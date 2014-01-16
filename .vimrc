@@ -22,6 +22,8 @@ Bundle 'tpope/vim-fugitive'
 Bundle 'tpope/vim-rails.git'
 Bundle 'tpope/vim-surround'
 Bundle 'tpope/vim-unimpaired'
+Bundle 'paranoida/vim-airlineish'
+Bundle 'christoomey/vim-tmux-navigator'
 
 " vim-scripts repos
 Bundle 'L9'
@@ -35,8 +37,9 @@ filetype plugin on            " required for snipMate
 syntax enable
 
 " color scheme
-set bg=light
-colo solarized
+" set bg=dark
+" colo solarized
+colo darkblue
 
 " stole this from SamP originally
 " imap jj <Esc> " map jj to esc
@@ -116,7 +119,7 @@ noremap v <c-v>
 noremap <c-v> v
 
 " Vim EasyMotion trigger
-let g:EasyMotion_leader_key = '<leader><leader>'
+let g:EasyMotion_leader_key= '<leader><leader>'
 
 " buftabs
 nnoremap <f1> :bprev<CR>
@@ -146,3 +149,13 @@ set guifont=Inconsolata:h19
 " splits open to bottom and right
 set splitright
 set splitbelow
+
+set t_Co=256
+let g:airline_theme='solarized'
+
+" NerdTree right
+let g:NERDTreeWinPos = "right"
+
+" Autocmd qf to silently open selections
+nnoremap <S-Left> :tabp<CR>
+nnoremap <S-Right> :tabn<CR>
