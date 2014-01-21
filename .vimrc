@@ -23,11 +23,13 @@ Bundle 'tpope/vim-eunuch'
 Bundle 'tpope/vim-fugitive'
 Bundle 'tpope/vim-surround'
 Bundle 'tpope/vim-unimpaired'
+Bundle 'tpope/vim-repeat'
 Bundle 'sjl/clam.vim'
 Bundle 'wesQ3/vim-windowswap'
 Bundle 'ervandew/supertab'
 Bundle 'vim-scripts/maven-ide'
 Bundle 'vim-scripts/ZoomWin.git'
+Bundle 'jeetsukumaran/vim-buffergator'
 
 " vim-scripts repos
 Bundle 'L9'
