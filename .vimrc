@@ -12,18 +12,22 @@ Bundle 'gmarik/vundle'
 Bundle 'Lokaltog/vim-easymotion'
 Bundle 'altercation/vim-colors-solarized'
 Bundle 'bling/vim-airline'
+Bundle 'christoomey/vim-tmux-navigator'
 Bundle 'godlygeek/tabular'
 Bundle 'hdima/python-syntax'
 Bundle 'mileszs/ack.vim'
 Bundle 'rstacruz/sparkup', {'rtp': 'vim/'}
 Bundle 'scrooloose/nerdtree'
 Bundle 'thinca/vim-visualstar'
+Bundle 'tpope/vim-eunuch'
 Bundle 'tpope/vim-fugitive'
-Bundle 'tpope/vim-rails.git'
 Bundle 'tpope/vim-surround'
 Bundle 'tpope/vim-unimpaired'
-Bundle 'paranoida/vim-airlineish'
-Bundle 'christoomey/vim-tmux-navigator'
+Bundle 'sjl/clam.vim'
+Bundle 'wesQ3/vim-windowswap'
+Bundle 'ervandew/supertab'
+Bundle 'vim-scripts/maven-ide'
+Bundle 'vim-scripts/ZoomWin.git'
 
 " vim-scripts repos
 Bundle 'L9'
@@ -37,9 +41,8 @@ filetype plugin on            " required for snipMate
 syntax enable
 
 " color scheme
-" set bg=dark
-" colo solarized
-colo darkblue
+set bg=light
+colo solarized
 
 " stole this from SamP originally
 " imap jj <Esc> " map jj to esc
@@ -119,7 +122,7 @@ noremap v <c-v>
 noremap <c-v> v
 
 " Vim EasyMotion trigger
-let g:EasyMotion_leader_key= '<leader><leader>'
+let g:EasyMotion_leader_key = '<leader><leader>'
 
 " buftabs
 nnoremap <f1> :bprev<CR>
@@ -144,18 +147,23 @@ set formatoptions+=rco
 set laststatus=2
 
 " font scheme
-set guifont=Inconsolata:h19
+set guifont=Inconsolata:h16
 
 " splits open to bottom and right
 set splitright
 set splitbelow
 
-set t_Co=256
-let g:airline_theme='solarized'
+" clam in vim
+nnoremap ! :Clam<space>
+vnoremap ! :ClamVisual<space>
 
-" NerdTree right
+" window swap vim
+" let g:windowswap_map_keys = 0 "prevent default bindings
+nnoremap <silent> <leader>yw :call WindowSwap#MarkWindowSwap()<CR>
+nnoremap <silent> <leader>pw :call WindowSwap#DoWindowSwap()<CR>
+
+" nerdtree right
 let g:NERDTreeWinPos = "right"
 
-" Autocmd qf to silently open selections
-nnoremap <S-Left> :tabp<CR>
-nnoremap <S-Right> :tabn<CR>
+" bind K to grep word under cursor
+nnoremap K :grep! "\b<C-R><C-W>\b"<CR>:cw<CR>
