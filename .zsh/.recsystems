@@ -1,0 +1,5 @@
+# Recommender Systems Prefs - http://recsys.cs.umn.edu/mac.html
+#export JAVA_HOME=`/usr/libexec/java_home`
+#export M2_HOME=/usr/local/Cellar/maven/3.0.5
+export PATH=/Users/prungta/Documents/RecSystems/lenskit-2.0/bin:$PATH
+
