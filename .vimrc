@@ -45,7 +45,7 @@ set bg=light
 colo solarized
 
 " stole this from SamP originally
-" imap jj <Esc> " map jj to esc
+inoremap ii <Esc> " map ii to esc
 " Removed to start using caps instead
 
 " leader to , <-- godsend
