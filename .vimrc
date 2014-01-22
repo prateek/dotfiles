@@ -9,6 +9,7 @@ call vundle#rc()
 Bundle 'gmarik/vundle'
 
 " original repos on github
+Bundle 'Lokaltog/vim-easymotion'
 Bundle 'altercation/vim-colors-solarized'
 Bundle 'bling/vim-airline'
 Bundle 'christoomey/vim-tmux-navigator'
@@ -16,7 +17,7 @@ Bundle 'ervandew/supertab'
 Bundle 'godlygeek/tabular'
 Bundle 'hdima/python-syntax'
 Bundle 'jeetsukumaran/vim-buffergator'
-Bundle 'Lokaltog/vim-easymotion'
+Bundle 'kien/ctrlp.vim'
 Bundle 'mileszs/ack.vim'
 Bundle 'rstacruz/sparkup', {'rtp': 'vim/'}
 Bundle 'scrooloose/nerdtree'
@@ -28,10 +29,10 @@ Bundle 'tpope/vim-repeat'
 Bundle 'tpope/vim-surround'
 Bundle 'tpope/vim-unimpaired'
 Bundle 'vim-scripts/ZoomWin.git'
-Bundle 'wesQ3/vim-windowswap'
 Bundle 'vim-scripts/maven-plugin'
 Bundle 'vimwiki/vimwiki'
-Bundle 'kien/ctrlp.vim'
+Bundle 'wesQ3/vim-windowswap'
+Bundle 'csexton/trailertrash.vim'
 
 " vim-scripts repos
 Bundle 'L9'
@@ -45,10 +46,10 @@ filetype plugin on            " required for snipMate
 syntax enable
 
 " color scheme
-" set t_Co=256
-" let g:solarized_termcolors=16
+set t_Co=256
+colo solarized
+let g:solarized_termcolors=256
 set bg=dark
-colo desert
 
 " stole this from SamP originally
 inoremap ii <Esc> " map ii to esc
@@ -64,8 +65,7 @@ au BufNewFile,BufRead *.hql set filetype=sql
 set tabstop=2
 set shiftwidth=2
 set expandtab
-"set smarttab
-set tabstop=2
+" set smarttab
 
 " NerdTreeToggle
 nnoremap <silent> <leader>n :NERDTreeToggle<CR>
@@ -88,7 +88,7 @@ augroup END
 
 " persistent undo
 set undofile
-set undodir=$HOME/tmp/.VIM_UNDO_FILES
+set undodir=$HOME/.VIM_UNDO_FILES
 set undolevels=10000
 
 " visual mode defaults
@@ -177,8 +177,7 @@ nnoremap <silent> <leader>mp :Mvn package <bar> redr!<CR>
 nnoremap <silent> <leader>mc :Mvn compile <bar> redr!<CR>
 
 " Trailing whitespace removal 
-" autocmd FileType c,python,cpp,java autocmd BufWritePre <buffer> :%s/\s\+$//e
-" TODO: use TrailerTrash
+autocmd FileType c,python,cpp,java autocmd BufWritePre <buffer> :Trim<CR>
 
 " execute workflow
 " Premier specific
@@ -189,13 +188,12 @@ nnoremap <silent> <leader>gst :Gstatus<CR>
 nnoremap <silent> <leader>gw :Gwrite<CR>
 nnoremap <silent> <leader>gd :Gdiff<CR>
 nnoremap <silent> <leader>ge :Gedit<CR>
-nnoremap <silent> <leader>gc :Gcommit -m "
+nnoremap <silent> <leader>gc :Gcommit 
 
 " ctrl-p mappings
-nnoremap <silent> <leader>p :CtrlPMixed<CR>
 let g:ctrlp_map = '<c-f>'
 let g:ctrlp_cmd = 'CtrlP'
-" let g:ctrlp_prompt_mappings = {
-"     \ 'AcceptSelection("e")': ['<c-v>', '<2-LeftMouse>'],
-"     \ 'AcceptSelection("v")': ['<cr>', '<RightMouse>'],
-"     \ }
+
+" vimwiki item toggle
+" TODO: fix this error
+" nnoremap <leader>xx <Plug>VimwikiToggleListItem
