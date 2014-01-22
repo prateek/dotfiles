@@ -1,10 +1,6 @@
 # PATH
 export PATH=$HOME/bin:/usr/local/bin:$PATH
 
-# virtual env setup
-export WORKON_HOME=~/Envs
-source /usr/local/bin/virtualenvwrapper.sh
-
 # prompt stolen from http://pthree.org/2009/03/28/add-vim-editing-mode-to-your-zsh-prompt/
 source ~/.zsh/.prompt
 
@@ -13,20 +9,27 @@ alias ip='ipython qtconsole --pylab=inline'
 alias ipn='ipython notebook ~/trash/notebooks'
 export PYTHONPATH=/usr/local/lib/python2.7/site-packages:
 
-# colorize ls
-eval `gdircolors $HOME/.dir_colors`
+## colorize ls
+# eval `gdircolors $HOME/.dir_colors`
 
-# colorize completions
+# enable color support of ls and also add handy aliases
+if [ -x /usr/bin/dircolors ]; then
+    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+    alias ls='ls --color=auto'
+
+    alias grep='grep --color=auto'
+    alias fgrep='fgrep --color=auto'
+    alias egrep='egrep --color=auto'
+fi
+
+## colorize completions
 zstyle ':completion:*' list-colors ''
 zstyle ':completion:*:default' list-colors ${(s.:.)LS_COLORS}
 
 # aliases
-alias ls='gls --color=auto'
 alias quit='exit'
 alias vimd='vim -d'
-alias m='mvim'
-alias g='mvim'
-alias psef='ps -A | grep'
+alias psef='ps -ef | grep'
 
 # bindings
 bindkey -v # Vim bindings for zsh
@@ -51,10 +54,6 @@ export M2_REPO=$HOME/.m2/repository
 # create new mr maven job
 # stolen from github.com/patrickangeles/cdh-maven-archetype
 # mvn archetype:generate -DarchetypeCatalog=http://repository.cloudera.com/archetype-catalog.xml
-
-# autojump configuration
-source /usr/local/etc/autojump.zsh
-export AUTOJUMP_IGNORE_CASE=1
 
 # zsh completion -- needs to be after autojump!
 autoload -U compinit && compinit
@@ -103,9 +102,9 @@ bindkey '^P' history-search-backward
 bindkey '^N' history-search-forward  
 
 # syntax highlight
-LESSPIPE=`which src-hilite-lesspipe.sh`
-export LESSOPEN="| ${LESSPIPE} %s"
-export LESS='-R'
+# LESSPIPE=`which src-hilite-lesspipe.sh`
+# export LESSOPEN="| ${LESSPIPE} %s"
+# export LESS='-R'
 
 # iter2 profile modify
 function iterm_profile() {

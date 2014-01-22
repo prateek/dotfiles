@@ -9,27 +9,29 @@ call vundle#rc()
 Bundle 'gmarik/vundle'
 
 " original repos on github
-Bundle 'Lokaltog/vim-easymotion'
 Bundle 'altercation/vim-colors-solarized'
 Bundle 'bling/vim-airline'
 Bundle 'christoomey/vim-tmux-navigator'
+Bundle 'ervandew/supertab'
 Bundle 'godlygeek/tabular'
 Bundle 'hdima/python-syntax'
+Bundle 'jeetsukumaran/vim-buffergator'
+Bundle 'Lokaltog/vim-easymotion'
 Bundle 'mileszs/ack.vim'
 Bundle 'rstacruz/sparkup', {'rtp': 'vim/'}
 Bundle 'scrooloose/nerdtree'
+Bundle 'sjl/clam.vim'
 Bundle 'thinca/vim-visualstar'
 Bundle 'tpope/vim-eunuch'
 Bundle 'tpope/vim-fugitive'
+Bundle 'tpope/vim-repeat'
 Bundle 'tpope/vim-surround'
 Bundle 'tpope/vim-unimpaired'
-Bundle 'tpope/vim-repeat'
-Bundle 'sjl/clam.vim'
-Bundle 'wesQ3/vim-windowswap'
-Bundle 'ervandew/supertab'
-Bundle 'vim-scripts/maven-ide'
 Bundle 'vim-scripts/ZoomWin.git'
-Bundle 'jeetsukumaran/vim-buffergator'
+Bundle 'wesQ3/vim-windowswap'
+Bundle 'vim-scripts/maven-plugin'
+" Bundle 'vim-airlineish'
+" Bundle 'vim-scripts/maven-ide'
 
 " vim-scripts repos
 Bundle 'L9'
@@ -43,8 +45,8 @@ filetype plugin on            " required for snipMate
 syntax enable
 
 " color scheme
-set bg=light
-colo solarized
+set bg=dark
+colo darkblue
 
 " stole this from SamP originally
 inoremap ii <Esc> " map ii to esc
@@ -155,6 +157,9 @@ set guifont=Inconsolata:h16
 set splitright
 set splitbelow
 
+" color
+set t_Co=256
+let g:airline_theme='solarized'
 " clam in vim
 nnoremap ! :Clam<space>
 vnoremap ! :ClamVisual<space>
@@ -169,3 +174,6 @@ let g:NERDTreeWinPos = "right"
 
 " bind K to grep word under cursor
 nnoremap K :grep! "\b<C-R><C-W>\b"<CR>:cw<CR>
+
+" maven
+nnoremap <silent> <leader>mp :Mvn package <bar> redr!<CR>
