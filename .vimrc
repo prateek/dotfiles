@@ -30,7 +30,7 @@ Bundle 'tpope/vim-unimpaired'
 Bundle 'vim-scripts/ZoomWin.git'
 Bundle 'wesQ3/vim-windowswap'
 Bundle 'vim-scripts/maven-plugin'
-" Bundle 'vim-airlineish'
+Bundle 'vimwiki/vimwiki'
 " Bundle 'vim-scripts/maven-ide'
 
 " vim-scripts repos
@@ -45,8 +45,10 @@ filetype plugin on            " required for snipMate
 syntax enable
 
 " color scheme
+" set t_Co=256
+" let g:solarized_termcolors=16
 set bg=dark
-colo darkblue
+colo desert
 
 " stole this from SamP originally
 inoremap ii <Esc> " map ii to esc
@@ -157,8 +159,6 @@ set guifont=Inconsolata:h16
 set splitright
 set splitbelow
 
-" color
-set t_Co=256
 let g:airline_theme='solarized'
 " clam in vim
 nnoremap ! :Clam<space>
@@ -169,11 +169,18 @@ vnoremap ! :ClamVisual<space>
 nnoremap <silent> <leader>yw :call WindowSwap#MarkWindowSwap()<CR>
 nnoremap <silent> <leader>pw :call WindowSwap#DoWindowSwap()<CR>
 
-" nerdtree right
-let g:NERDTreeWinPos = "right"
+" nerdtree left
+let g:NERDTreeWinPos = "left"
 
 " bind K to grep word under cursor
 nnoremap K :grep! "\b<C-R><C-W>\b"<CR>:cw<CR>
 
 " maven
 nnoremap <silent> <leader>mp :Mvn package <bar> redr!<CR>
+
+" Trailing whitespace removal 
+autocmd FileType c,python,cpp,java autocmd BufWritePre <buffer> :%s/\s\+$//e
+
+" execute workflow
+" Premier specific
+nnoremap <silent> <leader>rr :!/home/developer/workspace/distdata/src/scripts/helpers/copyOozieDeps.sh<CR>
