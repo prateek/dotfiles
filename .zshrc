@@ -90,7 +90,7 @@ fpath=($HOME/.zsh/func $fpath)
 typeset -U fpath
 
 # tmux color
-alias tmux="TERM=screen-256color-bce tmux"
+alias tmux="TERM=screen-256color-bce tmux -2"
 
 # stackoverflow in commandline
 alias h='howdoi --color'
