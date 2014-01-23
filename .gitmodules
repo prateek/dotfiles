@@ -1,3 +1,6 @@
 [submodule "opp.zsh"]
 	path = opp.zsh
 	url = https://github.com/hchbaw/opp.zsh
+[submodule ".zsh/opp.zsh"]
+	path = .zsh/opp.zsh
+	url = https://github.com/hchbaw/opp.zsh
