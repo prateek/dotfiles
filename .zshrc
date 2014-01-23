@@ -4,6 +4,10 @@ export PATH=$HOME/bin:/usr/local/bin:$PATH
 # prompt stolen from http://pthree.org/2009/03/28/add-vim-editing-mode-to-your-zsh-prompt/
 source ~/.zsh/.prompt
 
+## Vim inner word key bindings
+source ~/.zsh/opp.zsh/opp.zsh
+source ~/.zsh/opp.zsh/opp/*.zsh
+
 # ipython 
 alias ip='ipython qtconsole --pylab=inline'
 alias ipn='ipython notebook ~/trash/notebooks'
