@@ -29,6 +29,9 @@ alias psef='ps -ef | grep -i '
 
 # bindings
 bindkey -v # Vim bindings for zsh
+# zsh key timeout
+export KEYTIMEOUT=1
+
 # need to start using caps instead of jj
 bindkey -Mviins 'ii' vi-cmd-mode # jj map to esc 
 
