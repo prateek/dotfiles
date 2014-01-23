@@ -10,17 +10,13 @@ alias ipn='ipython notebook ~/trash/notebooks'
 export PYTHONPATH=/usr/local/lib/python2.7/site-packages:
 
 ## colorize ls
-# eval `gdircolors $HOME/.dir_colors`
+eval `gdircolors $HOME/.dir_colors`
 
-# enable color support of ls and also add handy aliases
-if [ -x /usr/bin/dircolors ]; then
-    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
-    alias ls='ls --color=auto'
-
-    alias grep='grep --color=auto'
-    alias fgrep='fgrep --color=auto'
-    alias egrep='egrep --color=auto'
-fi
+## color aliases
+alias ls='gls --color=auto'
+alias grep='grep --color=auto'
+alias fgrep='fgrep --color=auto'
+alias egrep='egrep --color=auto'
 
 ## colorize completions
 zstyle ':completion:*' list-colors ''
