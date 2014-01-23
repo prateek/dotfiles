@@ -104,10 +104,6 @@ nnoremap <DEL> :nohlsearch<CR>
 nmap S :%s//g<LEFT><LEFT> 
 vmap S :s//g<LEFT><LEFT>
 
-" get rid of the capital K map
-nnoremap K k
-vnoremap K k
-
 " toggle line wrapping
 nnoremap <leader>w :set wrap!<CR>
 set nowrap
@@ -173,13 +169,16 @@ nnoremap <silent> <leader>pw :call WindowSwap#DoWindowSwap()<CR>
 let g:NERDTreeWinPos = "left"
 
 " bind K to grep word under cursor
-nnoremap K :grep! "\b<C-R><C-W>\b"<CR>:cw<CR>
+nnoremap K :vimgrep "<C-R><C-W>" **/*.java<CR>
+vnoremap K :vimgrep "<C-R><C-W>" **/*.java<CR>
 
 " maven
 nnoremap <silent> <leader>mp :Mvn package <bar> redr!<CR>
+nnoremap <silent> <leader>mc :Mvn compile <bar> redr!<CR>
 
 " Trailing whitespace removal 
-autocmd FileType c,python,cpp,java autocmd BufWritePre <buffer> :%s/\s\+$//e
+" autocmd FileType c,python,cpp,java autocmd BufWritePre <buffer> :%s/\s\+$//e
+" TODO: use TrailerTrash
 
 " execute workflow
 " Premier specific
@@ -189,11 +188,14 @@ nnoremap <silent> <leader>rr :!/home/developer/workspace/distdata/src/scripts/he
 nnoremap <silent> <leader>gst :Gstatus<CR>
 nnoremap <silent> <leader>gw :Gwrite<CR>
 nnoremap <silent> <leader>gd :Gdiff<CR>
+nnoremap <silent> <leader>ge :Gedit<CR>
 nnoremap <silent> <leader>gc :Gcommit -m "
 
 " ctrl-p mappings
 nnoremap <silent> <leader>p :CtrlPMixed<CR>
-let g:ctrlp_prompt_mappings = {
-    \ 'AcceptSelection("e")': ['<c-v>', '<2-LeftMouse>'],
-    \ 'AcceptSelection("v")': ['<cr>', '<RightMouse>'],
-    \ }
+let g:ctrlp_map = '<c-f>'
+let g:ctrlp_cmd = 'CtrlP'
+" let g:ctrlp_prompt_mappings = {
+"     \ 'AcceptSelection("e")': ['<c-v>', '<2-LeftMouse>'],
+"     \ 'AcceptSelection("v")': ['<cr>', '<RightMouse>'],
+"     \ }

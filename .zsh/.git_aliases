@@ -14,3 +14,4 @@ alias gcot='git checkout -t'
 alias gcotb='git checkout --track -b'
 alias glog='git log'
 alias glogp='git log --pretty=format:"%h %s" --graph'
+alias gg="git log --graph --pretty=oneline --abbrev-commit"
