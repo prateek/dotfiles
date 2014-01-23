@@ -31,7 +31,7 @@ Bundle 'vim-scripts/ZoomWin.git'
 Bundle 'wesQ3/vim-windowswap'
 Bundle 'vim-scripts/maven-plugin'
 Bundle 'vimwiki/vimwiki'
-" Bundle 'vim-scripts/maven-ide'
+Bundle 'kien/ctrlp.vim'
 
 " vim-scripts repos
 Bundle 'L9'
@@ -184,3 +184,16 @@ autocmd FileType c,python,cpp,java autocmd BufWritePre <buffer> :%s/\s\+$//e
 " execute workflow
 " Premier specific
 nnoremap <silent> <leader>rr :!/home/developer/workspace/distdata/src/scripts/helpers/copyOozieDeps.sh<CR>
+
+" fugitive mappings
+nnoremap <silent> <leader>gst :Gstatus<CR>
+nnoremap <silent> <leader>gw :Gwrite<CR>
+nnoremap <silent> <leader>gd :Gdiff<CR>
+nnoremap <silent> <leader>gc :Gcommit -m "
+
+" ctrl-p mappings
+nnoremap <silent> <leader>p :CtrlPMixed<CR>
+let g:ctrlp_prompt_mappings = {
+    \ 'AcceptSelection("e")': ['<c-v>', '<2-LeftMouse>'],
+    \ 'AcceptSelection("v")': ['<cr>', '<RightMouse>'],
+    \ }
