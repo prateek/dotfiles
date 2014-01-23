@@ -5,8 +5,12 @@ set rtp+=~/.vim/bundle/vundle/
 call vundle#rc()
 
 " let Vundle manage Vundle
-" required! 
+" required!
 Bundle 'gmarik/vundle'
+
+filetype plugin indent on     " required!
+filetype plugin on            " required for snipMate
+syntax enable
 
 " original repos on github
 Bundle 'Lokaltog/vim-easymotion'
@@ -35,17 +39,15 @@ Bundle 'wesQ3/vim-windowswap'
 Bundle 'csexton/trailertrash.vim'
 Bundle 'junegunn/goyo.vim'
 Bundle 'amix/vim-zenroom2'
+Bundle 'MarcWeber/vim-addon-mw-utils'
+Bundle 'tomtom/tlib_vim'
+Bundle 'garbas/vim-snipmate'
+Bundle 'honza/vim-snippets'
+Bundle 'scrooloose/syntastic'
 
 " vim-scripts repos
 Bundle 'L9'
-Bundle 'FuzzyFinder'
-Bundle 'Align'
 Bundle 'SQLUtilities'
-Bundle 'snipMate'
-
-filetype plugin indent on     " required!
-filetype plugin on            " required for snipMate
-syntax enable
 
 " color scheme
 set t_Co=256
@@ -67,7 +69,20 @@ au BufNewFile,BufRead *.hql set filetype=sql
 set tabstop=2
 set shiftwidth=2
 set expandtab
-" set smarttab
+set autoindent
+set backspace=indent,eol,start
+set complete-=i
+set showmatch
+set smarttab
+
+set nrformats-=octal
+set shiftround
+
+" timeout fixes
+set esckeys
+set timeoutlen=1000
+set ttimeoutlen=50
+set incsearch
 
 " NerdTreeToggle
 nnoremap <silent> <leader>n :NERDTreeToggle<CR>
@@ -83,9 +98,9 @@ nnoremap <silent> <S-Space> @=(foldlevel('.')?'za':'l')<CR>
 
 " vimrc tweaking -- from 'Instantly Better Vim'
 nnoremap <silent> <leader>v :sp $MYVIMRC<CR>
-augroup VimReload 
+augroup VimReload
   autocmd!
-  autocmd BufWritePost $MYVIMRC source $MYVIMRC 
+  autocmd BufWritePost $MYVIMRC source $MYVIMRC
 augroup END
 
 " persistent undo
@@ -100,15 +115,19 @@ set virtualedit=block
 set smartcase ignorecase
 set incsearch
 set hlsearch
-nnoremap <DEL> :nohlsearch<CR>
+nnoremap \ :nohlsearch<CR>
 
 " search and replace shortcut
-nmap S :%s//g<LEFT><LEFT> 
+nmap S :%s//g<LEFT><LEFT>
 vmap S :s//g<LEFT><LEFT>
 
 " toggle line wrapping
 nnoremap <leader>w :set wrap!<CR>
 set nowrap
+
+" toggle list chars
+nnoremap <leader>l :set list!<CR>
+set nolist
 
 " set current file's directory as the vim directory
 nnoremap <leader>c :cd %:p:h<CR>
@@ -138,7 +157,7 @@ nnoremap N Nzz
 nnoremap * *zz
 nnoremap # #zz
 nnoremap g* g*zz
-nnoremap g# g#zz    
+nnoremap g# g#zz
 
 " make ctrl-p be regular p and otherwise use smart pasting
 nnoremap <c-p> p
@@ -149,6 +168,21 @@ set formatoptions+=rco
 
 " always display status line
 set laststatus=2
+set ruler
+set showcmd
+set wildmenu
+
+" scrolloff f
+if !&scrolloff
+  set scrolloff=1
+endif
+if !&sidescrolloff
+  set sidescrolloff=5
+endif
+set display+=lastline
+
+" Use the same symbols as TextMate for tabstops and EOLs
+set listchars=trail:·,precedes:«,extends:»,tab:▸\ ,eol:¬
 
 " font scheme
 set guifont=Inconsolata:h16
@@ -178,7 +212,7 @@ vnoremap K :vimgrep "<C-R><C-W>" **/*.java<CR>
 nnoremap <silent> <leader>mp :Mvn package <bar> redr!<CR>
 nnoremap <silent> <leader>mc :Mvn compile <bar> redr!<CR>
 
-" Trailing whitespace removal 
+" Trailing whitespace removal
 autocmd FileType c,python,cpp,java autocmd BufWritePre <buffer> :Trim<CR>
 
 " execute workflow
@@ -190,7 +224,7 @@ nnoremap <silent> <leader>gst :Gstatus<CR>
 nnoremap <silent> <leader>gw :Gwrite<CR>
 nnoremap <silent> <leader>gd :Gdiff<CR>
 nnoremap <silent> <leader>ge :Gedit<CR>
-nnoremap <silent> <leader>gc :Gcommit 
+nnoremap <silent> <leader>gc :Gcommit
 
 " ctrl-p mappings
 let g:ctrlp_map = '<c-f>'
@@ -199,10 +233,6 @@ let g:ctrlp_cmd = 'CtrlP'
 " vimwiki item toggle
 " TODO: fix this error
 " nnoremap <leader>xx <Plug>VimwikiToggleListItem
-
-" timeout fixes
-set esckeys
-set timeoutlen=1000 ttimeoutlen=0
 
 " Break character
 set showbreak=↪
