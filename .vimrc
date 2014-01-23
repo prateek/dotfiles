@@ -51,8 +51,8 @@ Bundle 'SQLUtilities'
 
 " color scheme
 set t_Co=256
-colo solarized
 let g:solarized_termcolors=256
+colo solarized
 set bg=dark
 
 " stole this from SamP originally
