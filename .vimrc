@@ -5,7 +5,7 @@ set rtp+=~/.vim/bundle/vundle/
 call vundle#rc()
 
 " let Vundle manage Vundle
-" required! 
+" required!
 Bundle 'gmarik/vundle'
 
 " original repos on github
@@ -46,9 +46,9 @@ filetype plugin on            " required for snipMate
 syntax enable
 
 " color scheme
-set t_Co=256
-colo solarized
-let g:solarized_termcolors=256
+" set t_Co=256
+" let g:solarized_termcolors=256
+colo desert
 set bg=dark
 
 " stole this from SamP originally
@@ -81,9 +81,9 @@ nnoremap <silent> <S-Space> @=(foldlevel('.')?'za':'l')<CR>
 
 " vimrc tweaking -- from 'Instantly Better Vim'
 nnoremap <silent> <leader>v :sp $MYVIMRC<CR>
-augroup VimReload 
+augroup VimReload
   autocmd!
-  autocmd BufWritePost $MYVIMRC source $MYVIMRC 
+  autocmd BufWritePost $MYVIMRC source $MYVIMRC
 augroup END
 
 " persistent undo
@@ -101,7 +101,7 @@ set hlsearch
 nnoremap <DEL> :nohlsearch<CR>
 
 " search and replace shortcut
-nmap S :%s//g<LEFT><LEFT> 
+nmap S :%s//g<LEFT><LEFT>
 vmap S :s//g<LEFT><LEFT>
 
 " toggle line wrapping
@@ -136,7 +136,7 @@ nnoremap N Nzz
 nnoremap * *zz
 nnoremap # #zz
 nnoremap g* g*zz
-nnoremap g# g#zz    
+nnoremap g# g#zz
 
 " make ctrl-p be regular p and otherwise use smart pasting
 nnoremap <c-p> p
@@ -176,7 +176,7 @@ vnoremap K :vimgrep "<C-R><C-W>" **/*.java<CR>
 nnoremap <silent> <leader>mp :Mvn package <bar> redr!<CR>
 nnoremap <silent> <leader>mc :Mvn compile <bar> redr!<CR>
 
-" Trailing whitespace removal 
+" Trailing whitespace removal
 autocmd FileType c,python,cpp,java autocmd BufWritePre <buffer> :Trim<CR>
 
 " execute workflow
@@ -188,7 +188,7 @@ nnoremap <silent> <leader>gst :Gstatus<CR>
 nnoremap <silent> <leader>gw :Gwrite<CR>
 nnoremap <silent> <leader>gd :Gdiff<CR>
 nnoremap <silent> <leader>ge :Gedit<CR>
-nnoremap <silent> <leader>gc :Gcommit 
+nnoremap <silent> <leader>gc :Gcommit
 
 " ctrl-p mappings
 let g:ctrlp_map = '<c-f>'
