@@ -33,6 +33,8 @@ Bundle 'vim-scripts/maven-plugin'
 Bundle 'vimwiki/vimwiki'
 Bundle 'wesQ3/vim-windowswap'
 Bundle 'csexton/trailertrash.vim'
+Bundle 'junegunn/goyo.vim'
+Bundle 'amix/vim-zenroom2'
 
 " vim-scripts repos
 Bundle 'L9'
@@ -201,3 +203,9 @@ let g:ctrlp_cmd = 'CtrlP'
 " timeout fixes
 set esckeys
 set timeoutlen=1000 ttimeoutlen=0
+
+" Break character
+set showbreak=↪
+
+" VimRoom Plugin
+" nnoremap <silent> <leader>z :Goyo | so $MYVIMRC | redr!<CR>
