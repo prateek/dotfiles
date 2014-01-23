@@ -197,3 +197,7 @@ let g:ctrlp_cmd = 'CtrlP'
 " vimwiki item toggle
 " TODO: fix this error
 " nnoremap <leader>xx <Plug>VimwikiToggleListItem
+
+" timeout fixes
+set esckeys
+set timeoutlen=1000 ttimeoutlen=0
