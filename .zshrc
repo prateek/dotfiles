@@ -29,7 +29,7 @@ zstyle ':completion:*:default' list-colors ${(s.:.)LS_COLORS}
 # aliases
 alias quit='exit'
 alias vimd='vim -d'
-alias psef='ps -ef | grep'
+alias psef='ps -ef | grep -i '
 
 # bindings
 bindkey -v # Vim bindings for zsh
