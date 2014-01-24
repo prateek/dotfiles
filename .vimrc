@@ -45,6 +45,7 @@ Bundle 'garbas/vim-snipmate'
 Bundle 'honza/vim-snippets'
 Bundle 'scrooloose/syntastic'
 Bundle 'sk1418/QFGrep'
+Bundle 'tpope/vim-markdown'
 
 " vim-scripts repos
 Bundle 'L9'
@@ -65,6 +66,17 @@ let mapleader = " "
 
 " Treat .hql files as SQL for syntax highlighting
 au BufNewFile,BufRead *.hql set filetype=sql
+
+" markdown formatting
+augroup markdown
+  autocmd BufNewFile * :set ai
+  autocmd BufNewFile * :set formatoptions=tcroqn2 
+  autocmd BufNewFile * :set comments=n:> 
+  autocmd BufNewFile * :set textwidth=80
+  autocmd BufNewFile * :set wrap
+  autocmd BufNewFile * :set linebreak
+  autocmd BufNewFile * :set list
+augroup END
 
 " Tabs
 set tabstop=2
