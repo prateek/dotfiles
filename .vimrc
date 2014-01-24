@@ -213,7 +213,7 @@ nnoremap <silent> <leader>mp :Mvn package <bar> redr!<CR>
 nnoremap <silent> <leader>mc :Mvn compile <bar> redr!<CR>
 
 " Trailing whitespace removal
-autocmd FileType c,python,cpp,java autocmd BufWritePre <buffer> :Trim<CR>
+" autocmd FileType c,python,cpp,java autocmd BufWritePre <buffer> :Trim<CR>
 
 " execute workflow
 " Premier specific
