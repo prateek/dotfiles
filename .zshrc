@@ -1,23 +1,51 @@
 # PATH
 export PATH=$HOME/bin:/usr/local/bin:$PATH
 
+if [ -d $HOME/dotfiles ]; then
+  export DOTFILES=$HOME/dotfiles
+else
+  if [ -d $HOME/prateek-dotfiles ]; then
+    export DOTFILES=$HOME/prateek-dotfiles
+  else
+    export DOTFILES=$HOME
+  fi
+fi
+
 # prompt stolen from http://pthree.org/2009/03/28/add-vim-editing-mode-to-your-zsh-prompt/
-source ~/.zsh/.prompt
+. $DOTFILES/.zsh/.prompt
 
 ## Vim inner word key bindings
-source ~/.zsh/opp.zsh/opp.zsh
-source ~/.zsh/opp.zsh/opp/*.zsh
+. $DOTFILES/.zsh/opp.zsh/opp.zsh
+. $DOTFILES/.zsh/opp.zsh/opp/*.zsh
 
-# ipython 
+# git-aliases
+. $DOTFILES/.zsh/.git_aliases
+
+# hub alias
+eval "$(hub alias -s)"
+
+# source zsh file completions
+fpath=($HOME/.zsh/func /usr/local/share/zsh/site-functions $fpath)
+typeset -U fpath
+
+# ipython
 alias ip='ipython qtconsole --pylab=inline'
-alias ipn='ipython notebook ~/trash/notebooks'
+alias ipn="ipython notebook $HOME/trash/notebooks"
 export PYTHONPATH=/usr/local/lib/python2.7/site-packages:
 
 # enable color support of ls and also add handy aliases
-if [ -x /usr/bin/dircolors ]; then
-    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
-    alias ls='ls --color=auto'
+## colorize ls
+if [ -x /usr/local/bin/gdircolors ]  && [ -s $HOME/.dir_colors ]; then
+  eval `gdircolors $HOME/.dir_colors`
+  alias ls='gls --color=auto'
+  alias grep='grep --color=auto'
+  alias fgrep='fgrep --color=auto'
+  alias egrep='egrep --color=auto'
+fi
 
+if [ -x /usr/bin/dircolors ]; then
+    test -r $HOME/dircolors && eval "$(dircolors -b $HOME/dircolors)" || eval "$(dircolors -b)"
+    alias ls='ls --color=auto'
     alias grep='grep --color=auto'
     alias fgrep='fgrep --color=auto'
     alias egrep='egrep --color=auto'
@@ -38,10 +66,7 @@ bindkey -v # Vim bindings for zsh
 export KEYTIMEOUT=1
 
 # need to start using caps instead of jj
-bindkey -Mviins 'ii' vi-cmd-mode # jj map to esc 
-
-# git-aliases
-source ~/.zsh/.git_aliases
+bindkey -Mviins 'ii' vi-cmd-mode # jj map to esc
 
 # History options
 HISTFILE=$HOME/.zhistory       # enable history saving on shell exit
@@ -89,10 +114,6 @@ man() {
     man "$@"
 }
 
-# command tab completion for homebrew
-fpath=($HOME/.zsh/func $fpath)
-typeset -U fpath
-
 # tmux color
 alias tmux="TERM=screen-256color-bce tmux -2"
 
@@ -103,14 +124,9 @@ alias h='howdoi --color'
 bindkey '^R' history-incremental-search-backward
 bindkey '^S' history-incremental-search-forward
 bindkey '^P' history-search-backward
-bindkey '^N' history-search-forward  
+bindkey '^N' history-search-forward
 
 # syntax highlight
 # LESSPIPE=`which src-hilite-lesspipe.sh`
 # export LESSOPEN="| ${LESSPIPE} %s"
 # export LESS='-R'
-
-# iter2 profile modify
-function iterm_profile() {
-  echo -e "\033]50;SetProfile=${1}\a"
-}
