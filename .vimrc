@@ -44,6 +44,7 @@ Bundle 'vim-scripts/maven-plugin'
 Bundle 'vimwiki/vimwiki'
 Bundle 'wesQ3/vim-windowswap'
 Bundle 'amix/vim-zenroom2'
+Bundle 'tomasr/molokai'
 
 " vim-scripts repos
 Bundle 'L9'
@@ -51,9 +52,10 @@ Bundle 'SQLUtilities'
 
 " color scheme
 let g:solarized_termcolors=256
+let g:rehash256 = 1
 set t_Co=256
-set bg=light
-colo solarized
+set bg=dark
+colo molokai
 let g:airline_theme='solarized'
 
 " Keep this below the colorschemes
@@ -227,11 +229,8 @@ vnoremap K :vimgrep "<C-R><C-W>" **/*.java<CR>
 nnoremap <silent> <leader>mp :Mvn package <bar> redr! <bar> ccl <bar> copen<CR>
 nnoremap <silent> <leader>mc :Mvn compile <bar> redr!<CR>
 
-" Trailing whitespace removal
-" autocmd FileType c,python,cpp,java autocmd BufWritePre <buffer> :Trim<CR>
-
-" execute workflow
 " Premier specific
+" execute workflow
 nnoremap <silent> <leader>rr :!/home/developer/workspace/distdata/src/scripts/helpers/copyOozieDeps.sh<CR>
 
 " fugitive mappings
@@ -241,6 +240,8 @@ nnoremap <silent> <leader>gd :Gdiff<CR>
 nnoremap <silent> <leader>ge :Gedit<CR>
 nnoremap <silent> <leader>gc :Gcommit
 
+" Git log mappings
+nnoremap <silent> <leader>gl :sp <bar> GitLog<CR>
 
 " ctrl-p mappings
 let g:ctrlp_map = '<c-p>'
