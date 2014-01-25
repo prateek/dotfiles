@@ -8,27 +8,34 @@ call vundle#rc()
 " required!
 Bundle 'gmarik/vundle'
 
-filetype plugin indent on     " required!
-filetype plugin on            " required for snipMate
-syntax enable
-
 " original repos on github
 Bundle 'Lokaltog/vim-easymotion'
+Bundle 'MarcWeber/vim-addon-mw-utils'
 Bundle 'altercation/vim-colors-solarized'
 Bundle 'bling/vim-airline'
 Bundle 'christoomey/vim-tmux-navigator'
+Bundle 'csexton/trailertrash.vim'
 Bundle 'ervandew/supertab'
+Bundle 'garbas/vim-snipmate'
 Bundle 'godlygeek/tabular'
 Bundle 'hdima/python-syntax'
+Bundle 'honza/vim-snippets'
 Bundle 'jeetsukumaran/vim-buffergator'
+Bundle 'junegunn/goyo.vim'
+Bundle 'kablamo/vim-git-log'
 Bundle 'kien/ctrlp.vim'
 Bundle 'mileszs/ack.vim'
+Bundle 'prateek/QFGrep'
 Bundle 'rstacruz/sparkup', {'rtp': 'vim/'}
 Bundle 'scrooloose/nerdtree'
+Bundle 'scrooloose/syntastic'
 Bundle 'sjl/clam.vim'
 Bundle 'thinca/vim-visualstar'
+Bundle 'tomtom/tlib_vim'
+Bundle 'tpope/vim-abolish'
 Bundle 'tpope/vim-eunuch'
 Bundle 'tpope/vim-fugitive'
+Bundle 'tpope/vim-markdown'
 Bundle 'tpope/vim-repeat'
 Bundle 'tpope/vim-surround'
 Bundle 'tpope/vim-unimpaired'
@@ -36,16 +43,7 @@ Bundle 'vim-scripts/ZoomWin.git'
 Bundle 'vim-scripts/maven-plugin'
 Bundle 'vimwiki/vimwiki'
 Bundle 'wesQ3/vim-windowswap'
-Bundle 'csexton/trailertrash.vim'
-Bundle 'junegunn/goyo.vim'
 Bundle 'amix/vim-zenroom2'
-Bundle 'MarcWeber/vim-addon-mw-utils'
-Bundle 'tomtom/tlib_vim'
-Bundle 'garbas/vim-snipmate'
-Bundle 'honza/vim-snippets'
-Bundle 'scrooloose/syntastic'
-Bundle 'sk1418/QFGrep'
-Bundle 'tpope/vim-markdown'
 
 " vim-scripts repos
 Bundle 'L9'
@@ -56,6 +54,12 @@ let g:solarized_termcolors=256
 set t_Co=256
 set bg=light
 colo solarized
+let g:airline_theme='solarized'
+
+" Keep this below the colorschemes
+filetype plugin indent on     " required!
+filetype plugin on            " required for snipMate
+syntax enable
 
 " stole this from SamP originally
 inoremap ii <Esc> " map ii to esc
@@ -70,8 +74,8 @@ au BufNewFile,BufRead *.hql set filetype=sql
 " markdown formatting
 augroup markdown
   autocmd BufNewFile * :set ai
-  autocmd BufNewFile * :set formatoptions=tcroqn2 
-  autocmd BufNewFile * :set comments=n:> 
+  autocmd BufNewFile * :set formatoptions=tcroqn2
+  autocmd BufNewFile * :set comments=n:>
   autocmd BufNewFile * :set textwidth=80
   autocmd BufNewFile * :set wrap
   autocmd BufNewFile * :set linebreak
@@ -203,8 +207,6 @@ set guifont=Inconsolata:h16
 set splitright
 set splitbelow
 
-let g:airline_theme='solarized'
-
 " clam in vim
 nnoremap ! :Clam<space>
 vnoremap ! :ClamVisual<space>
@@ -239,17 +241,10 @@ nnoremap <silent> <leader>gd :Gdiff<CR>
 nnoremap <silent> <leader>ge :Gedit<CR>
 nnoremap <silent> <leader>gc :Gcommit
 
-" make ctrl-p be regular p and otherwise use smart pasting
-" nnoremap <c-p> p
-" nnoremap p p=`]
 
 " ctrl-p mappings
-let g:ctrlp_map = '<c-f>'
+let g:ctrlp_map = '<c-p>'
 let g:ctrlp_cmd = 'CtrlPMixed'
-
-" vimwiki item toggle
-" TODO: fix this error
-" nnoremap <leader>xx <Plug>VimwikiToggleListItem
 
 " VimRoom Plugin
 nnoremap <silent> <leader>z :Goyo<CR>
