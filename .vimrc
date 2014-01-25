@@ -44,16 +44,18 @@ Bundle 'tomtom/tlib_vim'
 Bundle 'garbas/vim-snipmate'
 Bundle 'honza/vim-snippets'
 Bundle 'scrooloose/syntastic'
+Bundle 'sk1418/QFGrep'
+Bundle 'tpope/vim-markdown'
 
 " vim-scripts repos
 Bundle 'L9'
 Bundle 'SQLUtilities'
 
 " color scheme
-set t_Co=256
-colo solarized
 let g:solarized_termcolors=256
-set bg=dark
+set t_Co=256
+set bg=light
+colo solarized
 
 " stole this from SamP originally
 inoremap ii <Esc> " map ii to esc
@@ -64,6 +66,17 @@ let mapleader = " "
 
 " Treat .hql files as SQL for syntax highlighting
 au BufNewFile,BufRead *.hql set filetype=sql
+
+" markdown formatting
+augroup markdown
+  autocmd BufNewFile * :set ai
+  autocmd BufNewFile * :set formatoptions=tcroqn2 
+  autocmd BufNewFile * :set comments=n:> 
+  autocmd BufNewFile * :set textwidth=80
+  autocmd BufNewFile * :set wrap
+  autocmd BufNewFile * :set linebreak
+  autocmd BufNewFile * :set list
+augroup END
 
 " Tabs
 set tabstop=2
@@ -159,10 +172,6 @@ nnoremap # #zz
 nnoremap g* g*zz
 nnoremap g# g#zz
 
-" make ctrl-p be regular p and otherwise use smart pasting
-nnoremap <c-p> p
-nnoremap p p=`]
-
 " not sure what this does anymore, should investigate
 set formatoptions+=rco
 
@@ -184,6 +193,9 @@ set display+=lastline
 " Use the same symbols as TextMate for tabstops and EOLs
 set listchars=trail:·,precedes:«,extends:»,tab:▸\ ,eol:¬
 
+" Break character
+set showbreak=↪
+
 " font scheme
 set guifont=Inconsolata:h16
 
@@ -192,6 +204,7 @@ set splitright
 set splitbelow
 
 let g:airline_theme='solarized'
+
 " clam in vim
 nnoremap ! :Clam<space>
 vnoremap ! :ClamVisual<space>
@@ -209,7 +222,7 @@ nnoremap K :vimgrep "<C-R><C-W>" **/*.java<CR>
 vnoremap K :vimgrep "<C-R><C-W>" **/*.java<CR>
 
 " maven
-nnoremap <silent> <leader>mp :Mvn package <bar> redr!<CR>
+nnoremap <silent> <leader>mp :Mvn package <bar> redr! <bar> ccl <bar> copen<CR>
 nnoremap <silent> <leader>mc :Mvn compile <bar> redr!<CR>
 
 " Trailing whitespace removal
@@ -226,16 +239,22 @@ nnoremap <silent> <leader>gd :Gdiff<CR>
 nnoremap <silent> <leader>ge :Gedit<CR>
 nnoremap <silent> <leader>gc :Gcommit
 
+" make ctrl-p be regular p and otherwise use smart pasting
+" nnoremap <c-p> p
+" nnoremap p p=`]
+
 " ctrl-p mappings
 let g:ctrlp_map = '<c-f>'
-let g:ctrlp_cmd = 'CtrlP'
+let g:ctrlp_cmd = 'CtrlPMixed'
 
 " vimwiki item toggle
 " TODO: fix this error
 " nnoremap <leader>xx <Plug>VimwikiToggleListItem
 
-" Break character
-set showbreak=↪
-
 " VimRoom Plugin
-" nnoremap <silent> <leader>z :Goyo | so $MYVIMRC | redr!<CR>
+nnoremap <silent> <leader>z :Goyo<CR>
+
+" QFGrep
+let g:QFG_Grep = '<M-g>'
+let g:QFG_GrepV = '<M-v>'
+let g:QFG_Restore = '<M-r>'
