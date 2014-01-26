@@ -45,6 +45,8 @@ Bundle 'vimwiki/vimwiki'
 Bundle 'wesQ3/vim-windowswap'
 Bundle 'amix/vim-zenroom2'
 Bundle 'tomasr/molokai'
+Bundle 'mattn/gist-vim'
+Bundle 'mattn/webapi-vim'
 
 " vim-scripts repos
 Bundle 'L9'
@@ -164,7 +166,10 @@ noremap v <c-v>
 noremap <c-v> v
 
 " Vim EasyMotion trigger
-let g:EasyMotion_leader_key = '<leader><leader>'
+let g:EasyMotion_leader_key = '<Leader><Leader>'
+" EasyMotion Highlight
+hi link EasyMotionTarget ErrorMsg
+hi link EasyMotionShade  Comment
 
 " buftabs
 nnoremap <f1> :bprev<CR>
@@ -254,3 +259,8 @@ nnoremap <silent> <leader>z :Goyo<CR>
 let g:QFG_Grep = '<M-g>'
 let g:QFG_GrepV = '<M-v>'
 let g:QFG_Restore = '<M-r>'
+
+" Gist plugin
+let g:gist_post_private = 1
+let g:gist_show_privates = 1
+
