@@ -149,7 +149,7 @@ setopt INC_APPEND_HISTORY     # Write after each command
 # bindings
 bindkey -v # Vim bindings for zsh
 # zsh key timeout
-export KEYTIMEOUT=1
+export KEYTIMEOUT=0.5
 
 # need to start using caps instead of jj
 # bindkey -Mviins 'ii' vi-cmd-mode # jj map to esc

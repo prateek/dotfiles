@@ -47,6 +47,8 @@ Bundle 'amix/vim-zenroom2'
 Bundle 'tomasr/molokai'
 Bundle 'mattn/gist-vim'
 Bundle 'mattn/webapi-vim'
+Bundle 'mattboehm/vim-accordion'
+Bundle 'mattboehm/vim-unstack'
 
 " vim-scripts repos
 Bundle 'L9'
@@ -246,7 +248,7 @@ nnoremap <silent> <leader>ge :Gedit<CR>
 nnoremap <silent> <leader>gc :Gcommit
 
 " Git log mappings
-nnoremap <silent> <leader>gl :sp <bar> GitLog<CR>
+" nnoremap <silent> <leader>gl :sp <bar> GitLog<CR>
 
 " ctrl-p mappings
 let g:ctrlp_map = '<c-p>'
@@ -264,3 +266,8 @@ let g:QFG_Restore = '<M-r>'
 let g:gist_post_private = 1
 let g:gist_show_privates = 1
 
+" Accordion
+" set AccordionAll 4
+nnoremap <leader>d :AccordionDiff<CR>
+nnoremap <leader>i :AccordionZoomIn<CR>
+nnoremap <leader>o :AccordionZoomOut<CR>
