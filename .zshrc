@@ -18,7 +18,7 @@ if [ "$OLD_LS" != "" ]; then
   unalias ls
 fi
 
-# source antigen 
+# source antigen
 . $DOTFILES/.zsh/antigen/antigen.zsh
 
 # Load the oh-my-zsh's library.
@@ -76,9 +76,6 @@ fi
 ## Vim inner word key bindings
 . $DOTFILES/.zsh/opp.zsh/opp.zsh
 . $DOTFILES/.zsh/opp.zsh/opp/*.zsh
-
-# git-aliases
-. $DOTFILES/.zsh/.git_aliases
 
 # hub alias
 eval "$(hub alias -s)"

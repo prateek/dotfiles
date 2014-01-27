@@ -246,11 +246,11 @@ nnoremap <silent> <leader>mc :Mvn compile <bar> redr!<CR>
 nnoremap <silent> <leader>rr :!/home/developer/workspace/distdata/src/scripts/helpers/copyOozieDeps.sh<CR>
 
 " fugitive mappings
-nnoremap <silent> <leader>gst :Gstatus<CR>
+nnoremap <silent> <leader>gs :Gstatus<CR>
 nnoremap <silent> <leader>gw :Gwrite<CR>
 nnoremap <silent> <leader>gd :Gdiff<CR>
 nnoremap <silent> <leader>ge :Gedit<CR>
-nnoremap <silent> <leader>gc :Gcommit
+nnoremap <silent> <leader>gc :Gcommit<CR>
 
 " Git log mappings
 " nnoremap <silent> <leader>gl :sp <bar> GitLog<CR>
