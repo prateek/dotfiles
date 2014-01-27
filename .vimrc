@@ -25,7 +25,10 @@ Bundle 'junegunn/goyo.vim'
 Bundle 'kablamo/vim-git-log'
 Bundle 'kien/ctrlp.vim'
 Bundle 'mileszs/ack.vim'
-Bundle 'prateek/QFGrep'
+
+" TODO: use the master repo once it picks up your commit
+Bundle 'prateek/QFGrep' 
+
 Bundle 'rstacruz/sparkup', {'rtp': 'vim/'}
 Bundle 'scrooloose/nerdtree'
 Bundle 'scrooloose/syntastic'
@@ -48,7 +51,9 @@ Bundle 'tomasr/molokai'
 Bundle 'mattn/gist-vim'
 Bundle 'mattn/webapi-vim'
 Bundle 'mattboehm/vim-accordion'
-Bundle 'mattboehm/vim-unstack'
+
+" TODO: use the master repo once it picks up your commit
+Bundle 'prateek/vim-unstack'
 
 " vim-scripts repos
 Bundle 'L9'
