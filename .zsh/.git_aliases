@@ -19,3 +19,4 @@ alias glogp='git log --pretty=format:"%h %s" --graph'
 # The ultimate graph display for your git log
 # alias gg="git log --graph --pretty=oneline --abbrev-commit"
 alias gg="git log --graph --abbrev-commit --decorate --date=relative --format=format:'%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(bold yellow)%d%C(reset)' --all"
+alias ggl="git log --graph --abbrev-commit --decorate --date=relative --format=format:'%C(bold blue)%H%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(bold yellow)%d%C(reset)' --all"

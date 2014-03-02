@@ -14,7 +14,7 @@ Bundle 'MarcWeber/vim-addon-mw-utils'
 Bundle 'altercation/vim-colors-solarized'
 Bundle 'bling/vim-airline'
 Bundle 'christoomey/vim-tmux-navigator'
-Bundle 'csexton/trailertrash.vim'
+" Bundle 'csexton/trailertrash.vim'
 Bundle 'ervandew/supertab'
 Bundle 'garbas/vim-snipmate'
 Bundle 'godlygeek/tabular'
@@ -25,6 +25,7 @@ Bundle 'junegunn/goyo.vim'
 Bundle 'kablamo/vim-git-log'
 Bundle 'kien/ctrlp.vim'
 Bundle 'mileszs/ack.vim'
+Bundle 'plasticboy/vim-markdown'
 
 " TODO: use the master repo once it picks up your commit
 Bundle 'prateek/QFGrep' 
@@ -38,7 +39,6 @@ Bundle 'tomtom/tlib_vim'
 Bundle 'tpope/vim-abolish'
 Bundle 'tpope/vim-eunuch'
 Bundle 'tpope/vim-fugitive'
-Bundle 'tpope/vim-markdown'
 Bundle 'tpope/vim-repeat'
 Bundle 'tpope/vim-surround'
 Bundle 'tpope/vim-unimpaired'
@@ -83,15 +83,15 @@ let mapleader = " "
 au BufNewFile,BufRead *.hql set filetype=sql
 
 " markdown formatting
-augroup markdown
-  autocmd BufNewFile * :set ai
-  autocmd BufNewFile * :set formatoptions=tcroqn2
-  autocmd BufNewFile * :set comments=n:>
-  autocmd BufNewFile * :set textwidth=80
-  autocmd BufNewFile * :set wrap
-  autocmd BufNewFile * :set linebreak
-  autocmd BufNewFile * :set list
-augroup END
+" augroup markdown
+"   autocmd BufNewFile * :set ai
+"   autocmd BufNewFile * :set formatoptions=tcroqn2
+"   autocmd BufNewFile * :set comments=n:>
+"   autocmd BufNewFile * :set textwidth=80
+"   autocmd BufNewFile * :set wrap
+"   autocmd BufNewFile * :set linebreak
+"   autocmd BufNewFile * :set list
+" augroup END
 
 " Tabs
 set tabstop=2
@@ -238,7 +238,7 @@ nnoremap K :vimgrep "<C-R><C-W>" **/*.java<CR>
 vnoremap K :vimgrep "<C-R><C-W>" **/*.java<CR>
 
 " maven
-nnoremap <silent> <leader>mp :Mvn package <bar> redr! <bar> ccl <bar> copen<CR>
+nnoremap <silent> <leader>mp :Mvn package -DskipTests<bar> redr! <bar> ccl <bar> copen<CR>
 nnoremap <silent> <leader>mc :Mvn compile <bar> redr!<CR>
 
 " Premier specific
@@ -276,3 +276,9 @@ let g:gist_show_privates = 1
 nnoremap <leader>d :AccordionDiff<CR>
 nnoremap <leader>i :AccordionZoomIn<CR>
 nnoremap <leader>o :AccordionZoomOut<CR>
+
+" vim-markdown
+let g:vim_markdown_initial_foldlevel=1
+
+" disable markdown folds at startup?
+" let g:vim_markdown_folding_disabled=1
