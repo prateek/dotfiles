@@ -14,7 +14,7 @@ Bundle 'MarcWeber/vim-addon-mw-utils'
 Bundle 'altercation/vim-colors-solarized'
 Bundle 'bling/vim-airline'
 Bundle 'christoomey/vim-tmux-navigator'
-" Bundle 'csexton/trailertrash.vim'
+Bundle 'csexton/trailertrash.vim'
 Bundle 'ervandew/supertab'
 Bundle 'garbas/vim-snipmate'
 Bundle 'godlygeek/tabular'
@@ -28,7 +28,7 @@ Bundle 'mileszs/ack.vim'
 Bundle 'plasticboy/vim-markdown'
 
 " TODO: use the master repo once it picks up your commit
-Bundle 'prateek/QFGrep' 
+Bundle 'prateek/QFGrep'
 
 Bundle 'rstacruz/sparkup', {'rtp': 'vim/'}
 Bundle 'scrooloose/nerdtree'
@@ -73,25 +73,25 @@ filetype plugin on            " required for snipMate
 syntax enable
 
 " stole this from SamP originally
-inoremap ii <Esc> " map ii to esc
+" inoremap ii <Esc> " map ii to esc
 " Removed to start using caps instead
 
-" leader to , <-- godsend
+" leader to <SPACE> <-- godsend
 let mapleader = " "
 
 " Treat .hql files as SQL for syntax highlighting
 au BufNewFile,BufRead *.hql set filetype=sql
 
 " markdown formatting
-" augroup markdown
-"   autocmd BufNewFile * :set ai
-"   autocmd BufNewFile * :set formatoptions=tcroqn2
-"   autocmd BufNewFile * :set comments=n:>
-"   autocmd BufNewFile * :set textwidth=80
-"   autocmd BufNewFile * :set wrap
-"   autocmd BufNewFile * :set linebreak
-"   autocmd BufNewFile * :set list
-" augroup END
+augroup markdown
+  autocmd BufNewFile * :set ai
+  autocmd BufNewFile * :set formatoptions=tcroqn2
+  autocmd BufNewFile * :set comments=n:>
+  autocmd BufNewFile * :set textwidth=80
+  autocmd BufNewFile * :set wrap
+  autocmd BufNewFile * :set linebreak
+  autocmd BufNewFile * :set list
+augroup END
 
 " Tabs
 set tabstop=2
@@ -241,10 +241,6 @@ vnoremap K :vimgrep "<C-R><C-W>" **/*.java<CR>
 nnoremap <silent> <leader>mp :Mvn package -DskipTests<bar> redr! <bar> ccl <bar> copen<CR>
 nnoremap <silent> <leader>mc :Mvn compile <bar> redr!<CR>
 
-" Premier specific
-" execute workflow
-nnoremap <silent> <leader>rr :!/home/developer/workspace/distdata/src/scripts/helpers/copyOozieDeps.sh<CR>
-
 " fugitive mappings
 nnoremap <silent> <leader>gs :Gstatus<CR>
 nnoremap <silent> <leader>gw :Gwrite<CR>
@@ -281,4 +277,4 @@ nnoremap <leader>o :AccordionZoomOut<CR>
 let g:vim_markdown_initial_foldlevel=1
 
 " disable markdown folds at startup?
-" let g:vim_markdown_folding_disabled=1
+let g:vim_markdown_folding_disabled=1
