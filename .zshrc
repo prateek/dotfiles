@@ -44,6 +44,10 @@ antigen bundle vundle
 antigen bundle zsh-users/zsh-completions src
 antigen bundle zsh-users/zsh-syntax-highlighting
 
+# Locale Settings
+export LC_ALL=en_US.UTF-8
+export LANG=en_US.UTF-8
+
 DARVIN_OS=darwin
 if [ "${OSTYPE/$DARVIN_OS}" = "$OSTYPE" ]; then
     antigen-bundle osx
