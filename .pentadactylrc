@@ -1,0 +1,57 @@
+" vim: set filetype=vim :
+ 
+set defsearch=d
+set guioptions=bs
+set showtabline=never
+set complete=sbl
+set newtab=all
+set hlfind
+set titlestring=
+ 
+" buftabs
+loadplugins buftabs
+set buftabs-maxlength=25
+set buftabs-completer=~
+se showstatuslinks=command
+ 
+set mapleader=,
+ 
+set hintkeys=asdfg
+ 
+colorscheme zenburn_mod
+ 
+map l gt
+map L :tabmove +1<CR>
+map h gT
+map H :tabmove -1<CR>
+ 
+map D :tabdetach<CR>
+map c :tabduplicate<CR>
+ 
+noremap j 5j
+noremap k 5k
+ 
+set passkeys+=duckduckgo.com:jkv<CR>
+set passkeys+=www.google.com/reader/view/:jkvrf
+ 
+set nextpattern+='\bseuraava\b'
+set previouspattern+='\bedellinen\b'
+ 
+map <Leader>d :downloads<CR>
+map <Leader>h :sidebar! History<CR>
+map <Leader>b :sidebar! Bookmarks<CR>
+map <Leader>n :nohlsearch<CR>
+ 
+map <C-m> :set guioptions!=m<CR>
+map <C-b> :set guioptions!=T<CR>
+map <C-g> :pageinfo<CR>
+ 
+map <C-l> ]]
+map <C-h> [[
+ 
+map <Left> :back<CR>
+map <Right> :forward<CR>
+
+" swap colon and semicolon
+noremap ; :
+noremap : ;
