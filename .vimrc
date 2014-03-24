@@ -12,10 +12,12 @@ Bundle 'gmarik/vundle'
 Bundle 'Lokaltog/vim-easymotion'
 Bundle 'MarcWeber/vim-addon-mw-utils'
 Bundle 'altercation/vim-colors-solarized'
+Bundle 'amix/vim-zenroom2'
 Bundle 'bling/vim-airline'
 Bundle 'christoomey/vim-tmux-navigator'
 Bundle 'csexton/trailertrash.vim'
 Bundle 'ervandew/supertab'
+Bundle 'fs111/pydoc.vim'
 Bundle 'garbas/vim-snipmate'
 Bundle 'godlygeek/tabular'
 Bundle 'hdima/python-syntax'
@@ -24,17 +26,17 @@ Bundle 'jeetsukumaran/vim-buffergator'
 Bundle 'junegunn/goyo.vim'
 Bundle 'kablamo/vim-git-log'
 Bundle 'kien/ctrlp.vim'
+Bundle 'mattboehm/vim-accordion'
+Bundle 'mattn/gist-vim'
+Bundle 'mattn/webapi-vim'
 Bundle 'mileszs/ack.vim'
 Bundle 'plasticboy/vim-markdown'
-
-" TODO: use the master repo once it picks up your commit
-Bundle 'prateek/QFGrep'
-
 Bundle 'rstacruz/sparkup', {'rtp': 'vim/'}
 Bundle 'scrooloose/nerdtree'
 Bundle 'scrooloose/syntastic'
 Bundle 'sjl/clam.vim'
 Bundle 'thinca/vim-visualstar'
+Bundle 'tomasr/molokai'
 Bundle 'tomtom/tlib_vim'
 Bundle 'tpope/vim-abolish'
 Bundle 'tpope/vim-eunuch'
@@ -46,14 +48,13 @@ Bundle 'vim-scripts/ZoomWin.git'
 Bundle 'vim-scripts/maven-plugin'
 Bundle 'vimwiki/vimwiki'
 Bundle 'wesQ3/vim-windowswap'
-Bundle 'amix/vim-zenroom2'
-Bundle 'tomasr/molokai'
-Bundle 'mattn/gist-vim'
-Bundle 'mattn/webapi-vim'
-Bundle 'mattboehm/vim-accordion'
+Bundle 'tommcdo/vim-exchange'
+Bundle 'lambdalisue/nose.vim'
 
 " TODO: use the master repo once it picks up your commit
+Bundle 'prateek/QFGrep'
 Bundle 'prateek/vim-unstack'
+
 
 " vim-scripts repos
 Bundle 'L9'
@@ -82,16 +83,19 @@ let mapleader = " "
 " Treat .hql files as SQL for syntax highlighting
 au BufNewFile,BufRead *.hql set filetype=sql
 
+" python nose compiling
+au BufNewFile,BufRead *.py compiler nose
+
 " markdown formatting
 augroup markdown
-  autocmd BufNewFile * :set ai
-  autocmd BufNewFile * :set formatoptions=tcroqn2
-  autocmd BufNewFile * :set comments=n:>
-  autocmd BufNewFile * :set textwidth=80
-  autocmd BufNewFile * :set wrap
-  autocmd BufNewFile * :set linebreak
-  autocmd BufNewFile * :set list
-augroup END
+  autocmd bufnewfile * :set ai
+  autocmd bufnewfile * :set formatoptions=tcroqn2
+  autocmd bufnewfile * :set comments=n:>
+  autocmd bufnewfile * :set textwidth=80
+  autocmd bufnewfile * :set wrap
+  autocmd bufnewfile * :set linebreak
+  autocmd bufnewfile * :set list
+augroup end
 
 " Tabs
 set tabstop=2
@@ -233,6 +237,13 @@ set splitbelow
 nnoremap ! :Clam<space>
 vnoremap ! :ClamVisual<space>
 
+" exchange vim
+nnoremap cx <Plug>(Exchange)
+vnoremap cx <Plug>(Exchange)
+nnoremap cC <Plug>(ExchangeClear)
+vnoremap cX <Plug>(ExchangeLine)
+nnoremap cX <Plug>(ExchangeLine)
+
 " window swap vim
 " let g:windowswap_map_keys = 0 "prevent default bindings
 nnoremap <silent> <leader>yw :call WindowSwap#MarkWindowSwap()<CR>
@@ -286,3 +297,12 @@ let g:vim_markdown_initial_foldlevel=1
 
 " disable markdown folds at startup?
 let g:vim_markdown_folding_disabled=1
+
+" Use a bar-shaped cursor for insert mode, even through tmux.
+if exists('$TMUX')
+    let &t_SI = "\<Esc>Ptmux;\<Esc>\<Esc>]50;CursorShape=1\x7\<Esc>\\"
+    let &t_EI = "\<Esc>Ptmux;\<Esc>\<Esc>]50;CursorShape=0\x7\<Esc>\\"
+else
+    let &t_SI = "\<Esc>]50;CursorShape=1\x7"
+    let &t_EI = "\<Esc>]50;CursorShape=0\x7"
+endif
