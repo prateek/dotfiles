@@ -16,24 +16,20 @@ Bundle 'amix/vim-zenroom2'
 Bundle 'bling/vim-airline'
 Bundle 'christoomey/vim-tmux-navigator'
 Bundle 'csexton/trailertrash.vim'
-Bundle 'ervandew/supertab'
 Bundle 'fs111/pydoc.vim'
-Bundle 'garbas/vim-snipmate'
 Bundle 'godlygeek/tabular'
 Bundle 'hdima/python-syntax'
-Bundle 'honza/vim-snippets'
 Bundle 'jeetsukumaran/vim-buffergator'
 Bundle 'junegunn/goyo.vim'
 Bundle 'kablamo/vim-git-log'
 Bundle 'kien/ctrlp.vim'
-Bundle 'mattboehm/vim-accordion'
 Bundle 'mattn/gist-vim'
 Bundle 'mattn/webapi-vim'
 Bundle 'mileszs/ack.vim'
 Bundle 'plasticboy/vim-markdown'
 Bundle 'rstacruz/sparkup', {'rtp': 'vim/'}
 Bundle 'scrooloose/nerdtree'
-Bundle 'scrooloose/syntastic'
+ Bundle 'scrooloose/syntastic'
 Bundle 'sjl/clam.vim'
 Bundle 'thinca/vim-visualstar'
 Bundle 'tomasr/molokai'
@@ -51,14 +47,27 @@ Bundle 'wesQ3/vim-windowswap'
 Bundle 'tommcdo/vim-exchange'
 Bundle 'lambdalisue/nose.vim'
 
+" Auto-complete tab
+Bundle 'ervandew/supertab'
+
+" Snippets
+Bundle "MarcWeber/vim-addon-mw-utils"
+Bundle "tomtom/tlib_vim"
+Bundle 'SirVer/ultisnips'
+Bundle "honza/vim-snippets"
+
 " TODO: use the master repo once it picks up your commit
 Bundle 'prateek/QFGrep'
 Bundle 'prateek/vim-unstack'
-
+" Bundle 'mattboehm/vim-accordion'
 
 " vim-scripts repos
 Bundle 'L9'
 Bundle 'SQLUtilities'
+
+"" syntax plugins
+" HOCON syntax files, used for morphlines
+Bundle 'GEverding/vim-hocon'
 
 " color scheme
 let g:solarized_termcolors=256
@@ -87,15 +96,20 @@ au BufNewFile,BufRead *.hql set filetype=sql
 au BufNewFile,BufRead *.py compiler nose
 
 " markdown formatting
+" autocmd bufnewfile * :set textwidth=80
 augroup markdown
   autocmd bufnewfile * :set ai
   autocmd bufnewfile * :set formatoptions=tcroqn2
   autocmd bufnewfile * :set comments=n:>
-  autocmd bufnewfile * :set textwidth=80
   autocmd bufnewfile * :set wrap
   autocmd bufnewfile * :set linebreak
   autocmd bufnewfile * :set list
 augroup end
+
+" vim-markdown
+let g:vim_markdown_initial_foldlevel=1
+" disable markdown folds at startup?
+let g:vim_markdown_folding_disabled=1
 
 " Tabs
 set tabstop=2
@@ -132,6 +146,13 @@ nnoremap <C-h> <C-w>h
 nnoremap <C-j> <C-w>j
 nnoremap <C-k> <C-w>k
 nnoremap <C-l> <C-w>l
+
+" smart column moving
+" TODO: these break with C+hjkl, find fix
+nnoremap j gj
+nnoremap k gk
+nnoremap gk k
+nnoremap gj j
 
 " toggle hold with <S-Space> if over a fold
 nnoremap <silent> <S-Space> @=(foldlevel('.')?'za':'l')<CR>
@@ -257,7 +278,7 @@ nnoremap K :vimgrep "<C-R><C-W>" **/*.java<CR>
 vnoremap K :vimgrep "<C-R><C-W>" **/*.java<CR>
 
 " maven
-nnoremap <silent> <leader>mp :Mvn package -DskipTests<bar> redr! <bar> ccl <bar> copen<CR>
+nnoremap <silent> <leader>mp :Mvn package <bar> redr! <bar> ccl <bar> copen<CR>
 nnoremap <silent> <leader>mc :Mvn compile <bar> redr!<CR>
 
 " fugitive mappings
@@ -292,12 +313,6 @@ nnoremap <leader>d :AccordionDiff<CR>
 nnoremap <leader>i :AccordionZoomIn<CR>
 nnoremap <leader>o :AccordionZoomOut<CR>
 
-" vim-markdown
-let g:vim_markdown_initial_foldlevel=1
-
-" disable markdown folds at startup?
-let g:vim_markdown_folding_disabled=1
-
 " Use a bar-shaped cursor for insert mode, even through tmux.
 if exists('$TMUX')
     let &t_SI = "\<Esc>Ptmux;\<Esc>\<Esc>]50;CursorShape=1\x7\<Esc>\\"
@@ -306,3 +321,9 @@ else
     let &t_SI = "\<Esc>]50;CursorShape=1\x7"
     let &t_EI = "\<Esc>]50;CursorShape=0\x7"
 endif
+
+" Marked binding
+nnoremap <leader>mm :silent !open -a Marked.app '%:p' <bar> redr! <CR>
+
+" TrailerTrash trim binding
+nnoremap <leader>t :silent Trim<bar>w<CR>
