@@ -1,73 +1,105 @@
 set nocompatible               " be iMproved
 filetype off                   " required!
 
-set rtp+=~/.vim/bundle/vundle/
-call vundle#rc()
+set rtp+=~/.vim/bundle/Vundle.vim
+call vundle#begin()
 
 " let Vundle manage Vundle
 " required!
-Bundle 'gmarik/vundle'
+Plugin 'gmarik/Vundle.vim'
 
 " original repos on github
-Bundle 'Lokaltog/vim-easymotion'
-Bundle 'MarcWeber/vim-addon-mw-utils'
-Bundle 'altercation/vim-colors-solarized'
-Bundle 'amix/vim-zenroom2'
-Bundle 'bling/vim-airline'
-Bundle 'christoomey/vim-tmux-navigator'
-Bundle 'csexton/trailertrash.vim'
-Bundle 'fs111/pydoc.vim'
-Bundle 'godlygeek/tabular'
-Bundle 'hdima/python-syntax'
-Bundle 'jeetsukumaran/vim-buffergator'
-Bundle 'junegunn/goyo.vim'
-Bundle 'kablamo/vim-git-log'
-Bundle 'kien/ctrlp.vim'
-Bundle 'mattn/gist-vim'
-Bundle 'mattn/webapi-vim'
-Bundle 'mileszs/ack.vim'
-Bundle 'plasticboy/vim-markdown'
-Bundle 'rstacruz/sparkup', {'rtp': 'vim/'}
-Bundle 'scrooloose/nerdtree'
- Bundle 'scrooloose/syntastic'
-Bundle 'sjl/clam.vim'
-Bundle 'thinca/vim-visualstar'
-Bundle 'tomasr/molokai'
-Bundle 'tomtom/tlib_vim'
-Bundle 'tpope/vim-abolish'
-Bundle 'tpope/vim-eunuch'
-Bundle 'tpope/vim-fugitive'
-Bundle 'tpope/vim-repeat'
-Bundle 'tpope/vim-surround'
-Bundle 'tpope/vim-unimpaired'
-Bundle 'vim-scripts/ZoomWin.git'
-Bundle 'vim-scripts/maven-plugin'
-Bundle 'vimwiki/vimwiki'
-Bundle 'wesQ3/vim-windowswap'
-Bundle 'tommcdo/vim-exchange'
-Bundle 'lambdalisue/nose.vim'
+Plugin 'Lokaltog/vim-easymotion'
+Plugin 'altercation/vim-colors-solarized'
+Plugin 'amix/vim-zenroom2'
+Plugin 'bling/vim-airline'
+Plugin 'christoomey/vim-tmux-navigator'
+Plugin 'csexton/trailertrash.vim'
+Plugin 'fs111/pydoc.vim'
+Plugin 'godlygeek/tabular'
+Plugin 'hdima/python-syntax'
+Plugin 'jeetsukumaran/vim-buffergator'
+Plugin 'junegunn/goyo.vim'
+Plugin 'kablamo/vim-git-log'
+Plugin 'kien/ctrlp.vim'
+Plugin 'mattn/gist-vim'
+Plugin 'mattn/webapi-vim'
+Plugin 'mileszs/ack.vim'
+Plugin 'plasticboy/vim-markdown'
+Plugin 'rstacruz/sparkup', {'rtp': 'vim/'}
+Plugin 'scrooloose/nerdtree'
+Plugin 'sjl/clam.vim'
+Plugin 'thinca/vim-visualstar'
+Plugin 'tomasr/molokai'
+Plugin 'tpope/vim-abolish'
+Plugin 'tpope/vim-eunuch'
+Plugin 'tpope/vim-fugitive'
+Plugin 'tpope/vim-repeat'
+Plugin 'tpope/vim-surround'
+Plugin 'tpope/vim-unimpaired'
+Plugin 'vim-scripts/maven-plugin'
+Plugin 'vimwiki/vimwiki'
+Plugin 'wesQ3/vim-windowswap'
+Plugin 'tommcdo/vim-exchange'
+Plugin 'lambdalisue/nose.vim'
+
+" Plugin 'scrooloose/syntastic' " Syntax Error Checking
+Plugin 'jiangmiao/auto-pairs' " AutoPair Brackets
+Plugin 'wellle/targets.vim' " TextObject Extensions
+Plugin 'wellle/tmux-complete.vim' " Auto complete across tmux panes
 
 " Auto-complete tab
-Bundle 'ervandew/supertab'
+Plugin 'ervandew/supertab'
 
 " Snippets
-Bundle "MarcWeber/vim-addon-mw-utils"
-Bundle "tomtom/tlib_vim"
-Bundle 'SirVer/ultisnips'
-Bundle "honza/vim-snippets"
+Plugin 'MarcWeber/vim-addon-mw-utils'
+Plugin 'tomtom/tlib_vim'
+Plugin 'SirVer/ultisnips'
+Plugin 'honza/vim-snippets'
+
+" Sessions
+" Plugin 'xolox/vim-misc'
+" Plugin 'xolox/vim-session'
 
 " TODO: use the master repo once it picks up your commit
-Bundle 'prateek/QFGrep'
-Bundle 'prateek/vim-unstack'
-" Bundle 'mattboehm/vim-accordion'
+Plugin 'prateek/QFGrep'
+Plugin 'prateek/vim-unstack'
 
 " vim-scripts repos
-Bundle 'L9'
-Bundle 'SQLUtilities'
+Plugin 'L9'
+Plugin 'SQLUtilities'
+
+" ZoomWin
+Plugin 'vim-scripts/ZoomWin'
+nnoremap <silent> <leader>z :ZoomWin<CR>
+
+" Damian Conway's piece de resistance
+"vnoremap <expr> <LEFT> DVB_Drag('left')
+"vnoremap <expr> <RIGHT> DVB_Drag('right')
+"vnoremap <expr> <DOWN> DVB_Drag('down')
+"vnoremap <expr> <UP> DVB_Drag('up')
 
 "" syntax plugins
 " HOCON syntax files, used for morphlines
-Bundle 'GEverding/vim-hocon'
+Plugin 'GEverding/vim-hocon'
+
+" Dash.app integration - Mac Specific
+Plugin 'rizzatti/funcoo.vim'
+Plugin 'rizzatti/dash.vim'
+nmap <silent> K <Plug>DashSearch
+vmap <silent> K <Plug>DashSearch
+nnoremap <silent> <leader>K :DashSearch 
+
+" all plugins finished
+call vundle#end()            " required
+filetype plugin indent on    " required
+
+" exchange vim
+nmap cx <Plug>(Exchange)
+vmap cx <Plug>(Exchange)
+nmap cC <Plug>(ExchangeClear)
+vmap cX <Plug>(ExchangeLine)
+nmap cX <Plug>(ExchangeLine)
 
 " color scheme
 let g:solarized_termcolors=256
@@ -79,7 +111,6 @@ let g:airline_theme='solarized'
 
 " Keep this below the colorschemes
 filetype plugin indent on     " required!
-filetype plugin on            " required for snipMate
 syntax enable
 
 " stole this from SamP originally
@@ -126,14 +157,12 @@ set shiftround
 
 " timeout fixes
 set esckeys
-if ! has('gui_running')
-    set ttimeoutlen=10
-    augroup FastEscape
-        autocmd!
-        au InsertEnter * set timeoutlen=0
-        au InsertLeave * set timeoutlen=1000
-    augroup END
-endif
+set ttimeoutlen=10
+augroup FastEscape
+    autocmd!
+    au InsertEnter * set timeoutlen=0
+    au InsertLeave * set timeoutlen=1000
+augroup END
 
 " incremental search
 set incsearch
@@ -148,7 +177,6 @@ nnoremap <C-k> <C-w>k
 nnoremap <C-l> <C-w>l
 
 " smart column moving
-" TODO: these break with C+hjkl, find fix
 nnoremap j gj
 nnoremap k gk
 nnoremap gk k
@@ -207,13 +235,14 @@ noremap <c-v> v
 
 " Vim EasyMotion trigger
 let g:EasyMotion_leader_key = '<Leader><Leader>'
+
 " EasyMotion Highlight
 hi link EasyMotionTarget ErrorMsg
 hi link EasyMotionShade  Comment
 
 " buftabs
-nnoremap <f1> :bprev<CR>
-nnoremap <f2> :bnext<CR>
+nnoremap <F1> :bprev<CR>
+nnoremap <F2> :bnext<CR>
 
 "make search results appear in middle of screen
 nnoremap n nzz
@@ -231,7 +260,9 @@ set laststatus=2
 set ruler
 set showcmd
 set wildmenu
-
+set wildmode=list:longest,full      " Show list of completions
+                                    " and complete as much as possible,
+                                    " then iterate full completions
 " scrolloff f
 if !&scrolloff
   set scrolloff=1
@@ -258,24 +289,13 @@ set splitbelow
 nnoremap ! :Clam<space>
 vnoremap ! :ClamVisual<space>
 
-" exchange vim
-nnoremap cx <Plug>(Exchange)
-vnoremap cx <Plug>(Exchange)
-nnoremap cC <Plug>(ExchangeClear)
-vnoremap cX <Plug>(ExchangeLine)
-nnoremap cX <Plug>(ExchangeLine)
-
 " window swap vim
-" let g:windowswap_map_keys = 0 "prevent default bindings
+let g:windowswap_map_keys = 0 "prevent default bindings
 nnoremap <silent> <leader>yw :call WindowSwap#MarkWindowSwap()<CR>
 nnoremap <silent> <leader>pw :call WindowSwap#DoWindowSwap()<CR>
 
 " nerdtree left
 let g:NERDTreeWinPos = "left"
-
-" bind K to grep word under cursor
-nnoremap K :vimgrep "<C-R><C-W>" **/*.java<CR>
-vnoremap K :vimgrep "<C-R><C-W>" **/*.java<CR>
 
 " maven
 nnoremap <silent> <leader>mp :Mvn package <bar> redr! <bar> ccl <bar> copen<CR>
@@ -296,7 +316,7 @@ let g:ctrlp_map = '<c-p>'
 let g:ctrlp_cmd = 'CtrlPMixed'
 
 " VimRoom Plugin
-nnoremap <silent> <leader>z :Goyo<CR>
+nnoremap <silent> <leader>wr :Goyo<CR>
 
 " QFGrep
 let g:QFG_Grep = '<M-g>'
@@ -307,12 +327,6 @@ let g:QFG_Restore = '<M-r>'
 let g:gist_post_private = 1
 let g:gist_show_privates = 1
 
-" Accordion
-" set AccordionAll 4
-nnoremap <leader>d :AccordionDiff<CR>
-nnoremap <leader>i :AccordionZoomIn<CR>
-nnoremap <leader>o :AccordionZoomOut<CR>
-
 " Use a bar-shaped cursor for insert mode, even through tmux.
 if exists('$TMUX')
     let &t_SI = "\<Esc>Ptmux;\<Esc>\<Esc>]50;CursorShape=1\x7\<Esc>\\"
@@ -322,8 +336,12 @@ else
     let &t_EI = "\<Esc>]50;CursorShape=0\x7"
 endif
 
-" Marked binding
-nnoremap <leader>mm :silent !open -a Marked.app '%:p' <bar> redr! <CR>
-
 " TrailerTrash trim binding
-nnoremap <leader>t :silent Trim<bar>w<CR>
+nnoremap <leader>t :Trim<bar>w<CR>
+
+"====[ I'm sick of typing :%s/.../.../g ]=======
+nnoremap S :%s//g<LEFT><LEFT>
+vnoremap S :s//g<LEFT><LEFT>
+
+" Marked binding
+" nnoremap <leader>ma :!open -a Marked.app '%:p' <bar> redr! <CR>

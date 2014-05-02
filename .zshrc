@@ -1,5 +1,11 @@
+# Profile ZSH: https://github.com/zsh-users/zsh-syntax-highlighting/issues/30#issuecomment-4310722
+# Begining:
+zmodload zsh/zprof
+# End:
+
 # PATH
-export PATH=$HOME/bin:/usr/local/bin:$PATH
+export GOPATH=$HOME/go
+export PATH=$HOME/bin:/usr/local/bin:$GOPATH/bin:$HOME/trash/vowpal_wabbit/utl:$PATH
 export EDITOR="vim"
 
 if [ -d $HOME/dotfiles ]; then
@@ -19,45 +25,45 @@ if [ "$OLD_LS" != "" ]; then
 fi
 
 # source antigen
-. $DOTFILES/.zsh/antigen/antigen.zsh
+# . $DOTFILES/.zsh/antigen/antigen.zsh
 
 # Load the oh-my-zsh's library.
-antigen use oh-my-zsh
+# antigen use oh-my-zsh
 
 # Bundles from the default repo (robbyrussell's oh-my-zsh).
 # antigen bundle git
 # antigen bundle git-extras
-antigen bundle github
-
-antigen bundle pip
-antigen bundle mvn
-antigen bundle colored-man
-antigen bundle command-not-found
-antigen bundle rsync
-antigen bundle python
-antigen bundle virtualenvwrapper
-antigen bundle command-not-found
-antigen bundle history
-antigen bundle tmux
-antigen bundle vundle
-
-antigen bundle zsh-users/zsh-completions src
-antigen bundle zsh-users/zsh-syntax-highlighting
+# antigen bundle github
+# 
+# antigen bundle pip
+# antigen bundle mvn
+# antigen bundle colored-man
+# antigen bundle command-not-found
+# antigen bundle rsync
+# antigen bundle python
+# antigen bundle virtualenvwrapper
+# antigen bundle command-not-found
+# antigen bundle history
+# antigen bundle tmux
+# antigen bundle vundle
+# 
+# antigen bundle zsh-users/zsh-completions src
+# antigen bundle zsh-users/zsh-syntax-highlighting
 
 # Locale Settings
 export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
 
-DARVIN_OS=darwin
-if [ "${OSTYPE/$DARVIN_OS}" = "$OSTYPE" ]; then
-    antigen-bundle osx
-fi
+#DARVIN_OS=darwin
+#if [ "${OSTYPE/$DARVIN_OS}" = "$OSTYPE" ]; then
+#    antigen-bundle osx
+#fi
 
 # Theme
-antigen theme Granze/G-zsh-theme-2 granze2
+# antigen theme Granze/G-zsh-theme-2 granze2
 
 # Tell antigen that you're done.
-antigen apply
+#antigen apply
 if [ "$OLD_LS" != "" ]; then
   alias ls="$OLD_LS"
 fi
@@ -78,15 +84,15 @@ if [[ "$RPS1" == "" && "$RPROMPT" == "" ]]; then
 fi
 
 ## Vim inner word key bindings
-. $DOTFILES/.zsh/opp.zsh/opp.zsh
-. $DOTFILES/.zsh/opp.zsh/opp/*.zsh
+# . $DOTFILES/.zsh/opp.zsh/opp.zsh
+# . $DOTFILES/.zsh/opp.zsh/opp/*.zsh
 
 # hub alias
 eval "$(hub alias -s)"
 
 # source zsh file completions
-fpath=($HOME/.zsh/func /usr/local/share/zsh/site-functions $fpath)
-typeset -U fpath
+# fpath=($HOME/.zsh/func /usr/local/share/zsh/site-functions $fpath)
+# typeset -U fpath
 
 # Maven repo setup
 # from http://coe4bd.github.io/HadoopHowTo/hadoopMaven/hadoopMaven.html
@@ -238,8 +244,14 @@ alias h='howdoi --color'
 # zmv aliases
 alias mmv='noglob zmv -W'
 
+# drake using drip
+# via https://gist.github.com/daguar/5368778
+alias drake='drip -jar /Applications/drake/target/drake.jar'
+
 # Neovim
 # alias vim="nvim"
 
 # SCM_BREEZE!!
 [ -s "/Users/prungta/.scm_breeze/scm_breeze.sh" ] && source "/Users/prungta/.scm_breeze/scm_breeze.sh"
+
+zprof
