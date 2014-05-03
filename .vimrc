@@ -1,31 +1,29 @@
+" vim:fdm=marker
+
+" Vundle Plugin List {{{
 set nocompatible               " be iMproved
 filetype off                   " required!
 
 set rtp+=~/.vim/bundle/Vundle.vim
 call vundle#begin()
 
-" let Vundle manage Vundle
-" required!
+" let Vundle manage Vundle, it's required 
 Plugin 'gmarik/Vundle.vim'
 
 " original repos on github
-Plugin 'Lokaltog/vim-easymotion'
 Plugin 'altercation/vim-colors-solarized'
 Plugin 'amix/vim-zenroom2'
 Plugin 'bling/vim-airline'
 Plugin 'christoomey/vim-tmux-navigator'
-Plugin 'csexton/trailertrash.vim'
 Plugin 'fs111/pydoc.vim'
 Plugin 'godlygeek/tabular'
 Plugin 'hdima/python-syntax'
-Plugin 'jeetsukumaran/vim-buffergator'
 Plugin 'junegunn/goyo.vim'
 Plugin 'kablamo/vim-git-log'
 Plugin 'kien/ctrlp.vim'
 Plugin 'mattn/gist-vim'
 Plugin 'mattn/webapi-vim'
 Plugin 'mileszs/ack.vim'
-Plugin 'plasticboy/vim-markdown'
 Plugin 'rstacruz/sparkup', {'rtp': 'vim/'}
 Plugin 'scrooloose/nerdtree'
 Plugin 'sjl/clam.vim'
@@ -44,8 +42,9 @@ Plugin 'tommcdo/vim-exchange'
 Plugin 'lambdalisue/nose.vim'
 
 " Plugin 'scrooloose/syntastic' " Syntax Error Checking
-Plugin 'jiangmiao/auto-pairs' " AutoPair Brackets
-Plugin 'wellle/targets.vim' " TextObject Extensions
+
+Plugin 'jiangmiao/auto-pairs'     " AutoPair Brackets
+Plugin 'wellle/targets.vim'       " TextObject Extensions
 Plugin 'wellle/tmux-complete.vim' " Auto complete across tmux panes
 
 " Auto-complete tab
@@ -57,6 +56,22 @@ Plugin 'tomtom/tlib_vim'
 Plugin 'SirVer/ultisnips'
 Plugin 'honza/vim-snippets'
 
+" Background vim compile
+Plugin 'tpope/vim-dispatch'
+autocmd FileType java let b:dispatch = 'mvn package'
+
+" Slime
+Plugin 'jpalardy/vim-slime'
+let g:slime_target = "tmux"
+" let g:slime_paste_file = "$HOME/.slime_paste"
+let g:slime_no_mappings = 1
+xmap <c-x> <Plug>SlimeRegionSend
+nmap <c-x> <Plug>SlimeParagraphSend
+
+" Reveal in finder
+Plugin 'henrik/vim-reveal-in-finder'
+nnoremap <leader>e :Reveal<CR>
+
 " Sessions
 " Plugin 'xolox/vim-misc'
 " Plugin 'xolox/vim-session'
@@ -67,7 +82,17 @@ Plugin 'prateek/vim-unstack'
 
 " vim-scripts repos
 Plugin 'L9'
-Plugin 'SQLUtilities'
+
+Plugin 'csexton/trailertrash.vim' " TrailerTrash
+nnoremap <leader>t :Trim<bar>w<CR>
+
+" ExtractLinks {{{
+Plugin 'ingo-library'
+Plugin 'PatternsOnText'
+Plugin 'ExtractMatches'
+Plugin 'ExtractLinks'
+nnoremap <leader>x :ExtractLinks<bar>:$put<CR>
+" }}}
 
 " ZoomWin
 Plugin 'vim-scripts/ZoomWin'
@@ -79,20 +104,62 @@ nnoremap <silent> <leader>z :ZoomWin<CR>
 "vnoremap <expr> <DOWN> DVB_Drag('down')
 "vnoremap <expr> <UP> DVB_Drag('up')
 
-"" syntax plugins
-" HOCON syntax files, used for morphlines
-Plugin 'GEverding/vim-hocon'
+" syntax plugins {{{
+Plugin 'GEverding/vim-hocon' " HOCON syntax files, used for morphlines
 
-" Dash.app integration - Mac Specific
+" }}} syntax
+
+"" markdown  {{{
+Plugin 'prateek/vim-writingsyntax' " Writing-Syntax Checker
+" autocmd BufNewFile * :setf writing
+
+Plugin 'plasticboy/vim-markdown'
+" autocmd bufnewfile * :set textwidth=80
+augroup markdown
+  autocmd BufNewFile * :set ai
+  autocmd BufNewFile * :set formatoptions=tcroqn2
+  autocmd BufNewFile * :set comments=n:>
+  autocmd BufNewFile * :set wrap
+  autocmd BufNewFile * :set linebreak
+  autocmd BufNewFile * :set list
+augroup end
+
+" vim-markdown
+let g:vim_markdown_initial_foldlevel=1
+
+" disable markdown folds at startup
+let g:vim_markdown_folding_disabled=1
+" }}}
+
+" BufferList plugin {{{
+Plugin 'jeetsukumaran/vim-buffergator'
+let g:buffergator_suppress_keymaps=1
+nnoremap <silent> <leader>b :BuffergatorOpen<CR>
+nnoremap <silent> [b :BuffergatorMruCyclePrev<CR>
+nnoremap <silent> ]b :BuffergatorMruCycleNext<CR>
+" }}}
+
+" Dash.app integration - Mac Specific {{{
 Plugin 'rizzatti/funcoo.vim'
 Plugin 'rizzatti/dash.vim'
-nmap <silent> K <Plug>DashSearch
-vmap <silent> K <Plug>DashSearch
-nnoremap <silent> <leader>K :DashSearch 
+nnoremap <silent> K <Plug>DashSearch
+vnoremap <silent> K <Plug>DashSearch
+nnoremap <silent> <leader>K :DashSearch
+" }}}
+
+" Easy-Motion disabled for vim-smalls {{{
+Plugin 'Lokaltog/vim-easymotion'
+" Vim EasyMotion trigger
+let g:EasyMotion_leader_key = '<Leader><Leader>'
+" EasyMotion Highlight
+hi link EasyMotionTarget ErrorMsg
+hi link EasyMotionShade  Comment
+" }}}
 
 " all plugins finished
 call vundle#end()            " required
 filetype plugin indent on    " required
+" }}}
 
 " exchange vim
 nmap cx <Plug>(Exchange)
@@ -125,22 +192,6 @@ au BufNewFile,BufRead *.hql set filetype=sql
 
 " python nose compiling
 au BufNewFile,BufRead *.py compiler nose
-
-" markdown formatting
-" autocmd bufnewfile * :set textwidth=80
-augroup markdown
-  autocmd bufnewfile * :set ai
-  autocmd bufnewfile * :set formatoptions=tcroqn2
-  autocmd bufnewfile * :set comments=n:>
-  autocmd bufnewfile * :set wrap
-  autocmd bufnewfile * :set linebreak
-  autocmd bufnewfile * :set list
-augroup end
-
-" vim-markdown
-let g:vim_markdown_initial_foldlevel=1
-" disable markdown folds at startup?
-let g:vim_markdown_folding_disabled=1
 
 " Tabs
 set tabstop=2
@@ -183,7 +234,7 @@ nnoremap gk k
 nnoremap gj j
 
 " toggle hold with <S-Space> if over a fold
-nnoremap <silent> <S-Space> @=(foldlevel('.')?'za':'l')<CR>
+nnoremap <S-Space> za
 
 " vimrc tweaking -- from 'Instantly Better Vim'
 nnoremap <silent> <leader>v :sp $MYVIMRC<CR>
@@ -204,18 +255,20 @@ set virtualedit=block
 set smartcase ignorecase
 set incsearch
 set hlsearch
-nnoremap \ :nohlsearch<CR>
+
+" clear search with ENTER
+nnoremap <CR> :nohlsearch<CR>
 
 " search and replace shortcut
-nmap S :%s//g<LEFT><LEFT>
-vmap S :s//g<LEFT><LEFT>
+nnoremap S :%s//g<LEFT><LEFT>
+vnoremap S :s//g<LEFT><LEFT>
 
 " toggle line wrapping
-nnoremap <leader>w :set wrap!<CR>
+" nnoremap <leader>w :set wrap!<CR>
 set nowrap
 
 " toggle list chars
-nnoremap <leader>l :set list!<CR>
+" nnoremap <leader>l :set list!<CR>
 set nolist
 
 " set current file's directory as the vim directory
@@ -223,7 +276,10 @@ nnoremap <leader>c :cd %:p:h<CR>
 nnoremap <leader>r :NERDTreeFind<cr>
 
 " line numbers
-set nu
+" all surrounding lines have relative numbers
+" set relativenumber
+" current line has absolute numbering
+set number
 
 " swap colon and semicolon
 noremap ; :
@@ -232,17 +288,6 @@ noremap : ;
 " swap visual and block visual mode
 noremap v <c-v>
 noremap <c-v> v
-
-" Vim EasyMotion trigger
-let g:EasyMotion_leader_key = '<Leader><Leader>'
-
-" EasyMotion Highlight
-hi link EasyMotionTarget ErrorMsg
-hi link EasyMotionShade  Comment
-
-" buftabs
-nnoremap <F1> :bprev<CR>
-nnoremap <F2> :bnext<CR>
 
 "make search results appear in middle of screen
 nnoremap n nzz
@@ -336,12 +381,48 @@ else
     let &t_EI = "\<Esc>]50;CursorShape=0\x7"
 endif
 
-" TrailerTrash trim binding
-nnoremap <leader>t :Trim<bar>w<CR>
-
 "====[ I'm sick of typing :%s/.../.../g ]=======
 nnoremap S :%s//g<LEFT><LEFT>
 vnoremap S :s//g<LEFT><LEFT>
 
 " Marked binding
 " nnoremap <leader>ma :!open -a Marked.app '%:p' <bar> redr! <CR>
+
+" Visually select last edited/pasted text
+" http://vimcasts.org/episodes/bubbling-text/
+nnoremap gp `[v`]
+
+" Run quick scripts {{{
+" Adapted from: http://oinksoft.com/blog/view/6/
+" <Command-R> mapped to execute script
+let ft_stdout_mappings = {
+      \'bash':        'bash',
+      \'javascript':  'node',
+      \'nodejs':      'node',
+      \'perl':        'perl',
+      \'php':         'php',
+      \'python':      'python',
+      \'ruby':        'ruby',
+      \'sh':          'sh',
+      \}
+let ft_execute_mappings = {
+      \'c': 'gcc -o %:r -Wall -std=c99 % && ./%:r',
+      \'md': 'open -app Marked2.app %',
+      \'markdown': 'open -app Marked2.app %',
+      \}
+
+for ft_name in keys(ft_stdout_mappings)
+  execute 'autocmd Filetype ' . ft_name . ' nnoremap <buffer> <D-R> :write !'
+          \. ft_stdout_mappings[ft_name] . '<CR>'
+endfor
+
+for ft_name in keys(ft_execute_mappings)
+  execute 'autocmd FileType ' . ft_name
+          \. ' nnoremap <buffer> <C-P> :write \| !'
+          \. ft_execute_mappings[ft_name] . '<CR>'
+endfor
+" }}}
+
+nnoremap <Leader>pi :PluginInstall<CR>
+nnoremap <Leader>pu :PluginUpdate<CR>
+nnoremap <Leader>pc :PluginClean<CR>

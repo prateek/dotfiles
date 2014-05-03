@@ -2,6 +2,7 @@
 # Begining:
 zmodload zsh/zprof
 # End:
+#   zprof
 
 # PATH
 export GOPATH=$HOME/go
@@ -25,7 +26,7 @@ if [ "$OLD_LS" != "" ]; then
 fi
 
 # source antigen
-# . $DOTFILES/.zsh/antigen/antigen.zsh
+source $DOTFILES/.zsh/antigen/antigen.zsh
 
 # Load the oh-my-zsh's library.
 # antigen use oh-my-zsh
@@ -34,7 +35,7 @@ fi
 # antigen bundle git
 # antigen bundle git-extras
 # antigen bundle github
-# 
+
 # antigen bundle pip
 # antigen bundle mvn
 # antigen bundle colored-man
@@ -44,9 +45,7 @@ fi
 # antigen bundle virtualenvwrapper
 # antigen bundle command-not-found
 # antigen bundle history
-# antigen bundle tmux
-# antigen bundle vundle
-# 
+
 # antigen bundle zsh-users/zsh-completions src
 # antigen bundle zsh-users/zsh-syntax-highlighting
 
@@ -54,16 +53,16 @@ fi
 export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
 
-#DARVIN_OS=darwin
-#if [ "${OSTYPE/$DARVIN_OS}" = "$OSTYPE" ]; then
-#    antigen-bundle osx
-#fi
+# DARVIN_OS=darwin
+# if [ "${OSTYPE/$DARVIN_OS}" = "$OSTYPE" ]; then
+#     antigen-bundle osx
+# fi
 
 # Theme
 # antigen theme Granze/G-zsh-theme-2 granze2
 
 # Tell antigen that you're done.
-#antigen apply
+antigen apply
 if [ "$OLD_LS" != "" ]; then
   alias ls="$OLD_LS"
 fi
@@ -87,21 +86,16 @@ fi
 # . $DOTFILES/.zsh/opp.zsh/opp.zsh
 # . $DOTFILES/.zsh/opp.zsh/opp/*.zsh
 
-# hub alias
-eval "$(hub alias -s)"
-
 # source zsh file completions
 # fpath=($HOME/.zsh/func /usr/local/share/zsh/site-functions $fpath)
 # typeset -U fpath
 
+# hub alias
+eval "$(hub alias -s)"
+
 # Maven repo setup
 # from http://coe4bd.github.io/HadoopHowTo/hadoopMaven/hadoopMaven.html
 export M2_REPO=$HOME/.m2/repository
-
-# syntax highlight
-# LESSPIPE=`which src-hilite-lesspipe.sh`
-# export LESSOPEN="| ${LESSPIPE} %s"
-# export LESS='-R'
 
 # ipython
 alias ip='ipython qtconsole --pylab=inline'
@@ -237,6 +231,9 @@ alias cpv="rsync -poghb --backup-dir=/tmp/rsync -e /dev/null --progress --"
 
 # tmux color
 alias tmux="TERM=screen-256color-bce tmux -2"
+alias ta='tmux attach -t'
+alias ts='tmux new-session -s'
+alias tl='tmux list-sessions'
 
 # stackoverflow in commandline
 alias h='howdoi --color'
@@ -252,6 +249,5 @@ alias drake='drip -jar /Applications/drake/target/drake.jar'
 # alias vim="nvim"
 
 # SCM_BREEZE!!
-[ -s "/Users/prungta/.scm_breeze/scm_breeze.sh" ] && source "/Users/prungta/.scm_breeze/scm_breeze.sh"
-
+source "/Users/prungta/.scm_breeze/scm_breeze.sh"
 zprof
