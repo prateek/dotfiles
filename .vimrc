@@ -305,9 +305,9 @@ set laststatus=2
 set ruler
 set showcmd
 set wildmenu
-set wildmode=list:longest,full      " Show list of completions
-                                    " and complete as much as possible,
-                                    " then iterate full completions
+" Show list of completions, and complete as much as possible, then iterate full completions
+set wildmode=list:longest,full  
+
 " scrolloff f
 if !&scrolloff
   set scrolloff=1
@@ -358,7 +358,9 @@ nnoremap <silent> <leader>gc :Gcommit<CR>
 
 " ctrl-p mappings
 let g:ctrlp_map = '<c-p>'
-let g:ctrlp_cmd = 'CtrlPMixed'
+let g:ctrlp_cmd = 'CtrlP'
+let g:ctrlp_working_path_mode = 'ra'
+let g:ctrlp_user_command = ['.git', 'cd %s && git ls-files']
 
 " VimRoom Plugin
 nnoremap <silent> <leader>wr :Goyo<CR>
@@ -426,3 +428,9 @@ endfor
 nnoremap <Leader>pi :PluginInstall<CR>
 nnoremap <Leader>pu :PluginUpdate<CR>
 nnoremap <Leader>pc :PluginClean<CR>
+
+" vim paste for OS-X
+nnoremap <D-v> :set paste<CR>:put  *<CR>:set nopaste<CR>
+nnoremap <D-V> :set paste<CR>:put  *<CR>:set nopaste<CR>
+inoremap <D-v> :set paste<CR>:put  *<CR>:set nopaste<CR>
+inoremap <D-V> :set paste<CR>:put  *<CR>:set nopaste<CR>

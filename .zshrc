@@ -29,37 +29,37 @@ fi
 source $DOTFILES/.zsh/antigen/antigen.zsh
 
 # Load the oh-my-zsh's library.
-# antigen use oh-my-zsh
+antigen use oh-my-zsh
 
 # Bundles from the default repo (robbyrussell's oh-my-zsh).
-# antigen bundle git
-# antigen bundle git-extras
-# antigen bundle github
+antigen bundle git
+antigen bundle git-extras
+antigen bundle github
 
-# antigen bundle pip
-# antigen bundle mvn
-# antigen bundle colored-man
-# antigen bundle command-not-found
-# antigen bundle rsync
-# antigen bundle python
-# antigen bundle virtualenvwrapper
-# antigen bundle command-not-found
-# antigen bundle history
+antigen bundle pip
+antigen bundle mvn
+antigen bundle colored-man
+antigen bundle command-not-found
+antigen bundle rsync
+antigen bundle python
+antigen bundle virtualenvwrapper
+antigen bundle command-not-found
+antigen bundle history
 
-# antigen bundle zsh-users/zsh-completions src
-# antigen bundle zsh-users/zsh-syntax-highlighting
+antigen bundle zsh-users/zsh-completions src
+antigen bundle zsh-users/zsh-syntax-highlighting
 
 # Locale Settings
 export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
 
-# DARVIN_OS=darwin
-# if [ "${OSTYPE/$DARVIN_OS}" = "$OSTYPE" ]; then
-#     antigen-bundle osx
-# fi
+DARVIN_OS=darwin
+if [ "${OSTYPE/$DARVIN_OS}" = "$OSTYPE" ]; then
+    antigen-bundle osx
+fi
 
-# Theme
-# antigen theme Granze/G-zsh-theme-2 granze2
+Theme
+antigen theme Granze/G-zsh-theme-2 granze2
 
 # Tell antigen that you're done.
 antigen apply
