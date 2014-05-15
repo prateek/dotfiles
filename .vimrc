@@ -7,7 +7,7 @@ filetype off                   " required!
 set rtp+=~/.vim/bundle/Vundle.vim
 call vundle#begin()
 
-" let Vundle manage Vundle, it's required 
+" let Vundle manage Vundle, it's required
 Plugin 'gmarik/Vundle.vim'
 
 " original repos on github
@@ -15,9 +15,7 @@ Plugin 'altercation/vim-colors-solarized'
 Plugin 'amix/vim-zenroom2'
 Plugin 'bling/vim-airline'
 Plugin 'christoomey/vim-tmux-navigator'
-Plugin 'fs111/pydoc.vim'
 Plugin 'godlygeek/tabular'
-Plugin 'hdima/python-syntax'
 Plugin 'junegunn/goyo.vim'
 Plugin 'kablamo/vim-git-log'
 Plugin 'kien/ctrlp.vim'
@@ -35,12 +33,13 @@ Plugin 'tpope/vim-fugitive'
 Plugin 'tpope/vim-repeat'
 Plugin 'tpope/vim-surround'
 Plugin 'tpope/vim-unimpaired'
+Plugin 'tpope/vim-commentary'
 Plugin 'vim-scripts/maven-plugin'
 Plugin 'vimwiki/vimwiki'
 Plugin 'wesQ3/vim-windowswap'
 Plugin 'tommcdo/vim-exchange'
-Plugin 'lambdalisue/nose.vim'
 
+Plugin 'luochen1990/rainbow'
 " Plugin 'scrooloose/syntastic' " Syntax Error Checking
 
 Plugin 'jiangmiao/auto-pairs'     " AutoPair Brackets
@@ -48,7 +47,7 @@ Plugin 'wellle/targets.vim'       " TextObject Extensions
 Plugin 'wellle/tmux-complete.vim' " Auto complete across tmux panes
 
 " Auto-complete tab
-Plugin 'ervandew/supertab'
+" Plugin 'ervandew/supertab'
 
 " Snippets
 Plugin 'MarcWeber/vim-addon-mw-utils'
@@ -61,6 +60,7 @@ Plugin 'tpope/vim-dispatch'
 autocmd FileType java let b:dispatch = 'mvn package'
 
 " Slime
+" TODO: try: https://github.com/epeli/slimux
 Plugin 'jpalardy/vim-slime'
 let g:slime_target = "tmux"
 " let g:slime_paste_file = "$HOME/.slime_paste"
@@ -80,11 +80,18 @@ nnoremap <leader>e :Reveal<CR>
 Plugin 'prateek/QFGrep'
 Plugin 'prateek/vim-unstack'
 
+" json-like text objects
+" Plugin 'tpope/vim-jdaddy'
+
+let g:sexp_filetypes = 'clojure,scheme,lisp,timl,scala'
+let g:sexp_enable_insert_mode_mappings = 0
+Plugin 'guns/vim-sexp'
+
 " vim-scripts repos
 Plugin 'L9'
 
 Plugin 'csexton/trailertrash.vim' " TrailerTrash
-nnoremap <leader>t :Trim<bar>w<CR>
+nnoremap cot :Trim<bar>w<CR>
 
 " ExtractLinks {{{
 Plugin 'ingo-library'
@@ -98,6 +105,10 @@ nnoremap <leader>x :ExtractLinks<bar>:$put<CR>
 Plugin 'vim-scripts/ZoomWin'
 nnoremap <silent> <leader>z :ZoomWin<CR>
 
+" GitGutter
+Plugin 'airblade/vim-gitgutter'
+nnoremap cog :GitGutterToggle<cr>
+
 " Damian Conway's piece de resistance
 "vnoremap <expr> <LEFT> DVB_Drag('left')
 "vnoremap <expr> <RIGHT> DVB_Drag('right')
@@ -105,7 +116,30 @@ nnoremap <silent> <leader>z :ZoomWin<CR>
 "vnoremap <expr> <UP> DVB_Drag('up')
 
 " syntax plugins {{{
+Plugin 'majutsushi/tagbar'
+nnoremap <silent> <C-t> :TagbarToggle<CR>
+
+Plugin 'Valloric/YouCompleteMe'
+let g:ycm_collect_identifiers_from_tags_files = 1
+let g:EclimCompletionMethod = 'omnifunc'
+let g:ycm_auto_trigger = 1
+" iTerm2 is taking care of the S-space -> C-U mapping
+" let g:ycm_key_invoke_completion = '<C-U>'
+let g:ycm_autoclose_preview_window_after_insertion=1
+
+Plugin 'nathanaelkane/vim-indent-guides'
+let g:indent_guides_start_level=1
+let g:indent_guides_guide_size=1
+
 Plugin 'GEverding/vim-hocon' " HOCON syntax files, used for morphlines
+
+" Scala {{{
+" Based on: http://bleibinha.us/blog/2013/08/my-vim-setup-for-scala
+" TODO: try this - https://github.com/mdr/scalariform
+Plugin 'derekwyatt/vim-scala'
+Plugin 'kalmanb/sbt-ctags'
+Plugin 'ktvoelker/sbt-vim'
+" }}}
 
 " }}} syntax
 
@@ -142,9 +176,9 @@ nnoremap <silent> ]b :BuffergatorMruCycleNext<CR>
 " Dash.app integration - Mac Specific {{{
 Plugin 'rizzatti/funcoo.vim'
 Plugin 'rizzatti/dash.vim'
-nnoremap <silent> K <Plug>DashSearch
-vnoremap <silent> K <Plug>DashSearch
-nnoremap <silent> <leader>K :DashSearch
+nmap <silent> K <Plug>DashSearch
+vmap <silent> K <Plug>DashSearch
+nmap <silent> <leader>K :DashSearch
 " }}}
 
 " Easy-Motion disabled for vim-smalls {{{
@@ -160,6 +194,7 @@ hi link EasyMotionShade  Comment
 call vundle#end()            " required
 filetype plugin indent on    " required
 " }}}
+"
 
 " exchange vim
 nmap cx <Plug>(Exchange)
@@ -189,9 +224,6 @@ let mapleader = " "
 
 " Treat .hql files as SQL for syntax highlighting
 au BufNewFile,BufRead *.hql set filetype=sql
-
-" python nose compiling
-au BufNewFile,BufRead *.py compiler nose
 
 " Tabs
 set tabstop=2
@@ -233,11 +265,13 @@ nnoremap k gk
 nnoremap gk k
 nnoremap gj j
 
+" iTerm2 is remapping S-Space to C-U
 " toggle hold with <S-Space> if over a fold
-nnoremap <S-Space> za
+nnoremap <C-U> za
 
 " vimrc tweaking -- from 'Instantly Better Vim'
-nnoremap <silent> <leader>v :sp $MYVIMRC<CR>
+nnoremap <silent> cv :sp $MYVIMRC<CR>
+
 augroup VimReload
   autocmd!
   autocmd BufWritePost $MYVIMRC source $MYVIMRC
@@ -306,7 +340,7 @@ set ruler
 set showcmd
 set wildmenu
 " Show list of completions, and complete as much as possible, then iterate full completions
-set wildmode=list:longest,full  
+set wildmode=list:longest,full
 
 " scrolloff f
 if !&scrolloff
@@ -361,6 +395,7 @@ let g:ctrlp_map = '<c-p>'
 let g:ctrlp_cmd = 'CtrlP'
 let g:ctrlp_working_path_mode = 'ra'
 let g:ctrlp_user_command = ['.git', 'cd %s && git ls-files']
+nnoremap <leader>. :CtrlPTag<cr>
 
 " VimRoom Plugin
 nnoremap <silent> <leader>wr :Goyo<CR>
@@ -430,7 +465,28 @@ nnoremap <Leader>pu :PluginUpdate<CR>
 nnoremap <Leader>pc :PluginClean<CR>
 
 " vim paste for OS-X
-nnoremap <D-v> :set paste<CR>:put  *<CR>:set nopaste<CR>
-nnoremap <D-V> :set paste<CR>:put  *<CR>:set nopaste<CR>
 inoremap <D-v> :set paste<CR>:put  *<CR>:set nopaste<CR>
 inoremap <D-V> :set paste<CR>:put  *<CR>:set nopaste<CR>
+
+" YCM with UltiSnips
+  " https://github.com/Valloric/YouCompleteMe/issues/36#issuecomment-15722669
+let g:UltiSnipsExpandTrigger       = "<tab>"
+let g:UltiSnipsJumpForwardTrigger  = "<tab>"
+let g:UltiSnipsJumpBackwardTrigger = "<s-tab>"
+
+function! g:UltiSnips_Complete()
+    call UltiSnips#ExpandSnippet()
+    if g:ulti_expand_res == 0
+        if pumvisible()
+            return "\<C-n>"
+        else
+            call UltiSnips#JumpForwards()
+            if g:ulti_jump_forwards_res == 0
+               return "\<TAB>"
+            endif
+        endif
+    endif
+    return ""
+endfunction
+
+au InsertEnter * exec "inoremap <silent> " . g:UltiSnipsExpandTrigger . " <C-R>=g:UltiSnips_Complete()<cr>"

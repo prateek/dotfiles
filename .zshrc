@@ -1,6 +1,6 @@
 # Profile ZSH: https://github.com/zsh-users/zsh-syntax-highlighting/issues/30#issuecomment-4310722
 # Begining:
-zmodload zsh/zprof
+# zmodload zsh/zprof
 # End:
 #   zprof
 
@@ -47,7 +47,6 @@ antigen bundle command-not-found
 antigen bundle history
 
 antigen bundle zsh-users/zsh-completions src
-antigen bundle zsh-users/zsh-syntax-highlighting
 
 # Locale Settings
 export LC_ALL=en_US.UTF-8
@@ -58,7 +57,8 @@ if [ "${OSTYPE/$DARVIN_OS}" = "$OSTYPE" ]; then
     antigen-bundle osx
 fi
 
-Theme
+antigen bundle zsh-users/zsh-syntax-highlighting
+# Theme
 antigen theme Granze/G-zsh-theme-2 granze2
 
 # Tell antigen that you're done.
@@ -250,4 +250,8 @@ alias drake='drip -jar /Applications/drake/target/drake.jar'
 
 # SCM_BREEZE!!
 source "/Users/prungta/.scm_breeze/scm_breeze.sh"
-zprof
+
+# convenience
+alias l="| less"
+alias v="| vim"
+alias eclimd="/Applications/eclipse/eclimd"

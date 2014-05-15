@@ -1,0 +1,72 @@
+---
+current_section: Currently
+doing_file: ~/Dropbox/notes/wwid-??.md
+views:
+  times:
+    date_format: '%a %_I:%M%P'
+    section: All
+    count: 0
+    wrap_width: 0
+    template: '%boldblack%date %boldcyan > %boldwhite%title %boldbgwhite%boldblack%interval%default'
+    order: asc
+    tags: done
+    tags_bool: ANY
+    tags_color: cyan
+  color:
+    date_format: '%F %_I:%M%P'
+    section: Currently
+    count: 10
+    wrap_width: 0
+    template: '%boldblack%date %boldgreen| %boldwhite%title%default%note'
+    order: desc
+  geektool:
+    date_format: '%a %_I:%M%P'
+    section: Currently
+    count: 3
+    wrap_width: 0
+    template: '%boldblack%date %boldcyan > %boldwhite%title%default'
+    order: asc
+    tags: done cancelled
+    tags_bool: NONE
+    tags_color: blue
+  later:
+    date_format: '%F %_I:%M%P'
+    section: Later
+    count: 10
+    wrap_width: 0
+    template: '%boldblack%date %boldgreen| %boldwhite%title%default%note'
+    order: asc
+    tags: 
+    tags_bool: 
+  working:
+    date_format: '%F %_I:%M%P'
+    section: Currently
+    count: 20
+    wrap_width: 0
+    template: '%boldblack%date %boldgreen| %boldwhite%title%default%note'
+    order: asc
+    tags: done finished cancelled
+    tags_bool: NONE
+default_template: '%date: %title%note'
+editor_app: Sublime Text
+templates:
+  last:
+    date_format: '%-I:%M%P on %a'
+    wrap_width: 0
+    template: '%title (at %date)%odnote'
+  default:
+    date_format: '%Y-%m-%d %H:%M'
+    wrap_width: 0
+    template: '%magenta%date %boldgreen| %boldwhite%title %bgwhite%black%interval%default%note'
+  recent:
+    date_format: '%_I:%M%P'
+    wrap_width: 88
+    template: '%magenta%date %boldgreen| %boldwhite%title%default %interval%note'
+  today:
+    date_format: '%_I:%M%P'
+    wrap_width: 0
+    template: '%date: %title %boldbgwhite%black%interval%default%odnote'
+:include_notes: true
+default_date_format: '%Y-%m-%d %H:%M'
+marker_tag: flagged
+marker_color: red
