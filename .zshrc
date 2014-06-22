@@ -5,6 +5,7 @@
 #   zprof
 
 # PATH
+export JAVA_HOME="/System/Library/Frameworks/JavaVM.framework/Versions/CurrentJDK/Home"
 export GOPATH=$HOME/go
 export PATH=$HOME/bin:/usr/local/bin:$GOPATH/bin:$HOME/trash/vowpal_wabbit/utl:$PATH
 export EDITOR="vim"

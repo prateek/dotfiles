@@ -1,6 +1,6 @@
 " vim:fdm=marker
 
-" Vundle Plugin List {{{
+" Vundle Plugin List
 set nocompatible               " be iMproved
 filetype off                   " required!
 
@@ -21,7 +21,6 @@ Plugin 'kablamo/vim-git-log'
 Plugin 'kien/ctrlp.vim'
 Plugin 'mattn/gist-vim'
 Plugin 'mattn/webapi-vim'
-Plugin 'mileszs/ack.vim'
 Plugin 'rstacruz/sparkup', {'rtp': 'vim/'}
 Plugin 'scrooloose/nerdtree'
 Plugin 'sjl/clam.vim'
@@ -38,13 +37,24 @@ Plugin 'vim-scripts/maven-plugin'
 Plugin 'vimwiki/vimwiki'
 Plugin 'wesQ3/vim-windowswap'
 Plugin 'tommcdo/vim-exchange'
+Plugin 'sjl/gundo.vim'
+Plugin 'vim-scripts/YankRing.vim'
 
 Plugin 'luochen1990/rainbow'
 " Plugin 'scrooloose/syntastic' " Syntax Error Checking
+Plugin 'terryma/vim-multiple-cursors'
+
+" Ack.vim
+nnoremap <Leader>a :Ack
+let g:ack_use_dispatch=1
+let g:ack_qhandler = "botright copen 5"
+Plugin 'mileszs/ack.vim'
 
 Plugin 'jiangmiao/auto-pairs'     " AutoPair Brackets
 Plugin 'wellle/targets.vim'       " TextObject Extensions
 Plugin 'wellle/tmux-complete.vim' " Auto complete across tmux panes
+
+Plugin 'davidoc/taskpaper.vim'
 
 " Auto-complete tab
 " Plugin 'ervandew/supertab'
@@ -93,21 +103,20 @@ Plugin 'L9'
 Plugin 'csexton/trailertrash.vim' " TrailerTrash
 nnoremap cot :Trim<bar>w<CR>
 
-" ExtractLinks {{{
+" ExtractLinks
 Plugin 'ingo-library'
 Plugin 'PatternsOnText'
 Plugin 'ExtractMatches'
 Plugin 'ExtractLinks'
 nnoremap <leader>x :ExtractLinks<bar>:$put<CR>
-" }}}
 
 " ZoomWin
 Plugin 'vim-scripts/ZoomWin'
 nnoremap <silent> <leader>z :ZoomWin<CR>
 
 " GitGutter
-Plugin 'airblade/vim-gitgutter'
-nnoremap cog :GitGutterToggle<cr>
+" Plugin 'airblade/vim-gitgutter'
+" nnoremap cog :GitGutterToggle<cr>
 
 " Damian Conway's piece de resistance
 "vnoremap <expr> <LEFT> DVB_Drag('left')
@@ -115,7 +124,7 @@ nnoremap cog :GitGutterToggle<cr>
 "vnoremap <expr> <DOWN> DVB_Drag('down')
 "vnoremap <expr> <UP> DVB_Drag('up')
 
-" syntax plugins {{{
+" syntax plugins
 Plugin 'majutsushi/tagbar'
 nnoremap <silent> <C-t> :TagbarToggle<CR>
 
@@ -133,17 +142,15 @@ let g:indent_guides_guide_size=1
 
 Plugin 'GEverding/vim-hocon' " HOCON syntax files, used for morphlines
 
-" Scala {{{
+" Scala
 " Based on: http://bleibinha.us/blog/2013/08/my-vim-setup-for-scala
 " TODO: try this - https://github.com/mdr/scalariform
 Plugin 'derekwyatt/vim-scala'
 Plugin 'kalmanb/sbt-ctags'
 Plugin 'ktvoelker/sbt-vim'
-" }}}
 
-" }}} syntax
-
-"" markdown  {{{
+"  syntax
+"" markdown
 Plugin 'prateek/vim-writingsyntax' " Writing-Syntax Checker
 " autocmd BufNewFile * :setf writing
 
@@ -163,38 +170,32 @@ let g:vim_markdown_initial_foldlevel=1
 
 " disable markdown folds at startup
 let g:vim_markdown_folding_disabled=1
-" }}}
 
-" BufferList plugin {{{
+" BufferList plugin
 Plugin 'jeetsukumaran/vim-buffergator'
 let g:buffergator_suppress_keymaps=1
 nnoremap <silent> <leader>b :BuffergatorOpen<CR>
 nnoremap <silent> [b :BuffergatorMruCyclePrev<CR>
 nnoremap <silent> ]b :BuffergatorMruCycleNext<CR>
-" }}}
 
-" Dash.app integration - Mac Specific {{{
+" Dash.app integration - Mac Specific
 Plugin 'rizzatti/funcoo.vim'
 Plugin 'rizzatti/dash.vim'
 nmap <silent> K <Plug>DashSearch
 vmap <silent> K <Plug>DashSearch
 nmap <silent> <leader>K :DashSearch
-" }}}
 
-" Easy-Motion disabled for vim-smalls {{{
+" Easy-Motion disabled for vim-smalls
 Plugin 'Lokaltog/vim-easymotion'
 " Vim EasyMotion trigger
 let g:EasyMotion_leader_key = '<Leader><Leader>'
 " EasyMotion Highlight
 hi link EasyMotionTarget ErrorMsg
 hi link EasyMotionShade  Comment
-" }}}
 
 " all plugins finished
 call vundle#end()            " required
 filetype plugin indent on    " required
-" }}}
-"
 
 " exchange vim
 nmap cx <Plug>(Exchange)
@@ -395,7 +396,7 @@ let g:ctrlp_map = '<c-p>'
 let g:ctrlp_cmd = 'CtrlP'
 let g:ctrlp_working_path_mode = 'ra'
 let g:ctrlp_user_command = ['.git', 'cd %s && git ls-files']
-nnoremap <leader>. :CtrlPTag<cr>
+" nnoremap <C-P>. :CtrlPTag<cr>
 
 " VimRoom Plugin
 nnoremap <silent> <leader>wr :Goyo<CR>
@@ -423,13 +424,13 @@ nnoremap S :%s//g<LEFT><LEFT>
 vnoremap S :s//g<LEFT><LEFT>
 
 " Marked binding
-" nnoremap <leader>ma :!open -a Marked.app '%:p' <bar> redr! <CR>
+nnoremap <silent> <leader>ma :!open -a Marked.app '%:p'<CR>
 
 " Visually select last edited/pasted text
 " http://vimcasts.org/episodes/bubbling-text/
 nnoremap gp `[v`]
 
-" Run quick scripts {{{
+" Run quick scripts
 " Adapted from: http://oinksoft.com/blog/view/6/
 " <Command-R> mapped to execute script
 let ft_stdout_mappings = {
@@ -458,11 +459,21 @@ for ft_name in keys(ft_execute_mappings)
           \. ' nnoremap <buffer> <C-P> :write \| !'
           \. ft_execute_mappings[ft_name] . '<CR>'
 endfor
-" }}}
 
 nnoremap <Leader>pi :PluginInstall<CR>
 nnoremap <Leader>pu :PluginUpdate<CR>
 nnoremap <Leader>pc :PluginClean<CR>
+
+" Gundo
+let g:gundo_auto_preview=0
+let g:gundo_playback_delay=30
+nnoremap <Leader>gu :GundoToggle<CR>
+
+" YankRing
+nnoremap <silent> <Leader>y :YRShow<CR>
+let g:yankring_replace_n_pkey = '<D-p>'
+let g:yankring_replace_n_nkey = '<D-n>'
+let g:yankring_history_file='.yankring_history_'
 
 " vim paste for OS-X
 inoremap <D-v> :set paste<CR>:put  *<CR>:set nopaste<CR>
