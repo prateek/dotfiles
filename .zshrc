@@ -48,6 +48,7 @@ antigen bundle command-not-found
 antigen bundle history
 
 antigen bundle zsh-users/zsh-completions src
+antigen bundle zsh-users/zaw
 
 # Locale Settings
 export LC_ALL=en_US.UTF-8
@@ -226,6 +227,10 @@ setopt NO_BEEP
 # zsh modification aliases
 alias sz='source ~/.zshrc'
 alias ez='vim ~/.zshrc'
+
+# ssh with vi mode enabled
+function sshv { ssh -t $1 "bash -i -o vi"  }
+compdef sshv='ssh'
 
 # copy with a progress bar
 alias cpv="rsync -poghb --backup-dir=/tmp/rsync -e /dev/null --progress --"

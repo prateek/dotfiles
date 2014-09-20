@@ -40,6 +40,10 @@ Plugin 'tommcdo/vim-exchange'
 Plugin 'sjl/gundo.vim'
 Plugin 'vim-scripts/YankRing.vim'
 
+" Plugin 'tpope/vim-vinegar'
+Plugin 'tpope/vim-classpath'
+
+
 Plugin 'luochen1990/rainbow'
 " Plugin 'scrooloose/syntastic' " Syntax Error Checking
 Plugin 'terryma/vim-multiple-cursors'
@@ -115,8 +119,8 @@ Plugin 'vim-scripts/ZoomWin'
 nnoremap <silent> <leader>z :ZoomWin<CR>
 
 " GitGutter
-" Plugin 'airblade/vim-gitgutter'
-" nnoremap cog :GitGutterToggle<cr>
+Plugin 'airblade/vim-gitgutter'
+nnoremap cog :GitGutterToggle<cr>
 
 " Damian Conway's piece de resistance
 "vnoremap <expr> <LEFT> DVB_Drag('left')
@@ -394,9 +398,10 @@ nnoremap <silent> <leader>gc :Gcommit<CR>
 " ctrl-p mappings
 let g:ctrlp_map = '<c-p>'
 let g:ctrlp_cmd = 'CtrlP'
-let g:ctrlp_working_path_mode = 'ra'
-let g:ctrlp_user_command = ['.git', 'cd %s && git ls-files']
 " nnoremap <C-P>. :CtrlPTag<cr>
+let g:ctrlp_working_path_mode = 'ra'
+" let g:ctrlp_user_command = ['.git', 'cd %s && git ls-files']
+let g:ctrlp_user_command = ['.git', 'cd %s && git ls-files . -co --exclude-standard']
 
 " VimRoom Plugin
 nnoremap <silent> <leader>wr :Goyo<CR>
@@ -424,7 +429,7 @@ nnoremap S :%s//g<LEFT><LEFT>
 vnoremap S :s//g<LEFT><LEFT>
 
 " Marked binding
-nnoremap <silent> <leader>ma :!open -a Marked.app '%:p'<CR>
+nnoremap <silent> <leader>ma :!open -a Marked\ 2.app '%:p'<CR>
 
 " Visually select last edited/pasted text
 " http://vimcasts.org/episodes/bubbling-text/
@@ -476,8 +481,8 @@ let g:yankring_replace_n_nkey = '<D-n>'
 let g:yankring_history_file='.yankring_history_'
 
 " vim paste for OS-X
-inoremap <D-v> :set paste<CR>:put  *<CR>:set nopaste<CR>
-inoremap <D-V> :set paste<CR>:put  *<CR>:set nopaste<CR>
+" inoremap <D-v> :set paste<CR>:put  *<CR>:set nopaste<CR>
+" inoremap <D-V> :set paste<CR>:put  *<CR>:set nopaste<CR>
 
 " YCM with UltiSnips
   " https://github.com/Valloric/YouCompleteMe/issues/36#issuecomment-15722669
