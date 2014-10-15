@@ -41,7 +41,7 @@ Plugin 'sjl/gundo.vim'
 Plugin 'vim-scripts/YankRing.vim'
 
 " Plugin 'tpope/vim-vinegar'
-Plugin 'tpope/vim-classpath'
+" Plugin 'tpope/vim-classpath'
 
 
 Plugin 'luochen1990/rainbow'
@@ -119,8 +119,8 @@ Plugin 'vim-scripts/ZoomWin'
 nnoremap <silent> <leader>z :ZoomWin<CR>
 
 " GitGutter
-Plugin 'airblade/vim-gitgutter'
-nnoremap cog :GitGutterToggle<cr>
+" Plugin 'airblade/vim-gitgutter'
+" nnoremap cog :GitGutterToggle<cr>
 
 " Damian Conway's piece de resistance
 "vnoremap <expr> <LEFT> DVB_Drag('left')
@@ -383,7 +383,7 @@ let g:NERDTreeWinPos = "left"
 
 " maven
 nnoremap <silent> <leader>mp :Mvn package <bar> redr! <bar> ccl <bar> copen<CR>
-nnoremap <silent> <leader>mc :Mvn compile <bar> redr!<CR>
+nnoremap <silent> <leader>mc :Mvn compile <bar> redr! <bar> ccl <bar> copen<CR>
 
 " fugitive mappings
 nnoremap <silent> <leader>gs :Gstatus<CR>

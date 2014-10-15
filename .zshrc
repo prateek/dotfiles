@@ -48,7 +48,9 @@ antigen bundle command-not-found
 antigen bundle history
 
 antigen bundle zsh-users/zsh-completions src
-antigen bundle zsh-users/zaw
+# TODO: antigen bundle zsh-users/zaw
+source /Users/prungta/trash/zaw/zaw.zsh
+bindkey '^R' zaw-history
 
 # Locale Settings
 export LC_ALL=en_US.UTF-8
