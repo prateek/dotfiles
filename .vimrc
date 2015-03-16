@@ -11,13 +11,12 @@ call vundle#begin()
 Plugin 'gmarik/Vundle.vim'
 
 " original repos on github
-Plugin 'altercation/vim-colors-solarized'
+Plugin 'sjl/badwolf'
 Plugin 'amix/vim-zenroom2'
 Plugin 'bling/vim-airline'
 Plugin 'christoomey/vim-tmux-navigator'
 Plugin 'godlygeek/tabular'
 Plugin 'junegunn/goyo.vim'
-Plugin 'kablamo/vim-git-log'
 Plugin 'kien/ctrlp.vim'
 Plugin 'mattn/gist-vim'
 Plugin 'mattn/webapi-vim'
@@ -25,7 +24,6 @@ Plugin 'rstacruz/sparkup', {'rtp': 'vim/'}
 Plugin 'scrooloose/nerdtree'
 Plugin 'sjl/clam.vim'
 Plugin 'thinca/vim-visualstar'
-Plugin 'tomasr/molokai'
 Plugin 'tpope/vim-abolish'
 Plugin 'tpope/vim-eunuch'
 Plugin 'tpope/vim-fugitive'
@@ -43,15 +41,10 @@ Plugin 'vim-scripts/YankRing.vim'
 " Plugin 'tpope/vim-vinegar'
 " Plugin 'tpope/vim-classpath'
 
-
 Plugin 'luochen1990/rainbow'
 " Plugin 'scrooloose/syntastic' " Syntax Error Checking
 Plugin 'terryma/vim-multiple-cursors'
 
-" Ack.vim
-nnoremap <Leader>a :Ack
-let g:ack_use_dispatch=1
-let g:ack_qhandler = "botright copen 5"
 Plugin 'mileszs/ack.vim'
 
 Plugin 'jiangmiao/auto-pairs'     " AutoPair Brackets
@@ -69,26 +62,9 @@ Plugin 'tomtom/tlib_vim'
 Plugin 'SirVer/ultisnips'
 Plugin 'honza/vim-snippets'
 
-" Background vim compile
-Plugin 'tpope/vim-dispatch'
-autocmd FileType java let b:dispatch = 'mvn package'
-
-" Slime
-" TODO: try: https://github.com/epeli/slimux
 Plugin 'jpalardy/vim-slime'
-let g:slime_target = "tmux"
-" let g:slime_paste_file = "$HOME/.slime_paste"
-let g:slime_no_mappings = 1
-xmap <c-x> <Plug>SlimeRegionSend
-nmap <c-x> <Plug>SlimeParagraphSend
-
 " Reveal in finder
 Plugin 'henrik/vim-reveal-in-finder'
-nnoremap <leader>e :Reveal<CR>
-
-" Sessions
-" Plugin 'xolox/vim-misc'
-" Plugin 'xolox/vim-session'
 
 " TODO: use the master repo once it picks up your commit
 Plugin 'prateek/QFGrep'
@@ -97,52 +73,29 @@ Plugin 'prateek/vim-unstack'
 " json-like text objects
 " Plugin 'tpope/vim-jdaddy'
 
-let g:sexp_filetypes = 'clojure,scheme,lisp,timl,scala'
-let g:sexp_enable_insert_mode_mappings = 0
+Plugin 'tpope/vim-sexp-mappings-for-regular-people'
 Plugin 'guns/vim-sexp'
 
 " vim-scripts repos
 Plugin 'L9'
-
 Plugin 'csexton/trailertrash.vim' " TrailerTrash
-nnoremap cot :Trim<bar>w<CR>
 
 " ExtractLinks
 Plugin 'ingo-library'
 Plugin 'PatternsOnText'
 Plugin 'ExtractMatches'
 Plugin 'ExtractLinks'
-nnoremap <leader>x :ExtractLinks<bar>:$put<CR>
+
+" Background vim compile
+Plugin 'tpope/vim-dispatch'
 
 " ZoomWin
 Plugin 'vim-scripts/ZoomWin'
-nnoremap <silent> <leader>z :ZoomWin<CR>
-
-" GitGutter
-" Plugin 'airblade/vim-gitgutter'
-" nnoremap cog :GitGutterToggle<cr>
-
-" Damian Conway's piece de resistance
-"vnoremap <expr> <LEFT> DVB_Drag('left')
-"vnoremap <expr> <RIGHT> DVB_Drag('right')
-"vnoremap <expr> <DOWN> DVB_Drag('down')
-"vnoremap <expr> <UP> DVB_Drag('up')
 
 " syntax plugins
 Plugin 'majutsushi/tagbar'
-nnoremap <silent> <C-t> :TagbarToggle<CR>
-
 Plugin 'Valloric/YouCompleteMe'
-let g:ycm_collect_identifiers_from_tags_files = 1
-let g:EclimCompletionMethod = 'omnifunc'
-let g:ycm_auto_trigger = 1
-" iTerm2 is taking care of the S-space -> C-U mapping
-" let g:ycm_key_invoke_completion = '<C-U>'
-let g:ycm_autoclose_preview_window_after_insertion=1
-
 Plugin 'nathanaelkane/vim-indent-guides'
-let g:indent_guides_start_level=1
-let g:indent_guides_guide_size=1
 
 Plugin 'GEverding/vim-hocon' " HOCON syntax files, used for morphlines
 
@@ -153,13 +106,58 @@ Plugin 'derekwyatt/vim-scala'
 Plugin 'kalmanb/sbt-ctags'
 Plugin 'ktvoelker/sbt-vim'
 
-"  syntax
 "" markdown
 Plugin 'prateek/vim-writingsyntax' " Writing-Syntax Checker
-" autocmd BufNewFile * :setf writing
-
 Plugin 'plasticboy/vim-markdown'
-" autocmd bufnewfile * :set textwidth=80
+
+" BufferList plugin
+Plugin 'jeetsukumaran/vim-buffergator'
+
+" Easy-Motion disabled for vim-smalls
+Plugin 'Lokaltog/vim-easymotion'
+
+" Dash.app integration - Mac Specific
+Plugin 'rizzatti/funcoo.vim'
+Plugin 'rizzatti/dash.vim'
+call vundle#end()            " required
+
+" Ack.vim
+nnoremap <Leader>a :Ack
+let g:ack_use_dispatch=1
+let g:ack_qhandler = "botright copen 5"
+autocmd FileType java let b:dispatch = 'mvn package'
+
+" Slime
+" TODO: try: https://github.com/epeli/slimux
+let g:slime_target = "tmux"
+" let g:slime_paste_file = "$HOME/.slime_paste"
+let g:slime_no_mappings = 1
+xmap <c-d> <Plug>SlimeRegionSend
+nmap <c-d> <Plug>SlimeParagraphSend
+
+nnoremap <leader>e :Reveal<CR>
+
+let g:sexp_filetypes = 'clojure,scheme,lisp,timl,scala'
+let g:sexp_enable_insert_mode_mappings = 0
+nnoremap cot :Trim<bar>w<CR>
+
+nnoremap <leader>x :ExtractLinks<bar>:$put<CR>
+
+nnoremap <silent> <leader>z :ZoomWin<CR>
+
+nnoremap <silent> <C-t> :TagbarToggle<CR>
+
+let g:ycm_collect_identifiers_from_tags_files = 1
+let g:EclimCompletionMethod = 'omnifunc'
+let g:ycm_auto_trigger = 1
+" iTerm2 is taking care of the S-space -> C-U mapping
+" let g:ycm_key_invoke_completion = '<C-U>'
+let g:ycm_autoclose_preview_window_after_insertion=1
+
+let g:indent_guides_start_level=1
+let g:indent_guides_guide_size=1
+
+"  syntax
 augroup markdown
   autocmd BufNewFile * :set ai
   autocmd BufNewFile * :set formatoptions=tcroqn2
@@ -175,22 +173,15 @@ let g:vim_markdown_initial_foldlevel=1
 " disable markdown folds at startup
 let g:vim_markdown_folding_disabled=1
 
-" BufferList plugin
-Plugin 'jeetsukumaran/vim-buffergator'
 let g:buffergator_suppress_keymaps=1
 nnoremap <silent> <leader>b :BuffergatorOpen<CR>
 nnoremap <silent> [b :BuffergatorMruCyclePrev<CR>
 nnoremap <silent> ]b :BuffergatorMruCycleNext<CR>
 
-" Dash.app integration - Mac Specific
-Plugin 'rizzatti/funcoo.vim'
-Plugin 'rizzatti/dash.vim'
 nmap <silent> K <Plug>DashSearch
 vmap <silent> K <Plug>DashSearch
 nmap <silent> <leader>K :DashSearch
 
-" Easy-Motion disabled for vim-smalls
-Plugin 'Lokaltog/vim-easymotion'
 " Vim EasyMotion trigger
 let g:EasyMotion_leader_key = '<Leader><Leader>'
 " EasyMotion Highlight
@@ -198,7 +189,6 @@ hi link EasyMotionTarget ErrorMsg
 hi link EasyMotionShade  Comment
 
 " all plugins finished
-call vundle#end()            " required
 filetype plugin indent on    " required
 
 " exchange vim
@@ -213,16 +203,12 @@ let g:solarized_termcolors=256
 let g:rehash256 = 1
 set t_Co=256
 set bg=dark
-colo molokai
 let g:airline_theme='solarized'
+colorscheme badwolf
 
 " Keep this below the colorschemes
 filetype plugin indent on     " required!
 syntax enable
-
-" stole this from SamP originally
-" inoremap ii <Esc> " map ii to esc
-" Removed to start using caps instead
 
 " leader to <SPACE> <-- godsend
 let mapleader = " "
@@ -303,11 +289,9 @@ nnoremap S :%s//g<LEFT><LEFT>
 vnoremap S :s//g<LEFT><LEFT>
 
 " toggle line wrapping
-" nnoremap <leader>w :set wrap!<CR>
 set nowrap
 
 " toggle list chars
-" nnoremap <leader>l :set list!<CR>
 set nolist
 
 " set current file's directory as the vim directory
@@ -391,9 +375,6 @@ nnoremap <silent> <leader>gw :Gwrite<CR>
 nnoremap <silent> <leader>gd :Gdiff<CR>
 nnoremap <silent> <leader>ge :Gedit<CR>
 nnoremap <silent> <leader>gc :Gcommit<CR>
-
-" Git log mappings
-" nnoremap <silent> <leader>gl :sp <bar> GitLog<CR>
 
 " ctrl-p mappings
 let g:ctrlp_map = '<c-p>'
