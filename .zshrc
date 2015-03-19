@@ -2,10 +2,11 @@
 # Begining:
 # zmodload zsh/zprof
 # End:
-#   zprof
+# zprof
 
-# PATH
-export JAVA_HOME="/System/Library/Frameworks/JavaVM.framework/Versions/CurrentJDK/Home"
+# PATH(s)
+export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.7.0_65.jdk/Contents/Home
+# export JAVA_HOME="/System/Library/Frameworks/JavaVM.framework/Versions/CurrentJDK/Home"
 export GOPATH=$HOME/go
 export PATH=$HOME/bin:/usr/local/bin:$GOPATH/bin:$HOME/trash/vowpal_wabbit/utl:$PATH
 export EDITOR="vim"
@@ -13,11 +14,7 @@ export EDITOR="vim"
 if [ -d $HOME/dotfiles ]; then
   export DOTFILES=$HOME/dotfiles
 else
-  if [ -d $HOME/prateek-dotfiles ]; then
-    export DOTFILES=$HOME/prateek-dotfiles
-  else
-    export DOTFILES=$HOME
-  fi
+  export DOTFILES=$HOME
 fi
 
 # RESET LS to ensure antigen works
@@ -71,7 +68,6 @@ if [ "$OLD_LS" != "" ]; then
   alias ls="$OLD_LS"
 fi
 
-
 # if mode indicator wasn't setup by theme, define default
 if [[ "$MODE_INDICATOR" == "" ]]; then
   MODE_INDICATOR="%{$fg_bold[red]%}<%{$fg[red]%}<<%{$reset_color%}"
@@ -98,13 +94,12 @@ fi
 eval "$(hub alias -s)"
 
 # Maven repo setup
-# from http://coe4bd.github.io/HadoopHowTo/hadoopMaven/hadoopMaven.html
 export M2_REPO=$HOME/.m2/repository
 
 # ipython
 alias ip='ipython qtconsole --pylab=inline'
 alias ipn="ipython notebook $HOME/trash/notebooks"
-export PYTHONPATH=/usr/local/lib/python2.7/site-packages:
+#export PYTHONPATH=/usr/local/lib/python2.7/site-packages:
 
 # enable color support of ls and also add handy aliases
 ## colorize ls
@@ -213,7 +208,7 @@ compctl -g '*(-/)' cd chdir dirs pushd j
 compinit
 
 setopt nolistambiguous # one tab for completion
-setopt MULTIOS        # tee/cat automatically
+setopt MULTIOS         # tee/cat automatically
 
 # convenient stuff
 autoload zmv
@@ -231,7 +226,7 @@ alias sz='source ~/.zshrc'
 alias ez='vim ~/.zshrc'
 
 # ssh with vi mode enabled
-function sshv { ssh -t $1 "bash -i -o vi"  }
+function sshv { ssh -t $* "bash -i -o vi"  }
 compdef sshv='ssh'
 
 # copy with a progress bar

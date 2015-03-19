@@ -20,10 +20,9 @@ Plugin 'junegunn/goyo.vim'
 Plugin 'kien/ctrlp.vim'
 Plugin 'mattn/gist-vim'
 Plugin 'mattn/webapi-vim'
-Plugin 'rstacruz/sparkup', {'rtp': 'vim/'}
 Plugin 'scrooloose/nerdtree'
 Plugin 'sjl/clam.vim'
-Plugin 'thinca/vim-visualstar'
+Plugin 'bronson/vim-visual-star-search'
 Plugin 'tpope/vim-abolish'
 Plugin 'tpope/vim-eunuch'
 Plugin 'tpope/vim-fugitive'
@@ -43,7 +42,9 @@ Plugin 'vim-scripts/YankRing.vim'
 
 Plugin 'luochen1990/rainbow'
 " Plugin 'scrooloose/syntastic' " Syntax Error Checking
-Plugin 'terryma/vim-multiple-cursors'
+
+" Emacs bindings for Vim's CLI
+Plugin 'bruno-/vim-husk'
 
 Plugin 'mileszs/ack.vim'
 
@@ -63,15 +64,17 @@ Plugin 'SirVer/ultisnips'
 Plugin 'honza/vim-snippets'
 
 Plugin 'jpalardy/vim-slime'
-" Reveal in finder
+
+" OS X Bindings
+"" Reveal in finder
 Plugin 'henrik/vim-reveal-in-finder'
+"" Dash.app integration - Mac Specific
+Plugin 'rizzatti/funcoo.vim'
+Plugin 'rizzatti/dash.vim'
 
 " TODO: use the master repo once it picks up your commit
 Plugin 'prateek/QFGrep'
-Plugin 'prateek/vim-unstack'
-
-" json-like text objects
-" Plugin 'tpope/vim-jdaddy'
+Plugin 'mattboehm/vim-unstack'
 
 Plugin 'tpope/vim-sexp-mappings-for-regular-people'
 Plugin 'guns/vim-sexp'
@@ -80,12 +83,6 @@ Plugin 'guns/vim-sexp'
 Plugin 'L9'
 Plugin 'csexton/trailertrash.vim' " TrailerTrash
 
-" ExtractLinks
-Plugin 'ingo-library'
-Plugin 'PatternsOnText'
-Plugin 'ExtractMatches'
-Plugin 'ExtractLinks'
-
 " Background vim compile
 Plugin 'tpope/vim-dispatch'
 
@@ -93,38 +90,51 @@ Plugin 'tpope/vim-dispatch'
 Plugin 'vim-scripts/ZoomWin'
 
 " syntax plugins
-Plugin 'majutsushi/tagbar'
 Plugin 'Valloric/YouCompleteMe'
-Plugin 'nathanaelkane/vim-indent-guides'
-
-Plugin 'GEverding/vim-hocon' " HOCON syntax files, used for morphlines
-
+"" HOCON - aka morphlines
+Plugin 'GEverding/vim-hocon'
 " Scala
 " Based on: http://bleibinha.us/blog/2013/08/my-vim-setup-for-scala
 " TODO: try this - https://github.com/mdr/scalariform
+Plugin 'nathanaelkane/vim-indent-guides'
 Plugin 'derekwyatt/vim-scala'
 Plugin 'kalmanb/sbt-ctags'
 Plugin 'ktvoelker/sbt-vim'
-
 "" markdown
 Plugin 'prateek/vim-writingsyntax' " Writing-Syntax Checker
 Plugin 'plasticboy/vim-markdown'
 
 " BufferList plugin
 Plugin 'jeetsukumaran/vim-buffergator'
-
 " Easy-Motion disabled for vim-smalls
 Plugin 'Lokaltog/vim-easymotion'
 
-" Dash.app integration - Mac Specific
-Plugin 'rizzatti/funcoo.vim'
-Plugin 'rizzatti/dash.vim'
+" ExtractLinks
+Plugin 'ingo-library'
+Plugin 'PatternsOnText'
+Plugin 'ExtractMatches'
+Plugin 'ExtractLinks'
+
 call vundle#end()            " required
+
+" color scheme
+let g:solarized_termcolors=256
+let g:rehash256 = 1
+set t_Co=256
+set bg=dark
+let g:airline_theme='solarized'
+colorscheme badwolf
+
+" Keep this below the colorschemes
+filetype plugin indent on     " required!
+syntax enable
 
 " Ack.vim
 nnoremap <Leader>a :Ack
 let g:ack_use_dispatch=1
 let g:ack_qhandler = "botright copen 5"
+
+" Dispatch.vim
 autocmd FileType java let b:dispatch = 'mvn package'
 
 " Slime
@@ -135,29 +145,30 @@ let g:slime_no_mappings = 1
 xmap <c-d> <Plug>SlimeRegionSend
 nmap <c-d> <Plug>SlimeParagraphSend
 
-nnoremap <leader>e :Reveal<CR>
-
+" Sexp
 let g:sexp_filetypes = 'clojure,scheme,lisp,timl,scala'
 let g:sexp_enable_insert_mode_mappings = 0
+
 nnoremap cot :Trim<bar>w<CR>
 
+" ExtractLinks
 nnoremap <leader>x :ExtractLinks<bar>:$put<CR>
 
+" ZoomWin.vim
 nnoremap <silent> <leader>z :ZoomWin<CR>
 
-nnoremap <silent> <C-t> :TagbarToggle<CR>
-
+" TabCompletion - YCM + UtilSnips
 let g:ycm_collect_identifiers_from_tags_files = 1
-let g:EclimCompletionMethod = 'omnifunc'
 let g:ycm_auto_trigger = 1
+let g:ycm_autoclose_preview_window_after_insertion=1
 " iTerm2 is taking care of the S-space -> C-U mapping
 " let g:ycm_key_invoke_completion = '<C-U>'
-let g:ycm_autoclose_preview_window_after_insertion=1
 
 let g:indent_guides_start_level=1
 let g:indent_guides_guide_size=1
 
 "  syntax
+"" markdown
 augroup markdown
   autocmd BufNewFile * :set ai
   autocmd BufNewFile * :set formatoptions=tcroqn2
@@ -166,10 +177,8 @@ augroup markdown
   autocmd BufNewFile * :set linebreak
   autocmd BufNewFile * :set list
 augroup end
-
 " vim-markdown
 let g:vim_markdown_initial_foldlevel=1
-
 " disable markdown folds at startup
 let g:vim_markdown_folding_disabled=1
 
@@ -188,8 +197,7 @@ let g:EasyMotion_leader_key = '<Leader><Leader>'
 hi link EasyMotionTarget ErrorMsg
 hi link EasyMotionShade  Comment
 
-" all plugins finished
-filetype plugin indent on    " required
+nnoremap <leader>e :Reveal<CR>
 
 " exchange vim
 nmap cx <Plug>(Exchange)
@@ -197,18 +205,6 @@ vmap cx <Plug>(Exchange)
 nmap cC <Plug>(ExchangeClear)
 vmap cX <Plug>(ExchangeLine)
 nmap cX <Plug>(ExchangeLine)
-
-" color scheme
-let g:solarized_termcolors=256
-let g:rehash256 = 1
-set t_Co=256
-set bg=dark
-let g:airline_theme='solarized'
-colorscheme badwolf
-
-" Keep this below the colorschemes
-filetype plugin indent on     " required!
-syntax enable
 
 " leader to <SPACE> <-- godsend
 let mapleader = " "
@@ -302,7 +298,7 @@ nnoremap <leader>r :NERDTreeFind<cr>
 " all surrounding lines have relative numbers
 " set relativenumber
 " current line has absolute numbering
-set number
+" set number
 
 " swap colon and semicolon
 noremap ; :
@@ -464,6 +460,32 @@ let g:yankring_history_file='.yankring_history_'
 " vim paste for OS-X
 " inoremap <D-v> :set paste<CR>:put  *<CR>:set nopaste<CR>
 " inoremap <D-V> :set paste<CR>:put  *<CR>:set nopaste<CR>
+
+" Rainbow
+nnoremap cr :RainbowToggle<CR>
+let g:rainbow_active = 1
+let g:rainbow_conf = {
+\   'guifgs': ['royalblue3', 'darkorange3', 'seagreen3', 'firebrick'],
+\   'ctermfgs': ['lightblue', 'lightyellow', 'lightcyan', 'lightmagenta'],
+\   'operators': '_,_',
+\   'parentheses': ['start=/(/ end=/)/ fold', 'start=/\[/ end=/\]/ fold', 'start=/{/ end=/}/ fold'],
+\   'separately': {
+\       '*': {},
+\       'tex': {
+\           'parentheses': ['start=/(/ end=/)/', 'start=/\[/ end=/\]/'],
+\       },
+\       'lisp': {
+\           'guifgs': ['royalblue3', 'darkorange3', 'seagreen3', 'firebrick', 'darkorchid3'],
+\       },
+\       'vim': {
+\           'parentheses': ['start=/(/ end=/)/', 'start=/\[/ end=/\]/', 'start=/{/ end=/}/ fold', 'start=/(/ end=/)/ containedin=vimFuncBody', 'start=/\[/ end=/\]/ containedin=vimFuncBody', 'start=/{/ end=/}/ fold containedin=vimFuncBody'],
+\       },
+\       'html': {
+\           'parentheses': ['start=/\v\<((area|base|br|col|embed|hr|img|input|keygen|link|menuitem|meta|param|source|track|wbr)[ >])@!\z([-_:a-zA-Z0-9]+)(\s+[-_:a-zA-Z0-9]+(\=("[^"]*"|'."'".'[^'."'".']*'."'".'|[^ '."'".'"><=`]*))?)*\>/ end=#</\z1># fold'],
+\       },
+\       'css': 0,
+\   }
+\}
 
 " YCM with UltiSnips
   " https://github.com/Valloric/YouCompleteMe/issues/36#issuecomment-15722669
