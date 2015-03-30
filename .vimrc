@@ -15,23 +15,31 @@ Plugin 'sjl/badwolf'
 Plugin 'amix/vim-zenroom2'
 Plugin 'bling/vim-airline'
 Plugin 'christoomey/vim-tmux-navigator'
-Plugin 'godlygeek/tabular'
+
 Plugin 'junegunn/goyo.vim'
+Plugin 'godlygeek/tabular'
 Plugin 'kien/ctrlp.vim'
+
+" Gist.vim and it's dependency
 Plugin 'mattn/gist-vim'
 Plugin 'mattn/webapi-vim'
+
 Plugin 'scrooloose/nerdtree'
 Plugin 'sjl/clam.vim'
-Plugin 'bronson/vim-visual-star-search'
-Plugin 'tpope/vim-abolish'
-Plugin 'tpope/vim-eunuch'
+
+" Git Plugin
 Plugin 'tpope/vim-fugitive'
+
+Plugin 'bronson/vim-visual-star-search'
+
+Plugin 'tpope/vim-eunuch'
+Plugin 'tpope/vim-abolish'
 Plugin 'tpope/vim-repeat'
 Plugin 'tpope/vim-surround'
 Plugin 'tpope/vim-unimpaired'
 Plugin 'tpope/vim-commentary'
 Plugin 'vim-scripts/maven-plugin'
-Plugin 'vimwiki/vimwiki'
+
 Plugin 'wesQ3/vim-windowswap'
 Plugin 'tommcdo/vim-exchange'
 Plugin 'sjl/gundo.vim'
@@ -52,11 +60,8 @@ Plugin 'jiangmiao/auto-pairs'     " AutoPair Brackets
 Plugin 'wellle/targets.vim'       " TextObject Extensions
 Plugin 'wellle/tmux-complete.vim' " Auto complete across tmux panes
 
-Plugin 'davidoc/taskpaper.vim'
-
-" Auto-complete tab
-" Plugin 'ervandew/supertab'
-
+" Autocomplete
+Plugin 'Valloric/YouCompleteMe'
 " Snippets
 Plugin 'MarcWeber/vim-addon-mw-utils'
 Plugin 'tomtom/tlib_vim'
@@ -76,6 +81,7 @@ Plugin 'rizzatti/dash.vim'
 Plugin 'prateek/QFGrep'
 Plugin 'mattboehm/vim-unstack'
 
+" Clojure(! s/.*/Lisp)
 Plugin 'tpope/vim-sexp-mappings-for-regular-people'
 Plugin 'guns/vim-sexp'
 
@@ -90,7 +96,6 @@ Plugin 'tpope/vim-dispatch'
 Plugin 'vim-scripts/ZoomWin'
 
 " syntax plugins
-Plugin 'Valloric/YouCompleteMe'
 "" HOCON - aka morphlines
 Plugin 'GEverding/vim-hocon'
 " Scala
@@ -103,6 +108,8 @@ Plugin 'ktvoelker/sbt-vim'
 "" markdown
 Plugin 'prateek/vim-writingsyntax' " Writing-Syntax Checker
 Plugin 'plasticboy/vim-markdown'
+" logs
+Plugin 'dzeban/vim-log-syntax'
 
 " BufferList plugin
 Plugin 'jeetsukumaran/vim-buffergator'
