@@ -82,8 +82,13 @@ Plugin 'prateek/QFGrep'
 Plugin 'mattboehm/vim-unstack'
 
 " Clojure(! s/.*/Lisp)
-Plugin 'tpope/vim-sexp-mappings-for-regular-people'
 Plugin 'guns/vim-sexp'
+Plugin 'tpope/vim-sexp-mappings-for-regular-people'
+Plugin 'tpope/vim-leiningen'
+Plugin 'tpope/vim-projectionist'
+Plugin 'tpope/vim-fireplace'
+Plugin 'guns/vim-clojure-static'
+Plugin 'guns/vim-clojure-highlight'
 
 " vim-scripts repos
 Plugin 'L9'
@@ -200,6 +205,7 @@ nmap <silent> <leader>K :DashSearch
 
 " Vim EasyMotion trigger
 let g:EasyMotion_leader_key = '<Leader><Leader>'
+nmap <silent> <C-s> <Plug>(easymotion-w)
 " EasyMotion Highlight
 hi link EasyMotionTarget ErrorMsg
 hi link EasyMotionShade  Comment
@@ -421,7 +427,6 @@ nnoremap gp `[v`]
 
 " Run quick scripts
 " Adapted from: http://oinksoft.com/blog/view/6/
-" <Command-R> mapped to execute script
 let ft_stdout_mappings = {
       \'bash':        'bash',
       \'javascript':  'node',
@@ -436,16 +441,17 @@ let ft_execute_mappings = {
       \'c': 'gcc -o %:r -Wall -std=c99 % && ./%:r',
       \'md': 'open -app Marked2.app %',
       \'markdown': 'open -app Marked2.app %',
+      \'applescript': 'osascript %',
       \}
 
 for ft_name in keys(ft_stdout_mappings)
-  execute 'autocmd Filetype ' . ft_name . ' nnoremap <buffer> <D-R> :write !'
-          \. ft_stdout_mappings[ft_name] . '<CR>'
+  execute 'autocmd Filetype ' . ft_name . ' nnoremap <buffer> <C-e> :Dispatch '
+          \. ft_stdout_mappings[ft_name] . ' % <CR>'
 endfor
 
 for ft_name in keys(ft_execute_mappings)
   execute 'autocmd FileType ' . ft_name
-          \. ' nnoremap <buffer> <C-P> :write \| !'
+          \. ' nnoremap <buffer> <C-e> :Dispatch '
           \. ft_execute_mappings[ft_name] . '<CR>'
 endfor
 

@@ -17,78 +17,72 @@ else
   export DOTFILES=$HOME
 fi
 
+# source $DOTFILES/zgen/zgen.zsh
+
 # RESET LS to ensure antigen works
-OLD_LS=$(alias ls | sed -e "s/.*'\(.*\)'.*/\1/g")
-if [ "$OLD_LS" != "" ]; then
-  unalias ls
-fi
+# OLD_LS=$(alias ls | sed -e "s/.*'\(.*\)'.*/\1/g")
+# if [ "$OLD_LS" != "" ]; then
+#   unalias ls
+# fi
 
 # source antigen
-source $DOTFILES/.zsh/antigen/antigen.zsh
+# source $DOTFILES/.zsh/antigen/antigen.zsh
 
 # Load the oh-my-zsh's library.
-antigen use oh-my-zsh
+# antigen use oh-my-zsh
 
 # Bundles from the default repo (robbyrussell's oh-my-zsh).
-antigen bundle git
-antigen bundle git-extras
-antigen bundle github
+# antigen bundle git
+# antigen bundle git-extras
+# antigen bundle github
 
-antigen bundle pip
-antigen bundle mvn
-antigen bundle colored-man
-antigen bundle command-not-found
-antigen bundle rsync
-antigen bundle python
-antigen bundle virtualenvwrapper
-antigen bundle command-not-found
-antigen bundle history
+# antigen bundle pip
+# antigen bundle mvn
+# antigen bundle colored-man
+# antigen bundle command-not-found
+# antigen bundle rsync
+# antigen bundle python
+# antigen bundle command-not-found
+# antigen bundle virtualenvwrapper
+# antigen bundle history
 
-antigen bundle zsh-users/zsh-completions src
+# antigen bundle zsh-users/zsh-completions src
 # TODO: antigen bundle zsh-users/zaw
-source /Users/prungta/trash/zaw/zaw.zsh
-bindkey '^R' zaw-history
+# source /Users/prungta/trash/zaw/zaw.zsh
+# bindkey '^R' zaw-history
 
 # Locale Settings
 export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
 
-DARVIN_OS=darwin
-if [ "${OSTYPE/$DARVIN_OS}" = "$OSTYPE" ]; then
-    antigen-bundle osx
-fi
+# DARVIN_OS=darwin
+# if [ "${OSTYPE/$DARVIN_OS}" = "$OSTYPE" ]; then
+#     antigen-bundle osx
+# fi
+# 
+# antigen bundle zsh-users/zsh-syntax-highlighting
+# # Theme
+# antigen theme Granze/G-zsh-theme-2 granze2
+# 
+# # Tell antigen that you're done.
+# antigen apply
+#if [ "$OLD_LS" != "" ]; then
+#  alias ls="$OLD_LS"
+#fi
 
-antigen bundle zsh-users/zsh-syntax-highlighting
-# Theme
-antigen theme Granze/G-zsh-theme-2 granze2
-
-# Tell antigen that you're done.
-antigen apply
-if [ "$OLD_LS" != "" ]; then
-  alias ls="$OLD_LS"
-fi
-
-# if mode indicator wasn't setup by theme, define default
-if [[ "$MODE_INDICATOR" == "" ]]; then
-  MODE_INDICATOR="%{$fg_bold[red]%}<%{$fg[red]%}<<%{$reset_color%}"
-fi
-
-function vi_mode_prompt_info() {
-  echo "${${KEYMAP/vicmd/$MODE_INDICATOR}/(main|viins)/}"
-}
-
-# define right prompt, if it wasn't defined by a theme
-if [[ "$RPS1" == "" && "$RPROMPT" == "" ]]; then
-  RPS1='$(vi_mode_prompt_info)'
-fi
-
-## Vim inner word key bindings
-# . $DOTFILES/.zsh/opp.zsh/opp.zsh
-# . $DOTFILES/.zsh/opp.zsh/opp/*.zsh
-
-# source zsh file completions
-# fpath=($HOME/.zsh/func /usr/local/share/zsh/site-functions $fpath)
-# typeset -U fpath
+# # if mode indicator wasn't setup by theme, define default
+# if [[ "$MODE_INDICATOR" == "" ]]; then
+#   MODE_INDICATOR="%{$fg_bold[red]%}<%{$fg[red]%}<<%{$reset_color%}"
+# fi
+# 
+# function vi_mode_prompt_info() {
+#   echo "${${KEYMAP/vicmd/$MODE_INDICATOR}/(main|viins)/}"
+# }
+# 
+# # define right prompt, if it wasn't defined by a theme
+# if [[ "$RPS1" == "" && "$RPROMPT" == "" ]]; then
+#   RPS1='$(vi_mode_prompt_info)'
+# fi
 
 # hub alias
 eval "$(hub alias -s)"
@@ -130,9 +124,8 @@ alias psef='ps -ef | grep -i '
 
 # History options
 HISTFILE=$HOME/.zhistory      # enable history saving on shell exit
-HISTSIZE=10000                # lines of history to maintain memory
-SAVEHIST=100000               # lines of history to maintain in history file.
-# setopt SHARE_HISTORY        # Killer: share history between multiple shells
+HISTSIZE=1000                 # lines of history to maintain memory
+SAVEHIST=10000                # lines of history to maintain in history file.
 setopt APPEND_HISTORY         # append rather than overwrite history file.
 setopt EXTENDED_HISTORY       # Save the time and how long a command ran
 setopt HIST_EXPIRE_DUPS_FIRST # allow dups, but expire old ones when I hit HISTSIZE
@@ -200,19 +193,19 @@ zle -N copy-earlier-word
 
 # zsh completion
 autoload -U compinit && compinit
-
-zstyle ':completion:*' menu select
-setopt correctall
-compctl -g '*(/)' rmdir dircmp j
-compctl -g '*(-/)' cd chdir dirs pushd j
-compinit
+#
+# zstyle ':completion:*' menu select
+# setopt correctall
+# compctl -g '*(/)' rmdir dircmp j
+# compctl -g '*(-/)' cd chdir dirs pushd j
+# compinit
 
 setopt nolistambiguous # one tab for completion
 setopt MULTIOS         # tee/cat automatically
 
 # convenient stuff
 autoload zmv
-setopt autocd
+# setopt autocd
 setopt extendedglob
 
 # autoexapnd aliases
@@ -224,10 +217,6 @@ setopt NO_BEEP
 # zsh modification aliases
 alias sz='source ~/.zshrc'
 alias ez='vim ~/.zshrc'
-
-# ssh with vi mode enabled
-function sshv { ssh -t $* "bash -i -o vi"  }
-compdef sshv='ssh'
 
 # copy with a progress bar
 alias cpv="rsync -poghb --backup-dir=/tmp/rsync -e /dev/null --progress --"
@@ -251,8 +240,11 @@ alias drake='drip -jar /Applications/drake/target/drake.jar'
 # Neovim
 # alias vim="nvim"
 
-# SCM_BREEZE!!
-source "/Users/prungta/.scm_breeze/scm_breeze.sh"
+# scmpuff
+eval "$(scmpuff init -s)"
+alias gt="git tag"
+alias gl="git lg"
+alias gca="git commit -a"
 
 # convenience
 alias l="| less"
