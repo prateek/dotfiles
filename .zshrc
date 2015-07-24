@@ -1,4 +1,5 @@
 # Profile ZSH: https://github.com/zsh-users/zsh-syntax-highlighting/issues/30#issuecomment-4310722
+# u
 # Begining:
 # zmodload zsh/zprof
 # End:
@@ -17,72 +18,18 @@ else
   export DOTFILES=$HOME
 fi
 
-# source $DOTFILES/zgen/zgen.zsh
-
-# RESET LS to ensure antigen works
-# OLD_LS=$(alias ls | sed -e "s/.*'\(.*\)'.*/\1/g")
-# if [ "$OLD_LS" != "" ]; then
-#   unalias ls
-# fi
-
-# source antigen
-# source $DOTFILES/.zsh/antigen/antigen.zsh
-
-# Load the oh-my-zsh's library.
-# antigen use oh-my-zsh
-
-# Bundles from the default repo (robbyrussell's oh-my-zsh).
-# antigen bundle git
-# antigen bundle git-extras
-# antigen bundle github
-
-# antigen bundle pip
-# antigen bundle mvn
-# antigen bundle colored-man
-# antigen bundle command-not-found
-# antigen bundle rsync
-# antigen bundle python
-# antigen bundle command-not-found
-# antigen bundle virtualenvwrapper
-# antigen bundle history
-
-# antigen bundle zsh-users/zsh-completions src
-# TODO: antigen bundle zsh-users/zaw
-# source /Users/prungta/trash/zaw/zaw.zsh
-# bindkey '^R' zaw-history
+source $DOTFILES/zgen/zgen.zsh
+if ! zgen saved; then
+  echo "Creating zgen save"
+#  zgen oh-my-zsh plugins/virtualenvwrapper
+  zgen load sindresorhus/pure
+  zgen load zsh-users/zaw
+  zgen save
+fi
 
 # Locale Settings
 export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
-
-# DARVIN_OS=darwin
-# if [ "${OSTYPE/$DARVIN_OS}" = "$OSTYPE" ]; then
-#     antigen-bundle osx
-# fi
-# 
-# antigen bundle zsh-users/zsh-syntax-highlighting
-# # Theme
-# antigen theme Granze/G-zsh-theme-2 granze2
-# 
-# # Tell antigen that you're done.
-# antigen apply
-#if [ "$OLD_LS" != "" ]; then
-#  alias ls="$OLD_LS"
-#fi
-
-# # if mode indicator wasn't setup by theme, define default
-# if [[ "$MODE_INDICATOR" == "" ]]; then
-#   MODE_INDICATOR="%{$fg_bold[red]%}<%{$fg[red]%}<<%{$reset_color%}"
-# fi
-# 
-# function vi_mode_prompt_info() {
-#   echo "${${KEYMAP/vicmd/$MODE_INDICATOR}/(main|viins)/}"
-# }
-# 
-# # define right prompt, if it wasn't defined by a theme
-# if [[ "$RPS1" == "" && "$RPROMPT" == "" ]]; then
-#   RPS1='$(vi_mode_prompt_info)'
-# fi
 
 # hub alias
 eval "$(hub alias -s)"
@@ -124,8 +71,8 @@ alias psef='ps -ef | grep -i '
 
 # History options
 HISTFILE=$HOME/.zhistory      # enable history saving on shell exit
-HISTSIZE=1000                 # lines of history to maintain memory
-SAVEHIST=10000                # lines of history to maintain in history file.
+HISTSIZE=10000                # lines of history to maintain memory
+SAVEHIST=100000               # lines of history to maintain in history file.
 setopt APPEND_HISTORY         # append rather than overwrite history file.
 setopt EXTENDED_HISTORY       # Save the time and how long a command ran
 setopt HIST_EXPIRE_DUPS_FIRST # allow dups, but expire old ones when I hit HISTSIZE
@@ -192,13 +139,25 @@ autoload -Uz copy-earlier-word
 zle -N copy-earlier-word
 
 # zsh completion
-autoload -U compinit && compinit
-#
-# zstyle ':completion:*' menu select
-# setopt correctall
-# compctl -g '*(/)' rmdir dircmp j
-# compctl -g '*(-/)' cd chdir dirs pushd j
-# compinit
+autoload -U compinit
+
+zstyle ':completion:*' menu select
+setopt correctall
+compctl -g '*(/)' rmdir dircmp j
+compctl -g '*(-/)' cd chdir dirs pushd j
+compinit
+
+
+# Zaw Configs
+bindkey '^R' zaw-history
+bindkey -M filterselect '^R' down-line-or-history
+bindkey -M filterselect '^S' up-line-or-history
+bindkey -M filterselect '^E' accept-search
+zstyle ':filter-select:highlight' selected bg=red
+zstyle ':filter-select:highlight' matched fg=yellow,standout
+zstyle ':filter-select' rotate-list yes # enable rotation for filter-select
+zstyle ':filter-select' case-insensitive yes # enable case-insensitive
+zstyle ':filter-select' extended-search yes # see below
 
 setopt nolistambiguous # one tab for completion
 setopt MULTIOS         # tee/cat automatically
@@ -237,14 +196,19 @@ alias mmv='noglob zmv -W'
 # via https://gist.github.com/daguar/5368778
 alias drake='drip -jar /Applications/drake/target/drake.jar'
 
+# Lazy-load virtualenvwrapper
+export VIRTUALENVWRAPPER_SCRIPT=/usr/local/bin/virtualenvwrapper.sh
+source /usr/local/bin/virtualenvwrapper_lazy.sh
+
 # Neovim
 # alias vim="nvim"
 
 # scmpuff
 eval "$(scmpuff init -s)"
 alias gt="git tag"
-alias gl="git lg"
+alias gb="git branch"
 alias gca="git commit -a"
+alias gl="git lg"
 
 # convenience
 alias l="| less"

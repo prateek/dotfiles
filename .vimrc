@@ -10,8 +10,10 @@ call vundle#begin()
 " let Vundle manage Vundle, it's required
 Plugin 'gmarik/Vundle.vim'
 
-" original repos on github
+" ColorSchemes
 Plugin 'sjl/badwolf'
+Plugin 'NLKNguyen/papercolor-theme'
+
 Plugin 'amix/vim-zenroom2'
 Plugin 'bling/vim-airline'
 Plugin 'christoomey/vim-tmux-navigator'
@@ -43,7 +45,7 @@ Plugin 'vim-scripts/maven-plugin'
 Plugin 'wesQ3/vim-windowswap'
 Plugin 'tommcdo/vim-exchange'
 Plugin 'sjl/gundo.vim'
-Plugin 'vim-scripts/YankRing.vim'
+" Plugin 'vim-scripts/YankRing.vim'
 
 " Plugin 'tpope/vim-vinegar'
 " Plugin 'tpope/vim-classpath'
@@ -77,15 +79,13 @@ Plugin 'henrik/vim-reveal-in-finder'
 Plugin 'rizzatti/funcoo.vim'
 Plugin 'rizzatti/dash.vim'
 
-" TODO: use the master repo once it picks up your commit
-Plugin 'prateek/QFGrep'
 Plugin 'mattboehm/vim-unstack'
+Plugin 'tpope/vim-projectionist'
 
 " Clojure(! s/.*/Lisp)
 Plugin 'guns/vim-sexp'
 Plugin 'tpope/vim-sexp-mappings-for-regular-people'
 Plugin 'tpope/vim-leiningen'
-Plugin 'tpope/vim-projectionist'
 Plugin 'tpope/vim-fireplace'
 Plugin 'guns/vim-clojure-static'
 Plugin 'guns/vim-clojure-highlight'
@@ -115,6 +115,10 @@ Plugin 'prateek/vim-writingsyntax' " Writing-Syntax Checker
 Plugin 'plasticboy/vim-markdown'
 " logs
 Plugin 'dzeban/vim-log-syntax'
+" octave
+Plugin 'jvirtanen/vim-octave'
+" python
+Plugin 'hdima/python-syntax'
 
 " BufferList plugin
 Plugin 'jeetsukumaran/vim-buffergator'
@@ -127,19 +131,23 @@ Plugin 'PatternsOnText'
 Plugin 'ExtractMatches'
 Plugin 'ExtractLinks'
 
+Plugin 'altercation/vim-colors-solarized'
 call vundle#end()            " required
 
 " color scheme
+syntax enable
 let g:solarized_termcolors=256
 let g:rehash256 = 1
 set t_Co=256
+" let g:airline_theme='solarized'
 set bg=dark
-let g:airline_theme='solarized'
+" colorscheme solarized
 colorscheme badwolf
+" colorscheme PaperColor
+let g:airline_theme='PaperColor'
 
 " Keep this below the colorschemes
 filetype plugin indent on     " required!
-syntax enable
 
 " Ack.vim
 nnoremap <Leader>a :Ack
@@ -161,8 +169,6 @@ nmap <c-d> <Plug>SlimeParagraphSend
 let g:sexp_filetypes = 'clojure,scheme,lisp,timl,scala'
 let g:sexp_enable_insert_mode_mappings = 0
 
-nnoremap cot :Trim<bar>w<CR>
-
 " ExtractLinks
 nnoremap <leader>x :ExtractLinks<bar>:$put<CR>
 
@@ -175,9 +181,6 @@ let g:ycm_auto_trigger = 1
 let g:ycm_autoclose_preview_window_after_insertion=1
 " iTerm2 is taking care of the S-space -> C-U mapping
 " let g:ycm_key_invoke_completion = '<C-U>'
-
-let g:indent_guides_start_level=1
-let g:indent_guides_guide_size=1
 
 "  syntax
 "" markdown
@@ -303,6 +306,10 @@ set nowrap
 " toggle list chars
 set nolist
 
+" TrailerTrash Trim
+" nnoremap cot :Trim<bar>w<CR>
+nnoremap <leader>t :TrailerTrim<CR>
+
 " set current file's directory as the vim directory
 nnoremap <leader>c :cd %:p:h<CR>
 nnoremap <leader>r :NERDTreeFind<cr>
@@ -357,6 +364,7 @@ set showbreak=↪
 
 " font scheme
 set guifont=Inconsolata:h16
+" set guifont=Monaco:h16
 
 " splits open to bottom and right
 set splitright
@@ -477,28 +485,6 @@ let g:yankring_history_file='.yankring_history_'
 " Rainbow
 nnoremap cr :RainbowToggle<CR>
 let g:rainbow_active = 1
-let g:rainbow_conf = {
-\   'guifgs': ['royalblue3', 'darkorange3', 'seagreen3', 'firebrick'],
-\   'ctermfgs': ['lightblue', 'lightyellow', 'lightcyan', 'lightmagenta'],
-\   'operators': '_,_',
-\   'parentheses': ['start=/(/ end=/)/ fold', 'start=/\[/ end=/\]/ fold', 'start=/{/ end=/}/ fold'],
-\   'separately': {
-\       '*': {},
-\       'tex': {
-\           'parentheses': ['start=/(/ end=/)/', 'start=/\[/ end=/\]/'],
-\       },
-\       'lisp': {
-\           'guifgs': ['royalblue3', 'darkorange3', 'seagreen3', 'firebrick', 'darkorchid3'],
-\       },
-\       'vim': {
-\           'parentheses': ['start=/(/ end=/)/', 'start=/\[/ end=/\]/', 'start=/{/ end=/}/ fold', 'start=/(/ end=/)/ containedin=vimFuncBody', 'start=/\[/ end=/\]/ containedin=vimFuncBody', 'start=/{/ end=/}/ fold containedin=vimFuncBody'],
-\       },
-\       'html': {
-\           'parentheses': ['start=/\v\<((area|base|br|col|embed|hr|img|input|keygen|link|menuitem|meta|param|source|track|wbr)[ >])@!\z([-_:a-zA-Z0-9]+)(\s+[-_:a-zA-Z0-9]+(\=("[^"]*"|'."'".'[^'."'".']*'."'".'|[^ '."'".'"><=`]*))?)*\>/ end=#</\z1># fold'],
-\       },
-\       'css': 0,
-\   }
-\}
 
 " YCM with UltiSnips
   " https://github.com/Valloric/YouCompleteMe/issues/36#issuecomment-15722669
@@ -512,13 +498,23 @@ function! g:UltiSnips_Complete()
         if pumvisible()
             return "\<C-n>"
         else
-            call UltiSnips#JumpForwards()
-            if g:ulti_jump_forwards_res == 0
-               return "\<TAB>"
-            endif
+          call UltiSnips#JumpForwards()
+          if g:ulti_jump_forwards_res == 0
+            return "\<TAB>"
+          endif
         endif
     endif
     return ""
 endfunction
 
 au InsertEnter * exec "inoremap <silent> " . g:UltiSnipsExpandTrigger . " <C-R>=g:UltiSnips_Complete()<cr>"
+
+" IndentGuides
+nnoremap coi :IndentGuidesToggle<CR>
+let g:indent_guides_start_level=1
+let g:indent_guides_guide_size=1
+
+" Block Visual Move
+" via http://vimrcfu.com/snippet/77
+vnoremap J :m '>+1<CR>gv=gv
+vnoremap K :m '<-2<CR>gv=gv"
