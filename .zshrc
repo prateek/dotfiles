@@ -6,10 +6,10 @@
 # zprof
 
 # PATH(s)
-export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.7.0_65.jdk/Contents/Home
+export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.7.0_80.jdk/Contents/Home
 # export JAVA_HOME="/System/Library/Frameworks/JavaVM.framework/Versions/CurrentJDK/Home"
-export GOPATH=$HOME/go
-export PATH=$HOME/bin:/usr/local/bin:$GOPATH/bin:$HOME/trash/vowpal_wabbit/utl:$PATH
+# export JAVA_HOME="/System/Library/Frameworks/JavaVM.framework/Versions/Current/Home"
+export PATH=$JAVA_HOME/bin:$HOME/bin:/usr/local/bin:$PATH
 export EDITOR="vim"
 
 if [ -d $HOME/dotfiles ]; then
@@ -21,9 +21,10 @@ fi
 source $DOTFILES/zgen/zgen.zsh
 if ! zgen saved; then
   echo "Creating zgen save"
-#  zgen oh-my-zsh plugins/virtualenvwrapper
-  zgen load sindresorhus/pure
+# oh-my-zsh plugins/virtualenvwrapper
   zgen load zsh-users/zaw
+  zgen load mafredri/zsh-async
+  zgen load sindresorhus/pure
   zgen save
 fi
 
@@ -51,14 +52,8 @@ if [ -x /usr/local/bin/gdircolors ]  && [ -s $HOME/.dir_colors ]; then
   alias fgrep='fgrep --color=auto'
   alias egrep='egrep --color=auto'
 fi
-
-if [ -x /usr/bin/dircolors ]; then
-    test -r $HOME/dircolors && eval "$(dircolors -b $HOME/dircolors)" || eval "$(dircolors -b)"
-   #  alias ls='ls --color=auto'
-    alias grep='grep --color=auto'
-    alias fgrep='fgrep --color=auto'
-    alias egrep='egrep --color=auto'
-fi
+alias ls='ls -G'
+alias ll='ls -ltrG'
 
 ## colorize completions
 zstyle ':completion:*' list-colors ''
@@ -123,6 +118,7 @@ bindkey '\e[C' forward-char
 bindkey '\e[D' backward-char
 bindkey '\eOC' forward-char
 bindkey '\eOD' backward-char
+bindkey "^?" backward-delete-char
 
 # create new mr maven job
 # stolen from github.com/patrickangeles/cdh-maven-archetype
@@ -197,8 +193,7 @@ alias mmv='noglob zmv -W'
 alias drake='drip -jar /Applications/drake/target/drake.jar'
 
 # Lazy-load virtualenvwrapper
-export VIRTUALENVWRAPPER_SCRIPT=/usr/local/bin/virtualenvwrapper.sh
-source /usr/local/bin/virtualenvwrapper_lazy.sh
+# export VIRTUALENVWRAPPER_SCRIPT=/usr/local/bin/virtualenvwrapper.sh
 
 # Neovim
 # alias vim="nvim"
@@ -216,3 +211,12 @@ alias v="| vim"
 alias eclimd="/Applications/eclipse/eclimd"
 alias j7="export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.7.0_65.jdk/Contents/Home"
 alias yoink="open -a Yoink"
+
+alias vim='/usr/local/bin/vim'
+eval "$(pyenv init -)"
+eval "$(pyenv virtualenv-init -)"
+
+# npm, nodejs
+# via: http://stackoverflow.com/questions/28017374/what-is-the-suggested-way-to-install-brew-node-js-io-js-nvm-npm-on-os-x
+export NVM_DIR=~/.nvm
+alias nvms="source $(brew --prefix nvm)/nvm.sh"
