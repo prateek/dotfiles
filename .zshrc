@@ -9,7 +9,7 @@
 export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.7.0_80.jdk/Contents/Home
 # export JAVA_HOME="/System/Library/Frameworks/JavaVM.framework/Versions/CurrentJDK/Home"
 # export JAVA_HOME="/System/Library/Frameworks/JavaVM.framework/Versions/Current/Home"
-export PATH=$JAVA_HOME/bin:$HOME/bin:/usr/local/bin:$PATH
+export PATH=$JAVA_HOME/bin:$HOME/code/miniconda3/bin:$HOME/bin:/usr/local/bin:$PATH
 export EDITOR="vim"
 
 if [ -d $HOME/dotfiles ]; then
