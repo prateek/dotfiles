@@ -6,11 +6,17 @@
 # zprof
 
 # PATH(s)
-export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.7.0_80.jdk/Contents/Home
+# export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.7.0_80.jdk/Contents/Home
+export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_73.jdk/Contents/Home
 # export JAVA_HOME="/System/Library/Frameworks/JavaVM.framework/Versions/CurrentJDK/Home"
 # export JAVA_HOME="/System/Library/Frameworks/JavaVM.framework/Versions/Current/Home"
 export PATH=$JAVA_HOME/bin:$HOME/code/miniconda3/bin:$HOME/bin:/usr/local/bin:$PATH
 export EDITOR="vim"
+
+# tesla begin
+export DEV_PATH=/Users/prungta/code
+export pipl="--index-url https://artifactory.dev.teslamotors.com:443/artifactory/api/pypi/sysval-release-local/simple --extra-index-url https://pypi.python.org/simple"
+# tesla end
 
 if [ -d $HOME/dotfiles ]; then
   export DOTFILES=$HOME/dotfiles
@@ -21,7 +27,8 @@ fi
 source $DOTFILES/zgen/zgen.zsh
 if ! zgen saved; then
   echo "Creating zgen save"
-# oh-my-zsh plugins/virtualenvwrapper
+  zgen load felixr/docker-zsh-completion
+  zgen load mafredri/zsh-async
   zgen load zsh-users/zaw
   zgen load mafredri/zsh-async
   zgen load sindresorhus/pure
@@ -31,6 +38,10 @@ fi
 # Locale Settings
 export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
+
+# docker aliases
+alias d=docker
+alias dc=docker-compose
 
 # hub alias
 eval "$(hub alias -s)"
@@ -54,10 +65,6 @@ if [ -x /usr/local/bin/gdircolors ]  && [ -s $HOME/.dir_colors ]; then
 fi
 alias ls='ls -G'
 alias ll='ls -ltrG'
-
-## colorize completions
-zstyle ':completion:*' list-colors ''
-zstyle ':completion:*:default' list-colors ${(s.:.)LS_COLORS}
 
 # aliases
 alias quit='exit'
@@ -135,12 +142,18 @@ autoload -Uz copy-earlier-word
 zle -N copy-earlier-word
 
 # zsh completion
-autoload -U compinit
+# bash autocompletion too: http://stackoverflow.com/questions/3249432/i-have-a-bash-tab-completion-script-is-there-a-simple-way-to-use-it-from-zsh
+autoload -U +X compinit
 
 zstyle ':completion:*' menu select
 setopt correctall
 compctl -g '*(/)' rmdir dircmp j
 compctl -g '*(-/)' cd chdir dirs pushd j
+
+## colorize completions
+zstyle ':completion:*' list-colors ''
+zstyle ':completion:*:default' list-colors ${(s.:.)LS_COLORS}
+
 compinit
 
 
@@ -213,6 +226,12 @@ alias j7="export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.7.0_65.jdk/Con
 alias yoink="open -a Yoink"
 
 alias vim='/usr/local/bin/vim'
+
+export PIP_REQUIRE_VIRTUALENV=true
+# define a "global pip" function to use outside virtualenv:
+gpip(){
+    PIP_REQUIRE_VIRTUALENV="" pip "$@"
+}
 eval "$(pyenv init -)"
 eval "$(pyenv virtualenv-init -)"
 
@@ -220,3 +239,16 @@ eval "$(pyenv virtualenv-init -)"
 # via: http://stackoverflow.com/questions/28017374/what-is-the-suggested-way-to-install-brew-node-js-io-js-nvm-npm-on-os-x
 export NVM_DIR=~/.nvm
 alias nvms="source $(brew --prefix nvm)/nvm.sh"
+
+# domino
+alias domino=/Applications/domino/domino
+
+# PIP, via: https://github.com/yyuu/pyenv-virtualenv/issues/10
+# pip should only run if there is a virtualenv currently activated
+# export PIP_REQUIRE_VIRTUALENV=true
+# # cache pip-installed packages to avoid re-downloading
+# export PIP_DOWNLOAD_CACHE=$HOME/.pip/cache
+
+# export SPARK_HOME=/Users/prungta/code/spark
+# # export SPARK_HOME=/Users/prungta/code/spark-1.3.0-bin-hadoop2.4
+# export SPARK_CONF_DIR=/Users/prungta/code/spark-conf/prod

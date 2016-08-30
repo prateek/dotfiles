@@ -53,7 +53,9 @@ Plug 'wellle/targets.vim'       " TextObject Extensions
 Plug 'wellle/tmux-complete.vim' " Auto complete across tmux panes
 
 " Autocomplete
-Plug 'Valloric/YouCompleteMe', { 'do': './install.sh' , 'for': ['python', 'cpp']}
+" Plug 'Valloric/YouCompleteMe', { 'do': './install.sh' , 'for': ['python', 'cpp']}
+Plug 'Valloric/YouCompleteMe', { 'do': './install.sh' , 'for': 'cpp'}
+
 " Snippets
 Plug 'MarcWeber/vim-addon-mw-utils'
 Plug 'tomtom/tlib_vim'
@@ -114,7 +116,7 @@ Plug 'tpope/vim-markdown', { 'for': 'markdown' }
 Plug 'prateek/vim-writingsyntax', {'for': ['markdown', 'text'] } " Writing-Syntax Checker
 Plug 'reedes/vim-textobj-quote', {'for': ['markdown', 'text'] }
 Plug 'reedes/vim-litecorrect', {'for': ['markdown', 'text'] }    " light weight autocorrect
-Plug 'reedes/vim-pencil', {'for': ['markdown', 'text'] }    " light weight autocorrect
+" Plug 'reedes/vim-pencil', {'for': ['markdown', 'text'] }    " light weight autocorrect
 " TODO: https://github.com/reedes/vim-lexical
 
 " logs
@@ -124,7 +126,7 @@ Plug 'dzeban/vim-log-syntax', { 'for': 'log' }
 Plug 'jvirtanen/vim-octave', { 'for': 'octave' }
 
 " python
-Plug 'hdima/python-syntax', { 'for': 'python' }
+" Plug 'hdima/python-syntax', { 'for': 'python' }
 
 " BufferList plugin
 Plug 'jeetsukumaran/vim-buffergator'
@@ -134,6 +136,9 @@ Plug 'Lokaltog/vim-easymotion'
 
 " ExtractLinks
 Plug 'ingo-library' | Plug 'PatternsOnText' | Plug 'ExtractMatches' | Plug 'ExtractLinks'
+
+" Transpose Tabular data
+Plug 'salsifis/vim-transpose'
 
 call plug#end()
 
@@ -166,7 +171,7 @@ autocmd FileType java let b:dispatch = 'mvn package'
 " Slime
 " TODO: try: https://github.com/epeli/slimux
 let g:slime_target = "tmux"
-" let g:slime_paste_file = "$HOME/.slime_paste"
+let g:slime_paste_file = "$HOME/.slime_paste"
 let g:slime_no_mappings = 1
 xmap <c-d> <Plug>SlimeRegionSend
 nmap <c-d> <Plug>SlimeParagraphSend
@@ -198,13 +203,14 @@ let g:ycm_autoclose_preview_window_after_insertion=1
 "   autocmd BufNewFile * :set linebreak
 "   autocmd BufNewFile * :set list
 " augroup end
-augroup pencil
-  autocmd!
-  autocmd FileType markdown,mkd,text call pencil#init({'wrap': 'hard'})
-                                 \ | call litecorrect#init()
-  autocmd FileType markdown,mkd,text :let g:pencil#textwidth=74 " 1/2 screen width of my rMbp
-  autocmd FileType markdown,mkd,text :let g:airline_section_x='%{PencilMode()}'
-augroup END
+
+" augroup pencil
+"   autocmd!
+"   autocmd FileType markdown,mkd,text call pencil#init({'wrap': 'hard'})
+"                                  \ | call litecorrect#init()
+"   autocmd FileType markdown,mkd,text :let g:pencil#textwidth=74 " 1/2 screen width of my rMbp
+"   autocmd FileType markdown,mkd,text :let g:airline_section_x='%{PencilMode()}'
+" augroup END
 
 "" fenced code-blocks within markdown
 let g:markdown_fenced_languages = ['html', 'python', 'bash=sh']
