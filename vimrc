@@ -34,8 +34,8 @@ Plug 'tpope/vim-repeat'
 Plug 'tpope/vim-surround'
 Plug 'tpope/vim-unimpaired'
 Plug 'tpope/vim-commentary'
-" Plug 'vim-scripts/maven-plugin'
 
+" Plug 'vim-scripts/maven-plugin'
 Plug 'wesQ3/vim-windowswap'
 Plug 'tommcdo/vim-exchange'
 Plug 'sjl/gundo.vim'
@@ -73,13 +73,16 @@ Plug 'itspriddle/vim-marked'
 "" Dash.app integration - Mac Specific
 " Plug 'rizzatti/funcoo.vim'
 " Plug 'rizzatti/dash.vim'
-
 Plug 'mattboehm/vim-unstack'
 Plug 'tpope/vim-projectionist'
 
-" Clojure(! s/.*/Lisp)
-Plug 'guns/vim-sexp' , { 'for': 'clojure'  }
-Plug 'tpope/vim-sexp-mappings-for-regular-people', { 'for': 'clojure'  }
+" Lisps
+Plug 'wlangstroth/vim-racket'
+Plug 'vim-scripts/scribble.vim'
+Plug 'guns/vim-sexp' , { 'for': ['clojure', 'scheme']  }
+Plug 'tpope/vim-sexp-mappings-for-regular-people', { 'for': ['clojure', 'scheme']  }
+
+" Clojure
 Plug 'tpope/vim-classpath', { 'for': 'clojure' }
 Plug 'tpope/vim-salve', { 'for': 'clojure'  }
 Plug 'tpope/vim-fireplace', { 'for': 'clojure'  }
@@ -99,7 +102,6 @@ Plug 'vim-scripts/ZoomWin'
 " syntax plugins
 "" HOCON - aka morphlines
 Plug 'GEverding/vim-hocon', { 'for': 'conf' }
-
 Plug 'nathanaelkane/vim-indent-guides'
 
 " Scala
@@ -507,6 +509,8 @@ let g:yankring_history_file='.yankring_history_'
 " Rainbow
 nnoremap cr :RainbowToggle<CR>
 let g:rainbow_active = 1
+let g:rainbow_guifgs = ['RoyalBlue3', 'DarkOrange3', 'DarkOrchid3', 'FireBrick']
+let g:rainbow_ctermfgs = ['lightblue', 'lightgreen', 'yellow', 'red', 'magenta']
 
 " YCM with UltiSnips
   " https://github.com/Valloric/YouCompleteMe/issues/36#issuecomment-15722669
