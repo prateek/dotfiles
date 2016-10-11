@@ -6,11 +6,11 @@
 # zprof
 
 # PATH(s)
-# export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.7.0_80.jdk/Contents/Home
-export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_73.jdk/Contents/Home
+export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.7.0_80.jdk/Contents/Home
+# export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_73.jdk/Contents/Home
 # export JAVA_HOME="/System/Library/Frameworks/JavaVM.framework/Versions/CurrentJDK/Home"
 # export JAVA_HOME="/System/Library/Frameworks/JavaVM.framework/Versions/Current/Home"
-export PATH=$JAVA_HOME/bin:$HOME/code/miniconda3/bin:$HOME/bin:/usr/local/bin:$PATH
+export PATH=$JAVA_HOME/bin:$HOME/bin:/usr/local/bin:$PATH
 export EDITOR="vim"
 
 # tesla begin
@@ -24,16 +24,29 @@ else
   export DOTFILES=$HOME
 fi
 
-source $DOTFILES/zgen/zgen.zsh
-if ! zgen saved; then
-  echo "Creating zgen save"
-  zgen load felixr/docker-zsh-completion
-  zgen load mafredri/zsh-async
-  zgen load zsh-users/zaw
-  zgen load mafredri/zsh-async
-  zgen load sindresorhus/pure
-  zgen save
-fi
+# ZSH Plugins
+export ZPLUG_HOME=/usr/local/opt/zplug
+source $ZPLUG_HOME/init.zsh
+zplug "mafredri/zsh-async"
+zplug "sindresorhus/pure"
+zplug "felixr/docker-zsh-completion", as:plugin, lazy:true
+zplug "zsh-users/zaw", lazy:true
+zplug load
+
+# source $DOTFILES/zaw.bindings.zsh
+
+# Zaw Configs
+# bindkey '^R' zaw-history
+
+# source $DOTFILES/zgen/zgen.zsh
+# if ! zgen saved; then
+#   echo "Creating zgen save"
+#   zgen load felixr/docker-zsh-completion
+#   zgen load mafredri/zsh-async
+#   zgen load zsh-users/zaw
+#   zgen load sindresorhus/pure
+#   zgen save
+# fi
 
 # Locale Settings
 export LC_ALL=en_US.UTF-8
@@ -142,9 +155,6 @@ autoload -Uz copy-earlier-word
 zle -N copy-earlier-word
 
 # zsh completion
-# bash autocompletion too: http://stackoverflow.com/questions/3249432/i-have-a-bash-tab-completion-script-is-there-a-simple-way-to-use-it-from-zsh
-autoload -U +X compinit
-
 zstyle ':completion:*' menu select
 setopt correctall
 compctl -g '*(/)' rmdir dircmp j
@@ -155,18 +165,6 @@ zstyle ':completion:*' list-colors ''
 zstyle ':completion:*:default' list-colors ${(s.:.)LS_COLORS}
 
 compinit
-
-
-# Zaw Configs
-bindkey '^R' zaw-history
-bindkey -M filterselect '^R' down-line-or-history
-bindkey -M filterselect '^S' up-line-or-history
-bindkey -M filterselect '^E' accept-search
-zstyle ':filter-select:highlight' selected bg=red
-zstyle ':filter-select:highlight' matched fg=yellow,standout
-zstyle ':filter-select' rotate-list yes # enable rotation for filter-select
-zstyle ':filter-select' case-insensitive yes # enable case-insensitive
-zstyle ':filter-select' extended-search yes # see below
 
 setopt nolistambiguous # one tab for completion
 setopt MULTIOS         # tee/cat automatically
@@ -205,9 +203,6 @@ alias mmv='noglob zmv -W'
 # via https://gist.github.com/daguar/5368778
 alias drake='drip -jar /Applications/drake/target/drake.jar'
 
-# Lazy-load virtualenvwrapper
-# export VIRTUALENVWRAPPER_SCRIPT=/usr/local/bin/virtualenvwrapper.sh
-
 # Neovim
 # alias vim="nvim"
 
@@ -222,7 +217,6 @@ alias gl="git lg"
 alias l="| less"
 alias v="| vim"
 alias eclimd="/Applications/eclipse/eclimd"
-alias j7="export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.7.0_65.jdk/Contents/Home"
 alias yoink="open -a Yoink"
 
 alias vim='/usr/local/bin/vim'
@@ -243,12 +237,4 @@ alias nvms="source $(brew --prefix nvm)/nvm.sh"
 # domino
 alias domino=/Applications/domino/domino
 
-# PIP, via: https://github.com/yyuu/pyenv-virtualenv/issues/10
-# pip should only run if there is a virtualenv currently activated
-# export PIP_REQUIRE_VIRTUALENV=true
-# # cache pip-installed packages to avoid re-downloading
-# export PIP_DOWNLOAD_CACHE=$HOME/.pip/cache
-
-# export SPARK_HOME=/Users/prungta/code/spark
-# # export SPARK_HOME=/Users/prungta/code/spark-1.3.0-bin-hadoop2.4
-# export SPARK_CONF_DIR=/Users/prungta/code/spark-conf/prod
+# zprof
