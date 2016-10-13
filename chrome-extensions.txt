@@ -1,0 +1,5 @@
+- Pinboard
+- 1Password
+- Adblock Plus
+- Ghostery
+- Pocket

@@ -1,0 +1,12 @@
+* Episodes.app
+* Paprika Recipe Manager.app
+* Calca.app
+* CheatSheet.app
+* Day One.app
+* PopClip.app
+* Scrubly.app
+* Slogger
+* contacts
+* catdoc
+* VisualVM
+* 
