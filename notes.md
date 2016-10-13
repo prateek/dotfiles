@@ -14,3 +14,7 @@ tmux plugin - k understood
 
 # random pieces of code
 npm install gitignore -g
+
+
+# projects
+- `sicp`
