@@ -179,7 +179,7 @@ brew 'tokyo-cabinet'
 brew 'tree'
 brew 'unrar'
 brew 'urlview'
-brew 'macvim' --with-override-system-vim
+brew 'macvim'
 brew 'watch'
 brew 'wget'
 brew 'zsh'
