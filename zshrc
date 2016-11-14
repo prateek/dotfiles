@@ -10,13 +10,9 @@ export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.7.0_80.jdk/Contents/Home
 # export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_73.jdk/Contents/Home
 # export JAVA_HOME="/System/Library/Frameworks/JavaVM.framework/Versions/CurrentJDK/Home"
 # export JAVA_HOME="/System/Library/Frameworks/JavaVM.framework/Versions/Current/Home"
-export PATH=$JAVA_HOME/bin:$HOME/bin:/usr/local/bin:$PATH
+[ -z "$GOPATH" ] && export GOPATH="/Users/prungta/gocode"
+export PATH=$JAVA_HOME/bin:$HOME/bin:/usr/local/bin:$GOPATH/bin:$PATH
 export EDITOR="vim"
-
-# tesla begin
-export DEV_PATH=/Users/prungta/code
-export pipl="--index-url https://artifactory.dev.teslamotors.com:443/artifactory/api/pypi/sysval-release-local/simple --extra-index-url https://pypi.python.org/simple"
-# tesla end
 
 if [ -d $HOME/dotfiles ]; then
   export DOTFILES=$HOME/dotfiles
@@ -24,29 +20,31 @@ else
   export DOTFILES=$HOME
 fi
 
-# ZSH Plugins
-export ZPLUG_HOME=/usr/local/opt/zplug
-source $ZPLUG_HOME/init.zsh
-zplug "mafredri/zsh-async"
+# Uber-start
+source ~/.profile_corp
+# Uber-end
+
+# zplug (zsh plugin manager)
+export ZPLUG_HOME=$HOME/.zplug
+source $(brew --prefix zplug)/init.zsh
+# zsh plugins
+zplug "mafredri/zsh-async", on:sindresorhus/pure
 zplug "sindresorhus/pure"
 zplug "felixr/docker-zsh-completion", as:plugin, lazy:true
-zplug "zsh-users/zaw", lazy:true
+zplug "zsh-users/zaw"
+# startup
 zplug load
 
-# source $DOTFILES/zaw.bindings.zsh
-
 # Zaw Configs
-# bindkey '^R' zaw-history
-
-# source $DOTFILES/zgen/zgen.zsh
-# if ! zgen saved; then
-#   echo "Creating zgen save"
-#   zgen load felixr/docker-zsh-completion
-#   zgen load mafredri/zsh-async
-#   zgen load zsh-users/zaw
-#   zgen load sindresorhus/pure
-#   zgen save
-# fi
+bindkey -M filterselect '^R' down-line-or-history
+bindkey -M filterselect '^S' up-line-or-history
+bindkey -M filterselect '^E' accept-search
+zstyle ':filter-select:highlight' selected bg=red
+zstyle ':filter-select:highlight' matched fg=yellow,standout
+zstyle ':filter-select' rotate-list yes
+zstyle ':filter-select' case-insensitive yes
+zstyle ':filter-select' extended-search yes
+bindkey '^R' zaw-history
 
 # Locale Settings
 export LC_ALL=en_US.UTF-8
@@ -219,8 +217,6 @@ alias v="| vim"
 alias eclimd="/Applications/eclipse/eclimd"
 alias yoink="open -a Yoink"
 
-alias vim='/usr/local/bin/vim'
-
 export PIP_REQUIRE_VIRTUALENV=true
 # define a "global pip" function to use outside virtualenv:
 gpip(){
@@ -233,8 +229,5 @@ eval "$(pyenv virtualenv-init -)"
 # via: http://stackoverflow.com/questions/28017374/what-is-the-suggested-way-to-install-brew-node-js-io-js-nvm-npm-on-os-x
 export NVM_DIR=~/.nvm
 alias nvms="source $(brew --prefix nvm)/nvm.sh"
-
-# domino
-alias domino=/Applications/domino/domino
 
 # zprof

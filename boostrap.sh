@@ -14,7 +14,6 @@ ln -s $CWD/zshrc $HOME/.zshrc
 # directories
 mkdir -p $HOME/code
 
-
 # vim setup
 $CWD/install-vim-plug.sh
-vim -c "PlugInstall" #TODO:
+vim -c "PlugInstall" #TODO: quit
