@@ -10,7 +10,7 @@ export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.7.0_80.jdk/Contents/Home
 # export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_73.jdk/Contents/Home
 # export JAVA_HOME="/System/Library/Frameworks/JavaVM.framework/Versions/CurrentJDK/Home"
 # export JAVA_HOME="/System/Library/Frameworks/JavaVM.framework/Versions/Current/Home"
-[ -z "$GOPATH" ] && export GOPATH="/Users/prungta/gocode"
+export GOPATH="/Users/prungta/code/gocode"
 export PATH=$JAVA_HOME/bin:$HOME/bin:/usr/local/bin:$GOPATH/bin:$PATH
 export EDITOR="vim"
 
@@ -20,9 +20,12 @@ else
   export DOTFILES=$HOME
 fi
 
-# Uber-start
-source ~/.profile_corp
-# Uber-end
+# uber-start
+# source ~/.profile_corp
+export UBER_HOME="$HOME/Uber"
+export UBER_OWNER="rungta@uber.com"
+export UBER_LDAP_UID=rungta
+# uber-end
 
 # zplug (zsh plugin manager)
 export ZPLUG_HOME=$HOME/.zplug
@@ -190,12 +193,6 @@ alias tmux="TERM=screen-256color-bce tmux -2"
 alias ta='tmux attach -t'
 alias ts='tmux new-session -s'
 alias tl='tmux list-sessions'
-
-# stackoverflow in commandline
-alias h='howdoi --color'
-
-# zmv aliases
-alias mmv='noglob zmv -W'
 
 # drake using drip
 # via https://gist.github.com/daguar/5368778

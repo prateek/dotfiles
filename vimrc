@@ -304,9 +304,13 @@ augroup VimReload
 augroup END
 
 " persistent undo
+if !isdirectory($HOME . "/.vim/undo")
+    call mkdir($HOME . "/.vim/undo", "p")
+endif
 set undofile
-set undodir=$HOME/.VIM_UNDO_FILES
+set undodir=$HOME/.vim/undo " directory needs to exist(!)
 set undolevels=10000
+set undoreload=10000        " number of lines to save for undo
 
 " visual mode defaults
 set virtualedit=block
@@ -551,3 +555,9 @@ vnoremap K :m '<-2<CR>gv=gv"
 " syn match Evenlines "^.*$" contains=ALL nextgroup=Oddlines skipnl
 " hi Oddlines ctermbg=yellow guibg=#FFFF99
 " hi Evenlines ctermbg=magenta guibg=#FFCCFF
+
+" Uncomment the following to have Vim jump to the last position when reopening a file
+" via http://askubuntu.com/questions/223018/vim-is-not-remembering-last-position
+if has("autocmd")
+  au BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
+endif
