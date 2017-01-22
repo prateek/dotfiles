@@ -36,16 +36,16 @@ Plug 'tpope/vim-unimpaired'
 Plug 'tpope/vim-commentary'
 
 " Plug 'vim-scripts/maven-plugin'
-Plug 'wesQ3/vim-windowswap'
+" Plug 'wesQ3/vim-windowswap'
 Plug 'tommcdo/vim-exchange'
 Plug 'sjl/gundo.vim'
 
 Plug 'luochen1990/rainbow'
-" Plug 'scrooloose/syntastic' " Syntax Error Checking
+Plug 'vim-syntastic/syntastic', { 'for': 'go' } " Syntax Error Checking
 
 " Emacs bindings for Vim's CLI
 Plug 'bruno-/vim-husk'
-" Plug 'mileszs/ack.vim'
+Plug 'mileszs/ack.vim'
 Plug 'wincent/ferret'
 
 Plug 'jiangmiao/auto-pairs'     " AutoPair Brackets
@@ -53,7 +53,7 @@ Plug 'wellle/targets.vim'       " TextObject Extensions
 Plug 'wellle/tmux-complete.vim' " Auto complete across tmux panes
 
 " Autocomplete
-" Plug 'Valloric/YouCompleteMe', { 'do': './install.sh' , 'for': ['python', 'cpp']}
+" Plug 'Valloric/YouCompleteMe', { 'do': './install.sh' , 'for': ['go', 'cpp']}
 Plug 'Valloric/YouCompleteMe', { 'do': './install.sh' , 'for': 'cpp'}
 
 " Snippets
@@ -88,6 +88,14 @@ Plug 'tpope/vim-salve', { 'for': 'clojure'  }
 Plug 'tpope/vim-fireplace', { 'for': 'clojure'  }
 Plug 'guns/vim-clojure-static', { 'for': 'clojure'  }
 Plug 'guns/vim-clojure-highlight', { 'for': 'clojure'  }
+
+" Golang
+Plug 'fatih/vim-go', { 'for': 'go' }
+Plug 'majutsushi/tagbar', { 'for': 'go' }
+Plug 'godoctor/godoctor.vim', { 'for': 'go' }
+Plug 'Shougo/deoplete.nvim', { 'do': ':UpdateRemotePlugins', 'for': 'go' }
+Plug 'zchee/deoplete-go', { 'do': 'make', 'for': 'go' }
+" remember to install gocode: ``go get -u github.com/nsf/gocode``
 
 " vim-scripts repos
 Plug 'L9'
@@ -222,7 +230,6 @@ let g:vim_markdown_initial_foldlevel=1
 let g:vim_markdown_folding_disabled=1
 
 " writing plugins
-
 let g:buffergator_suppress_keymaps=1
 nnoremap <silent> <leader>b :BuffergatorOpen<CR>
 nnoremap <silent> [b :BuffergatorMruCyclePrev<CR>
@@ -291,6 +298,24 @@ nnoremap k gk
 nnoremap gk k
 nnoremap gj j
 
+" vim-go golang
+let g:go_highlight_functions = 1
+let g:go_highlight_methods = 1
+let g:go_highlight_fields = 1
+let g:go_highlight_types = 1
+let g:go_highlight_operators = 1
+let g:go_highlight_build_constraints = 1
+let g:go_fmt_command = "goimports"
+let g:go_info_mode = 'gocode'
+
+nnoremap <Leader>t :TagbarToggle<CR>
+
+au FileType go nnoremap <Leader>i :GoInfo<CR>
+
+" ack.vim -> ag
+let g:ackprg = 'ag --nogroup --nocolor --column'
+" let g:ackprg = 'ag --vimgrep' " include multiple matches per line
+
 " iTerm2 is remapping S-Space to C-U
 " toggle hold with <S-Space> if over a fold
 nnoremap <C-U> za
@@ -335,7 +360,7 @@ set nolist
 
 " TrailerTrash Trim
 " nnoremap cot :Trim<bar>w<CR>
-nnoremap <Leader>t :TrailerTrim<CR>
+" nnoremap <Leader>t :TrailerTrim<CR>
 
 " set current file's directory as the vim directory
 nnoremap <Leader>c :cd %:p:h<CR>
@@ -403,9 +428,9 @@ nnoremap ! :Clam<space>
 vnoremap ! :ClamVisual<space>
 
 " window swap vim
-let g:windowswap_map_keys = 0 "prevent default bindings
-nnoremap <silent> <Leader>yw :call WindowSwap#MarkWindowSwap()<CR>
-nnoremap <silent> <Leader>pw :call WindowSwap#DoWindowSwap()<CR>
+" let g:windowswap_map_keys = 0 "prevent default bindings
+" nnoremap <silent> <Leader>yw :call WindowSwap#MarkWindowSwap()<CR>
+" nnoremap <silent> <Leader>pw :call WindowSwap#DoWindowSwap()<CR>
 
 " nerdtree left
 let g:NERDTreeWinPos = "left"
@@ -518,26 +543,26 @@ let g:rainbow_ctermfgs = ['lightblue', 'lightgreen', 'yellow', 'red', 'magenta']
 
 " YCM with UltiSnips
   " https://github.com/Valloric/YouCompleteMe/issues/36#issuecomment-15722669
-let g:UltiSnipsExpandTrigger       = "<tab>"
-let g:UltiSnipsJumpForwardTrigger  = "<tab>"
-let g:UltiSnipsJumpBackwardTrigger = "<s-tab>"
+" let g:UltiSnipsExpandTrigger       = "<tab>"
+" let g:UltiSnipsJumpForwardTrigger  = "<tab>"
+" let g:UltiSnipsJumpBackwardTrigger = "<s-tab>"
 
-function! g:UltiSnips_Complete()
-    call UltiSnips#ExpandSnippet()
-    if g:ulti_expand_res == 0
-        if pumvisible()
-            return "\<C-n>"
-        else
-          call UltiSnips#JumpForwards()
-          if g:ulti_jump_forwards_res == 0
-            return "\<TAB>"
-          endif
-        endif
-    endif
-    return ""
-endfunction
+" function! g:UltiSnips_Complete()
+"     call UltiSnips#ExpandSnippet()
+"     if g:ulti_expand_res == 0
+"         if pumvisible()
+"             return "\<C-n>"
+"         else
+"           call UltiSnips#JumpForwards()
+"           if g:ulti_jump_forwards_res == 0
+"             return "\<TAB>"
+"           endif
+"         endif
+"     endif
+"     return ""
+" endfunction
 
-au InsertEnter * exec "inoremap <silent> " . g:UltiSnipsExpandTrigger . " <C-R>=g:UltiSnips_Complete()<cr>"
+" au InsertEnter * exec "inoremap <silent> " . g:UltiSnipsExpandTrigger . " <C-R>=g:UltiSnips_Complete()<cr>"
 
 " IndentGuides
 nnoremap coi :IndentGuidesToggle<CR>

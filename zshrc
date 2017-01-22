@@ -1,4 +1,13 @@
-# Profile ZSH: https://github.com/zsh-users/zsh-syntax-highlighting/issues/30#issuecomment-4310722
+
+
+#
+# User configuration sourced by interactive shells
+#
+
+# Source zim
+if [[ -s ${ZDOTDIR:-${HOME}}/.zim/init.zsh ]]; then
+  source ${ZDOTDIR:-${HOME}}/.zim/init.zsh
+fi# Profile ZSH: https://github.com/zsh-users/zsh-syntax-highlighting/issues/30#issuecomment-4310722
 # u
 # Begining:
 # zmodload zsh/zprof
@@ -28,15 +37,18 @@ export UBER_LDAP_UID=rungta
 # uber-end
 
 # zplug (zsh plugin manager)
-export ZPLUG_HOME=$HOME/.zplug
-source $(brew --prefix zplug)/init.zsh
-# zsh plugins
-zplug "mafredri/zsh-async", on:sindresorhus/pure
-zplug "sindresorhus/pure"
-zplug "felixr/docker-zsh-completion", as:plugin, lazy:true
-zplug "zsh-users/zaw"
-# startup
-zplug load
+# export ZPLUG_HOME=/usr/local/opt/zplug
+# source $ZPLUG_HOME/init.zsh
+# # export ZPLUG_HOME=$HOME/.zplug
+# # source $(brew --prefix zplug)/init.zsh
+# # source $ZPLUG_HOME/init.zsh
+# # zsh plugins
+# zplug "mafredri/zsh-async", on:sindresorhus/pure
+# zplug "sindresorhus/pure"
+# zplug "felixr/docker-zsh-completion", as:plugin, lazy:true
+# zplug "zsh-users/zaw"
+# # startup
+# zplug load
 
 # Zaw Configs
 bindkey -M filterselect '^R' down-line-or-history
@@ -222,9 +234,21 @@ gpip(){
 eval "$(pyenv init -)"
 eval "$(pyenv virtualenv-init -)"
 
+# rbenv
+eval "$(rbenv init -)"
+
 # npm, nodejs
 # via: http://stackoverflow.com/questions/28017374/what-is-the-suggested-way-to-install-brew-node-js-io-js-nvm-npm-on-os-x
 export NVM_DIR=~/.nvm
 alias nvms="source $(brew --prefix nvm)/nvm.sh"
 
+# go-test-all
+# from http://stackoverflow.com/questions/16353016/how-to-go-test-all-testings-in-my-project
+alias gotestall='go test $(go list ./... | grep -v /vendor/)'
+
+# autojump sourcing
+[[ -s $(brew --prefix)/etc/profile.d/autojump.sh ]] && . $(brew --prefix)/etc/profile.d/autojump.sh
+
 # zprof
+echo "Hey!"
+
