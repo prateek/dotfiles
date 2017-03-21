@@ -12,7 +12,8 @@ Plug 'altercation/vim-colors-solarized'
 
 Plug 'amix/vim-zenroom2'
 Plug 'bling/vim-airline'
-Plug 'christoomey/vim-tmux-navigator'
+" Plug 'christoomey/vim-tmux-navigator'
+" replaced tmux navigator with iterm2 navigator
 
 Plug 'junegunn/goyo.vim'
 Plug 'godlygeek/tabular'
@@ -69,6 +70,7 @@ Plug 'wincent/terminus'
 "" Reveal in finder
 Plug 'henrik/vim-reveal-in-finder'
 Plug 'itspriddle/vim-marked'
+Plug 'zephod/vim-iterm2-navigator'
 
 "" Dash.app integration - Mac Specific
 " Plug 'rizzatti/funcoo.vim'
