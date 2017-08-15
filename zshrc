@@ -44,17 +44,6 @@ export UBER_LDAP_UID=rungta
 # # Then, source plugins and add commands to $PATH
 # zplug load
 
-# Zaw Configs
-# bindkey -M filterselect '^R' down-line-or-history
-# bindkey -M filterselect '^S' up-line-or-history
-# bindkey -M filterselect '^E' accept-search
-# zstyle ':filter-select:highlight' selected bg=red
-# zstyle ':filter-select:highlight' matched fg=yellow,standout
-# zstyle ':filter-select' rotate-list yes
-# zstyle ':filter-select' case-insensitive yes
-# zstyle ':filter-select' extended-search yes
-# bindkey '^R' zaw-history
-
 # Locale Settings
 export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
@@ -167,6 +156,18 @@ compctl -g '*(-/)' cd chdir dirs pushd j
 zstyle ':completion:*' list-colors ''
 zstyle ':completion:*:default' list-colors ${(s.:.)LS_COLORS}
 
+# Zaw Configs
+source $DOTFILES/zsh-plugins/zaw/zaw.zsh
+bindkey -M filterselect '^R' down-line-or-history
+bindkey -M filterselect '^S' up-line-or-history
+bindkey -M filterselect '^E' accept-search
+zstyle ':filter-select:highlight' selected bg=red
+zstyle ':filter-select:highlight' matched fg=yellow,standout
+zstyle ':filter-select' rotate-list yes
+zstyle ':filter-select' case-insensitive yes
+zstyle ':filter-select' extended-search yes
+bindkey '^R' zaw-history
+
 autoload -U promptinit; promptinit
 prompt pure
 # compinit
@@ -207,6 +208,11 @@ alias gt="git tag"
 alias gb="git branch"
 alias gca="git commit -a"
 alias gl="git lg"
+alias gco="git checkout --recurse-submodules"
+# git worktree (tutorial: https://stacktoheap.com/blog/2016/01/19/using-multiple-worktrees-with-git/)
+alias gwa='git worktree add'
+alias gwp='git worktree prune'
+alias gwl='git worktree list'
 # adapted from: http://stackoverflow.com/questions/14031970/git-push-current-branch-shortcut
 function gpb()
 {
@@ -229,8 +235,10 @@ gpip(){
     PIP_REQUIRE_VIRTUALENV="" pip "$@"
 }
 
-# eval "$(pyenv init -)"
-# eval "$(pyenv virtualenv-init -)"
+init_pyenv(){
+  eval "$(pyenv init -)"
+  eval "$(pyenv virtualenv-init -)"
+}
 
 # rbenv
 # eval "$(rbenv init -)"
@@ -240,11 +248,55 @@ gpip(){
 # export NVM_DIR=~/.nvm
 # alias nvms="source $(brew --prefix nvm)/nvm.sh"
 
+# WIP quick git commit
+alias wip='git commit -am "WIP"'
+
 # go-test-all
 # from http://stackoverflow.com/questions/16353016/how-to-go-test-all-testings-in-my-project
 alias gotestall='go test $(go list ./... | grep -v /vendor/)'
+add_licence(){
+  go list ./... | grep -v /vendor/ | xargs -I{} sh -c "cd $GOPATH/src/{} && uber-licence --file *.go"
+}
 
 # autojump sourcing
 source /usr/local/etc/profile.d/autojump.sh
+
+diff_statsdex_configs()
+{
+  set -e # paranoia, ftw
+
+  if [ -z "$1" ]; then
+    echo "usage: diff_statsdex_configs <branch>"
+    return 0
+  fi
+  local branch=$1
+
+  cd ~/code/gocode/src/code.uber.internal/infra/statsdex
+
+  source ./udeploy/cfg_clusters.sh
+  temp_dir=$(mktemp -d)
+  echo "temp dir: ${temp_dir}"
+
+  git checkout master
+  echo "making master"
+  make clean
+  for c in $(echo $CFG_CLUSTERS | tr ' ' '\n'); do echo $c ; CLUSTER=$c make build-all-config ; done
+  echo "moving ./out/ to ${temp_dir}/out-master"
+  mv ./out ${temp_dir}/out-master
+
+  git checkout ${branch}
+  echo "making ${branch}"
+  make clean
+  for c in $(echo $CFG_CLUSTERS | tr ' ' '\n'); do echo $c ; CLUSTER=$c make build-all-config ; done
+  echo "moving ./out/ to ${temp_dir}/out-branch"
+  mv ./out ${temp_dir}/out-branch
+
+  echo "configs created"
+  echo "suggested diffs to look at: "
+  echo "  vim -d ${temp_dir}/out-master ${temp_dir}/out-branch"
+  echo "  diff -rq ${temp_dir}/out-master ${temp_dir}/out-branch"
+
+  echo "remember to cleanup dir: ${temp_dir} once you're done diffing"
+}
 
 # zprof
