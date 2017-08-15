@@ -5,7 +5,7 @@
 # Note: This uses ZSH specific shell features, but considering this is for zsh plugin install, w/e.
 # Author: Prateek Rungta
 
-CWD=$(dirname "$0")
+CWD=${0:a:h} # https://unix.stackexchange.com/questions/76505/portable-way-to-get-scripts-absolute-path
 RAW_FOLDER=$CWD/raw
 FUNCTION_FOLDER=$CWD/zfunctions
 COMPLETION_FOLDER=$CWD/completions

@@ -18,7 +18,7 @@ if [ -d $HOME/dotfiles ]; then
 else
   export DOTFILES=$HOME
 fi
-fpath=( "$DOTFILES/zsh-plugins/zfunctions" $fpath )
+fpath=( "$DOTFILES/zsh-plugins/zfunctions" "$DOTFILES/zsh-plugins/completions" $fpath )
 
 # uber-start
 # source ~/.profile_corp
@@ -168,9 +168,9 @@ zstyle ':filter-select' case-insensitive yes
 zstyle ':filter-select' extended-search yes
 bindkey '^R' zaw-history
 
-autoload -U promptinit; promptinit
+autoload -U promptinit && promptinit
 prompt pure
-# compinit
+autoload -U compinit && compinit
 
 setopt nolistambiguous # one tab for completion
 setopt MULTIOS         # tee/cat automatically
