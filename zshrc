@@ -206,7 +206,7 @@ alias sz='source ~/.zshrc'
 alias ez='vim ~/.zshrc'
 
 # copy with a progress bar
-alias cpv="rsync -poghb --backup-dir=/tmp/rsync -e /dev/null --progress --"
+alias cpv="rsync -rpoghb --backup-dir=/tmp/rsync -e /dev/null --progress --"
 
 # tmux color
 alias tmux="TERM=screen-256color-bce tmux -2"
