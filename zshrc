@@ -6,12 +6,23 @@
 # zprof
 
 # PATH(s)
-export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.7.0_80.jdk/Contents/Home
-export GOPATH=/Users/prungta/code/gocode
-export GOROOT=/usr/local/opt/go/libexec
-export PATH=$JAVA_HOME/bin:$HOME/bin:/usr/local/bin:$GOPATH/bin:$PATH
-export EDITOR="vim"
+export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_112.jdk/Contents/Home
+# JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.7.0_80.jdk/Contents/Home
+export PATH=$JAVA_HOME/bin:$HOME/bin:/usr/local/bin:$GOPATH/bin:$HOME/code/FlameGraph:$PATH
+export EDITOR="nvim"
 
+# Go aliases
+export GOPATH=/Users/prungta/code/gocode
+# Never, ever set GOROOT.
+# Multiple installs of go using https://dave.cheney.net/2014/04/20/how-to-install-multiple-versions-of-go
+# GOBASE=/Users/prungta/code/go1.7.4/bin
+GOBASE=/Users/prungta/code/go1.13.4/bin
+alias go=$GOBASE/go
+GOCODEBIN=/Users/prungta/code/gocode/bin
+PATH=$GOBASE:$GOCODEBIN:$PATH
+
+PATH=$PATH:/Users/prungta/.cargo/bin
+export PATH
 
 if [ -d $HOME/dotfiles ]; then
   export DOTFILES=$HOME/dotfiles
@@ -25,6 +36,7 @@ fpath=( "$DOTFILES/zsh-plugins/zfunctions" "$DOTFILES/zsh-plugins/completions" $
 export UBER_HOME="$HOME/Uber"
 export UBER_OWNER="rungta@uber.com"
 export UBER_LDAP_UID=rungta
+alias urc=/Users/prungta/code/gocode/src/github.com/uber/arcanist/bin/arc
 # uber-end
 
 # zplug (zsh plugin manager)
@@ -61,7 +73,7 @@ export M2_REPO=$HOME/.m2/repository
 # ipython
 # alias ip='ipython qtconsole --pylab=inline'
 # alias ipn="ipython notebook $HOME/trash/notebooks"
-#export PYTHONPATH=/usr/local/lib/python2.7/site-packages:
+# export PYTHONPATH=/usr/local/lib/python2.7/site-packages:
 
 # enable color support of ls and also add handy aliases
 ## colorize ls
@@ -122,8 +134,7 @@ bindkey -M vicmd "??" history-beginning-search-forward
 bindkey -M vicmd "q" push-line   # copy buffer to stack and clear, reload it next tiem editor starts up
 bindkey -M viins ' ' magic-space # it's like, space AND completion.  Gnarlbot.
 bindkey -M vicmd '!' edit-command-output
-bindkey -M vicmd 'v' edit-command-line
-bindkey -M vicmd 'u' undo
+# bindkey -M vicmd 'v' edit-command-line bindkey -M vicmd 'u' undo
 
 # Ensure that arrow keys work as they should
 bindkey '\e[A' up-line-or-history
@@ -135,6 +146,10 @@ bindkey '\e[D' backward-char
 bindkey '\eOC' forward-char
 bindkey '\eOD' backward-char
 bindkey "^?" backward-delete-char
+
+# ensure alt+arrow keys work
+bindkey "^[^[[D" backward-word
+bindkey "^[^[[C" forward-word
 
 # vim editing for commands
 autoload -z edit-command-line
@@ -200,7 +215,7 @@ alias ts='tmux new-session -s'
 alias tl='tmux list-sessions'
 
 # Neovim
-# alias vim="nvim"
+alias vim="nvim"
 
 # scmpuff
 eval "$(scmpuff init -s)"
@@ -209,10 +224,6 @@ alias gb="git branch"
 alias gca="git commit -a"
 alias gl="git lg"
 alias gco="git checkout --recurse-submodules"
-# git worktree (tutorial: https://stacktoheap.com/blog/2016/01/19/using-multiple-worktrees-with-git/)
-alias gwa='git worktree add'
-alias gwp='git worktree prune'
-alias gwl='git worktree list'
 # adapted from: http://stackoverflow.com/questions/14031970/git-push-current-branch-shortcut
 function gpb()
 {
@@ -222,6 +233,8 @@ function gpb()
         git push -u origin HEAD
     fi
 }
+
+alias gr='GIT_SEQUENCE_EDITOR=~/bin/squash_branch.sh git rebase -i'
 
 # convenience
 alias l="| less"
@@ -261,42 +274,27 @@ add_licence(){
 # autojump sourcing
 source /usr/local/etc/profile.d/autojump.sh
 
-diff_statsdex_configs()
-{
-  set -e # paranoia, ftw
+function nodexp() {
+  open -a /Applications/Google\ Chrome.app "https://meta-grafana4.uberinternal.com/dashboard/db/node-exporter?var-host=$1&var-dc=*"
+}
 
-  if [ -z "$1" ]; then
-    echo "usage: diff_statsdex_configs <branch>"
-    return 0
-  fi
-  local branch=$1
 
-  cd ~/code/gocode/src/code.uber.internal/infra/statsdex
+# extract_diff assumes a bunch of shit
+# requires that the differential revision be mentioned in the commit message of the first commit on the branch based off master
+# i.e. no chaining of diffs, no base branch which isn't master, etc.
+function extract_diff() {
+  git log --format='%B' -n1 $(git log master..HEAD --oneline | tail -n1 | cut -d ' ' -f 1) | grep 'https://code.uberinternal.com' | sed -e 's@.*\(D[0-9][0-9]*\)$@\1@'
+}
 
-  source ./udeploy/cfg_clusters.sh
-  temp_dir=$(mktemp -d)
-  echo "temp dir: ${temp_dir}"
+# au is only meant to be used during update, not for creation.
+function au() {
+  arc diff --update $(extract_diff) $(git merge-base master HEAD) $@
+}
 
-  git checkout master
-  echo "making master"
-  make clean
-  for c in $(echo $CFG_CLUSTERS | tr ' ' '\n'); do echo $c ; CLUSTER=$c make build-all-config ; done
-  echo "moving ./out/ to ${temp_dir}/out-master"
-  mv ./out ${temp_dir}/out-master
-
-  git checkout ${branch}
-  echo "making ${branch}"
-  make clean
-  for c in $(echo $CFG_CLUSTERS | tr ' ' '\n'); do echo $c ; CLUSTER=$c make build-all-config ; done
-  echo "moving ./out/ to ${temp_dir}/out-branch"
-  mv ./out ${temp_dir}/out-branch
-
-  echo "configs created"
-  echo "suggested diffs to look at: "
-  echo "  vim -d ${temp_dir}/out-master ${temp_dir}/out-branch"
-  echo "  diff -rq ${temp_dir}/out-master ${temp_dir}/out-branch"
-
-  echo "remember to cleanup dir: ${temp_dir} once you're done diffing"
+function reposearch() {
+  echo "{\"constraints\": {\"name\": \"$1\"}}"     \
+    | arc call-conduit diffusion.repository.search \
+    | jq -r '.response.data[] | "\(.fields.name) - https://code.uberinternal.com/diffusion/\(.fields.callsign)"'
 }
 
 # zprof

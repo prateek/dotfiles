@@ -12,6 +12,7 @@ Plug 'altercation/vim-colors-solarized'
 
 Plug 'amix/vim-zenroom2'
 Plug 'bling/vim-airline'
+Plug 'vim-airline/vim-airline-themes'
 " Plug 'christoomey/vim-tmux-navigator'
 " replaced tmux navigator with iterm2 navigator
 
@@ -167,7 +168,7 @@ set bg=dark
 " colorscheme solarized
 colorscheme badwolf
 " colorscheme PaperColor
-let g:airline_theme='PaperColor'
+" let g:airline_theme='PaperColor'
 
 " Keep this below the colorschemes
 filetype plugin indent on     " required!
@@ -274,7 +275,7 @@ set nrformats-=octal
 set shiftround
 
 " timeout fixes
-set esckeys
+" set esckeys
 set ttimeoutlen=10
 augroup FastEscape
     autocmd!
