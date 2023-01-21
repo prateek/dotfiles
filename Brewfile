@@ -5,20 +5,11 @@ tap "discoteq/discoteq"
 tap "go-delve/delve"
 tap "go-swagger/go-swagger"
 tap "holgerbrandl/tap"
-tap "homebrew/boneyard"
 tap "homebrew/bundle"
 tap "homebrew/cask"
 tap "homebrew/cask-fonts"
 tap "homebrew/cask-versions"
-tap "homebrew/completions"
 tap "homebrew/core"
-tap "homebrew/dupes"
-tap "homebrew/fuse"
-tap "homebrew/games"
-tap "homebrew/php"
-tap "homebrew/python"
-tap "homebrew/science"
-tap "homebrew/versions"
 tap "neovim/neovim"
 tap "saulpw/vd"
 tap "thoughtbot/formulae"
@@ -60,15 +51,12 @@ brew "docker"
 brew "dos2unix"
 brew "doxygen"
 brew "drake"
-brew "drip"
 brew "e2fsprogs"
 brew "ec2-api-tools"
 brew "emacs", link: false
 brew "little-cms2"
 brew "epstool"
-brew "epsxe"
 brew "exercism"
-brew "ext4fuse"
 brew "fdupes"
 brew "findutils"
 brew "fondu"
@@ -159,7 +147,7 @@ brew "sip", args: ["with-python3"]
 brew "pyqt"
 brew "python-yq"
 brew "q"
-brew "qcachegrind", args: ["with-graphviz"]
+brew "qcachegrind"
 brew "qhull"
 brew "qscintilla2"
 brew "ruby-build"
@@ -178,21 +166,18 @@ brew "socat"
 brew "solr"
 brew "source-highlight"
 brew "ssh-copy-id"
-brew "sshpass"
 brew "st"
 brew "telnet"
 brew "tesseract"
 brew "texinfo"
 brew "the_silver_searcher"
 brew "tldr"
-brew "tmux-cssh"
-brew "transpose"
 brew "tree"
 brew "urlview"
 brew "utf8proc"
-brew "vim", args: ["with-override-system-vi"]
+brew "vim"
 brew "watchman"
-brew "wine"
+brew "wine-stable"
 brew "winetricks"
 brew "yarn"
 brew "zplug"
@@ -202,16 +187,12 @@ brew "d12frosted/emacs-plus/emacs-plus"
 brew "go-swagger/go-swagger/go-swagger"
 brew "saulpw/vd/visidata"
 brew "thoughtbot/formulae/gitsh"
-brew "visual-studio-code"
 
 tap "uber/alt", "gitolite@code.uber.internal:homebrew-alt"
 brew "uber/alt/assigner"
-brew "unison240-uber"
 brew "uber/alt/cerberus"
 brew "uber/alt/go-build", args: ["HEAD"]
 brew "uber/alt/moncon"
-brew "uber/alt/objective-caml401-uber"
-brew "uber/alt/uber-developer"
 brew "uber/alt/upt"
 
 mas "Amphetamine", id: 937984704
@@ -230,49 +211,45 @@ mas "Yoink", id: 457622435
 cask_args appdir: '/Applications'
 cask 'dropbox'
 cask '1password'
-cask 'acorn'
-cask 'adium'
-cask 'airflow'
-cask 'airparrot'
+cask 'iterm2'
+cask "visual-studio-code"
 cask 'alfred'
-cask 'atom'
 cask 'bartender'
 cask 'bettertouchtool'
-cask 'black-screen'
-cask 'brackets'
-cask 'caffeine'
-cask 'colloquy'
-cask 'cuttle'
-cask 'dash'
-cask 'disk-inventory-x'
-cask 'evernote'
-cask 'fantastical'
-cask 'fastscripts'
-cask 'growlnotify'
-cask 'iterm2'
-cask 'java8'
-cask 'karabiner'
+cask 'moom'
+cask 'nvalt'
+cask 'karabiner-elements'
 cask 'key-codes'
 cask 'launchcontrol'
 cask 'lingon-x'
 cask 'marked'
 cask 'miniconda'
 cask 'monodraw'
-cask 'moom'
-cask 'nvalt'
+cask 'acorn'
+cask 'adium'
+cask 'airflow'
+cask 'airparrot'
+cask 'atom'
+cask 'brackets'
+cask 'caffeine'
+cask 'colloquy'
+cask 'dash'
+cask 'disk-inventory-x'
+cask 'evernote'
+cask 'fantastical'
+cask 'fastscripts'
+cask 'growlnotify'
+cask 'java'
 cask 'omnifocus'
 cask 'omnigraffle'
 cask 'postman'
 cask 'racket'
 cask 'rescuetime'
 cask 'scrivener'
-cask 'seil'
 cask 'sequel-pro'
-cask 'shimo'
 cask 'skitch'
 cask 'skype'
 cask 'spotify'
-cask 'sublime-text3'
 cask 'taskpaper'
 cask 'textexpander'
 cask 'transmission'

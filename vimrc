@@ -101,7 +101,7 @@ Plug 'zchee/deoplete-go', { 'do': 'make', 'for': 'go' }
 " remember to install gocode: ``go get -u github.com/nsf/gocode``
 
 " vim-scripts repos
-Plug 'L9'
+Plug 'vim-scripts/L9'
 Plug 'csexton/trailertrash.vim' " TrailerTrash
 
 " Background vim compile
@@ -148,7 +148,7 @@ Plug 'jeetsukumaran/vim-buffergator'
 Plug 'Lokaltog/vim-easymotion'
 
 " ExtractLinks
-Plug 'ingo-library' | Plug 'PatternsOnText' | Plug 'ExtractMatches' | Plug 'ExtractLinks'
+Plug 'vim-scripts/ingo-library' | Plug 'vim-scripts/PatternsOnText' | Plug 'vim-scripts/ExtractMatches' | Plug 'vim-scripts/ExtractLinks'
 
 " Transpose Tabular data
 Plug 'salsifis/vim-transpose'
