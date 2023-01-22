@@ -54,10 +54,6 @@ Plug 'jiangmiao/auto-pairs'     " AutoPair Brackets
 Plug 'wellle/targets.vim'       " TextObject Extensions
 Plug 'wellle/tmux-complete.vim' " Auto complete across tmux panes
 
-" Autocomplete
-" Plug 'Valloric/YouCompleteMe', { 'do': './install.sh' , 'for': ['go', 'cpp']}
-Plug 'Valloric/YouCompleteMe', { 'do': './install.sh' , 'for': 'cpp'}
-
 " Snippets
 Plug 'MarcWeber/vim-addon-mw-utils'
 Plug 'tomtom/tlib_vim'
@@ -72,12 +68,6 @@ Plug 'wincent/terminus'
 Plug 'henrik/vim-reveal-in-finder'
 Plug 'itspriddle/vim-marked'
 Plug 'zephod/vim-iterm2-navigator'
-
-"" Dash.app integration - Mac Specific
-" Plug 'rizzatti/funcoo.vim'
-" Plug 'rizzatti/dash.vim'
-Plug 'mattboehm/vim-unstack'
-Plug 'tpope/vim-projectionist'
 
 " Lisps
 Plug 'wlangstroth/vim-racket'
@@ -199,13 +189,6 @@ nnoremap <Leader>x :ExtractLinks<bar>:$put<CR>
 " ZoomWin.vim
 nnoremap <silent> <Leader>z :ZoomWin<CR>
 
-" TabCompletion - YCM + UtilSnips
-let g:ycm_collect_identifiers_from_tags_files = 1
-let g:ycm_auto_trigger = 1
-let g:ycm_autoclose_preview_window_after_insertion=1
-" iTerm2 is taking care of the S-space -> C-U mapping
-" let g:ycm_key_invoke_completion = '<C-U>'
-
 "  syntax
 "" markdown
 " augroup markdown
@@ -310,8 +293,6 @@ let g:go_highlight_operators = 1
 let g:go_highlight_build_constraints = 1
 let g:go_fmt_command = "goimports"
 let g:go_info_mode = 'gocode'
-
-nnoremap <Leader>t :TagbarToggle<CR>
 
 au FileType go nnoremap <Leader>i :GoInfo<CR>
 
@@ -439,8 +420,8 @@ vnoremap ! :ClamVisual<space>
 let g:NERDTreeWinPos = "left"
 
 " maven
-nnoremap <silent> <Leader>mp :Mvn package<bar>:redr!<bar>:ccl<bar>:copen<CR>
-nnoremap <silent> <Leader>mc :Mvn compile<bar>:redr!<bar>:ccl<bar>:copen<CR>
+" nnoremap <silent> <Leader>mp :Mvn package<bar>:redr!<bar>:ccl<bar>:copen<CR>
+" nnoremap <silent> <Leader>mc :Mvn compile<bar>:redr!<bar>:ccl<bar>:copen<CR>
 
 " fugitive mappings
 nnoremap <silent> <Leader>gs :Gstatus<CR>
@@ -543,29 +524,6 @@ nnoremap cr :RainbowToggle<CR>
 let g:rainbow_active = 1
 let g:rainbow_guifgs = ['RoyalBlue3', 'DarkOrange3', 'DarkOrchid3', 'FireBrick']
 let g:rainbow_ctermfgs = ['lightblue', 'lightgreen', 'yellow', 'red', 'magenta']
-
-" YCM with UltiSnips
-  " https://github.com/Valloric/YouCompleteMe/issues/36#issuecomment-15722669
-" let g:UltiSnipsExpandTrigger       = "<tab>"
-" let g:UltiSnipsJumpForwardTrigger  = "<tab>"
-" let g:UltiSnipsJumpBackwardTrigger = "<s-tab>"
-
-" function! g:UltiSnips_Complete()
-"     call UltiSnips#ExpandSnippet()
-"     if g:ulti_expand_res == 0
-"         if pumvisible()
-"             return "\<C-n>"
-"         else
-"           call UltiSnips#JumpForwards()
-"           if g:ulti_jump_forwards_res == 0
-"             return "\<TAB>"
-"           endif
-"         endif
-"     endif
-"     return ""
-" endfunction
-
-" au InsertEnter * exec "inoremap <silent> " . g:UltiSnipsExpandTrigger . " <C-R>=g:UltiSnips_Complete()<cr>"
 
 " IndentGuides
 nnoremap coi :IndentGuidesToggle<CR>
