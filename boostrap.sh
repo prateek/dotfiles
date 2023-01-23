@@ -1,4 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env zsh
+# vim:syntax=zsh
+# vim:filetype=zsh
+
 CWD=$(dirname "$0")
 
 # install homebrew

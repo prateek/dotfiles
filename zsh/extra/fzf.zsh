@@ -1,3 +1,7 @@
+#!/usr/bin/env zsh
+# vim:syntax=zsh
+# vim:filetype=zsh
+
 # make fzf ctrl-r behave like zaw, via https://github.com/fsouza/dotfiles/blob/main/extra/fzf
 function _rebind_ctrl-r {
 	function fzf-history-widget {
@@ -29,6 +33,17 @@ function _setup_fzf {
 	# ensure fzf completion and key-bindings is configured.
 	if [[ -v HOMEBREW_PREFIX ]] && [ -d ${HOMEBREW_PREFIX}/opt/fzf ]; then
 		[[ $- == *i* ]] && source ${HOMEBREW_PREFIX}/opt/fzf/shell/completion.zsh 2> /dev/null
+
+		# very opinionated FZF style opts.
+		export FZF_DEFAULT_OPTS="
+			--bind=ctrl-e:accept
+			--cycle
+			--height=40% --layout=reverse --border=none --info=hidden --margin=0% --marker='*' --history-size=${HISTSIZE}
+			--color=dark
+			--color=fg:-1,bg:-1,hl:#c678dd,fg+:#ffffff,bg+:#252931,hl+:#d858fe
+			--color=info:#98c379,prompt:#61afef,pointer:#be5046,marker:#e5c07b,spinner:#61afef,header:#61afef
+		"
+		export FZF_DEFAULT_COMMAND="fd --type f --hidden -E '.git' -E '.hg'"
 
 		source ${HOMEBREW_PREFIX}/opt/fzf/shell/key-bindings.zsh
 		_rebind_ctrl-r

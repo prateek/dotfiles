@@ -27,3 +27,4 @@ Temporary Items
 
 # zsh compiled files
 *.zwc
+*.old
