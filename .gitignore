@@ -1,5 +1,4 @@
 ### https://raw.github.com/github/gitignore/9f044c43d2fa998acb2d468367a349fff609dc84/Global/osx.gitignore
-
 .DS_Store
 .AppleDouble
 .LSOverride
@@ -26,4 +25,5 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
-
+# zsh compiled files
+*.zwc
