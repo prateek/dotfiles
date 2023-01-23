@@ -19,3 +19,5 @@ function gpb()
         git push -u origin HEAD
     fi
 }
+
+# FIXME: alias ssh=sshrc

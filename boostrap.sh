@@ -32,6 +32,7 @@ lesskey -o $HOME/.less $CWD/lesskey
 cp $HOME/.less $HOME/.sshrc.d/.less
 
 # zsh setup
+# nb: this setup takes _heavy_ inspiration from the work of https://github.com/htr3n/zsh-config
 mkdir ~/.zinit
 git clone https://github.com/zdharma-continuum/zinit.git ~/.zinit/bin
 
