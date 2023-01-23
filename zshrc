@@ -1,3 +1,7 @@
+#!/usr/bin/env zsh
+# vim:syntax=zsh
+# vim:filetype=zsh
+
 # NB: need to run `autoload zkbd && zkbd` to setup keycode file being sourced below
 # ideally, only need to run ^ once when setting up a new computer.
 source ~/.zkbd/$TERM-${${DISPLAY:t}:-$VENDOR-$OSTYPE}
@@ -11,8 +15,7 @@ typeset -gxU fpath FPATH
 typeset -gxU manpath MANPATH
 
 # github base path (useful for `ghc`)
-GHPATH=/Users/rungta/code/gocode/src/github.com
-export GPATH
+export GHPATH=/Users/rungta/code/gocode/src/github.com
 
 # Multiple installs of go using https://dave.cheney.net/2014/04/20/how-to-install-multiple-versions-of-go
 GOBASE=/Users/rungta/code/go1.17.3/bin
