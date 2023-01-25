@@ -2,7 +2,10 @@
 # vim:syntax=sh
 # vim:filetype=sh
 
-# map ctrl-space to accept auto-completion suggestions.
+# map ctrl-space to accept auto-suggestions.
+# color map: https://upload.wikimedia.org/wikipedia/commons/1/15/Xterm_256color_chart.svg
+# usable attributes: https://zsh.sourceforge.io/Doc/Release/Zsh-Line-Editor.html#Character-Highlighting
+export ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=252,standout"
 bindkey '^ ' autosuggest-accept
 
 # Who doesn't want home and end to work?
