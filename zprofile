@@ -33,12 +33,12 @@ export GHPATH=/Users/rungta/code/gocode/src/github.com
 export DOTFILES=$HOME/dotfiles
 
 # Multiple installs of go using https://dave.cheney.net/2014/04/20/how-to-install-multiple-versions-of-go
-GOBASE=/Users/rungta/code/go1.17.3/bin
+# GOBASE=/Users/rungta/code/go1.17.3/bin
 export GOPATH=/Users/rungta/code/gocode
 
 # PATH(s), relies on zsh magic (path == $PATH but in array form and sync'd)
 path=(
-  $GOBASE
+  # $GOBASE
   $HOME/bin
   /usr/local/{sbin,bin}
   $GOPATH/bin
