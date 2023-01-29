@@ -20,4 +20,5 @@ function gpb()
     fi
 }
 
+alias jls="jira issue list"
 # FIXME: alias ssh=sshrc

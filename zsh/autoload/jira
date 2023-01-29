@@ -16,9 +16,9 @@ function force_update_jira_token() {
 }
 
 function jira() {
-  # first check if we already have a API_TOKEN_SET
+  # first check if we already have a JIRA_API_TOKEN set
   if [[ ! -n ${JIRA_API_TOKEN} ]]; then
-    force_update_jira_token
+    force_update_jira_token &>/dev/null
     local rc=$?
     if [ $rc -ne 0 ]; then
       echo "JIRA_API_TOKEN not set, unable to retrieve via usso."

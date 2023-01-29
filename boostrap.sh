@@ -8,6 +8,7 @@ CWD=$(dirname "$0")
 /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 
 # install homebrew-bundle
+# TODO: prune/update Homebrew/bundle
 brew tap Homebrew/bundle
 
 # setup symlinks
@@ -20,10 +21,6 @@ ln -s $CWD/zshrc $HOME/.zshrc
 # directories
 mkdir -p $HOME/code
 mkdir -p $HOME/.sshrc.d
-
-# TODO:
-# - need to copy and sync $HOME/.config directory too
-# - need to run `autoload zkbd && zkbd` to setup keycode file (used in zshrc)
 
 # generate lesskey binary file for older versions of less that might be
 # present on remote machines.
@@ -38,4 +35,10 @@ git clone https://github.com/zdharma-continuum/zinit.git ~/.zinit/bin
 
 # vim setup
 $CWD/install-vim-plug.sh
-vim -c "PlugInstall" #TODO: quit
+vim -c "PlugInstall" # TODO: quit(?)
+
+# TODO: pending automation items
+# - [ ] need to copy and sync $HOME/.config directory too (incl bootstrap.sh wiring)
+# - [ ] need to run `autoload zkbd && zkbd` to setup keycode file (used in zshrc)
+# - [ ] create ~/bin folder (both pulling that stuff into `dotfiles`, and hooking up to bootstrap)
+# - [ ] wire up boostrap.sh =>> scripts/build.sh
