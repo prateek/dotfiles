@@ -1,0 +1,33 @@
+# relies on https://github.com/ankitpokhrel/jira-cli being installed
+
+# jira interactions
+function force_update_jira_token() {
+  # ensure we have a ussh cert
+  usshcertstatus -quiet_mode
+  local rc=$?
+  if [ $rc -ne 0 ]; then
+    echo "no ussh token found, aborting!"
+    return 1
+  fi
+
+  # get t3 USSO token via ussh cert
+  export JIRA_API_TOKEN=$(usso -ussh t3 -print 2>/dev/null)
+  return 0
+}
+
+function jira() {
+  # first check if we already have a API_TOKEN_SET
+  if [[ ! -n ${JIRA_API_TOKEN} ]]; then
+    force_update_jira_token
+    local rc=$?
+    if [ $rc -ne 0 ]; then
+      echo "JIRA_API_TOKEN not set, unable to retrieve via usso."
+      return 1
+    fi
+  fi
+
+  # need to override LESS
+  LESS="-+j.5R" command jira "$@"
+}
+
+jira "$@"

@@ -6,7 +6,7 @@
 # color map: https://upload.wikimedia.org/wikipedia/commons/1/15/Xterm_256color_chart.svg
 # usable attributes: https://zsh.sourceforge.io/Doc/Release/Zsh-Line-Editor.html#Character-Highlighting
 export ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=252,standout"
-bindkey '^ ' autosuggest-accept
+bindkey '^ ' autosuggest-accept # toggle on ctrl-space
 
 # Who doesn't want home and end to work?
 bindkey -M viins "${key[Home]}" beginning-of-line
