@@ -27,7 +27,7 @@ function jira() {
   fi
 
   # need to override LESS
-  LESS="-+j.5R" command jira "$@"
+  LESS="-Rj.5" command jira "$@"
 }
 
 jira "$@"
