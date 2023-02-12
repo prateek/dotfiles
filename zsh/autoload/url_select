@@ -1,0 +1,13 @@
+# `url_select` - utility to select url from iterm_session_history
+# this is f-ugly hack to workaround the fact that I can't use a keyboard shortcut
+# to open a url in iTerm2. And I really don't want to use tmux for that one feature.
+#
+# nb: - requires `brew install extract_url urlview`
+#     - see `iterm_session_history` for the bulk for the fugliness.
+function url_select() {
+  # nb: 2>/dev/null is cause extract_url doesn't like being used without a tty (because of |head)
+  # and i'm unable to see an option to disable it (--list isn't sufficient)
+  iterm_session_history | extract_url --list --text --quoted 2>/dev/null | head -n 10 | urlview
+}
+
+url_select "$@"

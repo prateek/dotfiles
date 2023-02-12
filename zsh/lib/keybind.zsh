@@ -32,6 +32,10 @@ insert-last-command-output() {
 zle -N insert-last-command-output
 bindkey -M viins "^P" insert-last-command-output
 
+# ctrl-u in vi-cmd mode invokes the url_select autoload function
+zle -N url_select
+bindkey -M vicmd "^u" url_select
+
 # TODO: rerurn last command and page output using the bat help pager
 # rerun-last-command-with-bat() {
 #   bathelp='bat --plain --language=help'

@@ -37,6 +37,9 @@ git clone https://github.com/zdharma-continuum/zinit.git ~/.zinit/bin
 $CWD/install-vim-plug.sh
 vim -c "PlugInstall" # TODO: quit(?)
 
+# iterm2 session log setup (needed for url-view hackery)
+mkdir -p ~/Library/Logs/iterm2-session-logs/
+
 # TODO: pending automation items
 # - [ ] need to copy and sync $HOME/.config directory too (incl bootstrap.sh wiring)
 # - [ ] need to run `autoload zkbd && zkbd` to setup keycode file (used in zshrc)
