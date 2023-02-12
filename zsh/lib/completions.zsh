@@ -45,9 +45,16 @@ alias cat='bat --style=plain'
 alias grep='egrep --color=auto'
 alias egrep='egrep --color=auto'
 
+## git aliases
+alias pull='git pull'
+alias gp='git pull origin $(git rev-parse --abbrev-ref HEAD)'
+alias gpo='git pull origin $(git rev-parse --abbrev-ref HEAD)'
+alias push='git push origin $(git rev-parse --abbrev-ref HEAD)'
+
 ## zshrc modification aliases
-alias sz='source ~/.zshrc'
-alias ez='vim ~/.zshrc'
+alias sz='exec zsh'
+alias ez='code ~/.zshrc'
+alias jz='cd ~/dotfiles'
 
 # FIXME: Pipe Aliases
 # alias L=' | less '

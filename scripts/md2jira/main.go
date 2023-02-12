@@ -8,6 +8,11 @@ import (
 	"github.com/ankitpokhrel/jira-cli/pkg/md"
 )
 
+/*
+ * Known limitations:
+		- the markdown parser happily eats up badly formatted strings like "insert text / <other-text>".
+*/
+
 func main() {
 	args := os.Args
 	if len(args) != 2 {

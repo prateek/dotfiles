@@ -43,6 +43,7 @@ path=(
   /usr/local/{sbin,bin}
   $GOPATH/bin
   $HOME/code/FlameGraph
+  /usr/local/anaconda3/bin
   $HOME/code/gocode/src/code.uber.internal/go-code/bin
   $HOME/code/gocode/src/code.uber.internal/go-code/tools
   $HOME/.cargo/bin
