@@ -45,3 +45,5 @@ mkdir -p ~/Library/Logs/iterm2-session-logs/
 # - [ ] need to run `autoload zkbd && zkbd` to setup keycode file (used in zshrc)
 # - [ ] create ~/bin folder (both pulling that stuff into `dotfiles`, and hooking up to bootstrap)
 # - [ ] wire up boostrap.sh =>> scripts/build.sh
+# - [ ] ~/.gitconfig wiring
+#  - `git config --global --type=bool checkout.guess false`: https://gist.github.com/mmrko/b3ec6da9bea172cdb6bd83bdf95ee817 for git completions to not suck

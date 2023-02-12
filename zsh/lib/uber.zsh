@@ -8,6 +8,10 @@ list_adhoc() {
   lzc host list --group=m3-adhoc --format H
 }
 
+ssha() {
+  ssh $(list_adhoc | fzf)
+}
+
 # example usage
 # $ resolve_uns uns://phx2/phx2-prod03/us1/statsdex_query/preprod/p-phx2/0:http
 resolve_uns() {

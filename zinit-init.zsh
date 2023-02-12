@@ -25,3 +25,6 @@ zinit from"gh-r" as"program" mv"direnv* -> direnv"          \
 zinit ice pick"async.zsh" src"pure.zsh" lucid
 zinit light sindresorhus/pure
 
+# way better vim motions
+zinit ice wait"0" lucid
+zinit light zsh-vi-more/vi-motions

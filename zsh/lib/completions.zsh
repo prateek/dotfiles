@@ -35,35 +35,6 @@ zstyle ':completion:*:default' list-colors ${(s.:.)LS_COLORS}
 # zstyle ':fzf-tab:*' fzf-bindings 'ctrl-e:accept'
 # zstyle ':fzf-tab:*' accept-line enter
 
-# Aliases
-alias ls='ls -G'
-alias ll='ls -ltrG'
-alias vimd='vim -d'
-alias psef='ps -ef | grep -i'
-alias ps='ps -T'
-alias cat='bat --style=plain'
-alias grep='egrep --color=auto'
-alias egrep='egrep --color=auto'
-
-## git aliases
-alias pull='git pull'
-alias gp='git pull origin $(git rev-parse --abbrev-ref HEAD)'
-alias gpo='git pull origin $(git rev-parse --abbrev-ref HEAD)'
-alias push='git push origin $(git rev-parse --abbrev-ref HEAD)'
-
-## zshrc modification aliases
-alias sz='exec zsh'
-alias ez='code ~/.zshrc'
-alias jz='cd ~/dotfiles'
-
-# FIXME: Pipe Aliases
-# alias L=' | less '
-# alias G=' | egrep --color=auto '
-# alias T=' | tail '
-# alias H=' | head '
-# alias W=' | wc -l '
-# alias S=' | sort '
-#
 # globalias() {
 #    if [[ $LBUFFER =~ ' [A-Z0-9]+$' ]]; then
 #      zle _expand_alias
