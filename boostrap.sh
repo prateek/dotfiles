@@ -47,3 +47,5 @@ mkdir -p ~/Library/Logs/iterm2-session-logs/
 # - [ ] wire up boostrap.sh =>> scripts/build.sh
 # - [ ] ~/.gitconfig wiring
 #  - `git config --global --type=bool checkout.guess false`: https://gist.github.com/mmrko/b3ec6da9bea172cdb6bd83bdf95ee817 for git completions to not suck
+# - [ ] osx settings
+#  - VSCodeVim: `defaults write com.microsoft.VSCode ApplePressAndHoldEnabled -bool false` via https://github.com/VSCodeVim/Vim#mac

@@ -12,6 +12,11 @@ ssha() {
   ssh $(list_adhoc | fzf)
 }
 
+# h/t https://stackoverflow.com/questions/75428312/custom-json-output-formatting-with-jq
+prettify_grafana_json() {
+   jq '.[].datapoints |= "<q>\(tojson)</q>"' | jq -Rr 'sub("<q>(?<s>.*)</q>"; .s)'
+}
+
 # example usage
 # $ resolve_uns uns://phx2/phx2-prod03/us1/statsdex_query/preprod/p-phx2/0:http
 resolve_uns() {

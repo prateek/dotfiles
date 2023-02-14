@@ -14,6 +14,7 @@ alias gp='git pull origin $(git rev-parse --abbrev-ref HEAD)'
 alias gpo='git pull origin $(git rev-parse --abbrev-ref HEAD)'
 alias push='git push origin $(git rev-parse --abbrev-ref HEAD)'
 alias pull='git pull'
+alias grim='git rebase -i master'
 
 # # adapted from: http://stackoverflow.com/questions/14031970/git-push-current-branch-shortcut
 # function gpb()
