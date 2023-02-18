@@ -1,6 +1,0 @@
-[submodule ".zsh/opp.zsh"]
-	path = .zsh/opp.zsh
-	url = https://github.com/hchbaw/opp.zsh
-[submodule "zgen"]
-	path = zgen
-	url = https://github.com/tarjoilija/zgen

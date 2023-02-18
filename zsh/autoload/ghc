@@ -14,8 +14,9 @@ function ghc() {
   if [ -n "$(git status --porcelain)" ]; then
     echo "WARNING: git status is not clean"
   else
-    git checkout master
-    git pull origin master
+    default_branch=$(git remote show origin | grep 'HEAD branch' | cut -d: -f2 | sed -e 's/ //g')
+    git checkout $default_branch
+    git pull origin $default_branch
   fi
 }
 

@@ -2,6 +2,8 @@
 # vim:syntax=sh
 # vim:filetype=sh
 
+export ST=$HOME/code/gocode/src/code.uber.internal/infra/statsdex
+
 alias prod='DOMAIN=system.uberinternal.com; PROD=https://ignored:$(usso -ussh $DOMAIN -print)@$DOMAIN'
 
 list_adhoc() {
@@ -43,10 +45,16 @@ function reposearch() {
 
 # functions to make working with arc suck less.
 ## WIP quick git commit
-alias wip='git commit -am "squash! WIP"'
+alias wip='git commit -am "fixup! WIP"'
 
+# merges all commits between master..HEAD into a single commit.
 function squash() {
   GIT_SEQUENCE_EDITOR="sed -i -re '2,\$s/^pick /fixup /'" git rebase -i master
+}
+
+# merges all commits between master..HEAD with a `fixup!` prefix into the preceding commit.
+function fixup() {
+  GIT_SEQUENCE_EDITOR="sed -i -re '/fixup!/s/^pick /fixup /'" git rebase -i master
 }
 
 # extract_diff assumes a bunch of shit
@@ -62,3 +70,6 @@ function au() {
 }
 alias ws='wip && squash'
 alias wsa='wip && squash && au'
+
+alias wf='wip && fixup'
+alias wff='wip && fixup && farc upload master..'
