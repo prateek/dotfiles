@@ -16,6 +16,19 @@ alias push='git push origin $(git rev-parse --abbrev-ref HEAD)'
 alias pull='git pull'
 alias grim='git rebase -i master'
 
+# adapted from https://github.com/Phantas0s/.dotfiles/blob/master/zsh/scripts_fzf.zsh
+# git log browser with FZF
+fgl() {
+  git log --graph --color=always \
+      --format="%C(auto)%h%d %s %C(black)%C(bold)%cr" "$@" |
+  fzf --ansi --no-sort --reverse --tiebreak=index --bind=ctrl-s:toggle-sort \
+      --bind "ctrl-m:execute:
+                (grep -o '[a-f0-9]\{7\}' | head -1 |
+                xargs -I % sh -c 'git show --color=always % | less -R') << 'FZF-EOF'
+                {}
+FZF-EOF"
+}
+
 # # adapted from: http://stackoverflow.com/questions/14031970/git-push-current-branch-shortcut
 # function gpb()
 # {

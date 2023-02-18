@@ -28,3 +28,7 @@ zinit light sindresorhus/pure
 # way better vim motions
 zinit ice wait"0" lucid
 zinit light zsh-vi-more/vi-motions
+
+# # ex: commands in vi mode
+# zi ice wait"0" lucid
+# zinit light zsh-vi-more/ex-mode
