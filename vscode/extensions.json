@@ -1,0 +1,18 @@
+{
+    "extensions": [
+        "bee.git-temporal-vscode",
+        "eamodio.gitlens",
+        "GitHub.copilot",
+        "golang.go",
+        "golf1052.code-sync",
+        "inadarei.json-compact-prettifier",
+        "kangping.protobuf",
+        "marp-team.marp-vscode",
+        "mrkou47.thrift-syntax-support",
+        "Oigene.sessions",
+        "phgn.vscode-starlark",
+        "quicktype.quicktype",
+        "Rubymaniac.vscode-direnv",
+        "vscodevim.vim"
+    ]
+}
