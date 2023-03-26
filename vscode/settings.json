@@ -4,6 +4,14 @@
     "go.buildOnSave": "package",
     "go.testOnSave": false,
     "go.lintOnSave": "off",
+    "go.lintTool": "golangci-lint",
+    "go.lintFlags": [
+        "--no-config",
+        "--disable-all",
+        "--enable=lll,gocyclo,misspell",
+        "--new-from-rev=HEAD",
+        "--fast"
+    ],
     "go.vetOnSave": "off",
     "go.buildFlags": [],
     "editor.formatOnSave": true,
@@ -231,5 +239,7 @@
     "editor.inlineSuggest.enabled": true,
     "markdown.marp.enableHtml": true,
     "markdown.marp.pdf.noteAnnotations": true,
-    "git.openRepositoryInParentFolders": "always"
+    "git.openRepositoryInParentFolders": "always",
+    "github.copilot-labs.showBrushesLenses": true,
+    "github.copilot-labs.showTestGenerationLenses": true
 }

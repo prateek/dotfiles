@@ -15,6 +15,7 @@ alias gpo='git pull origin $(git rev-parse --abbrev-ref HEAD)'
 alias push='git push origin $(git rev-parse --abbrev-ref HEAD)'
 alias pull='git pull'
 alias grim='git rebase -i master'
+alias grimb='git rebase -i $(git merge-base master HEAD)'
 
 # adapted from https://github.com/Phantas0s/.dotfiles/blob/master/zsh/scripts_fzf.zsh
 # git log browser with FZF
