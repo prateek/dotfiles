@@ -41,14 +41,6 @@
     "when": "editorTextFocus"
   },
   {
-    "key": "ctrl+t",
-    "command": "workbench.action.terminal.toggleTerminal"
-  },
-  {
-    "key": "ctrl+`",
-    "command": "-workbench.action.terminal.toggleTerminal"
-  },
-  {
     "key": "ctrl+s",
     "command": "go.test.previous"
   },
@@ -129,10 +121,6 @@
     "when": "editorTextFocus"
   },
   {
-    "key": "cmd+t",
-    "command": "go.test.package"
-  },
-  {
     "key": "shift+cmd+r",
     "command": "workbench.action.tasks.build"
   },
@@ -191,5 +179,9 @@
     "key": "shift+alt+up",
     "command": "-editor.action.copyLinesUpAction",
     "when": "editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "ctrl+t",
+    "command": "go.test.package"
   }
 ]

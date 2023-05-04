@@ -23,35 +23,19 @@
         },
         "editor.suggest.snippetsPreventQuickSuggestions": false
     },
-    // "go.useLanguageServer": true,
-    // "gopls": {
-    //     // via https://github.com/golang/tools/blob/master/gopls/doc/vscode.md
-    //     // Add parameter placeholders when completing a function.
-    //     "usePlaceholders": true,
-    //     // If true, enable additional analyses with staticcheck.
-    //     // Warning: This will significantly increase memory usage.
-    //     "staticcheck": false,
-    // },
     "go.gopath": "/Users/rungta/code/gocode",
     "go.testTimeout": "20s",
-    "go.testEnvVars": {
-        // "GOTRACEBACK": "all",
-        // "GOTRACEBACK": "user",
-    },
+    "go.testEnvVars": {},
     "go.testFlags": [
         "-v",
-        // "-race",
         "-count=1"
     ],
-    // "go.buildTags": "integration big",
     "go.formatTool": "goimports",
     "go.formatFlags": [],
     "editor.tabSize": 2,
-    // "editor.formatOnType": false,
     "editor.scrollBeyondLastLine": false,
     "files.watcherExclude": {
         "bazel-*": true
-        // "pkg*": true,
     },
     "files.exclude": {
         "**/.tmp": true,
@@ -64,7 +48,6 @@
         "**/coverage.html": true,
         "**/_build": true,
         "bazel-*": true
-        // "pkg*": true,
     },
     "files.trimTrailingWhitespace": true,
     "editor.minimap.enabled": false,
@@ -72,7 +55,6 @@
     "workbench.editor.enablePreviewFromQuickOpen": false,
     "workbench.editor.enablePreview": false,
     "git.confirmSync": false,
-    // vim extension properties
     "vim.targets.enable": true,
     "vim.visualstar": true,
     "vim.surround": true,
@@ -176,7 +158,7 @@
     "workbench.startupEditor": "welcomePageInEmptyWorkbench",
     "window.zoomLevel": 2,
     "go.coverOnTestPackage": false,
-    "explorer.excludeGitIgnore": true,
+    "explorer.excludeGitIgnore": false,
     "gitlens.graph.dimMergeCommits": true,
     "editor.suggest.insertMode": "replace",
     "git.ignoredRepositories": [
@@ -241,5 +223,7 @@
     "markdown.marp.pdf.noteAnnotations": true,
     "git.openRepositoryInParentFolders": "always",
     "github.copilot-labs.showBrushesLenses": true,
-    "github.copilot-labs.showTestGenerationLenses": true
+    "github.copilot-labs.showTestGenerationLenses": true,
+    "remote.SSH.enableAgentForwarding": false,
+    "workbench.colorTheme": "Default Dark+"
 }

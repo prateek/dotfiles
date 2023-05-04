@@ -16,7 +16,7 @@ ssha() {
 
 # h/t https://stackoverflow.com/questions/75428312/custom-json-output-formatting-with-jq
 prettify_grafana_json() {
-   jq '.[].datapoints |= "<q>\(tojson)</q>"' | jq -Rr 'sub("<q>(?<s>.*)</q>"; .s)'
+   jq '.[].datapoints |= "<q>\(tojson)</q>"' | jq -Rr 'sub("<q>(?<s>.*)</q>"; .s)' --sort-keys
 }
 
 # example usage

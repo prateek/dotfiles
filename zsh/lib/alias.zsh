@@ -13,6 +13,7 @@ alias gco="git checkout"
 alias gp='git pull origin $(git rev-parse --abbrev-ref HEAD)'
 alias gpo='git pull origin $(git rev-parse --abbrev-ref HEAD)'
 alias push='git push origin $(git rev-parse --abbrev-ref HEAD)'
+alias pushf='git push origin $(git rev-parse --abbrev-ref HEAD) --force'
 alias pull='git pull'
 alias grim='git rebase -i master'
 alias grimb='git rebase -i $(git merge-base master HEAD)'
