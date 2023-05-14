@@ -255,6 +255,7 @@ brew "uber/alt/llc"
 brew "uber/alt/lzc"
 brew "uber/alt/moncon"
 brew "uber/alt/peloton"
+brew "uber/alt/perftool"
 brew "uber/alt/php@7.4"
 brew "uber/alt/reliability-data-platform-tools"
 brew "uber/alt/stargen"
@@ -317,16 +318,13 @@ cask "vial"
 cask "visual-studio-code"
 cask "xquartz"
 mas "Amphetamine", id: 937984704
-mas "Deliveries", id: 924726344
-mas "GarageBand", id: 682658836
-mas "iMovie", id: 408981434
+mas "Calendar 366 II", id: 1265895169
 mas "Keynote", id: 409183694
-mas "Lungo", id: 1263070803
+mas "LiquidText", id: 922765270
 mas "Numbers", id: 409203825
 mas "Pages", id: 409201541
 mas "Paprika Recipe Manager", id: 451907568
 mas "Pocket", id: 568494494
 mas "ReadKit", id: 588726889
+mas "Things", id: 904280696
 mas "Tweetbot", id: 557168941
-mas "Xcode", id: 497799835
-mas "Yoink", id: 457622435
