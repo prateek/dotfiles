@@ -32,6 +32,15 @@
     ],
     "go.formatTool": "goimports",
     "go.formatFlags": [],
+    "gopls": {
+        // "ui.codelenses": {
+        //     "gc_details": true,
+        // },
+        "ui.diagnostic.analyses": {
+            "simplifycompositelit": false,
+            "composites": true
+        }
+    },
     "editor.tabSize": 2,
     "editor.scrollBeyondLastLine": false,
     "files.watcherExclude": {
@@ -222,8 +231,6 @@
     "markdown.marp.enableHtml": true,
     "markdown.marp.pdf.noteAnnotations": true,
     "git.openRepositoryInParentFolders": "always",
-    "github.copilot-labs.showBrushesLenses": true,
-    "github.copilot-labs.showTestGenerationLenses": true,
     "remote.SSH.enableAgentForwarding": false,
     "workbench.colorTheme": "Default Dark+"
 }
