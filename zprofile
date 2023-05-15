@@ -41,6 +41,7 @@ path=(
   # $GOBASE
   $HOME/bin
   /usr/local/{sbin,bin}
+  /opt/homebrew/{bin,sbin}
   $GOPATH/bin
   $HOME/code/FlameGraph
   /usr/local/anaconda3/bin

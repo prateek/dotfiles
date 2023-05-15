@@ -2,14 +2,17 @@
 # vim:syntax=zsh
 # vim:filetype=zsh
 
-CWD=$(dirname "$0")
+set -eo pipefail
+
+CWD=$(dirname -- "$( readlink -f -- "$0"; )")
 
 # install homebrew
-/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+echo "install homebrew without the curl please"
+# exit 1 
 
 # install homebrew-bundle
 # TODO: prune/update Homebrew/bundle
-brew tap Homebrew/bundle
+# brew tap Homebrew/bundle
 
 # setup symlinks
 ln -s $CWD/vimrc $HOME/.vimrc
@@ -19,7 +22,7 @@ ln -s $CWD/zprofile $HOME/.zprofile
 ln -s $CWD/zshrc $HOME/.zshrc
 
 # directories
-mkdir -p $HOME/code
+# mkdir -p $HOME/code
 mkdir -p $HOME/.sshrc.d
 
 # generate lesskey binary file for older versions of less that might be
@@ -34,15 +37,13 @@ mkdir ~/.zinit
 git clone https://github.com/zdharma-continuum/zinit.git ~/.zinit/bin
 
 # vim setup
-$CWD/install-vim-plug.sh
-vim -c "PlugInstall" # TODO: quit(?)
-
-# iterm2 session log setup (needed for url-view hackery)
-mkdir -p ~/Library/Logs/iterm2-session-logs/
+# curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
+#     https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+vim -c "PlugInstall" 
 
 # TODO: pending automation items
-# - [ ] need to copy and sync $HOME/.config directory too (incl bootstrap.sh wiring)
 # - [ ] need to run `autoload zkbd && zkbd` to setup keycode file (used in zshrc)
+# - [ ] need to copy and sync $HOME/.config directory too (incl bootstrap.sh wiring)
 # - [ ] create ~/bin folder (both pulling that stuff into `dotfiles`, and hooking up to bootstrap)
 # - [ ] wire up boostrap.sh =>> scripts/build.sh
 # - [ ] ~/.gitconfig wiring
