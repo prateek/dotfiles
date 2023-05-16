@@ -111,7 +111,7 @@
     ],
     "workbench.activityBar.visible": true,
     "git.enableSmartCommit": true,
-    "terminal.integrated.shell.osx": "/usr/local/bin/zsh",
+    // "terminal.integrated.shell.osx": "/usr/local/bin/zsh",
     "explorer.confirmDragAndDrop": false,
     "explorer.confirmDelete": false,
     "extensions.ignoreRecommendations": false,
@@ -231,6 +231,6 @@
     "markdown.marp.enableHtml": true,
     "markdown.marp.pdf.noteAnnotations": true,
     "git.openRepositoryInParentFolders": "always",
-    "remote.SSH.enableAgentForwarding": false,
-    "workbench.colorTheme": "Default Dark+"
+    "remote.SSH.enableAgentForwarding": false
+    // "workbench.colorTheme": "Default Dark+"
 }
