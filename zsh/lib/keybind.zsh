@@ -2,6 +2,11 @@
 # vim:syntax=sh
 # vim:filetype=sh
 
+# make key presses work a lot faster
+# `man keytimeout`: The time the shell waits, in hundredths of seconds,
+# for another key to be pressed when reading bound multi-character sequences.
+KEYTIMEOUT=1
+
 # map ctrl-space to accept auto-suggestions.
 # color map: https://upload.wikimedia.org/wikipedia/commons/1/15/Xterm_256color_chart.svg
 # usable attributes: https://zsh.sourceforge.io/Doc/Release/Zsh-Line-Editor.html#Character-Highlighting

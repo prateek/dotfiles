@@ -38,7 +38,6 @@ export GOPATH=/Users/rungta/code/gocode
 
 # PATH(s), relies on zsh magic (path == $PATH but in array form and sync'd)
 path=(
-  # $GOBASE
   $HOME/bin
   /usr/local/{sbin,bin}
   /opt/homebrew/{bin,sbin}

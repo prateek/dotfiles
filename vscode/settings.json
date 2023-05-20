@@ -231,6 +231,6 @@
     "markdown.marp.enableHtml": true,
     "markdown.marp.pdf.noteAnnotations": true,
     "git.openRepositoryInParentFolders": "always",
-    "remote.SSH.enableAgentForwarding": false
-    // "workbench.colorTheme": "Default Dark+"
+    "remote.SSH.enableAgentForwarding": false,
+    "workbench.colorTheme": "Default Dark+"
 }

@@ -1,5 +1,7 @@
 {
     "extensions": [
+        "alexclewontin.make-lsp-vscode",
+        "ast-grep.ast-grep-vscode",
         "bee.git-temporal-vscode",
         "eamodio.gitlens",
         "GitHub.copilot",
@@ -9,6 +11,7 @@
         "kangping.protobuf",
         "marp-team.marp-vscode",
         "mrkou47.thrift-syntax-support",
+        "ms-vscode.makefile-tools",
         "Oigene.sessions",
         "phgn.vscode-starlark",
         "quicktype.quicktype",
