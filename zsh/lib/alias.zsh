@@ -18,6 +18,11 @@ alias pull='git pull'
 alias grim='git rebase -i master'
 alias grimb='git rebase -i $(git merge-base master HEAD)'
 
+# use fzf to autocomplete git branches
+gcf() {
+    git checkout $(git branch | fzf)
+}
+
 # adapted from https://github.com/Phantas0s/.dotfiles/blob/master/zsh/scripts_fzf.zsh
 # git log browser with FZF
 fgl() {

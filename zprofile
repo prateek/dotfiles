@@ -39,16 +39,16 @@ export GOPATH=/Users/rungta/code/gocode
 # PATH(s), relies on zsh magic (path == $PATH but in array form and sync'd)
 path=(
   $HOME/bin
-  /usr/local/{sbin,bin}
   /opt/homebrew/{bin,sbin}
   $GOPATH/bin
+  /opt/homebrew/opt/python@3.11/libexec/bin
   $HOME/code/FlameGraph
-  /usr/local/anaconda3/bin
   $HOME/code/gocode/src/code.uber.internal/go-code/bin
   $HOME/code/gocode/src/code.uber.internal/go-code/tools
   $HOME/.cargo/bin
   /usr/{sbin,bin}
   /{sbin,bin}
+  /usr/local/{sbin,bin}
   $path
 )
 path=($^path(N-/))

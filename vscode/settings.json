@@ -171,7 +171,8 @@
     "gitlens.graph.dimMergeCommits": true,
     "editor.suggest.insertMode": "replace",
     "git.ignoredRepositories": [
-        "/Users/rungta/code/gocode/src/code.uber.internal/infra/statsdex/go-build"
+        "/Users/rungta/code/gocode/src/code.uber.internal/infra/statsdex/go-build",
+        "/opt/homebrew"
     ],
     "gitlens.menus": {
         "editor": {
@@ -232,5 +233,15 @@
     "markdown.marp.pdf.noteAnnotations": true,
     "git.openRepositoryInParentFolders": "always",
     "remote.SSH.enableAgentForwarding": false,
+    "window.newWindowDimensions": "inherit",
+    "github.copilot.enable": {
+        "*": true,
+        "plaintext": false,
+        "markdown": true,
+        "scminput": false
+    },
+    "jupyter.askForKernelRestart": false,
+    "notebook.lineNumbers": "on",
+    "editor.codeActionsOnSave": {},
     "workbench.colorTheme": "Default Dark+"
 }
