@@ -15,11 +15,13 @@
   },
   {
     "key": "shift+cmd+[",
-    "command": "workbench.action.previousEditor"
+    "command": "workbench.action.previousEditor",
+    "when": "!terminalFocus"
   },
   {
     "key": "shift+cmd+]",
-    "command": "workbench.action.nextEditor"
+    "command": "workbench.action.nextEditor",
+    "when": "!terminalFocus"
   },
   {
     "key": "f1",
@@ -183,5 +185,41 @@
   {
     "key": "ctrl+t",
     "command": "go.test.package"
+  },
+  {
+    "key": "shift+cmd+i",
+    "command": "-chat.action.askQuickQuestion",
+    "when": "config.chat.experimental.quickQuestion.enable && hasChatProvider"
+  },
+  {
+    "key": "ctrl+shift+c",
+    "command": "workbench.panel.chatSidebar.copilot"
+  },
+  {
+    "key": "ctrl+cmd+i",
+    "command": "-workbench.panel.chatSidebar.copilot"
+  },
+  {
+    "key": "shift+cmd+enter",
+    "command": "workbench.action.toggleMaximizedPanel",
+    "when": "terminalFocus"
+  },
+  {
+    "key": "shift+cmd+]",
+    "command": "workbench.action.nextEditor",
+    "when": "!terminalFocus"
+  },
+  {
+    "key": "shift+cmd+]",
+    "command": "-workbench.action.nextEditor"
+  },
+  {
+    "key": "shift+cmd+[",
+    "command": "workbench.action.previousEditor",
+    "when": "!terminalFocus"
+  },
+  {
+    "key": "shift+cmd+[",
+    "command": "-workbench.action.previousEditor"
   }
 ]
