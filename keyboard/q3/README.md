@@ -10,10 +10,6 @@ keychron-q3-qmk-configuration
 | ------------ | ---------------------- | ------------------------------ |
 | Caps Lock    | MT(MOD_LCTL,KC_ESCAPE) | CTRL if held, Esc if tapped.   |
 | ;            | MT(MOD_HYPR,KC_SCLN)   | HYPER if held, ; if tapped.    |
-| Right Shift  | MT(MOD_RSFT,KC_UP)     | Shift if held, Up if tapped.   |
-| Right Ctrl   | MT(MOD_RCTL,KC_RGHT)   | CTRL if held, Right if tapped. |
-| Right fn     | LT(1,KC_DOWN)          | FN if held, Down if tapped.    |
-| Right Alt    | MT(MOD_RALT,KC_LEFT)   | ALT if held, Left if tapped.   |
 
 ### References
 - QMK newb tutorial - https://docs.qmk.fm/#/newbs
