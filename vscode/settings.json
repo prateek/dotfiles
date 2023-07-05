@@ -1,46 +1,37 @@
+// prettier-ignore
 {
-    "files.autoSave": "off",
-    "files.autoSaveDelay": 3000,
-    "go.buildOnSave": "package",
-    "go.testOnSave": false,
-    "go.lintOnSave": "off",
-    "go.lintTool": "golangci-lint",
-    "go.lintFlags": [
-        "--no-config",
-        "--disable-all",
-        "--enable=lll,gocyclo,misspell",
-        "--new-from-rev=HEAD",
-        "--fast"
-    ],
-    "go.vetOnSave": "off",
-    "go.buildFlags": [],
-    "editor.formatOnSave": true,
-    "[go]": {
-        "editor.insertSpaces": false,
-        "editor.formatOnSave": true,
+    // json configuration files
+    "[jsonc]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
         "editor.codeActionsOnSave": {
-            "source.organizeImports": true
-        },
-        "editor.suggest.snippetsPreventQuickSuggestions": false
-    },
-    "go.gopath": "/Users/rungta/code/gocode",
-    "go.testTimeout": "20s",
-    "go.testEnvVars": {},
-    "go.testFlags": [
-        "-v",
-        "-count=1"
-    ],
-    "go.formatTool": "goimports",
-    "go.formatFlags": [],
-    "gopls": {
-        // "ui.codelenses": {
-        //     "gc_details": true,
-        // },
-        "ui.diagnostic.analyses": {
-            "simplifycompositelit": false,
-            "composites": true
+            "source.fixAll": false
         }
     },
+    // misc
+    "editor.quickSuggestionsDelay": 300,
+    "editor.quickSuggestions": {
+        "other": false,
+        "comments": false,
+        "strings": false
+    },
+    "editor.fontSize": 13,
+    "breadcrumbs.enabled": true,
+    "diffEditor.ignoreTrimWhitespace": false,
+    "outline.collapseItems": "alwaysCollapse",
+    "ipynb.pasteImagesAsAttachments.enabled": false,
+    "workbench.startupEditor": "welcomePageInEmptyWorkbench",
+    "window.zoomLevel": 2,
+    "explorer.excludeGitIgnore": false,
+    "editor.suggest.insertMode": "replace",
+    "security.workspace.trust.untrustedFiles": "open",
+    "javascript.autoClosingTags": false,
+    "typescript.autoClosingTags": false,
+    "editor.inlineSuggest.enabled": true,
+    "files.autoSave": "off",
+    "files.autoSaveDelay": 3000,
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {},
+    "workbench.colorTheme": "Default Dark+",
     "editor.tabSize": 2,
     "editor.scrollBeyondLastLine": false,
     "files.watcherExclude": {
@@ -63,11 +54,377 @@
     "editor.minimap.renderCharacters": false,
     "workbench.editor.enablePreviewFromQuickOpen": false,
     "workbench.editor.enablePreview": false,
-    "git.confirmSync": false,
+    "remote.SSH.enableAgentForwarding": false,
+    "window.newWindowDimensions": "inherit",
+    "jupyter.askForKernelRestart": false,
+    "notebook.lineNumbers": "on",
+    "workbench.activityBar.visible": true,
+    "explorer.confirmDragAndDrop": false,
+    "explorer.confirmDelete": false,
+    "extensions.ignoreRecommendations": false,
+    // go
+    "go.toolsManagement.autoUpdate": true,
+    "go.buildOnSave": "package",
+    "go.testOnSave": false,
+    "go.lintOnSave": "off",
+    "go.lintTool": "golangci-lint",
+    "go.lintFlags": [
+        "--no-config",
+        "--disable-all",
+        "--enable=lll,gocyclo,misspell",
+        "--new-from-rev=HEAD",
+        "--fast"
+    ],
+    "go.vetOnSave": "off",
+    "go.buildFlags": [],
+    "go.gopath": "/Users/rungta/code/gocode",
+    "go.testTimeout": "20s",
+    "go.testEnvVars": {},
+    "go.testFlags": [
+        "-v",
+        "-count=1"
+    ],
+    "go.formatTool": "goimports",
+    "go.formatFlags": [],
+    "gopls": {
+        // "ui.codelenses": {
+        //     "gc_details": true,
+        // },
+        "ui.diagnostic.analyses": {
+            "simplifycompositelit": false,
+            "composites": true
+        }
+    },
+    // "go.autocompleteUnimportedPackages": true,f
+    "go.disableConcurrentTests": true,
+    "go.coverOnTestPackage": false,
+    "[go]": {
+        "editor.insertSpaces": false,
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": true
+        },
+        "editor.suggest.snippetsPreventQuickSuggestions": false
+    },
+    // vim
     "vim.targets.enable": true,
     "vim.visualstar": true,
     "vim.surround": true,
+    "vim.useSystemClipboard": true,
+    "vim.leader": "<space>",
     "vim.normalModeKeyBindingsNonRecursive": [
+        // vim-impaired bindings from https://github.com/VSCodeVim/Vim/issues/3263
+        {
+            "before": [
+                "[",
+                " "
+            ],
+            "after": [
+                "O",
+                "<Esc>",
+                "j",
+                "0"
+            ]
+        },
+        {
+            "before": [
+                "]",
+                " "
+            ],
+            "after": [
+                "o",
+                "<Esc>",
+                "k",
+                "0"
+            ]
+        },
+        // location-list equivalent
+        {
+            "before": [
+                "[",
+                "q"
+            ],
+            "commands": [
+                "editor.action.marker.prevInFiles"
+            ],
+            "when": "editorTextFocus"
+        },
+        {
+            "before": [
+                "]",
+                "q"
+            ],
+            "commands": [
+                "editor.action.marker.nextInFiles"
+            ],
+            "when": "editorTextFocus"
+        },
+        // references-view
+        {
+            "before": [
+                "[",
+                "r"
+            ],
+            "commands": [
+                "references-view.prev"
+            ],
+            "when": "reference-list.hasResult || (inReferenceSearchEditor || referenceSearchVisible)"
+        },
+        {
+            "before": [
+                "]",
+                "r"
+            ],
+            "commands": [
+                "references-view.next"
+            ],
+            "when": "reference-list.hasResult || (inReferenceSearchEditor || referenceSearchVisible)"
+        },
+        {
+            "before": [
+                "[",
+                "c"
+            ],
+            "commands": [
+                "workbench.action.editor.previousChange"
+            ],
+            "when": "editorTextFocus"
+        },
+        {
+            "before": [
+                "]",
+                "c"
+            ],
+            "commands": [
+                "workbench.action.editor.nextChange"
+            ],
+            "when": "editorTextFocus"
+        },
+        {
+            "before": [
+                "[",
+                "f"
+            ],
+            "commands": [
+                "search.action.focusPreviousSearchResult"
+            ],
+            "when": "hasSearchResult"
+        },
+        {
+            "before": [
+                "]",
+                "f"
+            ],
+            "commands": [
+                "search.action.focusNextSearchResult"
+            ],
+            "when": "hasSearchResult"
+        },
+        {
+            "before": [
+                "c",
+                "o",
+                "w"
+            ],
+            "commands": [
+                "editor.action.toggleWordWrap"
+            ]
+        },
+        {
+            "before": [
+                "c",
+                "o",
+                "l"
+            ],
+            "commands": [
+                "editor.action.toggleRenderWhitespace"
+            ]
+        },
+        // bookmarks
+        {
+            "before": [
+                "<leader>",
+                "m"
+            ],
+            "commands": [
+                "bookmarks.toggle"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "b"
+            ],
+            "commands": [
+                "bookmarks.list"
+            ]
+        },
+        // Things which surround plugin is supposed to do, but isn't doing
+        // from https://github.com/joeytwiddle/dotfiles/blob/master/.config/Code/User/settings.json
+        {
+            "before": [
+                "c",
+                "s",
+                "w"
+            ],
+            "after": [
+                "v",
+                "i",
+                "w",
+                "S"
+            ]
+        },
+        {
+            "before": [
+                "c",
+                "s",
+                "W"
+            ],
+            "after": [
+                "v",
+                "i",
+                "W",
+                "S"
+            ]
+        },
+        {
+            "before": [
+                "C-O"
+            ],
+            "commands": [
+                "workbench.action.navigateBack"
+            ]
+        },
+        {
+            "before": [
+                "C-I"
+            ],
+            "commands": [
+                "workbench.action.navigateForward"
+            ]
+        },
+        // Navigation (mostly custom)
+        // revealDefinition may work more often than goToImplementation
+        // { "before": [ "g", "d" ], "commands": [ "editor.action.revealDefinition" ], "when": "editorHasDefinitionProvider && editorTextFocus && !isInEmbeddedEditor" },
+        {
+            "before": [
+                "g",
+                "D"
+            ],
+            "after": [
+                "*",
+                "g",
+                "g",
+                "n"
+            ]
+        },
+        {
+            "before": [
+                "g",
+                "I"
+            ],
+            "commands": [
+                "references-view.findImplementations"
+            ],
+            "when": "editorHasReferenceProvider"
+        },
+        {
+            "before": [
+                "g",
+                "u"
+            ],
+            "commands": [
+                "editor.action.goToReferences"
+            ],
+            "when": "editorHasReferenceProvider && editorTextFocus && !inReferenceSearchEditor && !isInEmbeddedEditor"
+        },
+        {
+            "before": [
+                "g",
+                "U"
+            ],
+            "commands": [
+                "references-view.find"
+            ],
+            "when": "editorHasReferenceProvider"
+        },
+        {
+            "before": [
+                "g",
+                "H"
+            ],
+            "commands": [
+                "editor.action.showDefinitionPreviewHover"
+            ]
+        },
+        {
+            "before": [
+                "g",
+                "Leader",
+                "h"
+            ],
+            "commands": [
+                "editor.action.peekDefinition"
+            ],
+            "when": "editorHasDefinitionProvider && editorTextFocus && !inReferenceSearchEditor && !isInEmbeddedEditor"
+        },
+        {
+            "before": [
+                "g",
+                "Leader",
+                "H"
+            ],
+            "commands": [
+                "editor.action.peekImplementation"
+            ],
+            "when": "editorHasImplementationProvider && editorTextFocus && !inReferenceSearchEditor && !isInEmbeddedEditor"
+        },
+        {
+            "before": [
+                "g",
+                "Leader",
+                "Leader",
+                "h"
+            ],
+            "commands": [
+                "editor.action.peekTypeDefinition"
+            ]
+        },
+        {
+            "before": [
+                "C-W",
+                "c"
+            ],
+            "commands": [
+                "workbench.action.closeGroup"
+            ]
+        },
+        // misc bindings from my .vimrc
+        {
+            "before": [
+                ":"
+            ],
+            "after": [
+                ";"
+            ]
+        },
+        {
+            "before": [
+                ";"
+            ],
+            "after": [
+                ":"
+            ]
+        },
+        {
+            "before": [
+                "j"
+            ],
+            "after": [
+                "g",
+                "j"
+            ]
+        },
         {
             "before": [
                 "j"
@@ -107,73 +464,28 @@
                     "command": "redo"
                 }
             ]
-        }
-    ],
-    "workbench.activityBar.visible": true,
-    "git.enableSmartCommit": true,
-    // "terminal.integrated.shell.osx": "/usr/local/bin/zsh",
-    "explorer.confirmDragAndDrop": false,
-    "explorer.confirmDelete": false,
-    "extensions.ignoreRecommendations": false,
-    "gitlens.views.repositories.files.layout": "list",
-    "gitlens.hovers.annotations.over": "annotation",
-    "gitlens.currentLine.enabled": false,
-    "gitlens.hovers.currentLine.over": "line",
-    "gitlens.keymap": "alternate",
-    "gitlens.advanced.messages": {
-        "suppressCommitHasNoPreviousCommitWarning": false,
-        "suppressCommitNotFoundWarning": false,
-        "suppressFileNotUnderSourceControlWarning": false,
-        "suppressGitVersionWarning": false,
-        "suppressLineUncommittedWarning": false,
-        "suppressNoRepositoryWarning": false,
-        "suppressResultsExplorerNotice": false,
-        "suppressShowKeyBindingsNotice": true
-    },
-    "gitlens.remotes": [
+        },
         {
-            "domain": "code.uber.internal",
-            "type": "Custom",
-            "name": "Uber",
-            "protocol": "gitolite",
-            "urls": {
-                "repository": "https://sourcegraph.uberinternal.com/code.uber.internal/${repo}",
-                "branches": "https://sourcegraph.uberinternal.com/code.uber.internal/${repo}/-/branches",
-                "branch": "https://sourcegraph.uberinternal.com/code.uber.internal/${repo}@${branch}",
-                "commit": "https://sourcegraph.uberinternal.com/code.uber.internal/${repo}/-/commit/${id}",
-                "file": "https://sourcegraph.uberinternal.com/code.uber.internal/${repo}@master/-/blob/${file}",
-                "fileInBranch": "https://sourcegraph.uberinternal.com/code.uber.internal/${repo}@${branch}/-/blob/${file}",
-                "fileInCommit": "https://sourcegraph.uberinternal.com/code.uber.internal/${repo}@${id}/-/blob/${file}",
-                "fileLine": "#L${line}",
-                "fileRange": "#L${start}-${end}"
-            }
+            "before": [
+                "leader",
+                "c",
+                "v"
+            ],
+            "commands": [
+                "workbench.action.openApplicationSettingsJson"
+            ]
         }
     ],
-    "editor.quickSuggestionsDelay": 300,
-    "editor.quickSuggestions": {
-        "other": false,
-        "comments": false,
-        "strings": false
-    },
-    "editor.fontSize": 13,
-    "breadcrumbs.enabled": true,
-    "diffEditor.ignoreTrimWhitespace": false,
-    "go.autocompleteUnimportedPackages": true,
-    "go.disableConcurrentTests": true,
+    // git
+    "git.confirmSync": false,
+    "git.openRepositoryInParentFolders": "always",
+    "git.enableSmartCommit": true,
     "git.detectSubmodules": false,
-    "outline.collapseItems": "alwaysCollapse",
-    "redhat.telemetry.enabled": false,
-    "ipynb.pasteImagesAsAttachments.enabled": false,
-    "workbench.startupEditor": "welcomePageInEmptyWorkbench",
-    "window.zoomLevel": 2,
-    "go.coverOnTestPackage": false,
-    "explorer.excludeGitIgnore": false,
-    "gitlens.graph.dimMergeCommits": true,
-    "editor.suggest.insertMode": "replace",
     "git.ignoredRepositories": [
         "/Users/rungta/code/gocode/src/code.uber.internal/infra/statsdex/go-build",
         "/opt/homebrew"
     ],
+    "gitlens.graph.dimMergeCommits": true,
     "gitlens.menus": {
         "editor": {
             "blame": false,
@@ -225,23 +537,54 @@
             "stash": true
         }
     },
-    "security.workspace.trust.untrustedFiles": "open",
-    "javascript.autoClosingTags": false,
-    "typescript.autoClosingTags": false,
-    "editor.inlineSuggest.enabled": true,
+    "gitlens.views.repositories.files.layout": "list",
+    "gitlens.hovers.annotations.over": "annotation",
+    "gitlens.currentLine.enabled": false,
+    "gitlens.hovers.currentLine.over": "line",
+    "gitlens.keymap": "alternate",
+    "gitlens.advanced.messages": {
+        "suppressCommitHasNoPreviousCommitWarning": false,
+        "suppressCommitNotFoundWarning": false,
+        "suppressFileNotUnderSourceControlWarning": false,
+        "suppressGitVersionWarning": false,
+        "suppressLineUncommittedWarning": false,
+        "suppressNoRepositoryWarning": false
+        //   "suppressResultsExplorerNotice": false,
+        //   "suppressShowKeyBindingsNotice": true
+    },
+    "gitlens.remotes": [
+        {
+            "domain": "code.uber.internal",
+            "type": "Custom",
+            "name": "Uber",
+            "protocol": "gitolite",
+            "urls": {
+                "repository": "https://sourcegraph.uberinternal.com/code.uber.internal/${repo}",
+                "branches": "https://sourcegraph.uberinternal.com/code.uber.internal/${repo}/-/branches",
+                "branch": "https://sourcegraph.uberinternal.com/code.uber.internal/${repo}@${branch}",
+                "commit": "https://sourcegraph.uberinternal.com/code.uber.internal/${repo}/-/commit/${id}",
+                "file": "https://sourcegraph.uberinternal.com/code.uber.internal/${repo}@master/-/blob/${file}",
+                "fileInBranch": "https://sourcegraph.uberinternal.com/code.uber.internal/${repo}@${branch}/-/blob/${file}",
+                "fileInCommit": "https://sourcegraph.uberinternal.com/code.uber.internal/${repo}@${id}/-/blob/${file}",
+                "fileLine": "#L${line}",
+                "fileRange": "#L${start}-${end}"
+            }
+        }
+    ],
+    // markdown
     "markdown.marp.enableHtml": true,
     "markdown.marp.pdf.noteAnnotations": true,
-    "git.openRepositoryInParentFolders": "always",
-    "remote.SSH.enableAgentForwarding": false,
-    "window.newWindowDimensions": "inherit",
+    // copilot
     "github.copilot.enable": {
         "*": true,
         "plaintext": false,
-        "markdown": true,
+        "markdown": false,
         "scminput": false
     },
-    "jupyter.askForKernelRestart": false,
-    "notebook.lineNumbers": "on",
-    "editor.codeActionsOnSave": {},
-    "workbench.colorTheme": "Default Dark+"
+    // zig
+    "zig.zigPath": "/Users/rungta/Library/Application Support/Code/User/globalStorage/ziglang.vscode-zig/zig_install/zig",
+    "zig.zls.path": "/Users/rungta/Library/Application Support/Code/User/globalStorage/ziglang.vscode-zig/zls_install/zls",
+    "zig.zigVersion": "nightly-0.11.0-dev.3897+f571438fc",
+    "zig.zls.enableInlayHints": false,
+    "editor.renderWhitespace": "none"
 }
