@@ -15,8 +15,8 @@ alias gpo='git pull origin $(git rev-parse --abbrev-ref HEAD)'
 alias push='git push origin $(git rev-parse --abbrev-ref HEAD)'
 alias pushf='git push origin $(git rev-parse --abbrev-ref HEAD) --force'
 alias pull='git pull'
-alias grim='git rebase -i master'
-alias grimb='git rebase -i $(git merge-base master HEAD)'
+alias grim='git rebase -i $(git symbolic-ref refs/remotes/origin/HEAD | sed "s@^refs/remotes/origin/@@")'
+alias grimb='BASE=$(git symbolic-ref refs/remotes/origin/HEAD | sed "s@^refs/remotes/origin/@@") && git rebase -i $(git merge-base $BASE HEAD)'
 
 # use fzf to autocomplete git branches
 gcf() {

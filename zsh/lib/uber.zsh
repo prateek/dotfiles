@@ -47,67 +47,38 @@ function reposearch() {
 ## WIP quick git commit
 alias wip='git commit -am "fixup! WIP"'
 
+# return the name of the default branch
+function master_or_main() {
+	# via https://stackoverflow.com/questions/28666357/how-to-get-default-git-branch
+	git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@'
+}
+
 # merges all commits between master..HEAD into a single commit.
 function squash() {
-  GIT_SEQUENCE_EDITOR="sed -i -re '2,\$s/^pick /fixup /'" git rebase -i master
+  GIT_SEQUENCE_EDITOR="sed -i -re '2,\$s/^pick /fixup /'" git rebase -i $(master_or_main)
 }
 
 # merges all commits between master..HEAD with a `fixup!` prefix into the preceding commit.
 function fixup() {
-  GIT_SEQUENCE_EDITOR="sed -i -re '/fixup!/s/^pick /fixup /'" git rebase -i master
+  GIT_SEQUENCE_EDITOR="sed -i -re '/fixup!/s/^pick /fixup /'" git rebase -i $(master_or_main)
 }
 
 # extract_diff assumes a bunch of shit
 # requires that the differential revision be mentioned in the commit message of the first commit on the branch based off master
 # i.e. no chaining of diffs, no base branch which isn't master, etc.
 function extract_diff() {
-  git log --format='%B' -n1 $(git log master..HEAD --oneline | tail -n1 | cut -d ' ' -f 1) | grep 'https://code.uberinternal.com' | sed -e 's@.*\(D[0-9][0-9]*\)$@\1@'
+	local base=$(master_or_main)
+  git log --format='%B' -n1 $(git log ${base}..HEAD --oneline | tail -n1 | cut -d ' ' -f 1) | grep 'https://code.uberinternal.com' | sed -e 's@.*\(D[0-9][0-9]*\)$@\1@'
 }
 
 # au is only meant to be used during update, not for creation.
 function au() {
-  arc diff --update $(extract_diff) $(git merge-base master HEAD) --message '.' $@
+	local base=$(master_or_main)
+  arc diff --update $(extract_diff) $(git merge-base ${base} HEAD) --message '.' $@
 }
 alias ws='wip && squash'
 alias wsa='wip && squash && au'
+alias wsp='wip && squash && push'
 
 alias wf='wip && fixup'
 alias wff='wip && fixup && farc upload master..'
-
-# test go packages affected by changes on this branch
-function testaffected() {
-	go test $(find-affected-packages $(git merge-base master HEAD)..HEAD) "$@"
-}
-
-# go-monorepo...
-# Usage: run "gopathmode on|off" to reset the monorepo direnv to the desired mode.
-function gopathmode () {
-	USAGE="$0 [ on | off ]\n\tshows or sets MONOREPO_GOPATH_MODE"
-	[ $# -lt 1 ] && {
-		[ -n "$MONOREPO_GOPATH_MODE" ] \
-		&& echo "MONOREPO_GOPATH_MODE is on." \
-		|| echo "MONOREPO_GOPATH_MODE is off."
-		return
-	}
-
-	[ $# -gt 1 ] && echo "$USAGE" && return
-
-	[ "$1" != "on" ] && [ "$1" != "off" ] && {
-		echo "$USAGE"
-		return
-	}
-
-	if [[ "$MONOREPO_GOPATH_MODE" != "1" && "$1" == "on" ]] ; then
-		export MONOREPO_GOPATH_MODE=1
-		repo=$(git config --get remote.origin.url || true)
-		if [[ $repo =~ ":go-code" ]]; then
-			direnv reload
-		fi
-	elif [[ -n "$MONOREPO_GOPATH_MODE" && "$1" == "off" ]] ; then
-		unset MONOREPO_GOPATH_MODE
-		repo=$(git config --get remote.origin.url || true)
-		if [[ $repo =~ ":go-code" ]]; then
-			direnv reload
-		fi
-	fi
-}
