@@ -23,6 +23,12 @@ gcf() {
     git checkout $(git branch | fzf)
 }
 
+# use fzf to delete branches, allow multiple selections
+gbd() {
+    # use TAB/S-TAB to select multiple branches
+    git branch -D $(git branch | fzf -m)
+}
+
 # adapted from https://github.com/Phantas0s/.dotfiles/blob/master/zsh/scripts_fzf.zsh
 # git log browser with FZF
 fgl() {
