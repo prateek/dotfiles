@@ -344,7 +344,7 @@ set nolist
 
 " TrailerTrash Trim
 " nnoremap cot :Trim<bar>w<CR>
-" nnoremap <Leader>t :TrailerTrim<CR>
+nnoremap <Leader>t :TrailerTrim<CR>
 
 " set current file's directory as the vim directory
 nnoremap <Leader>c :cd %:p:h<CR>

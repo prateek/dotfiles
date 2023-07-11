@@ -1,7 +1,6 @@
 {
     "extensions": [
         "alefragnani.Bookmarks",
-        "alexclewontin.make-lsp-vscode",
         "bee.git-temporal-vscode",
         "eamodio.gitlens",
         "esbenp.prettier-vscode",
@@ -9,32 +8,23 @@
         "GitHub.copilot-chat",
         "golang.go",
         "golf1052.code-sync",
-        "ianic.zig-language-extras",
-        "inadarei.json-compact-prettifier",
-        "j-brooke.fracturedjsonvsc",
+        "hediet.debug-visualizer",
         "kangping.protobuf",
         "marp-team.marp-vscode",
         "mrkou47.thrift-syntax-support",
         "ms-python.black-formatter",
         "ms-python.python",
         "ms-python.vscode-pylance",
-        "ms-toolsai.jupyter",
-        "ms-toolsai.jupyter-keymap",
-        "ms-toolsai.jupyter-renderers",
-        "ms-toolsai.vscode-jupyter-cell-tags",
-        "ms-toolsai.vscode-jupyter-slideshow",
         "ms-vscode-remote.remote-containers",
         "ms-vscode-remote.remote-ssh",
         "ms-vscode-remote.remote-ssh-edit",
         "ms-vscode.remote-explorer",
         "Oigene.sessions",
         "phgn.vscode-starlark",
-        "quicktype.quicktype",
         "Rubymaniac.vscode-direnv",
         "Uber.vscode-laptop-companion",
         "vadimcn.vscode-lldb",
         "vscodevim.vim",
-        "webfreak.debug",
-        "ziglang.vscode-zig"
+        "webfreak.debug"
     ]
 }
