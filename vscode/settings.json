@@ -105,7 +105,7 @@
     "vim.targets.enable": true,
     "vim.visualstar": true,
     "vim.surround": true,
-    "vim.useSystemClipboard": true,
+    "vim.useSystemClipboard": false,
     "vim.leader": "<space>",
     "vim.normalModeKeyBindingsNonRecursive": [
         // vim-impaired bindings from https://github.com/VSCodeVim/Vim/issues/3263
@@ -130,8 +130,8 @@
         // from https://github.com/joeytwiddle/dotfiles/blob/master/.config/Code/User/settings.json
         { "before": ["c", "s", "w"], "after": ["v", "i", "w", "S"] },
         { "before": ["c", "s", "W"], "after": ["v", "i", "W", "S"] },
-        { "before": ["C-O"], "commands": ["workbench.action.navigateBack"] },
-        { "before"  : ["C-I"], "commands": ["workbench.action.navigateForward"] },
+        { "before": ["C-I"], "commands": ["workbench.action.navigateBack"] },
+        { "before"  : ["C-O"], "commands": ["workbench.action.navigateForward"] },
         // Navigation (mostly custom)
         // revealDefinition may work more often than goToImplementation
         // { "before": [ "g", "d" ], "commands": [ "editor.action.revealDefinition" ], "when": "editorHasDefinitionProvider && editorTextFocus && !isInEmbeddedEditor" },
