@@ -1,7 +1,7 @@
-# `ghc`: github-checkout -- quick checkout and directory switcher
-# usage (1) `$ ghc <github-user>/<github-repo>`
-# usage (2) `$ ghc github.com/<github-user>/<github-repo>(/.*)?`
-function ghc() {
+# `ghclone`: github-checkout -- quick checkout and directory switcher
+# usage (1) `$ ghclone <github-user>/<github-repo>`
+# usage (2) `$ ghclone github.com/<github-user>/<github-repo>(/.*)?`
+function ghclone() {
   local ghstub=$(echo $1 | sed -e 's/.*github.com\///g' -e 's/#.*$//g' | cut -d/ -f1,2)
   local target=$GHPATH/$ghstub
   if ! [ -d "$target" ]; then
@@ -20,4 +20,4 @@ function ghc() {
   fi
 }
 
-ghc "$@"
+ghclone "$@"

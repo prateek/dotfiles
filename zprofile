@@ -36,9 +36,13 @@ export DOTFILES=$HOME/dotfiles
 # GOBASE=/Users/rungta/code/go1.17.3/bin
 export GOPATH=/Users/rungta/code/gocode
 
+# Enable XDG for `ghcup`, via https://www.haskell.org/ghcup/guide/
+export GHCUP_USE_XDG_DIRS=1
+
 # PATH(s), relies on zsh magic (path == $PATH but in array form and sync'd)
 path=(
   $HOME/bin
+  $HOME/.local/bin
   /opt/homebrew/{bin,sbin}
   $GOPATH/bin
   /opt/homebrew/opt/python@3.11/libexec/bin
@@ -60,3 +64,6 @@ manpath=(
   /usr/share/man
 )
 manpath=($^manpath(N-/))
+
+# Added by OrbStack: command-line tools and integration
+source ~/.orbstack/shell/init.zsh 2>/dev/null || :

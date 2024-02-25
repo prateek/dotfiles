@@ -57,7 +57,7 @@ alias jls="jira issue list"
 
 # Aliases
 alias ls='ls -G'
-alias ll='ls -ltrG'
+alias ll='ls -lhG'
 alias vimd='vim -d'
 alias psef='ps -ef | grep -i'
 alias ps='ps -T'

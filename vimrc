@@ -1,7 +1,7 @@
 " vim:fdm=marker
 
-set nocompatible               " be iMproved
-filetype off                   " required!
+set nocompatible " be iMproved
+filetype off     " required!
 
 call plug#begin('~/.vim/plugged')
 
@@ -10,13 +10,9 @@ Plug 'sjl/badwolf'
 Plug 'NLKNguyen/papercolor-theme'
 Plug 'altercation/vim-colors-solarized'
 
-Plug 'amix/vim-zenroom2'
 Plug 'bling/vim-airline'
 Plug 'vim-airline/vim-airline-themes'
-" Plug 'christoomey/vim-tmux-navigator'
-" replaced tmux navigator with iterm2 navigator
 
-Plug 'junegunn/goyo.vim'
 Plug 'godlygeek/tabular'
 Plug 'kien/ctrlp.vim'
 
@@ -37,14 +33,6 @@ Plug 'tpope/vim-surround'
 Plug 'tpope/vim-unimpaired'
 Plug 'tpope/vim-commentary'
 
-" Plug 'vim-scripts/maven-plugin'
-" Plug 'wesQ3/vim-windowswap'
-Plug 'tommcdo/vim-exchange'
-Plug 'sjl/gundo.vim'
-
-Plug 'luochen1990/rainbow'
-Plug 'vim-syntastic/syntastic', { 'for': 'go' } " Syntax Error Checking
-
 " Emacs bindings for Vim's CLI
 Plug 'bruno-/vim-husk'
 Plug 'mileszs/ack.vim'
@@ -54,14 +42,7 @@ Plug 'jiangmiao/auto-pairs'     " AutoPair Brackets
 Plug 'wellle/targets.vim'       " TextObject Extensions
 Plug 'wellle/tmux-complete.vim' " Auto complete across tmux panes
 
-" Snippets
-Plug 'MarcWeber/vim-addon-mw-utils'
-Plug 'tomtom/tlib_vim'
-Plug 'SirVer/ultisnips'
-Plug 'honza/vim-snippets'
-
 Plug 'jpalardy/vim-slime'
-Plug 'wincent/terminus'
 
 " OS X Bindings
 "" Reveal in finder
@@ -75,61 +56,12 @@ Plug 'vim-scripts/scribble.vim'
 Plug 'guns/vim-sexp' , { 'for': ['clojure', 'scheme']  }
 Plug 'tpope/vim-sexp-mappings-for-regular-people', { 'for': ['clojure', 'scheme']  }
 
-" Clojure
-Plug 'tpope/vim-classpath', { 'for': 'clojure' }
-Plug 'tpope/vim-salve', { 'for': 'clojure'  }
-Plug 'tpope/vim-fireplace', { 'for': 'clojure'  }
-Plug 'guns/vim-clojure-static', { 'for': 'clojure'  }
-Plug 'guns/vim-clojure-highlight', { 'for': 'clojure'  }
-
-" Golang
-Plug 'fatih/vim-go', { 'for': 'go' }
-Plug 'majutsushi/tagbar', { 'for': 'go' }
-Plug 'godoctor/godoctor.vim', { 'for': 'go' }
-Plug 'Shougo/deoplete.nvim', { 'do': ':UpdateRemotePlugins', 'for': 'go' }
-Plug 'zchee/deoplete-go', { 'do': 'make', 'for': 'go' }
-" remember to install gocode: ``go get -u github.com/nsf/gocode``
-
 " vim-scripts repos
 Plug 'vim-scripts/L9'
-Plug 'csexton/trailertrash.vim' " TrailerTrash
+Plug 'csexton/trailertrash.vim'
 
 " Background vim compile
 Plug 'tpope/vim-dispatch'
-
-" ZoomWin
-Plug 'vim-scripts/ZoomWin'
-
-" syntax plugins
-"" HOCON - aka morphlines
-Plug 'GEverding/vim-hocon', { 'for': 'conf' }
-Plug 'nathanaelkane/vim-indent-guides'
-
-" Scala
-" Based on: http://bleibinha.us/blog/2013/08/my-vim-setup-for-scala
-" TODO: try this - https://github.com/mdr/scalariform
-Plug 'derekwyatt/vim-scala', { 'for': 'scala' }
-Plug 'kalmanb/sbt-ctags', { 'for': 'scala' }
-Plug 'ktvoelker/sbt-vim', { 'for': 'scala' }
-
-" markdown
-Plug 'tpope/vim-markdown', { 'for': 'markdown' }
-
-" writing
-Plug 'prateek/vim-writingsyntax', {'for': ['markdown', 'text'] } " Writing-Syntax Checker
-Plug 'reedes/vim-textobj-quote', {'for': ['markdown', 'text'] }
-Plug 'reedes/vim-litecorrect', {'for': ['markdown', 'text'] }    " light weight autocorrect
-" Plug 'reedes/vim-pencil', {'for': ['markdown', 'text'] }    " light weight autocorrect
-" TODO: https://github.com/reedes/vim-lexical
-
-" logs
-Plug 'dzeban/vim-log-syntax', { 'for': 'log' }
-
-" octave
-Plug 'jvirtanen/vim-octave', { 'for': 'octave' }
-
-" python
-" Plug 'hdima/python-syntax', { 'for': 'python' }
 
 " BufferList plugin
 Plug 'jeetsukumaran/vim-buffergator'
@@ -162,68 +94,6 @@ colorscheme badwolf
 
 " Keep this below the colorschemes
 filetype plugin indent on     " required!
-
-" Ack.vim
-nnoremap <Leader>a :Ack
-let g:ack_use_dispatch=1
-let g:ack_qhandler = "botright copen 5"
-
-" Dispatch.vim
-autocmd FileType java let b:dispatch = 'mvn package'
-
-" Slime
-" TODO: try: https://github.com/epeli/slimux
-let g:slime_target = "tmux"
-let g:slime_paste_file = "$HOME/.slime_paste"
-let g:slime_no_mappings = 1
-xmap <c-d> <Plug>SlimeRegionSend
-nmap <c-d> <Plug>SlimeParagraphSend
-
-" Sexp
-let g:sexp_filetypes = 'clojure,scheme,lisp,timl,scala'
-let g:sexp_enable_insert_mode_mappings = 0
-
-" ExtractLinks
-nnoremap <Leader>x :ExtractLinks<bar>:$put<CR>
-
-" ZoomWin.vim
-nnoremap <silent> <Leader>z :ZoomWin<CR>
-
-"  syntax
-"" markdown
-" augroup markdown
-"   autocmd BufNewFile * :set ai
-"   autocmd BufNewFile * :set formatoptions=tcroqn2
-"   autocmd BufNewFile * :set comments=n:>
-"   autocmd BufNewFile * :set wrap
-"   autocmd BufNewFile * :set linebreak
-"   autocmd BufNewFile * :set list
-" augroup end
-
-" augroup pencil
-"   autocmd!
-"   autocmd FileType markdown,mkd,text call pencil#init({'wrap': 'hard'})
-"                                  \ | call litecorrect#init()
-"   autocmd FileType markdown,mkd,text :let g:pencil#textwidth=74 " 1/2 screen width of my rMbp
-"   autocmd FileType markdown,mkd,text :let g:airline_section_x='%{PencilMode()}'
-" augroup END
-
-"" fenced code-blocks within markdown
-let g:markdown_fenced_languages = ['html', 'python', 'bash=sh']
-"" vim-markdown
-let g:vim_markdown_initial_foldlevel=1
-"" disable markdown folds at startup
-let g:vim_markdown_folding_disabled=1
-
-" writing plugins
-let g:buffergator_suppress_keymaps=1
-nnoremap <silent> <leader>b :BuffergatorOpen<CR>
-nnoremap <silent> [b :BuffergatorMruCyclePrev<CR>
-nnoremap <silent> ]b :BuffergatorMruCycleNext<CR>
-
-" nmap <silent> K <Plug>DashSearch
-" vmap <silent> K <Plug>DashSearch
-" nmap <silent> <leader>K :DashSearch
 
 " Vim EasyMotion trigger
 let g:EasyMotion_leader_key = '<Leader><Leader>'
@@ -283,22 +153,6 @@ nnoremap j gj
 nnoremap k gk
 nnoremap gk k
 nnoremap gj j
-
-" vim-go golang
-let g:go_highlight_functions = 1
-let g:go_highlight_methods = 1
-let g:go_highlight_fields = 1
-let g:go_highlight_types = 1
-let g:go_highlight_operators = 1
-let g:go_highlight_build_constraints = 1
-let g:go_fmt_command = "goimports"
-let g:go_info_mode = 'gocode'
-
-au FileType go nnoremap <Leader>i :GoInfo<CR>
-
-" ack.vim -> ag
-let g:ackprg = 'ag --nogroup --nocolor --column'
-" let g:ackprg = 'ag --vimgrep' " include multiple matches per line
 
 " iTerm2 is remapping S-Space to C-U
 " toggle hold with <S-Space> if over a fold
@@ -411,24 +265,8 @@ set splitbelow
 nnoremap ! :Clam<space>
 vnoremap ! :ClamVisual<space>
 
-" window swap vim
-" let g:windowswap_map_keys = 0 "prevent default bindings
-" nnoremap <silent> <Leader>yw :call WindowSwap#MarkWindowSwap()<CR>
-" nnoremap <silent> <Leader>pw :call WindowSwap#DoWindowSwap()<CR>
-
 " nerdtree left
 let g:NERDTreeWinPos = "left"
-
-" maven
-" nnoremap <silent> <Leader>mp :Mvn package<bar>:redr!<bar>:ccl<bar>:copen<CR>
-" nnoremap <silent> <Leader>mc :Mvn compile<bar>:redr!<bar>:ccl<bar>:copen<CR>
-
-" fugitive mappings
-nnoremap <silent> <Leader>gs :Gstatus<CR>
-nnoremap <silent> <Leader>gw :Gwrite<CR>
-nnoremap <silent> <Leader>gd :Gdiff<CR>
-nnoremap <silent> <Leader>ge :Gedit<CR>
-nnoremap <silent> <Leader>gc :Gcommit<CR>
 
 " ctrl-p mappings
 let g:ctrlp_map = '<c-p>'
@@ -438,33 +276,9 @@ let g:ctrlp_working_path_mode = 'ra'
 " let g:ctrlp_user_command = ['.git', 'cd %s && git ls-files']
 let g:ctrlp_user_command = ['.git', 'cd %s && git ls-files . -co --exclude-standard']
 
-" VimRoom Plugin
-nnoremap <silent> <Leader>wr :Goyo<CR>
-
-" QFGrep
-let g:QFG_Grep = '<M-g>'
-let g:QFG_GrepV = '<M-v>'
-let g:QFG_Restore = '<M-r>'
-
-" Gist plugin
-let g:gist_post_private = 1
-let g:gist_show_privates = 1
-
-" Use a bar-shaped cursor for insert mode, even through tmux.
-if exists('$TMUX')
-    let &t_SI = "\<Esc>Ptmux;\<Esc>\<Esc>]50;CursorShape=1\x7\<Esc>\\"
-    let &t_EI = "\<Esc>Ptmux;\<Esc>\<Esc>]50;CursorShape=0\x7\<Esc>\\"
-else
-    let &t_SI = "\<Esc>]50;CursorShape=1\x7"
-    let &t_EI = "\<Esc>]50;CursorShape=0\x7"
-endif
-
 "====[ I'm sick of typing :%s/.../.../g ]=======
 nnoremap S :%s//g<LEFT><LEFT>
 vnoremap S :s//g<LEFT><LEFT>
-
-" Marked binding
-nnoremap <silent> <Leader>ma :MarkedOpen<bar>:redr!<cr>
 
 " Visually select last edited/pasted text
 " http://vimcasts.org/episodes/bubbling-text/
@@ -504,46 +318,8 @@ nnoremap <Leader>pi :PlugInstall<CR>
 nnoremap <Leader>pu :PlugUpdate!<CR>
 nnoremap <Leader>pc :PlugClean<CR>
 
-" Gundo
-let g:gundo_auto_preview=0
-let g:gundo_playback_delay=30
-nnoremap <Leader>gu :GundoToggle<CR>
-
-" YankRing
-nnoremap <silent> <Leader>y :YRShow<CR>
-let g:yankring_replace_n_pkey = '<D-p>'
-let g:yankring_replace_n_nkey = '<D-n>'
-let g:yankring_history_file='.yankring_history_'
-
-" vim paste for OS-X
-" inoremap <D-v> :set paste<CR>:put  *<CR>:set nopaste<CR>
-" inoremap <D-V> :set paste<CR>:put  *<CR>:set nopaste<CR>
-
-" Rainbow
-nnoremap cr :RainbowToggle<CR>
-let g:rainbow_active = 1
-let g:rainbow_guifgs = ['RoyalBlue3', 'DarkOrange3', 'DarkOrchid3', 'FireBrick']
-let g:rainbow_ctermfgs = ['lightblue', 'lightgreen', 'yellow', 'red', 'magenta']
-
 " IndentGuides
 nnoremap coi :IndentGuidesToggle<CR>
 let g:indent_guides_start_level=1
 let g:indent_guides_guide_size=1
 
-" Block Visual Move
-" via http://vimrcfu.com/snippet/77
-vnoremap J :m '>+1<CR>gv=gv
-vnoremap K :m '<-2<CR>gv=gv"
-
-" Alternate line colors
-" via http://stackoverflow.com/questions/26611851/set-alternating-highlight-colors-to-text-in-vim
-" syn match Oddlines "^.*$" contains=ALL nextgroup=Evenlines skipnl
-" syn match Evenlines "^.*$" contains=ALL nextgroup=Oddlines skipnl
-" hi Oddlines ctermbg=yellow guibg=#FFFF99
-" hi Evenlines ctermbg=magenta guibg=#FFCCFF
-
-" Uncomment the following to have Vim jump to the last position when reopening a file
-" via http://askubuntu.com/questions/223018/vim-is-not-remembering-last-position
-if has("autocmd")
-  au BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
-endif

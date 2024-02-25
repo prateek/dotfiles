@@ -47,7 +47,7 @@
   { "key": "shift+cmd+r", "command": "workbench.action.tasks.build" },
   { "key": "shift+cmd+b", "command": "-workbench.action.tasks.build", "when": "taskCommandsRegistered" },
   { "key": "shift+cmd+r", "command": "-rerunSearchEditorSearch", "when": "inSearchEditor" },
-  { "key": "alt+w", "command": "editor.action.toggleWordWrap" },
+  // { "key": "alt+w", "command": "editor.action.toggleWordWrap" },
   { "key": "alt+cmd+t", "command": "-workbench.action.closeOtherEditors" },
   { "key": "cmd+k cmd+o", "command": "workbench.action.closeEditorsInOtherGroups" },
   { "key": "shift+alt+down", "command": "-editor.action.copyLinesDownAction", "when": "editorTextFocus && !editorReadonly" },
@@ -66,19 +66,13 @@
   { "key": "ctrl+l", "command": "workbench.action.navigateRight" },
   { "key": "ctrl+k", "command": "workbench.action.navigateUp" },
   { "key": "ctrl+j", "command": "workbench.action.navigateDown" },
-  {
-    "key": "cmd+f",
-    "command": "-list.find",
-    "when": "listFocus && listSupportsFind"
-  },
-  {
-    "key": "f4",
-    "command": "references-view.next",
-    "when": "reference-list.hasResult && references-view.canNavigate"
-  },
-  {
-    "key": "f4",
-    "command": "-references-view.next",
-    "when": "reference-list.hasResult && references-view.canNavigate"
-  }
+
+  { "key": "cmd+f", "command": "-list.find", "when": "listFocus && listSupportsFind" },
+  { "key": "f4", "command": "references-view.next", "when": "reference-list.hasResult && references-view.canNavigate" },
+  { "key": "f4", "command": "-references-view.next", "when": "reference-list.hasResult && references-view.canNavigate" },
+  { "key": "cmd+k l", "command": "workbench.action.closeEditorsToTheRight" },
+
+  { "key": "shift+cmd+e", "command": "workbench.view.explorer", "when": "viewContainer.workbench.view.explorer.enabled && !editorFocus" },
+  { "key": "shift+cmd+e", "command": "workbench.files.action.showActiveFileInExplorer", "when": "viewContainer.workbench.view.explorer.enabled && editorFocus" },
+  { "key": "shift+cmd+e", "command": "-workbench.view.explorer", "when": "viewContainer.workbench.view.explorer.enabled" }
 ]
