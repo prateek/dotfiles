@@ -8,7 +8,7 @@ export LANG=en_US.UTF-8
 
 # NB: need to run `autoload zkbd && zkbd` to setup keycode file being sourced below
 # ideally, only need to run ^ once when setting up a new computer.
-source ~/.zkbd/$TERM-${${DISPLAY:t}:-$VENDOR-$OSTYPE}
+# source ~/.zkbd/$TERM-${${DISPLAY:t}:-$VENDOR-$OSTYPE}
 
 # `less` configuration
 # -F: automatically exit if the entire file can be displayed on the first screen.
