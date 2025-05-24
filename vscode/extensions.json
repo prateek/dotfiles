@@ -1,25 +1,24 @@
 {
     "extensions": [
-        "bee.git-temporal-vscode",
-        "betterthantomorrow.calva",
-        "betterthantomorrow.calva-spritz",
+        "Anthropic.claude-code",
+        "Codeium.windsurfPyright",
         "eamodio.gitlens",
-        "evzen-wybitul.magic-racket",
+        "GitHub.copilot",
+        "GitHub.copilot-chat",
         "golang.go",
         "golf1052.code-sync",
-        "haskell.haskell",
-        "jcanero.hoogle-vscode",
-        "justusadam.language-haskell",
         "kangping.protobuf",
         "marp-team.marp-vscode",
         "mrkou47.thrift-syntax-support",
         "ms-python.debugpy",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "myriad-dreamin.tinymist",
+        "naveenvignesh5nv.html-live-server",
         "phgn.vscode-starlark",
-        "phoityne.phoityne-vscode",
-        "rcook.ghci-helper",
-        "rubberduck.rubberduck-vscode",
-        "rust-lang.rust-analyzer",
-        "visortelle.haskell-spotlight",
-        "vscodevim.vim"
+        "shd101wyy.markdown-preview-enhanced",
+        "SpecStory.specstory-vscode",
+        "vscodevim.vim",
+        "yzane.markdown-pdf"
     ]
 }

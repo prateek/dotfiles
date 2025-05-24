@@ -28,3 +28,5 @@ Temporary Items
 # zsh compiled files
 *.zwc
 *.old
+# SpecStory explanation file
+.specstory/.what-is-this.md

@@ -69,14 +69,14 @@
     "explorer.confirmDelete": false,
     "extensions.ignoreRecommendations": true,
     "go.toolsManagement.autoUpdate": true,
-    "go.buildOnSave": "off",
+    // "go.buildOnSave": "off",
     "go.testOnSave": false,
     "go.lintOnSave": "off",
     "go.lintTool": "golangci-lint",
     "go.lintFlags": [],
     "go.vetOnSave": "package",
     "go.buildFlags": [],
-    "go.gopath": "/Users/rungta/code/gocode",
+    // "go.gopath": "/Users/prateek/code/gocode",
     "go.testTimeout": "20s",
     "go.testEnvVars": {},
     "go.testFlags": [
@@ -520,8 +520,8 @@
         "markdown": false,
         "scminput": false
     },
-    "zig.zigPath": "/Users/rungta/Library/Application Support/Code/User/globalStorage/ziglang.vscode-zig/zig_install/zig",
-    "zig.zls.path": "/Users/rungta/Library/Application Support/Code/User/globalStorage/ziglang.vscode-zig/zls_install/zls",
+    "zig.zigPath": "/Users/prateek/Library/Application Support/Code/User/globalStorage/ziglang.vscode-zig/zig_install/zig",
+    "zig.zls.path": "/Users/prateek/Library/Application Support/Code/User/globalStorage/ziglang.vscode-zig/zls_install/zls",
     "zig.zigVersion": "nightly-0.11.0-dev.3897+f571438fc",
     "zig.zls.enableInlayHints": false,
     "editor.renderWhitespace": "none",
@@ -533,9 +533,9 @@
     "git.autoRepositoryDetection": "subFolders",
     "python.jediEnabled": false,
     "editor.bracketPairColorization.enabled": true,
-    "go.toolsEnvVars": {
-        "GO111MODULE": "off"
-    },
+    // "go.toolsEnvVars": {
+    //     "GO111MODULE": "off"
+    // },
     "go.vetFlags": [],
     "go.useCodeSnippetsOnFunctionSuggest": false,
     "go.useLanguageServer": true,
@@ -599,5 +599,7 @@
     ],
     "haskell.manageHLS": "GHCup",
     "terminal.integrated.enableMultiLinePasteWarning": false,
-    "haskell.checkProject": false
+    "haskell.checkProject": false,
+    "github.copilot.editor.enableAutoCompletions": false,
+    "diffEditor.ignoreTrimWhitespace": false
 }

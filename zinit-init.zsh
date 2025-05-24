@@ -29,6 +29,9 @@ zinit light sindresorhus/pure
 zinit ice wait"0" lucid
 zinit light zsh-vi-more/vi-motions
 
+# fzf-tab completion
+zinit light Aloxaf/fzf-tab
+
 # # ex: commands in vi mode
 # zi ice wait"0" lucid
 # zinit light zsh-vi-more/ex-mode

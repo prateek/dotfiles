@@ -30,3 +30,6 @@ case $SYSTEM in
     # not yet match GNU & BSD stat
   ;;
 esac
+
+# Added by Windsurf
+export PATH="/Users/prateek/.codeium/windsurf/bin:$PATH"

@@ -29,12 +29,12 @@ typeset -gxU fpath FPATH
 typeset -gxU manpath MANPATH
 
 # github base path (useful for `ghc`)
-export GHPATH=/Users/rungta/code/gocode/src/github.com
+export GHPATH=$HOME/code/gocode/src/github.com
 export DOTFILES=$HOME/dotfiles
 
 # Multiple installs of go using https://dave.cheney.net/2014/04/20/how-to-install-multiple-versions-of-go
 # GOBASE=/Users/rungta/code/go1.17.3/bin
-export GOPATH=/Users/rungta/code/gocode
+export GOPATH=$HOME/code/gocode
 
 # Enable XDG for `ghcup`, via https://www.haskell.org/ghcup/guide/
 export GHCUP_USE_XDG_DIRS=1

@@ -61,7 +61,7 @@ alias ll='ls -lhG'
 alias vimd='vim -d'
 alias psef='ps -ef | grep -i'
 alias ps='ps -T'
-alias cat='bat --style=plain'
+# alias cat='bat --style=plain'
 alias grep='egrep --color=auto'
 alias egrep='egrep --color=auto'
 
@@ -70,6 +70,7 @@ alias sz='exec zsh'
 alias ez='code ~/dotfiles'
 alias jz='cd ~/dotfiles'
 
+alias y='open -a Yoink'
 # FIXME: Pipe Aliases
 # alias L=' | less '
 # alias G=' | egrep --color=auto '
