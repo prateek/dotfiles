@@ -70,7 +70,11 @@ alias sz='exec zsh'
 alias ez='code ~/dotfiles'
 alias jz='cd ~/dotfiles'
 
-alias y='open -a Yoink'
+alias ec='code ~/.claude'
+alias jc='cd ~/.claude'
+
+alias yo='open -a Yoink'
+alias yolo='claude --dangerously-skip-permissions'
 # FIXME: Pipe Aliases
 # alias L=' | less '
 # alias G=' | egrep --color=auto '

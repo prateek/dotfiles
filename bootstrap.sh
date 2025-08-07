@@ -22,6 +22,7 @@ if [ ! -f $HOME/.vimrc ]; then ln -s $CWD/vimrc $HOME/.vimrc ; fi
 if [ ! -f $HOME/.zlogin ]; then ln -s $CWD/zlogin $HOME/.zlogin ; fi
 if [ ! -f $HOME/.zprofile ]; then ln -s $CWD/zprofile $HOME/.zprofile ; fi
 if [ ! -f $HOME/.zshrc ]; then ln -s $CWD/zshrc $HOME/.zshrc ; fi
+# TODO: .claude
 
 # directories
 mkdir -p $HOME/code
@@ -43,7 +44,7 @@ fi
 # vim setup
 curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
      https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-vim -c "PlugInstall" 
+vim -c "PlugInstall"
 
 # osx install
 ## dropbox
@@ -70,4 +71,3 @@ defaults import com.manytricks.Moom $CWD/osx-apps/Moom.plist
 # - [ ] ZDOTDIR and XDG_CONFIG_HOME=~/.config -- https://thevaluable.dev/zsh-install-configure-mouseless/ has ideas
 # - [ ] osx settings
 #  - VSCodeVim: `defaults write com.microsoft.VSCode ApplePressAndHoldEnabled -bool false` via https://github.com/VSCodeVim/Vim#mac
-

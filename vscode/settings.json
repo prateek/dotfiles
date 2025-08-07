@@ -601,5 +601,6 @@
     "terminal.integrated.enableMultiLinePasteWarning": false,
     "haskell.checkProject": false,
     "github.copilot.editor.enableAutoCompletions": false,
-    "diffEditor.ignoreTrimWhitespace": false
+    "diffEditor.ignoreTrimWhitespace": false,
+    "github.copilot.nextEditSuggestions.enabled": true
 }

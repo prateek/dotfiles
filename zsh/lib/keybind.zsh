@@ -7,6 +7,13 @@
 # for another key to be pressed when reading bound multi-character sequences.
 KEYTIMEOUT=1
 
+# Enable bracketed paste mode for better paste handling in vi-mode
+autoload -Uz bracketed-paste-magic
+zle -N bracketed-paste bracketed-paste-magic
+
+# Fix paste issues in vi-mode
+zstyle ':bracketed-paste-magic' active-widgets '.self-insert-unmeta'
+
 # map ctrl-space to accept auto-suggestions.
 # color map: https://upload.wikimedia.org/wikipedia/commons/1/15/Xterm_256color_chart.svg
 # usable attributes: https://zsh.sourceforge.io/Doc/Release/Zsh-Line-Editor.html#Character-Highlighting
