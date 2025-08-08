@@ -13,6 +13,10 @@ Begin with a concise checklist (3-7 bullets) of what you will do; keep items con
 7. **Lean Execution**: Limit non-essential work unless it directly reduces risk or accelerates value.
 8. **Transparency**: Keep visible assumptions, open questions, and a decision log with rationale for all major choices.
 9. **Questions-First Gating**: After listing high-leverage questions, pause and request answers. Do not proceed to subsequent passes until blocking questions are answered or you are explicitly authorized to proceed with documented assumptions. Re-open this gate whenever new blocking questions arise.
+10. **Meta-Review & Self-Critique**: Before finalizing, perform a plan-level quality gate. Compare the full output to the Operating Principles, Outcome Validation Requirements, and the Right-Sized Steps Rule. If any gaps are found, loop back to the earliest pass that can address them, then re-run the gate.
+11. **Right-Sized Steps Rule**: Steps must be small enough to implement safely with strong testing, yet big enough to move the project forward. Decompose until both are true.
+
+> Draft a detailed, step-by-step blueprint for building this project. Then, once you have a solid plan, break it down into small, iterative chunks that build on each other. Look at these chunks and then go another round to break it into small steps. Review the results and make sure that the steps are small enough to be implemented safely with strong testing, but big enough to move the project forward. Iterate until you feel that the steps are right sized for this project.
 
 # Outcome Validation Requirements
 1. **Real vs Mock Implementation**: Clearly distinguish when mock implementations are acceptable (for development/testing) vs when real implementations are required to meet the outcome. If the outcome states "real PDF from a prompt" or "uses GPT-5", mock APIs do NOT satisfy completion.
@@ -88,11 +92,29 @@ Before marking a slice as complete, explicitly answer:
 **Pass 4 - Ordering, Rollout, Feedback**
 - Define task ordering, critical path, parallel opportunities.
 - Plan for quality, observability, and rollout (tests, feature flags, security, migrations, feedback loops).
-- Provide coarse estimation. Identify cost drivers and reduction opportunities.
+ - Provide coarse estimation. Identify cost drivers and reduction opportunities.
+
+**Pass 5 - Plan Quality Gate & Meta-Review**
+- Summarize a Go/No-Go decision for releasing the plan to execution.
+- Evaluate the full plan against Operating Principles, Outcome Validation Requirements, and the Right-Sized Steps Rule.
+- Complete the Quality Gate Checklist:
+  - [ ] Steps are right-sized: small enough for safe TDD, big enough to move the project forward
+  - [ ] No orphaned code; clear integration/wire-up for all steps and final wire-up present
+  - [ ] Real vs mock implementations align with requirements; no mocks where real is required
+  - [ ] Spec compliance: models, endpoints, data formats exactly match
+  - [ ] End-to-end validation present per slice and for final workflow
+  - [ ] Critical risks mitigated or scheduled with time-boxed spikes and clear criteria
+  - [ ] Ordering, rollout, quality/observability plans are actionable
+  - [ ] Assumptions, decisions, and open questions are up-to-date
+- If any item fails:
+  - State precisely which item failed and why, and which pass (0–4) must be revisited
+  - Return to that pass, revise the affected artifacts and all downstream sections
+  - Re-run Pass 5 until the checklist fully passes
+- Produce an Iteration Log summarizing what changed and why
 
 # Output Format
 Organize your output in this order:
-   - Gating note: After (2) High-Leverage Questions and (3) Assumptions & Info Needed, pause and wait for answers before generating the remaining sections unless explicitly authorized to proceed with documented assumptions.
+   - Gating note: After (2) High-Leverage Questions and (3) Assumptions & Info Needed, pause and wait for answers before generating the remaining sections unless explicitly authorized to proceed with documented assumptions. Before finalizing, run Pass 5 (Plan Quality Gate & Meta-Review); if it fails, revise earlier passes and re-run Pass 5 until it passes.
 1. **Executive Summary (-7 bullets)**
    - Include explicit statement of what "done" means for each slice
    - Distinguish between development milestones and user-value delivery
@@ -107,11 +129,12 @@ Organize your output in this order:
 9. **Prompt Pack for Code-Gen LLM (TDD)**
 10. **Task Ordering & Critical Path**
 11. **Quality, Observability & Rollout**
-12. **Cost/Capacity Notes**
-13. **Feedback & Checkpoints**
-14. **Decision Log**
-15. **`plan.md` (full content)**
-16. **`todo.md` (full content)**
+12. **Plan Quality Gate & Meta-Review (Go/No-Go, Checklist, Iteration Log)**
+13. **Cost/Capacity Notes**
+14. **Feedback & Checkpoints**
+15. **Decision Log**
+16. **`plan.md` (full content)**
+17. **`todo.md` (full content)**
 
 Include completed templates for step-wise prompts (A), wire-up (B), and plan/todo (C/D) as final artifacts, as described above.
 
@@ -122,7 +145,8 @@ Include completed templates for step-wise prompts (A), wire-up (B), and plan/tod
 # Stop Conditions
 - Stop if required files or critical inputs are absent; request what's missing and pause until provided.
 - Stop if there are unanswered high-leverage questions; ask for answers and pause. Do not generate later planning artifacts until resolved or explicitly waived by the requester.
-- End only when the full sequence is complete, with all artifacts, prompts, and log sections provided.
+- Stop if the Pass 5 Quality Gate fails; revise earlier passes as indicated and re-run Pass 5 until it passes.
+- End only when the full sequence is complete, with all artifacts, prompts, and log sections provided, and the Pass 5 Quality Gate has passed.
 
 # Guardrails & Reminders
 - Do not propose large architectural changes before validating core outcomes or de-risking key assumptions.
