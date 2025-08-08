@@ -45,6 +45,7 @@ Across all passes: If new blocking questions arise, pause and request answers be
 **Pass 1 - Risks & Spikes**
 - Maintain a risk and unknowns register: track likelihood, impact, mitigation/spike, responsible owner, and decision date.
 - Propose prototypes/spikes (time-boxed) with objective, success/kill criteria, and intended artifact.
+ - For each spike, define a concrete schedule window (dates or sprint/week), explicit timebox, predecessors/successors, gating criteria, and owner. Ensure spikes are included in the ordering plan and critical path.
 
 **Pass 2 - Blueprint to Increments to Steps**
 - Create a detailed, high-level step-by-step build plan ("blueprint").
@@ -56,22 +57,27 @@ Across all passes: If new blocking questions arise, pause and request answers be
 - Specify **validation steps** that prove each slice delivers its promised value.
 
 **Pass 3 - Prompt Pack for Code-Gen LLM (TDD)**
-- For each step, provide a fenced `text` block prompt including:
-  - Context (current repo state, relevant files, constraints)
-  - Tests to write first (name, location, key cases)
-  - Files to create/modify (with purpose), exact acceptance criteria/DoD
-  - **Acceptance criteria / DoD:**
-    - All tests pass (using the project's standard test runner)
-    - Codebase passes linting/formatting checks (using the project's standard tools)
-    - **Outcome verification**: Demonstrates the slice delivers its promised value with specified technologies
-    - **Real implementation check**: No mocks remain where real implementations were specified
-    - **Spec compliance**: All technical details match specification exactly
-    - **End-to-end validation**: Complete user workflow tested successfully
-    - Integration note at end: how this hooks into previous steps
-  - Run commands (tests/build), telemetry if relevant
-  - Constraints (style, perf, security), edge cases
-  - Integration notes (so nothing is orphaned)
-- End with a final **Wire-Up & End-to-End** prompt.
+- For each step, create a standalone prompt file saved at `llm/prompt-X.md` (sequential non-padded index) instead of inlining the prompt in the plan.
+  - Each prompt file must include:
+    - Context (current repo state, relevant files, constraints)
+    - Tests to write first (name, location, key cases)
+    - Files to create/modify (with purpose), exact acceptance criteria/DoD
+    - **Acceptance criteria / DoD:**
+      - All tests pass (using the project's standard test runner)
+      - Codebase passes linting/formatting checks (using the project's standard tools)
+      - **Outcome verification**: Demonstrates the slice delivers its promised value with specified technologies
+      - **Real implementation check**: No mocks remain where real implementations were specified
+      - **Spec compliance**: All technical details match specification exactly
+      - **End-to-end validation**: Complete user workflow tested successfully
+      - Integration note at end: how this hooks into previous steps
+    - Run commands (tests/build), telemetry if relevant
+    - Constraints (style, perf, security), edge cases
+    - Integration notes (so nothing is orphaned)
+  - Naming & numbering:
+    - Use `llm/prompt-1.md`, `llm/prompt-2.md`, ... across all slices. Continue numbering without resetting.
+  - Referencing rules:
+    - Do not inline prompt contents in `prompt_plan.md` or `TODO.md`. Those documents must reference the exact prompt file paths.
+- End with a final **Wire-Up & End-to-End** prompt saved as the next `llm/prompt-X.md`.
 
 **Pass 3.5 - Slice Completion Validation**
 - For each slice, provide a completion checklist that includes:
@@ -90,7 +96,8 @@ Before marking a slice as complete, explicitly answer:
 5. Has the slice been validated with actual end-to-end testing?
 
 **Pass 4 - Ordering, Rollout, Feedback**
-- Define task ordering, critical path, parallel opportunities.
+- Define task ordering, critical path, parallel opportunities, including scheduled spikes from Pass 1 placed into the sequence with timeboxes, gating, and owners.
+- Produce an Ordering Constraints table listing tasks and spikes with predecessors, successors, and parallelization windows.
 - Plan for quality, observability, and rollout (tests, feature flags, security, migrations, feedback loops).
  - Provide coarse estimation. Identify cost drivers and reduction opportunities.
 
@@ -126,15 +133,15 @@ Organize your output in this order:
 6. **Blueprint (Step-by-Step)**
 7. **Incremental Plan (Vertical Slices)**
 8. **Decomposed Steps (per Increment)**
-9. **Prompt Pack for Code-Gen LLM (TDD)**
-10. **Task Ordering & Critical Path**
+9. **Prompt Pack for Code-Gen LLM (TDD)** — index referencing `llm/prompt-X.md` files (no inline prompts)
+10. **Task Ordering & Critical Path** (including scheduled spikes)
 11. **Quality, Observability & Rollout**
 12. **Plan Quality Gate & Meta-Review (Go/No-Go, Checklist, Iteration Log)**
 13. **Cost/Capacity Notes**
 14. **Feedback & Checkpoints**
 15. **Decision Log**
-16. **`plan.md` (full content)**
-17. **`todo.md` (full content)**
+16. **`prompt_plan.md`** (with references to `llm/prompt-X.md`; do not inline prompt contents)
+17. **`TODO.md`** (status tracker referencing exact prompt file paths)
 
 Include completed templates for step-wise prompts (A), wire-up (B), and plan/todo (C/D) as final artifacts, as described above.
 
@@ -156,6 +163,9 @@ Include completed templates for step-wise prompts (A), wire-up (B), and plan/tod
 - If spec file or critical context is missing (`{{spec_file}}`), declare "I don't know," state what is required, and pause execution.
 
 # Output destination
-Store the plan in `prompt_plan.md`, also create a `todo.md` to keep state.
+- Create a directory named `llm/` at the repo root.
+- Save each step prompt as `llm/prompt-X.md` (sequential across all slices). Do not inline prompt contents elsewhere.
+- Store the plan in `prompt_plan.md` with references to the exact prompt files.
+- Create `TODO.md` to track execution state; list each step with a checkbox and the exact `llm/prompt-X.md` path to run next.
 
 The spec is in the file called:
