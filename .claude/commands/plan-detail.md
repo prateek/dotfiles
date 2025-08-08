@@ -15,6 +15,7 @@ Begin with a concise checklist (3-7 bullets) of what you will do; keep items con
 9. **Questions-First Gating**: After listing high-leverage questions, pause and request answers. Do not proceed to subsequent passes until blocking questions are answered or you are explicitly authorized to proceed with documented assumptions. Re-open this gate whenever new blocking questions arise.
 10. **Meta-Review & Self-Critique**: Before finalizing, perform a plan-level quality gate. Compare the full output to the Operating Principles, Outcome Validation Requirements, and the Right-Sized Steps Rule. If any gaps are found, loop back to the earliest pass that can address them, then re-run the gate.
 11. **Right-Sized Steps Rule**: Steps must be small enough to implement safely with strong testing, yet big enough to move the project forward. Decompose until both are true.
+12. **Plan vs Log Separation**: Treat `prompt_plan.md` as a stable baseline for the blueprint and step index. Maintain a separate `project_log.md` for execution notes, validations, deviations, and decisions. Only revise the plan when the plan itself changes; record all such changes in the `project_log.md` with rationale and links.
 
 > Draft a detailed, step-by-step blueprint for building this project. Then, once you have a solid plan, break it down into small, iterative chunks that build on each other. Look at these chunks and then go another round to break it into small steps. Review the results and make sure that the steps are small enough to be implemented safely with strong testing, but big enough to move the project forward. Iterate until you feel that the steps are right sized for this project.
 
@@ -41,6 +42,8 @@ You will be provided with:
 - Gating: Present the high-leverage questions and pause. Request answers; do not proceed to Pass 1+ until blocking questions are answered or explicit approval is given to proceed with the stated assumptions.
 
 Across all passes: If new blocking questions arise, pause and request answers before proceeding.
+
+- Across all passes: Maintain `project_log.md`. After each slice or significant decision, append a timestamped entry with step ID, status, decisions, deviations from plan, validation results, and links to commits/PRs.
 
 **Pass 1 - Risks & Spikes**
 - Maintain a risk and unknowns register: track likelihood, impact, mitigation/spike, responsible owner, and decision date.
@@ -86,6 +89,7 @@ Across all passes: If new blocking questions arise, pause and request answers be
   - [ ] Outcome measurably achieved (e.g., "real PDF generated from prompt")
   - [ ] No mock implementations remaining where real ones were specified
   - [ ] Integration with previous slices verified
+  - On completion, append a structured entry to `project_log.md` documenting: slice/step ID, prompts executed (paths), commit hash/PR link, tests and results, observed issues, decisions and rationale, deltas from the plan, and the next step to run.
 
 # Pre-Completion Review (Ask before marking any slice complete)
 Before marking a slice as complete, explicitly answer:
@@ -140,8 +144,9 @@ Organize your output in this order:
 13. **Cost/Capacity Notes**
 14. **Feedback & Checkpoints**
 15. **Decision Log**
-16. **`prompt_plan.md`** (with references to `llm/prompt-X.md`; do not inline prompt contents)
+16. **`prompt_plan.md`** (stable plan referencing `llm/prompt-X.md`; do not inline prompt contents)
 17. **`TODO.md`** (status tracker referencing exact prompt file paths)
+18. **`project_log.md`** (chronological execution notes; append entries after each slice/decision; see template below)
 
 Include completed templates for step-wise prompts (A), wire-up (B), and plan/todo (C/D) as final artifacts, as described above.
 
@@ -165,7 +170,24 @@ Include completed templates for step-wise prompts (A), wire-up (B), and plan/tod
 # Output destination
 - Create a directory named `llm/` at the repo root.
 - Save each step prompt as `llm/prompt-X.md` (sequential across all slices). Do not inline prompt contents elsewhere.
-- Store the plan in `prompt_plan.md` with references to the exact prompt files.
+- Store the plan in `prompt_plan.md` with references to the exact prompt files. Keep this file stable; only revise if the plan itself changes.
 - Create `TODO.md` to track execution state; list each step with a checkbox and the exact `llm/prompt-X.md` path to run next.
+- Create `project_log.md` at the repo root. After each slice completion or material decision, append a timestamped entry using the structure below. Do not place execution notes in the plan or TODO files.
+
+# `project_log.md` structure
+Use this structure for each entry:
+
+```md
+## [YYYY-MM-DD HH:MM] Step X – <step name>
+- Prompt(s) run: `llm/prompt-X.md`[, `llm/prompt-Y.md`]
+- Commit/PR: <hash or link>
+- Result: <pass/fail/partial>; tests: <summary>
+- Decisions: <what, why, alternatives>
+- Deviations from plan: <what changed>
+- Issues/risks: <new or ongoing>
+- Next step: `llm/prompt-Z.md`
+```
+
+At plan revisions, include a short change log entry referencing the sections updated in `prompt_plan.md` and the rationale.
 
 The spec is in the file called:
