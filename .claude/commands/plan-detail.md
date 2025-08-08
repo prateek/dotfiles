@@ -15,7 +15,7 @@ Begin with a concise checklist (3-7 bullets) of what you will do; keep items con
 9. **Questions-First Gating**: After listing high-leverage questions, pause and request answers. Do not proceed to subsequent passes until blocking questions are answered or you are explicitly authorized to proceed with documented assumptions. Re-open this gate whenever new blocking questions arise.
 10. **Meta-Review & Self-Critique**: Before finalizing, perform a plan-level quality gate. Compare the full output to the Operating Principles, Outcome Validation Requirements, and the Right-Sized Steps Rule. If any gaps are found, loop back to the earliest pass that can address them, then re-run the gate.
 11. **Right-Sized Steps Rule**: Steps must be small enough to implement safely with strong testing, yet big enough to move the project forward. Decompose until both are true.
-12. **Plan vs Log Separation**: Treat `prompt_plan.md` as a stable baseline for the blueprint and step index. Maintain a separate `project_log.md` for execution notes, validations, deviations, and decisions. Only revise the plan when the plan itself changes; record all such changes in the `project_log.md` with rationale and links.
+12. **Plan vs Log Separation**: Treat `prompt_plan.md` as a stable baseline for the blueprint and step index. Maintain a separate `project_log.md` for execution notes, validations, deviations, and decisions. Only revise the plan when the plan itself changes; record all such changes in the `project_log.md` with rationale and links. Minimal status annotations in the plan (e.g., a one-line completion note with date and deviation flag) are allowed; detailed notes belong in the log.
 
 > Draft a detailed, step-by-step blueprint for building this project. Then, once you have a solid plan, break it down into small, iterative chunks that build on each other. Look at these chunks and then go another round to break it into small steps. Review the results and make sure that the steps are small enough to be implemented safely with strong testing, but big enough to move the project forward. Iterate until you feel that the steps are right sized for this project.
 
@@ -147,6 +147,7 @@ Organize your output in this order:
 16. **`prompt_plan.md`** (stable plan referencing `llm/prompt-X.md`; do not inline prompt contents)
 17. **`TODO.md`** (status tracker referencing exact prompt file paths)
 18. **`project_log.md`** (chronological execution notes; append entries after each slice/decision; see template below)
+19. **`TODO.md` Header Template** (prepend to TODO with agent operating instructions; see below)
 
 Include completed templates for step-wise prompts (A), wire-up (B), and plan/todo (C/D) as final artifacts, as described above.
 
@@ -173,6 +174,33 @@ Include completed templates for step-wise prompts (A), wire-up (B), and plan/tod
 - Store the plan in `prompt_plan.md` with references to the exact prompt files. Keep this file stable; only revise if the plan itself changes.
 - Create `TODO.md` to track execution state; list each step with a checkbox and the exact `llm/prompt-X.md` path to run next.
 - Create `project_log.md` at the repo root. After each slice completion or material decision, append a timestamped entry using the structure below. Do not place execution notes in the plan or TODO files.
+
+# `TODO.md` header template
+Place this at the top of `TODO.md` and keep it as instructions for any agent executing the tasks:
+
+```md
+## How to Operate
+
+Follow these principles:
+- Clarify assumptions and ask blocking questions before proceeding.
+- Prefer small, test-driven steps; ensure integration, avoid orphaned code.
+- Keep `prompt_plan.md` stable; only update when the plan itself changes.
+
+Operating loop for each session:
+1) Review open items in this TODO list and the latest entries in `project_log.md`.
+2) Select the next pending task. If unclear, consult `prompt_plan.md` ordering and critical path.
+3) Execute the corresponding prompt file(s) in `llm/`.
+4) Update artifacts:
+   - `project_log.md`: Append a timestamped entry with prompts run, results, decisions, deviations, risks, and next step.
+   - `prompt_plan.md`: Add a brief one-line completion annotation under the relevant step with date and deviation flag; update plan content only if the plan itself changed.
+   - `spec.md`: If requirements changed or clarified, edit accordingly and reference the change in the project log.
+   - `TODO.md`: Mark items done, add/adjust next items with exact `llm/prompt-X.md` paths.
+5) Run tests/lint/build as specified; do not mark tasks complete unless acceptance criteria are met.
+
+Notes:
+- Deviations from plan must be called out in both the TODO item note and the `project_log.md`, with rationale.
+- Never inline prompt contents here; always reference exact files under `llm/`.
+```
 
 # `project_log.md` structure
 Use this structure for each entry:
