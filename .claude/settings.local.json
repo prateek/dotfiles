@@ -1,9 +1,27 @@
 {
   "permissions": {
     "allow": [
-      "Bash(brew:*)"
+      "Bash(brew:*)",
+      "Bash(git add:*)",
+      "Bash(sqlite3:*)",
+      "Bash(mkdir:*)",
+      "Bash(find:*)",
+      "Bash(python3:*)",
+      "Bash(chmod:*)",
+      "Bash(grep:*)",
+      "WebFetch(domain:manual.raycast.com)",
+      "Bash(plutil:*)",
+      "mcp__exa__web_search_exa",
+      "mcp__exa__crawling_exa",
+      "Bash(aerospace:*)",
+      "Bash(cp:*)",
+      "Bash(pgrep:*)",
+      "Bash(killall:*)"
     ],
-    "deny": []
+    "deny": [],
+    "additionalDirectories": [
+      "/Users/prateek"
+    ]
   },
   "enableAllProjectMcpServers": false
 }

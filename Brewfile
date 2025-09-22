@@ -14,6 +14,7 @@ tap "neovim/neovim"
 tap "romkatv/powerlevel10k"
 tap "saulpw/vd"
 tap "thoughtbot/formulae"
+tap "nikitabobko/tap"
 
 brew "ack"
 brew "adns"
@@ -276,6 +277,8 @@ cask "obsidian"
 cask "omnifocus", args: { appdir: "/Applications" }
 cask "omnigraffle", args: { appdir: "/Applications" }
 cask "postman", args: { appdir: "/Applications" }
+cask "raycast", args: { appdir: "/Applications" }
+cask "nikitabobko/tap/aerospace", args: { appdir: "/Applications" }
 cask "rescuetime", args: { appdir: "/Applications" }
 cask "scrivener", args: { appdir: "/Applications" }
 cask "sequel-pro", args: { appdir: "/Applications" }
