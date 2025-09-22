@@ -4,33 +4,41 @@
 
 # https://zdharma-continuum.github.io/zinit/wiki/GALLERY/
 
-# fzf pack via zinit
-# https://zdharma-continuum.github.io/zinit/wiki/Zinit-Packages/
-zinit pack for fzf
-
-# zinit ice wait"0" atload"_zsh_autosuggest_start" lucid
-# zinit light zsh-users/zsh-autosuggestions
-
-zinit ice wait"0" lucid
-zinit light zsh-users/zsh-completions
-
-zinit ice wait"0" atinit"zpcompinit; zpcdreplay" lucid
-zinit light zdharma-continuum/fast-syntax-highlighting
-
-zinit from"gh-r" as"program" mv"direnv* -> direnv"          \
-    atclone'./direnv hook zsh > zhook.zsh' atpull'%atclone' \
-    pick"direnv" src="zhook.zsh" for direnv/direnv
-
+# Load critical items first (prompt needs to be immediate)
 # Load the pure theme, with zsh-async library that's bundled with it
 zinit ice pick"async.zsh" src"pure.zsh" lucid
 zinit light sindresorhus/pure
 
-# way better vim motions
-zinit ice wait"0" lucid
+# fzf is loaded via custom setup in zsh/extra/fzf.zsh
+# Installation handled by Brewfile during bootstrap (not zinit)
+# Removed zinit pack to avoid double loading
+
+# Defer non-critical plugins with turbo mode
+# wait - defers loading (in seconds or with special value)
+# lucid - skip "Loaded" message
+# atinit/atload - commands to run before/after loading
+
+# Completions must load first
+zinit ice wait lucid blockf atpull'zinit creinstall -q .'
+zinit light zsh-users/zsh-completions
+
+# fzf-tab loads after completions with compinit
+zinit ice wait lucid atinit"zpcompinit; zpcdreplay"
+zinit light Aloxaf/fzf-tab
+
+# Syntax highlighting loads last (no compinit needed)
+zinit ice wait lucid
+zinit light zdharma-continuum/fast-syntax-highlighting
+
+# Vi motions can be deferred
+zinit ice wait lucid
 zinit light zsh-vi-more/vi-motions
 
-# fzf-tab completion
-zinit light Aloxaf/fzf-tab
+# direnv loads from binary (deferred since not needed immediately)
+zinit ice wait"1" from"gh-r" as"program" mv"direnv* -> direnv"          \
+    atclone'./direnv hook zsh > zhook.zsh' atpull'%atclone' \
+    pick"direnv" src="zhook.zsh"
+zinit light direnv/direnv
 
 # # ex: commands in vi mode
 # zi ice wait"0" lucid

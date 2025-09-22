@@ -3,6 +3,13 @@
 # vim:filetype=sh
 
 #-----------------------------------------------------
+# Cache homebrew prefix early (before plugins need it)
+#-----------------------------------------------------
+if [[ -z ${HOMEBREW_PREFIX:-} ]] && command -v brew >/dev/null 2>&1; then
+    export HOMEBREW_PREFIX="$(brew --prefix)"
+fi
+
+#-----------------------------------------------------
 # bootstrap zinit script
 #-----------------------------------------------------
 source "$HOME/.zinit/bin/zinit.zsh"
@@ -11,9 +18,6 @@ source "$HOME/.zinit/bin/zinit.zsh"
 # load zinit plugins
 #-----------------------------------------------------
 source "$DOTFILES/zinit-init.zsh"
-
-# avoid every command forking for this
-export HOMEBREW_PREFIX=$(brew --prefix)
 
 #-----------------------------------------------------
 # Setting autoloaded functions
@@ -51,5 +55,7 @@ if [[ -d "$extras" ]]; then
 fi
 unset extras
 
-# finally, set the PATH for macOS
-[[ -x /bin/launchctl ]] && /bin/launchctl setenv PATH $PATH
+# Set PATH for macOS (only for interactive login shells)
+if [[ -x /bin/launchctl && -o interactive && -o login ]]; then
+    /bin/launchctl setenv PATH "$PATH"
+fi
