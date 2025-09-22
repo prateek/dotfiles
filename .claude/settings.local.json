@@ -16,12 +16,25 @@
       "Bash(aerospace:*)",
       "Bash(cp:*)",
       "Bash(pgrep:*)",
-      "Bash(killall:*)"
+      "Bash(killall:*)",
+      "Bash(time zsh:*)",
+      "Bash(ZPROF=1 zsh -i -c 'zprof')",
+      "Bash(zsh:*)",
+      "mcp__exa__deep_researcher_start",
+      "mcp__exa__deep_researcher_check",
+      "mcp__zen__codereview"
     ],
     "deny": [],
     "additionalDirectories": [
       "/Users/prateek"
     ]
   },
-  "enableAllProjectMcpServers": false
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "zen"
+  ],
+  "statusLine": {
+    "type": "command",
+    "command": "npx -y @owloops/claude-powerline@latest --style=powerline"
+  }
 }

@@ -30,3 +30,4 @@ Temporary Items
 *.old
 # SpecStory explanation file
 .specstory/.what-is-this.md
+.env
