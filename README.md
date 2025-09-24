@@ -34,7 +34,7 @@ cd ~/dotfiles
 
 # Install and initialize chezmoi
 ./install-chezmoi.sh
-./init-chezmoi.sh
+./init-chezmoi-v2.sh  # Use v2 for proper dot_ structure
 ```
 
 ## Directory Structure

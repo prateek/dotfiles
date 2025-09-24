@@ -1,0 +1,21 @@
+# Chezmoi state
+.chezmoi.toml.tmpl.lock
+
+# Editor files
+*.swp
+*~
+.*.sw[op]
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*.orig
+
+# IDE
+.idea/
+.vscode/
+*.sublime-*
