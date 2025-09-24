@@ -1,0 +1,14 @@
+# TODO: use aliases to jump to common directories quickly.
+# For my needs, it'll suffice (and let me avoid avoid j/z/fasd).
+
+# autojump sourcing
+# h/t https://kevin.burke.dev/kevin/profiling-zsh-startup-time/ for the lazy-loading trick.
+function j() {
+    (( $+commands[brew] )) && {
+        local pfx=$(brew --prefix)
+        [[ -f "$pfx/etc/autojump.sh" ]] && . "$pfx/etc/autojump.sh"
+        j "$@"
+    }
+}
+
+j "$@"

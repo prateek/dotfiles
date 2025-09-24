@@ -1,0 +1,12 @@
+# adapted from https://stackoverflow.com/questions/40010848/how-to-list-all-zsh-autocompletions
+function list_completions() {
+  for command completion in ${(kv)_comps:#-*(-|-,*)}
+  do
+    printf "%-32s %s\n" $command $completion
+  done | sort
+}
+
+# also useful:
+# https://unix.stackexchange.com/questions/509869/how-to-look-up-zsh-completion-definitions
+
+list_completions "$@"

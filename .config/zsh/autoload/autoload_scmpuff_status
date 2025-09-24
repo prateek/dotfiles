@@ -1,0 +1,6 @@
+function autoload_scmpuff_status() {
+  eval "$(scmpuff init --shell=zsh --aliases=false --wrap=false)"
+  scmpuff_status "$@"
+}
+
+autoload_scmpuff_status "$@"

@@ -1,0 +1,5 @@
+#command
+\n undo-hilite
+
+# nb: i also wanted <shift-space> to page up but i'm forced to do that via my TERM emulator (iterm2)
+# because of https://unix.stackexchange.com/questions/88579/shift-space-in-less

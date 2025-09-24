@@ -1,0 +1,21 @@
+# chezmoi configuration
+
+[data]
+    # Personal information
+    name = "Your Name"
+    email = "your.email@example.com"
+
+[edit]
+    command = "vim"
+
+[git]
+    autoCommit = true
+    autoPush = false
+
+# Use XDG Base Directory specification
+[diff]
+    exclude = ["scripts"]
+
+# Template options
+[template]
+    options = ["missingkey=zero"]
