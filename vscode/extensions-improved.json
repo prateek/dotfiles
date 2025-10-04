@@ -1,0 +1,39 @@
+{
+  "recommendations": [
+    // AI Assistants
+    "Anthropic.claude-code",
+    "GitHub.copilot",
+    
+    // Git Integration
+    "eamodio.gitlens",
+    
+    // Language Support
+    "golang.go",
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "ms-python.debugpy",
+    
+    // Editor Enhancement
+    "vscodevim.vim",
+    
+    // Markdown
+    "marp-team.marp-vscode",
+    "shd101wyy.markdown-preview-enhanced",
+    "yzane.markdown-pdf",
+    
+    // Remote Development
+    "ms-vscode-remote.remote-containers",
+    
+    // Other Languages
+    "phgn.vscode-starlark",        // Bazel
+    "myriad-dreamin.tinymist",     // Typst
+    "kangping.protobuf",           // Protocol Buffers
+    "mrkou47.thrift-syntax-support" // Thrift
+  ],
+  "unwantedRecommendations": [
+    // Exclude language servers that might conflict
+    "ms-python.black-formatter",
+    "ms-python.isort",
+    "ms-python.flake8"
+  ]
+}
