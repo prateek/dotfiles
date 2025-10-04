@@ -1,5 +1,7 @@
 {
     "extensions": [
+        "esbenp.prettier-vscode",
+        "betterthantomorrow.calva",
         "Anthropic.claude-code",
         "Codeium.windsurfPyright",
         "eamodio.gitlens",
