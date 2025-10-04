@@ -1,64 +1,46 @@
 {
-	/*
-	// Place your snippets for Go here. Each snippet is defined under a snippet name and has a prefix, body and
-	// description. The prefix is what is used to trigger the snippet and the body will be expanded and inserted. Possible variables are:
-	// $1, $2 for tab stops, $0 for the final cursor position, and ${1:label}, ${2:another} for placeholders. Placeholders with the
-	// same ids are connected.
-	// Example:
-	"Print to console": {
-		"prefix": "log",
-		"body": [
-			"console.log('$1');",
-			"$2"
-		],
-		"description": "Log output to console"
-	}
-*/
-	"Print to console": {
-		"prefix": "psf",
-		"body": [
-			"println(fmt.Sprintf(\"$1\"))"
-		],
-		"description": "Print output to console"
-	},
-	"Test controller": {
-		"prefix": "ctrl",
-		"body": [
-			"ctrl := gomock.NewController(xtest.Reporter{t})",
-			"defer ctrl.Finish()"
-		],
-		"description": "Add test mock controller"
-	},
-	"Leaktest": {
-		"prefix": "leak",
-		"body": [
-			"defer leaktest.CheckTimeout(t, time.Second)()"
-		],
-		"description": "Add leaktest check"
-	},
-	"Prop Test": {
-		"prefix": "proptest",
-		"body": [
-			"func TestSamplePropTest(t *testing.T) {",
-			"parameters := gopter.DefaultTestParameters()",
-			"seed := time.Now().UnixNano()",
-			"parameters.MinSuccessfulTests = 100",
-			"parameters.MaxSize = 40",
-			"parameters.Rng = rand.New(rand.NewSource(seed))",
-			"properties := gopter.NewProperties(parameters)",
-			"",
-			"properties.Property(\"Property\", prop.ForAll(",
-			"func(x int) (bool, error) {",
-			"return false, nil",
-			"},",
-			"gen.Int32(),",
-			"))",
-			"",
-			"reporter := gopter.NewFormatedReporter(true, 160, os.Stdout)",
-			"if !properties.Run(reporter) {",
-			"t.Errorf(\"failed with initial seed: %d\", seed)",
-			"}",
-			"}",
-		]
-	}
+  "Print to console": {
+    "prefix": "psf",
+    "body": ["println(fmt.Sprintf(\"$1\"))"],
+    "description": "Print output to console"
+  },
+  "Test controller": {
+    "prefix": "ctrl",
+    "body": [
+      "ctrl := gomock.NewController(xtest.Reporter{t})",
+      "defer ctrl.Finish()"
+    ],
+    "description": "Add test mock controller"
+  },
+  "Leaktest": {
+    "prefix": "leak",
+    "body": ["defer leaktest.CheckTimeout(t, time.Second)()"],
+    "description": "Add leaktest check"
+  },
+  "Prop Test": {
+    "prefix": "proptest",
+    "body": [
+      "func TestSamplePropTest(t *testing.T) {",
+      "\tparameters := gopter.DefaultTestParameters()",
+      "\tseed := time.Now().UnixNano()",
+      "\tparameters.MinSuccessfulTests = 100",
+      "\tparameters.MaxSize = 40",
+      "\tparameters.Rng = rand.New(rand.NewSource(seed))",
+      "\tproperties := gopter.NewProperties(parameters)",
+      "",
+      "\tproperties.Property(\"Property\", prop.ForAll(",
+      "\t\tfunc(x int) (bool, error) {",
+      "\t\t\treturn false, nil",
+      "\t\t},",
+      "\t\tgen.Int32(),",
+      "\t))",
+      "",
+      "\treporter := gopter.NewFormatedReporter(true, 160, os.Stdout)",
+      "\tif !properties.Run(reporter) {",
+      "\t\tt.Errorf(\"failed with initial seed: %d\", seed)",
+      "\t}",
+      "}"
+    ],
+    "description": "Property-based test template with gopter"
+  }
 }

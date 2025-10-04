@@ -1,19 +1,31 @@
-// Place your key bindings in this file to overwrite the defaults
 // prettier-ignore
 [
-  // open hotkeys
+  // ============================================================================
+  // SYSTEM/GLOBAL SHORTCUTS
+  // ============================================================================
   {
     "key": "shift+cmd+.",
     "command": "workbench.action.openGlobalKeybindings"
   },
-  // editor navigation
+
+  // ============================================================================
+  // EDITOR NAVIGATION
+  // ============================================================================
   {
     "key": "ctrl+h",
-    "command": "workbench.action.focusPreviousGroup"
+    "command": "workbench.action.navigateLeft"
   },
   {
     "key": "ctrl+l",
-    "command": "workbench.action.focusNextGroup"
+    "command": "workbench.action.navigateRight"
+  },
+  {
+    "key": "ctrl+k",
+    "command": "workbench.action.navigateUp"
+  },
+  {
+    "key": "ctrl+j",
+    "command": "workbench.action.navigateDown"
   },
   {
     "key": "shift+cmd+[",
@@ -21,38 +33,203 @@
     "when": "!terminalFocus"
   },
   {
+    "key": "shift+cmd+[",
+    "command": "-workbench.action.previousEditor"
+  },
+  {
     "key": "shift+cmd+]",
     "command": "workbench.action.nextEditor",
     "when": "!terminalFocus"
   },
+  {
+    "key": "shift+cmd+]",
+    "command": "-workbench.action.nextEditor"
+  },
+  {
+    "key": "cmd+n",
+    "command": "workbench.action.quickOpen"
+  },
+  {
+    "key": "cmd+p",
+    "command": "-workbench.action.quickOpen"
+  },
+  {
+    "key": "cmd+2",
+    "command": "workbench.action.splitEditor"
+  },
+  {
+    "key": "cmd+2",
+    "command": "-workbench.action.focusSecondEditorGroup"
+  },
+  {
+    "key": "cmd+\\",
+    "command": "-workbench.action.splitEditor"
+  },
+  {
+    "key": "cmd+k l",
+    "command": "workbench.action.closeEditorsToTheRight"
+  },
+  {
+    "key": "cmd+k cmd+o",
+    "command": "workbench.action.closeEditorsInOtherGroups"
+  },
+  {
+    "key": "alt+cmd+t",
+    "command": "-workbench.action.closeOtherEditors"
+  },
+
+  // ============================================================================
+  // EDITOR FEATURES
+  // ============================================================================
   {
     "key": "f1",
     "command": "editor.action.showHover",
     "when": "editorTextFocus"
   },
   {
-    "key": "cmd+n",
-    "command": "workbench.action.quickOpen"
-  },
-  // zig bindings - start
-  {
-    "key": "ctrl+f",
-    "command": "zig-language-extras.runFileTests",
-    "when": "editorLangId=='zig' && editorTextFocus"
+    "key": "ctrl+shift+f",
+    "command": "editor.action.formatDocument",
+    "when": "editorTextFocus && !editorReadonly"
   },
   {
-    "key": "ctrl+e",
-    "command": "zig-language-extras.runSingleTest",
-    "when": "editorLangId=='zig' && editorTextFocus"
+    "key": "shift+alt+f",
+    "command": "-editor.action.formatDocument",
+    "when": "editorTextFocus && !editorReadonly"
+  },
+
+  // ============================================================================
+  // PROBLEM/ERROR NAVIGATION
+  // ============================================================================
+  {
+    "key": "cmd+p",
+    "command": "editor.action.marker.next",
+    "when": "editorFocus"
   },
   {
-    "key": "f5",
-    "command": "workbench.action.tasks.runTask",
-    "args": "runZigFile",
-    "when": "editorLangId=='zig' && editorFocus"
+    "key": "alt+f8",
+    "command": "-editor.action.marker.next",
+    "when": "editorFocus"
   },
-  // zig bindings - end
-  // go bindings - start
+  {
+    "key": "shift+cmd+p",
+    "command": "editor.action.marker.prev",
+    "when": "editorFocus"
+  },
+  {
+    "key": "shift+alt+f8",
+    "command": "-editor.action.marker.prev",
+    "when": "editorFocus"
+  },
+  {
+    "key": "shift+cmd+p",
+    "command": "-workbench.action.showCommands"
+  },
+
+  // ============================================================================
+  // REFERENCES & SYMBOLS
+  // ============================================================================
+  {
+    "key": "f4",
+    "command": "references-view.next",
+    "when": "reference-list.hasResult && references-view.canNavigate"
+  },
+  {
+    "key": "f4",
+    "command": "-references-view.next",
+    "when": "reference-list.hasResult && references-view.canNavigate"
+  },
+  {
+    "key": "ctrl+z",
+    "command": "workbench.action.showAllSymbols"
+  },
+  {
+    "key": "cmd+t",
+    "command": "-workbench.action.showAllSymbols"
+  },
+  {
+    "key": "shift+cmd+o",
+    "command": "-workbench.action.gotoSymbol"
+  },
+
+  // ============================================================================
+  // EXPLORER VIEW
+  // ============================================================================
+  {
+    "key": "shift+cmd+e",
+    "command": "workbench.view.explorer",
+    "when": "viewContainer.workbench.view.explorer.enabled && !editorFocus"
+  },
+  {
+    "key": "shift+cmd+e",
+    "command": "workbench.files.action.showActiveFileInExplorer",
+    "when": "viewContainer.workbench.view.explorer.enabled && editorFocus"
+  },
+  {
+    "key": "shift+cmd+e",
+    "command": "-workbench.view.explorer",
+    "when": "viewContainer.workbench.view.explorer.enabled"
+  },
+
+  // ============================================================================
+  // GIT/VERSION CONTROL
+  // ============================================================================
+  {
+    "key": "cmd+r",
+    "command": "gitlens.openFileOnRemote",
+    "when": "editorTextFocus"
+  },
+
+  // ============================================================================
+  // TASKS & BUILD
+  // ============================================================================
+  {
+    "key": "shift+cmd+r",
+    "command": "workbench.action.tasks.build"
+  },
+  {
+    "key": "shift+cmd+b",
+    "command": "-workbench.action.tasks.build",
+    "when": "taskCommandsRegistered"
+  },
+  {
+    "key": "shift+cmd+r",
+    "command": "-rerunSearchEditorSearch",
+    "when": "inSearchEditor"
+  },
+
+  // ============================================================================
+  // TERMINAL
+  // ============================================================================
+  {
+    "key": "shift+cmd+enter",
+    "command": "workbench.action.toggleMaximizedPanel",
+    "when": "terminalFocus"
+  },
+  {
+    "key": "ctrl+a",
+    "command": "workbench.action.terminal.runSelectedText"
+  },
+
+  // ============================================================================
+  // COPILOT CHAT
+  // ============================================================================
+  {
+    "key": "ctrl+shift+c",
+    "command": "workbench.panel.chatSidebar.copilot"
+  },
+  {
+    "key": "ctrl+cmd+i",
+    "command": "-workbench.panel.chatSidebar.copilot"
+  },
+  {
+    "key": "shift+cmd+i",
+    "command": "-chat.action.askQuickQuestion",
+    "when": "config.chat.experimental.quickQuestion.enable && hasChatProvider"
+  },
+
+  // ============================================================================
+  // GO LANGUAGE BINDINGS
+  // ============================================================================
   {
     "key": "f5",
     "command": "workbench.action.debug.restart",
@@ -83,101 +260,30 @@
     "command": "go.test.package",
     "when": "editorLangId=='go'"
   },
+
+  // ============================================================================
+  // ZIG LANGUAGE BINDINGS
+  // ============================================================================
   {
-    "key": "shift+cmd+o",
-    "command": "-workbench.action.gotoSymbol"
+    "key": "ctrl+f",
+    "command": "zig-language-extras.runFileTests",
+    "when": "editorLangId=='zig' && editorTextFocus"
   },
   {
-    "key": "ctrl+z",
-    "command": "workbench.action.showAllSymbols"
+    "key": "ctrl+e",
+    "command": "zig-language-extras.runSingleTest",
+    "when": "editorLangId=='zig' && editorTextFocus"
   },
   {
-    "key": "cmd+t",
-    "command": "-workbench.action.showAllSymbols"
+    "key": "f5",
+    "command": "workbench.action.tasks.runTask",
+    "args": "runZigFile",
+    "when": "editorLangId=='zig' && editorFocus"
   },
-  {
-    "key": "ctrl+shift+f",
-    "command": "editor.action.formatDocument",
-    "when": "editorTextFocus && !editorReadonly"
-  },
-  {
-    "key": "shift+alt+f",
-    "command": "-editor.action.formatDocument",
-    "when": "editorTextFocus && !editorReadonly"
-  },
-  {
-    "key": "cmd+2",
-    "command": "-workbench.action.focusSecondEditorGroup"
-  },
-  {
-    "key": "cmd+2",
-    "command": "workbench.action.splitEditor"
-  },
-  {
-    "key": "cmd+\\",
-    "command": "-workbench.action.splitEditor"
-  },
-  {
-    "key": "shift+cmd+p",
-    "command": "-workbench.action.showCommands"
-  },
-  {
-    "key": "cmd+p",
-    "command": "-workbench.action.quickOpen"
-  },
-  {
-    "key": "cmd+p",
-    "command": "editor.action.marker.next",
-    "when": "editorFocus"
-  },
-  {
-    "key": "alt+f8",
-    "command": "-editor.action.marker.next",
-    "when": "editorFocus"
-  },
-  {
-    "key": "shift+cmd+p",
-    "command": "editor.action.marker.prev",
-    "when": "editorFocus"
-  },
-  {
-    "key": "shift+alt+f8",
-    "command": "-editor.action.marker.prev",
-    "when": "editorFocus"
-  },
-  {
-    "key": "shift+cmd+u",
-    "command": "-workbench.action.output.toggleOutput",
-    "when": "workbench.panel.output.active"
-  },
-  {
-    "key": "cmd+r",
-    "command": "gitlens.openFileOnRemote",
-    "when": "editorTextFocus"
-  },
-  {
-    "key": "shift+cmd+r",
-    "command": "workbench.action.tasks.build"
-  },
-  {
-    "key": "shift+cmd+b",
-    "command": "-workbench.action.tasks.build",
-    "when": "taskCommandsRegistered"
-  },
-  {
-    "key": "shift+cmd+r",
-    "command": "-rerunSearchEditorSearch",
-    "when": "inSearchEditor"
-  },
-  // { "key": "alt+w", "command": "editor.action.toggleWordWrap" },
-  {
-    "key": "alt+cmd+t",
-    "command": "-workbench.action.closeOtherEditors"
-  },
-  {
-    "key": "cmd+k cmd+o",
-    "command": "workbench.action.closeEditorsInOtherGroups"
-  },
+
+  // ============================================================================
+  // MISC DISABLED BINDINGS
+  // ============================================================================
   {
     "key": "shift+alt+down",
     "command": "-editor.action.copyLinesDownAction",
@@ -199,93 +305,13 @@
     "when": "editorTextFocus && !editorReadonly"
   },
   {
-    "key": "shift+cmd+i",
-    "command": "-chat.action.askQuickQuestion",
-    "when": "config.chat.experimental.quickQuestion.enable && hasChatProvider"
-  },
-  {
-    "key": "ctrl+shift+c",
-    "command": "workbench.panel.chatSidebar.copilot"
-  },
-  {
-    "key": "ctrl+cmd+i",
-    "command": "-workbench.panel.chatSidebar.copilot"
-  },
-  {
-    "key": "shift+cmd+enter",
-    "command": "workbench.action.toggleMaximizedPanel",
-    "when": "terminalFocus"
-  },
-  {
-    "key": "shift+cmd+]",
-    "command": "workbench.action.nextEditor",
-    "when": "!terminalFocus"
-  },
-  {
-    "key": "shift+cmd+]",
-    "command": "-workbench.action.nextEditor"
-  },
-  {
-    "key": "shift+cmd+[",
-    "command": "workbench.action.previousEditor",
-    "when": "!terminalFocus"
-  },
-  {
-    "key": "shift+cmd+[",
-    "command": "-workbench.action.previousEditor"
-  },
-  {
-    "key": "ctrl+h",
-    "command": "workbench.action.navigateLeft"
-  },
-  {
-    "key": "ctrl+l",
-    "command": "workbench.action.navigateRight"
-  },
-  {
-    "key": "ctrl+k",
-    "command": "workbench.action.navigateUp"
-  },
-  {
-    "key": "ctrl+j",
-    "command": "workbench.action.navigateDown"
+    "key": "shift+cmd+u",
+    "command": "-workbench.action.output.toggleOutput",
+    "when": "workbench.panel.output.active"
   },
   {
     "key": "cmd+f",
     "command": "-list.find",
     "when": "listFocus && listSupportsFind"
-  },
-  {
-    "key": "f4",
-    "command": "references-view.next",
-    "when": "reference-list.hasResult && references-view.canNavigate"
-  },
-  {
-    "key": "f4",
-    "command": "-references-view.next",
-    "when": "reference-list.hasResult && references-view.canNavigate"
-  },
-  {
-    "key": "cmd+k l",
-    "command": "workbench.action.closeEditorsToTheRight"
-  },
-  {
-    "key": "shift+cmd+e",
-    "command": "workbench.view.explorer",
-    "when": "viewContainer.workbench.view.explorer.enabled && !editorFocus"
-  },
-  {
-    "key": "shift+cmd+e",
-    "command": "workbench.files.action.showActiveFileInExplorer",
-    "when": "viewContainer.workbench.view.explorer.enabled && editorFocus"
-  },
-  {
-    "key": "shift+cmd+e",
-    "command": "-workbench.view.explorer",
-    "when": "viewContainer.workbench.view.explorer.enabled"
-  },
-  {
-    "key": "ctrl+a",
-    "command": "workbench.action.terminal.runSelectedText"
   }
 ]
