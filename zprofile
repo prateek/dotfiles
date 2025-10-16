@@ -47,8 +47,7 @@ path=(
   $GOPATH/bin
   /opt/homebrew/opt/python@3.11/libexec/bin
   $HOME/code/FlameGraph
-  $HOME/code/gocode/src/code.uber.internal/go-code/bin
-  $HOME/code/gocode/src/code.uber.internal/go-code/tools
+  /opt/homebrew/share/google-cloud-sdk/bin
   $HOME/.cargo/bin
   /usr/{sbin,bin}
   /{sbin,bin}
