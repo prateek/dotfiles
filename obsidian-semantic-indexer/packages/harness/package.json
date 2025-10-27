@@ -1,0 +1,22 @@
+{
+  "name": "@osi/harness",
+  "version": "1.0.0",
+  "description": "Test harness for Obsidian Semantic Indexer",
+  "type": "module",
+  "scripts": {
+    "test": "vitest",
+    "test:chaos": "vitest run --config vitest.chaos.config.ts",
+    "test:e2e": "playwright test",
+    "test:all": "npm run test && npm run test:chaos && npm run test:e2e"
+  },
+  "dependencies": {
+    "@osi/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.1",
+    "@types/node": "^20.11.5",
+    "fast-check": "^3.15.0",
+    "playwright": "^1.40.1",
+    "vitest": "^1.2.1"
+  }
+}
