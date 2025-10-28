@@ -1,10 +1,31 @@
 {
-    "[json, jsonc]": {
-        "editor.formatOnSave": false,
+    // Language-specific: JSON
+    "[json]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.formatOnSave": true,
         "editor.codeActionsOnSave": {
             "source.fixAll": "never"
         },
         "editor.renderWhitespace": "none"
+    },
+    // Language-specific: JSON with Comments
+    "[jsonc]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.fixAll": "never"
+        },
+        "editor.renderWhitespace": "none"
+    },
+    // Language-specific: Clojure
+    "[clojure]": {
+        "editor.defaultFormatter": "betterthantomorrow.calva",
+        "editor.formatOnSave": true
+    },
+    // Language-specific: EDN
+    "[edn]": {
+        "editor.defaultFormatter": "betterthantomorrow.calva",
+        "editor.formatOnSave": true
     },
     "editor.quickSuggestionsDelay": 300,
     "editor.quickSuggestions": {
@@ -28,12 +49,32 @@
     "files.autoSaveDelay": 3000,
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {},
+    // Prettier formatter defaults
+    "prettier.requireConfig": false,
+    "prettier.useEditorConfig": false,
+    "prettier.printWidth": 80,
+    "prettier.singleQuote": false,
+    "prettier.trailingComma": "none",
+    "prettier.bracketSpacing": true,
     "workbench.colorTheme": "Default Dark+",
     "editor.tabSize": 2,
     "editor.scrollBeyondLastLine": false,
+    // Recognize common EDN config files
+    "files.associations": {
+        "*.edn": "edn",
+        "bb.edn": "edn",
+        "deps.edn": "edn",
+        "shadow-cljs.edn": "edn"
+    },
     "files.watcherExclude": {
         "**/bazel*/**": true,
-        "pkg/mod/**": true
+        "pkg/mod/**": true,
+        "**/node_modules/**": true,
+        "**/dist/**": true,
+        "**/build/**": true,
+        "**/.venv/**": true,
+        "**/.direnv/**": true,
+        "**/.cache/**": true
     },
     "files.exclude": {
         "**/__pycache__": true,
@@ -53,8 +94,18 @@
         "go-build/.go": true,
         "Godeps/_workspace": true,
         "vendor": true,
+        "**/node_modules": true,
+        "**/dist": true,
+        "**/build": true,
         "bazel-*": true,
         "pkg/mod/**": true
+    },
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/dist": true,
+        "**/build": true,
+        "**/bazel-*": true,
+        "**/pkg/mod/**": true
     },
     "files.trimTrailingWhitespace": true,
     "editor.minimap.enabled": false,
@@ -67,6 +118,7 @@
     "notebook.lineNumbers": "on",
     "explorer.confirmDragAndDrop": false,
     "explorer.confirmDelete": false,
+    "explorer.autoReveal": false,
     "extensions.ignoreRecommendations": true,
     "go.toolsManagement.autoUpdate": true,
     // "go.buildOnSave": "off",
@@ -493,25 +545,7 @@
         "suppressLineUncommittedWarning": false,
         "suppressNoRepositoryWarning": false
     },
-    "gitlens.remotes": [
-        {
-            "domain": "code.uber.internal",
-            "type": "Custom",
-            "name": "Uber",
-            "protocol": "gitolite",
-            "urls": {
-                "repository": "https://sourcegraph.uberinternal.com/code.uber.internal/${repo}",
-                "branches": "https://sourcegraph.uberinternal.com/code.uber.internal/${repo}/-/branches",
-                "branch": "https://sourcegraph.uberinternal.com/code.uber.internal/${repo}@${branch}",
-                "commit": "https://sourcegraph.uberinternal.com/code.uber.internal/${repo}/-/commit/${id}",
-                "file": "https://sourcegraph.uberinternal.com/code.uber.internal/${repo}@master/-/blob/${file}${line}",
-                "fileInBranch": "https://sourcegraph.uberinternal.com/code.uber.internal/${repo}@${branch}/-/blob/${file}${line}",
-                "fileInCommit": "https://sourcegraph.uberinternal.com/code.uber.internal/${repo}@${id}/-/blob/${file}${line}",
-                "fileLine": "#L${line}",
-                "fileRange": "#L${start}-${end}"
-            }
-        }
-    ],
+    // Removed custom GitLens remote mapping for internal hosts for portability
     "markdown.marp.enableHtml": true,
     "markdown.marp.pdf.noteAnnotations": true,
     "github.copilot.enable": {
@@ -520,10 +554,7 @@
         "markdown": false,
         "scminput": false
     },
-    "zig.zigPath": "/Users/prateek/Library/Application Support/Code/User/globalStorage/ziglang.vscode-zig/zig_install/zig",
-    "zig.zls.path": "/Users/prateek/Library/Application Support/Code/User/globalStorage/ziglang.vscode-zig/zls_install/zls",
-    "zig.zigVersion": "nightly-0.11.0-dev.3897+f571438fc",
-    "zig.zls.enableInlayHints": false,
+    // Zig-specific absolute paths removed for portability
     "editor.renderWhitespace": "none",
     "extensions.showRecommendationsOnlyOnDemand": true,
     "debug.onTaskErrors": "debugAnyway",
