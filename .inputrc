@@ -1,0 +1,2 @@
+# XDG Base Directory support - redirect to XDG location
+$include ~/.config/readline/inputrc

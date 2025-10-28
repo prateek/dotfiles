@@ -1,0 +1,35 @@
+# Files and directories to ignore
+
+# Documentation
+README.md
+LICENSE
+MIGRATION_GUIDE.md
+
+# Scripts that are not part of the deployed dotfiles
+install-chezmoi.sh
+init-chezmoi.sh
+bootstrap*.sh
+test-*.sh
+
+# Version control
+.git/
+.gitignore
+
+# macOS
+.DS_Store
+
+# Editor files
+*.swp
+*~
+
+# Temporary files
+*.tmp
+*.bak
+
+# Cache directories (these should be created, not synced)
+.cache/
+.local/share/zinit/
+.local/share/vim/
+
+# Other files that shouldn't be managed
+.orbstack/

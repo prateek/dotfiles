@@ -1,0 +1,6 @@
+# replace newlines in clipboard with a single space
+function clip_nocr() {
+  pbpaste | tr '\n' ' ' | gsed -e 's/  */ /g' | sponge | pbcopy
+}
+
+clip_nocr "$@"
