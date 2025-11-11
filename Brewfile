@@ -23,6 +23,8 @@ tap "oven-sh/bun"
 tap "romkatv/powerlevel10k"
 tap "saulpw/vd"
 tap "thoughtbot/formulae"
+tap "homebrew/cask"
+
 brew "ack"
 brew "act"
 brew "adns"
@@ -112,7 +114,6 @@ brew "fx"
 brew "mpfr"
 brew "gawk"
 brew "gdrive"
-brew "geoip"
 brew "gh"
 brew "gibo"
 brew "git"
@@ -288,6 +289,7 @@ brew "facebook/fb/idb-companion"
 brew "felixkratz/formulae/borders"
 brew "hudochenkov/sshpass/sshpass"
 brew "oven-sh/bun/bun"
+
 cask "1password", args: { appdir: "/Applications" }
 cask "1password-cli"
 cask "acorn", args: { appdir: "/Applications" }
@@ -370,6 +372,7 @@ cask "wkhtmltopdf"
 cask "xquartz"
 cask "zed"
 cask "zen"
+
 mas "1Password for Safari", id: 1569813296
 mas "Amphetamine", id: 937984704
 mas "Calendar 366 II", id: 1265895169
@@ -390,6 +393,7 @@ mas "Tailscale", id: 1475387142
 mas "Things", id: 904280696
 mas "Tweetbot", id: 557168941
 mas "Xcode", id: 497799835
+
 vscode "anthropic.claude-code"
 vscode "bee.git-temporal-vscode"
 vscode "betterthantomorrow.calva"

@@ -58,19 +58,20 @@ curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
 vim -c "PlugInstall"
 
 # osx install
-## dropbox
+## dropbox (only if allowed (i.e. not work))
 ### TODO: ensure files are available offline
 ## alfred
 ### TODO: sync preferences to dropbox folder
 ### TODO: command+space to alfred, not spotlight (disable via Settings -> Keyboard)
 ## moom
-defaults import com.manytricks.Moom $CWD/osx-apps/Moom.plist
+# defaults import com.manytricks.Moom $CWD/osx-apps/Moom.plist
 ### TODO: open the license file from 1p
+## TODO: install setapp applications
+
 ## osx
 ### dock settings (left, hiding)
 ### add bluetooth/wifi/sounds to menu bar, remove spotlight
 ### set alert volume to 0 (in Settings -> Sounds)
-
 
 # TODO: pending automation items
 # - [ ] need to run `autoload zkbd && zkbd` to setup keycode file (used in zshrc)
