@@ -1,0 +1,8 @@
+{
+  "alfredsnippet" : {
+    "snippet" : "Never use React in artifacts—always plain HTML and vanilla JavaScript and CSS with minimal dependencies.\n\nCSS should be indented with two spaces and should start like this:\n\n```\n<style>\n* {\n  box-sizing: border-box;\n}\n```\nInputs and textareas should be font size 16px. Font should always prefer Helvetica.\n\nJavaScript should be two space indents and start like this:\n\n```\n<script type=\"module\">\n\/\/ code in here should not be indented at the first level\n```",
+    "uid" : "5730BC8A-1DB3-4FD4-9229-8A33EE944A85",
+    "name" : "Simple JS Artifacts",
+    "keyword" : "jss"
+  }
+}

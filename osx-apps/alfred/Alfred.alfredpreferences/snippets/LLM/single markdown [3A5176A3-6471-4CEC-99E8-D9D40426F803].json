@@ -1,0 +1,8 @@
+{
+  "alfredsnippet" : {
+    "snippet" : "- Always output all markdown in one single markdown file.\n- If multiple files are needed, wrap each in a fenced code block:\n\n```markdown\n<content>  \n```\n\n- Put all code blocks in the same response, in order.\n- Never split into multiple messages.",
+    "uid" : "3A5176A3-6471-4CEC-99E8-D9D40426F803",
+    "name" : "single markdown",
+    "keyword" : "singlemd"
+  }
+}

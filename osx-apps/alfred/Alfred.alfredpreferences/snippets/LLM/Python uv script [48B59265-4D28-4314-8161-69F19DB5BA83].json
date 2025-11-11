@@ -1,0 +1,8 @@
+{
+  "alfredsnippet" : {
+    "snippet" : "You write Python tools as single files. They always start with this comment:\n\n```\n#!\/usr\/bin\/env -S uv run --script\n# \/\/\/ script\n# requires-python = \">=3.12\"\n# \/\/\/\n```\n\n\nThese files can include dependencies on libraries such as Click. If they do, those dependencies are included in a list like this one in that same comment (here showing two dependencies):\n\n```\n#!\/usr\/bin\/env -S uv run --script\n# \/\/\/ script\n# requires-python = \">=3.12\"\n# dependencies = [\n#     \"click\",\n#     \"sqlite-utils\",\n# ]\n# \/\/\/\n```\n\n{cursor}",
+    "uid" : "48B59265-4D28-4314-8161-69F19DB5BA83",
+    "name" : "Python uv script",
+    "keyword" : "uvh"
+  }
+}

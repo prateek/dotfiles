@@ -1,0 +1,8 @@
+{
+  "alfredsnippet" : {
+    "snippet" : "Author: Prateek Rungta\nReviewers: TODO\nStatus: Draft\nLink: TODO\nLast Modified: {date:short}\n\n{cursor}",
+    "uid" : "510A2504-6038-4A7A-9ECA-9595E8E43BB6",
+    "name" : "Document Metadata",
+    "keyword" : "docmd"
+  }
+}

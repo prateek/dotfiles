@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>customSites</key>
+	<dict>
+		<key>09BAD765-71D5-4A38-811D-7C5BD1F36FA6</key>
+		<dict>
+			<key>enabled</key>
+			<true/>
+			<key>keyword</key>
+			<string>g</string>
+			<key>spaces</key>
+			<string>+</string>
+			<key>text</key>
+			<string>Search glean for '{query}'</string>
+			<key>url</key>
+			<string>https://app.glean.com/search?q={query}</string>
+		</dict>
+		<key>2422029A-98DD-4C55-A227-4622B56516B7</key>
+		<dict>
+			<key>enabled</key>
+			<false/>
+			<key>keyword</key>
+			<string>ub</string>
+			<key>text</key>
+			<string>uBunny</string>
+			<key>url</key>
+			<string>https://ubunny.uberinternal.com/ubunny?q={query}</string>
+		</dict>
+		<key>C131085D-6FE8-446D-BEFC-AA457B11984B</key>
+		<dict>
+			<key>enabled</key>
+			<true/>
+			<key>keyword</key>
+			<string>uown</string>
+			<key>text</key>
+			<string>uown</string>
+			<key>url</key>
+			<string>https://uown.uberinternal.com/search?q={query}</string>
+			<key>utf8</key>
+			<true/>
+		</dict>
+		<key>CC8F7000-FE84-4ED5-9EC2-F3FE02828F35</key>
+		<dict>
+			<key>enabled</key>
+			<true/>
+			<key>keyword</key>
+			<string>s</string>
+			<key>text</key>
+			<string>Uber Sourcegraph Search</string>
+			<key>url</key>
+			<string>https://sourcegraph.uberinternal.com/search?q={query}</string>
+			<key>utf8</key>
+			<true/>
+		</dict>
+		<key>DC308808-33E8-4BCB-BE45-727DD75D1CE3</key>
+		<dict>
+			<key>enabled</key>
+			<true/>
+			<key>keyword</key>
+			<string>e</string>
+			<key>text</key>
+			<string>Grafana Explore</string>
+			<key>url</key>
+			<string>https://ugrafana.uberinternal.com/explore?orgId=1&amp;left=["now-1h","now","M3QL",{"target":"{query}"}]</string>
+		</dict>
+		<key>E9B5BEE0-B768-49AC-8E3B-C7720A094A58</key>
+		<dict>
+			<key>enabled</key>
+			<true/>
+			<key>keyword</key>
+			<string>sub</string>
+			<key>text</key>
+			<string>Subscribe in Feedbin</string>
+			<key>url</key>
+			<string>https://feedbin.com/?subscribe={query}</string>
+		</dict>
+	</dict>
+	<key>onlyShowEnabledInPrefs</key>
+	<true/>
+</dict>
+</plist>

@@ -1,0 +1,8 @@
+{
+  "alfredsnippet" : {
+    "snippet" : "{isodate:yyyy-MM-dd}-{cursor}",
+    "uid" : "530F08B7-4DE1-47A7-8872-0EABF17279A6",
+    "name" : "Date",
+    "keyword" : "date"
+  }
+}

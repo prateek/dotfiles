@@ -1,0 +1,8 @@
+{
+  "alfredsnippet" : {
+    "snippet" : "When writing MCP tools, ensure we are integration testing them e2e as much as possible.\n\nthings to verify:\n- use https:\/\/github.com\/f\/mcptools to wire up test scenarios in shell scripts.\n- use https:\/\/github.com\/f\/mcptools to ensure the tools descriptions make sense and are not too verbose\n- don't emit anything to stdout\/stderr if you can help it - use log files + return appropriate error messages to the mcp response so the user is aware",
+    "uid" : "30C596D0-1A50-4593-8255-D7E86E97ADEF",
+    "name" : "MCP Testing",
+    "keyword" : "tmcp"
+  }
+}
