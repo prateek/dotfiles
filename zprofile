@@ -64,5 +64,6 @@ manpath=(
 )
 manpath=($^manpath(N-/))
 
-# Added by OrbStack: command-line tools and integration
-source ~/.orbstack/shell/init.zsh 2>/dev/null || :
+if [ -f "$HOME/.zprofile.local" ]; then
+  source "$HOME/.zprofile.local"
+fi

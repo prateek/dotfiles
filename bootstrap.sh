@@ -22,6 +22,8 @@ if [ ! -f $HOME/.vimrc ]; then ln -s $CWD/vimrc $HOME/.vimrc ; fi
 if [ ! -f $HOME/.zlogin ]; then ln -s $CWD/zlogin $HOME/.zlogin ; fi
 if [ ! -f $HOME/.zprofile ]; then ln -s $CWD/zprofile $HOME/.zprofile ; fi
 if [ ! -f $HOME/.zshrc ]; then ln -s $CWD/zshrc $HOME/.zshrc ; fi
+if [ ! -f $HOME/.zshenv ]; then ln -s "$CWD/zshenv" "$HOME/.zshenv"; fi
+
 # .claude directory symlinks
 mkdir -p $HOME/.claude
 for dir in agents commands docs; do

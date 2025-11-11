@@ -33,5 +33,7 @@ fi
 #   ;;
 # esac
 
-# Added by Windsurf
-export PATH="/Users/prateek/.codeium/windsurf/bin:$PATH"
+# Source local rc overlay if present (work configs)
+if [ -f "$HOME/.zshrc.local" ]; then
+  source "$HOME/.zshrc.local"
+fi
