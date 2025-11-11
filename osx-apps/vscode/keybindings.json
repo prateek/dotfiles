@@ -287,5 +287,9 @@
   {
     "key": "ctrl+a",
     "command": "workbench.action.terminal.runSelectedText"
+  },
+  {
+    "key": "cmd+i",
+    "command": "composerMode.agent"
   }
 ]

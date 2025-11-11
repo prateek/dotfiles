@@ -220,11 +220,7 @@ brew "pyenv-virtualenvwrapper"
 brew "qt"
 brew "pyqt"
 brew "python-yq"
-brew "python@3.10"
 brew "python@3.11"
-brew "python@3.8"
-brew "python@3.9"
-brew "pyyaml"
 brew "qcachegrind"
 brew "qhull"
 brew "qscintilla2"
@@ -240,7 +236,6 @@ brew "rsync"
 brew "s3cmd"
 brew "sbt"
 brew "scala"
-brew "scantailor"
 brew "scmpuff"
 brew "sdl2_image"
 brew "sdl2_mixer"
@@ -297,10 +292,6 @@ cask "adium", args: { appdir: "/Applications" }
 cask "aerospace"
 cask "airflow", args: { appdir: "/Applications" }
 cask "alfred", args: { appdir: "/Applications" }
-cask "anaconda"
-cask "android-commandlinetools"
-cask "android-platform-tools"
-cask "atom", args: { appdir: "/Applications" }
 cask "bartender", args: { appdir: "/Applications" }
 cask "bettertouchtool"
 cask "burp-suite"
@@ -311,11 +302,7 @@ cask "companion"
 cask "conductor"
 cask "container-use"
 cask "dash", args: { appdir: "/Applications" }
-cask "db-browser-for-sqlite"
 cask "disk-inventory-x", args: { appdir: "/Applications" }
-cask "dropbox"
-cask "evernote", args: { appdir: "/Applications" }
-cask "fantastical", args: { appdir: "/Applications" }
 cask "fastscripts", args: { appdir: "/Applications" }
 cask "font-inter"
 cask "font-meslo-for-powerline"
@@ -330,18 +317,12 @@ cask "karabiner-elements"
 cask "key-codes", args: { appdir: "/Applications" }
 cask "launchcontrol", args: { appdir: "/Applications" }
 cask "mactex"
-cask "macwhisper"
-cask "marked-app", args: { appdir: "/Applications" }
-cask "miniconda", args: { appdir: "/Applications" }
 cask "mitmproxy"
 cask "monodraw", args: { appdir: "/Applications" }
 cask "moom", args: { appdir: "/Applications" }
 cask "mtmr"
-cask "naps2"
 cask "nvalt", args: { appdir: "/Applications" }
 cask "obsidian"
-cask "ollama-app"
-cask "omnifocus", args: { appdir: "/Applications" }
 cask "omnigraffle", args: { appdir: "/Applications" }
 cask "opcode"
 cask "orbstack"
@@ -354,17 +335,13 @@ cask "scrivener", args: { appdir: "/Applications" }
 cask "sequel-pro", args: { appdir: "/Applications" }
 cask "setapp"
 cask "skitch", args: { appdir: "/Applications" }
-cask "skype", args: { appdir: "/Applications" }
 cask "slack"
 cask "sloth"
 cask "spotify", args: { appdir: "/Applications" }
 cask "taskpaper", args: { appdir: "/Applications" }
-cask "textexpander", args: { appdir: "/Applications" }
-cask "transmission", args: { appdir: "/Applications" }
 cask "tuist"
 cask "utm"
 cask "vial"
-cask "vibetunnel"
 cask "visual-studio-code"
 cask "vlc"
 cask "voiceink"
@@ -393,39 +370,3 @@ mas "Tailscale", id: 1475387142
 mas "Things", id: 904280696
 mas "Tweetbot", id: 557168941
 mas "Xcode", id: 497799835
-
-vscode "anthropic.claude-code"
-vscode "bee.git-temporal-vscode"
-vscode "betterthantomorrow.calva"
-vscode "betterthantomorrow.calva-spritz"
-vscode "codeium.windsurfpyright"
-vscode "eamodio.gitlens"
-vscode "evzen-wybitul.magic-racket"
-vscode "github.copilot"
-vscode "github.copilot-chat"
-vscode "golang.go"
-vscode "golf1052.code-sync"
-vscode "haskell.haskell"
-vscode "jcanero.hoogle-vscode"
-vscode "justusadam.language-haskell"
-vscode "kangping.protobuf"
-vscode "marp-team.marp-vscode"
-vscode "mrkou47.thrift-syntax-support"
-vscode "ms-python.debugpy"
-vscode "ms-python.python"
-vscode "ms-python.vscode-pylance"
-vscode "ms-python.vscode-python-envs"
-vscode "ms-vscode-remote.remote-containers"
-vscode "myriad-dreamin.tinymist"
-vscode "naveenvignesh5nv.html-live-server"
-vscode "phgn.vscode-starlark"
-vscode "phoityne.phoityne-vscode"
-vscode "pomdtr.excalidraw-editor"
-vscode "rcook.ghci-helper"
-vscode "rubberduck.rubberduck-vscode"
-vscode "rust-lang.rust-analyzer"
-vscode "shd101wyy.markdown-preview-enhanced"
-vscode "specstory.specstory-vscode"
-vscode "visortelle.haskell-spotlight"
-vscode "vscodevim.vim"
-vscode "yzane.markdown-pdf"

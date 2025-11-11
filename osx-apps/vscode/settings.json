@@ -602,5 +602,35 @@
     "haskell.checkProject": false,
     "github.copilot.editor.enableAutoCompletions": false,
     "diffEditor.ignoreTrimWhitespace": false,
-    "github.copilot.nextEditSuggestions.enabled": true
+    "github.copilot.nextEditSuggestions.enabled": true,
+    "workbench.iconTheme": "vs-seti",
+    "cursor.cmdk.autoSelect": false,
+    "workbench.productIconTheme": "Default",
+    "workbench.activityBar.orientation": "vertical",
+    "redhat.telemetry.enabled": false,
+    "python.analysis.nodeExecutable": "node",
+    "cursorpyright.nodeExecutable": "node",
+    "python.analysis.logLevel": "Information",
+    "cursorpyright.analysis.logLevel": "Information",
+    "[dockercompose]": {
+        "editor.insertSpaces": true,
+        "editor.tabSize": 2,
+        "editor.autoIndent": "advanced",
+        "editor.quickSuggestions": {
+            "other": true,
+            "comments": false,
+            "strings": true
+        },
+        "editor.defaultFormatter": "redhat.vscode-yaml"
+    },
+    "[github-actions-workflow]": {
+        "editor.defaultFormatter": "redhat.vscode-yaml"
+    },
+    "cursor.enable_git_worktrees_setting": true,
+    "specstory.cloudSync.enabled": "never",
+    "specstory.derivedRules.enabled": false,
+    "specstory.helpUsImprove": false,
+    "githubPullRequests.pullBranch": "never",
+    "jest.enable": false,
+    "rust-analyzer.checkOnSave": false
 }
