@@ -9,6 +9,21 @@
       "key" : "s",
       "type" : "application",
       "value" : "/Applications/Slack.app"
+    },
+    {
+      "key" : "v",
+      "type" : "application",
+      "value" : "/Applications/Cursor.app"
+    },
+    {
+      "key" : "w",
+      "type" : "application",
+      "value" : "/Applications/Obsidian.app"
+    },
+    {
+      "key" : "b",
+      "type" : "application",
+      "value" : "/Applications/Google Chrome.app"
     }
   ],
   "type" : "group"
