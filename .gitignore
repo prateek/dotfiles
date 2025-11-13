@@ -1,10 +1,12 @@
+zen_precommit.changeset
 ### https://raw.github.com/github/gitignore/9f044c43d2fa998acb2d468367a349fff609dc84/Global/osx.gitignore
 .DS_Store
 .AppleDouble
 .LSOverride
 
 # Icon must end with two \r
-Icon
+Icon
+
 
 # Thumbnails
 ._*

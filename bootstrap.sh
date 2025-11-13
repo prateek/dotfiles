@@ -2,9 +2,11 @@
 # vim:syntax=zsh
 # vim:filetype=zsh
 
-set -eo pipefail
+set -e
+set -o pipefail
 
-CWD=$(dirname -- "$( readlink -f -- "$0"; )")
+# Resolve repository root directory in a zsh-portable way
+CWD="${0:A:h}"
 
 # install homebrew
 if ! command -v brew &> /dev/null
@@ -14,18 +16,30 @@ then
 fi
 
 # install homebrew files
-# brew bundle install --file $CWD/Brewfile
+brew bundle install --file "$CWD/Brewfile"
 
 # setup symlinks
-if [ ! -f $HOME/.vimrc ]; then ln -s $CWD/vimrc $HOME/.vimrc ; fi
+# Neovim (LazyVim) config
+NVIM_CONFIG_DIR="$HOME/.config/nvim"
+if [ -d "$NVIM_CONFIG_DIR" ] || [ -L "$NVIM_CONFIG_DIR" ]; then
+  if [ "$(readlink "$NVIM_CONFIG_DIR" 2>/dev/null)" != "$CWD/nvim" ]; then
+    echo "Error: $NVIM_CONFIG_DIR already exists and is not a symlink to $CWD/nvim."
+    echo "To back it up, run: mv \"$NVIM_CONFIG_DIR\" \"${NVIM_CONFIG_DIR}.backup-$(date +%s)\""
+    echo "Or remove it if you don't need it: rm -rf \"$NVIM_CONFIG_DIR\""
+    echo "After fixing, rerun this bootstrap script."
+    exit 1
+  fi
+fi
+mkdir -p "$HOME/.config"
+ln -snf "$CWD/nvim" "$NVIM_CONFIG_DIR"
 # if [ ! -f $HOME/.sshrc ]; then ln -s $CWD/sshrc $HOME/.sshrc ; fi
-if [ ! -f $HOME/.zlogin ]; then ln -s $CWD/zlogin $HOME/.zlogin ; fi
-if [ ! -f $HOME/.zprofile ]; then ln -s $CWD/zprofile $HOME/.zprofile ; fi
-if [ ! -f $HOME/.zshrc ]; then ln -s $CWD/zshrc $HOME/.zshrc ; fi
+if [ ! -f "$HOME/.zlogin" ]; then ln -s "$CWD/zlogin" "$HOME/.zlogin"; fi
+if [ ! -f "$HOME/.zprofile" ]; then ln -s "$CWD/zprofile" "$HOME/.zprofile"; fi
+if [ ! -f "$HOME/.zshrc" ]; then ln -s "$CWD/zshrc" "$HOME/.zshrc"; fi
 if [ ! -f $HOME/.zshenv ]; then ln -s "$CWD/zshenv" "$HOME/.zshenv"; fi
 
 # .claude directory symlinks
-mkdir -p $HOME/.claude
+mkdir -p "$HOME/.claude"
 for dir in agents commands docs; do
   if [ -d "$CWD/.claude/$dir" ]; then
     if [ -e "$HOME/.claude/$dir" ]; then
@@ -36,26 +50,28 @@ for dir in agents commands docs; do
 done
 
 # directories
-mkdir -p $HOME/code
-mkdir -p $HOME/.sshrc.d
+mkdir -p "$HOME/code"
+mkdir -p "$HOME/.sshrc.d"
 
 # generate lesskey binary file for older versions of less that might be
 # present on remote machines.
 # nb: will need to `brew install less` for the following line to work.
-lesskey -o $HOME/.less $CWD/lesskey
-cp $HOME/.less $HOME/.sshrc.d/.less
+if command -v lesskey >/dev/null 2>&1 && [ -f "$CWD/lesskey" ]; then
+  lesskey -o "$HOME/.less" "$CWD/lesskey"
+  cp "$HOME/.less" "$HOME/.sshrc.d/.less"
+fi
 
 # zsh setup
 # nb: this setup takes _heavy_ inspiration from the work of https://github.com/htr3n/zsh-config
-if [ ! -d ~/.zinit ]; then
-  mkdir ~/.zinit
-  git clone https://github.com/zdharma-continuum/zinit.git ~/.zinit/bin
+if [ ! -d "$HOME/.zinit" ]; then
+  mkdir -p "$HOME/.zinit"
+  git clone https://github.com/zdharma-continuum/zinit.git "$HOME/.zinit/bin"
 fi
 
-# vim setup
-curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
-     https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-vim -c "PlugInstall"
+# LazyVim bootstrap (plugins install on first nvim run). Optionally sync now.
+if command -v nvim &>/dev/null; then
+  nvim --headless "+Lazy! sync" +qa || true
+fi
 
 # osx install
 ## dropbox (only if allowed (i.e. not work))

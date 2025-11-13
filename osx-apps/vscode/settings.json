@@ -1,442 +1,640 @@
 {
-  "[json, jsonc]": {
-    "editor.formatOnSave": false,
-    "editor.codeActionsOnSave": {
-      "source.fixAll": "never"
+    "[json, jsonc]": {
+        "editor.formatOnSave": false,
+        "editor.codeActionsOnSave": {
+            "source.fixAll": "never"
+        },
+        "editor.renderWhitespace": "none"
     },
-    "editor.renderWhitespace": "none"
-  },
-  "editor.quickSuggestionsDelay": 300,
-  "editor.quickSuggestions": {
-    "other": false,
-    "comments": false,
-    "strings": false
-  },
-  "editor.fontSize": 13,
-  "breadcrumbs.enabled": true,
-  "outline.collapseItems": "alwaysCollapse",
-  "ipynb.pasteImagesAsAttachments.enabled": false,
-  "workbench.startupEditor": "welcomePageInEmptyWorkbench",
-  "window.zoomLevel": 2,
-  "explorer.excludeGitIgnore": false,
-  "editor.suggest.insertMode": "replace",
-  "security.workspace.trust.untrustedFiles": "open",
-  "javascript.autoClosingTags": false,
-  "typescript.autoClosingTags": false,
-  "editor.inlineSuggest.enabled": true,
-  "files.autoSave": "off",
-  "files.autoSaveDelay": 3000,
-  "editor.formatOnSave": true,
-  "editor.codeActionsOnSave": {},
-  "workbench.colorTheme": "Default Dark+",
-  "editor.tabSize": 2,
-  "editor.scrollBeyondLastLine": false,
-  "files.watcherExclude": {
-    "**/bazel*/**": true,
-    "pkg/mod/**": true
-  },
-  "files.exclude": {
-    "**/__pycache__": true,
-    "**/_build": true,
-    "**/.classpath": true,
-    "**/.DS_Store": true,
-    "**/.factorypath": true,
-    "**/.git": true,
-    "**/.mypy_cache": true,
-    "**/.project": true,
-    "**/.settings": true,
-    "**/.tmp": true,
-    "**/*.egg-info": true,
-    "**/*.egg": true,
-    "**/*.test": true,
-    "**/coverage.html": true,
-    "go-build/.go": true,
-    "Godeps/_workspace": true,
-    "vendor": true,
-    "bazel-*": true,
-    "pkg/mod/**": true
-  },
-  "files.trimTrailingWhitespace": true,
-  "editor.minimap.enabled": false,
-  "editor.minimap.renderCharacters": false,
-  "workbench.editor.enablePreviewFromQuickOpen": false,
-  "workbench.editor.enablePreview": false,
-  "remote.SSH.enableAgentForwarding": false,
-  "window.newWindowDimensions": "inherit",
-  "jupyter.askForKernelRestart": false,
-  "notebook.lineNumbers": "on",
-  "explorer.confirmDragAndDrop": false,
-  "explorer.confirmDelete": false,
-  "extensions.ignoreRecommendations": true,
-  "go.toolsManagement.autoUpdate": true,
-  // "go.buildOnSave": "off",
-  "go.testOnSave": false,
-  "go.lintOnSave": "off",
-  "go.lintTool": "golangci-lint",
-  "go.lintFlags": [],
-  "go.vetOnSave": "package",
-  "go.buildFlags": [],
-  // "go.gopath": "/Users/prateek/code/gocode",
-  "go.testTimeout": "20s",
-  "go.testEnvVars": {},
-  "go.testFlags": ["-v", "-count=1"],
-  "go.formatTool": "custom",
-  "go.formatFlags": [],
-  "gopls": {
-    "importShortcut": "Definition",
-    // "build.expandWorkspaceToModule": false,
-    "ui.diagnostic.staticcheck": false,
-    "ui.semanticTokens": true,
-    "build.directoryFilters": [
-      "-**/bazel-out",
-      "-**/bazel-go-code",
-      "-**/bazel-pkgdrv",
-      "-**/bazel-testlogs"
-    ]
-  },
-  "go.disableConcurrentTests": true,
-  "go.coverOnTestPackage": false,
-  "[go]": {
-    "editor.insertSpaces": false,
-    "editor.formatOnSave": true,
-    "editor.codeActionsOnSave": {
-      "source.organizeImports": "never"
-    },
-    "editor.tabSize": 4
-  },
-  "vim.targets.enable": true,
-  "vim.visualstar": true,
-  "vim.surround": true,
-  "vim.useSystemClipboard": false,
-  "vim.leader": "<space>",
-  "vim.normalModeKeyBindingsNonRecursive": [
-    {
-      "before": ["[", " "],
-      "after": ["O", "<Esc>", "j", "0"]
-    },
-    {
-      "before": ["]", " "],
-      "after": ["o", "<Esc>", "k", "0"]
-    },
-    {
-      "before": ["[", "q"],
-      "commands": ["editor.action.marker.prevInFiles"],
-      "when": "editorTextFocus"
-    },
-    {
-      "before": ["]", "q"],
-      "commands": ["editor.action.marker.nextInFiles"],
-      "when": "editorTextFocus"
-    },
-    {
-      "before": ["[", "r"],
-      "commands": ["references-view.prev"],
-      "when": "reference-list.hasResult || (inReferenceSearchEditor || referenceSearchVisible)"
-    },
-    {
-      "before": ["]", "r"],
-      "commands": ["references-view.next"],
-      "when": "reference-list.hasResult || (inReferenceSearchEditor || referenceSearchVisible)"
-    },
-    {
-      "before": ["[", "c"],
-      "commands": ["workbench.action.editor.previousChange"],
-      "when": "editorTextFocus"
-    },
-    {
-      "before": ["]", "c"],
-      "commands": ["workbench.action.editor.nextChange"],
-      "when": "editorTextFocus"
-    },
-    {
-      "before": ["[", "f"],
-      "commands": ["search.action.focusPreviousSearchResult"],
-      "when": "hasSearchResult"
-    },
-    {
-      "before": ["]", "f"],
-      "commands": ["search.action.focusNextSearchResult"],
-      "when": "hasSearchResult"
-    },
-    {
-      "before": ["c", "o", "w"],
-      "commands": ["editor.action.toggleWordWrap"]
-    },
-    {
-      "before": ["c", "o", "l"],
-      "commands": ["editor.action.toggleRenderWhitespace"]
-    },
-    {
-      "before": ["<leader>", "m"],
-      "commands": ["bookmarks.toggle"]
-    },
-    {
-      "before": ["<leader>", "b"],
-      "commands": ["bookmarks.list"]
-    },
-    {
-      "before": ["c", "s", "w"],
-      "after": ["v", "i", "w", "S"]
-    },
-    {
-      "before": ["c", "s", "W"],
-      "after": ["v", "i", "W", "S"]
-    },
-    {
-      "before": ["C-I"],
-      "commands": ["workbench.action.navigateBack"]
-    },
-    {
-      "before": ["C-O"],
-      "commands": ["workbench.action.navigateForward"]
-    },
-    {
-      "before": ["g", "D"],
-      "after": ["*", "g", "g", "n"]
-    },
-    {
-      "before": ["g", "I"],
-      "commands": ["references-view.findImplementations"],
-      "when": "editorHasReferenceProvider"
-    },
-    {
-      "before": ["g", "u"],
-      "commands": ["editor.action.goToReferences"],
-      "when": "editorHasReferenceProvider && editorTextFocus && !inReferenceSearchEditor && !isInEmbeddedEditor"
-    },
-    {
-      "before": ["g", "U"],
-      "commands": ["references-view.find"],
-      "when": "editorHasReferenceProvider"
-    },
-    {
-      "before": ["g", "H"],
-      "commands": ["editor.action.showDefinitionPreviewHover"]
-    },
-    {
-      "before": ["g", "Leader", "h"],
-      "commands": ["editor.action.peekDefinition"],
-      "when": "editorHasDefinitionProvider && editorTextFocus && !inReferenceSearchEditor && !isInEmbeddedEditor"
-    },
-    {
-      "before": ["g", "Leader", "H"],
-      "commands": ["editor.action.peekImplementation"],
-      "when": "editorHasImplementationProvider && editorTextFocus && !inReferenceSearchEditor && !isInEmbeddedEditor"
-    },
-    {
-      "before": ["g", "Leader", "Leader", "h"],
-      "commands": ["editor.action.peekTypeDefinition"]
-    },
-    {
-      "before": ["C-W", "c"],
-      "commands": ["workbench.action.closeGroup"]
-    },
-    {
-      "before": [":"],
-      "after": [";"]
-    },
-    {
-      "before": [";"],
-      "after": [":"]
-    },
-    {
-      "before": ["j"],
-      "after": ["g", "j"]
-    },
-    {
-      "before": ["j"],
-      "after": ["g", "j"]
-    },
-    {
-      "before": ["k"],
-      "after": ["g", "k"]
-    },
-    {
-      "before": ["u"],
-      "after": [],
-      "commands": [
-        {
-          "command": "undo"
-        }
-      ]
-    },
-    {
-      "before": ["<C-r>"],
-      "after": [],
-      "commands": [
-        {
-          "command": "redo"
-        }
-      ]
-    },
-    {
-      "before": ["leader", "c", "v"],
-      "commands": ["workbench.action.openApplicationSettingsJson"]
-    }
-  ],
-  "git.confirmSync": false,
-  "git.openRepositoryInParentFolders": "always",
-  "git.enableSmartCommit": true,
-  "git.detectSubmodules": false,
-  "git.ignoredRepositories": [
-    "/Users/rungta/code/gocode/src/code.uber.internal/infra/statsdex/go-build",
-    "/opt/homebrew"
-  ],
-  "gitlens.graph.dimMergeCommits": true,
-  "gitlens.menus": {
-    "editor": {
-      "remote": true
-    }
-  },
-  "gitlens.views.repositories.files.layout": "list",
-  "gitlens.hovers.annotations.over": "annotation",
-  "gitlens.currentLine.enabled": false,
-  "gitlens.hovers.currentLine.over": "line",
-  "gitlens.keymap": "alternate",
-  "gitlens.advanced.messages": {
-    "suppressCommitHasNoPreviousCommitWarning": false,
-    "suppressCommitNotFoundWarning": false,
-    "suppressFileNotUnderSourceControlWarning": false,
-    "suppressGitVersionWarning": false,
-    "suppressLineUncommittedWarning": false,
-    "suppressNoRepositoryWarning": false
-  },
-  "gitlens.remotes": [
-    {
-      "domain": "code.uber.internal",
-      "type": "Custom",
-      "name": "Uber",
-      "protocol": "gitolite",
-      "urls": {
-        "repository": "https://sourcegraph.uberinternal.com/code.uber.internal/${repo}",
-        "branches": "https://sourcegraph.uberinternal.com/code.uber.internal/${repo}/-/branches",
-        "branch": "https://sourcegraph.uberinternal.com/code.uber.internal/${repo}@${branch}",
-        "commit": "https://sourcegraph.uberinternal.com/code.uber.internal/${repo}/-/commit/${id}",
-        "file": "https://sourcegraph.uberinternal.com/code.uber.internal/${repo}@master/-/blob/${file}${line}",
-        "fileInBranch": "https://sourcegraph.uberinternal.com/code.uber.internal/${repo}@${branch}/-/blob/${file}${line}",
-        "fileInCommit": "https://sourcegraph.uberinternal.com/code.uber.internal/${repo}@${id}/-/blob/${file}${line}",
-        "fileLine": "#L${line}",
-        "fileRange": "#L${start}-${end}"
-      }
-    }
-  ],
-  "markdown.marp.enableHtml": true,
-  "markdown.marp.pdf.noteAnnotations": true,
-  "github.copilot.enable": {
-    "*": true,
-    "plaintext": false,
-    "markdown": false,
-    "scminput": false
-  },
-  "zig.zigPath": "/Users/prateek/Library/Application Support/Code/User/globalStorage/ziglang.vscode-zig/zig_install/zig",
-  "zig.zls.path": "/Users/prateek/Library/Application Support/Code/User/globalStorage/ziglang.vscode-zig/zls_install/zls",
-  "zig.zigVersion": "nightly-0.11.0-dev.3897+f571438fc",
-  "zig.zls.enableInlayHints": false,
-  "editor.renderWhitespace": "none",
-  "extensions.showRecommendationsOnlyOnDemand": true,
-  "debug.onTaskErrors": "debugAnyway",
-  "files.insertFinalNewline": true,
-  "files.trimFinalNewlines": true,
-  "git.autofetch": true,
-  "git.autoRepositoryDetection": "subFolders",
-  "python.jediEnabled": false,
-  "editor.bracketPairColorization.enabled": true,
-  // "go.toolsEnvVars": {
-  //     "GO111MODULE": "off"
-  // },
-  "go.vetFlags": [],
-  "go.useCodeSnippetsOnFunctionSuggest": false,
-  "go.useLanguageServer": true,
-  "go.languageServerExperimentalFeatures": {
-    "diagnostics": true
-  },
-  "go.coverOnSave": false,
-  "go.coverageDecorator": {
-    "type": "highlight",
-    "coveredHighlightColor": "rgba(0, 255, 0, 0.15)",
-    "uncoveredHighlightColor": "rgba(255, 0, 0, 0.15)",
-    "coveredBorderColor": "rgba(0, 255, 0, 0.15)",
-    "uncoveredBorderColor": "rgba(255, 0, 0, 0.15)",
-    "coveredGutterStyle": "verticalgreen",
-    "uncoveredGutterStyle": "verticalred"
-  },
-  "go.coverOnSingleTest": true,
-  "go.delveConfig.hideSystemGoroutines": true,
-  "go.editorContextMenuCommands": {
-    "testAtCursor": false,
-    "addImport": false,
-    "testCoverage": false,
-    "playground": false,
-    "debugTestAtCursor": false
-  },
-  "window.commandCenter": true,
-  "terminal.integrated.profiles.linux": {
-    "bash": {
-      "path": "bash",
-      "env": {
-        "SHELL": "/bin/bash"
-      }
-    },
-    "zsh": {
-      "path": "zsh",
-      "env": {
-        "SHELL": "/bin/zsh"
-      }
-    },
-    "bash(login)": {
-      "path": "bash",
-      "args": ["-l"],
-      "env": {
-        "SHELL": "/bin/bash"
-      }
-    },
-    "zsh(login)": {
-      "path": "zsh",
-      "args": ["-l"],
-      "env": {
-        "SHELL": "/bin/zsh"
-      }
-    }
-  },
-  "bazel.pathsToIgnore": [".*"],
-  "haskell.manageHLS": "GHCup",
-  "terminal.integrated.enableMultiLinePasteWarning": false,
-  "haskell.checkProject": false,
-  "github.copilot.editor.enableAutoCompletions": false,
-  "diffEditor.ignoreTrimWhitespace": false,
-  "github.copilot.nextEditSuggestions.enabled": true,
-  "workbench.iconTheme": "vs-seti",
-  "cursor.cmdk.autoSelect": false,
-  "workbench.productIconTheme": "Default",
-  "workbench.activityBar.orientation": "vertical",
-  "redhat.telemetry.enabled": false,
-  "python.analysis.nodeExecutable": "node",
-  "cursorpyright.nodeExecutable": "node",
-  "python.analysis.logLevel": "Information",
-  "cursorpyright.analysis.logLevel": "Information",
-  "[dockercompose]": {
-    "editor.insertSpaces": true,
-    "editor.tabSize": 2,
-    "editor.autoIndent": "advanced",
+    "editor.quickSuggestionsDelay": 300,
     "editor.quickSuggestions": {
-      "other": true,
-      "comments": false,
-      "strings": true
+        "other": false,
+        "comments": false,
+        "strings": false
     },
-    "editor.defaultFormatter": "redhat.vscode-yaml"
-  },
-  "[github-actions-workflow]": {
-    "editor.defaultFormatter": "redhat.vscode-yaml"
-  },
-  "cursor.enable_git_worktrees_setting": true,
-  "specstory.cloudSync.enabled": "never",
-  "specstory.derivedRules.enabled": false,
-  "specstory.helpUsImprove": false,
-  "githubPullRequests.pullBranch": "never",
-  "jest.enable": false,
-  "rust-analyzer.checkOnSave": false,
-  "editor.accessibilitySupport": "off",
-  "gitlens.ai.model": "vscode",
-  "gitlens.ai.vscode.model": "copilot:gpt-4.1",
-  "git.replaceTagsWhenPull": true
+    "editor.fontSize": 13,
+    "breadcrumbs.enabled": true,
+    "outline.collapseItems": "alwaysCollapse",
+    "ipynb.pasteImagesAsAttachments.enabled": false,
+    "workbench.startupEditor": "welcomePageInEmptyWorkbench",
+    "window.zoomLevel": 2,
+    "explorer.excludeGitIgnore": false,
+    "editor.suggest.insertMode": "replace",
+    "security.workspace.trust.untrustedFiles": "open",
+    "javascript.autoClosingTags": false,
+    "typescript.autoClosingTags": false,
+    "editor.inlineSuggest.enabled": true,
+    "files.autoSave": "off",
+    "files.autoSaveDelay": 3000,
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {},
+    "workbench.colorTheme": "Default Dark+",
+    "editor.tabSize": 2,
+    "editor.scrollBeyondLastLine": false,
+    "files.watcherExclude": {
+        "**/bazel*/**": true,
+        "pkg/mod/**": true
+    },
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/_build": true,
+        "**/.classpath": true,
+        "**/.DS_Store": true,
+        "**/.factorypath": true,
+        "**/.git": true,
+        "**/.mypy_cache": true,
+        "**/.project": true,
+        "**/.settings": true,
+        "**/.tmp": true,
+        "**/*.egg-info": true,
+        "**/*.egg": true,
+        "**/*.test": true,
+        "**/coverage.html": true,
+        "go-build/.go": true,
+        "Godeps/_workspace": true,
+        "vendor": true,
+        "bazel-*": true,
+        "pkg/mod/**": true
+    },
+    "files.trimTrailingWhitespace": true,
+    "editor.minimap.enabled": false,
+    "editor.minimap.renderCharacters": false,
+    "workbench.editor.enablePreviewFromQuickOpen": false,
+    "workbench.editor.enablePreview": false,
+    "remote.SSH.enableAgentForwarding": false,
+    "window.newWindowDimensions": "inherit",
+    "jupyter.askForKernelRestart": false,
+    "notebook.lineNumbers": "on",
+    "explorer.confirmDragAndDrop": false,
+    "explorer.confirmDelete": false,
+    "extensions.ignoreRecommendations": true,
+    "go.toolsManagement.autoUpdate": true,
+    // "go.buildOnSave": "off",
+    "go.testOnSave": false,
+    "go.lintOnSave": "off",
+    "go.lintTool": "golangci-lint",
+    "go.lintFlags": [],
+    "go.vetOnSave": "package",
+    "go.buildFlags": [],
+    // "go.gopath": "/Users/prateek/code/gocode",
+    "go.testTimeout": "20s",
+    "go.testEnvVars": {},
+    "go.testFlags": [
+        "-v",
+        "-count=1"
+    ],
+    "go.formatTool": "custom",
+    "go.formatFlags": [],
+    "gopls": {
+        "importShortcut": "Definition",
+        // "build.expandWorkspaceToModule": false,
+        "ui.diagnostic.staticcheck": false,
+        "ui.semanticTokens": true,
+        "build.directoryFilters": [
+            "-**/bazel-out",
+            "-**/bazel-go-code",
+            "-**/bazel-pkgdrv",
+            "-**/bazel-testlogs"
+        ]
+    },
+    "go.disableConcurrentTests": true,
+    "go.coverOnTestPackage": false,
+    "[go]": {
+        "editor.insertSpaces": false,
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "never"
+        },
+        "editor.tabSize": 4
+    },
+    "vim.targets.enable": true,
+    "vim.visualstar": true,
+    "vim.surround": true,
+    "vim.useSystemClipboard": false,
+    "vim.leader": "<space>",
+    "vim.normalModeKeyBindingsNonRecursive": [
+        {
+            "before": [
+                "[",
+                " "
+            ],
+            "after": [
+                "O",
+                "<Esc>",
+                "j",
+                "0"
+            ]
+        },
+        {
+            "before": [
+                "]",
+                " "
+            ],
+            "after": [
+                "o",
+                "<Esc>",
+                "k",
+                "0"
+            ]
+        },
+        {
+            "before": [
+                "[",
+                "q"
+            ],
+            "commands": [
+                "editor.action.marker.prevInFiles"
+            ],
+            "when": "editorTextFocus"
+        },
+        {
+            "before": [
+                "]",
+                "q"
+            ],
+            "commands": [
+                "editor.action.marker.nextInFiles"
+            ],
+            "when": "editorTextFocus"
+        },
+        {
+            "before": [
+                "[",
+                "r"
+            ],
+            "commands": [
+                "references-view.prev"
+            ],
+            "when": "reference-list.hasResult || (inReferenceSearchEditor || referenceSearchVisible)"
+        },
+        {
+            "before": [
+                "]",
+                "r"
+            ],
+            "commands": [
+                "references-view.next"
+            ],
+            "when": "reference-list.hasResult || (inReferenceSearchEditor || referenceSearchVisible)"
+        },
+        {
+            "before": [
+                "[",
+                "c"
+            ],
+            "commands": [
+                "workbench.action.editor.previousChange"
+            ],
+            "when": "editorTextFocus"
+        },
+        {
+            "before": [
+                "]",
+                "c"
+            ],
+            "commands": [
+                "workbench.action.editor.nextChange"
+            ],
+            "when": "editorTextFocus"
+        },
+        {
+            "before": [
+                "[",
+                "f"
+            ],
+            "commands": [
+                "search.action.focusPreviousSearchResult"
+            ],
+            "when": "hasSearchResult"
+        },
+        {
+            "before": [
+                "]",
+                "f"
+            ],
+            "commands": [
+                "search.action.focusNextSearchResult"
+            ],
+            "when": "hasSearchResult"
+        },
+        {
+            "before": [
+                "c",
+                "o",
+                "w"
+            ],
+            "commands": [
+                "editor.action.toggleWordWrap"
+            ]
+        },
+        {
+            "before": [
+                "c",
+                "o",
+                "l"
+            ],
+            "commands": [
+                "editor.action.toggleRenderWhitespace"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "m"
+            ],
+            "commands": [
+                "bookmarks.toggle"
+            ]
+        },
+        {
+            "before": [
+                "<leader>",
+                "b"
+            ],
+            "commands": [
+                "bookmarks.list"
+            ]
+        },
+        {
+            "before": [
+                "c",
+                "s",
+                "w"
+            ],
+            "after": [
+                "v",
+                "i",
+                "w",
+                "S"
+            ]
+        },
+        {
+            "before": [
+                "c",
+                "s",
+                "W"
+            ],
+            "after": [
+                "v",
+                "i",
+                "W",
+                "S"
+            ]
+        },
+        {
+            "before": [
+                "C-I"
+            ],
+            "commands": [
+                "workbench.action.navigateBack"
+            ]
+        },
+        {
+            "before": [
+                "C-O"
+            ],
+            "commands": [
+                "workbench.action.navigateForward"
+            ]
+        },
+        {
+            "before": [
+                "g",
+                "D"
+            ],
+            "after": [
+                "*",
+                "g",
+                "g",
+                "n"
+            ]
+        },
+        {
+            "before": [
+                "g",
+                "I"
+            ],
+            "commands": [
+                "references-view.findImplementations"
+            ],
+            "when": "editorHasReferenceProvider"
+        },
+        {
+            "before": [
+                "g",
+                "u"
+            ],
+            "commands": [
+                "editor.action.goToReferences"
+            ],
+            "when": "editorHasReferenceProvider && editorTextFocus && !inReferenceSearchEditor && !isInEmbeddedEditor"
+        },
+        {
+            "before": [
+                "g",
+                "U"
+            ],
+            "commands": [
+                "references-view.find"
+            ],
+            "when": "editorHasReferenceProvider"
+        },
+        {
+            "before": [
+                "g",
+                "H"
+            ],
+            "commands": [
+                "editor.action.showDefinitionPreviewHover"
+            ]
+        },
+        {
+            "before": [
+                "g",
+                "Leader",
+                "h"
+            ],
+            "commands": [
+                "editor.action.peekDefinition"
+            ],
+            "when": "editorHasDefinitionProvider && editorTextFocus && !inReferenceSearchEditor && !isInEmbeddedEditor"
+        },
+        {
+            "before": [
+                "g",
+                "Leader",
+                "H"
+            ],
+            "commands": [
+                "editor.action.peekImplementation"
+            ],
+            "when": "editorHasImplementationProvider && editorTextFocus && !inReferenceSearchEditor && !isInEmbeddedEditor"
+        },
+        {
+            "before": [
+                "g",
+                "Leader",
+                "Leader",
+                "h"
+            ],
+            "commands": [
+                "editor.action.peekTypeDefinition"
+            ]
+        },
+        {
+            "before": [
+                "C-W",
+                "c"
+            ],
+            "commands": [
+                "workbench.action.closeGroup"
+            ]
+        },
+        {
+            "before": [
+                ":"
+            ],
+            "after": [
+                ";"
+            ]
+        },
+        {
+            "before": [
+                ";"
+            ],
+            "after": [
+                ":"
+            ]
+        },
+        {
+            "before": [
+                "j"
+            ],
+            "after": [
+                "g",
+                "j"
+            ]
+        },
+        {
+            "before": [
+                "j"
+            ],
+            "after": [
+                "g",
+                "j"
+            ]
+        },
+        {
+            "before": [
+                "k"
+            ],
+            "after": [
+                "g",
+                "k"
+            ]
+        },
+        {
+            "before": [
+                "u"
+            ],
+            "after": [],
+            "commands": [
+                {
+                    "command": "undo"
+                }
+            ]
+        },
+        {
+            "before": [
+                "<C-r>"
+            ],
+            "after": [],
+            "commands": [
+                {
+                    "command": "redo"
+                }
+            ]
+        },
+        {
+            "before": [
+                "leader",
+                "c",
+                "v"
+            ],
+            "commands": [
+                "workbench.action.openApplicationSettingsJson"
+            ]
+        }
+    ],
+    "git.confirmSync": false,
+    "git.openRepositoryInParentFolders": "always",
+    "git.enableSmartCommit": true,
+    "git.detectSubmodules": false,
+    "git.ignoredRepositories": [
+        "/Users/rungta/code/gocode/src/code.uber.internal/infra/statsdex/go-build",
+        "/opt/homebrew"
+    ],
+    "gitlens.graph.dimMergeCommits": true,
+    "gitlens.menus": {
+        "editor": {
+            "remote": true
+        }
+    },
+    "gitlens.views.repositories.files.layout": "list",
+    "gitlens.hovers.annotations.over": "annotation",
+    "gitlens.currentLine.enabled": false,
+    "gitlens.hovers.currentLine.over": "line",
+    "gitlens.keymap": "alternate",
+    "gitlens.advanced.messages": {
+        "suppressCommitHasNoPreviousCommitWarning": false,
+        "suppressCommitNotFoundWarning": false,
+        "suppressFileNotUnderSourceControlWarning": false,
+        "suppressGitVersionWarning": false,
+        "suppressLineUncommittedWarning": false,
+        "suppressNoRepositoryWarning": false
+    },
+    "gitlens.remotes": [
+        {
+            "domain": "code.uber.internal",
+            "type": "Custom",
+            "name": "Uber",
+            "protocol": "gitolite",
+            "urls": {
+                "repository": "https://sourcegraph.uberinternal.com/code.uber.internal/${repo}",
+                "branches": "https://sourcegraph.uberinternal.com/code.uber.internal/${repo}/-/branches",
+                "branch": "https://sourcegraph.uberinternal.com/code.uber.internal/${repo}@${branch}",
+                "commit": "https://sourcegraph.uberinternal.com/code.uber.internal/${repo}/-/commit/${id}",
+                "file": "https://sourcegraph.uberinternal.com/code.uber.internal/${repo}@master/-/blob/${file}${line}",
+                "fileInBranch": "https://sourcegraph.uberinternal.com/code.uber.internal/${repo}@${branch}/-/blob/${file}${line}",
+                "fileInCommit": "https://sourcegraph.uberinternal.com/code.uber.internal/${repo}@${id}/-/blob/${file}${line}",
+                "fileLine": "#L${line}",
+                "fileRange": "#L${start}-${end}"
+            }
+        }
+    ],
+    "markdown.marp.enableHtml": true,
+    "markdown.marp.pdf.noteAnnotations": true,
+    "github.copilot.enable": {
+        "*": true,
+        "plaintext": false,
+        "markdown": false,
+        "scminput": false
+    },
+    "zig.zigPath": "/Users/prateek/Library/Application Support/Code/User/globalStorage/ziglang.vscode-zig/zig_install/zig",
+    "zig.zls.path": "/Users/prateek/Library/Application Support/Code/User/globalStorage/ziglang.vscode-zig/zls_install/zls",
+    "zig.zigVersion": "nightly-0.11.0-dev.3897+f571438fc",
+    "zig.zls.enableInlayHints": false,
+    "editor.renderWhitespace": "none",
+    "extensions.showRecommendationsOnlyOnDemand": true,
+    "debug.onTaskErrors": "debugAnyway",
+    "files.insertFinalNewline": true,
+    "files.trimFinalNewlines": true,
+    "git.autofetch": true,
+    "git.autoRepositoryDetection": "subFolders",
+    "python.jediEnabled": false,
+    "editor.bracketPairColorization.enabled": true,
+    // "go.toolsEnvVars": {
+    //     "GO111MODULE": "off"
+    // },
+    "go.vetFlags": [],
+    "go.useCodeSnippetsOnFunctionSuggest": false,
+    "go.useLanguageServer": true,
+    "go.languageServerExperimentalFeatures": {
+        "diagnostics": true
+    },
+    "go.coverOnSave": false,
+    "go.coverageDecorator": {
+        "type": "highlight",
+        "coveredHighlightColor": "rgba(0, 255, 0, 0.15)",
+        "uncoveredHighlightColor": "rgba(255, 0, 0, 0.15)",
+        "coveredBorderColor": "rgba(0, 255, 0, 0.15)",
+        "uncoveredBorderColor": "rgba(255, 0, 0, 0.15)",
+        "coveredGutterStyle": "verticalgreen",
+        "uncoveredGutterStyle": "verticalred"
+    },
+    "go.coverOnSingleTest": true,
+    "go.delveConfig.hideSystemGoroutines": true,
+    "go.editorContextMenuCommands": {
+        "testAtCursor": false,
+        "addImport": false,
+        "testCoverage": false,
+        "playground": false,
+        "debugTestAtCursor": false
+    },
+    "window.commandCenter": true,
+    "terminal.integrated.profiles.linux": {
+        "bash": {
+            "path": "bash",
+            "env": {
+                "SHELL": "/bin/bash"
+            }
+        },
+        "zsh": {
+            "path": "zsh",
+            "env": {
+                "SHELL": "/bin/zsh"
+            }
+        },
+        "bash(login)": {
+            "path": "bash",
+            "args": [
+                "-l"
+            ],
+            "env": {
+                "SHELL": "/bin/bash"
+            }
+        },
+        "zsh(login)": {
+            "path": "zsh",
+            "args": [
+                "-l"
+            ],
+            "env": {
+                "SHELL": "/bin/zsh"
+            }
+        }
+    },
+    "bazel.pathsToIgnore": [
+        ".*"
+    ],
+    "haskell.manageHLS": "GHCup",
+    "terminal.integrated.enableMultiLinePasteWarning": false,
+    "haskell.checkProject": false,
+    "github.copilot.editor.enableAutoCompletions": false,
+    "diffEditor.ignoreTrimWhitespace": false,
+    "github.copilot.nextEditSuggestions.enabled": true,
+    "workbench.iconTheme": "vs-seti",
+    "cursor.cmdk.autoSelect": false,
+    "workbench.productIconTheme": "Default",
+    "workbench.activityBar.orientation": "vertical",
+    "redhat.telemetry.enabled": false,
+    "python.analysis.nodeExecutable": "node",
+    "cursorpyright.nodeExecutable": "node",
+    "python.analysis.logLevel": "Information",
+    "cursorpyright.analysis.logLevel": "Information",
+    "[dockercompose]": {
+        "editor.insertSpaces": true,
+        "editor.tabSize": 2,
+        "editor.autoIndent": "advanced",
+        "editor.quickSuggestions": {
+            "other": true,
+            "comments": false,
+            "strings": true
+        },
+        "editor.defaultFormatter": "redhat.vscode-yaml"
+    },
+    "[github-actions-workflow]": {
+        "editor.defaultFormatter": "redhat.vscode-yaml"
+    },
+    "cursor.enable_git_worktrees_setting": true,
+    "specstory.cloudSync.enabled": "never",
+    "specstory.derivedRules.enabled": false,
+    "specstory.helpUsImprove": false,
+    "githubPullRequests.pullBranch": "never",
+    "jest.enable": false,
+    "rust-analyzer.checkOnSave": false,
+    "editor.accessibilitySupport": "off",
+    "gitlens.ai.model": "vscode",
+    "gitlens.ai.vscode.model": "copilot:gpt-4.1",
+    "git.replaceTagsWhenPull": true
 }
