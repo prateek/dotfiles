@@ -43,6 +43,10 @@ function _setup_fzf {
 			--color=fg:-1,bg:-1,hl:#c678dd,fg+:#ffffff,bg+:#252931,hl+:#d858fe
 			--color=info:#98c379,prompt:#61afef,pointer:#be5046,marker:#e5c07b,spinner:#61afef,header:#61afef
 		"
+		# Keep ctrl-t and alt-c lists in newest-first order
+		export FZF_CTRL_T_COMMAND="print -rl -- **/*(.Om) 2>/dev/null"   # files, newest→oldest
+		export FZF_ALT_C_COMMAND="print -rl -- **/*(/Om) 2>/dev/null"    # dirs, newest→oldest
+		# Default file source (used by some widgets); order doesn’t matter here
 		export FZF_DEFAULT_COMMAND="fd --type f --hidden -E '.git' -E '.hg'"
 
 		source ${HOMEBREW_PREFIX}/opt/fzf/shell/key-bindings.zsh
@@ -52,4 +56,10 @@ function _setup_fzf {
 
 if command -v fzf &>/dev/null; then
 	_setup_fzf
+    # Ensure fzf-tab owns <Tab> binding last, after fzf's own completion
+    # is loaded. This makes fzf-tab use zsh compsys results (and thus
+    # respect zstyles like file-sort) instead of fzf's completion widget.
+    if typeset -f enable-fzf-tab >/dev/null; then
+        enable-fzf-tab
+    fi
 fi

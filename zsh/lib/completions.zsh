@@ -30,6 +30,15 @@ compctl -g '*(-/)' cd chdir dirs pushd j
 zstyle ':completion:*' list-colors ''
 zstyle ':completion:*:default' list-colors ${(s.:.)LS_COLORS}
 
+# Sort path/file completion by modification time (newest first in practice).
+# fzf-tab preserves zsh’s completion order, so this affects the fzf popup.
+zstyle ':completion:*' file-sort 'modification'
+# Prevent a later generic alphabetical sort from overriding file-sort.
+zstyle ':completion:*' sort false
+
+# Ensure key file-ops explicitly inherit reverse-chronological order.
+zstyle ':completion:*:*:cp:*' file-sort 'modification'
+
 # [ -f ~/.fzf-tab/fzf-tab.plugin.zsh ] && source ~/.fzf-tab/fzf-tab.plugin.zsh
 # zstyle ':fzf-tab:*' continuous-trigger '/'
 # zstyle ':fzf-tab:*' fzf-bindings 'ctrl-e:accept'
