@@ -27,7 +27,7 @@ o.listchars = {
   trail = "·",
   precedes = "«",
   extends = "»",
-  tab = "▸ \u00A0",
+  tab = "▸·",
   eol = "¬",
 }
 o.showbreak = "↪"
@@ -39,8 +39,8 @@ o.smartcase = true
 o.incsearch = true
 o.hlsearch = true
 
--- Formatting
-o.formatoptions:append({ "r", "c", "o" })
+-- Use 'r', 'c', 'o' like in your vimrc
+o.formatoptions:append("rco")
 o.virtualedit = "block"
 
 -- Performance / timeouts
@@ -59,3 +59,6 @@ o.undodir = undodir
 -- Colors
 o.termguicolors = true
 
+-- Disable red/right margin column highlight
+o.colorcolumn = ""
+pcall(vim.api.nvim_set_hl, 0, "ColorColumn", { bg = "NONE" })

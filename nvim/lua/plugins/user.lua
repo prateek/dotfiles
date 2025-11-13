@@ -1,14 +1,14 @@
 return {
-  -- Theme from your vimrc; set early
-  {
-    "sjl/badwolf",
-    name = "badwolf",
-    lazy = false,
-    priority = 1000,
-    config = function()
-      vim.cmd.colorscheme("badwolf")
-    end,
-  },
+  -- -- Theme from your vimrc; set early
+  -- {
+  --   "sjl/badwolf",
+  --   name = "badwolf",
+  --   lazy = false,
+  --   priority = 1000,
+  --   config = function()
+  --     vim.cmd.colorscheme("badwolf")
+  --   end,
+  -- },
 
   -- Git tools similar to your setup
   { "tpope/vim-fugitive" },
@@ -63,5 +63,44 @@ return {
   { "vim-scripts/scribble.vim", ft = { "racket" } },
   { "guns/vim-sexp", ft = { "clojure", "scheme", "lisp" } },
   { "tpope/vim-sexp-mappings-for-regular-people", ft = { "clojure", "scheme", "lisp" } },
-}
 
+  -- Use the Snacks `advanced` dashboard example
+  {
+    "folke/snacks.nvim",
+    opts = {
+      dashboard = {
+        sections = {
+          { section = "header" },
+          {
+            pane = 2,
+            section = "terminal",
+            cmd = "colorscript -e square",
+            height = 5,
+            padding = 1,
+            enabled = function()
+              return vim.fn.executable("colorscript") == 1
+            end,
+          },
+          { section = "keys", gap = 1, padding = 1 },
+          { pane = 2, icon = " ", title = "Recent Files", section = "recent_files", indent = 2, padding = 1 },
+          { pane = 2, icon = " ", title = "Projects", section = "projects", indent = 2, padding = 1 },
+          {
+            pane = 2,
+            icon = " ",
+            title = "Git Status",
+            section = "terminal",
+            enabled = function()
+              return Snacks.git.get_root() ~= nil
+            end,
+            cmd = "git status --short --branch --renames",
+            height = 5,
+            padding = 1,
+            ttl = 5 * 60,
+            indent = 3,
+          },
+          { section = "startup" },
+        },
+      },
+    },
+  },
+}

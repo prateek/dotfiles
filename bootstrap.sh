@@ -70,7 +70,7 @@ fi
 
 # LazyVim bootstrap (plugins install on first nvim run). Optionally sync now.
 if command -v nvim &>/dev/null; then
-  nvim --headless "+Lazy! sync" +qa || true
+  nvim --headless "+Lazy sync" +qa || true
 fi
 
 # osx install

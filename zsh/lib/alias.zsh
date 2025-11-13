@@ -71,7 +71,7 @@ alias ez='code ~/dotfiles'
 alias jz='cd ~/dotfiles'
 
 alias ec='code ~/.claude'
-alias jc='cd ~/.claude'
+# alias jc='cd ~/.claude' # TODO: conflicts with autojump
 
 alias yo='open -a Yoink'
 alias yolo='claude --dangerously-skip-permissions'
