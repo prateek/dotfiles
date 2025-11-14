@@ -14,7 +14,41 @@ alias gp='git pull origin $(git rev-parse --abbrev-ref HEAD)'
 alias gpo='git pull origin $(git rev-parse --abbrev-ref HEAD)'
 alias push='git push origin $(git rev-parse --abbrev-ref HEAD)'
 alias pushf='git push origin $(git rev-parse --abbrev-ref HEAD) --force'
-alias pull='git pull'
+g_pull_fast() {
+  # If not in a git repo, behave like git pull and fail
+  if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    echo "pull: not a git repository" >&2
+    return 1
+  fi
+
+  # If the user passes arguments, don't be clever – just defer to git pull
+  if [[ "$#" -gt 0 ]]; then
+    git pull "$@"
+    return $?
+  fi
+
+  # Try to determine the upstream (<remote>/<branch>) of the current branch
+  local upstream remote branch
+  upstream=$(git rev-parse --abbrev-ref --symbolic-full-name @{upstream} 2>/dev/null) || {
+    # No upstream configured: fall back to normal git pull
+    git pull --ff-only
+    return $?
+  }
+
+  # Expect something like "origin/main"
+  if [[ "$upstream" != */* ]]; then
+    git pull --ff-only
+    return $?
+  fi
+
+  remote=${upstream%%/*}
+  branch=${upstream#*/}
+
+  # Fast, branch-specific, tag-free fetch, then fast-forward merge
+  git fetch --no-tags "$remote" "$branch" && \
+    git merge --ff-only "$remote/$branch"
+}
+alias pull='g_pull_fast'
 alias grim='git rebase -i $(git symbolic-ref refs/remotes/origin/HEAD | sed "s@^refs/remotes/origin/@@")'
 alias grimb='BASE=$(git symbolic-ref refs/remotes/origin/HEAD | sed "s@^refs/remotes/origin/@@") && git rebase -i $(git merge-base $BASE HEAD)'
 

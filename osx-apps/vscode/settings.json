@@ -636,5 +636,6 @@
     "editor.accessibilitySupport": "off",
     "gitlens.ai.model": "vscode",
     "gitlens.ai.vscode.model": "copilot:gpt-4.1",
-    "git.replaceTagsWhenPull": true
+    "git.replaceTagsWhenPull": true,
+    "githubPullRequests.fileListLayout": "flat"
 }
