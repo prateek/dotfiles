@@ -2,7 +2,7 @@
 /**
  * Reorganize a VS Code settings.json (JSONC) file:
  * - Group top-level keys by prefix (segment before the first dot); language overrides (`"[lang]"`) grouped at bottom.
- * - Preserve original values (including nested comments) by slicing from source text via jsonc-parser AST.
+ * - Preserve original values (including nested comments) by slicing from source text using a lightweight JSONC scanner.
  * - Sort keys alphabetically within each group.
  * - Insert simple group header comments.
  * - Write back only if content changed; create a .bak backup on first run.
@@ -12,7 +12,7 @@
 import fs from "fs";
 import path from "path";
 import process from "process";
-import { parseTree } from "jsonc-parser";
+ 
 
 function readFile(filePath) {
   return fs.readFileSync(filePath, "utf8");
@@ -106,17 +106,195 @@ function sortPropsWithinGroups(groupToProps) {
   }
 }
 
-function extractRootProperties(src, rootNode) {
-  // rootNode is an 'object' node. Its children are property nodes.
+// --- Lightweight JSONC scanning primitives (comments + strings + balancing) ---
+function skipWhitespaceAndComments(src, i) {
+  const n = src.length;
+  while (i < n) {
+    const ch = src[i];
+    // whitespace
+    if (ch === " " || ch === "\t" || ch === "\r" || ch === "\n") {
+      i++;
+      continue;
+    }
+    // line comment
+    if (ch === "/" && src[i + 1] === "/") {
+      i += 2;
+      while (i < n && src[i] !== "\n" && src[i] !== "\r") i++;
+      continue;
+    }
+    // block comment
+    if (ch === "/" && src[i + 1] === "*") {
+      i += 2;
+      while (i < n && !(src[i] === "*" && src[i + 1] === "/")) i++;
+      if (i < n) i += 2;
+      continue;
+    }
+    break;
+  }
+  return i;
+}
+
+function parseJSONString(src, i) {
+  // expects src[i] === '\"', returns index just after closing quote
+  const n = src.length;
+  i++; // skip opening quote
+  let escaped = false;
+  while (i < n) {
+    const ch = src[i];
+    if (escaped) {
+      escaped = false;
+      i++;
+      continue;
+    }
+    if (ch === "\\") {
+      escaped = true;
+      i++;
+      continue;
+    }
+    if (ch === "\"") {
+      return i + 1;
+    }
+    i++;
+  }
+  return i;
+}
+
+function consumeValue(src, i, closeIndex) {
+  // returns { end, terminator } where terminator is ',' or '}' or ''
+  const n = src.length;
+  let depthObj = 0;
+  let depthArr = 0;
+  let inString = false;
+  let escaped = false;
+  let inLineComment = false;
+  let inBlockComment = false;
+  for (; i < n; i++) {
+    const ch = src[i];
+    const next = src[i + 1];
+
+    if (inLineComment) {
+      if (ch === "\n" || ch === "\r") inLineComment = false;
+      continue;
+    }
+    if (inBlockComment) {
+      if (ch === "*" && next === "/") {
+        inBlockComment = false;
+        i++;
+      }
+      continue;
+    }
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (ch === "\\") {
+        escaped = true;
+      } else if (ch === "\"") {
+        inString = false;
+      }
+      continue;
+    }
+
+    // not in string/comment
+    if (ch === "\"") {
+      inString = true;
+      continue;
+    }
+    if (ch === "/" && next === "/") {
+      inLineComment = true;
+      i++;
+      continue;
+    }
+    if (ch === "/" && next === "*") {
+      inBlockComment = true;
+      i++;
+      continue;
+    }
+    if (ch === "{") {
+      depthObj++;
+      continue;
+    }
+    if (ch === "}") {
+      if (depthObj > 0) {
+        depthObj--;
+        continue;
+      }
+      // value ends before this closing brace of root
+      return { end: i, terminator: "}" };
+    }
+    if (ch === "[") {
+      depthArr++;
+      continue;
+    }
+    if (ch === "]") {
+      if (depthArr > 0) depthArr--;
+      continue;
+    }
+    if (ch === "," && depthObj === 0 && depthArr === 0) {
+      return { end: i, terminator: "," };
+    }
+  }
+  return { end: n, terminator: "" };
+}
+
+function extractRootProperties(src) {
   const props = [];
-  if (!rootNode || rootNode.type !== "object" || !Array.isArray(rootNode.children)) return props;
-  for (const propNode of rootNode.children) {
-    if (!Array.isArray(propNode.children) || propNode.children.length < 2) continue;
-    const keyNode = propNode.children[0];
-    const valueNode = propNode.children[1];
-    const key = keyNode.value; // string
-    const valueText = src.slice(valueNode.offset, valueNode.offset + valueNode.length);
+  const openBraceIndex = src.indexOf("{");
+  const closeBraceIndex = src.lastIndexOf("}");
+  if (openBraceIndex === -1 || closeBraceIndex === -1 || closeBraceIndex <= openBraceIndex) {
+    return props;
+  }
+  let i = openBraceIndex + 1;
+  while (true) {
+    i = skipWhitespaceAndComments(src, i);
+    if (i >= closeBraceIndex) break;
+    if (src[i] !== "\"") {
+      // not a valid key start; try to advance to next quote or exit
+      const nextQuote = src.indexOf("\"", i);
+      if (nextQuote === -1 || nextQuote >= closeBraceIndex) break;
+      i = nextQuote;
+    }
+    // parse key string
+    const keyStart = i;
+    const keyEnd = parseJSONString(src, i);
+    const keyRaw = src.slice(keyStart, keyEnd);
+    let key;
+    try {
+      key = JSON.parse(keyRaw);
+    } catch {
+      // skip malformed key
+      i = keyEnd;
+      continue;
+    }
+    i = skipWhitespaceAndComments(src, keyEnd);
+    // find colon
+    if (src[i] !== ":") {
+      // advance to next ':' skipping comments/space
+      while (i < closeBraceIndex) {
+        if (src[i] === ":") break;
+        if (src[i] === "/" && (src[i + 1] === "/" || src[i + 1] === "*")) {
+          i = skipWhitespaceAndComments(src, i);
+          continue;
+        }
+        i++;
+      }
+    }
+    if (src[i] !== ":") break;
+    i++; // skip ':'
+    i = skipWhitespaceAndComments(src, i);
+    const valueStart = i;
+    const { end, terminator } = consumeValue(src, i, closeBraceIndex);
+    const valueText = src.slice(valueStart, end);
     props.push({ key, valueText });
+    if (terminator === ",") {
+      i = end + 1;
+      continue;
+    } else if (terminator === "}") {
+      // root object end
+      break;
+    } else {
+      i = end;
+      break;
+    }
   }
   return props;
 }
@@ -164,7 +342,8 @@ function buildOutput(src, groupsOrdered, groupToProps, indent) {
     result = "{" + EOL + body + "}" + EOL;
   } else {
     // Preserve any prefix before '{' and suffix after '}' if they exist
-    result = before + EOL + body + after.endsWith(EOL) ? after : after + EOL;
+    const suffix = after.endsWith(EOL) ? after : after + EOL;
+    result = before + EOL + body + suffix;
   }
   return result;
 }
@@ -181,14 +360,9 @@ function main() {
     process.exit(2);
   }
   const src = readFile(abs);
-  const root = parseTree(src);
-  if (!root || root.type !== "object") {
-    console.error("Root of settings must be a JSON object.");
-    process.exit(2);
-  }
   const indent = detectIndent(src);
   const directive = parseDirective(src);
-  const propsInOrder = extractRootProperties(src, root);
+  const propsInOrder = extractRootProperties(src);
   const { groupOrder, groupToProps } = buildGroups(propsInOrder);
   sortPropsWithinGroups(groupToProps);
   const groupsOrdered = reorderGroupsDynamic(groupOrder, groupToProps, directive);
@@ -202,5 +376,3 @@ function main() {
 }
 
 main();
-
-
