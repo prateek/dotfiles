@@ -12,7 +12,7 @@
 import fs from "fs";
 import path from "path";
 import process from "process";
- 
+
 
 function readFile(filePath) {
   return fs.readFileSync(filePath, "utf8");
@@ -84,18 +84,66 @@ function reorderGroupsDynamic(groupOrder, groupToProps, directive) {
   const set = new Set(groupOrder);
   const allGroups = Array.from(set);
 
-  // Pull overrides out
-  const nonOverrides = allGroups.filter((g) => g !== overridesKey);
-  const hasOverrides = set.has(overridesKey);
+  // Classification helpers
+  const CORE = new Set([
+    "editor",
+    "workbench",
+    "window",
+    "files",
+    "explorer",
+    "terminal",
+    "diffEditor",
+    "security",
+    "breadcrumbs",
+    "outline",
+    "debug",
+    "remote"
+  ]);
+  const LANG = new Set([
+    "go",
+    "gopls",
+    "python",
+    "typescript",
+    "javascript",
+    "haskell",
+    "rust-analyzer",
+    "zig",
+    "jupyter",
+    "notebook",
+    "ipynb",
+    "markdown"
+  ]);
+  function isLanguageGroup(g) {
+    return LANG.has(g) || /-analy[z|s]er$/.test(g);
+  }
+  function categoryRank(g) {
+    if (g === overridesKey) return 3;
+    if (CORE.has(g)) return 0;
+    if (isLanguageGroup(g)) return 2;
+    return 1; // extensions/integrations and everything else
+  }
 
-  // Pinned first in given order, intersect with existing groups
+  // Pinned groups first in given order (if present)
   const pinnedOrdered = pinned.filter((g) => set.has(g));
-  // Remaining groups (excluding pinned and overrides) alphabetical
-  const remaining = nonOverrides.filter((g) => !pinnedOrdered.includes(g)).sort();
+
+  // Remaining groups, excluding pinned
+  const remaining = allGroups.filter((g) => !pinnedOrdered.includes(g));
+
+  // If overrides are to be forced at top/bottom, handle separately
+  const hasOverrides = set.has(overridesKey);
+  const remainingNoOverrides = remaining.filter((g) => g !== overridesKey);
+
+  // Sort remaining by category rank, then alphabetically within category
+  remainingNoOverrides.sort((a, b) => {
+    const ra = categoryRank(a);
+    const rb = categoryRank(b);
+    if (ra !== rb) return ra - rb;
+    return a.localeCompare(b);
+  });
 
   let ordered = [];
   if (overridesPos === "top" && hasOverrides) ordered.push(overridesKey);
-  ordered = ordered.concat(pinnedOrdered, remaining);
+  ordered = ordered.concat(pinnedOrdered, remainingNoOverrides);
   if (overridesPos === "bottom" && hasOverrides) ordered.push(overridesKey);
   return ordered;
 }
