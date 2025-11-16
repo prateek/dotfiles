@@ -20,6 +20,16 @@
         "showReuseMessage": false,
         "clear": false
       }
+    },
+    {
+      "label": "Format VSCode settings",
+      "type": "shell",
+      "command": "node ${workspaceFolder}/scripts/format-vscode-settings.mjs ${workspaceFolder}/osx-apps/vscode/settings.json",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "never",
+        "panel": "shared"
+      }
     }
   ]
 }
