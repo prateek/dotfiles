@@ -1,6 +1,14 @@
 {
-    "[json, jsonc]": {
+    "[json]": {
         "editor.formatOnSave": false,
+        "editor.codeActionsOnSave": {
+            "source.fixAll": "never"
+        },
+        "editor.renderWhitespace": "none"
+    },
+    "[jsonc]": {
+        "editor.defaultFormatter": "vscode.json-language-features",
+        "editor.formatOnSave": true,
         "editor.codeActionsOnSave": {
             "source.fixAll": "never"
         },

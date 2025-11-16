@@ -106,6 +106,9 @@ alias jz='cd ~/dotfiles'
 
 alias ec='code ~/.claude'
 # alias jc='cd ~/.claude' # TODO: conflicts with autojump
+#
+# c: mnemonic for "code editor" — opens current dir in Cursor/VS Code
+alias c='/Users/prateek/dotfiles/scripts/c'
 
 alias yo='open -a Yoink'
 alias yolo='claude --dangerously-skip-permissions'

@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+
+# c = "code editor" (mnemonic)
+# Opens Cursor/VS Code with a language-specific profile.
+# Behavior:
+# - With no args: open current directory (no --wait)
+# - With file args: open those files and wait (--wait) so EDITOR flows work
+# Detection order: Rust > Go > Zig > Base
+set -euo pipefail
+
+args=("$@")
+
+is_file_arg=false
+for a in "${args[@]:-}"; do
+  if [ -n "${a:-}" ] && [ -e "$a" ]; then
+    is_file_arg=true
+    break
+  fi
+done
+
+# Determine base directory for profile detection
+detect_base_dir() {
+  # Prefer git root if present
+  if command -v git >/dev/null 2>&1 && git rev-parse --show-toplevel >/dev/null 2>&1; then
+    git rev-parse --show-toplevel
+    return
+  fi
+  if $is_file_arg; then
+    # Use containing dir of first existing path
+    for a in "${args[@]}"; do
+      if [ -e "$a" ]; then
+        if [ -d "$a" ]; then
+          realpath "$a"
+        else
+          realpath "$(dirname "$a")"
+        fi
+        return
+      fi
+    done
+  fi
+  # Fallback: current directory
+  pwd
+}
+
+base_dir="$(detect_base_dir)"
+
+open_with="code"
+if command -v cursor >/dev/null 2>&1; then
+  open_with="cursor"
+elif command -v code >/dev/null 2>&1; then
+  open_with="code"
+else
+  echo "Neither 'cursor' nor 'code' CLI found on PATH." >&2
+  exit 1
+fi
+
+# Build command
+cmd=( "$open_with" )
+if $is_file_arg; then
+  cmd+=( "--wait" )
+  cmd+=( "${args[@]}" )
+else
+  cmd+=( "$base_dir" )
+fi
+
+exec "${cmd[@]}"
