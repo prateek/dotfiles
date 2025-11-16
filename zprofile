@@ -20,7 +20,7 @@ export LESSCHARSET=utf-8
 export PAGER=less
 
 # EDITOR preferences
-export EDITOR="$HOME/dotfiles/scripts/c" # mnemonic: c = code editor
+export EDITOR="nvim" # mnemonic: c = code editor
 export VISUAL="$HOME/dotfiles/scripts/c"
 bindkey -v          # vim bindings for zsh
 

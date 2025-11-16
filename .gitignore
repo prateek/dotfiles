@@ -33,5 +33,7 @@ Temporary Items
 .specstory/.what-is-this.md
 .env
 
+*.bak
+
 # Include local formatter dependencies
 node_modules/

@@ -131,13 +131,18 @@
   },
   {
     "key": "shift+cmd+enter",
-    "command": "workbench.action.maximizeEditor",
+    "command": "workbench.action.toggleMaximizeEditorGroup",
     "when": "editorFocus"
   },
   {
     "key": "shift+cmd+enter",
-    "command": "workbench.action.toggleMaximizedPanel",
-    "when": "panelFocus"
+    "command": "workbench.action.toggleZenMode",
+    "when": "terminalFocus"
+  },
+  {
+    "key": "shift+cmd+enter",
+    "command": "workbench.action.focusActiveEditorGroup",
+    "when": "!editorFocus && !terminalFocus"
   },
   {
     "key": "shift+cmd+]",
