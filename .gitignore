@@ -33,3 +33,6 @@ Temporary Items
 # SpecStory explanation file
 .specstory/.what-is-this.md
 .env
+
+# Include local formatter dependencies
+!scripts/node_modules/
