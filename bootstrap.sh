@@ -32,6 +32,26 @@ if [ -d "$NVIM_CONFIG_DIR" ] || [ -L "$NVIM_CONFIG_DIR" ]; then
 fi
 mkdir -p "$HOME/.config"
 ln -snf "$CWD/nvim" "$NVIM_CONFIG_DIR"
+# Borders (JankyBorders) config
+BORDERS_CONFIG_DIR="$HOME/.config/borders"
+if [ -d "$BORDERS_CONFIG_DIR" ] || [ -L "$BORDERS_CONFIG_DIR" ]; then
+  if [ "$(readlink "$BORDERS_CONFIG_DIR" 2>/dev/null)" != "$CWD/.config/borders" ]; then
+    echo "Error: $BORDERS_CONFIG_DIR already exists and is not a symlink to $CWD/.config/borders."
+    echo "To back it up, run: mv \"$BORDERS_CONFIG_DIR\" \"${BORDERS_CONFIG_DIR}.backup-$(date +%s)\""
+    echo "Or remove it if you don't need it: rm -rf \"$BORDERS_CONFIG_DIR\""
+    echo "After fixing, rerun this bootstrap script."
+    exit 1
+  fi
+fi
+mkdir -p "$HOME/.config"
+ln -snf "$CWD/.config/borders" "$BORDERS_CONFIG_DIR"
+
+# Start JankyBorders via brew services (uses ~/.config/borders/bordersrc)
+if command -v brew >/dev/null 2>&1; then
+  if brew list --formula | grep -q "^borders$"; then
+    brew services restart borders || brew services start borders || true
+  fi
+fi
 # if [ ! -f $HOME/.sshrc ]; then ln -s $CWD/sshrc $HOME/.sshrc ; fi
 if [ ! -f "$HOME/.zlogin" ]; then ln -s "$CWD/zlogin" "$HOME/.zlogin"; fi
 if [ ! -f "$HOME/.zprofile" ]; then ln -s "$CWD/zprofile" "$HOME/.zprofile"; fi

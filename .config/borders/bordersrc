@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+# JankyBorders configuration
+# This file is sourced by the borders daemon on launch.
+# See: man borders or the project README for all options.
+
+options=(
+  style=round
+  width=6.0
+  hidpi=on
+  active_color=0xfff1c232
+  inactive_color=0xff494d64
+)
+
+borders "${options[@]}"
