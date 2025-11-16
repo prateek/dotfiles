@@ -68,7 +68,8 @@
     // === terminal ===
     "terminal.integrated.enableMultiLinePasteWarning": false,
     "terminal.integrated.commandsToSkipShell": [
-        "workbench.action.toggleZenMode"
+        "workbench.action.toggleZenMode",
+        "workbench.action.toggleMaximizedPanel"
     ],
     "terminal.integrated.profiles.linux": {
         "bash": {
