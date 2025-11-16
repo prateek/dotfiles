@@ -131,23 +131,24 @@
   },
   {
     "key": "shift+cmd+enter",
-    "command": "workbench.action.toggleMaximizeEditorGroup",
-    "when": "editorFocus"
-  },
-  {
-    "key": "shift+cmd+enter",
     "command": "workbench.action.toggleZenMode",
-    "when": "terminalFocus"
+    "when": "editorFocus || notebookEditorFocused || terminalFocus || terminalEditorFocus"
   },
   {
     "key": "shift+cmd+enter",
     "command": "workbench.action.focusActiveEditorGroup",
-    "when": "!editorFocus && !terminalFocus"
+    "when": "!editorFocus && !terminalFocus && !notebookEditorFocused && !terminalEditorFocus"
   },
   {
     "key": "shift+cmd+]",
     "command": "composer.selectNextComposer",
     "when": "agentsPaneFocused && cursor.agentIdeUnification.enabled || composerFocused && cursor.agentIdeUnification.enabled"
+  },
+  // ——— Unbind conflicting defaults ———
+  {
+    "key": "shift+cmd+enter",
+    "command": "-editor.action.insertLineBefore",
+    "when": "editorTextFocus && !editorReadonly"
   },
   {
     "key": "shift+cmd+[",
