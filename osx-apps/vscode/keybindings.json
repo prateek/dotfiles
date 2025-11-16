@@ -326,5 +326,15 @@
     "key": "f4",
     "command": "-references-view.next",
     "when": "reference-list.hasResult && references-view.canNavigate"
+  },
+  {
+    "key": "shift+cmd+enter",
+    "command": "workbench.action.maximizeChatSize",
+    "when": "cursor.agentIdeUnification.enabled"
+  },
+  {
+    "key": "alt+cmd+e",
+    "command": "-workbench.action.maximizeChatSize",
+    "when": "cursor.agentIdeUnification.enabled"
   }
 ]
