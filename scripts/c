@@ -5,6 +5,7 @@
 # Behavior:
 # - With no args: open current directory (no --wait)
 # - With file args: open those files and wait (--wait) so EDITOR flows work
+# - Always open a new window by default (--new-window)
 # Detection order: Rust > Go > Zig > Base
 set -euo pipefail
 
@@ -55,7 +56,7 @@ else
 fi
 
 # Build command
-cmd=( "$open_with" )
+cmd=( "$open_with" "--new-window" )
 if $is_file_arg; then
   cmd+=( "--wait" )
   cmd+=( "${args[@]}" )
