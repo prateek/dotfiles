@@ -51,6 +51,8 @@ g_pull_fast() {
 alias pull='g_pull_fast'
 alias grim='git rebase -i $(git symbolic-ref refs/remotes/origin/HEAD | sed "s@^refs/remotes/origin/@@")'
 alias grimb='BASE=$(git symbolic-ref refs/remotes/origin/HEAD | sed "s@^refs/remotes/origin/@@") && git rebase -i $(git merge-base $BASE HEAD)'
+# add an alias for git spice
+alias gsp="$(brew --prefix)/opt/git-spice/bin/gs"
 
 # use fzf to autocomplete git branches
 gcf() {
