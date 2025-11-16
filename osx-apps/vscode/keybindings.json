@@ -132,7 +132,12 @@
   {
     "key": "shift+cmd+enter",
     "command": "workbench.action.toggleZenMode",
-    "when": "editorFocus || notebookEditorFocused || terminalFocus || terminalEditorFocus"
+    "when": "editorFocus || notebookEditorFocused"
+  },
+  {
+    "key": "shift+cmd+enter",
+    "command": "workbench.action.toggleMaximizedPanel",
+    "when": "terminalFocus || terminalEditorFocus"
   },
   {
     "key": "shift+cmd+enter",
