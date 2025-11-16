@@ -2,6 +2,8 @@
 # vim:syntax=sh
 # vim:filetype=sh
 
+open https://discord.com/channels/460571766901964801/676992289327022111
+
 #-----------------------------------------------------
 # Cache homebrew prefix early (before plugins need it)
 #-----------------------------------------------------
