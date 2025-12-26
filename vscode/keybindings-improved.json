@@ -1,0 +1,304 @@
+// Place your key bindings in this file to overwrite the defaults
+[
+  // ===== COMMAND PALETTE & QUICK ACCESS =====
+  {
+    "key": "shift+cmd+.",
+    "command": "workbench.action.openGlobalKeybindings"
+  },
+  {
+    "key": "cmd+n",
+    "command": "workbench.action.quickOpen"
+  },
+  {
+    "key": "ctrl+z",
+    "command": "workbench.action.showAllSymbols"
+  },
+
+  // ===== EDITOR NAVIGATION =====
+  // Focus between editor groups
+  {
+    "key": "ctrl+h",
+    "command": "workbench.action.focusPreviousGroup"
+  },
+  {
+    "key": "ctrl+l",
+    "command": "workbench.action.focusNextGroup"
+  },
+  
+  // Navigate between editors
+  {
+    "key": "shift+cmd+[",
+    "command": "workbench.action.previousEditor",
+    "when": "!terminalFocus"
+  },
+  {
+    "key": "shift+cmd+]",
+    "command": "workbench.action.nextEditor",
+    "when": "!terminalFocus"
+  },
+
+  // Navigate between panes (terminal, sidebar, etc.)
+  {
+    "key": "ctrl+h",
+    "command": "workbench.action.navigateLeft"
+  },
+  {
+    "key": "ctrl+l",
+    "command": "workbench.action.navigateRight"
+  },
+  {
+    "key": "ctrl+k",
+    "command": "workbench.action.navigateUp"
+  },
+  {
+    "key": "ctrl+j",
+    "command": "workbench.action.navigateDown"
+  },
+
+  // ===== EDITOR ACTIONS =====
+  {
+    "key": "f1",
+    "command": "editor.action.showHover",
+    "when": "editorTextFocus"
+  },
+  {
+    "key": "ctrl+shift+f",
+    "command": "editor.action.formatDocument",
+    "when": "editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "cmd+2",
+    "command": "workbench.action.splitEditor"
+  },
+  {
+    "key": "cmd+k l",
+    "command": "workbench.action.closeEditorsToTheRight"
+  },
+  {
+    "key": "cmd+k cmd+o",
+    "command": "workbench.action.closeEditorsInOtherGroups"
+  },
+
+  // ===== ERROR/PROBLEM NAVIGATION =====
+  {
+    "key": "cmd+p",
+    "command": "editor.action.marker.next",
+    "when": "editorFocus"
+  },
+  {
+    "key": "shift+cmd+p",
+    "command": "editor.action.marker.prev",
+    "when": "editorFocus"
+  },
+
+  // ===== EXPLORER & FILE MANAGEMENT =====
+  {
+    "key": "shift+cmd+e",
+    "command": "workbench.view.explorer",
+    "when": "viewContainer.workbench.view.explorer.enabled && !editorFocus"
+  },
+  {
+    "key": "shift+cmd+e",
+    "command": "workbench.files.action.showActiveFileInExplorer",
+    "when": "viewContainer.workbench.view.explorer.enabled && editorFocus"
+  },
+
+  // ===== GIT INTEGRATION =====
+  {
+    "key": "cmd+r",
+    "command": "gitlens.openFileOnRemote",
+    "when": "editorTextFocus"
+  },
+
+  // ===== BUILD & TASKS =====
+  {
+    "key": "shift+cmd+r",
+    "command": "workbench.action.tasks.build"
+  },
+
+  // ===== TERMINAL =====
+  {
+    "key": "shift+cmd+enter",
+    "command": "workbench.action.toggleMaximizedPanel",
+    "when": "terminalFocus"
+  },
+  {
+    "key": "ctrl+a",
+    "command": "workbench.action.terminal.runSelectedText"
+  },
+
+  // ===== COPILOT & AI =====
+  {
+    "key": "ctrl+shift+c",
+    "command": "workbench.panel.chatSidebar.copilot"
+  },
+
+  // ===== REFERENCES & SEARCH =====
+  {
+    "key": "f4",
+    "command": "references-view.next",
+    "when": "reference-list.hasResult && references-view.canNavigate"
+  },
+
+  // ===== GO LANGUAGE SPECIFIC =====
+  {
+    "key": "ctrl+e",
+    "command": "go.test.cursor",
+    "when": "editorLangId=='go' && editorTextFocus"
+  },
+  {
+    "key": "ctrl+f",
+    "command": "go.test.file",
+    "when": "editorLangId=='go' && editorTextFocus"
+  },
+  {
+    "key": "ctrl+s",
+    "command": "go.test.previous",
+    "when": "editorLangId=='go' && editorTextFocus"
+  },
+  {
+    "key": "ctrl+t",
+    "command": "go.test.package",
+    "when": "editorLangId=='go'"
+  },
+  {
+    "key": "f5",
+    "command": "workbench.action.debug.restart",
+    "when": "editorLangId=='go' && inDebugMode"
+  },
+
+  // ===== ZIG LANGUAGE SPECIFIC =====
+  {
+    "key": "ctrl+f",
+    "command": "zig-language-extras.runFileTests",
+    "when": "editorLangId=='zig' && editorTextFocus"
+  },
+  {
+    "key": "ctrl+e",
+    "command": "zig-language-extras.runSingleTest",
+    "when": "editorLangId=='zig' && editorTextFocus"
+  },
+  {
+    "key": "f5",
+    "command": "workbench.action.tasks.runTask",
+    "args": "runZigFile",
+    "when": "editorLangId=='zig' && editorFocus"
+  },
+
+  // ===== UNBIND DEFAULT KEYBINDINGS =====
+  {
+    "key": "cmd+p",
+    "command": "-workbench.action.quickOpen"
+  },
+  {
+    "key": "shift+cmd+p",
+    "command": "-workbench.action.showCommands"
+  },
+  {
+    "key": "cmd+t",
+    "command": "-workbench.action.showAllSymbols"
+  },
+  {
+    "key": "shift+cmd+o",
+    "command": "-workbench.action.gotoSymbol"
+  },
+  {
+    "key": "cmd+\\",
+    "command": "-workbench.action.splitEditor"
+  },
+  {
+    "key": "shift+alt+f",
+    "command": "-editor.action.formatDocument",
+    "when": "editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "cmd+2",
+    "command": "-workbench.action.focusSecondEditorGroup"
+  },
+  {
+    "key": "alt+f8",
+    "command": "-editor.action.marker.next",
+    "when": "editorFocus"
+  },
+  {
+    "key": "shift+alt+f8",
+    "command": "-editor.action.marker.prev",
+    "when": "editorFocus"
+  },
+  {
+    "key": "shift+cmd+u",
+    "command": "-workbench.action.output.toggleOutput",
+    "when": "workbench.panel.output.active"
+  },
+  {
+    "key": "shift+cmd+b",
+    "command": "-workbench.action.tasks.build",
+    "when": "taskCommandsRegistered"
+  },
+  {
+    "key": "shift+cmd+r",
+    "command": "-rerunSearchEditorSearch",
+    "when": "inSearchEditor"
+  },
+  {
+    "key": "alt+cmd+t",
+    "command": "-workbench.action.closeOtherEditors"
+  },
+  {
+    "key": "shift+alt+down",
+    "command": "-editor.action.copyLinesDownAction",
+    "when": "editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "shift+alt+down",
+    "command": "-notebook.cell.copyDown",
+    "when": "notebookEditorFocused && !inputFocus"
+  },
+  {
+    "key": "shift+alt+up",
+    "command": "-notebook.cell.copyUp",
+    "when": "notebookEditorFocused && !inputFocus"
+  },
+  {
+    "key": "shift+alt+up",
+    "command": "-editor.action.copyLinesUpAction",
+    "when": "editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "shift+cmd+i",
+    "command": "-chat.action.askQuickQuestion",
+    "when": "config.chat.experimental.quickQuestion.enable && hasChatProvider"
+  },
+  {
+    "key": "ctrl+cmd+i",
+    "command": "-workbench.panel.chatSidebar.copilot"
+  },
+  {
+    "key": "shift+cmd+]",
+    "command": "-workbench.action.nextEditor"
+  },
+  {
+    "key": "shift+cmd+[",
+    "command": "-workbench.action.previousEditor"
+  },
+  {
+    "key": "cmd+f",
+    "command": "-list.find",
+    "when": "listFocus && listSupportsFind"
+  },
+  {
+    "key": "f4",
+    "command": "-references-view.next",
+    "when": "reference-list.hasResult && references-view.canNavigate"
+  },
+  {
+    "key": "shift+cmd+e",
+    "command": "-workbench.view.explorer",
+    "when": "viewContainer.workbench.view.explorer.enabled"
+  },
+  {
+    "key": "shift+cmd+f5",
+    "command": "-workbench.action.debug.restart",
+    "when": "editorLangId=='go' && inDebugMode"
+  }
+]
