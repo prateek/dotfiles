@@ -24,6 +24,11 @@
       "key" : "b",
       "type" : "application",
       "value" : "/Applications/Google Chrome.app"
+    },
+    {
+      "key" : "m",
+      "type" : "application",
+      "value" : "/Applications/Meet.app"
     }
   ],
   "type" : "group"

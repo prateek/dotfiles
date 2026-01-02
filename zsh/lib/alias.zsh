@@ -9,6 +9,7 @@ alias gd="git diff"
 alias gb="git branch"
 alias gca="git commit -a"
 alias gco="git checkout"
+alias lg="lazygit"
 
 # via https://stackoverflow.com/questions/1057564/pretty-git-branch-graphs
 alias gl1="git log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(auto)%d%C(reset)' --all"
@@ -118,7 +119,8 @@ alias ec='code ~/.claude'
 alias c='/Users/prateek/dotfiles/scripts/c'
 
 alias yo='open -a Yoink'
-alias yolo='claude --dangerously-skip-permissions'
+alias yolo='codex --dangerously-bypass-approvals-and-sandbox'
+alias yoloc='claude --dangerously-skip-permissions'
 # FIXME: Pipe Aliases
 # alias L=' | less '
 # alias G=' | egrep --color=auto '

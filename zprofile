@@ -20,9 +20,9 @@ export LESSCHARSET=utf-8
 export PAGER=less
 
 # EDITOR preferences
-export EDITOR="nvim" # mnemonic: c = code editor
-export VISUAL="$HOME/dotfiles/scripts/c"
-bindkey -v          # vim bindings for zsh
+export EDITOR="nvim"
+export VISUAL="nvim" # "$HOME/dotfiles/scripts/c"
+bindkey -v           # vim bindings for zsh
 
 # Export existing paths.
 typeset -gxU path PATH

@@ -65,7 +65,9 @@ map("n", "coi", function()
   vim.cmd("IBLToggle")
 end, { desc = "Toggle indent guides" })
 
+-- Toggle listchars (visible whitespace)
+map("n", "col", ":set list!<CR>", { desc = "Toggle listchars", silent = true })
+
 -- Swap visual modes (v and <C-v>) like your vimrc
 map("n", "v", "<C-v>", { noremap = true })
 map("n", "<C-v>", "v", { noremap = true })
-

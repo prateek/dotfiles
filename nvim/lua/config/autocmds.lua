@@ -22,6 +22,15 @@ auc("BufWritePost", {
   command = "source $MYVIMRC",
 })
 
+-- Prefer absolute line numbers by default (LazyVim defaults to relative)
+auc("VimEnter", {
+  group = aug("line_numbers_default", { clear = true }),
+  callback = function()
+    vim.opt.number = true
+    vim.opt.relativenumber = false
+  end,
+})
+
 -- Map <C-e> to run quick scripts via :Dispatch for specific filetypes
 local ft_stdout = {
   bash = "bash",

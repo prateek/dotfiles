@@ -1,6 +1,4 @@
 #!/usr/bin/env zsh
-# vim:syntax=zsh
-# vim:filetype=zsh
 
 export SYSTEM=$(uname -s)
 export ZSHCONFIG=$DOTFILES
@@ -10,6 +8,11 @@ if [[ -s ${ZSH_INIT} ]]; then
     source ${ZSH_INIT}
 else
     echo "Could not find the init script ${ZSH_INIT}"
+fi
+
+# Prefer Neovim when invoking vim
+if command -v nvim >/dev/null 2>&1; then
+  alias vim='nvim'
 fi
 
 # Compinit optimization - only regenerate dump once per day
@@ -37,3 +40,17 @@ fi
 if [ -f "$HOME/.zshrc.local" ]; then
   source "$HOME/.zshrc.local"
 fi
+
+# Added by Windsurf
+export PATH="/Users/prateek/.codeium/windsurf/bin:$PATH"
+
+# Added by Antigravity
+export PATH="/Users/prateek/.antigravity/antigravity/bin:$PATH"
+
+# pnpm
+export PNPM_HOME="/Users/prateek/Library/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+# pnpm end

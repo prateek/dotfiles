@@ -20,9 +20,6 @@ require("lazy").setup({
     -- LazyVim and its default plugin collection
     { "LazyVim/LazyVim", import = "lazyvim.plugins" },
 
-    -- Useful extras to align with your prior workflow
-    { import = "lazyvim.plugins.extras.editor.flash" },
-
     -- User plugins and overrides
     { import = "plugins" },
   },
@@ -33,4 +30,3 @@ require("lazy").setup({
   install = { colorscheme = { "badwolf", "tokyonight", "catppuccin" } },
   checker = { enabled = true },
 })
-
