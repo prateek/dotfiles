@@ -58,6 +58,7 @@ o.undodir = undodir
 
 -- Colors
 o.termguicolors = true
+o.background = "dark"
 
 -- Disable red/right margin column highlight
 o.colorcolumn = ""

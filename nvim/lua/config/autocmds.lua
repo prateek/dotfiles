@@ -31,6 +31,15 @@ auc("VimEnter", {
   end,
 })
 
+-- Disable wrapping and hide listchars by default (LazyVim defaults differ)
+auc("VimEnter", {
+  group = aug("wrap_list_default", { clear = true }),
+  callback = function()
+    vim.opt.wrap = false
+    vim.opt.list = false
+  end,
+})
+
 -- Map <C-e> to run quick scripts via :Dispatch for specific filetypes
 local ft_stdout = {
   bash = "bash",

@@ -1,14 +1,19 @@
 return {
-  -- -- Theme from your vimrc; set early
-  -- {
-  --   "sjl/badwolf",
-  --   name = "badwolf",
-  --   lazy = false,
-  --   priority = 1000,
-  --   config = function()
-  --     vim.cmd.colorscheme("badwolf")
-  --   end,
-  -- },
+  -- Theme: vscode.nvim (dark)
+  {
+    "Mofiqul/vscode.nvim",
+    lazy = false,
+    priority = 1000,
+    config = function()
+      require("vscode").setup({})
+    end,
+  },
+  {
+    "LazyVim/LazyVim",
+    opts = {
+      colorscheme = "vscode",
+    },
+  },
 
   -- Git tools similar to your setup
   { "tpope/vim-fugitive" },

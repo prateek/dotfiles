@@ -27,6 +27,6 @@ require("lazy").setup({
     lazy = false,      -- load plugins during startup by default
     version = false,   -- always use latest git
   },
-  install = { colorscheme = { "badwolf", "tokyonight", "catppuccin" } },
+  install = { colorscheme = { "vscode", "badwolf", "tokyonight", "catppuccin" } },
   checker = { enabled = true },
 })

@@ -650,6 +650,8 @@
     "python.analysis.logLevel": "Information",
     "python.analysis.nodeExecutable": "node",
     "python.jediEnabled": false,
+    // === ruff ===
+    "ruff.showNotifications": "off",
     // === rust-analyzer ===
     "rust-analyzer.checkOnSave": false,
     // === typescript ===
@@ -696,6 +698,9 @@
             "source.fixAll": "never"
         },
         "editor.renderWhitespace": "none"
+    },
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff"
     },
     "explorer.fileNesting.patterns": {
         "*.ts": "${capture}.js",
