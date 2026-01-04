@@ -52,6 +52,34 @@ if command -v brew >/dev/null 2>&1; then
     brew services restart borders || brew services start borders || true
   fi
 fi
+
+# Codex config
+CODEX_DIR="$HOME/.codex"
+CODEX_CONFIG_TOML="$CODEX_DIR/config.toml"
+CODEX_SKILLS_DIR="$CODEX_DIR/skills"
+mkdir -p "$CODEX_DIR"
+
+if [ -e "$CODEX_CONFIG_TOML" ] || [ -L "$CODEX_CONFIG_TOML" ]; then
+  if [ "$(readlink "$CODEX_CONFIG_TOML" 2>/dev/null)" != "$CWD/.codex/config.toml" ]; then
+    echo "Error: $CODEX_CONFIG_TOML already exists and is not a symlink to $CWD/.codex/config.toml."
+    echo "To back it up, run: mv \"$CODEX_CONFIG_TOML\" \"${CODEX_CONFIG_TOML}.backup-$(date +%s)\""
+    echo "After fixing, rerun this bootstrap script."
+    exit 1
+  fi
+fi
+ln -snf "$CWD/.codex/config.toml" "$CODEX_CONFIG_TOML"
+
+if [ -e "$CODEX_SKILLS_DIR" ] || [ -L "$CODEX_SKILLS_DIR" ]; then
+  if [ "$(readlink "$CODEX_SKILLS_DIR" 2>/dev/null)" != "$CWD/.codex/skills" ]; then
+    echo "Error: $CODEX_SKILLS_DIR already exists and is not a symlink to $CWD/.codex/skills."
+    echo "To back it up, run: mv \"$CODEX_SKILLS_DIR\" \"${CODEX_SKILLS_DIR}.backup-$(date +%s)\""
+    echo "Or remove it if you don't need it: rm -rf \"$CODEX_SKILLS_DIR\""
+    echo "After fixing, rerun this bootstrap script."
+    exit 1
+  fi
+fi
+ln -snf "$CWD/.codex/skills" "$CODEX_SKILLS_DIR"
+
 # if [ ! -f $HOME/.sshrc ]; then ln -s $CWD/sshrc $HOME/.sshrc ; fi
 if [ ! -f "$HOME/.zlogin" ]; then ln -s "$CWD/zlogin" "$HOME/.zlogin"; fi
 if [ ! -f "$HOME/.zprofile" ]; then ln -s "$CWD/zprofile" "$HOME/.zprofile"; fi

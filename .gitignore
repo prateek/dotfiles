@@ -37,3 +37,6 @@ Temporary Items
 
 # Include local formatter dependencies
 node_modules/
+
+# Codex system skills (installed automatically)
+.codex/skills/.system/

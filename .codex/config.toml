@@ -1,0 +1,38 @@
+model = "gpt-5.2"
+model_reasoning_effort = "xhigh"
+
+[model_providers.openai]
+name = "OpenAI"
+base_url = "https://api.openai.com/v1"
+
+http_headers = {
+  "OpenAI-Service-Tier" = "priority",
+  "X-Custom-Client"     = "prateek-codex/1.0"
+}
+
+[projects."/Users/prateek/code/openai"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/dotfiles"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/chronosphere-openai"]
+trust_level = "trusted"
+
+[mcp_servers.pal]
+command = "bash"
+args = ["-c", "/Users/prateek/.local/bin/uvx --from git+https://github.com/BeehiveInnovations/pal-mcp-server.git pal-mcp-server"]
+startup_timeout_sec = 300
+tool_timeout_sec = 1200
+
+[mcp_servers.pal.env]
+DEFAULT_MODEL="gpt-5.2-pro"
+
+[features]
+web_search_request = true
+
+[notice.model_migrations]
+"gpt-5.2" = "gpt-5.2-codex"
