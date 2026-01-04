@@ -80,5 +80,5 @@ alias ws='wip && squash'
 alias wsa='wip && squash && au'
 alias wsp='wip && squash && push'
 
-alias wf='wip && fixup'
-alias wff='wip && fixup && farc upload master..'
+# alias wf='wip && fixup'
+# alias wff='wip && fixup && farc upload master..'

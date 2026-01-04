@@ -26,6 +26,8 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
+*.pyc
+
 # zsh compiled files
 *.zwc
 *.old

@@ -121,6 +121,16 @@ alias c='/Users/prateek/dotfiles/scripts/c'
 alias yo='open -a Yoink'
 alias yolo='codex --dangerously-bypass-approvals-and-sandbox'
 alias yoloc='claude --dangerously-skip-permissions'
+
+# One-shot Codex: cdx "do x y and z"
+# via https://gist.github.com/cameroncooke/9efe289b3251f290ecc5bf0dd87f92bd
+cdx() {
+  codex --ask-for-approval on-request \
+    --sandbox danger-full-access      \
+    exec --skip-git-repo-check        \
+    "$*" 2>/dev/null
+}
+
 # FIXME: Pipe Aliases
 # alias L=' | less '
 # alias G=' | egrep --color=auto '
