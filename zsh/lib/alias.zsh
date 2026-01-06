@@ -119,7 +119,10 @@ alias ec='code ~/.claude'
 alias c='/Users/prateek/dotfiles/scripts/c'
 
 alias yo='open -a Yoink'
-alias yolo='codex --dangerously-bypass-approvals-and-sandbox'
+unalias yolo 2>/dev/null
+yolo() {
+  codex --dangerously-bypass-approvals-and-sandbox "$@"
+}
 alias yoloc='claude --dangerously-skip-permissions'
 
 # One-shot Codex: cdx "do x y and z"
