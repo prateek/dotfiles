@@ -720,5 +720,7 @@
     "amp.url": "https://ampcode.com/",
     "editor.wordBasedSuggestions": "off",
     "amp.tab.enabled": true,
-    "githubPullRequests.terminalLinksHandler": "github"
+    "githubPullRequests.terminalLinksHandler": "github",
+    "editor.wordWrap": "on",
+    "python.defaultInterpreterPath": "/Users/prateek/.virtualenvs/openai/bin/python3"
 }
