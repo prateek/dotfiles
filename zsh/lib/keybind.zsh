@@ -14,6 +14,14 @@ zle -N bracketed-paste bracketed-paste-magic
 # Fix paste issues in vi-mode
 zstyle ':bracketed-paste-magic' active-widgets '.self-insert-unmeta'
 
+# Zsh vi-mode has two keymaps: `vicmd` (normal/command mode) and `viins` (insert mode).
+# Keep `vicmd` behaving like vim, but make `viins` behave like emacs so common Ctrl keys
+# (Ctrl-W/Ctrl-K/Ctrl-A/Ctrl-E/etc) work while you're inserting.
+# Note: this copies the emacs map into `viins`, so it must run *before* any custom `viins`
+# bindings below (Home/End, fzf Ctrl-T, etc.) which intentionally override defaults.
+bindkey -A emacs viins
+bindkey -M viins $'\e' vi-cmd-mode
+
 # map ctrl-space to accept auto-suggestions.
 # color map: https://upload.wikimedia.org/wikipedia/commons/1/15/Xterm_256color_chart.svg
 # usable attributes: https://zsh.sourceforge.io/Doc/Release/Zsh-Line-Editor.html#Character-Highlighting
