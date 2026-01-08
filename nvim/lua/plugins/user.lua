@@ -15,6 +15,16 @@ return {
     },
   },
 
+  -- Completion: only show the menu on explicit trigger (<C-space>)
+  {
+    "saghen/blink.cmp",
+    opts = function(_, opts)
+      opts.completion = opts.completion or {}
+      opts.completion.menu = opts.completion.menu or {}
+      opts.completion.menu.auto_show = false
+    end,
+  },
+
   -- Git tools similar to your setup
   { "tpope/vim-fugitive" },
 
@@ -34,6 +44,10 @@ return {
   {
     "nvim-mini/mini.trailspace",
     version = false,
+    init = function()
+      -- Disable trailing whitespace highlighting (keep manual trimming via <leader>t).
+      vim.g.minitrailspace_disable = true
+    end,
     config = function()
       require("mini.trailspace").setup()
       vim.keymap.set("n", "<leader>t", function()

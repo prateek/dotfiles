@@ -10,6 +10,17 @@ auc({ "BufNewFile", "BufRead" }, {
   end,
 })
 
+-- Disable spell checking everywhere (some ftplugins enable it by default).
+auc("FileType", {
+  group = aug("spell_off", { clear = true }),
+  pattern = "*",
+  callback = function()
+    vim.schedule(function()
+      vim.opt_local.spell = false
+    end)
+  end,
+})
+
 -- Fast escape timings (match your vimrc behavior)
 local grp = aug("fast_escape", { clear = true })
 auc("InsertEnter", { group = grp, callback = function() vim.opt.timeoutlen = 0 end })
@@ -37,6 +48,17 @@ auc("VimEnter", {
   callback = function()
     vim.opt.wrap = false
     vim.opt.list = false
+  end,
+})
+
+-- Show raw syntax markers (no markdown conceal, etc.)
+local conceal_grp = aug("conceal_off", { clear = true })
+auc({ "VimEnter", "FileType" }, {
+  group = conceal_grp,
+  pattern = "*",
+  callback = function()
+    vim.opt.conceallevel = 0
+    vim.opt_local.conceallevel = 0
   end,
 })
 

@@ -68,6 +68,12 @@ end, { desc = "Toggle indent guides" })
 -- Toggle listchars (visible whitespace)
 map("n", "col", ":set list!<CR>", { desc = "Toggle listchars", silent = true })
 
+-- Toggle word wrap
+map("n", "cow", function()
+  vim.wo.wrap = not vim.wo.wrap
+  vim.wo.linebreak = vim.wo.wrap
+end, { desc = "Toggle word wrap", silent = true })
+
 -- Swap visual modes (v and <C-v>) like your vimrc
 map("n", "v", "<C-v>", { noremap = true })
 map("n", "<C-v>", "v", { noremap = true })
