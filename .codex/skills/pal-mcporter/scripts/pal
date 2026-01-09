@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+MCPORTER_VERSION="${MCPORTER_VERSION:-0.7.3}"
+PAL_MCPORTER_TIMEOUT_MS="${PAL_MCPORTER_TIMEOUT_MS:-120000}"
+
+PAL_UVX_BIN="${PAL_UVX_BIN:-uvx}"
+PAL_MCP_FROM="${PAL_MCP_FROM:-git+https://github.com/BeehiveInnovations/pal-mcp-server.git}"
+PAL_DEFAULT_MODEL="${PAL_DEFAULT_MODEL:-gpt-5.2-pro}"
+PAL_NAME="${PAL_NAME:-pal}"
+
+_die() {
+  echo "pal-mcporter: $*" >&2
+  exit 1
+}
+
+_uvx_bin() {
+  if command -v "$PAL_UVX_BIN" >/dev/null 2>&1; then
+    echo "$PAL_UVX_BIN"
+    return
+  fi
+  local fallback="$HOME/.local/bin/uvx"
+  if [ -x "$fallback" ]; then
+    echo "$fallback"
+    return
+  fi
+  _die "uvx not found; set PAL_UVX_BIN or install uv/uvx"
+}
+
+_mcporter() {
+  command -v npx >/dev/null 2>&1 || _die "npx not found; install Node.js"
+  echo "mcporter@${MCPORTER_VERSION}"
+}
+
+_base_flags() {
+  local uvx
+  uvx="$(_uvx_bin)"
+  # NOTE: Avoid passing secrets via --env. STDIO inherits shell env already.
+  printf "%s\0" \
+    --stdio "$uvx" \
+    --stdio-arg --from \
+    --stdio-arg "$PAL_MCP_FROM" \
+    --stdio-arg pal-mcp-server \
+    --name "$PAL_NAME" \
+    --env "DEFAULT_MODEL=$PAL_DEFAULT_MODEL"
+}
+
+_usage() {
+  cat <<'EOF'
+Usage:
+  pal list [mcporter list flags...]
+  pal call <tool-or-call-expr> [mcporter call args/flags...]
+  pal <tool> [tool args/flags...]   # shorthand for "pal call"
+
+Examples:
+  pal list --schema
+  pal listmodels --output json
+  pal apilookup prompt="OpenAI Responses API streaming" --output markdown
+
+Env:
+  MCPORTER_VERSION           mcporter npm version (default: 0.7.3)
+  PAL_MCPORTER_TIMEOUT_MS    default --timeout in ms (default: 120000)
+  PAL_UVX_BIN                uvx executable (default: uvx, fallback: ~/.local/bin/uvx)
+  PAL_MCP_FROM               uvx --from source (default: git+https://github.com/BeehiveInnovations/pal-mcp-server.git)
+  PAL_DEFAULT_MODEL          injected as DEFAULT_MODEL for PAL (default: gpt-5.2-pro)
+  PAL_NAME                   ad-hoc mcporter server name (default: pal)
+EOF
+}
+
+main() {
+  local subcmd
+  subcmd="${1:-}"
+  if [ -z "$subcmd" ] || [ "$subcmd" = "-h" ] || [ "$subcmd" = "--help" ] || [ "$subcmd" = "help" ]; then
+    _usage
+    return 0
+  fi
+
+  # shellcheck disable=SC2207
+  local base_flags=($(tr '\0' ' ' < <(_base_flags)))
+
+  case "$subcmd" in
+    list)
+      shift
+      exec npx -y "$(_mcporter)" list \
+        --timeout "$PAL_MCPORTER_TIMEOUT_MS" \
+        "${base_flags[@]}" \
+        "$@"
+      ;;
+    call)
+      shift
+      exec npx -y "$(_mcporter)" call \
+        --timeout "$PAL_MCPORTER_TIMEOUT_MS" \
+        "${base_flags[@]}" \
+        "$@"
+      ;;
+    *)
+      # Default: treat it as a tool name / selector and run `mcporter call`.
+      exec npx -y "$(_mcporter)" call \
+        --timeout "$PAL_MCPORTER_TIMEOUT_MS" \
+        "${base_flags[@]}" \
+        "$@"
+      ;;
+  esac
+}
+
+main "$@"
+
