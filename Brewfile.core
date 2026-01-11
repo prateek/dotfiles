@@ -1,0 +1,37 @@
+tap "1password/tap"
+tap "felixkratz/formulae"
+
+brew "direnv"
+brew "fd"
+brew "felixkratz/formulae/borders"
+brew "fzf"
+brew "gh"
+brew "git"
+brew "gitleaks"
+brew "llm"
+brew "mise"
+brew "neovim"
+brew "ripgrep"
+brew "uv"
+brew "shellcheck"
+
+cask "codex"
+cask "1password", args: { appdir: "/Applications" }
+cask "1password-cli"
+cask "alfred", args: { appdir: "/Applications" }
+cask "bettertouchtool"
+cask "font-hack-nerd-font"
+cask "ghostty"
+cask "google-chrome"
+cask "karabiner-elements"
+cask "leader-key"
+cask "moom", args: { appdir: "/Applications" }
+cask "orbstack"
+cask "raycast"
+cask "setapp"
+cask "tailscale-app"
+cask "visual-studio-code"
+cask "voiceink"
+
+# Optional: CleanShot X (often licensed/installed via Setapp)
+# cask "cleanshot"
