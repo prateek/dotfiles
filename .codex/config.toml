@@ -22,17 +22,29 @@ trust_level = "trusted"
 [projects."/Users/prateek/code/chronosphere-openai"]
 trust_level = "trusted"
 
-[mcp_servers.pal]
-command = "bash"
-args = ["-c", "/Users/prateek/.local/bin/uvx --from git+https://github.com/BeehiveInnovations/pal-mcp-server.git pal-mcp-server"]
-startup_timeout_sec = 300
-tool_timeout_sec = 1200
+[projects."/Users/prateek"]
+trust_level = "untrusted"
 
-[mcp_servers.pal.env]
-DEFAULT_MODEL="gpt-5.2-pro"
+[projects."/Users/prateek/code/github.com/prateek/codex-transcripts"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/experiments/marimo-feature-playground"]
+trust_level = "trusted"
+
+# [mcp_servers.pal]
+# command = "bash"
+# args = ["-c", "/Users/prateek/.local/bin/uvx --from git+https://github.com/BeehiveInnovations/pal-mcp-server.git pal-mcp-server"]
+# env_vars = ["OPENAI_API_KEY"]
+# startup_timeout_sec = 300
+# tool_timeout_sec = 1200
+# 
+# [mcp_servers.pal.env]
+# DEFAULT_MODEL="gpt-5.2-pro"
 
 [features]
 web_search_request = true
+unified_exec = true
+shell_snapshot = true
 
 [notice.model_migrations]
 "gpt-5.2" = "gpt-5.2-codex"

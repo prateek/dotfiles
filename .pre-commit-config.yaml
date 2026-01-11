@@ -4,3 +4,4 @@ repos:
     hooks:
       # Use system gitleaks (installed via Homebrew in Brewfile/Brewfile.core).
       - id: gitleaks-system
+        pass_filenames: false

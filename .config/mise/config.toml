@@ -1,0 +1,7 @@
+[tools]
+# Node: pinned (reproducible)
+node = "24.12.0"
+
+# Go/Ruby: track latest
+go = "latest"
+ruby = "latest"
