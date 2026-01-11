@@ -657,10 +657,8 @@
     // === typescript ===
     "typescript.autoClosingTags": false,
     // === zig ===
-    "zig.zigPath": "/Users/prateek/Library/Application Support/Code/User/globalStorage/ziglang.vscode-zig/zig_install/zig",
     "zig.zigVersion": "nightly-0.11.0-dev.3897+f571438fc",
     "zig.zls.enableInlayHints": false,
-    "zig.zls.path": "/Users/prateek/Library/Application Support/Code/User/globalStorage/ziglang.vscode-zig/zls_install/zls",
     // === language overrides ===
     "[dockercompose]": {
         "editor.insertSpaces": true,
@@ -721,6 +719,5 @@
     "editor.wordBasedSuggestions": "off",
     "amp.tab.enabled": true,
     "githubPullRequests.terminalLinksHandler": "github",
-    "editor.wordWrap": "on",
-    "python.defaultInterpreterPath": "/Users/prateek/.virtualenvs/openai/bin/python3"
+    "editor.wordWrap": "on"
 }

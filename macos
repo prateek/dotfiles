@@ -2,15 +2,18 @@
 
 # ~/.macos — https://mths.be/macos
 
-# Close any open System Preferences panes, to prevent them from overriding
+# Close any open System Settings/Preferences panes, to prevent them from overriding
 # settings we’re about to change
-osascript -e 'tell application "System Preferences" to quit'
+osascript -e 'tell application "System Settings" to quit' 2>/dev/null || true
+osascript -e 'tell application "System Preferences" to quit' 2>/dev/null || true
 
-# Ask for the administrator password upfront
-sudo -v
-
-# Keep-alive: update existing `sudo` time stamp until `.macos` has finished
-while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+# Ask for the administrator password upfront (unless already done by install/bootstrap).
+if [ "${DOTFILES_SUDO_KEEPALIVE_STARTED:-0}" != "1" ]; then
+	sudo -v
+	# Keep-alive: update existing `sudo` time stamp until `.macos` has finished
+	while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+	export DOTFILES_SUDO_KEEPALIVE_STARTED=1
+fi
 
 ###############################################################################
 # General UI/UX                                                               #
@@ -27,6 +30,10 @@ sudo pmset -a standbydelay 86400
 
 # Disable the sound effects on boot
 sudo nvram SystemAudioVolume=" "
+
+# Disable the system alert sound (beep) + feedback
+defaults write NSGlobalDomain com.apple.sound.beep.volume -int 0
+defaults write NSGlobalDomain com.apple.sound.beep.feedback -bool false
 
 # Disable transparency in the menu bar and elsewhere on Yosemite
 defaults write com.apple.universalaccess reduceTransparency -bool true
@@ -112,8 +119,13 @@ sudo defaults write /Library/Preferences/com.apple.loginwindow AdminHostInfo Hos
 # Restart automatically if the computer freezes
 sudo systemsetup -setrestartfreeze on
 
-# Never go into computer sleep mode
-# sudo systemsetup -setcomputersleep Off > /dev/null
+# If the host is not a laptop, disable auto-sleep / energy-savings.
+# Heuristic: if there's no InternalBattery, assume "desktop".
+if ! pmset -g batt 2>/dev/null | grep -q "InternalBattery"; then
+	# Keep the machine awake; leave display sleep alone by default.
+	sudo systemsetup -setcomputersleep Off > /dev/null 2>&1 || true
+	sudo pmset -a sleep 0 standby 0 autopoweroff 0 > /dev/null 2>&1 || true
+fi
 
 # Disable Notification Center and remove the menu bar icon
 # launchctl unload -w /System/Library/LaunchAgents/com.apple.notificationcenterui.plist 2> /dev/null
@@ -352,6 +364,9 @@ defaults write com.apple.finder FXInfoPanesExpanded -dict \
 
 # Set the icon size of Dock items to 36 pixels
 defaults write com.apple.dock tilesize -int 32
+
+# Place the Dock on the left
+defaults write com.apple.dock orientation -string "left"
 
 # Change minimize/maximize window effect
 defaults write com.apple.dock mineffect -string "genie"
@@ -603,6 +618,9 @@ sudo mdutil -E / > /dev/null
 defaults write com.apple.terminal StringEncodings -array 4
 
 # Use a modified version of the Solarized Dark theme by default in Terminal.app
+#
+# NOTE: This expects the theme file at: ~/init/Solarized Dark xterm-256color.terminal
+if [ -f "$HOME/init/Solarized Dark xterm-256color.terminal" ]; then
 osascript <<EOD
 
 tell application "Terminal"
@@ -648,6 +666,7 @@ tell application "Terminal"
 end tell
 
 EOD
+fi
 
 # Enable “focus follows mouse” for Terminal.app and all X11 apps
 # i.e. hover over a window and start typing in it without clicking first

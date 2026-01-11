@@ -1,0 +1,10 @@
+# Ghostty (macOS) configuration.
+# Docs: https://ghostty.org/docs/config
+
+theme = Ghostty Default Style Dark
+split-divider-color = red
+font-family = Hack Nerd Font Mono
+
+# For https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent#installation
+keybind = alt+backspace=text:\x1b\x7f
+keybind = shift+enter=text:\n

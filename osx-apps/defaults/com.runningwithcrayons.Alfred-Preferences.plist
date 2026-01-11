@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>NSNavPanelExpandedSizeForOpenMode</key>
+	<string>{800, 520}</string>
+	<key>NSSplitView Subview Frames NSColorPanelSplitView</key>
+	<array>
+		<string>0.000000, 0.000000, 224.000000, 258.000000, NO, NO</string>
+		<string>0.000000, 259.000000, 224.000000, 48.000000, NO, NO</string>
+	</array>
+	<key>NSToolbar Configuration com.apple.NSColorPanel</key>
+	<dict>
+		<key>TB Is Shown</key>
+		<integer>1</integer>
+	</dict>
+	<key>NSWindow Frame NSColorPanel</key>
+	<string>0 81 224 278 0 0 5632 1559 </string>
+	<key>NSWindow Frame NSNavPanelAutosaveName</key>
+	<string>2160 445 800 520 0 0 5120 1415 </string>
+	<key>NSWindow Frame alfredprefswindow</key>
+	<string>2213 458 1180 728 0 0 5632 1559 </string>
+	<key>automationtasks.lastNotified</key>
+	<integer>784594479</integer>
+	<key>catalinaCacheChecked</key>
+	<true/>
+	<key>importSnippetLastCollection</key>
+	<string>LLM</string>
+	<key>lastFeature</key>
+	<string>snippets</string>
+	<key>lastFeatureTS</key>
+	<integer>789095488</integer>
+	<key>lastTab</key>
+	<string>general</string>
+	<key>lastTabBuild</key>
+	<integer>2312</integer>
+	<key>syncfolder</key>
+	<string>~/dotfiles/osx-apps/alfred</string>
+	<key>themeEditorBackground</key>
+	<string>Sonoma.heic</string>
+	<key>workflowpalette.expansion</key>
+	<dict>
+		<key>actions</key>
+		<false/>
+		<key>automations</key>
+		<false/>
+		<key>inputs</key>
+		<false/>
+		<key>outputs</key>
+		<false/>
+		<key>palette.gettingstarted</key>
+		<false/>
+		<key>section.favourites</key>
+		<false/>
+		<key>section.prefabs</key>
+		<false/>
+		<key>triggers</key>
+		<false/>
+		<key>userinterface</key>
+		<false/>
+		<key>utilities</key>
+		<false/>
+	</dict>
+	<key>workflows.hideGalleryUpdates</key>
+	<false/>
+</dict>
+</plist>

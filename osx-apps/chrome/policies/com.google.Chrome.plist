@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- install Chrome extensions -->
+	<key>ExtensionInstallForcelist</key>
+	<array>
+		<!-- 1Password -->
+		<string>aeblfdkhhhdcdjpifhhbdiojplfjncoa;https://clients2.google.com/service/update2/crx</string>
+		<!-- Dark Reader -->
+		<string>eimadpbcbfnmbkopoojfekhnkhdbieeh;https://clients2.google.com/service/update2/crx</string>
+		<!-- Vimium -->
+		<string>dbepggeogbaibhgnhhndojpepiihcmeb;https://clients2.google.com/service/update2/crx</string>
+		<!-- Tampermonkey -->
+		<string>dhdgffkkebhmkfjojejmpbldmpobfkfo;https://clients2.google.com/service/update2/crx</string>
+	</array>
+</dict>
+</plist>

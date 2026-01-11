@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>ConfigOutlineEditor.ExpandedIndexPaths</key>
+	<array/>
+	<key>KeyboardShortcuts_navigate</key>
+	<string>{"carbonModifiers":4096,"carbonKeyCode":0}</string>
+	<key>NSNavPanelExpandedSizeForOpenMode</key>
+	<string>{800, 448}</string>
+	<key>NSStatusItem Preferred Position Item-1</key>
+	<real>511</real>
+	<key>NSWindow Frame NSNavPanelAutosaveName</key>
+	<string>2416 833 800 448 0 0 5632 1559 </string>
+	<key>NSWindow Frame com.sindresorhus.Settings.FrameAutosaveName</key>
+	<string>2426 671 780 676 0 0 5632 1559 </string>
+	<key>SUAutomaticallyUpdate</key>
+	<true/>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUHasLaunchedBefore</key>
+	<true/>
+	<key>SULastCheckTime</key>
+	<date>2026-01-10T23:15:33Z</date>
+	<key>SUSendProfileInfo</key>
+	<false/>
+	<key>SUUpdateGroupIdentifier</key>
+	<integer>3411743463</integer>
+	<key>configDir</key>
+	<string>/Users/prateek/dotfiles/osx-apps/leader-key</string>
+	<key>theme</key>
+	<string>cheater</string>
+</dict>
+</plist>
