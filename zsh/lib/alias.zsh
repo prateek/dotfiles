@@ -95,7 +95,6 @@ FZF-EOF"
 #     fi
 # }
 
-alias jls="jira issue list"
 # FIXME: alias ssh=sshrc
 
 # Aliases
@@ -117,12 +116,16 @@ alias ec='code ~/.claude'
 # alias jc='cd ~/.claude' # TODO: conflicts with autojump
 #
 # c: mnemonic for "code editor" — opens current dir in Cursor/VS Code
-alias c='/Users/prateek/dotfiles/scripts/c'
+alias c='$DOTFILES/scripts/c'
 
 alias yo='open -a Yoink'
 unalias yolo 2>/dev/null
 yolo() {
   codex --dangerously-bypass-approvals-and-sandbox "$@"
+}
+unalias yoloo 2>/dev/null
+yoloo() {
+  OPENCODE_PERMISSION='{"*":"allow"}' opencode "$@"
 }
 alias yoloc='claude --dangerously-skip-permissions'
 

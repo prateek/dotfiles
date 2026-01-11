@@ -2,6 +2,12 @@
 # vim:syntax=sh
 # vim:filetype=sh
 
+source_if_readable() {
+  local f="$1"
+  [[ -r "$f" ]] || return 1
+  source "$f"
+}
+
 #-----------------------------------------------------
 # Cache homebrew prefix early (before plugins need it)
 #-----------------------------------------------------
@@ -9,24 +15,34 @@ if [[ -z ${HOMEBREW_PREFIX:-} ]] && command -v brew >/dev/null 2>&1; then
     export HOMEBREW_PREFIX="$(brew --prefix)"
 fi
 
+# Prefer a consistent repo root even if DOTFILES isn't exported for some reason.
+DOTFILES_ROOT="${DOTFILES:-${ZSHCONFIG:-$HOME/dotfiles}}"
+ZSHCONFIG="${ZSHCONFIG:-$DOTFILES_ROOT}"
+
 #-----------------------------------------------------
 # bootstrap zinit script
 #-----------------------------------------------------
-source "$HOME/.zinit/bin/zinit.zsh"
+if ! source_if_readable "$HOME/.zinit/bin/zinit.zsh"; then
+  print -u2 "zinit not found at \$HOME/.zinit/bin/zinit.zsh (run ./bootstrap.sh to install zinit)."
+  return 0 2>/dev/null || exit 0
+fi
 
 #-----------------------------------------------------
 # load zinit plugins
 #-----------------------------------------------------
-source "$DOTFILES/zinit-init.zsh"
+if ! source_if_readable "$DOTFILES_ROOT/zinit-init.zsh"; then
+  print -u2 "Missing $DOTFILES_ROOT/zinit-init.zsh; skipping plugin setup."
+fi
 
 #-----------------------------------------------------
 # Setting autoloaded functions
 #-----------------------------------------------------
 zsh_fns=${ZSHCONFIG}/zsh/autoload
-fpath=($zsh_fns $fpath)
 if [[ -d "$zsh_fns" ]]; then
-    for func in $zsh_fns/*; do
-        autoload -Uz ${func:t}
+    fpath=("$zsh_fns" $fpath)
+    for func in "$zsh_fns"/*(N); do
+        [[ -f "$func" ]] || continue
+        autoload -Uz "${func:t}"
     done
 fi
 unset zsh_fns
@@ -36,8 +52,8 @@ unset zsh_fns
 #-----------------------------------------------------
 zsh_libs=${ZSHCONFIG}/zsh/lib
 if [[ -d "$zsh_libs" ]]; then
-   for file in $zsh_libs/*.zsh; do
-      source $file
+   for file in "$zsh_libs"/*.zsh(N); do
+      source "$file"
    done
 fi
 unset zsh_libs
@@ -49,8 +65,8 @@ unset zsh_libs
 #-----------------------------------------------------
 extras=${ZSHCONFIG}/zsh/extra
 if [[ -d "$extras" ]]; then
-   for file in $extras/*.zsh; do
-      source $file
+   for file in "$extras"/*.zsh(N); do
+      source "$file"
    done
 fi
 unset extras
