@@ -39,6 +39,72 @@ if command -v nvim >/dev/null 2>&1; then
   alias vim='nvim'
 fi
 
+# Codex Q&A helpers (`?` / `??`)
+__codex_qa_exec() {
+  if [[ $# -eq 0 ]]; then
+    print -u2 "usage: ? <question>"
+    return 1
+  fi
+
+  codex exec --full-auto --skip-git-repo-check -- "$*"
+}
+
+__codex_qa() {
+  if [[ $# -eq 0 ]]; then
+    codex --full-auto
+    return
+  fi
+
+  codex --full-auto -- "$*"
+}
+
+# `?` and `??` are glob patterns in zsh, so implement them via ZLE rather than aliases.
+if [[ -o interactive && -o zle ]]; then
+  __codex_qa_accept_line() {
+    local original_buffer="$BUFFER"
+    local trimmed="$original_buffer"
+    trimmed="${trimmed#"${trimmed%%[![:space:]]*}"}"
+
+    if [[ "$trimmed" == '??' || "$trimmed" == '?? '* ]]; then
+      local question="${trimmed#\?\?}"
+      question="${question#"${question%%[![:space:]]*}"}"
+
+      print -s -- "$original_buffer"
+      setopt localoptions histignorespace
+      if [[ -n "$question" ]]; then
+        BUFFER=" codex --full-auto -- ${(q)question}"
+      else
+        BUFFER=" codex --full-auto"
+      fi
+      zle .accept-line
+      return
+    fi
+
+    if [[ "$trimmed" == '?' || "$trimmed" == '? '* ]]; then
+      local question="${trimmed#\?}"
+      question="${question#"${question%%[![:space:]]*}"}"
+
+      print -s -- "$original_buffer"
+      if [[ -z "$question" ]]; then
+        print -u2 "usage: ? <question>"
+        BUFFER=''
+        CURSOR=0
+        zle reset-prompt
+        return 1
+      fi
+
+      setopt localoptions histignorespace
+      BUFFER=" codex exec --full-auto --skip-git-repo-check -- ${(q)question}"
+      zle .accept-line
+      return
+    fi
+
+    zle .accept-line
+  }
+
+  zle -N accept-line __codex_qa_accept_line
+fi
+
 # Compinit optimization - only regenerate dump once per day
 # https://gist.github.com/ctechols/ca1035271ad134841284
 # https://carlosbecker.com/posts/speeding-up-zsh
