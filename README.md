@@ -18,7 +18,8 @@ cd ~/dotfiles && ./install.sh
 This will:
 - Install Homebrew (if missing) + run `brew bundle` via `Brewfile`
 - Set up symlinks (zsh, nvim, Codex, etc.)
-- Apply macOS + app settings via `scripts/macos/apply.sh`
+- Apply macOS settings via `scripts/macos/apply.sh`
+- Configure macOS GUI apps via `scripts/macos/gui-apps.sh` (manifest: `osx-apps/gui-apps.yaml`)
 
 If you prefer cloning via GitHub auth + SSH:
 
@@ -113,9 +114,10 @@ Node/Go/Ruby are managed via `mise` using `.config/mise/config.toml`.
 
 - Install Xcode Command Line Tools: a one-time GUI prompt will appear (triggered by `install.sh`).
 - Sign in: 1Password, Setapp, Tailscale, etc.
-- Approve permissions: Accessibility (Karabiner, BetterTouchTool), Screen Recording (CleanShot/VoiceInk), and any “Privacy & Security” prompts (e.g. Tailscale system extension).
+- Approve permissions: `./scripts/macos/gui-apps.sh apply --dry-run=false` will guide you through Accessibility/Input Monitoring/Screen Recording/etc, but these still require manual clicks.
 
 To skip macOS defaults: `SKIP_MACOS_DEFAULTS=1 ./bootstrap.sh`.
+To skip starting apps: `DOTFILES_START_APPS=0 ./bootstrap.sh`.
 To preinstall Neovim plugins (optional): `DOTFILES_NVIM_LAZY_SYNC=1 ./bootstrap.sh`.
 
 ## Capturing settings from an existing Mac

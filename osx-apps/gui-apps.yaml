@@ -1,0 +1,134 @@
+# Declarative macOS *GUI app* setup.
+# Used by: ./scripts/macos/gui-apps.sh
+#
+# Notes:
+# - This file intentionally only covers apps we can reasonably automate.
+# - macOS permission grants (Accessibility/Input Monitoring/Screen Recording/etc)
+#   cannot be fully automated without a user-approved MDM; this setup provides a
+#   guided “wizard” to open the right System Settings panes.
+# - Licenses are intentionally opt-in and expected to be pulled from 1Password
+#   (via the `op` CLI) rather than committed to git.
+
+schema_version: 1
+
+defaults:
+  install: true
+  config: true
+  # `set_once`: seed config once then stop overwriting.
+  # `sync`: keep applying repo config every run.
+  config_mode: set_once
+  license: false
+  license_mode: set_once
+  launch: true
+  permissions: true
+
+# If you enable any per-app `license.enabled: true`, ensure:
+# - 1Password app is installed and signed in
+# - `op` CLI is installed and authenticated (see: `op signin`)
+onepassword:
+  enabled: false
+
+state:
+  # Optional override. Default:
+  #   ${XDG_STATE_HOME:-"$HOME/Library/Application Support"}/dotfiles/gui-apps
+  dir: ""
+
+apps:
+  - id: karabiner-elements
+    name: Karabiner-Elements
+    enabled: true
+    brew_cask: karabiner-elements
+    bundle_id: org.pqrs.Karabiner-Elements.Settings
+    launch: true
+    permissions_needed:
+      - system_extension
+      - accessibility
+      - input_monitoring
+
+  - id: moom
+    name: Moom
+    enabled: true
+    brew_cask: moom
+    bundle_id: com.manytricks.Moom
+    launch: true
+    permissions_needed:
+      - accessibility
+    license:
+      enabled: false
+      # Example (store a preferences plist as a 1Password Document or file field):
+      # op_uri: op://Personal/Moom/com.manytricks.Moom.plist
+      # install:
+      #   type: defaults_import
+      #   domain: com.manytricks.Moom
+
+  - id: alfred
+    name: Alfred
+    enabled: true
+    brew_cask: alfred
+    bundle_id: com.runningwithcrayons.Alfred
+    launch: true
+    permissions_needed:
+      - accessibility
+      - automation
+
+  - id: leader-key
+    name: Leader Key
+    enabled: true
+    brew_cask: leader-key
+    bundle_id: com.brnbw.Leader-Key
+    launch: true
+    permissions_needed:
+      - accessibility
+      - input_monitoring
+
+  - id: bettertouchtool
+    name: BetterTouchTool
+    enabled: true
+    brew_cask: bettertouchtool
+    bundle_id: com.hegenberg.BetterTouchTool
+    # Config is only applied if `osx-apps/bettertouchtool/` exists.
+    config: false
+    launch: true
+    permissions_needed:
+      - accessibility
+      - input_monitoring
+      - screen_recording
+
+  - id: google-chrome
+    name: Google Chrome
+    enabled: true
+    brew_cask: google-chrome
+    bundle_id: com.google.Chrome
+    launch: false
+    # Managed Preferences policies (sudo) in `osx-apps/chrome/policies/`.
+    config: true
+
+  - id: orbstack
+    name: OrbStack
+    enabled: true
+    brew_cask: orbstack
+    bundle_id: dev.kdrag0n.MacVirt
+    launch: false
+
+  - id: ghostty
+    name: Ghostty
+    enabled: true
+    brew_cask: ghostty
+    bundle_id: com.mitchellh.ghostty
+    launch: false
+
+  - id: visual-studio-code
+    name: Visual Studio Code
+    enabled: true
+    brew_cask: visual-studio-code
+    bundle_id: com.microsoft.VSCode
+    launch: false
+
+  - id: cursor
+    name: Cursor
+    enabled: true
+    # Cursor isn't currently installed via Brewfile; config is still applied if present.
+    install: false
+    bundle_id: ""
+    launch: false
+
