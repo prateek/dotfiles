@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: Run `codex review` plus PAL `precommit` (via the `pal-mcporter` skill) against a git base ref, then merge both outputs into one prioritized, actionable review.
+description: Run `codex review` plus PAL `codereview` (via the `pal-mcporter` skill) against a git base ref, then merge both outputs into one prioritized, actionable review.
 ---
 
 # Code Review
@@ -10,7 +10,7 @@ description: Run `codex review` plus PAL `precommit` (via the `pal-mcporter` ski
 Use when you have a local git repo and a base ref to diff against (e.g. `upstream/main`, `origin/master`, or a commit SHA) and you want a single merged review from:
 
 - `codex review`
-- PAL `precommit` (run via `pal-mcporter`)
+- PAL `codereview` (run via `pal-mcporter`)
 
 ## Inputs
 
@@ -26,16 +26,17 @@ Use when you have a local git repo and a base ref to diff against (e.g. `upstrea
 - If `compare_to` is a remote ref like `upstream/main`, ensure it’s present:
   - `git fetch <remote> <branch>`
 
-### 2) Run Codex review + PAL precommit (parallel)
+### 2) Run Codex review + PAL codereview (parallel)
 
 These two passes are independent once `compare_to` exists locally, so run them in parallel to reduce wall-clock time.
 
 - Codex review (capture as `codex_review`):
-  - `cd <path> && codex review --base "<compare_to>" "Review for correctness, security, performance, tests, and maintainability. Prioritize issues (blockers vs suggestions vs nits) and reference files/paths when possible. <extra>"`
-- PAL precommit via MCPorter (capture as `pal_review`):
-  - `bash "<path-to-pal-mcporter-skill>/scripts/pal" precommit --args '{"step":"Review changes vs compare_to","step_number":1,"total_steps":1,"next_step_required":false,"findings":"","path":"<absolute-path>","compare_to":"<compare_to>","precommit_type":"external","severity_filter":"all","focus_on":"<extra>"}' --output markdown`
+  - `cd <path> && codex review --base "<compare_to>"`
+  - Note: the current `codex review` CLI does not accept a custom prompt when `--base` is used; run it without a prompt.
+- PAL review via MCPorter (capture as `pal_review`):
+  - `bash "<path-to-pal-mcporter-skill>/scripts/pal" -o markdown codereview --step "Review changes vs <compare_to>. <extra>" --step-number 1 --total-steps 1 --next-step-required false --findings "" --model auto --review-validation-type internal --review-type quick --severity-filter all --focus-on "<extra>"`
 
-Implementation note (when tool-parallelism is available): use `multi_tool_use.parallel` to run two `functions.exec_command` calls concurrently (one for `codex review`, one for `pal ... precommit`).
+Implementation note (when tool-parallelism is available): use `multi_tool_use.parallel` to run two `functions.exec_command` calls concurrently (one for `codex review`, one for `pal ... codereview`).
 
 ### 3) Merge feedback into one review
 
