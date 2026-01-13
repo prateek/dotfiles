@@ -1,6 +1,14 @@
 ---
 name: ci-autofix-loop
-description: End-to-end CI fixer loop for the current git branch/PR (GitHub Actions + Buildkite). Use when asked to “fix CI”, “make checks green”, or “address failing checks”, and the workflow should: (1) discover failing checks via `gh pr checks`, (2) diagnose failures via provider logs (Buildkite log tooling/API or `gh run view --log-failed`), (3) apply minimal code fixes, (4) run `code-simplifier` + `code-review`, (5) commit + push, and (6) iterate until remaining failures are unfixable via code change.
+description: >
+  End-to-end CI fixer loop for the current git branch/PR (GitHub Actions + Buildkite).
+  Use when asked to “fix CI”, “make checks green”, or “address failing checks”, and the workflow should:
+  (1) discover failing checks via `gh pr checks`,
+  (2) diagnose failures via provider logs (Buildkite log tooling/API or `gh run view --log-failed`),
+  (3) apply minimal code fixes,
+  (4) run `code-simplifier` + `code-review`,
+  (5) commit + push, and
+  (6) iterate until remaining failures are unfixable via code change.
 ---
 
 # CI Autofix Loop
