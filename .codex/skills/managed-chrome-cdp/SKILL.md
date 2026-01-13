@@ -9,27 +9,27 @@ Use this when Chrome remote debugging (CDP) is blocked on first launch until ent
 
 ## Tool
 
-- Script: `~/dotfiles/scripts/browser-tools.ts`
-- First run auto-installs pinned deps into a per-user cache (override cache root with `BROWSER_TOOLS_CACHE_DIR`).
+- Script: `~/.codex/skills/managed-chrome-cdp/scripts/browser-tools.ts`
+- First run auto-installs pinned deps into `scripts/.cache/` (override cache root with `BROWSER_TOOLS_CACHE_DIR`).
 
 ## Quick start
 
 - Start a headless CDP Chrome using a persistent profile dir:
-  - `bun ~/dotfiles/scripts/browser-tools.ts start --headless --port 9333`
+  - `bun ~/.codex/skills/managed-chrome-cdp/scripts/browser-tools.ts start --headless --port 9333`
   - Default profile: `.dev/chrome-cdp-profile` (relative to your current directory)
 
 ## Login flow (cookie reuse)
 
 - Check if automation can access the portal:
-  - `bun ~/dotfiles/scripts/browser-tools.ts ensure-auth "<url>" --port 9333`
+  - `bun ~/.codex/skills/managed-chrome-cdp/scripts/browser-tools.ts ensure-auth "<url>" --port 9333`
 - If it says login is required:
-  - `bun ~/dotfiles/scripts/browser-tools.ts login "<url>" --port 9333`
+  - `bun ~/.codex/skills/managed-chrome-cdp/scripts/browser-tools.ts login "<url>" --port 9333`
   - This opens a **headed** Chrome for you to complete login, then restarts **headless** by default (so it won’t grab focus during automation).
 
 ## Reset / recovery
 
 - If the profile gets wedged/corrupted (or CDP won’t come up), reset it:
-  - `bun ~/dotfiles/scripts/browser-tools.ts reset-profile --force`
+  - `bun ~/.codex/skills/managed-chrome-cdp/scripts/browser-tools.ts reset-profile --force`
   - Then re-run `start` and `login` as needed.
 
 ## Notes
