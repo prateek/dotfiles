@@ -18,7 +18,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y shellcheck
       - name: Shellcheck
         run: |
-          shellcheck -x install.sh scripts/macos/apply.sh scripts/macos/capture.sh scripts/vm/test-install-tart.sh
+          shellcheck -x install.sh scripts/macos/apply.sh scripts/macos/capture.sh scripts/macos/gui-apps.sh scripts/vm/test-install-tart.sh
 
   macos-dry-run:
     runs-on: macos-latest

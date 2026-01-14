@@ -137,7 +137,10 @@ fi
 
 if [ "$DRY_RUN" = "0" ]; then
   # install homebrew files
-  brew bundle install --no-upgrade --file "$BREWFILE"
+  # Avoid surprising partial installs if the caller has HOMEBREW_BUNDLE_*_SKIP set.
+  # (We still intentionally set HOMEBREW_BUNDLE_MAS_SKIP above when not signed in.)
+  env -u HOMEBREW_BUNDLE_BREW_SKIP -u HOMEBREW_BUNDLE_CASK_SKIP -u HOMEBREW_BUNDLE_TAP_SKIP \
+    brew bundle install --no-upgrade --file "$BREWFILE"
 fi
 
 # setup symlinks
@@ -356,6 +359,12 @@ if [ "$DRY_RUN" = "1" ]; then
 else
   echo "Bootstrap complete."
 fi
+echo
+echo "macOS GUI apps (install/config/launch/permissions):"
+echo "  Manifest: $CWD/osx-apps/gui-apps.yaml"
+echo "  Plan:     $CWD/scripts/macos/gui-apps.sh plan"
+echo "  Apply:    $CWD/scripts/macos/gui-apps.sh apply --dry-run=false"
+echo "  Force:    $CWD/scripts/macos/gui-apps.sh apply --dry-run=false --force"
 echo
 echo "Reminder: set any API keys / secrets in ~/.zshrc.local (this repo's ~/.zshrc sources it if present)."
 echo "Common examples:"

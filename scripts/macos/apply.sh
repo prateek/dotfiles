@@ -8,54 +8,10 @@ if [ "$(uname -s)" != "Darwin" ]; then
   exit 0
 fi
 
-timestamp() { date +%s; }
-
-backup_if_exists() {
-  local path="$1"
-  if [ -e "$path" ] || [ -L "$path" ]; then
-    mv "$path" "${path}.backup-$(timestamp)"
-  fi
-}
-
-ensure_symlink() {
-  local src="$1"
-  local dest="$2"
-
-  mkdir -p "$(dirname "$dest")"
-  if [ -e "$dest" ] || [ -L "$dest" ]; then
-    if [ "$(readlink "$dest" 2>/dev/null || true)" = "$src" ]; then
-      return 0
-    fi
-    backup_if_exists "$dest"
-  fi
-  ln -snf "$src" "$dest"
-}
-
-copy_file() {
-  local src="$1"
-  local dest="$2"
-
-  mkdir -p "$(dirname "$dest")"
-  if [ -e "$dest" ] || [ -L "$dest" ]; then
-    backup_if_exists "$dest"
-  fi
-  cp "$src" "$dest"
-}
-
-echo "Applying macOS settings + app configs…"
+echo "Applying macOS settings…"
 
 if [ -x "$REPO_ROOT/macos" ] && [ "${SKIP_MACOS_DEFAULTS:-0}" != "1" ]; then
   "$REPO_ROOT/macos"
-fi
-
-# App preferences via `defaults` exports (osx-apps/defaults/<domain>.plist)
-DEFAULTS_DIR="$REPO_ROOT/osx-apps/defaults"
-if [ -d "$DEFAULTS_DIR" ]; then
-  for plist in "$DEFAULTS_DIR"/*.plist; do
-    [ -e "$plist" ] || continue
-    domain="$(basename "$plist" .plist)"
-    defaults import "$domain" "$plist" >/dev/null 2>&1 || true
-  done
 fi
 
 # Text replacements (System Settings → Keyboard → Text replacements)
@@ -75,80 +31,10 @@ if [ -f "$TEXT_REPLACEMENTS_PLIST" ]; then
   killall cfprefsd >/dev/null 2>&1 || true
 fi
 
-# BetterTouchTool config (portable settings DB; license is intentionally not tracked)
-BTT_REPO_DIR="$REPO_ROOT/osx-apps/bettertouchtool"
-if [ -d "$BTT_REPO_DIR" ]; then
-  killall BetterTouchTool >/dev/null 2>&1 || true
-
-  BTT_DEST_DIR="$HOME/Library/Application Support/BetterTouchTool"
-  mkdir -p "$BTT_DEST_DIR"
-  for src in "$BTT_REPO_DIR"/*; do
-    [ -e "$src" ] || continue
-    base="$(basename "$src")"
-    case "$base" in
-      btt_data_store.version_*|btt_user_variables.plist)
-        copy_file "$src" "$BTT_DEST_DIR/$base"
-        ;;
-    esac
-  done
-fi
-
-# Google Chrome policies (force-install extensions, etc.)
-CHROME_POLICY_PLIST="$REPO_ROOT/osx-apps/chrome/policies/com.google.Chrome.plist"
-if [ -f "$CHROME_POLICY_PLIST" ]; then
-  sudo mkdir -p "/Library/Managed Preferences"
-  sudo install -m 0644 "$CHROME_POLICY_PLIST" "/Library/Managed Preferences/com.google.Chrome.plist"
-  killall "Google Chrome" >/dev/null 2>&1 || true
-fi
-
-# OrbStack config (keep it minimal; OrbStack will manage VM/data separately).
-if [ -f "$REPO_ROOT/osx-apps/orbstack/config/docker.json" ]; then
-  copy_file "$REPO_ROOT/osx-apps/orbstack/config/docker.json" "$HOME/.orbstack/config/docker.json"
-fi
-if [ -f "$REPO_ROOT/osx-apps/orbstack/vmconfig.json" ]; then
-  copy_file "$REPO_ROOT/osx-apps/orbstack/vmconfig.json" "$HOME/.orbstack/vmconfig.json"
-fi
-
-# VS Code + Cursor settings
-VSCODE_USER_DIR="$HOME/Library/Application Support/Code/User"
-CURSOR_USER_DIR="$HOME/Library/Application Support/Cursor/User"
-for user_dir in "$VSCODE_USER_DIR" "$CURSOR_USER_DIR"; do
-  ensure_symlink "$REPO_ROOT/osx-apps/vscode/settings.json" "$user_dir/settings.json"
-  ensure_symlink "$REPO_ROOT/osx-apps/vscode/keybindings.json" "$user_dir/keybindings.json"
-  ensure_symlink "$REPO_ROOT/osx-apps/vscode/snippets" "$user_dir/snippets"
-done
-
-# Alfred preferences sync folder (expects repo-managed prefs at osx-apps/alfred)
-if [ -d "$REPO_ROOT/osx-apps/alfred" ]; then
-  defaults write com.runningwithcrayons.Alfred-Preferences syncfolder -string "$REPO_ROOT/osx-apps/alfred" || true
-  killall Alfred >/dev/null 2>&1 || true
-fi
-
-# Moom preferences
-if [ -f "$REPO_ROOT/osx-apps/Moom.plist" ]; then
-  defaults import com.manytricks.Moom "$REPO_ROOT/osx-apps/Moom.plist" >/dev/null 2>&1 || true
-  killall Moom >/dev/null 2>&1 || true
-fi
-
-# Leader Key config (expects repo-managed config at osx-apps/leader-key/config.json)
-if [ -d "$REPO_ROOT/osx-apps/leader-key" ]; then
-  defaults write com.brnbw.Leader-Key configDir -string "$REPO_ROOT/osx-apps/leader-key" >/dev/null 2>&1 || true
-  killall "Leader Key" >/dev/null 2>&1 || true
-fi
-
-# Ghostty config (expects repo-managed config at osx-apps/ghostty/config)
-if [ -f "$REPO_ROOT/osx-apps/ghostty/config" ]; then
-  ensure_symlink \
-    "$REPO_ROOT/osx-apps/ghostty/config" \
-    "$HOME/Library/Application Support/com.mitchellh.ghostty/config"
-  killall Ghostty >/dev/null 2>&1 || true
-fi
-
-# Karabiner-Elements (link only karabiner.json to avoid repo churn from automatic_backups)
-if [ -f "$REPO_ROOT/.config/karabiner/karabiner.json" ]; then
-  mkdir -p "$HOME/.config/karabiner"
-  ensure_symlink "$REPO_ROOT/.config/karabiner/karabiner.json" "$HOME/.config/karabiner/karabiner.json"
-  /Library/Application\ Support/org.pqrs/Karabiner-Elements/bin/karabiner_cli --reloadxml >/dev/null 2>&1 || true
+GUI_APPS_SCRIPT="$REPO_ROOT/scripts/macos/gui-apps.sh"
+GUI_APPS_MANIFEST="${DOTFILES_GUI_APPS_MANIFEST:-$REPO_ROOT/osx-apps/gui-apps.yaml}"
+if [ -x "$GUI_APPS_SCRIPT" ] && [ -f "$GUI_APPS_MANIFEST" ]; then
+  "$GUI_APPS_SCRIPT" apply --manifest "$GUI_APPS_MANIFEST" --dry-run=false
 fi
 
 echo "Done."
