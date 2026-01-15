@@ -107,6 +107,11 @@ alias ps='ps -T'
 alias grep='egrep --color=auto'
 alias egrep='egrep --color=auto'
 
+# Prefer fastcp when available
+if command -v fastcp >/dev/null 2>&1; then
+  alias cp='fastcp'
+fi
+
 ## zshrc modification aliases
 alias sz='exec zsh'
 alias ez='code ~/dotfiles'
