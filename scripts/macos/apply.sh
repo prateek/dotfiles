@@ -144,6 +144,52 @@ if [ -f "$REPO_ROOT/osx-apps/ghostty/config" ]; then
   killall Ghostty >/dev/null 2>&1 || true
 fi
 
+# iTerm2 Dynamic Profiles + Scripts (expects repo-managed config at osx-apps/iterm2)
+ITERM2_REPO_DIR="$REPO_ROOT/osx-apps/iterm2"
+if [ -d "$ITERM2_REPO_DIR/DynamicProfiles" ]; then
+  ensure_symlink \
+    "$ITERM2_REPO_DIR/DynamicProfiles" \
+    "$HOME/Library/Application Support/iTerm2/DynamicProfiles"
+fi
+if [ -d "$ITERM2_REPO_DIR/Scripts" ]; then
+  ensure_symlink \
+    "$ITERM2_REPO_DIR/Scripts" \
+    "$HOME/Library/Application Support/iTerm2/Scripts"
+fi
+
+# Set the default profile to the first profile in the dotfiles Dynamic Profile.
+# (This avoids hardcoding GUIDs in multiple places.)
+DEFAULT_ITERM2_PROFILE_JSON="$ITERM2_REPO_DIR/DynamicProfiles/dotfiles.json"
+if [ -f "$DEFAULT_ITERM2_PROFILE_JSON" ] && command -v python3 >/dev/null 2>&1; then
+  default_guid="$(
+    python3 - "$DEFAULT_ITERM2_PROFILE_JSON" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+try:
+    data = json.loads(path.read_text())
+except Exception:
+    sys.exit(0)
+
+profiles = data.get("Profiles")
+if not isinstance(profiles, list) or not profiles:
+    sys.exit(0)
+
+guid = profiles[0].get("Guid")
+if isinstance(guid, str) and guid:
+    print(guid)
+PY
+  )"
+
+  if [ -n "${default_guid:-}" ]; then
+    defaults write com.googlecode.iterm2 "Default Bookmark Guid" -string "$default_guid" >/dev/null 2>&1 || true
+    defaults write com.googlecode.iterm2 "Default Browser Profile Guid" -string "$default_guid" >/dev/null 2>&1 || true
+    killall iTerm2 >/dev/null 2>&1 || true
+  fi
+fi
+
 # Karabiner-Elements (link only karabiner.json to avoid repo churn from automatic_backups)
 if [ -f "$REPO_ROOT/.config/karabiner/karabiner.json" ]; then
   mkdir -p "$HOME/.config/karabiner"
