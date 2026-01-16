@@ -719,5 +719,6 @@
     "editor.wordBasedSuggestions": "off",
     "amp.tab.enabled": true,
     "githubPullRequests.terminalLinksHandler": "github",
-    "editor.wordWrap": "on"
+    "editor.wordWrap": "on",
+    "git.detectWorktrees": false
 }
