@@ -1,0 +1,110 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+session="${DOTFILES_TMUX_SESSION:-main}"
+create_window="${DOTFILES_TMUX_CREATE_WINDOW:-0}"
+window_name="${DOTFILES_TMUX_WINDOW_NAME:-}"
+start_dir="${DOTFILES_TMUX_START_DIR:-$HOME}"
+start_cmd="${DOTFILES_TMUX_START_COMMAND:-}"
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --session)
+      session="$2"
+      shift 2
+      ;;
+    --create-window)
+      create_window=1
+      shift
+      ;;
+    --no-create-window)
+      create_window=0
+      shift
+      ;;
+    --name|--window-name)
+      window_name="$2"
+      shift 2
+      ;;
+    --dir)
+      start_dir="$2"
+      shift 2
+      ;;
+    --cmd)
+      start_cmd="$2"
+      shift 2
+      ;;
+    -h|--help)
+      cat <<'USAGE'
+Usage: tmux-entrypoint [--session NAME] [--create-window] [--dir PATH] [--name NAME] [--cmd COMMAND]
+
+Environment variables (used by scripts/iterm2/iterm-tab):
+  DOTFILES_TMUX_SESSION
+  DOTFILES_TMUX_CREATE_WINDOW
+  DOTFILES_TMUX_WINDOW_NAME
+  DOTFILES_TMUX_START_DIR
+  DOTFILES_TMUX_START_COMMAND
+USAGE
+      exit 0
+      ;;
+    *)
+      echo "Unknown arg: $1" >&2
+      exit 2
+      ;;
+  esac
+done
+
+if ! command -v tmux >/dev/null 2>&1; then
+  echo "tmux-entrypoint: tmux not found" >&2
+  exit 127
+fi
+
+if [ -z "${start_dir:-}" ] || [ ! -d "$start_dir" ]; then
+  start_dir="$HOME"
+fi
+
+if [ "$create_window" = "1" ] && [ -z "${window_name:-}" ]; then
+  window_name="$(basename "$start_dir")"
+fi
+
+sync_tmux_env() {
+  # Keep some env vars fresh in a long-lived tmux server.
+  #
+  # - PATH isn't updated by tmux unless explicitly listed in update-environment.
+  # - SSH_AUTH_SOCK moves when using agents like 1Password.
+  tmux set-environment -g PATH "$PATH" >/dev/null 2>&1 || true
+  if [ -n "${SSH_AUTH_SOCK:-}" ]; then
+    tmux set-environment -g SSH_AUTH_SOCK "$SSH_AUTH_SOCK" >/dev/null 2>&1 || true
+  fi
+}
+
+if ! tmux has-session -t "$session" >/dev/null 2>&1; then
+  if [ "$create_window" = "1" ]; then
+    if [ -n "${start_cmd:-}" ]; then
+      tmux new-session -d -s "$session" -c "$start_dir" -n "$window_name" "$start_cmd"
+    else
+      tmux new-session -d -s "$session" -c "$start_dir" -n "$window_name"
+    fi
+  else
+    tmux new-session -d -s "$session"
+  fi
+
+  sync_tmux_env
+else
+  sync_tmux_env
+  if [ "$create_window" = "1" ]; then
+    # Create the window detached so we don't steal focus from existing clients.
+    # Then attach this new client directly to the new window.
+    new_window_index=""
+    if [ -n "${start_cmd:-}" ]; then
+      new_window_index="$(tmux new-window -P -F "#{window_index}" -d -t "$session" -c "$start_dir" -n "$window_name" "$start_cmd")"
+    else
+      new_window_index="$(tmux new-window -P -F "#{window_index}" -d -t "$session" -c "$start_dir" -n "$window_name")"
+    fi
+
+    if [ -n "${new_window_index:-}" ]; then
+      exec tmux attach-session -t "$session:$new_window_index"
+    fi
+  fi
+fi
+
+exec tmux attach-session -t "$session"

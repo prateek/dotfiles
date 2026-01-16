@@ -42,7 +42,9 @@ gh repo clone prateek/dotfiles ~/dotfiles
 cd ~/dotfiles && ./install.sh
 ```
 
-Currently managed configs include: macOS defaults, Text Replacements, Alfred, Ghostty, Moom, Leader Key, Karabiner-Elements, BetterTouchTool, OrbStack (minimal), VS Code/Cursor, and Chrome policies (extension force-install).
+Currently managed configs include: macOS defaults, Text Replacements, Alfred, iTerm2, tmux, Moom, Leader Key, Karabiner-Elements, BetterTouchTool, OrbStack (minimal), VS Code/Cursor, and Chrome policies (extension force-install).
+
+Terminal setup notes (iTerm2 + tmux): `docs/iterm2-tmux.md`.
 
 ## Auditing what to remove / what’s tracked
 

@@ -1,0 +1,12 @@
+new window	tmux new-window -c "#{pane_current_path}"
+split vertical	tmux split-window -v -c "#{pane_current_path}"
+split horizontal	tmux split-window -h -c "#{pane_current_path}"
+switch session	tmux choose-tree -s
+switch window	tmux choose-tree -w
+rename window	tmux command-prompt -I "#{window_name}" "rename-window '%%'"
+rename session	tmux command-prompt -I "#{session_name}" "rename-session '%%'"
+kill pane	tmux confirm-before -p "kill-pane #P? (y/n)" kill-pane
+kill window	tmux confirm-before -p "kill-window #W? (y/n)" kill-window
+reload config	tmux source-file ~/.config/tmux/tmux.conf \; display-message "reloaded ~/.config/tmux/tmux.conf"
+iterm tab presets	$HOME/dotfiles/scripts/iterm2/iterm-tab --choose
+iterm tab (cwd)	$HOME/dotfiles/scripts/iterm2/iterm-tab --dir "$(tmux display-message -p -F '#{pane_current_path}')" --name "$(basename "$(tmux display-message -p -F '#{pane_current_path}')")"

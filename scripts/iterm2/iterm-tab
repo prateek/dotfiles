@@ -1,0 +1,179 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'USAGE'
+Usage:
+  scripts/iterm2/iterm-tab [--choose]
+                        [--dir PATH]
+                        [--name NAME]
+                        [--cmd COMMAND]
+                        [--profile ITERM_PROFILE]
+                        [--session TMUX_SESSION]
+
+Notes:
+  - Uses iTerm2 AppleScript to open a new tab and (by default) create a tmux window.
+  - `--choose` shows a simple modal picker using `tab-presets.tsv`.
+USAGE
+}
+
+repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
+presets_file="$repo_root/scripts/iterm2/tab-presets.tsv"
+tmux_entrypoint="$repo_root/scripts/iterm2/tmux-entrypoint"
+
+choose=0
+dir="${PWD}"
+name=""
+cmd=""
+profile="Solarized Dark Patched"
+session="${DOTFILES_TMUX_SESSION:-main}"
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --choose)
+      choose=1
+      shift
+      ;;
+    --dir)
+      dir="$2"
+      shift 2
+      ;;
+    --name)
+      name="$2"
+      shift 2
+      ;;
+    --cmd)
+      cmd="$2"
+      shift 2
+      ;;
+    --profile)
+      profile="$2"
+      shift 2
+      ;;
+    --session)
+      session="$2"
+      shift 2
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown arg: $1" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+done
+
+expand_path() {
+  local raw="$1"
+  if [ -z "$raw" ]; then
+    return 0
+  fi
+  if [[ "$raw" == \\~/* ]]; then
+    printf '%s\n' "${HOME}/${raw#~/}"
+    return 0
+  fi
+  if [[ "$raw" == "\$HOME/"* ]]; then
+    printf '%s\n' "${HOME}/${raw#\$HOME/}"
+    return 0
+  fi
+  printf '%s\n' "$raw"
+}
+
+if [ "$choose" = "1" ]; then
+  if [ ! -f "$presets_file" ]; then
+    echo "Missing presets file: $presets_file" >&2
+    exit 1
+  fi
+
+  choices="$(rg -v '^[[:space:]]*($|#)' "$presets_file" | cut -f1)"
+  selection="$(
+    osascript - <<OSA "$choices"
+on run argv
+  set choicesText to item 1 of argv
+  set AppleScript's text item delimiters to "\n"
+  set choicesList to text items of choicesText
+  set picked to choose from list choicesList with prompt "Open iTerm tab:" without multiple selections allowed
+  if picked is false then
+    return ""
+  end if
+  return item 1 of picked
+end run
+OSA
+  )"
+
+  if [ -z "$selection" ]; then
+    exit 0
+  fi
+
+  line="$(rg -m1 -n "^${selection}\t" "$presets_file" || true)"
+  if [ -z "$line" ]; then
+    echo "Preset not found: $selection" >&2
+    exit 1
+  fi
+
+  preset_dir="$(printf '%s\n' "$line" | cut -f2)"
+  preset_name="$(printf '%s\n' "$line" | cut -f3)"
+  preset_cmd="$(printf '%s\n' "$line" | cut -f4)"
+  preset_profile="$(printf '%s\n' "$line" | cut -f5)"
+  preset_session="$(printf '%s\n' "$line" | cut -f6)"
+
+  dir="$(expand_path "$preset_dir")"
+  name="$preset_name"
+  cmd="$preset_cmd"
+  if [ -n "${preset_profile:-}" ]; then
+    profile="$preset_profile"
+  fi
+  if [ -n "${preset_session:-}" ]; then
+    session="$preset_session"
+  fi
+fi
+
+dir="$(expand_path "$dir")"
+if [ -z "${name:-}" ]; then
+  name="$(basename "$dir")"
+fi
+
+if [ ! -x "$tmux_entrypoint" ]; then
+  echo "Missing tmux entrypoint script: $tmux_entrypoint" >&2
+  exit 1
+fi
+
+command_line="DOTFILES_TMUX_SESSION=$(printf '%q' "$session") DOTFILES_TMUX_CREATE_WINDOW=1 DOTFILES_TMUX_WINDOW_NAME=$(printf '%q' "$name") DOTFILES_TMUX_START_DIR=$(printf '%q' "$dir")"
+if [ -n "${cmd:-}" ]; then
+  command_line="$command_line DOTFILES_TMUX_START_COMMAND=$(printf '%q' "$cmd")"
+fi
+command_line="$command_line $(printf '%q' "$tmux_entrypoint")"
+
+osascript - <<OSA "$profile" "$command_line"
+on run argv
+  set profileName to item 1 of argv
+  set cmdline to item 2 of argv
+
+  tell application "iTerm"
+    activate
+
+    if (count of windows) = 0 then
+      set w to (create window with profile profileName)
+      try
+        create tab in w with profile profileName command cmdline
+      on error
+        create tab with default profile in w command cmdline
+      end try
+
+      try
+        close (tab 1 of w)
+      end try
+      return
+    end if
+
+    try
+      create tab in current window with profile profileName command cmdline
+    on error
+      create tab with default profile in current window command cmdline
+    end try
+  end tell
+end run
+OSA

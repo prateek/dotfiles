@@ -1,0 +1,4 @@
+# label	dir	name	cmd	profile	session
+home	$HOME	home		Solarized Dark Patched	main
+dotfiles	$HOME/dotfiles	dotfiles	nvim .	Solarized Dark Patched	main
+code	$HOME/code	code		Solarized Dark Patched	main

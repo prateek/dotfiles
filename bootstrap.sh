@@ -184,6 +184,28 @@ else
   ln -snf "$CWD/.config/borders" "$BORDERS_CONFIG_DIR"
 fi
 
+# tmux config
+TMUX_CONFIG_DIR="$HOME/.config/tmux"
+if [ -d "$TMUX_CONFIG_DIR" ] || [ -L "$TMUX_CONFIG_DIR" ]; then
+  if [ "$(readlink "$TMUX_CONFIG_DIR" 2>/dev/null)" != "$CWD/.config/tmux" ]; then
+    echo "Error: $TMUX_CONFIG_DIR already exists and is not a symlink to $CWD/.config/tmux."
+    echo "To back it up, run: mv \"$TMUX_CONFIG_DIR\" \"${TMUX_CONFIG_DIR}.backup-$(date +%s)\""
+    echo "Or remove it if you don't need it: rm -rf \"$TMUX_CONFIG_DIR\""
+    echo "After fixing, rerun this bootstrap script."
+    exit 1
+  fi
+fi
+if [ "$DRY_RUN" = "1" ]; then
+  echo "Would ensure directory: $HOME/.config"
+else
+  mkdir -p "$HOME/.config"
+fi
+if [ "$DRY_RUN" = "1" ]; then
+  echo "Would symlink: $TMUX_CONFIG_DIR -> $CWD/.config/tmux"
+else
+  ln -snf "$CWD/.config/tmux" "$TMUX_CONFIG_DIR"
+fi
+
 # Start JankyBorders via brew services (uses ~/.config/borders/bordersrc)
 if command -v brew >/dev/null 2>&1; then
   if brew list --formula | grep -q "^borders$"; then
