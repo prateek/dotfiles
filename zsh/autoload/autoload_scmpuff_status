@@ -1,5 +1,11 @@
 function autoload_scmpuff_status() {
-  eval "$(scmpuff init --shell=zsh --aliases=false --wrap=false)"
+  if (( ! $+functions[scmpuff_status] )); then
+    if ! command -v scmpuff >/dev/null 2>&1; then
+      command git status "$@"
+      return $?
+    fi
+    eval "$(scmpuff init --shell=zsh --aliases=false)"
+  fi
   scmpuff_status "$@"
 }
 
