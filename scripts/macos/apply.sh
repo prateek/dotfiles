@@ -147,9 +147,16 @@ fi
 # iTerm2 Dynamic Profiles + Scripts (expects repo-managed config at osx-apps/iterm2)
 ITERM2_REPO_DIR="$REPO_ROOT/osx-apps/iterm2"
 if [ -d "$ITERM2_REPO_DIR/DynamicProfiles" ]; then
-  ensure_symlink \
-    "$ITERM2_REPO_DIR/DynamicProfiles" \
-    "$HOME/Library/Application Support/iTerm2/DynamicProfiles"
+  ITERM2_DYNAMIC_PROFILES_DIR="$HOME/Library/Application Support/iTerm2/DynamicProfiles"
+  if [ -L "$ITERM2_DYNAMIC_PROFILES_DIR" ] || { [ -e "$ITERM2_DYNAMIC_PROFILES_DIR" ] && [ ! -d "$ITERM2_DYNAMIC_PROFILES_DIR" ]; }; then
+    backup_if_exists "$ITERM2_DYNAMIC_PROFILES_DIR"
+  fi
+
+  mkdir -p "$ITERM2_DYNAMIC_PROFILES_DIR"
+  for src in "$ITERM2_REPO_DIR/DynamicProfiles"/*; do
+    [ -e "$src" ] || continue
+    cp -f "$src" "$ITERM2_DYNAMIC_PROFILES_DIR/$(basename "$src")"
+  done
 fi
 if [ -d "$ITERM2_REPO_DIR/Scripts" ]; then
   ensure_symlink \
