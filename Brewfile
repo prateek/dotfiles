@@ -116,6 +116,7 @@ brew "graphicsmagick"
 brew "graphviz"
 brew "helix"
 brew "htop"
+brew "tmux"
 brew "hub"
 brew "hyperfine"
 brew "fastcp", args: ["HEAD"]

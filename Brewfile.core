@@ -14,6 +14,7 @@ brew "neovim"
 brew "ripgrep"
 brew "uv"
 brew "shellcheck"
+brew "tmux"
 
 cask "codex"
 cask "1password", args: { appdir: "/Applications" }
@@ -22,6 +23,7 @@ cask "alfred", args: { appdir: "/Applications" }
 cask "bettertouchtool"
 cask "font-hack-nerd-font"
 cask "ghostty"
+cask "iterm2"
 cask "google-chrome"
 cask "karabiner-elements"
 cask "leader-key"
