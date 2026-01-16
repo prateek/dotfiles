@@ -677,9 +677,11 @@ fi
 # See: https://security.stackexchange.com/a/47786/8918
 defaults write com.apple.terminal SecureKeyboardEntry -bool true
 
-# Install the Solarized Dark theme for iTerm
-# TODO: do this!
-# open "${HOME}/init/Solarized Dark.itermcolors"
+# iTerm2
+#
+# Theme + default profile are managed via Dynamic Profiles in this repo:
+# - osx-apps/iterm2/DynamicProfiles/dotfiles.json
+# - scripts/macos/apply.sh symlinks it into iTerm2 and sets it as the default profile.
 
 # Don’t display the annoying prompt when quitting iTerm
 defaults write com.googlecode.iterm2 PromptOnQuit -bool false

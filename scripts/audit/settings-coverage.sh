@@ -34,6 +34,9 @@ tracked_paths_for() {
     ghostty)
       echo "osx-apps/ghostty/config | scripts/macos/apply.sh"
       ;;
+    iterm2)
+      echo "osx-apps/iterm2/ | scripts/macos/apply.sh"
+      ;;
     orbstack)
       echo "osx-apps/orbstack/config/docker.json | osx-apps/orbstack/vmconfig.json | scripts/macos/capture.sh | scripts/macos/apply.sh"
       ;;
@@ -85,6 +88,9 @@ artifact_paths_for() {
       ;;
     ghostty)
       echo "osx-apps/ghostty/config"
+      ;;
+    iterm2)
+      echo "osx-apps/iterm2/DynamicProfiles/dotfiles.json osx-apps/iterm2/colors/Solarized-Dark-Patched.itermcolors osx-apps/iterm2/backgrounds/solarized-grain.png"
       ;;
     orbstack)
       echo "osx-apps/orbstack/config/docker.json osx-apps/orbstack/vmconfig.json"
