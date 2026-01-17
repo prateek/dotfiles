@@ -1,0 +1,62 @@
+;; ABOUTME: Kanata keyboard remapper configuration
+;; ABOUTME: Maps caps->ctrl/esc and simultaneous cmd keys to fn+F12
+
+(defcfg
+  ;; Process all keys so timing-sensitive actions work correctly
+  process-unmapped-keys yes
+
+  ;; ============================================================================
+  ;; DEVICE-SPECIFIC CONFIGURATION
+  ;; ============================================================================
+  ;; To apply this config to specific keyboards only, uncomment and customize
+  ;; the appropriate option for your OS:
+  ;;
+  ;; macOS: Use macos-dev-names-include with device names
+  ;;   macos-dev-names-include (
+  ;;     "Apple Internal Keyboard / Trackpad"
+  ;;     "Keychron K3 Pro"
+  ;;   )
+  ;;
+  ;; To find your device names on macOS, run: kanata --list
+  ;;
+  ;; Linux: Use linux-dev with paths from /dev/input/by-id/
+  ;;   linux-dev /dev/input/by-id/usb-Keychron_K3_Pro-event-kbd
+  ;;   ;; Multiple devices separated by colon:
+  ;;   ;; linux-dev /dev/input/by-id/device1:/dev/input/by-id/device2
+  ;;
+  ;; Windows: Use windows-only-interception-keyboard-hwids
+  ;;   windows-only-interception-keyboard-hwids (
+  ;;     "HWID_STRING_HERE"
+  ;;   )
+  ;;   ;; Run kanata with empty hwids first, press a key, check logs for hwid
+  ;; ============================================================================
+)
+
+;; Define the physical keys we're intercepting
+(defsrc
+  caps lmet rmet
+)
+
+;; Default layer with our custom behaviors
+(deflayer default
+  @cap @lm  @rm
+)
+
+(defalias
+  ;; Caps Lock: tap = escape, hold = left control
+  ;; 200ms threshold for tap vs hold detection
+  cap (tap-hold 200 200 esc lctl)
+
+  ;; Command keys with chord detection
+  ;; When pressed alone, act as normal command keys
+  ;; When pressed together, trigger the chord action
+  lm (chord cmds lmet)
+  rm (chord cmds rmet)
+)
+
+;; Chord: both command keys pressed within 50ms = fn+F12
+(defchords cmds 50
+  (lmet)      lmet
+  (rmet)      rmet
+  (lmet rmet) (multi fn f12)
+)
