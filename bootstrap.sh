@@ -239,6 +239,39 @@ else
   ln -snf "$CWD/.config/mise/config.toml" "$MISE_CONFIG_FILE"
 fi
 
+# GRM (git-repo-manager) config
+GRM_CONFIG_DIR="$HOME/.config/grm"
+GRM_CONFIG_FILE="$GRM_CONFIG_DIR/config.toml"
+if [ "$DRY_RUN" = "1" ]; then
+  echo "Would ensure directory: $GRM_CONFIG_DIR"
+else
+  mkdir -p "$GRM_CONFIG_DIR"
+fi
+if [ -e "$GRM_CONFIG_FILE" ] || [ -L "$GRM_CONFIG_FILE" ]; then
+  if [ "$(readlink "$GRM_CONFIG_FILE" 2>/dev/null)" != "$CWD/.config/grm/config.toml" ]; then
+    echo "Error: $GRM_CONFIG_FILE already exists and is not a symlink to $CWD/.config/grm/config.toml."
+    echo "To back it up, run: mv \"$GRM_CONFIG_FILE\" \"${GRM_CONFIG_FILE}.backup-$(date +%s)\""
+    echo "After fixing, rerun this bootstrap script."
+    exit 1
+  fi
+fi
+if [ "$DRY_RUN" = "1" ]; then
+  echo "Would symlink: $GRM_CONFIG_FILE -> $CWD/.config/grm/config.toml"
+else
+  ln -snf "$CWD/.config/grm/config.toml" "$GRM_CONFIG_FILE"
+fi
+
+# Generate an initial GRM config (best-effort) so `grmrepo` works immediately.
+if [ "$DRY_RUN" = "1" ]; then
+  echo "Would generate: $CWD/.config/grm/config.toml (via bin/grmrepo-refresh) if missing/empty"
+else
+  if [ ! -s "$CWD/.config/grm/config.toml" ]; then
+    if [ -x "$CWD/bin/grmrepo-refresh" ]; then
+      GRMREPO_CONFIG="$CWD/.config/grm/config.toml" "$CWD/bin/grmrepo-refresh" >/dev/null 2>&1 || true
+    fi
+  fi
+fi
+
 # Install mise-managed runtimes (node/go/ruby) from global config.
 if command -v mise >/dev/null 2>&1; then
   # Avoid interactive trust prompts on a clean machine.
@@ -364,6 +397,28 @@ else
   mkdir -p "$HOME/bin"
   mkdir -p "$HOME/code"
   mkdir -p "$HOME/.sshrc.d"
+fi
+
+# dotfiles bin wrappers
+for f in gh grmrepo grmrepo-refresh repo-index; do
+  src="$CWD/bin/$f"
+  dest="$HOME/bin/$f"
+  if [ -f "$src" ]; then
+    if [ "$DRY_RUN" = "1" ]; then
+      echo "Would symlink: $dest -> $src"
+    else
+      ln -snf "$src" "$dest"
+    fi
+  fi
+done
+
+# git-repo-manager (grm) install/update (via cargo, when available)
+if [ "$DRY_RUN" = "1" ]; then
+  echo "Would install/update git-repo-manager via cargo (if cargo is available)"
+else
+  if command -v cargo >/dev/null 2>&1; then
+    cargo install git-repo-manager --locked || echo "Warning: cargo install git-repo-manager failed; retry later."
+  fi
 fi
 
 # generate lesskey binary file for older versions of less that might be

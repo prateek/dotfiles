@@ -1,0 +1,144 @@
+#!/usr/bin/env zsh
+# List locally tracked repos (canonical clones) as TSV for shell + Hammerspoon.
+#
+# Output (tsv): <owner/repo>\t<https_url>\t<local_path>
+#
+# Canonical clones:
+#   ~/code/github.com/<owner>/<repo>
+# Exceptions:
+#   github.com/openai/openai -> ~/code/openai
+#   github.com/chronosphereio/chronosphere-openai -> ~/code/chronosphere-openai
+#
+# Notes:
+# - We intentionally ignore git *worktrees* where `.git` is a file.
+# - We prefer returning GitHub HTTPS URLs even when remotes use SSH host aliases.
+
+set -euo pipefail
+unsetopt xtrace 2>/dev/null || true
+set +x 2>/dev/null || true
+unsetopt verbose 2>/dev/null || true
+set +v 2>/dev/null || true
+setopt typeset_silent 2>/dev/null || true
+
+_slug_from_remote() {
+  local url="$1"
+
+  # Common forms:
+  # - git@github.com:owner/repo.git
+  # - git@github-openai:openai/repo.git
+  # - org-123@github.com:owner/repo.git
+  # - https://github.com/owner/repo(.git)?
+  # - ssh://git@github.com/owner/repo.git
+
+  if [[ "$url" == http://* || "$url" == https://* ]]; then
+    local rest="${url#*://}"
+    rest="${rest#*/}" # drop host
+    rest="${rest%.git}"
+    echo "$rest"
+    return 0
+  fi
+
+  if [[ "$url" == ssh://* ]]; then
+    local rest="${url#ssh://}"
+    rest="${rest#*@}"     # drop user@ if present
+    rest="${rest#*/}"     # drop host/
+    rest="${rest%.git}"
+    echo "$rest"
+    return 0
+  fi
+
+  if [[ "$url" == *:* && "$url" != *://* ]]; then
+    local scp_path="${url#*:}"
+    scp_path="${scp_path%.git}"
+    echo "$scp_path"
+    return 0
+  fi
+
+  # Unsupported (e.g. local filesystem remotes like /Users/me/repo).
+  echo ""
+  return 0
+}
+
+main() {
+  local format="tsv"
+  local tab=$'\t'
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --format)
+        format="${2:?missing --format value}"
+        shift 2
+        ;;
+      --format=*)
+        format="${1#*=}"
+        shift
+        ;;
+      -h|--help)
+        cat <<'EOF'
+Usage: repo-index [--format tsv|urls|paths|slugs]
+
+Formats:
+  tsv    owner/repo<TAB>https://github.com/owner/repo<TAB>/abs/path (default)
+  urls   https://github.com/owner/repo
+  paths  /abs/path
+  slugs  owner/repo
+EOF
+        return 0
+        ;;
+      *)
+        echo "repo-index: unknown arg: $1" >&2
+        return 2
+        ;;
+    esac
+  done
+
+  local github_root="${GHPATH:-$HOME/code/github.com}"
+
+  local -a repo_dirs
+  repo_dirs=()
+
+  # Canonical: ~/code/github.com/<owner>/<repo>
+  local d
+  for d in "$github_root"/*/*(N-/); do
+    [[ -d "$d/.git" ]] || continue
+    repo_dirs+=("$d")
+  done
+
+  # Exceptions
+  for d in "$HOME/code/openai" "$HOME/code/chronosphere-openai"; do
+    [[ -d "$d/.git" ]] || continue
+    repo_dirs+=("$d")
+  done
+
+  repo_dirs=("${(@u)repo_dirs}")
+
+  for repo_dir in "${repo_dirs[@]}"; do
+    local slug origin_url repo_path url
+    slug=""
+    origin_url=""
+    repo_path="$repo_dir"
+
+    if [[ "$repo_dir" == "$github_root"/*/* ]]; then
+      slug="${repo_dir#$github_root/}"
+    else
+      origin_url="$(/usr/bin/git -C "$repo_dir" remote get-url origin 2>/dev/null || true)"
+      [[ -n "$origin_url" ]] || continue
+      slug="$(_slug_from_remote "$origin_url")"
+    fi
+
+    [[ -n "$slug" ]] || continue
+    url="https://github.com/${slug}"
+
+    case "$format" in
+      tsv)   print -r -- "${slug}${tab}${url}${tab}${repo_path}" ;;
+      urls)  print -r -- "${url}" ;;
+      paths) print -r -- "${repo_path}" ;;
+      slugs) print -r -- "${slug}" ;;
+      *)
+        echo "repo-index: unknown format: $format" >&2
+        return 2
+        ;;
+    esac
+  done | LC_ALL=C sort -u
+}
+
+main "$@"

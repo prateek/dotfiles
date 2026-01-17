@@ -2,22 +2,109 @@
 # usage (1) `$ ghc <github-user>/<github-repo>`
 # usage (2) `$ ghc github.com/<github-user>/<github-repo>(/.*)?`
 function ghc() {
-  local ghstub=$(echo $1 | sed -e 's/.*github.com\///g' -e 's/#.*$//g' | cut -d/ -f1,2)
-  local target=$GHPATH/$ghstub
-  if ! [ -d "$target" ]; then
-    dirname=$(dirname $target)
-    mkdir -p $dirname
-    git clone git@github.com:${ghstub}.git $target
+  setopt localoptions pipefail no_aliases 2> /dev/null
+
+  if [[ $# -lt 1 ]]; then
+    echo "usage: ghc <owner>/<repo>  (or github.com/<owner>/<repo>)" >&2
+    return 2
   fi
-  cd $target
-  # check directory git status
-  if [ -n "$(git status --porcelain)" ]; then
+
+  _ghc_parse_slug() {
+    local raw="${1:-}"
+
+    raw="${raw%%#*}"
+    raw="${raw%%\?*}"
+    raw="${raw%.git}"
+
+    # scp-like: git@github.com:owner/repo(.git)
+    if [[ "$raw" == *@*:* && "$raw" != *://* ]]; then
+      raw="${raw#*:}"
+    fi
+
+    # URL-like: https://github.com/owner/repo(.git)
+    raw="${raw#http://}"
+    raw="${raw#https://}"
+    raw="${raw#ssh://}"
+
+    if [[ "$raw" == *github.com/* ]]; then
+      raw="${raw##*github.com/}"
+    fi
+
+    local owner repo
+    owner="${raw%%/*}"
+    repo="${raw#*/}"
+    repo="${repo%%/*}"
+
+    if [[ -z "$owner" || -z "$repo" || "$owner" == "$raw" ]]; then
+      echo ""
+      return 0
+    fi
+
+    echo "${owner}/${repo}"
+  }
+
+  # Normalize to owner/repo.
+  local slug
+  slug="$(_ghc_parse_slug "$1")"
+  if [[ "$slug" != */* ]]; then
+    echo "ghc: could not parse repo slug from: $1" >&2
+    return 2
+  fi
+
+  local code_root ghpath
+  ghpath="${GHPATH:-$HOME/code/github.com}"
+  code_root="${ghpath%/github.com}"
+
+  local target
+  case "$slug" in
+    (openai/openai)
+      target="$code_root/openai"
+      ;;
+    (chronosphereio/chronosphere-openai)
+      target="$code_root/chronosphere-openai"
+      ;;
+    (*)
+      target="$ghpath/$slug"
+      ;;
+  esac
+
+  if [[ ! -d "$target/.git" ]]; then
+    mkdir -p "$(dirname "$target")"
+
+    local owner clone_url
+    owner="${slug%%/*}"
+    case "$owner" in
+      (openai) clone_url="git@github-openai:${slug}.git" ;;
+      (prateek) clone_url="git@github-prateek:${slug}.git" ;;
+      (*) clone_url="git@github.com:${slug}.git" ;;
+    esac
+
+    git clone "$clone_url" "$target"
+
+    if command -v grmrepo-refresh >/dev/null 2>&1; then
+      grmrepo-refresh >/dev/null 2>&1 &!
+    fi
+  fi
+
+  cd "$target" || return 1
+
+  if [[ -n "$(git status --porcelain)" ]]; then
     echo "WARNING: git status is not clean"
-  else
-    default_branch=$(git remote show origin | grep 'HEAD branch' | cut -d: -f2 | sed -e 's/ //g')
-    git checkout $default_branch
-    git pull origin $default_branch
+    return 0
   fi
+
+  local default_branch
+  default_branch="$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')"
+  if [[ -z "$default_branch" ]]; then
+    if git show-ref --verify --quiet refs/heads/main; then
+      default_branch="main"
+    else
+      default_branch="master"
+    fi
+  fi
+
+  git checkout "$default_branch" >/dev/null 2>&1 || true
+  git pull --ff-only origin "$default_branch" >/dev/null 2>&1 || true
 }
 
 ghc "$@"

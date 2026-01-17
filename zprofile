@@ -64,3 +64,8 @@ manpath=($^manpath(N-/))
 if [ -f "$HOME/.zprofile.local" ]; then
   source "$HOME/.zprofile.local"
 fi
+
+# Keep ~/bin first (some local overlays, e.g. `brew shellenv`, may prepend PATH).
+if [[ -d "$HOME/bin" ]]; then
+  path=("$HOME/bin" ${path:#"$HOME/bin"})
+fi

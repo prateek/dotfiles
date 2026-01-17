@@ -1,0 +1,47 @@
+# url_select: fuzzy-pick a repo URL and insert it into the current ZLE buffer.
+#
+# Bound in `zsh/lib/keybind.zsh` (Ctrl-U in vicmd).
+
+function url_select() {
+  setopt localoptions pipefail no_aliases 2> /dev/null
+
+  if ! command -v fzf >/dev/null 2>&1; then
+    echo "url_select: missing fzf" >&2
+    zle reset-prompt
+    return 1
+  fi
+
+  if ! command -v repo-index >/dev/null 2>&1; then
+    echo "url_select: missing repo-index (expected in \$PATH)" >&2
+    zle reset-prompt
+    return 1
+  fi
+
+  local selection url
+  selection="$(
+    repo-index --format tsv 2>/dev/null | \
+      fzf --ansi --reverse --no-sort \
+        --prompt='repo url> ' \
+        --delimiter=$'\t' \
+        --with-nth=1,2 \
+        --bind=ctrl-e:accept \
+        --expect=enter \
+  )"
+
+  if [[ -z "$selection" ]]; then
+    zle reset-prompt
+    return 0
+  fi
+
+  url="$(printf '%s\n' "$selection" | tail -n 1 | cut -f2)"
+  if [[ -z "$url" ]]; then
+    zle reset-prompt
+    return 0
+  fi
+
+  LBUFFER+="$url"
+  zle reset-prompt
+}
+
+url_select "$@"
+

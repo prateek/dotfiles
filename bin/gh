@@ -1,0 +1,185 @@
+#!/usr/bin/env zsh
+# Identity-aware GitHub CLI wrapper.
+#
+# Picks a `gh` account based on:
+# - the current repo's `origin` remote (when inside a git repo), else
+# - a repo slug from `-R/--repo`, else
+# - a repo slug argument (best-effort, for common commands like `gh repo clone owner/repo`)
+#
+# The matching logic lives in `~/dotfiles/zsh/lib/gh-user-rules.zsh`.
+
+set -euo pipefail
+unsetopt xtrace 2>/dev/null || true
+set +x 2>/dev/null || true
+
+dotfiles_root="${DOTFILES:-$HOME/dotfiles}"
+rules_file="$dotfiles_root/zsh/lib/gh-user-rules.zsh"
+if [[ -r "$rules_file" ]]; then
+  source "$rules_file"
+fi
+
+if ! typeset -f gh_user_for_context >/dev/null 2>&1; then
+  gh_user_for_context() {
+    echo "prateek"
+  }
+fi
+
+_real_gh() {
+  local wrapper_path="${1:?missing wrapper path}"
+  local wrapper_real="${wrapper_path:A}"
+
+  local dir candidate
+  for dir in ${(s/:/)PATH}; do
+    [[ -z "$dir" ]] && continue
+    candidate="$dir/gh"
+    [[ -x "$candidate" ]] || continue
+
+    # Skip this wrapper even if discovered via a different symlink path.
+    if [[ "${candidate:A}" == "$wrapper_real" ]]; then
+      continue
+    fi
+
+    print -r -- "$candidate"
+    return 0
+  done
+
+  echo "gh wrapper: could not find real gh binary on PATH" >&2
+  return 1
+}
+
+real_gh="$(_real_gh "$0")"
+
+# Don't interfere with auth flows or local-only commands that don't need tokens.
+if [[ "${1:-}" == "auth" || "${1:-}" == "help" || "${1:-}" == "version" || "${1:-}" == "completion" || "${1:-}" == "alias" || "${1:-}" == "config" ]]; then
+  exec "$real_gh" "$@"
+fi
+
+for arg in "$@"; do
+  case "$arg" in
+    -h|--help|--version)
+      exec "$real_gh" "$@"
+      ;;
+  esac
+done
+
+_slug_from_repo_arg() {
+  local arg="${1:-}"
+
+  [[ -n "$arg" ]] || { print -r -- ""; return 0; }
+
+  # Drop fragments/query and trailing ".git"
+  arg="${arg%%#*}"
+  arg="${arg%%\?*}"
+  arg="${arg%.git}"
+
+  local path=""
+
+  if [[ "$arg" == http://* || "$arg" == https://* ]]; then
+    local rest="${arg#*://}"
+    rest="${rest#*@}"   # drop user@ if present
+    path="${rest#*/}"   # drop host/
+  elif [[ "$arg" == ssh://* ]]; then
+    local rest="${arg#ssh://}"
+    rest="${rest#*@}"   # drop user@ if present
+    path="${rest#*/}"   # drop host/
+  elif [[ "$arg" == *:* && "$arg" != *://* ]]; then
+    # scp-style: git@host:owner/repo(.git)
+    path="${arg#*:}"
+  elif [[ "$arg" == *github.com/* ]]; then
+    path="${arg#*github.com/}"
+  else
+    path="$arg"
+  fi
+
+  path="${path#/}"
+  path="${path%.git}"
+
+  local owner repo
+  owner="${path%%/*}"
+  repo="${path#*/}"
+  repo="${repo%%/*}"
+
+  if [[ -n "$owner" && -n "$repo" && "$owner" != "$path" ]]; then
+    print -r -- "${owner}/${repo}"
+    return 0
+  fi
+
+  print -r -- ""
+}
+
+_looks_like_remote_url() {
+  local arg="${1:-}"
+  [[ -n "$arg" ]] || return 1
+  [[ "$arg" == http://* || "$arg" == https://* || "$arg" == ssh://* || ( "$arg" == *:* && "$arg" != *://* ) ]]
+}
+
+_extract_repo_context() {
+  local -a argv
+  argv=("$@")
+
+  local origin_candidate=""
+  local slug_candidate=""
+
+  local i
+  for ((i=1; i<=${#argv[@]}; i++)); do
+    if [[ "${argv[$i]}" == "-R" || "${argv[$i]}" == "--repo" ]]; then
+      slug_candidate="$(_slug_from_repo_arg "${argv[$((i+1))]:-}")"
+      break
+    fi
+    if [[ "${argv[$i]}" == --repo=* ]]; then
+      slug_candidate="$(_slug_from_repo_arg "${argv[$i]#--repo=}")"
+      break
+    fi
+  done
+
+  local arg
+  for arg in "${argv[@]}"; do
+    [[ -n "$slug_candidate" ]] || slug_candidate="$(_slug_from_repo_arg "$arg")"
+    if [[ -z "$origin_candidate" ]] && _looks_like_remote_url "$arg"; then
+      origin_candidate="$arg"
+    fi
+    [[ -n "$slug_candidate" && -n "$origin_candidate" ]] && break
+  done
+
+  print -r -- "${origin_candidate}\t${slug_candidate}"
+}
+
+origin_url=""
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  origin_url="$(git remote get-url origin 2>/dev/null || true)"
+fi
+
+ctx="$(_extract_repo_context "$@")"
+origin_from_args="${ctx%%$'\t'*}"
+repo_slug="${ctx#*$'\t'}"
+
+if [[ -z "$origin_url" ]]; then
+  origin_url="$origin_from_args"
+fi
+
+gh_user="${GH_WRAPPER_USER:-}"
+if [[ -z "$gh_user" ]]; then
+  gh_user="$(gh_user_for_context "$origin_url" "$repo_slug")"
+fi
+
+token="$(env -u GH_TOKEN -u GITHUB_TOKEN "$real_gh" auth token --user "$gh_user" 2>/dev/null || true)"
+if [[ -z "$token" ]]; then
+  echo "gh wrapper: failed to get token for user '$gh_user' (run: gh auth status)" >&2
+  exit 1
+fi
+
+should_refresh=0
+if [[ "${1:-}" == "repo" && ( "${2:-}" == "clone" || "${2:-}" == "create" ) ]]; then
+  should_refresh=1
+fi
+
+set +e
+GH_TOKEN="$token" GITHUB_TOKEN="$token" "$real_gh" "$@"
+rc=$?
+set -e
+
+if (( rc == 0 && should_refresh == 1 )); then
+  ( command -v grmrepo-refresh >/dev/null 2>&1 && grmrepo-refresh >/dev/null 2>&1 ) &!
+fi
+
+exit $rc

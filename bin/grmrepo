@@ -1,0 +1,48 @@
+#!/usr/bin/env zsh
+
+set -euo pipefail
+unsetopt xtrace 2>/dev/null || true
+set +x 2>/dev/null || true
+
+real_grm="$HOME/.cargo/bin/grm"
+if [[ ! -x "$real_grm" ]]; then
+  echo "grmrepo: missing $real_grm (install via: cargo install git-repo-manager)" >&2
+  exit 127
+fi
+
+config_path="${GRMREPO_CONFIG:-$HOME/.config/grm/config.toml}"
+
+_has_flag() {
+  local needle="$1"
+  shift
+  local arg
+  for arg in "$@"; do
+    [[ "$arg" == "$needle" ]] && return 0
+    case "$needle" in
+      --config) [[ "$arg" == --config=* ]] && return 0 ;;
+    esac
+  done
+  return 1
+}
+
+if [[ "${1:-}" == "refresh" ]]; then
+  exec grmrepo-refresh "${@:2}"
+fi
+
+# Convenience: outside a repo, `grmrepo repos status` defaults to the global config.
+if [[ "${1:-}" == "repos" && "${2:-}" == "status" ]]; then
+  if ! _has_flag "-c" "$@" && ! _has_flag "--config" "$@"; then
+    if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+      exec "$real_grm" repos status --config "$config_path" "${@:3}"
+    fi
+  fi
+fi
+
+# Convenience: `grmrepo repos sync config` defaults to the global config.
+if [[ "${1:-}" == "repos" && "${2:-}" == "sync" && "${3:-}" == "config" ]]; then
+  if ! _has_flag "-c" "$@" && ! _has_flag "--config" "$@"; then
+    exec "$real_grm" repos sync config --config "$config_path" "${@:4}"
+  fi
+fi
+
+exec "$real_grm" "$@"
