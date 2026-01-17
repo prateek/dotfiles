@@ -42,3 +42,6 @@ node_modules/
 
 # Codex system skills (installed automatically)
 .codex/skills/.system/
+
+# Hammerspoon build output
+.hammerspoon/init.generated.lua

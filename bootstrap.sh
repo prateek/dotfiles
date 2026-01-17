@@ -291,6 +291,42 @@ else
   ln -snf "$CWD/.codex/skills" "$CODEX_SKILLS_DIR"
 fi
 
+# Hammerspoon config
+HAMMERSPOON_DIR="$HOME/.hammerspoon"
+HAMMERSPOON_INIT="$HAMMERSPOON_DIR/init.lua"
+if [ "$DRY_RUN" = "1" ]; then
+  echo "Would ensure directory: $HAMMERSPOON_DIR"
+else
+  mkdir -p "$HAMMERSPOON_DIR"
+fi
+if [ -e "$HAMMERSPOON_INIT" ] || [ -L "$HAMMERSPOON_INIT" ]; then
+  if [ "$(readlink "$HAMMERSPOON_INIT" 2>/dev/null)" != "$CWD/.hammerspoon/init.lua" ]; then
+    backup="${HAMMERSPOON_INIT}.backup-$(date +%s)"
+    if [ "$DRY_RUN" = "1" ]; then
+      echo "Would backup: $HAMMERSPOON_INIT -> $backup"
+    else
+      echo "Backing up existing Hammerspoon init: $HAMMERSPOON_INIT -> $backup"
+      mv "$HAMMERSPOON_INIT" "$backup"
+    fi
+  fi
+fi
+if [ "$DRY_RUN" = "1" ]; then
+  echo "Would symlink: $HAMMERSPOON_INIT -> $CWD/.hammerspoon/init.lua"
+else
+  ln -snf "$CWD/.hammerspoon/init.lua" "$HAMMERSPOON_INIT"
+fi
+
+# Compile Hammerspoon config (Fennel -> Lua) when possible.
+if [ "$DRY_RUN" = "1" ]; then
+  echo "Would compile Hammerspoon config: (cd $CWD && make hammerspoon) (if fennel is available)"
+else
+  if command -v fennel >/dev/null 2>&1; then
+    (cd "$CWD" && make hammerspoon) || echo "Warning: make hammerspoon failed; run manually."
+  else
+    echo "Note: fennel not installed; run 'brew bundle' then 'make hammerspoon' to build Hammerspoon config."
+  fi
+fi
+
 # if [ ! -f $HOME/.sshrc ]; then ln -s $CWD/sshrc $HOME/.sshrc ; fi
 for f in zlogin zprofile zshrc zshenv; do
   dest="$HOME/.${f}"
