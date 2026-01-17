@@ -1,0 +1,22 @@
+{
+  "name": "@osi/plugin-obsidian",
+  "version": "1.0.0",
+  "description": "Obsidian plugin for semantic search",
+  "type": "module",
+  "main": "main.js",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@osi/core": "workspace:*",
+    "@xenova/transformers": "^2.14.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.5",
+    "obsidian": "latest",
+    "tsup": "^8.0.1",
+    "typescript": "^5.3.3"
+  }
+}

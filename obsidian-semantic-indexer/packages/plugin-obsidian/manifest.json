@@ -1,0 +1,10 @@
+{
+  "id": "semantic-index",
+  "name": "Semantic Index",
+  "version": "1.0.0",
+  "minAppVersion": "1.4.0",
+  "description": "Local, self-contained semantic search with crash-proof indexing",
+  "author": "OSI Team",
+  "authorUrl": "https://github.com/osi-team",
+  "isDesktopOnly": false
+}
