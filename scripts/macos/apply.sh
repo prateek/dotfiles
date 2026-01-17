@@ -157,6 +157,11 @@ if [ -d "$ITERM2_REPO_DIR/DynamicProfiles" ]; then
     [ -e "$src" ] || continue
     cp -f "$src" "$ITERM2_DYNAMIC_PROFILES_DIR/$(basename "$src")"
   done
+
+  ITERM2_DEFAULTS_PLIST="$REPO_ROOT/osx-apps/defaults/com.googlecode.iterm2.plist"
+  if [ -f "$ITERM2_DEFAULTS_PLIST" ]; then
+    defaults import com.googlecode.iterm2 "$ITERM2_DEFAULTS_PLIST" >/dev/null 2>&1 || true
+  fi
 fi
 if [ -d "$ITERM2_REPO_DIR/Scripts" ]; then
   ensure_symlink \
@@ -202,6 +207,13 @@ if [ -f "$REPO_ROOT/.config/karabiner/karabiner.json" ]; then
   mkdir -p "$HOME/.config/karabiner"
   ensure_symlink "$REPO_ROOT/.config/karabiner/karabiner.json" "$HOME/.config/karabiner/karabiner.json"
   /Library/Application\ Support/org.pqrs/Karabiner-Elements/bin/karabiner_cli --reloadxml >/dev/null 2>&1 || true
+fi
+
+# Kanata config
+if [ -f "$REPO_ROOT/.config/kanata/kanata.kbd" ]; then
+  ensure_symlink \
+    "$REPO_ROOT/.config/kanata/kanata.kbd" \
+    "$HOME/Library/Application Support/kanata/kanata.kbd"
 fi
 
 echo "Done."

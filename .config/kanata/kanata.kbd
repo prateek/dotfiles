@@ -1,0 +1,73 @@
+;; kanata config (macOS)
+;;
+;; Ported from Karabiner:
+;; - Caps Lock: Escape if pressed alone, Left Control if used with other keys.
+;; - Left Shift: double-tap => one-shot Hyper (Cmd+Ctrl+Alt+Shift).
+;;              next key X becomes Hyper+X.
+;;              hold remains normal Shift.
+;; - Akimbo Cmd (Left Cmd + Right Cmd): Fn+F12.
+
+(defcfg
+  process-unmapped-keys yes
+)
+
+(defvar
+  ;; Left Shift tap dance window.
+  shift_tapdance_timeout 500
+
+  ;; Tap-hold thresholds.
+  tap_hold_tap_timeout  200
+  tap_hold_hold_timeout 200
+
+  ;; One-shot modifier timeout (how long you have to press the next key).
+  oneshot_timeout 2000
+
+  ;; Akimbo Cmd detection window (Karabiner default is ~50ms).
+  akimbo_window 50
+
+  ;; For CapsLock->(Esc/Ctrl), we want Esc even if you hold Caps alone.
+  ;; Kanata's tap-hold still needs a hold-timeout, so make it effectively "never".
+  caps_hold_timeout 60000
+)
+
+(defvirtualkeys
+  ;; Used as internal state (not sent to OS) for Akimbo Cmd timing.
+  akimbo_arm_l nop0
+  akimbo_arm_r nop1
+
+  ;; A short tap of this virtual key emits Fn+F12.
+  akimbo_f12 (multi fn f12)
+)
+
+(defalias
+  ;; One-shot modifiers.
+  os_ctl (one-shot $oneshot_timeout lctl)
+  os_alt (one-shot $oneshot_timeout lalt)
+  os_met (one-shot $oneshot_timeout lmet)
+  os_sft (one-shot $oneshot_timeout lsft)
+
+  ;; Hyper = Cmd+Ctrl+Alt+Shift for exactly one subsequent key.
+  os_hyper (multi @os_ctl @os_alt @os_met @os_sft)
+
+  ;; Single tap does nothing; double tap enables one-shot Hyper.
+  lsft_td (tap-dance $shift_tapdance_timeout (XX @os_hyper))
+
+  ;; Hold = normal Shift, Tap = tap-dance above.
+  lsft_hyper (tap-hold-press $tap_hold_tap_timeout $tap_hold_hold_timeout @lsft_td lsft)
+
+  ;; Caps Lock: Esc if alone, Ctrl if used with other keys.
+  caps_esc_ctl (tap-hold-press $tap_hold_tap_timeout $caps_hold_timeout esc lctl)
+
+  ;; Akimbo Cmd: Left Cmd + Right Cmd => Fn+F12 (on release).
+  akimbo_cmd (multi (release-key lmet) (release-key rmet) (on-release tap-vkey akimbo_f12))
+  lmet_akimbo (fork (multi lmet (hold-for-duration $akimbo_window akimbo_arm_l)) @akimbo_cmd (nop1))
+  rmet_akimbo (fork (multi rmet (hold-for-duration $akimbo_window akimbo_arm_r)) @akimbo_cmd (nop0))
+)
+
+(defsrc
+  lsft caps lmet rmet
+)
+
+(deflayer base
+  @lsft_hyper @caps_esc_ctl @lmet_akimbo @rmet_akimbo
+)

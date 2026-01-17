@@ -90,7 +90,7 @@ artifact_paths_for() {
       echo "osx-apps/ghostty/config"
       ;;
     iterm2)
-      echo "osx-apps/iterm2/DynamicProfiles/dotfiles.json osx-apps/iterm2/colors/Solarized-Dark-Patched.itermcolors osx-apps/iterm2/backgrounds/solarized-grain.png"
+      echo "osx-apps/iterm2/DynamicProfiles/dotfiles.json osx-apps/iterm2/colors/Solarized-Dark-Patched.itermcolors osx-apps/iterm2/backgrounds/solarized-grain.png osx-apps/defaults/com.googlecode.iterm2.plist"
       ;;
     orbstack)
       echo "osx-apps/orbstack/config/docker.json osx-apps/orbstack/vmconfig.json"

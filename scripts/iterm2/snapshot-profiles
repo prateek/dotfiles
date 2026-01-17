@@ -1,0 +1,85 @@
+#!/usr/bin/env python3
+
+import argparse
+import json
+import plistlib
+import sys
+from pathlib import Path
+
+
+def _load_iterm_preferences() -> dict:
+    path = Path.home() / "Library/Preferences/com.googlecode.iterm2.plist"
+    with path.open("rb") as f:
+        return plistlib.load(f)
+
+
+def _sanitize_profile(profile: dict) -> dict:
+    profile = dict(profile)
+    profile.pop("Dynamic Profile Filename", None)
+    if profile.get("Working Directory") == str(Path.home()):
+        profile["Working Directory"] = "~"
+    return profile
+
+
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parents[2]
+
+
+def _write_dynamic_profile(path: Path, profile: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {"Profiles": [profile]}
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Snapshot iTerm2 profiles into dotfiles.")
+    parser.add_argument(
+        "--include-tmux",
+        action="store_true",
+        help="Also snapshot the 'tmux' profile (writes DynamicProfiles/tmux.json).",
+    )
+    args = parser.parse_args()
+
+    prefs = _load_iterm_preferences()
+    bookmarks = prefs.get("New Bookmarks", [])
+    if not isinstance(bookmarks, list) or not bookmarks:
+        print("No profiles found in iTerm2 preferences.", file=sys.stderr)
+        return 1
+
+    default_guid = prefs.get("Default Bookmark Guid")
+    if not isinstance(default_guid, str) or not default_guid:
+        print("Could not determine iTerm2 default profile GUID.", file=sys.stderr)
+        return 1
+
+    try:
+        default_profile = next(b for b in bookmarks if b.get("Guid") == default_guid)
+    except StopIteration:
+        print(f"Default profile GUID not found in profiles: {default_guid}", file=sys.stderr)
+        return 1
+
+    root = _repo_root()
+    dynamic_dir = root / "osx-apps/iterm2/DynamicProfiles"
+
+    _write_dynamic_profile(
+        dynamic_dir / "dotfiles.json",
+        _sanitize_profile(default_profile),
+    )
+    print(f"Wrote {dynamic_dir / 'dotfiles.json'}")
+
+    if args.include_tmux:
+        tmux_profile = next((b for b in bookmarks if b.get("Name") == "tmux"), None)
+        if not tmux_profile:
+            print("No profile named 'tmux' found; skipping.", file=sys.stderr)
+        else:
+            _write_dynamic_profile(
+                dynamic_dir / "tmux.json",
+                _sanitize_profile(tmux_profile),
+            )
+            print(f"Wrote {dynamic_dir / 'tmux.json'}")
+
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
