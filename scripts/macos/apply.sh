@@ -197,11 +197,26 @@ PY
   fi
 fi
 
-# Karabiner-Elements (link only karabiner.json to avoid repo churn from automatic_backups)
-if [ -f "$REPO_ROOT/.config/karabiner/karabiner.json" ]; then
-  mkdir -p "$HOME/.config/karabiner"
-  ensure_symlink "$REPO_ROOT/.config/karabiner/karabiner.json" "$HOME/.config/karabiner/karabiner.json"
-  /Library/Application\ Support/org.pqrs/Karabiner-Elements/bin/karabiner_cli --reloadxml >/dev/null 2>&1 || true
+# Kanata keyboard remapper (requires Karabiner driver on macOS)
+# Note: karabiner-elements cask is still needed for the driver, but we use Kanata for config
+if [ -f "$REPO_ROOT/.config/kanata/kanata.kbd" ]; then
+  mkdir -p "$HOME/.config/kanata"
+  ensure_symlink "$REPO_ROOT/.config/kanata/kanata.kbd" "$HOME/.config/kanata/kanata.kbd"
+
+  # Install launchd plist for running Kanata as a daemon (requires sudo)
+  KANATA_PLIST="$REPO_ROOT/.config/kanata/launchd/com.jtroo.kanata.plist"
+  KANATA_PLIST_DEST="/Library/LaunchDaemons/com.jtroo.kanata.plist"
+  if [ -f "$KANATA_PLIST" ]; then
+    # Stop existing service if running
+    sudo launchctl bootout system "$KANATA_PLIST_DEST" >/dev/null 2>&1 || true
+
+    # Install the plist
+    sudo install -m 0644 -o root -g wheel "$KANATA_PLIST" "$KANATA_PLIST_DEST"
+
+    # Load and start the service
+    sudo launchctl bootstrap system "$KANATA_PLIST_DEST" >/dev/null 2>&1 || true
+    echo "Kanata daemon installed and started."
+  fi
 fi
 
 echo "Done."

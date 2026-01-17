@@ -22,7 +22,9 @@
       "Bash(zsh:*)",
       "mcp__exa__deep_researcher_start",
       "mcp__exa__deep_researcher_check",
-      "mcp__zen__codereview"
+      "mcp__zen__codereview",
+      "WebSearch",
+      "WebFetch(domain:github.com)"
     ],
     "deny": [],
     "additionalDirectories": [
