@@ -118,7 +118,7 @@ alias ez='code ~/dotfiles'
 alias jz='cd ~/dotfiles'
 
 alias ec='code ~/.claude'
-# alias jc='cd ~/.claude' # TODO: conflicts with autojump
+# alias jc='cd ~/.claude'
 #
 # c: mnemonic for "code editor" — opens current dir in Cursor/VS Code
 alias c='$DOTFILES/scripts/c'

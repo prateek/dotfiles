@@ -83,6 +83,18 @@ url = "git@github.com:mikker/LeaderKey.app.git"
 type = "ssh"
 
 [[trees]]
+root = "~/code/github.com/nushell"
+
+[[trees.repos]]
+name = "reedline"
+worktree_setup = false
+
+[[trees.repos.remotes]]
+name = "origin"
+url = "git@github.com:nushell/reedline.git"
+type = "ssh"
+
+[[trees]]
 root = "~/code/github.com/openai"
 
 [[trees.repos]]

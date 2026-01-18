@@ -1,14 +1,23 @@
 # TODO: use aliases to jump to common directories quickly.
-# For my needs, it'll suffice (and let me avoid avoid j/z/fasd).
 
-# autojump sourcing
-# h/t https://kevin.burke.dev/kevin/profiling-zsh-startup-time/ for the lazy-loading trick.
+# Lazy-load on first use to keep zsh startup fast.
 function j() {
-    (( $+commands[brew] )) && {
-        local pfx=$(brew --prefix)
-        [[ -f "$pfx/etc/autojump.sh" ]] && . "$pfx/etc/autojump.sh"
-        j "$@"
+  if (( $+commands[zoxide] )); then
+    local init
+    init="$(zoxide init zsh --cmd j)" || {
+      print -u2 "j: zoxide init failed"
+      return 1
     }
+    eval "$init" || {
+      print -u2 "j: zoxide init eval failed"
+      return 1
+    }
+    j "$@"
+    return
+  fi
+
+  print -u2 "j: install 'zoxide' to enable directory jumping."
+  return 127
 }
 
 j "$@"

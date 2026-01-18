@@ -1,0 +1,14 @@
+#compdef j
+
+# Backwards-compatible completion shim:
+# Existing ~/.zcompdump may map `j` -> `_j` from older setups.
+# Delegate to zoxide’s completion when available.
+
+if (( ${+functions[__zoxide_z_complete]} )); then
+  __zoxide_z_complete "$@"
+  return
+fi
+
+# Fallback: complete local directories.
+_cd -/
+

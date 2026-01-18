@@ -46,6 +46,10 @@ Currently managed configs include: macOS defaults, Text Replacements, Alfred, iT
 
 Terminal setup notes (iTerm2 + tmux): `docs/iterm2-tmux.md`.
 
+## Shell helpers
+
+- Directory jumping: `j <query>` is powered by `zoxide` (imports `~/Library/autojump/autojump.txt` once, if present).
+
 ## Auditing what to remove / what’s tracked
 
 - Brewfile usage report (no changes): `./scripts/audit/brewfile-usage.sh`

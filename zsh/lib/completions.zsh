@@ -23,8 +23,12 @@ setopt nolistambiguous     # one tab for completion
 
 # zsh completion
 zstyle ':completion:*' menu select
-compctl -g '*(/)' rmdir dircmp j
-compctl -g '*(-/)' cd chdir dirs pushd j
+compctl -g '*(/)' rmdir dircmp
+compctl -g '*(-/)' cd chdir dirs pushd
+
+# `j` completion is handled by zoxide (via `__zoxide_z_complete`) and a small
+# shim completion function `_j` (see `zsh/autoload/_j`) for compatibility with
+# existing `~/.zcompdump` state.
 
 ## colorize completions
 zstyle ':completion:*' list-colors ''
