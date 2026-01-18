@@ -1,0 +1,12 @@
+# devtools: per-tool version selection
+#
+# Values:
+# - "stable"                 -> whatever is already on PATH (Homebrew, mise, etc.)
+# - "pr-<num>"               -> installed via `devtool install github-pr ...`
+# - "path:/absolute/path"    -> use a specific binary directly
+#
+# Local overrides:
+# - Put a `.devtools.toml` file in a repo/dir with the same `[tools]` table.
+
+[tools]
+

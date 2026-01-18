@@ -49,6 +49,7 @@ Terminal setup notes (iTerm2 + tmux): `docs/iterm2-tmux.md`.
 ## Shell helpers
 
 - Directory jumping: `j <query>` is powered by `zoxide` (imports `~/Library/autojump/autojump.txt` once, if present).
+- Dev tool overrides (stable vs local PR builds): `devtool` (docs: `docs/devtools.md`).
 
 ## Auditing what to remove / what’s tracked
 

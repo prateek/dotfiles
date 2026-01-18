@@ -239,6 +239,28 @@ else
   ln -snf "$CWD/.config/mise/config.toml" "$MISE_CONFIG_FILE"
 fi
 
+# devtools global config
+DEVTOOLS_CONFIG_DIR="$HOME/.config/devtools"
+DEVTOOLS_CONFIG_FILE="$DEVTOOLS_CONFIG_DIR/config.toml"
+if [ "$DRY_RUN" = "1" ]; then
+  echo "Would ensure directory: $DEVTOOLS_CONFIG_DIR"
+else
+  mkdir -p "$DEVTOOLS_CONFIG_DIR"
+fi
+if [ -e "$DEVTOOLS_CONFIG_FILE" ] || [ -L "$DEVTOOLS_CONFIG_FILE" ]; then
+  if [ "$(readlink "$DEVTOOLS_CONFIG_FILE" 2>/dev/null)" != "$CWD/.config/devtools/config.toml" ]; then
+    echo "Error: $DEVTOOLS_CONFIG_FILE already exists and is not a symlink to $CWD/.config/devtools/config.toml."
+    echo "To back it up, run: mv \"$DEVTOOLS_CONFIG_FILE\" \"${DEVTOOLS_CONFIG_FILE}.backup-$(date +%s)\""
+    echo "After fixing, rerun this bootstrap script."
+    exit 1
+  fi
+fi
+if [ "$DRY_RUN" = "1" ]; then
+  echo "Would symlink: $DEVTOOLS_CONFIG_FILE -> $CWD/.config/devtools/config.toml"
+else
+  ln -snf "$CWD/.config/devtools/config.toml" "$DEVTOOLS_CONFIG_FILE"
+fi
+
 # GRM (git-repo-manager) config
 GRM_CONFIG_DIR="$HOME/.config/grm"
 GRM_CONFIG_FILE="$GRM_CONFIG_DIR/config.toml"
@@ -400,7 +422,7 @@ else
 fi
 
 # dotfiles bin wrappers
-for f in gh grmrepo grmrepo-refresh repo-index; do
+for f in devtool gh grmrepo grmrepo-refresh repo-index; do
   src="$CWD/bin/$f"
   dest="$HOME/bin/$f"
   if [ -f "$src" ]; then

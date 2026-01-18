@@ -1,0 +1,163 @@
+#!/usr/bin/env zsh
+# Generic tool shim for selecting stable vs locally-installed dev versions.
+#
+# Intended usage:
+# - `devtool shim <tool>` creates `~/bin/<tool>` as a symlink to this script.
+# - This script then dispatches based on config:
+#   - local: walk up for `.devtools.toml`
+#   - global: `~/.config/devtools/config.toml`
+#
+# Selection values:
+# - stable
+# - pr-<num> (installed under DEVTOOLS_HOME/installs/<tool>/<value>/bin/<tool>)
+# - path:/absolute/path
+
+set -euo pipefail
+unsetopt xtrace 2>/dev/null || true
+set +x 2>/dev/null || true
+unsetopt verbose 2>/dev/null || true
+set +v 2>/dev/null || true
+setopt typeset_silent 2>/dev/null || true
+
+_devtools_home() {
+  local data_home="${XDG_DATA_HOME:-$HOME/.local/share}"
+  echo "${DEVTOOLS_HOME:-$data_home/devtools}"
+}
+
+_devtools_global_config() {
+  local config_home="${XDG_CONFIG_HOME:-$HOME/.config}"
+  echo "$config_home/devtools/config.toml"
+}
+
+_devtools_find_local_config() {
+  local dir="$PWD"
+  while true; do
+    local candidate="$dir/.devtools.toml"
+    if [[ -f "$candidate" ]]; then
+      echo "$candidate"
+      return 0
+    fi
+
+    if [[ "$dir" == "/" || "$dir" == "$HOME" ]]; then
+      return 1
+    fi
+    dir="${dir:h}"
+  done
+}
+
+_devtools_get_tool_from_toml() {
+  local file="$1"
+  local tool="$2"
+  [[ -r "$file" ]] || return 1
+
+  # We intentionally support only a tiny subset of TOML:
+  #   [tools]
+  #   name = "value"
+  /usr/bin/awk -v tool="$tool" '
+    BEGIN { in_tools = 0 }
+    /^[[:space:]]*\[tools\][[:space:]]*$/ { in_tools = 1; next }
+    in_tools && /^[[:space:]]*\[/ { exit }
+    in_tools {
+      line = $0
+      sub(/[[:space:]]+#.*$/, "", line)
+      pos = index(line, "=")
+      if (pos == 0) next
+      key = substr(line, 1, pos - 1)
+      val = substr(line, pos + 1)
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", key)
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", val)
+      if (key != tool) next
+      if ((val ~ /^".*"$/) || (val ~ /^'\''.*'\''$/)) val = substr(val, 2, length(val) - 2)
+      print val
+      exit
+    }
+  ' "$file"
+}
+
+_devtools_resolve_selection() {
+  local tool="$1"
+
+  local local_cfg global_cfg val
+  local_cfg="$(_devtools_find_local_config 2>/dev/null || true)"
+  if [[ -n "$local_cfg" ]]; then
+    val="$(_devtools_get_tool_from_toml "$local_cfg" "$tool" 2>/dev/null || true)"
+    [[ -n "$val" ]] && echo "$val" && return 0
+  fi
+
+  global_cfg="$(_devtools_global_config)"
+  val="$(_devtools_get_tool_from_toml "$global_cfg" "$tool" 2>/dev/null || true)"
+  [[ -n "$val" ]] && echo "$val" && return 0
+
+  echo "stable"
+}
+
+_devtools_find_stable_on_path() {
+  local tool="$1"
+  local shim_real="$2"
+
+  local -a entries
+  entries=(${(s/:/)PATH})
+
+  local d candidate
+  for d in "${entries[@]}"; do
+    [[ -n "$d" ]] || d="."
+    candidate="$d/$tool"
+    [[ -x "$candidate" ]] || continue
+    [[ "${candidate:A}" == "$shim_real" ]] && continue
+    echo "$candidate"
+    return 0
+  done
+
+  return 1
+}
+
+main() {
+  local tool="${1:?missing tool name}"
+  local shim_real="${2:?missing shim path}"
+  shift 2
+
+  local selection
+  selection="$(_devtools_resolve_selection "$tool")"
+
+  case "$selection" in
+    stable)
+      local stable
+      stable="$(_devtools_find_stable_on_path "$tool" "$shim_real" 2>/dev/null || true)"
+      if [[ -z "$stable" ]]; then
+        echo "devtool-shim: stable '$tool' not found on PATH" >&2
+        return 127
+      fi
+      exec "$stable" "$@"
+      ;;
+    path:*)
+      local target="${selection#path:}"
+      target="${target/#\~/$HOME}"
+      if [[ ! -x "$target" ]]; then
+        echo "devtool-shim: '$tool' target not executable: $target" >&2
+        return 127
+      fi
+      exec "$target" "$@"
+      ;;
+    *)
+      local home install_bin
+      home="$(_devtools_home)"
+      install_bin="$home/installs/$tool/$selection/bin/$tool"
+      if [[ -x "$install_bin" ]]; then
+        exec "$install_bin" "$@"
+      fi
+
+      echo "devtool-shim: '$tool' version '$selection' not installed at: $install_bin" >&2
+
+      local stable
+      stable="$(_devtools_find_stable_on_path "$tool" "$shim_real" 2>/dev/null || true)"
+      if [[ -n "$stable" ]]; then
+        exec "$stable" "$@"
+      fi
+      return 127
+      ;;
+  esac
+}
+
+tool_argv0="${0:t}"
+shim_realpath="${0:A}"
+main "$tool_argv0" "$shim_realpath" "$@"

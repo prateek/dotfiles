@@ -1,0 +1,532 @@
+#!/usr/bin/env zsh
+# devtool: manage locally-built "dev" versions of CLIs and select them by config.
+#
+# Summary:
+# - `devtool shim <tool>` creates `~/bin/<tool>` -> `~/dotfiles/bin/devtool-shim`
+# - `devtool install github-pr <tool> <owner/repo> <pr>` builds + installs
+# - `devtool use [-g] <tool> <selector>` writes selection config
+#
+# Config:
+# - Global: `${XDG_CONFIG_HOME:-~/.config}/devtools/config.toml`
+# - Local (directory scope): `.devtools.toml` (walked up from $PWD)
+
+set -euo pipefail
+unsetopt xtrace 2>/dev/null || true
+set +x 2>/dev/null || true
+unsetopt verbose 2>/dev/null || true
+set +v 2>/dev/null || true
+setopt typeset_silent 2>/dev/null || true
+
+self_realpath="${0:A}"
+dotfiles_root_default="${self_realpath:h:h}"
+dotfiles_root="${DOTFILES:-$dotfiles_root_default}"
+
+die() {
+  echo "devtool: $*" >&2
+  exit 2
+}
+
+devtools_home() {
+  local data_home="${XDG_DATA_HOME:-$HOME/.local/share}"
+  echo "${DEVTOOLS_HOME:-$data_home/devtools}"
+}
+
+global_config_file() {
+  local config_home="${XDG_CONFIG_HOME:-$HOME/.config}"
+  echo "$config_home/devtools/config.toml"
+}
+
+ensure_parent_dir() {
+  local file_path="$1"
+  mkdir -p "${file_path:h}"
+}
+
+validate_tool_name() {
+  local tool="$1"
+  [[ -n "$tool" ]] || die "invalid tool name: empty"
+  [[ "$tool" != *"/"* ]] || die "invalid tool name (must not contain '/'): $tool"
+  [[ "$tool" != *[[:space:]]* ]] || die "invalid tool name (must not contain whitespace): $tool"
+}
+
+toml_escape_string() {
+  local s="$1"
+  s="${s//\\/\\\\}"
+  s="${s//\"/\\\"}"
+  s="${s//$'\n'/\\n}"
+  print -r -- "$s"
+}
+
+toml_set_tool() {
+  local file="$1"
+  local tool="$2"
+  local value="$3"
+  local escaped
+  escaped="$(toml_escape_string "$value")"
+
+  local dest="$file"
+  if [[ -L "$file" && -e "$file" ]]; then
+    dest="${file:A}"
+  fi
+
+  ensure_parent_dir "$dest"
+  if [[ ! -e "$dest" ]]; then
+    cat >"$dest" <<EOF
+# devtools selection
+[tools]
+$tool = "$escaped"
+EOF
+    return 0
+  fi
+
+  local tmp
+  tmp="$(mktemp "${dest}.tmp.XXXXXX")"
+
+  local in_tools=0 saw_tools=0 wrote=0
+  local line
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    local trimmed="$line"
+    trimmed="${trimmed#"${trimmed%%[![:space:]]*}"}"
+    trimmed="${trimmed%"${trimmed##*[![:space:]]}"}"
+
+    if [[ "$trimmed" == "[tools]" ]]; then
+      in_tools=1
+      saw_tools=1
+      print -r -- "$line" >>"$tmp"
+      continue
+    fi
+
+    if (( in_tools )) && [[ "$trimmed" == \[*\] ]]; then
+      if (( ! wrote )); then
+        print -r -- "$tool = \"$escaped\"" >>"$tmp"
+        wrote=1
+      fi
+      in_tools=0
+      print -r -- "$line" >>"$tmp"
+      continue
+    fi
+
+    if (( in_tools )); then
+      local stripped="${line%%#*}"
+      if [[ "$stripped" != *"="* ]]; then
+        print -r -- "$line" >>"$tmp"
+        continue
+      fi
+      local key="${stripped%%=*}"
+      key="${key#"${key%%[![:space:]]*}"}"
+      key="${key%"${key##*[![:space:]]}"}"
+      if [[ -n "$key" && "$key" == "$tool" ]]; then
+        print -r -- "$tool = \"$escaped\"" >>"$tmp"
+        wrote=1
+        continue
+      fi
+    fi
+
+    print -r -- "$line" >>"$tmp"
+  done <"$dest"
+
+  if (( ! saw_tools )); then
+    print -r -- "" >>"$tmp"
+    print -r -- "[tools]" >>"$tmp"
+    print -r -- "$tool = \"$escaped\"" >>"$tmp"
+    wrote=1
+  elif (( in_tools )) && (( ! wrote )); then
+    print -r -- "$tool = \"$escaped\"" >>"$tmp"
+    wrote=1
+  fi
+
+  mv -f "$tmp" "$dest"
+}
+
+find_dotfiles_root() {
+  echo "$dotfiles_root"
+}
+
+cmd_help() {
+  cat <<'EOF'
+Usage:
+  devtool shim <tool> [tool...]
+  devtool use [-g|--global] <tool> <selector>
+  devtool install github-pr <tool> <owner/repo> <pr> [--type auto|rust|node] [--bin <name>] [--pm auto|npm|pnpm|bun] [--build <cmd>] [--use] [--global|--dir <path>]
+
+Selectors:
+  stable
+  pr-<num>
+  path:/absolute/path
+
+Notes:
+  - Local scope is controlled by `.devtools.toml` (place it at a repo root).
+  - Global scope is `~/.config/devtools/config.toml`.
+EOF
+}
+
+cmd_shim() {
+  local force=0
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -f|--force) force=1; shift ;;
+      -h|--help) cmd_help; return 0 ;;
+      --) shift; break ;;
+      *) break ;;
+    esac
+  done
+
+  [[ $# -ge 1 ]] || die "shim: missing <tool>"
+
+  local root shim_target home_bin
+  root="$(find_dotfiles_root)"
+  shim_target="$root/bin/devtool-shim"
+  [[ -x "$shim_target" ]] || die "shim: missing shim script at $shim_target"
+
+  home_bin="$HOME/bin"
+  mkdir -p "$home_bin"
+
+  local tool dest existing
+  for tool in "$@"; do
+    validate_tool_name "$tool"
+    dest="$home_bin/$tool"
+    if [[ -e "$dest" || -L "$dest" ]]; then
+      existing="$(readlink "$dest" 2>/dev/null || true)"
+      if [[ -n "$existing" && "$existing" == "$shim_target" ]]; then
+        continue
+      fi
+      if (( ! force )); then
+        die "shim: $dest already exists (use --force to replace)"
+      fi
+      rm -f "$dest"
+    fi
+    ln -snf "$shim_target" "$dest"
+  done
+}
+
+detect_pm() {
+  local dir="$1"
+  if [[ -f "$dir/pnpm-lock.yaml" ]]; then
+    echo "pnpm"
+    return 0
+  fi
+  if [[ -f "$dir/bun.lockb" || -f "$dir/bun.lock" ]]; then
+    echo "bun"
+    return 0
+  fi
+  echo "npm"
+}
+
+node_has_build_script() {
+  local dir="$1"
+  if command -v python3 >/dev/null 2>&1; then
+    local out=""
+    if out="$(python3 - "$dir" <<'PY'
+import json, os, sys
+pkg = os.path.join(sys.argv[1], "package.json")
+with open(pkg, "r", encoding="utf-8") as f:
+    data = json.load(f)
+scripts = data.get("scripts") or {}
+print("1" if "build" in scripts else "")
+PY
+    )"; then
+      print -r -- "$out"
+      return 0
+    fi
+  fi
+
+  command -v node >/dev/null 2>&1 || return 1
+  node -e '
+const pkg = require(process.argv[1]);
+const scripts = pkg.scripts || {};
+process.stdout.write(Object.prototype.hasOwnProperty.call(scripts, "build") ? "1" : "");
+' "$dir/package.json"
+}
+
+node_bin_entrypoint() {
+  local dir="$1"
+  local tool="$2"
+  if command -v python3 >/dev/null 2>&1; then
+    local out=""
+    if out="$(python3 - "$dir" "$tool" <<'PY'
+import json, os, sys
+root = sys.argv[1]
+tool = sys.argv[2]
+with open(os.path.join(root, "package.json"), "r", encoding="utf-8") as f:
+    pkg = json.load(f)
+binv = pkg.get("bin")
+entry = None
+if isinstance(binv, str):
+    entry = binv
+elif isinstance(binv, dict):
+    if tool in binv:
+        entry = binv[tool]
+    elif len(binv) == 1:
+        entry = next(iter(binv.values()))
+if not entry:
+    sys.exit(2)
+print(entry)
+PY
+    )"; then
+      print -r -- "$out"
+      return 0
+    fi
+  fi
+
+  command -v node >/dev/null 2>&1 || return 1
+  node -e '
+const tool = process.argv[1];
+const pkg = require(process.argv[2]);
+const binv = pkg.bin;
+let entry = null;
+if (typeof binv === "string") entry = binv;
+else if (binv && typeof binv === "object") {
+  if (Object.prototype.hasOwnProperty.call(binv, tool)) entry = binv[tool];
+  else {
+    const keys = Object.keys(binv);
+    if (keys.length === 1) entry = binv[keys[0]];
+  }
+}
+if (!entry) process.exit(2);
+process.stdout.write(entry);
+' "$tool" "$dir/package.json"
+}
+
+bash_single_quote() {
+  local s="$1"
+  local escaped
+  escaped="$(printf '%s' "$s" | /usr/bin/sed "s/'/'\\\"'\\\"'/g")"
+  printf "'%s'" "$escaped"
+}
+
+install_github_pr() {
+  local tool="${1:?missing <tool>}"
+  local repo_slug="${2:?missing <owner/repo>}"
+  local pr="${3:?missing <pr>}"
+  shift 3
+
+  validate_tool_name "$tool"
+  [[ "$pr" == <-> ]] || die "install github-pr: invalid PR number: $pr"
+
+  local type="auto"
+  local bin_name="$tool"
+  local pm="auto"
+  local build_cmd=""
+  local use_after=0
+  local use_global=0
+  local use_dir=""
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --type) type="${2:?missing --type value}"; shift 2 ;;
+      --bin) bin_name="${2:?missing --bin value}"; shift 2 ;;
+      --pm) pm="${2:?missing --pm value}"; shift 2 ;;
+      --build) build_cmd="${2:?missing --build cmd}"; shift 2 ;;
+      --use) use_after=1; shift ;;
+      -g|--global) use_global=1; shift ;;
+      --dir) use_dir="${2:?missing --dir value}"; shift 2 ;;
+      -h|--help)
+        cmd_help
+        return 0
+        ;;
+      *)
+        die "install github-pr: unknown arg: $1"
+        ;;
+    esac
+  done
+
+  local owner repo
+  owner="${repo_slug%%/*}"
+  repo="${repo_slug#*/}"
+  [[ "$repo_slug" == */* && "$repo_slug" != */*/* ]] || die "install github-pr: invalid repo (expected owner/repo): $repo_slug"
+  [[ -n "$owner" && -n "$repo" ]] || die "install github-pr: invalid repo: $repo_slug"
+
+  local home src_dir worktree_dir branch version install_dir
+  home="$(devtools_home)"
+  src_dir="$home/src/$owner/$repo"
+  worktree_dir="$home/worktrees/$owner/$repo/pr-$pr"
+  branch="devtools/pr-$pr"
+  version="pr-$pr"
+  install_dir="$home/installs/$tool/$version"
+
+  mkdir -p "${src_dir:h}" "${worktree_dir:h}" "$install_dir/bin"
+
+  if [[ ! -d "$src_dir/.git" ]]; then
+    if command -v gh >/dev/null 2>&1; then
+      gh repo clone "$repo_slug" "$src_dir"
+    else
+      git clone "https://github.com/$repo_slug.git" "$src_dir"
+    fi
+  fi
+
+  git -C "$src_dir" fetch --prune origin
+  git -C "$src_dir" fetch -f origin "pull/$pr/head:$branch"
+
+  if [[ -d "$worktree_dir" ]]; then
+    git -C "$src_dir" worktree remove --force "$worktree_dir" 2>/dev/null || rm -rf "$worktree_dir"
+  fi
+  git -C "$src_dir" worktree add -f "$worktree_dir" "$branch"
+
+  local sha
+  sha="$(git -C "$worktree_dir" rev-parse HEAD)"
+
+  if [[ "$type" == "auto" ]]; then
+    if [[ -f "$worktree_dir/Cargo.toml" ]]; then
+      type="rust"
+    elif [[ -f "$worktree_dir/package.json" ]]; then
+      type="node"
+    else
+      die "install github-pr: couldn't detect type (no Cargo.toml or package.json)"
+    fi
+  fi
+
+  case "$type" in
+    rust)
+      command -v cargo >/dev/null 2>&1 || die "install github-pr: missing cargo (type=rust)"
+      (cd "$worktree_dir" && cargo build --release)
+      local artifact="$worktree_dir/target/release/$bin_name"
+      [[ -x "$artifact" ]] || die "install github-pr: missing artifact: $artifact (try --bin <name>)"
+      cp -f "$artifact" "$install_dir/bin/$tool"
+      chmod +x "$install_dir/bin/$tool"
+      ;;
+    node)
+      if [[ "$pm" == "auto" ]]; then
+        pm="$(detect_pm "$worktree_dir")"
+      fi
+      case "$pm" in
+        npm)  command -v npm >/dev/null 2>&1 || die "install github-pr: missing npm (type=node)" ;;
+        pnpm) command -v pnpm >/dev/null 2>&1 || die "install github-pr: missing pnpm (type=node)" ;;
+        bun)  command -v bun >/dev/null 2>&1 || die "install github-pr: missing bun (type=node)" ;;
+        *) die "install github-pr: unknown --pm: $pm" ;;
+      esac
+
+      case "$pm" in
+        npm)
+          if [[ -f "$worktree_dir/package-lock.json" ]]; then
+            (cd "$worktree_dir" && npm ci)
+          else
+            (cd "$worktree_dir" && npm install)
+          fi
+          ;;
+        pnpm)
+          if [[ -f "$worktree_dir/pnpm-lock.yaml" ]]; then
+            (cd "$worktree_dir" && pnpm install --frozen-lockfile)
+          else
+            (cd "$worktree_dir" && pnpm install)
+          fi
+          ;;
+        bun)
+          (cd "$worktree_dir" && bun install)
+          ;;
+      esac
+
+      if [[ -z "$build_cmd" ]]; then
+        if [[ -n "$(node_has_build_script "$worktree_dir" 2>/dev/null || true)" ]]; then
+          case "$pm" in
+            npm) build_cmd="npm run build" ;;
+            pnpm) build_cmd="pnpm run build" ;;
+            bun) build_cmd="bun run build" ;;
+          esac
+        fi
+      fi
+
+      if [[ -n "$build_cmd" ]]; then
+        (cd "$worktree_dir" && eval "$build_cmd")
+      fi
+
+      local entry
+      entry="$(node_bin_entrypoint "$worktree_dir" "$tool" 2>/dev/null || true)"
+      [[ -n "$entry" ]] || die "install github-pr: package.json has no bin entry for '$tool' (use a tool name that matches, or edit wrapper support)"
+      [[ -f "$worktree_dir/$entry" ]] || die "install github-pr: bin entry does not exist: $entry (build may have failed; use --build)"
+
+      local repo_q entry_q
+      repo_q="$(bash_single_quote "$worktree_dir")"
+      entry_q="$(bash_single_quote "$entry")"
+      cat >"$install_dir/bin/$tool" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+repo_dir=$repo_q
+entry=$entry_q
+cd "\$repo_dir"
+if command -v node >/dev/null 2>&1; then
+  exec node "\$entry" "\$@"
+elif command -v bun >/dev/null 2>&1; then
+  exec bun "\$entry" "\$@"
+else
+  echo "devtool: missing node (or bun) runtime for '$tool'" >&2
+  exit 127
+fi
+EOF
+      chmod +x "$install_dir/bin/$tool"
+      ;;
+    *)
+      die "install github-pr: unknown type: $type"
+      ;;
+  esac
+
+  cat >"$install_dir/meta.toml" <<EOF
+kind = "github-pr"
+repo = "$repo_slug"
+pr = $pr
+sha = "$sha"
+type = "$type"
+EOF
+
+  echo "Installed: $tool@$version -> $install_dir/bin/$tool"
+
+  if (( use_after )); then
+    local selector="$version"
+    if (( use_global )) || [[ -z "$use_dir" ]]; then
+      toml_set_tool "$(global_config_file)" "$tool" "$selector"
+      echo "Selected (global): $tool = $selector"
+    else
+      toml_set_tool "$use_dir/.devtools.toml" "$tool" "$selector"
+      echo "Selected (dir): $use_dir/.devtools.toml: $tool = $selector"
+    fi
+  fi
+}
+
+cmd_install() {
+  local kind="${1:-}"
+  shift || true
+  case "$kind" in
+    github-pr) install_github_pr "$@" ;;
+    ""|-h|--help) cmd_help; return 0 ;;
+    *) die "install: unknown kind: $kind" ;;
+  esac
+}
+
+cmd_use() {
+  local global=0
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -g|--global) global=1; shift ;;
+      -h|--help) cmd_help; return 0 ;;
+      --) shift; break ;;
+      *) break ;;
+    esac
+  done
+
+  local tool="${1:?use: missing <tool>}"
+  local selector="${2:?use: missing <selector>}"
+  [[ $# -eq 2 ]] || die "use: expected <tool> <selector>"
+  validate_tool_name "$tool"
+
+  if (( global )); then
+    toml_set_tool "$(global_config_file)" "$tool" "$selector"
+    echo "Updated $(global_config_file): $tool = $selector"
+  else
+    toml_set_tool "$PWD/.devtools.toml" "$tool" "$selector"
+    echo "Updated $PWD/.devtools.toml: $tool = $selector"
+  fi
+}
+
+main() {
+  local cmd="${1:-help}"
+  shift || true
+  case "$cmd" in
+    help|-h|--help) cmd_help ;;
+    shim) cmd_shim "$@" ;;
+    use) cmd_use "$@" ;;
+    install) cmd_install "$@" ;;
+    *)
+      die "unknown command: $cmd"
+      ;;
+  esac
+}
+
+main "$@"
