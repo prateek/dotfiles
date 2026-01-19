@@ -11,6 +11,26 @@ alias gca="git commit -a"
 alias gco="git checkout"
 alias lg="lazygit"
 
+# Open Neogit (in Neovim) for a given path (defaults to current directory)
+ng() {
+  if ! command -v nvim >/dev/null 2>&1; then
+    print -u2 "ng: nvim not found"
+    return 127
+  fi
+
+  local target="${1:-.}"
+  if [[ -f "$target" ]]; then
+    target="${target:h}"
+  fi
+  local root
+  root="$(git -C "$target" rev-parse --show-toplevel 2>/dev/null)" || {
+    print -u2 "ng: not a git repository: $target"
+    return 1
+  }
+
+  (cd "$root" && nvim -c "Neogit")
+}
+
 # via https://stackoverflow.com/questions/1057564/pretty-git-branch-graphs
 alias gl1="git log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(auto)%d%C(reset)' --all"
 alias gl2="git log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(reset) %C(bold green)(%ar)%C(reset)%C(auto)%d%C(reset)%n          %C(white)%s%C(reset) %C(dim white)- %an%C(reset)'"
