@@ -2,8 +2,7 @@
 
 This machine uses Git worktrees heavily. Prefer the `w` wrapper (Worktrunk-powered) so worktrees stay centralized and discoverable.
 
-- Dotfiles worktree doc: `~/dotfiles/docs/worktrees.md` (link: [docs/worktrees.md](../dotfiles/docs/worktrees.md))
-- OpenAI worktrees reference: `~/experiments/worktree-management/references/notion_using-git-worktrees-at-openai.md` (link: [notion snapshot](../experiments/worktree-management/references/notion_using-git-worktrees-at-openai.md))
+- Worktrees guide: `~/dotfiles/docs/worktrees.md` (link: [docs/worktrees.md](../dotfiles/docs/worktrees.md))
 
 ## Quickstart (`w`)
 
@@ -38,12 +37,7 @@ w rm --yes      # apply stale cleanup
 
 ## OpenAI monorepo (`openai/openai`)
 
-OpenAI guidance strongly prefers:
-- worktrees under `~/code` (security/speed reasons)
-- preserving the repo directory name (`openai`)
-- a separate venv per checkout/worktree
-
-When creating a worktree for `openai/openai`, **prefer a sparse checkout** and keep it minimal: only the project(s) you need.
+When asked to create a worktree for `openai/openai`, **prefer a sparse checkout** and keep it minimal: only the project(s)/dirs you need.
 
 If the needed project(s)/dirs aren’t clear, ask for clarification before creating the worktree.
 
