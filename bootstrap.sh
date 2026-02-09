@@ -333,6 +333,7 @@ fi
 CODEX_DIR="$HOME/.codex"
 CODEX_CONFIG_TOML="$CODEX_DIR/config.toml"
 CODEX_SKILLS_DIR="$CODEX_DIR/skills"
+CODEX_AGENTS_MD="$CODEX_DIR/agents.md"
 if [ "$DRY_RUN" = "1" ]; then
   echo "Would ensure directory: $CODEX_DIR"
 else
@@ -366,6 +367,20 @@ if [ "$DRY_RUN" = "1" ]; then
   echo "Would symlink: $CODEX_SKILLS_DIR -> $CWD/.codex/skills"
 else
   ln -snf "$CWD/.codex/skills" "$CODEX_SKILLS_DIR"
+fi
+
+if [ -e "$CODEX_AGENTS_MD" ] || [ -L "$CODEX_AGENTS_MD" ]; then
+  if [ "$(readlink "$CODEX_AGENTS_MD" 2>/dev/null)" != "$CWD/.codex/agents.md" ]; then
+    echo "Error: $CODEX_AGENTS_MD already exists and is not a symlink to $CWD/.codex/agents.md."
+    echo "To back it up, run: mv \"$CODEX_AGENTS_MD\" \"${CODEX_AGENTS_MD}.backup-$(date +%s)\""
+    echo "After fixing, rerun this bootstrap script."
+    exit 1
+  fi
+fi
+if [ "$DRY_RUN" = "1" ]; then
+  echo "Would symlink: $CODEX_AGENTS_MD -> $CWD/.codex/agents.md"
+else
+  ln -snf "$CWD/.codex/agents.md" "$CODEX_AGENTS_MD"
 fi
 
 # Hammerspoon config
