@@ -1,0 +1,199 @@
+#!/usr/bin/env zsh
+# repo_select: fuzzy-pick a canonical repo (from repo-index), ordered by zoxide frecency.
+#
+# Output formats:
+#   tsv  (default): <owner/repo>\t<https_url>\t</abs/path>
+#   path: </abs/path>
+#   slug: <owner/repo>
+#
+# Requires: fzf, repo-index. (Optionally: zoxide for frecency ordering.)
+
+function repo_select() {
+  setopt localoptions pipefail no_aliases 2> /dev/null
+
+  local format="tsv"
+  local prompt="repo> "
+  local query=""
+  local filter=""
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --format)
+        format="${2:?missing --format value}"
+        shift 2
+        ;;
+      --format=*)
+        format="${1#*=}"
+        shift
+        ;;
+      --prompt)
+        prompt="${2:?missing --prompt value}"
+        shift 2
+        ;;
+      --prompt=*)
+        prompt="${1#*=}"
+        shift
+        ;;
+      --query)
+        query="${2:?missing --query value}"
+        shift 2
+        ;;
+      --query=*)
+        query="${1#*=}"
+        shift
+        ;;
+      --filter)
+        filter="${2:?missing --filter value}"
+        shift 2
+        ;;
+      --filter=*)
+        filter="${1#*=}"
+        shift
+        ;;
+      -h|--help)
+        cat <<'EOF'
+Usage:
+  repo_select [--format tsv|path|slug] [--prompt STR] [--query STR] [--filter STR]
+EOF
+        return 0
+        ;;
+      --)
+        shift
+        break
+        ;;
+      *)
+        echo "repo_select: unknown arg: $1" >&2
+        return 2
+        ;;
+    esac
+  done
+
+  if ! command -v fzf >/dev/null 2>&1; then
+    echo "repo_select: missing fzf" >&2
+    return 127
+  fi
+
+  local repo_index_cmd="repo-index"
+  if ! command -v "$repo_index_cmd" >/dev/null 2>&1; then
+    if [[ -n "${DOTFILES:-}" && -x "$DOTFILES/bin/repo-index" ]]; then
+      repo_index_cmd="$DOTFILES/bin/repo-index"
+    elif [[ -x "$HOME/dotfiles/bin/repo-index" ]]; then
+      repo_index_cmd="$HOME/dotfiles/bin/repo-index"
+    else
+      echo "repo_select: missing repo-index (expected in \$PATH or \$DOTFILES/bin)" >&2
+      return 127
+    fi
+  fi
+
+  local tsv
+  tsv="$("$repo_index_cmd" --format tsv 2>/dev/null)" || return $?
+  [[ -n "$tsv" ]] || return 1
+
+  local tab=$'\t'
+  local -a lines ordered remaining
+  lines=("${(@f)tsv}")
+
+  if command -v zoxide >/dev/null 2>&1; then
+    local github_root="${GHPATH:-$HOME/code/github.com}"
+    local -A line_by_root seen
+    local -a repo_roots zo_paths zo_roots
+
+    line_by_root=()
+    repo_roots=()
+
+    local line repo_path root
+    for line in "${lines[@]}"; do
+      repo_path="${line##*$tab}"
+      root="$repo_path"
+      line_by_root[$root]="$line"
+      repo_roots+=("$root")
+    done
+
+    seen=()
+    zo_paths=("${(@f)$(zoxide query -l --all --base-dir "$HOME/code" 2>/dev/null)}")
+    zo_roots=()
+    zo_paths=("${zo_paths[@]:#}")
+
+    local p owner repo
+    for p in "${zo_paths[@]}"; do
+      root=""
+
+      if [[ "$p" == "$github_root"/*/*(|/*) ]]; then
+        owner="${p#$github_root/}"
+        owner="${owner%%/*}"
+        repo="${p#$github_root/$owner/}"
+        repo="${repo%%/*}"
+        root="$github_root/$owner/$repo"
+      elif [[ "$p" == "$HOME/code/openai"(|/*) ]]; then
+        root="$HOME/code/openai"
+      elif [[ "$p" == "$HOME/code/chronosphere-openai"(|/*) ]]; then
+        root="$HOME/code/chronosphere-openai"
+      fi
+
+      if [[ -n "$root" && -n "${line_by_root[$root]:-}" && -z "${seen[$root]:-}" ]]; then
+        zo_roots+=("$root")
+        seen[$root]=1
+      fi
+    done
+
+    ordered=()
+    remaining=()
+
+    local r
+    for r in "${zo_roots[@]}"; do
+      ordered+=("${line_by_root[$r]}")
+    done
+    for r in "${repo_roots[@]}"; do
+      if [[ -z "${seen[$r]:-}" ]]; then
+        remaining+=("${line_by_root[$r]}")
+      fi
+    done
+
+    lines=("${ordered[@]}" "${remaining[@]}")
+  fi
+
+  local -a fzf_args
+  fzf_args=(
+    --ansi
+    --reverse
+    --no-sort
+    --prompt="$prompt"
+    --delimiter=$'\t'
+    --with-nth=1,3
+  )
+  if [[ -n "$query" ]]; then
+    fzf_args+=(--query="$query")
+  fi
+  if [[ -n "$filter" ]]; then
+    fzf_args+=(--filter="$filter")
+  fi
+
+  local selection
+  if tty -s 2>/dev/null; then
+    selection="$(printf '%s\n' "${lines[@]}" | fzf "${fzf_args[@]}" </dev/tty)" || return $?
+  else
+    selection="$(printf '%s\n' "${lines[@]}" | fzf "${fzf_args[@]}")" || return $?
+  fi
+  [[ -n "$selection" ]] || return 1
+
+  local selected_slug selected_path
+  selected_slug="${selection%%$tab*}"
+  selected_path="${selection##*$tab}"
+
+  # Feed selection into zoxide (best-effort).
+  if command -v zoxide >/dev/null 2>&1 && [[ -n "$selected_path" ]]; then
+    zoxide add "$selected_path" >/dev/null 2>&1 || true
+  fi
+
+  case "$format" in
+    tsv)  print -r -- "$selection" ;;
+    path) print -r -- "$selected_path" ;;
+    slug) print -r -- "$selected_slug" ;;
+    *)
+      echo "repo_select: unknown format: $format" >&2
+      return 2
+      ;;
+  esac
+}
+
+repo_select "$@"

@@ -1,0 +1,847 @@
+#!/usr/bin/env zsh
+# w: unified wrapper for Worktrunk worktree workflows.
+#
+# Supports:
+#   - create/switch (with centralized worktree storage)
+#   - create+exec (agent workflow)
+#   - cd/enter an existing worktree
+#   - list worktrees under the centralized root
+#   - prune stale/broken centralized worktrees (safe by default)
+
+_w_slug_from_remote() {
+  local url="${1:-}"
+
+  if [[ -z "$url" ]]; then
+    print -r -- ""
+    return 0
+  fi
+
+  if [[ "$url" == http://* || "$url" == https://* ]]; then
+    local rest="${url#*://}"
+    rest="${rest#*/}" # drop host
+    rest="${rest%.git}"
+    print -r -- "$rest"
+    return 0
+  fi
+
+  if [[ "$url" == ssh://* ]]; then
+    local rest="${url#ssh://}"
+    rest="${rest#*@}"     # drop user@ if present
+    rest="${rest#*/}"     # drop host/
+    rest="${rest%.git}"
+    print -r -- "$rest"
+    return 0
+  fi
+
+  if [[ "$url" == *:* && "$url" != *://* ]]; then
+    local scp_path="${url#*:}"
+    scp_path="${scp_path%.git}"
+    print -r -- "$scp_path"
+    return 0
+  fi
+
+  print -r -- ""
+  return 0
+}
+
+_w_repo_index_cmd() {
+  local cmd="repo-index"
+  if command -v "$cmd" >/dev/null 2>&1; then
+    print -r -- "$cmd"
+    return 0
+  fi
+  if [[ -n "${DOTFILES:-}" && -x "$DOTFILES/bin/repo-index" ]]; then
+    print -r -- "$DOTFILES/bin/repo-index"
+    return 0
+  fi
+  if [[ -x "$HOME/dotfiles/bin/repo-index" ]]; then
+    print -r -- "$HOME/dotfiles/bin/repo-index"
+    return 0
+  fi
+  return 1
+}
+
+_w_is_special_branch_arg() {
+  local branch="${1:-}"
+
+  [[ "$branch" == "^" || "$branch" == "-" || "$branch" == "@" || "$branch" == pr:* || "$branch" == mr:* ]]
+}
+
+_w_branch_exists() {
+  local repo_root="$1"
+  local branch="$2"
+
+  git -C "$repo_root" show-ref --verify --quiet "refs/heads/$branch" 2>/dev/null && return 0
+
+  local -a remotes
+  remotes=("${(@f)$(git -C "$repo_root" remote 2>/dev/null || true)}")
+
+  local r
+  for r in "${remotes[@]}"; do
+    git -C "$repo_root" show-ref --verify --quiet "refs/remotes/$r/$branch" 2>/dev/null && return 0
+  done
+
+  return 1
+}
+
+_w_resolve_repo() {
+  local use_here="$1"
+  local repo_spec="$2"
+  local slug_override="$3"
+  local require_slug="${4:-1}"
+
+  local tab=$'\t'
+  local slug="" repo_root=""
+
+  local repo_index_cmd=""
+  repo_index_cmd="$(_w_repo_index_cmd 2>/dev/null)" || repo_index_cmd=""
+
+  if (( use_here )); then
+    repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || return 1
+    local origin=""
+    origin="$(git -C "$repo_root" remote get-url origin 2>/dev/null || true)"
+    slug="$(_w_slug_from_remote "$origin")"
+  elif [[ -n "$repo_spec" ]]; then
+    if [[ "$repo_spec" == /* || "$repo_spec" == "~"* ]]; then
+      repo_root="${repo_spec:A}"
+      local origin=""
+      origin="$(git -C "$repo_root" remote get-url origin 2>/dev/null || true)"
+      slug="$(_w_slug_from_remote "$origin")"
+    elif [[ "$repo_spec" == */* ]]; then
+      [[ -n "$repo_index_cmd" ]] || return 1
+      local line=""
+      line="$("$repo_index_cmd" --format tsv 2>/dev/null | awk -F '\t' -v want="$repo_spec" '$1==want {print; exit}')"
+      [[ -n "$line" ]] || return 1
+      slug="${line%%$tab*}"
+      repo_root="${line##*$tab}"
+    else
+      return 2
+    fi
+  else
+    local selection=""
+    selection="$(repo_select --format tsv)" || return $?
+    slug="${selection%%$tab*}"
+    repo_root="${selection##*$tab}"
+  fi
+
+  if [[ -n "$slug_override" ]]; then
+    slug="$slug_override"
+  fi
+
+  if [[ -z "$repo_root" ]]; then
+    return 1
+  fi
+  if (( require_slug )) && [[ -z "$slug" || "$slug" != */* ]]; then
+    return 3
+  fi
+
+  print -r -- "${slug}${tab}${repo_root}"
+  return 0
+}
+
+_w_worktree_path_for_branch() {
+  local repo_root="$1"
+  local branch="$2"
+
+  wt -C "$repo_root" list --format json 2>/dev/null | BRANCH="$branch" python3 -c $'import json,os,sys\nbranch=os.environ.get("BRANCH","")\ntry:\n  items=json.load(sys.stdin)\nexcept Exception:\n  print(\"\")\n  raise SystemExit(0)\nfor item in items:\n  if item.get(\"kind\")==\"worktree\" and item.get(\"branch\")==branch:\n    print(item.get(\"path\") or \"\")\n    break\nelse:\n  print(\"\")'
+}
+
+_w_worktree_path_from_switch_output() {
+  local out="${1:-}"
+
+  local -a lines
+  lines=("${(@f)out}")
+
+  local line path=""
+  for line in "${lines[@]}"; do
+    if [[ "$line" == *"Switched to worktree for "* && "$line" == *" @ "* ]]; then
+      path="${line##*@ }"
+    elif [[ "$line" == *"Created branch "* && "$line" == *"worktree @ "* ]]; then
+      path="${line##*worktree @ }"
+    elif [[ "$line" == *"Created worktree @ "* ]]; then
+      path="${line##*Created worktree @ }"
+    fi
+  done
+
+  # Trim ANSI reset codes and CRLF.
+  path="${path%%$'\r'*}"
+  path="${path%%$'\e'*}"
+
+  if [[ "$path" == "~"* ]]; then
+    path="${path/#\~/$HOME}"
+  fi
+
+  print -r -- "$path"
+}
+
+_w_require_wt() {
+  if ! command -v wt >/dev/null 2>&1; then
+    print -u2 "w: missing wt (Worktrunk)"
+    return 127
+  fi
+}
+
+_w_help() {
+  cat <<'EOF'
+Usage:
+  w <branch> [opts]                         Create/switch + cd (default; repo picker)
+  w <branch> [opts] -- <agent args..>       Create/switch + exec agent (default agent)
+
+Commands:
+  w new <branch> [opts]                Create/switch a worktree
+  w run <branch> [opts] -- [args..]    Create/switch and execute agent cmd
+  w cd  <branch> [opts]                Switch and cd into worktree
+  w ls [--format table|tsv|json]       List centralized worktrees (alias: list)
+  w rm [--yes]                         Remove stale centralized worktrees (dry-run by default; alias: prune)
+
+Common opts (new/run/cd):
+  --here                               Use current git repo (no picker)
+  --repo <owner/repo|/path>            Choose repo by slug (canonical) or path
+  --slug <owner/repo>                  Override slug (when origin isn't parseable)
+  --root <path>                        Central worktrees root (default: $W_WORKTREES_ROOT or ~/code/wt)
+  --config <path>                      Worktrunk user config path (passed through)
+  --no-cd                              Don't cd after switching (new/cd only)
+
+Create opts (new/run):
+  --base <ref>                         Base ref for --create
+  --sparse <path>                      Cone-mode sparse paths (repeatable)
+
+Run opts:
+  --agent <cmd>                        Command to execute (default: $WT_AGENT_CMD or codex)
+
+Notes:
+  - Worktrees are created under: <root>/<owner>-<repo>.<branch_sanitized>/<repo_dir>
+  - Use `w ls` to see what's currently under the centralized root.
+
+Examples:
+  w feature/auth
+  w feature/auth --here
+  w feature/auth --repo openai/openai
+  w feature/auth --root ~/code/wt2
+  w fix-bug -- 'Fix GH #322'
+  w run fix-bug --agent claude -- 'Fix GH #322'
+  w run fix-bug --agent 'code {{ worktree_path }}'
+  w new docs --sparse api --sparse docs
+
+  # Sparse after creation (inside the worktree):
+  git sparse-checkout list
+  git sparse-checkout add tools
+  git sparse-checkout disable
+EOF
+}
+
+_w_cmd_new() {
+  setopt localoptions pipefail no_aliases 2> /dev/null
+
+  _w_require_wt || return $?
+
+  local branch=""
+  local base_ref=""
+  local repo_spec=""
+  local slug_override=""
+  local use_here=0
+  local no_cd=0
+  local worktrees_root="${W_WORKTREES_ROOT:-$HOME/code/wt}"
+  local -a sparse_paths wt_args
+  sparse_paths=()
+  wt_args=()
+
+	  while [[ $# -gt 0 ]]; do
+	    case "$1" in
+	      -C)
+	        print -u2 "w new: -C is not supported (use --repo /path or --here)"
+	        return 2
+	        ;;
+	      --config) wt_args+=("$1" "${2:?missing --config value}"); shift 2 ;;
+	      --config=*) wt_args+=("$1"); shift ;;
+	      --here) use_here=1; shift ;;
+	      --repo) repo_spec="${2:?missing --repo value}"; shift 2 ;;
+	      --repo=*) repo_spec="${1#*=}"; shift ;;
+	      --slug) slug_override="${2:?missing --slug value}"; shift 2 ;;
+      --slug=*) slug_override="${1#*=}"; shift ;;
+      --root) worktrees_root="${2:?missing --root value}"; shift 2 ;;
+      --root=*) worktrees_root="${1#*=}"; shift ;;
+      --base) base_ref="${2:?missing --base value}"; shift 2 ;;
+      --base=*) base_ref="${1#*=}"; shift ;;
+      --sparse) sparse_paths+=("${2:?missing --sparse path}"); shift 2 ;;
+      --sparse=*) sparse_paths+=("${1#*=}"); shift ;;
+      --no-cd) no_cd=1; shift ;;
+      -h|--help) _w_help; return 0 ;;
+      --) shift; break ;;
+      -*)
+        wt_args+=("$1")
+        shift
+        ;;
+      *)
+        if [[ -z "$branch" ]]; then
+          branch="$1"
+        else
+          print -u2 "w new: unexpected arg: $1"
+          return 2
+        fi
+        shift
+        ;;
+    esac
+  done
+
+  if [[ -z "$branch" ]]; then
+    print -u2 "w new: missing <branch> (run: w --help)"
+    return 2
+  fi
+
+  local resolved tab=$'\t'
+  resolved="$(_w_resolve_repo "$use_here" "$repo_spec" "$slug_override")" || {
+    local rc=$?
+    case "$rc" in
+      1) print -u2 "w new: failed to resolve repo (use --here, --repo, or pick one)";;
+      2) print -u2 "w new: unsupported --repo value (expected owner/repo or /path): $repo_spec";;
+      3)
+        print -u2 "w new: could not determine owner/repo slug for repo"
+        print -u2 "w new: pass --slug owner/repo or ensure origin remote is set"
+        ;;
+      *) print -u2 "w new: failed to resolve repo";;
+    esac
+    return 1
+  }
+  local slug="${resolved%%$tab*}"
+  local repo_root="${resolved##*$tab}"
+
+  if command -v zoxide >/dev/null 2>&1; then
+    zoxide add "$repo_root" >/dev/null 2>&1 || true
+  fi
+
+  local owner="${slug%%/*}"
+  local repo="${slug##*/}"
+  local prefix="${owner}-${repo}"
+
+  mkdir -p "$worktrees_root" >/dev/null 2>&1 || true
+
+  local worktree_path_template="${worktrees_root}/${prefix}.{{ branch | sanitize }}/{{ repo }}"
+
+  local sparse_env=""
+  if (( ${#sparse_paths[@]} > 0 )); then
+    sparse_env="$(printf '%s\n' "${sparse_paths[@]}")"
+  fi
+
+  local -a base_args
+  base_args=()
+  if [[ -n "$base_ref" ]]; then
+    base_args=(--base "$base_ref")
+  fi
+
+  local create=1
+  if _w_is_special_branch_arg "$branch" || _w_branch_exists "$repo_root" "$branch"; then
+    create=0
+  fi
+
+  local -a switch_args
+  switch_args=(switch)
+  if (( create )); then
+    switch_args+=(--create "${base_args[@]}")
+  fi
+  switch_args+=(--no-cd "${wt_args[@]}" "$branch")
+
+  local wt_out wt_rc
+  wt_out="$(
+    WORKTRUNK_WORKTREE_PATH="$worktree_path_template" \
+    WT_SPARSE_PATHS="$sparse_env" \
+      wt -C "$repo_root" "${switch_args[@]}" 2>&1
+  )"
+  wt_rc=$?
+  print -r -- "$wt_out"
+
+  if (( no_cd )); then
+    return "$wt_rc"
+  fi
+
+  local worktree_path=""
+  (( wt_rc == 0 )) || return "$wt_rc"
+
+  worktree_path="$(_w_worktree_path_from_switch_output "$wt_out")"
+  if [[ -z "$worktree_path" ]]; then
+    worktree_path="$(_w_worktree_path_for_branch "$repo_root" "$branch")" || worktree_path=""
+  fi
+  if [[ -z "$worktree_path" || ! -d "$worktree_path" ]]; then
+    print -u2 "w new: could not determine worktree path"
+    return 1
+  fi
+
+  cd "$worktree_path" || return 1
+}
+
+_w_cmd_run() {
+  setopt localoptions pipefail no_aliases 2> /dev/null
+
+  _w_require_wt || return $?
+
+  local branch=""
+  local base_ref=""
+  local repo_spec=""
+  local slug_override=""
+  local use_here=0
+  local worktrees_root="${W_WORKTREES_ROOT:-$HOME/code/wt}"
+  local agent_cmd="${WT_AGENT_CMD:-codex}"
+  local -a sparse_paths wt_args agent_args
+  sparse_paths=()
+  wt_args=()
+  agent_args=()
+
+	  while [[ $# -gt 0 ]]; do
+	    case "$1" in
+	      --agent) agent_cmd="${2:?missing --agent value}"; shift 2 ;;
+	      --agent=*) agent_cmd="${1#*=}"; shift ;;
+	      -C)
+	        print -u2 "w run: -C is not supported (use --repo /path or --here)"
+	        return 2
+	        ;;
+	      --config) wt_args+=("$1" "${2:?missing --config value}"); shift 2 ;;
+	      --config=*) wt_args+=("$1"); shift ;;
+	      --no-cd)
+	        print -u2 "w run: --no-cd breaks --execute (agent runs in the current dir)"
+	        print -u2 "w run: use 'w new <branch> --no-cd' then run the agent manually"
+	        return 2
+	        ;;
+	      -x|--execute)
+	        print -u2 "w run: use --agent instead of -x/--execute"
+	        return 2
+	        ;;
+	      -x=*|--execute=*)
+	        print -u2 "w run: use --agent instead of -x/--execute"
+	        return 2
+	        ;;
+	      --here) use_here=1; shift ;;
+	      --repo) repo_spec="${2:?missing --repo value}"; shift 2 ;;
+	      --repo=*) repo_spec="${1#*=}"; shift ;;
+	      --slug) slug_override="${2:?missing --slug value}"; shift 2 ;;
+      --slug=*) slug_override="${1#*=}"; shift ;;
+      --root) worktrees_root="${2:?missing --root value}"; shift 2 ;;
+      --root=*) worktrees_root="${1#*=}"; shift ;;
+      --base) base_ref="${2:?missing --base value}"; shift 2 ;;
+      --base=*) base_ref="${1#*=}"; shift ;;
+      --sparse) sparse_paths+=("${2:?missing --sparse path}"); shift 2 ;;
+      --sparse=*) sparse_paths+=("${1#*=}"); shift ;;
+      -h|--help) _w_help; return 0 ;;
+      --)
+        shift
+        while [[ $# -gt 0 ]]; do
+          if [[ -z "$branch" ]]; then
+            branch="$1"
+          else
+            agent_args+=("$1")
+          fi
+          shift
+        done
+        break
+        ;;
+      -*)
+        wt_args+=("$1")
+        shift
+        ;;
+      *)
+        if [[ -z "$branch" ]]; then
+          branch="$1"
+        else
+          print -u2 "w run: unexpected arg: $1"
+          return 2
+        fi
+        shift
+        ;;
+    esac
+  done
+
+  if [[ -z "$branch" ]]; then
+    print -u2 "w run: missing <branch> (run: w --help)"
+    return 2
+  fi
+
+  local resolved tab=$'\t'
+  resolved="$(_w_resolve_repo "$use_here" "$repo_spec" "$slug_override")" || {
+    local rc=$?
+    case "$rc" in
+      1) print -u2 "w run: failed to resolve repo (use --here, --repo, or pick one)";;
+      2) print -u2 "w run: unsupported --repo value (expected owner/repo or /path): $repo_spec";;
+      3)
+        print -u2 "w run: could not determine owner/repo slug for repo"
+        print -u2 "w run: pass --slug owner/repo or ensure origin remote is set"
+        ;;
+      *) print -u2 "w run: failed to resolve repo";;
+    esac
+    return 1
+  }
+  local slug="${resolved%%$tab*}"
+  local repo_root="${resolved##*$tab}"
+
+  if command -v zoxide >/dev/null 2>&1; then
+    zoxide add "$repo_root" >/dev/null 2>&1 || true
+  fi
+
+  local owner="${slug%%/*}"
+  local repo="${slug##*/}"
+  local prefix="${owner}-${repo}"
+
+  mkdir -p "$worktrees_root" >/dev/null 2>&1 || true
+
+  local worktree_path_template="${worktrees_root}/${prefix}.{{ branch | sanitize }}/{{ repo }}"
+
+  local sparse_env=""
+  if (( ${#sparse_paths[@]} > 0 )); then
+    sparse_env="$(printf '%s\n' "${sparse_paths[@]}")"
+  fi
+
+  local -a base_args
+  base_args=()
+  if [[ -n "$base_ref" ]]; then
+    base_args=(--base "$base_ref")
+  fi
+
+  local -a exec_args
+  exec_args=()
+  if (( ${#agent_args[@]} > 0 )); then
+    exec_args=(-- "${agent_args[@]}")
+  fi
+
+  local create=1
+  if _w_is_special_branch_arg "$branch" || _w_branch_exists "$repo_root" "$branch"; then
+    create=0
+  fi
+
+  local -a switch_args
+  switch_args=(switch)
+  if (( create )); then
+    switch_args+=(--create "${base_args[@]}")
+  fi
+  switch_args+=("${wt_args[@]}" "$branch" -x "$agent_cmd" "${exec_args[@]}")
+
+  WORKTRUNK_WORKTREE_PATH="$worktree_path_template" \
+  WT_SPARSE_PATHS="$sparse_env" \
+    wt -C "$repo_root" "${switch_args[@]}"
+}
+
+_w_cmd_cd() {
+  setopt localoptions pipefail no_aliases 2> /dev/null
+
+  _w_require_wt || return $?
+
+	  local branch=""
+	  local repo_spec=""
+	  local slug_override=""
+	  local use_here=0
+	  local no_cd=0
+	  local worktrees_root="${W_WORKTREES_ROOT:-$HOME/code/wt}"
+	  local -a wt_args
+	  wt_args=()
+
+		  while [[ $# -gt 0 ]]; do
+		    case "$1" in
+	      -C)
+	        print -u2 "w cd: -C is not supported (use --repo /path or --here)"
+	        return 2
+	        ;;
+		      --config) wt_args+=("$1" "${2:?missing --config value}"); shift 2 ;;
+		      --config=*) wt_args+=("$1"); shift ;;
+		      --here) use_here=1; shift ;;
+		      --repo) repo_spec="${2:?missing --repo value}"; shift 2 ;;
+		      --repo=*) repo_spec="${1#*=}"; shift ;;
+		      --slug) slug_override="${2:?missing --slug value}"; shift 2 ;;
+	      --slug=*) slug_override="${1#*=}"; shift ;;
+	      --root) worktrees_root="${2:?missing --root value}"; shift 2 ;;
+	      --root=*) worktrees_root="${1#*=}"; shift ;;
+	      --no-cd) no_cd=1; shift ;;
+	      -h|--help) _w_help; return 0 ;;
+	      --) shift; break ;;
+	      -*)
+	        wt_args+=("$1")
+        shift
+        ;;
+      *)
+        if [[ -z "$branch" ]]; then
+          branch="$1"
+        else
+          print -u2 "w cd: unexpected arg: $1"
+          return 2
+        fi
+        shift
+        ;;
+    esac
+  done
+
+  if [[ -z "$branch" ]]; then
+    print -u2 "w cd: missing <branch> (run: w --help)"
+    return 2
+  fi
+
+	  local resolved tab=$'\t'
+	  resolved="$(_w_resolve_repo "$use_here" "$repo_spec" "$slug_override" 0)" || {
+	    print -u2 "w cd: failed to resolve repo (use --here, --repo, or pick one)"
+	    return 1
+	  }
+	  local slug="${resolved%%$tab*}"
+	  local repo_root="${resolved##*$tab}"
+
+	  if command -v zoxide >/dev/null 2>&1; then
+	    zoxide add "$repo_root" >/dev/null 2>&1 || true
+	  fi
+
+	  local prefix="${repo_root:t}"
+	  if [[ -n "$slug" && "$slug" == */* ]]; then
+	    local owner="${slug%%/*}"
+	    local repo="${slug##*/}"
+	    prefix="${owner}-${repo}"
+	  fi
+
+	  mkdir -p "$worktrees_root" >/dev/null 2>&1 || true
+	  local worktree_path_template="${worktrees_root}/${prefix}.{{ branch | sanitize }}/{{ repo }}"
+
+	  local wt_out wt_rc
+	  wt_out="$(
+	    WORKTRUNK_WORKTREE_PATH="$worktree_path_template" \
+	      wt -C "$repo_root" switch --no-cd "${wt_args[@]}" "$branch" 2>&1
+	  )"
+	  wt_rc=$?
+	  print -r -- "$wt_out"
+
+	  if (( no_cd )); then
+	    return "$wt_rc"
+	  fi
+	  (( wt_rc == 0 )) || return "$wt_rc"
+
+	  local worktree_path=""
+	  worktree_path="$(_w_worktree_path_from_switch_output "$wt_out")"
+	  if [[ -z "$worktree_path" ]]; then
+	    worktree_path="$(_w_worktree_path_for_branch "$repo_root" "$branch")" || worktree_path=""
+	  fi
+	  if [[ -z "$worktree_path" || ! -d "$worktree_path" ]]; then
+	    print -u2 "w cd: could not determine worktree path"
+	    return 1
+	  fi
+
+	  cd "$worktree_path" || return 1
+	}
+
+_w_cmd_list() {
+  setopt localoptions pipefail no_aliases 2> /dev/null
+
+  local format="table"
+  local worktrees_root="${W_WORKTREES_ROOT:-$HOME/code/wt}"
+  local include_all=0
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --format) format="${2:?missing --format value}"; shift 2 ;;
+      --format=*) format="${1#*=}"; shift ;;
+      --root) worktrees_root="${2:?missing --root value}"; shift 2 ;;
+      --root=*) worktrees_root="${1#*=}"; shift ;;
+      --all) include_all=1; shift ;;
+      -h|--help) _w_help; return 0 ;;
+      *) print -u2 "w ls: unknown arg: $1"; return 2 ;;
+    esac
+  done
+
+  local -a leaves
+  leaves=("$worktrees_root"/*/*(N-/))
+
+  local tab=$'\t'
+  local -a rows
+  rows=()
+
+  local leaf origin slug branch dirty
+  for leaf in "${leaves[@]}"; do
+    if [[ ! -e "$leaf/.git" ]]; then
+      (( include_all )) || continue
+      slug=""
+      branch=""
+      dirty=""
+      rows+=("${slug}${tab}${branch}${tab}${leaf}${tab}${dirty}")
+      continue
+    fi
+
+    branch="$(git -C "$leaf" rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
+    origin="$(git -C "$leaf" remote get-url origin 2>/dev/null || true)"
+    slug="$(_w_slug_from_remote "$origin")"
+    dirty="0"
+    if [[ -n "$(git -C "$leaf" status --porcelain -uno 2>/dev/null || true)" ]]; then
+      dirty="1"
+    fi
+
+    rows+=("${slug}${tab}${branch}${tab}${leaf}${tab}${dirty}")
+  done
+
+  rows=("${(@o)rows}")
+
+  case "$format" in
+    tsv)
+      print -r -- "slug${tab}branch${tab}path${tab}dirty"
+      printf '%s\n' "${rows[@]}"
+      ;;
+    json)
+      printf '%s\n' "${rows[@]}" | python3 -c $'import json,sys\nout=[]\nfor l in sys.stdin:\n  l=l.rstrip(\"\\n\")\n  if not l.strip():\n    continue\n  parts=l.split(\"\\t\")\n  parts += [\"\"]*(4-len(parts))\n  slug,branch,path,dirty=parts[:4]\n  out.append({\"slug\":slug,\"branch\":branch,\"path\":path,\"dirty\":(dirty==\"1\")})\nprint(json.dumps(out, indent=2))'
+      ;;
+    table)
+      {
+        print -r -- "repo${tab}branch${tab}state${tab}path"
+        local row
+        for row in "${rows[@]}"; do
+          local s b p d
+          IFS=$'\t' read -r s b p d <<<"$row"
+
+          local state="clean"
+          [[ "$d" == "1" ]] && state="dirty"
+
+          local display_path="$p"
+          display_path="${display_path/#$HOME/~}"
+
+          print -r -- "${s}${tab}${b}${tab}${state}${tab}${display_path}"
+        done
+      } | {
+        if command -v column >/dev/null 2>&1; then
+          column -t -s $'\t'
+        else
+          cat
+        fi
+      }
+      ;;
+    *)
+      print -u2 "w ls: unknown format: $format (expected table|tsv|json)"
+      return 2
+      ;;
+  esac
+}
+
+_w_cmd_prune() {
+  setopt localoptions pipefail no_aliases 2> /dev/null
+
+  local worktrees_root="${W_WORKTREES_ROOT:-$HOME/code/wt}"
+  local apply=0
+  local verbose=0
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --root) worktrees_root="${2:?missing --root value}"; shift 2 ;;
+      --root=*) worktrees_root="${1#*=}"; shift ;;
+      --yes|-y) apply=1; shift ;;
+      --dry-run) apply=0; shift ;;
+      --verbose|-v) verbose=1; shift ;;
+      -h|--help) _w_help; return 0 ;;
+      *) print -u2 "w rm: unknown arg: $1"; return 2 ;;
+    esac
+  done
+
+  local -a leaves
+  leaves=("$worktrees_root"/*/*(N-/))
+
+  local -a stale
+  stale=()
+
+  local leaf line gitdir
+  for leaf in "${leaves[@]}"; do
+    [[ -f "$leaf/.git" ]] || continue
+    line="$(head -n 1 "$leaf/.git" 2>/dev/null || true)"
+    if [[ "$line" != gitdir:* ]]; then
+      (( verbose )) && print -u2 "stale: $leaf (unexpected .git format)"
+      stale+=("$leaf")
+      continue
+    fi
+    gitdir="${line#gitdir:}"
+    gitdir="${gitdir# }"
+    if [[ -z "$gitdir" ]]; then
+      (( verbose )) && print -u2 "stale: $leaf (empty gitdir)"
+      stale+=("$leaf")
+      continue
+    fi
+    if [[ "$gitdir" != /* ]]; then
+      gitdir="$leaf/$gitdir"
+    fi
+    if [[ ! -d "$gitdir" ]]; then
+      (( verbose )) && print -u2 "stale: $leaf (missing gitdir: $gitdir)"
+      stale+=("$leaf")
+      continue
+    fi
+  done
+
+  if (( ${#stale[@]} == 0 )); then
+    print -r -- "w rm: no stale worktrees found under: $worktrees_root"
+    return 0
+  fi
+
+  if (( ! apply )); then
+    print -r -- "w rm (dry-run): would remove ${#stale[@]} stale worktree(s):"
+    local s
+    for s in "${stale[@]}"; do
+      print -r -- "  $s"
+    done
+    print -r -- "Re-run with: w rm --yes"
+    return 0
+  fi
+
+  local removed=0
+  local s parent
+  for s in "${stale[@]}"; do
+    rm -rf -- "$s"
+    removed=$(( removed + 1 ))
+    parent="${s:h}"
+    rmdir "$parent" 2>/dev/null || true
+  done
+
+  print -r -- "w rm: removed $removed stale worktree(s)"
+}
+
+function w() {
+  setopt localoptions pipefail no_aliases 2> /dev/null
+
+  if [[ $# -eq 0 ]]; then
+    _w_help
+    return 2
+  fi
+
+  local sub="${1:-}"
+  case "$sub" in
+    -h|--help|help)
+      _w_help
+      return 0
+      ;;
+    new|n|create)
+      shift
+      _w_cmd_new "$@"
+      return $?
+      ;;
+    run|r|agent)
+      shift
+      _w_cmd_run "$@"
+      return $?
+      ;;
+    cd|c|go|enter)
+      shift
+      _w_cmd_cd "$@"
+      return $?
+      ;;
+    list|ls)
+      shift
+      _w_cmd_list "$@"
+      return $?
+      ;;
+    rm|prune|clean|cleanup)
+      shift
+      _w_cmd_prune "$@"
+      return $?
+      ;;
+    *)
+      # Default mode: `w <branch>` behaves like `w new <branch>`.
+      # If `--` or `--agent` is present, treat as `w run`.
+      local arg run_mode=0
+      for arg in "$@"; do
+        if [[ "$arg" == "--" || "$arg" == "--agent" || "$arg" == --agent=* ]]; then
+          run_mode=1
+          break
+        fi
+      done
+      if (( run_mode )); then
+        _w_cmd_run "$@"
+      else
+        _w_cmd_new "$@"
+      fi
+      return $?
+      ;;
+  esac
+}
+
+w "$@"

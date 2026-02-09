@@ -1,0 +1,11 @@
+#!/usr/bin/env zsh
+# Back-compat shim: prefer `w` (`w new` / `w run`).
+
+function wtn() {
+  setopt localoptions pipefail no_aliases 2> /dev/null
+  autoload -Uz w 2>/dev/null || true
+  w new "$@"
+}
+
+wtn "$@"
+
