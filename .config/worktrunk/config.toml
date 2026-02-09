@@ -1,0 +1,18 @@
+# Worktrunk user config (dotfiles-managed)
+#
+# Location: ~/.config/worktrunk/config.toml (symlinked by bootstrap.sh)
+#
+# Notes:
+# - User hooks do not require approval prompts.
+# - Sparse hook is a no-op unless `WT_SPARSE_PATHS` is set by wtn/wta.
+
+skip-shell-integration-prompt = true
+
+[commit.generation]
+command = ""
+
+[post-create]
+sparse = "wt-hook-sparse"
+
+[projects."github.com/openai/openai".post-create]
+venv = "wt-hook-openai-venv"

@@ -1,0 +1,58 @@
+#!/usr/bin/env zsh
+# wt-hook-openai-venv: Worktrunk hook to create a per-worktree OpenAI monorepo venv.
+#
+# Reads hook context JSON on stdin. Creates:
+#   ~/.virtualenvs/openai-<branch_sanitized>
+#
+# Uses monorepo_setup.sh's venv_setup_build (does not modify shell startup files).
+
+set -euo pipefail
+unsetopt xtrace 2>/dev/null || true
+set +x 2>/dev/null || true
+unsetopt verbose 2>/dev/null || true
+set +v 2>/dev/null || true
+setopt typeset_silent 2>/dev/null || true
+
+typeset -a fields
+fields=("${(@f)$(python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("worktree_path","") or ""); print(d.get("branch","") or "")')}") || {
+  echo "wt-hook-openai-venv: failed to parse hook JSON on stdin" >&2
+  exit 2
+}
+
+worktree_path="${fields[1]:-}"
+branch="${fields[2]:-}"
+
+if [[ -z "$worktree_path" ]]; then
+  echo "wt-hook-openai-venv: missing worktree_path in hook context" >&2
+  exit 2
+fi
+
+if [[ -z "$branch" ]]; then
+  echo "wt-hook-openai-venv: missing branch in hook context" >&2
+  exit 2
+fi
+
+branch_sanitized="${branch//\//-}"
+branch_sanitized="${branch_sanitized//\\/-}"
+branch_sanitized="${branch_sanitized// /-}"
+
+if [[ -z "$branch_sanitized" ]]; then
+  branch_sanitized="unknown"
+fi
+
+venv="$HOME/.virtualenvs/openai-${branch_sanitized}"
+if [[ -x "$venv/bin/python" || -x "$venv/bin/python3" ]]; then
+  exit 0
+fi
+
+if [[ ! -f "$worktree_path/monorepo_setup.sh" ]]; then
+  echo "wt-hook-openai-venv: missing monorepo_setup.sh at $worktree_path" >&2
+  exit 1
+fi
+
+(
+  cd "$worktree_path"
+  export MONOREPO_VENV="$venv"
+  source ./monorepo_setup.sh
+  venv_setup_build
+)

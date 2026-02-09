@@ -239,6 +239,28 @@ else
   ln -snf "$CWD/.config/mise/config.toml" "$MISE_CONFIG_FILE"
 fi
 
+# worktrunk config
+WORKTRUNK_CONFIG_DIR="$HOME/.config/worktrunk"
+WORKTRUNK_CONFIG_FILE="$WORKTRUNK_CONFIG_DIR/config.toml"
+if [ "$DRY_RUN" = "1" ]; then
+  echo "Would ensure directory: $WORKTRUNK_CONFIG_DIR"
+else
+  mkdir -p "$WORKTRUNK_CONFIG_DIR"
+fi
+if [ -e "$WORKTRUNK_CONFIG_FILE" ] || [ -L "$WORKTRUNK_CONFIG_FILE" ]; then
+  if [ "$(readlink "$WORKTRUNK_CONFIG_FILE" 2>/dev/null)" != "$CWD/.config/worktrunk/config.toml" ]; then
+    echo "Error: $WORKTRUNK_CONFIG_FILE already exists and is not a symlink to $CWD/.config/worktrunk/config.toml."
+    echo "To back it up, run: mv \"$WORKTRUNK_CONFIG_FILE\" \"${WORKTRUNK_CONFIG_FILE}.backup-$(date +%s)\""
+    echo "After fixing, rerun this bootstrap script."
+    exit 1
+  fi
+fi
+if [ "$DRY_RUN" = "1" ]; then
+  echo "Would symlink: $WORKTRUNK_CONFIG_FILE -> $CWD/.config/worktrunk/config.toml"
+else
+  ln -snf "$CWD/.config/worktrunk/config.toml" "$WORKTRUNK_CONFIG_FILE"
+fi
+
 # devtools global config
 DEVTOOLS_CONFIG_DIR="$HOME/.config/devtools"
 DEVTOOLS_CONFIG_FILE="$DEVTOOLS_CONFIG_DIR/config.toml"
@@ -422,7 +444,7 @@ else
 fi
 
 # dotfiles bin wrappers
-for f in devtool gh grmrepo grmrepo-refresh repo-index; do
+for f in devtool gh grmrepo grmrepo-refresh repo-index wt-hook-sparse wt-hook-openai-venv; do
   src="$CWD/bin/$f"
   dest="$HOME/bin/$f"
   if [ -f "$src" ]; then
