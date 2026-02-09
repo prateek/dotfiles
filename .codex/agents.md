@@ -2,8 +2,8 @@
 
 This machine uses Git worktrees heavily. Prefer the `w` wrapper (Worktrunk-powered) so worktrees stay centralized and discoverable.
 
-- Dotfiles worktree doc: `~/dotfiles/docs/worktrees.md`
-- (Link) `../dotfiles/docs/worktrees.md`
+- Dotfiles worktree doc: `~/dotfiles/docs/worktrees.md` (link: [docs/worktrees.md](../dotfiles/docs/worktrees.md))
+- OpenAI worktrees reference: `~/experiments/worktree-management/references/notion_using-git-worktrees-at-openai.md` (link: [notion snapshot](../experiments/worktree-management/references/notion_using-git-worktrees-at-openai.md))
 
 ## Quickstart (`w`)
 
