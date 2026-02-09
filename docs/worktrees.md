@@ -133,11 +133,36 @@ git sparse-checkout disable                # return to full checkout
 
 ## OpenAI monorepo hooks
 
-For `github.com/openai/openai`, a per-worktree venv is created on worktree creation:
+For `github.com/openai/openai`, OpenAI guidance generally prefers:
+
+- keeping checkouts under `~/code` (speed/security reasons)
+- preserving the repo directory name (`openai`) so repo-special-cased tooling works
+- a separate venv per worktree to avoid “which code am I running?” confusion
+
+This dotfiles setup keeps worktrees under `~/code/wt` and preserves the repo directory name.
+
+### Per-worktree venv
+
+On worktree creation, a per-worktree venv is created:
 
 - `~/.virtualenvs/openai-<branch_sanitized>`
 
 It runs `venv_setup_build` from `monorepo_setup.sh` (does not modify shell startup files).
+
+Activate it manually:
+
+```sh
+source ~/.virtualenvs/openai-<branch_sanitized>/bin/activate
+```
+
+Recreate it if you get into a confused state:
+
+```sh
+export MONOREPO_VENV="$HOME/.virtualenvs/openai-<branch_sanitized>"
+source monorepo_setup.sh
+venv_setup_build
+source "$MONOREPO_VENV/bin/activate"
+```
 
 Skip hooks for a one-off creation:
 

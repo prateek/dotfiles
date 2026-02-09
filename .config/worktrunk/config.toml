@@ -4,7 +4,7 @@
 #
 # Notes:
 # - User hooks do not require approval prompts.
-# - Sparse hook is a no-op unless `WT_SPARSE_PATHS` is set by wtn/wta.
+# - Sparse hook is a no-op unless `WT_SPARSE_PATHS` is set by `w` (or the back-compat shims).
 
 skip-shell-integration-prompt = true
 
