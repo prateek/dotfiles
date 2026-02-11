@@ -15,6 +15,7 @@ function repo_select() {
   local prompt="repo> "
   local query=""
   local filter=""
+  local debug=0
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -50,10 +51,14 @@ function repo_select() {
         filter="${1#*=}"
         shift
         ;;
+      --debug)
+        debug=1
+        shift
+        ;;
       -h|--help)
         cat <<'EOF'
 Usage:
-  repo_select [--format tsv|path|slug] [--prompt STR] [--query STR] [--filter STR]
+  repo_select [--format tsv|path|slug] [--prompt STR] [--query STR] [--filter STR] [--debug]
 EOF
         return 0
         ;;
@@ -93,13 +98,25 @@ EOF
   local -a lines ordered remaining
   lines=("${(@f)tsv}")
 
-  if command -v zoxide >/dev/null 2>&1; then
+  if command -v zoxide >/dev/null 2>&1 && [[ -z "${REPO_SELECT_NO_ZOXIDE:-}" ]]; then
     local github_root="${GHPATH:-$HOME/code/github.com}"
-    local -A line_by_root seen
-    local -a repo_roots zo_paths zo_roots
+    local zoxide_limit="${REPO_SELECT_ZOXIDE_LIMIT:-5000}"
+    if [[ "$zoxide_limit" != <-> ]]; then
+      zoxide_limit=5000
+    fi
 
+    local -F t0 t1
+    local debug_enabled=0
+    if (( debug )) || [[ -n "${REPO_SELECT_DEBUG:-}" ]]; then
+      debug_enabled=1
+      t0="${EPOCHREALTIME:-$SECONDS}"
+    fi
+
+    local -A line_by_root seen
+    local -a repo_roots exception_roots
     line_by_root=()
     repo_roots=()
+    exception_roots=()
 
     local line repo_path root
     for line in "${lines[@]}"; do
@@ -107,49 +124,79 @@ EOF
       root="$repo_path"
       line_by_root[$root]="$line"
       repo_roots+=("$root")
-    done
 
-    seen=()
-    zo_paths=("${(@f)$(zoxide query -l --all --base-dir "$HOME/code" 2>/dev/null)}")
-    zo_roots=()
-    zo_paths=("${zo_paths[@]:#}")
-
-    local p owner repo
-    for p in "${zo_paths[@]}"; do
-      root=""
-
-      if [[ "$p" == "$github_root"/*/*(|/*) ]]; then
-        owner="${p#$github_root/}"
-        owner="${owner%%/*}"
-        repo="${p#$github_root/$owner/}"
-        repo="${repo%%/*}"
-        root="$github_root/$owner/$repo"
-      elif [[ "$p" == "$HOME/code/openai"(|/*) ]]; then
-        root="$HOME/code/openai"
-      elif [[ "$p" == "$HOME/code/chronosphere-openai"(|/*) ]]; then
-        root="$HOME/code/chronosphere-openai"
-      fi
-
-      if [[ -n "$root" && -n "${line_by_root[$root]:-}" && -z "${seen[$root]:-}" ]]; then
-        zo_roots+=("$root")
-        seen[$root]=1
+      if [[ "$root" != "$github_root"/*/* ]]; then
+        exception_roots+=("$root")
       fi
     done
 
-    ordered=()
-    remaining=()
+    local -a scored scored_sorted zo_roots
+    scored=()
+
+    if [[ -d "$github_root" ]]; then
+      scored+=("${(@f)$(zoxide query -ls --all --base-dir "$github_root" 2>/dev/null | head -n "$zoxide_limit" || true)}")
+    fi
 
     local r
-    for r in "${zo_roots[@]}"; do
-      ordered+=("${line_by_root[$r]}")
-    done
-    for r in "${repo_roots[@]}"; do
-      if [[ -z "${seen[$r]:-}" ]]; then
-        remaining+=("${line_by_root[$r]}")
-      fi
+    for r in "${exception_roots[@]}"; do
+      [[ -d "$r" ]] || continue
+      scored+=("${(@f)$(zoxide query -ls --all --base-dir "$r" 2>/dev/null | head -n "$zoxide_limit" || true)}")
     done
 
-    lines=("${ordered[@]}" "${remaining[@]}")
+    if (( ${#scored[@]} > 0 )); then
+      scored_sorted=("${(@f)$(printf '%s\n' "${scored[@]}" | LC_ALL=C sort -nr)}")
+      zo_roots=()
+      seen=()
+
+      local score zo_path owner repo
+      local scored_line
+      for scored_line in "${scored_sorted[@]}"; do
+        score=""
+        zo_path=""
+        IFS=$' \t' read -r score zo_path <<<"$scored_line"
+        [[ -n "$zo_path" ]] || continue
+
+        root=""
+        if [[ "$zo_path" == "$github_root"/*/*(|/*) ]]; then
+          owner="${zo_path#$github_root/}"
+          owner="${owner%%/*}"
+          repo="${zo_path#$github_root/$owner/}"
+          repo="${repo%%/*}"
+          root="$github_root/$owner/$repo"
+        else
+          for r in "${exception_roots[@]}"; do
+            if [[ "$zo_path" == "$r"(|/*) ]]; then
+              root="$r"
+              break
+            fi
+          done
+        fi
+
+        if [[ -n "$root" && -n "${line_by_root[$root]:-}" && -z "${seen[$root]:-}" ]]; then
+          zo_roots+=("$root")
+          seen[$root]=1
+        fi
+      done
+
+      ordered=()
+      remaining=()
+      for r in "${zo_roots[@]}"; do
+        ordered+=("${line_by_root[$r]}")
+      done
+      for r in "${repo_roots[@]}"; do
+        if [[ -z "${seen[$r]:-}" ]]; then
+          remaining+=("${line_by_root[$r]}")
+        fi
+      done
+
+      lines=("${ordered[@]}" "${remaining[@]}")
+    fi
+
+    if (( debug_enabled )); then
+      t1="${EPOCHREALTIME:-$SECONDS}"
+      printf 'repo_select: zoxide-order: repos=%d scored_lines=%d limit=%s base=%s elapsed=%.3fs\n' \
+        "${#lines[@]}" "${#scored[@]}" "$zoxide_limit" "$github_root" "$((t1 - t0))" >&2
+    fi
   fi
 
   local -a fzf_args
