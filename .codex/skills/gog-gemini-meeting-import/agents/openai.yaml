@@ -1,0 +1,4 @@
+interface:
+  display_name: "Gemini Meeting Import"
+  short_description: "Import Gemini meeting docs into transcript + notes"
+  default_prompt: "Given a Gemini meeting Google Doc URL, export the transcript and generate meeting notes."
