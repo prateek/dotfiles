@@ -153,6 +153,15 @@ pwd_after="$(
 )"
 assert_eq "$pwd_after" "${wt1:A}"
 
+echo "• w switch fuzzy-picks an existing worktree"
+pwd_after="$(
+  cd "$repos_dir/test-repo"
+  wt1_display="${wt1/#$HOME/~}"
+  w switch --root "$HOME/code/wt" --filter "$wt1_display" >/dev/null 2>&1
+  pwd -P
+)"
+assert_eq "$pwd_after" "${wt1:A}"
+
 echo "• w run executes agent command in worktree"
 (
   cd "$repos_dir/test-repo"
@@ -214,17 +223,37 @@ printf '%s' "$list_json" | python3 -c 'import json,sys; d=json.load(sys.stdin); 
 printf '%s' "$list_json" | python3 -c 'import json,sys; d=json.load(sys.stdin); print("\n".join(sorted({i.get("path","") for i in d})))' | grep -Fqx "$wt3" || die "w list missing: $wt3"
 printf '%s' "$list_json" | python3 -c 'import json,sys; d=json.load(sys.stdin); print("\n".join(sorted({i.get("path","") for i in d})))' | grep -Fqx "$wt4" || die "w list missing: $wt4"
 
-echo "• w rm removes stale worktree dirs (safe)"
-stale_parent="$HOME/code/wt/stale-owner-stale-repo.stale-branch"
-stale_leaf="$stale_parent/stale-repo"
-mkdir -p "$stale_leaf"
-cat >"$stale_leaf/.git" <<'EOF'
+echo "• broken worktrees show as stale"
+broken_parent="$HOME/code/wt/broken-owner-broken-repo.broken-branch"
+broken_leaf="$broken_parent/broken-repo"
+mkdir -p "$broken_leaf"
+cat >"$broken_leaf/.git" <<'EOF'
 gitdir: /does/not/exist
 EOF
+
+w help >/dev/null 2>&1
+got_gitdir="$(_w_gitdir_for_worktree "$broken_leaf")"
+assert_eq "$got_gitdir" ""
+
+ls_out="$(w ls --all --root "$HOME/code/wt" --format table)"
+broken_display="${broken_leaf/#$HOME/~}"
+ls_line="$(print -r -- "$ls_out" | grep -F "$broken_display" | head -n 1 || true)"
+[[ -n "$ls_line" ]] || die "expected w ls to include: $broken_leaf"
+print -r -- "$ls_line" | grep -Fq "✗ stale" || die "expected w ls to mark stale: $broken_leaf"
+
+echo "• w switch can filter stale rows"
+pwd_after="$(
+  cd "$repos_dir/test-repo"
+  w switch --all --root "$HOME/code/wt" --filter "stale" >/dev/null 2>&1
+  pwd -P
+)"
+assert_eq "$pwd_after" "${broken_leaf:A}"
+
+echo "• w rm removes stale worktree dirs (safe)"
 rm_out="$(w rm)"
-print -r -- "$rm_out" | grep -Fq "$stale_leaf" || die "expected w rm dry-run output to mention: $stale_leaf"
+print -r -- "$rm_out" | grep -Fq "$broken_leaf" || die "expected w rm dry-run output to mention: $broken_leaf"
 w rm --yes >/dev/null
-[[ ! -d "$stale_leaf" ]] || die "expected stale worktree removed: $stale_leaf"
+[[ ! -d "$broken_leaf" ]] || die "expected stale worktree removed: $broken_leaf"
 assert_dir "$wt1"
 
 echo "OK"

@@ -191,6 +191,7 @@ Commands:
   w new <branch> [opts]                Create/switch a worktree
   w run <branch> [opts] -- [args..]    Create/switch and execute agent cmd
   w cd  <branch> [opts]                Switch and cd into worktree
+  w switch [opts]                      Fuzzy-pick an existing worktree and cd into it (alias: wsc)
   w ls [--format table|tsv|json]       List centralized worktrees (alias: list)
   w rm [--yes]                         Remove stale centralized worktrees (dry-run by default; alias: prune)
 
@@ -201,6 +202,14 @@ Common opts (new/run/cd):
   --root <path>                        Central worktrees root (default: $W_WORKTREES_ROOT or ~/code/wt)
   --config <path>                      Worktrunk user config path (passed through)
   --no-cd                              Don't cd after switching (new/cd only)
+
+Switch opts:
+  --query <str>                        Initial fzf query
+  --filter <str>                       Non-interactive fzf selection (best for scripts/tests)
+  --all                                Include broken/non-git dirs under the root
+
+List opts:
+  --dirty                              Compute clean/dirty status (slower)
 
 Create opts (new/run):
   --base <ref>                         Base ref for --create
@@ -615,15 +624,261 @@ _w_cmd_cd() {
 	    return 1
 	  fi
 
-	  cd "$worktree_path" || return 1
-	}
+		  cd "$worktree_path" || return 1
+		}
+
+_w_gitdir_for_worktree() {
+  local worktree_path="$1"
+
+  if [[ -d "$worktree_path/.git" ]]; then
+    print -r -- "${worktree_path}/.git"
+    return 0
+  fi
+
+  [[ -f "$worktree_path/.git" ]] || { print -r -- ""; return 0; }
+
+  local line=""
+  IFS= read -r line <"$worktree_path/.git" 2>/dev/null || { print -r -- ""; return 0; }
+  [[ "$line" == gitdir:* ]] || { print -r -- ""; return 0; }
+
+  local gitdir="${line#gitdir:}"
+  gitdir="${gitdir# }"
+  [[ -n "$gitdir" ]] || { print -r -- ""; return 0; }
+
+  if [[ "$gitdir" != /* ]]; then
+    gitdir="$worktree_path/$gitdir"
+  fi
+
+  gitdir="${gitdir:A}"
+  [[ -d "$gitdir" ]] || { print -r -- ""; return 0; }
+
+  print -r -- "$gitdir"
+  return 0
+}
+
+_w_common_gitdir_from_gitdir() {
+  local gitdir="$1"
+  [[ -n "$gitdir" ]] || { print -r -- ""; return 0; }
+
+  local commondir_file="$gitdir/commondir"
+  if [[ -f "$commondir_file" ]]; then
+    local rel=""
+    IFS= read -r rel <"$commondir_file" 2>/dev/null || rel=""
+    [[ -n "$rel" ]] || { print -r -- "$gitdir"; return 0; }
+
+    local common="$rel"
+    if [[ "$common" != /* ]]; then
+      common="$gitdir/$common"
+    fi
+
+    print -r -- "${common:A}"
+    return 0
+  fi
+
+  print -r -- "$gitdir"
+  return 0
+}
+
+_w_branch_from_gitdir() {
+  local gitdir="$1"
+  [[ -n "$gitdir" ]] || { print -r -- ""; return 0; }
+
+  local head_file="$gitdir/HEAD"
+  [[ -f "$head_file" ]] || { print -r -- ""; return 0; }
+
+  local head=""
+  IFS= read -r head <"$head_file" 2>/dev/null || head=""
+  [[ -n "$head" ]] || { print -r -- ""; return 0; }
+
+  if [[ "$head" == "ref: refs/heads/"* ]]; then
+    print -r -- "${head#ref: refs/heads/}"
+  elif [[ "$head" == "ref: "* ]]; then
+    print -r -- "${head#ref: }"
+  else
+    print -r -- "(detached)"
+  fi
+
+  return 0
+}
+
+_w_origin_url_from_gitconfig() {
+  local config_path="$1"
+  [[ -f "$config_path" ]] || { print -r -- ""; return 0; }
+
+  local in_origin=0
+  local line=""
+  while IFS= read -r line; do
+    [[ -n "$line" ]] || continue
+
+    if [[ "$line" == "[remote \"origin\"]" ]]; then
+      in_origin=1
+      continue
+    fi
+
+    if [[ "$line" == \[*\] ]]; then
+      in_origin=0
+      continue
+    fi
+
+    if (( in_origin )); then
+      local trimmed="$line"
+      trimmed="${trimmed#"${trimmed%%[!$' \t']*}"}"
+
+      if [[ "$trimmed" == url* ]]; then
+        local rest="${trimmed#url}"
+        rest="${rest#"${rest%%[!$' \t']*}"}"
+        if [[ "$rest" == "="* ]]; then
+          rest="${rest#=}"
+          rest="${rest#"${rest%%[!$' \t']*}"}"
+          print -r -- "$rest"
+          return 0
+        fi
+      fi
+    fi
+  done <"$config_path"
+
+  print -r -- ""
+  return 0
+}
+
+_w_cmd_switch() {
+  setopt localoptions pipefail no_aliases 2> /dev/null
+
+  if ! command -v fzf >/dev/null 2>&1; then
+    print -u2 "w switch: missing fzf"
+    return 127
+  fi
+
+  local worktrees_root="${W_WORKTREES_ROOT:-$HOME/code/wt}"
+  local query=""
+  local filter=""
+  local include_all=0
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --root) worktrees_root="${2:?missing --root value}"; shift 2 ;;
+      --root=*) worktrees_root="${1#*=}"; shift ;;
+      --query) query="${2:?missing --query value}"; shift 2 ;;
+      --query=*) query="${1#*=}"; shift ;;
+      --filter) filter="${2:?missing --filter value}"; shift 2 ;;
+      --filter=*) filter="${1#*=}"; shift ;;
+      --all) include_all=1; shift ;;
+      -h|--help) _w_help; return 0 ;;
+      --) shift; break ;;
+      -*)
+        print -u2 "w switch: unknown arg: $1"
+        return 2
+        ;;
+      *)
+        if [[ -z "$query" ]]; then
+          query="$1"
+        else
+          print -u2 "w switch: unexpected arg: $1"
+          return 2
+        fi
+        shift
+        ;;
+    esac
+  done
+
+  local -a leaves
+  leaves=("$worktrees_root"/*/*(N-/))
+  if (( ${#leaves[@]} == 0 )); then
+    print -u2 "w switch: no worktrees found under: $worktrees_root"
+    return 1
+  fi
+
+  local tab=$'\t'
+  local -a rows
+  rows=()
+
+  local leaf gitdir common_gitdir origin_url slug branch state display_path
+  for leaf in "${leaves[@]}"; do
+    if [[ ! -e "$leaf/.git" ]]; then
+      (( include_all )) || continue
+      slug=""
+      branch=""
+      state="stale"
+      display_path="${leaf/#$HOME/~}"
+      rows+=("${slug}${tab}${branch}${tab}${state}${tab}${display_path}${tab}${leaf}")
+      continue
+    fi
+
+    gitdir="$(_w_gitdir_for_worktree "$leaf")"
+    if [[ -z "$gitdir" ]]; then
+      (( include_all )) || continue
+      slug=""
+      branch=""
+      state="stale"
+      display_path="${leaf/#$HOME/~}"
+      rows+=("${slug}${tab}${branch}${tab}${state}${tab}${display_path}${tab}${leaf}")
+      continue
+    fi
+
+    common_gitdir="$(_w_common_gitdir_from_gitdir "$gitdir")"
+    origin_url="$(_w_origin_url_from_gitconfig "$common_gitdir/config")"
+    slug="$(_w_slug_from_remote "$origin_url")"
+    branch="$(_w_branch_from_gitdir "$gitdir")"
+
+    state="ok"
+    display_path="${leaf/#$HOME/~}"
+    rows+=("${slug}${tab}${branch}${tab}${state}${tab}${display_path}${tab}${leaf}")
+  done
+
+  rows=("${(@o)rows}")
+
+  local -a fzf_args
+  fzf_args=(
+    --ansi
+    --reverse
+    --no-sort
+    --prompt="worktree> "
+    --delimiter=$'\t'
+    --with-nth=1,2,3,4
+    --preview='git -C {5} status -sb 2>/dev/null; echo; git -C {5} status --porcelain -uno 2>/dev/null | head -n 50'
+    --preview-window=right:60%
+  )
+  if [[ -n "$query" ]]; then
+    fzf_args+=(--query="$query")
+  fi
+  if [[ -n "$filter" ]]; then
+    fzf_args+=(--filter="$filter")
+  fi
+
+  local selection
+  if tty -s 2>/dev/null; then
+    selection="$(printf '%s\n' "${rows[@]}" | fzf "${fzf_args[@]}" </dev/tty)" || return $?
+  else
+    selection="$(printf '%s\n' "${rows[@]}" | fzf "${fzf_args[@]}")" || return $?
+  fi
+  [[ -n "$selection" ]] || return 1
+
+  local selected_path="${selection##*$tab}"
+  if [[ "$selected_path" == "~"* ]]; then
+    selected_path="${selected_path/#\~/$HOME}"
+  fi
+
+  if command -v zoxide >/dev/null 2>&1; then
+    zoxide add "$selected_path" >/dev/null 2>&1 || true
+  fi
+
+  cd "$selected_path" || return 1
+}
 
 _w_cmd_list() {
   setopt localoptions pipefail no_aliases 2> /dev/null
+  setopt typeset_silent 2> /dev/null || true
+  unsetopt xtrace 2>/dev/null || true
+  set +x 2>/dev/null || true
+  unsetopt verbose 2>/dev/null || true
+  set +v 2>/dev/null || true
 
   local format="table"
   local worktrees_root="${W_WORKTREES_ROOT:-$HOME/code/wt}"
   local include_all=0
+  local compute_dirty=0
+  local dirty_count=0
+  local stale_count=0
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -631,11 +886,17 @@ _w_cmd_list() {
       --format=*) format="${1#*=}"; shift ;;
       --root) worktrees_root="${2:?missing --root value}"; shift 2 ;;
       --root=*) worktrees_root="${1#*=}"; shift ;;
+      --dirty) compute_dirty=1; shift ;;
       --all) include_all=1; shift ;;
       -h|--help) _w_help; return 0 ;;
       *) print -u2 "w ls: unknown arg: $1"; return 2 ;;
     esac
   done
+
+  # Table output is intended to be fast; only compute dirty/clean status when requested.
+  if [[ "$format" != "table" ]]; then
+    compute_dirty=1
+  fi
 
   local -a leaves
   leaves=("$worktrees_root"/*/*(N-/))
@@ -644,26 +905,40 @@ _w_cmd_list() {
   local -a rows
   rows=()
 
-  local leaf origin slug branch dirty
+  local leaf gitdir common_gitdir origin_url slug branch dirty kind
   for leaf in "${leaves[@]}"; do
-    if [[ ! -e "$leaf/.git" ]]; then
+    kind="ok"
+
+    gitdir="$(_w_gitdir_for_worktree "$leaf")"
+    if [[ -z "$gitdir" ]]; then
+      kind="stale"
+    fi
+
+    if [[ "$kind" == "stale" ]]; then
       (( include_all )) || continue
+      stale_count=$(( stale_count + 1 ))
       slug=""
       branch=""
       dirty=""
-      rows+=("${slug}${tab}${branch}${tab}${leaf}${tab}${dirty}")
+      rows+=("${slug}${tab}${branch}${tab}${leaf}${tab}${dirty}${tab}${kind}")
       continue
     fi
 
-    branch="$(git -C "$leaf" rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
-    origin="$(git -C "$leaf" remote get-url origin 2>/dev/null || true)"
-    slug="$(_w_slug_from_remote "$origin")"
-    dirty="0"
-    if [[ -n "$(git -C "$leaf" status --porcelain -uno 2>/dev/null || true)" ]]; then
-      dirty="1"
+    common_gitdir="$(_w_common_gitdir_from_gitdir "$gitdir")"
+    origin_url="$(_w_origin_url_from_gitconfig "$common_gitdir/config")"
+    slug="$(_w_slug_from_remote "$origin_url")"
+    branch="$(_w_branch_from_gitdir "$gitdir")"
+
+    dirty=""
+    if (( compute_dirty )); then
+      dirty="0"
+      if [[ -n "$(git -C "$leaf" status --porcelain -uno 2>/dev/null || true)" ]]; then
+        dirty="1"
+        dirty_count=$(( dirty_count + 1 ))
+      fi
     fi
 
-    rows+=("${slug}${tab}${branch}${tab}${leaf}${tab}${dirty}")
+    rows+=("${slug}${tab}${branch}${tab}${leaf}${tab}${dirty}${tab}${kind}")
   done
 
   rows=("${(@o)rows}")
@@ -671,26 +946,57 @@ _w_cmd_list() {
   case "$format" in
     tsv)
       print -r -- "slug${tab}branch${tab}path${tab}dirty"
-      printf '%s\n' "${rows[@]}"
+      local row
+      local s="" b="" p="" d="" k=""
+      local sep=$'\001'
+      local row_tmp=""
+      for row in "${rows[@]}"; do
+        row_tmp="${row//$'\t'/$sep}"
+        IFS="$sep" read -r s b p d k <<<"$row_tmp"
+        print -r -- "${s}${tab}${b}${tab}${p}${tab}${d}"
+      done
       ;;
     json)
       printf '%s\n' "${rows[@]}" | python3 -c $'import json,sys\nout=[]\nfor l in sys.stdin:\n  l=l.rstrip(\"\\n\")\n  if not l.strip():\n    continue\n  parts=l.split(\"\\t\")\n  parts += [\"\"]*(4-len(parts))\n  slug,branch,path,dirty=parts[:4]\n  out.append({\"slug\":slug,\"branch\":branch,\"path\":path,\"dirty\":(dirty==\"1\")})\nprint(json.dumps(out, indent=2))'
       ;;
     table)
+      local is_tty=0
+      [[ -t 1 ]] && is_tty=1
+
+      local use_color=0
+      if (( is_tty )) && [[ -z "${NO_COLOR:-}" ]]; then
+        use_color=1
+      fi
+
       {
         print -r -- "repo${tab}branch${tab}state${tab}path"
         local row
+        local s="" b="" p="" d="" k=""
+        local sep=$'\001'
+        local row_tmp=""
         for row in "${rows[@]}"; do
-          local s b p d
-          IFS=$'\t' read -r s b p d <<<"$row"
+          row_tmp="${row//$'\t'/$sep}"
+          IFS="$sep" read -r s b p d k <<<"$row_tmp"
 
-          local state="clean"
-          [[ "$d" == "1" ]] && state="dirty"
+          local state="○ ok"
+          if [[ "$k" == "stale" ]]; then
+            state="✗ stale"
+          elif [[ "$d" == "1" ]]; then
+            state="● dirty"
+          elif [[ "$d" == "0" ]]; then
+            state="○ clean"
+          fi
 
           local display_path="$p"
           display_path="${display_path/#$HOME/~}"
 
-          print -r -- "${s}${tab}${b}${tab}${state}${tab}${display_path}"
+          local repo_display="$s"
+          [[ -z "$repo_display" ]] && repo_display="-"
+
+          local branch_display="$b"
+          [[ -z "$branch_display" ]] && branch_display="-"
+
+          print -r -- "${repo_display}${tab}${branch_display}${tab}${state}${tab}${display_path}"
         done
       } | {
         if command -v column >/dev/null 2>&1; then
@@ -698,7 +1004,71 @@ _w_cmd_list() {
         else
           cat
         fi
+      } | {
+        if (( use_color )); then
+          local line i=0
+          local esc=$'\e[' reset=$'\e[0m' bold=$'\e[1m'
+          local green=$'\e[32m' yellow=$'\e[33m' red=$'\e[31m'
+          while IFS= read -r line; do
+            i=$((i + 1))
+            if (( i == 1 )); then
+              print -r -- "${bold}${line}${reset}"
+              continue
+            fi
+            line="${line//○ ok/${green}○ ok${reset}}"
+            line="${line//○ clean/${green}○ clean${reset}}"
+            line="${line//● dirty/${yellow}● dirty${reset}}"
+            line="${line//✗ stale/${red}✗ stale${reset}}"
+            print -r -- "$line"
+          done
+        else
+          cat
+        fi
       }
+
+      if (( is_tty )); then
+        local total_count="${#rows[@]}"
+        local root_display="$worktrees_root"
+        root_display="${root_display/#$HOME/~}"
+
+        if (( use_color )); then
+          if (( compute_dirty )); then
+            if (( stale_count > 0 )); then
+              printf '\n\033[2m○ Showing %d worktrees, %d dirty, %d stale (root: %s)\033[0m\n' \
+                "$total_count" "$dirty_count" "$stale_count" "$root_display"
+            else
+              printf '\n\033[2m○ Showing %d worktrees, %d dirty (root: %s)\033[0m\n' \
+                "$total_count" "$dirty_count" "$root_display"
+            fi
+          else
+            if (( stale_count > 0 )); then
+              printf '\n\033[2m○ Showing %d worktrees, %d stale (root: %s)\033[0m\n' \
+                "$total_count" "$stale_count" "$root_display"
+            else
+              printf '\n\033[2m○ Showing %d worktrees (root: %s)\033[0m\n' \
+                "$total_count" "$root_display"
+            fi
+          fi
+        else
+          if (( compute_dirty )); then
+            if (( stale_count > 0 )); then
+              printf '\n○ Showing %d worktrees, %d dirty, %d stale (root: %s)\n' \
+                "$total_count" "$dirty_count" "$stale_count" "$root_display"
+            else
+              printf '\n○ Showing %d worktrees, %d dirty (root: %s)\n' \
+                "$total_count" "$dirty_count" "$root_display"
+            fi
+          else
+            if (( stale_count > 0 )); then
+              printf '\n○ Showing %d worktrees, %d stale (root: %s)\n' \
+                "$total_count" "$stale_count" "$root_display"
+            else
+              printf '\n○ Showing %d worktrees (root: %s)\n' \
+                "$total_count" "$root_display"
+            fi
+          fi
+        fi
+      fi
       ;;
     *)
       print -u2 "w ls: unknown format: $format (expected table|tsv|json)"
@@ -812,6 +1182,11 @@ function w() {
     cd|c|go|enter)
       shift
       _w_cmd_cd "$@"
+      return $?
+      ;;
+    switch|sw)
+      shift
+      _w_cmd_switch "$@"
       return $?
       ;;
     list|ls)

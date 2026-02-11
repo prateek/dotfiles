@@ -51,7 +51,9 @@ Useful subcommands:
 w new feature-auth --base origin/main
 w new feature-auth --sparse api --sparse docs
 w cd  feature-auth                # switch + cd into worktree
-w ls                              # list centralized worktrees under ~/code/wt
+w switch                          # pick an existing centralized worktree and cd into it (alias: wsc)
+w ls                              # fast list of centralized worktrees under ~/code/wt
+w ls --dirty                      # include clean/dirty status (slower)
 w rm                              # dry-run stale cleanup
 w rm --yes                        # apply stale cleanup
 ```
@@ -86,8 +88,13 @@ export WT_AGENT_CMD=claude   # or keep default: codex
 Worktrunk docs-style shorthand:
 
 ```sh
-alias wsc='w run'
+alias wra='w run'
 ```
+
+### When to use `w` vs `wt`
+
+- Use `w` when you want **multi-repo** selection (repo picker / `--repo`), a **centralized root** (`~/code/wt`), or a quick **agent launch** pattern.
+- Use `wt` directly when you want Worktrunk’s **rich per-repo UX** (`wt list --full`, `wt switch` picker, `wt merge`, `wt remove`, hooks, CI links).
 
 ### Back-compat
 

@@ -154,8 +154,11 @@ yoloo() {
 }
 alias yoloc='claude --dangerously-skip-permissions'
 
-# Worktree: create + agent (Worktrunk docs-style shorthand)
-alias wsc='w run'
+# Worktrees:
+# - `wsc`: switch existing centralized worktree
+# - `wra`: create/switch + run agent command
+alias wsc='w switch'
+alias wra='w run'
 
 # One-shot Codex: cdx "do x y and z"
 # via https://gist.github.com/cameroncooke/9efe289b3251f290ecc5bf0dd87f92bd
