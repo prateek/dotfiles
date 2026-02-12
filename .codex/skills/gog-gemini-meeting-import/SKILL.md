@@ -10,6 +10,11 @@ Use this skill to turn a Gemini meeting Google Doc into two files in your notes 
 - `YYYY-MM-DD-meeting-transcript-<participants>.md` (raw transcript section)
 - `YYYY-MM-DD-meeting-notes-<participants>.md` (structured notes generated from the transcript)
 
+For automation / collision-proof naming, you can append a short docId suffix:
+
+- `YYYY-MM-DD-meeting-transcript-<participants>-<docIdShort>.md`
+- `YYYY-MM-DD-meeting-notes-<participants>-<docIdShort>.md`
+
 ## Preconditions
 
 - `gog` is installed and authenticated for Google Docs access.
@@ -18,7 +23,7 @@ Use this skill to turn a Gemini meeting Google Doc into two files in your notes 
 
 ### 1) Export + extract transcript
 
-Run the helper script (defaults output dir to `/Users/prateek/code/github.com/prateek/personal-notes/20-openai`):
+Run the helper script (defaults output dir to `/Users/prateek/code/github.com/prateek/personal-notes/21-openai-meetings`):
 
 ```bash
 python3 scripts/import_gemini_meeting.py "<google_doc_url_or_doc_id>"
@@ -31,6 +36,26 @@ python3 scripts/import_gemini_meeting.py "<url>" --out-dir "/path/to/notes/dir"
 ```
 
 The script writes the transcript file and prints the transcript path plus the suggested notes path.
+
+### 1b) Sync all recent Gemini meeting docs (Drive + Calendar)
+
+Dry-run discovery (recommended while iterating):
+
+```bash
+python3 scripts/sync_gemini_meetings.py --dry-run --days 7
+```
+
+Apply (imports transcript + generates notes, and records processed docIds):
+
+```bash
+python3 scripts/sync_gemini_meetings.py --days 90
+```
+
+State is stored in your notes repo at:
+
+- `.gemini-sync/processed-docids.txt` (one docId per line)
+
+Debug artifacts are written to an OS temp directory (see the printed “Run dir” path).
 
 ### 2) Generate meeting notes from the transcript
 

@@ -10,7 +10,7 @@ from datetime import datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-DEFAULT_OUT_DIR = Path("/Users/prateek/code/github.com/prateek/personal-notes/20-openai")
+DEFAULT_OUT_DIR = Path("/Users/prateek/code/github.com/prateek/personal-notes/21-openai-meetings")
 
 DOC_ID_FROM_URL_RE = re.compile(r"https?://docs\.google\.com/document/d/([a-zA-Z0-9_-]+)")
 DOC_ID_FROM_PATH_RE = re.compile(r"document/d/([a-zA-Z0-9_-]+)")
@@ -43,6 +43,11 @@ def _parse_doc_id(source: str) -> str:
 
 def _default_source_url(doc_id: str) -> str:
     return f"https://docs.google.com/document/d/{doc_id}/edit"
+
+
+def _short_doc_id(doc_id: str, length: int = 10) -> str:
+    # Doc IDs are URL-safe and file-name-safe (letters, digits, - and _).
+    return doc_id[:length]
 
 
 def _run_gog_export(doc_id: str, out_path: Path) -> None:
@@ -230,6 +235,16 @@ def main() -> int:
         help="Overwrite existing transcript file if present.",
     )
     parser.add_argument(
+        "--allow-existing",
+        action="store_true",
+        help="If transcript already exists, do not error; still print paths (useful for sync).",
+    )
+    parser.add_argument(
+        "--include-doc-id",
+        action="store_true",
+        help="Append a short docId suffix to output filenames to avoid collisions.",
+    )
+    parser.add_argument(
         "--json",
         action="store_true",
         help="Print machine-readable JSON output.",
@@ -264,14 +279,19 @@ def main() -> int:
     date_slug = inferred_date.strftime("%Y-%m-%d") if inferred_date else "unknown-date"
     participants_slug = inferred_participants or "unknown-attendees"
 
-    transcript_path = out_dir / f"{date_slug}-meeting-transcript-{participants_slug}.md"
-    notes_path = out_dir / f"{date_slug}-meeting-notes-{participants_slug}.md"
+    doc_id_suffix = f"-{_short_doc_id(doc_id)}" if args.include_doc_id else ""
+    transcript_path = out_dir / f"{date_slug}-meeting-transcript-{participants_slug}{doc_id_suffix}.md"
+    notes_path = out_dir / f"{date_slug}-meeting-notes-{participants_slug}{doc_id_suffix}.md"
 
-    if transcript_path.exists() and not args.overwrite:
-        print(f"[ERROR] Transcript already exists: {transcript_path}", file=sys.stderr)
-        return 2
-
-    transcript_path.write_text(transcript_text, encoding="utf-8")
+    transcript_existed = transcript_path.exists()
+    transcript_written = False
+    if transcript_existed and not args.overwrite:
+        if not args.allow_existing:
+            print(f"[ERROR] Transcript already exists: {transcript_path}", file=sys.stderr)
+            return 2
+    else:
+        transcript_path.write_text(transcript_text, encoding="utf-8")
+        transcript_written = True
 
     payload = {
         "doc_id": doc_id,
@@ -281,6 +301,8 @@ def main() -> int:
         "participants": (participants_slug if inferred_participants else None),
         "transcript_path": str(transcript_path),
         "notes_path": str(notes_path),
+        "transcript_existed": transcript_existed,
+        "transcript_written": transcript_written,
     }
 
     if args.json:
