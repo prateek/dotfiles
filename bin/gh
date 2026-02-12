@@ -132,16 +132,27 @@ _extract_repo_context() {
     fi
   done
 
+  # Only attempt to infer a repo slug from positional args for a small set of
+  # commands. Many other commands accept values like `--head owner/branch`
+  # which can look like `owner/repo` but are not.
+  if [[ -z "$slug_candidate" && "${argv[1]:-}" == "repo" ]]; then
+    case "${argv[2]:-}" in
+      clone|view|fork)
+        slug_candidate="$(_slug_from_repo_arg "${argv[3]:-}")"
+        ;;
+    esac
+  fi
+
   local arg
   for arg in "${argv[@]}"; do
-    [[ -n "$slug_candidate" ]] || slug_candidate="$(_slug_from_repo_arg "$arg")"
     if [[ -z "$origin_candidate" ]] && _looks_like_remote_url "$arg"; then
       origin_candidate="$arg"
+      [[ -n "$slug_candidate" ]] || slug_candidate="$(_slug_from_repo_arg "$arg")"
+      break
     fi
-    [[ -n "$slug_candidate" && -n "$origin_candidate" ]] && break
   done
 
-  print -r -- "${origin_candidate}\t${slug_candidate}"
+  printf '%s\t%s\n' "$origin_candidate" "$slug_candidate"
 }
 
 origin_url=""
@@ -155,6 +166,9 @@ repo_slug="${ctx#*$'\t'}"
 
 if [[ -z "$origin_url" ]]; then
   origin_url="$origin_from_args"
+fi
+if [[ -z "$repo_slug" && -n "$origin_url" ]]; then
+  repo_slug="$(_slug_from_repo_arg "$origin_url")"
 fi
 
 gh_user="${GH_WRAPPER_USER:-}"

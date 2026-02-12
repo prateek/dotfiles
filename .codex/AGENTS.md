@@ -85,3 +85,13 @@ git sparse-checkout add tools
 git sparse-checkout list
 git sparse-checkout disable
 ```
+
+## GitHub CLI (`gh`)
+
+This machine wraps `gh` to automatically pick the right GitHub identity:
+- Wrapper path: `~/bin/gh` → `~/dotfiles/bin/gh`
+- Selection signals (in priority order): `-R/--repo`, current repo `origin` remote, a small set of positional repo args (like `gh repo clone owner/repo`)
+- Force a user when needed: `GH_WRAPPER_USER=prateek-oai gh …` or `GH_WRAPPER_USER=prateek gh …`
+- Quick sanity check for which identity is in use: `gh api user -q .login`
+
+If you see `GraphQL: Could not resolve to a Repository ...`, it’s usually the wrong identity being selected; retry with `GH_WRAPPER_USER=prateek-oai`.
