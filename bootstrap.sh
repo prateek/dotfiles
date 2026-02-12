@@ -466,7 +466,7 @@ else
 fi
 
 # dotfiles bin wrappers
-for f in devtool gh grmrepo grmrepo-refresh repo-index wt-hook-sparse wt-hook-openai-venv; do
+for f in devtool gemini-meeting-sync gh grmrepo grmrepo-refresh repo-index wt-hook-sparse wt-hook-openai-venv; do
   src="$CWD/bin/$f"
   dest="$HOME/bin/$f"
   if [ -f "$src" ]; then
@@ -477,6 +477,29 @@ for f in devtool gh grmrepo grmrepo-refresh repo-index wt-hook-sparse wt-hook-op
     fi
   fi
 done
+
+# Gemini meeting sync (optional): install a default config, but do NOT enable.
+GMS_CONFIG_DIR="$HOME/.config/gemini-meeting-sync"
+GMS_CONFIG_FILE="$GMS_CONFIG_DIR/config.json"
+if [ "$DRY_RUN" = "1" ]; then
+  echo "Would ensure directory: $GMS_CONFIG_DIR"
+  echo "Would ensure default config (if missing): $GMS_CONFIG_FILE"
+else
+  mkdir -p "$GMS_CONFIG_DIR"
+  if [ ! -f "$GMS_CONFIG_FILE" ]; then
+    cat >"$GMS_CONFIG_FILE" <<'EOF'
+{
+  "out_dir": "/Users/prateek/code/github.com/prateek/personal-notes/21-openai-meetings",
+  "lookback_days": 7,
+  "interval_seconds": 900,
+  "use_calendar": false,
+  "artifact_prune_days": 2,
+  "notify_on_success": "on_change",
+  "notify_on_failure": true
+}
+EOF
+  fi
+fi
 
 # git-repo-manager (grm) install/update (via cargo, when available)
 if [ "$DRY_RUN" = "1" ]; then

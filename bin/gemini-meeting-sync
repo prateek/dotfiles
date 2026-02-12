@@ -1,0 +1,371 @@
+#!/usr/bin/env zsh
+#
+# gemini-meeting-sync: periodic Gemini meeting notes sync (transcripts + notes).
+#
+# This wrapper:
+# - runs the gog-gemini-meeting-import sync script with sane defaults
+# - prevents overlapping runs
+# - writes logs + status to /var/tmp (NOT the notes vault)
+# - exposes enable/disable + status helpers for Hammerspoon/Raycast/etc.
+
+set -euo pipefail
+unsetopt xtrace 2>/dev/null || true
+set +x 2>/dev/null || true
+unsetopt verbose 2>/dev/null || true
+set +v 2>/dev/null || true
+
+die() {
+  echo "gemini-meeting-sync: $*" >&2
+  exit 2
+}
+
+config_dir() {
+  local config_home="${XDG_CONFIG_HOME:-$HOME/.config}"
+  echo "$config_home/gemini-meeting-sync"
+}
+
+config_file() {
+  echo "$(config_dir)/config.json"
+}
+
+enabled_file() {
+  echo "$(config_dir)/enabled"
+}
+
+tmp_root() {
+  echo "${GEMINI_MEETING_SYNC_TMP_ROOT:-/var/tmp/gemini-meeting-sync}"
+}
+
+status_file() {
+  echo "$(tmp_root)/latest-status.json"
+}
+
+latest_log_link() {
+  echo "$(tmp_root)/latest.log"
+}
+
+sync_script_path() {
+  echo "${GEMINI_MEETING_SYNC_SCRIPT:-$HOME/.codex/skills/gog-gemini-meeting-import/scripts/sync_gemini_meetings.py}"
+}
+
+ensure_dirs() {
+  mkdir -p "$(config_dir)"
+  mkdir -p "$(tmp_root)"
+  mkdir -p "$(tmp_root)/logs"
+}
+
+ensure_default_config() {
+  local cfg
+  cfg="$(config_file)"
+  if [[ -f "$cfg" ]]; then
+    return 0
+  fi
+  cat >"$cfg" <<'EOF'
+{
+  "out_dir": "/Users/prateek/code/github.com/prateek/personal-notes/21-openai-meetings",
+  "lookback_days": 7,
+  "interval_seconds": 900,
+  "use_calendar": false,
+  "artifact_prune_days": 2,
+  "notify_on_success": "on_change",
+  "notify_on_failure": true
+}
+EOF
+}
+
+read_config() {
+  local cfg
+  cfg="$(config_file)"
+  # Defaults (must stay in sync with ensure_default_config).
+  local out_dir_default="/Users/prateek/code/github.com/prateek/personal-notes/21-openai-meetings"
+  local lookback_days_default="7"
+  local use_calendar_default="0"
+  local prune_days_default="2"
+
+  eval "$(
+    python3 - <<'PY' "$cfg" "$out_dir_default" "$lookback_days_default" "$use_calendar_default" "$prune_days_default"
+import json
+import shlex
+import sys
+from pathlib import Path
+
+cfg_path = Path(sys.argv[1])
+out_dir_default = sys.argv[2]
+lookback_days_default = int(sys.argv[3])
+use_calendar_default = sys.argv[4] == "1"
+prune_days_default = int(sys.argv[5])
+
+cfg = {}
+if cfg_path.exists():
+    try:
+        cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
+    except Exception:
+        cfg = {}
+
+out_dir = cfg.get("out_dir", out_dir_default)
+lookback_days = int(cfg.get("lookback_days", lookback_days_default))
+use_calendar = bool(cfg.get("use_calendar", use_calendar_default))
+prune_days = int(cfg.get("artifact_prune_days", prune_days_default))
+
+print("OUT_DIR=" + shlex.quote(str(out_dir)))
+print("LOOKBACK_DAYS=" + shlex.quote(str(lookback_days)))
+print("USE_CALENDAR=" + shlex.quote("1" if use_calendar else "0"))
+print("PRUNE_DAYS=" + shlex.quote(str(prune_days)))
+PY
+  )"
+}
+
+count_processed() {
+  local out_dir="$1"
+  local state_file="$out_dir/.gemini-sync/processed-docids.txt"
+  if [[ ! -f "$state_file" ]]; then
+    echo 0
+    return 0
+  fi
+  python3 - <<'PY' "$state_file"
+from pathlib import Path
+import sys
+
+p = Path(sys.argv[1])
+text = p.read_text(encoding="utf-8", errors="replace")
+print(sum(1 for line in text.splitlines() if line.strip()))
+PY
+}
+
+write_status_json() {
+  local started_at="$1"
+  local finished_at="$2"
+  local exit_code="$3"
+  local out_dir="$4"
+  local lookback_days="$5"
+  local new_processed="$6"
+  local errors="$7"
+  local run_dir="$8"
+  local log_path="$9"
+
+  local dest tmp
+  dest="$(status_file)"
+  tmp="$(mktemp "${dest}.tmp.XXXXXX")"
+
+  python3 - <<'PY' "$tmp" "$started_at" "$finished_at" "$exit_code" "$out_dir" "$lookback_days" "$new_processed" "$errors" "$run_dir" "$log_path"
+import json
+import sys
+
+out_path = sys.argv[1]
+payload = {
+    "started_at": sys.argv[2],
+    "finished_at": sys.argv[3],
+    "exit_code": int(sys.argv[4]),
+    "out_dir": sys.argv[5],
+    "lookback_days": int(sys.argv[6]),
+    "new_processed": int(sys.argv[7]),
+    "errors": None if sys.argv[8] in ("", "unknown") else int(sys.argv[8]),
+    "run_dir": (sys.argv[9] or None),
+    "log_path": (sys.argv[10] or None),
+}
+with open(out_path, "w", encoding="utf-8") as f:
+    json.dump(payload, f, indent=2, sort_keys=True)
+    f.write("\n")
+PY
+
+  mv -f "$tmp" "$dest"
+}
+
+acquire_lock() {
+  local lock_dir
+  lock_dir="$(tmp_root)/lock"
+  local pid_file="$lock_dir/pid"
+
+  if mkdir "$lock_dir" 2>/dev/null; then
+    echo "$$" >"$pid_file"
+    return 0
+  fi
+
+  if [[ -f "$pid_file" ]]; then
+    local existing_pid
+    existing_pid="$(cat "$pid_file" 2>/dev/null || true)"
+    if [[ -n "$existing_pid" ]] && kill -0 "$existing_pid" 2>/dev/null; then
+      echo "gemini-meeting-sync: already running (pid=$existing_pid)" >&2
+      return 1
+    fi
+  fi
+
+  # Stale lock.
+  rm -rf "$lock_dir" 2>/dev/null || true
+  mkdir "$lock_dir" || return 1
+  echo "$$" >"$pid_file"
+  return 0
+}
+
+release_lock() {
+  rm -rf "$(tmp_root)/lock" 2>/dev/null || true
+}
+
+prune_old_wrapper_logs() {
+  local prune_days="$1"
+  [[ "$prune_days" =~ '^[0-9]+$' ]] || return 0
+  if [[ "$prune_days" -le 0 ]]; then
+    return 0
+  fi
+
+  local logs_dir
+  logs_dir="$(tmp_root)/logs"
+  [[ -d "$logs_dir" ]] || return 0
+
+  # Best-effort; never fail the sync just because cleanup failed.
+  python3 - <<'PY' "$logs_dir" "$prune_days" >/dev/null 2>&1 || true
+import sys
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+logs_dir = Path(sys.argv[1])
+prune_days = int(sys.argv[2])
+cutoff = datetime.now(timezone.utc) - timedelta(days=prune_days)
+
+for path in logs_dir.glob("run-*.log"):
+    try:
+        mtime = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
+    except OSError:
+        continue
+    if mtime < cutoff:
+        try:
+            path.unlink()
+        except OSError:
+            pass
+PY
+}
+
+cmd_enable() {
+  ensure_dirs
+  ensure_default_config
+  touch "$(enabled_file)"
+  echo "Enabled: $(enabled_file)"
+  echo "Hammerspoon will pick this up on its next timer tick."
+  echo "Run now: gemini-meeting-sync run"
+}
+
+cmd_disable() {
+  ensure_dirs
+  rm -f "$(enabled_file)" 2>/dev/null || true
+  echo "Disabled (removed): $(enabled_file)"
+}
+
+cmd_status() {
+  local f
+  f="$(status_file)"
+  if [[ ! -f "$f" ]]; then
+    echo "No status yet. Run: gemini-meeting-sync run"
+    return 0
+  fi
+  cat "$f"
+}
+
+cmd_tail() {
+  local f
+  f="$(latest_log_link)"
+  if [[ ! -e "$f" ]]; then
+    echo "No logs yet. Run: gemini-meeting-sync run"
+    return 0
+  fi
+  tail -n 200 -f "$f"
+}
+
+cmd_run() {
+  ensure_dirs
+  ensure_default_config
+  read_config
+
+  local script
+  script="$(sync_script_path)"
+  [[ -f "$script" ]] || die "missing sync script at $script (run dotfiles bootstrap to link ~/.codex/skills)"
+  command -v python3 >/dev/null 2>&1 || die "missing python3"
+
+  if ! acquire_lock; then
+    return 0
+  fi
+  trap release_lock EXIT INT TERM
+
+  local started_at finished_at
+  started_at="$(date -Iseconds)"
+
+  local pre_count post_count new_processed
+  pre_count="$(count_processed "$OUT_DIR")"
+
+  prune_old_wrapper_logs "$PRUNE_DAYS"
+
+  local ts log_path latest_link
+  ts="$(date +%Y%m%dT%H%M%S)"
+  log_path="$(tmp_root)/logs/run-$ts.log"
+  latest_link="$(latest_log_link)"
+  ln -snf "$log_path" "$latest_link" 2>/dev/null || true
+
+  local run_dir=""
+  local errors="unknown"
+  local exit_code=0
+
+  {
+    echo "gemini-meeting-sync run started_at=$started_at out_dir=$OUT_DIR lookback_days=$LOOKBACK_DAYS use_calendar=$USE_CALENDAR"
+    echo "log_path=$log_path"
+    echo "tmp_root=$(tmp_root)"
+    echo "cmd=python3 -u $script --out-dir \"$OUT_DIR\" --days \"$LOOKBACK_DAYS\" --prune-days \"$PRUNE_DAYS\" $([[ \"$USE_CALENDAR\" == \"1\" ]] || echo \"--no-calendar\") $*"
+    echo
+    TMPDIR="/var/tmp" PYTHONUNBUFFERED=1 python3 -u "$script" \
+      --out-dir "$OUT_DIR" \
+      --days "$LOOKBACK_DAYS" \
+      --prune-days "$PRUNE_DAYS" \
+      $([[ "$USE_CALENDAR" == "1" ]] || echo "--no-calendar") \
+      "$@"
+  } >"$log_path" 2>&1 || exit_code=$?
+
+  run_dir="$(grep -m1 '^Run dir: ' "$log_path" 2>/dev/null | sed -E 's/^Run dir: //' || true)"
+  if [[ -n "$run_dir" && -f "$run_dir/summary.json" ]]; then
+    errors="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["errors"])' "$run_dir/summary.json" 2>/dev/null || echo unknown)"
+  fi
+
+  post_count="$(count_processed "$OUT_DIR")"
+  new_processed=$(( post_count - pre_count ))
+
+  finished_at="$(date -Iseconds)"
+  write_status_json "$started_at" "$finished_at" "$exit_code" "$OUT_DIR" "$LOOKBACK_DAYS" "$new_processed" "$errors" "$run_dir" "$log_path"
+
+  if [[ "$exit_code" -eq 0 ]]; then
+    echo "gemini-meeting-sync: ok new_processed=$new_processed errors=$errors run_dir=${run_dir:-unknown}"
+  else
+    echo "gemini-meeting-sync: failed exit_code=$exit_code new_processed=$new_processed errors=$errors run_dir=${run_dir:-unknown}"
+  fi
+
+  return "$exit_code"
+}
+
+cmd_help() {
+  cat <<'EOF'
+Usage:
+  gemini-meeting-sync run
+  gemini-meeting-sync status
+  gemini-meeting-sync tail
+  gemini-meeting-sync enable
+  gemini-meeting-sync disable
+
+State:
+  - Enabled marker: ~/.config/gemini-meeting-sync/enabled
+  - Config: ~/.config/gemini-meeting-sync/config.json
+
+Logs + status:
+  - /var/tmp/gemini-meeting-sync/latest.log -> most recent run log
+  - /var/tmp/gemini-meeting-sync/latest-status.json
+
+Env:
+  - GEMINI_MEETING_SYNC_TMP_ROOT: override /var/tmp/gemini-meeting-sync
+  - GEMINI_MEETING_SYNC_SCRIPT: override the sync script path
+EOF
+}
+
+case "${1:-}" in
+  run) shift; cmd_run "$@" ;;
+  status) shift; cmd_status "$@" ;;
+  tail) shift; cmd_tail "$@" ;;
+  enable) shift; cmd_enable "$@" ;;
+  disable) shift; cmd_disable "$@" ;;
+  -h|--help|"") cmd_help ;;
+  *) die "unknown command: $1 (use --help)" ;;
+esac

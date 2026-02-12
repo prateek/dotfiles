@@ -1698,6 +1698,108 @@
                  (hs.pasteboard.setContents logFile)
                  (hs.alert.show "FuzzyOverlay log path copied" 0.8)))
 
+;; Gemini meeting sync -----------------------------------------------------
+(local geminiConfigHome
+  (or (os.getenv "XDG_CONFIG_HOME")
+      (.. (or (os.getenv "HOME") "") "/.config")))
+(local geminiConfigDir (.. geminiConfigHome "/gemini-meeting-sync"))
+(local geminiEnabledFile (.. geminiConfigDir "/enabled"))
+(local geminiConfigFile (.. geminiConfigDir "/config.json"))
+(local geminiStatusFile "/var/tmp/gemini-meeting-sync/latest-status.json")
+(local geminiBin (.. config.dotfilesBin "/gemini-meeting-sync"))
+(local geminiLastExitKey "geminiMeetingSync.lastExitCode")
+
+(fn _geminiFileExists [path]
+  (not= nil (hs.fs.attributes path "mode")))
+
+(fn _geminiGet [t k default]
+  (let [v (. (or t {}) k)]
+    (if (= nil v) default v)))
+
+(fn _geminiLoadConfig []
+  (if (not (_geminiFileExists geminiConfigFile))
+    {}
+    (let [(ok f) (pcall io.open geminiConfigFile "r")]
+      (if (not (and ok f))
+        {}
+        (let [content (f:read "*a")]
+          (f:close)
+          (let [(ok2 obj) (pcall json.decode (or content ""))]
+            (if (and ok2 (= (type obj) "table"))
+              obj
+              {})))))))
+
+(fn _geminiReadStatus []
+  (if (not (_geminiFileExists geminiStatusFile))
+    nil
+    (let [(ok f) (pcall io.open geminiStatusFile "r")]
+      (if (not (and ok f))
+        nil
+        (let [content (f:read "*a")]
+          (f:close)
+          (let [(ok2 obj) (pcall json.decode (or content ""))]
+            (if (and ok2 (= (type obj) "table"))
+              obj
+              nil)))))))
+
+(fn _geminiNotify [title text]
+  (let [n (hs.notify.new {:title title :informativeText text})]
+    (: n :send)))
+
+(var geminiInFlight false)
+
+(fn _geminiHandleRunResult [ok _ err]
+  (let [cfg (_geminiLoadConfig)
+        notifyOnSuccess (_geminiGet cfg :notify_on_success "on_change")
+        notifyOnFailure (_geminiGet cfg :notify_on_failure true)
+        status (_geminiReadStatus)
+        exitCode (if status (or (. status :exit_code) (if ok 0 1)) (if ok 0 1))
+        lastExit (or (hs.settings.get geminiLastExitKey) 0)
+        newProcessed (if status (or (. status :new_processed) 0) 0)
+        logPath (if status (or (. status :log_path) geminiStatusFile) geminiStatusFile)]
+
+    (when (not status)
+      (log.wf "gemini sync: missing status file (%s) ok=%s err=%s"
+              geminiStatusFile
+              (tostring ok)
+              (_trim (or err ""))))
+
+    (if (not= exitCode 0)
+      (when (and notifyOnFailure (= lastExit 0))
+        (_geminiNotify "Gemini sync failed" (string.format "exit_code=%d (see %s)" exitCode logPath)))
+      (do
+        (when (and notifyOnFailure (not= lastExit 0))
+          (_geminiNotify "Gemini sync recovered" (string.format "ok (see %s)" logPath)))
+        (when (or (= notifyOnSuccess "always")
+                  (and (= notifyOnSuccess "on_change") (> newProcessed 0)))
+          (_geminiNotify "Gemini sync" (string.format "Imported %d new docs" newProcessed)))))
+
+    (hs.settings.set geminiLastExitKey exitCode)))
+
+(fn _geminiMaybeRun []
+  (when (_geminiFileExists geminiEnabledFile)
+    (if geminiInFlight
+      (log.df "gemini sync: skipped (in flight)")
+      (do
+        (set geminiInFlight true)
+        (let [cmd (.. (string.format "%q" geminiBin) " run")]
+          (log.f "gemini sync: %s" cmd)
+          (_shAsync cmd
+                    (fn [ok out err]
+                      (set geminiInFlight false)
+                      (_geminiHandleRunResult ok out err))))))))
+
+(let [cfg (_geminiLoadConfig)
+      intervalRaw (tonumber (_geminiGet cfg :interval_seconds 900))
+      intervalSeconds (if (or (not intervalRaw) (<= intervalRaw 0)) 900
+                        (< intervalRaw 60) 60
+                        intervalRaw)]
+  (log.f "gemini sync timer: interval=%ds enabled=%s"
+         intervalSeconds
+         (tostring (_geminiFileExists geminiEnabledFile)))
+  (hs.timer.doEvery intervalSeconds _geminiMaybeRun)
+  (hs.timer.doAfter 15 _geminiMaybeRun))
+
 ;; Recompile + reload (Fennel -> Lua)
 (local hyper ["ctrl" "alt" "cmd" "shift"])
 (hs.hotkey.bind hyper "r"
