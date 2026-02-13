@@ -720,5 +720,7 @@
     "amp.tab.enabled": true,
     "githubPullRequests.terminalLinksHandler": "github",
     "editor.wordWrap": "on",
-    "git.detectWorktrees": false
+    "git.detectWorktrees": false,
+    "markdown-preview-enhanced.codeBlockTheme": "dark.css",
+    "markdown-preview-enhanced.previewTheme": "atom-dark.css"
 }
