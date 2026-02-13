@@ -1,97 +1,77 @@
 # Codex agent notes (local)
 
-This machine uses Git worktrees heavily. Prefer the `w` wrapper (Worktrunk-powered) so worktrees stay centralized and discoverable.
+This file is intentionally short. Use the docs below as the source of truth.
 
-- Worktrees guide: `~/dotfiles/docs/worktrees.md` (link: [docs/worktrees.md](../dotfiles/docs/worktrees.md))
+## Git and repo conventions
 
-## Quickstart (`w`)
+For Git/GitHub/worktree/openai-monorepo conventions, follow:
 
-Create/switch + cd (repo picker by default):
+- `~/.codex/docs/git-conventions.md`
 
-```sh
-w feature/auth
-```
+## Slack conventions
 
-Create/switch + run an agent command (default agent: `$WT_AGENT_CMD` or `codex`):
+For any Slack task (read/search/send), follow:
 
-```sh
-w fix-bug -- 'Fix GH #322'
-w run fix-bug --agent claude -- 'Fix GH #322'
-```
+- `~/.codex/docs/slack-conventions.md`
 
-Operate on a specific repo:
+Requirements:
 
-```sh
-w feature/auth --here                 # current repo
-w feature/auth --repo openai/openai   # canonical repo
-w feature/auth --repo /path/to/repo   # explicit path
-```
+- Prefer the OpenAI Slack connector for Slack interactions.
+- Use documented channel IDs + channel-purpose guidance.
+- Use the exact review-request format: `r? <link> - <desc>` then `cc ...`.
 
-Find/clean up centralized worktrees:
+## Linear conventions
 
-```sh
-w ls
-w rm            # dry-run stale cleanup
-w rm --yes      # apply stale cleanup
-```
+For Linear tasks, follow:
 
-## OpenAI monorepo (`openai/openai`)
+- `~/.codex/docs/linear-conventions.md`
 
-When asked to create a worktree for `openai/openai`, **prefer a sparse checkout** and keep it minimal: only the project(s)/dirs you need.
+Requirements:
 
-If the needed project(s)/dirs aren’t clear, ask for clarification before creating the worktree.
+- Prefer `linear` CLI for Linear interactions.
 
-Example (sparse on creation):
+## Google Workspace conventions
 
-```sh
-w new my-branch --repo openai/openai --sparse api --sparse codex
-```
+For Google Workspace tasks, follow:
 
-Add more after creation (inside the worktree):
+- `~/.codex/docs/google-workspace-conventions.md`
 
-```sh
-git sparse-checkout add docs
-git sparse-checkout list
-```
+Scope includes:
 
-Venv:
-- On worktree creation, dotfiles installs a per-worktree venv hook for `openai/openai`.
-- Venv path: `~/.virtualenvs/openai-<branch_sanitized>`
+- Google Drive, Docs, Sheets, Slides, Calendar
+- Gmail, Chat, Contacts, Tasks, People
+- Groups, Classroom, Keep
 
-## Git worktrees (manual)
+Requirements:
 
-Create:
+- Prefer `gog` CLI for Google Workspace interactions.
 
-```sh
-git worktree add -b my-branch ../my-branch/$(basename "$(pwd)")
-```
+## Browser CDP conventions
 
-List/remove/prune:
+For browser-control/CDP tasks, follow:
 
-```sh
-git worktree list
-git worktree remove /path/to/worktree
-git worktree prune
-```
+- `~/.codex/docs/browser-cdp-conventions.md`
 
-## Sparse checkout (git)
+Requirements:
 
-Cone mode basics:
+- Prefer credentials/profile specified by `CDP_PROFILE_PATH`.
+- If `CDP_PROFILE_PATH` is unavailable or invalid, prompt the user for which profile path to use.
 
-```sh
-git sparse-checkout init --cone
-git sparse-checkout set --cone -- api docs
-git sparse-checkout add tools
-git sparse-checkout list
-git sparse-checkout disable
-```
+## Observability provider environment
 
-## GitHub CLI (`gh`)
+For Chronosphere, Datadog, and Grafana tasks, use pre-exposed environment variables instead of hardcoding credentials.
 
-This machine wraps `gh` to automatically pick the right GitHub identity:
-- Wrapper path: `~/bin/gh` → `~/dotfiles/bin/gh`
-- Selection signals (in priority order): `-R/--repo`, current repo `origin` remote, a small set of positional repo args (like `gh repo clone owner/repo`)
-- Force a user when needed: `GH_WRAPPER_USER=prateek-oai gh …` or `GH_WRAPPER_USER=prateek gh …`
-- Quick sanity check for which identity is in use: `gh api user -q .login`
+Available variable names (no values):
 
-If you see `GraphQL: Could not resolve to a Repository ...`, it’s usually the wrong identity being selected; retry with `GH_WRAPPER_USER=prateek-oai`.
+- `CHRONOSPHERE_ORG_NAME`
+- `CHRONOSPHERE_API_TOKEN`
+- `DATADOG_API_KEY`
+- `DATADOG_APP_KEY`
+- `GRAFANA_TOKEN`
+- `API_REPO_PATH`
+
+Requirements:
+
+- Never print or log secret values.
+- Use these environment variables as the default auth/config path.
+- If a required variable is missing, prompt the user before proceeding.

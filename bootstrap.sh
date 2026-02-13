@@ -333,6 +333,7 @@ fi
 CODEX_DIR="$HOME/.codex"
 CODEX_CONFIG_TOML="$CODEX_DIR/config.toml"
 CODEX_SKILLS_DIR="$CODEX_DIR/skills"
+CODEX_DOCS_DIR="$CODEX_DIR/docs"
 CODEX_AGENTS_MD="$CODEX_DIR/AGENTS.md"
 if [ "$DRY_RUN" = "1" ]; then
   echo "Would ensure directory: $CODEX_DIR"
@@ -367,6 +368,21 @@ if [ "$DRY_RUN" = "1" ]; then
   echo "Would symlink: $CODEX_SKILLS_DIR -> $CWD/.codex/skills"
 else
   ln -snf "$CWD/.codex/skills" "$CODEX_SKILLS_DIR"
+fi
+
+if [ -e "$CODEX_DOCS_DIR" ] || [ -L "$CODEX_DOCS_DIR" ]; then
+  if [ "$(readlink "$CODEX_DOCS_DIR" 2>/dev/null)" != "$CWD/.codex/docs" ]; then
+    echo "Error: $CODEX_DOCS_DIR already exists and is not a symlink to $CWD/.codex/docs."
+    echo "To back it up, run: mv \"$CODEX_DOCS_DIR\" \"${CODEX_DOCS_DIR}.backup-$(date +%s)\""
+    echo "Or remove it if you don't need it: rm -rf \"$CODEX_DOCS_DIR\""
+    echo "After fixing, rerun this bootstrap script."
+    exit 1
+  fi
+fi
+if [ "$DRY_RUN" = "1" ]; then
+  echo "Would symlink: $CODEX_DOCS_DIR -> $CWD/.codex/docs"
+else
+  ln -snf "$CWD/.codex/docs" "$CODEX_DOCS_DIR"
 fi
 
 if [ -e "$CODEX_AGENTS_MD" ] || [ -L "$CODEX_AGENTS_MD" ]; then
