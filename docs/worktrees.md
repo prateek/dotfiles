@@ -52,10 +52,17 @@ w new feature-auth --base origin/main
 w new feature-auth --sparse api --sparse docs
 w cd  feature-auth                # switch + cd into worktree
 w switch                          # pick an existing centralized worktree and cd into it (alias: wsc)
-w ls                              # fast list of centralized worktrees under ~/code/wt
-w ls --dirty                      # include clean/dirty status (slower)
-w rm                              # dry-run stale cleanup
-w rm --yes                        # apply stale cleanup
+w ls                              # fast compact list (repo/branch/status with relations)
+w ls -l                           # long list with full absolute path column
+w ls --no-relations               # fastest metadata-only status (`ok`)
+w ls --dirty                      # show clean/dirty words (slower)
+w ls --relations                  # explicit relation mode (default on)
+w ls --dirty --relations          # show dirty+relation tuple (most expensive)
+w rm feature-auth                 # remove a selected worktree (branch deleted if merged)
+w rm --filter 'feature-auth'      # non-interactive picker selection
+w rm --yes --filter 'dirty/rm'    # required for dirty worktrees
+w prune                           # dry-run stale cleanup
+w prune --yes                     # apply stale cleanup
 ```
 
 Common workflows:
@@ -67,9 +74,19 @@ w new feature-auth --no-cd        # create/switch without cd (automation)
 w new feature-auth --no-verify    # create/switch without hooks
 
 w ls                              # list centralized worktrees
-wt remove feature-auth            # remove a worktree (Worktrunk; from any dir with -C /path/to/repo)
-w rm                              # cleanup only *stale/broken* centralized dirs (safe)
+w rm feature-auth                 # remove a worktree via wrapper safety rules
+w prune                           # cleanup only *stale/broken* centralized dirs (safe)
 ```
+
+### `w ls` status legend
+
+- Default (`w ls`): `<main><upstream>` (example: `↕|`, `=·`).
+- `w ls --no-relations`: `ok` means metadata-only fast path.
+- `w ls --dirty`: `clean` or `dirty`.
+- `w ls --relations`: explicit relation mode (same as default).
+- `w ls --dirty --relations`: `<dirty><main><upstream>` (example: `!↕⇣`, `·_·`).
+- `main` symbols: `^ = _ – ↑ ↓ ↕ ? ·`
+- `upstream` symbols: `| ⇡ ⇣ ⇅ ·`
 
 Select repo:
 

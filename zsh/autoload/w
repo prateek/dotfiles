@@ -193,7 +193,8 @@ Commands:
   w cd  <branch> [opts]                Switch and cd into worktree
   w switch [opts]                      Fuzzy-pick an existing worktree and cd into it (alias: wsc)
   w ls [--format table|tsv|json]       List centralized worktrees (alias: list)
-  w rm [--yes]                         Remove stale centralized worktrees (dry-run by default; alias: prune)
+  w rm [opts]                          Remove a selected centralized worktree
+  w prune [--yes]                      Remove stale centralized worktrees (dry-run by default)
 
 Common opts (new/run/cd):
   --here                               Use current git repo (no picker)
@@ -208,8 +209,27 @@ Switch opts:
   --filter <str>                       Non-interactive fzf selection (best for scripts/tests)
   --all                                Include broken/non-git dirs under the root
 
+Rm opts:
+  --query <str>                        Initial fzf query
+  --filter <str>                       Non-interactive fzf selection (best for scripts/tests)
+  --all                                Include stale entries in picker (cannot be removed via rm)
+  --yes                                Required to remove dirty worktrees
+
 List opts:
   --dirty                              Compute clean/dirty status (slower)
+  --jobs <n>                           Parallel jobs for --dirty checks (default: adaptive)
+  --relations                          Compute detailed main/upstream divergence symbols (default: on)
+  --no-relations                       Disable relation symbols for maximum speed
+  -l, -L                               Long view: include full absolute path column (no truncation)
+
+Status legend (`w ls`):
+  default                              `<main><upstream>` (for example `↕|`, `=·`)
+  --no-relations                       `ok` = metadata-only fast path
+  --dirty                              `clean` or `dirty`
+  --relations                          Explicitly enable relation symbols
+  --dirty --relations                  `<dirty><main><upstream>` (for example `!↕⇣`, `·_·`)
+  main symbols                         `^ = _ – ↑ ↓ ↕ ? ·`
+  upstream symbols                     `| ⇡ ⇣ ⇅ ·`
 
 Create opts (new/run):
   --base <ref>                         Base ref for --create
@@ -741,6 +761,89 @@ _w_origin_url_from_gitconfig() {
   return 0
 }
 
+_w_default_branch_from_gitconfig() {
+  local config_path="$1"
+  [[ -f "$config_path" ]] || { print -r -- ""; return 0; }
+
+  local in_worktrunk=0
+  local line=""
+  while IFS= read -r line; do
+    [[ -n "$line" ]] || continue
+
+    if [[ "$line" == "[worktrunk]" ]]; then
+      in_worktrunk=1
+      continue
+    fi
+
+    if [[ "$line" == \[*\] ]]; then
+      in_worktrunk=0
+      continue
+    fi
+
+    if (( in_worktrunk )); then
+      local trimmed="$line"
+      trimmed="${trimmed#"${trimmed%%[!$' \t']*}"}"
+      if [[ "$trimmed" == default-branch* ]]; then
+        local rest="${trimmed#default-branch}"
+        rest="${rest#"${rest%%[!$' \t']*}"}"
+        if [[ "$rest" == "="* ]]; then
+          rest="${rest#=}"
+          rest="${rest#"${rest%%[!$' \t']*}"}"
+          print -r -- "$rest"
+          return 0
+        fi
+      fi
+    fi
+  done <"$config_path"
+
+  print -r -- ""
+  return 0
+}
+
+_w_is_worktree_dirty_any() {
+  local worktree_path="$1"
+  [[ -n "$worktree_path" && -d "$worktree_path" ]] || return 1
+
+  local out=""
+  out="$(GIT_OPTIONAL_LOCKS=0 git -C "$worktree_path" status --porcelain 2>/dev/null || true)"
+  [[ -n "$out" ]]
+}
+
+_w_resolve_ls_dirty_jobs() {
+  local jobs_override="$1"
+  local target_count="$2"
+  local jobs=""
+
+  if [[ "$jobs_override" == <-> && "$jobs_override" -gt 0 ]]; then
+    jobs="$jobs_override"
+  elif [[ "${W_LS_DIRTY_JOBS:-}" == <-> && "${W_LS_DIRTY_JOBS:-0}" -gt 0 ]]; then
+    jobs="$W_LS_DIRTY_JOBS"
+  elif [[ "${W_LS_JOBS:-}" == <-> && "${W_LS_JOBS:-0}" -gt 0 ]]; then
+    jobs="$W_LS_JOBS"
+  else
+    local ncpu="2"
+    if command -v getconf >/dev/null 2>&1; then
+      ncpu="$(getconf _NPROCESSORS_ONLN 2>/dev/null || print -r -- "2")"
+    elif command -v sysctl >/dev/null 2>&1; then
+      ncpu="$(sysctl -n hw.ncpu 2>/dev/null || print -r -- "2")"
+    fi
+    [[ "$ncpu" == <-> ]] || ncpu="2"
+    (( ncpu < 1 )) && ncpu=1
+
+    jobs=$(( ncpu / 2 ))
+    (( jobs < 2 )) && jobs=2
+  fi
+
+  [[ "$jobs" == <-> ]] || jobs=1
+  (( jobs < 1 )) && jobs=1
+  if [[ "$target_count" == <-> && "$target_count" -gt 0 && "$jobs" -gt "$target_count" ]]; then
+    jobs="$target_count"
+  fi
+
+  print -r -- "$jobs"
+  return 0
+}
+
 _w_cmd_switch() {
   setopt localoptions pipefail no_aliases 2> /dev/null
 
@@ -877,6 +980,9 @@ _w_cmd_list() {
   local worktrees_root="${W_WORKTREES_ROOT:-$HOME/code/wt}"
   local include_all=0
   local compute_dirty=0
+  local compute_relations=1
+  local long_view=0
+  local jobs_override=""
   local dirty_count=0
   local stale_count=0
 
@@ -887,27 +993,45 @@ _w_cmd_list() {
       --root) worktrees_root="${2:?missing --root value}"; shift 2 ;;
       --root=*) worktrees_root="${1#*=}"; shift ;;
       --dirty) compute_dirty=1; shift ;;
+      --relations) compute_relations=1; shift ;;
+      --no-relations) compute_relations=0; shift ;;
+      --jobs) jobs_override="${2:?missing --jobs value}"; shift 2 ;;
+      --jobs=*) jobs_override="${1#*=}"; shift ;;
+      -l|-L|--long) long_view=1; shift ;;
       --all) include_all=1; shift ;;
       -h|--help) _w_help; return 0 ;;
       *) print -u2 "w ls: unknown arg: $1"; return 2 ;;
     esac
   done
 
-  # Table output is intended to be fast; only compute dirty/clean status when requested.
-  if [[ "$format" != "table" ]]; then
-    compute_dirty=1
-  fi
-
   local -a leaves
   leaves=("$worktrees_root"/*/*(N-/))
+  local current_pwd="${PWD:A}"
 
   local tab=$'\t'
   local -a rows
   rows=()
+  local -a dirty_paths
+  dirty_paths=()
+  local -a relation_entries
+  relation_entries=()
+  typeset -A dirty_by_path
+  typeset -A main_by_path
+  typeset -A upstream_by_path
+  typeset -A slug_by_common
+  typeset -A default_branch_by_common
 
-  local leaf gitdir common_gitdir origin_url slug branch dirty kind
+  local leaf gitdir common_gitdir config_path origin_url slug branch default_branch dirty kind
+  local main_symbol upstream_symbol is_current current_sort kind_sort
   for leaf in "${leaves[@]}"; do
     kind="ok"
+    dirty=""
+    main_symbol="·"
+    upstream_symbol="·"
+    is_current=0
+    if [[ "$current_pwd" == "${leaf:A}"(|/*) ]]; then
+      is_current=1
+    fi
 
     gitdir="$(_w_gitdir_for_worktree "$leaf")"
     if [[ -z "$gitdir" ]]; then
@@ -917,47 +1041,212 @@ _w_cmd_list() {
     if [[ "$kind" == "stale" ]]; then
       (( include_all )) || continue
       stale_count=$(( stale_count + 1 ))
-      slug=""
-      branch=""
-      dirty=""
-      rows+=("${slug}${tab}${branch}${tab}${leaf}${tab}${dirty}${tab}${kind}")
+      current_sort=1
+      (( is_current )) && current_sort=0
+      kind_sort=1
+      rows+=("${current_sort}${tab}${kind_sort}${tab}${tab}${tab}${leaf}${tab}${dirty}${tab}${kind}${tab}${main_symbol}${tab}${upstream_symbol}${tab}${is_current}")
       continue
     fi
 
     common_gitdir="$(_w_common_gitdir_from_gitdir "$gitdir")"
-    origin_url="$(_w_origin_url_from_gitconfig "$common_gitdir/config")"
-    slug="$(_w_slug_from_remote "$origin_url")"
-    branch="$(_w_branch_from_gitdir "$gitdir")"
-
-    dirty=""
-    if (( compute_dirty )); then
-      dirty="0"
-      if [[ -n "$(git -C "$leaf" status --porcelain -uno 2>/dev/null || true)" ]]; then
-        dirty="1"
-        dirty_count=$(( dirty_count + 1 ))
-      fi
+    config_path="$common_gitdir/config"
+    if [[ -z "${slug_by_common["$common_gitdir"]:-}" ]]; then
+      origin_url="$(_w_origin_url_from_gitconfig "$config_path")"
+      slug_by_common["$common_gitdir"]="$(_w_slug_from_remote "$origin_url")"
+      default_branch_by_common["$common_gitdir"]="$(_w_default_branch_from_gitconfig "$config_path")"
     fi
 
-    rows+=("${slug}${tab}${branch}${tab}${leaf}${tab}${dirty}${tab}${kind}")
+    slug="${slug_by_common["$common_gitdir"]}"
+    default_branch="${default_branch_by_common["$common_gitdir"]}"
+    branch="$(_w_branch_from_gitdir "$gitdir")"
+    if [[ -n "$default_branch" && "$branch" == "$default_branch" ]]; then
+      main_symbol="^"
+    fi
+
+    if (( compute_relations )); then
+      relation_entries+=("${leaf}${tab}${branch}${tab}${default_branch}")
+    fi
+
+    if (( compute_dirty )); then
+      dirty_paths+=("$leaf")
+    fi
+
+    current_sort=1
+    (( is_current )) && current_sort=0
+    kind_sort=0
+    rows+=("${current_sort}${tab}${kind_sort}${tab}${slug}${tab}${branch}${tab}${leaf}${tab}${dirty}${tab}${kind}${tab}${main_symbol}${tab}${upstream_symbol}${tab}${is_current}")
   done
 
-  rows=("${(@o)rows}")
+  if (( compute_relations && ${#relation_entries[@]} > 0 )); then
+    local relation_jobs=""
+    if [[ "$jobs_override" == <-> && "$jobs_override" -gt 0 ]]; then
+      relation_jobs="$jobs_override"
+    elif [[ "${W_LS_STATUS_JOBS:-}" == <-> && "${W_LS_STATUS_JOBS:-0}" -gt 0 ]]; then
+      relation_jobs="$W_LS_STATUS_JOBS"
+    else
+      relation_jobs="$(_w_resolve_ls_dirty_jobs "" "${#relation_entries[@]}")"
+    fi
+    [[ "$relation_jobs" == <-> ]] || relation_jobs=1
+    (( relation_jobs < 1 )) && relation_jobs=1
+    (( relation_jobs > ${#relation_entries[@]} )) && relation_jobs=${#relation_entries[@]}
+
+    local relation_line relation_worktree relation_main relation_upstream
+    while IFS= read -r relation_line; do
+      [[ -n "$relation_line" ]] || continue
+      relation_worktree="${relation_line%%$tab*}"
+      relation_line="${relation_line#*$tab}"
+      relation_main="${relation_line%%$tab*}"
+      relation_upstream="${relation_line#*$tab}"
+      [[ -n "$relation_worktree" ]] || continue
+      [[ -n "$relation_main" ]] || relation_main="·"
+      [[ -n "$relation_upstream" ]] || relation_upstream="·"
+      main_by_path["$relation_worktree"]="$relation_main"
+      upstream_by_path["$relation_worktree"]="$relation_upstream"
+    done < <(
+      printf '%s\0' "${relation_entries[@]}" | \
+        xargs -0 -n 1 -P "$relation_jobs" sh -c '
+          entry="$1"
+          tab=$(printf "\t")
+          IFS="$tab" read -r worktree branch default_branch <<EOF
+$entry
+EOF
+
+          main="·"
+          if [ -n "$default_branch" ]; then
+            if [ "$branch" = "$default_branch" ]; then
+              main="^"
+            else
+              raw_main="$(git -C "$worktree" rev-list --left-right --count "HEAD...$default_branch" 2>/dev/null || true)"
+              set -- $raw_main
+              ahead="${1:-}"
+              behind="${2:-}"
+              if [ -n "$ahead" ] && [ -n "$behind" ]; then
+                if [ "$ahead" -eq 0 ] && [ "$behind" -eq 0 ]; then
+                  main="="
+                elif [ "$ahead" -gt 0 ] && [ "$behind" -gt 0 ]; then
+                  main="↕"
+                elif [ "$ahead" -gt 0 ]; then
+                  main="↑"
+                else
+                  main="↓"
+                fi
+              else
+                main="?"
+              fi
+            fi
+          fi
+
+          upstream="·"
+          raw_upstream="$(git -C "$worktree" rev-list --left-right --count "HEAD...@{upstream}" 2>/dev/null || true)"
+          set -- $raw_upstream
+          ua="${1:-}"
+          ub="${2:-}"
+          if [ -n "$ua" ] && [ -n "$ub" ]; then
+            if [ "$ua" -eq 0 ] && [ "$ub" -eq 0 ]; then
+              upstream="|"
+            elif [ "$ua" -gt 0 ] && [ "$ub" -gt 0 ]; then
+              upstream="⇅"
+            elif [ "$ua" -gt 0 ]; then
+              upstream="⇡"
+            else
+              upstream="⇣"
+            fi
+          fi
+
+          printf "%s\t%s\t%s\n" "$worktree" "$main" "$upstream"
+        ' sh
+    )
+
+    local -a rows_with_relations
+    rows_with_relations=()
+    local row row_tmp sep
+    local cur_sort="" kind_sort="" s="" b="" p="" d="" k="" main="" upstream="" cur=""
+    sep=$'\001'
+    for row in "${rows[@]}"; do
+      row_tmp="${row//$'\t'/$sep}"
+      IFS="$sep" read -r cur_sort kind_sort s b p d k main upstream cur <<<"$row_tmp"
+      if [[ "$k" != "stale" ]]; then
+        main="${main_by_path["$p"]:-·}"
+        upstream="${upstream_by_path["$p"]:-·}"
+      fi
+      rows_with_relations+=("${cur_sort}${tab}${kind_sort}${tab}${s}${tab}${b}${tab}${p}${tab}${d}${tab}${k}${tab}${main}${tab}${upstream}${tab}${cur}")
+    done
+    rows=("${rows_with_relations[@]}")
+  fi
+
+  if (( compute_dirty && ${#dirty_paths[@]} > 0 )); then
+    local jobs
+    jobs="$(_w_resolve_ls_dirty_jobs "$jobs_override" "${#dirty_paths[@]}")"
+
+    local line dirty_path is_dirty
+    while IFS= read -r line; do
+      [[ -n "$line" ]] || continue
+      dirty_path="${line%%$tab*}"
+      is_dirty="${line#*$tab}"
+      [[ -n "$dirty_path" ]] || continue
+      [[ "$is_dirty" == "1" ]] || is_dirty="0"
+      dirty_by_path["$dirty_path"]="$is_dirty"
+    done < <(
+      printf '%s\0' "${dirty_paths[@]}" | \
+        xargs -0 -n 1 -P "$jobs" sh -c '
+          p="$1"
+          if GIT_OPTIONAL_LOCKS=0 git -C "$p" diff-index --quiet HEAD -- 2>/dev/null; then
+            printf "%s\t0\n" "$p"
+          else
+            ec="$?"
+            if [ "$ec" -eq 1 ]; then
+              printf "%s\t1\n" "$p"
+            else
+              if [ -n "$(GIT_OPTIONAL_LOCKS=0 git -C "$p" status --porcelain -uno 2>/dev/null)" ]; then
+                printf "%s\t1\n" "$p"
+              else
+                printf "%s\t0\n" "$p"
+              fi
+            fi
+          fi
+        ' sh
+    )
+
+    local -a rows_with_dirty
+    rows_with_dirty=()
+    local row row_tmp sep
+    local cur_sort="" kind_sort="" s="" b="" p="" d="" k="" main="" upstream="" cur=""
+    sep=$'\001'
+    for row in "${rows[@]}"; do
+      row_tmp="${row//$'\t'/$sep}"
+      IFS="$sep" read -r cur_sort kind_sort s b p d k main upstream cur <<<"$row_tmp"
+      if [[ "$k" == "stale" ]]; then
+        d=""
+      else
+        d="${dirty_by_path[$p]:-0}"
+        if [[ "$d" == "1" ]]; then
+          dirty_count=$(( dirty_count + 1 ))
+        fi
+      fi
+      rows_with_dirty+=("${cur_sort}${tab}${kind_sort}${tab}${s}${tab}${b}${tab}${p}${tab}${d}${tab}${k}${tab}${main}${tab}${upstream}${tab}${cur}")
+    done
+    rows=("${rows_with_dirty[@]}")
+  fi
+
+  if (( ${#rows[@]} > 1 )); then
+    rows=("${(@f)$(LC_ALL=C printf '%s\n' "${rows[@]}" | sort -t $'\t' -k1,1n -k2,2n -k3,3 -k4,4 -k5,5)}")
+  fi
 
   case "$format" in
     tsv)
       print -r -- "slug${tab}branch${tab}path${tab}dirty"
       local row
-      local s="" b="" p="" d="" k=""
+      local cur_sort="" kind_sort="" s="" b="" p="" d="" k="" main="" upstream="" cur=""
       local sep=$'\001'
       local row_tmp=""
       for row in "${rows[@]}"; do
         row_tmp="${row//$'\t'/$sep}"
-        IFS="$sep" read -r s b p d k <<<"$row_tmp"
+        IFS="$sep" read -r cur_sort kind_sort s b p d k main upstream cur <<<"$row_tmp"
         print -r -- "${s}${tab}${b}${tab}${p}${tab}${d}"
       done
       ;;
     json)
-      printf '%s\n' "${rows[@]}" | python3 -c $'import json,sys\nout=[]\nfor l in sys.stdin:\n  l=l.rstrip(\"\\n\")\n  if not l.strip():\n    continue\n  parts=l.split(\"\\t\")\n  parts += [\"\"]*(4-len(parts))\n  slug,branch,path,dirty=parts[:4]\n  out.append({\"slug\":slug,\"branch\":branch,\"path\":path,\"dirty\":(dirty==\"1\")})\nprint(json.dumps(out, indent=2))'
+      printf '%s\n' "${rows[@]}" | python3 -c $'import json,sys\nout=[]\nfor l in sys.stdin:\n  l=l.rstrip("\\n")\n  if not l.strip():\n    continue\n  parts=l.split("\\t")\n  parts += [""]*(10-len(parts))\n  _,_,slug,branch,path,dirty,kind,main,upstream,is_current=parts[:10]\n  out.append({"slug":slug,"branch":branch,"path":path,"dirty":(dirty=="1") if dirty else None,"kind":kind,"main":main,"upstream":upstream,"is_current":(is_current=="1")})\nprint(json.dumps(out, indent=2))'
       ;;
     table)
       local is_tty=0
@@ -968,63 +1257,224 @@ _w_cmd_list() {
         use_color=1
       fi
 
-      {
-        print -r -- "repo${tab}branch${tab}state${tab}path"
-        local row
-        local s="" b="" p="" d="" k=""
-        local sep=$'\001'
-        local row_tmp=""
-        for row in "${rows[@]}"; do
-          row_tmp="${row//$'\t'/$sep}"
-          IFS="$sep" read -r s b p d k <<<"$row_tmp"
+      local -a display_rows
+      display_rows=()
+      local mark_w=4
+      local repo_w=4
+      local branch_w=6
+      local status_w=6
+      local path_w=4
+      local show_mark=0
+      local show_path=0
+      (( long_view )) && show_path=1
+      local row
+      local cur_sort="" kind_sort="" s="" b="" p="" d="" k="" main="" upstream="" cur=""
+      local sep=$'\001'
+      local row_tmp=""
+      local mark="" repo_display="" branch_display="" status_display="" path_display=""
+      local dirty_symbol=""
 
-          local state="○ ok"
-          if [[ "$k" == "stale" ]]; then
-            state="✗ stale"
-          elif [[ "$d" == "1" ]]; then
-            state="● dirty"
-          elif [[ "$d" == "0" ]]; then
-            state="○ clean"
+      for row in "${rows[@]}"; do
+        row_tmp="${row//$'\t'/$sep}"
+        IFS="$sep" read -r cur_sort kind_sort s b p d k main upstream cur <<<"$row_tmp"
+
+        mark="+"
+        if [[ "$cur" == "1" ]]; then
+          mark="@"
+          show_mark=1
+        fi
+
+        repo_display="$s"
+        [[ -z "$repo_display" ]] && repo_display="-"
+
+        branch_display="$b"
+        [[ -z "$branch_display" ]] && branch_display="-"
+
+        if (( show_path )); then
+          path_display="$p"
+        else
+          path_display=""
+        fi
+
+        if [[ "$k" == "stale" ]]; then
+          status_display="✗ stale"
+        else
+          if (( compute_relations )); then
+            if [[ "$main" == "=" ]]; then
+              if (( compute_dirty )); then
+                if [[ "$d" == "1" ]]; then
+                  main="–"
+                else
+                  main="_"
+                fi
+              fi
+            fi
+
+            if (( compute_dirty )); then
+              if [[ "$d" == "1" ]]; then
+                dirty_symbol="!"
+              else
+                dirty_symbol="·"
+              fi
+              status_display="${dirty_symbol}${main}${upstream}"
+            else
+              status_display="${main}${upstream}"
+              [[ "$status_display" == "··" ]] && status_display="ok"
+            fi
+          elif (( compute_dirty )); then
+            if [[ "$d" == "1" ]]; then
+              status_display="dirty"
+            else
+              status_display="clean"
+            fi
+          else
+            status_display="ok"
+          fi
+        fi
+
+        (( ${#mark} > mark_w )) && mark_w=${#mark}
+        (( ${#repo_display} > repo_w )) && repo_w=${#repo_display}
+        (( ${#branch_display} > branch_w )) && branch_w=${#branch_display}
+        (( ${#status_display} > status_w )) && status_w=${#status_display}
+        if (( show_path )); then
+          (( ${#path_display} > path_w )) && path_w=${#path_display}
+        fi
+        display_rows+=("${mark}${tab}${repo_display}${tab}${branch_display}${tab}${status_display}${tab}${path_display}${tab}${k}")
+      done
+
+      local reset=$'\e[0m'
+      local bold=$'\e[1m'
+      local dim=$'\e[2m'
+      local red=$'\e[31m'
+      local cyan=$'\e[36m'
+      local pure_dirty=$'\e[38;5;218m'
+
+      if (( show_mark && show_path )); then
+        printf "%-${mark_w}s  %-${repo_w}s  %-${branch_w}s  %-${status_w}s  %-${path_w}s\n" \
+          "mark" "repo" "branch" "status" "path" | {
+          local header_line
+          IFS= read -r header_line
+          if (( use_color )); then
+            print -r -- "${bold}${header_line}${reset}"
+          else
+            print -r -- "$header_line"
+          fi
+        }
+      elif (( show_mark )); then
+        printf "%-${mark_w}s  %-${repo_w}s  %-${branch_w}s  %-${status_w}s\n" \
+          "mark" "repo" "branch" "status" | {
+          local header_line
+          IFS= read -r header_line
+          if (( use_color )); then
+            print -r -- "${bold}${header_line}${reset}"
+          else
+            print -r -- "$header_line"
+          fi
+        }
+      elif (( show_path )); then
+        printf "%-${repo_w}s  %-${branch_w}s  %-${status_w}s  %-${path_w}s\n" \
+          "repo" "branch" "status" "path" | {
+          local header_line
+          IFS= read -r header_line
+          if (( use_color )); then
+            print -r -- "${bold}${header_line}${reset}"
+          else
+            print -r -- "$header_line"
+          fi
+        }
+      else
+        printf "%-${repo_w}s  %-${branch_w}s  %-${status_w}s\n" \
+          "repo" "branch" "status" | {
+          local header_line
+          IFS= read -r header_line
+          if (( use_color )); then
+            print -r -- "${bold}${header_line}${reset}"
+          else
+            print -r -- "$header_line"
+          fi
+        }
+      fi
+
+      local display_row
+      for display_row in "${display_rows[@]}"; do
+        local d_mark="" d_repo="" d_branch="" d_status="" d_path="" d_kind=""
+        row_tmp="${display_row//$'\t'/$sep}"
+        IFS="$sep" read -r d_mark d_repo d_branch d_status d_path d_kind <<<"$row_tmp"
+
+        local status_plain="$d_status"
+        local mark_out="$d_mark"
+        local status_out="$status_plain"
+
+        if (( use_color )); then
+          if [[ "$d_mark" == "@" ]]; then
+            mark_out="${cyan}@${reset}"
+          else
+            mark_out="${dim}+${reset}"
           fi
 
-          local display_path="$p"
-          display_path="${display_path/#$HOME/~}"
-
-          local repo_display="$s"
-          [[ -z "$repo_display" ]] && repo_display="-"
-
-          local branch_display="$b"
-          [[ -z "$branch_display" ]] && branch_display="-"
-
-          print -r -- "${repo_display}${tab}${branch_display}${tab}${state}${tab}${display_path}"
-        done
-      } | {
-        if command -v column >/dev/null 2>&1; then
-          column -t -s $'\t'
-        else
-          cat
+          if [[ "$status_plain" == "stale" || "$status_plain" == "✗ stale" ]]; then
+            status_out="${red}${status_plain}${reset}"
+          elif [[ "$status_plain" == "dirty" ]]; then
+            status_out="${pure_dirty}${status_plain}${reset}"
+          elif [[ "$status_plain" == "clean" || "$status_plain" == "ok" ]]; then
+            status_out="${dim}${status_plain}${reset}"
+          else
+            status_out=""
+            local i ch
+            for (( i=1; i<=${#status_plain}; i++ )); do
+              ch="${status_plain[i]}"
+              case "$ch" in
+                '!') status_out+="${pure_dirty}!${reset}" ;;
+                '·'|'_'|'–'|'='|'^') status_out+="${dim}${ch}${reset}" ;;
+                '?') status_out+="${red}?${reset}" ;;
+                '↕'|'↑'|'↓'|'⇅'|'⇡'|'⇣'|'|') status_out+="${cyan}${ch}${reset}" ;;
+                *) status_out+="$ch" ;;
+              esac
+            done
+          fi
         fi
-      } | {
-        if (( use_color )); then
-          local line i=0
-          local esc=$'\e[' reset=$'\e[0m' bold=$'\e[1m'
-          local green=$'\e[32m' yellow=$'\e[33m' red=$'\e[31m'
-          while IFS= read -r line; do
-            i=$((i + 1))
-            if (( i == 1 )); then
-              print -r -- "${bold}${line}${reset}"
-              continue
-            fi
-            line="${line//○ ok/${green}○ ok${reset}}"
-            line="${line//○ clean/${green}○ clean${reset}}"
-            line="${line//● dirty/${yellow}● dirty${reset}}"
-            line="${line//✗ stale/${red}✗ stale${reset}}"
-            print -r -- "$line"
-          done
-        else
-          cat
+
+        local status_pad=$(( status_w - ${#status_plain} ))
+        (( status_pad < 0 )) && status_pad=0
+        local path_pad=0
+        if (( show_path )); then
+          path_pad=$(( path_w - ${#d_path} ))
+          (( path_pad < 0 )) && path_pad=0
         fi
-      }
+
+        if (( show_mark && show_path )); then
+          printf "%-${mark_w}s  %-${repo_w}s  %-${branch_w}s  %s" \
+            "$mark_out" "$d_repo" "$d_branch" "$status_out"
+          if (( status_pad > 0 )); then
+            printf "%${status_pad}s" ""
+          fi
+          printf "  %s" "$d_path"
+        elif (( show_mark )); then
+          printf "%-${mark_w}s  %-${repo_w}s  %-${branch_w}s  %s" \
+            "$mark_out" "$d_repo" "$d_branch" "$status_out"
+          if (( status_pad > 0 )); then
+            printf "%${status_pad}s" ""
+          fi
+        elif (( show_path )); then
+          printf "%-${repo_w}s  %-${branch_w}s  %s" \
+            "$d_repo" "$d_branch" "$status_out"
+          if (( status_pad > 0 )); then
+            printf "%${status_pad}s" ""
+          fi
+          printf "  %s" "$d_path"
+        else
+          printf "%-${repo_w}s  %-${branch_w}s  %s" \
+            "$d_repo" "$d_branch" "$status_out"
+          if (( status_pad > 0 )); then
+            printf "%${status_pad}s" ""
+          fi
+        fi
+
+        if (( show_path && path_pad > 0 )); then
+          printf "%${path_pad}s" ""
+        fi
+        printf "\n"
+      done
 
       if (( is_tty )); then
         local total_count="${#rows[@]}"
@@ -1068,6 +1518,35 @@ _w_cmd_list() {
             fi
           fi
         fi
+
+        local legend_line1="ok = metadata-only fast path (no dirty/relation git checks)"
+        local legend_line2="clean = no tracked changes; dirty = tracked changes (with --dirty)"
+        local legend_line3=""
+        local legend_line4=""
+        if (( compute_relations )); then
+          if (( compute_dirty )); then
+            legend_line3="status format: <dirty><main><upstream>; dirty symbols: ! dirty, · clean"
+          else
+            legend_line3="status format: <main><upstream> (dirty check not run)"
+          fi
+          legend_line4="main: ^ default, = same, _ same+clean, – same+dirty, ↑ ahead, ↓ behind, ↕ diverged, ? unknown, · n/a; upstream: | sync, ⇡ ahead, ⇣ behind, ⇅ diverged, · n/a"
+        elif (( compute_dirty )); then
+          legend_line3="status values in this mode: clean | dirty"
+        else
+          legend_line3="status values in this mode: ok"
+        fi
+
+        if (( use_color )); then
+          [[ -n "$legend_line1" ]] && printf '\033[2m  %s\033[0m\n' "$legend_line1"
+          [[ -n "$legend_line2" ]] && printf '\033[2m  %s\033[0m\n' "$legend_line2"
+          [[ -n "$legend_line3" ]] && printf '\033[2m  %s\033[0m\n' "$legend_line3"
+          [[ -n "$legend_line4" ]] && printf '\033[2m  %s\033[0m\n' "$legend_line4"
+        else
+          [[ -n "$legend_line1" ]] && printf '  %s\n' "$legend_line1"
+          [[ -n "$legend_line2" ]] && printf '  %s\n' "$legend_line2"
+          [[ -n "$legend_line3" ]] && printf '  %s\n' "$legend_line3"
+          [[ -n "$legend_line4" ]] && printf '  %s\n' "$legend_line4"
+        fi
       fi
       ;;
     *)
@@ -1075,6 +1554,237 @@ _w_cmd_list() {
       return 2
       ;;
   esac
+}
+
+_w_cmd_rm() {
+  setopt localoptions pipefail no_aliases 2> /dev/null
+
+  _w_require_wt || return $?
+
+  if ! command -v fzf >/dev/null 2>&1; then
+    print -u2 "w rm: missing fzf"
+    return 127
+  fi
+
+  local worktrees_root="${W_WORKTREES_ROOT:-$HOME/code/wt}"
+  local query=""
+  local filter=""
+  local include_all=0
+  local apply=0
+  local target=""
+  local -a wt_args
+  wt_args=()
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --root) worktrees_root="${2:?missing --root value}"; shift 2 ;;
+      --root=*) worktrees_root="${1#*=}"; shift ;;
+      --query) query="${2:?missing --query value}"; shift 2 ;;
+      --query=*) query="${1#*=}"; shift ;;
+      --filter) filter="${2:?missing --filter value}"; shift 2 ;;
+      --filter=*) filter="${1#*=}"; shift ;;
+      --all) include_all=1; shift ;;
+      --yes|-y) apply=1; shift ;;
+      --config) wt_args+=("$1" "${2:?missing --config value}"); shift 2 ;;
+      --config=*) wt_args+=("$1"); shift ;;
+      --no-verify|--no-delete-branch|-D|--force-delete|-f|--force) wt_args+=("$1"); shift ;;
+      -h|--help) _w_help; return 0 ;;
+      --) shift; break ;;
+      -*)
+        print -u2 "w rm: unknown arg: $1"
+        return 2
+        ;;
+      *)
+        if [[ -z "$target" ]]; then
+          target="$1"
+        else
+          print -u2 "w rm: unexpected arg: $1"
+          return 2
+        fi
+        shift
+        ;;
+    esac
+  done
+
+  if [[ -n "$target" && -z "$filter" && -z "$query" ]]; then
+    filter="$target"
+  fi
+
+  local -a leaves
+  leaves=("$worktrees_root"/*/*(N-/))
+  if (( ${#leaves[@]} == 0 )); then
+    print -u2 "w rm: no worktrees found under: $worktrees_root"
+    return 1
+  fi
+
+  local tab=$'\t'
+  local -a rows
+  rows=()
+
+  local leaf gitdir common_gitdir origin_url slug branch state dirty display_path
+  for leaf in "${leaves[@]}"; do
+    gitdir="$(_w_gitdir_for_worktree "$leaf")"
+    if [[ -z "$gitdir" ]]; then
+      (( include_all )) || continue
+      slug=""
+      branch=""
+      state="stale"
+      dirty="-"
+      display_path="${leaf/#$HOME/~}"
+      rows+=("${slug}${tab}${branch}${tab}${state}${tab}${dirty}${tab}${display_path}")
+      continue
+    fi
+
+    common_gitdir="$(_w_common_gitdir_from_gitdir "$gitdir")"
+    origin_url="$(_w_origin_url_from_gitconfig "$common_gitdir/config")"
+    slug="$(_w_slug_from_remote "$origin_url")"
+    branch="$(_w_branch_from_gitdir "$gitdir")"
+    state="ok"
+    if _w_is_worktree_dirty_any "$leaf"; then
+      dirty="dirty"
+    else
+      dirty="clean"
+    fi
+    display_path="${leaf/#$HOME/~}"
+    rows+=("${slug}${tab}${branch}${tab}${state}${tab}${dirty}${tab}${display_path}")
+  done
+
+  if (( ${#rows[@]} == 0 )); then
+    print -u2 "w rm: no removable worktrees found under: $worktrees_root"
+    return 1
+  fi
+
+  rows=("${(@o)rows}")
+
+  local -a fzf_args
+  fzf_args=(
+    --ansi
+    --reverse
+    --no-sort
+    --prompt="remove> "
+    --delimiter=$'\t'
+    --with-nth=1,2,3,4,5
+  )
+  if [[ -n "$query" ]]; then
+    fzf_args+=(--query="$query")
+  fi
+  if [[ -n "$filter" ]]; then
+    fzf_args+=(--filter="$filter")
+  fi
+
+  local selection
+  if tty -s 2>/dev/null; then
+    selection="$(printf '%s\n' "${rows[@]}" | fzf "${fzf_args[@]}" </dev/tty)" || return $?
+  else
+    selection="$(printf '%s\n' "${rows[@]}" | fzf "${fzf_args[@]}")" || return $?
+  fi
+  [[ -n "$selection" ]] || return 1
+
+  local -a selected_lines
+  selected_lines=("${(@f)selection}")
+  if (( ${#selected_lines[@]} != 1 )); then
+    print -u2 "w rm: filter matched ${#selected_lines[@]} worktrees; refine --filter to a single target"
+    local line
+    local shown=0
+    for line in "${selected_lines[@]}"; do
+      print -u2 "  ${line##*$tab}"
+      shown=$(( shown + 1 ))
+      (( shown >= 10 )) && break
+    done
+    return 1
+  fi
+  selection="${selected_lines[1]}"
+
+  local selected_slug="" selected_branch="" selected_state="" selected_dirty="" selected_path=""
+  selected_slug="$(print -r -- "$selection" | awk -F '\t' '{print $1}')"
+  selected_branch="$(print -r -- "$selection" | awk -F '\t' '{print $2}')"
+  selected_state="$(print -r -- "$selection" | awk -F '\t' '{print $3}')"
+  selected_dirty="$(print -r -- "$selection" | awk -F '\t' '{print $4}')"
+  selected_path="$(print -r -- "$selection" | awk -F '\t' '{print $5}')"
+
+  if [[ "$selected_path" == "~"* ]]; then
+    selected_path="${selected_path/#\~/$HOME}"
+  fi
+
+  if [[ "$selected_state" == "stale" ]]; then
+    print -u2 "w rm: selected entry is stale; use 'w prune' instead"
+    return 1
+  fi
+
+  if [[ -z "$selected_path" || ! -d "$selected_path" ]]; then
+    print -u2 "w rm: selected path does not exist: $selected_path"
+    return 1
+  fi
+
+  local is_dirty=0
+  if _w_is_worktree_dirty_any "$selected_path"; then
+    is_dirty=1
+  fi
+
+  if (( is_dirty && ! apply )); then
+    print -u2 "w rm: refusing to remove dirty worktree without --yes: $selected_path"
+    return 1
+  fi
+
+  if (( ! apply )); then
+    if ! tty -s 2>/dev/null; then
+      print -u2 "w rm: non-interactive mode requires --yes"
+      return 1
+    fi
+
+    local reply=""
+    printf "w rm: remove %s? [y/N] " "$selected_path" >/dev/tty
+    IFS= read -r reply </dev/tty || return 1
+    case "$reply" in
+      y|Y|yes|YES) ;;
+      *)
+        print -r -- "w rm: skipped"
+        return 1
+        ;;
+    esac
+  fi
+
+  local -a cmd
+  cmd=(wt -C "$selected_path" remove --foreground --yes "${wt_args[@]}")
+
+  local has_force=0
+  local arg
+  for arg in "${wt_args[@]}"; do
+    if [[ "$arg" == "-f" || "$arg" == "--force" ]]; then
+      has_force=1
+      break
+    fi
+  done
+  if (( is_dirty && ! has_force )); then
+    cmd+=(--force)
+  fi
+
+  if [[ -n "$selected_branch" && "$selected_branch" != "-" && "$selected_branch" != "(detached)" ]]; then
+    cmd+=("$selected_branch")
+  fi
+
+  local prefix=""
+  if [[ -n "$selected_slug" && "$selected_slug" == */* ]]; then
+    local owner="${selected_slug%%/*}"
+    local repo="${selected_slug##*/}"
+    if [[ -n "$owner" && -n "$repo" ]]; then
+      prefix="${owner}-${repo}"
+    fi
+  fi
+  if [[ -z "$prefix" ]]; then
+    local parent_name="${selected_path:h:t}"
+    prefix="${parent_name%%.*}"
+    [[ -z "$prefix" ]] && prefix="${selected_path:t}"
+  fi
+
+  local worktree_path_template="${worktrees_root}/${prefix}.{{ branch | sanitize }}/{{ repo }}"
+  WORKTRUNK_WORKTREE_PATH="$worktree_path_template" "${cmd[@]}"
+  local rc=$?
+  (( rc == 0 )) || return "$rc"
+
+  local parent="${selected_path:h}"
+  rmdir "$parent" 2>/dev/null || true
+  return 0
 }
 
 _w_cmd_prune() {
@@ -1092,7 +1802,7 @@ _w_cmd_prune() {
       --dry-run) apply=0; shift ;;
       --verbose|-v) verbose=1; shift ;;
       -h|--help) _w_help; return 0 ;;
-      *) print -u2 "w rm: unknown arg: $1"; return 2 ;;
+      *) print -u2 "w prune: unknown arg: $1"; return 2 ;;
     esac
   done
 
@@ -1102,44 +1812,29 @@ _w_cmd_prune() {
   local -a stale
   stale=()
 
-  local leaf line gitdir
+  local leaf gitdir
   for leaf in "${leaves[@]}"; do
     [[ -f "$leaf/.git" ]] || continue
-    line="$(head -n 1 "$leaf/.git" 2>/dev/null || true)"
-    if [[ "$line" != gitdir:* ]]; then
-      (( verbose )) && print -u2 "stale: $leaf (unexpected .git format)"
-      stale+=("$leaf")
-      continue
-    fi
-    gitdir="${line#gitdir:}"
-    gitdir="${gitdir# }"
+    gitdir="$(_w_gitdir_for_worktree "$leaf")"
     if [[ -z "$gitdir" ]]; then
-      (( verbose )) && print -u2 "stale: $leaf (empty gitdir)"
-      stale+=("$leaf")
-      continue
-    fi
-    if [[ "$gitdir" != /* ]]; then
-      gitdir="$leaf/$gitdir"
-    fi
-    if [[ ! -d "$gitdir" ]]; then
-      (( verbose )) && print -u2 "stale: $leaf (missing gitdir: $gitdir)"
+      (( verbose )) && print -u2 "stale: $leaf"
       stale+=("$leaf")
       continue
     fi
   done
 
   if (( ${#stale[@]} == 0 )); then
-    print -r -- "w rm: no stale worktrees found under: $worktrees_root"
+    print -r -- "w prune: no stale worktrees found under: $worktrees_root"
     return 0
   fi
 
   if (( ! apply )); then
-    print -r -- "w rm (dry-run): would remove ${#stale[@]} stale worktree(s):"
+    print -r -- "w prune (dry-run): would remove ${#stale[@]} stale worktree(s):"
     local s
     for s in "${stale[@]}"; do
       print -r -- "  $s"
     done
-    print -r -- "Re-run with: w rm --yes"
+    print -r -- "Re-run with: w prune --yes"
     return 0
   fi
 
@@ -1152,7 +1847,7 @@ _w_cmd_prune() {
     rmdir "$parent" 2>/dev/null || true
   done
 
-  print -r -- "w rm: removed $removed stale worktree(s)"
+  print -r -- "w prune: removed $removed stale worktree(s)"
 }
 
 function w() {
@@ -1194,7 +1889,12 @@ function w() {
       _w_cmd_list "$@"
       return $?
       ;;
-    rm|prune|clean|cleanup)
+    rm)
+      shift
+      _w_cmd_rm "$@"
+      return $?
+      ;;
+    prune|clean|cleanup)
       shift
       _w_cmd_prune "$@"
       return $?

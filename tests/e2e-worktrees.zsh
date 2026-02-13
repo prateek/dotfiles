@@ -223,6 +223,44 @@ printf '%s' "$list_json" | python3 -c 'import json,sys; d=json.load(sys.stdin); 
 printf '%s' "$list_json" | python3 -c 'import json,sys; d=json.load(sys.stdin); print("\n".join(sorted({i.get("path","") for i in d})))' | grep -Fqx "$wt3" || die "w list missing: $wt3"
 printf '%s' "$list_json" | python3 -c 'import json,sys; d=json.load(sys.stdin); print("\n".join(sorted({i.get("path","") for i in d})))' | grep -Fqx "$wt4" || die "w list missing: $wt4"
 
+echo "• w rm removes a clean worktree with --yes"
+w rm --yes --filter "feature/foo" >/dev/null
+[[ ! -d "$wt1" ]] || die "expected clean worktree removed: $wt1"
+git -C "$repos_dir/test-repo" show-ref --verify --quiet refs/heads/feature/foo && die "expected branch removed: feature/foo"
+
+echo "• w rm --filter requires a single match"
+(
+  cd "$repos_dir/test-repo"
+  w new --here "ambig/one" --base @ --no-cd >/dev/null
+  w new --here "ambig/two" --base @ --no-cd >/dev/null
+)
+wt_ambig_one="$HOME/code/wt/test-owner-test-repo.ambig-one/test-repo"
+wt_ambig_two="$HOME/code/wt/test-owner-test-repo.ambig-two/test-repo"
+assert_dir "$wt_ambig_one"
+assert_dir "$wt_ambig_two"
+if w rm --yes --filter "ambig" >/dev/null 2>&1; then
+  die "expected w rm --filter ambig to fail due to multiple matches"
+fi
+assert_dir "$wt_ambig_one"
+assert_dir "$wt_ambig_two"
+
+echo "• w rm does not remove dirty worktree without confirmation"
+(
+  cd "$repos_dir/test-repo"
+  w new --here "dirty/rm" --base @ --no-cd >/dev/null
+)
+wt_dirty="$HOME/code/wt/test-owner-test-repo.dirty-rm/test-repo"
+assert_dir "$wt_dirty"
+echo "dirty" > "$wt_dirty/.dirty.txt"
+if w rm --filter "dirty/rm" >/dev/null 2>&1; then
+  die "expected w rm to fail for dirty worktree without --yes"
+fi
+assert_dir "$wt_dirty"
+
+echo "• w rm removes dirty worktree with --yes"
+w rm --yes --filter "dirty/rm" >/dev/null
+[[ ! -d "$wt_dirty" ]] || die "expected dirty worktree removed: $wt_dirty"
+
 echo "• broken worktrees show as stale"
 broken_parent="$HOME/code/wt/broken-owner-broken-repo.broken-branch"
 broken_leaf="$broken_parent/broken-repo"
@@ -235,8 +273,8 @@ w help >/dev/null 2>&1
 got_gitdir="$(_w_gitdir_for_worktree "$broken_leaf")"
 assert_eq "$got_gitdir" ""
 
-ls_out="$(w ls --all --root "$HOME/code/wt" --format table)"
-broken_display="${broken_leaf/#$HOME/~}"
+ls_out="$(w ls --all --root "$HOME/code/wt" --format table -l)"
+broken_display="$broken_leaf"
 ls_line="$(print -r -- "$ls_out" | grep -F "$broken_display" | head -n 1 || true)"
 [[ -n "$ls_line" ]] || die "expected w ls to include: $broken_leaf"
 print -r -- "$ls_line" | grep -Fq "✗ stale" || die "expected w ls to mark stale: $broken_leaf"
@@ -249,11 +287,17 @@ pwd_after="$(
 )"
 assert_eq "$pwd_after" "${broken_leaf:A}"
 
-echo "• w rm removes stale worktree dirs (safe)"
-rm_out="$(w rm)"
-print -r -- "$rm_out" | grep -Fq "$broken_leaf" || die "expected w rm dry-run output to mention: $broken_leaf"
-w rm --yes >/dev/null
+echo "• w rm does not remove stale entries; use prune"
+if w rm --all --root "$HOME/code/wt" --filter "stale" >/dev/null 2>&1; then
+  die "expected w rm to fail for stale selection"
+fi
+assert_dir "$broken_leaf"
+
+echo "• w prune removes stale worktree dirs (safe)"
+prune_out="$(w prune)"
+print -r -- "$prune_out" | grep -Fq "$broken_leaf" || die "expected w prune dry-run output to mention: $broken_leaf"
+w prune --yes >/dev/null
 [[ ! -d "$broken_leaf" ]] || die "expected stale worktree removed: $broken_leaf"
-assert_dir "$wt1"
+assert_dir "$wt2"
 
 echo "OK"
