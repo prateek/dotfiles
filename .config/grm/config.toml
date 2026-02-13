@@ -110,6 +110,15 @@ type = "ssh"
 root = "~/code/github.com/openai"
 
 [[trees.repos]]
+name = "chronosphere_backups"
+worktree_setup = false
+
+[[trees.repos.remotes]]
+name = "origin"
+url = "git@github-openai:openai/chronosphere_backups.git"
+type = "ssh"
+
+[[trees.repos]]
 name = "codex"
 worktree_setup = false
 
@@ -248,6 +257,15 @@ url = "git@github.com:steipete/mcporter.git"
 type = "ssh"
 
 [[trees.repos]]
+name = "original_performance_takehome"
+worktree_setup = false
+
+[[trees.repos.remotes]]
+name = "origin"
+url = "git@github-prateek:prateek/original_performance_takehome.git"
+type = "ssh"
+
+[[trees.repos]]
 name = "personal-notes"
 worktree_setup = false
 
@@ -339,12 +357,12 @@ name = "chronosphere-openai"
 worktree_setup = false
 
 [[trees.repos.remotes]]
-name = "openai"
-url = "git@github-openai:openai/chronosphere-openai.git"
-type = "ssh"
+name = "origin"
+url = "https://github.com/chronosphereio/chronosphere-openai.git"
+type = "https"
 
 [[trees.repos.remotes]]
-name = "origin"
+name = "origin-ssh"
 url = "git@github.com:chronosphereio/chronosphere-openai.git"
 type = "ssh"
 
@@ -356,4 +374,3 @@ worktree_setup = false
 name = "origin"
 url = "git@github-openai:openai/openai.git"
 type = "ssh"
-
