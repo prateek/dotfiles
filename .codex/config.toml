@@ -1,6 +1,14 @@
 model = "gpt-5.2"
 model_reasoning_effort = "xhigh"
 
+[otel]
+exporter = "none"
+trace_exporter = "none"
+metrics_exporter = "none"
+
+[analytics]
+enabled = false
+
 [model_providers.openai]
 name = "OpenAI"
 base_url = "https://api.openai.com/v1"
@@ -30,16 +38,6 @@ trust_level = "trusted"
 
 [projects."/Users/prateek/experiments/marimo-feature-playground"]
 trust_level = "trusted"
-
-# [mcp_servers.pal]
-# command = "bash"
-# args = ["-c", "/Users/prateek/.local/bin/uvx --from git+https://github.com/BeehiveInnovations/pal-mcp-server.git pal-mcp-server"]
-# env_vars = ["OPENAI_API_KEY"]
-# startup_timeout_sec = 300
-# tool_timeout_sec = 1200
-# 
-# [mcp_servers.pal.env]
-# DEFAULT_MODEL="gpt-5.2-pro"
 
 [features]
 web_search_request = true

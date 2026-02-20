@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+MCPORTER_VERSION="${MCPORTER_VERSION:-0.7.3}"
+
+_SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+_SKILL_DIR="$(cd -- "${_SCRIPT_DIR}/.." && pwd -P)"
+
+CONFIG_PATH="${MCP_SKILL_CONFIG:-${_SKILL_DIR}/mcporter.json}"
+
+echo "selftest: skill_dir=${_SKILL_DIR}"
+echo "selftest: config=${CONFIG_PATH}"
+echo "selftest: mcporter_version=${MCPORTER_VERSION}"
+echo "selftest: fixture_tests=no"
+
+MCPORTER_BIN="${MCPORTER_BIN:-}"
+if [ -n "${MCPORTER_BIN}" ]; then
+  if ! command -v "${MCPORTER_BIN}" >/dev/null 2>&1; then
+    echo "selftest: MCPORTER_BIN=${MCPORTER_BIN} not found in PATH" >&2
+    exit 2
+  fi
+else
+  if ! command -v npx >/dev/null 2>&1; then
+    echo "selftest: npx not found in PATH (set MCPORTER_BIN=mcporter to use a local mcporter binary)" >&2
+    exit 2
+  fi
+fi
+
+if [ -f "${_SKILL_DIR}/tests/test_offline.py" ]; then
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo "selftest: python3 not found in PATH (required for offline tests)" >&2
+    exit 2
+  fi
+  echo "selftest: offline tests ..."
+  python3 "${_SKILL_DIR}/tests/test_offline.py" >/dev/null 2>&1
+fi
+
+echo "selftest: list tools (server=pal) ..."
+bash "${_SKILL_DIR}/scripts/mcp" list --json >/dev/null
+
+echo "selftest: version ..."
+bash "${_SKILL_DIR}/scripts/mcp" call version --output json --args '{}' >/dev/null
+
+
+
+echo "ok"

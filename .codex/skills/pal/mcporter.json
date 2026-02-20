@@ -1,0 +1,17 @@
+{
+  "imports": [],
+  "mcpServers": {
+    "pal": {
+      "command": [
+        "bash",
+        "-c",
+        "set -eo pipefail; uvx_bin=\"$PAL_UVX_BIN\"; if [ -z \"$uvx_bin\" ]; then candidate=\"$(command -v uvx 2>/dev/null || true)\"; if [ -n \"$candidate\" ] && [ -x \"$candidate\" ]; then uvx_bin=\"$candidate\"; elif [ -x \"$HOME/.local/bin/uvx\" ]; then uvx_bin=\"$HOME/.local/bin/uvx\"; elif [ -x \"/opt/homebrew/bin/uvx\" ]; then uvx_bin=\"/opt/homebrew/bin/uvx\"; elif [ -x \"/usr/local/bin/uvx\" ]; then uvx_bin=\"/usr/local/bin/uvx\"; fi; fi; if [ -z \"$uvx_bin\" ] || [ ! -x \"$uvx_bin\" ]; then echo \"uvx not found. Install uv (uvx), set PAL_UVX_BIN, or put uvx on PATH.\" >&2; exit 1; fi; default_model=\"$PAL_DEFAULT_MODEL\"; if [ -z \"$default_model\" ]; then default_model=\"auto\"; fi; export DEFAULT_MODEL=\"$default_model\"; from=\"$PAL_MCP_FROM\"; if [ -z \"$from\" ]; then from=\"git+https://github.com/BeehiveInnovations/pal-mcp-server.git\"; fi; exec \"$uvx_bin\" --from \"$from\" pal-mcp-server"
+      ],
+      "description": "pal MCP server",
+      "lifecycle": {
+        "idleTimeoutMs": 1800000,
+        "mode": "keep-alive"
+      }
+    }
+  }
+}

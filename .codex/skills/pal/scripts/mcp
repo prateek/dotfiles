@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+MCPORTER_VERSION="${MCPORTER_VERSION:-0.7.3}"
+
+_SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+_SKILL_DIR="$(cd -- "${_SCRIPT_DIR}/.." && pwd -P)"
+
+CONFIG_PATH="${MCP_SKILL_CONFIG:-${_SKILL_DIR}/mcporter.json}"
+
+MCPORTER_BIN="${MCPORTER_BIN:-}"
+
+if [ -n "${MCPORTER_BIN}" ]; then
+  if ! command -v "${MCPORTER_BIN}" >/dev/null 2>&1; then
+    echo "mcp wrapper: MCPORTER_BIN=${MCPORTER_BIN} not found in PATH" >&2
+    exit 2
+  fi
+  MC=("${MCPORTER_BIN}" --config "${CONFIG_PATH}")
+else
+  if ! command -v npx >/dev/null 2>&1; then
+    echo "mcp wrapper: npx not found in PATH (set MCPORTER_BIN=mcporter to use a local mcporter binary)" >&2
+    exit 2
+  fi
+  export npm_config_update_notifier="${npm_config_update_notifier:-false}"
+  MC=(npx -y "mcporter@${MCPORTER_VERSION}" --config "${CONFIG_PATH}")
+fi
+
+subcmd="${1:-}"
+if [ -z "${subcmd}" ] || [ "${subcmd}" = "-h" ] || [ "${subcmd}" = "--help" ] || [ "${subcmd}" = "help" ]; then
+  cat <<'EOF'
+Usage:
+  mcp list [args...]
+  mcp call <tool|server.tool|url> [args...]
+
+Notes:
+  - Defaults to MCPorter via npx (pinned by MCPORTER_VERSION).
+  - Set MCPORTER_BIN=mcporter to use a local mcporter binary from PATH instead.
+  - Uses a skill-local config by default: mcporter.json (override with MCP_SKILL_CONFIG).
+EOF
+  exit 0
+fi
+
+case "${subcmd}" in
+  list)
+    shift
+    "${MC[@]}" list "pal" "$@"
+    ;;
+  call)
+    shift
+    selector="${1:-}"
+    if [ -z "${selector}" ]; then
+      echo "mcp wrapper: missing tool selector" >&2
+      exit 2
+    fi
+    shift
+    if [[ "${selector}" == *.* || "${selector}" == http*://* ]]; then
+      target="${selector}"
+    else
+      target="pal.${selector}"
+    fi
+    "${MC[@]}" call "${target}" "$@"
+    ;;
+  *)
+    shift
+    "${MC[@]}" "${subcmd}" "$@"
+    ;;
+esac

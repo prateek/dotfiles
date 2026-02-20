@@ -293,6 +293,15 @@ url = "git@github-prateek:prateek/vscode-pep723-uv-autoenv.git"
 type = "ssh"
 
 [[trees.repos]]
+name = "w"
+worktree_setup = false
+
+[[trees.repos.remotes]]
+name = "origin"
+url = "git@github-prateek:prateek/w.git"
+type = "ssh"
+
+[[trees.repos]]
 name = "yt-summarizer"
 worktree_setup = false
 

@@ -27,6 +27,7 @@ Temporary Items
 .apdisk
 
 *.pyc
+__pycache__/
 
 # zsh compiled files
 *.zwc

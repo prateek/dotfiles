@@ -26,7 +26,7 @@ description: Prepare a clean local checkout for a GitHub PR (worktree-first via 
 The script prints one JSON object to stdout containing at least:
 
 - `worktree_dir`: local checkout path (worktree or in-place)
-- `compare_to`: base ref suitable for `codex review --base` and PAL `compare_to` (e.g. `upstream/main`)
+- `compare_to`: base ref suitable for `codex review --base` and PAL review (via the `pal` skill) (e.g. `upstream/main`)
 - `checks`: `gh pr checks` JSON
 - `issue_comments`, `reviews`, `review_comments`: all PR discussion content pulled via `gh api --paginate`
 
