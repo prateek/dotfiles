@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+*.js
+*.js.map
+*.d.ts
+!*.config.js
+!*.config.ts
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Test
+coverage/
+.nyc_output/
+
+# Temp
+tmp/
+temp/
+*.tmp
+
+# Development vault
+dev-vault/
+!dev-vault/.gitkeep
+
+# Plugin builds
+main.js
+styles.css
+manifest.json
+!packages/plugin-obsidian/manifest.json
