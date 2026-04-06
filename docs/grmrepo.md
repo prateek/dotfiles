@@ -4,7 +4,7 @@ This dotfiles repo wires up [git-repo-manager](https://github.com/hakoerber/git-
 
 - Tracking canonical local clones under `~/code`
 - Fast repo URL insertion (shell + global via Hammerspoon)
-- Routing `gh` between work/personal accounts based on repo context
+- Refreshing GRM metadata after `gh repo clone/create`
 
 ## Layout conventions
 
@@ -47,12 +47,35 @@ To keep `grm repos status` working with `owner/repo` naming, `grmrepo-refresh` e
 - Clone everything from the config onto a new machine:
   - `grmrepo repos sync config`
 
-## `gh` account routing (work vs personal)
+## `gh` wrapper
 
 - Wrapper: `~/bin/gh`
-- Rules live in: `~/dotfiles/zsh/lib/gh-user-rules.zsh`
-- Override per-invocation:
-  - `GH_WRAPPER_USER=prateek gh repo view openai/codex`
+- Behavior:
+  - Passes through to the real `gh`
+  - Triggers a background `grmrepo-refresh` after successful `gh repo clone/create`
+
+### Extending Back To Multiple `gh` Users
+
+If this machine needs multiple authenticated `gh` users again, keep the current wrapper thin and put the account-selection logic behind a small sourced rules file rather than rebuilding it inline.
+
+Recommended shape:
+
+- Add a rules file such as `~/dotfiles/zsh/lib/gh-user-rules.zsh`
+- Define one function with a narrow interface:
+  - `gh_user_for_context <origin_url> <repo_slug>`
+- In `~/bin/gh`:
+  - source that rules file if it exists
+  - derive context from the current repo `origin`, `--repo/-R`, or a repo argument for commands like `gh repo clone owner/repo`
+  - resolve the target account with `gh_user_for_context`
+  - fetch a token with `gh auth token --user <name>`
+  - exec the real `gh` with `GH_TOKEN` and `GITHUB_TOKEN` set to that token
+- Keep `grmrepo-refresh` as a post-success hook for `repo clone/create`
+
+Guidelines:
+
+- Keep repo-to-user matching declarative and isolated in the rules file
+- Prefer matching on explicit repo slug or remote URL, not on arbitrary command arguments
+- Keep `ghc` SSH-first unless you also need owner-specific SSH aliases; if you reintroduce those aliases, only do it when the corresponding SSH config is actually present
 
 ## URL insertion UX
 

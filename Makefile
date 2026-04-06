@@ -1,5 +1,5 @@
 .PHONY: hammerspoon hammerspoon-check hammerspoon-reload
-.PHONY: test-worktrees
+.PHONY: test-ghc test-worktrees
 
 HAMMERSPOON_SRC := .hammerspoon/init.fnl
 HAMMERSPOON_OUT := .hammerspoon/init.generated.lua
@@ -21,6 +21,10 @@ hammerspoon-check: hammerspoon
 hammerspoon-reload: hammerspoon
 	@command -v hs >/dev/null 2>&1 || { echo "Missing 'hs' CLI"; exit 1; }
 	@hs -c 'hs.reload(); "ok"' -q
+
+## E2E tests for ghc URL handling.
+test-ghc:
+	@zsh ./tests/ghc-url.zsh
 
 ## E2E tests for worktree helpers (w + hooks).
 test-worktrees:

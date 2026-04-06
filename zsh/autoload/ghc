@@ -1,11 +1,12 @@
 # `ghc`: github-checkout -- quick checkout and directory switcher
 # usage (1) `$ ghc <github-user>/<github-repo>`
 # usage (2) `$ ghc github.com/<github-user>/<github-repo>(/.*)?`
+# usage (3) `$ ghc https://github.com/<github-user>/<github-repo>(/.*)?`
 function ghc() {
   setopt localoptions pipefail no_aliases 2> /dev/null
 
   if [[ $# -lt 1 ]]; then
-    echo "usage: ghc <owner>/<repo>  (or github.com/<owner>/<repo>)" >&2
+    echo "usage: ghc <owner>/<repo>  (or [https://]github.com/<owner>/<repo>)" >&2
     return 2
   fi
 
@@ -71,15 +72,8 @@ function ghc() {
   if [[ ! -d "$target/.git" ]]; then
     mkdir -p "$(dirname "$target")"
 
-    local owner clone_url
-    owner="${slug%%/*}"
-    case "$owner" in
-      (openai) clone_url="git@github-openai:${slug}.git" ;;
-      (prateek) clone_url="git@github-prateek:${slug}.git" ;;
-      (*) clone_url="git@github.com:${slug}.git" ;;
-    esac
-
-    git clone "$clone_url" "$target"
+    local clone_url="git@github.com:${slug}.git"
+    git clone "$clone_url" "$target" || return 1
 
     if command -v grmrepo-refresh >/dev/null 2>&1; then
       grmrepo-refresh >/dev/null 2>&1 &!

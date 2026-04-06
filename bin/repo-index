@@ -25,7 +25,7 @@ _slug_from_remote() {
 
   # Common forms:
   # - git@github.com:owner/repo.git
-  # - git@github-openai:openai/repo.git
+  # - git@some-host:owner/repo.git
   # - org-123@github.com:owner/repo.git
   # - https://github.com/owner/repo(.git)?
   # - ssh://git@github.com/owner/repo.git
