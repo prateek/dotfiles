@@ -1,48 +1,51 @@
-model = "gpt-5.2"
+model = "gpt-5.4"
 model_reasoning_effort = "xhigh"
-
-[otel]
-exporter = "none"
-trace_exporter = "none"
-metrics_exporter = "none"
-
-[analytics]
-enabled = false
-
-[model_providers.openai]
-name = "OpenAI"
-base_url = "https://api.openai.com/v1"
-
-http_headers = {
-  "OpenAI-Service-Tier" = "priority",
-  "X-Custom-Client"     = "prateek-codex/1.0"
-}
-
-[projects."/Users/prateek/code/openai"]
-trust_level = "trusted"
-
 [projects."/Users/prateek/dotfiles"]
 trust_level = "trusted"
 
-[projects."/Users/prateek/code"]
-trust_level = "trusted"
-
-[projects."/Users/prateek/code/chronosphere-openai"]
-trust_level = "trusted"
-
 [projects."/Users/prateek"]
-trust_level = "untrusted"
-
-[projects."/Users/prateek/code/github.com/prateek/codex-transcripts"]
 trust_level = "trusted"
 
-[projects."/Users/prateek/experiments/marimo-feature-playground"]
+[projects."/Users/prateek/code/experiments/2026-04-03-calibre-setup"]
 trust_level = "trusted"
 
-[features]
-web_search_request = true
-unified_exec = true
-shell_snapshot = true
+[projects."/Users/prateek/code/literotica"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments/2026-04-03-crosspoint-reader-tailscale"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments/2026-04-04-ebook-platform-eval"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/github.com/SillyTavern/SillyTavern"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments/2026-04-03-calibre-setup/serial-sync"]
+trust_level = "trusted"
 
 [notice.model_migrations]
-"gpt-5.2" = "gpt-5.2-codex"
+gpt-5-codex = "gpt-5.3-codex"
+"gpt-5.2" = "gpt-5.3-codex"
+
+[mcp_servers.granola]
+enabled = true
+url = "https://mcp.granola.ai/mcp"
+
+[features]
+multi_agent = true
+
+[plugins."google-calendar@openai-curated"]
+enabled = true
+
+[plugins."gmail@openai-curated"]
+enabled = true
+
+[plugins."github@openai-curated"]
+enabled = true
+
+[plugins."google-drive@openai-curated"]
+enabled = true
