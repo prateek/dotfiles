@@ -1,0 +1,6 @@
+interface:
+  display_name: "Image Gen Nano Banana"
+  short_description: "Direct Flash/Pro image gen with Kousen-style prompting guidance"
+  default_prompt: "Use $image-gen-nano-banana to craft a strong Nano Banana prompt if needed, then run the direct Flash or Pro generator."
+policy:
+  allow_implicit_invocation: true
