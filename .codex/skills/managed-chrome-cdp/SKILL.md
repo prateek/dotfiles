@@ -17,6 +17,9 @@ Use this when Chrome remote debugging (CDP) is blocked on first launch until ent
 - Start a headless CDP Chrome using a persistent profile dir:
   - `bun ~/.codex/skills/managed-chrome-cdp/scripts/browser-tools.ts start --headless --port 9333`
   - Default profile: `.dev/chrome-cdp-profile` (relative to your current directory)
+  - When using `--profile`, the script copies `~/Library/Application Support/Google/Chrome/Default` into that temp user-data-dir and also copies `Local State` when present.
+  - This avoids pointing CDP Chrome at the live Chrome profile directory directly.
+  - The script still scrubs copied Chrome runtime lock/socket artifacts like `Singleton*` before launch.
 
 ## Login flow (cookie reuse)
 
@@ -37,4 +40,5 @@ Use this when Chrome remote debugging (CDP) is blocked on first launch until ent
 - Don’t run multiple Chrome instances using the same `--profile-dir` at once (Chrome profile lock).
 - The default profile dir is gitignored automatically when running inside a git repo.
 - The script may append `**/.dev/chrome-cdp-profile/` to `.gitignore` and `.git/info/exclude` (when using the default profile dir).
+- The policy prewarm path is now used as a fallback after a failed launch, instead of delaying every launch on machines that do not use Chrome enterprise policy.
 - `content` / `search` inject third-party JS from `unpkg.com` (Readability/Turndown) into the page to extract readable text; avoid on sensitive pages if that trust boundary is a concern.

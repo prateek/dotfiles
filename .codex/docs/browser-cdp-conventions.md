@@ -22,6 +22,9 @@ Use this playbook for browser automation and CDP-controlled workflows.
 2. Validate path:
    - If the env var is missing, empty, or points to a non-existent directory, prompt the user for which profile path to use.
 3. Start/operate browser tooling with that resolved profile path.
+4. If the user wants to reuse the local Chrome `Default` profile:
+   - Prefer copying `~/Library/Application Support/Google/Chrome/Default` into a separate CDP user-data-dir.
+   - Do not point CDP Chrome directly at the live Chrome profile directory unless the user explicitly wants that risk.
 
 ## Validation checklist
 

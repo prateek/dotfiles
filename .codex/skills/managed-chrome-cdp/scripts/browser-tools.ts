@@ -147,9 +147,32 @@ async function loadDeps() {
 const DEFAULT_PORT = 9222;
 const DEFAULT_PROFILE_DIR = path.join(process.cwd(), '.dev', 'chrome-cdp-profile');
 const DEFAULT_CHROME_BIN = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+const DEFAULT_CHROME_PROFILE_SOURCE_DIR = path.join(
+  os.homedir(),
+  'Library',
+  'Application Support',
+  'Google',
+  'Chrome',
+  'Default',
+);
+const DEFAULT_CHROME_LOCAL_STATE_SOURCE = path.join(
+  os.homedir(),
+  'Library',
+  'Application Support',
+  'Google',
+  'Chrome',
+  'Local State',
+);
 
 const POLICY_CACHE_MARKER = path.join('Policy', 'Machine Level User Cloud Policy');
 const DEFAULT_PROFILE_GITIGNORE_PATTERN = '**/.dev/chrome-cdp-profile/';
+const CHROME_RUNTIME_ARTIFACTS = [
+  'SingletonLock',
+  'SingletonSocket',
+  'SingletonCookie',
+  'RunningChromeVersion',
+  'DevToolsActivePort',
+];
 
 function shellQuote(value: string): string {
   if (/^[A-Za-z0-9_./:-]+$/.test(value)) return value;
@@ -366,6 +389,83 @@ async function prewarmProfile(profileDir: string, chromePath: string, timeoutMs:
   }
 }
 
+async function scrubChromeRuntimeArtifacts(profileDir: string) {
+  for (const artifact of CHROME_RUNTIME_ARTIFACTS) {
+    try {
+      await rm(path.join(profileDir, artifact), { force: true, recursive: true });
+    } catch {
+      // ignore cleanup failures
+    }
+  }
+}
+
+async function stopChromeProcess(proc: ReturnType<typeof spawn> | undefined) {
+  if (!proc) return;
+
+  try {
+    proc.kill('SIGTERM');
+  } catch {
+    // ignore
+  }
+  await new Promise((resolve) => setTimeout(resolve, 750));
+  try {
+    proc.kill('SIGKILL');
+  } catch {
+    // ignore
+  }
+}
+
+async function launchChromeWithRecovery(options: {
+  chromePath: string;
+  port: number;
+  profileDir: string;
+  headless: boolean;
+  detached: boolean;
+  prewarmTimeoutMs: number;
+}) {
+  const { chromePath, port, profileDir, headless, detached, prewarmTimeoutMs } = options;
+
+  await scrubChromeRuntimeArtifacts(profileDir);
+
+  let launch = spawnDevtoolsChrome({ chromePath, port, profileDir, headless, detached });
+  let chromeSpawnError = await launch.spawnError;
+  if (chromeSpawnError) {
+    throw new Error(`Failed to launch Chrome: ${chromeSpawnError.message}`);
+  }
+
+  if (await waitForBrowser(port, 15_000)) {
+    return { proc: launch.proc, usedPrewarmRecovery: false };
+  }
+
+  const hadPolicyCache = isPolicyCached(profileDir);
+  await stopChromeProcess(launch.proc);
+
+  if (!hadPolicyCache && prewarmTimeoutMs > 0) {
+    await scrubChromeRuntimeArtifacts(profileDir);
+    try {
+      await prewarmProfile(profileDir, chromePath, prewarmTimeoutMs);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`! Policy prewarm failed: ${message}`);
+    }
+
+    await scrubChromeRuntimeArtifacts(profileDir);
+    launch = spawnDevtoolsChrome({ chromePath, port, profileDir, headless, detached });
+    chromeSpawnError = await launch.spawnError;
+    if (chromeSpawnError) {
+      throw new Error(`Failed to launch Chrome after prewarm: ${chromeSpawnError.message}`);
+    }
+
+    if (await waitForBrowser(port, 15_000)) {
+      return { proc: launch.proc, usedPrewarmRecovery: true };
+    }
+
+    await stopChromeProcess(launch.proc);
+  }
+
+  return { proc: undefined, usedPrewarmRecovery: !hadPolicyCache };
+}
+
 interface AuthState {
   verifiedHosts?: Record<string, { lastVerified: string }>;
 }
@@ -512,9 +612,16 @@ program
     await mkdir(resolvedProfileDir, { recursive: true });
 
     if (profile) {
-      const source = `${path.join(os.homedir(), 'Library', 'Application Support', 'Google', 'Chrome')}/`;
       try {
-        const destination = resolvedProfileDir.endsWith(path.sep) ? resolvedProfileDir : `${resolvedProfileDir}${path.sep}`;
+        const source = DEFAULT_CHROME_PROFILE_SOURCE_DIR.endsWith(path.sep)
+          ? DEFAULT_CHROME_PROFILE_SOURCE_DIR
+          : `${DEFAULT_CHROME_PROFILE_SOURCE_DIR}${path.sep}`;
+        const destinationDefaultDir = path.join(resolvedProfileDir, 'Default');
+        await mkdir(destinationDefaultDir, { recursive: true });
+        const destination = destinationDefaultDir.endsWith(path.sep)
+          ? destinationDefaultDir
+          : `${destinationDefaultDir}${path.sep}`;
+
         const result = spawnSync('rsync', ['-a', '--delete', source, destination], {
           encoding: 'utf8',
           stdio: ['ignore', 'ignore', 'pipe'],
@@ -524,40 +631,35 @@ program
           const message = result.error instanceof Error ? result.error.message : stderr || `rsync exited with code ${result.status}`;
           throw new Error(message);
         }
+
+        if (existsSync(DEFAULT_CHROME_LOCAL_STATE_SOURCE)) {
+          copyFileSync(
+            DEFAULT_CHROME_LOCAL_STATE_SOURCE,
+            path.join(resolvedProfileDir, 'Local State'),
+          );
+        }
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         console.warn(`! Failed to copy Chrome profile (continuing with empty profile): ${message}`);
       }
     }
 
-    if (!isPolicyCached(resolvedProfileDir)) {
-      try {
-        await prewarmProfile(resolvedProfileDir, resolvedChromePath, Math.max(1, prewarmTimeout) * 1000);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        console.warn(`! Policy prewarm failed: ${message}`);
-      }
-    }
-
-    const { spawnError } = spawnDevtoolsChrome({
+    const { proc, usedPrewarmRecovery } = await launchChromeWithRecovery({
       chromePath: resolvedChromePath,
       port,
       profileDir: resolvedProfileDir,
       headless,
       detached: true,
+      prewarmTimeoutMs: Math.max(1, prewarmTimeout) * 1000,
     });
-    const chromeSpawnError = await spawnError;
-    if (chromeSpawnError) {
-      console.error(`✗ Failed to launch Chrome: ${chromeSpawnError.message}`);
-      process.exit(1);
-    }
 
-    const connected = await waitForBrowser(port, 15_000);
-
-    if (!connected) {
+    if (!proc) {
       console.error(`✗ Failed to start Chrome on port ${port}`);
       if (!isPolicyCached(resolvedProfileDir)) {
-        console.error(`  Policy cache not found in ${path.join(resolvedProfileDir, 'Policy')}. Try re-running with --reset-profile --force.`);
+        console.error(`  No policy cache found in ${path.join(resolvedProfileDir, 'Policy')}.`);
+      }
+      if (usedPrewarmRecovery) {
+        console.error('  A prewarm retry was attempted after the initial launch failed.');
       }
       process.exit(1);
     }
@@ -609,34 +711,15 @@ program
     await ensureGitIgnored(resolvedProfileDir);
     await mkdir(resolvedProfileDir, { recursive: true });
 
-    if (!isPolicyCached(resolvedProfileDir)) {
-      try {
-        await prewarmProfile(resolvedProfileDir, resolvedChromePath, Math.max(1, prewarmTimeout) * 1000);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        console.warn(`! Policy prewarm failed: ${message}`);
-      }
-    }
-
-    const { proc, spawnError } = spawnDevtoolsChrome({
+    const { proc } = await launchChromeWithRecovery({
       chromePath: resolvedChromePath,
       port,
       profileDir: resolvedProfileDir,
       headless: false,
       detached: false,
+      prewarmTimeoutMs: Math.max(1, prewarmTimeout) * 1000,
     });
-    const chromeSpawnError = await spawnError;
-    if (chromeSpawnError) {
-      console.error(`✗ Failed to launch Chrome: ${chromeSpawnError.message}`);
-      process.exit(1);
-    }
-    const connected = await waitForBrowser(port, 15_000);
-    if (!connected) {
-      try {
-        proc.kill('SIGKILL');
-      } catch {
-        // ignore
-      }
+    if (!proc) {
       console.error(`✗ Failed to start Chrome on port ${port}`);
       process.exit(1);
     }
@@ -674,32 +757,17 @@ program
       return;
     }
 
-    try {
-      proc.kill('SIGTERM');
-    } catch {
-      // ignore
-    }
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    try {
-      proc.kill('SIGKILL');
-    } catch {
-      // ignore
-    }
+    await stopChromeProcess(proc);
 
-    const { spawnError: headlessSpawnError } = spawnDevtoolsChrome({
+    const { proc: restartedProc } = await launchChromeWithRecovery({
       chromePath: resolvedChromePath,
       port,
       profileDir: resolvedProfileDir,
       headless: true,
       detached: true,
+      prewarmTimeoutMs: Math.max(1, prewarmTimeout) * 1000,
     });
-    const headlessChromeSpawnError = await headlessSpawnError;
-    if (headlessChromeSpawnError) {
-      console.error(`✗ Failed to launch headless Chrome: ${headlessChromeSpawnError.message}`);
-      process.exit(1);
-    }
-    const headlessConnected = await waitForBrowser(port, 15_000);
-    if (!headlessConnected) {
+    if (!restartedProc) {
       console.error(`✗ Failed to restart headless Chrome on port ${port}`);
       process.exit(1);
     }
@@ -729,39 +797,21 @@ program
     await ensureGitIgnored(resolvedProfileDir);
     await mkdir(resolvedProfileDir, { recursive: true });
 
-    if (!isPolicyCached(resolvedProfileDir)) {
-      try {
-        await prewarmProfile(resolvedProfileDir, resolvedChromePath, Math.max(1, prewarmTimeout) * 1000);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        console.warn(`! Policy prewarm failed: ${message}`);
-      }
-    }
-
     let launchedProc: ReturnType<typeof spawn> | undefined;
     let browser: any;
     try {
       browser = await connectBrowser(port);
     } catch {
-      const launch = spawnDevtoolsChrome({
+      const launch = await launchChromeWithRecovery({
         chromePath: resolvedChromePath,
         port,
         profileDir: resolvedProfileDir,
         headless: true,
         detached: false,
+        prewarmTimeoutMs: Math.max(1, prewarmTimeout) * 1000,
       });
       launchedProc = launch.proc;
-      const chromeSpawnError = await launch.spawnError;
-      if (chromeSpawnError) {
-        throw new Error(`Failed to launch Chrome: ${chromeSpawnError.message}`);
-      }
-      const connected = await waitForBrowser(port, 15_000);
-      if (!connected) {
-        try {
-          launchedProc.kill('SIGKILL');
-        } catch {
-          // ignore
-        }
+      if (!launchedProc) {
         throw new Error(`Failed to start headless Chrome on port ${port}`);
       }
       browser = await connectBrowser(port);
@@ -791,19 +841,7 @@ program
       }
     } finally {
       await browser.disconnect();
-      if (launchedProc) {
-        try {
-          launchedProc.kill('SIGTERM');
-        } catch {
-          // ignore
-        }
-        await new Promise((resolve) => setTimeout(resolve, 750));
-        try {
-          launchedProc.kill('SIGKILL');
-        } catch {
-          // ignore
-        }
-      }
+      await stopChromeProcess(launchedProc);
     }
   });
 
