@@ -23,6 +23,8 @@ Offer the user a structured workflow for co-authoring the document. Explain the 
 
 Explain that this approach helps ensure the doc works well when others read it (including when they paste it into Claude). Ask if they want to try this workflow or prefer to work freeform.
 
+For implementation-oriented docs such as PRDs, technical specs, or execution handoffs, explain that the workflow also checks execution order: the doc should make the first functional vertical slice obvious, keep later polish subordinate to blockers for that slice, and keep execution journaling outside the main spec.
+
 If user declines, work freeform. If user accepts, proceed to Stage 1.
 
 ## Stage 1: Context Gathering
@@ -40,6 +42,12 @@ Start by asking the user for meta-context about the document:
 5. Any other constraints or context to know?
 
 Inform them they can answer in shorthand or dump information however works best for them.
+
+**Additional questions for implementation specs and PRDs:**
+- What is the first functional vertical slice the implementer must deliver?
+- Which blockers must outrank later polish, lifecycle cleanup, or fidelity work?
+- Is this document meant to be a stable spec for an autonomous implementation agent?
+- Where should execution updates live? Prefer a separate `IMPLEMENTATION_LOG.md`, not the main spec.
 
 **If user provides a template or mentions a doc type:**
 - Ask if they have a template document to share
@@ -66,6 +74,12 @@ Advise them not to worry about organizing it - just get it all out. Offer multip
 - Info dump stream-of-consciousness
 - Point to team channels or threads to read
 - Link to shared documents
+
+For implementation specs and PRDs, explicitly ask for:
+- the risky integration target that should define the first real end-to-end slice
+- the blocker ordering for that slice
+- which work is allowed to outrank those blockers, if any
+- which work is explicitly deferred until after the first functional slice works
 
 **If integrations are available** (e.g., Slack, Teams, Google Drive, SharePoint, or other MCP servers), mention that these can be used to pull in context directly.
 
@@ -115,6 +129,8 @@ Explain that the document will be built section by section. For each section:
 
 Start with whichever section has the most unknowns (usually the core decision/proposal), then work through the rest.
 
+For implementation specs and PRDs, prefer drafting the first functional vertical slice, current blockers, and critical path before polishing later sections. Avoid a subsystem-by-subsystem plan that delays the first real end-to-end slice unless the user explicitly wants that structure.
+
 **Section ordering:**
 
 If the document structure is clear:
@@ -126,6 +142,14 @@ If user doesn't know what sections they need:
 Based on the type of document and template, suggest 3-5 sections appropriate for the doc type.
 
 Ask if this structure works, or if they want to adjust it.
+
+**Special rule for implementation specs and PRDs:**
+- Prefer milestones that deliver an early end-to-end thin slice.
+- Make the first functional slice explicit.
+- Add explicit `Current Blockers` and `Critical Path` sections.
+- State that later lifecycle polish, seam work, trace expansion, and fidelity cleanup cannot outrank unfinished blockers for the first functional slice.
+- Keep execution updates in `IMPLEMENTATION_LOG.md`, not in the PRD/spec itself.
+- Do not prepend "completed in this slice" or similar execution-log sections to the top of the spec.
 
 **Once structure is agreed:**
 
@@ -235,6 +259,12 @@ Announce all sections are drafted. Indicate intention to review the complete doc
 
 Review for overall coherence, flow, completeness.
 
+For implementation specs and PRDs, explicitly review whether:
+- the first functional vertical slice is unambiguous
+- blockers are ordered clearly
+- the doc would cause a fresh implementation agent to prioritize blockers over later polish
+- the doc stays a stable spec while `IMPLEMENTATION_LOG.md` holds execution history
+
 Provide any final suggestions.
 
 Ask if ready to move to Reader Testing, or if they want to refine anything else.
@@ -274,7 +304,22 @@ Invoke sub-agent to check for ambiguity, false assumptions, contradictions.
 
 Summarize any issues found.
 
-### Step 4: Report and Fix
+### Step 4: Mandatory Vertical-Slice Priority Gate
+
+For implementation specs and PRDs, run an additional required test with a fresh sub-agent using only the document:
+- "What are the first five implementation tasks?"
+- "What is the first functional vertical slice?"
+- "Is there any later polish work this doc might prioritize ahead of that slice?"
+
+Summarize whether the fresh reader's answer matches the intended blocker-first ordering.
+
+Ask the user this exact question:
+
+"If I hand only this doc to a fresh implementation agent, will it clearly prioritize the earliest blocker for the first functional vertical slice, or does the doc still allow later polish to outrank unfinished blockers for that slice?"
+
+If the answer is not a clear yes, or the fresh reader's first tasks do not align with the first functional slice, loop back to refinement.
+
+### Step 5: Report and Fix
 
 If issues found:
 Report that Reader Claude struggled with specific issues.
@@ -318,7 +363,20 @@ Also ask Reader Claude:
 - "What knowledge or context does this doc assume readers already have?"
 - "Are there any internal contradictions or inconsistencies?"
 
-### Step 4: Iterate Based on Results
+### Step 4: Mandatory Vertical-Slice Priority Gate
+
+For implementation specs and PRDs, also ask Reader Claude:
+- "What are the first five implementation tasks?"
+- "What is the first functional vertical slice?"
+- "Is there any later polish work this doc might prioritize ahead of that slice?"
+
+Then ask the user this exact question:
+
+"If I hand only this doc to a fresh implementation agent, will it clearly prioritize the earliest blocker for the first functional vertical slice, or does the doc still allow later polish to outrank unfinished blockers for that slice?"
+
+If the answer is not a clear yes, or the fresh reader's first tasks do not align with the intended blocker-first ordering, loop back to refinement.
+
+### Step 5: Iterate Based on Results
 
 Ask what Reader Claude got wrong or struggled with. Indicate intention to fix those gaps.
 
@@ -328,7 +386,7 @@ Loop back to refinement for any problematic sections.
 
 ### Exit Condition (Both Approaches)
 
-When Reader Claude consistently answers questions correctly and doesn't surface new gaps or ambiguities, the doc is ready.
+When Reader Claude consistently answers questions correctly, doesn't surface new gaps or ambiguities, and for implementation specs clearly identifies the same first functional slice plus blocker-first ordering, the doc is ready.
 
 ## Final Review
 
@@ -338,6 +396,7 @@ Announce the doc has passed Reader Claude testing. Before completion:
 1. Recommend they do a final read-through themselves - they own this document and are responsible for its quality
 2. Suggest double-checking any facts, links, or technical details
 3. Ask them to verify it achieves the impact they wanted
+4. For implementation specs and PRDs, remind them to keep future execution updates in `IMPLEMENTATION_LOG.md` rather than turning the spec itself into a work log
 
 Ask if they want one more review, or if the work is done.
 
