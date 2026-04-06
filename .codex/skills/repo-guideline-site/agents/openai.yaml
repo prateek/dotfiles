@@ -1,0 +1,4 @@
+interface:
+  display_name: "Repo Guideline Site"
+  short_description: "Turn a repo into a polished how-to website"
+  default_prompt: "Inspect this repository, infer its audiences and workflows, and generate a high-quality guidelines website with demos and an evaluation plan."
