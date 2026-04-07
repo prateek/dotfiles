@@ -2,24 +2,6 @@
 # vim:syntax=zsh
 # vim:filetype=zsh
 
-# Execute code in the background to not affect the current session
-(
-    # <https://github.com/zimfw/zimfw/blob/master/login_init.zsh>
-    setopt LOCAL_OPTIONS EXTENDED_GLOB
-    autoload -U zrecompile
-    local ZSHCONFIG=~/dotfiles
-
-    # Compile zcompdump, if modified, to increase startup speed.
-    zcompdump="${ZDOTDIR:-$HOME}/.zcompdump"
-    if [[ -s "$zcompdump" && (! -s "${zcompdump}.zwc" || "$zcompdump" -nt "${zcompdump}.zwc") ]]; then
-        zrecompile -pq "$zcompdump"
-    fi
-    zrecompile -pq ${ZDOTDIR:-${HOME}}/.zshrc
-    zrecompile -pq ${ZDOTDIR:-${HOME}}/.zprofile
-    zrecompile -pq ${ZDOTDIR:-${HOME}}/.zshenv
-    # recompile all zsh or sh
-    for f in $ZSHCONFIG/**/*.*sh
-    do
-        zrecompile -pq $f
-    done
-) &!
+# Login shell hook intentionally left blank.
+# The startup compile/recompile machinery was removed because it did not
+# produce meaningful interactive performance gains in this setup.
