@@ -1,4 +1,4 @@
-// Generated from ~/.codex/config.toml
+// OpenCode config. Shared instructions: ~/.agents/AGENTS.md
 {
   "$schema": "https://opencode.ai/config.json",
   "model": "openai/gpt-5.2",

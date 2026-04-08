@@ -329,11 +329,52 @@ if command -v mise >/dev/null 2>&1; then
   fi
 fi
 
+# Shared agent layer (.agents)
+AGENTS_DIR="$HOME/.agents"
+AGENTS_SKILLS="$AGENTS_DIR/skills"
+AGENTS_DOCS="$AGENTS_DIR/docs"
+if [ "$DRY_RUN" = "1" ]; then
+  echo "Would ensure directory: $AGENTS_DIR"
+else
+  mkdir -p "$AGENTS_DIR"
+fi
+
+# ~/.agents/skills -> shared skills directory
+if [ -e "$AGENTS_SKILLS" ] && [ ! -L "$AGENTS_SKILLS" ]; then
+  backup="${AGENTS_SKILLS}.backup-$(date +%s)"
+  if [ "$DRY_RUN" = "1" ]; then
+    echo "Would backup real dir: $AGENTS_SKILLS -> $backup"
+  else
+    echo "Backing up existing skills dir: $AGENTS_SKILLS -> $backup"
+    mv "$AGENTS_SKILLS" "$backup"
+  fi
+fi
+if [ "$DRY_RUN" = "1" ]; then
+  echo "Would symlink: $AGENTS_SKILLS -> $CWD/.agents/skills"
+else
+  ln -snf "$CWD/.agents/skills" "$AGENTS_SKILLS"
+fi
+
+# ~/.agents/docs -> shared docs directory
+if [ -e "$AGENTS_DOCS" ] && [ ! -L "$AGENTS_DOCS" ]; then
+  backup="${AGENTS_DOCS}.backup-$(date +%s)"
+  if [ "$DRY_RUN" = "1" ]; then
+    echo "Would backup real dir: $AGENTS_DOCS -> $backup"
+  else
+    echo "Backing up existing docs dir: $AGENTS_DOCS -> $backup"
+    mv "$AGENTS_DOCS" "$backup"
+  fi
+fi
+if [ "$DRY_RUN" = "1" ]; then
+  echo "Would symlink: $AGENTS_DOCS -> $CWD/.agents/docs"
+else
+  ln -snf "$CWD/.agents/docs" "$AGENTS_DOCS"
+fi
+
 # Codex config
 CODEX_DIR="$HOME/.codex"
 CODEX_CONFIG_TOML="$CODEX_DIR/config.toml"
 CODEX_SKILLS_DIR="$CODEX_DIR/skills"
-CODEX_DOCS_DIR="$CODEX_DIR/docs"
 CODEX_AGENTS_MD="$CODEX_DIR/AGENTS.md"
 if [ "$DRY_RUN" = "1" ]; then
   echo "Would ensure directory: $CODEX_DIR"
@@ -341,6 +382,7 @@ else
   mkdir -p "$CODEX_DIR"
 fi
 
+# ~/.codex/config.toml -> Codex-specific config
 if [ -e "$CODEX_CONFIG_TOML" ] || [ -L "$CODEX_CONFIG_TOML" ]; then
   if [ "$(readlink "$CODEX_CONFIG_TOML" 2>/dev/null)" != "$CWD/.codex/config.toml" ]; then
     echo "Error: $CODEX_CONFIG_TOML already exists and is not a symlink to $CWD/.codex/config.toml."
@@ -355,55 +397,50 @@ else
   ln -snf "$CWD/.codex/config.toml" "$CODEX_CONFIG_TOML"
 fi
 
-if [ -e "$CODEX_SKILLS_DIR" ] || [ -L "$CODEX_SKILLS_DIR" ]; then
-  if [ "$(readlink "$CODEX_SKILLS_DIR" 2>/dev/null)" != "$CWD/.codex/skills" ]; then
-    echo "Error: $CODEX_SKILLS_DIR already exists and is not a symlink to $CWD/.codex/skills."
-    echo "To back it up, run: mv \"$CODEX_SKILLS_DIR\" \"${CODEX_SKILLS_DIR}.backup-$(date +%s)\""
-    echo "Or remove it if you don't need it: rm -rf \"$CODEX_SKILLS_DIR\""
-    echo "After fixing, rerun this bootstrap script."
-    exit 1
+# ~/.codex/skills -> shared skills (same target as ~/.agents/skills)
+if [ -e "$CODEX_SKILLS_DIR" ] && [ ! -L "$CODEX_SKILLS_DIR" ]; then
+  backup="${CODEX_SKILLS_DIR}.backup-$(date +%s)"
+  if [ "$DRY_RUN" = "1" ]; then
+    echo "Would backup real dir: $CODEX_SKILLS_DIR -> $backup"
+  else
+    echo "Backing up existing Codex skills dir: $CODEX_SKILLS_DIR -> $backup"
+    mv "$CODEX_SKILLS_DIR" "$backup"
   fi
 fi
 if [ "$DRY_RUN" = "1" ]; then
-  echo "Would symlink: $CODEX_SKILLS_DIR -> $CWD/.codex/skills"
+  echo "Would symlink: $CODEX_SKILLS_DIR -> $CWD/.agents/skills"
 else
-  ln -snf "$CWD/.codex/skills" "$CODEX_SKILLS_DIR"
+  ln -snf "$CWD/.agents/skills" "$CODEX_SKILLS_DIR"
 fi
 
-if [ -e "$CODEX_DOCS_DIR" ] || [ -L "$CODEX_DOCS_DIR" ]; then
-  if [ "$(readlink "$CODEX_DOCS_DIR" 2>/dev/null)" != "$CWD/.codex/docs" ]; then
-    echo "Error: $CODEX_DOCS_DIR already exists and is not a symlink to $CWD/.codex/docs."
-    echo "To back it up, run: mv \"$CODEX_DOCS_DIR\" \"${CODEX_DOCS_DIR}.backup-$(date +%s)\""
-    echo "Or remove it if you don't need it: rm -rf \"$CODEX_DOCS_DIR\""
-    echo "After fixing, rerun this bootstrap script."
-    exit 1
+# ~/.codex/AGENTS.md -> shared instructions (direct to .agents)
+if [ -e "$CODEX_AGENTS_MD" ] && [ ! -L "$CODEX_AGENTS_MD" ]; then
+  backup="${CODEX_AGENTS_MD}.backup-$(date +%s)"
+  if [ "$DRY_RUN" = "1" ]; then
+    echo "Would backup real file: $CODEX_AGENTS_MD -> $backup"
+  else
+    echo "Backing up existing AGENTS.md: $CODEX_AGENTS_MD -> $backup"
+    mv "$CODEX_AGENTS_MD" "$backup"
   fi
 fi
 if [ "$DRY_RUN" = "1" ]; then
-  echo "Would symlink: $CODEX_DOCS_DIR -> $CWD/.codex/docs"
+  echo "Would symlink: $CODEX_AGENTS_MD -> $CWD/.agents/AGENTS.md"
 else
-  ln -snf "$CWD/.codex/docs" "$CODEX_DOCS_DIR"
+  ln -snf "$CWD/.agents/AGENTS.md" "$CODEX_AGENTS_MD"
 fi
 
-if [ -e "$CODEX_AGENTS_MD" ] || [ -L "$CODEX_AGENTS_MD" ]; then
-  existing_target="$(readlink "$CODEX_AGENTS_MD" 2>/dev/null || true)"
-  if [ -z "$existing_target" ]; then
-    echo "Error: $CODEX_AGENTS_MD already exists and is not a symlink."
-    echo "To back it up, run: mv \"$CODEX_AGENTS_MD\" \"${CODEX_AGENTS_MD}.backup-$(date +%s)\""
-    echo "After fixing, rerun this bootstrap script."
-    exit 1
+# Cleanup stale Codex symlinks from previous layout
+CODEX_DOCS_DIR="$CODEX_DIR/docs"
+if [ -L "$CODEX_DOCS_DIR" ]; then
+  old_target="$(readlink "$CODEX_DOCS_DIR" 2>/dev/null || true)"
+  if echo "$old_target" | grep -q '\.codex/docs'; then
+    if [ "$DRY_RUN" = "1" ]; then
+      echo "Would remove stale symlink: $CODEX_DOCS_DIR -> $old_target"
+    else
+      echo "Removing stale symlink: $CODEX_DOCS_DIR -> $old_target"
+      rm "$CODEX_DOCS_DIR"
+    fi
   fi
-  if [ "$existing_target" != "$CWD/.codex/AGENTS.md" ] && [ "$existing_target" != "$CWD/.codex/agents.md" ]; then
-    echo "Error: $CODEX_AGENTS_MD already exists and is not a symlink to $CWD/.codex/AGENTS.md."
-    echo "To back it up, run: mv \"$CODEX_AGENTS_MD\" \"${CODEX_AGENTS_MD}.backup-$(date +%s)\""
-    echo "After fixing, rerun this bootstrap script."
-    exit 1
-  fi
-fi
-if [ "$DRY_RUN" = "1" ]; then
-  echo "Would symlink: $CODEX_AGENTS_MD -> $CWD/.codex/AGENTS.md"
-else
-  ln -snf "$CWD/.codex/AGENTS.md" "$CODEX_AGENTS_MD"
 fi
 
 # Hammerspoon config
@@ -454,23 +491,70 @@ for f in zlogin zprofile zshrc zshenv; do
 done
 
 # .claude directory symlinks
+CLAUDE_DIR="$HOME/.claude"
 if [ "$DRY_RUN" = "1" ]; then
-  echo "Would ensure directory: $HOME/.claude"
+  echo "Would ensure directory: $CLAUDE_DIR"
 else
-  mkdir -p "$HOME/.claude"
+  mkdir -p "$CLAUDE_DIR"
 fi
-for dir in agents commands docs; do
+
+# Claude-specific directories (agents, commands)
+for dir in agents commands; do
   if [ -d "$CWD/.claude/$dir" ]; then
     if [ "$DRY_RUN" = "1" ]; then
-      echo "Would replace symlink: $HOME/.claude/$dir -> $CWD/.claude/$dir"
+      echo "Would replace symlink: $CLAUDE_DIR/$dir -> $CWD/.claude/$dir"
     else
-      if [ -e "$HOME/.claude/$dir" ]; then
-        rm -rf "$HOME/.claude/$dir"
+      if [ -e "$CLAUDE_DIR/$dir" ]; then
+        rm -rf "$CLAUDE_DIR/$dir"
       fi
-      ln -sf "$CWD/.claude/$dir" "$HOME/.claude/$dir"
+      ln -sf "$CWD/.claude/$dir" "$CLAUDE_DIR/$dir"
     fi
   fi
 done
+
+# ~/.claude/docs -> shared docs (direct to .agents)
+if [ "$DRY_RUN" = "1" ]; then
+  echo "Would symlink: $CLAUDE_DIR/docs -> $CWD/.agents/docs"
+else
+  if [ -e "$CLAUDE_DIR/docs" ]; then
+    rm -rf "$CLAUDE_DIR/docs"
+  fi
+  ln -sf "$CWD/.agents/docs" "$CLAUDE_DIR/docs"
+fi
+
+# ~/.claude/CLAUDE.md -> repo CLAUDE.md (which symlinks to .agents/AGENTS.md)
+CLAUDE_MD="$CLAUDE_DIR/CLAUDE.md"
+if [ -e "$CLAUDE_MD" ] && [ ! -L "$CLAUDE_MD" ]; then
+  backup="${CLAUDE_MD}.backup-$(date +%s)"
+  if [ "$DRY_RUN" = "1" ]; then
+    echo "Would backup real file: $CLAUDE_MD -> $backup"
+  else
+    echo "Backing up existing CLAUDE.md: $CLAUDE_MD -> $backup"
+    mv "$CLAUDE_MD" "$backup"
+  fi
+fi
+if [ "$DRY_RUN" = "1" ]; then
+  echo "Would symlink: $CLAUDE_MD -> $CWD/.claude/CLAUDE.md"
+else
+  ln -snf "$CWD/.claude/CLAUDE.md" "$CLAUDE_MD"
+fi
+
+# ~/.claude/skills -> shared skills (same target as ~/.agents/skills)
+CLAUDE_SKILLS="$CLAUDE_DIR/skills"
+if [ -e "$CLAUDE_SKILLS" ] && [ ! -L "$CLAUDE_SKILLS" ]; then
+  backup="${CLAUDE_SKILLS}.backup-$(date +%s)"
+  if [ "$DRY_RUN" = "1" ]; then
+    echo "Would backup real dir: $CLAUDE_SKILLS -> $backup"
+  else
+    echo "Backing up existing Claude skills dir: $CLAUDE_SKILLS -> $backup"
+    mv "$CLAUDE_SKILLS" "$backup"
+  fi
+fi
+if [ "$DRY_RUN" = "1" ]; then
+  echo "Would symlink: $CLAUDE_SKILLS -> $CWD/.agents/skills"
+else
+  ln -snf "$CWD/.agents/skills" "$CLAUDE_SKILLS"
+fi
 
 # directories
 if [ "$DRY_RUN" = "1" ]; then
