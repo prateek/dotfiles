@@ -144,6 +144,12 @@ if [ -f "$REPO_ROOT/osx-apps/ghostty/config" ]; then
   killall Ghostty >/dev/null 2>&1 || true
 fi
 
+# cmux custom app icon
+CMUX_ICON_SCRIPT="$REPO_ROOT/scripts/macos/set-cmux-icon.sh"
+if [ -x "$CMUX_ICON_SCRIPT" ] && [ -d "/Applications/cmux.app" ]; then
+  "$CMUX_ICON_SCRIPT" "/Applications/cmux.app"
+fi
+
 # iTerm2 Dynamic Profiles + Scripts (expects repo-managed config at osx-apps/iterm2)
 ITERM2_REPO_DIR="$REPO_ROOT/osx-apps/iterm2"
 if [ -d "$ITERM2_REPO_DIR/DynamicProfiles" ]; then
