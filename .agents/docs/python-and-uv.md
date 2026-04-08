@@ -1,6 +1,3 @@
-# ABOUTME: Python, uv, and Docker conventions — preferences, field manual, and container recipes.
-# ABOUTME: Merged from python.md, using-uv.md, and docker-uv.md.
-
 # Python and uv Conventions
 
 ## Preferences

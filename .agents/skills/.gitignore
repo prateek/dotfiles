@@ -1,6 +1,3 @@
-# ABOUTME: Gitignore for the shared skills directory.
-# ABOUTME: Only .system/ is ignored — everything else is tracked in git.
-
 # Codex writes runtime system skills here via the ~/.codex/skills symlink.
 # These change with Codex versions and should not be version-controlled.
 .system/

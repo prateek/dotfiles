@@ -1,6 +1,3 @@
-# ABOUTME: Git conventions, commit message format, workflows, and safety protocols.
-# ABOUTME: Merged from git-conventions.md, source-control.md, and CLAUDE.md git section.
-
 # Git Conventions
 
 ## Purpose
