@@ -1,5 +1,6 @@
 model = "gpt-5.4"
 model_reasoning_effort = "xhigh"
+plan_mode_reasoning_effort = "xhigh"
 [projects."/Users/prateek/dotfiles"]
 trust_level = "trusted"
 
@@ -25,6 +26,21 @@ trust_level = "trusted"
 trust_level = "trusted"
 
 [projects."/Users/prateek/code/experiments/2026-04-03-calibre-setup/serial-sync"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/gocode/src/github.com/prateek/movies.do-reverse-engineer"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments/movies.do-app"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments/2026-04-06-ios-silly-tavern"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments/2026-03-03-timeline-attempt"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments/2026-04-08-agent-spec-survey"]
 trust_level = "trusted"
 
 [notice.model_migrations]
