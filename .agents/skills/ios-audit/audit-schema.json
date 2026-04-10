@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://movies.do-app/ios-audit/audit-schema.json",
+  "title": "iOS Audit",
+  "description": "Single-file JSON baseline for an iOS app audit. Produced by the render phase of ios-audit.",
+  "type": "object",
+  "required": ["meta", "findings"],
+  "additionalProperties": false,
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": ["schema_version", "generated_at", "app", "repo"],
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {"type": "string", "const": "1.0"},
+        "generated_at": {"type": "string", "format": "date-time"},
+        "skill_version": {"type": "string"},
+        "app": {
+          "type": "object",
+          "required": ["name", "bundle_id"],
+          "properties": {
+            "name": {"type": "string"},
+            "bundle_id": {"type": "string"},
+            "marketing_version": {"type": "string"},
+            "build_number": {"type": "string"}
+          }
+        },
+        "repo": {
+          "type": "object",
+          "required": ["root", "git_rev"],
+          "properties": {
+            "root": {"type": "string"},
+            "git_rev": {"type": "string"},
+            "git_branch": {"type": "string"},
+            "git_dirty": {"type": "boolean"}
+          }
+        },
+        "tools": {
+          "type": "object",
+          "description": "Tool versions present at collect time",
+          "additionalProperties": {"type": ["string", "null"]}
+        },
+        "pillars_run": {
+          "type": "array",
+          "items": {"type": "string", "enum": ["code_health", "ux", "runtime", "release"]}
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/finding"}
+    },
+    "summary": {
+      "type": "object",
+      "properties": {
+        "by_severity": {
+          "type": "object",
+          "additionalProperties": {"type": "integer"}
+        },
+        "by_pillar": {
+          "type": "object",
+          "additionalProperties": {"type": "integer"}
+        },
+        "by_priority": {
+          "type": "object",
+          "additionalProperties": {"type": "integer"}
+        },
+        "rice_total": {"type": "number"},
+        "ship_blockers": {"type": "integer"}
+      }
+    },
+    "trends": {
+      "type": "object",
+      "description": "Populated only by the diff phase",
+      "properties": {
+        "baseline_commit": {"type": "string"},
+        "baseline_generated_at": {"type": "string", "format": "date-time"},
+        "fixed_since_baseline": {"type": "array", "items": {"type": "string"}},
+        "new_since_baseline": {"type": "array", "items": {"type": "string"}},
+        "regressed": {"type": "array", "items": {"type": "string"}},
+        "demoted": {"type": "array", "items": {"type": "string"}},
+        "rice_delta": {"type": "number"}
+      }
+    },
+    "raw_inputs": {
+      "type": "object",
+      "description": "Per-pillar raw collector output keyed by pillar name",
+      "additionalProperties": {"type": "object"}
+    }
+  },
+  "$defs": {
+    "finding": {
+      "type": "object",
+      "required": ["id", "pillar", "severity", "priority", "title", "summary", "recommendation"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Z]{2,4}-\\d{3,4}$",
+          "description": "Stable finding ID, e.g. CH-012, UX-005, RT-003, RL-001"
+        },
+        "pillar": {
+          "type": "string",
+          "enum": ["code_health", "ux", "runtime", "release"]
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["critical", "major", "moderate", "minor"]
+        },
+        "priority": {
+          "type": "string",
+          "enum": ["must", "should", "could", "wont"]
+        },
+        "title": {"type": "string", "minLength": 4, "maxLength": 120},
+        "summary": {"type": "string"},
+        "recommendation": {"type": "string"},
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": {"type": "string"},
+              "line_start": {"type": "integer"},
+              "line_end": {"type": "integer"},
+              "snippet": {"type": "string"},
+              "url": {"type": "string", "format": "uri"}
+            }
+          }
+        },
+        "rice": {
+          "type": "object",
+          "required": ["reach", "impact", "confidence", "effort", "score"],
+          "properties": {
+            "reach": {"type": "number", "minimum": 0, "maximum": 10},
+            "impact": {"type": "number", "minimum": 0, "maximum": 10},
+            "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+            "effort": {"type": "number", "minimum": 0.5},
+            "score": {"type": "number"}
+          }
+        },
+        "tags": {"type": "array", "items": {"type": "string"}},
+        "related_findings": {"type": "array", "items": {"type": "string"}},
+        "first_seen_commit": {"type": "string"},
+        "last_seen_commit": {"type": "string"}
+      }
+    }
+  }
+}

@@ -1,0 +1,284 @@
+# ABOUTME: Workflow definitions for the local SillyTavern iOS app.
+# ABOUTME: Covers supported native flows plus unsupported boundary surfaces exposed in the current product.
+
+app:
+  bundle_id: com.prateek.sillytavern.ios
+  name: SillyTavern iOS
+
+workflows:
+  - name: Launch And Tab Shell
+    description: Validate the primary iPhone shell and all four top-level tabs.
+    tags: [critical, navigation, shell]
+    steps:
+      - action: launch
+        description: Launch the app
+      - action: wait
+        duration: 3
+        description: Wait for the shell to load
+      - action: screenshot
+        name: chat_shell
+        description: Chat shell on launch
+      - action: tap
+        target: { text: "Library" }
+        description: Open Library tab
+      - action: wait
+        duration: 1.5
+        description: Wait for Library
+      - action: screenshot
+        name: library_tab
+        description: Library tab
+      - action: tap
+        target: { text: "Extensions" }
+        description: Open Extensions tab
+      - action: wait
+        duration: 1.5
+        description: Wait for Extensions
+      - action: screenshot
+        name: extensions_tab
+        description: Extensions tab
+      - action: tap
+        target: { text: "Settings" }
+        description: Open Settings tab
+      - action: wait
+        duration: 1.5
+        description: Wait for Settings
+      - action: screenshot
+        name: settings_tab
+        description: Settings tab
+      - action: tap
+        target: { text: "Chat" }
+        description: Return to Chat tab
+      - action: wait
+        duration: 1
+        description: Wait for Chat
+      - action: screenshot
+        name: chat_returned
+        description: Chat after tab round-trip
+
+  - name: Chat Generation Quick Replies And Branches
+    description: "Exercise the main supported chat workflow: send, quick reply, lorebook, and branch switching."
+    tags: [critical, chat, generation]
+    steps:
+      - action: launch
+        description: Launch the app
+      - action: wait
+        duration: 2.5
+        description: Wait for Chat
+      - action: screenshot
+        name: chat_initial
+        description: Initial chat state
+      - action: tap
+        target: { id: "chat-composer-field" }
+        description: Focus composer
+      - action: type
+        value: "Tell me about the workshop clue."
+        description: Enter a prompt
+      - action: tap
+        target: { id: "composer-send-button" }
+        description: Send the prompt
+      - action: wait
+        duration: 2.5
+        description: Wait for assistant reply
+      - action: screenshot
+        name: chat_generated
+        description: Generated reply in chat
+      - action: tap
+        target: { id: "quick-reply-search-lore" }
+        description: Queue the lore quick reply
+      - action: tap
+        target: { id: "composer-send-button" }
+        description: Send queued quick reply
+      - action: wait
+        duration: 2.5
+        description: Wait for lore reply
+      - action: screenshot
+        name: quick_reply_generated
+        description: Quick reply result
+      - action: tap
+        target: { id: "lorebook-open-button" }
+        description: Open lorebook sheet
+      - action: wait
+        duration: 1
+        description: Wait for lorebook sheet
+      - action: screenshot
+        name: lorebook_sheet
+        description: Lorebook sheet
+      - action: tap
+        target: { text: "Close" }
+        description: Close lorebook
+      - action: tap
+        target: { id: "branches-open-button" }
+        description: Open branch switcher
+      - action: wait
+        duration: 1
+        description: Wait for branches sheet
+      - action: screenshot
+        name: branches_sheet
+        description: Branch switcher
+      - action: tap
+        target: { text: "Archive Route" }
+        description: Switch to archive route
+      - action: wait
+        duration: 1.5
+        description: Wait for branch switch
+      - action: screenshot
+        name: archive_branch
+        description: Archive route active
+
+  - name: Group Chat Speaker Switching
+    description: Exercise the group-chat selector and capture the selectable active-speaker path.
+    tags: [group-chat, chat]
+    steps:
+      - action: launch
+        description: Launch the app
+      - action: wait
+        duration: 2.5
+        description: Wait for Chat
+      - action: tap
+        target: { text: "Group" }
+        description: Open group chat sheet
+      - action: wait
+        duration: 1
+        description: Wait for group sheet
+      - action: screenshot
+        name: group_sheet
+        description: Group chat sheet
+      - action: tap
+        target: { text: "Dock Porter" }
+        description: Select Dock Porter
+      - action: wait
+        duration: 1.5
+        description: Wait for active speaker switch
+      - action: screenshot
+        name: after_porter_selected
+        description: Chat after selecting Dock Porter
+
+  - name: Library Core Modules
+    description: Traverse characters, personas, lorebooks, and prompt presets from the Library tab.
+    tags: [library, content]
+    steps:
+      - action: launch
+        description: Launch the app
+      - action: wait
+        duration: 3
+        description: Wait for app
+      - action: tap
+        target: { id: "tab-library" }
+        description: Open Library
+      - action: wait
+        duration: 1.5
+        description: Wait for Library
+      - action: screenshot
+        name: library_home
+        description: Library home
+      - action: tap
+        target: { id: "library-character-ari-vale" }
+        description: Open character detail
+      - action: wait
+        duration: 1.5
+        description: Wait for character detail
+      - action: screenshot
+        name: character_detail
+        description: Character detail
+      - action: tap
+        target: { id: "library-back-button" }
+        description: Return to Library
+      - action: tap
+        target: { text: "Personas" }
+        description: Open Personas
+      - action: wait
+        duration: 1
+        description: Wait for personas
+      - action: screenshot
+        name: personas
+        description: Persona library
+      - action: tap
+        target: { id: "library-back-button" }
+        description: Return to Library
+      - action: tap
+        target: { text: "Lorebooks" }
+        description: Open Lorebooks
+      - action: wait
+        duration: 1
+        description: Wait for lorebooks
+      - action: screenshot
+        name: lorebooks
+        description: Lorebook library
+      - action: tap
+        target: { id: "library-back-button" }
+        description: Return to Library
+      - action: tap
+        target: { text: "Prompt Presets" }
+        description: Open Prompt Presets
+      - action: wait
+        duration: 1
+        description: Wait for presets
+      - action: screenshot
+        name: prompt_presets
+        description: Prompt preset library
+
+  - name: Settings Profiles
+    description: Audit provider and generation profile surfaces from Settings.
+    tags: [settings, profiles]
+    steps:
+      - action: launch
+        description: Launch the app
+      - action: wait
+        duration: 2
+        description: Wait for app
+      - action: tap
+        target: { text: "Settings" }
+        description: Open Settings
+      - action: wait
+        duration: 1.5
+        description: Wait for Settings
+      - action: screenshot
+        name: settings_home
+        description: Settings overview
+      - action: tap
+        target: { id: "provider-profiles-open-button" }
+        description: Open provider profiles
+      - action: wait
+        duration: 1
+        description: Wait for provider profiles
+      - action: screenshot
+        name: provider_profiles
+        description: Provider profiles sheet
+      - action: tap
+        target: { text: "Close" }
+        description: Close provider profiles
+      - action: tap
+        target: { id: "generation-profile-open-button" }
+        description: Open generation profiles
+      - action: wait
+        duration: 1
+        description: Wait for generation profiles
+      - action: screenshot
+        name: generation_profiles
+        description: Generation profiles sheet
+
+  - name: Extensions Compatibility Boundaries
+    description: Audit supported extension mapping and browser-only unsupported boundaries.
+    tags: [extensions, unsupported]
+    steps:
+      - action: launch
+        description: Launch the app
+      - action: wait
+        duration: 2
+        description: Wait for app
+      - action: tap
+        target: { text: "Extensions" }
+        description: Open Extensions
+      - action: wait
+        duration: 1.5
+        description: Wait for extension hub
+      - action: screenshot
+        name: extension_hub
+        description: Extension compatibility hub
+      - action: scroll
+        direction: down
+        amount: 2
+        description: Scroll through extension compatibility cards
+      - action: screenshot
+        name: extension_hub_scrolled
+        description: Extension hub scrolled

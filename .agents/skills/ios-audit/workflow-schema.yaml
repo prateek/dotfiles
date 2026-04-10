@@ -1,0 +1,64 @@
+# Reference schema for ios-flow-audit workflow definitions.
+# Shows all supported actions, target selectors, and metadata fields.
+
+# Top-level app configuration
+app:
+  bundle_id: string         # iOS bundle identifier (required)
+  name: string              # Human-readable app name (required)
+  credentials:              # Optional credentials for sign-in flows
+    username: string
+    password: string
+
+# Simulator configuration (optional)
+simulator:
+  device: string            # e.g., "iPhone 16 Pro" (default: booted device)
+  os: string                # e.g., "18.6" (default: whatever's running)
+
+# Workflow definitions
+workflows:
+  - name: string            # Workflow name (required, used in report headers)
+    description: string     # What this workflow tests (required)
+    tags: [string]          # Optional tags for filtering (e.g., ["critical", "auth"])
+    precondition: string    # Optional: which workflow must run first (by name)
+
+    steps:
+      - action: string      # Required: one of the supported actions below
+        name: string        # Optional: screenshot name suffix (auto-generated if omitted)
+        description: string # Required: what this step does (shown in report)
+
+        # Action-specific fields:
+
+        # For "tap":
+        target:
+          text: string       # Find element by visible text (fuzzy match)
+          id: string         # Find element by accessibility identifier
+          type: string       # Find element by type (Button, TextField, etc.)
+          coordinates: [x, y] # Tap at exact point coordinates (last resort)
+
+        # For "type":
+        value: string        # Text to type into the focused field
+
+        # For "swipe":
+        direction: string    # up, down, left, right
+
+        # For "scroll":
+        direction: string    # up, down
+        amount: integer      # Number of scroll repetitions (default: 3)
+
+        # For "wait":
+        duration: number     # Seconds to wait (supports decimals)
+
+        # For "screenshot":
+        # (name field used as the screenshot filename suffix)
+
+        # For "launch" / "terminate":
+        # (uses app.bundle_id automatically)
+
+        # For "back":
+        # (no additional fields — swipes right from left edge)
+
+        # Universal optional fields:
+        screenshot: boolean  # Force screenshot capture after this step (default: true)
+        expect:              # Optional assertions (for future use)
+          screen: string     # Expected screen name
+          elements: [string] # Expected element labels

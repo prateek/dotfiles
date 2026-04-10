@@ -1,0 +1,102 @@
+# Fastfile for an iOS app scaffolded by ios-project-scaffold.
+#
+# Authentication: ASC API key via env vars (set via ~/.env.fastlane on dev
+# machines, and via GitHub repo secrets in CI). No Apple-ID + 2FA path.
+#
+# Required env vars (canonical Fastlane names):
+#   APP_STORE_CONNECT_API_KEY_KEY_ID
+#   APP_STORE_CONNECT_API_KEY_ISSUER_ID
+#   APP_STORE_CONNECT_API_KEY_KEY_FILEPATH   (path to AuthKey_XXXX.p8)
+#
+# Once the three env vars are set, every lane below works without Apple-ID
+# login prompts.
+
+default_platform(:ios)
+
+SCHEME      = ENV.fetch("SCHEME",      "MyApp")
+WORKSPACE   = ENV.fetch("WORKSPACE",   "MyApp.xcworkspace")
+CONFIG      = ENV.fetch("CONFIGURATION", "Release")
+
+platform :ios do
+
+  # Loads the ASC API key from the env vars above and caches it for
+  # downstream actions via lane_context[SharedValues::APP_STORE_CONNECT_API_KEY].
+  private_lane :asc_auth do
+    app_store_connect_api_key(
+      is_key_content_base64: false,
+      in_house: false
+    )
+  end
+
+  # create_app_in_asc is NOT automatable as of April 2026.
+  # Apple's App Store Connect API has no POST /v1/apps endpoint, and
+  # fastlane `produce` still requires Apple-ID + 2FA (fastlane #29435).
+  # Create the app once in the ASC web UI, then never touch it again.
+  lane :create_app_in_asc do
+    UI.user_error!(
+      "App Store Connect app creation cannot be automated with an ASC API key.\n" \
+      "One-time manual step (takes 60 seconds):\n" \
+      "  1. Sign in at https://appstoreconnect.apple.com/apps\n" \
+      "  2. Click '+' → 'New App'\n" \
+      "  3. Fill bundle ID, SKU, name, language, platform\n" \
+      "  4. Save\n" \
+      "After that, `fastlane beta` handles every subsequent upload."
+    )
+  end
+
+  # Build the app and upload to TestFlight.
+  # Uses the ASC API key via lane_context (picked up automatically from asc_auth).
+  lane :beta do
+    asc_auth
+
+    build_app(
+      workspace: WORKSPACE,
+      scheme: SCHEME,
+      configuration: CONFIG,
+      export_method: "app-store",
+      clean: true,
+      output_directory: "build"
+    )
+
+    upload_to_testflight(
+      skip_waiting_for_build_processing: true,
+      changelog: ENV.fetch("CHANGELOG", "Automated TestFlight build.")
+    )
+  end
+
+  # Build the app and submit to the App Store (production).
+  # Use with care; gate behind manual dispatch or tag triggers in CI.
+  lane :release do
+    asc_auth
+
+    build_app(
+      workspace: WORKSPACE,
+      scheme: SCHEME,
+      configuration: "Release",
+      export_method: "app-store",
+      clean: true,
+      output_directory: "build"
+    )
+
+    upload_to_app_store(
+      skip_metadata: false,
+      skip_screenshots: false,
+      submit_for_review: false,
+      automatic_release: false,
+      force: true
+    )
+  end
+
+  # Pull metadata and screenshots down from ASC for local editing.
+  # Also used to push local edits back up.
+  lane :metadata do
+    asc_auth
+    deliver(
+      skip_binary_upload: true,
+      skip_screenshots: false,
+      skip_metadata: false,
+      force: true
+    )
+  end
+
+end

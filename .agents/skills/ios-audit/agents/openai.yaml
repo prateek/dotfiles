@@ -1,0 +1,7 @@
+interface:
+  display_name: "iOS Audit"
+  short_description: "4-pillar iOS app audit → docs + HTML + JSON"
+  default_prompt: "Use $ios-audit to baseline this iOS app across Code Health, UX, Runtime, and Release pillars and replace the docs/ tree with the audit output."
+
+policy:
+  allow_implicit_invocation: true

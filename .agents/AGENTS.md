@@ -87,6 +87,8 @@ For Browser CDP conventions (profile path), read: ~/.agents/docs/browser-cdp.md
 
 For marimo notebooks with uv, read: ~/.agents/docs/marimo.md
 
+For iOS and Apple-platform work (Xcode toolchain, Tuist, simulator leasing, version pinning, Makefile targets, CI cost control), read: ~/.agents/docs/ios.md
+
 ## Observability provider environment
 
 For Chronosphere, Datadog, and Grafana tasks, use pre-exposed environment variables instead of hardcoding credentials.

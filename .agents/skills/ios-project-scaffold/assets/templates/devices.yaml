@@ -1,0 +1,11 @@
+# Device set for ios-flow-audit.
+# Values should match ~/.agents/state/ios-triple.json and the GHA runner image
+# that CI targets. Edit per-project only if you need a different phone or tablet.
+
+devices:
+  - kind: phone
+    device_type: "iPhone 17 Pro"
+    runtime: "iOS 26.2"
+  - kind: tablet
+    device_type: "iPad Pro 13-inch (M5)"
+    runtime: "iOS 26.2"

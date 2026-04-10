@@ -1,0 +1,31 @@
+# Xcode (Tuist regenerates these from Project.swift)
+*.xcworkspace/
+*.xcodeproj/
+xcuserdata/
+*.xcscheme.bak
+build/
+DerivedData/
+
+# Tuist
+.tuist/
+Derived/
+
+# Secrets
+.env
+.env.test
+fastlane/.env
+*.p8
+*.p12
+*.mobileprovision
+AuthKey_*
+
+# Fastlane artifacts
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/test_output
+
+# Simulator lease sentinel (per-worktree, never shared)
+.ios-sim-udid
+
+# System
+.DS_Store

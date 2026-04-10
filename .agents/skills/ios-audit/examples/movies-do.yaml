@@ -1,0 +1,388 @@
+# ABOUTME: Workflow definitions for the Movies.do iOS streaming app.
+# ABOUTME: Covers all 10 core user flows from sign-in through playback and library management.
+
+app:
+  bundle_id: com.movies.do.ios
+  name: Movies.do
+  credentials:
+    # Replace with your test account. Never commit real credentials.
+    # Prefer loading from environment variables at runtime.
+    username: "${MOVIES_DO_TEST_USERNAME}"
+    password: "${MOVIES_DO_TEST_PASSWORD}"
+
+workflows:
+  - name: Sign In
+    description: User signs in with credentials and lands on home screen
+    tags: [critical, auth]
+    steps:
+      - action: launch
+        description: Launch the app
+
+      - action: wait
+        duration: 3
+        description: Wait for app to load
+
+      - action: screenshot
+        name: signin_screen
+        description: Sign-in screen
+
+      - action: tap
+        target: { type: TextField }
+        description: Focus username field
+
+      - action: type
+        value: "${MOVIES_DO_TEST_USERNAME}"
+        description: Enter username
+
+      - action: tap
+        target: { text: "Password" }
+        description: Focus password field
+
+      - action: type
+        value: "${MOVIES_DO_TEST_PASSWORD}"
+        description: Enter password
+
+      - action: screenshot
+        name: fields_filled
+        description: Fields filled
+
+      - action: tap
+        target: { text: "Sign In" }
+        description: Tap Sign In
+
+      - action: wait
+        duration: 4
+        description: Wait for home to load
+
+      - action: screenshot
+        name: home_after_signin
+        description: Home screen after sign-in
+
+  - name: Home Hero to Title Detail
+    description: Tap the featured hero card on home to see title detail
+    tags: [critical, navigation]
+    precondition: Sign In
+    steps:
+      - action: screenshot
+        name: home_hero
+        description: Home with hero visible
+
+      - action: tap
+        target: { id: heroCard }
+        description: Tap hero card
+
+      - action: wait
+        duration: 3
+        description: Wait for detail to load
+
+      - action: screenshot
+        name: title_detail
+        description: Title detail from hero
+
+      - action: scroll
+        direction: down
+        amount: 3
+        description: Scroll to see episodes and cast
+
+      - action: screenshot
+        name: detail_scrolled
+        description: Title detail scrolled (episodes, synopsis, cast)
+
+      - action: back
+        description: Go back to home
+
+  - name: Continue Watching
+    description: Tap a continue watching item to see its title detail
+    tags: [critical, continuity]
+    precondition: Sign In
+    steps:
+      - action: scroll
+        direction: down
+        amount: 2
+        description: Scroll to continue watching section
+
+      - action: screenshot
+        name: continue_watching_visible
+        description: Continue watching section
+
+      - action: tap
+        target: { text: "Shrinking" }
+        description: Tap continue watching item
+
+      - action: wait
+        duration: 3
+        description: Wait for detail
+
+      - action: screenshot
+        name: cw_title_detail
+        description: Title detail from continue watching
+
+      - action: back
+        description: Go back
+
+  - name: Browse Catalog
+    description: Open browse tab and browse the catalog grid
+    tags: [discovery]
+    precondition: Sign In
+    steps:
+      - action: tap
+        target: { text: "Browse" }
+        description: Tap Browse tab
+
+      - action: wait
+        duration: 3
+        description: Wait for catalog to load
+
+      - action: screenshot
+        name: browse_grid
+        description: Browse catalog grid
+
+      - action: scroll
+        direction: down
+        amount: 3
+        description: Scroll catalog
+
+      - action: screenshot
+        name: browse_scrolled
+        description: Browse scrolled
+
+      - action: tap
+        target: { id: posterCard_0 }
+        description: Tap first poster
+
+      - action: wait
+        duration: 3
+        description: Wait for detail
+
+      - action: screenshot
+        name: detail_from_browse
+        description: Title detail from browse
+
+      - action: back
+        description: Go back to browse
+
+  - name: Search
+    description: Search for a title and open it
+    tags: [discovery]
+    precondition: Sign In
+    steps:
+      - action: tap
+        target: { text: "Search" }
+        description: Tap Search tab
+
+      - action: wait
+        duration: 2
+        description: Wait for search screen
+
+      - action: screenshot
+        name: search_empty
+        description: Search screen (empty or trending)
+
+      - action: tap
+        target: { type: TextField }
+        description: Focus search field
+
+      - action: type
+        value: avatar
+        description: Type search query
+
+      - action: wait
+        duration: 2
+        description: Wait for results
+
+      - action: screenshot
+        name: search_results
+        description: Search results for "avatar"
+
+      - action: tap
+        target: { text: "Avatar" }
+        description: Tap a search result
+
+      - action: wait
+        duration: 3
+        description: Wait for detail
+
+      - action: screenshot
+        name: detail_from_search
+        description: Title detail from search
+
+      - action: back
+        description: Go back
+
+  - name: Playback
+    description: Start video playback from title detail
+    tags: [critical, playback]
+    precondition: Sign In
+    steps:
+      - action: tap
+        target: { text: "Home" }
+        description: Go to Home tab
+
+      - action: tap
+        target: { id: heroCard }
+        description: Tap hero
+
+      - action: wait
+        duration: 3
+        description: Wait for detail
+
+      - action: tap
+        target: { id: playButton }
+        description: Tap Play button
+
+      - action: wait
+        duration: 5
+        description: Wait for video to load
+
+      - action: screenshot
+        name: player_active
+        description: Player with video
+
+      - action: back
+        description: Exit player
+
+  - name: Episode Selection
+    description: Browse episodes of a series and play a specific one
+    tags: [critical, series]
+    precondition: Sign In
+    steps:
+      - action: tap
+        target: { text: "Home" }
+        description: Go to Home tab
+
+      - action: scroll
+        direction: down
+        amount: 2
+        description: Scroll to continue watching
+
+      - action: tap
+        target: { text: "Pitt" }
+        description: Tap a series
+
+      - action: wait
+        duration: 3
+        description: Wait for detail
+
+      - action: scroll
+        direction: down
+        amount: 2
+        description: Scroll to episodes
+
+      - action: screenshot
+        name: episode_list
+        description: Episode list
+
+      - action: tap
+        target: { text: "Episode 2" }
+        description: Tap Episode 2
+
+      - action: wait
+        duration: 3
+        description: Wait for player
+
+      - action: screenshot
+        name: episode_player
+        description: Player from episode selection
+
+      - action: back
+        description: Exit player
+
+  - name: Cast to Celebrity
+    description: Tap a cast member to see their detail page
+    tags: [detail]
+    precondition: Sign In
+    steps:
+      - action: tap
+        target: { text: "Home" }
+        description: Go to Home tab
+
+      - action: tap
+        target: { id: heroCard }
+        description: Open a title
+
+      - action: wait
+        duration: 3
+        description: Wait for detail
+
+      - action: scroll
+        direction: down
+        amount: 5
+        description: Scroll to cast section
+
+      - action: screenshot
+        name: cast_section
+        description: Cast horizontal scroll
+
+      - action: tap
+        target: { type: Button }
+        description: Tap first cast member
+
+      - action: wait
+        duration: 3
+        description: Wait for celebrity page
+
+      - action: screenshot
+        name: celebrity_detail
+        description: Celebrity detail page
+
+      - action: back
+        description: Go back
+
+  - name: Library
+    description: View library with continue watching, favorites, and profile
+    tags: [personal]
+    precondition: Sign In
+    steps:
+      - action: tap
+        target: { text: "Library" }
+        description: Tap Library tab
+
+      - action: wait
+        duration: 3
+        description: Wait for library to load
+
+      - action: screenshot
+        name: library_top
+        description: Library with profile and continue watching
+
+      - action: scroll
+        direction: down
+        amount: 5
+        description: Scroll to favorites
+
+      - action: screenshot
+        name: library_favorites
+        description: Library favorites and sign out
+
+  - name: Favorite Toggle
+    description: Toggle a title as favorite from its detail page
+    tags: [personal]
+    precondition: Sign In
+    steps:
+      - action: tap
+        target: { text: "Home" }
+        description: Go to Home tab
+
+      - action: tap
+        target: { id: heroCard }
+        description: Open a title
+
+      - action: wait
+        duration: 3
+        description: Wait for detail
+
+      - action: screenshot
+        name: before_favorite
+        description: Heart icon before toggle
+
+      - action: tap
+        target: { id: favoriteButton }
+        description: Tap heart button
+
+      - action: wait
+        duration: 1
+        description: Wait for toggle
+
+      - action: screenshot
+        name: after_favorite
+        description: Heart icon after toggle

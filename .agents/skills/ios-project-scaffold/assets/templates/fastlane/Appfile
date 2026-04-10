@@ -1,0 +1,7 @@
+app_identifier("com.example.MyApp")   # bundle identifier; update to match Project.swift
+team_id("ABCD123456")                  # Apple Developer Team ID (10-char); find at developer.apple.com/account → Membership
+
+# itc_team_id and team_id are historically different; both default to reading
+# from the ASC API key's issuer when asc_auth runs, so leaving them commented
+# is usually fine for API-key-based flows.
+# itc_team_id("...")

@@ -1,0 +1,55 @@
+// Tuist 4.x Project.swift — canonical shape with:
+//   - iOS app target + unit-test target
+//   - Test-action environment variables defined on the scheme so they
+//     survive `tuist generate` (never edit xcschemes directly).
+//   - Single shared scheme, everything else generated from here.
+//
+// Verified against Tuist 4.61.2.
+
+import ProjectDescription
+
+let project = Project(
+    name: "MyApp",
+    targets: [
+        .target(
+            name: "MyApp",
+            destinations: .iOS,
+            product: .app,
+            bundleId: "com.example.MyApp",
+            deploymentTargets: .iOS("18.0"),
+            infoPlist: .default,
+            sources: ["Sources/**"],
+            resources: ["Resources/**"],
+            dependencies: []
+        ),
+        .target(
+            name: "MyAppTests",
+            destinations: .iOS,
+            product: .unitTests,
+            bundleId: "com.example.MyAppTests",
+            deploymentTargets: .iOS("18.0"),
+            sources: ["Tests/**"],
+            dependencies: [
+                .target(name: "MyApp")
+            ]
+        ),
+    ],
+    schemes: [
+        .scheme(
+            name: "MyApp",
+            shared: true,
+            buildAction: .buildAction(targets: ["MyApp"]),
+            testAction: .targets(
+                ["MyAppTests"],
+                arguments: .arguments(environmentVariables: [
+                    // Commit keys, not values. Set the actual values in the
+                    // shell (e.g. .env.test sourced by the Makefile target)
+                    // at tuist-generate time.
+                    "MY_APP_TEST_USERNAME": "$(MY_APP_TEST_USERNAME)",
+                    "MY_APP_TEST_PASSWORD": "$(MY_APP_TEST_PASSWORD)",
+                ])
+            ),
+            runAction: .runAction(executable: "MyApp")
+        )
+    ]
+)
