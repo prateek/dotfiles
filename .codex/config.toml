@@ -43,6 +43,9 @@ trust_level = "trusted"
 [projects."/Users/prateek/code/experiments/2026-04-08-agent-spec-survey"]
 trust_level = "trusted"
 
+[projects."/Users/prateek/Dropbox/Documents/Taxes"]
+trust_level = "trusted"
+
 [notice.model_migrations]
 gpt-5-codex = "gpt-5.3-codex"
 "gpt-5.2" = "gpt-5.3-codex"
