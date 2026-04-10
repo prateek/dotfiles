@@ -1,0 +1,4 @@
+interface:
+  display_name: "Disk Usage Audit"
+  short_description: "Map disk usage, then validate reclaim with clone-aware checks."
+  default_prompt: "Use $disk-usage-audit to audit disk usage on this machine, explain where storage is going, and rank cleanup candidates by risk, expected reclaim, and clone-aware validation when APFS may distort logical sizes."
