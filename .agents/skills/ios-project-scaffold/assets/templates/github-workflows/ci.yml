@@ -1,0 +1,113 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: macos-15
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+
+      - uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac # v2.4.4
+        with:
+          install: true
+          cache: true
+
+      - name: Lint
+        run: make lint
+
+  unit-tests:
+    runs-on: macos-15
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+
+      - uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
+        with:
+          xcode-version: "26.3"
+
+      - uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac # v2.4.4
+        with:
+          install: true
+          cache: true
+
+      - name: Create CI simulator
+        run: |
+          xcrun simctl create "CI-iPhone-17-Pro" \
+            "com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro" \
+            "com.apple.CoreSimulator.SimRuntime.iOS-26-2"
+          UDID=$(xcrun simctl list devices -j \
+            | jq -r '.devices | to_entries[] | .value[] | select(.name=="CI-iPhone-17-Pro") | .udid' \
+            | head -1)
+          echo "$UDID" > .ios-sim-udid
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+
+      - name: Unit tests
+        run: make test-unit
+
+      - name: Archive xcresult bundle
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: unit-xcresults
+          path: /tmp/${{ github.event.repository.name }}-*/Logs/Test/*.xcresult
+          if-no-files-found: ignore
+
+  ui-tests:
+    runs-on: macos-15
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+
+      - uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
+        with:
+          xcode-version: "26.3"
+
+      - uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac # v2.4.4
+        with:
+          install: true
+          cache: true
+
+      - name: Create CI simulator
+        run: |
+          xcrun simctl create "CI-iPhone-17-Pro" \
+            "com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro" \
+            "com.apple.CoreSimulator.SimRuntime.iOS-26-2"
+          UDID=$(xcrun simctl list devices -j \
+            | jq -r '.devices | to_entries[] | .value[] | select(.name=="CI-iPhone-17-Pro") | .udid' \
+            | head -1)
+          echo "$UDID" > .ios-sim-udid
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+
+      - name: UI tests
+        run: make test-ui
+
+      - name: Archive xcresult bundle
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ui-xcresults
+          path: /tmp/${{ github.event.repository.name }}-*/Logs/Test/*.xcresult
+          if-no-files-found: ignore

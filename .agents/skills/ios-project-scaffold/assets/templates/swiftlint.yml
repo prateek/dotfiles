@@ -1,0 +1,18 @@
+disabled_rules:
+  - trailing_comma
+
+included:
+  - Sources
+  - Tests
+  - UITests
+  - Project.swift
+
+excluded:
+  - .build
+  - .git
+  - .tuist
+  - Derived
+  - DerivedData
+  - build
+
+reporter: xcode

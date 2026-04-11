@@ -10,10 +10,10 @@
 #   audit.sh --target <dir> --json      # JSON output for LLM consumption
 #
 # This script handles the deterministic half of the audit: file existence,
-# gitignore entries, Makefile targets, YAML shape. The judgment half — is
-# Project.swift using the Tuist 4 environmentVariables API correctly, are
-# Fastlane lanes well-structured, etc. — belongs to the LLM rubric in the
-# skill's SKILL.md, which runs as a second pass.
+# gitignore entries, Makefile targets, hook shape, and workflow structure.
+# The judgment half — is Project.swift using the Tuist 4 environmentVariables
+# API correctly, are the Fastlane lanes well-structured, and so on — belongs
+# to the rubric in SKILL.md.
 
 set -euo pipefail
 
@@ -34,8 +34,6 @@ cd "$TARGET"
 FAILS=0
 RESULTS=()
 
-# Always returns 0 so callers can `if check ...; then ...` without tripping
-# set -e or being mis-parsed by && / || chains.
 check() {
   local name="$1"
   local status="$2"
@@ -57,8 +55,6 @@ check() {
 file_exists() { [[ -f "$1" ]]; }
 dir_exists()  { [[ -d "$1" ]]; }
 
-# Escape-safe grep wrapper. Uses -- to terminate flags so patterns starting
-# with a dash are handled correctly.
 grep_present() {
   local pattern="$1"
   local file="$2"
@@ -66,9 +62,15 @@ grep_present() {
   grep -qE -- "$pattern" "$file"
 }
 
+grep_absent() {
+  local pattern="$1"
+  local file="$2"
+  [[ -f "$file" ]] || return 1
+  ! grep -qE -- "$pattern" "$file"
+}
+
 section() { [[ $JSON -eq 0 ]] && printf "\n\033[1m%s\033[0m\n" "$1" || true; }
 
-# --- Toolchain pins ---
 section "Toolchain and versions"
 if file_exists ".xcode-version"; then
   check ".xcode-version present" pass
@@ -94,7 +96,6 @@ else
   check "mise.toml present" fail "copy from ~/.agents/skills/ios-project-scaffold/assets/templates/mise.toml"
 fi
 
-# --- Project hygiene ---
 section "Project hygiene"
 if file_exists ".gitignore"; then
   check ".gitignore present" pass
@@ -133,6 +134,12 @@ if file_exists ".gitignore"; then
     check ".gitignore ignores *.p8" fail "add '*.p8' to .gitignore"
   fi
 
+  if grep_present '^\*\.p12$' .gitignore; then
+    check ".gitignore ignores *.p12" pass
+  else
+    check ".gitignore ignores *.p12" fail "add '*.p12' to .gitignore"
+  fi
+
   if grep_present '^\*\.mobileprovision$' .gitignore; then
     check ".gitignore ignores *.mobileprovision" pass
   else
@@ -146,13 +153,52 @@ else
   check "Project.swift present (Tuist)" fail "run tuist init or copy Project.swift template"
 fi
 
-# --- Makefile targets ---
+for config in ".swiftlint.yml" ".swiftformat" ".typos.toml"; do
+  if file_exists "$config"; then
+    check "$config present" pass
+  else
+    check "$config present" fail "copy $config from the scaffold templates"
+  fi
+done
+
+if file_exists ".githooks/pre-commit"; then
+  check ".githooks/pre-commit present" pass
+else
+  check ".githooks/pre-commit present" fail "copy .githooks/pre-commit from the scaffold templates"
+fi
+
+if file_exists ".githooks/pre-push"; then
+  check ".githooks/pre-push absent" fail "remove .githooks/pre-push; the default scaffold only installs pre-commit"
+else
+  check ".githooks/pre-push absent" pass
+fi
+
+if file_exists ".githooks/pre-commit"; then
+  if grep_present 'git diff --cached --name-only' .githooks/pre-commit; then
+    check "pre-commit scopes itself to staged files" pass
+  else
+    check "pre-commit scopes itself to staged files" fail "make pre-commit read staged files from git diff --cached"
+  fi
+
+  if grep_absent 'xcodebuild|simctl|periphery' .githooks/pre-commit; then
+    check "pre-commit stays on the fast local path" pass
+  else
+    check "pre-commit stays on the fast local path" fail "remove xcodebuild, simctl, and periphery from .githooks/pre-commit"
+  fi
+fi
+
 section "Makefile"
 if file_exists "Makefile"; then
   check "Makefile present" pass
-  for tgt in generate build run test-unit test-ui test audit beta release metadata \
-             boot-lease release-lease kill-dev-processes clean-dev-artifacts \
-             check-xcode create-app-in-asc; do
+else
+  check "Makefile present" fail "copy from ~/.agents/skills/ios-project-scaffold/assets/templates/Makefile"
+fi
+
+if file_exists "Makefile"; then
+  for tgt in setup-tools bootstrap-local format lint generate build run test \
+             test-unit test-ui beta release metadata boot-lease release-lease \
+             hooks-install kill-dev-processes clean-dev-artifacts check-xcode \
+             create-app-in-asc; do
     if grep_present "^${tgt}:" Makefile; then
       check "Makefile target: $tgt" pass
     else
@@ -160,10 +206,34 @@ if file_exists "Makefile"; then
     fi
   done
 
-  if grep_present 'xcbeautify' Makefile; then
-    check "Makefile pipes through xcbeautify" pass
+  if grep_present 'swiftformat --lint' Makefile; then
+    check "Makefile lint runs SwiftFormat" pass
   else
-    check "Makefile pipes through xcbeautify" fail "pipe 'xcodebuild ... | xcbeautify' in build/test targets"
+    check "Makefile lint runs SwiftFormat" fail "add 'swiftformat --lint .' to the lint target"
+  fi
+
+  if grep_present 'swiftlint lint' Makefile; then
+    check "Makefile lint runs SwiftLint" pass
+  else
+    check "Makefile lint runs SwiftLint" fail "add 'swiftlint lint --quiet' to the lint target"
+  fi
+
+  if grep_present 'typos ' Makefile; then
+    check "Makefile lint runs typos" pass
+  else
+    check "Makefile lint runs typos" fail "add 'typos .' to the lint target"
+  fi
+
+  if grep_present 'core\.hooksPath \.githooks' Makefile; then
+    check "Makefile installs repo-owned hooks" pass
+  else
+    check "Makefile installs repo-owned hooks" fail "set git core.hooksPath to .githooks in hooks-install"
+  fi
+
+  if grep_present 'xcbeautify' Makefile; then
+    check "Makefile pipes xcodebuild through xcbeautify" pass
+  else
+    check "Makefile pipes xcodebuild through xcbeautify" fail "pipe 'xcodebuild ... | xcbeautify' in build/test targets"
   fi
 
   if grep_present 'id=\$\(IOS_SIM_UDID\)' Makefile; then
@@ -171,11 +241,22 @@ if file_exists "Makefile"; then
   else
     check "Makefile pins simulator by UDID" fail 'add -destination "id=$(IOS_SIM_UDID)" to XCBUILD_FLAGS'
   fi
-else
-  check "Makefile present" fail "copy from ~/.agents/skills/ios-project-scaffold/assets/templates/Makefile"
+
+  if file_exists ".periphery.yml"; then
+    if grep_present '^analyze:' Makefile; then
+      check "Makefile target: analyze" pass
+    else
+      check "Makefile target: analyze" fail "add 'analyze:' when .periphery.yml is present"
+    fi
+
+    if grep_present '^periphery = "3\.7\.2"$' mise.toml; then
+      check "mise.toml pins periphery in strict mode" pass
+    else
+      check "mise.toml pins periphery in strict mode" fail "add periphery to the [tools] table in mise.toml"
+    fi
+  fi
 fi
 
-# --- Fastlane ---
 section "Fastlane"
 if file_exists "fastlane/Fastfile"; then
   check "fastlane/Fastfile present" pass
@@ -209,26 +290,17 @@ if file_exists "fastlane/Fastfile"; then
   fi
 fi
 
-# --- Flow audit placeholder ---
-section "UI flow audit"
-if dir_exists ".audit"; then
-  check ".audit/ directory present" pass
-else
-  check ".audit/ directory present" fail "mkdir .audit && copy devices.yaml from the scaffold templates"
-fi
-
-if file_exists ".audit/devices.yaml"; then
-  check ".audit/devices.yaml present" pass
-else
-  check ".audit/devices.yaml present" fail "copy from ~/.agents/skills/ios-project-scaffold/assets/templates/devices.yaml"
-fi
-
-# --- CI workflows ---
 section "CI workflows"
-if file_exists ".github/workflows/build.yml"; then
-  check ".github/workflows/build.yml present" pass
+if file_exists ".github/workflows/ci.yml"; then
+  check ".github/workflows/ci.yml present" pass
 else
-  check ".github/workflows/build.yml present" fail "copy from the scaffold templates"
+  check ".github/workflows/ci.yml present" fail "copy from the scaffold templates"
+fi
+
+if file_exists ".github/workflows/security.yml"; then
+  check ".github/workflows/security.yml present" pass
+else
+  check ".github/workflows/security.yml present" fail "copy from the scaffold templates"
 fi
 
 if file_exists ".github/workflows/testflight.yml"; then
@@ -237,27 +309,56 @@ else
   check ".github/workflows/testflight.yml present" fail "copy from the scaffold templates"
 fi
 
-if file_exists ".github/workflows/build.yml"; then
-  if grep_present "timeout-minutes:" .github/workflows/build.yml; then
-    check "build.yml sets timeout-minutes" pass
+if file_exists ".github/workflows/ci.yml"; then
+  if grep_present "timeout-minutes:" .github/workflows/ci.yml; then
+    check "ci.yml sets timeout-minutes" pass
   else
-    check "build.yml sets timeout-minutes" fail "add timeout-minutes: 15 to the job"
+    check "ci.yml sets timeout-minutes" fail "add timeout-minutes to each job"
   fi
 
-  if grep_present "cancel-in-progress: true" .github/workflows/build.yml; then
-    check "build.yml cancels stale runs" pass
+  if grep_present "cancel-in-progress: true" .github/workflows/ci.yml; then
+    check "ci.yml cancels stale runs" pass
   else
-    check "build.yml cancels stale runs" fail "add concurrency.cancel-in-progress: true"
+    check "ci.yml cancels stale runs" fail "add concurrency.cancel-in-progress: true"
   fi
 
-  if grep_present "xcode-version: ['\"]26\\.3['\"]" .github/workflows/build.yml; then
-    check "build.yml pins Xcode version" pass
+  if grep_present "xcode-version: ['\"]26\\.3['\"]" .github/workflows/ci.yml; then
+    check "ci.yml pins Xcode version" pass
   else
-    check "build.yml pins Xcode version" fail "add setup-xcode with xcode-version matching .xcode-version"
+    check "ci.yml pins Xcode version" fail "add setup-xcode with xcode-version matching .xcode-version"
+  fi
+
+  for cmd in "make lint" "make test-unit" "make test-ui"; do
+    if grep_present "$cmd" .github/workflows/ci.yml; then
+      check "ci.yml runs $cmd" pass
+    else
+      check "ci.yml runs $cmd" fail "add '$cmd' to ci.yml"
+    fi
+  done
+fi
+
+if file_exists ".github/workflows/security.yml"; then
+  if grep_present "zizmor" .github/workflows/security.yml; then
+    check "security.yml runs zizmor" pass
+  else
+    check "security.yml runs zizmor" fail "add a zizmor step to security.yml"
   fi
 fi
 
-# --- Summary ---
+if file_exists ".github/workflows/testflight.yml"; then
+  if grep_present "environment: testflight" .github/workflows/testflight.yml; then
+    check "testflight.yml requires environment approval" pass
+  else
+    check "testflight.yml requires environment approval" fail "set environment: testflight on the release job"
+  fi
+
+  if grep_present "cancel-in-progress: false" .github/workflows/testflight.yml; then
+    check "testflight.yml preserves in-flight releases" pass
+  else
+    check "testflight.yml preserves in-flight releases" fail "set concurrency.cancel-in-progress: false"
+  fi
+fi
+
 if [[ $JSON -eq 1 ]]; then
   if [[ ${#RESULTS[@]} -eq 0 ]]; then
     printf '{"fails":%d,"checks":[]}\n' "$FAILS"

@@ -1,5 +1,5 @@
 .PHONY: hammerspoon hammerspoon-check hammerspoon-reload
-.PHONY: test-ghc test-worktrees
+.PHONY: test-ghc test-macos-settings test-worktrees
 
 HAMMERSPOON_SRC := .hammerspoon/init.fnl
 HAMMERSPOON_OUT := .hammerspoon/init.generated.lua
@@ -25,6 +25,10 @@ hammerspoon-reload: hammerspoon
 ## E2E tests for ghc URL handling.
 test-ghc:
 	@zsh ./tests/ghc-url.zsh
+
+## Regression tests for managed macOS defaults coverage.
+test-macos-settings:
+	@zsh ./tests/macos-settings-coverage.zsh
 
 ## E2E tests for worktree helpers (w + hooks).
 test-worktrees:

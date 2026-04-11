@@ -1,17 +1,20 @@
 # Pin every tool the project depends on through mise so CI and local dev
-# run the same versions. Override any of these per-project by editing values.
+# run the same versions.
 
 [tools]
 # Swift toolchain (Xcode itself is pinned via .xcode-version so xcodes can
 # switch it; this pin tells mise to ensure Tuist and Ruby are present).
 tuist = "4.61.2"
-ruby  = "3.3.5"          # for Fastlane
+ruby = "3.3.5"
 
-# Swift CLI tooling (distributed as GitHub releases; ubi pulls and caches).
+# Swift CLI tooling.
+swiftlint = "0.63.2"
+swiftformat = "0.60.1"
 "ubi:cpisciotta/xcbeautify" = "2.16.0"
-"ubi:realm/SwiftLint"       = "0.57.1"
 
-# Runtime utilities the Makefile uses.
+# Hygiene and utility tools.
+typos = "1.45.0"
+zizmor = "1.23.1"
 jq = "1.7.1"
 
 [env]

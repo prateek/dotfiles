@@ -1,6 +1,6 @@
 # CI and GitHub Actions cost control
 
-The scaffold's `.github/workflows/build.yml` and `testflight.yml` templates encode these rules. Read this file when you need to tune them, add a new workflow, or debug a CI cost spike.
+The scaffold's `.github/workflows/ci.yml`, `security.yml`, and `testflight.yml` templates encode these rules. Read this file when you need to tune them, add a new workflow, or debug a CI cost spike.
 
 ## The cost math
 
@@ -30,7 +30,7 @@ An unbounded macOS job running 60 minutes once per push costs ~$3.72 per run. Te
 Every macOS job must set:
 
 1. **Explicit `timeout-minutes`.** Start conservative (15 for build-and-test, 30 for TestFlight deploys) and tighten as you measure. Unbounded macOS jobs are the #1 cause of cost spikes.
-2. **`concurrency:` with `cancel-in-progress: true`** so stale runs do not keep consuming minutes after a new push. The scaffold does this automatically via `concurrency: build-${{ github.ref }}`.
+2. **`concurrency:` with `cancel-in-progress: true`** so stale runs do not keep consuming minutes after a new push. The scaffold does this automatically in `ci.yml`.
 3. **Pinned `xcode-version`** matching `.xcode-version` in the repo. `maxim-lobanov/setup-xcode@v1` is the standard action; it switches among pre-installed versions.
 4. **`xcodebuild` output piped through `xcbeautify`.** Raw `xcodebuild` log volume wastes human review time and hides errors; also increases log storage cost.
 5. **Runner image pinned** to `macos-15` or `macos-26`. Never use `macos-latest` — it silently flips under you and breaks reproducibility. Both `macos-15` and `macos-26` ship Xcode 26.3 and iOS 26.2 pre-installed as of April 2026; pick one and stick.
@@ -38,7 +38,7 @@ Every macOS job must set:
 
 ## Trigger gates
 
-- **build-and-test**: fires on `push` and `pull_request`. Cheap, high-frequency.
+- **ci**: fires on `push` and `pull_request`. Cheap, high-frequency.
 - **TestFlight deploy**: fires only on tag pushes matching `v*` or on manual dispatch. Never fires on every commit; the cost and the TestFlight rate limit both matter.
 - **App Store release**: tag or manual dispatch only, and require an environment reviewer gate. The scaffold's `testflight.yml` uses `environment: testflight` which enforces a reviewer.
 
@@ -80,7 +80,7 @@ Agents parse text logs inefficiently. Upload the `.xcresult` bundle as an artifa
     if-no-files-found: ignore
 ```
 
-`xcresulttool get --path foo.xcresult --format json` produces structured failure diagnostics. The scaffold's `build.yml` already includes this step.
+`xcresulttool get --path foo.xcresult --format json` produces structured failure diagnostics. The scaffold's `ci.yml` uploads the `.xcresult` bundle so downstream tools can inspect it.
 
 ## Tuist Cloud in CI
 

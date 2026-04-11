@@ -1,0 +1,6 @@
+workspace: MyApp.xcworkspace
+schemes:
+  - MyApp
+
+format: xcode
+retain_public: true

@@ -90,4 +90,4 @@ Ranked by rigor:
 2. **XCUITest** — hard assertions inside the Xcode test runner. Best when CI needs a pass/fail gate.
 3. **Manual simulator walkthrough** — exploratory, one-off. Useful during active debugging; never a ship gate.
 
-Every ship-critical flow gets at least one `ios-flow-audit` YAML in the project's `.audit/` directory, wired into `make audit`.
+If you adopt a flow-audit harness, keep the YAML under `.audit/` and wire it into a repo-specific command instead of relying on a scaffold default.

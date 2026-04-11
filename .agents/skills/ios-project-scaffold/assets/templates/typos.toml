@@ -1,0 +1,13 @@
+[files]
+extend-exclude = [
+  ".build",
+  ".git",
+  ".tuist",
+  "Derived",
+  "DerivedData",
+  "build",
+]
+
+[default.extend-words]
+UDID = "UDID"
+udid = "udid"

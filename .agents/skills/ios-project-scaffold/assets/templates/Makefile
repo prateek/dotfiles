@@ -21,10 +21,12 @@ XCBUILD_FLAGS = -workspace $(WORKSPACE) \
                 -configuration $(CONFIGURATION) \
                 -destination "id=$(IOS_SIM_UDID)"
 
-.PHONY: help boot-lease release-lease generate build build-unit build-ui \
-        run test-unit test-ui test audit beta release metadata \
-        create-app-in-asc kill-dev-processes clean-dev-artifacts check-xcode \
-        require-lease
+.PHONY: help setup-tools bootstrap-local boot-lease release-lease generate format \
+        lint build run test-unit test-ui test beta release metadata create-app-in-asc \
+        hooks-install kill-dev-processes clean-dev-artifacts check-xcode require-lease
+
+help: ## Show this help
+	@awk -F':.*## ' '/^[a-zA-Z_-]+:.*## / {printf "%-22s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 # Guard that every target needing a simulator depends on.
 require-lease:
@@ -46,6 +48,29 @@ boot-lease: ## Acquire a leased simulator; writes UDID to .ios-sim-udid
 release-lease: ## Release the current simulator lease
 	@rm -f $(LEASE_FILE)
 	@echo "released"
+
+# ----- Fast local hygiene -----
+setup-tools: ## Trust this repo's mise config and install pinned tools
+	mise trust
+	mise install
+
+format: ## Format Swift sources
+	swiftformat .
+
+lint: ## Run fast static checks
+	swiftformat --lint .
+	swiftlint lint --quiet
+	typos .
+
+hooks-install: ## Install repo-owned git hooks
+	@git rev-parse --git-dir >/dev/null 2>&1 || { \
+	  echo "error: not inside a git repo. Run 'git init' first."; \
+	  exit 1; \
+	}
+	git config core.hooksPath .githooks
+	@echo "hooksPath=.githooks"
+
+bootstrap-local: setup-tools hooks-install check-xcode ## Prepare local tooling, hooks, and Xcode selection
 
 # ----- Project generation -----
 generate: ## tuist generate --no-open
@@ -81,22 +106,6 @@ test-ui: require-lease generate ## Run the UI test suite
 
 test: test-unit test-ui ## Run unit + UI tests
 
-# ----- UI flow audit (ios-flow-audit skill) -----
-audit: require-lease generate ## Run ios-flow-audit against .audit/*.yaml flows
-	@if [ ! -f .audit/primary.yaml ]; then \
-	  echo "note: .audit/primary.yaml not found; nothing to audit."; \
-	  echo "Write a flow YAML at .audit/primary.yaml to enable this target."; \
-	  echo "See ~/.agents/skills/ios-flow-audit/SKILL.md for the schema."; \
-	  exit 0; \
-	fi
-	python3 ~/.agents/skills/ios-flow-audit/scripts/run_workflows.py \
-	  --workflows .audit/primary.yaml \
-	  --udid "$(IOS_SIM_UDID)" \
-	  --output-dir /tmp/$(PROJECT_NAME)-audit
-	python3 ~/.agents/skills/ios-flow-audit/scripts/generate_report.py \
-	  --results /tmp/$(PROJECT_NAME)-audit/results.json \
-	  --output  /tmp/$(PROJECT_NAME)-audit/report.html
-
 # ----- Release lanes (Fastlane) -----
 create-app-in-asc: ## Fails loudly; ASC app creation cannot be automated (2026)
 	@fastlane create_app_in_asc
@@ -131,6 +140,3 @@ kill-dev-processes: ## Kill Xcode + Simulator; shutdown all simulators
 
 clean-dev-artifacts: ## Nuke per-lane derived-data directories
 	rm -rf /tmp/$(PROJECT_NAME)-*
-
-help: ## Show this help
-	@awk -F':.*## ' '/^[a-zA-Z_-]+:.*## / {printf "%-22s %s\n", $$1, $$2}' $(MAKEFILE_LIST)

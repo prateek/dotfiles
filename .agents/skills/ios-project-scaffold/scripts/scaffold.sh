@@ -7,7 +7,7 @@
 #
 # Usage:
 #   scaffold.sh --target <dir> --name <AppName> --bundle-id <com.foo.Bar> \
-#               --team-id <TEAMID> [--force]
+#               --team-id <TEAMID> [--with-analysis] [--force]
 #
 # After running, follow README.bootstrap.md in the target directory for
 # the one-time manual steps (ASC app record, ASC API key, CI secrets).
@@ -23,6 +23,7 @@ APP_NAME=""
 BUNDLE_ID=""
 TEAM_ID=""
 FORCE=0
+WITH_ANALYSIS=0
 
 usage() {
   sed -n '2,14p' "$0"
@@ -35,6 +36,7 @@ while [[ $# -gt 0 ]]; do
     --name)      APP_NAME="$2"; shift 2 ;;
     --bundle-id) BUNDLE_ID="$2"; shift 2 ;;
     --team-id)   TEAM_ID="$2"; shift 2 ;;
+    --with-analysis) WITH_ANALYSIS=1; shift ;;
     --force)     FORCE=1; shift ;;
     -h|--help)   usage 0 ;;
     *) echo "unknown argument: $1" >&2; usage 1 ;;
@@ -67,14 +69,24 @@ copy_template "tuist-version"    ".tuist-version"
 copy_template "mise.toml"        "mise.toml"
 copy_template "gitignore"        ".gitignore"
 copy_template "Makefile"         "Makefile"
+copy_template "swiftlint.yml"    ".swiftlint.yml"
+copy_template "swiftformat"      ".swiftformat"
+copy_template "typos.toml"       ".typos.toml"
+copy_template "githooks/pre-commit" ".githooks/pre-commit"
 copy_template "Project.swift.example" "Project.swift"
-copy_template "devices.yaml"     ".audit/devices.yaml"
 copy_template "fastlane/Fastfile"    "fastlane/Fastfile"
 copy_template "fastlane/Appfile"     "fastlane/Appfile"
 copy_template "fastlane/.env.example" "fastlane/.env.example"
-copy_template "github-workflows/build.yml"       ".github/workflows/build.yml"
+copy_template "github-workflows/ci.yml"          ".github/workflows/ci.yml"
+copy_template "github-workflows/security.yml"    ".github/workflows/security.yml"
 copy_template "github-workflows/testflight.yml"  ".github/workflows/testflight.yml"
 copy_template "README.bootstrap.md" "README.bootstrap.md"
+
+if [[ $WITH_ANALYSIS -eq 1 ]]; then
+  copy_template "periphery.yml" ".periphery.yml"
+fi
+
+chmod +x "${TARGET}/.githooks/pre-commit"
 
 # Substitute placeholders in copied files. Uses perl -pi (portable across
 # macOS BSD and Linux GNU) because macOS BSD sed does not honor \b word
@@ -100,11 +112,26 @@ for f in \
     "fastlane/Fastfile" \
     "fastlane/Appfile" \
     "fastlane/.env.example" \
-    ".github/workflows/build.yml" \
+    ".github/workflows/ci.yml" \
+    ".github/workflows/security.yml" \
     ".github/workflows/testflight.yml" \
     "README.bootstrap.md"; do
   substitute "${TARGET}/${f}"
 done
+
+if [[ $WITH_ANALYSIS -eq 1 ]]; then
+  substitute "${TARGET}/.periphery.yml"
+
+  perl -0pi -e 's/\n\[env\]/\nperiphery = "3.7.2"\n\n[env]/' "${TARGET}/mise.toml"
+
+  cat >> "${TARGET}/Makefile" <<'EOF'
+
+.PHONY: analyze
+
+analyze: generate ## Run deeper static analysis (optional)
+	periphery scan --config .periphery.yml
+EOF
+fi
 
 # Initial source directories so tuist generate has something to find.
 mkdir -p "${TARGET}/Sources" "${TARGET}/Tests" "${TARGET}/Resources"
@@ -115,10 +142,12 @@ Scaffold complete. Next steps:
 
   1. Read README.bootstrap.md and do the one-time manual steps
      (ASC app record, ASC API key, CI secrets).
-  2. git init && git add . && git commit -m "bootstrap"
-  3. make check-xcode
-  4. make generate
-  5. Boot a simulator and write its UDID to .ios-sim-udid
-  6. make run
+  2. git init
+  3. make bootstrap-local
+  4. make lint
+  5. make generate
+  6. Boot a simulator and write its UDID to .ios-sim-udid
+  7. make run
+  8. git add . && git commit -m "bootstrap"
 
 DONE

@@ -1,11 +1,11 @@
 # Bootstrap Instructions
 
-This project was scaffolded by `ios-project-scaffold`. The Makefile, Tuist manifest, Fastlane lanes, and GitHub Actions workflows are already in place. Do these steps **once** per new app to finish the setup.
+This project was scaffolded by `ios-project-scaffold`. The Makefile, Tuist manifest, Fastlane lanes, hooks, and GitHub Actions workflows are already in place. Do these steps **once** per new app to finish the setup.
 
 ## Prerequisites
 
 - Xcode 26.3 installed and selected (`xcodes select 26.3`).
-- `mise install` run at the repo root (installs Tuist, Ruby, jq, xcbeautify, etc.).
+- `git init` followed by `make bootstrap-local` (trusts `mise.toml`, installs tools, installs hooks, and checks Xcode).
 - An Apple Developer Program membership under the team ID in `fastlane/Appfile`.
 
 ## Step 1 — Create the App Store Connect record (one-time, manual)
@@ -69,7 +69,9 @@ Also create a **protected environment** called `testflight` under **Settings** �
 ## Step 5 — First local build
 
 ```bash
-make check-xcode             # confirms the active Xcode matches .xcode-version
+git init
+make bootstrap-local         # installs tools, hooks, and checks Xcode
+make lint                    # fast local hygiene; no simulator required
 make generate                # tuist generate
 # Manually boot a simulator once and drop its UDID in .ios-sim-udid:
 xcrun simctl boot "iPhone 17 Pro"
@@ -81,6 +83,18 @@ make test
 ```
 
 If every target succeeds, you're ready to ship.
+
+## Fast local loop
+
+The default local loop is intentionally fast:
+
+- `make format` rewrites Swift files.
+- `make lint` runs formatting lint, SwiftLint, and typos.
+- `make setup-tools` trusts `mise.toml` and installs pinned tools.
+- `make bootstrap-local` runs `setup-tools`, installs hooks, and checks Xcode.
+- `.githooks/pre-commit` only checks staged files.
+
+Hooks never run `xcodebuild`, simulator-based tests, or deep static analysis.
 
 ## Step 6 — First TestFlight upload
 
@@ -112,4 +126,3 @@ The tagged push fires `.github/workflows/testflight.yml`, which requires the `te
 
 - `~/.agents/docs/ios.md` — iOS conventions playbook.
 - `~/.agents/skills/ios-project-scaffold/` — this skill; run `audit` mode to check drift.
-- `~/.agents/skills/ios-flow-audit/` — add YAML flows under `.audit/` once the app has real screens worth regression-testing.

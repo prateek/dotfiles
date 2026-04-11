@@ -103,6 +103,7 @@ keys=(
   "com.apple.screencapture type"
   "com.apple.screencapture disable-shadow"
 
+  "com.apple.finder AppleShowAllFiles"
   "com.apple.finder NewWindowTargetPath"
   "com.apple.finder ShowStatusBar"
   "com.apple.finder ShowPathbar"
