@@ -130,18 +130,42 @@ def _modules(root: Path) -> dict[str, Any]:
         result["spm"].append(str(p.relative_to(root)))
 
     if (root / "Tuist").exists() or (root / "Project.swift").exists():
+        # `tuist graph --format json --output-path DIR` writes DIR/graph.json.
+        # --output-path must be a DIRECTORY, not a file. We make a fresh temp
+        # dir, run tuist, then read graph.json from inside it.
+        import tempfile
         try:
-            g = subprocess.run(
-                ["tuist", "graph", "--format", "json", "--skip-open"],
-                cwd=root, capture_output=True, text=True, timeout=60,
-            )
-            if g.returncode == 0 and g.stdout:
-                try:
-                    result["tuist_graph"] = json.loads(g.stdout)
-                except json.JSONDecodeError:
-                    result["tuist_graph"] = {"raw": g.stdout[:4000]}
-            else:
-                result["tuist_graph"] = {"error": g.stderr.strip() or "tuist failed"}
+            with tempfile.TemporaryDirectory(prefix="ios-audit-tuist-") as tmpdir:
+                g = subprocess.run(
+                    [
+                        "tuist", "graph",
+                        "--format", "json",
+                        "--no-open",
+                        "--output-path", tmpdir,
+                    ],
+                    cwd=root, capture_output=True, text=True, timeout=180,
+                )
+                graph_file = Path(tmpdir) / "graph.json"
+                if graph_file.exists() and graph_file.stat().st_size > 0:
+                    try:
+                        result["tuist_graph"] = json.loads(
+                            graph_file.read_text(encoding="utf-8", errors="replace")
+                        )
+                    except json.JSONDecodeError as e:
+                        result["tuist_graph"] = {
+                            "error": f"non-JSON graph.json: {e}",
+                            "raw_head": graph_file.read_text(errors="replace")[:2000],
+                        }
+                elif g.returncode != 0:
+                    result["tuist_graph"] = {
+                        "error": (g.stderr.strip() or g.stdout.strip() or "tuist failed")[:2000]
+                    }
+                else:
+                    result["tuist_graph"] = {
+                        "error": "tuist exited 0 but no graph.json produced",
+                        "stdout_head": g.stdout[:500],
+                        "stderr_head": g.stderr[:500],
+                    }
         except (FileNotFoundError, subprocess.TimeoutExpired) as e:
             result["tuist_graph"] = {"error": str(e)}
     return result
@@ -168,23 +192,67 @@ def _run_swiftlint(root: Path) -> dict[str, Any]:
 def _run_periphery(root: Path) -> dict[str, Any]:
     if not tool_version("periphery", "version"):
         return {"tool_missing": "periphery not on PATH"}
-    # Periphery needs an Xcode project; detect.
-    projects = list(root.glob("*.xcworkspace")) or list(root.glob("*.xcodeproj"))
-    if not projects:
+
+    workspaces = sorted(root.glob("*.xcworkspace"))
+    projects = sorted(root.glob("*.xcodeproj"))
+
+    # For Tuist projects, the .xcodeproj / .xcworkspace is regenerated via
+    # `tuist generate`. If there's a Project.swift but no generated files,
+    # try to generate them first.
+    if not workspaces and not projects and (root / "Project.swift").exists():
+        try:
+            subprocess.run(
+                ["tuist", "install"], cwd=root,
+                capture_output=True, text=True, timeout=300, check=False,
+            )
+            subprocess.run(
+                ["tuist", "generate", "--no-open"], cwd=root,
+                capture_output=True, text=True, timeout=300, check=False,
+            )
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            pass
+        workspaces = sorted(root.glob("*.xcworkspace"))
+        projects = sorted(root.glob("*.xcodeproj"))
+
+    if not workspaces and not projects:
         return {"error": "no Xcode project/workspace at repo root"}
+
+    # Discover target name. For movies.do and similar single-target apps,
+    # the target is the main .xcodeproj name without extension.
+    target_name = (workspaces[0] if workspaces else projects[0]).stem
+    cmd = ["periphery", "scan", "--format", "json", "--quiet"]
+    if workspaces:
+        cmd += ["--workspace", workspaces[0].name, "--schemes", target_name, "--targets", target_name]
+    else:
+        cmd += ["--project", projects[0].name, "--schemes", target_name, "--targets", target_name]
+
     try:
         r = subprocess.run(
-            ["periphery", "scan", "--format", "json", "--quiet"],
-            cwd=root, capture_output=True, text=True, timeout=600,
+            cmd, cwd=root, capture_output=True, text=True, timeout=900,
         )
         if r.stdout:
             try:
-                return {"results": json.loads(r.stdout)}
+                parsed = json.loads(r.stdout)
+                return {
+                    "results": parsed,
+                    "total": len(parsed) if isinstance(parsed, list) else None,
+                    "command": " ".join(cmd),
+                }
             except json.JSONDecodeError:
-                return {"error": "non-JSON output", "raw_head": r.stdout[:2000]}
-        return {"results": [], "stderr_head": r.stderr[:2000]}
+                return {
+                    "error": "non-JSON output",
+                    "raw_head": r.stdout[:2000],
+                    "stderr_head": r.stderr[:2000],
+                    "command": " ".join(cmd),
+                }
+        return {
+            "results": [],
+            "stderr_head": r.stderr[:2000],
+            "returncode": r.returncode,
+            "command": " ".join(cmd),
+        }
     except subprocess.TimeoutExpired:
-        return {"error": "periphery timed out"}
+        return {"error": "periphery timed out after 900s"}
 
 
 COMPLEXITY_TOKENS = re.compile(

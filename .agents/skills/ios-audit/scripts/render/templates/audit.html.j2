@@ -3,6 +3,27 @@
 <head>
 <meta charset="utf-8">
 <title>iOS Audit — {{ audit.meta.app.name if audit.meta.app else 'Unknown' }}</title>
+
+<!-- highlight.js — syntax highlighting -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github-dark.min.css">
+<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/core.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/languages/swift.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/languages/bash.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/languages/json.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/languages/yaml.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/languages/python.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/languages/xml.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/languages/plaintext.min.js"></script>
+
+<!-- mermaid — diagram rendering -->
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+
+<!-- panzoom — pannable / zoomable flow canvas -->
+<script src="https://unpkg.com/panzoom@9.4.0/dist/panzoom.min.js"></script>
+
+<!-- PhotoSwipe 5 — click-to-zoom lightbox -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@5.4.4/dist/photoswipe.css">
+
 <style>
 :root {
   --sev-critical: #b91c1c;
@@ -10,125 +31,933 @@
   --sev-moderate: #a16207;
   --sev-minor: #475569;
   --bg: #f8fafc;
-  --card: #ffffff;
-  --border: #e5e7eb;
+  --panel: #ffffff;
+  --border: #e2e8f0;
   --ink: #0f172a;
   --ink-muted: #475569;
+  --accent: #3b82f6;
+  --accent-soft: #dbeafe;
+  --code-bg: #0d1117;
+  --code-ink: #e6edf3;
+  --sidebar-w: 280px;
+  --topbar-h: 56px;
 }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background: var(--bg);
   color: var(--ink);
-  max-width: 1040px;
-  margin: 2em auto;
-  padding: 0 1.5em;
+  line-height: 1.55;
+  font-size: 15px;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Code blocks: GitHub Dark palette */
+code, pre { font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace; font-size: 0.85em; }
+pre, pre.hljs {
+  background: var(--code-bg) !important;
+  color: var(--code-ink) !important;
+  padding: 1em 1.1em;
+  border-radius: 8px;
+  overflow-x: auto;
   line-height: 1.5;
+  border: 1px solid #30363d;
+  margin: 1em 0;
 }
-header { margin-bottom: 2em; }
-h1 { font-size: 1.75rem; margin-bottom: 0.25em; }
-.meta { color: var(--ink-muted); font-size: 0.9rem; }
-.meta code { font-family: "SF Mono", Menlo, monospace; }
-.summary-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 1em;
-  margin: 1.5em 0;
+pre code, pre code.hljs {
+  background: transparent !important;
+  padding: 0 !important;
+  color: inherit !important;
+  border: none;
+  font-size: 1em;
 }
-.summary-card {
-  background: var(--card);
+:not(pre) > code {
+  background: #eef2f7;
+  color: #0f172a;
+  padding: 0.12em 0.45em;
+  border-radius: 5px;
+  border: 1px solid #e2e8f0;
+  font-size: 0.88em;
+}
+
+/* Mermaid containers */
+.mermaid {
+  background: #ffffff;
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 1em;
+  padding: 1.25em;
+  margin: 1.25em 0;
+  text-align: center;
+  overflow-x: auto;
 }
-.summary-card .label { font-size: 0.8rem; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-.summary-card .value { font-size: 1.8rem; font-weight: 600; margin-top: 0.25em; }
-.pillar-badge { display: inline-block; padding: 0.1em 0.6em; border-radius: 999px; font-size: 0.75rem; background: #e0e7ff; color: #3730a3; }
-.severity {
+.mermaid svg { max-width: 100%; height: auto; }
+pre.mermaid-error {
+  background: #1f1415 !important;
+  border-color: var(--sev-critical) !important;
+  white-space: pre-wrap;
+}
+
+/* Tables */
+table { border-collapse: collapse; width: 100%; margin: 1em 0; font-size: 0.92em; }
+th, td { border-bottom: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+th { background: #f1f5f9; font-weight: 600; font-size: 0.9em; }
+blockquote { border-left: 3px solid var(--border); margin: 1em 0; padding: 0 1em; color: var(--ink-muted); }
+
+/* Layout shell */
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  height: var(--topbar-h);
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  padding: 0 1.5em;
+  gap: 1.25em;
+}
+.topbar .app-name { font-weight: 700; font-size: 1.05rem; }
+.topbar .meta-row { color: var(--ink-muted); font-size: 0.78rem; }
+.topbar .meta-row code { font-family: "SF Mono", Menlo, monospace; }
+.topbar .spacer { flex: 1; }
+.topbar .search-box input {
+  background: #f1f5f9;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.4em 0.7em;
+  font-size: 0.85rem;
+  width: 200px;
+}
+
+.tab-strip {
+  display: flex;
+  gap: 0.25em;
+  height: 100%;
+  align-items: center;
+}
+.tab-strip button {
+  background: transparent;
+  border: none;
+  color: var(--ink-muted);
+  padding: 0.45em 0.9em;
+  font-size: 0.88rem;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  position: relative;
+}
+.tab-strip button:hover { background: #f1f5f9; color: var(--ink); }
+.tab-strip button.active {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.tab-strip button .badge {
   display: inline-block;
-  padding: 0.1em 0.6em;
+  background: #e2e8f0;
+  color: var(--ink-muted);
   border-radius: 999px;
-  font-size: 0.75rem;
+  padding: 0.05em 0.5em;
+  font-size: 0.7rem;
+  margin-left: 0.35em;
+  font-weight: 600;
+}
+.tab-strip button.active .badge { background: #bfdbfe; color: #1e3a8a; }
+
+.shell { display: flex; min-height: calc(100vh - var(--topbar-h)); }
+.sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  padding: 1.25em 1em;
+  position: sticky; top: var(--topbar-h);
+  height: calc(100vh - var(--topbar-h));
+  overflow-y: auto;
+}
+.sidebar ul { list-style: none; padding: 0; margin: 0; }
+.sidebar .section-title {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-muted);
+  font-weight: 700;
+  margin: 1em 0 0.35em;
+}
+.sidebar .section-title:first-child { margin-top: 0; }
+.sidebar a {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.3em 0.55em;
+  border-radius: 5px;
+  color: var(--ink);
+  font-size: 0.83rem;
+  text-decoration: none;
+  margin-bottom: 2px;
+}
+.sidebar a:hover { background: #f1f5f9; text-decoration: none; }
+.sidebar a.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.sidebar .nested { margin-left: 0.7em; }
+.sidebar .count {
+  background: #f1f5f9;
+  color: var(--ink-muted);
+  padding: 0.05em 0.5em;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+main {
+  flex: 1;
+  padding: 1.75em 2.5em;
+  max-width: 1200px;
+}
+main h1, main h2, main h3, main h4 { scroll-margin-top: calc(var(--topbar-h) + 1em); }
+main h1 { font-size: 1.75rem; margin-top: 0; }
+main h2 {
+  font-size: 1.45rem;
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 0.3em;
+  margin-top: 2.5em;
+}
+main h3 { font-size: 1.15rem; margin-top: 1.5em; }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ---- Overview tab ---- */
+.hero-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.5em 1.75em;
+  margin-bottom: 1.5em;
+}
+.hero-card h1 { margin-top: 0; }
+.hero-summary-row {
+  display: flex;
+  gap: 1.5em;
+  margin-top: 0.75em;
+  font-size: 0.95rem;
+  flex-wrap: wrap;
+}
+.hero-summary-row .stat { display: flex; align-items: baseline; gap: 0.4em; }
+.hero-summary-row .stat-num {
+  font-size: 1.6rem; font-weight: 700; color: var(--ink);
+}
+.hero-summary-row .stat-num.critical { color: var(--sev-critical); }
+.hero-summary-row .stat-label {
+  font-size: 0.8rem; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.05em;
+}
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25em;
+  margin: 1.25em 0;
+}
+@media (max-width: 1000px) { .overview-grid { grid-template-columns: 1fr; } }
+
+.overview-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25em 1.4em;
+}
+.overview-card h3 {
+  margin-top: 0;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-muted);
+}
+
+.pillar-bars { display: flex; flex-direction: column; gap: 0.4em; }
+.pillar-bar {
+  display: grid;
+  grid-template-columns: 110px 1fr 50px;
+  gap: 0.75em;
+  align-items: center;
+  cursor: pointer;
+}
+.pillar-bar:hover { background: #f1f5f9; border-radius: 6px; }
+.pillar-bar .label { font-weight: 600; font-size: 0.88rem; }
+.pillar-bar .bar {
+  position: relative;
+  height: 22px;
+  background: #f1f5f9;
+  border-radius: 5px;
+  overflow: hidden;
+  display: flex;
+}
+.pillar-bar .bar-seg { height: 100%; }
+.pillar-bar .bar-seg.critical { background: var(--sev-critical); }
+.pillar-bar .bar-seg.major { background: var(--sev-major); }
+.pillar-bar .bar-seg.moderate { background: var(--sev-moderate); }
+.pillar-bar .bar-seg.minor { background: var(--sev-minor); }
+.pillar-bar .bar-total {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+}
+
+.top-list { list-style: none; padding: 0; margin: 0; }
+.top-list li {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  gap: 0.6em;
+  padding: 0.5em 0.5em;
+  border-bottom: 1px solid #f1f5f9;
+  align-items: center;
+  cursor: pointer;
+}
+.top-list li:hover { background: #f1f5f9; border-radius: 6px; }
+.top-list li:last-child { border-bottom: none; }
+.top-list .rank { color: var(--ink-muted); font-weight: 600; font-variant-numeric: tabular-nums; }
+.top-list .title { font-size: 0.88rem; }
+.top-list .id { color: var(--ink-muted); font-family: "SF Mono", Menlo, monospace; font-size: 0.78rem; margin-right: 0.35em; }
+.top-list .rice { font-variant-numeric: tabular-nums; font-size: 0.8rem; color: var(--ink-muted); }
+
+.hotspot-row {
+  display: grid;
+  grid-template-columns: 40px 1fr 80px;
+  gap: 0.6em;
+  padding: 0.35em 0.5em;
+  align-items: center;
+  font-size: 0.85rem;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+}
+.hotspot-row:hover { background: #f1f5f9; border-radius: 5px; }
+.hotspot-row .count-badge {
+  display: inline-block;
+  background: #fee2e2;
+  color: var(--sev-critical);
+  border-radius: 5px;
+  padding: 0.15em 0.5em;
+  font-weight: 600;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.hotspot-row .count-badge.moderate { background: #fef3c7; color: var(--sev-moderate); }
+.hotspot-row .count-badge.major { background: #fed7aa; color: var(--sev-major); }
+.hotspot-row .count-badge.minor { background: #e5e7eb; color: var(--ink-muted); }
+.hotspot-row .path { font-family: "SF Mono", Menlo, monospace; font-size: 0.78rem; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hotspot-row .max-sev {
+  text-align: right;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+/* ---- Severity / priority / pillar badges ---- */
+.severity, .priority, .pillar-badge {
+  display: inline-block;
+  padding: 0.1em 0.55em;
+  border-radius: 4px;
+  font-size: 0.72rem;
   font-weight: 600;
   text-transform: uppercase;
-  color: white;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
+.severity { color: white; }
 .sev-critical { background: var(--sev-critical); }
 .sev-major { background: var(--sev-major); }
 .sev-moderate { background: var(--sev-moderate); }
 .sev-minor { background: var(--sev-minor); }
-.priority {
-  display: inline-block;
-  padding: 0.1em 0.6em;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  background: #f1f5f9;
-  color: var(--ink-muted);
-}
+.priority { background: #f1f5f9; color: var(--ink-muted); }
 .pri-must { background: #fee2e2; color: var(--sev-critical); }
 .pri-should { background: #fed7aa; color: var(--sev-major); }
 .pri-could { background: #e0f2fe; color: #0369a1; }
 .pri-wont { background: #e5e7eb; }
+.pillar-badge { background: #e0e7ff; color: #3730a3; text-transform: none; }
+
+/* ---- Findings cards ---- */
 .finding {
-  background: var(--card);
+  background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 1em 1.25em;
   margin-bottom: 0.75em;
+  scroll-margin-top: calc(var(--topbar-h) + 2em);
 }
-.finding h3 { margin: 0 0 0.5em; font-size: 1.1rem; }
-.finding .meta-row { display: flex; gap: 0.5em; flex-wrap: wrap; font-size: 0.8rem; margin-bottom: 0.5em; }
-.finding .summary-text { margin: 0.25em 0 0.5em; color: var(--ink); }
-.finding .recommendation { color: var(--ink-muted); font-style: italic; }
-.finding .evidence { font-family: "SF Mono", Menlo, monospace; font-size: 0.8rem; background: #f1f5f9; padding: 0.5em; border-radius: 6px; margin-top: 0.5em; }
-.rice-score { font-weight: 600; color: var(--ink); }
-details { margin-top: 2em; }
-summary { cursor: pointer; font-weight: 600; padding: 0.5em 0; }
+.finding.hidden { display: none; }
+.finding h3 { margin: 0 0 0.4em; font-size: 1.05rem; }
+.finding h3 .id { color: var(--ink-muted); font-weight: 500; margin-right: 0.5em; font-family: "SF Mono", Menlo, monospace; font-size: 0.9em; }
+.finding .meta-row {
+  display: flex; gap: 0.35em; flex-wrap: wrap;
+  font-size: 0.75rem; margin-bottom: 0.5em;
+}
+.finding .rice-score {
+  background: #f1f5f9;
+  color: var(--ink-muted);
+  padding: 0.1em 0.55em;
+  border-radius: 4px;
+  font-weight: 600;
+}
+.finding .summary-text { margin: 0.3em 0 0.5em; color: var(--ink); }
+.finding .recommendation { color: var(--ink-muted); font-style: italic; margin-bottom: 0.5em; }
+.finding .recommendation strong { font-style: normal; color: var(--ink); }
+.finding .evidence {
+  font-family: "SF Mono", Menlo, monospace; font-size: 0.78rem;
+  background: #f8fafc; border: 1px solid var(--border);
+  padding: 0.6em 0.75em; border-radius: 6px;
+}
+.finding .evidence .file-pill {
+  display: inline-block;
+  background: var(--accent-soft);
+  color: #1e3a8a;
+  padding: 0.08em 0.45em;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: none;
+}
+.finding .evidence .file-pill:hover { background: #bfdbfe; text-decoration: none; }
+.finding .discussed-in {
+  margin-top: 0.65em;
+  padding-top: 0.65em;
+  border-top: 1px dashed var(--border);
+  font-size: 0.78rem;
+  color: var(--ink-muted);
+}
+.finding .discussed-in a {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 0.75rem;
+  background: #f1f5f9;
+  padding: 0.1em 0.5em;
+  border-radius: 4px;
+  margin-right: 0.3em;
+  display: inline-block;
+  margin-bottom: 0.15em;
+}
+
+/* ---- Filter bar ---- */
+.filter-bar {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.75em 1em;
+  margin-bottom: 1em;
+  display: flex;
+  gap: 0.75em;
+  flex-wrap: wrap;
+  align-items: center;
+  position: sticky;
+  top: calc(var(--topbar-h) + 0.75em);
+  z-index: 10;
+}
+.filter-bar input[type=text] {
+  flex: 1; min-width: 200px;
+  padding: 0.4em 0.7em;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+.filter-bar .facet-group {
+  display: flex; gap: 0.25em; flex-wrap: wrap;
+}
+.filter-bar .facet-group .label {
+  font-size: 0.72rem; color: var(--ink-muted); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  margin-right: 0.35em; align-self: center;
+}
+.filter-bar .facet-group label {
+  display: inline-flex; align-items: center; gap: 0.2em;
+  font-size: 0.78rem; cursor: pointer;
+  padding: 0.1em 0.4em; border-radius: 4px;
+}
+.filter-bar .facet-group label:hover { background: #f1f5f9; }
+.filter-bar .count { color: var(--ink-muted); font-size: 0.78rem; margin-left: auto; }
+.filter-bar .clear-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  padding: 0.3em 0.6em;
+  border-radius: 5px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  color: var(--ink-muted);
+}
+.filter-bar .clear-btn:hover { background: #f1f5f9; color: var(--ink); }
+
+/* ---- Authored doc articles ---- */
+.authored-doc {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.5em 2em;
+  margin-bottom: 1.5em;
+  scroll-margin-top: calc(var(--topbar-h) + 1em);
+}
+.authored-doc > :first-child { margin-top: 0; }
+.authored-doc > :last-child { margin-bottom: 0; }
+.authored-doc h1 { font-size: 1.4rem; border-bottom: 2px solid var(--border); padding-bottom: 0.3em; }
+.authored-doc h2 { font-size: 1.15rem; border: none; margin-top: 1.5em; }
+.authored-doc h3 { font-size: 1rem; margin-top: 1.2em; }
+.authored-doc ul, .authored-doc ol { padding-left: 1.5em; }
+.authored-doc img {
+  max-width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  display: block;
+  margin: 0.5em 0;
+}
+.authored-doc blockquote {
+  background: #f8fafc;
+  border-left: 4px solid var(--accent);
+  padding: 0.6em 1em;
+  margin: 1em 0;
+  color: var(--ink);
+}
+.authored-doc .rel-path {
+  font-size: 0.7rem;
+  color: var(--ink-muted);
+  font-family: "SF Mono", Menlo, monospace;
+  display: block;
+  margin-bottom: 0.6em;
+}
+.doc-findings-chips {
+  margin: 0.3em 0 0.75em;
+  font-size: 0.75rem;
+}
+.doc-findings-chips a {
+  display: inline-block;
+  background: #f1f5f9;
+  color: var(--ink);
+  padding: 0.12em 0.55em;
+  border-radius: 4px;
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 0.72rem;
+  margin-right: 0.3em;
+  margin-bottom: 0.15em;
+  text-decoration: none;
+}
+.doc-findings-chips a:hover { background: #e2e8f0; text-decoration: none; }
+
+/* ---- Flow canvas (Proposal B) ---- */
+.flow-doc { padding: 1.5em 1.75em; }
+.flow-intro { margin-bottom: 1em; font-size: 0.92em; color: var(--ink); }
+.flow-intro p { margin: 0.5em 0; }
+.flow-canvas-wrap {
+  position: relative;
+  background: #0f172a;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 1em 0;
+  height: 680px;
+  border: 1px solid #1e293b;
+}
+.flow-canvas-controls {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 5;
+  display: flex;
+  gap: 4px;
+  background: rgba(15, 23, 42, 0.8);
+  padding: 4px;
+  border-radius: 6px;
+  backdrop-filter: blur(6px);
+}
+.flow-canvas-controls button {
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #e2e8f0;
+  padding: 0.3em 0.7em;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.flow-canvas-controls button:hover { background: #334155; }
+.flow-canvas-controls .zoom-label {
+  color: #94a3b8;
+  font-size: 0.72rem;
+  padding: 0.3em 0.5em;
+  font-variant-numeric: tabular-nums;
+  min-width: 48px;
+  text-align: center;
+}
+.flow-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+}
+.flow-canvas .arrows {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+.flow-canvas .arrows line {
+  stroke: #64748b;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.flow-step {
+  position: absolute;
+  width: 140px;
+  height: 320px;
+  background: #0b1220;
+  border: 2px solid #1e293b;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  text-decoration: none;
+  color: #e6edf3;
+  transition: border-color 0.15s, transform 0.15s;
+  overflow: hidden;
+}
+.flow-step:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  text-decoration: none;
+}
+.flow-step.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.flow-step img {
+  width: 120px;
+  height: 260px;
+  object-fit: cover;
+  display: block;
+  margin: 8px 9px 4px;
+  border-radius: 5px;
+  border: 1px solid #1e293b;
+}
+.flow-step .label {
+  padding: 2px 10px 6px;
+  font-size: 0.68rem;
+  color: #cbd5e1;
+  text-align: center;
+  line-height: 1.3;
+}
+.flow-step .label .idx {
+  display: inline-block;
+  background: #1e293b;
+  color: #94a3b8;
+  padding: 0.05em 0.4em;
+  border-radius: 3px;
+  font-family: "SF Mono", Menlo, monospace;
+  font-weight: 600;
+  margin-right: 0.3em;
+}
+.flow-step .step-findings {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.flow-step .step-findings .fchip {
+  background: var(--sev-critical);
+  color: white;
+  font-size: 0.6rem;
+  padding: 0.1em 0.4em;
+  border-radius: 3px;
+  font-weight: 600;
+  font-family: "SF Mono", Menlo, monospace;
+}
+.flow-annotations {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.8em 1em;
+  margin-top: 0.5em;
+  max-height: 240px;
+  overflow-y: auto;
+  font-size: 0.88rem;
+}
+.flow-annotations .ann {
+  padding: 0.5em 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+.flow-annotations .ann:last-child { border-bottom: none; }
+.flow-annotations .ann.highlighted {
+  background: #fef3c7;
+  border-left: 3px solid #f59e0b;
+  padding-left: 0.75em;
+  margin-left: -0.75em;
+  border-radius: 3px;
+}
+.flow-annotations .ann strong { color: var(--ink); }
+details.flow-source {
+  margin-top: 1em;
+  padding: 0.5em 0.75em;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+details.flow-source summary {
+  font-size: 0.82rem;
+  color: var(--ink-muted);
+  cursor: pointer;
+  user-select: none;
+}
+details.flow-source[open] summary { margin-bottom: 0.75em; }
+details.flow-source .flow-source-body { font-size: 0.88em; }
+
+/* ---- Files tab (Proposal C) ---- */
+.file-tree { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 0.5em 0; }
+.file-row {
+  display: grid;
+  grid-template-columns: 50px 1fr 140px 90px;
+  gap: 0.75em;
+  align-items: center;
+  padding: 0.55em 1.25em;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.file-row:last-child { border-bottom: none; }
+.file-row:hover { background: #f1f5f9; }
+.file-row .count-badge {
+  background: #fee2e2;
+  color: var(--sev-critical);
+  border-radius: 5px;
+  padding: 0.15em 0.5em;
+  font-weight: 600;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.file-row .count-badge.moderate { background: #fef3c7; color: var(--sev-moderate); }
+.file-row .count-badge.major { background: #fed7aa; color: var(--sev-major); }
+.file-row .count-badge.minor { background: #e5e7eb; color: var(--ink-muted); }
+.file-row .path { font-family: "SF Mono", Menlo, monospace; font-size: 0.78rem; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-row .max-sev-label { font-size: 0.72rem; text-transform: uppercase; font-weight: 600; }
+.file-row .finding-ids { color: var(--ink-muted); font-size: 0.72rem; font-family: "SF Mono", Menlo, monospace; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---- Responsive ---- */
+@media (max-width: 900px) {
+  .shell { flex-direction: column; }
+  .sidebar { width: 100%; height: auto; position: static; border-right: none; border-bottom: 1px solid var(--border); }
+  main { padding: 1em; }
+  .topbar { padding: 0 1em; flex-wrap: wrap; }
+  .topbar .meta-row { display: none; }
+}
 </style>
 </head>
 <body>
 
-<header>
-  <h1>iOS Audit &mdash; {{ audit.meta.app.name if audit.meta.app else 'Unknown' }}</h1>
-  <div class="meta">
-    Generated {{ audit.meta.generated_at if audit.meta.generated_at else generated_at }}
-    &middot; Commit <code>{{ (audit.meta.repo.git_rev or '')[:12] }}</code>
-    {% if audit.meta.repo.git_branch %}on <code>{{ audit.meta.repo.git_branch }}</code>{% endif %}
-    {% if audit.meta.app.bundle_id %}&middot; {{ audit.meta.app.bundle_id }}{% endif %}
+<!-- ================= TOP BAR ================= -->
+<header class="topbar">
+  <div>
+    <div class="app-name">iOS Audit — {{ audit.meta.app.name if audit.meta.app else 'Unknown' }}</div>
+    <div class="meta-row">
+      {{ audit.meta.generated_at if audit.meta.generated_at else generated_at }}
+      &middot; <code>{{ (audit.meta.repo.git_rev or '')[:12] }}</code>
+      {% if audit.meta.repo.git_branch %}on <code>{{ audit.meta.repo.git_branch }}</code>{% endif %}
+    </div>
   </div>
+  <nav class="tab-strip" id="tab-strip">
+    <button data-tab="overview" class="active">Overview</button>
+    <button data-tab="findings">Findings <span class="badge">{{ audit.findings | length }}</span></button>
+    <button data-tab="docs">Docs</button>
+    <button data-tab="flows">Flows <span class="badge">{{ sections | selectattr('slug','equalto','ux') | map(attribute='docs') | map('selectattr','is_flow') | map('list') | map('length') | sum }}</span></button>
+    <button data-tab="files">Files <span class="badge">{{ indexes.file_tree | length }}</span></button>
+  </nav>
+  <div class="spacer"></div>
+  <div class="search-box"><input type="text" id="global-search" placeholder="⌘K search findings…"></div>
 </header>
 
-<section>
-  <h2>Summary</h2>
-  <div class="summary-grid">
-    <div class="summary-card">
-      <div class="label">Total Findings</div>
-      <div class="value">{{ audit.findings | length }}</div>
-    </div>
-    <div class="summary-card">
-      <div class="label">Ship Blockers</div>
-      <div class="value" style="color: var(--sev-critical);">{{ audit.summary.ship_blockers or 0 }}</div>
-    </div>
-    <div class="summary-card">
-      <div class="label">RICE Total</div>
-      <div class="value">{{ audit.summary.rice_total or 0 }}</div>
-    </div>
-    {% for pillar, count in (audit.summary.by_pillar or {}).items() %}
-    <div class="summary-card">
-      <div class="label">{{ pillar | replace('_', ' ') | title }}</div>
-      <div class="value">{{ count }}</div>
-    </div>
+<div class="shell">
+
+<!-- ================= SIDEBAR ================= -->
+<nav class="sidebar" id="sidebar">
+  <!-- Sidebar content is tab-scoped and updated by JS -->
+  <div data-sidebar-for="overview">
+    <div class="section-title">Overview</div>
+    <ul>
+      <li><a href="#overview-summary">Summary</a></li>
+      <li><a href="#overview-pillars">Pillars</a></li>
+      <li><a href="#overview-top-rice">Top by RICE</a></li>
+      <li><a href="#overview-ship-blockers">Ship Blockers <span class="count">{{ overview.ship_blockers | length }}</span></a></li>
+      <li><a href="#overview-hotspots">File Hotspots</a></li>
+    </ul>
+  </div>
+
+  <div data-sidebar-for="findings" style="display:none">
+    <div class="section-title">Findings by Pillar</div>
+    <ul>
+      {% for p in overview.pillar_stats %}
+      <li><a href="#findings-pillar-{{ p.slug }}">{{ p.title }} <span class="count">{{ p.count }}</span></a></li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div data-sidebar-for="docs" style="display:none">
+    {% for section in sections %}
+      {% set non_flow_docs = section.docs | rejectattr('is_flow') | list %}
+      {% if non_flow_docs %}
+      <div class="section-title">{{ section.title }}</div>
+      <ul>
+        {% for doc in non_flow_docs %}
+        <li><a href="#doc-{{ doc.id }}">{{ doc.title }}</a></li>
+        {% endfor %}
+      </ul>
+      {% endif %}
     {% endfor %}
+  </div>
+
+  <div data-sidebar-for="flows" style="display:none">
+    <div class="section-title">Flows</div>
+    <ul>
+      {% for section in sections %}
+        {% if section.slug == 'ux' %}
+          {% for doc in section.docs %}
+            {% if doc.is_flow %}
+            <li><a href="#doc-{{ doc.id }}">{{ doc.title }}</a></li>
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div data-sidebar-for="files" style="display:none">
+    <div class="section-title">Top file hotspots</div>
+    <ul>
+      {% for f in indexes.file_tree[:15] %}
+      <li><a href="#file-{{ loop.index0 }}" title="{{ f.path }}">{{ f.path.split('/')[-1] }} <span class="count">{{ f.count }}</span></a></li>
+      {% endfor %}
+    </ul>
+  </div>
+</nav>
+
+<main>
+
+<!-- ================= OVERVIEW TAB ================= -->
+<section class="tab-panel active" data-tab="overview">
+  <div class="hero-card">
+    <h1 id="overview-summary">{{ audit.meta.app.name if audit.meta.app else 'iOS Audit' }}</h1>
+    <div class="hero-summary-row">
+      <div class="stat"><span class="stat-num">{{ audit.findings | length }}</span><span class="stat-label">Findings</span></div>
+      <div class="stat"><span class="stat-num critical">{{ audit.summary.ship_blockers or 0 }}</span><span class="stat-label">Ship blockers</span></div>
+      <div class="stat"><span class="stat-num">{{ audit.summary.rice_total or 0 }}</span><span class="stat-label">RICE total</span></div>
+      <div class="stat"><span class="stat-num">{{ indexes.file_tree | length }}</span><span class="stat-label">Files</span></div>
+    </div>
+    {% if overview.exec_brief_html %}
+      <div class="exec-brief" style="margin-top:1em">{{ overview.exec_brief_html | safe }}</div>
+    {% else %}
+      <p style="color:var(--ink-muted);font-size:0.88rem;margin-top:1em;font-style:italic">
+        No exec brief authored yet. To add one, write <code>docs/00-exec-brief.md</code> inside the audit output
+        and re-run render. This space will render the first ~5 bullets of that file.
+      </p>
+    {% endif %}
+  </div>
+
+  <div class="overview-grid">
+    <div class="overview-card" id="overview-pillars">
+      <h3>Pillars</h3>
+      <div class="pillar-bars">
+        {% for p in overview.pillar_stats %}
+        <div class="pillar-bar" data-goto-pillar="{{ p.slug }}">
+          <div class="label">{{ p.title }}</div>
+          <div class="bar">
+            {% set total = p.count %}
+            {% if p.critical %}<div class="bar-seg critical" style="width:{{ (p.critical * 100 / total) | round(1) }}%" title="{{ p.critical }} critical"></div>{% endif %}
+            {% if p.major %}<div class="bar-seg major" style="width:{{ (p.major * 100 / total) | round(1) }}%" title="{{ p.major }} major"></div>{% endif %}
+            {% if p.moderate %}<div class="bar-seg moderate" style="width:{{ (p.moderate * 100 / total) | round(1) }}%" title="{{ p.moderate }} moderate"></div>{% endif %}
+            {% if p.minor %}<div class="bar-seg minor" style="width:{{ (p.minor * 100 / total) | round(1) }}%" title="{{ p.minor }} minor"></div>{% endif %}
+          </div>
+          <div class="bar-total">{{ p.count }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="overview-card" id="overview-top-rice">
+      <h3>Top 10 by RICE score</h3>
+      <ol class="top-list">
+        {% for f in overview.top_rice %}
+        <li data-goto-finding="{{ f.id }}">
+          <span class="rank">{{ loop.index }}.</span>
+          <span><span class="id">{{ f.id }}</span>{{ f.title }}</span>
+          <span class="rice">{{ f.rice.score if f.rice else 0 }}</span>
+        </li>
+        {% endfor %}
+      </ol>
+    </div>
+
+    <div class="overview-card" id="overview-ship-blockers">
+      <h3>Ship blockers ({{ overview.ship_blockers | length }})</h3>
+      {% if overview.ship_blockers %}
+      <ol class="top-list">
+        {% for f in overview.ship_blockers %}
+        <li data-goto-finding="{{ f.id }}">
+          <span class="rank">{{ loop.index }}.</span>
+          <span><span class="id">{{ f.id }}</span>{{ f.title }}</span>
+          <span class="rice">{{ f.rice.score if f.rice else 0 }}</span>
+        </li>
+        {% endfor %}
+      </ol>
+      {% else %}
+      <p style="color:var(--ink-muted);font-style:italic">No ship blockers. 🎉</p>
+      {% endif %}
+    </div>
+
+    <div class="overview-card" id="overview-hotspots">
+      <h3>Top 10 file hotspots</h3>
+      {% for f in overview.file_hotspots %}
+      <div class="hotspot-row" data-goto-file="{{ f.path }}">
+        <span class="count-badge {{ f.max_severity }}">{{ f.count }}</span>
+        <span class="path" title="{{ f.path }}">{{ f.path }}</span>
+        <span class="max-sev"><span class="severity sev-{{ f.max_severity }}">{{ f.max_severity }}</span></span>
+      </div>
+      {% endfor %}
+    </div>
   </div>
 </section>
 
-<section>
-  <h2>Findings</h2>
+<!-- ================= FINDINGS TAB ================= -->
+<section class="tab-panel" data-tab="findings">
+  <div class="filter-bar">
+    <input type="text" id="finding-search" placeholder="Filter by id, title, tag, file path…">
+    <div class="facet-group">
+      <span class="label">Severity</span>
+      <label><input type="checkbox" class="sev-filter" value="critical" checked>Critical</label>
+      <label><input type="checkbox" class="sev-filter" value="major" checked>Major</label>
+      <label><input type="checkbox" class="sev-filter" value="moderate" checked>Moderate</label>
+      <label><input type="checkbox" class="sev-filter" value="minor" checked>Minor</label>
+    </div>
+    <div class="facet-group">
+      <span class="label">Pillar</span>
+      {% for p in overview.pillar_stats %}
+      <label><input type="checkbox" class="pillar-filter" value="{{ p.slug }}" checked>{{ p.title }}</label>
+      {% endfor %}
+    </div>
+    <div class="facet-group">
+      <span class="label">Priority</span>
+      <label><input type="checkbox" class="pri-filter" value="must" checked>Must</label>
+      <label><input type="checkbox" class="pri-filter" value="should" checked>Should</label>
+      <label><input type="checkbox" class="pri-filter" value="could" checked>Could</label>
+      <label><input type="checkbox" class="pri-filter" value="wont" checked>Won't</label>
+    </div>
+    <button class="clear-btn" id="clear-filters">Clear</button>
+    <span class="count" id="finding-count">{{ audit.findings | length }} shown</span>
+  </div>
+
   {% if not audit.findings %}
     <p><em>No findings recorded.</em></p>
   {% endif %}
+
   {% for f in audit.findings %}
-  <div class="finding">
-    <h3>{{ f.id }} &mdash; {{ f.title }}</h3>
+  <div class="finding"
+       id="finding-{{ f.id }}"
+       data-severity="{{ f.severity }}"
+       data-pillar="{{ f.pillar }}"
+       data-priority="{{ f.priority }}"
+       data-search="{{ f.id }} {{ f.title }} {{ f.tags | join(' ') if f.tags else '' }} {% for e in (f.evidence or []) %}{{ e.path }} {% endfor %}">
+    <h3><span class="id">{{ f.id }}</span>{{ f.title }}</h3>
     <div class="meta-row">
       <span class="pillar-badge">{{ f.pillar | replace('_', ' ') }}</span>
       <span class="severity {{ f.severity | severity_class }}">{{ f.severity }}</span>
@@ -136,6 +965,7 @@ summary { cursor: pointer; font-weight: 600; padding: 0.5em 0; }
       {% if f.rice and f.rice.score is not none %}
       <span class="rice-score">RICE {{ f.rice.score }}</span>
       {% endif %}
+      {% for tag in (f.tags or []) %}<span class="priority">{{ tag }}</span>{% endfor %}
     </div>
     <p class="summary-text">{{ f.summary }}</p>
     {% if f.recommendation %}
@@ -144,7 +974,19 @@ summary { cursor: pointer; font-weight: 600; padding: 0.5em 0; }
     {% if f.evidence %}
     <div class="evidence">
       {% for e in f.evidence %}
-      {{ e.path }}{% if e.line_start %}:{{ e.line_start }}{% if e.line_end %}–{{ e.line_end }}{% endif %}{% endif %}<br>
+      <div>
+        {% if e.path %}<a class="file-pill" href="#file-pivot" data-file-path="{{ e.path }}">{{ e.path }}</a>{% endif %}{% if e.line_start %}:{{ e.line_start }}{% if e.line_end %}–{{ e.line_end }}{% endif %}{% endif %}
+        {% if e.snippet %}<br><code>{{ e.snippet | truncate(180) }}</code>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% set backlinks = indexes.docs_by_finding.get(f.id) %}
+    {% if backlinks %}
+    <div class="discussed-in">
+      <strong>Discussed in:</strong>
+      {% for b in backlinks %}
+      <a href="#doc-{{ b.doc_id }}" data-nav-tab="{% if b.section_slug == 'ux' and '/flows/' in b.rel_path %}flows{% else %}docs{% endif %}">{{ b.rel_path }}</a>
       {% endfor %}
     </div>
     {% endif %}
@@ -152,10 +994,441 @@ summary { cursor: pointer; font-weight: 600; padding: 0.5em 0; }
   {% endfor %}
 </section>
 
-<details>
-  <summary>Meta (raw)</summary>
-  <pre style="background:#f1f5f9;padding:1em;border-radius:10px;overflow:auto;font-size:0.75rem">{{ audit.meta | tojson(indent=2) }}</pre>
-</details>
+<!-- ================= DOCS TAB ================= -->
+<section class="tab-panel" data-tab="docs">
+  {% for section in sections %}
+    {% set non_flow_docs = section.docs | rejectattr('is_flow') | list %}
+    {% if non_flow_docs %}
+    <h2 id="section-{{ section.slug }}">{{ section.title }}</h2>
+    {% for doc in non_flow_docs %}
+    <article class="authored-doc" id="doc-{{ doc.id }}">
+      <code class="rel-path">{{ doc.rel_path }}</code>
+      {{ doc.html | safe }}
+    </article>
+    {% endfor %}
+    {% endif %}
+  {% endfor %}
+</section>
 
+<!-- ================= FLOWS TAB ================= -->
+<section class="tab-panel" data-tab="flows">
+  {% for section in sections %}
+    {% if section.slug == 'ux' %}
+      {% for doc in section.docs %}
+        {% if doc.is_flow and doc.flow_scene %}
+        <article class="authored-doc flow-doc" id="doc-{{ doc.id }}">
+          <h1>{{ doc.title }}</h1>
+          <code class="rel-path">{{ doc.rel_path }}</code>
+          {% if doc.flow_scene.intro_html %}
+          <div class="flow-intro">{{ doc.flow_scene.intro_html | safe }}</div>
+          {% endif %}
+          <div class="flow-canvas-wrap" data-flow="{{ doc.id }}">
+            <div class="flow-canvas-controls">
+              <button data-pz-action="fit">Fit</button>
+              <button data-pz-action="reset">100%</button>
+              <span class="zoom-label">100%</span>
+            </div>
+            <div class="flow-canvas" style="width:{{ doc.flow_scene.canvas_width }}px;height:{{ doc.flow_scene.canvas_height }}px">
+              {% if doc.flow_scene.edges %}
+              <svg class="arrows" width="{{ doc.flow_scene.canvas_width }}" height="{{ doc.flow_scene.canvas_height }}">
+                <defs>
+                  <marker id="arrow-head-{{ doc.id }}" viewBox="0 0 10 10" refX="9" refY="5"
+                          markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
+                  </marker>
+                </defs>
+                {% for edge in doc.flow_scene.edges %}
+                <line x1="{{ edge.x1 }}" y1="{{ edge.y1 }}" x2="{{ edge.x2 }}" y2="{{ edge.y2 }}"
+                      marker-end="url(#arrow-head-{{ doc.id }})"/>
+                {% endfor %}
+              </svg>
+              {% endif %}
+              {% for step in doc.flow_scene.steps %}
+              <a class="flow-step"
+                 href="{{ step.full_src }}"
+                 data-pswp-width="{{ step.full_w }}"
+                 data-pswp-height="{{ step.full_h }}"
+                 data-step-idx="{{ step.idx }}"
+                 data-flow-id="{{ doc.id }}"
+                 style="left:{{ step.x }}px;top:{{ step.y }}px">
+                <img src="{{ step.thumb_src }}" loading="lazy" alt="{{ step.caption }}">
+                <div class="label"><span class="idx">S{{ step.idx }}</span>{{ step.title }}</div>
+                {% if step.findings %}
+                <div class="step-findings">
+                  {% for fid in step.findings %}<span class="fchip">{{ fid }}</span>{% endfor %}
+                </div>
+                {% endif %}
+              </a>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="flow-annotations" data-flow="{{ doc.id }}">
+            {% for step in doc.flow_scene.steps %}
+            <div class="ann" data-step-idx="{{ step.idx }}">
+              <strong>S{{ step.idx }} · {{ step.title }}</strong>
+              {{ step.prose_html | safe }}
+              {% if step.findings %}
+              <div style="margin-top:0.3em">
+                {% for fid in step.findings %}
+                <a href="#finding-{{ fid }}" data-nav-tab="findings" class="priority" style="text-decoration:none;margin-right:0.3em">{{ fid }}</a>
+                {% endfor %}
+              </div>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+          {% if doc.flow_scene.outro_html %}
+          <details class="flow-source">
+            <summary>Full narrative, edge cases & related</summary>
+            <div class="flow-source-body">{{ doc.flow_scene.outro_html | safe }}</div>
+          </details>
+          {% endif %}
+        </article>
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+  {% endfor %}
+</section>
+
+<!-- ================= FILES TAB ================= -->
+<section class="tab-panel" data-tab="files">
+  <div class="hero-card">
+    <h2 style="margin-top:0">Source files with findings</h2>
+    <p style="color:var(--ink-muted);font-size:0.88rem">
+      {{ indexes.file_tree | length }} files across {{ audit.findings | length }} findings.
+      Click a row to filter Findings to just that file.
+    </p>
+  </div>
+  <div class="file-tree">
+    {% for f in indexes.file_tree %}
+    <div class="file-row" id="file-{{ loop.index0 }}" data-file-path="{{ f.path }}">
+      <span class="count-badge {{ f.max_severity }}">{{ f.count }}</span>
+      <span class="path" title="{{ f.path }}">{{ f.path }}</span>
+      <span class="max-sev-label"><span class="severity sev-{{ f.max_severity }}">{{ f.max_severity }}</span></span>
+      <span class="finding-ids" title="{{ f.finding_ids | join(', ') }}">{{ f.finding_ids | join(' ') }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+</main>
+</div>
+
+<!-- Inline JSON indexes for client-side pivot views -->
+<script id="audit-indexes" type="application/json">{{ indexes | tojson_script | safe }}</script>
+
+<script>
+(function() {
+  'use strict';
+
+  // ========== Tab switching (hash-routed) ==========
+  const tabs = document.querySelectorAll('.tab-strip button');
+  const panels = document.querySelectorAll('.tab-panel');
+  const sidebarGroups = document.querySelectorAll('.sidebar [data-sidebar-for]');
+
+  function activateTab(name) {
+    tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+    panels.forEach(p => p.classList.toggle('active', p.dataset.tab === name));
+    sidebarGroups.forEach(s => s.style.display = s.dataset.sidebarFor === name ? '' : 'none');
+    if (location.hash.split(':')[0] !== '#tab-' + name) {
+      history.replaceState(null, '', '#tab-' + name);
+    }
+  }
+
+  tabs.forEach(t => t.addEventListener('click', () => activateTab(t.dataset.tab)));
+
+  // Cross-tab navigation: any <a> with data-nav-tab jumps tab then anchor
+  document.addEventListener('click', function(e) {
+    const link = e.target.closest('a[data-nav-tab]');
+    if (link) {
+      e.preventDefault();
+      activateTab(link.dataset.navTab);
+      const href = link.getAttribute('href');
+      if (href && href.startsWith('#')) {
+        setTimeout(() => {
+          const target = document.querySelector(href);
+          if (target) target.scrollIntoView({behavior: 'smooth', block: 'start'});
+        }, 50);
+      }
+    }
+  });
+
+  // Overview → navigate
+  document.querySelectorAll('[data-goto-finding]').forEach(el => {
+    el.addEventListener('click', () => {
+      activateTab('findings');
+      setTimeout(() => {
+        const fid = el.dataset.gotoFinding;
+        const target = document.getElementById('finding-' + fid);
+        if (target) target.scrollIntoView({behavior: 'smooth', block: 'center'});
+      }, 50);
+    });
+  });
+  document.querySelectorAll('[data-goto-pillar]').forEach(el => {
+    el.addEventListener('click', () => {
+      activateTab('findings');
+      // Uncheck all pillar filters except the target
+      const target = el.dataset.gotoPillar;
+      document.querySelectorAll('.pillar-filter').forEach(cb => {
+        cb.checked = cb.value === target;
+      });
+      applyFindingFilters();
+    });
+  });
+  document.querySelectorAll('[data-goto-file]').forEach(el => {
+    el.addEventListener('click', () => {
+      activateTab('findings');
+      const path = el.dataset.gotoFile;
+      document.getElementById('finding-search').value = path;
+      applyFindingFilters();
+    });
+  });
+
+  // File-row and file-pill clicks → filter Findings by that file
+  document.querySelectorAll('.file-row').forEach(row => {
+    row.addEventListener('click', () => {
+      activateTab('findings');
+      document.getElementById('finding-search').value = row.dataset.filePath;
+      applyFindingFilters();
+    });
+  });
+  document.querySelectorAll('.file-pill').forEach(pill => {
+    pill.addEventListener('click', (e) => {
+      e.preventDefault();
+      activateTab('findings');
+      document.getElementById('finding-search').value = pill.dataset.filePath;
+      applyFindingFilters();
+      setTimeout(() => {
+        document.getElementById('finding-search').scrollIntoView({behavior: 'smooth', block: 'start'});
+      }, 50);
+    });
+  });
+
+  // ========== Findings filter ==========
+  const search = document.getElementById('finding-search');
+  const sevFilters = document.querySelectorAll('.sev-filter');
+  const pillarFilters = document.querySelectorAll('.pillar-filter');
+  const priFilters = document.querySelectorAll('.pri-filter');
+  const count = document.getElementById('finding-count');
+  const findings = document.querySelectorAll('.finding');
+  const clearBtn = document.getElementById('clear-filters');
+
+  function applyFindingFilters() {
+    const query = (search.value || '').toLowerCase().trim();
+    const activeSevs = new Set(Array.from(sevFilters).filter(cb => cb.checked).map(cb => cb.value));
+    const activePillars = new Set(Array.from(pillarFilters).filter(cb => cb.checked).map(cb => cb.value));
+    const activePris = new Set(Array.from(priFilters).filter(cb => cb.checked).map(cb => cb.value));
+    let shown = 0;
+    findings.forEach(el => {
+      const sev = el.dataset.severity;
+      const pillar = el.dataset.pillar;
+      const priority = el.dataset.priority;
+      const blob = (el.dataset.search || '').toLowerCase();
+      const ok =
+        activeSevs.has(sev) &&
+        activePillars.has(pillar) &&
+        activePris.has(priority) &&
+        (!query || blob.indexOf(query) >= 0);
+      el.classList.toggle('hidden', !ok);
+      if (ok) shown++;
+    });
+    count.textContent = shown + ' shown';
+  }
+
+  search.addEventListener('input', applyFindingFilters);
+  sevFilters.forEach(cb => cb.addEventListener('change', applyFindingFilters));
+  pillarFilters.forEach(cb => cb.addEventListener('change', applyFindingFilters));
+  priFilters.forEach(cb => cb.addEventListener('change', applyFindingFilters));
+
+  clearBtn.addEventListener('click', () => {
+    search.value = '';
+    [...sevFilters, ...pillarFilters, ...priFilters].forEach(cb => cb.checked = true);
+    applyFindingFilters();
+  });
+
+  // ⌘K / Ctrl+K focuses the top search box
+  const globalSearch = document.getElementById('global-search');
+  document.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault();
+      activateTab('findings');
+      search.focus();
+      search.select();
+    }
+  });
+  globalSearch.addEventListener('input', () => {
+    search.value = globalSearch.value;
+    activateTab('findings');
+    applyFindingFilters();
+  });
+
+  // ========== Restore tab from hash on load ==========
+  function restoreFromHash() {
+    const h = location.hash.replace(/^#/, '');
+    if (h.startsWith('tab-')) {
+      activateTab(h.slice(4));
+    } else if (h.startsWith('finding-')) {
+      activateTab('findings');
+      setTimeout(() => {
+        const target = document.getElementById(h);
+        if (target) target.scrollIntoView({behavior: 'smooth', block: 'center'});
+      }, 50);
+    } else if (h.startsWith('doc-')) {
+      // Decide tab based on doc id prefix
+      const isFlow = h.startsWith('doc-ux-flows-');
+      activateTab(isFlow ? 'flows' : 'docs');
+      setTimeout(() => {
+        const target = document.getElementById(h);
+        if (target) target.scrollIntoView({behavior: 'smooth', block: 'start'});
+      }, 50);
+    } else if (h.startsWith('file-')) {
+      activateTab('files');
+      setTimeout(() => {
+        const target = document.getElementById(h);
+        if (target) target.scrollIntoView({behavior: 'smooth', block: 'start'});
+      }, 50);
+    }
+  }
+  window.addEventListener('hashchange', restoreFromHash);
+  restoreFromHash();
+
+  // ========== highlight.js init ==========
+  if (typeof hljs !== 'undefined') {
+    try {
+      document.querySelectorAll('pre code').forEach(function(block) {
+        if (block.closest('.mermaid')) return;
+        hljs.highlightElement(block);
+      });
+    } catch (e) { console.warn('hljs highlight failed:', e); }
+  }
+
+  // ========== mermaid init (per-block error recovery) ==========
+  if (typeof mermaid !== 'undefined') {
+    try {
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: 'default',
+        themeVariables: {
+          fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
+          primaryColor: '#e0e7ff',
+          primaryTextColor: '#0f172a',
+          primaryBorderColor: '#3b82f6',
+          lineColor: '#475569',
+          secondaryColor: '#fef3c7',
+          tertiaryColor: '#f1f5f9',
+        },
+        securityLevel: 'loose',
+        flowchart: { htmlLabels: true, curve: 'basis' },
+      });
+      (async () => {
+        const blocks = Array.from(document.querySelectorAll('.mermaid'));
+        for (let i = 0; i < blocks.length; i++) {
+          const el = blocks[i];
+          const source = el.textContent.trim();
+          const id = 'mermaid-svg-' + i;
+          try {
+            const { svg } = await mermaid.render(id, source);
+            el.innerHTML = svg;
+            el.setAttribute('data-processed', 'true');
+          } catch (err) {
+            console.warn('mermaid block ' + i + ' failed:', err);
+            const pre = document.createElement('pre');
+            pre.className = 'mermaid-error';
+            pre.textContent = source;
+            const note = document.createElement('div');
+            note.style.cssText = 'color:#b91c1c;font-size:0.8em;margin-bottom:0.5em;font-style:italic';
+            note.textContent = '⚠︎ mermaid render failed (' + (err && err.message ? err.message.split('\n')[0] : 'unknown') + ') — showing source';
+            el.innerHTML = '';
+            el.appendChild(note);
+            el.appendChild(pre);
+          }
+        }
+      })();
+    } catch (e) { console.warn('mermaid init failed:', e); }
+  }
+
+  // ========== Flow canvas panzoom + annotation sync ==========
+  if (typeof panzoom !== 'undefined') {
+    document.querySelectorAll('.flow-canvas-wrap').forEach(wrap => {
+      const canvas = wrap.querySelector('.flow-canvas');
+      if (!canvas) return;
+      const instance = panzoom(canvas, {
+        bounds: false,
+        boundsPadding: 0.1,
+        maxZoom: 3,
+        minZoom: 0.2,
+        smoothScroll: false,
+        zoomDoubleClickSpeed: 1,
+      });
+      const zoomLabel = wrap.querySelector('.zoom-label');
+      instance.on('zoom', () => {
+        const t = instance.getTransform();
+        if (zoomLabel) zoomLabel.textContent = Math.round(t.scale * 100) + '%';
+      });
+      const fitBtn = wrap.querySelector('[data-pz-action="fit"]');
+      const resetBtn = wrap.querySelector('[data-pz-action="reset"]');
+      if (fitBtn) fitBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const wRect = wrap.getBoundingClientRect();
+        const cRect = canvas.getBoundingClientRect();
+        const currentT = instance.getTransform();
+        // compute un-scaled canvas size
+        const w = cRect.width / currentT.scale;
+        const h = cRect.height / currentT.scale;
+        const scale = Math.min((wRect.width - 40) / w, (wRect.height - 80) / h, 1);
+        instance.zoomAbs(0, 0, scale);
+        instance.moveTo(20, 20);
+      });
+      if (resetBtn) resetBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        instance.zoomAbs(0, 0, 1);
+        instance.moveTo(0, 0);
+      });
+      // Default fit on load
+      setTimeout(() => { if (fitBtn) fitBtn.click(); }, 0);
+    });
+
+    // Clicking a step card highlights the matching annotation
+    document.querySelectorAll('.flow-step').forEach(card => {
+      card.addEventListener('click', (e) => {
+        // Allow photoswipe to handle unmodified clicks; for our sync, suppress
+        // if a modifier is held we treat it as a highlight-only click.
+        if (e.shiftKey || e.altKey) {
+          e.preventDefault();
+          const flowId = card.dataset.flowId;
+          const stepIdx = card.dataset.stepIdx;
+          document.querySelectorAll('.flow-step[data-flow-id="' + flowId + '"]').forEach(c => c.classList.remove('active'));
+          card.classList.add('active');
+          const annPane = document.querySelector('.flow-annotations[data-flow="' + flowId + '"]');
+          if (annPane) {
+            annPane.querySelectorAll('.ann').forEach(a => a.classList.remove('highlighted'));
+            const target = annPane.querySelector('.ann[data-step-idx="' + stepIdx + '"]');
+            if (target) {
+              target.classList.add('highlighted');
+              target.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+            }
+          }
+        }
+      });
+    });
+  }
+
+  // ========== PhotoSwipe lightbox for flow step thumbnails ==========
+  (async function initPhotoSwipe() {
+    try {
+      const PhotoSwipeLightbox = (await import('https://cdn.jsdelivr.net/npm/photoswipe@5.4.4/dist/photoswipe-lightbox.esm.min.js')).default;
+      const lightbox = new PhotoSwipeLightbox({
+        gallery: '.flow-canvas',
+        children: 'a.flow-step',
+        pswpModule: () => import('https://cdn.jsdelivr.net/npm/photoswipe@5.4.4/dist/photoswipe.esm.min.js'),
+      });
+      lightbox.init();
+    } catch (e) {
+      console.warn('PhotoSwipe init failed:', e);
+    }
+  })();
+
+})();
+</script>
 </body>
 </html>

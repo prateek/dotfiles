@@ -7,6 +7,7 @@ Captures screenshots and accessibility trees at each step, outputs structured JS
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -26,16 +27,40 @@ DEFAULT_SIM_SKILL_DIR = (
 )
 
 
+ENV_RE = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}|\$([A-Za-z_][A-Za-z0-9_]*)")
+
+
+def _expand_env(value):
+    """Recursively expand ${VAR} and $VAR references. Missing vars raise KeyError.
+
+    Expansion happens in-memory only. The expanded structure is never
+    written to disk, so plaintext credentials don't land in a resolved
+    YAML or results.json.
+    """
+    if isinstance(value, str):
+        def replace(match):
+            name = match.group(1) or match.group(2)
+            if name not in os.environ:
+                raise KeyError(f"env var ${{{name}}} is not set")
+            return os.environ[name]
+        return ENV_RE.sub(replace, value)
+    if isinstance(value, dict):
+        return {k: _expand_env(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_expand_env(v) for v in value]
+    return value
+
+
 def load_workflows(path: str) -> dict:
-    """Load workflow definitions from YAML file."""
+    """Load workflow definitions from YAML file with in-memory env var expansion."""
     try:
         import yaml
     except ImportError:
-        # Fallback: try to parse simple YAML manually or error
         print("PyYAML not installed. Install with: pip install pyyaml", file=sys.stderr)
         sys.exit(1)
     with open(path) as f:
-        return yaml.safe_load(f)
+        data = yaml.safe_load(f)
+    return _expand_env(data)
 
 
 def run_sim_script(sim_skill_dir: str, script: str, args: list[str]) -> tuple[bool, str]:
@@ -138,7 +163,13 @@ def execute_step(
             keyboard_args = ["--udid", udid] + keyboard_args
         ok, output = run_sim_script(sim_skill_dir, "keyboard.py", keyboard_args)
         result["success"] = ok
-        result["output"] = output
+        # Do NOT echo the typed value or the keyboard.py output into results.
+        # Typed values may be passwords or tokens — treat them as opaque.
+        if ok:
+            result["output"] = f"Typed <redacted, {len(value)} chars>"
+        else:
+            # Preserve error signal but strip any echo of the value.
+            result["output"] = f"type failed (len={len(value)})"
         result["interaction_type"] = "keyboard input"
 
     elif action == "swipe":

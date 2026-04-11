@@ -142,6 +142,7 @@ def cmd_render(args: argparse.Namespace) -> int:
 
 def cmd_diff(args: argparse.Namespace) -> int:
     from diff import diff  # noqa: E402
+    import shutil as _sh
 
     current = Path(args.current).resolve()
     baseline = Path(args.baseline).resolve() if args.baseline else None
@@ -153,11 +154,20 @@ def cmd_diff(args: argparse.Namespace) -> int:
 
     if baseline is None or not baseline.exists():
         print("First audit — no baseline found. Skipping diff.")
-        return 0
+    else:
+        out_path = Path(args.output).resolve() if args.output else current.parent / "audit-diff.md"
+        diff.diff(current=current, baseline=baseline, output=out_path)
+        print(f"\nDiff complete: {out_path}")
 
-    out_path = Path(args.output).resolve() if args.output else current.parent / "audit-diff.md"
-    diff.diff(current=current, baseline=baseline, output=out_path)
-    print(f"\nDiff complete: {out_path}")
+    # Promote current audit.json to docs/audit.json so the NEXT run can
+    # auto-detect this one as the baseline.
+    docs_dir_guess = current.parent.parent / "docs"
+    if docs_dir_guess.exists() or args.baseline is None:
+        target = docs_dir_guess / "audit.json"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        _sh.copy(current, target)
+        print(f"Promoted current audit.json → {target}")
+
     return 0
 
 

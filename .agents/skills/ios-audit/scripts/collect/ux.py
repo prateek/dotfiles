@@ -12,13 +12,12 @@ from __future__ import annotations
 import json
 import os
 import re
-import shutil
 import subprocess
 import sys
 from pathlib import Path
 from typing import Any
 
-from common import RepoInfo, expand_env, eprint, write_json
+from common import RepoInfo, eprint, write_json
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 UX_DIR = SCRIPT_DIR.parent / "ux"
@@ -46,29 +45,35 @@ def collect(
     else:
         flow_output = output_dir / "ux_run"
         flow_output.mkdir(parents=True, exist_ok=True)
-        # Materialize a resolved YAML with env vars expanded
-        resolved_yaml = _resolve_workflows(workflows, flow_output)
-        out["flows"] = _run_flows(resolved_yaml, flow_output, udid, sim_skill_dir)
+        # Pass the ORIGINAL workflow path — run_workflows.py expands env
+        # vars in-memory so plaintext credentials never touch disk.
+        out["flows"] = _run_flows(workflows, flow_output, udid, sim_skill_dir)
 
+    # Also sanitize the flows output — strip any "Typed" step outputs
+    # that might echo the value, just in case the underlying keyboard.py
+    # ever changes to log the argument.
+    _sanitize_flows(out.get("flows"))
     write_json(output_dir / "ux.json", out)
 
 
-def _resolve_workflows(src: Path, dest_dir: Path) -> Path:
-    try:
-        import yaml
-    except ImportError:
-        eprint("pyyaml not installed — copying workflow YAML verbatim")
-        dest = dest_dir / src.name
-        shutil.copy(src, dest)
-        return dest
+_TYPED_ECHO_RE = re.compile(r'Typed[:"]*\s*"[^"]*"')
 
-    with src.open("r", encoding="utf-8") as f:
-        data = yaml.safe_load(f)
-    resolved = expand_env(data, strict=True)
-    dest = dest_dir / f"resolved_{src.name}"
-    with dest.open("w", encoding="utf-8") as f:
-        yaml.safe_dump(resolved, f, sort_keys=False)
-    return dest
+
+def _sanitize_flows(flows: Any) -> None:
+    """Belt-and-braces: walk flow results and redact any 'Typed: "..."' echo
+    in step outputs. run_workflows.py already does this, but defense in depth.
+    """
+    if not isinstance(flows, dict):
+        return
+    results = flows.get("results")
+    if not isinstance(results, dict):
+        return
+    for wf in results.get("workflows", []) or []:
+        for step in wf.get("steps", []) or []:
+            if step.get("action") == "type":
+                out = step.get("output") or ""
+                if _TYPED_ECHO_RE.search(out):
+                    step["output"] = "Typed <redacted>"
 
 
 def _run_flows(

@@ -1,5 +1,15 @@
 # ABOUTME: Workflow definitions for the Movies.do iOS streaming app.
 # ABOUTME: Covers all 10 core user flows from sign-in through playback and library management.
+#
+# Calibration notes (2026-04-10):
+#   - Tab bar is NOT surfaced in idb's accessibility tree, so tab navigation
+#     uses coordinate taps against iPhone 16 Pro (402x874 pts):
+#       Home=(40,818) Browse=(120,818) Search=(201,818) Downloads=(282,818) Library=(362,818)
+#   - heroCard identifier is triplicated by SwiftUI propagation:
+#     id=`heroCard-heroCard-heroCard`
+#   - posterCard_N ids are duplicated across rails — use text selectors for posters
+#   - Each non-SignIn flow begins with `terminate + launch` so it starts on Home
+#     (auth persists via Keychain, so relaunch skips the sign-in screen)
 
 app:
   bundle_id: com.movies.do.ios
@@ -16,18 +26,18 @@ workflows:
     tags: [critical, auth]
     steps:
       - action: launch
-        description: Launch the app
+        description: Launch the app (assumes signed-out state)
 
       - action: wait
         duration: 3
-        description: Wait for app to load
+        description: Wait for sign-in screen
 
       - action: screenshot
         name: signin_screen
         description: Sign-in screen
 
       - action: tap
-        target: { type: TextField }
+        target: { id: usernameField }
         description: Focus username field
 
       - action: type
@@ -35,7 +45,7 @@ workflows:
         description: Enter username
 
       - action: tap
-        target: { text: "Password" }
+        target: { id: passwordField }
         description: Focus password field
 
       - action: type
@@ -47,11 +57,11 @@ workflows:
         description: Fields filled
 
       - action: tap
-        target: { text: "Sign In" }
+        target: { id: signInButton }
         description: Tap Sign In
 
       - action: wait
-        duration: 4
+        duration: 5
         description: Wait for home to load
 
       - action: screenshot
@@ -61,15 +71,21 @@ workflows:
   - name: Home Hero to Title Detail
     description: Tap the featured hero card on home to see title detail
     tags: [critical, navigation]
-    precondition: Sign In
     steps:
+      - action: terminate
+        description: Reset app
+      - action: launch
+        description: Launch into Home (auth persisted)
+      - action: wait
+        duration: 3
+
       - action: screenshot
         name: home_hero
         description: Home with hero visible
 
       - action: tap
-        target: { id: heroCard }
-        description: Tap hero card
+        target: { id: "heroCard-heroCard-heroCard" }
+        description: Tap hero card (triplicated SwiftUI identifier)
 
       - action: wait
         duration: 3
@@ -88,14 +104,19 @@ workflows:
         name: detail_scrolled
         description: Title detail scrolled (episodes, synopsis, cast)
 
-      - action: back
+      - action: tap
+        target: { text: "Back" }
         description: Go back to home
 
   - name: Continue Watching
     description: Tap a continue watching item to see its title detail
     tags: [critical, continuity]
-    precondition: Sign In
     steps:
+      - action: terminate
+      - action: launch
+      - action: wait
+        duration: 3
+
       - action: scroll
         direction: down
         amount: 2
@@ -107,7 +128,7 @@ workflows:
 
       - action: tap
         target: { text: "Shrinking" }
-        description: Tap continue watching item
+        description: Tap Shrinking continue-watching item (fuzzy text match)
 
       - action: wait
         duration: 3
@@ -117,17 +138,22 @@ workflows:
         name: cw_title_detail
         description: Title detail from continue watching
 
-      - action: back
+      - action: tap
+        target: { text: "Back" }
         description: Go back
 
   - name: Browse Catalog
     description: Open browse tab and browse the catalog grid
     tags: [discovery]
-    precondition: Sign In
     steps:
+      - action: terminate
+      - action: launch
+      - action: wait
+        duration: 3
+
       - action: tap
-        target: { text: "Browse" }
-        description: Tap Browse tab
+        target: { coordinates: [120, 818] }
+        description: Tap Browse tab (coordinates — tab bar not in a11y tree)
 
       - action: wait
         duration: 3
@@ -147,8 +173,8 @@ workflows:
         description: Browse scrolled
 
       - action: tap
-        target: { id: posterCard_0 }
-        description: Tap first poster
+        target: { text: "Avatar" }
+        description: Tap first Avatar result (stable title)
 
       - action: wait
         duration: 3
@@ -158,16 +184,21 @@ workflows:
         name: detail_from_browse
         description: Title detail from browse
 
-      - action: back
+      - action: tap
+        target: { text: "Back" }
         description: Go back to browse
 
   - name: Search
     description: Search for a title and open it
     tags: [discovery]
-    precondition: Sign In
     steps:
+      - action: terminate
+      - action: launch
+      - action: wait
+        duration: 3
+
       - action: tap
-        target: { text: "Search" }
+        target: { coordinates: [201, 818] }
         description: Tap Search tab
 
       - action: wait
@@ -176,18 +207,21 @@ workflows:
 
       - action: screenshot
         name: search_empty
-        description: Search screen (empty or trending)
+        description: Search screen (Trending)
 
       - action: tap
-        target: { type: TextField }
-        description: Focus search field
+        target: { coordinates: [201, 200] }
+        description: Focus search field (not in a11y tree — coords)
+
+      - action: wait
+        duration: 1
 
       - action: type
-        value: avatar
+        value: "avatar"
         description: Type search query
 
       - action: wait
-        duration: 2
+        duration: 3
         description: Wait for results
 
       - action: screenshot
@@ -196,7 +230,7 @@ workflows:
 
       - action: tap
         target: { text: "Avatar" }
-        description: Tap a search result
+        description: Tap Avatar result
 
       - action: wait
         duration: 3
@@ -206,20 +240,21 @@ workflows:
         name: detail_from_search
         description: Title detail from search
 
-      - action: back
+      - action: tap
+        target: { text: "Back" }
         description: Go back
 
   - name: Playback
     description: Start video playback from title detail
     tags: [critical, playback]
-    precondition: Sign In
     steps:
-      - action: tap
-        target: { text: "Home" }
-        description: Go to Home tab
+      - action: terminate
+      - action: launch
+      - action: wait
+        duration: 3
 
       - action: tap
-        target: { id: heroCard }
+        target: { id: "heroCard-heroCard-heroCard" }
         description: Tap hero
 
       - action: wait
@@ -231,24 +266,33 @@ workflows:
         description: Tap Play button
 
       - action: wait
-        duration: 5
+        duration: 6
         description: Wait for video to load
 
       - action: screenshot
         name: player_active
         description: Player with video
 
-      - action: back
-        description: Exit player
+      - action: tap
+        target: { coordinates: [200, 440] }
+        description: Tap to surface player controls (controls auto-hide)
+
+      - action: wait
+        duration: 1
+        description: Let controls appear
+
+      - action: tap
+        target: { id: "Close Button" }
+        description: Close the player
 
   - name: Episode Selection
     description: Browse episodes of a series and play a specific one
     tags: [critical, series]
-    precondition: Sign In
     steps:
-      - action: tap
-        target: { text: "Home" }
-        description: Go to Home tab
+      - action: terminate
+      - action: launch
+      - action: wait
+        duration: 3
 
       - action: scroll
         direction: down
@@ -256,8 +300,8 @@ workflows:
         description: Scroll to continue watching
 
       - action: tap
-        target: { text: "Pitt" }
-        description: Tap a series
+        target: { text: "Shrinking" }
+        description: Tap Shrinking series (known multi-episode series)
 
       - action: wait
         duration: 3
@@ -265,8 +309,8 @@ workflows:
 
       - action: scroll
         direction: down
-        amount: 2
-        description: Scroll to episodes
+        amount: 3
+        description: Scroll to episodes list
 
       - action: screenshot
         name: episode_list
@@ -274,31 +318,32 @@ workflows:
 
       - action: tap
         target: { text: "Episode 2" }
-        description: Tap Episode 2
+        description: Tap Episode 2 (fuzzy match Ep 02)
 
       - action: wait
-        duration: 3
+        duration: 5
         description: Wait for player
 
       - action: screenshot
         name: episode_player
         description: Player from episode selection
 
-      - action: back
+      - action: tap
+        target: { text: "Back" }
         description: Exit player
 
   - name: Cast to Celebrity
-    description: Tap a cast member to see their detail page
-    tags: [detail]
-    precondition: Sign In
+    description: Scroll Title Detail to the cast rail (cast cards are not in the idb a11y tree so automated tap is unreliable — this flow captures the scrolled state only)
+    tags: [detail, known-gap]
     steps:
-      - action: tap
-        target: { text: "Home" }
-        description: Go to Home tab
+      - action: terminate
+      - action: launch
+      - action: wait
+        duration: 3
 
       - action: tap
-        target: { id: heroCard }
-        description: Open a title
+        target: { id: "heroCard-heroCard-heroCard" }
+        description: Open hero title
 
       - action: wait
         duration: 3
@@ -306,35 +351,37 @@ workflows:
 
       - action: scroll
         direction: down
-        amount: 5
-        description: Scroll to cast section
+        amount: 6
+        description: Scroll toward cast section
 
       - action: screenshot
         name: cast_section
-        description: Cast horizontal scroll
+        description: Cast horizontal scroll visible
 
-      - action: tap
-        target: { type: Button }
-        description: Tap first cast member
-
-      - action: wait
-        duration: 3
-        description: Wait for celebrity page
+      - action: scroll
+        direction: down
+        amount: 4
+        description: Scroll further to capture more cast
 
       - action: screenshot
-        name: celebrity_detail
-        description: Celebrity detail page
+        name: cast_further
+        description: More cast scrolled into view
 
-      - action: back
-        description: Go back
+      - action: tap
+        target: { text: "Back" }
+        description: Return to home
 
   - name: Library
     description: View library with continue watching, favorites, and profile
     tags: [personal]
-    precondition: Sign In
     steps:
+      - action: terminate
+      - action: launch
+      - action: wait
+        duration: 3
+
       - action: tap
-        target: { text: "Library" }
+        target: { coordinates: [362, 818] }
         description: Tap Library tab
 
       - action: wait
@@ -357,14 +404,14 @@ workflows:
   - name: Favorite Toggle
     description: Toggle a title as favorite from its detail page
     tags: [personal]
-    precondition: Sign In
     steps:
-      - action: tap
-        target: { text: "Home" }
-        description: Go to Home tab
+      - action: terminate
+      - action: launch
+      - action: wait
+        duration: 3
 
       - action: tap
-        target: { id: heroCard }
+        target: { id: "heroCard-heroCard-heroCard" }
         description: Open a title
 
       - action: wait
@@ -380,7 +427,7 @@ workflows:
         description: Tap heart button
 
       - action: wait
-        duration: 1
+        duration: 2
         description: Wait for toggle
 
       - action: screenshot
