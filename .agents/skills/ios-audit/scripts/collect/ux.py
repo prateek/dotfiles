@@ -17,11 +17,31 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from common import RepoInfo, eprint, write_json
+from common import RepoInfo, eprint, safe_grep, write_json
+from ux.workflow_matrix import normalize_device_matrix, summarize_device_coverage, validate_workflow_devices
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 UX_DIR = SCRIPT_DIR.parent / "ux"
 RUN_WORKFLOWS = UX_DIR / "run_workflows.py"
+
+ADAPTIVE_LAYOUT_PATTERNS = [
+    r"horizontalSizeClass",
+    r"verticalSizeClass",
+    r"NavigationSplitView",
+    r"ViewThatFits",
+    r"GeometryReader",
+    r"userInterfaceIdiom",
+    r"dynamicTypeSize",
+    r"safeAreaInset",
+]
+
+SEMANTIC_SURFACE_PATTERNS = {
+    "quality": [r"\bquality\b", r"\b4K\b", r"\bHDR\b", r"\bresolution\b"],
+    "audio": [r"\baudio\b", r"selectedAudioLanguage", r"\blanguage(s)?\b"],
+    "subtitles": [r"\bsubtitle(s)?\b", r"\bcaptions?\b"],
+    "downloads": [r"\bdownload(s|ing)?\b", r"\boffline\b", r"resumeData"],
+    "playback_preferences": [r"wifiQuality", r"cellularQuality", r"preferredSubtitle", r"playbackSpeed"],
+}
 
 
 def collect(
@@ -32,11 +52,16 @@ def collect(
     udid: str | None,
     sim_skill_dir: str | None,
 ) -> None:
+    workflow_config = _load_workflow_config(workflows) if workflows else {}
+    adaptive_layout_signals = safe_grep(ADAPTIVE_LAYOUT_PATTERNS, repo.root)
     out: dict[str, Any] = {
         "screen_inventory": _screen_inventory(repo.root),
         "navigation_graph": _navigation_graph(repo.root),
         "component_catalog": _component_catalog(repo.root),
         "gesture_usage": _gesture_usage(repo.root),
+        "adaptive_layout_signals": adaptive_layout_signals,
+        "semantic_surface_signals": _semantic_surface_signals(repo.root),
+        "workflow_matrix": _workflow_matrix_summary(workflow_config, adaptive_layout_signals),
         "flows": None,
     }
 
@@ -48,6 +73,14 @@ def collect(
         # Pass the ORIGINAL workflow path — run_workflows.py expands env
         # vars in-memory so plaintext credentials never touch disk.
         out["flows"] = _run_flows(workflows, flow_output, udid, sim_skill_dir)
+        out["workflow_matrix"] = _workflow_matrix_summary(
+            workflow_config,
+            adaptive_layout_signals,
+            out["flows"],
+        )
+        validation_errors = out["workflow_matrix"].get("validation_errors") or []
+        if validation_errors:
+            raise RuntimeError("; ".join(validation_errors))
 
     # Also sanitize the flows output — strip any "Typed" step outputs
     # that might echo the value, just in case the underlying keyboard.py
@@ -110,6 +143,46 @@ def _run_flows(
     else:
         out["stderr_tail"] = r.stderr[-2000:]
     return out
+
+
+def _load_workflow_config(workflows: Path) -> dict[str, Any]:
+    try:
+        import yaml
+    except ImportError:
+        return {}
+    try:
+        with workflows.open("r", encoding="utf-8") as f:
+            return yaml.safe_load(f) or {}
+    except OSError:
+        return {}
+
+
+def _semantic_surface_signals(root: Path) -> dict[str, list[dict[str, Any]]]:
+    return {
+        surface: safe_grep(patterns, root)
+        for surface, patterns in SEMANTIC_SURFACE_PATTERNS.items()
+    }
+
+
+def _workflow_matrix_summary(
+    workflow_config: dict[str, Any],
+    adaptive_layout_signals: list[dict[str, Any]],
+    flow_results: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    lanes = normalize_device_matrix(workflow_config)
+    workflows = workflow_config.get("workflows") or []
+    summary = summarize_device_coverage(
+        lanes=lanes,
+        workflows=workflows,
+        flow_results=flow_results,
+        adaptive_signals=adaptive_layout_signals,
+    )
+    summary["declared_lanes"] = lanes
+    validation_errors = validate_workflow_devices(workflows, lanes)
+    if flow_results is not None:
+        validation_errors.extend(summary.get("coverage_gaps") or [])
+    summary["validation_errors"] = validation_errors
+    return summary
 
 
 VIEW_STRUCT_RE = re.compile(
@@ -226,5 +299,4 @@ def _component_catalog(root: Path) -> list[dict[str, Any]]:
 
 def _gesture_usage(root: Path) -> list[dict[str, Any]]:
     """Call sites of SwiftUI gesture modifiers — useful for conflict detection."""
-    from common import safe_grep
     return safe_grep([GESTURE_RE.pattern], root)
