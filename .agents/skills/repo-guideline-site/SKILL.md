@@ -135,7 +135,7 @@ See `references/media-playbook.md`.
 
 Once there is a real build and real proof media, review the rendered site instead of trusting the source alone.
 
-If the local skill exists at `/Users/prateek/.agents/skills/ui-ux-pro-max/SKILL.md`, use it as the primary review rubric. For this skill, only apply the relevant parts for guideline sites:
+If the local skill exists at `~/.agents/skills/ui-ux-pro-max/SKILL.md`, use it as the primary review rubric. For this skill, only apply the relevant parts for guideline sites:
 
 - Accessibility and heading hierarchy
 - Touch target size and non-hover interaction states

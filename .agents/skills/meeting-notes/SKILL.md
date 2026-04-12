@@ -1,4 +1,5 @@
 ---
+name: meeting-notes
 description: Convert a transcript into structured meeting notes + action items
 argument-hint: '[FILE=<path>] [TITLE="<title>"] [DATE=YYYY-MM-DD] [ATTENDEES="<names>"]'
 ---

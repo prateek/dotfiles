@@ -19,7 +19,7 @@ Important: Generated skills are **not** first-class Codex MCP tools (`mcp__...`)
 ## Generate a skill
 
 Generator:
-- `dotfiles/.agents/skills/mcporter-skillifier/scripts/generate_skill.py`
+- `~/.agents/skills/mcporter-skillifier/scripts/generate_skill.py`
 
 Typical invocation (stdio server):
 
