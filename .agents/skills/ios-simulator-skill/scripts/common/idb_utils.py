@@ -19,6 +19,52 @@ import subprocess
 import sys
 
 
+def normalize_accessibility_tree(tree_data: object, *, nested: bool) -> dict:
+    """Normalize IDB output into a single root node.
+
+    `idb ui describe-all --json --nested` can return multiple window roots.
+    Keep them all by wrapping them in a synthetic application node instead of
+    silently discarding everything after index 0.
+    """
+    if isinstance(tree_data, dict):
+        return tree_data
+
+    if not isinstance(tree_data, list):
+        return {}
+
+    if not tree_data:
+        return {}
+
+    if not nested:
+        return tree_data[0] if isinstance(tree_data[0], dict) else {}
+
+    if len(tree_data) == 1 and isinstance(tree_data[0], dict):
+        return tree_data[0]
+
+    roots = [node for node in tree_data if isinstance(node, dict)]
+    if not roots:
+        return {}
+
+    frames = [node.get("frame") or {} for node in roots]
+    min_x = min(int(frame.get("x", 0)) for frame in frames)
+    min_y = min(int(frame.get("y", 0)) for frame in frames)
+    max_x = max(int(frame.get("x", 0)) + int(frame.get("width", 0)) for frame in frames)
+    max_y = max(int(frame.get("y", 0)) + int(frame.get("height", 0)) for frame in frames)
+    label = next((node.get("AXLabel") for node in roots if node.get("AXLabel")), "")
+
+    return {
+        "type": "Application",
+        "AXLabel": label,
+        "children": roots,
+        "frame": {
+            "x": min_x,
+            "y": min_y,
+            "width": max_x - min_x,
+            "height": max_y - min_y,
+        },
+    }
+
+
 def get_accessibility_tree(udid: str | None = None, nested: bool = True) -> dict:
     """
     Fetch accessibility tree from IDB.
@@ -55,11 +101,7 @@ def get_accessibility_tree(udid: str | None = None, nested: bool = True) -> dict
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
         tree_data = json.loads(result.stdout)
-
-        # IDB returns array format, extract first element (root)
-        if isinstance(tree_data, list) and len(tree_data) > 0:
-            return tree_data[0]
-        return tree_data
+        return normalize_accessibility_tree(tree_data, nested=nested)
     except subprocess.CalledProcessError as e:
         print(f"Error: Failed to get accessibility tree: {e.stderr}", file=sys.stderr)
         sys.exit(1)
