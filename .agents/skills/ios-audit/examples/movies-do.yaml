@@ -8,6 +8,7 @@
 #   - heroCard identifier is triplicated by SwiftUI propagation:
 #     id=`heroCard-heroCard-heroCard`
 #   - posterCard_N ids are duplicated across rails — use text selectors for posters
+#   - Sign-in explicitly resets the simulator keychain so auth starts clean
 #   - Each non-SignIn flow begins with `terminate + launch` so it starts on Home
 #     (auth persists via Keychain, so relaunch skips the sign-in screen)
 
@@ -20,13 +21,29 @@ app:
     username: "${MOVIES_DO_TEST_USERNAME}"
     password: "${MOVIES_DO_TEST_PASSWORD}"
 
+device_matrix:
+  - id: iphone_compact
+    device: "iPhone 16 Pro"
+    traits: [compact, phone]
+    default: true
+  - id: ipad_regular
+    device: "iPad Pro 13-inch (M4)"
+    traits: [regular, ipad]
+    default: false
+
 workflows:
   - name: Sign In
     description: User signs in with credentials and lands on home screen
     tags: [critical, auth]
     steps:
+      - action: terminate
+        description: Close the app before resetting auth state
+
+      - action: reset_keychain
+        description: Reset persisted auth so sign-in starts signed out
+
       - action: launch
-        description: Launch the app (assumes signed-out state)
+        description: Launch the app after resetting auth state
 
       - action: wait
         duration: 3

@@ -13,6 +13,16 @@ app:
 simulator:
   device: string            # e.g., "iPhone 16 Pro" (default: booted device)
   os: string                # e.g., "18.6" (default: whatever's running)
+  traits: [string]          # Optional lane traits (e.g., ["compact", "phone"])
+
+# Optional device matrix for adaptive-layout coverage.
+# If omitted, the audit runs against one default lane.
+device_matrix:
+  - id: string              # Stable lane id (e.g., "iphone_compact")
+    device: string          # Simulator name to resolve via simctl
+    udid: string            # Optional fixed UDID
+    traits: [string]        # e.g., ["compact", "phone"] or ["regular", "ipad"]
+    default: boolean        # Whether workflows without explicit devices run here
 
 # Workflow definitions
 workflows:
@@ -20,6 +30,7 @@ workflows:
     description: string     # What this workflow tests (required)
     tags: [string]          # Optional tags for filtering (e.g., ["critical", "auth"])
     precondition: string    # Optional: which workflow must run first (by name)
+    devices: [string]       # Optional lane ids from device_matrix; defaults to the default lane(s)
 
     steps:
       - action: string      # Required: one of the supported actions below
@@ -53,6 +64,9 @@ workflows:
 
         # For "launch" / "terminate":
         # (uses app.bundle_id automatically)
+
+        # For "reset_keychain":
+        # Resets the simulator keychain to clear persisted auth/session state
 
         # For "back":
         # (no additional fields — swipes right from left edge)

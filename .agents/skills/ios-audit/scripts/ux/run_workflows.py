@@ -1,4 +1,10 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#   "pyyaml",
+# ]
+# ///
 """Execute iOS app flow audits step-by-step using ios-simulator-skill.
 
 Captures screenshots and accessibility trees at each step, outputs structured JSON results.
@@ -13,6 +19,8 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
+
+from workflow_matrix import normalize_device_matrix, validate_workflow_devices, workflow_lane_ids
 
 # Canonical ios-simulator-skill location (shared ~/.agents/skills source of truth).
 # Falls back to the legacy ~/.claude/skills path if the canonical one is missing.
@@ -56,7 +64,10 @@ def load_workflows(path: str) -> dict:
     try:
         import yaml
     except ImportError:
-        print("PyYAML not installed. Install with: pip install pyyaml", file=sys.stderr)
+        print(
+            "PyYAML not installed. Re-run this entrypoint through uv so its script metadata is applied.",
+            file=sys.stderr,
+        )
         sys.exit(1)
     with open(path) as f:
         data = yaml.safe_load(f)
@@ -72,6 +83,84 @@ def run_sim_script(sim_skill_dir: str, script: str, args: list[str]) -> tuple[bo
     if result.returncode != 0:
         output = result.stderr.strip() or output
     return result.returncode == 0, output
+
+
+def list_available_simulators() -> list[dict]:
+    result = subprocess.run(
+        ["xcrun", "simctl", "list", "devices", "available", "-j"],
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    if result.returncode != 0:
+        return []
+    try:
+        payload = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        return []
+
+    simulators: list[dict] = []
+    for runtime, devices in (payload.get("devices") or {}).items():
+        for device in devices:
+            if not device.get("isAvailable", True):
+                continue
+            simulators.append({
+                "runtime": runtime,
+                "name": device.get("name"),
+                "udid": device.get("udid"),
+                "state": device.get("state"),
+            })
+    return simulators
+
+
+def resolve_lane_device(lane: dict, simulators: list[dict]) -> dict:
+    if lane.get("udid") or not lane.get("device"):
+        return lane
+    matches = [sim for sim in simulators if sim.get("name") == lane["device"]]
+    if not matches:
+        raise RuntimeError(f"no available simulator named '{lane['device']}'")
+    match = next((sim for sim in matches if sim.get("state") == "Booted"), matches[0])
+    resolved = dict(lane)
+    resolved["udid"] = match.get("udid")
+    resolved["resolved_runtime"] = match.get("runtime")
+    return resolved
+
+
+def ensure_simulator_booted(udid: str | None) -> tuple[bool, str]:
+    if not udid:
+        return True, "using booted simulator"
+
+    state_result = subprocess.run(
+        ["xcrun", "simctl", "list", "devices", udid],
+        capture_output=True,
+        text=True,
+        timeout=15,
+        check=False,
+    )
+    if "Booted" in state_result.stdout:
+        return True, "already booted"
+
+    boot_result = subprocess.run(
+        ["xcrun", "simctl", "boot", udid],
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    if boot_result.returncode != 0 and "Unable to boot device in current state: Booted" not in boot_result.stderr:
+        return False, boot_result.stderr.strip() or boot_result.stdout.strip()
+
+    bootstatus = subprocess.run(
+        ["xcrun", "simctl", "bootstatus", udid, "-b"],
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=False,
+    )
+    if bootstatus.returncode != 0:
+        return False, bootstatus.stderr.strip() or bootstatus.stdout.strip()
+    return True, "booted"
 
 
 def capture_screenshot(output_dir: str, name: str, udid: str | None = None) -> str | None:
@@ -104,6 +193,20 @@ def capture_accessibility(sim_skill_dir: str, udid: str | None = None) -> dict:
         verbose_args = ["--udid", udid] + verbose_args
     ok2, output2 = run_sim_script(sim_skill_dir, "screen_mapper.py", verbose_args)
     return {"raw": output2}
+
+
+def reset_keychain(udid: str | None = None) -> tuple[bool, str]:
+    """Reset the simulator keychain to clear persisted auth/session state."""
+    device = udid or "booted"
+    result = subprocess.run(
+        ["xcrun", "simctl", "keychain", device, "reset"],
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    output = result.stdout.strip() or result.stderr.strip() or "Reset keychain"
+    return result.returncode == 0, output
 
 
 def execute_step(
@@ -232,6 +335,12 @@ def execute_step(
         result["output"] = output
         result["interaction_type"] = "app terminate"
 
+    elif action == "reset_keychain":
+        ok, output = reset_keychain(udid)
+        result["success"] = ok
+        result["output"] = output
+        result["interaction_type"] = "keychain reset"
+
     elif action == "back":
         back_args = ["--swipe", "right"]
         if udid:
@@ -262,7 +371,7 @@ def execute_step(
 
 def run_workflow(
     workflow: dict, app_config: dict, sim_skill_dir: str, output_dir: str,
-    udid: str | None,
+    udid: str | None, lane: dict,
 ) -> dict:
     """Execute all steps in a workflow and return structured results."""
     wf_name = workflow.get("name", "unknown").replace(" ", "_").lower()
@@ -273,6 +382,10 @@ def run_workflow(
         "name": workflow.get("name", "Unknown"),
         "description": workflow.get("description", ""),
         "tags": workflow.get("tags", []),
+        "device_lane": lane.get("id", "default"),
+        "device_name": lane.get("device"),
+        "device_udid": lane.get("udid"),
+        "device_traits": lane.get("traits", []),
         "steps": [],
         "start_time": datetime.now().isoformat(),
         "success": True,
@@ -319,24 +432,70 @@ def main():
             print(f"Workflow '{args.workflow}' not found", file=sys.stderr)
             sys.exit(1)
 
+    lanes = normalize_device_matrix(config, cli_udid=args.udid)
+    validation_errors = validate_workflow_devices(workflows, lanes)
+    if validation_errors:
+        for error in validation_errors:
+            print(error, file=sys.stderr)
+        sys.exit(1)
+
+    simulators = list_available_simulators()
+    resolved_lanes = {}
+    try:
+        resolved_lanes = {
+            lane["id"]: resolve_lane_device(lane, simulators)
+            for lane in lanes
+        }
+    except RuntimeError as exc:
+        print(str(exc), file=sys.stderr)
+        sys.exit(1)
+
     all_results = {
         "app": app_config,
         "run_time": datetime.now().isoformat(),
+        "device_matrix": list(resolved_lanes.values()),
         "workflows": [],
     }
 
     for wf in workflows:
         wf_name = wf.get("name", "Unknown")
-        print(f"Running workflow: {wf_name}")
-        wf_result = run_workflow(
-            wf, app_config, args.sim_skill_dir, args.output_dir, args.udid
-        )
-        all_results["workflows"].append(wf_result)
+        for lane_id in workflow_lane_ids(wf, lanes):
+            lane = resolved_lanes[lane_id]
+            ok, boot_message = ensure_simulator_booted(lane.get("udid"))
+            if not ok:
+                print(f"Running workflow: {wf_name} [{lane_id}]", file=sys.stderr)
+                print(f"  FAIL: could not boot simulator: {boot_message}", file=sys.stderr)
+                all_results["workflows"].append({
+                    "name": wf_name,
+                    "description": wf.get("description", ""),
+                    "tags": wf.get("tags", []),
+                    "device_lane": lane.get("id", "default"),
+                    "device_name": lane.get("device"),
+                    "device_udid": lane.get("udid"),
+                    "device_traits": lane.get("traits", []),
+                    "steps": [],
+                    "start_time": datetime.now().isoformat(),
+                    "end_time": datetime.now().isoformat(),
+                    "success": False,
+                    "boot_error": boot_message,
+                })
+                continue
 
-        step_count = len(wf_result["steps"])
-        passed = sum(1 for s in wf_result["steps"] if s["success"])
-        status = "PASS" if wf_result["success"] else "FAIL"
-        print(f"  {status}: {passed}/{step_count} steps succeeded")
+            print(f"Running workflow: {wf_name} [{lane_id}]")
+            wf_result = run_workflow(
+                wf,
+                app_config,
+                args.sim_skill_dir,
+                args.output_dir,
+                lane.get("udid"),
+                lane,
+            )
+            all_results["workflows"].append(wf_result)
+
+            step_count = len(wf_result["steps"])
+            passed = sum(1 for s in wf_result["steps"] if s["success"])
+            status = "PASS" if wf_result["success"] else "FAIL"
+            print(f"  {status}: {passed}/{step_count} steps succeeded ({boot_message})")
 
     # Save results
     results_path = os.path.join(args.output_dir, "results.json")

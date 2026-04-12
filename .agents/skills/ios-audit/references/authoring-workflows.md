@@ -62,7 +62,7 @@ Pass credentials to the audit run via your shell:
 ```bash
 export MYAPP_TEST_USERNAME="..."
 export MYAPP_TEST_PASSWORD="..."
-python3 ~/.agents/skills/ios-audit/scripts/audit.py collect --workflows .audit/workflows.yaml ...
+~/.agents/skills/ios-audit/scripts/audit.py collect --workflows .audit/workflows.yaml ...
 ```
 
 For Xcode UI tests that run alongside the audit, use the Xcode 15.3+
@@ -90,6 +90,7 @@ See `workflow-schema.yaml` for the authoritative schema, or
 | `wait` | `duration` | Wait N seconds (decimal OK) |
 | `screenshot` | `name` | Explicit screenshot with custom suffix |
 | `back` | — | Swipe right from left edge |
+| `reset_keychain` | — | Reset the simulator keychain to clear persisted auth/session state |
 
 ## Target selectors
 
