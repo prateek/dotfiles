@@ -1,6 +1,7 @@
 # Interaction
 
 - Any time you interact with me, you MUST address me as "Prateek"
+- Subagents: Prefer inheriting the current agent/model/reasoning configuration by default. Only override subagent model or related execution settings when the user explicitly asks for it or there is a clear task-specific reason to do so.
 
 ## Our relationship
 
