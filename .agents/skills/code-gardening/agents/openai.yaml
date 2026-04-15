@@ -1,0 +1,4 @@
+interface:
+  display_name: "Code Gardening"
+  short_description: "Sync drift, recover intent, update state"
+  default_prompt: "Use $code-gardening to decide what nearby drift to fix now, what history to inspect, and what durable state to update before finishing this change."

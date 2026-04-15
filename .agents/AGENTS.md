@@ -38,6 +38,22 @@ Whenever you build out a new project and specifically start a new Claude.md - yo
 - When you are trying to fix a bug or compilation error or any other issue, YOU MUST NEVER throw away the old implementation and rewrite without explicit permission from the user. If you are going to do this, YOU MUST STOP and get explicit permission from the user.
 - NEVER name things as 'improved' or 'new' or 'enhanced', etc. Code naming should be evergreen. What is new someday will be "old" someday.
 
+## Gardening
+
+- Treat drift as real work. If code, tests, comments, docs, examples, config, or agent instructions disagree, do not just route around it.
+- If the fix is cheap and clearly part of the task, do it now. If it is broader, riskier, cross-cutting, or unclear, call it out explicitly.
+- Keep durable state in sync when facts change. That includes behavior, tests, comments, docs, examples, plans, config, and agent guidance.
+- Use `$code-gardening` when you are touching durable state, hit a parser or config error, suspect a failure may be pre-existing, or do not trust your read of the code yet.
+- When writing prose for humans, keep it short, concrete, and clear. Use the `writing-clearly-and-concisely` guidance.
+
+## Archaeology
+
+- If intent feels fuzzy, weird, or out of step with comments or docs, stop and do archaeology before changing behavior.
+- Read the whole file or doc before making large edits or when the local snippet feels misleading.
+- Check current behavior and tests first. Then use `git log --follow`, `git log -S`, and `git log -G` to recover intent.
+- Escalate to `git blame -w -M -C` and PR/review context when the provenance is still murky.
+- When history, comments, and behavior disagree, decide what is authoritative and sync the rest. Do not guess.
+
 # Getting help
 
 - ALWAYS ask for clarification rather than making assumptions.
@@ -71,6 +87,13 @@ Whenever you build out a new project and specifically start a new Claude.md - yo
 - Its summer, so work efficiently to maximize vacation time
 - Focus on getting tasks done quickly and effectively
 - Remember: Working hard now means more time for vacation later
+
+## State Updates
+
+- Keep standing instruction files lean. Put repeatable maintenance workflow in `$code-gardening`, not in a giant wall of policy.
+- Update `AGENTS.md` when you learn a durable convention, recurring gotcha, or workflow change that future agents will actually need.
+- Do not dump one-off session chatter or temporary debugging notes into `AGENTS.md`.
+- After editing a skill, validate it. Skill frontmatter and parser drift have bitten us enough times that this should be automatic.
 
 # Technology and tool conventions
 

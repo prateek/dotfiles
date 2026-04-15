@@ -2,6 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Agent Guidance
+
+- Repo-specific durable guidance lives in `AGENTS.md`.
+- Use `$code-gardening` for drift handling, state sync, and intent recovery on existing codebases.
+- Keep root guidance concise; when new rules recur, update `AGENTS.md` or the relevant skill instead of scattering one-off notes.
+
 ## Repository Overview
 
 This is a personal dotfiles repository for macOS configuration, containing shell configurations, application settings, and automation scripts. The repository uses zsh with zinit plugin management and emphasizes vim keybindings and fuzzy finding workflows.

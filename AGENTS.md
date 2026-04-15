@@ -1,5 +1,32 @@
 # Agent Notes (personal)
 
+This file is the durable repo contract for coding agents working in this dotfiles repo.
+Keep it short. Put recurring maintenance workflow in `$code-gardening`, not in long prose.
+
+## Gardening
+
+- Treat drift as real work. If code, tests, comments, docs, examples, or tooling disagree, do not just route around it.
+- If the fix is cheap and clearly part of the task, do it now. If it is broader, riskier, cross-cutting, or unclear, call it out explicitly.
+- Keep durable state in sync when facts change. That includes behavior, tests, comments, docs, examples, config, and agent instructions.
+- Use `$code-gardening` when you are touching durable state, hit a parser or config error, suspect a failure may be pre-existing, or do not trust your read of the code yet.
+- When writing prose for humans, keep it short, concrete, and clear. Use the `writing-clearly-and-concisely` guidance.
+
+## Archaeology
+
+- If intent feels fuzzy, weird, or out of step with comments or docs, stop and do archaeology before changing behavior.
+- Read the whole file or doc before making large edits or when the local snippet feels misleading.
+- Check current behavior and tests first. Then use `git log --follow`, `git log -S`, and `git log -G` to recover intent.
+- Escalate to `git blame -w -M -C` and PR/review context when the provenance is still murky.
+- If the repo has PRs, review comments, issues, ADRs, or design notes, use them when history alone is not enough.
+- When history, comments, and behavior disagree, decide what is authoritative and sync the rest. Do not guess.
+
+## State Updates
+
+- Keep the root instruction file lean. Put repeatable maintenance workflow in `$code-gardening`, not in a giant wall of policy.
+- Update `AGENTS.md` when you learn a durable convention, recurring gotcha, or workflow change that future agents will actually need.
+- Do not put one-off session chatter or temporary debugging notes here. Those belong in task output, issues, or other working notes.
+- After editing a skill, validate it. Skill frontmatter and parser drift have bitten us enough times that this should be automatic.
+
 ## Python deps (pyproject + type stubs + build system)
 
 - When adding a new Python import, declare the dependency in `pyproject.toml` (runtime vs test/dev/optional).
