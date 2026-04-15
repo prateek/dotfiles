@@ -131,9 +131,6 @@ if [ -f "$HOME/.zshrc.local" ]; then
   source "$HOME/.zshrc.local"
 fi
 
-# Added by Windsurf
-export PATH="$HOME/.codeium/windsurf/bin:$PATH"
-
 # Added by Antigravity
 export PATH="$HOME/.antigravity/antigravity/bin:$PATH"
 

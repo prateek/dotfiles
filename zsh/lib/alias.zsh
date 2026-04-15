@@ -152,7 +152,9 @@ unalias yoloo 2>/dev/null
 yoloo() {
   OPENCODE_PERMISSION='{"*":"allow"}' opencode "$@"
 }
-alias yoloc='claude --dangerously-skip-permissions'
+yoloc() {
+  claude --dangerously-skip-permissions "$@"
+}
 
 # Worktrees:
 # - `wsc`: switch existing centralized worktree

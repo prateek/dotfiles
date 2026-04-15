@@ -60,7 +60,6 @@
     "editor.minimap.enabled": false,
     "editor.minimap.renderCharacters": false,
     "workbench.editor.enablePreviewFromQuickOpen": false,
-    "workbench.editor.enablePreview": false,
     "remote.SSH.enableAgentForwarding": false,
     "window.newWindowDimensions": "inherit",
     "jupyter.askForKernelRestart": false,
@@ -606,5 +605,7 @@
     "specstory.cloudSync.enabled": "never",
     "specstory.autoSave.enabled": false,
     "gitlens.ai.model": "vscode",
-    "gitlens.ai.vscode.model": "copilot:gpt-4.1"
+    "gitlens.ai.vscode.model": "copilot:gpt-4.1",
+    "workbench.editor.enablePreview": false,
+    "markdown-preview-enhanced.previewTheme": "atom-dark.css"
 }

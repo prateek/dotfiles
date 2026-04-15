@@ -5,7 +5,9 @@
         "GitHub.copilot-chat",
         "golang.go",
         "golf1052.code-sync",
+        "informal.quint-vscode",
         "kangping.protobuf",
+        "llvm-vs-code-extensions.lldb-dap",
         "marp-team.marp-vscode",
         "mrkou47.thrift-syntax-support",
         "ms-python.debugpy",
@@ -19,6 +21,7 @@
         "phgn.vscode-starlark",
         "shd101wyy.markdown-preview-enhanced",
         "SpecStory.specstory-vscode",
+        "swiftlang.swift-vscode",
         "vscodevim.vim",
         "yzane.markdown-pdf"
     ]
