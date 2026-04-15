@@ -54,6 +54,34 @@ FORCE_UNWRAP = [
     r"!\s*\)",                            # trailing force unwrap
 ]
 
+STATE_MANAGEMENT_PATTERNS = [
+    r"@Observable\b",
+    r"ObservableObject\b",
+    r"@State(?:Object)?\b",
+    r"@Binding\b",
+    r"@Bindable\b",
+    r"@Environment(?:Object)?\b",
+    r"@AppStorage\b",
+    r"@SceneStorage\b",
+    r"@FocusState\b",
+    r"@Namespace\b",
+    r"@MainActor\b",
+]
+
+CONFIG_PROVENANCE_PATTERNS = [
+    r"UserDefaults\.",
+    r"@AppStorage\b",
+    r"Bundle\.main\b",
+    r"object\s*\(\s*forInfoDictionaryKey:",
+    r"infoDictionary",
+    r"ProcessInfo\.processInfo\.environment",
+    r"static\s+let\s+\w+\s*=",
+    r"(?:enum|struct)\s+\w*(?:Config|Constants|Environment|Preferences)\b",
+]
+
+NUMERIC_LITERAL_RE = re.compile(r"(?<![\w.])(-?(?:\d+\.\d+|\d+))(?![\w.])")
+IGNORED_NUMERIC_LITERALS = {"0", "1", "2", "3", "4", "5"}
+
 
 def collect(*, repo: RepoInfo, output_dir: Path) -> None:
     root = repo.root
@@ -68,6 +96,9 @@ def collect(*, repo: RepoInfo, output_dir: Path) -> None:
         "error_handling_smells": safe_grep(ERROR_HANDLING_SMELLS, root),
         "force_unwraps": safe_grep(FORCE_UNWRAP, root),
         "todo_markers": _todo_markers(root),
+        "state_management": safe_grep(STATE_MANAGEMENT_PATTERNS, root),
+        "configuration_provenance": safe_grep(CONFIG_PROVENANCE_PATTERNS, root),
+        "magic_literals": _magic_literals(root),
         "tool_versions": {
             "swiftlint": tool_version("swiftlint", "version"),
             "periphery": tool_version("periphery", "version"),
@@ -380,3 +411,56 @@ def _extract_containers(body: str) -> list[dict[str, Any]]:
 
 def _todo_markers(root: Path) -> list[dict[str, Any]]:
     return safe_grep([r"//\s*(TODO|FIXME|XXX|HACK)[:\s]"], root)
+
+
+def extract_numeric_literals(text: str) -> list[str]:
+    literals: list[str] = []
+    for raw_line in text.splitlines():
+        line = raw_line.split("//", 1)[0]
+        for match in NUMERIC_LITERAL_RE.finditer(line):
+            literal = match.group(1)
+            if literal in IGNORED_NUMERIC_LITERALS:
+                continue
+            literals.append(literal)
+    return literals
+
+
+def summarize_magic_literals(
+    occurrences: dict[str, list[dict[str, Any]]],
+    *,
+    min_hits: int = 3,
+    top_n: int = 40,
+) -> list[dict[str, Any]]:
+    summary: list[dict[str, Any]] = []
+    for literal, sites in occurrences.items():
+        if len(sites) < min_hits:
+            continue
+        summary.append({
+            "literal": literal,
+            "count": len(sites),
+            "sample_sites": sites[:5],
+        })
+    summary.sort(key=lambda item: (-item["count"], item["literal"]))
+    return summary[:top_n]
+
+
+def _magic_literals(root: Path) -> list[dict[str, Any]]:
+    occurrences: dict[str, list[dict[str, Any]]] = {}
+    exclude = {".git", ".build", "DerivedData", "Pods", "Carthage", ".audit", "Tests"}
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = [d for d in dirnames if d not in exclude and not d.startswith(".")]
+        for filename in filenames:
+            if not filename.endswith(".swift"):
+                continue
+            full = Path(dirpath) / filename
+            try:
+                text = full.read_text(encoding="utf-8", errors="replace")
+            except OSError:
+                continue
+            for lineno, line in enumerate(text.splitlines(), start=1):
+                for literal in extract_numeric_literals(line):
+                    occurrences.setdefault(literal, []).append({
+                        "path": str(full.relative_to(root)),
+                        "line": lineno,
+                    })
+    return summarize_magic_literals(occurrences)

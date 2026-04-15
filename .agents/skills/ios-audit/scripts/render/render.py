@@ -9,9 +9,7 @@ Inputs (under `audit_root`):
 Outputs:
   audit_root/audit.json       # merged baseline (see audit-schema.json)
   audit_root/audit.html       # self-contained HTML report
-  <docs_dir>/                 # authored markdown copied over, preserving
-                              # paths listed in `preserve`
-  <docs_dir>-prev/            # snapshot of prior docs_dir (if it existed)
+  <docs_dir>/                 # authored markdown copied over
 
 The render step is deterministic and safe to re-run.
 """
@@ -35,13 +33,54 @@ from common import eprint, read_json, write_json  # noqa: E402
 from flow_scene import build_flow_scene  # noqa: E402
 
 ALL_PILLARS = ("code_health", "ux", "runtime", "release")
+FIXED_DOCS_BY_PILLAR: dict[str, tuple[str, ...]] = {
+    "code_health": (
+        "00-exec-brief.md",
+        "architecture/01-overview.md",
+        "architecture/02-module-graph.md",
+        "architecture/03-state-management.md",
+        "architecture/04-networking.md",
+        "architecture/05-configuration.md",
+        "quality/known-issues.md",
+        "quality/concurrency-audit.md",
+        "quality/code-smells.md",
+        "quality/refactoring-opportunities.md",
+    ),
+    "ux": (
+        "00-exec-brief.md",
+        "ux/screen-inventory.md",
+        "ux/navigation-graph.md",
+        "ux/component-catalog.md",
+        "ux/device-matrix.md",
+        "ux/consistency-audit.md",
+        "ux/layer-hierarchies.md",
+        "ux/gesture-audit.md",
+        "ux/accessibility-audit.md",
+    ),
+    "runtime": (
+        "00-exec-brief.md",
+        "operations/failure-modes.md",
+        "operations/caching-strategy.md",
+        "operations/resource-usage.md",
+        "operations/storage-policy.md",
+        "operations/observability.md",
+    ),
+    "release": (
+        "00-exec-brief.md",
+        "release/privacy-manifest.md",
+        "release/permissions-and-plist.md",
+        "release/localization.md",
+        "release/signing-and-distribution.md",
+        "release/app-store-readiness.md",
+        "release/third-party-dependencies.md",
+    ),
+}
 
 
 def render(
     *,
     audit_root: Path,
     docs_dir: Path,
-    preserve: list[str],
     skill_root: Path,
 ) -> Path:
     raw_dir = audit_root / "raw"
@@ -49,6 +88,12 @@ def render(
     authored_docs_dir = audit_root / "docs"
 
     meta = read_json(raw_dir / "meta.json") if (raw_dir / "meta.json").exists() else {}
+    _validate_authored_audit(
+        raw_dir=raw_dir,
+        findings_dir=findings_dir,
+        authored_docs_dir=authored_docs_dir,
+        meta=meta,
+    )
     findings = _load_findings(findings_dir)
 
     audit: dict[str, Any] = {
@@ -90,13 +135,12 @@ def render(
         overview=overview,
     )
 
-    # Copy authored docs into target docs_dir, preserving listed subpaths.
+    # Copy authored docs into target docs_dir. Preserve is opt-in only and
+    # discouraged because fresh audits should replace generated docs outright.
     if authored_docs_dir.exists():
         _apply_docs(
             authored=authored_docs_dir,
             target=docs_dir,
-            preserve=preserve,
-            audit_root=audit_root,
         )
     else:
         eprint(f"[render] no authored docs at {authored_docs_dir}; skipping docs copy")
@@ -153,72 +197,119 @@ def _summarize(findings: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def _apply_docs(*, authored: Path, target: Path, preserve: list[str], audit_root: Path) -> None:
-    """Replace target with authored contents, preserving listed subpaths.
-
-    Strategy:
-      1. Snapshot target → `<audit_root>/docs-prev` so the repo root stays clean.
-      2. For each path in preserve, copy it OUT of the current target (if present)
-         into a temp area.
-      3. Remove target, copy authored → target.
-      4. Restore preserved paths back into target.
-
-    `preserve` entries may be repo-relative (e.g. "docs/plans") or absolute.
-    They are normalized relative to target.parent so "docs/plans" under a
-    --docs-dir of "/repo/docs" resolves to "/repo/docs/plans".
-    """
+def _apply_docs(*, authored: Path, target: Path) -> None:
+    """Replace target with authored contents."""
     target = target.resolve()
     authored = authored.resolve()
 
-    prev_snapshot = audit_root / "docs-prev"
-    if target.exists():
-        if prev_snapshot.exists():
-            shutil.rmtree(prev_snapshot)
-        prev_snapshot.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copytree(target, prev_snapshot)
-
-    # Resolve preserves relative to target.parent
-    preserved_paths: list[tuple[Path, Path]] = []  # (orig_inside_target, saved_path)
-    tmp_root = target.parent / f".{target.name}.preserve-tmp"
-    if tmp_root.exists():
-        shutil.rmtree(tmp_root)
-    tmp_root.mkdir(parents=True, exist_ok=True)
-
-    for rel in preserve:
-        rel_path = Path(rel)
-        if rel_path.is_absolute():
-            resolved = rel_path
-        else:
-            # Support "docs/plans" (relative to target.parent) and "plans" (relative to target)
-            if rel_path.parts and rel_path.parts[0] == target.name:
-                resolved = target.parent / rel_path
-            else:
-                resolved = target / rel_path
-        if resolved.exists():
-            rel_in_target = resolved.relative_to(target) if resolved.is_relative_to(target) else None
-            saved = tmp_root / resolved.name
-            if resolved.is_dir():
-                shutil.copytree(resolved, saved)
-            else:
-                shutil.copy(resolved, saved)
-            preserved_paths.append((resolved, saved))
-
-    # Clobber target
     if target.exists():
         shutil.rmtree(target)
     shutil.copytree(authored, target)
 
-    # Restore preserves
-    for orig, saved in preserved_paths:
-        orig.parent.mkdir(parents=True, exist_ok=True)
-        if saved.is_dir():
-            if orig.exists():
-                shutil.rmtree(orig)
-            shutil.copytree(saved, orig)
-        else:
-            shutil.copy(saved, orig)
 
-    shutil.rmtree(tmp_root, ignore_errors=True)
+def _validate_authored_audit(
+    *,
+    raw_dir: Path,
+    findings_dir: Path,
+    authored_docs_dir: Path,
+    meta: dict[str, Any],
+) -> None:
+    """Fail fast when an audit run is incomplete.
+
+    Render should only operate on a complete, freshly-authored audit set.
+    """
+    errors: list[str] = []
+    pillars = _pillars_run(meta=meta, raw_dir=raw_dir)
+
+    if not authored_docs_dir.exists():
+        errors.append(f"missing authored docs directory: {authored_docs_dir}")
+    if not findings_dir.exists():
+        errors.append(f"missing findings directory: {findings_dir}")
+
+    for pillar in pillars:
+        findings_path = findings_dir / f"{pillar}.json"
+        if not findings_path.exists():
+            errors.append(f"missing findings file for pillar `{pillar}`: {findings_path}")
+            continue
+        try:
+            payload = read_json(findings_path)
+        except Exception as e:  # noqa: BLE001
+            errors.append(f"unreadable findings file for pillar `{pillar}`: {findings_path} ({e!r})")
+            continue
+        if not isinstance(payload, (list, dict)):
+            errors.append(f"findings file for pillar `{pillar}` must be a JSON array or object: {findings_path}")
+
+        for rel in FIXED_DOCS_BY_PILLAR.get(pillar, ()):
+            if not (authored_docs_dir / rel).exists():
+                errors.append(f"missing required authored doc for pillar `{pillar}`: docs/{rel}")
+
+    architecture_docs = sorted((authored_docs_dir / "architecture").glob("*.md")) if authored_docs_dir.exists() else []
+    if "code_health" in pillars and len(architecture_docs) < 6:
+        errors.append(
+            "expected a full architecture section for `code_health` "
+            f"(at least 6 markdown files under docs/architecture, found {len(architecture_docs)})"
+        )
+
+    runbooks = sorted((authored_docs_dir / "operations" / "runbooks").glob("*.md")) if authored_docs_dir.exists() else []
+    if "runtime" in pillars and not runbooks:
+        errors.append("expected at least one runbook under docs/operations/runbooks for the runtime pillar")
+
+    if "ux" in pillars:
+        flow_slugs = _expected_ux_flow_slugs(raw_dir)
+        if not flow_slugs:
+            errors.append("ux pillar ran but no workflows were found in raw/ux_run/results.json")
+        for slug in flow_slugs:
+            flow_doc = authored_docs_dir / "ux" / "flows" / f"{slug}.md"
+            shots_dir = authored_docs_dir / "ux" / "flows" / "_screenshots" / slug
+            if not flow_doc.exists():
+                errors.append(f"missing required UX flow doc: docs/ux/flows/{slug}.md")
+            if not shots_dir.exists() or not any(shots_dir.iterdir()):
+                errors.append(
+                    f"missing current-run screenshots for flow `{slug}` under "
+                    f"docs/ux/flows/_screenshots/{slug}/"
+                )
+
+    if errors:
+        bullets = "\n".join(f"- {error}" for error in errors)
+        raise RuntimeError(
+            "ios-audit render requires a complete fresh authored audit set before rendering.\n"
+            "Missing or invalid audit artifacts:\n"
+            f"{bullets}"
+        )
+
+
+def _pillars_run(*, meta: dict[str, Any], raw_dir: Path) -> tuple[str, ...]:
+    configured = meta.get("pillars_run")
+    if isinstance(configured, list) and configured:
+        return tuple(str(p) for p in configured if str(p) in ALL_PILLARS)
+    return tuple(
+        pillar for pillar in ALL_PILLARS
+        if (raw_dir / f"{pillar}.json").exists()
+    )
+
+
+def _expected_ux_flow_slugs(raw_dir: Path) -> list[str]:
+    results_path = raw_dir / "ux_run" / "results.json"
+    if not results_path.exists():
+        return []
+    try:
+        data = read_json(results_path)
+    except Exception:  # noqa: BLE001
+        return []
+
+    workflows = data.get("workflows")
+    if not isinstance(workflows, list):
+        workflows = (data.get("results") or {}).get("workflows")
+    if not isinstance(workflows, list):
+        return []
+
+    slugs: list[str] = []
+    for workflow in workflows:
+        name = str((workflow or {}).get("name") or "unknown")
+        slug = name.replace(" ", "_").lower()
+        if slug not in slugs:
+            slugs.append(slug)
+    return slugs
 
 
 def _render_html(
@@ -237,12 +328,21 @@ def _render_html(
     alongside the findings table, so opening `audit.html` gives a complete
     picture of the audit without needing to chase individual files.
 
-    Uses Jinja2 + markdown. Falls back to a minimal built-in template if
-    jinja2 is unavailable.
+    Requires Jinja2 + markdown. Missing renderer dependencies should fail
+    the audit run instead of silently degrading the report.
     """
     template_path = skill_root / "scripts" / "render" / "templates" / "audit.html.j2"
     try:
         import jinja2
+    except ImportError as e:
+        raise RuntimeError(
+            "ios-audit render requires the `jinja2` package. "
+            "Re-run the skill through its uv-managed entrypoint so the declared dependencies are installed."
+        ) from e
+    except Exception as e:  # noqa: BLE001
+        raise RuntimeError(f"ios-audit render failed to initialize Jinja2: {e!r}") from e
+
+    try:
         env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(str(template_path.parent)),
             autoescape=jinja2.select_autoescape(["html", "xml"]),
@@ -259,12 +359,8 @@ def _render_html(
             overview=overview,
             generated_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
         )
-    except ImportError as e:
-        eprint(f"[render] jinja2 unavailable ({e}); using fallback HTML")
-        html = _fallback_html(audit)
     except Exception as e:  # noqa: BLE001
-        eprint(f"[render] jinja2 template error ({e!r}); using fallback HTML")
-        html = _fallback_html(audit)
+        raise RuntimeError(f"ios-audit render failed while rendering audit.html: {e!r}") from e
     out_path.write_text(html, encoding="utf-8")
 
 
@@ -366,23 +462,22 @@ def _get_markdown_module():
     try:
         import markdown as md  # type: ignore
         return md
-    except ImportError:
-        return None
+    except ImportError as e:
+        raise RuntimeError(
+            "ios-audit render requires the `markdown` package. "
+            "Re-run the skill through its uv-managed entrypoint so the declared dependencies are installed."
+        ) from e
 
 
 def _make_markdown_to_html_callable(md_module) -> Callable[[str], str]:
-    """Return a `(markdown_source) -> html_string` callable using python-markdown
-    when available, or a <pre>-wrapping fallback otherwise."""
-    if md_module is not None:
-        def convert(text: str) -> str:
-            return md_module.markdown(
-                text,
-                extensions=["tables", "fenced_code", "toc"],
-                output_format="html5",
-            )
-        return convert
-    import html as _h
-    return lambda text: f"<pre>{_h.escape(text)}</pre>"
+    """Return a `(markdown_source) -> html_string` callable using python-markdown."""
+    def convert(text: str) -> str:
+        return md_module.markdown(
+            text,
+            extensions=["tables", "fenced_code", "toc"],
+            output_format="html5",
+        )
+    return convert
 
 
 FRONTMATTER_RE = re.compile(r"^---\s*\n.*?\n---\s*\n", re.DOTALL)
@@ -641,41 +736,3 @@ def _build_overview(
         "file_hotspots": file_hotspots,
         "pillar_stats": pillar_stats,
     }
-
-
-def _fallback_html(audit: dict[str, Any]) -> str:
-    import html as _h
-    meta = audit.get("meta", {})
-    findings = audit.get("findings", [])
-    summary = audit.get("summary", {})
-    lines = [
-        "<!doctype html>",
-        "<html><head><meta charset='utf-8'><title>iOS Audit</title>",
-        "<style>body{font-family:-apple-system,sans-serif;max-width:960px;margin:2em auto;padding:0 1em}"
-        ".sev-critical{color:#b91c1c;font-weight:600}.sev-major{color:#c2410c}"
-        ".sev-moderate{color:#a16207}.sev-minor{color:#475569}"
-        "table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid #e5e7eb;padding:6px;text-align:left}"
-        "</style></head><body>",
-        f"<h1>iOS Audit — {_h.escape(str(meta.get('app', {}).get('name', 'Unknown')))}</h1>",
-        f"<p>Generated: {_h.escape(str(meta.get('generated_at', '')))}</p>",
-        f"<p>Commit: <code>{_h.escape(str(meta.get('repo', {}).get('git_rev', '')))}</code></p>",
-        "<h2>Summary</h2>",
-        "<ul>",
-        f"<li>Findings: {len(findings)}</li>",
-        f"<li>Ship blockers (critical+must): {summary.get('ship_blockers', 0)}</li>",
-        f"<li>RICE total: {summary.get('rice_total', 0)}</li>",
-        "</ul>",
-        "<h2>Findings</h2>",
-        "<table><tr><th>ID</th><th>Pillar</th><th>Severity</th><th>Priority</th><th>Title</th></tr>",
-    ]
-    for f in findings:
-        sev = f.get("severity", "")
-        lines.append(
-            f"<tr><td>{_h.escape(f.get('id', ''))}</td>"
-            f"<td>{_h.escape(f.get('pillar', ''))}</td>"
-            f"<td class='sev-{sev}'>{_h.escape(sev)}</td>"
-            f"<td>{_h.escape(f.get('priority', ''))}</td>"
-            f"<td>{_h.escape(f.get('title', ''))}</td></tr>"
-        )
-    lines.append("</table></body></html>")
-    return "\n".join(lines)

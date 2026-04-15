@@ -35,6 +35,13 @@ The collector at `scripts/collect/code_health.py` captures:
   markers, `fatalError`, `preconditionFailure`.
 - **force_unwraps** — `x!.y` chain, `as!` casts, trailing `!)`.
 - **todo_markers** — same as above but broken out for convenience.
+- **state_management** — `@Observable`, `@State`, `@Binding`, `@Environment`,
+  `@AppStorage`, `@SceneStorage`, `@MainActor`.
+- **configuration_provenance** — UserDefaults/AppStorage, Bundle/Info.plist,
+  env vars, static constants, `*Config` / `*Constants` types.
+- **magic_literals** — repeated non-trivial numeric literals clustered by usage
+  site so the analyzer can inspect duplicated breakpoints, page sizes, and
+  user-visible capability constants.
 
 ## Required tools
 
@@ -52,6 +59,7 @@ See `scripts/analyze/prompts/code_health.md`. The prompt produces:
 - `architecture/02-module-graph.md`
 - `architecture/03-state-management.md`
 - `architecture/04-networking.md`
+- `architecture/05-configuration.md`
 - `architecture/NN-feature.md` (per feature)
 - `quality/known-issues.md`
 - `quality/concurrency-audit.md`
@@ -71,3 +79,5 @@ See `scripts/analyze/prompts/code_health.md`. The prompt produces:
 | CH-007 | `FIXME` or `HACK` marker older than 90 days | moderate |
 | CH-008 | Dead code flagged by Periphery — export or delete | minor |
 | CH-009 | Undocumented public type | minor |
+| CH-010 | User-facing capability badge duplicated across model/UI layers with no shared source of truth | major |
+| CH-011 | Repeated magic literal controls layout, pagination, or quality labels in multiple files | moderate |

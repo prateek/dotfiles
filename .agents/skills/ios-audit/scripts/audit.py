@@ -1,4 +1,13 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#   "jinja2",
+#   "markdown",
+#   "pillow",
+#   "pyyaml",
+# ]
+# ///
 """ios-audit top-level orchestrator.
 
 Subcommands:
@@ -14,6 +23,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -30,6 +40,7 @@ ALL_PILLARS = ("code_health", "ux", "runtime", "release")
 def cmd_collect(args: argparse.Namespace) -> int:
     repo = detect_repo(args.repo)
     output = Path(args.output).resolve()
+    _reset_audit_output(output=output, repo_root=repo.root)
     raw_dir = output / "raw"
     raw_dir.mkdir(parents=True, exist_ok=True)
 
@@ -108,6 +119,7 @@ def cmd_analyze(args: argparse.Namespace) -> int:
     print("For each pillar below, read the raw input + prompt, then write:")
     print("  1) authored markdown under .audit/docs/ per the prompt's doc outline")
     print("  2) a findings JSON file at .audit/findings/<pillar>.json matching audit-schema.json")
+    print("  3) a complete fresh doc set for every pillar that ran — render now fails if required docs are missing")
     print()
     for name in pillars:
         raw = raw_dir / f"{name}.json"
@@ -125,12 +137,10 @@ def cmd_render(args: argparse.Namespace) -> int:
 
     output = Path(args.audit).resolve()
     docs_dir = Path(args.docs_dir).resolve()
-    preserve = [p.strip() for p in (args.preserve or "").split(",") if p.strip()]
 
     audit_json_path = render.render(
         audit_root=output,
         docs_dir=docs_dir,
-        preserve=preserve,
         skill_root=SKILL_ROOT,
     )
     print(f"\nRender complete.")
@@ -237,6 +247,24 @@ def _load_app_override(workflows_path: str) -> dict:
     }
 
 
+def _reset_audit_output(*, output: Path, repo_root: Path) -> None:
+    """Ensure every collect run starts from a clean audit root.
+
+    The audit output directory is treated as disposable generated state.
+    This prevents stale docs, screenshots, thumbnails, or findings from a
+    prior run from satisfying the render phase by accident.
+    """
+    output = output.resolve()
+    protected = {repo_root.resolve(), repo_root.parent.resolve(), Path.home().resolve(), Path("/")}
+    if output in protected:
+        raise RuntimeError(
+            f"refusing to reset unsafe audit output path: {output}. "
+            "Use a dedicated audit directory such as `<repo>/.audit` or `<repo>/.audit-runs/<stamp>`."
+        )
+    if output.exists():
+        shutil.rmtree(output)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="ios-audit", description=__doc__)
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -265,7 +293,6 @@ def build_parser() -> argparse.ArgumentParser:
     r = sub.add_parser("render", help="Build audit.json + audit.html + docs/")
     r.add_argument("--audit", required=True, help="Audit output dir containing raw/ docs/ findings/")
     r.add_argument("--docs-dir", required=True, help="Target docs directory to replace")
-    r.add_argument("--preserve", default="docs/plans", help="Comma list of paths to preserve")
     r.set_defaults(func=cmd_render)
 
     d = sub.add_parser("diff", help="Compare current audit.json to baseline")
@@ -280,7 +307,6 @@ def build_parser() -> argparse.ArgumentParser:
     x.add_argument("--udid")
     x.add_argument("--sim-skill-dir")
     x.add_argument("--docs-dir", required=True)
-    x.add_argument("--preserve", default="docs/plans")
     x.add_argument("--baseline")
     x.add_argument("--keep-going", action="store_true")
     x.set_defaults(func=cmd_all)

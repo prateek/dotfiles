@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Shared helpers for ios-audit collectors, renderers, and diff script.
 
 Conventions:

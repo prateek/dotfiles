@@ -2,8 +2,8 @@
 
 You are writing the **Runtime Quality** section of an iOS app audit. Your
 inputs are `.audit/raw/runtime.json` (logging, retry patterns, timeouts,
-cache usage, network monitor, silent errors, persistence) plus the repo
-itself for source-level verification.
+cache usage, network monitor, silent errors, persistence, and storage policy)
+plus the repo itself for source-level verification.
 
 Your outputs:
 
@@ -41,6 +41,7 @@ Each gap becomes an RT-### finding.
   URL, favorite status, progress)
 - Current implementation notes: URLSession configuration, Nuke image cache,
   in-memory response cache
+- Whether transient streaming data is kept in cache/temp locations and whether durable offline content is stored separately with intentional retention
 - Proposed caching layer (if significant gaps exist): option A (URLSession)
   vs option B (custom manager), tradeoffs, recommended TTLs per endpoint
 
@@ -53,6 +54,13 @@ Synthesize from the raw data + your code reading:
 - Memory hotspots (large arrays, caches without bounds)
 - Background task / URLSession background modes
 - Battery considerations (polling, timers, location, motion)
+
+### `operations/storage-policy.md`
+
+- Bucket every persistent touchpoint into caches, temporary, application support, documents, keychain, and user defaults
+- For each bucket: what is stored there, whether that placement is appropriate, retention/cleanup behavior, and whether backup exclusion is applied where needed
+- Explicitly classify streaming/transient media, downloaded/offline media, telemetry payloads, auth/session data, and retry queues
+- Call out anything that relies on the OS to clean up without using the correct directory
 
 ### `operations/runbooks/<topic>.md` (one per major failure mode)
 
@@ -95,5 +103,6 @@ IDs start with `RT-`. Severity rubric:
 3. For every retry site, verify the retry logic is correct (exponential
    backoff, max attempts, cancellation, idempotency).
 4. For every cache use, ask: is there a TTL? invalidation? size cap?
-5. Write the failure-modes table first, then runbooks, then cache + obs docs.
-6. Cross-link every finding to the doc section where it's discussed.
+5. Use `storage_policy` to verify that transient stream artifacts live in cache/temp locations and that durable offline content has intentional retention and cleanup.
+6. Write the failure-modes table first, then runbooks, then cache + storage + obs docs.
+7. Cross-link every finding to the doc section where it's discussed.

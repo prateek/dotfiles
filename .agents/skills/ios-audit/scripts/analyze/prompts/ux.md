@@ -4,7 +4,8 @@ You are writing the **UX** section of an iOS app audit. Your inputs are
 the raw collector output at `.audit/raw/ux.json` — which includes static
 screen inventory, navigation graph, component catalog, gesture usage, AND
 the results of scripted flow walkthroughs with per-step screenshots and
-accessibility trees — plus the screenshots themselves under
+accessibility trees, adaptive-layout signals, semantic-surface grep hits,
+and workflow/device-lane coverage data — plus the screenshots themselves under
 `.audit/raw/ux_run/`.
 
 You should visually review screenshots, not just metadata.
@@ -49,7 +50,7 @@ Group by theme (cards, rows, chrome, badges, buttons, etc.).
 ### `ux/flows/<flow>.md` (one per workflow in `flows.results.workflows`)
 
 For each workflow executed:
-- Name, tags, precondition
+- Name, tags, precondition, device lane, and target simulator
 - Happy path description (1 paragraph)
 - Step-by-step walkthrough referencing the captured screenshots inline
   (image paths are in `.audit/raw/ux_run/<flow>/` and match
@@ -58,6 +59,24 @@ For each workflow executed:
   to note a11y label gaps, missing traits, unlabelled buttons, etc.)
 - Edge cases observed or expected
 - Known failure modes (link to runtime docs)
+
+### `ux/device-matrix.md`
+
+- Declared workflow lanes from `workflow_matrix.declared_lanes`
+- Which workflows actually executed on which device lane
+- Whether adaptive-layout signals exist without compact + regular coverage
+- Any lane-specific blockers (for example, iPad flow missing, large-screen controls clipped, sidebar-only nav untested)
+
+### `ux/consistency-audit.md`
+
+Compare recurring user-visible semantics across screens, workflows, and data sources.
+
+- For media apps, explicitly compare home/catalog/detail/player/download/settings for:
+  quality badges, version labels, audio language, subtitle/caption options,
+  download/offline status, watch progress, and any playback preference labels
+- For non-media apps, identify the equivalent repeated user-facing concepts
+- For each concept: source of truth, where it is rendered, whether it is API-derived or hard-coded, and whether the values stay consistent across the surfaces
+- If the audit cannot prove consistency, say that plainly and treat it as a finding when the concept matters to user choice
 
 ### `ux/layer-hierarchies.md`
 
@@ -95,8 +114,9 @@ IDs start with `UX-`. Severity rubric:
 
 - **critical** — broken flow (step fails, wrong screen lands), blocker gesture
   conflict, unreachable UI, a11y barrier that prevents task completion
+- **critical** — a core capability is advertised on one surface and unavailable on the path that should consume it
 - **major** — cosmetic bug that appears on every launch (overflow, clipping),
-  contrast failure, missing a11y label on a primary button
+  contrast failure, missing a11y label on a primary button, or primary metadata/options drift between key surfaces
 - **moderate** — inconsistency, slightly off padding, placeholder copy in prod
 - **minor** — polish: unused alignment, nit spacing
 
@@ -110,11 +130,13 @@ Priority (MoSCoW) and RICE scoring identical to Code Health. See
    text metadata is not a substitute for visual review.
 3. Walk the accessibility tree for each captured step. Pay attention to
    nodes with empty labels or no traits.
-4. For each flow, write the walkthrough first (with inline screenshots),
+4. Use `workflow_matrix` to state which device classes were actually covered and where lane coverage is missing.
+5. Use `semantic_surface_signals` plus source inspection to compare repeated capability badges/options across screens. Do not assume consistency just because the labels look similar.
+6. For each flow, write the walkthrough first (with inline screenshots),
    then the findings for that flow.
-5. Write the cross-cutting docs (screen inventory, nav graph, components,
-   gestures, a11y) last — they reference everything else.
-6. Every screenshot mentioned in the walkthrough must be committed under
+7. Write the cross-cutting docs (screen inventory, nav graph, components,
+   gestures, a11y, device matrix, consistency) last — they reference everything else.
+8. Every screenshot mentioned in the walkthrough must be committed under
    `docs/ux/flows/_screenshots/<flow>/` so the rendered docs are self-contained.
    Copy them as part of writing the markdown (the RENDER phase copies your
    authored `.audit/docs/` into `docs/` verbatim).

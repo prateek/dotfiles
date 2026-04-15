@@ -1,4 +1,10 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#   "pillow",
+# ]
+# ///
 """Generate an HTML flow document from ios-flow-audit results.
 
 Shows each workflow as a horizontal flow of screenshots with interaction arrows and issue badges.

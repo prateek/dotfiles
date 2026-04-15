@@ -29,6 +29,9 @@ The collector at `scripts/collect/runtime.py` is grep-based and captures:
   `FileManager.default`, `NSCoding`, `Codable .* write`.
 - **playback_signals** — `AVPlayer`, `AVPlayerItem`, `AVPlayerLayer`,
   `timeControlStatus`, `isPlaybackBufferEmpty`, `isPlaybackLikelyToKeepUp`.
+- **storage_policy** — storage touchpoints bucketed into documents,
+  application support, caches, temporary, keychain, and user defaults,
+  plus backup-exclusion and cleanup control signals.
 
 A summary block reports total counts per category so the analyzer can spot
 ratios at a glance (e.g. "45 silent-error sites vs 2 os_log sites" is a
@@ -47,6 +50,7 @@ See `scripts/analyze/prompts/runtime.md`. The prompt produces:
 - `operations/failure-modes.md`
 - `operations/caching-strategy.md`
 - `operations/resource-usage.md`
+- `operations/storage-policy.md`
 - `operations/runbooks/<topic>.md` (per gap worth a runbook)
 - `operations/observability.md`
 
@@ -61,3 +65,5 @@ See `scripts/analyze/prompts/runtime.md`. The prompt produces:
 | RT-005 | Response body re-fetched every tab switch — no in-memory cache | moderate |
 | RT-006 | Logging uses `print()` instead of `Logger` — not filterable | moderate |
 | RT-007 | Error types are `NSError`-ish instead of enum cases | minor |
+| RT-008 | Streamed/transient data stored outside cache/temp with no cleanup policy | major |
+| RT-009 | Offline downloads stored durably but without retention or backup policy | major |

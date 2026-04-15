@@ -47,7 +47,7 @@ python3 ~/.agents/skills/ios-flow-audit/scripts/generate_report.py \
 New equivalent (UX-only, no other pillars):
 
 ```bash
-python3 ~/.agents/skills/ios-audit/scripts/audit.py collect \
+~/.agents/skills/ios-audit/scripts/audit.py collect \
   --repo ~/code/my-app \
   --workflows .audit/flows.yaml \
   --output /tmp/audit \
@@ -57,7 +57,7 @@ python3 ~/.agents/skills/ios-audit/scripts/audit.py collect \
 Or the legacy scripts still work directly from `scripts/ux/`:
 
 ```bash
-python3 ~/.agents/skills/ios-audit/scripts/ux/run_workflows.py \
+~/.agents/skills/ios-audit/scripts/ux/run_workflows.py \
   --workflows .audit/flows.yaml \
   --output-dir /tmp/audit
 ```
@@ -65,7 +65,7 @@ python3 ~/.agents/skills/ios-audit/scripts/ux/run_workflows.py \
 For a full 4-pillar run (recommended):
 
 ```bash
-python3 ~/.agents/skills/ios-audit/scripts/audit.py all \
+~/.agents/skills/ios-audit/scripts/audit.py all \
   --repo ~/code/my-app \
   --workflows .audit/flows.yaml \
   --output /tmp/audit \

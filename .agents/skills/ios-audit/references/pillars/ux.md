@@ -26,6 +26,13 @@ The collector at `scripts/collect/ux.py` captures:
 - **gesture_usage** — grep sites for `.onTapGesture`, `.onLongPressGesture`,
   `.gesture`, `.simultaneousGesture`, `.highPriorityGesture`, `.swipeActions`,
   `.contextMenu`, `.onDrag`, `.onDrop`.
+- **adaptive_layout_signals** — code-derived evidence that the app adapts by
+  size class, device idiom, split view, ViewThatFits, or other layout branches.
+- **semantic_surface_signals** — grep hits for repeated user-facing concepts
+  like quality badges, audio language, subtitle/caption options, downloads,
+  and playback preferences so the analyzer can compare the screens that surface them.
+- **workflow_matrix** — declared device lanes, workflow-to-lane assignments,
+  executed lanes, and coverage gaps when adaptive UI exists but only one lane ran.
 
 **Dynamic (from the simulator):**
 
@@ -64,6 +71,8 @@ See `scripts/analyze/prompts/ux.md`. The prompt produces:
 - `ux/layer-hierarchies.md`
 - `ux/gesture-audit.md`
 - `ux/accessibility-audit.md`
+- `ux/device-matrix.md`
+- `ux/consistency-audit.md`
 
 Screenshots referenced from flow docs should be copied into
 `.audit/docs/ux/flows/_screenshots/<flow>/` so that when RENDER copies
@@ -82,3 +91,5 @@ prose.
 | UX-006 | Two siblings use the same swipe direction → unreliable | moderate |
 | UX-007 | Component used in 1 place but extracted as reusable — dead abstraction | minor |
 | UX-008 | Missing dark-mode asset (visible in light-mode screenshot only) | moderate |
+| UX-009 | Adaptive layout detected but only one device class was audited | major |
+| UX-010 | Title/detail/player/download surfaces disagree about the same capability | major |

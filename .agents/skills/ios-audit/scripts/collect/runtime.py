@@ -83,9 +83,41 @@ PLAYBACK_PATTERNS = [
     r"isPlaybackLikelyToKeepUp",
 ]
 
+STORAGE_TOUCHPOINT_PATTERNS = [
+    r"\.documentDirectory\b",
+    r"\.applicationSupportDirectory\b",
+    r"\.cachesDirectory\b",
+    r"temporaryDirectory\b",
+    r"NSTemporaryDirectory\s*\(",
+    r"UserDefaults\.",
+    r"KeychainHelper",
+    r"Keychain\.",
+    r"URLCache\b",
+    r"NSCache\b",
+]
+
+BACKUP_EXCLUSION_PATTERNS = [
+    r"isExcludedFromBackupKey",
+    r"isExcludedFromBackup",
+    r"NSURLIsExcludedFromBackupKey",
+]
+
+CLEANUP_CONTROL_PATTERNS = [
+    r"removeItem\s*\(",
+    r"replaceItemAt\s*\(",
+    r"removeExpired",
+    r"cleanup",
+    r"prune",
+    r"purge",
+    r"trim",
+]
+
 
 def collect(*, repo: RepoInfo, output_dir: Path) -> None:
     root = repo.root
+    storage_touchpoints = safe_grep(STORAGE_TOUCHPOINT_PATTERNS, root)
+    backup_exclusions = safe_grep(BACKUP_EXCLUSION_PATTERNS, root)
+    cleanup_controls = safe_grep(CLEANUP_CONTROL_PATTERNS, root)
     out: dict[str, Any] = {
         "logging": safe_grep(LOG_PATTERNS, root),
         "retry_patterns": safe_grep(RETRY_PATTERNS, root),
@@ -95,6 +127,12 @@ def collect(*, repo: RepoInfo, output_dir: Path) -> None:
         "silent_errors": safe_grep(SILENT_ERROR_PATTERNS, root),
         "persistence": safe_grep(PERSISTENCE_PATTERNS, root),
         "playback_signals": safe_grep(PLAYBACK_PATTERNS, root),
+        "storage_policy": {
+            "touchpoints": storage_touchpoints,
+            "backup_exclusions": backup_exclusions,
+            "cleanup_controls": cleanup_controls,
+            "summary": summarize_storage_policy(storage_touchpoints, backup_exclusions, cleanup_controls),
+        },
     }
     out["summary"] = {
         "total_log_sites": len(out["logging"]),
@@ -104,5 +142,45 @@ def collect(*, repo: RepoInfo, output_dir: Path) -> None:
         "timeout_sites": len(out["timeouts"]),
         "cache_sites": len(out["cache_usage"]),
         "silent_error_sites": len(out["silent_errors"]),
+        "storage_touchpoint_sites": len(storage_touchpoints),
     }
     write_json(output_dir / "runtime.json", out)
+
+
+def summarize_storage_policy(
+    touchpoints: list[dict[str, Any]],
+    backup_exclusions: list[dict[str, Any]],
+    cleanup_controls: list[dict[str, Any]],
+) -> dict[str, Any]:
+    bucket_counts = {
+        "documents": 0,
+        "application_support": 0,
+        "caches": 0,
+        "temporary": 0,
+        "keychain": 0,
+        "user_defaults": 0,
+        "unspecified": 0,
+    }
+
+    for touchpoint in touchpoints:
+        context = (touchpoint.get("context") or "").lower()
+        bucket = "unspecified"
+        if ".documentdirectory" in context:
+            bucket = "documents"
+        elif ".applicationsupportdirectory" in context:
+            bucket = "application_support"
+        elif ".cachesdirectory" in context or "urlcache" in context or "nscache" in context:
+            bucket = "caches"
+        elif "temporarydirectory" in context or "nstemporarydirectory" in context:
+            bucket = "temporary"
+        elif "keychain" in context:
+            bucket = "keychain"
+        elif "userdefaults" in context:
+            bucket = "user_defaults"
+        bucket_counts[bucket] += 1
+
+    return {
+        "bucket_counts": bucket_counts,
+        "has_backup_exclusion": bool(backup_exclusions),
+        "has_cleanup_controls": bool(cleanup_controls),
+    }

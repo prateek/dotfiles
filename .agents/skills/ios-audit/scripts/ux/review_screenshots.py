@@ -1,4 +1,8 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.10"
+# dependencies = []
+# ///
 """Organize captured screenshots for LLM-based visual/UX review.
 
 Outputs a structured review manifest that an LLM agent can process image-by-image.

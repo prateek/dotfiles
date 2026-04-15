@@ -34,6 +34,8 @@ graph.
 - @Observable classes, @State/@Binding/@Environment usage patterns
 - Where the app's source of truth lives (AuthManager, Router, global models)
 - Reactivity boundaries: which views own which models
+- Persisted state and settings ownership (`@AppStorage`, UserDefaults, keychain, file-backed queues)
+- Which user-facing values are API-derived vs locally hard-coded
 - Call out any @MainActor enforcement / isolation gaps
 
 ### `architecture/04-networking.md`
@@ -42,6 +44,13 @@ graph.
 - JSON decoding strategy
 - Error mapping
 - Any cache / retry / backoff plumbing (link to operations/caching-strategy.md)
+
+### `architecture/05-configuration.md`
+
+- Configuration sources: Info.plist, build settings, env vars, static constants, persisted preferences
+- Magic literal inventory from `magic_literals` with the handful that affect UX, pagination, quality labels, or layout breakpoints
+- Whether those values are centralized, duplicated, or inconsistent across features and device classes
+- Any place a user-visible capability badge or option is hard-coded instead of derived from runtime data
 
 ### `architecture/NN-feature.md` (one per major feature area)
 
@@ -130,8 +139,11 @@ See `references/priority-model.md` for the full RICE scoring guide.
 
 1. Read `.audit/raw/code_health.json` fully.
 2. Skim the top-20 largest files in source to form a mental model.
-3. Walk the concurrency + error handling smells in source to classify each.
-4. Draft the overview + feature docs first (they establish vocabulary).
-5. Draft the quality docs last (they reference the feature docs).
-6. Produce findings JSON as you go; do NOT wait until the end.
-7. Cross-link every finding to the doc section where it is discussed.
+3. Use `state_management`, `configuration_provenance`, and `magic_literals` to map where app state and app configuration truly come from.
+4. Walk the concurrency + error handling smells in source to classify each.
+5. Verify whether repeated user-facing metadata is API-derived or duplicated/hard-coded across screens.
+6. Draft the overview + feature docs first (they establish vocabulary).
+7. Draft the quality docs last (they reference the feature docs).
+8. Produce findings JSON as you go; do NOT wait until the end.
+9. Cross-link every finding to the doc section where it is discussed.
+10. Do not carry forward stale prose from prior audits. If existing docs disagree with the source, treat that as evidence of documentation drift and note it explicitly.
