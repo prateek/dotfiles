@@ -1,0 +1,26 @@
+# ABOUTME: Canonical runtime classes and preferred devices for __APP_NAME__ simulator execution.
+# ABOUTME: Task topology lives in Tuist metadata; this file only governs runtime and device-selection policy.
+
+[devices.iphone]
+type_identifiers = [
+  "com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro",
+  "com.apple.CoreSimulator.SimDeviceType.iPhone-16-Pro",
+]
+
+[devices.ipad]
+type_identifiers = [
+  "com.apple.CoreSimulator.SimDeviceType.iPad-Pro-13-inch-M4",
+  "com.apple.CoreSimulator.SimDeviceType.iPad-Air-13-inch-M3",
+]
+
+[runtimes.flexible]
+policy = "preferred_or_newest_compatible"
+preferred_identifiers = [
+  "com.apple.CoreSimulator.SimRuntime.iOS-26-4",
+]
+
+[runtimes.exact]
+policy = "exact"
+preferred_identifiers = [
+  "com.apple.CoreSimulator.SimRuntime.iOS-26-4",
+]

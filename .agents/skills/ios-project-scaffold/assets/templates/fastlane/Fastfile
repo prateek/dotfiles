@@ -13,8 +13,8 @@
 
 default_platform(:ios)
 
-SCHEME      = ENV.fetch("SCHEME",      "MyApp")
-WORKSPACE   = ENV.fetch("WORKSPACE",   "MyApp.xcworkspace")
+SCHEME      = ENV.fetch("SCHEME",      "__APP_NAME__")
+WORKSPACE   = ENV.fetch("WORKSPACE",   "__APP_NAME__.xcworkspace")
 CONFIG      = ENV.fetch("CONFIGURATION", "Release")
 
 platform :ios do

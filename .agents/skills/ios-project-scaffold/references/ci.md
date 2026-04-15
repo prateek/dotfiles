@@ -1,6 +1,6 @@
 # CI and GitHub Actions cost control
 
-The scaffold's `.github/workflows/ci.yml`, `security.yml`, and `testflight.yml` templates encode these rules. Read this file when you need to tune them, add a new workflow, or debug a CI cost spike.
+The scaffold's `.github/workflows/ci.yml`, `security.yml`, and `beta.yml` templates encode these rules. Read this file when you need to tune them, add a new workflow, or debug a CI cost spike.
 
 ## The cost math
 
@@ -40,7 +40,7 @@ Every macOS job must set:
 
 - **ci**: fires on `push` and `pull_request`. Cheap, high-frequency.
 - **TestFlight deploy**: fires only on tag pushes matching `v*` or on manual dispatch. Never fires on every commit; the cost and the TestFlight rate limit both matter.
-- **App Store release**: tag or manual dispatch only, and require an environment reviewer gate. The scaffold's `testflight.yml` uses `environment: testflight` which enforces a reviewer.
+- **TestFlight deploy**: tag or manual dispatch only, and require an environment reviewer gate. The scaffold's `beta.yml` uses `environment: beta`.
 
 Never rerun the full CI suite inside a deploy workflow unless the extra coverage justifies the cost. If it does, quote the cost in the workflow file comments.
 
@@ -76,7 +76,7 @@ Agents parse text logs inefficiently. Upload the `.xcresult` bundle as an artifa
   uses: actions/upload-artifact@v4
   with:
     name: xcresults
-    path: /tmp/${{ github.event.repository.name }}-*/Logs/Test/*.xcresult
+    path: build/results/*.xcresult
     if-no-files-found: ignore
 ```
 

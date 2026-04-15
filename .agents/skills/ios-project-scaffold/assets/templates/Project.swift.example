@@ -1,55 +1,206 @@
-// Tuist 4.x Project.swift — canonical shape with:
-//   - iOS app target + unit-test target
-//   - Test-action environment variables defined on the scheme so they
-//     survive `tuist generate` (never edit xcschemes directly).
-//   - Single shared scheme, everything else generated from here.
-//
-// Verified against Tuist 4.61.2.
+// ABOUTME: Tuist manifest defining the __APP_NAME__ project and its execution topology.
+// ABOUTME: Encodes suite metadata in Swift so the worktree helper can infer lanes from Tuist rather than handwritten maps.
 
 import ProjectDescription
 
-let project = Project(
-    name: "MyApp",
-    targets: [
-        .target(
-            name: "MyApp",
-            destinations: .iOS,
-            product: .app,
-            bundleId: "com.example.MyApp",
-            deploymentTargets: .iOS("18.0"),
-            infoPlist: .default,
-            sources: ["Sources/**"],
-            resources: ["Resources/**"],
-            dependencies: []
-        ),
-        .target(
-            name: "MyAppTests",
-            destinations: .iOS,
-            product: .unitTests,
-            bundleId: "com.example.MyAppTests",
-            deploymentTargets: .iOS("18.0"),
-            sources: ["Tests/**"],
-            dependencies: [
-                .target(name: "MyApp"),
+let appName = "__APP_NAME__"
+let bundlePrefix = "__BUNDLE_ID__"
+let deploymentTarget = "17.0"
+let swiftVersion = "5"
+let tagNamespace = "__APP_SLUG__"
+
+enum SuiteKind: String, CaseIterable {
+    case unit
+    case ui
+    case snapshot
+    case visual
+
+    var targetName: String {
+        switch self {
+        case .unit:
+            return "\(appName)Tests"
+        case .ui:
+            return "\(appName)UITests"
+        case .snapshot:
+            return "\(appName)SnapshotTests"
+        case .visual:
+            return "\(appName)VisualFidelityTests"
+        }
+    }
+
+    var bundleId: String {
+        switch self {
+        case .unit:
+            return "\(bundlePrefix).tests"
+        case .ui:
+            return "\(bundlePrefix).uitests"
+        case .snapshot:
+            return "\(bundlePrefix).snapshottests"
+        case .visual:
+            return "\(bundlePrefix).visualfidelity"
+        }
+    }
+
+    var product: Product {
+        switch self {
+        case .unit, .snapshot:
+            return .unitTests
+        case .ui, .visual:
+            return .uiTests
+        }
+    }
+
+    var runtimeClass: String {
+        switch self {
+        case .unit, .ui:
+            return "flexible"
+        case .snapshot, .visual:
+            return "exact"
+        }
+    }
+
+    var dataMode: String {
+        switch self {
+        case .unit, .snapshot:
+            return "deterministic"
+        case .ui, .visual:
+            return "live"
+        }
+    }
+
+    var validationDefault: Bool {
+        switch self {
+        case .visual:
+            return false
+        case .unit, .ui, .snapshot:
+            return true
+        }
+    }
+
+    var metadataTags: [String] {
+        [
+            "\(tagNamespace):role:suite",
+            "\(tagNamespace):suite:\(rawValue)",
+            "\(tagNamespace):device-support:both",
+            "\(tagNamespace):data-mode:\(dataMode)",
+            "\(tagNamespace):runtime-class:\(runtimeClass)",
+        ]
+    }
+
+    var sourceGlob: SourceFilesList {
+        switch self {
+        case .unit:
+            return ["Tests/Unit/**", "TestsSupport/**"]
+        case .ui:
+            return ["Tests/UI/**", "TestsSupport/**"]
+        case .snapshot:
+            return ["Tests/Snapshot/**", "TestsSupport/**"]
+        case .visual:
+            return ["Tests/Visual/**", "TestsSupport/**"]
+        }
+    }
+
+    var dependencies: [TargetDependency] {
+        switch self {
+        case .snapshot:
+            return [
+                .target(name: appName),
+                .external(name: "SnapshotTesting", condition: .when([.ios])),
+            ]
+        case .unit, .ui, .visual:
+            return [.target(name: appName)]
+        }
+    }
+}
+
+let suiteKinds = SuiteKind.allCases
+
+func appMetadataTags() -> [String] {
+    [
+        "\(tagNamespace):role:app",
+        "\(tagNamespace):runtime-class:flexible",
+    ]
+}
+
+func appTarget() -> Target {
+    .target(
+        name: appName,
+        destinations: .iOS,
+        product: .app,
+        bundleId: bundlePrefix,
+        deploymentTargets: .iOS(deploymentTarget),
+        infoPlist: .extendingDefault(with: [
+            "UIApplicationSceneManifest": .dictionary([
+                "UIApplicationSupportsMultipleScenes": .boolean(false),
+            ]),
+        ]),
+        sources: ["\(appName)/**"],
+        resources: [],
+        dependencies: [],
+        settings: .settings(
+            base: [
+                "SWIFT_STRICT_CONCURRENCY": "targeted",
+                "CODE_SIGN_IDENTITY": "",
+                "CODE_SIGNING_REQUIRED": "NO",
             ]
         ),
-    ],
-    schemes: [
-        .scheme(
-            name: "MyApp",
-            shared: true,
-            buildAction: .buildAction(targets: ["MyApp"]),
-            testAction: .targets(
-                ["MyAppTests"],
-                arguments: .arguments(environmentVariables: [
-                    // Commit keys, not values. Set the actual values in the
-                    // shell (e.g. .env.test sourced by the Makefile target)
-                    // at tuist-generate time.
-                    "MY_APP_TEST_USERNAME": "$(MY_APP_TEST_USERNAME)",
-                    "MY_APP_TEST_PASSWORD": "$(MY_APP_TEST_PASSWORD)",
-                ])
-            ),
-            runAction: .runAction(executable: "MyApp")
+        metadata: .metadata(tags: appMetadataTags())
+    )
+}
+
+func suiteTarget(_ kind: SuiteKind) -> Target {
+    .target(
+        name: kind.targetName,
+        destinations: .iOS,
+        product: kind.product,
+        bundleId: kind.bundleId,
+        deploymentTargets: .iOS(deploymentTarget),
+        infoPlist: .default,
+        sources: kind.sourceGlob,
+        dependencies: kind.dependencies,
+        metadata: .metadata(tags: kind.metadataTags)
+    )
+}
+
+func testableTargets(_ kinds: [SuiteKind]) -> [TestableTarget] {
+    kinds.map { .testableTarget(target: .target($0.targetName)) }
+}
+
+func appScheme() -> Scheme {
+    .scheme(
+        name: appName,
+        shared: true,
+        buildAction: .buildAction(targets: [.target(appName)]),
+        testAction: .targets(
+            testableTargets(suiteKinds.filter(\.validationDefault)),
+            configuration: .debug
         ),
-    ]
+        runAction: .runAction(configuration: .debug, executable: .target(appName))
+    )
+}
+
+func suiteScheme(_ kind: SuiteKind) -> Scheme {
+    .scheme(
+        name: kind.targetName,
+        shared: true,
+        buildAction: .buildAction(targets: [.target(appName)]),
+        testAction: .targets(
+            testableTargets([kind]),
+            configuration: .debug
+        ),
+        runAction: .runAction(configuration: .debug, executable: .target(appName))
+    )
+}
+
+let project = Project(
+    name: appName,
+    settings: .settings(
+        base: [
+            "SWIFT_VERSION": .string(swiftVersion),
+            "IPHONEOS_DEPLOYMENT_TARGET": .string(deploymentTarget),
+        ],
+        defaultSettings: .recommended
+    ),
+    targets: [appTarget()] + suiteKinds.map(suiteTarget),
+    schemes: [appScheme()] + suiteKinds.map(suiteScheme)
 )

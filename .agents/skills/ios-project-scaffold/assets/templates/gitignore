@@ -24,8 +24,5 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/test_output
 
-# Simulator lease sentinel (per-worktree, never shared)
-.ios-sim-udid
-
 # System
 .DS_Store

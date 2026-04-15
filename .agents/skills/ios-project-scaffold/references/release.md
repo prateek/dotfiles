@@ -1,6 +1,6 @@
 # Release: Fastlane, TestFlight, App Store Connect
 
-Read this file when you need to set up releases for a new app, rotate an ASC API key, or debug a failing `fastlane beta` run. The scaffold templates under `assets/templates/fastlane/` and `assets/templates/github-workflows/testflight.yml` encode these rules.
+Read this file when you need to set up releases for a new app, rotate an ASC API key, or debug a failing `fastlane beta` run. The scaffold templates under `assets/templates/fastlane/` and `assets/templates/github-workflows/beta.yml` encode these rules.
 
 ## The key fact about ASC app creation
 
@@ -66,14 +66,14 @@ Never commit `.p8`, `.p12`, `.mobileprovision`, or any `AuthKey_*` file.
 
 ## Beta → Release pipeline
 
-The scaffold's `.github/workflows/testflight.yml` fires on tag push:
+The scaffold's `.github/workflows/beta.yml` fires on tag push:
 
 ```
 git tag v0.1.0
 git push origin v0.1.0
 ```
 
-The tagged push triggers `fastlane beta`, gated behind the `testflight` environment reviewer. Once the build is live in TestFlight, testers get it through the Apple TestFlight app.
+The tagged push triggers `fastlane beta`, gated behind the `beta` environment reviewer. Once the build is live in TestFlight, testers get it through the Apple TestFlight app.
 
 For App Store submission (the `release` lane), use `workflow_dispatch` only. Never automate App Store submission on tag push — you want a human in the loop for the "Submit for Review" click.
 

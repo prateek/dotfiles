@@ -1,0 +1,4 @@
+# ABOUTME: direnv configuration for automatic environment variable loading.
+# ABOUTME: Sources .env so local credentials are available in shell sessions without hardcoding them in the repo.
+
+dotenv .env

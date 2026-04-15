@@ -1,3 +1,3 @@
 interface:
-  display_name: "Ios Project Scaffold"
-  short_description: "Help with Ios Project Scaffold tasks"
+  display_name: "iOS Project Scaffold"
+  short_description: "Scaffold or audit an iOS repo with Tuist, a worktree helper, and repo-owned build state"
