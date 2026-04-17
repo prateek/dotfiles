@@ -27,6 +27,12 @@ Keep it short. Put recurring maintenance workflow in `$code-gardening`, not in l
 - Do not put one-off session chatter or temporary debugging notes here. Those belong in task output, issues, or other working notes.
 - After editing a skill, validate it. Skill frontmatter and parser drift have bitten us enough times that this should be automatic.
 
+## Shell Startup
+
+- Keep baseline `PATH` entries in `zprofile`'s `path=(...)` array, not ad hoc `export PATH=...` snippets in `zshrc`.
+- Prefer explicit directories like `$HOME/go/bin` over indirect env vars like `$GOPATH/bin` when the goal is just shell PATH setup.
+- Reserve `zshrc` PATH mutations for truly interactive or late overlays only.
+
 ## Python deps (pyproject + type stubs + build system)
 
 - When adding a new Python import, declare the dependency in `pyproject.toml` (runtime vs test/dev/optional).

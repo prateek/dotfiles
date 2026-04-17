@@ -41,7 +41,8 @@ path=(
   $HOME/bin
   $HOME/.local/bin
   /opt/homebrew/{bin,sbin}
-  $GOPATH/bin
+  $HOME/go/bin
+  $HOME/Library/pnpm
   /opt/homebrew/opt/python@3.11/libexec/bin
   $HOME/code/FlameGraph
   /opt/homebrew/share/google-cloud-sdk/bin
