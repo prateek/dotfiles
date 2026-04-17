@@ -126,10 +126,29 @@ If you change durable vocabulary, workflow, invariants, or operating assumptions
 
 When editing prose humans will read, apply the `writing-clearly-and-concisely` guidance.
 
+#### Durable docs are steady-state artifacts
+
+`AGENTS.md`, `CLAUDE.md`, `README`, `SKILL.md`, and long-lived guides are part of the system, not commentary about it. When you touch them, treat the whole doc as in scope, not just the local edit site:
+
+- Compare the doc against the live tree or live behavior, not the nearby excerpt.
+- Reread the whole doc before finishing. Drift often shows up as redundancy or stale structure, not wrong facts.
+- Remove migration-era notes once the migration is complete.
+- Collapse repeated lists or restatements when one index will do.
+- Prefer one authoritative section over several partial restatements.
+
+#### Git vs non-git workspaces
+
+Provenance and rollback are weaker outside git. Raise the bar accordingly:
+
+- In a non-git workspace, surface durable-doc drift and ask before editing. Do not silently modify `AGENTS.md`-style files.
+- In a git-tracked workspace, small doc sync tightly coupled to the task stays in scope. Larger structural rewrites still need a heads-up.
+- If you cannot tell whether the workspace is git-tracked (for example, a docs root under `~/Documents`), check with `git rev-parse --is-inside-work-tree` before editing durable docs.
+
 ### 6. Validate The Boundary You Touched
 
 - Use tool-native checks instead of regex guesses.
 - After editing a skill, run its validator or parser immediately.
+- After editing a durable doc, reread the whole file and check for redundancy, migration-era wording, and sections that disagree with the live tree.
 - If a failure may be pre-existing, baseline it early.
 - Before commit or handoff on non-trivial work, run the smallest matching verification.
 
@@ -157,3 +176,5 @@ Keep this short. The goal is to leave the next reader with a trustworthy surface
 - Stuff one-off incident notes into `AGENTS.md`.
 - Trust stale comments over observed behavior.
 - Leave parser or validator drift unverified after touching skill or config files.
+- Silently edit durable docs in a non-git workspace. Surface the drift and ask first.
+- Patch a local line in `AGENTS.md`-style files without rereading the whole doc for redundancy and migration-era wording.

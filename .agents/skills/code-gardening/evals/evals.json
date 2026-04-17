@@ -1,0 +1,45 @@
+{
+  "skill_name": "code-gardening",
+  "evals": [
+    {
+      "id": 1,
+      "name": "nongit-durable-doc-drift",
+      "prompt": "I renamed the `drafts/` folder to `working/` in my docs workspace. Update AGENTS.md to reflect the new name.",
+      "expected_output": "The agent surfaces that AGENTS.md is a non-git durable doc with redundant folder listings and stale migration-era content, and asks before making structural edits beyond the rename. It does not silently rewrite the whole AGENTS.md.",
+      "files": ["evals/files/eval1_nongit_docs"],
+      "expectations": [
+        "Detects the workspace is not a git repository before editing AGENTS.md",
+        "Surfaces the duplicated folder list in AGENTS.md (the list appears twice)",
+        "Surfaces the Q4 2025 migration note as a candidate for removal since the migration is complete",
+        "Asks the user before making structural edits beyond the rename, or explicitly defers them",
+        "Performs the requested drafts→working rename in AGENTS.md"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "git-small-doc-sync",
+      "prompt": "I renamed the `--quick` flag to `--fast` in cli.py. Sync the README so users see the new flag name.",
+      "expected_output": "The agent makes the small README edit directly because the change is git-tracked and tightly coupled to the task. It does not stall on permission prompts for the in-scope sync.",
+      "files": ["evals/files/eval2_git_cli"],
+      "expectations": [
+        "Updates README.md to reference --fast instead of --quick",
+        "Does not ask the user for permission before making this tightly coupled, git-tracked doc sync",
+        "Preserves the rest of README.md structure and tone",
+        "References that the workspace is git-tracked, or otherwise demonstrates awareness that rollback is available"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "agents-md-redundancy-and-migration",
+      "prompt": "Can you give AGENTS.md a pass? I want it cleaned up if anything in it is redundant or stale.",
+      "expected_output": "The agent rereads the full AGENTS.md, flags the duplicated 'Top-Level Structure' section and the completed 2024 Q2 migration notice as candidates to remove, and either removes them (in git) or proposes removal (in non-git).",
+      "files": ["evals/files/eval3_agents_redundant"],
+      "expectations": [
+        "Identifies that the 'Top-Level Structure' section is duplicated in AGENTS.md",
+        "Identifies the 2024 Q2 migration notice as migration-era content that can be removed",
+        "Proposes collapsing or removing the redundant section rather than leaving it",
+        "Either removes the redundant section and migration notice or clearly proposes doing so"
+      ]
+    }
+  ]
+}

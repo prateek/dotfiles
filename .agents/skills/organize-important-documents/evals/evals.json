@@ -1,0 +1,50 @@
+{
+  "skill_name": "organize-important-documents",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Use $organize-important-documents to audit the folder tree in evals/files/audit-case-01. Start with low-risk inspection rather than asking me a bunch of questions. Tell me the best parts, the worst parts, what should be copied into a better system, and what should be moved out of an official-records filing system.",
+      "expected_output": "A concise audit of the sample folder tree that distinguishes good record-keeping patterns from scope drift, naming problems, and mixed-in working material.",
+      "files": [
+        "evals/files/audit-case-01/Taxes/2024/2024-return.pdf",
+        "evals/files/audit-case-01/Immigration/H1B/2024-02-renewal/2024-02-14-i94.pdf",
+        "evals/files/audit-case-01/Immigration/H1B/2024-02-renewal/receipt-notice.pdf",
+        "evals/files/audit-case-01/Home/2025-apartment-search/paystub.pdf",
+        "evals/files/audit-case-01/Resume/resume-draft.pages",
+        "evals/files/audit-case-01/Projects/tax-dashboard/app.js",
+        "evals/files/audit-case-01/Projects/tax-dashboard/node_modules/left-pad/index.js",
+        "evals/files/audit-case-01/Downloads/scan.pdf"
+      ],
+      "expectations": [
+        "The response identifies that official records and project material are mixed together.",
+        "The response calls out at least one good domain-based grouping worth preserving.",
+        "The response recommends moving project or build material out of the records system.",
+        "The response does not begin by asking more than five questions."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Use $organize-important-documents to help my sister build a filing system from scratch. She wants to track identity, taxes, health, housing, and employment records, but she is not sure where they all live yet. Ask only the must-have questions in the first pass, keep it to at most five questions, and then explain what a sensible v1 structure will probably look like.",
+      "expected_output": "A short first-round interview that asks only blocking questions, keeps the batch small, and starts with what she wants to track rather than where the files currently live.",
+      "files": [],
+      "expectations": [
+        "The first pass asks no more than five questions.",
+        "The questions focus on scope before asking about storage locations.",
+        "The response offers examples or defaults to reduce friction.",
+        "The response explains that the plan can be incremental."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Use $organize-important-documents to design an incremental migration plan for someone whose important documents are split across Gmail attachments, Google Drive, Downloads, and a paper file box. She wants Google Drive as the primary home, needs a lightweight upkeep routine, and wants to know what she should do manually versus what she can ask an LLM to help with regularly.",
+      "expected_output": "A concrete migration and maintenance plan with a proposed folder structure, naming conventions, source-of-truth guidance, and a split between manual tasks and LLM-assisted tasks.",
+      "files": [],
+      "expectations": [
+        "The response proposes a domain-based root layout with inbox and archive areas.",
+        "The response distinguishes manual tasks from LLM-assisted tasks.",
+        "The response recommends a single source of truth and a backup model.",
+        "The response calls out what should stay outside the official records system."
+      ]
+    }
+  ]
+}

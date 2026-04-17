@@ -1,0 +1,4 @@
+interface:
+  display_name: "Organize Important Documents"
+  short_description: "Build and maintain a life-doc filing system"
+  default_prompt: "Use $organize-important-documents to design or audit a personal document filing system."

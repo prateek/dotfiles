@@ -28,7 +28,7 @@
     "files.autoSaveDelay": 3000,
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {},
-    "workbench.colorTheme": "Default Dark+",
+    "workbench.colorTheme": "Dark+",
     "editor.tabSize": 2,
     "editor.scrollBeyondLastLine": false,
     "files.watcherExclude": {
