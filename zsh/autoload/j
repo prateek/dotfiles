@@ -1,23 +1,7 @@
-# TODO: use aliases to jump to common directories quickly.
-
-# Lazy-load on first use to keep zsh startup fast.
+# Lazy-load zoxide on first use to keep zsh startup fast.
 function j() {
-  if (( $+commands[zoxide] )); then
-    local init
-    init="$(zoxide init zsh --cmd j)" || {
-      print -u2 "j: zoxide init failed"
-      return 1
-    }
-    eval "$init" || {
-      print -u2 "j: zoxide init eval failed"
-      return 1
-    }
-    j "$@"
-    return
-  fi
-
-  print -u2 "j: install 'zoxide' to enable directory jumping."
-  return 127
+  __dotfiles_zoxide_init || return $?
+  j "$@"
 }
 
 j "$@"

@@ -2,25 +2,31 @@
 # vim:syntax=zsh
 # vim:filetype=zsh
 
-() {
-  if ! command -v zoxide >/dev/null 2>&1; then
-    return 0
-  fi
+if command -v zoxide >/dev/null 2>&1; then
+  # Keep zoxide learning from plain `cd` usage without paying full init on startup.
+  function __zoxide_hook() {
+    command zoxide add -- "$PWD"
+  }
 
-  # One-time migration: seed zoxide with your existing autojump history.
-  # Note: zoxide only imports paths (not scores), since the algorithms differ.
-  local autojump_db="$HOME/Library/autojump/autojump.txt"
-  local import_marker_dir="${XDG_CACHE_HOME:-$HOME/.cache}/dotfiles"
-  local import_marker_file="$import_marker_dir/zoxide.imported_autojump"
-  if [[ -f "$autojump_db" && ! -f "$import_marker_file" ]]; then
-    mkdir -p "$import_marker_dir"
-    if zoxide import --from autojump --merge "$autojump_db" >/dev/null 2>&1; then
-      : >| "$import_marker_file"
+  typeset -ga chpwd_functions
+  chpwd_functions=("${(@)chpwd_functions:#__zoxide_hook}")
+  chpwd_functions+=(__zoxide_hook)
+
+  autoload -Uz add-zsh-hook
+
+  _dotfiles_register_z_completion() {
+    if (( ${+_comps} )); then
+      _comps[z]=_z
     fi
-  fi
 
-  # Defines `j` + `ji`, and installs completion + shell hooks.
-  local init
-  init="$(zoxide init zsh --cmd j)" || return 0
-  eval "$init" || return 0
-}
+    if (( ${+functions[compdef]} )); then
+      compdef _z z
+    fi
+
+    if (( ${+_comps} || ${+functions[compdef]} )); then
+      add-zsh-hook -d precmd _dotfiles_register_z_completion
+    fi
+  }
+
+  add-zsh-hook precmd _dotfiles_register_z_completion
+fi

@@ -28,7 +28,10 @@ compctl -g '*(-/)' cd chdir dirs pushd
 
 # `j` completion is handled by zoxide (via `__zoxide_z_complete`) and a small
 # shim completion function `_j` (see `zsh/autoload/_j`) for compatibility with
-# existing `~/.zcompdump` state.
+# existing `~/.zcompdump` state. `z` reuses the same shim via `_z`.
+if (( ${+functions[compdef]} )); then
+  compdef _z z
+fi
 
 ## colorize completions
 zstyle ':completion:*' list-colors ''

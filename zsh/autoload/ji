@@ -1,0 +1,6 @@
+function ji() {
+  __dotfiles_zoxide_init || return $?
+  ji "$@"
+}
+
+ji "$@"

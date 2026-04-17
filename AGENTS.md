@@ -31,7 +31,15 @@ Keep it short. Put recurring maintenance workflow in `$code-gardening`, not in l
 
 - Keep baseline `PATH` entries in `zprofile`'s `path=(...)` array, not ad hoc `export PATH=...` snippets in `zshrc`.
 - Prefer explicit directories like `$HOME/go/bin` over indirect env vars like `$GOPATH/bin` when the goal is just shell PATH setup.
+- When startup only needs `mise` shims, add `$HOME/.local/share/mise/shims` to `zprofile` instead of running `mise activate --shims` on every shell.
 - Reserve `zshrc` PATH mutations for truly interactive or late overlays only.
+- Prefer autoloaded wrappers for optional or conflicting CLIs instead of source-time aliases when the command is not needed on every shell startup.
+- For zoxide, prefer lazy wrappers plus `zoxide init zsh --cmd j` over eager startup `eval`s; keep `zi` reserved for zinit.
+- Avoid source-time command substitutions such as `$(brew --prefix)` in shell startup files. Prefer `HOMEBREW_PREFIX`, `whence -p`, or resolution at call time.
+- When sourcing shell widgets or key-binding scripts, guard them behind `[[ -o zle ]]` so non-ZLE interactive shells like `zsh -ic` do not throw option or widget errors.
+- For shell widget or keymap debugging, prefer a real PTY login shell over `zsh -ic`; the latter can report `zle` as on without a tty and can miss deferred plugin state.
+- If syncing `PATH` into `launchctl`, compare against the live `launchctl getenv PATH` value instead of trusting a persistent cache file across GUI sessions.
+- Keep repeatable shell benchmarking guidance in `skills/benchmark-zsh-startup`, not loose repo docs.
 
 ## Python deps (pyproject + type stubs + build system)
 

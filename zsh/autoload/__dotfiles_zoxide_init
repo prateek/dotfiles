@@ -1,0 +1,36 @@
+__dotfiles_zoxide_init() {
+  if (( ${+functions[__zoxide_z]} )); then
+    return 0
+  fi
+
+  if ! (( $+commands[zoxide] )); then
+    print -u2 "j: install 'zoxide' to enable directory jumping."
+    return 127
+  fi
+
+  # One-time migration: seed zoxide with existing autojump history.
+  # zoxide imports paths only; scores are not portable across tools.
+  local autojump_db="$HOME/Library/autojump/autojump.txt"
+  local import_marker_dir="${XDG_CACHE_HOME:-$HOME/.cache}/dotfiles"
+  local import_marker_file="$import_marker_dir/zoxide.imported_autojump"
+  if [[ -f "$autojump_db" && ! -f "$import_marker_file" ]]; then
+    mkdir -p "$import_marker_dir"
+    if zoxide import --from autojump --merge "$autojump_db" >/dev/null 2>&1; then
+      : >| "$import_marker_file"
+    fi
+  fi
+
+  local init
+  init="$(zoxide init zsh --cmd j)" || {
+    print -u2 "j: zoxide init failed"
+    return 1
+  }
+  eval "$init"
+  if ! (( ${+functions[__zoxide_z]} && ${+functions[j]} && ${+functions[ji]} )); then
+    print -u2 "j: zoxide init eval failed"
+    return 1
+  fi
+  if (( ${+functions[compdef]} )); then
+    compdef __zoxide_z_complete z
+  fi
+}

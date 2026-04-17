@@ -139,9 +139,21 @@ function _rebind_ctrl-t {
 }
 
 function _setup_fzf {
-	# ensure fzf completion and key-bindings is configured.
-	if [[ -v HOMEBREW_PREFIX ]] && [ -d ${HOMEBREW_PREFIX}/opt/fzf ]; then
-		[[ $- == *i* ]] && source ${HOMEBREW_PREFIX}/opt/fzf/shell/completion.zsh 2> /dev/null
+	local fzf_bin fzf_root fzf_shell_dir
+	fzf_bin="${commands[fzf]:A}"
+	fzf_root="${fzf_bin:h:h}"
+
+	for fzf_shell_dir in \
+		"${fzf_root}/opt/fzf/shell" \
+		"${fzf_root}/share/fzf/shell" \
+		/opt/homebrew/opt/fzf/shell \
+		/usr/local/opt/fzf/shell
+	do
+		[[ -d "$fzf_shell_dir" ]] && break
+	done
+
+	# Ensure fzf completion and key-bindings are configured when zle is available.
+	if [[ -n "$fzf_shell_dir" && -d "$fzf_shell_dir" ]]; then
 
 		# very opinionated FZF style opts.
 		export FZF_DEFAULT_OPTS="
@@ -158,9 +170,12 @@ function _setup_fzf {
 		# Default file source (used by some widgets); order doesn’t matter here
 		export FZF_DEFAULT_COMMAND="fd --type f --hidden -E '.git' -E '.hg'"
 
-		source ${HOMEBREW_PREFIX}/opt/fzf/shell/key-bindings.zsh
-		_rebind_ctrl-r
-		_rebind_ctrl-t
+		if [[ -o zle && -t 0 && -t 1 ]]; then
+			source "${fzf_shell_dir}/completion.zsh" 2> /dev/null
+			source "${fzf_shell_dir}/key-bindings.zsh"
+			_rebind_ctrl-r
+			_rebind_ctrl-t
+		fi
 	fi
 }
 

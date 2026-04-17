@@ -1,0 +1,15 @@
+# Lazy-load git-spice via an autoloaded wrapper.
+function gsp() {
+  local gs_bin
+  gs_bin="$(whence -p gs 2>/dev/null)" || gs_bin=""
+
+  if [[ -n "$gs_bin" && -x "$gs_bin" ]]; then
+    "$gs_bin" "$@"
+    return $?
+  fi
+
+  print -u2 "gsp: git-spice binary 'gs' not found on PATH."
+  return 127
+}
+
+gsp "$@"

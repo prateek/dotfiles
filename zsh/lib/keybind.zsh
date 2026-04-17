@@ -22,6 +22,14 @@ zstyle ':bracketed-paste-magic' active-widgets '.self-insert-unmeta'
 bindkey -A emacs viins
 bindkey -M viins $'\e' vi-cmd-mode
 
+bind_if_sequence() {
+  local keymap="$1"
+  local sequence="$2"
+  local widget="$3"
+  [[ -n "$sequence" ]] || return 0
+  bindkey -M "$keymap" "$sequence" "$widget"
+}
+
 # map ctrl-space to accept auto-suggestions.
 # color map: https://upload.wikimedia.org/wikipedia/commons/1/15/Xterm_256color_chart.svg
 # usable attributes: https://zsh.sourceforge.io/Doc/Release/Zsh-Line-Editor.html#Character-Highlighting
@@ -29,8 +37,9 @@ bindkey -M viins $'\e' vi-cmd-mode
 # bindkey '^ ' autosuggest-accept # toggle on ctrl-space
 
 # Who doesn't want home and end to work?
-bindkey -M viins "${key[Home]}" beginning-of-line
-bindkey -M viins "${key[End]}" end-of-line
+zmodload zsh/terminfo 2>/dev/null || true
+bind_if_sequence viins "${terminfo[khome]-${key[Home]-}}" beginning-of-line
+bind_if_sequence viins "${terminfo[kend]-${key[End]-}}" end-of-line
 
 # ensure alt+arrow keys work
 bindkey "^[^[[D" backward-word

@@ -1,0 +1,4 @@
+#compdef z
+
+# Reuse `j` completion while `zoxide` is still lazy.
+_j "$@"

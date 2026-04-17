@@ -8,12 +8,16 @@ source_if_readable() {
   source "$f"
 }
 
-#-----------------------------------------------------
-# Cache homebrew prefix early (before plugins need it)
-#-----------------------------------------------------
-if [[ -z ${HOMEBREW_PREFIX:-} ]] && command -v brew >/dev/null 2>&1; then
-    export HOMEBREW_PREFIX="$(brew --prefix)"
-fi
+sync_launchctl_path() {
+  local launchctl_path=""
+
+  launchctl_path="$(/bin/launchctl getenv PATH 2>/dev/null || true)"
+  if [[ "$launchctl_path" == "$PATH" ]]; then
+    return 0
+  fi
+
+  /bin/launchctl setenv PATH "$PATH"
+}
 
 # Prefer a consistent repo root even if DOTFILES isn't exported for some reason.
 DOTFILES_ROOT="${DOTFILES:-${ZSHCONFIG:-$HOME/dotfiles}}"
@@ -28,13 +32,6 @@ if ! source_if_readable "$HOME/.zinit/bin/zinit.zsh"; then
 fi
 
 #-----------------------------------------------------
-# load zinit plugins
-#-----------------------------------------------------
-if ! source_if_readable "$DOTFILES_ROOT/zinit-init.zsh"; then
-  print -u2 "Missing $DOTFILES_ROOT/zinit-init.zsh; skipping plugin setup."
-fi
-
-#-----------------------------------------------------
 # Setting autoloaded functions
 #-----------------------------------------------------
 zsh_fns=${ZSHCONFIG}/zsh/autoload
@@ -46,6 +43,13 @@ if [[ -d "$zsh_fns" ]]; then
     done
 fi
 unset zsh_fns
+
+#-----------------------------------------------------
+# load zinit plugins
+#-----------------------------------------------------
+if ! source_if_readable "$DOTFILES_ROOT/zinit-init.zsh"; then
+  print -u2 "Missing $DOTFILES_ROOT/zinit-init.zsh; skipping plugin setup."
+fi
 
 #-----------------------------------------------------
 # Load all utility scripts
@@ -73,5 +77,5 @@ unset extras
 
 # Set PATH for macOS (only for interactive login shells)
 if [[ -x /bin/launchctl && -o interactive && -o login ]]; then
-    /bin/launchctl setenv PATH "$PATH"
+    sync_launchctl_path
 fi

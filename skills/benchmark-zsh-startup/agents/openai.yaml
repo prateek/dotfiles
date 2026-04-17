@@ -1,0 +1,4 @@
+interface:
+  display_name: "Benchmark Zsh Startup"
+  short_description: "Measure zsh prompt latency and attribute startup cost."
+  default_prompt: "Use $benchmark-zsh-startup to benchmark zsh prompt startup, attribute the time to specific startup steps, and recommend the next changes to test."

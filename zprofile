@@ -40,6 +40,7 @@ export GHCUP_USE_XDG_DIRS=1
 path=(
   $HOME/bin
   $HOME/.local/bin
+  $HOME/.local/share/mise/shims
   /opt/homebrew/{bin,sbin}
   $HOME/go/bin
   $HOME/Library/pnpm

@@ -5,6 +5,9 @@
 # Keep GRM config reasonably fresh after common git/gh actions.
 # This is intentionally lightweight (best-effort, background).
 
+zmodload -F zsh/stat b:zstat 2>/dev/null || true
+zmodload zsh/datetime 2>/dev/null || true
+
 grmrepo_refresh_bg() {
   if command -v grmrepo-refresh >/dev/null 2>&1; then
     grmrepo-refresh >/dev/null 2>&1 &!
@@ -13,7 +16,16 @@ grmrepo_refresh_bg() {
 
 _grmrepo_mtime_s() {
   local file="$1"
-  stat -f %m "$file" 2>/dev/null || stat -c %Y "$file" 2>/dev/null || echo 0
+  REPLY=0
+
+  if (( ${+builtins[zstat]} )); then
+    local -a stat_out
+    zstat -A stat_out +mtime -- "$file" 2>/dev/null || return 0
+    REPLY="${stat_out[1]:-0}"
+    return 0
+  fi
+
+  REPLY="$(stat -f %m "$file" 2>/dev/null || stat -c %Y "$file" 2>/dev/null || echo 0)"
 }
 
 grmrepo_refresh_maybe_bg() {
@@ -22,13 +34,12 @@ grmrepo_refresh_maybe_bg() {
   local stamp="$cache_dir/last-refresh"
 
   local now mtime
-  now="$(date +%s 2>/dev/null || echo 0)"
-  mtime="$(_grmrepo_mtime_s "$stamp")"
+  now="${EPOCHSECONDS:-0}"
+  _grmrepo_mtime_s "$stamp"
+  mtime="$REPLY"
 
-  if [[ "$now" != 0 && "$mtime" != 0 ]]; then
-    if (( (now - mtime) < max_age_s )); then
-      return 0
-    fi
+  if (( now != 0 && mtime != 0 && (now - mtime) < max_age_s )); then
+    return 0
   fi
 
   mkdir -p "$cache_dir" >/dev/null 2>&1 || true
