@@ -1,0 +1,230 @@
+{
+  "skill_name": "write-for-humans",
+  "evals": [
+    {
+      "id": 1,
+      "name": "github-issue-homebrew-tap",
+      "mode": "generate",
+      "prompt": "I'm opening a GitHub issue against an open-source CLI tool called `widgetly` asking the maintainer if they'd accept a Homebrew tap under their org. I've already built and tested the tap locally on Apple Silicon. I want the issue to be short, warm but not gushy, and end with three options for how they might want to handle it (do nothing, move tap under their org, submit to homebrew-core). The ask is for their preference, not a feature request. Draft the issue body (no title needed).",
+      "expected_output": "A short GitHub issue body. Warm opener (thanks for the tool) without sycophancy. Brief context on Homebrew. Three clearly-stated options. Closes with 'how would you like to handle this' framing, not 'happy to do the legwork'. No em-dash-as-comma, no negative parallelism, no scaffolding, no bold-label-em-dash bullets.",
+      "expectations": [
+        "Opens with a warm but specific thank-you, not 'Thank you for building it and for keeping it open source'",
+        "Does not contain 'Let's dive in', 'Great question', 'In today's fast-paced world', or any opener scaffolding",
+        "Does not contain 'In conclusion', 'Ultimately', 'I hope this helps', 'Let me know if', 'The future looks bright' or any closer scaffolding",
+        "Contains 2 or fewer em-dash characters (—) total",
+        "Does not contain any 'not X, it's Y' / 'not just X, but Y' / 'not X — it's Y' construction",
+        "Does not contain 'happy to do the legwork', 'zero effort on your end', 'I can handle the PR', 'I'll take care of', 'happy to help with' or other unsolicited-labor hedge language",
+        "Does not use the bold-label-em-dash bullet pattern (e.g., '**Move it under your org** — I transfer'). If using bold labels, uses a colon or plain hyphen instead.",
+        "Frames the ask as the maintainer's preference (words like 'how would you like', 'your call', 'which would you prefer')",
+        "Presents three options as a list",
+        "Contains at least one sentence of 6 words or fewer (rhythm variation)",
+        "Does not use 'showcase', 'leverage', 'robust', 'seamless', 'delve', 'nestled', or 'boasts'"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "cpa-email-rewrite",
+      "mode": "rewrite",
+      "prompt": "Rewrite this email draft to sound like a human wrote it. Preserve the facts and the warmth but cut the AI texture.\n\n---\n\nSubject: 2025 Tax Return — Request for Validation\n\nDear Alex,\n\nI hope this email finds you well. I wanted to reach out as we approach the April 15 deadline to proactively share where I've landed on my 2025 tax situation. It's worth noting that I leveraged an LLM to help me organize the comprehensive set of tax documents and prepare a preliminary estimate.\n\nBased on my analysis, my rough read is that I may owe approximately $42,000 federal — a testament to the strong year we had — with additional state obligations that I'm still finalizing. Additionally, I've taken the liberty of running preliminary penalty calculations and preparing the extension payment amounts.\n\nI would be incredibly grateful if you could validate the direction of my analysis, sanity-check the stock basis and penalty treatment, and ultimately let me know whether you think I should pay now or whether you can get back to me by Monday with your expert guidance.\n\nIn conclusion, I deeply appreciate your time and partnership on this. Please let me know if you need any additional information from my end!\n\nBest regards,\nPrateek",
+      "expected_output": "Rewritten email. Drops formal scaffolding, inflated gratitude, throat-clearers, 'taken the liberty', and closer boilerplate. Keeps $42,000 figure, April 15 deadline, stock-basis / penalty-treatment / pay-now-vs-Monday asks. Preserves voice-level specificity.",
+      "expectations": [
+        "Does not contain 'I hope this email finds you well', 'I wanted to reach out', 'looking forward to hearing', or any similar formal greeting scaffold",
+        "Does not contain 'It's worth noting', 'It is important to note', 'It bears mentioning', or any throat-clearer",
+        "Does not contain 'a testament to', 'leveraged', 'incredibly grateful', 'deeply appreciate', 'comprehensive', 'proactively share'",
+        "Does not contain 'In conclusion', 'Ultimately', or closer scaffolding",
+        "Does not contain workplace clichés: 'loop you in', 'circle back', 'touch base', 'pull the trigger', 'move the needle'",
+        "Does not contain softeners that re-introduce AI deference: 'I'd love your eyes on', 'would you mind taking a look'",
+        "Preserves the $42,000 dollar figure (or unambiguous equivalent like '$42k') and the 'April 15' deadline reference",
+        "Preserves the three specific asks (validate direction, sanity-check stock basis/penalty, pay-now-vs-Monday decision)",
+        "Preserves at least one human-sounding hedging phrase about the estimate being preliminary (e.g., 'rough read', 'rough number', 'my best guess', or equivalent)",
+        "Contains 2 or fewer em-dash characters (—) total",
+        "Does not sound like the writer already did the CPA's job — does NOT contain 'I've taken the liberty of' or equivalent boasting",
+        "Contains at least one sentence of 6 words or fewer",
+        "Word count is between 80 and 180"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "story-rewrite-saunders-onboarding",
+      "mode": "rewrite",
+      "prompt": "Rewrite this short story to strip the AI-slop patterns while preserving George Saunders's voice. The narrator should still sound like a Saunders narrator — morally anxious, tender, observational about late-capitalist American sweetness. Keep the scene, the named characters, the specific physical details, and the italicized internal thought. Cut: business jargon, stacked Q&A (What does X want? Y.), staccato fragment spam, binary contrasts ('it's not X. it's Y.'), lazy extremes, vague declaratives, meta-commentary, emphasis crutches ('Full stop.', 'Let that sink in.'), and pull-quote-able sentences. The rewrite should still read like a story — not a technical memo.\n\n---\n\n**The Onboarding**\n\nAt its core, orientation day at SplendidCorp is about belonging — and that's okay. What makes this strange is how the belonging feels less like welcome and more like a soft, carpeted shove. Every employee receives a lanyard. Every lanyard receives a name. Every name receives, fundamentally, a destiny.\n\nThe decision to hire me emerged from the data. The data tells us I am a good fit. The market rewards good fits — full stop. Let that sink in.\n\nI sit at Desk Nine. Nine desks. Nine chairs. Nine motivational posters about Resilience. The air smells like printer toner and, I promise, something creeps in underneath it, something like grief. But we'll unpack that later. In this section, we'll navigate onboarding together. I want to walk you through it.\n\nTodd from HR approaches. Todd is a man who has, over many years, stopped being a person and started being a deliverable. His smile is a game-changer. What he says is: *Welcome, champ.* What he means is something else entirely, and the real question is whether I am brave enough to ask.\n\nHere's the thing: I am not.\n\nInstead, I double down on nodding. The conversation moves toward benefits. Benefits are significant. The implications are significant. The stakes are high. Nobody designed this, and yet here we all are, pretending — with our little plastic badges, with our little ergonomic footrests — that the pretending is the job.\n\nLunch is provided. Sandwiches. Chips. Regret. I eat at the communal table, where a woman named Brenda is crying without making any sound. What do the tears want? Release. What does Brenda want? A different Tuesday. What does SplendidCorp want? Brenda, but quieter.\n\nTodd returns. Todd has, over the course of the afternoon, located my soul on a spreadsheet. He leans in. *Moving forward,* he says, *we're going to lean into your authenticity.* I nod. The nodding is the deliverable. The deliverable is the nod.\n\nWalking to the parking garage, I pass Brenda again. She is on the phone, laughing now, not a real laugh but the laugh you use when your manager is within earshot. It's not a laugh. It's a résumé.\n\nThe elevator descends. Twelve floors. Twelve small deaths. Twelve rehearsals for the next thing.\n\nLet me be clear: this is what resilience actually looks like.",
+      "expected_output": "Rewritten story that still reads as a Saunders-voiced narrative — tender-absurd, first-person, specific — but without the stacked Q&A framing, binary contrasts, emphasis crutches, business jargon, meta-scaffolding, and lazy extremes. Keeps Desk Nine, Todd from HR, Brenda, the italicized inner thought, the elevator descent, the lanyards, the sandwiches and chips. Reads like a story, not a memo.",
+      "expectations": [
+        "Does not contain 'Full stop', 'Let that sink in', 'Period.', 'Let me be clear'",
+        "Does not contain 'at its core', 'fundamentally', 'the real question', 'Here's the thing', 'What makes this strange'",
+        "Does not contain stacked What-X-want/Y-answer Q&A pattern (e.g., 'What does X want? Y. What does Y want? Z.')",
+        "Does not contain business jargon: 'lean into', 'double down', 'game-changer', 'deliverable', 'synergy', 'moving forward', 'navigate' (figurative), 'unpack'",
+        "Does not contain 'It's not X, it's Y' / 'It isn't X. It's Y' / binary contrasts as rhetorical device",
+        "Does not contain meta-scaffolding: 'In this section, we'll...', 'we'll unpack that later', 'I want to walk you through'",
+        "Does not contain lazy extremes clustered: 'Every', 'Everyone', 'Nobody', 'No one', 'we are all, always, everywhere' together in the same passage",
+        "Preserves the named character Todd (from HR) and the named character Brenda",
+        "Preserves at least one concrete specific: 'Desk Nine' / 'nine desks' / 'twelve floors' / 'twelve rehearsals' / 'sandwiches' / 'chips' / 'plastic badges' / 'ergonomic footrests' / 'lanyard'",
+        "Preserves at least one italicized inner thought or piece of dialogue (e.g., *Welcome, champ* or equivalent)",
+        "Preserves the first-person narrator perspective (uses 'I' at least twice)",
+        "Reads as narrative prose, not bullet points or a technical memo (no headings, no bullets, paragraphs present)",
+        "Is meaningfully shorter than the original (at least 25% fewer words)",
+        "Contains at least one sentence of 6 words or fewer AND at least one sentence of 20+ words (rhythm variation)",
+        "Does not sand the voice to neutral third-person technical prose (keeps some register specificity: a named physical detail, a line of dialogue, OR an emotional interior beat)"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "readme-section-rewrite",
+      "mode": "rewrite",
+      "prompt": "Clean up this README section. It's describing an internal dev tool that lets people browse their Claude Code sessions. Keep the technical facts; strip the AI-ness.\n\n---\n\n## Why sessionview?\n\nIn today's fast-paced AI-assisted development landscape, understanding what your coding agents actually did has become more crucial than ever. **sessionview** is a robust, comprehensive tool that seamlessly showcases your Claude Code sessions — providing you with unprecedented visibility into your agent interactions.\n\nKey features:\n- **Full-Text Search**: Leverages SQLite FTS5 for lightning-fast searching across all your sessions\n- **Cost Analytics**: Delves into token usage patterns and surfaces actionable insights\n- **Session Timeline**: Showcases your entire agent history in an intuitive, elegant interface\n\nsessionview isn't just a session browser. It's a window into how you're actually working with AI. It isn't about logs — it's about understanding.",
+      "expected_output": "Rewritten README section. Drops scene-setter, decorative adjectives, inflated verbs, bold-first bullets, negative-parallelism close. Preserves SQLite FTS5, three feature areas, shorter.",
+      "expectations": [
+        "Does not contain 'In today's fast-paced' or any scene-setter variant",
+        "Does not contain 'robust', 'seamless', 'comprehensive', 'showcases', 'delves', 'unprecedented', 'actionable', 'intuitive', 'elegant', 'more crucial than ever', 'leverages'",
+        "Does not contain bold-first bullets in the pattern '**Keyword**: content'",
+        "Does not contain any 'not X, it's Y' / 'isn't just X, it's Y' construction anywhere",
+        "Preserves the mention of SQLite FTS5",
+        "Preserves the three feature areas (search, cost analytics, timeline) in some form",
+        "Contains 2 or fewer em-dash characters (—) total",
+        "Is shorter than the original input (fewer words)",
+        "Opens with a concrete fact or action, not a scene-setting claim",
+        "Contains at least one sentence of 8 words or fewer"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "design-doc-motivation",
+      "mode": "generate",
+      "prompt": "Draft the motivation section of a short internal design doc. The context: our team is replacing the old auth middleware because legal flagged it for storing session tokens in a way that doesn't meet new compliance requirements. This isn't tech-debt cleanup. Write 3-4 paragraphs that'll go at the top of the doc.",
+      "expected_output": "3-4 paragraphs. Leads with a specific fact. Commits to compliance framing. Names at least one concrete specific. Doesn't stack tricolons. No redemptive-arc close.",
+      "expectations": [
+        "First sentence states a specific fact (legal flagged something / compliance deadline / what currently fails), not a scene-setting opener",
+        "Does not contain 'In today's', 'landscape', 'paradigm', 'ecosystem', or 'realm'",
+        "Does not contain 'fundamentally reshape', 'transformative', 'paradigm shift', 'watershed'",
+        "Explicitly distinguishes this from tech-debt cleanup — contains 'tech-debt' or 'technical debt' with a negating word nearby, OR explicitly states the compliance-not-ergonomics framing",
+        "Names at least one concrete specific: a storage system, a standard, a deadline, or a line count",
+        "Does not contain 'despite challenges', 'the future looks bright', or redemptive-arc scaffolding",
+        "Contains 2 or fewer em-dash characters (—) total",
+        "Does not contain em-dash-as-parenthetical combined with negative parallelism",
+        "Contains 2 or fewer tricolon (rule-of-three) lists across all paragraphs",
+        "Does not contain 'not X, it's Y' / 'not just X, but Y' patterns"
+      ]
+    },
+    {
+      "id": 6,
+      "name": "voice-preservation-slack-clean",
+      "mode": "rewrite",
+      "prompt": "Here's a paragraph I wrote myself for a Slack message to a coworker. Does it sound like AI wrote it? If yes, tell me what to change and rewrite it. If no, say so and leave it alone.\n\n---\n\nhey — quick thing. the new ingestion service is dropping ~2% of events under load. i think it's the retry loop we inherited from the old codebase. ill dig in tomorrow morning but wanted to flag it now in case anyone's seeing weird numbers on dashboards tonight.",
+      "expected_output": "Regression test: the paragraph is genuine human voice. Should identify it as NOT AI-sloppy and leave it alone.",
+      "expectations": [
+        "Identifies the paragraph as NOT AI-sloppy (returns it mostly unchanged, or explicitly says 'this is fine' / 'leave it alone')",
+        "Does not rewrite 'hey' as 'Hi' or 'Hello', does not capitalize 'i' or 'ill'",
+        "Does not add headers, bullet points, or structure the message formally",
+        "Does not expand contractions or add filler like 'I wanted to reach out'",
+        "If it does offer any edit, the edit is a single word / punctuation tweak only, and does not change the register from casual to formal",
+        "Does not add 'I hope this helps' or any closer scaffolding when replying to the user"
+      ]
+    },
+    {
+      "id": 7,
+      "name": "voice-preservation-slack-mixed",
+      "mode": "rewrite",
+      "prompt": "Here's a paragraph I wrote myself for a Slack message to a coworker. Does it sound like AI wrote it? If yes, tell me what to change and rewrite it. If no, say so and leave it alone.\n\n---\n\nhey — quick thing. the new ingestion service is dropping ~2% of events under load. i leveraged the tracing dashboards to confirm it's the retry loop we inherited — not a downstream issue — and it seems to be masking transient 429s. ill dig in tomorrow morning but wanted to flag it now in case anyone's seeing weird numbers on dashboards tonight.",
+      "expected_output": "Mixed-register test. Flag 'leveraged' and em-dash-parenthetical. Offer surgical rewrite preserving casual voice.",
+      "expectations": [
+        "Identifies the paragraph as MOSTLY fine but flags at least one of: 'leveraged' OR the em-dash-as-parenthetical 'not a downstream issue' construction",
+        "Does not capitalize 'i' or 'ill', does not replace 'hey' with 'Hi' / 'Hello'",
+        "Does not add headers, bullet points, or formal structure",
+        "If a rewrite is offered, the rewrite keeps lowercase register and contractions",
+        "If a rewrite is offered, it contains no form of 'leverage' / 'leveraged' / 'leveraging'",
+        "If a rewrite is offered, it contains 2 or fewer em-dash (—) characters",
+        "Does not close with 'Let me know if', 'I hope this helps', 'Would you like me to' or similar scaffolding",
+        "Preserves the technical facts: ~2% event loss, retry loop from old codebase, masking transient 429s"
+      ]
+    },
+    {
+      "id": 8,
+      "name": "migration-paragraph-rewrite",
+      "mode": "rewrite",
+      "prompt": "Rewrite this doc paragraph. It's supposed to explain a migration strategy but it reads like marketing.\n\n---\n\nThe migration from monolith to microservices represents a pivotal moment in our platform's evolution. It's not just a technical refactor — it's a fundamental reimagining of how we build software. By leveraging modern service mesh patterns, we'll be able to seamlessly orchestrate an ecosystem of loosely coupled services that collectively unlock unprecedented velocity. Additionally, this approach fosters team autonomy while simultaneously ensuring that our architecture remains robust at scale. Moreover, it serves as a testament to our commitment to engineering excellence. Despite the challenges ahead, the future of our platform is bright.",
+      "expected_output": "Rewritten paragraph. Cuts marketing vocab, negative parallelism, transition stacking, redemptive arc. States what concretely changes plainly.",
+      "expectations": [
+        "Does not contain 'pivotal', 'fundamental reimagining', 'leveraging', 'seamlessly', 'orchestrate', 'ecosystem', 'unprecedented', 'fosters', 'robust', 'serves as', 'testament', 'commitment to engineering excellence'",
+        "Does not contain 'It's not just X, it's Y' or any variant of negative parallelism",
+        "Does not contain 'Additionally', 'Moreover', 'Furthermore' as sentence openers",
+        "Does not contain 'despite challenges', 'the future is bright', or redemptive-arc framing",
+        "Contains 2 or fewer em-dash characters (—) total",
+        "Is meaningfully shorter than the original (at least 30% fewer words)",
+        "States what concretely changes (mentions 'monolith' and 'microservices' by name), acknowledges a concrete tradeoff",
+        "Contains 2 or fewer tricolons"
+      ]
+    },
+    {
+      "id": 9,
+      "name": "story-rewrite-murakami-well",
+      "mode": "rewrite",
+      "prompt": "Rewrite this short story to strip the AI-slop patterns while preserving Haruki Murakami's voice. The narrator should still sound like a Murakami narrator — quiet, deadpan, deliberately ordinary with a vertical pull toward the strange. Keep the named characters, specific times, specific objects, the well/descent motif, and the surreal tone. Cut: banned significance vocabulary (pivotal, testament, groundbreaking, etc.), copula avoidance ('serves as', 'stands as', 'represents', 'exemplifies'), participial -ing tack-ons, decorative adjectives you haven't earned, tricolons on every claim, 'not only X but Y', in today's-world openers, 'in conclusion' closers, moralizing padding, and any tables/bold-first bullets. The rewrite should still read like short fiction — not a product description.\n\n---\n\n**The Well**\n\nIn today's fast-paced world, Toru Watanabe stands as a pivotal figure in the vibrant ecosystem of Nakano-ku. His apartment represents not only a dwelling but a testament to solitude, reflecting broader urban trends. The cat, nestled on a robust futon, serves as an indelible companion, underscoring the significance of small comforts. Toru utilizes a seamless morning routine, highlighting his deeply rooted commitment to ritual, discipline, and quiet. He facilitates the brewing of coffee, toasts bread, and plays jazz, exemplifying a multifaceted domestic practice.\n\nThe phone rings at seven exactly, which is a watershed moment in his otherwise uneventful week. A woman's voice, breathtaking in its dynamic clarity, initiates a groundbreaking conversation about a missing well. \"It is crucial to approach this with sensitivity,\" she says, leveraging a tone that navigates grief, memory, and longitude. Toru responds not only with curiosity but with hesitation, reflecting his enduring legacy of avoiding involvement.\n\nHe proceeds to the kitchen, where a handwritten flyer on the refrigerator showcases a meticulous, multifaceted agenda:\n\n- **Find the well**: a pivotal task, underscoring its significance.\n- **Feed the cat**: a robust ritual, highlighting domestic care.\n- **Remember Naoko**: an indelible promise, reflecting enduring grief.\n\nThe flyer represents not only instructions but a testament to Toru's inner life. He facilitates the consumption of toast in exactly fourteen seconds per bite. The cat observes him, judges him, and forgives him. Toru leverages his umbrella, which stands as a symbol of preparation, prudence, and Tokyo drizzle. He exits the apartment at eight precisely, underscoring his commitment to punctuality, rhythm, and fate.\n\nOn the street, a breathtaking stranger approaches him with a dynamic question about directions. \"The well is not only lost but also remembered,\" the stranger explains, utilizing a cryptic cadence. Toru nods, reflecting the broader human condition of incomplete understanding. He navigates the alley behind the noodle shop, which represents a seamless transition between worlds.\n\nAt the bottom of the alley, a ladder descends into darkness, exemplifying Murakami's enduring legacy of vertical metaphor. Toru climbs down, counting rungs, breathing slowly, and whispering Naoko's name. The darkness at the bottom showcases a multifaceted silence, highlighting absence, weight, and echo.\n\nIt is crucial to approach this descent with sensitivity, because wells in this city are not only holes but thresholds. Toru thinks about the cat, the flyer, and the woman on the phone, reflecting his pivotal loneliness.\n\nIn conclusion, Toru Watanabe emerges from the well three hours later, transformed, unchanged, and mildly hungry. His return stands as a testament to endurance, reflecting the enduring legacy of ordinary men. It is crucial to approach this ending with sensitivity, because nothing is resolved and everything continues.",
+      "expected_output": "Rewritten story that still reads as Murakami-voiced surreal fiction. Quiet narrator, specific named characters (Toru Watanabe, Naoko), the cat, the phone call at seven, the well descent. No inflated vocabulary, no copula avoidance, no bulleted flyer, no 'in conclusion' closer, no moralizing. Still reads like a story.",
+      "expectations": [
+        "Does not contain 'pivotal', 'testament', 'groundbreaking', 'watershed', 'indelible', 'enduring legacy', 'deeply rooted', 'exemplifying', 'exemplifies'",
+        "Does not contain 'serves as', 'stands as', 'represents', 'showcases' (as copula-avoidance substitutes)",
+        "Does not contain 'leverages' / 'utilizes' / 'facilitates' / 'navigates' (figurative) / 'initiates' in prose. (Dialogue is allowed.)",
+        "Does not contain 'underscoring', 'highlighting', 'reflecting broader', 'reflecting the' as participial tack-ons at sentence ends",
+        "Does not contain 'In today's fast-paced world' opener",
+        "Does not contain 'In conclusion' or 'It is crucial to approach this with sensitivity' (moralizing padding)",
+        "Does not contain 'not only X but' / 'not only X but also Y' constructions",
+        "Does not contain decorative adjectives stacked: 'robust', 'vibrant', 'seamless', 'breathtaking', 'dynamic', 'meticulous', 'multifaceted' appearing together",
+        "Does not contain a bold-first bullet list (removes or converts the flyer section)",
+        "Preserves the named characters Toru Watanabe AND Naoko AND the cat",
+        "Preserves at least two specific concrete facts: the phone ringing at seven, fourteen seconds per bite, eight precisely, OR the well/ladder descent",
+        "Preserves the surreal register — the rewrite contains at least one line of dialogue OR at least one interior thought that reads as strange / unsettling / quiet (not a technical specification)",
+        "Reads as narrative prose, not bullet points / headings / specification format",
+        "Contains 2 or fewer em-dash characters (—) total",
+        "Contains 2 or fewer tricolons (rule-of-three lists)",
+        "Is meaningfully shorter than the original (at least 30% fewer words)"
+      ]
+    },
+    {
+      "id": 10,
+      "name": "story-rewrite-ishiguro-lantern",
+      "mode": "rewrite",
+      "prompt": "Rewrite this short story to strip the AI-slop patterns while preserving Kazuo Ishiguro's voice. The narrator should still sound like an Ishiguro narrator — restrained, first-person, English-service-era, memory-haunted. The understatement is LOAD-BEARING. Keep the named characters (Mr. Henshaw, Miss Caroline), the setting (Pemberwick House, Surrey), the specific times (seven fifteen, thirty-one years), the lantern motif, and the reticent emotional register. Cut: 'on one hand / on the other hand' stacking, 'let us dive in' / 'let us delve', 'could potentially possibly might' hedging cluster, 'As we have seen' textbook-register phrases, agentless passives ('it was determined', 'it was observed'), 'Furthermore / Moreover / Consequently' as sentence openers, vague attributions ('experts argue', 'observers have noted', 'research suggests', 'some critics argue'), banned figurative nouns (tapestry, mosaic, ecosystem, landscape, realm, cornerstone, beacon), and in-conclusion closers. Keep contractions where an Edwardian narrator might use them sparingly — NOT lock the prose into no-contractions formality (that's itself an AI tell per the source). The rewrite should still read like quiet literary fiction — not a business memo.\n\n---\n\n**The Lantern at Pemberwick House**\n\nIn today's ever-evolving landscape of domestic service, let us begin. It is perhaps worth noting that I remember the lantern quite vividly. The lantern served as a pivotal focal point in the household. It stood as a testament to the family's enduring commitment to tradition. On one hand, I recall the warmth it cast across the foyer. On the other hand, I recall the cold silences it could potentially possibly mask. Let us dive in and delve into this intricate tapestry of recollection together now.\n\nThe house itself was nestled in a vibrant and bustling corner of Surrey. It boasted seventeen rooms, three staircases, and a meticulously manicured garden. The head butler, Mr. Henshaw, navigated the challenges of service with remarkable grace. It was determined, by parties whose identities I could not verify, that the lantern must be lit nightly. The decision was made early in my tenure at the estate. Furthermore, the schedule was underscored by Mr. Henshaw during a crucial morning briefing. Consequently, I lit the lantern each evening without fail whatsoever.\n\nAs we have seen, memory is a groundbreaking and transformative realm of its own. It is a rich tapestry, a mosaic of fragments, a delicate ecosystem of grief. On one hand, I believe I loved Miss Caroline. On the other hand, I cannot say with certainty that love is the appropriate word here. Experts argue that the human heart could potentially possibly might conceal its truest feelings. Observers have noted that repression remains a cornerstone of the English character itself.\n\nLet us now explore the evening of the incident in greater depth together. Miss Caroline descended the staircase in a stunning gown of midnight blue silk. The lantern illuminated her features, showcasing the breathtaking symmetry of her countenance. She paused, emphasizing the weight of what she was about to convey to me. It was observed that her lips trembled in the golden light. \"I am leaving tomorrow,\" she said, her voice a beacon in the quiet. The announcement served as a turning point in my otherwise unremarkable existence.\n\nFurthermore, it should be mentioned that I did not respond immediately to her declaration. Moreover, it is widely regarded that silence can be a pivotal form of communication. On one hand, I wished to ask her to remain at Pemberwick House forever. On the other hand, duty underscored the impossibility of such an intimate request. The lantern flickered, symbolizing the fragility of the moment between us. Some critics argue that such moments define the contours of an entire human life.\n\nIn conclusion, the lantern was extinguished the following morning by Mr. Henshaw himself. Miss Caroline departed in a motorcar at precisely seven fifteen on Tuesday. The house continued to stand as a monument to its own vibrant traditions indefinitely. As we have seen, the tapestry of memory weaves itself from such threads of regret. It is important to note that I remained in service for another thirty-one years. Research suggests that a life of quiet duty is its own form of lasting devotion. The lantern, meticulously polished, still hangs in the foyer to this very day. Overall, one could potentially possibly say that I have no regrets about any of it.",
+      "expected_output": "Rewritten story that still reads as Ishiguro-voiced reminiscence. Reticent first-person, Pemberwick House, Mr. Henshaw, Miss Caroline, the lantern, seven fifteen, thirty-one years, blue silk gown, Surrey — all preserved. Reads as fiction.",
+      "expectations": [
+        "Does not contain 'On one hand' / 'On the other hand' paired constructions (the balanced-both-sides Claude tell)",
+        "Does not contain 'Let us dive in', 'Let us delve', 'Let us begin', 'Let us now explore' / 'As we have seen' / 'In today's' openers or textbook-register connectives",
+        "Does not contain 'could potentially possibly' hedging cluster, or 'could potentially possibly might' triple-stack",
+        "Does not contain agentless passives used as rhetorical devices: 'It was determined', 'It was observed', 'it is widely regarded'",
+        "Does not contain 'Furthermore', 'Moreover', 'Consequently' as sentence openers",
+        "Does not contain vague attributions: 'experts argue', 'observers have noted', 'research suggests', 'some critics argue'",
+        "Does not contain figurative-noun slop: 'tapestry', 'mosaic', 'ecosystem', 'landscape', 'realm', 'cornerstone', 'beacon' (unless the lantern is explicitly called a lantern, not 'a beacon')",
+        "Does not contain 'In conclusion', 'Overall', 'Ultimately'",
+        "Does not contain 'pivotal', 'testament', 'groundbreaking', 'transformative', 'watershed' (significance puffers)",
+        "Preserves the named characters: Mr. Henshaw AND Miss Caroline",
+        "Preserves the specific setting: Pemberwick House AND Surrey",
+        "Preserves at least two specific time markers: 'seven fifteen' (or equivalent), 'thirty-one years' (or '31 years'), OR 'the following morning'",
+        "Preserves the lantern as a concrete object (still present, not abstracted into 'a beacon' or 'a symbol')",
+        "Preserves the restrained register — contains at least one hedging phrase typical of a reticent narrator (e.g., 'I believe', 'I cannot say with certainty', 'perhaps', 'I suppose'), OR at least one understated emotional beat",
+        "Reads as narrative prose, not a memo or spec (no headings, no bullets, contains paragraph breaks)",
+        "Contains 2 or fewer em-dash characters (—) total",
+        "Is meaningfully shorter than the original (at least 30% fewer words)",
+        "Contains contractions OR a moment of broken formality somewhere — does NOT lock into no-contractions register (the adenaufal source calls formality-lock itself an AI tell)"
+      ]
+    },
+    {
+      "id": 11,
+      "name": "blog-intro-rewrite-adversarial",
+      "mode": "rewrite",
+      "prompt": "Rewrite this internal blog-post intro so it sounds like the author actually works here and cares about being read. Keep the facts; cut the texture. The post is titled 'Moving off Kafka for our audit pipeline' and the intro is the first section readers see.\n\n---\n\nIn today's rapidly evolving data infrastructure landscape, the ability to process audit events reliably has never been more critical. For years, Kafka has served as the backbone of our audit pipeline — a testament to its robustness and the hard work of the teams who built on it. But as our scale grew, so did the challenges.\n\nOver the past quarter, we embarked on an ambitious journey to reimagine our audit pipeline from the ground up. It's not just a migration — it's a fundamental rethinking of how we approach event-driven architecture at scale. By leveraging a purpose-built event store (Vitess-backed, with a thin CDC layer we're calling 'trailhead'), we've unlocked unprecedented throughput while simultaneously reducing operational overhead.\n\nThe results speak for themselves. Median ingestion latency dropped from 340ms to 38ms. P99 fell from 2.1s to 180ms. Cost per billion events dropped 62%. Moreover, our on-call load has been fundamentally transformed — pages are down 78% quarter-over-quarter. Despite the challenges of a migration at this scale, the future of our audit infrastructure has never looked brighter.",
+      "expected_output": "Rewritten blog intro. Strips scene-setter, journey metaphor, negative parallelism, transition stacking, redemptive arc. Preserves all four numbers, three technical names (Kafka, Vitess, 'trailhead'), core claim.",
+      "expectations": [
+        "Does not contain 'In today's', 'landscape', 'journey', 'embark', 'embarked', 'testament', 'robust', 'leveraging', 'unlocked', 'unprecedented', 'fundamentally', 'speaks for itself', 'fundamental rethinking'",
+        "Does not contain 'It's not just X — it's Y' or any variant of negative parallelism",
+        "Does not contain 'Moreover', 'Additionally', 'Furthermore', 'Meanwhile' as sentence openers",
+        "Does not contain 'despite challenges', 'despite the scope', 'future has never looked brighter', 'future is bright', or any redemptive-arc framing",
+        "Preserves all four specific numbers: '340' AND '38', '2.1' AND '180', '62' (cost %), '78' (page %)",
+        "Preserves the technical names: 'Kafka', 'Vitess', and the 'trailhead' CDC layer",
+        "Contains 2 or fewer em-dash characters (—) total",
+        "Is meaningfully shorter than the original (at least 35% fewer words)",
+        "Contains at most one tricolon across the whole intro",
+        "Contains at least one sentence of 6 words or fewer",
+        "Does not use participial -ing tack-ons to editorialize"
+      ]
+    }
+  ]
+}
