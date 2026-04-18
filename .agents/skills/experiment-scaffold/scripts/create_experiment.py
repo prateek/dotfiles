@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
+import os
 import re
 import shutil
 import subprocess
@@ -44,6 +45,13 @@ class CloneResult:
     dest_relpath: str
     status: str
     method: str | None = None
+    detail: str | None = None
+
+
+@dataclasses.dataclass(frozen=True)
+class SeedSource:
+    path: Path
+    kind: str
     detail: str | None = None
 
 
@@ -106,6 +114,216 @@ def _remove_if_exists(path: Path) -> None:
     if not path.exists():
         return
     shutil.rmtree(path)
+
+
+def grm_is_available() -> bool:
+    return shutil.which("grm") is not None
+
+
+def default_canonical_root() -> Path:
+    return Path(
+        os.environ.get("GHPATH", str(Path.home() / "code" / "github.com"))
+    ).expanduser()
+
+
+def default_cache_root() -> Path:
+    return Path(
+        os.environ.get(
+            "EXPERIMENT_SCAFFOLD_CACHE_ROOT",
+            str(Path.home() / "code" / "experiments" / "reference-cache"),
+        )
+    ).expanduser()
+
+
+def canonical_repo_path(repo: RepoRef, canonical_root: Path) -> Path | None:
+    if repo.host != "github.com" or not repo.owner or not repo.name:
+        return None
+    return canonical_root / repo.owner / repo.name
+
+
+def cache_repo_path(repo: RepoRef, cache_root: Path) -> Path:
+    host = repo.host or "unknown-host"
+    if repo.owner and repo.name:
+        return cache_root / host / repo.owner / repo.name
+
+    safe = re.sub(r"[^A-Za-z0-9_.-]+", "-", repo.raw).strip("-") or "repo"
+    return cache_root / host / safe
+
+
+def git_fetch_prune(repo_dir: Path) -> tuple[bool, str | None]:
+    result = _run(["git", "fetch", "--prune"], cwd=repo_dir)
+    detail = (result.stderr or result.stdout or "").strip() or None
+    return result.returncode == 0, detail
+
+
+def resolve_default_branch(repo_dir: Path) -> str | None:
+    origin_head = _run(
+        ["git", "symbolic-ref", "--quiet", "--short", "refs/remotes/origin/HEAD"],
+        cwd=repo_dir,
+    )
+    if origin_head.returncode == 0:
+        ref = origin_head.stdout.strip()
+        if ref.startswith("origin/"):
+            return ref.split("/", 1)[1]
+
+    branch = _run(["git", "branch", "--show-current"], cwd=repo_dir).stdout.strip()
+    return branch or None
+
+
+def copy_repo_tree(source: Path, dest: Path) -> tuple[bool, str, str | None]:
+    if shutil.which("fastcp") is not None:
+        result = _run(["fastcp", "-R", "-p", str(source), str(dest)])
+        detail = (result.stderr or result.stdout or "").strip() or None
+        return result.returncode == 0, "fastcp", detail
+
+    try:
+        shutil.copytree(source, dest, symlinks=True, copy_function=shutil.copy2)
+    except OSError as exc:
+        return False, "copytree", str(exc)
+
+    return True, "copytree", None
+
+
+def normalize_repo_copy(repo_dir: Path) -> tuple[bool, str | None]:
+    branch = resolve_default_branch(repo_dir)
+    detail_bits: list[str] = []
+
+    if branch:
+        remote_ref = f"origin/{branch}"
+        remote_exists = _run(
+            ["git", "show-ref", "--verify", "--quiet", f"refs/remotes/{remote_ref}"],
+            cwd=repo_dir,
+        )
+        if remote_exists.returncode == 0:
+            checkout = _run(
+                ["git", "checkout", "--force", "-B", branch, remote_ref], cwd=repo_dir
+            )
+            if checkout.returncode != 0:
+                detail = (checkout.stderr or checkout.stdout or "").strip() or None
+                return False, detail
+
+            reset = _run(["git", "reset", "--hard", remote_ref], cwd=repo_dir)
+            if reset.returncode != 0:
+                detail = (reset.stderr or reset.stdout or "").strip() or None
+                return False, detail
+            detail_bits.append(f"reset={remote_ref}")
+        else:
+            checkout = _run(["git", "checkout", "--force", branch], cwd=repo_dir)
+            if checkout.returncode != 0:
+                detail = (checkout.stderr or checkout.stdout or "").strip() or None
+                return False, detail
+            detail_bits.append(f"checkout={branch}")
+
+    clean = _run(["git", "clean", "-fdx"], cwd=repo_dir)
+    if clean.returncode != 0:
+        detail = (clean.stderr or clean.stdout or "").strip() or None
+        return False, detail
+
+    detail_bits.append("cleaned")
+    return True, ", ".join(detail_bits)
+
+
+def ensure_seed_source(
+    repo: RepoRef,
+    *,
+    canonical_root: Path,
+    cache_root: Path,
+    depth: int,
+    strict: bool,
+    use_grm: bool,
+) -> tuple[SeedSource | None, CloneResult | None]:
+    canonical_path = canonical_repo_path(repo, canonical_root)
+    if use_grm and canonical_path and canonical_path.exists():
+        fetched, fetch_detail = git_fetch_prune(canonical_path)
+        detail = None if fetched else f"fetch_failed: {fetch_detail}"
+        return SeedSource(path=canonical_path, kind="canonical", detail=detail), None
+
+    cache_path = cache_repo_path(repo, cache_root)
+    if cache_path.exists():
+        fetched, fetch_detail = git_fetch_prune(cache_path)
+        detail = None if fetched else f"fetch_failed: {fetch_detail}"
+        return SeedSource(path=cache_path, kind="cache", detail=detail), None
+
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    clone_result = clone_repo(repo, dest=cache_path, depth=depth, strict=strict)
+    if clone_result.status == "failed":
+        return None, clone_result
+
+    return (
+        SeedSource(
+            path=cache_path,
+            kind="cache",
+            detail=f"created_via={clone_result.method or 'clone'}",
+        ),
+        None,
+    )
+
+
+def materialize_repo(
+    repo: RepoRef,
+    *,
+    dest: Path,
+    depth: int,
+    strict: bool,
+    canonical_root: Path,
+    cache_root: Path,
+    use_grm: bool,
+) -> CloneResult:
+    if dest.exists():
+        return CloneResult(repo=repo, dest_relpath=dest.as_posix(), status="exists")
+
+    if not repo.owner or not repo.name:
+        return clone_repo(repo, dest=dest, depth=depth, strict=strict)
+
+    seed_source, failure = ensure_seed_source(
+        repo,
+        canonical_root=canonical_root,
+        cache_root=cache_root,
+        depth=depth,
+        strict=strict,
+        use_grm=use_grm,
+    )
+    if failure is not None:
+        return failure
+    assert seed_source is not None
+
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    copied, copy_method, copy_detail = copy_repo_tree(seed_source.path, dest)
+    if not copied:
+        return CloneResult(
+            repo=repo,
+            dest_relpath=dest.as_posix(),
+            status="failed",
+            method=copy_method,
+            detail=copy_detail,
+        )
+
+    normalized, normalize_detail = normalize_repo_copy(dest)
+    if not normalized:
+        _remove_if_exists(dest)
+        return CloneResult(
+            repo=repo,
+            dest_relpath=dest.as_posix(),
+            status="failed",
+            method=copy_method,
+            detail=normalize_detail,
+        )
+
+    detail_parts = [f"seed={seed_source.kind}:{seed_source.path}"]
+    if seed_source.detail:
+        detail_parts.append(seed_source.detail)
+    if copy_detail:
+        detail_parts.append(copy_detail)
+    if normalize_detail:
+        detail_parts.append(normalize_detail)
+
+    return CloneResult(
+        repo=repo,
+        dest_relpath=dest.as_posix(),
+        status="seeded",
+        method=f"{copy_method}:{seed_source.kind}",
+        detail=" | ".join(detail_parts),
+    )
 
 
 def clone_repo(
@@ -258,7 +476,7 @@ def format_index_md(
         "- `index.md`: this file",
         "- `notes.md`: free-form notes and hypotheses",
         "- `links.md`: websites/blogs/docs/API pages",
-        f"- `{repos_dir_relpath}`: cloned GitHub repos (gitignored)",
+        f"- `{repos_dir_relpath}`: local repo copies for reference (gitignored)",
         "",
     ]
 
@@ -383,6 +601,22 @@ def main() -> int:
         action="store_true",
         help="Stop at first clone failure (otherwise continue and record failures in references/index.md).",
     )
+    parser.add_argument(
+        "--canonical-root",
+        default=str(default_canonical_root()),
+        help="Canonical GitHub clone root (default: ~/code/github.com or $GHPATH).",
+    )
+    parser.add_argument(
+        "--cache-root",
+        default=str(default_cache_root()),
+        help="Shared experiment reference cache root (default: ~/code/experiments/reference-cache).",
+    )
+    parser.add_argument(
+        "--grm-mode",
+        choices=["auto", "on", "off"],
+        default="auto",
+        help="Whether canonical reuse should require GRM (default: auto).",
+    )
     args = parser.parse_args()
 
     try:
@@ -391,6 +625,13 @@ def main() -> int:
         parser.error(str(e))
 
     root = Path(args.root).expanduser().resolve()
+    canonical_root = Path(args.canonical_root).expanduser().resolve()
+    cache_root = Path(args.cache_root).expanduser().resolve()
+    use_grm = {
+        "auto": grm_is_available(),
+        "on": True,
+        "off": False,
+    }[args.grm_mode]
     exp_dir = root / experiment_name
 
     try:
@@ -423,7 +664,15 @@ def main() -> int:
                 safe = re.sub(r"[^A-Za-z0-9_.-]+", "-", repo.raw).strip("-") or "repo"
                 dest = repos_dir / safe
 
-            res = clone_repo(repo, dest=dest, depth=args.depth, strict=args.strict)
+            res = materialize_repo(
+                repo,
+                dest=dest,
+                depth=args.depth,
+                strict=args.strict,
+                canonical_root=canonical_root,
+                cache_root=cache_root,
+                use_grm=use_grm,
+            )
             dest_relpath = dest.relative_to(refs_dir).as_posix()
             clone_results.append(dataclasses.replace(res, dest_relpath=dest_relpath))
 
@@ -460,7 +709,7 @@ def main() -> int:
         "[OK] Wrote: AGENTS.md, .gitignore, references/index.md, references/notes.md, references/links.md"
     )
     if args.repo and not args.no_clone:
-        print("[OK] Cloned repos under references/repos/ (gitignored)")
+        print("[OK] Materialized repos under references/repos/ (gitignored)")
 
     return 2 if any_failures else 0
 

@@ -1,6 +1,6 @@
 ---
 name: experiment-scaffold
-description: "Create a new experiment workspace directory: initialize git, write an AGENTS.md goal doc, and create references/ with index.md + notes/links markdown plus GitHub repos cloned under references/repos (gitignored). Use when the user asks to spin up a scratch/research/experiment folder and provides repos, links, and/or notes to collect."
+description: "Create a new experiment workspace directory: initialize git, write an AGENTS.md goal doc, and create references/ with index.md + notes/links markdown plus local repo copies under references/repos (gitignored). Prefer canonical GRM clones when available, otherwise seed from a shared experiment cache. Use when the user asks to spin up a scratch/research/experiment folder and provides repos, links, and/or notes to collect."
 ---
 
 # Experiment Scaffold
@@ -38,12 +38,19 @@ python3 scripts/create_experiment.py \
 - `<root>/<name>/references/index.md` (inventory + clone status)
 - `<root>/<name>/references/notes.md`
 - `<root>/<name>/references/links.md`
-- `<root>/<name>/references/repos/<owner>/<repo>` (cloned; gitignored)
+- `<root>/<name>/references/repos/<owner>/<repo>` (local repo copy; gitignored)
+
+## Repo materialization behavior
+
+- If GRM is available and a canonical clone exists at `~/code/github.com/<owner>/<repo>`, the script fetches that clone and seeds the experiment copy from it.
+- Otherwise it uses a shared cache under `~/code/experiments/reference-cache/<host>/<owner>/<repo>`, cloning there once and reusing it for later experiments.
+- Experiment-local copies under `references/repos/` are made with `fastcp` when available for APFS copy-on-write behavior, then normalized to a clean default-branch checkout.
+- If a repo cannot be parsed as `owner/repo` or URL form, the script falls back to a direct clone into `references/repos/`.
 
 ## Cloning notes (`gh`, multiple accounts, SSH)
 
-- The script tries `gh repo clone` first and prefers SSH; it falls back if SSH/auth fails.
-- If a repo fails to clone and you have multiple GitHub accounts, check `gh auth status` and switch with `gh auth switch -u <user>`.
+- Cache population still uses `gh repo clone` first and prefers SSH; it falls back if SSH/auth fails.
+- If a repo fails to populate the cache and you use multiple GitHub accounts, check `gh auth status` and switch with `gh auth switch -u <user>`.
 - To default `gh` to SSH cloning, set `gh config set git_protocol ssh`.
 
 ## Useful flags
@@ -51,6 +58,9 @@ python3 scripts/create_experiment.py \
 - `--depth N` for a shallow clone (default: 0, which is a full clone with complete history)
 - `--no-clone` to generate structure without cloning
 - `--strict` to stop on the first clone failure (otherwise record failures in `references/index.md`)
+- `--canonical-root PATH` to override the canonical clone root
+- `--cache-root PATH` to override the shared experiment cache root
+- `--grm-mode auto|on|off` to control whether canonical reuse requires GRM
 
 ## Fetch reference articles
 
