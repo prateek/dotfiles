@@ -6,7 +6,8 @@ This dotfiles repo provides a fast workflow for creating Git worktrees across re
 
 - `wt` (Worktrunk)
 - `fzf`, `zoxide` (installed via Brewfile)
-- Dotfiles bootstrap symlinks `repo-index` + hook scripts into `~/bin`
+- Dotfiles bootstrap symlinks `repo-index` + `wt-hook-sparse` into `~/bin`
+- `~/dotfiles/bootstrap.sh` installs Worktrunk via `cargo install worktrunk --locked` when `cargo` is available
 
 If `wt` isn’t installed:
 
@@ -18,7 +19,7 @@ cargo install worktrunk --locked
 
 - Create/switch worktrees quickly (one command)
 - Keep all worktrees in one place: `~/code/wt`
-- Preserve repo directory names (important for OpenAI monorepo tooling)
+- Preserve repo directory names (useful for repo-local tooling and scripts)
 - Optional sparse checkout (cone mode) when requested
 - “New worktree + agent” pattern (default agent: `codex`, overridable)
 
@@ -55,11 +56,11 @@ w switch                          # pick an existing centralized worktree and cd
 w ls                              # fast compact list (repo/branch/status with relations)
 w ls -l                           # long list with full absolute path column
 w ls --no-relations               # fastest metadata-only status (`ok`)
-w ls --dirty                      # show clean/dirty words (slower)
+w ls --dirty                      # show clean/dirty words, including untracked files (slower)
 w ls --relations                  # explicit relation mode (default on)
 w ls --dirty --relations          # show dirty+relation tuple (most expensive)
 w rm feature-auth                 # remove a selected worktree (branch deleted if merged)
-w rm --filter 'feature-auth'      # non-interactive picker selection
+w rm --filter 'feature-auth'      # non-interactive substring selection (must match one)
 w rm --yes --filter 'dirty/rm'    # required for dirty worktrees
 w prune                           # dry-run stale cleanup
 w prune --yes                     # apply stale cleanup
@@ -82,7 +83,7 @@ w prune                           # cleanup only *stale/broken* centralized dirs
 
 - Default (`w ls`): `<main><upstream>` (example: `↕|`, `=·`).
 - `w ls --no-relations`: `ok` means metadata-only fast path.
-- `w ls --dirty`: `clean` or `dirty`.
+- `w ls --dirty`: `clean` or `dirty` (includes untracked files).
 - `w ls --relations`: explicit relation mode (same as default).
 - `w ls --dirty --relations`: `<dirty><main><upstream>` (example: `!↕⇣`, `·_·`).
 - `main` symbols: `^ = _ – ↑ ↓ ↕ ? ·`
@@ -92,7 +93,7 @@ Select repo:
 
 ```sh
 w feature-auth --here              # current repo (no picker)
-w feature-auth --repo openai/openai
+w feature-auth --repo owner/repo
 w feature-auth --repo /path/to/repo
 ```
 
@@ -134,7 +135,7 @@ export W_WORKTREES_ROOT="$HOME/code/wt"   # default shown
 
 Example:
 
-- `~/code/wt/openai-openai.feature-auth/openai`
+- `~/code/wt/test-owner-test-repo.feature-auth/test-repo`
 
 ## Sparse checkout (opt-in)
 
@@ -155,38 +156,31 @@ git sparse-checkout set --cone -- api docs tools
 git sparse-checkout disable                # return to full checkout
 ```
 
-## OpenAI monorepo hooks
+## Repo-specific hooks
 
-For `github.com/openai/openai`, OpenAI guidance generally prefers:
+Worktrunk supports repo-specific hooks in `~/.config/worktrunk/config.toml`.
 
-- keeping checkouts under `~/code` (speed/security reasons)
-- preserving the repo directory name (`openai`) so repo-special-cased tooling works
-- a separate venv per worktree to avoid “which code am I running?” confusion
+This dotfiles setup only enables the generic sparse hook by default:
 
-This dotfiles setup keeps worktrees under `~/code/wt` and preserves the repo directory name.
-
-### Per-worktree venv
-
-On worktree creation, a per-worktree venv is created:
-
-- `~/.virtualenvs/openai-<branch_sanitized>`
-
-It runs `venv_setup_build` from `monorepo_setup.sh` (does not modify shell startup files).
-
-Activate it manually:
-
-```sh
-source ~/.virtualenvs/openai-<branch_sanitized>/bin/activate
+```toml
+[pre-start]
+sparse = "wt-hook-sparse"
 ```
 
-Recreate it if you get into a confused state:
+If a repo needs extra setup on worktree creation, add a repo-scoped hook in your Worktrunk config:
 
-```sh
-export MONOREPO_VENV="$HOME/.virtualenvs/openai-<branch_sanitized>"
-source monorepo_setup.sh
-venv_setup_build
-source "$MONOREPO_VENV/bin/activate"
+```toml
+[projects."github.com/owner/repo".pre-start]
+setup = "wt-hook-repo-setup"
 ```
+
+Keep repo-specific hooks:
+
+- idempotent
+- fast
+- limited to checkout-local setup
+
+Worktrunk passes hook context JSON on stdin, including fields such as `worktree_path` and `branch`.
 
 Skip hooks for a one-off creation:
 

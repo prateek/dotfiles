@@ -383,7 +383,16 @@ else
 fi
 
 # ~/.codex/config.toml -> Codex-specific config
-if [ -e "$CODEX_CONFIG_TOML" ] || [ -L "$CODEX_CONFIG_TOML" ]; then
+if [ -e "$CODEX_CONFIG_TOML" ] && [ ! -L "$CODEX_CONFIG_TOML" ]; then
+  backup="${CODEX_CONFIG_TOML}.backup-$(date +%s)"
+  if [ "$DRY_RUN" = "1" ]; then
+    echo "Would backup real file: $CODEX_CONFIG_TOML -> $backup"
+  else
+    echo "Backing up existing Codex config: $CODEX_CONFIG_TOML -> $backup"
+    mv "$CODEX_CONFIG_TOML" "$backup"
+  fi
+fi
+if [ -L "$CODEX_CONFIG_TOML" ]; then
   if [ "$(readlink "$CODEX_CONFIG_TOML" 2>/dev/null)" != "$CWD/.codex/config.toml" ]; then
     echo "Error: $CODEX_CONFIG_TOML already exists and is not a symlink to $CWD/.codex/config.toml."
     echo "To back it up, run: mv \"$CODEX_CONFIG_TOML\" \"${CODEX_CONFIG_TOML}.backup-$(date +%s)\""
@@ -566,7 +575,7 @@ else
 fi
 
 # dotfiles bin wrappers
-for f in devtool gemini-meeting-sync gh grmrepo grmrepo-refresh repo-index wt-hook-sparse wt-hook-openai-venv; do
+for f in devtool gemini-meeting-sync gh grmrepo grmrepo-refresh repo-index wt-hook-sparse; do
   src="$CWD/bin/$f"
   dest="$HOME/bin/$f"
   if [ -f "$src" ]; then
@@ -601,11 +610,13 @@ EOF
   fi
 fi
 
-# git-repo-manager (grm) install/update (via cargo, when available)
+# Worktrunk + git-repo-manager install/update (via cargo, when available)
 if [ "$DRY_RUN" = "1" ]; then
+  echo "Would install/update Worktrunk via cargo (if cargo is available)"
   echo "Would install/update git-repo-manager via cargo (if cargo is available)"
 else
   if command -v cargo >/dev/null 2>&1; then
+    cargo install worktrunk --locked || echo "Warning: cargo install worktrunk failed; retry later."
     cargo install git-repo-manager --locked || echo "Warning: cargo install git-repo-manager failed; retry later."
   fi
 fi

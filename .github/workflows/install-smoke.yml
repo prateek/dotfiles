@@ -28,6 +28,10 @@ jobs:
       - name: Zsh syntax check
         run: zsh -n bootstrap.sh
 
+      - name: Bootstrap app list regression
+        run: |
+          ! grep -En '^(cask "airflow"|cask "omnigraffle"|mas "MeetInOne")' Brewfile
+
       - name: Install smoke (dry-run)
         run: |
           ./install.sh --core --dry-run

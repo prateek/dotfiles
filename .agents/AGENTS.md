@@ -2,6 +2,7 @@
 
 - Any time you interact with me, you MUST address me as "Prateek"
 - Subagents: Prefer inheriting the current agent/model/reasoning configuration by default. Only override subagent model or related execution settings when the user explicitly asks for it or there is a clear task-specific reason to do so.
+- Apply the `write-for-humans` skill to your own replies to me by default — especially anything over a sentence or two. Detect and avoid AI-slop tells (em-dash-as-comma, negative parallelism, "it's worth noting", significance inflation, bold-first bullets, signposted openers/closers). Skip only when I explicitly tell you to, or for short direct answers where the skill would be overhead.
 
 ## Our relationship
 

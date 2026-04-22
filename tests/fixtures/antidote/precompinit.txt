@@ -1,0 +1,1 @@
+zsh-users/zsh-completions path:src kind:fpath fpath-rule:prepend

@@ -8,6 +8,12 @@ source_if_readable() {
   source "$f"
 }
 
+keep_home_bin_first() {
+  if [[ -d "$HOME/bin" ]]; then
+    path=("$HOME/bin" ${path:#"$HOME/bin"})
+  fi
+}
+
 sync_launchctl_path() {
   local launchctl_path=""
 
@@ -75,7 +81,13 @@ if [[ -d "$extras" ]]; then
 fi
 unset extras
 
+# Keep ~/bin first even if plugin setup prepends helper bins later.
+keep_home_bin_first
+typeset -ga precmd_functions
+precmd_functions=("${(@)precmd_functions:#keep_home_bin_first}")
+precmd_functions+=(keep_home_bin_first)
+
 # Set PATH for macOS (only for interactive login shells)
-if [[ -x /bin/launchctl && -o interactive && -o login ]]; then
+if [[ -z ${DOTFILES_SKIP_LAUNCHCTL_SYNC:-} && -x /bin/launchctl && -o interactive && -o login ]]; then
     sync_launchctl_path
 fi

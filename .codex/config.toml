@@ -1,6 +1,11 @@
 model = "gpt-5.4"
 model_reasoning_effort = "xhigh"
 plan_mode_reasoning_effort = "xhigh"
+
+[agents]
+max_threads = 16
+max_depth = 3
+
 [projects."/Users/prateek/dotfiles"]
 trust_level = "trusted"
 
@@ -46,6 +51,72 @@ trust_level = "trusted"
 [projects."/Users/prateek/Dropbox/Documents/Taxes"]
 trust_level = "trusted"
 
+[projects."/Users/prateek/code/experiments/2026-04-10-flowdeck-reverse-engineering"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments/2026-04-11-skill-evaluator"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments/2026-04-11-agent-runtime-space-eval"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/github.com/prateek/movies.do-app"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/github.com/prateek/ordercli"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/github.com/informalsystems/quint-llm-kit"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/github.com/prateek/pi-mobile-ios"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/github.com/wesm/agentsview"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments/2026-04-15-analyze-dolt-cxdb"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/github.com/badlogic/pi-mono"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments/2026-04-06-neo-g9-fw"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/Dropbox/Documents"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments/2026-04-17-agentsview-pharo"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments/git-woof"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/github.com/prateek/chris-app"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments/2026-04-18-stock-toy-example"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/.claude"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/Dropbox/Documents/99-archive/content-dumps"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments/2026-04-17-google-sheets-dashboards-interactive-systems"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/github.com/prateek/movies-do-app"]
+trust_level = "trusted"
+
+[notice]
+hide_rate_limit_model_nudge = true
+
 [notice.model_migrations]
 gpt-5-codex = "gpt-5.3-codex"
 "gpt-5.2" = "gpt-5.3-codex"
@@ -55,6 +126,7 @@ enabled = true
 url = "https://mcp.granola.ai/mcp"
 
 [features]
+codex_hooks = true
 multi_agent = true
 
 [plugins."google-calendar@openai-curated"]
@@ -68,3 +140,6 @@ enabled = true
 
 [plugins."google-drive@openai-curated"]
 enabled = true
+
+[tui]
+status_line = ["thread-title", "model-with-reasoning", "context-usage", "current-dir", "five-hour-limit", "weekly-limit", "context-window-size", "used-tokens", "total-input-tokens", "total-output-tokens", "fast-mode"]

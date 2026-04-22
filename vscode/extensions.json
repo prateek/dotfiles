@@ -1,8 +1,8 @@
 {
     "extensions": [
+        "GitHub.copilot-chat",
         "Codeium.windsurfPyright",
         "eamodio.gitlens",
-        "GitHub.copilot-chat",
         "golang.go",
         "golf1052.code-sync",
         "informal.quint-vscode",

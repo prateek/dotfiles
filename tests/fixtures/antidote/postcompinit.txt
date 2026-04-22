@@ -1,0 +1,3 @@
+Aloxaf/fzf-tab
+zdharma-continuum/fast-syntax-highlighting kind:defer
+zsh-vi-more/vi-motions

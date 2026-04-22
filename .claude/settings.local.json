@@ -1,38 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash(brew:*)",
-      "Bash(git add:*)",
-      "Bash(sqlite3:*)",
-      "Bash(mkdir:*)",
-      "Bash(find:*)",
-      "Bash(python3:*)",
-      "Bash(chmod:*)",
-      "Bash(grep:*)",
-      "WebFetch(domain:manual.raycast.com)",
-      "Bash(plutil:*)",
-      "mcp__exa__web_search_exa",
-      "mcp__exa__crawling_exa",
-      "Bash(aerospace:*)",
-      "Bash(cp:*)",
-      "Bash(pgrep:*)",
-      "Bash(killall:*)",
-      "Bash(time zsh:*)",
-      "Bash(ZPROF=1 zsh -i -c 'zprof')",
-      "Bash(zsh:*)",
-      "mcp__exa__deep_researcher_start",
-      "mcp__exa__deep_researcher_check",
-      "mcp__zen__codereview"
+      "Bash(gh auth *)",
+      "Bash(gh api *)"
     ],
     "deny": [],
-    "additionalDirectories": [
-      "/Users/prateek"
-    ]
+    "additionalDirectories": []
   },
   "enableAllProjectMcpServers": true,
-  "enabledMcpjsonServers": [
-    "zen"
-  ],
+  "enabledMcpjsonServers": [],
   "statusLine": {
     "type": "command",
     "command": "npx -y @owloops/claude-powerline@latest --style=powerline"

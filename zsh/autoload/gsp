@@ -1,14 +1,42 @@
 # Lazy-load git-spice via an autoloaded wrapper.
-function gsp() {
-  local gs_bin
-  gs_bin="$(whence -p gs 2>/dev/null)" || gs_bin=""
+__dotfiles_git_spice_binary() {
+  local gs_bin help_output
 
-  if [[ -n "$gs_bin" && -x "$gs_bin" ]]; then
+  gs_bin="$(whence -p gs 2>/dev/null)" || gs_bin=""
+  if [[ -z "$gs_bin" || ! -x "$gs_bin" ]]; then
+    return 1
+  fi
+
+  help_output="$("$gs_bin" --help 2>&1 || true)"
+  if [[ "$help_output" == *"git-spice"* || "$help_output" == *"stacked Git branches"* || "$help_output" == *"Stacked Pull Requests"* || "$help_output" == *"gs branch create"* ]]; then
+    REPLY="$gs_bin"
+    return 0
+  fi
+
+  REPLY="$gs_bin"
+  return 2
+}
+
+function gsp() {
+  local gs_bin rc
+
+  __dotfiles_git_spice_binary
+  rc=$?
+
+  if [[ "$rc" -eq 0 ]]; then
+    gs_bin="$REPLY"
     "$gs_bin" "$@"
     return $?
   fi
 
-  print -u2 "gsp: git-spice binary 'gs' not found on PATH."
+  case "$rc" in
+    1)
+      print -u2 "gsp: git-spice binary 'gs' not found on PATH."
+      ;;
+    2)
+      print -u2 "gsp: found 'gs' on PATH, but it does not look like git-spice."
+      ;;
+  esac
   return 127
 }
 

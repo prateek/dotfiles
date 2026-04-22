@@ -206,17 +206,17 @@ Common opts (new/run/cd):
 
 Switch opts:
   --query <str>                        Initial fzf query
-  --filter <str>                       Non-interactive fzf selection (best for scripts/tests)
+  --filter <str>                       Non-interactive substring selection (must match one)
   --all                                Include broken/non-git dirs under the root
 
 Rm opts:
   --query <str>                        Initial fzf query
-  --filter <str>                       Non-interactive fzf selection (best for scripts/tests)
+  --filter <str>                       Non-interactive substring selection (must match one)
   --all                                Include stale entries in picker (cannot be removed via rm)
   --yes                                Required to remove dirty worktrees
 
 List opts:
-  --dirty                              Compute clean/dirty status (slower)
+  --dirty                              Compute clean/dirty status, including untracked files
   --jobs <n>                           Parallel jobs for --dirty checks (default: adaptive)
   --relations                          Compute detailed main/upstream divergence symbols (default: on)
   --no-relations                       Disable relation symbols for maximum speed
@@ -245,7 +245,7 @@ Notes:
 Examples:
   w feature/auth
   w feature/auth --here
-  w feature/auth --repo openai/openai
+  w feature/auth --repo owner/repo
   w feature/auth --root ~/code/wt2
   w fix-bug -- 'Fix GH #322'
   w run fix-bug --agent claude -- 'Fix GH #322'
@@ -804,9 +804,57 @@ _w_is_worktree_dirty_any() {
   local worktree_path="$1"
   [[ -n "$worktree_path" && -d "$worktree_path" ]] || return 1
 
-  local out=""
-  out="$(GIT_OPTIONAL_LOCKS=0 git -C "$worktree_path" status --porcelain 2>/dev/null || true)"
-  [[ -n "$out" ]]
+  local diff_rc=0
+  GIT_OPTIONAL_LOCKS=0 git -C "$worktree_path" diff-index --quiet HEAD -- 2>/dev/null
+  diff_rc=$?
+  if (( diff_rc == 1 )); then
+    return 0
+  fi
+
+  if (( diff_rc > 1 )); then
+    local tracked=""
+    tracked="$(GIT_OPTIONAL_LOCKS=0 git -C "$worktree_path" status --porcelain -uno 2>/dev/null || true)"
+    [[ -n "$tracked" ]] && return 0
+  fi
+
+  local untracked=""
+  untracked="$(GIT_OPTIONAL_LOCKS=0 git -C "$worktree_path" ls-files --others --exclude-standard --directory --no-empty-directory 2>/dev/null | head -n 1 || true)"
+  [[ -n "$untracked" ]]
+}
+
+_w_select_rows_by_filter() {
+  local filter="$1"
+  shift
+
+  [[ -n "$filter" ]] || return 1
+
+  local lc_filter="${filter:l}"
+  local row=""
+  local -a matches
+  matches=()
+
+  for row in "$@"; do
+    if [[ "${row:l}" == *"$lc_filter"* ]]; then
+      matches+=("$row")
+    fi
+  done
+
+  (( ${#matches[@]} > 0 )) || return 1
+  printf '%s\n' "${matches[@]}"
+  (( ${#matches[@]} == 1 )) && return 0
+  return 3
+}
+
+_w_print_filter_matches() {
+  local tab=$'\t'
+  local line=""
+  local shown=0
+
+  for line in "$@"; do
+    print -u2 "  ${line##*$tab}"
+    shown=$(( shown + 1 ))
+    (( shown >= 10 )) && break
+  done
 }
 
 _w_resolve_ls_dirty_jobs() {
@@ -847,11 +895,6 @@ _w_resolve_ls_dirty_jobs() {
 _w_cmd_switch() {
   setopt localoptions pipefail no_aliases 2> /dev/null
 
-  if ! command -v fzf >/dev/null 2>&1; then
-    print -u2 "w switch: missing fzf"
-    return 127
-  fi
-
   local worktrees_root="${W_WORKTREES_ROOT:-$HOME/code/wt}"
   local query=""
   local filter=""
@@ -883,6 +926,11 @@ _w_cmd_switch() {
         ;;
     esac
   done
+
+  if [[ -z "$filter" ]] && ! command -v fzf >/dev/null 2>&1; then
+    print -u2 "w switch: missing fzf"
+    return 127
+  fi
 
   local -a leaves
   leaves=("$worktrees_root"/*/*(N-/))
@@ -948,8 +996,32 @@ _w_cmd_switch() {
     fzf_args+=(--filter="$filter")
   fi
 
-  local selection
-  if tty -s 2>/dev/null; then
+  local selection=""
+  if [[ -n "$filter" ]]; then
+    local filtered=""
+    filtered="$(_w_select_rows_by_filter "$filter" "${rows[@]}")"
+    local filter_rc=$?
+    case "$filter_rc" in
+      0)
+        selection="$filtered"
+        ;;
+      1)
+        print -u2 "w switch: no worktrees matched --filter: $filter"
+        return 1
+        ;;
+      3)
+        local -a filtered_lines
+        filtered_lines=("${(@f)filtered}")
+        print -u2 "w switch: filter matched ${#filtered_lines[@]} worktrees; refine --filter to a single target"
+        _w_print_filter_matches "${filtered_lines[@]}"
+        return 1
+        ;;
+      *)
+        print -u2 "w switch: failed to resolve --filter: $filter"
+        return 1
+        ;;
+    esac
+  elif tty -s 2>/dev/null; then
     selection="$(printf '%s\n' "${rows[@]}" | fzf "${fzf_args[@]}" </dev/tty)" || return $?
   else
     selection="$(printf '%s\n' "${rows[@]}" | fzf "${fzf_args[@]}")" || return $?
@@ -1198,6 +1270,8 @@ EOF
               printf "%s\t1\n" "$p"
             else
               if [ -n "$(GIT_OPTIONAL_LOCKS=0 git -C "$p" status --porcelain -uno 2>/dev/null)" ]; then
+                printf "%s\t1\n" "$p"
+              elif [ -n "$(GIT_OPTIONAL_LOCKS=0 git -C "$p" ls-files --others --exclude-standard --directory --no-empty-directory 2>/dev/null | head -n 1)" ]; then
                 printf "%s\t1\n" "$p"
               else
                 printf "%s\t0\n" "$p"
@@ -1520,7 +1594,7 @@ EOF
         fi
 
         local legend_line1="ok = metadata-only fast path (no dirty/relation git checks)"
-        local legend_line2="clean = no tracked changes; dirty = tracked changes (with --dirty)"
+        local legend_line2="clean = no local changes; dirty = tracked or untracked changes (with --dirty)"
         local legend_line3=""
         local legend_line4=""
         if (( compute_relations )); then
@@ -1560,11 +1634,6 @@ _w_cmd_rm() {
   setopt localoptions pipefail no_aliases 2> /dev/null
 
   _w_require_wt || return $?
-
-  if ! command -v fzf >/dev/null 2>&1; then
-    print -u2 "w rm: missing fzf"
-    return 127
-  fi
 
   local worktrees_root="${W_WORKTREES_ROOT:-$HOME/code/wt}"
   local query=""
@@ -1608,6 +1677,11 @@ _w_cmd_rm() {
 
   if [[ -n "$target" && -z "$filter" && -z "$query" ]]; then
     filter="$target"
+  fi
+
+  if [[ -z "$filter" ]] && ! command -v fzf >/dev/null 2>&1; then
+    print -u2 "w rm: missing fzf"
+    return 127
   fi
 
   local -a leaves
@@ -1672,8 +1746,32 @@ _w_cmd_rm() {
     fzf_args+=(--filter="$filter")
   fi
 
-  local selection
-  if tty -s 2>/dev/null; then
+  local selection=""
+  if [[ -n "$filter" ]]; then
+    local filtered=""
+    filtered="$(_w_select_rows_by_filter "$filter" "${rows[@]}")"
+    local filter_rc=$?
+    case "$filter_rc" in
+      0)
+        selection="$filtered"
+        ;;
+      1)
+        print -u2 "w rm: no worktrees matched --filter: $filter"
+        return 1
+        ;;
+      3)
+        local -a filtered_lines
+        filtered_lines=("${(@f)filtered}")
+        print -u2 "w rm: filter matched ${#filtered_lines[@]} worktrees; refine --filter to a single target"
+        _w_print_filter_matches "${filtered_lines[@]}"
+        return 1
+        ;;
+      *)
+        print -u2 "w rm: failed to resolve --filter: $filter"
+        return 1
+        ;;
+    esac
+  elif tty -s 2>/dev/null; then
     selection="$(printf '%s\n' "${rows[@]}" | fzf "${fzf_args[@]}" </dev/tty)" || return $?
   else
     selection="$(printf '%s\n' "${rows[@]}" | fzf "${fzf_args[@]}")" || return $?

@@ -27,6 +27,14 @@ Keep it short. Put recurring maintenance workflow in `$code-gardening`, not in l
 - Do not put one-off session chatter or temporary debugging notes here. Those belong in task output, issues, or other working notes.
 - After editing a skill, validate it. Skill frontmatter and parser drift have bitten us enough times that this should be automatic.
 
+## Feature planning and decisions (dotfiles repo)
+
+- Non-trivial features or initiatives that live in this repo get a plan doc at `dev/docs/<slug>-plan.md`. The plan covers problem, goals/non-goals, architecture, implementation phases, open questions, and success criteria. Keep it updated as the work evolves.
+- Architectural decisions get a numbered ADR at `dev/adr/<NNNN>-<slug>.md` with status, context, options considered, decision, consequences, and revisit criteria. New ADRs take the next free number; never renumber existing ones.
+- Plan docs reference the ADR(s) they depend on; ADRs reference the plan doc(s) that prompted them. Cross-link with absolute paths.
+- Small one-off fixes don't need either. The bar is roughly: would a future agent or reviewer benefit from understanding the decision context, or does the diff explain itself?
+- Treat plan docs and ADRs as durable state under the same Gardening rule: if a decision changes, update the ADR (don't delete — add a superseding entry) and sync the plan doc.
+
 ## Shell Startup
 
 - Keep baseline `PATH` entries in `zprofile`'s `path=(...)` array, not ad hoc `export PATH=...` snippets in `zshrc`.
@@ -38,6 +46,8 @@ Keep it short. Put recurring maintenance workflow in `$code-gardening`, not in l
 - Avoid source-time command substitutions such as `$(brew --prefix)` in shell startup files. Prefer `HOMEBREW_PREFIX`, `whence -p`, or resolution at call time.
 - When sourcing shell widgets or key-binding scripts, guard them behind `[[ -o zle ]]` so non-ZLE interactive shells like `zsh -ic` do not throw option or widget errors.
 - For shell widget or keymap debugging, prefer a real PTY login shell over `zsh -ic`; the latter can report `zle` as on without a tty and can miss deferred plugin state.
+- For authoritative shell validation, run `scripts/audit/zsh-fresh-shells.zsh verify` and `bench` on the host. Use `scripts/audit/zsh-fresh-shells.zsh doctor` only as a live-shell doctor/debug helper.
+- Synthetic shell harnesses must set `DOTFILES_SKIP_LAUNCHCTL_SYNC=1` so login-shell tests do not mutate the GUI session `PATH`.
 - If syncing `PATH` into `launchctl`, compare against the live `launchctl getenv PATH` value instead of trusting a persistent cache file across GUI sessions.
 - Keep repeatable shell benchmarking guidance in `skills/benchmark-zsh-startup`, not loose repo docs.
 
@@ -50,6 +60,13 @@ Keep it short. Put recurring maintenance workflow in `$code-gardening`, not in l
   - the stub package (when needed)
 - Watch out for name normalization mismatches between ecosystems (common patterns: `-` → `_`, `.` → `_`, lowercase normalization). Use whatever naming convention the repo’s build rules expect.
 - After updating deps, run the smallest local checks that match CI: dependency validation + typecheck, before pushing.
+
+## Skill-creator eval review
+
+- For skill-creator eval review, prefer `~/dotfiles/scripts/eval-review.py` over the canonical `skill-creator/eval-viewer/generate_review.py`.
+- Generates a single self-contained `review.html` from an iteration dir; no deps beyond stdlib.
+- Benchmark lives as a sidebar entry below the evals (not a top-level tab); feedback sits inline under the with/without side-by-side outputs.
+- Supports `--previous <iter>` for prior-iteration comparison, theme toggle, j/k nav, `/` to focus feedback, and tolerates missing `output.md` / `grading.json` / `benchmark.json`.
 
 ## Gazelle / generated BUILD file diffs
 

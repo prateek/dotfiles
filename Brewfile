@@ -58,7 +58,6 @@ brew "cweb"
 brew "czmq"
 brew "datamash"
 brew "ddcctl"
-brew "dex2jar"
 brew "direnv"
 brew "docker"
 brew "dos2unix"
@@ -167,16 +166,13 @@ brew "pandoc"
 brew "pbzip2"
 brew "pgcli"
 brew "php"
-brew "pidof"
 brew "pigz"
 brew "plotutils"
 brew "poppler"
-brew "postgresql@14"
 brew "pre-commit", link: false
 brew "pstree"
 brew "pth"
 brew "pure"
-brew "putty"
 brew "pv"
 brew "python-yq"
 brew "python@3.11"
@@ -192,12 +188,10 @@ brew "s3cmd"
 brew "scmpuff"
 brew "sdl2_image"
 brew "sdl2_mixer"
-brew "sdl2_ttf"
 brew "shellcheck"
 brew "sip"
 brew "smartmontools"
 brew "socat"
-brew "source-highlight"
 brew "ssh-copy-id", link: true
 brew "st"
 brew "swiftformat"
@@ -205,7 +199,6 @@ brew "swiftlint"
 brew "telnet"
 brew "terminal-notifier"
 brew "terraform"
-brew "tesseract-lang"
 brew "the_silver_searcher"
 brew "tig"
 brew "tree"
@@ -235,7 +228,6 @@ cask "1password", args: { appdir: "/Applications" }
 cask "1password-cli"
 cask "codex"
 cask "aerospace"
-cask "airflow", args: { appdir: "/Applications" }
 cask "alfred", args: { appdir: "/Applications" }
 cask "bartender", args: { appdir: "/Applications" }
 cask "bettertouchtool"
@@ -243,7 +235,6 @@ cask "caffeine", args: { appdir: "/Applications" }
 # CleanShot X is installed via Setapp after login
 # cask "cleanshot"
 cask "container-use"
-cask "disk-inventory-x", args: { appdir: "/Applications" }
 cask "fastscripts", args: { appdir: "/Applications" }
 cask "font-inter"
 cask "font-meslo-for-powerline"
@@ -267,7 +258,6 @@ cask "moom", args: { appdir: "/Applications" }
 cask "mtmr"
 cask "nvalt", args: { appdir: "/Applications" }
 cask "obsidian"
-cask "omnigraffle", args: { appdir: "/Applications" }
 cask "orbstack"
 cask "prince"
 cask "raycast"
@@ -280,7 +270,6 @@ cask "spotify", args: { appdir: "/Applications" }
 cask "taskpaper", args: { appdir: "/Applications" }
 cask "tuist"
 cask "utm"
-cask "vial"
 cask "visual-studio-code"
 cask "voiceink"
 cask "tailscale-app"
@@ -290,6 +279,5 @@ cask "zen"
 mas "1Password for Safari", id: 1569813296
 mas "Amphetamine", id: 937984704
 mas "Lungo", id: 1263070803
-mas "MeetInOne", id: 1542778639
 mas "Things", id: 904280696
 mas "Xcode", id: 497799835

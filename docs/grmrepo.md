@@ -9,10 +9,12 @@ This dotfiles repo wires up [git-repo-manager](https://github.com/hakoerber/git-
 ## Layout conventions
 
 - Canonical clones live under `~/code/github.com/<owner>/<repo>`
-- Exceptions:
+- Supported special-case canonical-clone paths, when present locally:
   - `github.com/openai/openai` → `~/code/openai`
   - `github.com/chronosphereio/chronosphere-openai` → `~/code/chronosphere-openai`
 - Git worktrees can live anywhere; they are **not** tracked by GRM config here.
+- The generated GRM config contains only clones that actually exist on this machine. Supported special-case paths appear in the config only when those directories exist locally.
+- A canonical clone is only "first-class" for GRM when it has at least one supported network remote (`git@...`, `ssh://...`, `https://...`). Repos with no `origin` or only local filesystem remotes can still be tracked for status, but `grmrepo repos sync config` cannot clone them onto another machine until the remote is fixed.
 
 ## Bootstrap
 

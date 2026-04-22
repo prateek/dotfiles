@@ -5,7 +5,7 @@
 #
 # Canonical clones:
 #   ~/code/github.com/<owner>/<repo>
-# Exceptions:
+# Supported special-case paths (included only when present locally):
 #   github.com/openai/openai -> ~/code/openai
 #   github.com/chronosphereio/chronosphere-openai -> ~/code/chronosphere-openai
 #

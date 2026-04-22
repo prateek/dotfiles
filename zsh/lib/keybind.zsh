@@ -22,6 +22,12 @@ zstyle ':bracketed-paste-magic' active-widgets '.self-insert-unmeta'
 bindkey -A emacs viins
 bindkey -M viins $'\e' vi-cmd-mode
 
+# Make word-wise editing behave like shell token editing instead of zsh's
+# default "word chars include punctuation" behavior. This affects Alt+Backspace,
+# Alt+Arrow, and other word widgets around paths and flags.
+autoload -Uz select-word-style
+select-word-style shell
+
 bind_if_sequence() {
   local keymap="$1"
   local sequence="$2"
@@ -38,8 +44,15 @@ bind_if_sequence() {
 
 # Who doesn't want home and end to work?
 zmodload zsh/terminfo 2>/dev/null || true
-bind_if_sequence viins "${terminfo[khome]-${key[Home]-}}" beginning-of-line
-bind_if_sequence viins "${terminfo[kend]-${key[End]-}}" end-of-line
+typeset -g __dotfiles_key_home=''
+typeset -g __dotfiles_key_end=''
+if (( ${+key} )); then
+  __dotfiles_key_home="${key[Home]-}"
+  __dotfiles_key_end="${key[End]-}"
+fi
+bind_if_sequence viins "${terminfo[khome]-$__dotfiles_key_home}" beginning-of-line
+bind_if_sequence viins "${terminfo[kend]-$__dotfiles_key_end}" end-of-line
+unset __dotfiles_key_home __dotfiles_key_end
 
 # ensure alt+arrow keys work
 bindkey "^[^[[D" backward-word

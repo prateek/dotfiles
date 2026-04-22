@@ -81,7 +81,6 @@ fi
 case "$format" in
   tsv)
     printf '%s\t%s\t%s\n' "test-owner/test-repo" "https://github.com/test-owner/test-repo" "$REPO_INDEX_REPOS_DIR/test-repo"
-    printf '%s\t%s\t%s\n' "openai/openai" "https://github.com/openai/openai" "$REPO_INDEX_REPOS_DIR/openai"
     ;;
   *)
     echo "repo-index stub: unsupported format: $format" >&2
@@ -120,7 +119,6 @@ create_repo() {
 
 echo "• repo_select non-interactive"
 create_repo "$repos_dir/test-repo" "https://github.com/test-owner/test-repo.git"
-create_repo "$repos_dir/openai" "https://github.com/openai/openai.git"
 sel="$(repo_select --format slug --filter "$repos_dir/test-repo")"
 assert_eq "$sel" "test-owner/test-repo"
 
@@ -193,35 +191,11 @@ sparse_list="$(git -C "$wt3" sparse-checkout list | tr -d '\r')"
 print -r -- "$sparse_list" | grep -Eq '^src/?$' || die "expected sparse-checkout list to include src; got: $sparse_list"
 print -r -- "$sparse_list" | grep -Eq '^docs/?$' || die "expected sparse-checkout list to include docs; got: $sparse_list"
 
-echo "• OpenAI venv hook (stubbed monorepo_setup.sh)"
-cat >"$repos_dir/openai/monorepo_setup.sh" <<'EOF'
-#!/usr/bin/env sh
-venv_setup_build() {
-  mkdir -p "$MONOREPO_VENV/bin"
-  cat > "$MONOREPO_VENV/bin/python" <<'PY'
-#!/usr/bin/env sh
-exit 0
-PY
-  chmod +x "$MONOREPO_VENV/bin/python"
-}
-EOF
-chmod +x "$repos_dir/openai/monorepo_setup.sh"
-(
-  cd "$repos_dir/openai"
-  git add monorepo_setup.sh
-  git commit -qm "add stub monorepo_setup.sh"
-  w new --here "venv/test" --base @
-)
-wt4="$HOME/code/wt/openai-openai.venv-test/openai"
-assert_dir "$wt4"
-assert_file "$HOME/.virtualenvs/openai-venv-test/bin/python"
-
 echo "• w list shows centralized worktrees"
 list_json="$(w ls --format json)"
 printf '%s' "$list_json" | python3 -c 'import json,sys; d=json.load(sys.stdin); print("\n".join(sorted({i.get("path","") for i in d})))' | grep -Fqx "$wt1" || die "w list missing: $wt1"
 printf '%s' "$list_json" | python3 -c 'import json,sys; d=json.load(sys.stdin); print("\n".join(sorted({i.get("path","") for i in d})))' | grep -Fqx "$wt2" || die "w list missing: $wt2"
 printf '%s' "$list_json" | python3 -c 'import json,sys; d=json.load(sys.stdin); print("\n".join(sorted({i.get("path","") for i in d})))' | grep -Fqx "$wt3" || die "w list missing: $wt3"
-printf '%s' "$list_json" | python3 -c 'import json,sys; d=json.load(sys.stdin); print("\n".join(sorted({i.get("path","") for i in d})))' | grep -Fqx "$wt4" || die "w list missing: $wt4"
 
 echo "• w rm removes a clean worktree with --yes"
 w rm --yes --filter "feature/foo" >/dev/null
@@ -244,6 +218,17 @@ fi
 assert_dir "$wt_ambig_one"
 assert_dir "$wt_ambig_two"
 
+echo "• w switch --filter requires a single match"
+repo_worktree_test_root="$repos_dir/test-repo"
+pwd_after="$(
+  cd "$repos_dir/test-repo"
+  if w switch --root "$HOME/code/wt" --filter "ambig" >/dev/null 2>&1; then
+    die "expected w switch --filter ambig to fail due to multiple matches"
+  fi
+  pwd -P
+)"
+assert_eq "$pwd_after" "${repo_worktree_test_root:A}"
+
 echo "• w rm does not remove dirty worktree without confirmation"
 (
   cd "$repos_dir/test-repo"
@@ -252,6 +237,10 @@ echo "• w rm does not remove dirty worktree without confirmation"
 wt_dirty="$HOME/code/wt/test-owner-test-repo.dirty-rm/test-repo"
 assert_dir "$wt_dirty"
 echo "dirty" > "$wt_dirty/.dirty.txt"
+ls_dirty_out="$(w ls --dirty --no-relations --root "$HOME/code/wt" --format table -l)"
+dirty_line="$(print -r -- "$ls_dirty_out" | grep -F "$wt_dirty" | head -n 1 || true)"
+[[ -n "$dirty_line" ]] || die "expected w ls --dirty to include: $wt_dirty"
+print -r -- "$dirty_line" | grep -Fq "dirty" || die "expected w ls --dirty to mark untracked files as dirty: $wt_dirty"
 if w rm --filter "dirty/rm" >/dev/null 2>&1; then
   die "expected w rm to fail for dirty worktree without --yes"
 fi
