@@ -21,6 +21,39 @@ zstyle ':bracketed-paste-magic' active-widgets '.self-insert-unmeta'
 # bindings below (Home/End, fzf Ctrl-T, etc.) which intentionally override defaults.
 bindkey -A emacs viins
 bindkey -M viins $'\e' vi-cmd-mode
+bindkey -M emacs $'\e' vi-cmd-mode
+
+dotfiles-use-emacs-insert-keymap() {
+  zle "$1"
+  zle -K emacs
+}
+
+dotfiles-vi-insert() { dotfiles-use-emacs-insert-keymap .vi-insert }
+dotfiles-vi-add-next() { dotfiles-use-emacs-insert-keymap .vi-add-next }
+dotfiles-vi-add-eol() { dotfiles-use-emacs-insert-keymap .vi-add-eol }
+dotfiles-vi-insert-bol() { dotfiles-use-emacs-insert-keymap .vi-insert-bol }
+dotfiles-vi-open-line-above() { dotfiles-use-emacs-insert-keymap .vi-open-line-above }
+dotfiles-vi-open-line-below() { dotfiles-use-emacs-insert-keymap .vi-open-line-below }
+dotfiles-vi-change-eol() { dotfiles-use-emacs-insert-keymap .vi-change-eol }
+dotfiles-vi-change-whole-line() { dotfiles-use-emacs-insert-keymap .vi-change-whole-line }
+
+zle -N dotfiles-vi-insert
+zle -N dotfiles-vi-add-next
+zle -N dotfiles-vi-add-eol
+zle -N dotfiles-vi-insert-bol
+zle -N dotfiles-vi-open-line-above
+zle -N dotfiles-vi-open-line-below
+zle -N dotfiles-vi-change-eol
+zle -N dotfiles-vi-change-whole-line
+
+bindkey -M vicmd i dotfiles-vi-insert
+bindkey -M vicmd a dotfiles-vi-add-next
+bindkey -M vicmd A dotfiles-vi-add-eol
+bindkey -M vicmd I dotfiles-vi-insert-bol
+bindkey -M vicmd o dotfiles-vi-open-line-below
+bindkey -M vicmd O dotfiles-vi-open-line-above
+bindkey -M vicmd C dotfiles-vi-change-eol
+bindkey -M vicmd S dotfiles-vi-change-whole-line
 
 # Make word-wise editing behave like shell token editing instead of zsh's
 # default "word chars include punctuation" behavior. This affects Alt+Backspace,
@@ -52,11 +85,15 @@ if (( ${+key} )); then
 fi
 bind_if_sequence viins "${terminfo[khome]-$__dotfiles_key_home}" beginning-of-line
 bind_if_sequence viins "${terminfo[kend]-$__dotfiles_key_end}" end-of-line
+bind_if_sequence emacs "${terminfo[khome]-$__dotfiles_key_home}" beginning-of-line
+bind_if_sequence emacs "${terminfo[kend]-$__dotfiles_key_end}" end-of-line
 unset __dotfiles_key_home __dotfiles_key_end
 
 # ensure alt+arrow keys work
-bindkey "^[^[[D" backward-word
-bindkey "^[^[[C" forward-word
+bindkey -M viins "^[^[[D" backward-word
+bindkey -M viins "^[^[[C" forward-word
+bindkey -M emacs "^[^[[D" backward-word
+bindkey -M emacs "^[^[[C" forward-word
 
 # copy buffer to stack and clear, reload it next time editor starts up
 bindkey -M vicmd 'q' push-line
@@ -73,6 +110,7 @@ insert-last-command-output() {
 }
 zle -N insert-last-command-output
 bindkey -M viins "^P" insert-last-command-output
+bindkey -M emacs "^P" insert-last-command-output
 
 # ctrl-u in vi-cmd mode invokes the url_select autoload function
 zle -N url_select

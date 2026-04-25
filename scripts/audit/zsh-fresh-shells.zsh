@@ -46,13 +46,18 @@ typeset -ga VERIFY_CHECKS=(
   keytimeout
   word_style_shell
   vi_escape_binding
+  emacs_escape_binding
+  viins_backspace_crosses_insert_start
   alt_backspace
   alt_backspace_emacs
   alt_left
   alt_right
+  alt_left_emacs
+  alt_right_emacs
   tab_emacs_widget
   tab_viins_widget
   ctrl_r_binding
+  ctrl_r_emacs_binding
   ctrl_t_emacs_binding
   ctrl_t_viins_binding
   ctrl_t_vicmd_binding
@@ -61,6 +66,7 @@ typeset -ga VERIFY_CHECKS=(
   vicmd_q
   vicmd_v
   viins_ctrl_p
+  emacs_ctrl_p
   vicmd_ctrl_u
   direnv_enter_leave
   zoxide_jump
@@ -329,6 +335,35 @@ session_send_and_wait_for_prompt() {
   done
 
   REPLY="$buffer"
+}
+
+session_probe_viins_backspace_crosses_insert_start() {
+  local session_name="$1"
+  local marker='__AUDIT_VIINS_BACKSPACE_OK__'
+  local buffer=''
+  local sequence
+
+  sequence='abcdefghij'
+
+  zpty -w -n "$session_name" "$sequence"
+  zpty -w -n "$session_name" $'\e'
+  zselect -t 0.05 2>/dev/null || true
+
+  sequence='0AXYZ'
+  repeat 13; do
+    sequence+=$'\177'
+  done
+  sequence+="print -r -- $marker"
+
+  zpty -w "$session_name" "$sequence"
+  session_read_until "$session_name" 'λ' 8 || true
+  buffer="$REPLY"
+
+  if [[ "$buffer" != *'command not found:'* && "$buffer" == *"$marker"* ]]; then
+    emit_result verify PASS viins_backspace_crosses_insert_start "marker=$marker"
+  else
+    emit_result verify FAIL viins_backspace_crosses_insert_start 'Backspace stopped at vi insert-start boundary'
+  fi
 }
 
 extract_prefixed_lines() {
@@ -652,13 +687,17 @@ audit_verify_all() {
   audit_expect_equal keytimeout "1" "${KEYTIMEOUT:-}"
   audit_expect_zstyle_line word_style_shell ':zle:*' word-style "zstyle ':zle:*' word-style shell"
   audit_expect_binding_contains vi_escape_binding viins $'\e' vi-cmd-mode
+  audit_expect_binding_contains emacs_escape_binding emacs $'\e' vi-cmd-mode
   audit_expect_binding_contains alt_backspace viins '^[^?' backward-kill-word
   audit_expect_binding_contains alt_backspace_emacs emacs '^[^?' backward-kill-word
-  audit_expect_binding_contains alt_left main '^[^[[D' backward-word
-  audit_expect_binding_contains alt_right main '^[^[[C' forward-word
+  audit_expect_binding_contains alt_left viins '^[^[[D' backward-word
+  audit_expect_binding_contains alt_right viins '^[^[[C' forward-word
+  audit_expect_binding_contains alt_left_emacs emacs '^[^[[D' backward-word
+  audit_expect_binding_contains alt_right_emacs emacs '^[^[[C' forward-word
   audit_expect_binding_contains tab_emacs_widget emacs '^I' fzf-tab-complete
   audit_expect_binding_contains tab_viins_widget viins '^I' fzf-tab-complete
   audit_expect_binding_contains ctrl_r_binding main '^R' fzf-history-widget
+  audit_expect_binding_contains ctrl_r_emacs_binding emacs '^R' fzf-history-widget
   audit_expect_binding_contains ctrl_t_emacs_binding emacs '^T' fzf-file-widget
   audit_expect_binding_contains ctrl_t_viins_binding viins '^T' fzf-file-widget
   audit_expect_binding_contains ctrl_t_vicmd_binding vicmd '^T' fzf-file-widget
@@ -667,6 +706,7 @@ audit_verify_all() {
   audit_expect_binding_contains vicmd_q vicmd q push-line
   audit_expect_binding_contains vicmd_v vicmd v edit-command-line
   audit_expect_binding_contains viins_ctrl_p viins '^P' insert-last-command-output
+  audit_expect_binding_contains emacs_ctrl_p emacs '^P' insert-last-command-output
   audit_expect_binding_contains vicmd_ctrl_u vicmd '^U' url_select
 
   audit_probe_zoxide "$probe_root"
@@ -734,6 +774,7 @@ run_verify() {
     session_send_and_wait_for_prompt "$session_name" "true"
     session_send_and_wait_for_prompt "$session_name" "true"
     session_send_and_wait_for_prompt "$session_name" "true"
+    session_probe_viins_backspace_crosses_insert_start "$session_name"
     zpty -w "$session_name" "audit_probe_direnv ${(q)probe_root}"
     session_read_until "$session_name" '__AUDIT_DONE__|direnv' 12 || true
     direnv_output="$REPLY"

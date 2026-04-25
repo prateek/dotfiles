@@ -27,6 +27,8 @@ function _rebind_ctrl-r {
 	}
 	zle     -N   fzf-history-widget
 	bindkey '^R' fzf-history-widget
+	bindkey -M emacs '^R' fzf-history-widget
+	bindkey -M viins '^R' fzf-history-widget
 }
 
 # Ctrl-T: Make fzf's file widget "path aware".
