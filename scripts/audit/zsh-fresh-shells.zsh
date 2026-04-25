@@ -46,9 +46,13 @@ typeset -ga VERIFY_CHECKS=(
   keytimeout
   word_style_shell
   vi_escape_binding
-  emacs_escape_binding
   viins_backspace_crosses_insert_start
+  viins_backspace_widget
+  viins_ctrl_h_widget
+  viins_ctrl_w_widget
+  viins_ctrl_u_widget
   alt_backspace
+  alt_ctrl_h_backspace
   alt_backspace_emacs
   alt_left
   alt_right
@@ -356,7 +360,7 @@ session_probe_viins_backspace_crosses_insert_start() {
   sequence+="print -r -- $marker"
 
   zpty -w "$session_name" "$sequence"
-  session_read_until "$session_name" 'λ' 8 || true
+  session_read_until "$session_name" "$marker" 3 || true
   buffer="$REPLY"
 
   if [[ "$buffer" != *'command not found:'* && "$buffer" == *"$marker"* ]]; then
@@ -530,6 +534,21 @@ audit_expect_binding_contains() {
   fi
 }
 
+audit_expect_binding_equals() {
+  local check_id="$1"
+  local keymap="$2"
+  local sequence="$3"
+  local expected="$4"
+  local binding
+
+  binding="$(bindkey -M "$keymap" "$sequence" 2>/dev/null || true)"
+  if [[ "$binding" == "$expected" ]]; then
+    audit_pass "$check_id" "$binding"
+  else
+    audit_fail "$check_id" "expected=$expected observed=${binding:-missing binding}"
+  fi
+}
+
 audit_probe_direnv() {
   local probe_root="$1"
   local direnv_root="$probe_root/direnv-demo"
@@ -687,8 +706,20 @@ audit_verify_all() {
   audit_expect_equal keytimeout "1" "${KEYTIMEOUT:-}"
   audit_expect_zstyle_line word_style_shell ':zle:*' word-style "zstyle ':zle:*' word-style shell"
   audit_expect_binding_contains vi_escape_binding viins $'\e' vi-cmd-mode
-  audit_expect_binding_contains emacs_escape_binding emacs $'\e' vi-cmd-mode
+  audit_expect_binding_equals vicmd_i_native vicmd i '"i" vi-insert'
+  audit_expect_binding_equals vicmd_a_native vicmd a '"a" vi-add-next'
+  audit_expect_binding_equals vicmd_A_native vicmd A '"A" vi-add-eol'
+  audit_expect_binding_equals vicmd_I_native vicmd I '"I" vi-insert-bol'
+  audit_expect_binding_equals vicmd_o_native vicmd o '"o" vi-open-line-below'
+  audit_expect_binding_equals vicmd_O_native vicmd O '"O" vi-open-line-above'
+  audit_expect_binding_equals vicmd_C_native vicmd C '"C" vi-change-eol'
+  audit_expect_binding_equals vicmd_S_native vicmd S '"S" vi-change-whole-line'
+  audit_expect_binding_contains viins_backspace_widget viins '^?' backward-delete-char
+  audit_expect_binding_contains viins_ctrl_h_widget viins '^H' backward-delete-char
+  audit_expect_binding_contains viins_ctrl_w_widget viins '^W' backward-kill-word
+  audit_expect_binding_contains viins_ctrl_u_widget viins '^U' kill-whole-line
   audit_expect_binding_contains alt_backspace viins '^[^?' backward-kill-word
+  audit_expect_binding_contains alt_ctrl_h_backspace viins '^[^H' backward-kill-word
   audit_expect_binding_contains alt_backspace_emacs emacs '^[^?' backward-kill-word
   audit_expect_binding_contains alt_left viins '^[^[[D' backward-word
   audit_expect_binding_contains alt_right viins '^[^[[C' forward-word
@@ -1037,7 +1068,10 @@ run_selftest() {
   selftest_assert_contains "$verify_output" "RESULT|verify|PASS|path_go_bin|"
   selftest_assert_contains "$verify_output" "RESULT|verify|PASS|path_pnpm_bin|"
   selftest_assert_contains "$verify_output" "RESULT|verify|PASS|word_style_shell|"
-  selftest_assert_contains "$verify_output" "RESULT|verify|PASS|alt_backspace_emacs|"
+  selftest_assert_contains "$verify_output" "RESULT|verify|PASS|vicmd_i_native|"
+  selftest_assert_contains "$verify_output" "RESULT|verify|PASS|viins_backspace_widget|"
+  selftest_assert_contains "$verify_output" "RESULT|verify|PASS|viins_ctrl_u_widget|"
+  selftest_assert_contains "$verify_output" "RESULT|verify|PASS|alt_ctrl_h_backspace|"
   selftest_assert_contains "$verify_output" "RESULT|verify|PASS|direnv_enter_leave|"
   selftest_assert_contains "$verify_output" "RESULT|verify|PASS|zoxide_jump|"
   selftest_assert_contains "$verify_output" "RESULT|verify|PASS|ghc_usage|"
