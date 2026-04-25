@@ -102,6 +102,8 @@ For Python, uv, and Docker conventions, read: ~/.agents/docs/python-and-uv.md
 
 For Git workflows, commit format, and safety protocols, read: ~/.agents/docs/git.md
 
+For Go conventions, read: ~/.agents/docs/go.md
+
 For Slack conventions (channels, review request format), read: ~/.agents/docs/slack.md
 
 For Linear conventions (CLI workflows), read: ~/.agents/docs/linear.md

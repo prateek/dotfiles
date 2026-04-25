@@ -1,6 +1,6 @@
 ---
 name: conventions-maintainer
-description: Maintain local convention docs in ~/.agents/docs as skill-like operational playbooks (for example Slack/Git/Linear/Google Workspace) and keep ~/.agents/AGENTS.md as a short pointer file to those docs.
+description: Maintain local convention docs in ~/.agents/docs as skill-like operational playbooks (for example Slack/Git/Go/Linear/Google Workspace) and keep ~/.agents/AGENTS.md as a short pointer file to those docs.
 ---
 
 # Conventions Maintainer
@@ -11,9 +11,10 @@ Use this skill when asked to add, update, or clean up local convention guidance 
 
 - Slack interaction conventions
 - Git/GitHub/worktree conventions
-- Linear conventions (`linear-conventions.md`)
-- Google Workspace conventions (`google-workspace-conventions.md`)
-- Browser/CDP conventions (`browser-cdp-conventions.md`)
+- Go conventions (`go.md`)
+- Linear conventions (`linear.md`)
+- Google Workspace conventions (`google-workspace.md`)
+- Browser/CDP conventions (`browser-cdp.md`)
 - Other team workflow conventions stored under `~/.agents/docs`
 - `~/.agents/AGENTS.md` cleanup so it points to docs instead of duplicating long instructions
 
@@ -38,7 +39,7 @@ Convention docs should read like lightweight skills/playbooks.
 
 ### 1) Locate or create the target convention doc
 
-- Prefer one focused file per topic (for example `slack-conventions.md`, `git-conventions.md`, `linear-conventions.md`, `google-workspace-conventions.md`, `browser-cdp-conventions.md`).
+- Prefer one focused file per topic (for example `slack.md`, `git.md`, `go.md`, `linear.md`, `google-workspace.md`, `browser-cdp.md`).
 - Keep filenames stable and obvious.
 - If a topic already has a convention file, update in place instead of creating duplicates.
 
