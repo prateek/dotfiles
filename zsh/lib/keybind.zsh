@@ -71,8 +71,11 @@ bind_if_sequence viins "${terminfo[kend]-$__dotfiles_key_end}" end-of-line
 unset __dotfiles_key_home __dotfiles_key_end
 
 # ensure alt+arrow keys work
-bindkey -M viins "^[^[[D" backward-word
-bindkey -M viins "^[^[[C" forward-word
+for keymap in emacs viins; do
+  bindkey -M "$keymap" "^[^[[D" backward-word
+  bindkey -M "$keymap" "^[^[[C" forward-word
+done
+unset keymap
 
 # copy buffer to stack and clear, reload it next time editor starts up
 bindkey -M vicmd 'q' push-line
