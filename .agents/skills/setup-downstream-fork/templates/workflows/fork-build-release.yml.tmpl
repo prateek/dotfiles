@@ -1,0 +1,299 @@
+# fork-build-release: fork-specific invariants for PRs and main pushes.
+#
+# Upstream's own CI (jobs listed in $required_ci_checks) is what proves the
+# tree still builds and the test suite still passes. We do not re-run those
+# here. The jobs below cover only fork-shaped concerns: drift against the
+# snapshot, patch export consistency, the `.fork/` contract, and release
+# bookkeeping on merge.
+#
+# $build_command and $smoke_test_command are kept as reference in case a
+# future fork needs a local preflight job: the intent is that the upstream
+# pipeline already exercises them.
+#   build:        $build_command
+#   smoke_test:   $smoke_test_command
+
+name: fork-build-release
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  drift-recheck:
+    # Only sync/* PRs have a snapshot to compare against. Human PRs skip this job.
+    if: $${{ github.event_name == 'pull_request' && startsWith(github.head_ref, 'sync/') }}
+    runs-on: ubuntu-latest
+    env:
+      UPSTREAM_URL: "$upstream_url"
+      UPSTREAM_BRANCH: "$upstream_branch"
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Fetch upstream
+        run: |
+          git remote add upstream "$$UPSTREAM_URL" || git remote set-url upstream "$$UPSTREAM_URL"
+          git fetch upstream "$$UPSTREAM_BRANCH"
+
+      - name: Verify upstream has not advanced past snapshot
+        env:
+          HEAD_REF: $${{ github.head_ref }}
+        run: |
+          snapshot_name="$${HEAD_REF#sync/}"
+          snapshot=".fork/snapshots/$${snapshot_name}.json"
+          if [ ! -f "$$snapshot" ]; then
+            echo "Missing snapshot $$snapshot — cannot verify drift." >&2
+            exit 1
+          fi
+          snapshot_sha=$$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['upstream_sha'])" "$$snapshot")
+          current_sha=$$(git rev-parse "upstream/$$UPSTREAM_BRANCH")
+          echo "snapshot upstream_sha: $$snapshot_sha"
+          echo "current upstream HEAD: $$current_sha"
+          if [ "$$snapshot_sha" = "$$current_sha" ]; then
+            echo "No drift; HEAD matches snapshot."
+            exit 0
+          fi
+          if git merge-base --is-ancestor "$$current_sha" "$$snapshot_sha"; then
+            echo "Upstream has NOT advanced past snapshot; recheck OK."
+            exit 0
+          fi
+          echo "Upstream advanced past snapshot SHA — resync required." >&2
+          exit 1
+
+  patches-in-sync:
+    # Enforce that .fork/patches/ matches the live Fork-Patch: commit set.
+    # Runs on every PR and on main pushes.
+    runs-on: ubuntu-latest
+    env:
+      UPSTREAM_BRANCH: "$upstream_branch"
+    steps:
+      - name: Checkout ref under test
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Ensure local `upstream` branch exists
+        run: |
+          # The fork repo keeps a pristine `upstream` branch as a mirror. On a
+          # fresh checkout we need to materialize it as a local ref so
+          # format-patch has a base.
+          if git show-ref --verify --quiet refs/remotes/origin/upstream; then
+            git branch -f upstream origin/upstream
+          else
+            echo "origin/upstream missing — fork may not be fully initialized." >&2
+            exit 1
+          fi
+
+      - name: Compare .fork/patches/ against export-patches.sh output
+        run: |
+          set -euo pipefail
+          # Use the exporter itself so we validate the same artifact the
+          # operator is asked to commit (including the Reason: header
+          # injection done by export-patches.sh). Running raw
+          # format-patch here would diverge on every patch that carries
+          # a Reason: trailer.
+          exporter=".fork/tools/export-patches.sh"
+          if [ ! -x "$$exporter" ]; then
+            echo "$$exporter missing or not executable" >&2
+            exit 1
+          fi
+
+          committed=".fork/patches"
+          snapshot=$$(mktemp -d)
+          # Capture the committed patches before the exporter overwrites
+          # them; compare after regenerating into the live tree.
+          if [ -d "$$committed" ]; then
+            cp -R "$$committed/." "$$snapshot/"
+          fi
+
+          "$$exporter" >/dev/null
+
+          # Cosmetic headers (``From <sha> <date>``, ``index`` lines,
+          # ``Date:``) change every invocation of format-patch; strip
+          # them before diffing so we compare deterministic commit
+          # content plus the injected Reason: header.
+          normalize() {
+            sed -E \
+              -e '/^From [0-9a-f]{40} /d' \
+              -e '/^index [0-9a-f]+\.\.[0-9a-f]+/d' \
+              -e '/^Date: /d' \
+              "$$1"
+          }
+
+          regenerated_list=$$(cd "$$committed" && ls -1 *.patch 2>/dev/null | sort || true)
+          snapshot_list=$$(cd "$$snapshot" && ls -1 *.patch 2>/dev/null | sort || true)
+
+          if [ "$$regenerated_list" != "$$snapshot_list" ]; then
+            echo "Patch filename set drift." >&2
+            diff <(printf '%s\n' "$$snapshot_list") <(printf '%s\n' "$$regenerated_list") || true
+            echo "Run .fork/tools/export-patches.sh and commit the result." >&2
+            exit 1
+          fi
+
+          drift=0
+          while IFS= read -r f; do
+            [ -z "$$f" ] && continue
+            if ! diff -q <(normalize "$$snapshot/$$f") <(normalize "$$committed/$$f") >/dev/null; then
+              echo "Patch content drift in $$f" >&2
+              drift=1
+            fi
+          done <<< "$$snapshot_list"
+
+          if [ "$$drift" -ne 0 ]; then
+            echo "Run .fork/tools/export-patches.sh and commit the result." >&2
+            exit 1
+          fi
+          echo ".fork/patches/ is in sync with Fork-Patch: commits."
+
+  fork-contract-audit:
+    # Minimal, inlined doctor checks. When scripts/doctor.py lands in the
+    # generated fork, replace the inline block with:
+    #   python3 scripts/doctor.py --path . --json
+    # and fail on any ERROR-severity issue.
+    if: $${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 1
+
+      - name: Audit .fork/ contract
+        run: |
+          set -euo pipefail
+          errors=0
+
+          check_fail() {
+            echo "ERROR: $$1" >&2
+            errors=$$((errors + 1))
+          }
+
+          # .fork/AGENTS.md must exist and be non-empty.
+          if [ ! -s .fork/AGENTS.md ]; then
+            check_fail ".fork/AGENTS.md missing or empty"
+          fi
+
+          # .fork/revision.txt must parse: needs `upstream = <sha>` + `branch = <name>`.
+          if [ ! -f .fork/revision.txt ]; then
+            check_fail ".fork/revision.txt missing"
+          else
+            if ! grep -qE '^upstream[[:space:]]*=[[:space:]]*[0-9a-f]{7,40}' .fork/revision.txt; then
+              check_fail ".fork/revision.txt has no valid upstream = <sha>"
+            fi
+            if ! grep -qE '^branch[[:space:]]*=[[:space:]]*[^[:space:]]+' .fork/revision.txt; then
+              check_fail ".fork/revision.txt has no valid branch = <name>"
+            fi
+          fi
+
+          # No unresolved $$variable placeholders in .fork/ rendered files.
+          # Search for literal `$$<identifier>` that looks like an unsubstituted
+          # template var. Skip .fork/patches (those are real diffs with $$vars).
+          # The pattern below matches `$$` followed by a leading letter/_ — which
+          # is what our templates leak when a var is missing.
+          leaked=$$(grep -RnE '\$$[A-Za-z_][A-Za-z0-9_]*' .fork \
+            --exclude-dir=patches \
+            --exclude-dir=snapshots \
+            2>/dev/null || true)
+          if [ -n "$$leaked" ]; then
+            # Filter out legitimate shell $$var usage in .sh files by excluding
+            # lines that look like bash (contain `$${` or sit inside a .sh file
+            # already filtered by path). Keep this conservative.
+            stray=$$(echo "$$leaked" | grep -vE '\.sh:' || true)
+            if [ -n "$$stray" ]; then
+              check_fail "unresolved template placeholders found in .fork/:"
+              echo "$$stray" >&2
+            fi
+          fi
+
+          # .fork/tools/ must have the core scripts and they must be executable
+          # shell or python (chmod +x not required on checkout, but readable).
+          for required in .fork/tools/export-patches.sh .fork/tools/llm_resolve.py; do
+            if [ ! -s "$$required" ]; then
+              check_fail "$$required missing or empty"
+            fi
+          done
+
+          if [ "$$errors" -gt 0 ]; then
+            echo "fork-contract-audit: $$errors ERROR(s)." >&2
+            exit 1
+          fi
+          echo "fork-contract-audit: OK"
+
+  post-merge:
+    if: $${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    env:
+      UPSTREAM_URL: "$upstream_url"
+      UPSTREAM_BRANCH: "$upstream_branch"
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          ref: main
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Configure git bot identity
+        run: |
+          git config user.name "fork-sync-bot"
+          git config user.email "fork-sync-bot@users.noreply.github.com"
+
+      - name: Tag sync/<date>-<sha>-merged if commit carries a sync signature
+        id: sync_tag
+        run: |
+          msg=$$(git log -1 --format=%B)
+          snap=$$(echo "$$msg" | grep -oE 'sync/[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9a-f]+' | head -n1 || true)
+          if [ -n "$$snap" ]; then
+            tag="$${snap}-merged"
+            git tag -f "$$tag" HEAD
+            git push origin "$$tag"
+            echo "tagged=$$tag" >> "$$GITHUB_OUTPUT"
+          else
+            echo "No sync signature in commit message; skipping sync/*-merged tag."
+          fi
+
+      - name: Fetch upstream tags
+        run: |
+          git remote add upstream "$$UPSTREAM_URL" || git remote set-url upstream "$$UPSTREAM_URL"
+          git fetch upstream --tags
+
+      - name: Tag release/<upstream-tag> when merge advances to a tagged upstream commit
+        run: |
+          if [ ! -f .fork/revision.txt ]; then
+            echo "No .fork/revision.txt; skipping release tag."
+            exit 0
+          fi
+          upstream_sha=$$(grep -E '^upstream' .fork/revision.txt | head -n1 | awk '{print $$3}' || true)
+          if [ -z "$$upstream_sha" ]; then
+            echo "Could not read upstream SHA from revision.txt; skipping."
+            exit 0
+          fi
+          # Filter our own bookkeeping tag namespaces; only upstream's own tags
+          # count. Otherwise we'd tag `release/upstream-sync/...` because that
+          # tag sorts before any v-prefixed tag at the same SHA.
+          upstream_tag=$$(git tag --points-at "$$upstream_sha" \
+            | grep -vE '^(upstream-sync|sync|release)/' \
+            | head -n1 || true)
+          if [ -z "$$upstream_tag" ]; then
+            echo "Upstream SHA $$upstream_sha has no upstream tag; skipping release tag."
+            exit 0
+          fi
+          release_tag="release/$$upstream_tag"
+          if git rev-parse -q --verify "refs/tags/$$release_tag" >/dev/null; then
+            echo "release_tag $$release_tag already exists; skipping."
+            exit 0
+          fi
+          git tag "$$release_tag" HEAD
+          git push origin "$$release_tag"

@@ -1,0 +1,127 @@
+# .mergify.yml: queue + auto-merge policy for the fork.
+#
+# Schema note: Mergify deprecated the old `queue.method` field on the
+# `pull_request_rules.actions.queue` action. Merge strategy now lives on
+# the queue_rule itself (`merge_method: squash`). The queue action only
+# accepts `name:` (plus optional `update_method:` etc.). This template
+# uses the current shape.
+#
+# Two queues:
+#   - `fork-sync`: bot-authored PRs on sync/* branches. Requires
+#     drift-recheck because upstream might have advanced while the PR
+#     was open.
+#   - `default`: human-authored PRs from the fork owner. drift-recheck
+#     does not run on non-sync branches, so we don't require it.
+#
+# Template variable contract:
+#
+# $all_required_checks is a JSON-array string (e.g.
+# `["ci / build", "ci / test", "drift-recheck", "patches-in-sync",
+# "fork-contract-audit"]`) produced by setup_fork.py from the LLM's
+# analysis of upstream CI plus the fork-specific jobs from
+# fork-build-release.yml.
+#
+# YAML is a superset of JSON, so that raw array parses as a valid YAML
+# flow sequence. But Mergify's `conditions:` list wants each element to
+# be a string of the form `check-success=<name>`, not a bare name. Since
+# `string.Template` cannot iterate, setup_fork.py (render step) is
+# responsible for post-processing this file: after scalar substitution,
+# it should locate the `# >>> required_check_conditions <<<` sentinel
+# below and replace it with one `- "check-success=<name>"` line per
+# entry of $all_required_checks. The sentinel approach keeps the
+# template source readable and the rendered file hand-auditable.
+#
+# If setup_fork.py ever switches to a templating engine that supports
+# iteration (Jinja, Mako), collapse the sentinel to a literal loop.
+
+queue_rules:
+  - name: fork-sync
+    merge_method: squash
+    queue_conditions:
+      # Sync PRs are identified by branch-name convention + label, not by
+      # author. The sync workflow creates PRs using FORK_SYNC_TOKEN, whose
+      # author attribution is the PAT owner (the fork owner), not
+      # github-actions[bot]. Keying on author here would permanently stall
+      # auto-merge.
+      - base=main
+      - head~=^sync/
+      - label=automerge
+      - "-body~=DESIGN_CONFLICT:"
+    merge_conditions:
+      # >>> required_check_conditions <<<
+      # setup_fork.py expands this sentinel into one
+      #   - "check-success=<name>"
+      # line per entry of $all_required_checks (fork-sync keeps
+      # drift-recheck). Until the expander runs, the JSON-rendered
+      # fallback below is valid YAML-as-JSON and will fail loudly in
+      # Mergify's validator — the intended tripwire.
+      - check-names-source: $all_required_checks
+
+  - name: default
+    merge_method: squash
+    queue_conditions:
+      - base=main
+      - "-head~=^sync/"
+      - author=$fork_owner
+      - label=automerge
+      - "-body~=DESIGN_CONFLICT:"
+    merge_conditions:
+      # >>> required_check_conditions <<<
+      # Same sentinel as above. default queue skips drift-recheck
+      # (non-sync heads don't run it), but still gates on every other
+      # check in $all_required_checks.
+      - check-names-source: $all_required_checks
+
+pull_request_rules:
+  - name: auto-label sync PRs from the sync bot
+    # Author-based gating is unreliable here: sync PRs are created with
+    # FORK_SYNC_TOKEN (a PAT) whose author is the fork owner, not
+    # github-actions[bot]. The ``sync/`` branch-name convention plus the
+    # absence of a DESIGN_CONFLICT marker is a sufficient identifier — no
+    # human-created branch uses that prefix.
+    conditions:
+      - base=main
+      - head~=^sync/
+      - "-body~=DESIGN_CONFLICT:"
+    actions:
+      label:
+        add: [automerge]
+
+  - name: auto-queue sync PRs on green (no design conflicts)
+    conditions:
+      - base=main
+      - head~=^sync/
+      - label=automerge
+      - "-body~=DESIGN_CONFLICT:"
+    actions:
+      queue:
+        name: fork-sync
+
+  - name: auto-queue owner feature PRs with automerge label
+    conditions:
+      - base=main
+      - "-head~=^sync/"
+      - author=$fork_owner
+      - label=automerge
+      - "-body~=DESIGN_CONFLICT:"
+    actions:
+      queue:
+        name: default
+
+  - name: flag design-conflict PRs for human review
+    conditions:
+      - head~=^sync/
+      - "body~=DESIGN_CONFLICT:"
+    actions:
+      label:
+        add: [needs-human]
+        remove: [automerge]
+      comment:
+        message: >
+          One or more patches surfaced `DESIGN_CONFLICT:` markers during
+          sync. Human review required before merge. See the companion
+          `needs-human` tracking issue for the marker text.
+
+# Provenance (for humans reading the rendered file):
+#   required upstream CI checks (LLM-discovered): $required_ci_checks
+#   full required-check set (upstream + fork):    $all_required_checks

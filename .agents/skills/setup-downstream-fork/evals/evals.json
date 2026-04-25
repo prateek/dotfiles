@@ -1,0 +1,52 @@
+{
+  "skill_name": "setup-downstream-fork",
+  "evals": [
+    {
+      "id": 1,
+      "name": "scaffold-fork-of-small-cli",
+      "prompt": "I want to fork charmbracelet/glow and maintain my own version with LLM-driven auto-sync. Set it up for me. My GitHub user is `prateek`. Use Claude as the resolver. Use a private repo. Do a local dry-run — don't actually create the GitHub repo or push anything, just scaffold the local tree so I can inspect it.",
+      "expected_output": "A fork directory at the chosen local path containing: upstream's files at root; `.fork/` with AGENTS.md + README.md + revision.txt + patches/ + snapshots/ + references/ + skills/ + tools/; root AGENTS.md pointer + CLAUDE.md symlink; .claude/skills and .agents/skills symlinks to ../.fork/skills; .github/workflows/fork-upstream-sync.yml + fork-build-release.yml + fork-conflict-resolve.yml; root .mergify.yml; a git repo with `main` and `upstream` branches and an `upstream-sync/<date>-<sha>` tag.",
+      "files": [],
+      "assertions": [
+        {"id": "fork_dir_exists", "description": "`.fork/` directory exists at the repo root"},
+        {"id": "root_agents_md_is_pointer", "description": "Root AGENTS.md is a short pointer (< 30 lines) that references `.fork/AGENTS.md`"},
+        {"id": "fork_agents_md_populated", "description": "`.fork/AGENTS.md` exists and is at least 50 lines (full contract)"},
+        {"id": "revision_txt_has_upstream_sha", "description": "`.fork/revision.txt` contains `upstream = <sha>` with a real SHA substituted"},
+        {"id": "three_workflows_exist", "description": "All three `.github/workflows/fork-*.yml` files exist and parse as valid YAML"},
+        {"id": "mergify_config_exists", "description": "`.mergify.yml` exists at repo root with a `fork-sync` queue rule"},
+        {"id": "skill_discovery_symlinks", "description": "`.claude/skills` and `.agents/skills` both resolve to `.fork/skills`"},
+        {"id": "upstream_branch_exists", "description": "Git branch `upstream` exists and points at upstream's HEAD"},
+        {"id": "main_branch_exists", "description": "Git branch `main` exists and descends from `upstream`"},
+        {"id": "initial_sync_tag_exists", "description": "Tag matching `upstream-sync/*` exists"},
+        {"id": "five_repo_skills_exist", "description": "`.fork/skills/` contains 5 subdirectories: add-feature, refresh-patches, sync-upstream, resolve-conflict, doctor, each with a SKILL.md"},
+        {"id": "no_unresolved_template_vars", "description": "No file under `.fork/` or `.github/` contains an unresolved `$variable` or `${variable}` placeholder from the template engine"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "doctor-audit-existing-fork",
+      "prompt": "I have a fork at ~/my-glow-fork that was set up by this skill last month. Run doctor mode on it and tell me what's drifted. Don't fix anything yet — I want to see the report first.",
+      "expected_output": "A doctor audit report (human-readable table or JSON) listing each of the ~14 checks with ✓/⚠/✗ status and a short detail line. No fixes applied.",
+      "files": [],
+      "assertions": [
+        {"id": "all_checks_run", "description": "All 14 doctor checks report a result (branches_upstream, branches_main, fork_dir, root_agents_md, root_claude_md, skill_discovery_symlinks, workflows_present, mergify_yml, patches_synced, recent_sync, snapshots_valid, release_tags, llm_cache_gitignored, architecture_mismatch)"},
+        {"id": "no_fixes_applied", "description": "No files were modified — doctor ran in audit-only mode"},
+        {"id": "exit_code_reflects_status", "description": "Exit code is 0 if all checks ok, 1 if any warn, 2 if any error"}
+      ]
+    },
+    {
+      "id": 3,
+      "name": "resolve-synthetic-conflict",
+      "prompt": "In a fresh test repo, simulate an upstream bump that conflicts with one of my fork patches. Have the LLM resolver produce a working resolution and prove it with a smoke test. Walk me through what happened.",
+      "expected_output": "A reproducible scenario: (a) an upstream file gets modified, (b) a fork patch modifies the same region, (c) `git rebase upstream` produces a conflict, (d) `llm_resolve.py` is invoked and returns a resolved file (or a DESIGN_CONFLICT: marker with a reason), (e) a smoke test runs on the resolved file. The agent explains each step.",
+      "files": [],
+      "assertions": [
+        {"id": "conflict_reproduced", "description": "The scenario actually produces a git rebase conflict with `<<<<<<<` markers"},
+        {"id": "resolver_invoked", "description": "`llm_resolve.py` is invoked with the conflicted file"},
+        {"id": "resolver_emits_json", "description": "Resolver emits one JSON line on stdout per file with `file`, `outcome`, and `reason` fields"},
+        {"id": "resolution_or_design_conflict", "description": "Result is either (a) a cleanly resolved file where `git diff --check` finds no residual conflict markers, or (b) an explicit `DESIGN_CONFLICT:` marker with a human-readable reason"},
+        {"id": "smoke_test_ran", "description": "A smoke test command was executed against the resolved state"}
+      ]
+    }
+  ]
+}
