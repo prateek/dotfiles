@@ -21,6 +21,8 @@ Rows are intentionally precise. Every file under `tca-ios/references/` appears a
 - Renaming a reference: update every row that names it.
 - The `Advisory-against` table is a soft signal. The model may still load a flagged reference if the user's prompt explicitly names it or gives a specific reason; declare the override in one line.
 
+Keep this rule in `design/tca-ios/authoring-conventions.md` aligned with the steps here.
+
 ## build
 
 ### Required
