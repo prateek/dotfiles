@@ -1,4 +1,4 @@
-model = "gpt-5.4"
+model = "gpt-5.5"
 model_reasoning_effort = "xhigh"
 plan_mode_reasoning_effort = "xhigh"
 
@@ -114,6 +114,12 @@ trust_level = "trusted"
 [projects."/Users/prateek/code/github.com/prateek/movies-do-app"]
 trust_level = "trusted"
 
+[projects."/Users/prateek/code/github.com/chronosphereio/monorepo"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments/tca-ecosystem"]
+trust_level = "trusted"
+
 [notice]
 hide_rate_limit_model_nudge = true
 
@@ -142,4 +148,7 @@ enabled = true
 enabled = true
 
 [tui]
-status_line = ["thread-title", "model-with-reasoning", "context-usage", "current-dir", "five-hour-limit", "weekly-limit", "context-window-size", "used-tokens", "total-input-tokens", "total-output-tokens", "fast-mode"]
+status_line = ["thread-title", "model-with-reasoning", "context-used", "five-hour-limit", "weekly-limit", "context-window-size", "current-dir"]
+
+[tui.model_availability_nux]
+"gpt-5.5" = 4
