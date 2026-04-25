@@ -1,0 +1,4 @@
+interface:
+  display_name: "TCA iOS"
+  short_description: "Build, review, modernize, and diagnose TCA iOS apps"
+  default_prompt: "Use $tca-ios to build, review, modernize, or diagnose a modern TCA iOS feature."
