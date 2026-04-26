@@ -134,17 +134,21 @@ url = "https://mcp.granola.ai/mcp"
 [features]
 codex_hooks = true
 multi_agent = true
+memories = true
 
 [plugins."google-calendar@openai-curated"]
-enabled = true
+enabled = false
 
 [plugins."gmail@openai-curated"]
-enabled = true
+enabled = false
 
 [plugins."github@openai-curated"]
-enabled = true
+enabled = false
 
 [plugins."google-drive@openai-curated"]
+enabled = false
+
+[plugins."last30days@last30days-skill"]
 enabled = true
 
 [tui]
@@ -152,3 +156,9 @@ status_line = ["thread-title", "model-with-reasoning", "context-used", "five-hou
 
 [tui.model_availability_nux]
 "gpt-5.5" = 4
+
+[marketplaces.last30days-skill]
+last_updated = "2026-04-26T02:01:01Z"
+last_revision = "bbf892aecca14fdd08a28d5077451b7a6fd925a5"
+source_type = "git"
+source = "https://github.com/mvanhorn/last30days-skill.git"
