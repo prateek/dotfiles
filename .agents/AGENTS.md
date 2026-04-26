@@ -28,7 +28,6 @@ Whenever you build out a new project and specifically start a new Claude.md - yo
 
 # Writing code
 
-- CRITICAL: NEVER USE --no-verify WHEN COMMITTING CODE
 - We prefer simple, clean, maintainable solutions over clever or complex ones, even if the latter are more concise or performant. Readability and maintainability are primary concerns.
 - Make the smallest reasonable changes to get to the desired outcome. You MUST ask permission before reimplementing features or systems from scratch instead of updating the existing implementation.
 - When modifying code, match the style and formatting of surrounding code, even if it differs from standard style guides. Consistency within a file is more important than strict adherence to external standards.
@@ -118,16 +117,12 @@ For iOS and Apple-platform work (Xcode toolchain, Tuist, simulator leasing, vers
 
 ## Observability provider environment
 
-For Chronosphere, Datadog, and Grafana tasks, use pre-exposed environment variables instead of hardcoding credentials.
+For Chronosphere tasks, use pre-exposed environment variables instead of hardcoding credentials.
 
 Available variable names (no values):
 
 - `CHRONOSPHERE_ORG_NAME`
 - `CHRONOSPHERE_API_TOKEN`
-- `DATADOG_API_KEY`
-- `DATADOG_APP_KEY`
-- `GRAFANA_TOKEN`
-- `API_REPO_PATH`
 
 Requirements:
 
