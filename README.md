@@ -68,11 +68,12 @@ This repo has lightweight “don’t break bootstrap” checks on every PR.
 What CI runs (GitHub Actions):
 - Shellcheck on the install/OS scripts.
 - macOS smoke tests (dry-run): `./install.sh --core --dry-run` and `./install.sh --full --dry-run`.
+- Tart helper contract tests without booting a VM.
 - Brewfile parsing: `brew bundle list --all` for `Brewfile` + `Brewfile.core`.
 - Core Brewfile install check (formulae only; casks/mas skipped): `brew bundle install --file Brewfile.core`.
 
 What CI does *not* run:
-- A full end-to-end install in a macOS VM (too heavy/fragile for GitHub Actions).
+- A full end-to-end install in a macOS VM. That is local-only because it pulls a large Tart image and mutates a guest macOS install.
 
 Local verification:
 
@@ -80,15 +81,23 @@ Local verification:
 # Dry-run (no changes applied):
 ./install.sh --full --dry-run
 
+# Tart helper contract tests (no VM boot):
+make test-tart-install-helper
+
 # End-to-end in a clean macOS VM (Tart):
 brew install cirruslabs/cli/tart
-./scripts/vm/test-install-tart.sh --profile core
+make test-install-tart-dry-run
+make test-install-tart-smoke
 
 # Helpful flags:
-./scripts/vm/test-install-tart.sh --profile full          # slower
-./scripts/vm/test-install-tart.sh --profile full --dry-run # plan only
-./scripts/vm/test-install-tart.sh --keep-vm               # debug
+make test-install-tart-full                               # slower
+make test-install-tart-smoke TART_CPU=1 TART_MEMORY=3072  # smaller VM
+make test-install-tart-smoke TART_FLAGS=--keep-vm         # debug
 ```
+
+The default Tart image is `ghcr.io/cirruslabs/macos-tahoe-base:latest`.
+The smoke lane uses the core profile and skips Homebrew casks/MAS so it mirrors CI's formulae-only install shape.
+For the current `mini` over SSH workflow, see `dev/docs/tart-mini-validation.md`.
 
 ## Pre-commit hooks (recommended)
 
@@ -114,7 +123,7 @@ pre-commit run --all-files
 
 ## Runtimes (mise)
 
-Node/Go/Ruby are managed via `mise` using `.config/mise/config.toml`.
+Node/Go/Ruby are managed via `mise` using `.config/mise/config.toml`. Ruby uses mise's signed precompiled artifacts when available, so clean installs do not compile Ruby from source unless mise has no matching artifact.
 
 ## Manual steps (expected on a clean Mac)
 

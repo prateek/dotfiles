@@ -1,8 +1,14 @@
 .PHONY: hammerspoon hammerspoon-check hammerspoon-reload
-.PHONY: test-ghc test-macos-settings test-repo-index test-grmrepo-refresh test-worktrees test-zsh-fresh-shells verify-zsh-fresh-shells bench-zsh-startup
+.PHONY: test-ghc test-macos-settings test-repo-index test-grmrepo-refresh test-worktrees
+.PHONY: test-zsh-fresh-shells verify-zsh-fresh-shells bench-zsh-startup
+.PHONY: test-tart-install-helper test-vm-install-log-scan test-vm-postflight-macos test-install-tart-dry-run test-install-tart-smoke test-install-tart-full
 
 HAMMERSPOON_SRC := .hammerspoon/init.fnl
 HAMMERSPOON_OUT := .hammerspoon/init.generated.lua
+TART_IMAGE ?= ghcr.io/cirruslabs/macos-tahoe-base:latest
+TART_CPU ?= 2
+TART_MEMORY ?= 4096
+TART_FLAGS ?=
 
 ## Compile Hammerspoon config (Fennel -> Lua).
 hammerspoon: $(HAMMERSPOON_OUT)
@@ -53,3 +59,27 @@ verify-zsh-fresh-shells:
 ## Authoritative startup benchmark via pinned external zsh-bench.
 bench-zsh-startup:
 	@zsh ./scripts/audit/zsh-fresh-shells.zsh bench
+
+## Regression tests for the Tart install helper (does not boot a VM).
+test-tart-install-helper:
+	@zsh ./tests/tart-install-helper-contract.zsh
+
+## Regression tests for VM install-log failure scanning.
+test-vm-install-log-scan:
+	@zsh ./tests/vm-install-log-scan.zsh
+
+## Regression tests for VM macOS postflight assertions.
+test-vm-postflight-macos:
+	@zsh ./tests/vm-postflight-macos.zsh
+
+## Tart smoke lane, dry-run only. Pulls/boots a VM but skips actual installs.
+test-install-tart-dry-run:
+	@./scripts/vm/test-install-tart.sh --lane smoke --dry-run --image "$(TART_IMAGE)" --cpu "$(TART_CPU)" --memory "$(TART_MEMORY)" $(TART_FLAGS)
+
+## Tart smoke lane. Core profile, casks/MAS skipped, zsh postflight enabled.
+test-install-tart-smoke:
+	@./scripts/vm/test-install-tart.sh --lane smoke --image "$(TART_IMAGE)" --cpu "$(TART_CPU)" --memory "$(TART_MEMORY)" $(TART_FLAGS)
+
+## Tart full lane. Full profile, casks/MAS included, zsh postflight enabled.
+test-install-tart-full:
+	@./scripts/vm/test-install-tart.sh --lane full --image "$(TART_IMAGE)" --cpu "$(TART_CPU)" --memory "$(TART_MEMORY)" $(TART_FLAGS)

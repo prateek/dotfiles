@@ -5,3 +5,7 @@ node = "24.12.0"
 # Go/Ruby: track latest
 go = "latest"
 ruby = "latest"
+
+[settings.ruby]
+# Use mise's signed precompiled Ruby artifacts when available.
+compile = false

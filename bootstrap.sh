@@ -11,6 +11,71 @@ CWD="${0:A:h}"
 BREWFILE="$CWD/Brewfile"
 PROFILE="full"
 DRY_RUN=0
+BOOTSTRAP_TRACE_FILE="${DOTFILES_BOOTSTRAP_TRACE_FILE:-}"
+
+zmodload zsh/datetime 2>/dev/null || true
+
+typeset -g BOOTSTRAP_TRACE_OPEN=0
+typeset -g BOOTSTRAP_TRACE_EVENT_WRITTEN=0
+
+trace_now_us() {
+  if (( ${+EPOCHREALTIME} )); then
+    printf '%.0f\n' $(( EPOCHREALTIME * 1000000 ))
+  else
+    printf '%s000000\n' "$(date +%s)"
+  fi
+}
+
+trace_json() {
+  local value="$1"
+  value="${value//\\/\\\\}"
+  value="${value//\"/\\\"}"
+  printf '"%s"' "$value"
+}
+
+trace_init() {
+  [ -n "$BOOTSTRAP_TRACE_FILE" ] || return 0
+  mkdir -p "$(dirname "$BOOTSTRAP_TRACE_FILE")"
+  printf '{"traceEvents":[\n' >"$BOOTSTRAP_TRACE_FILE"
+  BOOTSTRAP_TRACE_OPEN=1
+  BOOTSTRAP_TRACE_EVENT_WRITTEN=0
+}
+
+trace_emit() {
+  [ "$BOOTSTRAP_TRACE_OPEN" = "1" ] || return 0
+
+  local name="$1"
+  local start_us="$2"
+  local end_us="$3"
+  local rc="${4:-0}"
+  local duration_us="$(( end_us - start_us ))"
+  local comma=""
+
+  if [ "$BOOTSTRAP_TRACE_EVENT_WRITTEN" = "1" ]; then
+    comma=","
+  fi
+
+  printf '%s{"name":%s,"cat":"bootstrap","ph":"X","ts":%s,"dur":%s,"pid":2,"tid":1,"args":{"rc":%s}}\n' \
+    "$comma" "$(trace_json "$name")" "$start_us" "$duration_us" "$rc" >>"$BOOTSTRAP_TRACE_FILE"
+  BOOTSTRAP_TRACE_EVENT_WRITTEN=1
+}
+
+trace_finish() {
+  [ "$BOOTSTRAP_TRACE_OPEN" = "1" ] || return 0
+  printf ']}\n' >>"$BOOTSTRAP_TRACE_FILE"
+  BOOTSTRAP_TRACE_OPEN=0
+}
+
+trace_exit() {
+  local rc="$?"
+  trace_emit "bootstrap total" "$trace_total_start" "$(trace_now_us)" "$rc"
+  trace_finish
+  return "$rc"
+}
+
+trace_init
+trace_total_start="$(trace_now_us)"
+trap trace_exit EXIT
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -65,6 +130,7 @@ if [ "$DRY_RUN" = "0" ] && [ "$(uname -s)" = "Darwin" ] && [ "${DOTFILES_SUDO_KE
 fi
 
 # Install Homebrew if needed
+trace_start_us="$(trace_now_us)"
 if ! command -v brew &> /dev/null; then
   if [ "$DRY_RUN" = "1" ]; then
     echo "Would install Homebrew (missing):"
@@ -81,6 +147,7 @@ if ! command -v brew &> /dev/null; then
     fi
   fi
 fi
+trace_emit "homebrew bootstrap" "$trace_start_us" "$(trace_now_us)" "0"
 
 if [ "$DRY_RUN" = "0" ]; then
   if ! command -v brew &> /dev/null; then
@@ -90,20 +157,36 @@ if [ "$DRY_RUN" = "0" ]; then
 fi
 
 # Mac App Store apps (mas) require being signed in; skip them if not.
-if [ "$DRY_RUN" = "1" ]; then
-  echo "Would ensure 'mas' is installed (required for Mac App Store apps), and skip MAS installs if not signed in."
-else
-  if ! command -v mas &> /dev/null; then
-    brew install mas
-  fi
-  if command -v mas &> /dev/null; then
-    if ! mas account &> /dev/null; then
-      echo "Not signed into the Mac App Store; skipping MAS installs for now."
-      export HOMEBREW_BUNDLE_MAS_SKIP=1
-    fi
-  fi
+trace_start_us="$(trace_now_us)"
+brewfile_mas_ids=()
+if [ -f "$BREWFILE" ]; then
+  brewfile_mas_ids=($(awk '/^mas "/ {for (i=1;i<=NF;i++) if ($i ~ /^id:/) {print $(i+1)}}' "$BREWFILE" | tr -d ',' | sort -u))
 fi
 
+if [ "$DRY_RUN" = "1" ]; then
+  if [ "${#brewfile_mas_ids[@]}" -gt 0 ]; then
+    echo "Would ensure 'mas' is installed (required for Mac App Store apps), and skip MAS installs if not signed in."
+  else
+    echo "Would skip 'mas' setup (no Mac App Store entries in $BREWFILE)."
+  fi
+else
+  if [ "${#brewfile_mas_ids[@]}" -gt 0 ]; then
+    if ! command -v mas &> /dev/null; then
+      brew install mas
+    fi
+    if command -v mas &> /dev/null; then
+      if ! mas account &> /dev/null; then
+        echo "Not signed into the Mac App Store; skipping MAS installs for now."
+        export HOMEBREW_BUNDLE_MAS_SKIP=1
+      fi
+    fi
+  else
+    export HOMEBREW_BUNDLE_MAS_SKIP=1
+  fi
+fi
+trace_emit "mas setup" "$trace_start_us" "$(trace_now_us)" "0"
+
+trace_start_us="$(trace_now_us)"
 if [ -f "$BREWFILE" ]; then
   taps=($(awk -F'"' '/^tap "/ {print $2}' "$BREWFILE" | sort -u))
   brews=($(awk -F'"' '/^brew "/ {print $2}' "$BREWFILE" | sort -u))
@@ -134,13 +217,17 @@ if [ -f "$BREWFILE" ]; then
     fi
   fi
 fi
+trace_emit "brewfile parse and taps" "$trace_start_us" "$(trace_now_us)" "0"
 
 if [ "$DRY_RUN" = "0" ]; then
   # install homebrew files
+  trace_start_us="$(trace_now_us)"
   brew bundle install --no-upgrade --file "$BREWFILE"
+  trace_emit "brew bundle install" "$trace_start_us" "$(trace_now_us)" "0"
 fi
 
 # setup symlinks
+trace_start_us="$(trace_now_us)"
 # Neovim (LazyVim) config
 NVIM_CONFIG_DIR="$HOME/.config/nvim"
 if [ -d "$NVIM_CONFIG_DIR" ] || [ -L "$NVIM_CONFIG_DIR" ]; then
@@ -315,8 +402,10 @@ else
     fi
   fi
 fi
+trace_emit "core config symlinks" "$trace_start_us" "$(trace_now_us)" "0"
 
 # Install mise-managed runtimes (node/go/ruby) from global config.
+trace_start_us="$(trace_now_us)"
 if command -v mise >/dev/null 2>&1; then
   # Avoid interactive trust prompts on a clean machine.
   if [ "$DRY_RUN" = "1" ]; then
@@ -328,8 +417,10 @@ if command -v mise >/dev/null 2>&1; then
     fi
   fi
 fi
+trace_emit "mise install" "$trace_start_us" "$(trace_now_us)" "0"
 
 # Shared agent layer (.agents)
+trace_start_us="$(trace_now_us)"
 AGENTS_DIR="$HOME/.agents"
 AGENTS_SKILLS="$AGENTS_DIR/skills"
 AGENTS_DOCS="$AGENTS_DIR/docs"
@@ -586,6 +677,7 @@ for f in devtool gemini-meeting-sync gh grmrepo grmrepo-refresh repo-index wt-ho
     fi
   fi
 done
+trace_emit "agent and shell symlinks" "$trace_start_us" "$(trace_now_us)" "0"
 
 # Gemini meeting sync (optional): install a default config, but do NOT enable.
 GMS_CONFIG_DIR="$HOME/.config/gemini-meeting-sync"
@@ -611,6 +703,7 @@ EOF
 fi
 
 # Worktrunk + git-repo-manager install/update (via cargo, when available)
+trace_start_us="$(trace_now_us)"
 if [ "$DRY_RUN" = "1" ]; then
   echo "Would install/update Worktrunk via cargo (if cargo is available)"
   echo "Would install/update git-repo-manager via cargo (if cargo is available)"
@@ -620,6 +713,7 @@ else
     cargo install git-repo-manager --locked || echo "Warning: cargo install git-repo-manager failed; retry later."
   fi
 fi
+trace_emit "cargo tools" "$trace_start_us" "$(trace_now_us)" "0"
 
 # generate lesskey binary file for older versions of less that might be
 # present on remote machines.
@@ -635,6 +729,7 @@ fi
 
 # zsh setup
 # nb: this setup takes _heavy_ inspiration from the work of https://github.com/htr3n/zsh-config
+trace_start_us="$(trace_now_us)"
 if [ ! -d "$HOME/.zinit" ]; then
   if [ "$DRY_RUN" = "1" ]; then
     echo "Would clone zinit to $HOME/.zinit/bin"
@@ -643,6 +738,7 @@ if [ ! -d "$HOME/.zinit" ]; then
     git clone https://github.com/zdharma-continuum/zinit.git "$HOME/.zinit/bin"
   fi
 fi
+trace_emit "zinit bootstrap" "$trace_start_us" "$(trace_now_us)" "0"
 
 # LazyVim bootstrap (plugins install on first nvim run).
 # Opt-in sync (avoids updating repo lockfile during bootstrap):
@@ -655,6 +751,7 @@ if [ "${DOTFILES_NVIM_LAZY_SYNC:-0}" = "1" ] && command -v nvim &>/dev/null; the
 fi
 
 # macOS + app settings
+trace_start_us="$(trace_now_us)"
 if [ -x "$CWD/scripts/macos/apply.sh" ]; then
   if [ "$DRY_RUN" = "1" ]; then
     echo "Would run: $CWD/scripts/macos/apply.sh"
@@ -662,6 +759,7 @@ if [ -x "$CWD/scripts/macos/apply.sh" ]; then
     "$CWD/scripts/macos/apply.sh"
   fi
 fi
+trace_emit "macos apply" "$trace_start_us" "$(trace_now_us)" "0"
 
 echo
 if [ "$DRY_RUN" = "1" ]; then

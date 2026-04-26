@@ -784,7 +784,7 @@ run_verify() {
 
   session_start "$session_name" "$home_dir" "$neutral_cwd"
   {
-    session_read_until "$session_name" 'λ' 8 || true
+    session_read_until "$session_name" 'λ' 20 || true
     startup_output="$REPLY"
 
     if [[ "$startup_output" == *'λ'* ]]; then
