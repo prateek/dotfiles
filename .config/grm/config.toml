@@ -247,6 +247,20 @@ type = "ssh"
 root = "~/code/github.com/prateek"
 
 [[trees.repos]]
+name = "actions-usage"
+worktree_setup = false
+
+[[trees.repos.remotes]]
+name = "origin"
+url = "git@github.com:prateek/actions-usage.git"
+type = "ssh"
+
+[[trees.repos.remotes]]
+name = "upstream"
+url = "git@github.com:self-actuated/actions-usage.git"
+type = "ssh"
+
+[[trees.repos]]
 name = "artifacts"
 worktree_setup = false
 
@@ -280,6 +294,15 @@ worktree_setup = false
 [[trees.repos.remotes]]
 name = "origin"
 url = "git@github.com:prateek/fastcp.git"
+type = "ssh"
+
+[[trees.repos]]
+name = "gh-actions-usage"
+worktree_setup = false
+
+[[trees.repos.remotes]]
+name = "origin"
+url = "git@github.com:prateek/gh-actions-usage.git"
 type = "ssh"
 
 [[trees.repos]]
