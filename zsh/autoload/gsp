@@ -17,7 +17,7 @@ __dotfiles_git_spice_binary() {
   return 2
 }
 
-function gsp() {
+function git-spice() {
   local gs_bin rc
 
   __dotfiles_git_spice_binary
@@ -31,13 +31,13 @@ function gsp() {
 
   case "$rc" in
     1)
-      print -u2 "gsp: git-spice binary 'gs' not found on PATH."
+      print -u2 "git-spice: git-spice binary 'gs' not found on PATH."
       ;;
     2)
-      print -u2 "gsp: found 'gs' on PATH, but it does not look like git-spice."
+      print -u2 "git-spice: found 'gs' on PATH, but it does not look like git-spice."
       ;;
   esac
   return 127
 }
 
-gsp "$@"
+git-spice "$@"

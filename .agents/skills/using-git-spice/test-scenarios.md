@@ -52,7 +52,7 @@ $ git branch
   feature-c
 * main
 
-$ command -v gsp >/dev/null && SPICE=gsp || SPICE=gs
+$ command -v git-spice >/dev/null && SPICE=git-spice || SPICE=gs
 $ $SPICE log short
 feature-c → feature-b → feature-a → main
 ```

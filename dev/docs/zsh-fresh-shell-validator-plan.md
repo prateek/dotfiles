@@ -57,7 +57,7 @@ The harness keeps its contracts inline as zsh data and functions. It does not ad
 - key bindings and widget ownership after deferred startup settles
 - `direnv` enter/leave behavior
 - `zoxide` first-use jump behavior
-- safe helper behavior for `ghc` and `gsp`
+- safe helper behavior for `ghc` and `git-spice`
 
 `bench` checks:
 

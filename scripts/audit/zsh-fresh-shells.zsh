@@ -638,7 +638,7 @@ audit_probe_helpers() {
   : >| "$out_file"
   if [[ -n "$gs_bin" ]]; then
     set +e
-    gsp --help >"$out_file" 2>"$err_file"
+    git-spice --help >"$out_file" 2>"$err_file"
     rc=$?
     set -e
     if [[ "$rc" -eq 0 && "$(<"$out_file")" == *"git-spice"* ]]; then
@@ -650,7 +650,7 @@ audit_probe_helpers() {
     fi
   else
     set +e
-    gsp >"$out_file" 2>"$err_file"
+    git-spice >"$out_file" 2>"$err_file"
     rc=$?
     set -e
     if [[ "$rc" -eq 127 && "$(<"$err_file")" == *"not found on PATH"* ]]; then
@@ -763,7 +763,7 @@ audit_diagnose_all() {
   print -r -- "INFO|diagnose|command_direnv_available|$(command -v direnv 2>/dev/null || print -r -- MISSING)"
   print -r -- "INFO|diagnose|command_j_available|$(command -v j 2>/dev/null || print -r -- MISSING)"
   print -r -- "INFO|diagnose|command_z_available|$(command -v z 2>/dev/null || print -r -- MISSING)"
-  print -r -- "INFO|diagnose|command_gsp_available|$(command -v gsp 2>/dev/null || print -r -- MISSING)"
+  print -r -- "INFO|diagnose|command_gsp_available|$(command -v git-spice 2>/dev/null || print -r -- MISSING)"
   print -r -- "__AUDIT_DONE__|diagnose"
 }
 EOF

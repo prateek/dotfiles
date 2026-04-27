@@ -3,14 +3,14 @@ name: using-git-spice
 description: Use when working with stacked branches, managing dependent PRs/CRs, or uncertain about git-spice commands (stack vs upstack vs downstack) - provides command reference, workflow patterns, and common pitfalls for the git-spice CLI tool.
 ---
 
-# Using git-spice (gs/gsp)
+# Using git-spice (gs/git-spice)
 
-## Pick the CLI name (`gs` vs `gsp`)
+## Pick the CLI name (`gs` vs `git-spice`)
 
-Prefer `gsp` if it exists (some setups rename git-spice to avoid clashing with Ghostscript’s `gs`):
+Prefer `git-spice` if it exists (some setups rename git-spice to avoid clashing with Ghostscript’s `gs`):
 
 ```bash
-command -v gsp >/dev/null && SPICE=gsp || SPICE=gs
+command -v git-spice >/dev/null && SPICE=git-spice || SPICE=gs
 $SPICE --version
 ```
 
