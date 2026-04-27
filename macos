@@ -15,6 +15,23 @@ if [ "${DOTFILES_SUDO_KEEPALIVE_STARTED:-0}" != "1" ]; then
 	export DOTFILES_SUDO_KEEPALIVE_STARTED=1
 fi
 
+systemsetup_set() {
+	local err rc
+	err="$(mktemp)"
+
+	if sudo systemsetup "$@" 2>"$err"; then
+		rc=0
+	else
+		rc=$?
+	fi
+
+	if [ -s "$err" ]; then
+		grep -v '### Error:-99 File:.*/InternetServices.m Line:379' "$err" >&2 || true
+	fi
+	rm -f "$err"
+	return "$rc"
+}
+
 ###############################################################################
 # General UI/UX                                                               #
 ###############################################################################
@@ -89,7 +106,7 @@ defaults write com.apple.print.PrintingPrefs "Quit When Finished" -bool true
 defaults write com.apple.LaunchServices LSQuarantine -bool false
 
 # Remove duplicates in the “Open With” menu (also see `lscleanup` alias)
-/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -kill -r -domain local -domain system -domain user
+/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -r -domain local -domain system -domain user
 
 # Display ASCII control characters using caret notation in standard text views
 # Try e.g. `cd /tmp; unidecode "\x{0000}" > cc.txt; open -e cc.txt`
@@ -117,13 +134,13 @@ defaults write com.apple.helpviewer DevMode -bool true
 sudo defaults write /Library/Preferences/com.apple.loginwindow AdminHostInfo HostName
 
 # Restart automatically if the computer freezes
-sudo systemsetup -setrestartfreeze on
+systemsetup_set -setrestartfreeze on
 
 # If the host is not a laptop, disable auto-sleep / energy-savings.
 # Heuristic: if there's no InternalBattery, assume "desktop".
 if ! pmset -g batt 2>/dev/null | grep -q "InternalBattery"; then
 	# Keep the machine awake; leave display sleep alone by default.
-	sudo systemsetup -setcomputersleep Off > /dev/null 2>&1 || true
+	systemsetup_set -setcomputersleep Off > /dev/null 2>&1 || true
 	sudo pmset -a sleep 0 standby 0 autopoweroff 0 > /dev/null 2>&1 || true
 fi
 
@@ -207,7 +224,7 @@ defaults write NSGlobalDomain AppleMeasurementUnits -string "Centimeters"
 defaults write NSGlobalDomain AppleMetricUnits -bool false
 
 # Set the timezone; see `sudo systemsetup -listtimezones` for other values
-sudo systemsetup -settimezone "America/New_York" > /dev/null
+systemsetup_set -settimezone "America/New_York" > /dev/null
 
 # Disable auto-correct
 # defaults write NSGlobalDomain NSAutomaticSpellingCorrectionEnabled -bool false
@@ -422,7 +439,9 @@ defaults write com.apple.dock showhidden -bool true
 #defaults write com.apple.dock showLaunchpadGestureEnabled -int 0
 
 # Reset Launchpad, but keep the desktop wallpaper intact
-find "${HOME}/Library/Application Support/Dock" -name "*-*.db" -maxdepth 1 -delete
+if [ -d "${HOME}/Library/Application Support/Dock" ]; then
+	find "${HOME}/Library/Application Support/Dock" -name "*-*.db" -maxdepth 1 -delete
+fi
 
 # Add iOS & Watch Simulator to Launchpad
 # sudo ln -sf "/Applications/Xcode.app/Contents/Developer/Applications/Simulator.app" "/Applications/Simulator.app"
@@ -566,12 +585,8 @@ defaults write com.apple.mail SpellCheckingBehavior -string "NoSpellCheckingEnab
 # Spotlight                                                                   #
 ###############################################################################
 
-# Hide Spotlight tray-icon (and subsequent helper)
-sudo chmod 600 /System/Library/CoreServices/Search.bundle/Contents/MacOS/Search
-# Disable Spotlight indexing for any volume that gets mounted and has not yet
-# been indexed before.
-# Use `sudo mdutil -i off "/Volumes/foo"` to stop indexing any volume.
-sudo defaults write /.Spotlight-V100/VolumeConfiguration Exclusions -array "/Volumes"
+# Modern macOS seals /System and stores Spotlight volume settings per volume.
+# Use `sudo mdutil -i off "/Volumes/foo"` for a specific external volume.
 # Change indexing order and disable some search results
 # Yosemite-specific search results (remove them if you are using macOS 10.9 or older):
 # 	MENU_DEFINITION

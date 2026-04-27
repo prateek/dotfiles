@@ -6,3 +6,7 @@ node = "24.12.0"
 go = "latest"
 ruby = "latest"
 "npm:@steipete/bird" = "latest"
+
+[settings.ruby]
+# Use mise's signed precompiled Ruby artifacts when available.
+compile = false

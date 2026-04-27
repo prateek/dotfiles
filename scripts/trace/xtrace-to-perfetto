@@ -1,0 +1,508 @@
+#!/usr/bin/env python3
+"""Convert dotfiles zsh xtrace logs into Chrome/Perfetto trace JSON."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import sys
+from dataclasses import dataclass
+from decimal import Decimal, InvalidOperation
+from pathlib import Path
+from typing import Any
+
+
+MARKER = "+DFX|v=1|"
+FALLBACK_DURATION_US = 1
+COMMAND_TID = 1
+LANE_PID_MULTIPLIER = 10
+SEMANTIC_PID_SUFFIX = 0
+MAJOR_COMMAND_PID_SUFFIX = 1
+COMMAND_PID_SUFFIX = 2
+MAJOR_COMMAND_MIN_DURATION_US = 10_000
+SEMANTIC_MIN_DURATION_US = 10_000
+SECRET_NAME_RE = re.compile(
+    r"\b([A-Za-z_][A-Za-z0-9_]*(?:TOKEN|SECRET|PASSWORD|PASS|API_KEY|AUTH|CREDENTIAL)[A-Za-z0-9_]*)="
+    r"((?:'[^']*')|(?:\"[^\"]*\")|[^\s;]+)"
+)
+SECRET_FLAG_RE = re.compile(
+    r"(?i)(--(?:api-key|auth|credential|password|passwd|secret|token)(?:=|\s+))"
+    r"((?:'[^']*')|(?:\"[^\"]*\")|[^\s;]+)"
+)
+URL_CRED_RE = re.compile(r"([A-Za-z][A-Za-z0-9+.-]*://)([^/\s:@]+):([^@\s/]+)@")
+
+
+@dataclass(frozen=True)
+class Record:
+    ts_us: int
+    pid: int
+    tid: int
+    raw_pid: str
+    raw_sub: str
+    source: str
+    line: str
+    name: str
+    stack: tuple[str, ...]
+    context: str
+    command: str
+
+
+@dataclass(frozen=True)
+class SemanticSpan:
+    pid: int
+    path: tuple[str, ...]
+    function_name: str
+    label: str
+    category: str
+    start_us: int
+    duration_us: int
+    record: Record
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("xtrace_log", help="stderr/xtrace log produced by scripts/trace/run-zsh")
+    parser.add_argument("--output", required=True, help="Perfetto JSON output path")
+    parser.add_argument("--summary-output", help="Optional JSON summary output path")
+    parser.add_argument("--process-name", default="zsh trace", help="Perfetto process name")
+    parser.add_argument("--pid-offset", type=int, default=0, help="Offset added to traced process ids")
+    return parser.parse_args()
+
+
+def timestamp_us(value: str) -> int | None:
+    try:
+        return int(Decimal(value) * Decimal(1_000_000))
+    except (InvalidOperation, ValueError):
+        return None
+
+
+def int_or(value: str, default: int) -> int:
+    try:
+        return int(value)
+    except ValueError:
+        return default
+
+
+def extract_segments(line: str) -> list[str]:
+    starts = [match.start() for match in re.finditer(re.escape(MARKER), line)]
+    segments = []
+    for index, start in enumerate(starts):
+        end = starts[index + 1] if index + 1 < len(starts) else len(line)
+        segments.append(line[start:end].rstrip("\n"))
+    return segments
+
+
+def parse_segment(segment: str, pid_offset: int) -> Record | None:
+    if not segment.startswith(MARKER):
+        return None
+
+    body = segment[len(MARKER) :]
+    if "| " in body:
+        meta_text, command = body.split("| ", 1)
+    else:
+        meta_text, command = body, ""
+
+    meta: dict[str, str] = {}
+    for part in meta_text.split("|"):
+        if "=" not in part:
+            continue
+        key, value = part.split("=", 1)
+        meta[key] = value
+
+    ts = timestamp_us(meta.get("ts", ""))
+    if ts is None:
+        return None
+
+    raw_pid = meta.get("pid", "0")
+    raw_sub = meta.get("sub", "0")
+    pid = int_or(raw_pid, 0) + pid_offset
+    # ZSH_SUBSHELL often changes for external commands. Keeping one command
+    # lane per zsh process makes durations line up with the next observed shell
+    # action instead of charging child-process time to the parent test command.
+    tid = COMMAND_TID
+    stack = tuple(item for item in meta.get("stack", "").split(",") if item)
+
+    return Record(
+        ts_us=ts,
+        pid=pid,
+        tid=tid,
+        raw_pid=raw_pid,
+        raw_sub=raw_sub,
+        source=meta.get("src", ""),
+        line=meta.get("line", ""),
+        name=meta.get("name", ""),
+        stack=stack,
+        context=meta.get("ctx", ""),
+        command=command,
+    )
+
+
+def parse_records(path: Path, pid_offset: int) -> tuple[list[Record], int]:
+    records: list[Record] = []
+    ignored = 0
+    with path.open("r", encoding="utf-8", errors="replace") as handle:
+        for line in handle:
+            segments = extract_segments(line)
+            if not segments:
+                ignored += 1
+                continue
+            for segment in segments:
+                record = parse_segment(segment, pid_offset)
+                if record is None:
+                    ignored += 1
+                else:
+                    records.append(record)
+    records.sort(key=lambda record: (record.ts_us, record.pid, record.tid))
+    return records, ignored
+
+
+def redact(text: str) -> str:
+    redacted = SECRET_NAME_RE.sub(r"\1=<redacted>", text)
+    redacted = SECRET_FLAG_RE.sub(r"\1<redacted>", redacted)
+    redacted = URL_CRED_RE.sub(r"\1<redacted>:<redacted>@", redacted)
+    return redacted
+
+
+def trim(text: str, limit: int = 180) -> str:
+    if len(text) <= limit:
+        return text
+    return text[: limit - 1] + "…"
+
+
+def lane_pid(record_pid: int, suffix: int) -> int:
+    return record_pid * LANE_PID_MULTIPLIER + suffix
+
+
+def command_pid(record: Record) -> int:
+    return lane_pid(record.pid, COMMAND_PID_SUFFIX)
+
+
+def major_command_pid(record: Record) -> int:
+    return lane_pid(record.pid, MAJOR_COMMAND_PID_SUFFIX)
+
+
+def function_stack(record: Record) -> tuple[str, ...]:
+    return tuple(reversed(record.stack))
+
+
+def semantic_vector(record: Record) -> list[str]:
+    return list(function_stack(record))
+
+
+def display_function_name(function_name: str) -> str:
+    local_name = function_name.rsplit("::", 1)[-1]
+    words = [word for word in re.split(r"[_\W]+", local_name) if word]
+    if not words:
+        return function_name
+    return " ".join(word.capitalize() for word in words)
+
+
+def function_category(function_name: str) -> str:
+    if "::" in function_name:
+        return function_name.split("::", 1)[0]
+    return "zsh-function"
+
+
+def semantic_track_name(path: tuple[str, ...]) -> str:
+    if not path:
+        return "unknown"
+    depth = max(len(path) - 1, 0)
+    return ("  " * depth) + display_function_name(path[-1])
+
+
+def process_name_event(pid: int, name: str, args: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "name": "process_name",
+        "ph": "M",
+        "pid": pid,
+        "tid": 0,
+        "args": {"name": name} | args,
+    }
+
+
+def process_sort_event(pid: int, sort_index: int) -> dict[str, Any]:
+    return {
+        "name": "process_sort_index",
+        "ph": "M",
+        "pid": pid,
+        "tid": 0,
+        "args": {"sort_index": sort_index},
+    }
+
+
+def thread_name_event(pid: int, tid: int, name: str) -> dict[str, Any]:
+    return {
+        "name": "thread_name",
+        "ph": "M",
+        "pid": pid,
+        "tid": tid,
+        "args": {"name": name},
+    }
+
+
+def thread_sort_event(pid: int, tid: int, sort_index: int) -> dict[str, Any]:
+    return {
+        "name": "thread_sort_index",
+        "ph": "M",
+        "pid": pid,
+        "tid": tid,
+        "args": {"sort_index": sort_index},
+    }
+
+
+def private_json_write(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    path.chmod(0o600)
+
+
+def metadata_events(records: list[Record], process_name: str) -> list[dict[str, Any]]:
+    events: list[dict[str, Any]] = []
+    seen_shell_pids: set[int] = set()
+
+    for record in records:
+        if record.pid not in seen_shell_pids:
+            common_args = {
+                "raw_pid": record.raw_pid,
+                "trace_pid": record.pid,
+            }
+            events.extend(
+                [
+                    process_name_event(
+                        major_command_pid(record),
+                        f"{process_name} pid {record.raw_pid} - major commands",
+                        common_args | {"lane": "major commands"},
+                    ),
+                    process_sort_event(major_command_pid(record), 20),
+                    thread_name_event(major_command_pid(record), COMMAND_TID, "major commands"),
+                    process_name_event(
+                        command_pid(record),
+                        f"{process_name} pid {record.raw_pid} - all commands",
+                        common_args | {"lane": "all commands"},
+                    ),
+                    process_sort_event(command_pid(record), 30),
+                    thread_name_event(command_pid(record), COMMAND_TID, "all commands"),
+                ]
+            )
+            seen_shell_pids.add(record.pid)
+    return events
+
+
+def event_args(record: Record) -> dict[str, str]:
+    return {
+        "source": record.source,
+        "line": record.line,
+        "name": record.name,
+        "context": record.context,
+        "subshell": record.raw_sub,
+        "raw_pid": record.raw_pid,
+        "trace_pid": str(record.pid),
+    }
+
+
+def command_event(record: Record, duration: int | None, pid: int, category: str) -> dict[str, Any]:
+    command = trim(redact(record.command or "<empty command>"))
+    event: dict[str, Any] = {
+        "name": command,
+        "cat": category,
+        "ts": record.ts_us,
+        "pid": pid,
+        "tid": COMMAND_TID,
+        "args": event_args(record),
+    }
+    if duration is None:
+        event["ph"] = "i"
+        event["s"] = "t"
+    else:
+        event["ph"] = "X"
+        event["dur"] = duration
+    return event
+
+
+def command_events(grouped: dict[tuple[int, int], list[Record]]) -> list[dict[str, Any]]:
+    events: list[dict[str, Any]] = []
+    for record, duration in iter_record_durations(grouped):
+        if duration is not None and duration >= MAJOR_COMMAND_MIN_DURATION_US:
+            events.append(command_event(record, duration, major_command_pid(record), "zsh-major-command"))
+        events.append(command_event(record, duration, command_pid(record), "zsh-command"))
+    return events
+
+
+def semantic_function_events(
+    grouped: dict[tuple[int, int], list[Record]],
+    process_name: str,
+) -> list[dict[str, Any]]:
+    spans: list[SemanticSpan] = []
+    for (pid, tid), records in grouped.items():
+        active: list[tuple[str, int, Record]] = []
+
+        def close_to(depth: int, end_ts: int) -> None:
+            nonlocal active
+            while len(active) > depth:
+                function_name, start_ts, open_record = active.pop()
+                duration = end_ts - start_ts
+                if duration < SEMANTIC_MIN_DURATION_US:
+                    continue
+                path = tuple(function for function, _, _ in active) + (function_name,)
+                label = display_function_name(function_name)
+                spans.append(
+                    SemanticSpan(
+                        pid=pid,
+                        path=path,
+                        function_name=function_name,
+                        label=label,
+                        category=function_category(function_name),
+                        start_us=start_ts,
+                        duration_us=duration,
+                        record=open_record,
+                    )
+                )
+
+        for record in records:
+            vector = semantic_vector(record)
+            lcp = 0
+            for current, incoming in zip((function_name for function_name, _, _ in active), vector):
+                if current != incoming:
+                    break
+                lcp += 1
+
+            close_to(lcp, record.ts_us)
+            for item in vector[lcp:]:
+                active.append((item, record.ts_us, record))
+
+        if records:
+            close_to(0, records[-1].ts_us + FALLBACK_DURATION_US)
+
+    if not spans:
+        return []
+
+    events: list[dict[str, Any]] = []
+    shell_records = {record.pid: record for records in grouped.values() for record in records}
+    paths_by_pid: dict[int, list[tuple[str, ...]]] = {}
+    for span in sorted(spans, key=lambda item: (item.start_us, len(item.path), item.path)):
+        paths_by_pid.setdefault(span.pid, [])
+        if span.path not in paths_by_pid[span.pid]:
+            paths_by_pid[span.pid].append(span.path)
+
+    track_ids: dict[tuple[int, tuple[str, ...]], int] = {}
+    for pid, paths in paths_by_pid.items():
+        first_record = shell_records[pid]
+        trace_pid = lane_pid(pid, SEMANTIC_PID_SUFFIX)
+        events.extend(
+            [
+                process_name_event(
+                    trace_pid,
+                    f"{process_name} pid {first_record.raw_pid} - semantic steps",
+                    {
+                        "raw_pid": first_record.raw_pid,
+                        "trace_pid": pid,
+                        "lane": "semantic steps",
+                    },
+                ),
+                process_sort_event(trace_pid, 10),
+            ]
+        )
+        for index, path in enumerate(paths, start=1):
+            track_ids[(pid, path)] = index
+            events.append(thread_name_event(trace_pid, index, semantic_track_name(path)))
+            events.append(thread_sort_event(trace_pid, index, index))
+
+    for span in spans:
+        events.append(
+            {
+                "name": span.label,
+                "cat": span.category,
+                "ph": "X",
+                "ts": span.start_us,
+                "dur": span.duration_us,
+                "pid": lane_pid(span.pid, SEMANTIC_PID_SUFFIX),
+                "tid": track_ids[(span.pid, span.path)],
+                "args": event_args(span.record)
+                | {
+                    "function": span.function_name,
+                    "path": " > ".join(span.path),
+                    "scope_depth": str(len(span.path)),
+                },
+            }
+        )
+
+    return events
+
+
+def group_records(records: list[Record]) -> dict[tuple[int, int], list[Record]]:
+    grouped: dict[tuple[int, int], list[Record]] = {}
+    for record in records:
+        grouped.setdefault((record.pid, record.tid), []).append(record)
+    for group in grouped.values():
+        group.sort(key=lambda record: record.ts_us)
+    return grouped
+
+
+def duration_to_next(records: list[Record], index: int) -> int | None:
+    if index + 1 >= len(records):
+        return FALLBACK_DURATION_US
+
+    duration = records[index + 1].ts_us - records[index].ts_us
+    if duration <= 0:
+        return None
+    return duration
+
+
+def iter_record_durations(grouped: dict[tuple[int, int], list[Record]]) -> list[tuple[Record, int | None]]:
+    return [
+        (record, duration_to_next(records, index))
+        for records in grouped.values()
+        for index, record in enumerate(records)
+    ]
+
+
+def build_summary(records: list[Record], ignored_lines: int) -> dict[str, Any]:
+    grouped = group_records(records)
+    command_totals: dict[str, int] = {}
+    for record, duration in iter_record_durations(grouped):
+        if duration is None:
+            continue
+        command = trim(redact(record.command or "<empty command>"), 120)
+        command_totals[command] = command_totals.get(command, 0) + duration
+
+    top_commands = [
+        {"command": command, "duration_us": duration}
+        for command, duration in sorted(command_totals.items(), key=lambda item: item[1], reverse=True)[:25]
+    ]
+
+    return {
+        "records": len(records),
+        "ignored_lines": ignored_lines,
+        "processes": len({record.pid for record in records}) * 3,
+        "threads": len({record.pid for record in records}) * 3,
+        "top_commands": top_commands,
+    }
+
+
+def main() -> int:
+    args = parse_args()
+    xtrace_path = Path(args.xtrace_log)
+    output_path = Path(args.output)
+    records, ignored_lines = parse_records(xtrace_path, args.pid_offset)
+    grouped = group_records(records)
+
+    events: list[dict[str, Any]] = []
+    events.extend(metadata_events(records, args.process_name))
+    events.extend(semantic_function_events(grouped, args.process_name))
+    events.extend(command_events(grouped))
+    events.sort(key=lambda event: (event.get("ts", -1), event.get("pid", 0), event.get("tid", 0), event.get("cat", "")))
+
+    private_json_write(output_path, {"traceEvents": events})
+
+    summary = build_summary(records, ignored_lines)
+    if args.summary_output:
+        private_json_write(Path(args.summary_output), summary)
+    else:
+        print(json.dumps(summary, indent=2))
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

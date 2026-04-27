@@ -34,11 +34,23 @@ zinit light zdharma-continuum/fast-syntax-highlighting
 zinit ice wait lucid
 zinit light zsh-vi-more/vi-motions
 
-# direnv loads from binary (deferred since not needed immediately)
-zinit ice wait"1" from"gh-r" as"program" mv"direnv* -> direnv"          \
-    atclone'./direnv hook zsh > zhook.zsh' atpull'%atclone' \
-    pick"direnv" src="zhook.zsh"
-zinit light direnv/direnv
+# direnv is installed by Homebrew during bootstrap. Wire the hook directly so a
+# clean first shell does not depend on zinit release-asset timing.
+if (( $+commands[direnv] )); then
+    _direnv_hook() {
+        trap -- '' SIGINT
+        eval "$("${commands[direnv]}" export zsh)"
+        trap - SIGINT
+    }
+
+    typeset -ga precmd_functions chpwd_functions
+    if (( ! ${precmd_functions[(I)_direnv_hook]} )); then
+        precmd_functions=(_direnv_hook $precmd_functions)
+    fi
+    if (( ! ${chpwd_functions[(I)_direnv_hook]} )); then
+        chpwd_functions=(_direnv_hook $chpwd_functions)
+    fi
+fi
 
 # # ex: commands in vi mode
 # zi ice wait"0" lucid

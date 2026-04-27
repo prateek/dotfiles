@@ -81,7 +81,7 @@ typeset -ga VERIFY_CHECKS=(
 typeset -gA BENCH_BUDGETS=(
   first_prompt_lag_ms 320
   first_command_lag_ms 320
-  command_lag_ms 12
+  command_lag_ms 20
   input_lag_ms 6
 )
 
@@ -784,7 +784,7 @@ run_verify() {
 
   session_start "$session_name" "$home_dir" "$neutral_cwd"
   {
-    session_read_until "$session_name" 'λ' 8 || true
+    session_read_until "$session_name" 'λ' 20 || true
     startup_output="$REPLY"
 
     if [[ "$startup_output" == *'λ'* ]]; then

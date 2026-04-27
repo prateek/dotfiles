@@ -1,0 +1,135 @@
+#!/usr/bin/env zsh
+# vim:syntax=zsh
+# vim:filetype=zsh
+
+set -e
+set -o pipefail
+
+usage() {
+  cat <<'USAGE'
+Usage: scripts/trace/run-zsh [options] -- command [args...]
+
+Run a command with zsh xtrace enabled for any zsh processes it starts, then
+convert the captured xtrace into Chrome/Perfetto trace JSON.
+
+Options:
+  --output-dir <dir>       Directory for stdout, stderr, manifest, and trace files
+  --process-name <name>    Perfetto process label (default: zsh trace)
+  --pid-offset <count>     Offset added to traced pids in the Perfetto output
+  -h, --help               Show help
+USAGE
+}
+
+die() {
+  print -u2 -- "run-zsh: $*"
+  exit 2
+}
+
+SCRIPT_DIR="${0:A:h}"
+OUTPUT_DIR=""
+PROCESS_NAME="zsh trace"
+PID_OFFSET=0
+
+while [[ "$#" -gt 0 ]]; do
+  case "$1" in
+    --output-dir)
+      [[ -n "${2:-}" ]] || die "missing value for --output-dir"
+      OUTPUT_DIR="$2"
+      shift 2
+      ;;
+    --process-name)
+      [[ -n "${2:-}" ]] || die "missing value for --process-name"
+      PROCESS_NAME="$2"
+      shift 2
+      ;;
+    --pid-offset)
+      [[ -n "${2:-}" ]] || die "missing value for --pid-offset"
+      PID_OFFSET="$2"
+      shift 2
+      ;;
+    --)
+      shift
+      break
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
+
+[[ "$#" -gt 0 ]] || die "missing command"
+[[ "$PID_OFFSET" == <-> ]] || die "--pid-offset must be a non-negative integer"
+
+umask 077
+
+if [[ -z "$OUTPUT_DIR" ]]; then
+  OUTPUT_DIR="$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-trace.XXXXXX")"
+fi
+mkdir -p "$OUTPUT_DIR"
+OUTPUT_DIR="${OUTPUT_DIR:A}"
+chmod 700 "$OUTPUT_DIR"
+
+ZDOTDIR_TRACE="$OUTPUT_DIR/zdotdir"
+STDOUT_LOG="$OUTPUT_DIR/stdout.log"
+STDERR_LOG="$OUTPUT_DIR/stderr.log"
+TRACE_FILE="$OUTPUT_DIR/trace.perfetto.json"
+SUMMARY_FILE="$OUTPUT_DIR/summary.json"
+MANIFEST_FILE="$OUTPUT_DIR/manifest.json"
+mkdir -p "$ZDOTDIR_TRACE"
+
+cat >"$ZDOTDIR_TRACE/.zshenv" <<'EOF'
+zmodload zsh/datetime 2>/dev/null || true
+setopt prompt_subst
+PS4='+DFX|v=1|ts=${EPOCHREALTIME}|pid=$$|sub=${ZSH_SUBSHELL}|src=%x|line=%I|name=%N|stack=${(pj:,:)funcstack}|ctx=${(pj:,:)zsh_eval_context}| '
+set -x
+EOF
+
+set +e
+(
+  export ZDOTDIR="$ZDOTDIR_TRACE"
+  "$@"
+) > >(tee "$STDOUT_LOG") 2> >(tee "$STDERR_LOG" | awk 'index($0, "+DFX|v=1|") == 0 { print }' >&2)
+COMMAND_RC=$?
+
+"$SCRIPT_DIR/xtrace-to-perfetto" \
+  --output "$TRACE_FILE" \
+  --summary-output "$SUMMARY_FILE" \
+  --process-name "$PROCESS_NAME" \
+  --pid-offset "$PID_OFFSET" \
+  "$STDERR_LOG" >/dev/null
+CONVERT_RC=$?
+set -e
+
+if [[ "$CONVERT_RC" -ne 0 ]]; then
+  print -u2 -- "run-zsh: warning: xtrace conversion failed with rc=$CONVERT_RC"
+fi
+
+python3 - "$MANIFEST_FILE" "$COMMAND_RC" "$CONVERT_RC" "$OUTPUT_DIR" "$STDOUT_LOG" "$STDERR_LOG" "$TRACE_FILE" "$SUMMARY_FILE" "$@" <<'PY'
+import json
+import sys
+
+manifest, command_rc, convert_rc, output_dir, stdout_log, stderr_log, trace_file, summary_file, *command = sys.argv[1:]
+payload = {
+    "command": command,
+    "command_rc": int(command_rc),
+    "convert_rc": int(convert_rc),
+    "output_dir": output_dir,
+    "stdout_log": stdout_log,
+    "stderr_log": stderr_log,
+    "trace_file": trace_file,
+    "summary_file": summary_file,
+}
+with open(manifest, "w", encoding="utf-8") as handle:
+    json.dump(payload, handle, indent=2)
+    handle.write("\n")
+PY
+
+print -u2 -- "run-zsh: artifacts: $OUTPUT_DIR"
+if [[ "$COMMAND_RC" -ne 0 ]]; then
+  exit "$COMMAND_RC"
+fi
+exit "$CONVERT_RC"

@@ -56,6 +56,7 @@ if [ "$DRY_RUN" = "1" ]; then
   echo "  BREWFILE=$BREWFILE"
 fi
 
+ensure_sudo_keepalive() {
 if [ "$DRY_RUN" = "0" ] && [ "$(uname -s)" = "Darwin" ] && [ "${DOTFILES_SUDO_KEEPALIVE_STARTED:-0}" != "1" ]; then
   echo "Requesting sudo (to avoid repeated password prompts)…"
   sudo -v
@@ -63,7 +64,9 @@ if [ "$DRY_RUN" = "0" ] && [ "$(uname -s)" = "Darwin" ] && [ "${DOTFILES_SUDO_KE
   while true; do sudo -n true; sleep 60; kill -0 "$SUDO_PID" || exit; done 2>/dev/null &
   export DOTFILES_SUDO_KEEPALIVE_STARTED=1
 fi
+}
 
+ensure_homebrew() {
 # Install Homebrew if needed
 if ! command -v brew &> /dev/null; then
   if [ "$DRY_RUN" = "1" ]; then
@@ -88,58 +91,93 @@ if [ "$DRY_RUN" = "0" ]; then
     exit 1
   fi
 fi
+}
 
+configure_mas_installs() {
 # Mac App Store apps (mas) require being signed in; skip them if not.
-if [ "$DRY_RUN" = "1" ]; then
-  echo "Would ensure 'mas' is installed (required for Mac App Store apps), and skip MAS installs if not signed in."
-else
-  if ! command -v mas &> /dev/null; then
-    brew install mas
-  fi
-  if command -v mas &> /dev/null; then
-    if ! mas account &> /dev/null; then
-      echo "Not signed into the Mac App Store; skipping MAS installs for now."
-      export HOMEBREW_BUNDLE_MAS_SKIP=1
-    fi
-  fi
+brewfile_mas_ids=()
+if [ -f "$BREWFILE" ]; then
+  brewfile_mas_ids=($(awk '/^mas "/ {for (i=1;i<=NF;i++) if ($i ~ /^id:/) {print $(i+1)}}' "$BREWFILE" | tr -d ',' | sort -u))
 fi
 
+if [ "$DRY_RUN" = "1" ]; then
+  if [ "${#brewfile_mas_ids[@]}" -gt 0 ]; then
+    echo "Would ensure 'mas' is installed (required for Mac App Store apps), and skip MAS installs if not signed in."
+  else
+    echo "Would skip 'mas' setup (no Mac App Store entries in $BREWFILE)."
+  fi
+else
+  if [ "${#brewfile_mas_ids[@]}" -gt 0 ]; then
+    if ! command -v mas &> /dev/null; then
+      brew install mas
+    fi
+    if command -v mas &> /dev/null; then
+      if ! mas account &> /dev/null; then
+        echo "Not signed into the Mac App Store; skipping MAS installs for now."
+        export HOMEBREW_BUNDLE_MAS_SKIP=1
+      fi
+    fi
+  else
+    export HOMEBREW_BUNDLE_MAS_SKIP=1
+  fi
+fi
+}
+
+install_brewfile() {
 if [ -f "$BREWFILE" ]; then
-  taps=($(awk -F'"' '/^tap "/ {print $2}' "$BREWFILE" | sort -u))
-  brews=($(awk -F'"' '/^brew "/ {print $2}' "$BREWFILE" | sort -u))
-  casks=($(awk -F'"' '/^cask "/ {print $2}' "$BREWFILE" | sort -u))
-  mas_ids=($(awk '/^mas "/ {for (i=1;i<=NF;i++) if ($i ~ /^id:/) {print $(i+1)}}' "$BREWFILE" | tr -d ',' | sort -u))
+  inspect_brewfile
 
   if [ "$DRY_RUN" = "1" ]; then
-    echo "Would tap (${#taps[@]}):"
-    for tap in "${taps[@]}"; do echo "  - $tap"; done
-    echo "Would install via Brewfile:"
-    echo "  - formulae: ${#brews[@]}"
-    echo "  - casks: ${#casks[@]}"
-    echo "  - mas apps: ${#mas_ids[@]} (skipped unless signed into App Store)"
-    echo "Would run:"
-    echo "  brew bundle install --no-upgrade --file \"$BREWFILE\""
+    print_brewfile_dry_run
   else
-    # Homebrew Bundle currently "fetches" dependencies before processing Brewfile taps,
-    # which can break installs for casks/formulae that only exist in third-party taps
-    # (e.g. nikitabobko/tap/aerospace, dagger/tap/container-use).
-    echo "Ensuring Homebrew taps from $BREWFILE…"
-    if [ "${#taps[@]}" -gt 0 ]; then
-      existing_taps="$(brew tap 2>/dev/null || true)"
-      for tap in "${taps[@]}"; do
-        if ! echo "$existing_taps" | grep -qx "$tap"; then
-          brew tap "$tap"
-        fi
-      done
-    fi
+    ensure_brewfile_taps
   fi
 fi
 
+run_brew_bundle
+}
+
+inspect_brewfile() {
+taps=($(awk -F'"' '/^tap "/ {print $2}' "$BREWFILE" | sort -u))
+brews=($(awk -F'"' '/^brew "/ {print $2}' "$BREWFILE" | sort -u))
+casks=($(awk -F'"' '/^cask "/ {print $2}' "$BREWFILE" | sort -u))
+mas_ids=($(awk '/^mas "/ {for (i=1;i<=NF;i++) if ($i ~ /^id:/) {print $(i+1)}}' "$BREWFILE" | tr -d ',' | sort -u))
+}
+
+print_brewfile_dry_run() {
+echo "Would tap (${#taps[@]}):"
+for tap in "${taps[@]}"; do echo "  - $tap"; done
+echo "Would install via Brewfile:"
+echo "  - formulae: ${#brews[@]}"
+echo "  - casks: ${#casks[@]}"
+echo "  - mas apps: ${#mas_ids[@]} (skipped unless signed into App Store)"
+echo "Would run:"
+echo "  brew bundle install --no-upgrade --file \"$BREWFILE\""
+}
+
+ensure_brewfile_taps() {
+# Homebrew Bundle currently "fetches" dependencies before processing Brewfile taps,
+# which can break installs for casks/formulae that only exist in third-party taps
+# (e.g. nikitabobko/tap/aerospace, dagger/tap/container-use).
+echo "Ensuring Homebrew taps from $BREWFILE…"
+if [ "${#taps[@]}" -gt 0 ]; then
+  existing_taps="$(brew tap 2>/dev/null || true)"
+  for tap in "${taps[@]}"; do
+    if ! echo "$existing_taps" | grep -qx "$tap"; then
+      brew tap "$tap"
+    fi
+  done
+fi
+}
+
+run_brew_bundle() {
 if [ "$DRY_RUN" = "0" ]; then
   # install homebrew files
   brew bundle install --no-upgrade --file "$BREWFILE"
 fi
+}
 
+link_dotfile_configs() {
 # setup symlinks
 # Neovim (LazyVim) config
 NVIM_CONFIG_DIR="$HOME/.config/nvim"
@@ -316,6 +354,9 @@ else
   fi
 fi
 
+}
+
+install_mise_runtimes() {
 # Install mise-managed runtimes (node/go/ruby) from global config.
 if command -v mise >/dev/null 2>&1; then
   # Avoid interactive trust prompts on a clean machine.
@@ -329,6 +370,9 @@ if command -v mise >/dev/null 2>&1; then
   fi
 fi
 
+}
+
+link_agent_layer() {
 # Shared agent layer (.agents)
 AGENTS_DIR="$HOME/.agents"
 AGENTS_SKILLS="$AGENTS_DIR/skills"
@@ -452,6 +496,9 @@ if [ -L "$CODEX_DOCS_DIR" ]; then
   fi
 fi
 
+}
+
+link_hammerspoon() {
 # Hammerspoon config
 HAMMERSPOON_DIR="$HOME/.hammerspoon"
 HAMMERSPOON_INIT="$HAMMERSPOON_DIR/init.lua"
@@ -488,6 +535,9 @@ else
   fi
 fi
 
+}
+
+link_shell_startup() {
 # if [ ! -f $HOME/.sshrc ]; then ln -s $CWD/sshrc $HOME/.sshrc ; fi
 for f in zlogin zprofile zshrc zshenv; do
   dest="$HOME/.${f}"
@@ -499,6 +549,9 @@ for f in zlogin zprofile zshrc zshenv; do
   fi
 done
 
+}
+
+link_claude_layer() {
 # .claude directory symlinks
 CLAUDE_DIR="$HOME/.claude"
 if [ "$DRY_RUN" = "1" ]; then
@@ -565,6 +618,9 @@ else
   ln -snf "$CWD/.agents/skills" "$CLAUDE_SKILLS"
 fi
 
+}
+
+link_bin_wrappers() {
 # directories
 if [ "$DRY_RUN" = "1" ]; then
   echo "Would ensure directories: $HOME/bin $HOME/code $HOME/.sshrc.d"
@@ -587,6 +643,9 @@ for f in devtool gemini-meeting-sync gh grmrepo grmrepo-refresh repo-index wt-ho
   fi
 done
 
+}
+
+configure_gemini_meeting_sync() {
 # Gemini meeting sync (optional): install a default config, but do NOT enable.
 GMS_CONFIG_DIR="$HOME/.config/gemini-meeting-sync"
 GMS_CONFIG_FILE="$GMS_CONFIG_DIR/config.json"
@@ -610,6 +669,9 @@ EOF
   fi
 fi
 
+}
+
+install_cargo_tools() {
 # Worktrunk + git-repo-manager install/update (via cargo, when available)
 if [ "$DRY_RUN" = "1" ]; then
   echo "Would install/update Worktrunk via cargo (if cargo is available)"
@@ -621,6 +683,9 @@ else
   fi
 fi
 
+}
+
+generate_lesskey() {
 # generate lesskey binary file for older versions of less that might be
 # present on remote machines.
 # nb: will need to `brew install less` for the following line to work.
@@ -633,6 +698,9 @@ if command -v lesskey >/dev/null 2>&1 && [ -f "$CWD/lesskey" ]; then
   fi
 fi
 
+}
+
+install_zinit() {
 # zsh setup
 # nb: this setup takes _heavy_ inspiration from the work of https://github.com/htr3n/zsh-config
 if [ ! -d "$HOME/.zinit" ]; then
@@ -644,6 +712,9 @@ if [ ! -d "$HOME/.zinit" ]; then
   fi
 fi
 
+}
+
+sync_lazyvim() {
 # LazyVim bootstrap (plugins install on first nvim run).
 # Opt-in sync (avoids updating repo lockfile during bootstrap):
 if [ "${DOTFILES_NVIM_LAZY_SYNC:-0}" = "1" ] && command -v nvim &>/dev/null; then
@@ -654,6 +725,9 @@ if [ "${DOTFILES_NVIM_LAZY_SYNC:-0}" = "1" ] && command -v nvim &>/dev/null; the
   fi
 fi
 
+}
+
+apply_macos_settings() {
 # macOS + app settings
 if [ -x "$CWD/scripts/macos/apply.sh" ]; then
   if [ "$DRY_RUN" = "1" ]; then
@@ -663,6 +737,9 @@ if [ -x "$CWD/scripts/macos/apply.sh" ]; then
   fi
 fi
 
+}
+
+print_bootstrap_summary() {
 echo
 if [ "$DRY_RUN" = "1" ]; then
   echo "Dry-run complete (no changes applied)."
@@ -676,6 +753,31 @@ echo "  export OPENAI_API_KEY=...        # used by tools like 'llm' (and others)
 echo "  export ANTHROPIC_API_KEY=...     # if you use Anthropic-backed tools"
 echo "  export GITHUB_TOKEN=...          # optional; for gh/CI tooling"
 echo
+
+}
+
+bootstrap_main() {
+  ensure_sudo_keepalive
+  ensure_homebrew
+  configure_mas_installs
+  install_brewfile
+  link_dotfile_configs
+  install_mise_runtimes
+  link_agent_layer
+  link_hammerspoon
+  link_shell_startup
+  link_claude_layer
+  link_bin_wrappers
+  configure_gemini_meeting_sync
+  install_cargo_tools
+  generate_lesskey
+  install_zinit
+  sync_lazyvim
+  apply_macos_settings
+  print_bootstrap_summary
+}
+
+bootstrap_main
 
 # TODO: pending automation items
 # - [ ] need to run `autoload zkbd && zkbd` to setup keycode file (used in zshrc)

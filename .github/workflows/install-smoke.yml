@@ -18,7 +18,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y shellcheck
       - name: Shellcheck
         run: |
-          shellcheck -x install.sh scripts/macos/apply.sh scripts/macos/capture.sh scripts/vm/test-install-tart.sh
+          shellcheck -x install.sh scripts/macos/apply.sh scripts/macos/capture.sh scripts/vm/test-install-tart.sh scripts/vm/check-install-log.sh scripts/trace/perfetto-trace.bash
 
   macos-dry-run:
     runs-on: macos-latest
@@ -26,7 +26,19 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Zsh syntax check
-        run: zsh -n bootstrap.sh
+        run: |
+          zsh -n bootstrap.sh
+          zsh -n scripts/trace/run-zsh
+
+      - name: Python syntax check
+        run: python3 -m py_compile scripts/trace/xtrace-to-perfetto scripts/trace/merge-perfetto scripts/trace/open-perfetto
+
+      - name: Tart helper contract
+        run: |
+          make test-tart-install-helper
+          make test-trace-perfetto
+          make test-vm-install-log-scan
+          make test-vm-postflight-macos
 
       - name: Bootstrap app list regression
         run: |
@@ -52,8 +64,10 @@ jobs:
           brew bundle list --all --file Brewfile >/dev/null
 
       - name: Brew bundle (core formulae only)
-        env:
-          HOMEBREW_BUNDLE_CASK_SKIP: "1"
-          HOMEBREW_BUNDLE_MAS_SKIP: "1"
         run: |
+          set -euo pipefail
+          HOMEBREW_BUNDLE_CASK_SKIP="$(awk -F'"' '/^cask "/ { print $2 }' Brewfile.core | xargs)"
+          HOMEBREW_BUNDLE_MAS_SKIP="$(awk -F'"' '/^mas "/ { print $2 }' Brewfile.core | xargs)"
+          export HOMEBREW_BUNDLE_CASK_SKIP
+          export HOMEBREW_BUNDLE_MAS_SKIP
           brew bundle install --no-upgrade --file Brewfile.core
