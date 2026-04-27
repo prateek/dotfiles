@@ -49,7 +49,7 @@ Terminal setup notes (iTerm2 + tmux): `docs/iterm2-tmux.md`.
 ## Shell helpers
 
 - Directory jumping: `j <query>` is powered by `zoxide` (imports a legacy `~/Library/autojump/autojump.txt` once, if present).
-- Dev tool overrides (stable vs local PR builds): `devtool` (docs: `docs/devtools.md`).
+- Dev tool overrides use mise tasks and linked prefixes. See `dev/docs/mise-tool-management-plan.md`.
 
 ## Auditing what to remove / what’s tracked
 
@@ -129,6 +129,16 @@ pre-commit run --all-files
 ## Runtimes (mise)
 
 Node/Go/Ruby are managed via `mise` using `.config/mise/config.toml`. Ruby uses mise's signed precompiled artifacts when available, so clean installs do not compile Ruby from source unless mise has no matching artifact.
+
+Bootstrap also links `.config/mise/tasks` into `~/.config/mise/tasks` so repo-owned mise tasks are available outside the dotfiles checkout.
+
+Codex channel switching is a mise task:
+
+```sh
+mise run codex:use latest
+mise run codex:use --local main
+mise run codex:use --local pr 19776
+```
 
 ## Manual steps (expected on a clean Mac)
 

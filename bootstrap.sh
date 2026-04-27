@@ -276,6 +276,20 @@ if [ "$DRY_RUN" = "1" ]; then
 else
   ln -snf "$CWD/.config/mise/config.toml" "$MISE_CONFIG_FILE"
 fi
+MISE_TASKS_DIR="$MISE_CONFIG_DIR/tasks"
+if [ -e "$MISE_TASKS_DIR" ] || [ -L "$MISE_TASKS_DIR" ]; then
+  if [ "$(readlink "$MISE_TASKS_DIR" 2>/dev/null)" != "$CWD/.config/mise/tasks" ]; then
+    echo "Error: $MISE_TASKS_DIR already exists and is not a symlink to $CWD/.config/mise/tasks."
+    echo "To back it up, run: mv \"$MISE_TASKS_DIR\" \"${MISE_TASKS_DIR}.backup-$(date +%s)\""
+    echo "After fixing, rerun this bootstrap script."
+    exit 1
+  fi
+fi
+if [ "$DRY_RUN" = "1" ]; then
+  echo "Would symlink: $MISE_TASKS_DIR -> $CWD/.config/mise/tasks"
+else
+  ln -snf "$CWD/.config/mise/tasks" "$MISE_TASKS_DIR"
+fi
 
 # worktrunk config
 WORKTRUNK_CONFIG_DIR="$HOME/.config/worktrunk"
@@ -297,28 +311,6 @@ if [ "$DRY_RUN" = "1" ]; then
   echo "Would symlink: $WORKTRUNK_CONFIG_FILE -> $CWD/.config/worktrunk/config.toml"
 else
   ln -snf "$CWD/.config/worktrunk/config.toml" "$WORKTRUNK_CONFIG_FILE"
-fi
-
-# devtools global config
-DEVTOOLS_CONFIG_DIR="$HOME/.config/devtools"
-DEVTOOLS_CONFIG_FILE="$DEVTOOLS_CONFIG_DIR/config.toml"
-if [ "$DRY_RUN" = "1" ]; then
-  echo "Would ensure directory: $DEVTOOLS_CONFIG_DIR"
-else
-  mkdir -p "$DEVTOOLS_CONFIG_DIR"
-fi
-if [ -e "$DEVTOOLS_CONFIG_FILE" ] || [ -L "$DEVTOOLS_CONFIG_FILE" ]; then
-  if [ "$(readlink "$DEVTOOLS_CONFIG_FILE" 2>/dev/null)" != "$CWD/.config/devtools/config.toml" ]; then
-    echo "Error: $DEVTOOLS_CONFIG_FILE already exists and is not a symlink to $CWD/.config/devtools/config.toml."
-    echo "To back it up, run: mv \"$DEVTOOLS_CONFIG_FILE\" \"${DEVTOOLS_CONFIG_FILE}.backup-$(date +%s)\""
-    echo "After fixing, rerun this bootstrap script."
-    exit 1
-  fi
-fi
-if [ "$DRY_RUN" = "1" ]; then
-  echo "Would symlink: $DEVTOOLS_CONFIG_FILE -> $CWD/.config/devtools/config.toml"
-else
-  ln -snf "$CWD/.config/devtools/config.toml" "$DEVTOOLS_CONFIG_FILE"
 fi
 
 # GRM (git-repo-manager) config
@@ -631,7 +623,7 @@ else
 fi
 
 # dotfiles bin wrappers
-for f in devtool gemini-meeting-sync gh grmrepo grmrepo-refresh repo-index wt-hook-sparse; do
+for f in gemini-meeting-sync gh grmrepo grmrepo-refresh repo-index wt-hook-sparse; do
   src="$CWD/bin/$f"
   dest="$HOME/bin/$f"
   if [ -f "$src" ]; then

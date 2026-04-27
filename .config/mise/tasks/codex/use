@@ -1,0 +1,136 @@
+#!/usr/bin/env bash
+#MISE description="Switch Codex between release, main, PR, and Homebrew builds"
+#MISE dir="{{cwd}}"
+#USAGE flag "--local" help="Write selection to mise.local.toml in the current repo"
+#USAGE flag "--global" help="Write selection to the global mise config"
+#USAGE arg "<channel>" help="Codex channel" default="latest" {
+#USAGE   choices "latest" "release" "main" "pr" "brew"
+#USAGE }
+#USAGE arg "[value]" help="Release version or PR number"
+set -euo pipefail
+
+scope="global"
+if [[ "${usage_local:-false}" == "true" ]]; then
+  scope="local"
+elif [[ "${usage_global:-false}" == "true" ]]; then
+  scope="global"
+elif [[ "${1:-}" == "--local" ]]; then
+  scope="local"
+  shift
+elif [[ "${1:-}" == "--global" ]]; then
+  scope="global"
+  shift
+fi
+
+channel="${usage_channel:-${1:-latest}}"
+value="${usage_value:-${2:-}}"
+
+data_dir="${MISE_DATA_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/mise}"
+external_dir="$data_dir/external"
+
+usage() {
+  cat >&2 <<'USAGE'
+usage:
+  mise run codex:use [--global|--local] latest
+  mise run codex:use [--global|--local] release <version>
+  mise run codex:use [--global|--local] main
+  mise run codex:use [--global|--local] pr <number>
+  mise run codex:use [--global|--local] brew
+USAGE
+}
+
+select_codex() {
+  local spec="$1"
+
+  if [[ "$scope" == "local" ]]; then
+    mise use --env local "$spec"
+  else
+    mise use -g "$spec"
+  fi
+}
+
+install_source() {
+  local label="$1"
+  local repo="$2"
+  local git_arg="$3"
+  local git_value="$4"
+  local prefix="$external_dir/codex-$label"
+
+  mkdir -p "$external_dir"
+
+  cargo install \
+    --git "$repo" \
+    "$git_arg" "$git_value" \
+    codex-cli \
+    --bin codex \
+    --root "$prefix" \
+    --locked \
+    --force
+
+  mise link --force "codex@$label" "$prefix"
+  select_codex "codex@$label"
+}
+
+case "$channel" in
+  latest)
+    select_codex "codex@latest"
+    ;;
+
+  release)
+    if [[ -z "$value" ]]; then
+      usage
+      exit 2
+    fi
+    select_codex "codex@$value"
+    ;;
+
+  main)
+    install_source "main" "https://github.com/openai/codex" "--branch" "main"
+    ;;
+
+  pr)
+    if [[ -z "$value" ]]; then
+      usage
+      exit 2
+    fi
+
+    read -r head_repo head_sha < <(
+      gh pr view "$value" \
+        --repo openai/codex \
+        --json headRepository,headRefOid \
+        --template '{{.headRepository.nameWithOwner}} {{.headRefOid}}'
+    )
+
+    if [[ -z "$head_repo" || "$head_repo" == "null" || -z "$head_sha" || "$head_sha" == "null" ]]; then
+      echo "Could not resolve openai/codex PR $value" >&2
+      exit 1
+    fi
+
+    install_source "pr-$value" "https://github.com/$head_repo" "--rev" "$head_sha"
+    ;;
+
+  brew)
+    prefix="$external_dir/codex-brew"
+    brew_bin="$(brew --prefix)/bin/codex"
+
+    if [[ ! -x "$brew_bin" ]]; then
+      brew install --cask codex
+    fi
+
+    mkdir -p "$prefix/bin"
+    ln -sf "$brew_bin" "$prefix/bin/codex"
+
+    mise link --force "codex@brew" "$prefix"
+    select_codex "codex@brew"
+    ;;
+
+  -h|--help|help)
+    usage
+    ;;
+
+  *)
+    echo "unknown Codex channel: $channel" >&2
+    usage
+    exit 2
+    ;;
+esac

@@ -35,6 +35,8 @@ __pycache__/
 # SpecStory explanation file
 .specstory/.what-is-this.md
 .env
+mise.local.toml
+.mise.local.toml
 
 *.bak
 
