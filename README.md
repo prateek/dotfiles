@@ -16,7 +16,7 @@ cd ~/dotfiles && ./install.sh
 ```
 
 This will:
-- Install Homebrew (if missing) + run `brew bundle` via `Brewfile`
+- Install Homebrew (if missing) and apply the selected Homebrew profile
 - Set up symlinks (zsh, nvim, Codex, etc.)
 - Apply macOS + app settings via `scripts/macos/apply.sh`
 
@@ -61,6 +61,21 @@ Terminal setup notes (iTerm2 + tmux): `docs/iterm2-tmux.md`.
 
 Note: Mac App Store installs require being signed in; `bootstrap.sh` will skip them if you aren’t.
 
+## Homebrew profiles
+
+`Brewfile.core` is the bootstrap profile for a usable shell and the main desktop tools. It is used by `./install.sh --core`, CI, and the Tart smoke lane. CI and the smoke lane skip casks and Mac App Store entries, so they only prove the core formula install path.
+
+`Brewfile` is the full workstation profile. It should include every core entry plus workstation-specific taps, CLIs, casks, fonts, and Mac App Store apps. When auditing a laptop, update this file first and keep `Brewfile.core` small unless a tool is needed for fresh-machine bootstrap or smoke validation.
+
+The audit scripts default to `Brewfile`; pass `BREWFILE=Brewfile.core` when checking the core profile:
+
+```sh
+BREWFILE=Brewfile.core ./scripts/audit/brew-inventory.sh
+BREWFILE=Brewfile.core ./scripts/audit/brewfile-usage.sh
+```
+
+Setapp is installed by Homebrew, but Setapp-managed apps are installed after Setapp login. CleanShot X is tracked that way, not as a Homebrew cask. For scripted Setapp installs, use `setapp-cli`: https://github.com/maximlevey/setapp-cli
+
 ## CI / tests
 
 This repo has lightweight “don’t break bootstrap” checks on every PR.
@@ -71,7 +86,7 @@ What CI runs (GitHub Actions):
 - Tart helper contract tests without booting a VM.
 - Perfetto trace conversion tests for zsh xtrace, function-derived spans, merge behavior, and the local viewer helper.
 - Brewfile parsing: `brew bundle list --all` for `Brewfile` + `Brewfile.core`.
-- Core Brewfile install check (formulae only; casks/mas skipped): `brew bundle install --file Brewfile.core`.
+- Core Brewfile install check: `brew bundle install --no-upgrade --file Brewfile.core` with core casks and Mac App Store entries skipped by environment.
 
 What CI does *not* run:
 - A full end-to-end install in a macOS VM. That is local-only because it pulls a large Tart image and mutates a guest macOS install.

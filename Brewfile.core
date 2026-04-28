@@ -36,5 +36,7 @@ cask "tailscale-app"
 cask "visual-studio-code"
 cask "voiceink"
 
-# Optional: CleanShot X (often licensed/installed via Setapp)
+# Setapp-managed apps are installed after Setapp login. Use setapp-cli for scripted Setapp app installs:
+# https://github.com/maximlevey/setapp-cli
+# CleanShot X is installed via Setapp, not Homebrew.
 # cask "cleanshot"

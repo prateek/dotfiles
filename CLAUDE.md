@@ -15,8 +15,10 @@ This is a personal dotfiles repository for macOS configuration, containing shell
 ## Common Commands
 
 ### Setup and Installation
-- `./bootstrap.sh` - Initial setup script that installs homebrew packages, creates symlinks, and configures the environment
-- `brew bundle install --file Brewfile` - Install all homebrew packages and applications from the Brewfile
+- `./install.sh --core` - Bootstrap the core profile using `Brewfile.core`
+- `./install.sh --full` - Bootstrap the full workstation profile using `Brewfile`
+- `brew bundle check --file Brewfile --no-upgrade --verbose` - Check whether the full Brewfile is satisfied
+- `BREWFILE=Brewfile.core ./scripts/audit/brew-inventory.sh` - Audit the core Brewfile against the local Homebrew install
 
 ### Shell Management
 - `sz` (alias) - Reload zsh configuration (`exec zsh`)
@@ -69,7 +71,7 @@ This is a personal dotfiles repository for macOS configuration, containing shell
 
 ### macOS Integration
 - `macos` script contains extensive system preference customizations
-- Homebrew Brewfile manages package installations
+- `Brewfile.core` is the small bootstrap profile; `Brewfile` is the full workstation profile and should remain a superset of core
 - Application-specific preference files in `osx-apps/`
 - Custom keyboard layouts and shortcuts
 
