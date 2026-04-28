@@ -18,7 +18,7 @@ The canonical checkout stays at `~/dotfiles`.
 
 - `home/`: chezmoi source state. With `.chezmoiroot = home`, files under this directory materialize into `$HOME`.
 - `install.sh`: the only public bootstrap entrypoint. It prepares enough of macOS for chezmoi to run, then hands off to `chezmoi init --apply`.
-- `.chezmoidata/`: committed structured desired state for chezmoi templates and scripts, including package profiles, app declarations, macOS defaults, license aliases, and permission intent.
+- `.chezmoidata/`: committed structured desired state for chezmoi templates and scripts, including bootstrap defaults, package profiles, app declarations, macOS defaults, license aliases, and permission intent.
 - `.chezmoiscripts/`: chezmoi-owned side effects. Use this for idempotent setup that should run as part of `chezmoi apply`.
 - `.chezmoiexternal.*`: chezmoi-owned external dependencies such as zinit or plugin repositories, when a clone/pull is enough.
 - `apps`: app-owned declarations under `home/.chezmoidata/apps/`.
@@ -36,9 +36,10 @@ The canonical checkout stays at `~/dotfiles`.
   home/
     .chezmoi.toml.tmpl          # used by `chezmoi init` to write local config
     .chezmoidata/
+      bootstrap.toml            # committed non-local bootstrap defaults
       features.toml             # committed non-identifying feature flags
       packages.toml             # package profiles and Brewfile selection
-      secrets.toml              # secret aliases only; no direct op:// refs
+      secrets.toml              # secret aliases and obfuscated op:// refs
       licenses.toml             # license aliases and validator IDs only
       permissions.toml          # global permission intent
       system/
@@ -53,7 +54,9 @@ The canonical checkout stays at `~/dotfiles`.
       run_onchange_after_10-brew-bundle.sh.tmpl
       run_onchange_after_20-mise-install.sh.tmpl
       run_onchange_after_30-macos-defaults.sh.tmpl
-      run_onchange_after_90-verify.sh.tmpl
+      run_after_90-verify.sh.tmpl
+    .chezmoitemplates/
+      script_lib.sh              # shared shell helpers for chezmoi scripts
     .chezmoiexternal.toml.tmpl   # zinit and other clone/pull-only dependencies
     dot_zshenv.tmpl             # tiny $HOME shim; sets XDG and ZDOTDIR
     dot_agents/
@@ -115,7 +118,7 @@ The canonical checkout stays at `~/dotfiles`.
 
 Do not create both `Library/` and `private_Library/` at the source root. They both target `~/Library` and make the source state ambiguous. Use one `Library/` tree and apply `private_` to specific files or directories.
 
-Committed `.chezmoidata` may contain desired app/system declarations, feature flags, package profiles, validator IDs, and opaque secret aliases. Hostnames, usernames, workplace labels, account names, installed-app inventories, raw captures, transaction records, and local paths belong in untracked XDG state or local chezmoi config.
+Committed `.chezmoidata` may contain desired app/system declarations, feature flags, package profiles, validator IDs, opaque secret aliases, and obfuscated `op://` refs. Hostnames, usernames, workplace labels, account names, installed-app inventories, raw captures, transaction records, and local paths belong in untracked XDG state or local chezmoi config.
 
 `${DOTFILES}` means a chezmoi data value named `dotfiles_dir`. It defaults to `~/dotfiles` on real machines. Isolated tests set it to the repo under test, so rendered live links and shell startup do not accidentally point at `$tmp_home/dotfiles`.
 
@@ -148,7 +151,7 @@ Allowed live links are limited to repo-local executable wrappers that must run d
 | `.mcp.json` | `home/private_dot_mcp.json` | 1 | planned |
 | `bin/` | repo root; selected wrappers exposed through `home/bin/symlink_*.tmpl` | 1 | planned |
 | `.config/grm/config.toml` | `home/dot_config/grm/config.toml` | 1 | planned |
-| `macos` safe baseline | `home/.chezmoidata/system/macos.toml` plus gated `.chezmoiscripts/run_onchange_after_30-macos-defaults.sh.tmpl` | 1 | planned; gated until rollback exists |
+| `macos` defaults baseline | `home/.chezmoidata/system/macos.toml` plus gated `.chezmoiscripts/run_onchange_after_30-macos-defaults.sh.tmpl` | 1 | planned; gated until rollback exists |
 | `install.sh`, `bootstrap.sh` | one simplified `install.sh`; delete `bootstrap.sh` | 0 | planned |
 | `Brewfile`, `Brewfile.core` | repo-root package manifests applied by `.chezmoiscripts/run_onchange_after_10-brew-bundle.sh.tmpl` | 2 | planned |
 | `.config/mise/`, `.config/tmux/`, `.config/worktrunk/`, `.config/opencode/`, `.config/borders/` | `home/dot_config/<name>/` | 2 | planned |
@@ -160,7 +163,7 @@ Allowed live links are limited to repo-local executable wrappers that must run d
 | `vscode/` | reconcile into the same `home/Library/...` targets, then remove the legacy tree | 2 | deferred |
 | `osx-apps/ghostty/config` | `home/Library/Application Support/com.mitchellh.ghostty/config` | 2 | planned |
 | `osx-apps/defaults/*.plist` | declarations under `home/.chezmoidata/apps/<app>.toml` or `home/.chezmoidata/system/macos.toml`; raw captures under `archive/app-captures/` | 3 | planned |
-| `osx-apps/iterm2/` | stable files under `home/Library/...`; defaults and file declarations under `home/.chezmoidata/apps/iterm2.toml` | 3 | planned |
+| `osx-apps/iterm2/` | stable preferences under `home/dot_config/applications/iterm2/`; defaults declarations in `home/.chezmoidata/apps/iterm2.toml` point iTerm2 at that folder | 3 | planned custom-folder model |
 | `osx-apps/Moom.plist` | `home/.chezmoidata/apps/moom.toml` plus raw capture under `archive/app-captures/` | 3 | planned |
 | `osx-apps/alfred/` | classified app-native sync folder under `home/Library/Application Support/Alfred/` plus declaration under `home/.chezmoidata/apps/alfred.toml`; volatile/private subtrees excluded | 3 | planned |
 | `osx-apps/chrome/policies/` | privileged opt-in declared under `home/.chezmoidata/apps/chrome.toml`; raw policy capture under `archive/app-captures/` | 3 | planned |
@@ -187,11 +190,13 @@ Rules:
 
 - Keep `install.sh` small. It may install Xcode Command Line Tools, Homebrew, Git, and chezmoi because chezmoi cannot manage the machine before it exists.
 - Put package installs, mise runtime install, zinit compatibility wiring, Hammerspoon compilation, selected macOS defaults, and post-apply verification under `home/.chezmoiscripts/`.
-- Use `run_once_before_` for one-time prerequisites and `run_onchange_after_` for work that should rerun when its script, template data, Brewfile, mise config, or defaults manifest changes.
+- Put shared shell helpers for those scripts under `home/.chezmoitemplates/` and include them from each script. Keep individual scripts short: data selection, command execution, and clear blocker output.
+- Use `run_once_before_` for one-time prerequisites and `run_onchange_after_` for work that should rerun when its rendered script content changes.
+- `run_onchange_` scripts that depend on repo-root files or structured data must embed dependency hashes in rendered comments. Brewfile, mise config, package data, and defaults manifests do not trigger reruns unless the script template includes their content hash.
 - Every script must be idempotent. A rerun should converge or report a clear blocker, not duplicate state.
 - Scripts must use explicit XDG paths and the rendered `dotfiles_dir` data value. Do not infer the repo from the process working directory.
 - Scripts that require secrets, GUI sign-in, TCC permissions, or privileged profile installation must be gated by data flags and fail closed with a specific manual step.
-- Prefer `.chezmoiexternal.*` over script-managed `git clone` when a dependency is just a repository or archive.
+- Prefer `.chezmoiexternal.*` over script-managed `git clone` when a dependency is just a repository or archive. Git-repo externals must set a `refreshPeriod` or be refreshed through `dotfiles apply chezmoi --refresh-externals=auto`; otherwise chezmoi may keep an existing checkout unchanged.
 
 Default `chezmoi apply` may run home-state scripts. That is idiomatic chezmoi. High-risk app/default/license/permission changes still go through the transaction-aware `dotfiles` CLI or an explicitly gated script so they can be audited and rolled back.
 
@@ -215,6 +220,7 @@ Desired app and system state lives in `.chezmoidata/`. Keep it static, structure
 
 ```text
 home/.chezmoidata/
+  bootstrap.toml
   features.toml
   packages.toml
   secrets.toml
@@ -231,23 +237,60 @@ home/.chezmoidata/
 Rules:
 
 - Stable target files go under `home/` at the real target path.
-- Selected plist/defaults intent goes into `.chezmoidata` TOML, not raw plist dumps.
+- macOS defaults intent goes into `.chezmoidata` TOML, not raw plist dumps. A broad baseline is in scope, but it must be expressed as explicit domain/key/type/value declarations rather than a whole-domain import.
+- Bootstrap defaults that are not machine-local live in `home/.chezmoidata/bootstrap.toml`, for example the default profile, selected Brewfile, `secrets_enabled = false`, and `run_install_scripts = true`.
+- Machine-local bootstrap data lives in the generated chezmoi config under `[data]`, not in committed `.chezmoidata`. That includes the resolved `dotfiles_dir`, local source/destination overrides, host identity, and any temporary Tart paths.
 - Third-party app domains live under `home/.chezmoidata/apps/<app>.toml`. Apple/global domains live under `home/.chezmoidata/system/macos.toml`.
+- Every app file must namespace its data under `apps.<app_id>` because chezmoi merges all `.chezmoidata` files into one root data dictionary in lexical order. App IDs use lowercase slug names such as `iterm2`, `moom`, or `ghostty`; they should match the filename.
+- App declarations use one small schema:
+
+  ```toml
+  [apps.iterm2]
+  name = "iTerm2"
+  bundle_id = "com.googlecode.iterm2"
+  domains = ["com.googlecode.iterm2"]
+  phase = 3
+  default_action = "audit"
+
+  [[apps.iterm2.files]]
+  path = ".config/applications/iterm2"
+  kind = "directory"
+  action = "managed"
+
+  [[apps.iterm2.defaults]]
+  domain = "com.googlecode.iterm2"
+  key = "PrefsCustomFolder"
+  type = "string"
+  value = "{{ .xdgConfigDir }}/applications/iterm2"
+  action = "managed"
+
+  [[apps.iterm2.defaults]]
+  domain = "com.googlecode.iterm2"
+  key = "LoadPrefsFromCustomFolder"
+  type = "bool"
+  value = true
+  action = "managed"
+  ```
+
+  Default value types are `bool`, `int`, `float`, `string`, `array`, and `dict`. `action` is one of `managed`, `audit`, `ignore`, or `manual`. New Mackup-derived candidates start as `audit` until classified. Files and defaults can move to `managed` only after the app-specific plan identifies rollback behavior and volatile/private paths.
+- Prefer app-supported config directories under XDG paths when the app provides that setting. For example, an app like iTerm2 can read preferences from a custom folder; manage that folder as source state and use a small defaults step to point the app at it. Use direct `Library/` targets only when the app has no stable custom-folder mechanism.
 - App-native sync folders must be classified per app. For Alfred, track preferences and workflows only; exclude clipboard DBs, per-machine local hashes, remote assets, resources, and snippets until they have an explicit redaction/adoption path.
 - Raw exports, local captures, generated inventories, and rollback transactions are local XDG state, not repo files.
 - Test fixtures live under `tests/fixtures/`; sanitized examples live under `dev/docs/` only when they explain a decision.
-- Mackup is a research/catalog input only. Parse it to discover candidate paths, classify paths, and default `license`, `state`, `cache`, and `unknown` to audit-only.
+- Mackup is a research/catalog input only. When Mackup is installed, first evaluate `chezmoi mackup add <application>` in a throwaway source state to discover candidate paths. The command reads `~/.mackup/<application>.cfg` before Mackup's packaged catalog, adds existing `configuration_files` from `$HOME`, maps `xdg_configuration_files` under `$XDG_CONFIG_HOME`, and ignores missing files.
+- Treat `chezmoi mackup add` output as candidate input for app classification, not as an adoption step. Mackup is not the policy engine; it discovers candidate paths, and this repo decides ownership, rollback, and volatility rules. New candidates become `apps.<app_id>` entries with `action = "audit"` until the app-specific plan chooses `managed`, `manual`, or `ignore`.
+- Secret scanning for Mackup-derived candidates remains a Phase 3 adoption-tooling decision. That phase chooses whether discovery runs with `--secrets=error`, `--secrets=warning`, or `--secrets=ignore`.
 - Never use Mackup link mode, whole-domain `defaults import`, bulk folder adoption, direct TCC SQLite writes, or default PPPC profile installation.
 
 ## Secrets, Licenses, And Permissions
 
-Committed `op://` references leak metadata. Manifests use aliases, not direct refs such as `op://Private/...`.
+Committed `op://` references are allowed when the vault, item, and field identifiers are obfuscated IDs. Human-readable vault names, item names, account names, and field names still leak metadata and stay out of committed files.
 
 Rules:
 
-- Public committed refs use repo-local aliases only.
-- Untracked local config maps aliases to 1Password refs or IDs.
-- Name-bearing refs and direct `op://` URLs live only in untracked local config.
+- Public committed refs use repo-local aliases or obfuscated `op://` IDs.
+- Untracked local config maps aliases to human-readable 1Password refs when that is more convenient locally.
+- Name-bearing refs such as `op://Private/...`, account labels, and direct refs with readable item or field names live only in untracked local config.
 - Secret templates must be guarded by an explicit `secrets_enabled` data flag and must not evaluate `op` calls during public bootstrap.
 - License files are never committed.
 - License fingerprints are local-only. If needed, use a per-machine untracked salt/HMAC and do not emit the result in normal JSON.
@@ -274,9 +317,11 @@ dotfiles rollback list|show|run|last [id] [--json]
 
 Scopes are `chezmoi`, `shell`, `defaults`, `packages`, `apps`, `licenses`, `permissions`, and `all`.
 
-`dotfiles apply chezmoi` is a thin wrapper around the canonical `chezmoi apply` flags and override-data file. It is allowed to run chezmoi scripts.
+`dotfiles apply chezmoi` is a thin wrapper around the canonical `chezmoi apply` flags and generated local chezmoi config. It is allowed to run chezmoi scripts.
 
 `dotfiles apply defaults`, `apps`, `licenses`, and `permissions` owns transaction planning, backups, audit output, and rollback metadata. Chezmoi scripts may call those scopes only when the matching data flag is enabled. Package and shell dependency scripts may run by default because they are part of making the declared home state usable.
+
+Package and runtime changes are not fully rollbackable. Their transaction records capture before/after inventory, command output, selected profile, and intended removals. Rollback for `packages` is best-effort when the package manager has a clear inverse, and otherwise reports the manual recovery plan.
 
 `inventory --write` writes local captures under `${XDG_STATE_HOME:-~/.local/state}/dotfiles/captures/` by default. Desired-state data changes only through one-item `adopt` commands with reviewable diffs to `home/.chezmoidata/`.
 
@@ -299,19 +344,20 @@ Target new-machine command:
 3. Install Homebrew only if missing.
 4. Install the minimum tools needed to hand off: `git` and `chezmoi`. `1password-cli`, `uv`, package profiles, app tools, and runtimes belong in chezmoi scripts.
 5. Clone or update `DOTFILES_DIR`, defaulting to `~/dotfiles`.
-6. Write an ephemeral override-data JSON file with `dotfiles_dir`, `profile`, `brewfile`, `secrets_enabled=false`, and `run_install_scripts=true`. Do not build JSON with shell string interpolation.
-7. Run `chezmoi init --apply --source "$DOTFILES_DIR"` with explicit XDG config/cache/state paths and `--persistent-state`. Pass the same `--cache` value to `init` and `apply`.
-8. Exit after chezmoi finishes. Do not directly call Brewfile, mise, cargo, Hammerspoon, zinit, macOS defaults, or app scripts from `install.sh`.
+6. Export only the local values needed by `home/.chezmoi.toml.tmpl`, such as the resolved `dotfiles_dir`, selected profile, source/destination overrides, and Tart paths. Do not generate a separate override-data JSON file for ordinary bootstrap data.
+7. Let `home/.chezmoi.toml.tmpl` write those local values into the generated chezmoi config under `[data]`. Committed defaults stay in `home/.chezmoidata/bootstrap.toml`.
+8. Run `chezmoi init --apply --source "$DOTFILES_DIR"` with explicit XDG config/cache/state paths and `--persistent-state`. Pass the same `--cache` value to `init` and future `apply` calls.
+9. Exit after chezmoi finishes. Do not directly call Brewfile, mise, cargo, Hammerspoon, zinit, macOS defaults, or app scripts from `install.sh`.
 
 Chezmoi then owns ongoing setup:
 
 1. `run_once_before_00-homebrew.sh.tmpl` ensures Homebrew exists when a machine enters through a path where `install.sh` did not already install it.
 2. `run_once_before_05-core-tools.sh.tmpl` ensures core handoff tools such as `git` and `chezmoi` exist.
-3. `.chezmoiexternal.toml.tmpl` clones or pulls zinit and other clone-only dependencies.
+3. `.chezmoiexternal.toml.tmpl` clones zinit and other clone-only dependencies and refreshes them according to their declared `refreshPeriod` or the wrapper's `--refresh-externals` mode.
 4. `run_onchange_after_10-brew-bundle.sh.tmpl` applies the selected Brewfile profile.
 5. `run_onchange_after_20-mise-install.sh.tmpl` trusts repo-owned mise config and installs runtimes.
-6. `run_onchange_after_30-macos-defaults.sh.tmpl` applies only allowlisted Apple/global defaults, gated by data flags until transaction rollback exists.
-7. `run_onchange_after_90-verify.sh.tmpl` runs cheap post-apply validation and prints manual blockers for secrets, sign-in, licenses, or permissions.
+6. `run_onchange_after_30-macos-defaults.sh.tmpl` applies the declared Apple/global defaults baseline, gated by data flags until transaction rollback exists.
+7. `run_after_90-verify.sh.tmpl` runs cheap post-apply validation and prints manual blockers for secrets, sign-in, licenses, or permissions.
 
 Secret-bearing templates render only when `secrets_enabled=true`. If `op` is unauthenticated, the script fails closed with the exact login/rerun command.
 
@@ -377,21 +423,13 @@ tmp_xdg_cache="$tmp_home/.cache"
 tmp_xdg_state="$tmp_home/.local/state"
 tmp_config="$tmp_xdg_config/chezmoi/chezmoi.toml"
 tmp_state="$tmp_xdg_state/chezmoi/state.boltdb"
-override_data="$tmp_home/override-data.json"
 mkdir -p "$tmp_xdg_config/chezmoi" "$tmp_xdg_cache/chezmoi" "$tmp_xdg_state/chezmoi"
-python3 - "$repo" "$override_data" <<'PY'
-import json
-import sys
-
-repo, output = sys.argv[1], sys.argv[2]
-with open(output, "w", encoding="utf-8") as f:
-    json.dump({"dotfiles_dir": repo, "secrets_enabled": False}, f)
-    f.write("\n")
-PY
 
 env -u ZDOTDIR \
 HOME="$tmp_home" \
 DOTFILES_DIR="$repo" \
+DOTFILES_INSTALL_PROFILE=core \
+DOTFILES_SECRETS_ENABLED=false \
 XDG_CONFIG_HOME="$tmp_xdg_config" \
 XDG_CACHE_HOME="$tmp_xdg_cache" \
 XDG_STATE_HOME="$tmp_xdg_state" \
@@ -404,12 +442,13 @@ chezmoi \
 env -u ZDOTDIR \
 HOME="$tmp_home" \
 DOTFILES_DIR="$repo" \
+DOTFILES_INSTALL_PROFILE=core \
+DOTFILES_SECRETS_ENABLED=false \
 XDG_CONFIG_HOME="$tmp_xdg_config" \
 XDG_CACHE_HOME="$tmp_xdg_cache" \
 XDG_STATE_HOME="$tmp_xdg_state" \
 chezmoi \
   --config "$tmp_config" \
-  --override-data-file "$override_data" \
   --source "$repo" \
   --destination "$tmp_home" \
   --cache "$tmp_xdg_cache/chezmoi" \
@@ -505,9 +544,9 @@ Bring up shell, agents, wrappers, GRM generation, zinit external acquisition, an
 Exit criteria:
 
 - fresh shell works from the materialized temp home;
-- zinit is managed by `.chezmoiexternal.toml.tmpl` or startup degrades clearly;
+- zinit is managed by `.chezmoiexternal.toml.tmpl` with explicit refresh behavior, or startup degrades clearly;
 - rendered agent/Codex/Claude targets materialize, and wrapper live links resolve;
-- Phase 1 defaults are Apple/global key-path allowlisted;
+- Phase 1 defaults are Apple/global key-path declarations with explicit value types;
 - live defaults mutation goes through the transaction-aware `dotfiles apply defaults` path. Until that path exists, Phase 1 validates declared defaults without applying them;
 - `make test-install-tart-smoke` passes before Phase 1 is accepted. If defaults are declaration-only, split or gate the Tart macOS postflight so it does not require unapplied defaults.
 
@@ -519,7 +558,7 @@ Includes Homebrew profiles, package/app inventory, usage reports, native XDG con
 
 Exit criteria:
 
-- `run_onchange_after_10-brew-bundle.sh.tmpl` is idempotent, profile-aware, and covered by Tart smoke/full lanes as appropriate;
+- `run_onchange_after_10-brew-bundle.sh.tmpl` is idempotent, profile-aware, embeds dependency hashes for Brewfile/profile data, and is covered by Tart smoke/full lanes as appropriate;
 - inventory and usage captures are local, redacted, and gitignored;
 - stable app config applies without copying caches, window geometry, account state, licenses, or app databases;
 - `make test-install-tart-smoke` passes for core package/profile changes;
@@ -556,8 +595,10 @@ Exit criteria:
 - chezmoi scripts guide: `https://www.chezmoi.io/user-guide/use-scripts-to-perform-actions/`
 - chezmoi externals reference: `https://www.chezmoi.io/reference/special-files/chezmoiexternal-format/`
 - chezmoi 1Password guide: `https://www.chezmoi.io/user-guide/password-managers/1password/`
-- chezmoi repository: `https://github.com/twpayne/chezmoi`
-- Mackup app catalog and modern macOS link-mode warning: `https://github.com/lra/mackup`
+- chezmoi repository and Mackup command implementation: `https://github.com/twpayne/chezmoi`
+- Nate Landau dotfiles chezmoi layout: `https://github.com/natelandau/dotfiles`
+- Mackup app catalog: `https://github.com/lra/mackup`
+- Mackup/chezmoi integration discussion: `https://github.com/lra/mackup/issues/1733`
 - Zac West plist patching pattern: `https://zacwe.st/2021/09/14/managing-preference-plists.html`
 - macOS defaults references: `https://macos-defaults.com/`
 - Apple PPPC payload settings: `https://support.apple.com/guide/deployment/privacy-preferences-policy-control-payload-settings-dep38df53c2a/web`
