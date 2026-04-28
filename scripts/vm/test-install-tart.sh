@@ -3,8 +3,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 
-DEFAULT_IMAGE="ghcr.io/cirruslabs/macos-tahoe-base:latest"
-IMAGE="$DEFAULT_IMAGE"
+IMAGE="ghcr.io/cirruslabs/macos-tahoe-base:latest"
 LANE="smoke"
 PROFILE="core"
 MODE="local"
@@ -82,52 +81,8 @@ Environment (Homebrew cache):
 USAGE
 }
 
-log() {
-  if [ -n "${LOG_FILE:-}" ]; then
-    printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" | tee -a "$LOG_FILE"
-  else
-    printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*"
-  fi
-}
-
-die() {
-  log "ERROR: $*"
-  exit 1
-}
-
-require_value() {
-  local flag="$1"
-  local value="${2:-}"
-
-  if [ -z "$value" ]; then
-    usage
-    die "missing value for $flag"
-  fi
-}
-
-require_integer_at_least() {
-  local flag="$1"
-  local value="$2"
-  local min="$3"
-  local unit="${4:-}"
-
-  local type_description="positive integer"
-  local min_description="$min"
-  if [ -n "$unit" ]; then
-    type_description="$type_description in $unit"
-    min_description="$min_description $unit"
-  fi
-
-  case "$value" in
-    ''|*[!0-9]*)
-      die "$flag must be a $type_description (got: $value)"
-      ;;
-  esac
-
-  if [ "$value" -lt "$min" ]; then
-    die "$flag must be >= $min_description (got: $value)"
-  fi
-}
+# shellcheck source=scripts/vm/lib.sh
+source "$REPO_ROOT/scripts/vm/lib.sh"
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -227,10 +182,6 @@ VM_SUDO_PASSWORD="${DOTFILES_TART_SUDO_PASSWORD:-admin}"
 RUN_PID=""
 VM_CREATED=0
 POSTFLIGHT_DOTFILES_ROOT=""
-
-vm_exists() {
-  tart list --quiet --source local 2>/dev/null | grep -qx "$VM_NAME"
-}
 
 configure_trace() {
   [ "$TRACE_ENABLED" = "1" ] || return 0
@@ -397,8 +348,7 @@ if [ "$TRACE_ENABLED" = "1" ]; then
   fi
 fi
 
-existing_vms="$(tart list --quiet --source local 2>>"$LOG_FILE")" || die "Unable to list local Tart VMs before clone."
-if printf '%s\n' "$existing_vms" | grep -qx "$VM_NAME"; then
+if vm_exists; then
   die "VM '$VM_NAME' already exists; choose a different --vm-name or delete it first."
 fi
 
