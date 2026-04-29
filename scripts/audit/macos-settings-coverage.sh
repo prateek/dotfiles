@@ -2,18 +2,44 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
-MACOS_SCRIPT="${MACOS_SCRIPT:-$REPO_ROOT/macos}"
-APPLY_SCRIPT="${APPLY_SCRIPT:-$REPO_ROOT/scripts/macos/apply.sh}"
 
 if [ "$(uname -s)" != "Darwin" ]; then
   echo "scripts/audit/macos-settings-coverage.sh: macOS only; skipping."
   exit 0
 fi
 
-if [ ! -f "$MACOS_SCRIPT" ]; then
-  echo "macos settings script not found: $MACOS_SCRIPT" >&2
-  exit 1
-fi
+COVERAGE_INDEX="$(uv run --quiet --python '>=3.11' python - "$REPO_ROOT" <<'PY'
+import pathlib
+import sys
+import tomllib
+
+root = pathlib.Path(sys.argv[1])
+
+def emit(items, source, default_action="yes"):
+    for item in items or []:
+        action = item.get("action", default_action)
+        if action != "ignore":
+            print(f"{item['domain']}\t{item['key']}\t{action}\t{source}")
+
+def emit_app_defaults(defaults, source):
+    if isinstance(defaults, list):
+        emit(defaults, source, "yes")
+        return
+    for domain, values in (defaults or {}).items():
+        for key in values:
+            print(f"{domain}\t{key}\tyes\t{source}")
+
+system_path = root / "home/.chezmoidata/system/macos.toml"
+system = tomllib.loads(system_path.read_text())
+macos = system.get("system", {}).get("macos", {})
+emit(macos.get("defaults", []), "home/.chezmoidata/system/macos.toml", macos.get("default_action", "managed"))
+
+for app_path in sorted((root / "home/.chezmoidata/apps").glob("*.toml")):
+    data = tomllib.loads(app_path.read_text())
+    for app in data.get("apps", {}).values():
+        emit_app_defaults(app.get("defaults", {}), str(app_path.relative_to(root)))
+PY
+)"
 
 read_value() {
   local domain="$1"
@@ -31,51 +57,22 @@ collapse() {
   tr '\n' ' ' | sed -E 's/[[:space:]]+/ /g; s/^ //; s/ $//'
 }
 
-managed_by_repo() {
+coverage_by_repo() {
   local domain="$1"
   local key="$2"
-
-  # Special case: Text replacements are applied via `plutil` in scripts/macos/apply.sh.
-  if [ "$domain" = "NSGlobalDomain" ] && [ "$key" = "NSUserDictionaryReplacementItems" ] && [ -f "$APPLY_SCRIPT" ]; then
-    local line=""
-    if command -v rg >/dev/null 2>&1; then
-      line="$(rg -n "NSUserDictionaryReplacementItems" "$APPLY_SCRIPT" | head -n 1 || true)"
-    else
-      line="$(grep -n "NSUserDictionaryReplacementItems" "$APPLY_SCRIPT" | head -n 1 || true)"
-    fi
-    if [ -n "$line" ]; then
-      echo "yes	${line%%:*}:${line#*:}"
-    else
-      echo "no	-"
-    fi
-    return 0
-  fi
-
   local line=""
-  local needle="defaults write $domain $key "
-  if [ "$domain" = "NSGlobalDomain" ]; then
-    if command -v rg >/dev/null 2>&1; then
-      line="$(rg -nF "$needle" "$MACOS_SCRIPT" | head -n 1 || true)"
-    else
-      line="$(grep -nF "$needle" "$MACOS_SCRIPT" | head -n 1 || true)"
-    fi
-  else
-    if command -v rg >/dev/null 2>&1; then
-      line="$(rg -nF "$needle" "$MACOS_SCRIPT" | head -n 1 || true)"
-    else
-      line="$(grep -nF "$needle" "$MACOS_SCRIPT" | head -n 1 || true)"
-    fi
-  fi
+
+  line="$(printf '%s\n' "$COVERAGE_INDEX" | awk -F '\t' -v domain="$domain" -v key="$key" '$1 == domain && $2 == key { print $3 "\t" $4; exit }')"
 
   if [ -n "$line" ]; then
-    echo "yes	${line%%:*}:${line#*:}"
+    echo "$line"
   else
     echo "no	-"
   fi
 }
 
 echo "# macOS settings coverage (selected keys)"
-echo "# Scripts: $MACOS_SCRIPT | $APPLY_SCRIPT"
+echo "# Source: home/.chezmoidata/system/macos.toml and home/.chezmoidata/apps/*.toml"
 echo
 
 printf "domain\tkey\tcurrent_value\tmanaged\twhere\n"
@@ -117,7 +114,7 @@ for item in "${keys[@]}"; do
   current="$(read_value "$domain" "$key" | collapse)"
   [ -n "$current" ] || current="(unset)"
 
-  managed_info="$(managed_by_repo "$domain" "$key")"
+  managed_info="$(coverage_by_repo "$domain" "$key")"
   managed="${managed_info%%$'\t'*}"
   where="${managed_info#*$'\t'}"
 
@@ -127,4 +124,4 @@ done | LC_ALL=C sort -t $'\t' -k4,4r -k1,1 -k2,2
 echo
 echo "# Notes"
 echo "# - This is not exhaustive; it checks a small set of high-signal preferences."
-echo "# - 'managed=yes' means this repo applies that key (not necessarily the same current value)."
+echo "# - managed=yes means this repo applies that key."

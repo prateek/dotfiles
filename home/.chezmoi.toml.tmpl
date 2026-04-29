@@ -1,0 +1,19 @@
+{{- $dotfilesDir := env "DOTFILES_DIR" | default (joinPath .chezmoi.homeDir "dotfiles") -}}
+{{- $profile := env "DOTFILES_INSTALL_PROFILE" | default "full" -}}
+{{- $secretsEnabled := env "DOTFILES_SECRETS_ENABLED" | default "false" -}}
+{{- $runInstallScripts := env "DOTFILES_RUN_INSTALL_SCRIPTS" | default "true" -}}
+{{- $applyDefaults := env "DOTFILES_APPLY_DEFAULTS" | default "true" -}}
+{{- $manageZinitExternal := env "DOTFILES_MANAGE_ZINIT_EXTERNAL" | default "true" -}}
+
+sourceDir = {{ $dotfilesDir | quote }}
+
+[data]
+dotfiles_dir = {{ $dotfilesDir | quote }}
+xdg_config_dir = {{ (env "XDG_CONFIG_HOME" | default (joinPath .chezmoi.homeDir ".config")) | quote }}
+xdg_cache_dir = {{ (env "XDG_CACHE_HOME" | default (joinPath .chezmoi.homeDir ".cache")) | quote }}
+xdg_state_dir = {{ (env "XDG_STATE_HOME" | default (joinPath .chezmoi.homeDir ".local/state")) | quote }}
+install_profile = {{ $profile | quote }}
+secrets_enabled = {{ $secretsEnabled }}
+run_install_scripts = {{ $runInstallScripts }}
+apply_macos_defaults = {{ $applyDefaults }}
+manage_zinit_external = {{ $manageZinitExternal }}

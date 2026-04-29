@@ -1,0 +1,25 @@
+{
+  "AppActivationKeyCode": 49,
+  "AppActivationModifiers": 2048,
+  "Bookmarks": [],
+  "BookmarksVisible": false,
+  "ColorScheme": 2,
+  "ConfirmNoteDeletion": false,
+  "DefaultEEIdentifier": "com.microsoft.VSCode",
+  "KeepsMaxTextWidth": true,
+  "QuitWhenClosingMainWindow": false,
+  "ShowDockIcon": false,
+  "ShowWordCount": false,
+  "StatusBarItem": true,
+  "TableIsReverseSorted": true,
+  "TableSortColumn": "Date Modified",
+  "ToolbarHidden": false,
+  "UserEEIdentifiers": [
+    "com.apple.TextEdit",
+    "dev.zed.Zed",
+    "com.todesktop.230313mzl4w4u92",
+    "com.microsoft.VSCode"
+  ],
+  "WebKitDeveloperExtras": true,
+  "markupPreviewVisible": false
+}

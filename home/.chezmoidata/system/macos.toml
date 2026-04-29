@@ -1,0 +1,69 @@
+[system.macos]
+default_action = "managed"
+
+[[system.macos.defaults]]
+id = "key_repeat"
+domain = "NSGlobalDomain"
+key = "KeyRepeat"
+type = "int"
+value = 1
+action = "managed"
+
+[[system.macos.defaults]]
+id = "initial_key_repeat"
+domain = "NSGlobalDomain"
+key = "InitialKeyRepeat"
+type = "int"
+value = 12
+action = "managed"
+
+[[system.macos.defaults]]
+id = "show_all_extensions"
+domain = "NSGlobalDomain"
+key = "AppleShowAllExtensions"
+type = "bool"
+value = true
+action = "managed"
+
+[[system.macos.defaults]]
+id = "finder_show_hidden"
+domain = "com.apple.finder"
+key = "AppleShowAllFiles"
+type = "bool"
+value = true
+action = "managed"
+
+[[system.macos.defaults]]
+id = "finder_show_pathbar"
+domain = "com.apple.finder"
+key = "ShowPathbar"
+type = "bool"
+value = true
+action = "managed"
+
+[[system.macos.defaults]]
+id = "dock_autohide"
+domain = "com.apple.dock"
+key = "autohide"
+type = "bool"
+value = true
+action = "managed"
+
+[[system.macos.defaults]]
+id = "text_replacements"
+domain = "NSGlobalDomain"
+key = "NSUserDictionaryReplacementItems"
+type = "array"
+action = "audit"
+
+[[system.macos.systemsetup]]
+id = "timezone"
+key = "timezone"
+value = "America/New_York"
+action = "managed"
+
+[[system.macos.spotlight]]
+id = "spotlight_root_indexing"
+volume = "/"
+indexing_enabled = true
+action = "managed"

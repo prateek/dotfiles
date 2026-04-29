@@ -47,11 +47,13 @@ SCRIPT="$DOTFILES_ROOT/scripts/vm/test-install-tart.sh"
 
 help_output="$(bash "$SCRIPT" --help)"
 assert_contains "$help_output" "ghcr.io/cirruslabs/macos-tahoe-base:latest"
+assert_contains "$help_output" "ghcr.io/cirruslabs/macos-tahoe-xcode:latest"
 assert_contains "$help_output" "--lane <smoke|full>"
 assert_contains "$help_output" "--cpu <count>"
 assert_contains "$help_output" "--memory <mb>"
 assert_contains "$help_output" "--homebrew-cache-dir <path>"
 assert_contains "$help_output" "--no-homebrew-cache"
+assert_contains "$help_output" "MAS requires opt-in"
 assert_contains "$help_output" "Local mode also"
 assert_contains "$help_output" "captures guest zsh spans"
 assert_contains "$help_output" "DOTFILES_TART_HOMEBREW_CACHE_DIR"
@@ -80,5 +82,36 @@ assert_contains "$REPLY" "missing value for --vm-name"
 
 assert_rc 1 env PATH="/usr/bin:/bin" bash "$SCRIPT" --homebrew-cache-dir
 assert_contains "$REPLY" "missing value for --homebrew-cache-dir"
+
+tmp_root="$(mktemp -d)"
+trap 'rm -rf "$tmp_root"' EXIT
+stub_bin="$tmp_root/bin"
+mkdir -p "$stub_bin"
+export TART_CALLS="$tmp_root/tart-calls.log"
+
+cat >"$stub_bin/tart" <<'EOF'
+#!/bin/sh
+set -eu
+printf '%s\n' "$*" >> "$TART_CALLS"
+case "${1:-}" in
+  list)
+    exit 0
+    ;;
+  clone|set|run|exec|stop|delete)
+    exit 0
+    ;;
+  *)
+    exit 1
+    ;;
+esac
+EOF
+chmod +x "$stub_bin/tart"
+
+LOG_FILE="$tmp_root/install.log" \
+DOTFILES_INSTALL_MAS_APPS=true \
+PATH="$stub_bin:$PATH" \
+  bash "$SCRIPT" --lane full --dry-run --vm-name dotfiles-helper-contract --no-homebrew-cache >/dev/null
+
+assert_contains "$(<"$TART_CALLS")" "DOTFILES_INSTALL_MAS_APPS=true"
 
 print -- "OK tart-install-helper-contract"

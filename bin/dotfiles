@@ -1,0 +1,856 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# ///
+import argparse
+import datetime as dt
+import json
+import os
+import pathlib
+import plistlib
+import shutil
+import subprocess
+import sys
+import tempfile
+
+
+def repo_root() -> pathlib.Path:
+    return pathlib.Path(__file__).resolve().parents[1]
+
+
+def home() -> pathlib.Path:
+    return pathlib.Path.home()
+
+
+def xdg_config_home() -> pathlib.Path:
+    return pathlib.Path(os.environ.get("XDG_CONFIG_HOME", home() / ".config"))
+
+
+def xdg_cache_home() -> pathlib.Path:
+    return pathlib.Path(os.environ.get("XDG_CACHE_HOME", home() / ".cache"))
+
+
+def xdg_state_home() -> pathlib.Path:
+    return pathlib.Path(os.environ.get("XDG_STATE_HOME", home() / ".local/state"))
+
+
+def state_root() -> pathlib.Path:
+    return xdg_state_home() / "dotfiles"
+
+
+def transaction_root() -> pathlib.Path:
+    return state_root() / "transactions"
+
+
+def capture_root() -> pathlib.Path:
+    return state_root() / "captures"
+
+
+def now_id(scope: str) -> str:
+    stamp = dt.datetime.now(dt.UTC).strftime("%Y%m%dT%H%M%SZ")
+    return f"{stamp}-{scope}"
+
+
+def run(argv, *, check=False, input_text=None):
+    return subprocess.run(
+        argv,
+        input=input_text,
+        text=True,
+        capture_output=True,
+        check=check,
+    )
+
+
+def print_payload(payload, as_json: bool):
+    if as_json:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        if isinstance(payload, str):
+            print(payload)
+        else:
+            print(json.dumps(payload, indent=2, sort_keys=True))
+
+
+def command_exists(name: str) -> bool:
+    return shutil.which(name) is not None
+
+
+def chezmoi_base():
+    cfg_home = xdg_config_home() / "chezmoi"
+    cache_home = xdg_cache_home() / "chezmoi"
+    state_home = xdg_state_home() / "chezmoi"
+    cfg_home.mkdir(parents=True, exist_ok=True)
+    cache_home.mkdir(parents=True, exist_ok=True)
+    state_home.mkdir(parents=True, exist_ok=True)
+    return [
+        "chezmoi",
+        "--source",
+        str(repo_root()),
+        "--config",
+        str(cfg_home / "chezmoi.toml"),
+        "--cache",
+        str(cache_home),
+        "--persistent-state",
+        str(state_home / "state.boltdb"),
+    ]
+
+
+def load_chezmoi_data():
+    if not command_exists("chezmoi"):
+        return {}
+    proc = run(chezmoi_base() + ["data", "--format=json"])
+    if proc.returncode != 0:
+        return {}
+    try:
+        return json.loads(proc.stdout)
+    except json.JSONDecodeError:
+        return {}
+
+
+def render_value(value, data):
+    if not isinstance(value, str):
+        return value
+    replacements = {
+        "{{ .xdg_config_dir }}": data.get("xdg_config_dir", str(xdg_config_home())),
+        "{{ .xdg_cache_dir }}": data.get("xdg_cache_dir", str(xdg_cache_home())),
+        "{{ .xdg_state_dir }}": data.get("xdg_state_dir", str(xdg_state_home())),
+        "{{ .dotfiles_dir }}": data.get("dotfiles_dir", str(repo_root())),
+    }
+    out = value
+    for needle, replacement in replacements.items():
+        out = out.replace(needle, replacement)
+    return out
+
+
+def installed_app_ids(data, profile: str = ""):
+    if not data.get("packages"):
+        return set()
+    selected_profile = (
+        profile
+        or os.environ.get("DOTFILES_INSTALL_PROFILE")
+        or data.get("install_profile")
+        or data.get("packages", {}).get("default_profile", "full")
+    )
+    selected = package_profile(data, selected_profile)
+    installed_casks = {item["name"] for item in selected.get("casks", [])}
+    return {
+        app_id
+        for app_id, app in data.get("apps", {}).items()
+        if app.get("cask") in installed_casks
+    }
+
+
+def infer_defaults_type(value):
+    if isinstance(value, bool):
+        return "bool"
+    if isinstance(value, int):
+        return "int"
+    if isinstance(value, float):
+        return "float"
+    if isinstance(value, str):
+        return "string"
+    if isinstance(value, list):
+        return "array"
+    if isinstance(value, dict):
+        return "dict"
+    raise RuntimeError(f"unsupported defaults value: {value!r}")
+
+
+def app_default_operations(app):
+    defaults = app.get("defaults", {})
+    if isinstance(defaults, list):
+        for item in defaults:
+            yield dict(item)
+        return
+    for domain, values in defaults.items():
+        for key, value in values.items():
+            yield {
+                "domain": domain,
+                "key": key,
+                "type": infer_defaults_type(value),
+                "value": value,
+            }
+
+
+def desired_defaults(profile: str = ""):
+    data = load_chezmoi_data()
+    operations = []
+    macos = data.get("system", {}).get("macos", {})
+    for item in macos.get("defaults", []):
+        if item.get("action", "managed") == "managed":
+            op = dict(item)
+            op["value"] = render_value(op.get("value"), data)
+            operations.append(op)
+
+    apps = data.get("apps", {})
+    installed_apps = installed_app_ids(data, profile)
+    for app_id, app in apps.items():
+        if app_id not in installed_apps:
+            continue
+        for item in app_default_operations(app):
+            op = dict(item)
+            op["value"] = render_value(op.get("value"), data)
+            operations.append(op)
+
+    systemsetup = []
+    for item in macos.get("systemsetup", []):
+        if item.get("action", "managed") == "managed":
+            systemsetup.append(dict(item))
+
+    spotlight = []
+    for item in macos.get("spotlight", []):
+        if item.get("action", "managed") == "managed":
+            spotlight.append(dict(item))
+
+    return operations, systemsetup, spotlight
+
+
+def ruby_quote(value) -> str:
+    text = str(value)
+    return '"' + text.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+def ruby_array(values) -> str:
+    return "[" + ", ".join(ruby_quote(value) for value in values) + "]"
+
+
+def env_truthy(name: str) -> bool:
+    return os.environ.get(name, "").lower() in {"1", "true", "yes", "on"}
+
+
+def render_brewfile_line(kind: str, item: dict) -> str:
+    name = item["name"]
+    if kind == "tap":
+        if item.get("url"):
+            return f'tap {ruby_quote(name)}, {ruby_quote(item["url"])}'
+        return f"tap {ruby_quote(name)}"
+
+    if kind == "mas":
+        return f'mas {ruby_quote(name)}, id: {int(item["id"])}'
+
+    parts = [f"{kind} {ruby_quote(name)}"]
+    if "link" in item:
+        parts.append(f"link: {'true' if item['link'] else 'false'}")
+    if item.get("args"):
+        parts.append(f"args: {ruby_array(item['args'])}")
+    if item.get("appdir"):
+        parts.append(f"args: {{ appdir: {ruby_quote(item['appdir'])} }}")
+    return parts[0] if len(parts) == 1 else f"{parts[0]}, {', '.join(parts[1:])}"
+
+
+def package_profile(data: dict, profile: str) -> dict:
+    packages = data.get("packages", {})
+    selected = profile or packages.get("default_profile", "full")
+    profiles = packages.get("profiles", {})
+    if selected not in profiles:
+        available = ", ".join(sorted(profiles)) or "none"
+        raise RuntimeError(f"unknown package profile: {selected} (available: {available})")
+    return profiles[selected]
+
+
+def render_brewfile(profile: str = "", *, include_mas: bool | None = None) -> str:
+    data = load_chezmoi_data()
+    selected = package_profile(data, profile)
+    sections = [
+        ("taps", "tap"),
+        ("brews", "brew"),
+        ("casks", "cask"),
+    ]
+    if include_mas is None:
+        include_mas = env_truthy("DOTFILES_INSTALL_MAS_APPS")
+    if include_mas:
+        sections.append(("mas", "mas"))
+    lines = []
+    for key, kind in sections:
+        entries = selected.get(key, [])
+        if lines and entries:
+            lines.append("")
+        for item in entries:
+            lines.append(render_brewfile_line(kind, item))
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def defaults_read(domain: str, key: str):
+    target = ["defaults", "read"]
+    if domain == "NSGlobalDomain":
+        target += ["-g", key]
+    else:
+        target += [domain, key]
+    proc = run(target)
+    if proc.returncode != 0:
+        return {"exists": False, "value": ""}
+    return {"exists": True, "value": proc.stdout.strip(), "type": defaults_read_type(domain, key)}
+
+
+def defaults_read_type(domain: str, key: str) -> str:
+    target = ["defaults", "read-type"]
+    if domain == "NSGlobalDomain":
+        target += ["-g", key]
+    else:
+        target += [domain, key]
+    proc = run(target)
+    if proc.returncode != 0:
+        return ""
+    text = proc.stdout.strip()
+    if text.startswith("Type is "):
+        text = text.removeprefix("Type is ").strip()
+    return {
+        "boolean": "bool",
+        "integer": "int",
+        "float": "float",
+        "string": "string",
+        "array": "array",
+        "dictionary": "dict",
+    }.get(text.lower(), text.lower())
+
+
+def normalize(value):
+    text = str(value).strip()
+    lowered = text.lower()
+    if lowered in {"true", "yes"}:
+        return "1"
+    if lowered in {"false", "no"}:
+        return "0"
+    return text
+
+
+def desired_text(op):
+    typ = op.get("type", "string")
+    value = op.get("value")
+    if typ == "bool":
+        return "1" if bool(value) else "0"
+    if typ == "array":
+        return "(" + ", ".join(str(item) for item in value or []) + ")"
+    return str(value)
+
+
+def defaults_array_values(text: str):
+    stripped = text.strip()
+    if stripped == "()":
+        return []
+    if not (stripped.startswith("(") and stripped.endswith(")")):
+        return None
+    inner = stripped[1:-1].strip()
+    if not inner:
+        return []
+    values = []
+    for line in inner.splitlines():
+        item = line.strip().rstrip(",").strip()
+        if not item:
+            continue
+        if len(item) >= 2 and item[0] == '"' and item[-1] == '"':
+            item = item[1:-1]
+        values.append(item)
+    return values
+
+
+def desired_array_values(value):
+    return [str(item) for item in value or []]
+
+
+def current_matches(op, current):
+    if not current["exists"]:
+        return False
+    typ = op.get("type", "string")
+    if typ == "array":
+        current_values = defaults_array_values(current["value"])
+        return current_values == desired_array_values(op.get("value"))
+    return normalize(current["value"]) == normalize(desired_text(op))
+
+
+def defaults_write(op):
+    domain = op["domain"]
+    key = op["key"]
+    typ = op.get("type", "string")
+    value = op.get("value")
+
+    argv = ["defaults", "write", domain, key]
+    if typ == "bool":
+        argv += ["-bool", "true" if value else "false"]
+    elif typ == "int":
+        argv += ["-int", str(value)]
+    elif typ == "float":
+        argv += ["-float", str(value)]
+    elif typ == "string":
+        argv += ["-string", str(value)]
+    elif typ == "array":
+        argv += ["-array"] + desired_array_values(value)
+    else:
+        raise RuntimeError(f"unsupported defaults type for {domain} {key}: {typ}")
+    return run(argv)
+
+
+def defaults_restore(domain: str, key: str, before: dict):
+    typ = before.get("type") or "string"
+    value = before.get("value", "")
+    op = {"domain": domain, "key": key, "type": typ, "value": value}
+    if typ == "bool":
+        op["value"] = normalize(value) in {"1", "true", "yes", "on"}
+    elif typ == "int":
+        op["value"] = int(str(value).strip())
+    elif typ == "float":
+        op["value"] = float(str(value).strip())
+    elif typ not in {"string", "array", "dict"}:
+        op["type"] = "string"
+    if op["type"] in {"array", "dict"}:
+        return run(["defaults", "write", domain, key, value])
+    return defaults_write(op)
+
+
+def defaults_delete(domain: str, key: str):
+    if domain == "NSGlobalDomain":
+        return run(["defaults", "delete", "-g", key])
+    return run(["defaults", "delete", domain, key])
+
+
+def timezone_read():
+    proc = run(["systemsetup", "-gettimezone"])
+    if proc.returncode != 0:
+        return {"exists": False, "value": ""}
+    value = proc.stdout.strip().removeprefix("Time Zone:").strip()
+    return {"exists": True, "value": value}
+
+
+def timezone_write(value: str):
+    argv = ["systemsetup", "-settimezone", value]
+    if os.geteuid() != 0:
+        argv.insert(0, "sudo")
+    return run(argv)
+
+
+def spotlight_read(volume: str):
+    proc = run(["mdutil", "-s", volume])
+    raw = (proc.stdout + proc.stderr).strip()
+    if proc.returncode != 0:
+        return {"exists": False, "value": "", "raw": raw}
+    if "Indexing enabled" in raw:
+        return {"exists": True, "value": "enabled", "raw": raw}
+    if "Indexing disabled" in raw:
+        return {"exists": True, "value": "disabled", "raw": raw}
+    return {"exists": True, "value": "unknown", "raw": raw}
+
+
+def spotlight_write(volume: str, enabled: bool):
+    argv = ["mdutil", "-i", "on" if enabled else "off", volume]
+    if os.geteuid() != 0:
+        argv.insert(0, "sudo")
+    return run(argv)
+
+
+def drift_defaults(as_json=False, profile: str = ""):
+    defaults_ops, system_ops, spotlight_ops = desired_defaults(profile)
+    drifts = []
+    for op in defaults_ops:
+        current = defaults_read(op["domain"], op["key"])
+        want = desired_text(op)
+        got = normalize(current["value"]) if current["exists"] else None
+        if not current_matches(op, current):
+            drifts.append({
+                "id": op.get("id", f"{op['domain']}:{op['key']}"),
+                "domain": op["domain"],
+                "key": op["key"],
+                "want": want,
+                "got": got,
+            })
+    for op in system_ops:
+        if op.get("key") == "timezone":
+            current = timezone_read()
+            if current.get("value") != op.get("value"):
+                drifts.append({
+                    "id": op.get("id", "timezone"),
+                    "domain": "systemsetup",
+                    "key": "timezone",
+                    "want": op.get("value"),
+                    "got": current.get("value"),
+                })
+    for op in spotlight_ops:
+        current = spotlight_read(op.get("volume", "/"))
+        want = "enabled" if op.get("indexing_enabled") else "disabled"
+        if current.get("value") != want:
+            drifts.append({
+                "id": op.get("id", "spotlight"),
+                "domain": "mdutil",
+                "key": op.get("volume", "/"),
+                "want": want,
+                "got": current.get("value"),
+            })
+    payload = {"scope": "defaults", "drift": drifts}
+    print_payload(payload, as_json)
+    return 1 if drifts else 0
+
+
+def write_transaction(payload):
+    transaction_root().mkdir(parents=True, exist_ok=True)
+    tx_id = payload["id"]
+    path = transaction_root() / f"{tx_id}.json"
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    return path
+
+
+def apply_defaults(as_json=False, profile: str = ""):
+    tx_id = now_id("defaults")
+    payload = {
+        "id": tx_id,
+        "scope": "defaults",
+        "started_at": dt.datetime.now(dt.UTC).isoformat(),
+        "operations": [],
+        "success": True,
+    }
+
+    defaults_ops, system_ops, spotlight_ops = desired_defaults(profile)
+    for op in defaults_ops:
+        before = defaults_read(op["domain"], op["key"])
+        result = {"operation": op, "before": before}
+        if current_matches(op, before):
+            result["status"] = "unchanged"
+        else:
+            proc = defaults_write(op)
+            result["status"] = "applied" if proc.returncode == 0 else "failed"
+            result["stdout"] = proc.stdout
+            result["stderr"] = proc.stderr
+            if proc.returncode != 0:
+                payload["success"] = False
+        result["after"] = defaults_read(op["domain"], op["key"])
+        payload["operations"].append(result)
+
+    for op in system_ops:
+        if op.get("key") != "timezone":
+            continue
+        before = timezone_read()
+        result = {"operation": {"domain": "systemsetup", **op}, "before": before}
+        if before.get("value") == op.get("value"):
+            result["status"] = "unchanged"
+        else:
+            proc = timezone_write(op["value"])
+            result["status"] = "applied" if proc.returncode == 0 else "failed"
+            result["stdout"] = proc.stdout
+            result["stderr"] = proc.stderr
+            if proc.returncode != 0:
+                payload["success"] = False
+        result["after"] = timezone_read()
+        payload["operations"].append(result)
+
+    for op in spotlight_ops:
+        volume = op.get("volume", "/")
+        want = "enabled" if op.get("indexing_enabled") else "disabled"
+        before = spotlight_read(volume)
+        result = {"operation": {"domain": "mdutil", "key": "indexing", **op}, "before": before}
+        if before.get("value") == want:
+            result["status"] = "unchanged"
+        else:
+            proc = spotlight_write(volume, bool(op.get("indexing_enabled")))
+            result["status"] = "applied" if proc.returncode == 0 else "failed"
+            result["stdout"] = proc.stdout
+            result["stderr"] = proc.stderr
+            if proc.returncode != 0:
+                payload["success"] = False
+        result["after"] = spotlight_read(volume)
+        payload["operations"].append(result)
+
+    payload["finished_at"] = dt.datetime.now(dt.UTC).isoformat()
+    path = write_transaction(payload)
+    output = {"transaction": str(path), "success": payload["success"], "operations": len(payload["operations"])}
+    print_payload(output, as_json)
+    return 0 if payload["success"] else 1
+
+
+def rollback_transaction(path: pathlib.Path, as_json=False):
+    payload = json.loads(path.read_text())
+    results = []
+    for item in reversed(payload.get("operations", [])):
+        op = item.get("operation", {})
+        before = item.get("before", {})
+        domain = op.get("domain")
+        key = op.get("key")
+        if domain == "systemsetup" and key == "timezone":
+            if before.get("exists") and before.get("value"):
+                proc = timezone_write(before["value"])
+            else:
+                continue
+        elif domain == "mdutil" and key == "indexing":
+            if before.get("value") in {"enabled", "disabled"}:
+                proc = spotlight_write(op.get("volume", "/"), before["value"] == "enabled")
+            else:
+                continue
+        elif domain and key:
+            if before.get("exists"):
+                proc = defaults_restore(domain, key, before)
+            else:
+                proc = defaults_delete(domain, key)
+        else:
+            continue
+        results.append({"domain": domain, "key": key, "rc": proc.returncode, "stderr": proc.stderr})
+    output = {"rolled_back": str(path), "results": results}
+    print_payload(output, as_json)
+    return 0 if all(item["rc"] == 0 for item in results) else 1
+
+
+def transaction_files():
+    root = transaction_root()
+    if not root.exists():
+        return []
+    return sorted(root.glob("*.json"))
+
+
+def cmd_rollback(args):
+    files = transaction_files()
+    if args.action == "list":
+        payload = [path.stem for path in files]
+        print_payload(payload, args.json)
+        return 0
+    if args.action == "last":
+        if not files:
+            print_payload({"error": "no transactions"}, args.json)
+            return 1
+        return rollback_transaction(files[-1], args.json)
+    if args.action in {"show", "run"}:
+        if not args.id:
+            print("transaction id is required", file=sys.stderr)
+            return 2
+        path = transaction_root() / f"{args.id}.json"
+        if not path.exists():
+            print(f"transaction not found: {args.id}", file=sys.stderr)
+            return 1
+        if args.action == "show":
+            print_payload(json.loads(path.read_text()), args.json)
+            return 0
+        return rollback_transaction(path, args.json)
+    return 2
+
+
+def cmd_doctor(args):
+    checks = []
+    for name in ["git", "chezmoi", "brew", "zsh"]:
+        checks.append({"id": f"command_{name}", "ok": command_exists(name)})
+    checks.append({"id": "repo_root", "ok": (repo_root() / ".chezmoiroot").exists(), "path": str(repo_root())})
+    checks.append({"id": "home_source", "ok": (repo_root() / "home").is_dir()})
+    payload = {"checks": checks, "ok": all(item["ok"] for item in checks)}
+    print_payload(payload, args.json)
+    return 0 if payload["ok"] else 1
+
+
+def cmd_apply(args):
+    if args.scope == "defaults":
+        return apply_defaults(args.json, args.profile)
+    if args.scope == "packages":
+        return apply_packages(args.profile, args.json, include_mas=args.include_mas)
+    if args.scope == "chezmoi":
+        proc = subprocess.run(chezmoi_base() + ["apply", "--refresh-externals=auto"])
+        return proc.returncode
+    if args.scope == "all":
+        rc = cmd_apply(argparse.Namespace(scope="chezmoi", json=args.json, profile=args.profile, include_mas=args.include_mas))
+        if rc != 0:
+            return rc
+        rc = cmd_apply(argparse.Namespace(scope="packages", json=args.json, profile=args.profile, include_mas=args.include_mas))
+        if rc != 0:
+            return rc
+        return apply_defaults(args.json, args.profile)
+    print(f"apply scope is gated/manual: {args.scope}", file=sys.stderr)
+    return 2
+
+
+def cmd_drift(args):
+    if args.scope == "defaults":
+        return drift_defaults(args.json)
+    if args.scope == "chezmoi":
+        proc = subprocess.run(chezmoi_base() + ["status"])
+        return proc.returncode
+    if args.scope in {"shell", "apps", "licenses", "permissions"}:
+        payload = {"scope": args.scope, "status": "audit-only"}
+        print_payload(payload, args.json)
+        return 0
+    if args.scope == "all":
+        return drift_defaults(args.json)
+    return 2
+
+
+def cmd_capture(args):
+    capture_root().mkdir(parents=True, exist_ok=True)
+    if args.scope not in {"defaults", "apps", "all"}:
+        print(f"capture scope is not supported yet: {args.scope}", file=sys.stderr)
+        return 2
+    defaults_ops, system_ops, spotlight_ops = desired_defaults()
+    payload = {
+        "scope": args.scope,
+        "captured_at": dt.datetime.now(dt.UTC).isoformat(),
+        "defaults": [
+            {"operation": op, "current": defaults_read(op["domain"], op["key"])}
+            for op in defaults_ops
+        ],
+        "systemsetup": [
+            {"operation": op, "current": timezone_read()}
+            for op in system_ops
+            if op.get("key") == "timezone"
+        ],
+        "spotlight": [
+            {"operation": op, "current": spotlight_read(op.get("volume", "/"))}
+            for op in spotlight_ops
+        ],
+    }
+    path = capture_root() / f"{now_id(args.scope)}.json"
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    output = {"capture": str(path)}
+    print_payload(output, args.json)
+    return 0
+
+
+def apply_packages(profile: str = "", as_json=False, *, include_mas: bool | None = None):
+    if not command_exists("brew"):
+        print("Homebrew is required before package apply can run.", file=sys.stderr)
+        return 1
+
+    text = render_brewfile(profile, include_mas=include_mas)
+    with tempfile.NamedTemporaryFile("w", prefix="dotfiles-brewfile-", delete=False) as file:
+        file.write(text)
+        path = pathlib.Path(file.name)
+
+    try:
+        proc = subprocess.run(["brew", "bundle", "install", "--no-upgrade", "--file", str(path)])
+    finally:
+        path.unlink(missing_ok=True)
+
+    payload = {
+        "scope": "packages",
+        "profile": profile or "default",
+        "include_mas": include_mas if include_mas is not None else env_truthy("DOTFILES_INSTALL_MAS_APPS"),
+        "rc": proc.returncode,
+    }
+    if as_json:
+        print_payload(payload, True)
+    return proc.returncode
+
+
+def cmd_render_brewfile(args):
+    text = render_brewfile(args.profile, include_mas=args.include_mas)
+    if args.output:
+        pathlib.Path(args.output).write_text(text)
+    else:
+        print(text, end="")
+    return 0
+
+
+def render_chrome_policy() -> bytes:
+    data = load_chezmoi_data()
+    policy = data.get("apps", {}).get("chrome", {}).get("policies", {})
+    payload = {}
+    force_list = policy.get("extension_install_forcelist", [])
+    if force_list:
+        payload["ExtensionInstallForcelist"] = list(force_list)
+    return plistlib.dumps(payload, fmt=plistlib.FMT_XML, sort_keys=True)
+
+
+def cmd_render_chrome_policy(args):
+    content = render_chrome_policy()
+    if args.output:
+        pathlib.Path(args.output).write_bytes(content)
+    else:
+        sys.stdout.buffer.write(content)
+    return 0
+
+
+def cmd_inventory(args):
+    data = load_chezmoi_data()
+    payload = {"scope": args.scope}
+    if args.scope in {"apps", "all"}:
+        payload["apps"] = data.get("apps", {})
+    if args.scope in {"packages", "all"}:
+        payload["packages"] = data.get("packages", {})
+    if args.scope in {"defaults", "all"}:
+        defaults_ops, system_ops, spotlight_ops = desired_defaults()
+        payload["defaults"] = defaults_ops
+        payload["systemsetup"] = system_ops
+        payload["spotlight"] = spotlight_ops
+    if args.write:
+        capture_root().mkdir(parents=True, exist_ok=True)
+        path = capture_root() / f"{now_id('inventory')}.json"
+        path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+        payload = {"inventory": str(path)}
+    print_payload(payload, args.json)
+    return 0
+
+
+def cmd_usage(args):
+    payload = {"scope": args.scope, "status": "no usage collector configured"}
+    print_payload(payload, args.json)
+    return 0
+
+
+def cmd_adopt(args):
+    print(
+        "adopt is intentionally gated until app/default classifiers are reviewed; use capture output as the adoption input.",
+        file=sys.stderr,
+    )
+    return 2
+
+
+def parser():
+    p = argparse.ArgumentParser(prog="dotfiles")
+    sub = p.add_subparsers(dest="command", required=True)
+
+    doctor = sub.add_parser("doctor")
+    doctor.add_argument("--json", action="store_true")
+    doctor.set_defaults(func=cmd_doctor)
+
+    apply = sub.add_parser("apply")
+    apply.add_argument("scope", choices=["chezmoi", "defaults", "packages", "apps", "licenses", "permissions", "all"])
+    apply.add_argument("--json", action="store_true")
+    apply.add_argument("--profile", default="")
+    apply.add_argument("--include-mas", action="store_true", default=None)
+    apply.set_defaults(func=cmd_apply)
+
+    drift = sub.add_parser("drift")
+    drift.add_argument("scope", choices=["chezmoi", "shell", "defaults", "packages", "apps", "licenses", "permissions", "all"])
+    drift.add_argument("--json", action="store_true")
+    drift.set_defaults(func=cmd_drift)
+
+    capture = sub.add_parser("capture")
+    capture.add_argument("scope", choices=["defaults", "apps", "all"])
+    capture.add_argument("--json", action="store_true")
+    capture.set_defaults(func=cmd_capture)
+
+    adopt = sub.add_parser("adopt")
+    adopt.add_argument("scope")
+    adopt.add_argument("id")
+    adopt.add_argument("--json", action="store_true")
+    adopt.set_defaults(func=cmd_adopt)
+
+    inventory = sub.add_parser("inventory")
+    inventory.add_argument("scope", choices=["defaults", "packages", "apps", "all"])
+    inventory.add_argument("--write", action="store_true")
+    inventory.add_argument("--json", action="store_true")
+    inventory.set_defaults(func=cmd_inventory)
+
+    usage = sub.add_parser("usage")
+    usage.add_argument("scope")
+    usage.add_argument("--since", default="")
+    usage.add_argument("--json", action="store_true")
+    usage.set_defaults(func=cmd_usage)
+
+    render = sub.add_parser("render")
+    render_sub = render.add_subparsers(dest="artifact", required=True)
+    brewfile = render_sub.add_parser("brewfile")
+    brewfile.add_argument("--profile", default="")
+    brewfile.add_argument("--output", default="")
+    brewfile.add_argument("--include-mas", action="store_true", default=None)
+    brewfile.set_defaults(func=cmd_render_brewfile)
+
+    chrome_policy = render_sub.add_parser("chrome-policy")
+    chrome_policy.add_argument("--output", default="")
+    chrome_policy.set_defaults(func=cmd_render_chrome_policy)
+
+    rollback = sub.add_parser("rollback")
+    rollback.add_argument("action", choices=["list", "show", "run", "last"])
+    rollback.add_argument("id", nargs="?")
+    rollback.add_argument("--json", action="store_true")
+    rollback.set_defaults(func=cmd_rollback)
+
+    return p
+
+
+def main(argv=None):
+    args = parser().parse_args(argv)
+    return args.func(args)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

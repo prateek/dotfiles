@@ -1,0 +1,16 @@
+{{ template "script_lib.sh" . }}
+
+# mise config sha256: {{ include "dot_config/mise/config.toml" | sha256sum }}
+
+{{- if and .run_install_scripts .features.install_mise_runtimes }}
+if ! have mise; then
+  warn "mise is not installed; skipping runtime install."
+  exit 0
+fi
+
+mise trust "$HOME/.config/mise/config.toml" >/dev/null 2>&1 || true
+run_timed "mise install node" mise install -y node || warn "mise node install failed; retry with: mise install -y node"
+run_timed "mise install" mise exec node -- mise install -y || warn "mise install failed; retry with: mise exec node -- mise install -y"
+{{- else }}
+log "mise runtime install disabled."
+{{- end }}

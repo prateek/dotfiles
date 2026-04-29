@@ -34,7 +34,7 @@ Guest trace semantics come from zsh function structure. `run-zsh` records each c
 
 ## What this proves
 
-- the default Tart image can boot on the validation host
+- the configured Tart images can boot on the validation host
 - the repo can be copied into a clean macOS guest
 - `install.sh --core` can run against a real macOS install
 - smoke-lane Homebrew casks and Mac App Store entries are skipped
@@ -56,7 +56,13 @@ The helper exposes lanes only. The install profile is derived internally from th
 
 `smoke` is the default lane. It uses the Tahoe base image, the core profile, explicit Homebrew cask/MAS skip lists, and fresh-shell postflight verification.
 
-`full` is explicit and slower. It uses the full profile and includes cask/MAS behavior.
+`full` is explicit and slower. It uses the Tahoe Xcode image, the full profile, and includes cask behavior. The Xcode image is required for full-profile packages that need `Xcode.app`, such as SwiftLint.
+
+Full-profile package application runs `brew update` before `brew bundle`. Prebuilt Tart images can carry Homebrew metadata that is old enough to misparse current casks.
+
+Mac App Store entries are omitted from generated Brewfiles by default because disposable Tart guests are not signed in to the App Store. Set `DOTFILES_INSTALL_MAS_APPS=true` only on a signed-in machine where MAS installs are intended.
+
+Every Tart run prints a slowest-phase timing summary before cleanup exits. The guest package scripts also emit `TIMING|...` log lines around expensive setup steps, so a slow run can usually be diagnosed from the plain log before opening a Perfetto trace.
 
 Dry-run is a mode layered on top of the smoke lane. `make test-install-tart-dry-run` boots Tart and runs `install.sh --core --dry-run`; it can continue past missing Xcode Command Line Tools because the point is to validate the script path, not install tools.
 
@@ -132,6 +138,20 @@ To disable the cache for a debugging run:
 ```sh
 make test-install-tart-smoke TART_FLAGS="--no-homebrew-cache"
 ```
+
+Run the full lane when changing full package, cask, or app-install behavior:
+
+```sh
+ssh mini 'set -euo pipefail
+  cd /Volumes/Extra/dotfiles-tart-test
+  export TART_HOME=/Volumes/Extra/.tart
+  export LOG_FILE=/Volumes/Extra/dotfiles-tart-full.log
+  export DOTFILES_TART_HOMEBREW_CACHE_DIR=/Volumes/Extra/homebrew-cache
+  vm_name="dotfiles-tart-full-$(date +%Y%m%d-%H%M%S)"
+  make test-install-tart-full TART_FLAGS="--vm-name $vm_name"'
+```
+
+`make test-install-tart-full` defaults to `ghcr.io/cirruslabs/macos-tahoe-xcode:latest`. Override it with `TART_FULL_IMAGE=...` only when validating a specific Xcode image or a pinned digest.
 
 Open a trace from your laptop with:
 

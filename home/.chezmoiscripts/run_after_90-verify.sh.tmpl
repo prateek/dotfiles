@@ -1,0 +1,25 @@
+{{ template "script_lib.sh" . }}
+
+checks_failed=0
+
+check_file() {
+  local path="$1"
+  if [ -e "$path" ]; then
+    log "ok: $path"
+  else
+    warn "missing: $path"
+    checks_failed=$((checks_failed + 1))
+  fi
+}
+
+check_file "$HOME/.zshenv"
+check_file "${ZDOTDIR:-$HOME/.config/zsh}/.zshrc"
+check_file "$HOME/bin/dotfiles"
+
+if [ {{ .secrets_enabled | quote }} != "true" ]; then
+  log "secrets disabled; sign in to 1Password and rerun with DOTFILES_SECRETS_ENABLED=true when needed."
+fi
+
+if [ "$checks_failed" -gt 0 ]; then
+  exit 1
+fi

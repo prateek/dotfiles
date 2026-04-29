@@ -3,7 +3,9 @@ set -euo pipefail
 
 REPO_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 
-IMAGE="ghcr.io/cirruslabs/macos-tahoe-base:latest"
+DEFAULT_SMOKE_IMAGE="ghcr.io/cirruslabs/macos-tahoe-base:latest"
+DEFAULT_FULL_IMAGE="ghcr.io/cirruslabs/macos-tahoe-xcode:latest"
+IMAGE=""
 LANE="smoke"
 PROFILE="core"
 MODE="local"
@@ -34,6 +36,10 @@ TRACE_SORT_INDEX=0
 export TRACE_FILE TRACE_CATEGORY TRACE_PROCESS_NAME TRACE_THREAD_NAME TRACE_PID TRACE_TID TRACE_SORT_INDEX
 # shellcheck source=scripts/trace/perfetto-trace.bash
 source "$REPO_ROOT/scripts/trace/perfetto-trace.bash"
+RUN_STARTED_US="$(trace_now_us)"
+TIMING_NAMES=()
+TIMING_MS=()
+TIMING_RCS=()
 
 if [ "${DOTFILES_TRACE:-0}" = "1" ] || [ -n "$REQUESTED_TRACE_FILE" ]; then
   TRACE_ENABLED=1
@@ -47,10 +53,11 @@ Boots a fresh macOS VM using Tart, runs this repo's install flow, and then
 deletes the VM (unless --keep-vm is set).
 
 Options:
-  --image <oci-image>     Tart image to clone (default: ghcr.io/cirruslabs/macos-tahoe-base:latest)
+  --image <oci-image>     Tart image to clone (default: smoke uses ghcr.io/cirruslabs/macos-tahoe-base:latest;
+                          full uses ghcr.io/cirruslabs/macos-tahoe-xcode:latest)
   --lane <smoke|full>     Test lane to run (default: smoke)
                           smoke: core profile, skip Homebrew casks/MAS
-                          full: full profile, include casks/MAS
+                          full: full profile, include casks; MAS requires opt-in
   --cpu <count>           VM CPU count (default: 2)
   --memory <mb>           VM memory in MB (default: 4096)
   --mode <local|remote>   local: mount current repo into VM (default)
@@ -83,6 +90,47 @@ USAGE
 
 # shellcheck source=scripts/vm/lib.sh
 source "$REPO_ROOT/scripts/vm/lib.sh"
+
+trace_record_timing() {
+  local name="$1"
+  local start_us="$2"
+  local end_us="$3"
+  local rc="$4"
+  local duration_ms="$(( (end_us - start_us) / 1000 ))"
+
+  if [ "$duration_ms" -lt 0 ]; then
+    duration_ms=0
+  fi
+
+  TIMING_NAMES+=("$name")
+  TIMING_MS+=("$duration_ms")
+  TIMING_RCS+=("$rc")
+}
+
+format_ms() {
+  local ms="$1"
+  printf '%d.%03ds' "$(( ms / 1000 ))" "$(( ms % 1000 ))"
+}
+
+emit_timing_summary() {
+  local now_us total_ms count index ms rc name
+
+  count="${#TIMING_NAMES[@]}"
+  if [ "$count" -eq 0 ]; then
+    return 0
+  fi
+
+  now_us="$(trace_now_us)"
+  total_ms="$(( (now_us - RUN_STARTED_US) / 1000 ))"
+  log "Timing summary: total=$(format_ms "$total_ms"), phases=$count"
+  {
+    for (( index = 0; index < count; index++ )); do
+      printf '%s\t%s\t%s\n' "${TIMING_MS[$index]}" "${TIMING_RCS[$index]}" "${TIMING_NAMES[$index]}"
+    done
+  } | sort -rn | head -15 | while IFS=$'\t' read -r ms rc name; do
+    log "Timing: $(format_ms "$ms") rc=$rc $name"
+  done
+}
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -146,8 +194,14 @@ while [ "$#" -gt 0 ]; do
 done
 
 case "$LANE" in
-  smoke) PROFILE="core" ;;
-  full) PROFILE="full" ;;
+  smoke)
+    PROFILE="core"
+    IMAGE="${IMAGE:-$DEFAULT_SMOKE_IMAGE}"
+    ;;
+  full)
+    PROFILE="full"
+    IMAGE="${IMAGE:-$DEFAULT_FULL_IMAGE}"
+    ;;
   *) die "--lane must be 'smoke' or 'full' (got: $LANE)" ;;
 esac
 
@@ -182,6 +236,7 @@ VM_SUDO_PASSWORD="${DOTFILES_TART_SUDO_PASSWORD:-admin}"
 RUN_PID=""
 VM_CREATED=0
 POSTFLIGHT_DOTFILES_ROOT=""
+HOST_PROFILE_BREWFILE=""
 
 configure_trace() {
   [ "$TRACE_ENABLED" = "1" ] || return 0
@@ -293,29 +348,59 @@ brewfile_entries() {
   awk -v kind="$kind" -F'"' '$1 ~ "^" kind " " { print $2 }' "$brewfile" | xargs
 }
 
+render_profile_brewfile() {
+  local profile="$1"
+  local output="$2"
+
+  "$REPO_ROOT/bin/dotfiles" render brewfile --profile "$profile" --output "$output"
+}
+
 cleanup() {
   local original_rc="$?"
   local trace_rc=0
+  local cleanup_rc=0
+  local stop_rc=0
+  local delete_rc=0
 
   set +e
+  if [ -n "$HOST_PROFILE_BREWFILE" ]; then
+    rm -f "$HOST_PROFILE_BREWFILE"
+  fi
   collect_guest_trace_artifacts
   if [ "$KEEP_VM" = "1" ]; then
     log "Keeping VM '$VM_NAME' (log: $LOG_FILE)"
   elif [ "$VM_CREATED" = "1" ] && vm_exists; then
     log "Stopping VM '$VM_NAME'…"
     trace_start_us="$(trace_now_us)"
-    tart stop "$VM_NAME" >/dev/null 2>&1 || true
-    trace_emit "stop VM" "$trace_start_us" "$(trace_now_us)" "0"
+    tart stop "$VM_NAME" >/dev/null 2>&1
+    stop_rc="$?"
+    trace_end_us="$(trace_now_us)"
+    trace_emit "stop VM" "$trace_start_us" "$trace_end_us" "$stop_rc"
+    trace_record_timing "stop VM" "$trace_start_us" "$trace_end_us" "$stop_rc"
+    if [ "$stop_rc" -ne 0 ]; then
+      log "Warning: tart stop failed for '$VM_NAME' (rc=$stop_rc); attempting delete anyway."
+    fi
     if [ -n "${RUN_PID:-}" ] && kill -0 "$RUN_PID" >/dev/null 2>&1; then
       kill "$RUN_PID" >/dev/null 2>&1 || true
     fi
     log "Deleting VM '$VM_NAME'…"
     trace_start_us="$(trace_now_us)"
-    tart delete "$VM_NAME" >/dev/null 2>&1 || true
-    trace_emit "delete VM" "$trace_start_us" "$(trace_now_us)" "0"
+    tart delete "$VM_NAME" >/dev/null 2>&1
+    delete_rc="$?"
+    trace_end_us="$(trace_now_us)"
+    trace_emit "delete VM" "$trace_start_us" "$trace_end_us" "$delete_rc"
+    trace_record_timing "delete VM" "$trace_start_us" "$trace_end_us" "$delete_rc"
+    if [ "$delete_rc" -ne 0 ]; then
+      log "Warning: tart delete failed for '$VM_NAME' (rc=$delete_rc)."
+      cleanup_rc="$delete_rc"
+    fi
   fi
 
+  emit_timing_summary
   finish_trace || trace_rc=$?
+  if [ "$original_rc" -eq 0 ] && [ "$cleanup_rc" -ne 0 ]; then
+    original_rc="$cleanup_rc"
+  fi
   if [ "$original_rc" -eq 0 ] && [ "$trace_rc" -ne 0 ]; then
     original_rc="$trace_rc"
   fi
@@ -353,7 +438,12 @@ if vm_exists; then
 fi
 
 log "Cloning image → VM…"
-run_traced_logged "clone image" tart clone "$IMAGE" "$VM_NAME"
+if ! run_traced_logged "clone image" tart clone "$IMAGE" "$VM_NAME"; then
+  if vm_exists; then
+    VM_CREATED=1
+  fi
+  die "Failed to clone image into VM '$VM_NAME'."
+fi
 VM_CREATED=1
 
 log "Configuring VM resources…"
@@ -371,19 +461,25 @@ log "Starting VM…"
 trace_start_us="$(trace_now_us)"
 tart run "${RUN_ARGS[@]}" "$VM_NAME" >>"$LOG_FILE" 2>&1 &
 RUN_PID="$!"
-trace_emit "launch VM process" "$trace_start_us" "$(trace_now_us)" "0"
+trace_end_us="$(trace_now_us)"
+trace_emit "launch VM process" "$trace_start_us" "$trace_end_us" "0"
+trace_record_timing "launch VM process" "$trace_start_us" "$trace_end_us" "0"
 
 log "Waiting for VM guest agent…"
 trace_start_us="$(trace_now_us)"
 deadline="$(( $(date +%s) + 600 ))"
 until tart exec "$VM_NAME" true >/dev/null 2>&1; do
   if [ "$(date +%s)" -ge "$deadline" ]; then
-    trace_emit "wait for guest agent" "$trace_start_us" "$(trace_now_us)" "1"
+    trace_end_us="$(trace_now_us)"
+    trace_emit "wait for guest agent" "$trace_start_us" "$trace_end_us" "1"
+    trace_record_timing "wait for guest agent" "$trace_start_us" "$trace_end_us" "1"
     die "Timed out waiting for VM to boot / guest agent to come up."
   fi
   sleep 5
 done
-trace_emit "wait for guest agent" "$trace_start_us" "$(trace_now_us)" "0"
+trace_end_us="$(trace_now_us)"
+trace_emit "wait for guest agent" "$trace_start_us" "$trace_end_us" "0"
+trace_record_timing "wait for guest agent" "$trace_start_us" "$trace_end_us" "0"
 
 log "Checking VM basics…"
 run_traced_tee "guest uname" tart exec "$VM_NAME" uname -a
@@ -411,6 +507,9 @@ if ! run_traced_logged "check Xcode CLT" tart exec "$VM_NAME" sh -lc 'xcode-sele
 fi
 
 INSTALL_ENV=(DOTFILES_SUDO_PASSWORD="$VM_SUDO_PASSWORD")
+if [ -n "${DOTFILES_INSTALL_MAS_APPS:-}" ]; then
+  INSTALL_ENV+=(DOTFILES_INSTALL_MAS_APPS="$DOTFILES_INSTALL_MAS_APPS")
+fi
 if [ "$USE_HOMEBREW_CACHE" = "1" ]; then
   INSTALL_ENV+=(
     HOMEBREW_CACHE="$GUEST_HOMEBREW_CACHE_DIR"
@@ -418,11 +517,11 @@ if [ "$USE_HOMEBREW_CACHE" = "1" ]; then
   )
 fi
 if [ "$LANE" = "smoke" ]; then
-  SMOKE_CASK_SKIP="$(brewfile_entries cask "$REPO_ROOT/Brewfile.core")"
-  SMOKE_MAS_SKIP="$(brewfile_entries mas "$REPO_ROOT/Brewfile.core")"
+  HOST_PROFILE_BREWFILE="$(mktemp "${TMPDIR:-/tmp}/dotfiles-brewfile-core.XXXXXX")"
+  render_profile_brewfile core "$HOST_PROFILE_BREWFILE"
+  SMOKE_CASK_SKIP="$(brewfile_entries cask "$HOST_PROFILE_BREWFILE")"
   INSTALL_ENV+=(
     HOMEBREW_BUNDLE_CASK_SKIP="$SMOKE_CASK_SKIP"
-    HOMEBREW_BUNDLE_MAS_SKIP="$SMOKE_MAS_SKIP"
   )
 fi
 
@@ -451,14 +550,14 @@ case "$MODE" in
       run_traced_tee "install local" tart exec "$VM_NAME" env "${INSTALL_ENV[@]}" sh -lc "
         set -e
         cd \"\$HOME/dotfiles\"
-        chmod +x ./install.sh ./bootstrap.sh ./scripts/trace/run-zsh ./scripts/trace/xtrace-to-perfetto
+        chmod +x ./install.sh ./scripts/trace/run-zsh ./scripts/trace/xtrace-to-perfetto
         ./scripts/trace/run-zsh --output-dir \"\$HOME/dotfiles-trace/install\" --process-name \"guest install zsh\" --pid-offset 100000 -- ./install.sh ${install_args[*]}
       "
     else
       run_traced_tee "install local" tart exec "$VM_NAME" env "${INSTALL_ENV[@]}" sh -lc "
         set -e
         cd \"\$HOME/dotfiles\"
-        chmod +x ./install.sh ./bootstrap.sh
+        chmod +x ./install.sh
         ./install.sh ${install_args[*]}
       "
     fi
@@ -494,7 +593,7 @@ else
   '
   run_traced_tee "postflight tool checks" tart exec "$VM_NAME" zsh -lc 'command -v brew && command -v mise && command -v uv && command -v llm'
   # shellcheck disable=SC2016
-  run_traced_tee "postflight zshrc symlink" tart exec "$VM_NAME" zsh -lc 'test -L "$HOME/.zshrc" && echo "~/.zshrc is a symlink (ok)"'
+  run_traced_tee "postflight chezmoi zsh files" tart exec "$VM_NAME" zsh -lc 'test -f "$HOME/.zshenv" && test -f "${ZDOTDIR:-$HOME/.config/zsh}/.zshrc" && echo "chezmoi zsh files materialized (ok)"'
   # shellcheck disable=SC2016
   run_traced_tee "postflight fresh-shell verify" tart exec "$VM_NAME" env DOTFILES_SKIP_LAUNCHCTL_SYNC=1 DOTFILES_TART_POSTFLIGHT_ROOT="$POSTFLIGHT_DOTFILES_ROOT" zsh -lc '
     set -e

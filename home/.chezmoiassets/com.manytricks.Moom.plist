@@ -1,0 +1,848 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Application Mode</key>
+	<integer>2</integer>
+	<key>Custom Controls</key>
+	<array>
+		<dict>
+			<key>Action</key>
+			<integer>-101</integer>
+			<key>Apply to Overlapping Windows</key>
+			<false/>
+			<key>Auto-Trigger</key>
+			<false/>
+			<key>Auto-Trigger Display Count</key>
+			<integer>1</integer>
+			<key>Center Mode</key>
+			<integer>0</integer>
+			<key>Collapsed</key>
+			<true/>
+			<key>Confine to Display</key>
+			<false/>
+			<key>Generic</key>
+			<false/>
+			<key>Identifier</key>
+			<string>37DAB43D-E778-4BB1-89B8-ECDD8C3078A4</string>
+			<key>Loop Through Displays</key>
+			<false/>
+			<key>Move Delta</key>
+			<integer>50</integer>
+			<key>Move Delta Unit</key>
+			<integer>0</integer>
+			<key>Move Direction</key>
+			<integer>5</integer>
+			<key>Move to Edge/Corner Direction</key>
+			<integer>5</integer>
+			<key>Relative Frame</key>
+			<string>{{0.16666666666666666, 0.25}, {0.66666666666666663, 0.5}}</string>
+			<key>Resize Anchor</key>
+			<integer>10</integer>
+			<key>Resize Height Unit</key>
+			<integer>0</integer>
+			<key>Resize Proportionally</key>
+			<false/>
+			<key>Resize Size</key>
+			<string>{800, 600}</string>
+			<key>Resize Width Unit</key>
+			<integer>0</integer>
+			<key>Title</key>
+			<string>SAMPLE CUSTOM CONTROLS</string>
+		</dict>
+		<dict>
+			<key>Action</key>
+			<integer>19</integer>
+			<key>Apply to Overlapping Windows</key>
+			<false/>
+			<key>Auto-Trigger</key>
+			<false/>
+			<key>Auto-Trigger Display Count</key>
+			<integer>1</integer>
+			<key>Center Mode</key>
+			<integer>0</integer>
+			<key>Collapsed</key>
+			<false/>
+			<key>Confine to Display</key>
+			<false/>
+			<key>Generic</key>
+			<false/>
+			<key>Hot Key</key>
+			<dict>
+				<key>Identifier</key>
+				<string>F7DF5FF5-4116-446D-AC0B-4DDD86BA7E11</string>
+				<key>Key Code</key>
+				<integer>18</integer>
+				<key>Modifier Flags</key>
+				<integer>256</integer>
+				<key>Visual Representation</key>
+				<string>1</string>
+			</dict>
+			<key>Identifier</key>
+			<string>F7DF5FF5-4116-446D-AC0B-4DDD86BA7E11</string>
+			<key>Loop Through Displays</key>
+			<false/>
+			<key>Move Delta</key>
+			<integer>50</integer>
+			<key>Move Delta Unit</key>
+			<integer>0</integer>
+			<key>Move Direction</key>
+			<integer>5</integer>
+			<key>Move to Edge/Corner Direction</key>
+			<integer>5</integer>
+			<key>Relative Frame</key>
+			<string>{{0, 0}, {0.16666666666666666, 1}}</string>
+			<key>Resize Anchor</key>
+			<integer>10</integer>
+			<key>Resize Height Unit</key>
+			<integer>0</integer>
+			<key>Resize Proportionally</key>
+			<false/>
+			<key>Resize Size</key>
+			<string>{800, 600}</string>
+			<key>Resize Width Unit</key>
+			<integer>0</integer>
+		</dict>
+		<dict>
+			<key>Action</key>
+			<integer>19</integer>
+			<key>Apply to Overlapping Windows</key>
+			<false/>
+			<key>Auto-Trigger</key>
+			<false/>
+			<key>Auto-Trigger Display Count</key>
+			<integer>1</integer>
+			<key>Center Mode</key>
+			<integer>0</integer>
+			<key>Collapsed</key>
+			<false/>
+			<key>Confine to Display</key>
+			<false/>
+			<key>Generic</key>
+			<false/>
+			<key>Hot Key</key>
+			<dict>
+				<key>Identifier</key>
+				<string>C26E4376-C961-4C4D-9219-E218847901F2</string>
+				<key>Key Code</key>
+				<integer>19</integer>
+				<key>Modifier Flags</key>
+				<integer>256</integer>
+				<key>Visual Representation</key>
+				<string>2</string>
+			</dict>
+			<key>Identifier</key>
+			<string>C26E4376-C961-4C4D-9219-E218847901F2</string>
+			<key>Loop Through Displays</key>
+			<false/>
+			<key>Move Delta</key>
+			<integer>50</integer>
+			<key>Move Delta Unit</key>
+			<integer>0</integer>
+			<key>Move Direction</key>
+			<integer>5</integer>
+			<key>Move to Edge/Corner Direction</key>
+			<integer>5</integer>
+			<key>Relative Frame</key>
+			<string>{{0, 0}, {0.66666666666666663, 1}}</string>
+			<key>Resize Anchor</key>
+			<integer>10</integer>
+			<key>Resize Height Unit</key>
+			<integer>0</integer>
+			<key>Resize Proportionally</key>
+			<false/>
+			<key>Resize Size</key>
+			<string>{800, 600}</string>
+			<key>Resize Width Unit</key>
+			<integer>0</integer>
+		</dict>
+		<dict>
+			<key>Action</key>
+			<integer>19</integer>
+			<key>Apply to Overlapping Windows</key>
+			<false/>
+			<key>Auto-Trigger</key>
+			<false/>
+			<key>Auto-Trigger Display Count</key>
+			<integer>1</integer>
+			<key>Center Mode</key>
+			<integer>0</integer>
+			<key>Collapsed</key>
+			<false/>
+			<key>Confine to Display</key>
+			<false/>
+			<key>Generic</key>
+			<false/>
+			<key>Hot Key</key>
+			<dict>
+				<key>Identifier</key>
+				<string>CB710662-3CE3-4F8C-8077-7BCBBF004482</string>
+				<key>Key Code</key>
+				<integer>20</integer>
+				<key>Modifier Flags</key>
+				<integer>256</integer>
+				<key>Visual Representation</key>
+				<string>3</string>
+			</dict>
+			<key>Identifier</key>
+			<string>CB710662-3CE3-4F8C-8077-7BCBBF004482</string>
+			<key>Loop Through Displays</key>
+			<false/>
+			<key>Move Delta</key>
+			<integer>50</integer>
+			<key>Move Delta Unit</key>
+			<integer>0</integer>
+			<key>Move Direction</key>
+			<integer>5</integer>
+			<key>Move to Edge/Corner Direction</key>
+			<integer>5</integer>
+			<key>Relative Frame</key>
+			<string>{{0.33333333333333331, 0}, {0.66666666666666674, 1}}</string>
+			<key>Resize Anchor</key>
+			<integer>10</integer>
+			<key>Resize Height Unit</key>
+			<integer>0</integer>
+			<key>Resize Proportionally</key>
+			<false/>
+			<key>Resize Size</key>
+			<string>{668, 573}</string>
+			<key>Resize Width Unit</key>
+			<integer>0</integer>
+		</dict>
+		<dict>
+			<key>Action</key>
+			<integer>19</integer>
+			<key>Apply to Overlapping Windows</key>
+			<false/>
+			<key>Auto-Trigger</key>
+			<false/>
+			<key>Auto-Trigger Display Count</key>
+			<integer>1</integer>
+			<key>Center Mode</key>
+			<integer>0</integer>
+			<key>Collapsed</key>
+			<false/>
+			<key>Confine to Display</key>
+			<false/>
+			<key>Generic</key>
+			<false/>
+			<key>Hot Key</key>
+			<dict>
+				<key>Identifier</key>
+				<string>A8279B9A-2952-4FD3-A854-F30292138AAA</string>
+				<key>Key Code</key>
+				<integer>21</integer>
+				<key>Modifier Flags</key>
+				<integer>256</integer>
+				<key>Visual Representation</key>
+				<string>4</string>
+			</dict>
+			<key>Identifier</key>
+			<string>A8279B9A-2952-4FD3-A854-F30292138AAA</string>
+			<key>Loop Through Displays</key>
+			<false/>
+			<key>Move Delta</key>
+			<integer>50</integer>
+			<key>Move Delta Unit</key>
+			<integer>0</integer>
+			<key>Move Direction</key>
+			<integer>5</integer>
+			<key>Move to Edge/Corner Direction</key>
+			<integer>5</integer>
+			<key>Relative Frame</key>
+			<string>{{0.66666666666666663, 0}, {0.33333333333333337, 1}}</string>
+			<key>Resize Anchor</key>
+			<integer>10</integer>
+			<key>Resize Height Unit</key>
+			<integer>0</integer>
+			<key>Resize Proportionally</key>
+			<false/>
+			<key>Resize Size</key>
+			<string>{668, 573}</string>
+			<key>Resize Width Unit</key>
+			<integer>0</integer>
+		</dict>
+		<dict>
+			<key>Action</key>
+			<integer>19</integer>
+			<key>Apply to Overlapping Windows</key>
+			<false/>
+			<key>Auto-Trigger</key>
+			<false/>
+			<key>Auto-Trigger Display Count</key>
+			<integer>1</integer>
+			<key>Center Mode</key>
+			<integer>0</integer>
+			<key>Collapsed</key>
+			<false/>
+			<key>Confine to Display</key>
+			<false/>
+			<key>Generic</key>
+			<false/>
+			<key>Hot Key</key>
+			<dict>
+				<key>Identifier</key>
+				<string>309FC2D6-2784-4D95-9FD6-35BBAD69EC40</string>
+				<key>Key Code</key>
+				<integer>12</integer>
+				<key>Modifier Flags</key>
+				<integer>256</integer>
+				<key>Visual Representation</key>
+				<string>Q</string>
+			</dict>
+			<key>Identifier</key>
+			<string>309FC2D6-2784-4D95-9FD6-35BBAD69EC40</string>
+			<key>Loop Through Displays</key>
+			<false/>
+			<key>Move Delta</key>
+			<integer>50</integer>
+			<key>Move Delta Unit</key>
+			<integer>0</integer>
+			<key>Move Direction</key>
+			<integer>5</integer>
+			<key>Move to Edge/Corner Direction</key>
+			<integer>5</integer>
+			<key>Relative Frame</key>
+			<string>{{0, 0}, {0.5, 1}}</string>
+			<key>Resize Anchor</key>
+			<integer>10</integer>
+			<key>Resize Height Unit</key>
+			<integer>0</integer>
+			<key>Resize Proportionally</key>
+			<false/>
+			<key>Resize Size</key>
+			<string>{668, 573}</string>
+			<key>Resize Width Unit</key>
+			<integer>0</integer>
+		</dict>
+		<dict>
+			<key>Action</key>
+			<integer>19</integer>
+			<key>Apply to Overlapping Windows</key>
+			<false/>
+			<key>Auto-Trigger</key>
+			<false/>
+			<key>Auto-Trigger Display Count</key>
+			<integer>1</integer>
+			<key>Center Mode</key>
+			<integer>0</integer>
+			<key>Collapsed</key>
+			<false/>
+			<key>Confine to Display</key>
+			<false/>
+			<key>Generic</key>
+			<false/>
+			<key>Hot Key</key>
+			<dict>
+				<key>Identifier</key>
+				<string>F029C91F-8E59-4619-903A-D3195399FFCE</string>
+				<key>Key Code</key>
+				<integer>13</integer>
+				<key>Modifier Flags</key>
+				<integer>256</integer>
+				<key>Visual Representation</key>
+				<string>W</string>
+			</dict>
+			<key>Identifier</key>
+			<string>F029C91F-8E59-4619-903A-D3195399FFCE</string>
+			<key>Loop Through Displays</key>
+			<false/>
+			<key>Move Delta</key>
+			<integer>50</integer>
+			<key>Move Delta Unit</key>
+			<integer>0</integer>
+			<key>Move Direction</key>
+			<integer>5</integer>
+			<key>Move to Edge/Corner Direction</key>
+			<integer>5</integer>
+			<key>Relative Frame</key>
+			<string>{{0.5, 0}, {0.5, 1}}</string>
+			<key>Resize Anchor</key>
+			<integer>10</integer>
+			<key>Resize Height Unit</key>
+			<integer>0</integer>
+			<key>Resize Proportionally</key>
+			<false/>
+			<key>Resize Size</key>
+			<string>{668, 573}</string>
+			<key>Resize Width Unit</key>
+			<integer>0</integer>
+		</dict>
+		<dict>
+			<key>Action</key>
+			<integer>19</integer>
+			<key>Apply to Overlapping Windows</key>
+			<false/>
+			<key>Auto-Trigger</key>
+			<false/>
+			<key>Auto-Trigger Display Count</key>
+			<integer>1</integer>
+			<key>Center Mode</key>
+			<integer>0</integer>
+			<key>Collapsed</key>
+			<false/>
+			<key>Confine to Display</key>
+			<false/>
+			<key>Generic</key>
+			<false/>
+			<key>Hot Key</key>
+			<dict>
+				<key>Identifier</key>
+				<string>7700D532-DE64-4EA3-9F2F-D4473E587547</string>
+				<key>Key Code</key>
+				<integer>2</integer>
+				<key>Modifier Flags</key>
+				<integer>256</integer>
+				<key>Visual Representation</key>
+				<string>D</string>
+			</dict>
+			<key>Identifier</key>
+			<string>7700D532-DE64-4EA3-9F2F-D4473E587547</string>
+			<key>Loop Through Displays</key>
+			<false/>
+			<key>Move Delta</key>
+			<integer>50</integer>
+			<key>Move Delta Unit</key>
+			<integer>0</integer>
+			<key>Move Direction</key>
+			<integer>5</integer>
+			<key>Move to Edge/Corner Direction</key>
+			<integer>5</integer>
+			<key>Relative Frame</key>
+			<string>{{0.66666666666666663, 0}, {0.33333333333333337, 1}}</string>
+			<key>Resize Anchor</key>
+			<integer>10</integer>
+			<key>Resize Height Unit</key>
+			<integer>0</integer>
+			<key>Resize Proportionally</key>
+			<false/>
+			<key>Resize Size</key>
+			<string>{1280, 1415}</string>
+			<key>Resize Width Unit</key>
+			<integer>0</integer>
+		</dict>
+		<dict>
+			<key>Action</key>
+			<integer>19</integer>
+			<key>Apply to Overlapping Windows</key>
+			<false/>
+			<key>Auto-Trigger</key>
+			<false/>
+			<key>Auto-Trigger Display Count</key>
+			<integer>1</integer>
+			<key>Center Mode</key>
+			<integer>0</integer>
+			<key>Collapsed</key>
+			<false/>
+			<key>Confine to Display</key>
+			<false/>
+			<key>Generic</key>
+			<false/>
+			<key>Hot Key</key>
+			<dict>
+				<key>Identifier</key>
+				<string>09A022B8-A9C6-4623-9D30-4BA805573A1E</string>
+				<key>Key Code</key>
+				<integer>1</integer>
+				<key>Modifier Flags</key>
+				<integer>256</integer>
+				<key>Visual Representation</key>
+				<string>S</string>
+			</dict>
+			<key>Identifier</key>
+			<string>09A022B8-A9C6-4623-9D30-4BA805573A1E</string>
+			<key>Loop Through Displays</key>
+			<false/>
+			<key>Move Delta</key>
+			<integer>50</integer>
+			<key>Move Delta Unit</key>
+			<integer>0</integer>
+			<key>Move Direction</key>
+			<integer>5</integer>
+			<key>Move to Edge/Corner Direction</key>
+			<integer>5</integer>
+			<key>Relative Frame</key>
+			<string>{{0.33333333333333331, 0}, {0.33333333333333331, 1}}</string>
+			<key>Resize Anchor</key>
+			<integer>10</integer>
+			<key>Resize Height Unit</key>
+			<integer>0</integer>
+			<key>Resize Proportionally</key>
+			<false/>
+			<key>Resize Size</key>
+			<string>{1792, 1055}</string>
+			<key>Resize Width Unit</key>
+			<integer>0</integer>
+		</dict>
+		<dict>
+			<key>Action</key>
+			<integer>19</integer>
+			<key>Apply to Overlapping Windows</key>
+			<false/>
+			<key>Auto-Trigger</key>
+			<false/>
+			<key>Auto-Trigger Display Count</key>
+			<integer>1</integer>
+			<key>Center Mode</key>
+			<integer>0</integer>
+			<key>Collapsed</key>
+			<false/>
+			<key>Confine to Display</key>
+			<false/>
+			<key>Generic</key>
+			<false/>
+			<key>Hot Key</key>
+			<dict>
+				<key>Identifier</key>
+				<string>EB706665-7D1E-4FA2-A99D-D03016B953AB</string>
+				<key>Key Code</key>
+				<integer>0</integer>
+				<key>Modifier Flags</key>
+				<integer>256</integer>
+				<key>Visual Representation</key>
+				<string>A</string>
+			</dict>
+			<key>Identifier</key>
+			<string>EB706665-7D1E-4FA2-A99D-D03016B953AB</string>
+			<key>Loop Through Displays</key>
+			<false/>
+			<key>Move Delta</key>
+			<integer>50</integer>
+			<key>Move Delta Unit</key>
+			<integer>0</integer>
+			<key>Move Direction</key>
+			<integer>5</integer>
+			<key>Move to Edge/Corner Direction</key>
+			<integer>5</integer>
+			<key>Relative Frame</key>
+			<string>{{0, 0}, {0.33333333333333331, 1}}</string>
+			<key>Resize Anchor</key>
+			<integer>10</integer>
+			<key>Resize Height Unit</key>
+			<integer>0</integer>
+			<key>Resize Proportionally</key>
+			<false/>
+			<key>Resize Size</key>
+			<string>{1792, 1055}</string>
+			<key>Resize Width Unit</key>
+			<integer>0</integer>
+		</dict>
+		<dict>
+			<key>Action</key>
+			<integer>19</integer>
+			<key>Apply to Overlapping Windows</key>
+			<false/>
+			<key>Auto-Trigger</key>
+			<false/>
+			<key>Auto-Trigger Display Count</key>
+			<integer>1</integer>
+			<key>Center Mode</key>
+			<integer>0</integer>
+			<key>Collapsed</key>
+			<false/>
+			<key>Confine to Display</key>
+			<false/>
+			<key>Generic</key>
+			<false/>
+			<key>Hot Key</key>
+			<dict>
+				<key>Identifier</key>
+				<string>B72E442D-4745-4397-9E82-A86B2C3E641B</string>
+				<key>Key Code</key>
+				<integer>6</integer>
+				<key>Modifier Flags</key>
+				<integer>256</integer>
+				<key>Visual Representation</key>
+				<string>Z</string>
+			</dict>
+			<key>Identifier</key>
+			<string>B72E442D-4745-4397-9E82-A86B2C3E641B</string>
+			<key>Loop Through Displays</key>
+			<false/>
+			<key>Move Delta</key>
+			<integer>50</integer>
+			<key>Move Delta Unit</key>
+			<integer>0</integer>
+			<key>Move Direction</key>
+			<integer>5</integer>
+			<key>Move to Edge/Corner Direction</key>
+			<integer>5</integer>
+			<key>Relative Frame</key>
+			<string>{{0.16666666666666666, 0}, {0.5, 1}}</string>
+			<key>Resize Anchor</key>
+			<integer>10</integer>
+			<key>Resize Height Unit</key>
+			<integer>0</integer>
+			<key>Resize Proportionally</key>
+			<false/>
+			<key>Resize Size</key>
+			<string>{2560, 1595}</string>
+			<key>Resize Width Unit</key>
+			<integer>0</integer>
+		</dict>
+	</array>
+	<key>Custom Controls (4001)</key>
+	<array>
+		<dict>
+			<key>Action</key>
+			<integer>19</integer>
+			<key>Hot Key</key>
+			<dict>
+				<key>Identifier</key>
+				<string>F7DF5FF5-4116-446D-AC0B-4DDD86BA7E11</string>
+				<key>Key Code</key>
+				<integer>18</integer>
+				<key>Modifier Flags</key>
+				<integer>256</integer>
+				<key>Visual Representation</key>
+				<string>1</string>
+			</dict>
+			<key>Identifier</key>
+			<string>F7DF5FF5-4116-446D-AC0B-4DDD86BA7E11</string>
+			<key>Relative Frame</key>
+			<string>{{0, 0}, {0.16666666666666666, 1}}</string>
+		</dict>
+		<dict>
+			<key>Action</key>
+			<integer>19</integer>
+			<key>Hot Key</key>
+			<dict>
+				<key>Identifier</key>
+				<string>C26E4376-C961-4C4D-9219-E218847901F2</string>
+				<key>Key Code</key>
+				<integer>19</integer>
+				<key>Modifier Flags</key>
+				<integer>256</integer>
+				<key>Visual Representation</key>
+				<string>2</string>
+			</dict>
+			<key>Identifier</key>
+			<string>C26E4376-C961-4C4D-9219-E218847901F2</string>
+			<key>Relative Frame</key>
+			<string>{{0, 0}, {0.66666666666666663, 1}}</string>
+		</dict>
+		<dict>
+			<key>Action</key>
+			<integer>19</integer>
+			<key>Hot Key</key>
+			<dict>
+				<key>Identifier</key>
+				<string>CB710662-3CE3-4F8C-8077-7BCBBF004482</string>
+				<key>Key Code</key>
+				<integer>20</integer>
+				<key>Modifier Flags</key>
+				<integer>256</integer>
+				<key>Visual Representation</key>
+				<string>3</string>
+			</dict>
+			<key>Identifier</key>
+			<string>CB710662-3CE3-4F8C-8077-7BCBBF004482</string>
+			<key>Relative Frame</key>
+			<string>{{0.33333333333333331, 0}, {0.66666666666666674, 1}}</string>
+		</dict>
+		<dict>
+			<key>Action</key>
+			<integer>19</integer>
+			<key>Hot Key</key>
+			<dict>
+				<key>Identifier</key>
+				<string>A8279B9A-2952-4FD3-A854-F30292138AAA</string>
+				<key>Key Code</key>
+				<integer>21</integer>
+				<key>Modifier Flags</key>
+				<integer>256</integer>
+				<key>Visual Representation</key>
+				<string>4</string>
+			</dict>
+			<key>Identifier</key>
+			<string>A8279B9A-2952-4FD3-A854-F30292138AAA</string>
+			<key>Relative Frame</key>
+			<string>{{0.66666666666666663, 0}, {0.33333333333333337, 1}}</string>
+		</dict>
+		<dict>
+			<key>Action</key>
+			<integer>19</integer>
+			<key>Hot Key</key>
+			<dict>
+				<key>Identifier</key>
+				<string>309FC2D6-2784-4D95-9FD6-35BBAD69EC40</string>
+				<key>Key Code</key>
+				<integer>12</integer>
+				<key>Modifier Flags</key>
+				<integer>256</integer>
+				<key>Visual Representation</key>
+				<string>Q</string>
+			</dict>
+			<key>Identifier</key>
+			<string>309FC2D6-2784-4D95-9FD6-35BBAD69EC40</string>
+			<key>Relative Frame</key>
+			<string>{{0, 0}, {0.5, 1}}</string>
+		</dict>
+		<dict>
+			<key>Action</key>
+			<integer>19</integer>
+			<key>Hot Key</key>
+			<dict>
+				<key>Identifier</key>
+				<string>F029C91F-8E59-4619-903A-D3195399FFCE</string>
+				<key>Key Code</key>
+				<integer>13</integer>
+				<key>Modifier Flags</key>
+				<integer>256</integer>
+				<key>Visual Representation</key>
+				<string>W</string>
+			</dict>
+			<key>Identifier</key>
+			<string>F029C91F-8E59-4619-903A-D3195399FFCE</string>
+			<key>Relative Frame</key>
+			<string>{{0.5, 0}, {0.5, 1}}</string>
+		</dict>
+		<dict>
+			<key>Action</key>
+			<integer>19</integer>
+			<key>Hot Key</key>
+			<dict>
+				<key>Identifier</key>
+				<string>7700D532-DE64-4EA3-9F2F-D4473E587547</string>
+				<key>Key Code</key>
+				<integer>2</integer>
+				<key>Modifier Flags</key>
+				<integer>256</integer>
+				<key>Visual Representation</key>
+				<string>D</string>
+			</dict>
+			<key>Identifier</key>
+			<string>7700D532-DE64-4EA3-9F2F-D4473E587547</string>
+			<key>Relative Frame</key>
+			<string>{{0.66666666666666663, 0}, {0.33333333333333337, 1}}</string>
+		</dict>
+		<dict>
+			<key>Action</key>
+			<integer>19</integer>
+			<key>Hot Key</key>
+			<dict>
+				<key>Identifier</key>
+				<string>09A022B8-A9C6-4623-9D30-4BA805573A1E</string>
+				<key>Key Code</key>
+				<integer>1</integer>
+				<key>Modifier Flags</key>
+				<integer>256</integer>
+				<key>Visual Representation</key>
+				<string>S</string>
+			</dict>
+			<key>Identifier</key>
+			<string>09A022B8-A9C6-4623-9D30-4BA805573A1E</string>
+			<key>Relative Frame</key>
+			<string>{{0.33333333333333331, 0}, {0.33333333333333331, 1}}</string>
+		</dict>
+		<dict>
+			<key>Action</key>
+			<integer>19</integer>
+			<key>Hot Key</key>
+			<dict>
+				<key>Identifier</key>
+				<string>EB706665-7D1E-4FA2-A99D-D03016B953AB</string>
+				<key>Key Code</key>
+				<integer>0</integer>
+				<key>Modifier Flags</key>
+				<integer>256</integer>
+				<key>Visual Representation</key>
+				<string>A</string>
+			</dict>
+			<key>Identifier</key>
+			<string>EB706665-7D1E-4FA2-A99D-D03016B953AB</string>
+			<key>Relative Frame</key>
+			<string>{{0, 0}, {0.33333333333333331, 1}}</string>
+		</dict>
+		<dict>
+			<key>Action</key>
+			<integer>19</integer>
+			<key>Hot Key</key>
+			<dict>
+				<key>Identifier</key>
+				<string>B72E442D-4745-4397-9E82-A86B2C3E641B</string>
+				<key>Key Code</key>
+				<integer>6</integer>
+				<key>Modifier Flags</key>
+				<integer>256</integer>
+				<key>Visual Representation</key>
+				<string>Z</string>
+			</dict>
+			<key>Identifier</key>
+			<string>B72E442D-4745-4397-9E82-A86B2C3E641B</string>
+			<key>Relative Frame</key>
+			<string>{{0.16666666666666666, 0}, {0.5, 1}}</string>
+		</dict>
+	</array>
+	<key>Dismiss After Filling</key>
+	<true/>
+	<key>Dismiss After Moving</key>
+	<true/>
+	<key>Dismiss After Other</key>
+	<false/>
+	<key>Grid Spacing</key>
+	<true/>
+	<key>Grid Spacing: Auto-Enabled Default Spacing</key>
+	<true/>
+	<key>Grid Spacing: Gap</key>
+	<integer>1</integer>
+	<key>Key Control: Arrow</key>
+	<integer>12</integer>
+	<key>Key Control: Arrow: Command</key>
+	<integer>41</integer>
+	<key>Keyboard Controls</key>
+	<dict>
+		<key>Identifier</key>
+		<string>Keyboard Controls</string>
+		<key>Key Code</key>
+		<integer>12</integer>
+		<key>Modifier Flags</key>
+		<integer>270592</integer>
+		<key>Visual Representation</key>
+		<string>⌃Q</string>
+	</dict>
+	<key>Keyboard Controls Grid</key>
+	<true/>
+	<key>Keyboard Controls Grid: Fast Track</key>
+	<false/>
+	<key>Mouse Controls Delay</key>
+	<real>0.0</real>
+	<key>Palette</key>
+	<dict>
+		<key>3-2</key>
+		<string>D4129744-DD35-4A54-8539-4BD341CF291E</string>
+		<key>3-3</key>
+		<integer>2</integer>
+		<key>4-2</key>
+		<string>A6237141-56CA-4CF6-8103-BDB0FE9127D4</string>
+		<key>4-3</key>
+		<integer>9</integer>
+		<key>5-2</key>
+		<string>0EEB6471-3992-4C27-AFDF-26E3BAB0CBC2</string>
+		<key>5-3</key>
+		<integer>5</integer>
+		<key>6-2</key>
+		<string>2CB7DA3C-4EB9-4F68-B75E-6F72F3AA83A7</string>
+		<key>6-3</key>
+		<integer>3</integer>
+		<key>7-2</key>
+		<string>5A7DAB57-AE88-4C38-B68A-311A652E9C5E</string>
+		<key>7-3</key>
+		<integer>7</integer>
+	</dict>
+	<key>Palette: Hidden Items</key>
+	<array/>
+	<key>Quit Without Confirmation</key>
+	<true/>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUSendProfileInfo</key>
+	<false/>
+	<key>Show Cheat Sheet</key>
+	<true/>
+	<key>Show Intro Popover</key>
+	<false/>
+	<key>Stealth Mode</key>
+	<true/>
+</dict>
+</plist>

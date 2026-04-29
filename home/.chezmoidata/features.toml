@@ -1,0 +1,5 @@
+[features]
+install_packages = true
+install_mise_runtimes = true
+compile_hammerspoon = true
+manage_zinit_external = true

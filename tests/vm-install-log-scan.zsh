@@ -66,4 +66,16 @@ assert_contains "$REPLY" "sealed system write"
 assert_contains "$REPLY" "unsupported Spotlight defaults write"
 assert_contains "$REPLY" "missing clean-VM Dock database path"
 
+loader_log="$tmp_root/loader.log"
+cat >"$loader_log" <<'EOF'
+`brew bundle` complete! 292 Brewfile dependencies now installed.
+dyld[36566]: Library not loaded: /opt/homebrew/opt/simdjson/lib/libsimdjson.31.dylib
+  Referenced from: <FD86D65B-7A6E-3DF7-BD83-D0BF5EE08125> /opt/homebrew/Cellar/node@24/24.14.1/bin/node
+  Reason: tried: '/opt/homebrew/opt/simdjson/lib/libsimdjson.31.dylib' (no such file)
+EOF
+
+assert_rc 1 bash "$SCRIPT" "$loader_log"
+assert_contains "$REPLY" "dynamic loader failure"
+assert_contains "$REPLY" "Library not loaded"
+
 print -- "OK vm-install-log-scan"

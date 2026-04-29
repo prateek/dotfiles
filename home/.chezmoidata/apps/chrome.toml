@@ -1,0 +1,8 @@
+[apps.chrome]
+name = "Google Chrome"
+cask = "google-chrome"
+bundle_id = "com.google.Chrome"
+domains = ["com.google.Chrome"]
+
+[apps.chrome.policies]
+extension_install_forcelist = ["aeblfdkhhhdcdjpifhhbdiojplfjncoa;https://clients2.google.com/service/update2/crx", "eimadpbcbfnmbkopoojfekhnkhdbieeh;https://clients2.google.com/service/update2/crx", "dbepggeogbaibhgnhhndojpepiihcmeb;https://clients2.google.com/service/update2/crx", "dhdgffkkebhmkfjojejmpbldmpobfkfo;https://clients2.google.com/service/update2/crx"]

@@ -1,11 +1,17 @@
 .PHONY: hammerspoon hammerspoon-check hammerspoon-reload
-.PHONY: test-ghc test-macos-settings test-repo-index test-grmrepo-refresh test-worktrees
-.PHONY: test-zsh-fresh-shells verify-zsh-fresh-shells bench-zsh-startup
+.PHONY: test-dotfiles-cli test-gemini-meeting-sync test-ghc test-mise-install-script test-macos-settings test-settings-coverage test-kanata-config test-cmux-plist test-ice-plist test-orbstack-plist test-package-gated-configs test-moom-plist test-nvalt-colors test-nvalt-plist test-voiceink-plist test-repo-index test-grmrepo-refresh test-worktrees
+.PHONY: test-zed-settings test-zsh-fresh-shells verify-zsh-fresh-shells bench-zsh-startup
 .PHONY: test-tart-install-helper test-trace-perfetto test-vm-install-log-scan test-vm-postflight-macos test-install-tart-dry-run test-install-tart-smoke test-install-tart-full
 
-HAMMERSPOON_SRC := .hammerspoon/init.fnl
-HAMMERSPOON_OUT := .hammerspoon/init.generated.lua
+HAMMERSPOON_SRC := home/dot_hammerspoon/init.fnl
+HAMMERSPOON_OUT := build/hammerspoon/init.generated.lua
 TART_IMAGE ?= ghcr.io/cirruslabs/macos-tahoe-base:latest
+TART_SMOKE_IMAGE ?= $(TART_IMAGE)
+ifneq ($(filter command line environment,$(origin TART_IMAGE)),)
+TART_FULL_IMAGE ?= $(TART_IMAGE)
+else
+TART_FULL_IMAGE ?= ghcr.io/cirruslabs/macos-tahoe-xcode:latest
+endif
 TART_CPU ?= 2
 TART_MEMORY ?= 4096
 TART_FLAGS ?=
@@ -15,6 +21,7 @@ hammerspoon: $(HAMMERSPOON_OUT)
 
 $(HAMMERSPOON_OUT): $(HAMMERSPOON_SRC)
 	@command -v fennel >/dev/null 2>&1 || { echo "Missing 'fennel' (brew install fennel)"; exit 1; }
+	@mkdir -p $(dir $(HAMMERSPOON_OUT))
 	@fennel --compile $(HAMMERSPOON_SRC) > $(HAMMERSPOON_OUT).tmp
 	@mv $(HAMMERSPOON_OUT).tmp $(HAMMERSPOON_OUT)
 
@@ -28,13 +35,69 @@ hammerspoon-reload: hammerspoon
 	@command -v hs >/dev/null 2>&1 || { echo "Missing 'hs' CLI"; exit 1; }
 	@hs -c 'hs.reload(); "ok"' -q
 
+## Regression tests for the dotfiles CLI.
+test-dotfiles-cli:
+	@zsh ./tests/dotfiles-cli.zsh
+
+## Regression tests for Gemini meeting sync wrapper config.
+test-gemini-meeting-sync:
+	@zsh ./tests/gemini-meeting-sync.zsh
+
 ## E2E tests for ghc URL handling.
 test-ghc:
 	@zsh ./tests/ghc-url.zsh
 
+## Regression tests for mise runtime install script ordering.
+test-mise-install-script:
+	@zsh ./tests/mise-install-script.zsh
+
 ## Regression tests for managed macOS defaults coverage.
 test-macos-settings:
 	@zsh ./tests/macos-settings-coverage.zsh
+
+## Regression tests for app settings coverage classification.
+test-settings-coverage:
+	@zsh ./tests/settings-coverage.zsh
+
+## Validate Kanata keyboard remap config with kanata's parser.
+test-kanata-config:
+	@zsh ./tests/kanata-config.zsh
+
+## Regression tests for selected-key cmux plist merging.
+test-cmux-plist:
+	@zsh ./tests/cmux-plist-modify.zsh
+
+## Regression tests for selected-key Ice plist merging.
+test-ice-plist:
+	@zsh ./tests/ice-plist-modify.zsh
+
+## Regression tests for selected-key OrbStack plist merging.
+test-orbstack-plist:
+	@zsh ./tests/orbstack-plist-modify.zsh
+
+## Regression tests for package-profile gated app config targets.
+test-package-gated-configs:
+	@zsh ./tests/package-gated-configs.zsh
+
+## Regression tests for Zed settings JSON.
+test-zed-settings:
+	@zsh ./tests/zed-settings.zsh
+
+## Regression tests for selected-key Moom plist merging.
+test-moom-plist:
+	@zsh ./tests/moom-plist-modify.zsh
+
+## Regression tests for selected-key nvALT plist merging.
+test-nvalt-plist:
+	@zsh ./tests/nvalt-plist-modify.zsh
+
+## Regression tests for nvALT color-list generation.
+test-nvalt-colors:
+	@zsh ./tests/nvalt-colors.zsh
+
+## Regression tests for selected-key VoiceInk plist merging.
+test-voiceink-plist:
+	@zsh ./tests/voiceink-plist-modify.zsh
 
 ## Regression tests for repo-index canonical clone discovery.
 test-repo-index:
@@ -78,12 +141,12 @@ test-vm-postflight-macos:
 
 ## Tart smoke lane, dry-run only. Pulls/boots a VM but skips actual installs.
 test-install-tart-dry-run:
-	@./scripts/vm/test-install-tart.sh --lane smoke --dry-run --image "$(TART_IMAGE)" --cpu "$(TART_CPU)" --memory "$(TART_MEMORY)" $(TART_FLAGS)
+	@./scripts/vm/test-install-tart.sh --lane smoke --dry-run --image "$(TART_SMOKE_IMAGE)" --cpu "$(TART_CPU)" --memory "$(TART_MEMORY)" $(TART_FLAGS)
 
 ## Tart smoke lane. Core profile, casks/MAS skipped, zsh postflight enabled.
 test-install-tart-smoke:
-	@./scripts/vm/test-install-tart.sh --lane smoke --image "$(TART_IMAGE)" --cpu "$(TART_CPU)" --memory "$(TART_MEMORY)" $(TART_FLAGS)
+	@./scripts/vm/test-install-tart.sh --lane smoke --image "$(TART_SMOKE_IMAGE)" --cpu "$(TART_CPU)" --memory "$(TART_MEMORY)" $(TART_FLAGS)
 
-## Tart full lane. Full profile, casks/MAS included, zsh postflight enabled.
+## Tart full lane. Full profile, Xcode image, casks included, MAS opt-in, zsh postflight enabled.
 test-install-tart-full:
-	@./scripts/vm/test-install-tart.sh --lane full --image "$(TART_IMAGE)" --cpu "$(TART_CPU)" --memory "$(TART_MEMORY)" $(TART_FLAGS)
+	@./scripts/vm/test-install-tart.sh --lane full --image "$(TART_FULL_IMAGE)" --cpu "$(TART_CPU)" --memory "$(TART_MEMORY)" $(TART_FLAGS)

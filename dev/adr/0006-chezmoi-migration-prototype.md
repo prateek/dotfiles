@@ -24,7 +24,7 @@ Use `.chezmoiroot` with the value `home`, so chezmoi reads source state from:
 ~/dotfiles/home/
 ```
 
-Repo tooling, plans, tests, scripts, reference docs, and package manifests stay outside `home/`.
+Repo tooling, plans, tests, scripts, reference docs, and generated artifacts stay outside `home/`.
 
 Use native chezmoi source-state naming in `home/`:
 
@@ -34,13 +34,21 @@ Use native chezmoi source-state naming in `home/`:
 - `.tmpl` only for host, OS, path, feature, or secret variation;
 - `symlink_` only for deliberate live links, primarily repo-local executable wrappers.
 
-Keep app/defaults/license/permission intent in `home/.chezmoidata/` so chezmoi templates and scripts can consume one structured data model. Chezmoi may materialize stable target files directly. Raw captures, rollback records, generated inventories, and other machine-local observations stay outside the repo under XDG state.
+Keep package profiles, app indexes, scalar defaults, license aliases, and permission intent in `home/.chezmoidata/` so chezmoi templates and scripts can consume one structured data model. Chezmoi may materialize stable target files directly. Selected app plist payloads that support `modify_` targets live under `home/.chezmoiassets/`, not `.chezmoitemplates`, so app-owned strings such as Moom geometry are not parsed as Go templates. Raw captures, rollback records, generated inventories, and other machine-local observations stay outside the repo under XDG state.
 
 Agent tool homes (`~/.agents`, `~/.codex`, and `~/.claude`) are managed as rendered source state under `home/`, not repo-root live-link trees. Local volatile state for those tools stays out of the repo.
 
-Plain `chezmoi apply` may run idempotent `.chezmoiscripts` for safe home-environment setup such as packages, shell dependencies, mise runtimes, and verification. Higher-risk app/default/license/permission mutations still belong behind explicit data gates and the transaction-aware `dotfiles apply <scope>` commands.
+Plain `chezmoi apply` may run idempotent `.chezmoiscripts` for safe home-environment setup such as packages, shell dependencies, mise runtimes, verification, and declared home source state. Stable app config is source state when it is a native file, a selected plist `modify_` target, or generated policy data. Higher-risk imperative default, license, permission, and non-file app mutations still belong behind explicit data gates and the transaction-aware `dotfiles apply <scope>` commands.
 
-Update, 2026-04-27: the target architecture merges `bootstrap.sh` into a tiny `install.sh`. `install.sh` prepares Xcode Command Line Tools, Homebrew, Git, and chezmoi, then hands off to `chezmoi init --apply`. Ongoing setup moves into `.chezmoiscripts` and `.chezmoiexternal.*`.
+Update, 2026-04-27: the target architecture merges `bootstrap.sh` into a tiny `install.sh`. `install.sh` prepares Xcode Command Line Tools, Homebrew, Git, chezmoi, and uv, then hands off to `chezmoi init --apply`. Ongoing setup moves into `.chezmoiscripts` and `.chezmoiexternal.*`.
+
+Update, 2026-04-28: `bin/dotfiles` is a uv-backed Python script with inline script metadata. uv is part of the stage-zero handoff set so the CLI runs with its declared Python version before package rendering or defaults rollback code executes.
+
+Update, 2026-04-28: Homebrew package intent lives in `home/.chezmoidata/packages.toml`. `bin/dotfiles render brewfile --profile <profile>` renders temporary Brewfile input for Homebrew Bundle; repo-root `Brewfile` and `Brewfile.core` are no longer durable source files. Mac App Store entries require explicit opt-in through `DOTFILES_INSTALL_MAS_APPS=true` or `--include-mas`.
+
+Update, 2026-04-28: raw app captures are not committed. `scripts/macos/capture.sh`, `dotfiles capture`, and `inventory --write` write machine-local observations under XDG state. Privileged Chrome policy intent is declared as data in `home/.chezmoidata/apps/chrome.toml` and rendered to a plist only during an explicit privileged apply.
+
+Update, 2026-04-29: app TOML files are apply-only indexes, not migration trackers. They exist only for apps installed by the selected package profile and point at readable config the repo applies: native files under `home/`, selected plist assets under `home/.chezmoiassets/` consumed by `modify_` targets, small scalar defaults, or generated policy data. Migration bookkeeping such as phase/action/audit status is not part of app desired state.
 
 ## Consequences
 
@@ -49,16 +57,16 @@ Update, 2026-04-27: the target architecture merges `bootstrap.sh` into a tiny `i
 - The repo keeps its `~/dotfiles` convention.
 - Chezmoi source state is readable and testable as source state, not a separate symlink descriptor layer.
 - Repo-only material stays outside chezmoi's home target mapping.
-- Desired app/system declarations use chezmoi's native data mechanism instead of a parallel repo control plane.
+- Desired package/app/system declarations use chezmoi's native data and source-state mechanisms instead of a parallel repo control plane.
 - Isolated HOME/XDG tests can exercise `chezmoi init`, `apply`, and `status`.
 - Tart remains the clean macOS install proof path for bootstrap, package, shell, and macOS baseline changes.
-- App/system mutations can be handled with stricter safety rules than ordinary dotfiles.
+- App/system mutations can use the narrowest safe mechanism: ordinary chezmoi source state for readable config, and transaction-aware commands for imperative side effects.
 
 ### Negative
 
 - Moving files into native chezmoi source-state names creates more churn than linking existing repo paths.
 - Temporary research files are not durable source state.
-- App/defaults handling needs local transaction and rollback design before it replaces existing scripts.
+- Imperative app/defaults handling needs local transaction and rollback design before it replaces existing scripts.
 
 ### Neutral
 

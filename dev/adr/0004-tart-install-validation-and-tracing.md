@@ -12,7 +12,7 @@ The host fresh-shell validator answers whether the shell behaves correctly after
 
 ADR 0002 rejected a VM-first shell validator because Tart was too heavy for that v1 problem. This decision reopens Tart for a narrower use: local end-to-end install validation.
 
-The current validation host is `mini`, with Tart storage on the external APFS volume at `/Volumes/Extra/.tart`. The current VM image is `ghcr.io/cirruslabs/macos-tahoe-base:latest`.
+The current validation host is `mini`, with Tart storage on the external APFS volume at `/Volumes/Extra/.tart`. The smoke lane uses `ghcr.io/cirruslabs/macos-tahoe-base:latest`; the full lane uses `ghcr.io/cirruslabs/macos-tahoe-xcode:latest`.
 
 ## Decision
 
@@ -22,16 +22,17 @@ Specific decisions:
 
 - `scripts/vm/test-install-tart.sh` owns VM creation, install execution, postflight validation, tracing, and cleanup.
 - `smoke` runs `install.sh --core` in a clean macOS guest and is the default real-VM lane.
-- `full` is explicit and slower; it includes the full install profile, cask behavior, and Mac App Store behavior.
+- `full` is explicit and slower; it uses an Xcode-backed image and includes the full install profile and cask behavior. Mac App Store entries are omitted from generated Brewfiles unless explicitly opted in on a signed-in machine.
 - CI stays lightweight. It runs helper contract, postflight, log-scan, and trace-conversion tests, but does not boot Tart.
 - The host fresh-shell verifier remains the shell oracle. Tart invokes `scripts/audit/zsh-fresh-shells.zsh verify` after bootstrap instead of replacing it.
 - Perfetto traces are diagnostic evidence. Installer scripts should not contain Perfetto JSON plumbing or trace metadata tables.
+- Plain timing summaries are always-on diagnostic evidence. Perfetto remains the deeper tool when phase timings are not enough.
 - Guest semantic spans come from zsh xtrace, function names, source files, line numbers, and `funcstack`.
 - Trace artifacts are private by default. Directories are `0700`; raw and converted trace files are `0600`.
 - If tracing is requested and install succeeds, trace conversion or merge failure fails the run.
 - The host-backed Homebrew cache is enabled by default as an optimization for trusted local Tart runs.
 - Remote install mode records host lifecycle spans only because the guest path is intentionally `curl | bash`.
-- The Tahoe base image floats on `latest` for now. Pinning is a revisit item, not the first default.
+- The Tahoe images float on `latest` for now. Pinning is a revisit item, not the first default.
 
 ## Options considered
 

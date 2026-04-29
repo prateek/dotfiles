@@ -50,10 +50,10 @@ trap 'rm -rf "$TMP_ROOT"' EXIT
 fixture="$TMP_ROOT/xtrace.log"
 cat >"$fixture" <<'EOF'
 ordinary stderr survives outside the trace parser
-+DFX|v=1|ts=1.000000|pid=42|sub=0|src=/tmp/bootstrap.sh|line=10|name=/tmp/bootstrap.sh|stack=|ctx=toplevel| bootstrap_main
-+DFX|v=1|ts=1.010000|pid=42|sub=0|src=/tmp/bootstrap.sh|line=20|name=install_brewfile|stack=install_brewfile,bootstrap_main|ctx=toplevel,shfunc| API_TOKEN=supersecret brew bundle install --token abc123
-+DFX|v=1|ts=1.050000|pid=42|sub=0|src=/tmp/bootstrap.sh|line=21|name=install_brewfile|stack=install_brewfile,bootstrap_main|ctx=toplevel,shfunc| echo done
-+DFX|v=1|ts=not-a-time|pid=42|sub=0|src=/tmp/bootstrap.sh|line=22|name=bad|stack=|ctx=toplevel| ignored
++DFX|v=1|ts=1.000000|pid=42|sub=0|src=/tmp/install.sh|line=10|name=/tmp/install.sh|stack=|ctx=toplevel| install_main
++DFX|v=1|ts=1.010000|pid=42|sub=0|src=/tmp/install.sh|line=20|name=install_brewfile|stack=install_brewfile,install_main|ctx=toplevel,shfunc| API_TOKEN=supersecret brew bundle install --token abc123
++DFX|v=1|ts=1.050000|pid=42|sub=0|src=/tmp/install.sh|line=21|name=install_brewfile|stack=install_brewfile,install_main|ctx=toplevel,shfunc| echo done
++DFX|v=1|ts=not-a-time|pid=42|sub=0|src=/tmp/install.sh|line=22|name=bad|stack=|ctx=toplevel| ignored
 EOF
 
 converted="$TMP_ROOT/fixture.perfetto.json"
@@ -86,7 +86,7 @@ assert process_names[1422] == "fixture pid 42 - all commands", process_names
 thread_names = {(event["pid"], event["tid"]): event["args"]["name"] for event in events if event.get("name") == "thread_name"}
 assert "major commands" in thread_names.values(), thread_names
 assert "all commands" in thread_names.values(), thread_names
-assert "Bootstrap Main" in thread_names.values(), thread_names
+assert "Install Main" in thread_names.values(), thread_names
 assert "  Install Brewfile" in thread_names.values(), thread_names
 
 major_commands = [event for event in events if event.get("cat") == "zsh-major-command" and "brew bundle" in event.get("name", "")]
@@ -94,7 +94,7 @@ assert major_commands, events
 
 semantic_events = [event for event in events if event.get("cat") == "zsh-function" and event.get("pid") == 1420]
 semantic_names = {event["name"] for event in semantic_events}
-assert "Bootstrap Main" in semantic_names, semantic_names
+assert "Install Main" in semantic_names, semantic_names
 assert "Install Brewfile" in semantic_names, semantic_names
 assert all(event["pid"] == 1420 for event in semantic_events), semantic_events
 
@@ -109,7 +109,7 @@ metadata_by_track = {
     if event.get("name") == "thread_name"
 }
 expected_tracks = {
-    (1420, 1): "Bootstrap Main",
+    (1420, 1): "Install Main",
     (1420, 2): "  Install Brewfile",
     (1421, 1): "major commands",
     (1422, 1): "all commands",
@@ -131,7 +131,7 @@ semantic_layout = {
     for event in x_events
     if event.get("cat") == "zsh-function" and event.get("pid") == 1420
 }
-assert semantic_layout["Bootstrap Main"] == 1, semantic_layout
+assert semantic_layout["Install Main"] == 1, semantic_layout
 assert semantic_layout["Install Brewfile"] == 2, semantic_layout
 PY
 
@@ -208,9 +208,9 @@ PY
 
 help_output="$(bash "$DOTFILES_ROOT/scripts/vm/test-install-tart.sh" --help)"
 assert_contains "$help_output" "DOTFILES_TRACE=1"
-assert_file_not_contains "$DOTFILES_ROOT/bootstrap.sh" "DOTFILES_BOOTSTRAP_TRACE_FILE"
+assert_file_not_contains "$DOTFILES_ROOT/install.sh" "DOTFILES_BOOTSTRAP_TRACE_FILE"
 assert_file_not_contains "$DOTFILES_ROOT/scripts/vm/test-install-tart.sh" "DOTFILES_BOOTSTRAP_TRACE_FILE"
-assert_file_not_contains "$DOTFILES_ROOT/bootstrap.sh" "trace::label"
-assert_file_not_contains "$DOTFILES_ROOT/bootstrap.sh" "trace::category"
+assert_file_not_contains "$DOTFILES_ROOT/install.sh" "trace::label"
+assert_file_not_contains "$DOTFILES_ROOT/install.sh" "trace::category"
 
 print -- "OK trace-perfetto"

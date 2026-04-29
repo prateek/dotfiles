@@ -1,0 +1,60 @@
+{{ template "script_lib.sh" . }}
+
+# packages.toml sha256: {{ include ".chezmoidata/packages.toml" | sha256sum }}
+
+{{- if and .run_install_scripts .features.install_packages }}
+profile={{ .install_profile | default .packages.default_profile | quote }}
+mas_opt_in={{ env "DOTFILES_INSTALL_MAS_APPS" | default "false" | quote }}
+
+dotfiles_bin="$HOME/bin/dotfiles"
+if [ ! -x "$dotfiles_bin" ]; then
+  dotfiles_bin={{ printf "%s/bin/dotfiles" .dotfiles_dir | quote }}
+fi
+
+brewfile="$(mktemp "${TMPDIR:-/tmp}/dotfiles-brewfile.XXXXXX")"
+trap 'rm -f "$brewfile"' EXIT
+
+case "$mas_opt_in" in
+  1|true|TRUE|yes|YES|on|ON)
+    "$dotfiles_bin" render brewfile --profile "$profile" --include-mas --output "$brewfile"
+    ;;
+  *)
+    if [ "$profile" = "full" ]; then
+      warn "Mac App Store installs disabled; set DOTFILES_INSTALL_MAS_APPS=true to opt in."
+    fi
+    "$dotfiles_bin" render brewfile --profile "$profile" --output "$brewfile"
+    ;;
+esac
+
+brew_shellenv
+have brew || die "Homebrew is required before brew bundle can run."
+
+if [ "$profile" = "full" ]; then
+  log "Updating Homebrew before applying the full package profile."
+  run_timed "brew update" brew update --quiet
+fi
+
+if command -v awk >/dev/null 2>&1; then
+  taps="$(awk -F'"' '/^tap "/ {print $2 "\t" $4}' "$brewfile" | sort -u)"
+  if [ -n "$taps" ]; then
+    existing_taps="$(brew tap 2>/dev/null || true)"
+    while IFS="$(printf '\t')" read -r tap url; do
+      [ -n "$tap" ] || continue
+      if ! printf '%s\n' "$existing_taps" | grep -qx "$tap"; then
+        if [ -n "$url" ]; then
+          run_timed "brew tap $tap" brew tap "$tap" "$url"
+        else
+          run_timed "brew tap $tap" brew tap "$tap"
+        fi
+      fi
+    done <<EOF_TAPS
+$taps
+EOF_TAPS
+  fi
+
+fi
+
+run_timed "brew bundle install ($profile)" brew bundle install --no-upgrade --file "$brewfile"
+{{- else }}
+log "Package install disabled; skipping brew bundle."
+{{- end }}

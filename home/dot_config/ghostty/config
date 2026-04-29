@@ -1,0 +1,11 @@
+# Ghostty configuration.
+# Docs: https://ghostty.org/docs/config
+
+theme = Dark Modern
+split-divider-color = red
+font-family = JetBrains Mono
+font-size = 14
+
+# For https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent#installation
+keybind = alt+backspace=text:\x1b\x7f
+keybind = shift+enter=text:\n

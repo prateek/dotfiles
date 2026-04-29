@@ -1,0 +1,35 @@
+{
+  "appearanceMode": "system",
+  "browserHostWhitelist": [
+    "chatgpt.com",
+    "google.com",
+    "gmail.com",
+    "anthropic.com",
+    "openai.com"
+  ],
+  "browserThemeMode": "system",
+  "shortcuts": {
+    "focusDown": { "command": false, "control": true, "key": "j", "option": false, "shift": false },
+    "focusLeft": { "command": false, "control": true, "key": "h", "option": false, "shift": false },
+    "focusRight": { "command": false, "control": true, "key": "l", "option": false, "shift": false },
+    "focusUp": { "command": false, "control": true, "key": "k", "option": false, "shift": false },
+    "newSurface": { "command": false, "control": true, "key": "t", "option": false, "shift": false },
+    "newTab": { "command": true, "control": false, "key": "t", "option": false, "shift": false },
+    "nextSidebarTab": { "command": true, "control": false, "key": "]", "option": true, "shift": false },
+    "nextSurface": { "command": true, "control": false, "key": "]", "option": false, "shift": true },
+    "prevSidebarTab": { "command": true, "control": false, "key": "[", "option": true, "shift": false },
+    "prevSurface": { "command": true, "control": false, "key": "[", "option": false, "shift": true }
+  },
+  "sidebar": {
+    "activeTabIndicatorStyle": "solidFill",
+    "appearanceDefaultsVersion": 1,
+    "blendMode": "withinWindow",
+    "blurOpacity": 1.0,
+    "cornerRadius": 0.0,
+    "material": "sidebar",
+    "preset": "nativeSidebar",
+    "state": "followWindow",
+    "tintHex": "#000000",
+    "tintOpacity": 0.18
+  }
+}

@@ -1,0 +1,24 @@
+{{ template "script_lib.sh" . }}
+
+{{- if .run_install_scripts }}
+brew_shellenv
+
+missing=()
+for tool in git chezmoi uv; do
+  if ! have "$tool"; then
+    missing+=("$tool")
+  fi
+done
+
+if [ "${#missing[@]}" -eq 0 ]; then
+  exit 0
+fi
+
+if ! have brew; then
+  die "Missing core tools (${missing[*]}) and Homebrew is unavailable."
+fi
+
+brew install "${missing[@]}"
+{{- else }}
+log "Install scripts disabled; skipping core tool setup."
+{{- end }}

@@ -35,6 +35,13 @@ Keep it short. Put recurring maintenance workflow in `$code-gardening`, not in l
 - Small one-off fixes don't need either. The bar is roughly: would a future agent or reviewer benefit from understanding the decision context, or does the diff explain itself?
 - Treat plan docs and ADRs as durable state under the same Gardening rule: if a decision changes, update the ADR (don't delete — add a superseding entry) and sync the plan doc.
 
+## App Config
+
+- Keep app config readable at the native target path under `home/` when possible. Do not add `home/.chezmoidata/apps/*.toml` when a native file, `.chezmoiassets` source, `modify_` target, or focused script is clearer. Use app TOML only when apply tooling needs app metadata beyond the file itself.
+- Gate app config for optional casks with `home/.chezmoiignore`; do not render `{}` or empty placeholder config just because an app is absent from the selected package profile.
+- Tests should prove both pieces: the full profile manages the target, profiles without the app ignore it, and the rendered file is valid real config.
+- For selected payloads consumed by `modify_` targets, keep the readable source under `home/.chezmoiassets/`. Do not store raw plist payloads under `.chezmoitemplates`; plist values can contain `{{...}}` strings that chezmoi will parse as templates.
+
 ## Shell Startup
 
 - Keep baseline `PATH` entries in `zprofile`'s `path=(...)` array, not ad hoc `export PATH=...` snippets in `zshrc`.

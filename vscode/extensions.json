@@ -5,12 +5,9 @@
         "eamodio.gitlens",
         "golang.go",
         "golf1052.code-sync",
-        "informal.quint-vscode",
         "kangping.protobuf",
-        "leanprover.lean4",
         "llvm-vs-code-extensions.lldb-dap",
         "marp-team.marp-vscode",
-        "mrkou47.thrift-syntax-support",
         "ms-python.debugpy",
         "ms-python.python",
         "ms-python.vscode-pylance",
@@ -19,12 +16,9 @@
         "myriad-dreamin.tinymist",
         "naveenvignesh5nv.html-live-server",
         "openai.chatgpt",
-        "phgn.vscode-starlark",
         "shd101wyy.markdown-preview-enhanced",
-        "SpecStory.specstory-vscode",
         "swiftlang.swift-vscode",
         "tamasfe.even-better-toml",
-        "vscodevim.vim",
-        "yzane.markdown-pdf"
+        "vscodevim.vim"
     ]
 }

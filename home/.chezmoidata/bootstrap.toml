@@ -1,0 +1,5 @@
+[bootstrap]
+default_profile = "full"
+secrets_enabled = false
+run_install_scripts = true
+apply_macos_defaults = true

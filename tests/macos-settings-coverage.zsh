@@ -25,7 +25,7 @@ trap 'rm -rf "$tmp_root"' EXIT
 
 stub_bin="$tmp_root/bin"
 mkdir -p "$stub_bin"
-export PATH="$stub_bin:/usr/bin:/bin"
+export PATH="$stub_bin:$PATH"
 
 cat >"$stub_bin/defaults" <<'EOF'
 #!/bin/sh
@@ -68,8 +68,6 @@ EOF
 chmod +x "$stub_bin/defaults"
 
 output="$(
-  MACOS_SCRIPT="$DOTFILES_ROOT/macos" \
-  APPLY_SCRIPT="$DOTFILES_ROOT/scripts/macos/apply.sh" \
   bash "$DOTFILES_ROOT/scripts/audit/macos-settings-coverage.sh"
 )"
 
@@ -79,5 +77,23 @@ line="$(print -r -- "$output" | awk -F '\t' '$1 == "com.apple.finder" && $2 == "
 managed="$(print -r -- "$line" | awk -F '\t' '{ print $4 }')"
 where="$(print -r -- "$line" | awk -F '\t' '{ print $5 }')"
 
-assert_eq "$managed" "yes"
-[[ "$where" != "-" ]] || die "expected AppleShowAllFiles to point at a managing script line"
+assert_eq "$managed" "managed"
+assert_eq "$where" "home/.chezmoidata/system/macos.toml"
+
+line="$(print -r -- "$output" | awk -F '\t' '$1 == "com.apple.finder" && $2 == "ShowStatusBar" { print $0 }')"
+[[ -n "$line" ]] || die "expected ShowStatusBar row in audit output"
+
+managed="$(print -r -- "$line" | awk -F '\t' '{ print $4 }')"
+where="$(print -r -- "$line" | awk -F '\t' '{ print $5 }')"
+
+assert_eq "$managed" "no"
+assert_eq "$where" "-"
+
+line="$(print -r -- "$output" | awk -F '\t' '$1 == "NSGlobalDomain" && $2 == "NSUserDictionaryReplacementItems" { print $0 }')"
+[[ -n "$line" ]] || die "expected NSUserDictionaryReplacementItems row in audit output"
+
+managed="$(print -r -- "$line" | awk -F '\t' '{ print $4 }')"
+where="$(print -r -- "$line" | awk -F '\t' '{ print $5 }')"
+
+assert_eq "$managed" "audit"
+assert_eq "$where" "home/.chezmoidata/system/macos.toml"

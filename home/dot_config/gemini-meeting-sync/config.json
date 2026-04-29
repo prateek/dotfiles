@@ -1,0 +1,9 @@
+{
+  "out_dir": "~/code/github.com/prateek/personal-notes/21-openai-meetings",
+  "lookback_days": 7,
+  "interval_seconds": 900,
+  "use_calendar": false,
+  "artifact_prune_days": 2,
+  "notify_on_success": "on_change",
+  "notify_on_failure": true
+}

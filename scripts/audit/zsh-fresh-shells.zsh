@@ -243,11 +243,56 @@ prepare_home() {
   mkdir -p "$home_dir/.config"
 
   ln -snf "$dotfiles_root" "$home_dir/dotfiles"
-  ln -snf "$home_dir/dotfiles/zprofile" "$home_dir/.zprofile"
-  ln -snf "$home_dir/dotfiles/zshrc" "$home_dir/.zshrc"
-  ln -snf "$home_dir/dotfiles/zshenv" "$home_dir/.zshenv"
 
-  if [[ -d "$HOME/.zinit" ]]; then
+  local xdg_config_home="$home_dir/.config"
+  local xdg_cache_home="$home_dir/.cache"
+  local xdg_state_home="$home_dir/.local/state"
+  mkdir -p "$xdg_config_home/chezmoi" "$xdg_cache_home/chezmoi" "$xdg_state_home/chezmoi"
+
+  env -u ZDOTDIR \
+    HOME="$home_dir" \
+    DOTFILES_DIR="$dotfiles_root" \
+    DOTFILES_INSTALL_PROFILE=core \
+    DOTFILES_SECRETS_ENABLED=false \
+    DOTFILES_RUN_INSTALL_SCRIPTS=false \
+    DOTFILES_APPLY_DEFAULTS=false \
+    DOTFILES_MANAGE_ZINIT_EXTERNAL=false \
+    XDG_CONFIG_HOME="$xdg_config_home" \
+    XDG_CACHE_HOME="$xdg_cache_home" \
+    XDG_STATE_HOME="$xdg_state_home" \
+    chezmoi \
+      --config "$xdg_config_home/chezmoi/chezmoi.toml" \
+      --source "$dotfiles_root" \
+      --destination "$home_dir" \
+      --cache "$xdg_cache_home/chezmoi" \
+      --persistent-state "$xdg_state_home/chezmoi/state.boltdb" \
+      --refresh-externals=never \
+      init >/dev/null
+
+  env -u ZDOTDIR \
+    HOME="$home_dir" \
+    DOTFILES_DIR="$dotfiles_root" \
+    DOTFILES_INSTALL_PROFILE=core \
+    DOTFILES_SECRETS_ENABLED=false \
+    DOTFILES_RUN_INSTALL_SCRIPTS=false \
+    DOTFILES_APPLY_DEFAULTS=false \
+    DOTFILES_MANAGE_ZINIT_EXTERNAL=false \
+    XDG_CONFIG_HOME="$xdg_config_home" \
+    XDG_CACHE_HOME="$xdg_cache_home" \
+    XDG_STATE_HOME="$xdg_state_home" \
+    chezmoi \
+      --config "$xdg_config_home/chezmoi/chezmoi.toml" \
+      --source "$dotfiles_root" \
+      --destination "$home_dir" \
+      --cache "$xdg_cache_home/chezmoi" \
+      --persistent-state "$xdg_state_home/chezmoi/state.boltdb" \
+      --refresh-externals=never \
+      apply --exclude=scripts >/dev/null
+
+  if [[ -d "${XDG_DATA_HOME:-$HOME/.local/share}/zinit/zinit.git" ]]; then
+    mkdir -p "$home_dir/.local/share/zinit"
+    ln -snf "${XDG_DATA_HOME:-$HOME/.local/share}/zinit/zinit.git" "$home_dir/.local/share/zinit/zinit.git"
+  elif [[ -d "$HOME/.zinit" ]]; then
     ln -snf "$HOME/.zinit" "$home_dir/.zinit"
   fi
 
@@ -269,7 +314,7 @@ exec env -i \
   SHELL=/bin/zsh \
   USER=${(q)${USER:-prateek}} \
   LOGNAME=${(q)${LOGNAME:-${USER:-prateek}}} \
-  ZDOTDIR=${(q)home_dir} \
+  ZDOTDIR=${(q)home_dir}/.config/zsh \
   DOTFILES_SKIP_LAUNCHCTL_SYNC=1 \
   /bin/zsh -il
 EOF
@@ -632,8 +677,24 @@ audit_probe_helpers() {
     audit_fail ghc_usage "rc=$rc stderr=$(tr '\n' ' ' <"$err_file")"
   fi
 
-  local gs_bin
-  gs_bin="$(whence -p gs 2>/dev/null || true)"
+  local candidate candidate_bin candidate_help gs_bin
+  gs_bin=''
+  for candidate in gs git-spice; do
+    candidate_bin="$(whence -p "$candidate" 2>/dev/null || true)"
+    if [[ -z "$candidate_bin" ]]; then
+      continue
+    fi
+
+    candidate_help="$("$candidate_bin" --help 2>&1 || true)"
+    if [[ "$candidate_help" == *"git-spice"* || "$candidate_help" == *"stacked Git branches"* || "$candidate_help" == *"Stacked Pull Requests"* || "$candidate_help" == *"gs branch create"* ]]; then
+      gs_bin="$candidate_bin"
+      break
+    fi
+
+    if [[ -z "$gs_bin" ]]; then
+      gs_bin="$candidate_bin"
+    fi
+  done
   : >| "$err_file"
   : >| "$out_file"
   if [[ -n "$gs_bin" ]]; then
@@ -923,7 +984,7 @@ run_bench() {
       SHELL=/bin/zsh \
       USER="${USER:-prateek}" \
       LOGNAME="${LOGNAME:-${USER:-prateek}}" \
-      ZDOTDIR="$home_dir" \
+      ZDOTDIR="$home_dir/.config/zsh" \
       DOTFILES_SKIP_LAUNCHCTL_SYNC=1 \
       "$resolved_root/zsh-bench" --raw
   ) >"$raw_file"
@@ -1098,7 +1159,7 @@ run_selftest() {
   selftest_tmp="$(mktemp -d)"
   overlay_root="$selftest_tmp/dotfiles"
   rsync -a --exclude .git "$dotfiles_root/" "$overlay_root/"
-  perl -0pi -e 's/^\s*KEYTIMEOUT=1\n/# KEYTIMEOUT=1\n/m' "$overlay_root/zsh/lib/keybind.zsh"
+  perl -0pi -e 's/^\s*KEYTIMEOUT=1\n/# KEYTIMEOUT=1\n/m' "$overlay_root/home/dot_config/zsh/lib/keybind.zsh"
 
   selftest_run_capture 1 \
     selftest_exec_verify "$overlay_root"

@@ -41,6 +41,9 @@ Run Tart install-helper contract tests without booting a VM:
 
 ```sh
 make test-tart-install-helper
+make test-dotfiles-cli
+make test-mise-install-script
+make test-settings-coverage
 make test-trace-perfetto
 make test-vm-install-log-scan
 make test-vm-postflight-macos
@@ -55,6 +58,8 @@ make test-install-tart-dry-run
 make test-install-tart-smoke
 make test-install-tart-full
 ```
+
+Smoke uses the Tahoe base image. Full uses the Tahoe Xcode image because the full package profile includes Xcode-dependent tools.
 
 The current `mini` validation workflow is documented in `dev/docs/tart-mini-validation.md`.
 

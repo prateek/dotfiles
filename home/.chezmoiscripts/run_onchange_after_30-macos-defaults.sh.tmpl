@@ -1,0 +1,20 @@
+{{ template "script_lib.sh" . }}
+
+# macos.toml sha256: {{ include ".chezmoidata/system/macos.toml" | sha256sum }}
+# app config sha256: {{ include ".chezmoidata/apps/chrome.toml" | sha256sum }}
+
+{{- if and .run_install_scripts .apply_macos_defaults }}
+if [ "$(uname -s)" != "Darwin" ]; then
+  log "macOS defaults skipped on non-macOS host."
+  exit 0
+fi
+
+dotfiles_bin="$HOME/bin/dotfiles"
+if [ ! -x "$dotfiles_bin" ]; then
+  dotfiles_bin={{ printf "%s/bin/dotfiles" .dotfiles_dir | quote }}
+fi
+
+run_timed "dotfiles apply defaults" "$dotfiles_bin" apply defaults
+{{- else }}
+log "macOS defaults are disabled."
+{{- end }}

@@ -77,6 +77,12 @@ trace_emit() {
     "$rc")"
 }
 
+trace_record_timing_event() {
+  if declare -F trace_record_timing >/dev/null 2>&1; then
+    trace_record_timing "$@"
+  fi
+}
+
 trace_finish() {
   [ "$TRACE_OPEN" = "1" ] || return 0
   printf ']}\n' >>"$TRACE_FILE"
@@ -99,6 +105,7 @@ run_traced_logged() {
   set -e
   end_us="$(trace_now_us)"
   trace_emit "$name" "$start_us" "$end_us" "$rc"
+  trace_record_timing_event "$name" "$start_us" "$end_us" "$rc"
   return "$rc"
 }
 
@@ -119,5 +126,6 @@ run_traced_tee() {
   set -e
   end_us="$(trace_now_us)"
   trace_emit "$name" "$start_us" "$end_us" "$rc"
+  trace_record_timing_event "$name" "$start_us" "$end_us" "$rc"
   return "$rc"
 }
