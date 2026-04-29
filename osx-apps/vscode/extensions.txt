@@ -12,7 +12,6 @@ evzen-wybitul.magic-racket
 github.vscode-github-actions
 github.vscode-pull-request-github
 golang.go
-golf1052.code-sync
 hashicorp.terraform
 zxh404.vscode-proto3
 marp-team.marp-vscode

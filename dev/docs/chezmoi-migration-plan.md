@@ -159,8 +159,8 @@ Allowed live links are limited to repo-local executable wrappers that must run d
 | `.config/kanata/kanata.kbd` | `home/dot_config/kanata/kanata.kbd`; mirror to `home/Library/Application Support/kanata/kanata.kbd` for Kanata's default config path | 2 | planned; Homebrew service uses the XDG path |
 | `nvim/` | `home/dot_config/nvim/` | 2 | planned |
 | `gitconfig`, `vimrc`, `inputrc`, `lesskey` | native `home/dot_*` files | 2 | planned |
-| `osx-apps/vscode/` | `home/Library/Application Support/Code/User/`, `home/.chezmoidata/apps/vscode.toml`; raw extension captures under `archive/app-captures/` | 2 | planned |
-| `vscode/` | reconcile into the same `home/Library/...` targets, then remove the legacy tree | 2 | deferred |
+| `osx-apps/vscode/` | `home/Library/Application Support/Code/User/`, `home/.chezmoidata/apps/vscode.toml`; raw extension captures under `archive/app-captures/` | 2 | planned; current settings source of truth |
+| `vscode/` | no target; legacy settings and extension copy removed after reconciliation into `osx-apps/vscode/` | 2 | complete |
 | `osx-apps/ghostty/config` | `home/Library/Application Support/com.mitchellh.ghostty/config` | 2 | planned |
 | `osx-apps/defaults/*.plist` | declarations under `home/.chezmoidata/apps/<app>.toml` or `home/.chezmoidata/system/macos.toml`; raw captures under `archive/app-captures/` | 3 | planned |
 | `osx-apps/iterm2/` | stable preferences under `home/dot_config/applications/iterm2/`; defaults declarations in `home/.chezmoidata/apps/iterm2.toml` point iTerm2 at that folder | 3 | planned custom-folder model |

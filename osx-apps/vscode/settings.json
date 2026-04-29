@@ -109,7 +109,7 @@
     "window.zoomLevel": 2,
     // === workbench ===
     "workbench.activityBar.orientation": "vertical",
-    "workbench.colorTheme": "Default Dark+",
+    "workbench.colorTheme": "Dark+",
     "workbench.editor.enablePreview": false,
     "workbench.editor.enablePreviewFromQuickOpen": false,
     "workbench.iconTheme": "vs-seti",
@@ -126,6 +126,8 @@
     "bazel.pathsToIgnore": [
         ".*"
     ],
+    // === chat ===
+    "chat.agent.enabled": false,
     // === cursor ===
     "cursor.cmdk.autoSelect": false,
     "cursor.enable_git_worktrees_setting": true,
@@ -151,6 +153,7 @@
     "git.detectSubmodules": false,
     "git.enableSmartCommit": true,
     "git.ignoredRepositories": [
+        "/Users/rungta/code/gocode/src/code.uber.internal/infra/statsdex/go-build",
         "/opt/homebrew"
     ],
     "git.openRepositoryInParentFolders": "always",
@@ -213,6 +216,7 @@
     // === redhat ===
     "redhat.telemetry.enabled": false,
     // === specstory ===
+    "specstory.autoSave.enabled": false,
     "specstory.cloudSync.enabled": "never",
     "specstory.derivedRules.enabled": false,
     "specstory.helpUsImprove": false,
@@ -658,6 +662,8 @@
     "typescript.autoClosingTags": false,
     // === zig ===
     "zig.zigVersion": "nightly-0.11.0-dev.3897+f571438fc",
+    "zig.zigPath": "/Users/prateek/Library/Application Support/Code/User/globalStorage/ziglang.vscode-zig/zig_install/zig",
+    "zig.zls.path": "/Users/prateek/Library/Application Support/Code/User/globalStorage/ziglang.vscode-zig/zls_install/zls",
     "zig.zls.enableInlayHints": false,
     // === language overrides ===
     "[dockercompose]": {
@@ -691,7 +697,7 @@
     },
     "[jsonc]": {
         "editor.defaultFormatter": "vscode.json-language-features",
-        "editor.formatOnSave": true,
+        "editor.formatOnSave": false,
         "editor.codeActionsOnSave": {
             "source.fixAll": "never"
         },

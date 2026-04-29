@@ -41,7 +41,7 @@ This is a personal dotfiles repository for macOS configuration, containing shell
   - `autoload/` - Custom functions auto-loaded by zsh
   - `lib/` - Core zsh libraries (aliases, keybindings, completions, etc.)
   - `extra/` - Additional configurations loaded last (overrides)
-- `vscode/` - VSCode settings, keybindings, and extensions
+- `osx-apps/vscode/` - Canonical VS Code/Cursor settings, keybindings, snippets, and extension captures
 - `scripts/` - Utility scripts and browser extensions
 - `osx-apps/` - macOS application preference files
 - `keyboard/` - Mechanical keyboard configurations

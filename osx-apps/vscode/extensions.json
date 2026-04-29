@@ -6,7 +6,8 @@
         "eamodio.gitlens",
         "evzen-wybitul.magic-racket",
         "golang.go",
-        "golf1052.code-sync",
+        // Disabled after moving VS Code settings sync to repo-managed symlinks.
+        // "golf1052.code-sync",
         "kangping.protobuf",
         "marp-team.marp-vscode",
         "mrkou47.thrift-syntax-support",
