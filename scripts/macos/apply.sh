@@ -219,6 +219,9 @@ fi
 if [ -f "$REPO_ROOT/.config/kanata/kanata.kbd" ]; then
   ensure_symlink \
     "$REPO_ROOT/.config/kanata/kanata.kbd" \
+    "$HOME/.config/kanata/kanata.kbd"
+  ensure_symlink \
+    "$REPO_ROOT/.config/kanata/kanata.kbd" \
     "$HOME/Library/Application Support/kanata/kanata.kbd"
 fi
 

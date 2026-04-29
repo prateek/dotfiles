@@ -156,7 +156,7 @@ Allowed live links are limited to repo-local executable wrappers that must run d
 | `Brewfile`, `Brewfile.core` | repo-root package manifests applied by `.chezmoiscripts/run_onchange_after_10-brew-bundle.sh.tmpl` | 2 | planned |
 | `.config/mise/`, `.config/tmux/`, `.config/worktrunk/`, `.config/opencode/`, `.config/borders/` | `home/dot_config/<name>/` | 2 | planned |
 | `.config/karabiner/karabiner.json` | `home/dot_config/karabiner/karabiner.json` | 2 | planned |
-| `.config/kanata/kanata.kbd` | `home/dot_config/kanata/kanata.kbd`; app-specific install path still needs classification | 2 | planned; app install path remains open |
+| `.config/kanata/kanata.kbd` | `home/dot_config/kanata/kanata.kbd`; mirror to `home/Library/Application Support/kanata/kanata.kbd` for Kanata's default config path | 2 | planned; Homebrew service uses the XDG path |
 | `nvim/` | `home/dot_config/nvim/` | 2 | planned |
 | `gitconfig`, `vimrc`, `inputrc`, `lesskey` | native `home/dot_*` files | 2 | planned |
 | `osx-apps/vscode/` | `home/Library/Application Support/Code/User/`, `home/.chezmoidata/apps/vscode.toml`; raw extension captures under `archive/app-captures/` | 2 | planned |
