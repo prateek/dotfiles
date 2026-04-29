@@ -1,5 +1,5 @@
 .PHONY: hammerspoon hammerspoon-check hammerspoon-reload
-.PHONY: test-dotfiles-cli test-gemini-meeting-sync test-ghc test-mise-install-script test-macos-settings test-settings-coverage test-kanata-config test-cmux-plist test-ice-plist test-orbstack-plist test-package-gated-configs test-moom-plist test-nvalt-colors test-nvalt-plist test-voiceink-plist test-repo-index test-grmrepo-refresh test-worktrees
+.PHONY: test-dotfiles-cli test-gemini-meeting-sync test-ghc test-mise-install-script test-macos-settings test-settings-coverage test-secret-backed-files test-kanata-config test-cmux-plist test-ice-plist test-orbstack-plist test-package-gated-configs test-moom-plist test-nvalt-colors test-nvalt-plist test-voiceink-plist test-repo-index test-grmrepo-refresh test-worktrees
 .PHONY: test-zed-settings test-zsh-fresh-shells verify-zsh-fresh-shells bench-zsh-startup
 .PHONY: test-tart-install-helper test-trace-perfetto test-vm-install-log-scan test-vm-postflight-macos test-install-tart-dry-run test-install-tart-smoke test-install-tart-full
 
@@ -58,6 +58,10 @@ test-macos-settings:
 ## Regression tests for app settings coverage classification.
 test-settings-coverage:
 	@zsh ./tests/settings-coverage.zsh
+
+## Regression tests for secret-backed private files.
+test-secret-backed-files:
+	@zsh ./tests/secret-backed-files.zsh
 
 ## Validate Kanata keyboard remap config with kanata's parser.
 test-kanata-config:

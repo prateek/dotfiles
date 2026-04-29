@@ -1,4 +1,2 @@
 [licenses]
-enabled = false
-
-[licenses.validators]
+paths = []

@@ -60,6 +60,12 @@ Managed app config includes Chrome policy, cmux, Ghostty, Hammerspoon, Ice, Kana
 
 `home/.chezmoidata/apps/` is apply-only. Add an app TOML there only when the repo needs an app index for defaults, generated policy, or selected plist/file ownership. Simple native config lives directly under `home/`; if it should follow package profiles, gate the target in `home/.chezmoiignore` instead of rendering `{}` for profiles that do not install the app. The app config report covers app indexes only, so native-file apps like Ghostty, Hammerspoon, VS Code, and Zed get focused tests instead. Nested preference plists should use selected readable source under `home/` or `home/.chezmoiassets/` plus a chezmoi `modify_` target instead of a whole-domain plist dump.
 
+Secret-backed configs and license files are private chezmoi templates under `home/`. Add config target paths to `home/.chezmoidata/secrets.toml` under `secrets.paths`, add license target paths to `home/.chezmoidata/licenses.toml` under `licenses.paths`, store only obfuscated `op://` refs in `secrets.refs`, and render the template with `onepasswordRead` behind `secrets_enabled`. Apply them explicitly:
+
+```sh
+DOTFILES_SECRETS_ENABLED=true dotfiles apply chezmoi
+```
+
 App captures include a local Mackup discovery source under `${XDG_STATE_HOME:-~/.local/state}/dotfiles/captures/app-settings/mackup-source/`. Those files are local evidence, not committed desired state.
 
 `bin/dotfiles` is a uv-backed Python script with an inline `requires-python` declaration, so bootstrap installs uv before handing off to chezmoi.

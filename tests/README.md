@@ -44,6 +44,7 @@ make test-tart-install-helper
 make test-dotfiles-cli
 make test-mise-install-script
 make test-settings-coverage
+make test-secret-backed-files
 make test-trace-perfetto
 make test-vm-install-log-scan
 make test-vm-postflight-macos

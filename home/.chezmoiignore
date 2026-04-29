@@ -29,3 +29,11 @@ Library/Preferences/dev.kdrag0n.MacVirt.plist
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "voiceink")) "true" }}
 Library/Preferences/com.prakashjoshipax.VoiceInk.plist
 {{- end }}
+{{- if not .secrets_enabled }}
+{{- range .secrets.paths }}
+{{ . }}
+{{- end }}
+{{- range .licenses.paths }}
+{{ . }}
+{{- end }}
+{{- end }}

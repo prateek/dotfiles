@@ -18,7 +18,7 @@ The canonical checkout stays at `~/dotfiles`.
 
 - `home/`: chezmoi source state. With `.chezmoiroot = home`, files under this directory materialize into `$HOME`.
 - `install.sh`: the only public bootstrap entrypoint. It prepares enough of macOS for chezmoi to run, then hands off to `chezmoi init --apply`.
-- `.chezmoidata/`: committed structured desired state for chezmoi templates and scripts, including bootstrap defaults, package profiles, app indexes, scalar defaults, license aliases, and permission intent.
+- `.chezmoidata/`: committed structured desired state for chezmoi templates and scripts, including bootstrap defaults, package profiles, app indexes, scalar defaults, secret refs, license paths, and permission intent.
 - `.chezmoiassets/`: committed source-only payloads used by templates or `modify_` targets. Use this for selected plist payloads that must not be parsed as Go templates.
 - `.chezmoiscripts/`: chezmoi-owned side effects. Use this for idempotent setup that should run as part of `chezmoi apply`.
 - `.chezmoiexternal.*`: chezmoi-owned external dependencies such as zinit or plugin repositories, when a clone/pull is enough.
@@ -71,8 +71,8 @@ Pending:
       bootstrap.toml            # committed non-local bootstrap defaults
       features.toml             # committed non-identifying feature flags
       packages.toml             # package profiles; rendered to temporary Brewfile input
-      secrets.toml              # secret aliases and obfuscated op:// refs
-      licenses.toml             # license aliases and validator IDs only
+      secrets.toml              # secret target paths and obfuscated op:// refs
+      licenses.toml             # license target paths only
       permissions.toml          # global permission intent
       system/
         macos.toml              # Apple/global defaults declarations
@@ -145,7 +145,7 @@ Pending:
 
 Do not create both `Library/` and `private_Library/` at the source root. They both target `~/Library` and make the source state ambiguous. Use one `Library/` tree and apply `private_` to specific files or directories.
 
-Committed `.chezmoidata` may contain desired app/system declarations, feature flags, package profiles, validator IDs, opaque secret aliases, and obfuscated `op://` refs. Hostnames, usernames, workplace labels, account names, installed-app inventories, raw captures, transaction records, and local paths belong in untracked XDG state or local chezmoi config.
+Committed `.chezmoidata` may contain desired app/system declarations, feature flags, package profiles, secret-backed target paths, opaque secret ref keys, and obfuscated `op://` refs. Hostnames, usernames, workplace labels, account names, installed-app inventories, raw captures, transaction records, and local paths belong in untracked XDG state or local chezmoi config.
 
 `${DOTFILES}` means a chezmoi data value named `dotfiles_dir`. It defaults to `~/dotfiles` on real machines. Isolated tests set it to the repo under test, so rendered live links and shell startup do not accidentally point at `$tmp_home/dotfiles`.
 
@@ -230,7 +230,7 @@ Rules:
 - Scripts that require secrets, GUI sign-in, TCC permissions, or privileged profile installation must be gated by data flags and fail closed with a specific manual step.
 - Prefer `.chezmoiexternal.*` over script-managed `git clone` when a dependency is just a repository or archive. Git-repo externals must set a `refreshPeriod` or be refreshed through `dotfiles apply chezmoi --refresh-externals=auto`; otherwise chezmoi may keep an existing checkout unchanged.
 
-Default `chezmoi apply` may run home-state scripts and apply declared home source state. That includes ordinary app files and selected preference plist `modify_` targets. High-risk imperative changes, such as privileged policy writes, license installation, permission/profile changes, or non-chezmoi app mutations, still go through the transaction-aware `dotfiles` CLI or an explicitly gated script so they can be audited and rolled back.
+Default `chezmoi apply` may run home-state scripts and apply declared home source state. That includes ordinary app files, selected preference plist `modify_` targets, and secret-backed private files when `secrets_enabled=true`. High-risk imperative changes, such as privileged policy writes, app license activation, permission/profile changes, or non-chezmoi app mutations, still go through the transaction-aware `dotfiles` CLI or an explicitly gated script so they can be audited and rolled back.
 
 ## Repo Tooling
 
@@ -301,10 +301,11 @@ Rules:
 - Public committed refs use repo-local aliases or obfuscated `op://` IDs.
 - Untracked local config maps aliases to human-readable 1Password refs when that is more convenient locally.
 - Name-bearing refs such as `op://Private/...`, account labels, and direct refs with readable item or field names live only in untracked local config.
-- Secret templates must be guarded by an explicit `secrets_enabled` data flag and must not evaluate `op` calls during public bootstrap.
+- Secret-backed config files list their target paths in `secrets.paths`; license files list theirs in `licenses.paths`. `.chezmoiignore` skips both unless `secrets_enabled=true`.
+- Secret templates use `onepasswordRead .secrets.refs.<name>` behind an explicit `secrets_enabled` guard and must not evaluate `op` calls during public bootstrap.
 - License files are never committed.
+- License files are private chezmoi templates in v1. If an app needs imperative activation or keychain mutation, keep it manual until `dotfiles apply licenses` grows that app-specific path.
 - License fingerprints are local-only. If needed, use a per-machine untracked salt/HMAC and do not emit the result in normal JSON.
-- License validation uses allowlisted repo-owned validators by ID. Do not run arbitrary shell from a license manifest.
 - Permission manifests may use `desired = "manual"` without a code requirement. Profile-managed permissions require non-empty, verified code requirements.
 - Raw TCC rows are never emitted. Reports use service, declared app ID, status enum, and redacted reason.
 
@@ -329,7 +330,7 @@ Scopes are `chezmoi`, `shell`, `defaults`, `packages`, `apps`, `licenses`, `perm
 
 `dotfiles apply chezmoi` is a thin wrapper around the canonical `chezmoi apply` flags and generated local chezmoi config. It is allowed to run chezmoi scripts.
 
-`dotfiles apply defaults`, `licenses`, and `permissions` owns transaction planning, backups, audit output, and rollback metadata for imperative mutations. App config represented as chezmoi source state applies through `dotfiles apply chezmoi`; an `apps` apply scope is reserved for future app work that cannot be represented as files, `modify_` targets, or generated policy data. Chezmoi scripts may call gated scopes only when the matching data flag is enabled. Package and shell dependency scripts may run by default because they are part of making the declared home state usable.
+`dotfiles apply defaults` and future `licenses`/`permissions` implementations own transaction planning, backups, audit output, and rollback metadata for imperative mutations. App config and license files represented as chezmoi source state apply through `dotfiles apply chezmoi`; `apps` and `licenses` apply scopes are reserved for future work that cannot be represented as files, `modify_` targets, or generated policy data. Chezmoi scripts may call gated scopes only when the matching data flag is enabled. Package and shell dependency scripts may run by default because they are part of making the declared home state usable.
 
 Package and runtime changes are not fully rollbackable. Their transaction records capture before/after inventory, command output, selected profile, and intended removals. Rollback for `packages` is best-effort when the package manager has a clear inverse, and otherwise reports the manual recovery plan.
 
@@ -369,7 +370,7 @@ Chezmoi then owns ongoing setup:
 6. `run_onchange_after_30-macos-defaults.sh.tmpl` applies the declared Apple/global defaults baseline, gated by data flags until transaction rollback exists.
 7. `run_after_90-verify.sh.tmpl` runs cheap post-apply validation and prints manual blockers for secrets, sign-in, licenses, or permissions.
 
-Secret-bearing templates render only when `secrets_enabled=true`. If `op` is unauthenticated, the script fails closed with the exact login/rerun command.
+Secret-bearing templates render only when `secrets_enabled=true`. Secret-backed paths are ignored otherwise, so public bootstrap does not create empty license/config files. If `op` is unauthenticated, chezmoi fails closed with the 1Password sign-in prompt.
 
 Normal update once the CLI exists:
 
@@ -545,7 +546,7 @@ Exit criteria:
 - isolated tests do not read or write real chezmoi state;
 - `install.sh` is the only public bootstrap script and has no package/app/default implementation beyond making chezmoi runnable;
 - `bootstrap.sh` is deleted;
-- `chezmoi apply` may run idempotent package/shell setup scripts, but app/default/license/permission mutations are gated until transaction rollback exists;
+- `chezmoi apply` may run idempotent package/shell setup scripts and secret-backed private files when explicitly enabled, but app/default/license activation/permission mutations are gated until transaction rollback exists;
 - no committed doc presents live-link descriptors as the default migration strategy;
 - changes to `install.sh`, chezmoi script ordering, or the public bootstrap command pass `make test-install-tart-dry-run`;
 - `install.sh --core` remains the Tart smoke entrypoint, or [../../scripts/vm/test-install-tart.sh](../../scripts/vm/test-install-tart.sh) and [tart-mini-validation.md](tart-mini-validation.md) are updated in the same phase.
