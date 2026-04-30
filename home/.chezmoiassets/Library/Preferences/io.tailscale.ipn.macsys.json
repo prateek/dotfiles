@@ -1,0 +1,9 @@
+{
+  "AppIntroShown": true,
+  "DevicesListSearchTerm": "",
+  "HideDockIcon": true,
+  "OnboardingFlow": "hide",
+  "TailscaleStartOnLogin": true,
+  "UnstableUpdatesEnabled": false,
+  "appIntroStep": 0
+}

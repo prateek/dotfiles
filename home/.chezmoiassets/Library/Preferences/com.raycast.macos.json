@@ -1,0 +1,21 @@
+{
+  "NSStatusItem VisibleCC raycastIcon": false,
+  "commandsPreferencesShowOnlyCustomized": true,
+  "commandsPreferencesShowOnlyEnabled": false,
+  "emojiPicker_skinTone": "standard",
+  "fileSearch_fileSearchScope": "kMDQueryScopeComputer",
+  "floatingNotes_raycastNotesFormatBarVisible": false,
+  "floatingNotes_raycastNotesWindowAutoresizingEnabled": false,
+  "navigationCommandStyleIdentifierKey": "vim",
+  "pageNavigationCommandKeysIdentifierKey": "arrows",
+  "popToRootTimeout": 15,
+  "raycastCurrentThemeId": "bundled-sky",
+  "raycastCurrentThemeIdDarkAppearance": "bundled-raycast-dark",
+  "raycastCurrentThemeIdLightAppearance": "bundled-raycast-light",
+  "raycastPreferredWindowMode": "compact",
+  "raycastShouldFollowSystemAppearance": true,
+  "raycastUI_preferredTextSize": "large",
+  "showGettingStartedLink": true,
+  "themeStudio_appearanceFilter": "dark",
+  "useHyperKeyIcon": false
+}

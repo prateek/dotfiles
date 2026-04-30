@@ -76,6 +76,11 @@ expect_ignored() {
 expect_unmanaged ".config/cmux" "$full_managed"
 expect_managed ".config/ghostty" "$full_managed"
 expect_managed ".hammerspoon" "$full_managed"
+expect_managed "Library/Preferences/com.hegenberg.BetterTouchTool.plist" "$full_managed"
+expect_managed "Library/Preferences/com.raycast.macos.plist" "$full_managed"
+expect_managed "Library/Preferences/io.tailscale.ipn.macsys.plist" "$full_managed"
+expect_managed "Library/Preferences/com.setapp.DesktopClient.plist" "$full_managed"
+expect_managed "Library/Preferences/pro.betterdisplay.BetterDisplay.plist" "$full_managed"
 expect_managed ".config/zed" "$full_managed"
 expect_managed "Library/Application Support/Leader Key/config.json" "$full_managed"
 expect_managed "Library/Application Support/Code/User" "$full_managed"
@@ -89,6 +94,11 @@ expect_managed "Library/Preferences/net.elasticthreads.nv.plist" "$full_managed"
 expect_unmanaged ".config/cmux" "$core_managed"
 expect_managed ".config/ghostty" "$core_managed"
 expect_unmanaged ".hammerspoon" "$core_managed"
+expect_managed "Library/Preferences/com.hegenberg.BetterTouchTool.plist" "$core_managed"
+expect_managed "Library/Preferences/com.raycast.macos.plist" "$core_managed"
+expect_managed "Library/Preferences/io.tailscale.ipn.macsys.plist" "$core_managed"
+expect_managed "Library/Preferences/com.setapp.DesktopClient.plist" "$core_managed"
+expect_unmanaged "Library/Preferences/pro.betterdisplay.BetterDisplay.plist" "$core_managed"
 expect_unmanaged ".config/zed" "$core_managed"
 expect_managed "Library/Application Support/Leader Key/config.json" "$core_managed"
 expect_managed "Library/Application Support/Code/User" "$core_managed"
@@ -105,6 +115,7 @@ expect_ignored "Library/Colors/nvALT.clr"
 expect_ignored "Library/Preferences/com.jordanbaird.Ice.plist"
 expect_ignored "Library/Preferences/com.cmuxterm.app.plist"
 expect_ignored "Library/Preferences/net.elasticthreads.nv.plist"
+expect_ignored "Library/Preferences/pro.betterdisplay.BetterDisplay.plist"
 grep -Fx -- "Library/Application Support/Leader Key/config.json" "$minimal_ignored" >/dev/null ||
   die "expected Leader Key to be ignored when profile has no leader-key cask"
 grep -Fx -- ".config/ghostty" "$minimal_ignored" >/dev/null ||
@@ -115,6 +126,14 @@ grep -Fx -- "Library/Preferences/dev.kdrag0n.MacVirt.plist" "$minimal_ignored" >
   die "expected OrbStack to be ignored when profile has no orbstack cask"
 grep -Fx -- "Library/Preferences/com.prakashjoshipax.VoiceInk.plist" "$minimal_ignored" >/dev/null ||
   die "expected VoiceInk to be ignored when profile has no voiceink cask"
+grep -Fx -- "Library/Preferences/com.hegenberg.BetterTouchTool.plist" "$minimal_ignored" >/dev/null ||
+  die "expected BetterTouchTool to be ignored when profile has no bettertouchtool cask"
+grep -Fx -- "Library/Preferences/com.raycast.macos.plist" "$minimal_ignored" >/dev/null ||
+  die "expected Raycast to be ignored when profile has no raycast cask"
+grep -Fx -- "Library/Preferences/io.tailscale.ipn.macsys.plist" "$minimal_ignored" >/dev/null ||
+  die "expected Tailscale to be ignored when profile has no tailscale-app cask"
+grep -Fx -- "Library/Preferences/com.setapp.DesktopClient.plist" "$minimal_ignored" >/dev/null ||
+  die "expected Setapp to be ignored when profile has no setapp cask"
 
 python3 - "$leader_key_json" <<'PY'
 import json

@@ -41,6 +41,7 @@ jobs:
           make test-dotfiles-cli
           make test-gemini-meeting-sync
           make test-settings-coverage
+          make test-pending-app-plists
           make test-zed-settings
           make test-moom-plist
           make test-trace-perfetto

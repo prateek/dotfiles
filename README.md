@@ -42,7 +42,7 @@ gh repo clone prateek/dotfiles ~/dotfiles
 cd ~/dotfiles && ./install.sh
 ```
 
-Managed app config includes Chrome policy, cmux, Ghostty, Hammerspoon, Ice, Kanata, Leader Key, Moom, nvALT, OrbStack, VoiceInk, VS Code, and Zed. Kanata owns keyboard remaps; the Karabiner-Elements install remains only for its macOS virtual HID driver. Moom uses a selected XML plist patch so layouts and hotkeys stay native without committing update/window/license state. Volatile state, credentials, licenses, and account databases stay local or in 1Password.
+Managed app config includes Chrome policy, BetterDisplay, BetterTouchTool, cmux, Ghostty, Hammerspoon, Ice, Kanata, Leader Key, Moom, nvALT, OrbStack, Raycast, Setapp, Tailscale, VoiceInk, VS Code, and Zed. Kanata owns keyboard remaps; the Karabiner-Elements install remains only for its macOS virtual HID driver. Selected plist patches keep app preferences native without committing update, window, license, account, cache, or runtime state. Volatile state, credentials, licenses, and account databases stay local or in 1Password.
 
 ## Shell helpers
 

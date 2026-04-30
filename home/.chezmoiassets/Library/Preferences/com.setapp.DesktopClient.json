@@ -1,0 +1,16 @@
+{
+  "AVDesktopPlaybackControlsControllerShowsDurationInsteadOfTimeRemainingDefaultsKey": true,
+  "EnableLauncher": false,
+  "QuickActionsOffset": 2,
+  "SUAutomaticallyUpdate": false,
+  "SUEnableAutomaticChecks": false,
+  "Setapp.app-DenyAgentRestartOnCrash": false,
+  "ShouldBlockAiSubscriptionAlertKey": true,
+  "ShouldLoadFinderSyncExtensionOnLaunch": false,
+  "ShouldShowUpToDateAlertIfNeeded": false,
+  "SuppressUninstallationDetection": false,
+  "shouldBlockSoundsKey": false,
+  "shouldDisableFeedbackWindow": true,
+  "shouldDisableRateRecentAppWindow": true,
+  "shouldShowNewTaglines": false
+}

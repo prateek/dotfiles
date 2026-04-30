@@ -13,6 +13,21 @@ Library/Application Support/Leader Key/config.json
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "hammerspoon")) "true" }}
 .hammerspoon
 {{- end }}
+{{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "bettertouchtool")) "true" }}
+Library/Preferences/com.hegenberg.BetterTouchTool.plist
+{{- end }}
+{{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "raycast")) "true" }}
+Library/Preferences/com.raycast.macos.plist
+{{- end }}
+{{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "tailscale-app")) "true" }}
+Library/Preferences/io.tailscale.ipn.macsys.plist
+{{- end }}
+{{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "setapp")) "true" }}
+Library/Preferences/com.setapp.DesktopClient.plist
+{{- end }}
+{{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "betterdisplay")) "true" }}
+Library/Preferences/pro.betterdisplay.BetterDisplay.plist
+{{- end }}
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "visual-studio-code")) "true" }}
 Library/Application Support/Code/User
 {{- end }}
