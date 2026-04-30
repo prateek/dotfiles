@@ -8,7 +8,7 @@ set +v 2>/dev/null || true
 setopt typeset_silent 2>/dev/null || true
 
 die() {
-  print -u2 -- "pending-app-plist-modify: $*"
+  print -u2 -- "selected-app-plist-modify: $*"
   exit 1
 }
 
@@ -159,4 +159,4 @@ for app_name, spec in cases.items():
         assert key not in empty_merged, (app_name, key)
 PY
 
-print -- "OK pending-app-plist-modify"
+print -- "OK selected-app-plist-modify"
