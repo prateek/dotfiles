@@ -142,16 +142,14 @@ alias ec='code ~/.claude'
 alias c='$DOTFILES/scripts/c'
 
 alias yo='open -a Yoink'
-unalias yolo 2>/dev/null
 yolo() {
   codex --dangerously-bypass-approvals-and-sandbox "$@"
 }
-unalias yoloo 2>/dev/null
-yoloo() {
-  OPENCODE_PERMISSION='{"*":"allow"}' opencode "$@"
-}
 yoloc() {
   claude --dangerously-skip-permissions "$@"
+}
+yoloct() {
+  CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 yoloc "$@"
 }
 
 # Worktrees:
