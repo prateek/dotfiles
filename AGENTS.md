@@ -9,6 +9,8 @@ Keep it short. Put recurring maintenance workflow in `$code-gardening`, not in l
 - If the fix is cheap and clearly part of the task, do it now. If it is broader, riskier, cross-cutting, or unclear, call it out explicitly.
 - Keep durable state in sync when facts change. That includes behavior, tests, comments, docs, examples, config, and agent instructions.
 - Use `$code-gardening` when you are touching durable state, hit a parser or config error, suspect a failure may be pre-existing, or do not trust your read of the code yet.
+- Before adding functionality, inventory the existing surface area and prefer extending or consolidating when semantics overlap. This includes CLI commands, flags, scripts, config keys, docs sections, agent guidance, tests, and helper APIs. State the inventory in the proposal — name the existing entries you considered and why each does or does not fit — before writing the new one. Treat the user's verb in a request ("can we probe…", "can we sync…") as a capability, not a command name; check whether an existing entry can grow a mode or flag first. If a new surface is still right, sync help, docs, and tests.
+- When I question a surface-area choice ("isn't this the same as X?", "shouldn't this be part of Y?"), default to consolidating, not redefining the new entry's scope. If you still think the split is right, say so explicitly and ask before continuing. Narrowing the new thing's definition to preserve it is the failure mode — it looks like agreement but ships the same shape.
 - When writing prose for humans, keep it short, concrete, and clear. Use the `writing-clearly-and-concisely` guidance.
 
 ## Archaeology
