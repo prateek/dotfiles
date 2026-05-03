@@ -38,6 +38,7 @@ path=(
   $HOME/.local/bin
   $HOME/.local/share/mise/shims
   /opt/homebrew/{bin,sbin}
+  /opt/homebrew/opt/libpq/bin
   $HOME/go/bin
   $HOME/Library/pnpm
   /opt/homebrew/opt/python@3.11/libexec/bin

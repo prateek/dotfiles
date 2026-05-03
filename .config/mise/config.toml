@@ -7,6 +7,9 @@ go = "latest"
 ruby = "latest"
 "npm:@steipete/bird" = "latest"
 
+# Absurd durable-workflow CLI
+"pipx:absurdctl" = "latest"
+
 [settings.ruby]
 # Use mise's signed precompiled Ruby artifacts when available.
 compile = false

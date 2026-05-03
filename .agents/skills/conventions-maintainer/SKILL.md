@@ -15,6 +15,7 @@ Use this skill when asked to add, update, or clean up local convention guidance 
 - Linear conventions (`linear.md`)
 - Google Workspace conventions (`google-workspace.md`)
 - Browser/CDP conventions (`browser-cdp.md`)
+- Twitter/X conventions (`twitter.md`)
 - Other team workflow conventions stored under `~/.agents/docs`
 - `~/.agents/AGENTS.md` cleanup so it points to docs instead of duplicating long instructions
 
@@ -39,7 +40,7 @@ Convention docs should read like lightweight skills/playbooks.
 
 ### 1) Locate or create the target convention doc
 
-- Prefer one focused file per topic (for example `slack.md`, `git.md`, `go.md`, `linear.md`, `google-workspace.md`, `browser-cdp.md`).
+- Prefer one focused file per topic (for example `slack.md`, `git.md`, `go.md`, `linear.md`, `google-workspace.md`, `browser-cdp.md`, `twitter.md`).
 - Keep filenames stable and obvious.
 - If a topic already has a convention file, update in place instead of creating duplicates.
 
@@ -74,7 +75,14 @@ Optional sections when useful:
 - If an ID cannot be resolved, mark it as `UNKNOWN` and add a short verification note.
 - Include channel usage guidance ("what it is for" and "when to use it").
 
-### 5) Keep AGENTS pointers aligned
+### 5) Topic-specific rules (Twitter/X)
+
+- Prefer the local `bird` CLI for Twitter/X read, search, timeline, and posting workflows.
+- Use `~/.agents/docs/twitter.md` as the convention doc.
+- Keep credentials and cookies out of docs, logs, and chat output.
+- Require explicit user instruction before write actions such as tweet, reply, follow, unfollow, bookmark, or unbookmark.
+
+### 6) Keep AGENTS pointers aligned
 
 When you add or rename a convention doc, update `~/.agents/AGENTS.md` to reference it.
 
@@ -84,7 +92,7 @@ Expected AGENTS style:
 - pointer-oriented
 - minimal hardcoded workflow detail
 
-### 6) Validate before finishing
+### 7) Validate before finishing
 
 - Confirm all referenced paths exist.
 - Check for stale or duplicated guidance between docs and `AGENTS.md`.

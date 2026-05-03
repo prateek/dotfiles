@@ -111,6 +111,8 @@ For Google Workspace conventions (gog CLI), read: ~/.agents/docs/google-workspac
 
 For Browser CDP conventions (profile path), read: ~/.agents/docs/browser-cdp.md
 
+For Twitter/X conventions (bird CLI, read/write boundaries), read: ~/.agents/docs/twitter.md
+
 For marimo notebooks with uv, read: ~/.agents/docs/marimo.md
 
 For iOS and Apple-platform work (Xcode toolchain, Tuist, simulator leasing, version pinning, Makefile targets, CI cost control), read: ~/.agents/docs/ios.md

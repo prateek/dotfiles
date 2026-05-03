@@ -17,6 +17,12 @@ The fix is not a longer vocabulary ban list. It is a small set of ordered moves 
 
 **Scope.** Apply this skill to prose humans will read: docs, READMEs, PRs, commit messages, issues, email, Slack, and long replies the user will read as text. Also apply it to your own natural-language output when replying to the user. Skip code, config, structured data, agent-facing imperative guidance (AGENTS.md rules, tool-use instructions) where bluntness matters more than humanization, and direct quotes.
 
+## Tables and terminal readability
+
+When output will be read in a terminal, TUI, chat transcript, or narrow pane, make tables physically readable before sending them. Prefer short columns, split wide comparisons into multiple smaller tables, and move long URLs or notes outside the grid. Do not use a giant Markdown table that wraps every row into mush.
+
+When writing a Markdown file, report, README, or other artifact that will be rendered by a Markdown viewer, normal Markdown tables are fine. Still keep column names short and avoid stuffing paragraphs into cells.
+
 ## The seven rules, in order
 
 Apply these in sequence. Order matters — earlier rules remove material that later rules would otherwise have to rewrite.
