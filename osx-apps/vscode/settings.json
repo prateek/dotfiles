@@ -728,5 +728,6 @@
     "editor.wordWrap": "on",
     "git.detectWorktrees": false,
     "markdown-preview-enhanced.codeBlockTheme": "dark.css",
-    "markdown-preview-enhanced.previewTheme": "atom-dark.css"
+    "markdown-preview-enhanced.previewTheme": "atom-dark.css",
+    "window.autoDetectColorScheme": false
 }
