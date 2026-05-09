@@ -132,7 +132,7 @@ enabled = true
 url = "https://mcp.granola.ai/mcp"
 
 [features]
-codex_hooks = true
+hooks = true
 multi_agent = true
 memories = true
 
