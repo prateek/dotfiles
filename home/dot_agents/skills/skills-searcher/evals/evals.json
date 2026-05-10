@@ -1,0 +1,127 @@
+{
+  "skill_name": "skills-searcher",
+  "evals": [
+    {
+      "id": 1,
+      "name": "basic-search-uses-skill-search-cli",
+      "prompt": "Find me an installable agent skill for working with chezmoi dotfiles. I want to compare the top few candidates and pick one to install.",
+      "expected_output": "The agent invokes the skills-searcher skill, runs `skill-search search` (not raw gh / Sourcegraph queries), and presents a ranked candidate list with stars/installs/sources. It does not ask the user which backend to query.",
+      "files": [],
+      "expectations": [
+        "Runs `skill-search search` (or `~/bin/skill-search search`, or the full `~/.agents/skills/skills-searcher/scripts/skill-search search` path) with a query containing 'chezmoi' or 'dotfiles'",
+        "Does NOT issue raw `gh api /search/code`, `gh skill search`, `src search`, or `npx skills find` invocations directly to assemble results",
+        "Does NOT ask the user to choose a backend (gh-skill vs Sourcegraph vs GitHub code vs npx-skills) — runs them in parallel via the CLI",
+        "Surfaces multiple candidate rows with at least one of: stars, installs, sources count, or repo path",
+        "If recommending a specific skill to install, reads the candidate's `SKILL.md` (via the preview/url column or a Read of the path) before recommending"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "fresh-environment-runs-doctor-first",
+      "prompt": "I just set up a brand new machine and cloned my dotfiles. Find me a skill for reviewing pull requests on GitHub.",
+      "expected_output": "Because the environment is fresh, the agent runs `skill-search doctor` first to confirm backends are wired up, then runs the search. It does not assume gh / src / npx are all configured.",
+      "files": [],
+      "expectations": [
+        "Runs `skill-search doctor` (or `--json doctor`) before — or alongside — the first search call",
+        "After doctor, runs `skill-search search` with a query referencing pull requests, code review, or PR review",
+        "If doctor reports a degraded backend, mentions which backend is unavailable rather than silently failing",
+        "Does not skip the search step on the basis of doctor output unless ALL backends are unavailable"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "github-rate-limit-degrades-to-no-enrich",
+      "prompt": "I'm getting `gh: API rate limit exceeded for user ID` errors when I try to search for skills. I still need to find a skill for managing iOS simulators today.",
+      "expected_output": "The agent diagnoses the rate limit, runs the search with `--no-enrich` (and/or relies on Sourcegraph + npx-skills results), and tells the user how to check the reset window. It does not retry GitHub search in a tight loop.",
+      "files": [],
+      "expectations": [
+        "Runs `skill-search search` with `--no-enrich` — OR explicitly relies on the Sourcegraph and npx-skills backends while GitHub is degraded",
+        "Mentions checking `gh api rate_limit` (or shows the reset time) so the user knows when GitHub recovers",
+        "Does NOT retry the same `gh skill search` / `gh api /search/code` command repeatedly without backoff",
+        "Still returns at least partial candidate results from the non-rate-limited backends — does not give up entirely",
+        "The query passed to skill-search references iOS simulators (e.g. 'ios simulator', 'ios sim', 'simulator')"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "install-command-from-result-row",
+      "prompt": "I ran skill-search and the top result is `owner-mid/repo@chezmoi-helper` with 42 installs from skills.sh. Install it for me.",
+      "expected_output": "The agent uses the `install_command` column from the skill-search result row rather than hand-crafting an install incantation. For an npx-skills result that means `npx skills add owner-mid/repo@chezmoi-helper` or equivalent.",
+      "files": [],
+      "expectations": [
+        "Uses the install command surfaced by skill-search (the `install_command` column), not a hand-rolled `git clone` / manual file copy",
+        "For a `skills-cli` (a.k.a. `npx-skills`) result, the install command form is `npx skills add <owner>/<repo>@<skill>` (or equivalent shown in the row)",
+        "Reads the skill's `SKILL.md` before installing, OR explicitly notes it's relying on the user's prior review",
+        "Does NOT confuse the install command with the preview command (preview is for inspecting; install is for adding)"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "sort-by-installs-when-popularity-matters",
+      "prompt": "Find me the most-installed React testing skills on skills.sh. I want to see what most people are actually using, not just what has the most stars on GitHub.",
+      "expected_output": "The agent passes `--sort-by installs` (with `--direction desc` implicit or explicit) so the npx-skills install counts drive the ordering, rather than GitHub stars.",
+      "files": [],
+      "expectations": [
+        "Runs `skill-search search` with `--sort-by installs` (and not `--sort-by stars`)",
+        "Query references React and testing (e.g. 'react testing', 'react test', 'testing react')",
+        "Top results in the response are ordered by install count, not by stargazer count",
+        "Does NOT default to stars-based ranking when the user explicitly asked about install popularity"
+      ]
+    },
+    {
+      "id": 6,
+      "name": "raw-backend-for-debugging",
+      "prompt": "The Sourcegraph backend is returning weird results for my query — I want to see the raw Sourcegraph response so I can debug what file:(?i)skill\\.md is matching.",
+      "expected_output": "The agent uses `skill-search raw sourcegraph <query>` to dump the backend-native JSON, rather than re-running the unified search or invoking `src search` directly.",
+      "files": [],
+      "expectations": [
+        "Runs `skill-search raw sourcegraph` with the user's query",
+        "Does NOT invoke `src search` directly when the skill's `raw` subcommand is the documented escape hatch",
+        "Surfaces the raw JSON output (or its key fields like `Results`, `repository`, `file.path`) so the user can inspect what's matching",
+        "If the user asks about the query shape, references the documented `file:(?i)skill\\.md <terms> select:file count:<limit>` form, where each token expands to `(file:<token> OR repo:<token> OR content:/(?m)^(name|description):.*<token>/)`"
+      ]
+    },
+    {
+      "id": 7,
+      "name": "authority-over-raw-signal-swiftui",
+      "prompt": "Find me an installable agent skill for working with iOS / SwiftUI. I want a recommendation.",
+      "expected_output": "The agent runs skill-search and sees both a large third-party collection (e.g. `dpearson2699/swift-ios-skills`) and a smaller-but-authoritative skill (e.g. `twostraws/swiftui-agent-skill@swiftui-pro` by Paul Hudson). It applies the workflow's authority check and recommends the authority-authored skill, citing source authority over raw stars / multi-source.",
+      "files": [],
+      "expectations": [
+        "Runs `skill-search search` with a query referencing SwiftUI or iOS",
+        "After ranking results, explicitly considers source authority — names at least one recognized upstream authority for the SwiftUI domain (Apple, `twostraws` / Paul Hudson, `avanderlee`, or similar)",
+        "Does NOT default to recommending a larger third-party collection on raw star count or multi-source agreement alone when an authority-authored skill is present in the results",
+        "Recommends `twostraws/swiftui-agent-skill@swiftui-pro` OR an equivalent skill from a recognized SwiftUI authority (Apple, `avanderlee`, Hacking with Swift / `twostraws`), OR explicitly explains why no such skill is available in the result set",
+        "Uses the install command from the result row, not a hand-crafted incantation"
+      ]
+    },
+    {
+      "id": 8,
+      "name": "scope-fit-over-popularity-antislop",
+      "prompt": "Find me an installable agent skill for writing for humans — stripping AI slop and sounding natural. I want a recommendation.",
+      "expected_output": "The agent runs skill-search and sees both narrowly-scoped anti-slop skills (e.g. `third774/dotfiles@natural-writing`, `hardikpandya/stop-slop`) and broadly-scoped writing-quality skills (e.g. `obra/superpowers@writing-skills`). It applies the workflow's scope-fit check and recommends a narrowly-scoped option that targets AI-slop semantics, not a generic high-popularity writing skill that's merely adjacent.",
+      "files": [],
+      "expectations": [
+        "Runs `skill-search search` with a query referencing slop, natural writing, anti-AI prose, or similar",
+        "After reading the top candidates' SKILL.md, explicitly contrasts scope — AI-slop / de-slopping is narrower than general writing quality / Strunk-style clarity / marketing copywriting",
+        "Recommends a skill whose SKILL.md is explicitly about AI tells, slop vocabulary, or natural-sounding prose (e.g. `third774/dotfiles@natural-writing`, `hardikpandya/stop-slop@stop-slop`, `brianlovin/claude-config@deslop`, or similar)",
+        "Does NOT recommend a generic high-install writing skill (e.g. `obra/superpowers@writing-skills`, `coreyhaines31/marketingskills@copywriting`) as the primary pick when a narrower match exists",
+        "Justifies the recommendation by what the skill actually targets, not by popularity alone"
+      ]
+    },
+    {
+      "id": 9,
+      "name": "niche-domain-low-install-fallback",
+      "prompt": "Find me an installable agent skill for working with chezmoi dotfiles. I want a recommendation.",
+      "expected_output": "The agent runs skill-search. Most chezmoi skills are below the 1K-install and 100-star bars. The agent does NOT refuse to recommend on those grounds — it applies the workflow's niche-domain guidance, falls back to the strongest multi-source-confirmed candidate with explicit caveats, or plainly states no candidate meets the bars and offers fallback help.",
+      "files": [],
+      "expectations": [
+        "Runs `skill-search search` with a chezmoi-related query",
+        "Recognizes that chezmoi is a niche domain where the 1K-install / 100-star bars (calibrated for mainstream ecosystems) will exclude most or all candidates",
+        "Either recommends a multi-source-confirmed candidate (e.g. `mizchi/skills@chezmoi-management`, `terrylica/cc-skills@chezmoi-sync`, `majiayu000/claude-skill-registry@chezmoi`) with explicit caveats about install count, OR plainly states that no candidate meets the popularity bars and offers a fallback path (direct help, `npx skills init` to scaffold a local skill)",
+        "Does NOT refuse to recommend purely because the install-count threshold is unmet when multi-source agreement is present",
+        "Surfaces the multi-source-agreement signal as a partial substitute for low install counts when explaining the recommendation"
+      ]
+    }
+  ]
+}

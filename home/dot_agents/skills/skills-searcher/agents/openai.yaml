@@ -1,0 +1,4 @@
+interface:
+  display_name: "Skills Searcher"
+  short_description: "Search agent skills across GitHub and skills.sh"
+  default_prompt: "Use $skills-searcher to find installable agent skills for a task."

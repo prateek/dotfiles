@@ -1,0 +1,1021 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# ///
+"""Search for agent SKILL.md files across GitHub-oriented discovery backends."""
+
+from __future__ import annotations
+
+import argparse
+import asyncio
+import datetime as _dt
+import json
+import re
+import shutil
+import subprocess
+import sys
+from dataclasses import dataclass
+from typing import Any
+
+
+BACKENDS = ("gh-skill", "sourcegraph", "github-code", "skills-cli")
+TSV_COLUMNS = (
+    "sources",
+    "stars",
+    "installs",
+    "file_commits",
+    "repo_commits",
+    "repo",
+    "path",
+    "skill_name",
+    "namespace",
+    "description",
+    "url",
+    "preview_command",
+    "install_command",
+)
+ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
+WORD_RE = re.compile(r"[A-Za-z0-9_.:/@+-]+")
+
+
+@dataclass
+class CommandResult:
+    args: list[str]
+    rc: int
+    stdout: str = ""
+    stderr: str = ""
+    timed_out: bool = False
+
+    @property
+    def ok(self) -> bool:
+        return self.rc == 0 and not self.timed_out
+
+    @property
+    def combined_output(self) -> str:
+        return "\n".join(part for part in (self.stdout, self.stderr) if part)
+
+
+def run_command(args: list[str], *, timeout: float = 20.0) -> CommandResult:
+    try:
+        proc = subprocess.run(
+            args,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+    except FileNotFoundError as exc:
+        return CommandResult(args=args, rc=127, stderr=str(exc))
+    except subprocess.TimeoutExpired as exc:
+        stdout = exc.stdout if isinstance(exc.stdout, str) else ""
+        stderr = exc.stderr if isinstance(exc.stderr, str) else ""
+        return CommandResult(args=args, rc=124, stdout=stdout, stderr=stderr, timed_out=True)
+
+    return CommandResult(args=args, rc=proc.returncode, stdout=proc.stdout, stderr=proc.stderr)
+
+
+def classify_failure(result: CommandResult) -> str:
+    text = result.combined_output.lower()
+    if result.timed_out or result.rc == 124:
+        return "timeout"
+    if result.rc == 127:
+        return "missing"
+    if "rate limit" in text or "api rate limit exceeded" in text:
+        return "rate_limited"
+    if "bad credentials" in text or "requires authentication" in text or "authentication failed" in text:
+        return "auth_failed"
+    return "failed"
+
+
+def compact_error(text: str) -> str:
+    text = ANSI_RE.sub("", text)
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    if not lines:
+        return ""
+    return re.sub(r"\s+", " ", lines[0])[:500]
+
+
+def parse_json(text: str) -> Any | None:
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        return None
+
+
+def to_int(value: Any) -> int | None:
+    if value is None or value == "":
+        return None
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        return int(value)
+    text = str(value).strip().replace(",", "")
+    if not text:
+        return None
+    multiplier = 1
+    if text[-1:].lower() == "k":
+        multiplier = 1_000
+        text = text[:-1]
+    elif text[-1:].lower() == "m":
+        multiplier = 1_000_000
+        text = text[:-1]
+    try:
+        return int(float(text) * multiplier)
+    except ValueError:
+        return None
+
+
+def strip_github_prefix(repo: str | None) -> str | None:
+    if not repo:
+        return None
+    repo = repo.strip()
+    for prefix in ("https://github.com/", "github.com/"):
+        if repo.startswith(prefix):
+            repo = repo[len(prefix) :]
+    return repo.strip("/")
+
+
+def repo_from_value(value: Any) -> str | None:
+    if isinstance(value, str):
+        return strip_github_prefix(value)
+    if isinstance(value, dict):
+        for key in ("full_name", "fullName", "nameWithOwner", "name", "slug"):
+            repo = repo_from_value(value.get(key))
+            if repo and "/" in repo:
+                return repo
+    return None
+
+
+def skill_name_from_path(path: str | None) -> str | None:
+    if not path:
+        return None
+    parts = [part for part in path.split("/") if part]
+    if len(parts) < 2:
+        return None
+    return parts[-2]
+
+
+def clean_frontmatter_value(value: str) -> str:
+    value = value.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
+        return value[1:-1]
+    return value
+
+
+def metadata_from_skill_content(content: str | None) -> dict[str, str]:
+    if not content or not content.startswith("---"):
+        return {}
+    pieces = content.split("---", 2)
+    if len(pieces) < 3:
+        return {}
+
+    metadata: dict[str, str] = {}
+    for line in pieces[1].splitlines():
+        if ":" not in line:
+            continue
+        key, value = line.split(":", 1)
+        key = key.strip()
+        if key in {"name", "description"}:
+            metadata[key] = clean_frontmatter_value(value)
+    return metadata
+
+
+def new_result(source: str, **fields: Any) -> dict[str, Any]:
+    result: dict[str, Any] = {
+        "sources": [source],
+        "stars": None,
+        "installs": None,
+        "file_commits": None,
+        "repo_commits": None,
+        "repo": None,
+        "path": None,
+        "skill_name": None,
+        "namespace": None,
+        "description": None,
+        "url": None,
+        "preview_command": None,
+        "install_command": None,
+    }
+    result.update({key: value for key, value in fields.items() if value not in ("", None)})
+    fill_commands(result)
+    return result
+
+
+def ordered_sources(sources: list[str]) -> list[str]:
+    backend_order = {name: index for index, name in enumerate(BACKENDS)}
+    return sorted(dict.fromkeys(sources), key=lambda source: (backend_order.get(source, len(backend_order)), source))
+
+
+def fill_commands(result: dict[str, Any]) -> None:
+    repo = result.get("repo")
+    path = result.get("path")
+    skill_name = result.get("skill_name")
+    if repo and path:
+        result["preview_command"] = f"gh skill preview {repo} {path}"
+        result["install_command"] = (
+            f"gh skill install {repo} {path} --allow-hidden-dirs --dir \"$HOME/.agents/skills\""
+        )
+    elif repo and skill_name:
+        result["install_command"] = f"npx skills add {repo}@{skill_name} -g -y"
+
+
+def backend_status(status: str, *, count: int = 0, detail: str | None = None) -> dict[str, Any]:
+    record: dict[str, Any] = {"status": status, "count": count}
+    if detail:
+        record["detail"] = detail
+    return record
+
+
+def progress(enabled: bool, message: str) -> None:
+    if enabled:
+        print(f"progress\t{message}", file=sys.stderr, flush=True)
+
+
+def progress_result(enabled: bool, source: str, result: dict[str, Any]) -> None:
+    if not enabled:
+        return
+    cells = [
+        source,
+        str(result.get("stars") or ""),
+        str(result.get("installs") or ""),
+        str(result.get("repo") or ""),
+        str(result.get("path") or ""),
+        str(result.get("skill_name") or ""),
+    ]
+    print("result\t" + "\t".join(clean_cell(cell) for cell in cells), file=sys.stderr, flush=True)
+
+
+def run_gh_skill(query: str, limit: int, *, timeout: float) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    if not shutil.which("gh"):
+        return [], backend_status("missing", detail="gh CLI is not installed")
+
+    args = [
+        "gh",
+        "skill",
+        "search",
+        query,
+        "--limit",
+        str(limit),
+        "--json",
+        "repo,path,skillName,namespace,description,stars",
+    ]
+    result = run_command(args, timeout=timeout)
+    if not result.ok:
+        status = classify_failure(result)
+        return [], backend_status(status, detail=github_rate_limit_hint() or compact_error(result.combined_output))
+
+    data = parse_json(result.stdout)
+    if not isinstance(data, list):
+        return [], backend_status("failed", detail="gh skill search returned non-JSON output")
+
+    results: list[dict[str, Any]] = []
+    for row in data:
+        if not isinstance(row, dict):
+            continue
+        repo = repo_from_value(row.get("repo") or row.get("repository"))
+        path = row.get("path")
+        results.append(
+            new_result(
+                "gh-skill",
+                repo=repo,
+                path=path,
+                skill_name=row.get("skillName") or row.get("skill_name") or skill_name_from_path(path),
+                namespace=row.get("namespace"),
+                description=row.get("description"),
+                stars=to_int(row.get("stars")),
+                url=github_blob_url(repo, path),
+            )
+        )
+    return results, backend_status("ok", count=len(results))
+
+
+def sourcegraph_query(query: str, limit: int, timeout: int) -> str:
+    # Match the term in the SKILL.md path, the repo name, or the frontmatter
+    # `name:` / `description:` lines. Body-content matches are excluded because
+    # they surface skills that merely mention the term in passing.
+    def clause(token: str) -> str:
+        esc = re.escape(token)
+        return (
+            f"(file:{esc} OR repo:{esc} "
+            f"OR content:/(?m)^(name|description):.*{esc}/)"
+        )
+
+    tokens = WORD_RE.findall(query)
+    terms = " ".join(clause(token) for token in tokens) if tokens else clause(query)
+    return f"file:(?i)skill\\.md {terms} select:file count:{limit} timeout:{timeout}s"
+
+
+def run_sourcegraph(query: str, limit: int, *, timeout: int) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    if not shutil.which("src"):
+        return [], backend_status("missing", detail="src CLI is not installed")
+
+    sg_query = sourcegraph_query(query, limit, timeout)
+    result = run_command(["src", "search", "-json", sg_query], timeout=timeout + 10)
+    if not result.ok:
+        return [], backend_status(classify_failure(result), detail=compact_error(result.combined_output))
+
+    data = parse_json(result.stdout)
+    if not isinstance(data, dict) or not isinstance(data.get("Results"), list):
+        return [], backend_status("failed", detail="src search returned unexpected JSON")
+
+    results: list[dict[str, Any]] = []
+    for row in data["Results"]:
+        if not isinstance(row, dict):
+            continue
+        repository = row.get("repository") if isinstance(row.get("repository"), dict) else {}
+        repo_name = repository.get("name")
+        if not isinstance(repo_name, str) or not repo_name.startswith("github.com/"):
+            continue
+        repo = strip_github_prefix(repo_name)
+        file_info = row.get("file") if isinstance(row.get("file"), dict) else {}
+        path = file_info.get("path")
+        content = file_info.get("content")
+        metadata = metadata_from_skill_content(content)
+        commit = file_info.get("commit") if isinstance(file_info.get("commit"), dict) else {}
+        oid = commit.get("oid")
+        results.append(
+            new_result(
+                "sourcegraph",
+                repo=repo,
+                path=path,
+                skill_name=metadata.get("name") or skill_name_from_path(path),
+                description=metadata.get("description"),
+                url=github_blob_url(repo, path, oid),
+            )
+        )
+    return results, backend_status("ok", count=len(results), detail=f"query={sg_query}")
+
+
+def github_code_query(query: str) -> str:
+    tokens = WORD_RE.findall(query)
+    term = " ".join(tokens) if tokens else query
+    return f"{term} filename:skill.md in:file,path"
+
+
+def run_github_code(query: str, limit: int, *, timeout: float) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    if not shutil.which("gh"):
+        return [], backend_status("missing", detail="gh CLI is not installed")
+
+    gh_query = github_code_query(query)
+    per_page = max(1, min(limit, 100))
+    results: list[dict[str, Any]] = []
+    page = 1
+
+    while len(results) < limit:
+        result = run_command(
+            [
+                "gh",
+                "api",
+                "--method",
+                "GET",
+                "/search/code",
+                "-f",
+                f"q={gh_query}",
+                "-f",
+                f"per_page={per_page}",
+                "-f",
+                f"page={page}",
+            ],
+            timeout=timeout,
+        )
+        if not result.ok:
+            status = classify_failure(result)
+            return results, backend_status(status, count=len(results), detail=github_rate_limit_hint() or compact_error(result.combined_output))
+
+        data = parse_json(result.stdout)
+        if not isinstance(data, dict) or not isinstance(data.get("items"), list):
+            return results, backend_status("failed", count=len(results), detail="GitHub code search returned unexpected JSON")
+
+        items = data["items"]
+        if not items:
+            break
+
+        for item in items:
+            if len(results) >= limit or not isinstance(item, dict):
+                break
+            repository = item.get("repository") if isinstance(item.get("repository"), dict) else {}
+            repo = repo_from_value(repository.get("full_name") or repository)
+            path = item.get("path")
+            results.append(
+                new_result(
+                    "github-code",
+                    repo=repo,
+                    path=path,
+                    skill_name=skill_name_from_path(path),
+                    url=item.get("html_url") or github_blob_url(repo, path),
+                )
+            )
+
+        total_count = to_int(data.get("total_count")) or 0
+        if len(results) >= total_count or len(items) < per_page:
+            break
+        page += 1
+
+    return results, backend_status("ok", count=len(results), detail=f"query={gh_query}")
+
+
+def run_skills_cli(query: str, limit: int, *, timeout: float) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    if not shutil.which("npx"):
+        return [], backend_status("missing", detail="npx is not installed")
+
+    result = run_command(["npx", "--yes", "skills", "find", query], timeout=timeout)
+    if not result.ok:
+        return [], backend_status(classify_failure(result), detail=compact_error(result.combined_output))
+
+    results: list[dict[str, Any]] = []
+    last: dict[str, Any] | None = None
+    for raw_line in result.stdout.splitlines():
+        line = ANSI_RE.sub("", raw_line).strip()
+        match = re.search(
+            r"([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)@([A-Za-z0-9_.-]+)\s+([0-9][0-9,.]*[KkMm]?)\s+installs",
+            line,
+        )
+        if match:
+            repo, skill_name, installs = match.groups()
+            last = new_result(
+                "skills-cli",
+                repo=repo,
+                skill_name=skill_name,
+                installs=to_int(installs),
+                url=f"https://skills.sh/{repo}/{skill_name}",
+            )
+            results.append(last)
+            continue
+
+        url_match = re.search(r"https://skills\.sh/\S+", line)
+        if url_match and last:
+            last["url"] = url_match.group(0)
+
+    return results[:limit], backend_status("ok", count=min(len(results), limit))
+
+
+def github_blob_url(repo: str | None, path: str | None, ref: str | None = None) -> str | None:
+    if not repo or not path:
+        return None
+    ref = ref or "HEAD"
+    return f"https://github.com/{repo}/blob/{ref}/{path}"
+
+
+def github_rate_limit_hint() -> str | None:
+    if not shutil.which("gh"):
+        return None
+    result = run_command(["gh", "api", "rate_limit"], timeout=10)
+    if not result.ok:
+        return None
+    data = parse_json(result.stdout)
+    if not isinstance(data, dict):
+        return None
+    search = data.get("resources", {}).get("search", {}) if isinstance(data.get("resources"), dict) else {}
+    reset_epoch = to_int(search.get("reset")) if isinstance(search, dict) else None
+    remaining = to_int(search.get("remaining")) if isinstance(search, dict) else None
+    if not reset_epoch:
+        return None
+    reset = _dt.datetime.fromtimestamp(reset_epoch, tz=_dt.datetime.now().astimezone().tzinfo)
+    limit = search.get("limit") if isinstance(search, dict) else None
+    if remaining == 0:
+        return f"GitHub search quota is exhausted; reset at {reset:%Y-%m-%d %H:%M:%S %Z}."
+    if remaining is not None:
+        return (
+            f"GitHub reports search remaining {remaining}/{limit}; "
+            f"this may be a secondary rate limit. Search reset is {reset:%Y-%m-%d %H:%M:%S %Z}."
+        )
+    return f"GitHub search quota resets at {reset:%Y-%m-%d %H:%M:%S %Z}."
+
+
+def github_repo_stars(repo: str, *, timeout: float) -> tuple[int | None, str | None]:
+    result = run_command(["gh", "api", f"repos/{repo}"], timeout=timeout)
+    if not result.ok:
+        return None, classify_failure(result)
+    data = parse_json(result.stdout)
+    if not isinstance(data, dict):
+        return None, "failed"
+    return to_int(data.get("stargazers_count")), None
+
+
+def split_headers_body(text: str) -> tuple[str, str]:
+    normalized = text.replace("\r\n", "\n")
+    if "\n\n" not in normalized:
+        return "", normalized
+    headers, body = normalized.split("\n\n", 1)
+    return headers, body
+
+
+def github_commit_count(repo: str, path: str | None, *, timeout: float) -> tuple[int | None, str | None]:
+    args = ["gh", "api", "-i", "--method", "GET", f"repos/{repo}/commits", "-f", "per_page=1"]
+    if path:
+        args.extend(["-f", f"path={path}"])
+
+    result = run_command(args, timeout=timeout)
+    if not result.ok:
+        return None, classify_failure(result)
+
+    headers, body = split_headers_body(result.stdout)
+    link_match = re.search(r'(?im)^link:\s*.*?[?&]page=([0-9]+)[^,\n]*;\s*rel="last"', headers)
+    if link_match:
+        return int(link_match.group(1)), None
+
+    data = parse_json(body)
+    if isinstance(data, list):
+        return len(data), None
+    return None, "failed"
+
+
+def result_key(result: dict[str, Any]) -> tuple[str, str]:
+    repo = str(result.get("repo") or "")
+    path = str(result.get("path") or "")
+    skill_name = str(result.get("skill_name") or "")
+    if repo and path:
+        return repo, path
+    if repo and skill_name:
+        return repo, f"skill:{skill_name}"
+    return str(result.get("url") or ""), skill_name
+
+
+def merge_results(results: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    merged: dict[tuple[str, str], dict[str, Any]] = {}
+    for result in results:
+        key = result_key(result)
+        current = merged.get(key)
+        if current is None:
+            copied = dict(result)
+            copied["sources"] = ordered_sources(copied.get("sources") or [])
+            merged[key] = copied
+            continue
+
+        current["sources"] = ordered_sources([*current.get("sources", []), *result.get("sources", [])])
+        for field in TSV_COLUMNS:
+            if field == "sources":
+                continue
+            if field in {"stars", "installs", "file_commits", "repo_commits"}:
+                values = [value for value in (current.get(field), result.get(field)) if value is not None]
+                current[field] = max(values) if values else None
+            elif not current.get(field) and result.get(field):
+                current[field] = result[field]
+        fill_commands(current)
+    return list(merged.values())
+
+
+def sort_results(results: list[dict[str, Any]], sort_by: str, direction: str) -> list[dict[str, Any]]:
+    field = sort_by.replace("-", "_")
+    reverse = direction == "desc"
+
+    def value_for(result: dict[str, Any]) -> Any:
+        value = result.get(field)
+        if field == "sources":
+            value = len(result.get("sources") or [])
+        return value
+
+    known = [result for result in results if value_for(result) is not None]
+    unknown = [result for result in results if value_for(result) is None]
+
+    def key(result: dict[str, Any]) -> tuple[Any, str, str]:
+        return value_for(result), str(result.get("repo") or ""), str(result.get("path") or "")
+
+    known.sort(key=key, reverse=reverse)
+    unknown.sort(key=lambda result: (str(result.get("repo") or ""), str(result.get("path") or "")))
+    return [*known, *unknown]
+
+
+def clean_cell(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, list):
+        value = ",".join(str(item) for item in value)
+    return re.sub(r"\s+", " ", str(value)).strip()
+
+
+def print_tsv(results: list[dict[str, Any]], *, include_header: bool) -> None:
+    if include_header:
+        print("\t".join(TSV_COLUMNS))
+    for result in results:
+        print("\t".join(clean_cell(result.get(column)) for column in TSV_COLUMNS))
+
+
+def backend_runner(name: str, query: str, limit: int, timeout: int) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    if name == "gh-skill":
+        return run_gh_skill(query, limit, timeout=timeout)
+    if name == "sourcegraph":
+        return run_sourcegraph(query, limit, timeout=timeout)
+    if name == "github-code":
+        return run_github_code(query, limit, timeout=timeout)
+    if name == "skills-cli":
+        return run_skills_cli(query, limit, timeout=timeout)
+    raise ValueError(f"unknown backend: {name}")
+
+
+async def backend_runner_async(name: str, query: str, limit: int, timeout: int) -> tuple[str, list[dict[str, Any]], dict[str, Any]]:
+    results, status = await asyncio.to_thread(backend_runner, name, query, limit, timeout)
+    return name, results, status
+
+
+async def enrich_with_github_async(
+    results: list[dict[str, Any]],
+    statuses: dict[str, Any],
+    *,
+    timeout: float,
+    progress_enabled: bool,
+    concurrency: int,
+) -> None:
+    if not shutil.which("gh"):
+        statuses["github-enrich"] = backend_status("missing", detail="gh CLI is not installed")
+        return
+
+    semaphore = asyncio.Semaphore(concurrency)
+
+    async def limited_call(func: Any, *call_args: Any) -> Any:
+        async with semaphore:
+            return await asyncio.to_thread(func, *call_args, timeout=timeout)
+
+    async def enrich_repo(repo: str) -> tuple[str, int | None, int | None, set[str]]:
+        progress(progress_enabled, f"enrich-repo\trepo={repo}")
+        stars_task = asyncio.create_task(limited_call(github_repo_stars, repo))
+        commits_task = asyncio.create_task(limited_call(github_commit_count, repo, None))
+        (stars, stars_failure), (commits, commits_failure) = await asyncio.gather(stars_task, commits_task)
+        failures = {failure for failure in (stars_failure, commits_failure) if failure}
+        return repo, stars, commits, failures
+
+    repos = sorted({str(result.get("repo")) for result in results if result.get("repo")})
+    repo_tasks = [asyncio.create_task(enrich_repo(repo)) for repo in repos]
+    stars_by_repo: dict[str, int | None] = {}
+    repo_commits_by_repo: dict[str, int | None] = {}
+    failures: set[str] = set()
+
+    for task in asyncio.as_completed(repo_tasks):
+        repo, stars, commits, repo_failures = await task
+        stars_by_repo[repo] = stars
+        repo_commits_by_repo[repo] = commits
+        failures.update(repo_failures)
+
+    async def enrich_file(index: int, result: dict[str, Any]) -> tuple[int, int | None, str | None]:
+        repo = str(result.get("repo"))
+        path = str(result.get("path"))
+        progress(progress_enabled, f"enrich-file\trepo={repo}\tpath={path}")
+        count, failure = await limited_call(github_commit_count, repo, path)
+        return index, count, failure
+
+    file_tasks: list[asyncio.Task[tuple[int, int | None, str | None]]] = []
+    for index, result in enumerate(results):
+        repo = result.get("repo")
+        path = result.get("path")
+        if not repo:
+            continue
+        if result.get("stars") is None:
+            result["stars"] = stars_by_repo.get(str(repo))
+        result["repo_commits"] = repo_commits_by_repo.get(str(repo))
+        if path:
+            file_tasks.append(asyncio.create_task(enrich_file(index, result)))
+
+    enriched_files = 0
+    for task in asyncio.as_completed(file_tasks):
+        index, count, failure = await task
+        if failure:
+            failures.add(failure)
+        else:
+            enriched_files += 1
+        results[index]["file_commits"] = count
+        fill_commands(results[index])
+
+    if failures:
+        detail = github_rate_limit_hint() if "rate_limited" in failures else ", ".join(sorted(failures))
+        statuses["github-enrich"] = backend_status("partial", count=enriched_files, detail=detail)
+    else:
+        statuses["github-enrich"] = backend_status("ok", count=enriched_files)
+
+
+async def command_search_async(args: argparse.Namespace) -> int:
+    query = " ".join(args.query).strip()
+    if not query:
+        print("skill-search: query is required", file=sys.stderr)
+        return 2
+
+    progress_enabled = args.progress == "always" or (args.progress == "auto" and sys.stderr.isatty())
+    limit = 1000 if args.all else args.limit
+    statuses: dict[str, Any] = {}
+    gathered: list[dict[str, Any]] = []
+
+    for backend in BACKENDS:
+        progress(progress_enabled, f"backend\tname={backend}\tstatus=started")
+    tasks = [
+        asyncio.create_task(backend_runner_async(backend, query, limit, args.timeout))
+        for backend in BACKENDS
+    ]
+
+    for task in asyncio.as_completed(tasks):
+        backend, results, status = await task
+        statuses[backend] = status
+        progress(progress_enabled, f"backend\tname={backend}\tstatus={status['status']}\tresults={len(results)}")
+        for result in results:
+            progress_result(progress_enabled, backend, result)
+        gathered.extend(results)
+
+    merged = merge_results(gathered)
+
+    if args.enrich:
+        await enrich_with_github_async(
+            merged,
+            statuses,
+            timeout=args.timeout,
+            progress_enabled=progress_enabled,
+            concurrency=args.github_concurrency,
+        )
+
+    sorted_rows = sort_results(merged, args.sort_by, args.direction)[:limit]
+
+    if args.json:
+        print(
+            json.dumps(
+                {
+                    "query": query,
+                    "sort_by": args.sort_by,
+                    "direction": args.direction,
+                    "backends": statuses,
+                    "results": sorted_rows,
+                },
+                indent=2,
+                sort_keys=True,
+            )
+        )
+    else:
+        print_tsv(sorted_rows, include_header=not args.no_header)
+
+    ok_or_partial = {status["status"] for status in statuses.values()} & {"ok", "partial"}
+    return 0 if ok_or_partial else 1
+
+
+def command_search(args: argparse.Namespace) -> int:
+    return asyncio.run(command_search_async(args))
+
+
+def command_raw(args: argparse.Namespace) -> int:
+    query = " ".join(args.query).strip()
+    if not query:
+        print("skill-search: query is required", file=sys.stderr)
+        return 2
+
+    backend = args.backend
+    if backend == "gh-skill":
+        command = [
+            "gh",
+            "skill",
+            "search",
+            query,
+            "--limit",
+            str(args.limit),
+            "--json",
+            "repo,path,skillName,namespace,description,stars",
+        ]
+        timeout = args.timeout
+    elif backend == "sourcegraph":
+        command = ["src", "search", "-json", sourcegraph_query(query, args.limit, args.timeout)]
+        timeout = args.timeout + 10
+    elif backend == "github-code":
+        command = [
+            "gh",
+            "api",
+            "--method",
+            "GET",
+            "/search/code",
+            "-f",
+            f"q={github_code_query(query)}",
+            "-f",
+            f"per_page={min(args.limit, 100)}",
+            "-f",
+            "page=1",
+        ]
+        timeout = args.timeout
+    elif backend == "skills-cli":
+        command = ["npx", "--yes", "skills", "find", query]
+        timeout = args.timeout
+    else:
+        print(f"skill-search: unknown backend: {backend}", file=sys.stderr)
+        return 2
+
+    result = run_command(command, timeout=timeout)
+    sys.stdout.write(result.stdout)
+    sys.stderr.write(result.stderr)
+    return result.rc
+
+
+def doctor_check(name: str, command: list[str], *, timeout: int = 20) -> dict[str, Any]:
+    tool = command[0]
+    if not shutil.which(tool):
+        return {"name": name, "status": "missing", "detail": f"{tool} is not installed"}
+
+    result = run_command(command, timeout=timeout)
+    if result.ok:
+        detail = doctor_success_detail(name, result.stdout)
+        return {"name": name, "status": "ok", "detail": detail}
+
+    status = classify_failure(result)
+    detail = compact_error(result.combined_output)
+    if status == "rate_limited":
+        detail = github_rate_limit_hint() or detail
+    return {"name": name, "status": status, "detail": detail}
+
+
+def doctor_success_detail(name: str, stdout: str) -> str:
+    text = stdout.strip()
+    data = parse_json(text)
+    if data is None:
+        return (compact_error(text) or "ok")[:160]
+
+    if name == "gh-api" and isinstance(data, dict):
+        resources = data.get("resources")
+        search = resources.get("search") if isinstance(resources, dict) else None
+        if isinstance(search, dict):
+            remaining = search.get("remaining")
+            limit = search.get("limit")
+            reset = to_int(search.get("reset"))
+            suffix = ""
+            if reset:
+                reset_time = _dt.datetime.fromtimestamp(reset, tz=_dt.datetime.now().astimezone().tzinfo)
+                suffix = f"; reset {reset_time:%Y-%m-%d %H:%M:%S %Z}"
+            return f"GitHub search remaining {remaining}/{limit}{suffix}"
+    if isinstance(data, dict) and isinstance(data.get("Results"), list):
+        return f"{len(data['Results'])} sample Sourcegraph result(s)"
+    if isinstance(data, dict) and isinstance(data.get("items"), list):
+        return f"{len(data['items'])} sample GitHub code result(s)"
+    if isinstance(data, list):
+        return f"{len(data)} sample result(s)"
+    return "ok"
+
+
+async def doctor_check_async(name: str, command: list[str], *, timeout: int = 20) -> dict[str, Any]:
+    return await asyncio.to_thread(doctor_check, name, command, timeout=timeout)
+
+
+async def command_doctor_async(args: argparse.Namespace) -> int:
+    checks: list[dict[str, Any]] = [
+        {
+            "name": "uv",
+            "status": "ok" if shutil.which("uv") else "missing",
+            "detail": shutil.which("uv") or "uv is required by the installed shebang",
+        }
+    ]
+    check_specs = [
+        ("gh", ["gh", "version"], 10),
+        ("gh-api", ["gh", "api", "rate_limit"], 10),
+        (
+            "gh-skill",
+            [
+                "gh",
+                "skill",
+                "search",
+                "skill",
+                "--limit",
+                "1",
+                "--json",
+                "repo,path,skillName,namespace,description,stars",
+            ],
+            args.timeout,
+        ),
+        (
+            "github-code",
+            [
+                "gh",
+                "api",
+                "--method",
+                "GET",
+                "/search/code",
+                "-f",
+                "q=skill filename:skill.md in:file,path",
+                "-f",
+                "per_page=1",
+            ],
+            args.timeout,
+        ),
+        ("src", ["src", "version"], 10),
+        (
+            "sourcegraph",
+            ["src", "search", "-json", "file:(?i)skill\\.md (content:skill OR file:skill) select:file count:1 timeout:5s"],
+            args.timeout + 5,
+        ),
+        ("npx-skills", ["npx", "--yes", "skills", "--help"], args.timeout),
+    ]
+    tasks = [
+        asyncio.create_task(doctor_check_async(name, command, timeout=timeout))
+        for name, command, timeout in check_specs
+    ]
+    checks.extend(await asyncio.gather(*tasks))
+
+    discovery_statuses = {
+        check["name"]: check["status"]
+        for check in checks
+        if check["name"] in {"gh-skill", "github-code", "sourcegraph", "npx-skills"}
+    }
+    ok_count = sum(1 for status in discovery_statuses.values() if status == "ok")
+    if ok_count == len(discovery_statuses):
+        overall = "ok"
+    elif ok_count:
+        overall = "degraded"
+    else:
+        overall = "broken"
+
+    payload = {"overall": overall, "checks": checks}
+    if args.json:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(f"skill-search doctor: {overall}")
+        for check in checks:
+            detail = f" - {check['detail']}" if check.get("detail") else ""
+            print(f"{check['name']}: {check['status']}{detail}")
+        if any(check["status"] == "rate_limited" for check in checks):
+            print()
+            print("GitHub rate-limit workarounds:")
+            print("- Wait for the reset shown by `gh api rate_limit`.")
+            print("- Run `skill-search search <query> --no-enrich` to avoid extra GitHub API calls.")
+            print("- Use Sourcegraph and npx results while GitHub search quota recovers.")
+            print("- Confirm `gh auth status` is using the intended account or token.")
+
+    return 0 if overall in {"ok", "degraded"} else 1
+
+
+def command_doctor(args: argparse.Namespace) -> int:
+    return asyncio.run(command_doctor_async(args))
+
+
+def positive_int(value: str) -> int:
+    try:
+        parsed = int(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("must be a positive integer") from exc
+    if parsed <= 0:
+        raise argparse.ArgumentTypeError("must be a positive integer")
+    return parsed
+
+
+def extract_global_json(argv: list[str]) -> tuple[bool, list[str]]:
+    json_output = False
+    cleaned: list[str] = []
+    for item in argv:
+        if item == "--json":
+            json_output = True
+        else:
+            cleaned.append(item)
+    return json_output, cleaned
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="skill-search",
+        description="Search for agent SKILL.md files across gh skill, Sourcegraph, GitHub code search, and skills.sh.",
+    )
+    parser.add_argument("--json", action="store_true", help="Emit structured JSON for search and doctor.")
+
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    search = subparsers.add_parser("search", help="Search all available backends and merge results.")
+    search.add_argument("query", nargs="+", help="Search terms, for example: chezmoi management.")
+    search.add_argument("-L", "--limit", type=positive_int, default=25, help="Maximum merged results to print.")
+    search.add_argument("--all", action="store_true", help="Ask each backend for as many results as this CLI supports.")
+    search.add_argument(
+        "-s",
+        "--sort-by",
+        choices=("stars", "installs", "file-commits", "repo-commits", "sources", "skill-name"),
+        default="stars",
+        help="Sort field.",
+    )
+    search.add_argument("-d", "--direction", choices=("asc", "desc"), default="desc", help="Sort direction.")
+    search.add_argument("--asc", dest="direction", action="store_const", const="asc", help="Sort ascending.")
+    search.add_argument("--desc", dest="direction", action="store_const", const="desc", help="Sort descending.")
+    search.add_argument("--timeout", type=positive_int, default=20, help="Per-backend timeout in seconds.")
+    search.add_argument(
+        "--github-concurrency",
+        type=positive_int,
+        default=4,
+        help="Maximum parallel GitHub API calls during enrichment.",
+    )
+    search.add_argument("--no-enrich", dest="enrich", action="store_false", help="Skip GitHub stars and commit-count enrichment.")
+    search.add_argument("--no-header", action="store_true", help="Omit the TSV header.")
+    progress_group = search.add_mutually_exclusive_group()
+    progress_group.add_argument("--progress", dest="progress", action="store_const", const="always", help="Print progress and incremental results to stderr.")
+    progress_group.add_argument("--no-progress", dest="progress", action="store_const", const="never", help="Suppress progress output.")
+    search.set_defaults(func=command_search, enrich=True, progress="auto")
+
+    raw = subparsers.add_parser("raw", help="Print raw output from one backend for debugging.")
+    raw.add_argument("backend", choices=BACKENDS)
+    raw.add_argument("query", nargs="+")
+    raw.add_argument("-L", "--limit", type=positive_int, default=25)
+    raw.add_argument("--timeout", type=positive_int, default=20)
+    raw.set_defaults(func=command_raw)
+
+    doctor = subparsers.add_parser("doctor", help="Validate local tools and backend connectivity.")
+    doctor.add_argument("--timeout", type=positive_int, default=20)
+    doctor.set_defaults(func=command_doctor)
+
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    argv = list(sys.argv[1:] if argv is None else argv)
+    json_output, cleaned = extract_global_json(argv)
+    parser = build_parser()
+    args = parser.parse_args(cleaned)
+    args.json = args.json or json_output
+    return args.func(args)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
