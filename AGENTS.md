@@ -2,8 +2,6 @@
 
 This is the repo-specific contract for coding agents working in Prateek's dotfiles repo. Keep this file lean. Put repeatable maintenance workflow in `$code-gardening`, and keep deep topic guidance in the focused docs it points to.
 
-`CLAUDE.md` is a symlink to this file. Do not duplicate root agent guidance.
-
 ## Repo Map
 
 - `home/`: chezmoi source state. `.chezmoiroot` points here, so files materialize into `$HOME`.
@@ -18,17 +16,6 @@ This is the repo-specific contract for coding agents working in Prateek's dotfil
 - `docs/*.md`: operator-facing repo references.
 
 Chezmoi is the ongoing command surface: prefer `chezmoi apply`, `chezmoi status`, `chezmoi diff`, `chezmoi verify`, `chezmoi managed`, and `chezmoi unmanaged` over adding a wrapper.
-
-## Working Rules
-
-- Treat drift as real work. If code, tests, comments, docs, examples, config, or agent instructions disagree, either fix the local drift or call out the broader mismatch.
-- Use `$code-gardening` when touching durable docs/config, hitting parser errors, suspecting pre-existing drift, or syncing behavior with docs/tests.
-- Before adding functionality, inventory the existing surface: commands, flags, scripts, config keys, docs, tests, helper APIs, and agent guidance. Prefer extending or consolidating when semantics overlap.
-- If intent is fuzzy, do archaeology before changing behavior: inspect current behavior, tests, `git log --follow`, `git log -S`, `git log -G`, and blame or PR context when needed.
-- Keep edits scoped. Do not rewrite a system from scratch or remove comments unless the user asked or the current code proves they are false.
-- Use real config, real APIs, and real data paths. Test fixtures and deterministic harnesses are fine; fake product/runtime modes are not.
-- Match local style over generic style guides.
-- Keep comments evergreen. Avoid "new", "old", "improved", "recently changed", or migration-era names unless they describe an active compatibility contract.
 
 ## Docs And Decisions
 
