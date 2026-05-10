@@ -1,7 +1,12 @@
-# ADR 0003 — git-subrepo-managed `src/` subdir (merged into 0001)
+---
+status: superseded
+doc_type: adr
+created: 2026-04-17
+superseded_by: 0001-downstream-fork-architecture.md
+status_detail: "Merged into ADR 0001."
+---
 
-- Status: **Merged into ADR 0001**
-- Date: 2026-04-17
+# ADR 0003 — git-subrepo-managed `src/` subdir (merged into 0001)
 
 This ADR briefly proposed a `git-subrepo`-managed `src/` subdir architecture (Option B′) as an alternative to the original Option C. It was rejected after a live smoke test at `/tmp/fork-smoketest/` surfaced two deal-breakers:
 

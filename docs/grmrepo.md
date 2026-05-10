@@ -1,3 +1,9 @@
+---
+status: current
+doc_type: reference
+updated: 2026-05-10
+---
+
 # GRM (git-repo-manager) on this machine
 
 This dotfiles repo wires up [git-repo-manager](https://github.com/hakoerber/git-repo-manager) ("GRM") for:

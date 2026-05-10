@@ -1,8 +1,11 @@
-# BetterDisplay Display Modes Plan
+---
+status: proposed
+doc_type: plan
+created: 2026-04-30
+related: []
+---
 
-Status: proposed
-Date: 2026-04-30
-Related ADRs: none yet
+# BetterDisplay Display Modes Plan
 
 ## Problem
 

@@ -21,6 +21,7 @@ Chezmoi is the ongoing command surface: prefer `chezmoi apply`, `chezmoi status`
 
 - Non-trivial repo initiatives get a plan at `docs/dev/<slug>-plan.md`.
 - Architectural decisions get the next numbered ADR at `docs/adr/<NNNN>-<slug>.md`; never renumber existing ADRs.
+- Markdown docs under `docs/` must use YAML frontmatter with a canonical `status`; follow [docs/document-lifecycle.md](docs/document-lifecycle.md) for states and transitions.
 - Plan docs reference their ADRs, and ADRs reference the plan docs that prompted them. Prefer Markdown-relative links for in-repo docs.
 - Small one-off fixes do not need a plan or ADR.
 - `README.md` is user-facing and intentionally tiny. Move coding-agent or maintenance details here or into focused docs instead.

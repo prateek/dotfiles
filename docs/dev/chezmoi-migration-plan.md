@@ -1,8 +1,13 @@
-# Chezmoi Migration Plan
+---
+status: active
+doc_type: plan
+created: 2026-04-27
+related:
+  - ../adr/0006-chezmoi-migration-prototype.md
+status_detail: "Accepted plan; implementation in progress on branch chezmoi-migration."
+---
 
-Status: accepted plan; implementation in progress on branch `chezmoi-migration`
-Date: 2026-04-27
-ADR: [../adr/0006-chezmoi-migration-prototype.md](../adr/0006-chezmoi-migration-prototype.md)
+# Chezmoi Migration Plan
 
 ## Goal
 

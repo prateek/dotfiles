@@ -1,8 +1,12 @@
-# zsh-fresh-shell-validator — plan
+---
+status: active
+doc_type: plan
+owner: Prateek
+related:
+  - ../adr/0002-zsh-fresh-shell-validator.md
+---
 
-Status: active
-Owner: Prateek
-ADR: [../adr/0002-zsh-fresh-shell-validator.md](../adr/0002-zsh-fresh-shell-validator.md)
+# zsh-fresh-shell-validator — plan
 
 ## Problem
 

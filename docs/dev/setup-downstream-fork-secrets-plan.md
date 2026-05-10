@@ -1,9 +1,13 @@
-# setup-downstream-fork — pluggable secret resolver
+---
+status: draft
+doc_type: plan
+owner: Prateek
+skill_path: ~/dotfiles/.agents/skills/setup-downstream-fork/
+related:
+  - setup-downstream-fork-plan.md
+---
 
-Status: draft
-Owner: Prateek
-Skill path: `~/dotfiles/.agents/skills/setup-downstream-fork/`
-Related: [setup-downstream-fork-plan.md](setup-downstream-fork-plan.md)
+# setup-downstream-fork — pluggable secret resolver
 
 ## Problem
 

@@ -1,10 +1,16 @@
+---
+status: active
+doc_type: adr
+created: 2026-04-17
+owner: Prateek
+related:
+  - ../dev/setup-downstream-fork-plan.md
+  - ~/dotfiles/.agents/skills/setup-downstream-fork/
+status_detail: "In development; not yet shipped and subject to change while SKILL.md is being written."
+---
+
 # ADR 0001 — Downstream fork repo architecture
 
-- Status: **In development** (not yet shipped; subject to change while SKILL.md is being written)
-- Date: 2026-04-17
-- Deciders: Prateek
-- Related: [../dev/setup-downstream-fork-plan.md](../dev/setup-downstream-fork-plan.md)
-- Related skill: `~/dotfiles/.agents/skills/setup-downstream-fork/`
 - History: merged with the short-lived ADR 0003 (git-subrepo experiment — rejected, see "Options considered" below).
 
 ## Context

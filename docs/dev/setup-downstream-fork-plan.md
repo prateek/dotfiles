@@ -1,9 +1,14 @@
-# setup-downstream-fork — plan
+---
+status: active
+doc_type: plan
+owner: Prateek
+skill_path: ~/dotfiles/.agents/skills/setup-downstream-fork/
+related:
+  - ../adr/0001-downstream-fork-architecture.md
+status_detail: "Draft, in active development."
+---
 
-Status: draft, in active development
-Owner: Prateek
-Skill path: `~/dotfiles/.agents/skills/setup-downstream-fork/`
-Architecture: **Option C — clone-as-base + `.fork/` inverted subdir, patches-as-commits, non-force-pushed `main` via `sync/*` branches** (see [../adr/0001-downstream-fork-architecture.md](../adr/0001-downstream-fork-architecture.md))
+# setup-downstream-fork — plan
 
 ## Problem
 

@@ -1,9 +1,11 @@
+---
+status: current
+doc_type: plan
+related:
+  - ../adr/0005-mise-tool-management.md
+---
+
 # Mise tool management plan
-
-Status: current
-Related ADRs:
-
-- [../adr/0005-mise-tool-management.md](../adr/0005-mise-tool-management.md)
 
 This plan replaces the repo-local `devtool` shim system with mise-native tool selection.
 

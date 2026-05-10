@@ -1,10 +1,12 @@
+---
+status: current
+doc_type: runbook
+related:
+  - ../adr/0002-zsh-fresh-shell-validator.md
+  - ../adr/0004-tart-install-validation-and-tracing.md
+---
+
 # Tart mini validation
-
-Status: current
-Related ADRs:
-
-- [../adr/0002-zsh-fresh-shell-validator.md](../adr/0002-zsh-fresh-shell-validator.md)
-- [../adr/0004-tart-install-validation-and-tracing.md](../adr/0004-tart-install-validation-and-tracing.md)
 
 This is the current end-to-end install validation lane for this repo. It is one validation path, not the whole test strategy. Today it gives us a disposable macOS guest, a real chezmoi-bootstrap run with `DOTFILES_INSTALL_PROFILE=core` (or `full`), and the same fresh-shell postflight checks we trust on the host.
 

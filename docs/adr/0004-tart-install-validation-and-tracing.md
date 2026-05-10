@@ -1,10 +1,14 @@
-# ADR 0004 - Tart install validation and Perfetto trace diagnostics
+---
+status: accepted
+doc_type: adr
+created: 2026-04-27
+owner: Prateek
+related:
+  - ../dev/tart-mini-validation.md
+  - 0002-zsh-fresh-shell-validator.md
+---
 
-- Status: Accepted
-- Date: 2026-04-27
-- Deciders: Prateek
-- Related: [../dev/tart-mini-validation.md](../dev/tart-mini-validation.md)
-- Related ADR: [0002-zsh-fresh-shell-validator.md](0002-zsh-fresh-shell-validator.md)
+# ADR 0004 - Tart install validation and Perfetto trace diagnostics
 
 ## Context
 

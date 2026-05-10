@@ -1,10 +1,14 @@
-# ADR 0006 — Chezmoi migration target architecture
+---
+status: accepted
+doc_type: adr
+created: 2026-04-26
+owner: Prateek
+related:
+  - ../dev/chezmoi-migration-plan.md
+  - 0004-tart-install-validation-and-tracing.md
+---
 
-- Status: Accepted
-- Date: 2026-04-26
-- Deciders: Prateek
-- Related: [../dev/chezmoi-migration-plan.md](../dev/chezmoi-migration-plan.md)
-- Related ADR: [0004-tart-install-validation-and-tracing.md](0004-tart-install-validation-and-tracing.md)
+# ADR 0006 — Chezmoi migration target architecture
 
 ## Context
 

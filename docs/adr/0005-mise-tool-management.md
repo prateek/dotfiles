@@ -1,9 +1,13 @@
-# ADR 0005 - Mise-managed tool selection
+---
+status: accepted
+doc_type: adr
+created: 2026-04-27
+owner: Prateek
+related:
+  - ../dev/mise-tool-management-plan.md
+---
 
-- Status: Accepted
-- Date: 2026-04-27
-- Deciders: Prateek
-- Related: [../dev/mise-tool-management-plan.md](../dev/mise-tool-management-plan.md)
+# ADR 0005 - Mise-managed tool selection
 
 ## Context
 
