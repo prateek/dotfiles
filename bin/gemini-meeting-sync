@@ -28,6 +28,10 @@ config_file() {
   echo "$(config_dir)/config.json"
 }
 
+default_out_dir() {
+  echo "$HOME/code/github.com/prateek/personal-notes/21-openai-meetings"
+}
+
 enabled_file() {
   echo "$(config_dir)/enabled"
 }
@@ -60,9 +64,11 @@ ensure_default_config() {
   if [[ -f "$cfg" ]]; then
     return 0
   fi
+  local out_dir
+  out_dir="~/code/github.com/prateek/personal-notes/21-openai-meetings"
   cat >"$cfg" <<'EOF'
 {
-  "out_dir": "/Users/prateek/code/github.com/prateek/personal-notes/21-openai-meetings",
+  "out_dir": "__OUT_DIR__",
   "lookback_days": 7,
   "interval_seconds": 900,
   "use_calendar": false,
@@ -71,13 +77,21 @@ ensure_default_config() {
   "notify_on_failure": true
 }
 EOF
+  python3 - <<'PY' "$cfg" "$out_dir"
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+path.write_text(path.read_text(encoding="utf-8").replace("__OUT_DIR__", sys.argv[2]), encoding="utf-8")
+PY
 }
 
 read_config() {
   local cfg
   cfg="$(config_file)"
   # Defaults (must stay in sync with ensure_default_config).
-  local out_dir_default="/Users/prateek/code/github.com/prateek/personal-notes/21-openai-meetings"
+  local out_dir_default
+  out_dir_default="$(default_out_dir)"
   local lookback_days_default="7"
   local use_calendar_default="0"
   local prune_days_default="2"
@@ -85,6 +99,7 @@ read_config() {
   eval "$(
     python3 - <<'PY' "$cfg" "$out_dir_default" "$lookback_days_default" "$use_calendar_default" "$prune_days_default"
 import json
+import os
 import shlex
 import sys
 from pathlib import Path
@@ -102,7 +117,7 @@ if cfg_path.exists():
     except Exception:
         cfg = {}
 
-out_dir = cfg.get("out_dir", out_dir_default)
+out_dir = os.path.expandvars(os.path.expanduser(str(cfg.get("out_dir", out_dir_default))))
 lookback_days = int(cfg.get("lookback_days", lookback_days_default))
 use_calendar = bool(cfg.get("use_calendar", use_calendar_default))
 prune_days = int(cfg.get("artifact_prune_days", prune_days_default))

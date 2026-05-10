@@ -1,0 +1,72 @@
+{{ template "script_lib.sh" . }}
+
+# packages.toml sha256: {{ include ".chezmoidata/packages.toml" | sha256sum }}
+# ios-triple.json sha256: {{ include "dot_agents/state/ios-triple.json" | sha256sum }}
+
+{{- if .run_install_scripts }}
+profile={{ .install_profile | default .packages.default_profile | quote }}
+install_xcode={{ .install_xcode | default false | toString | quote }}
+env_install_xcode={{ env "DOTFILES_INSTALL_XCODE" | quote }}
+if [ -n "$env_install_xcode" ]; then
+  install_xcode="$env_install_xcode"
+fi
+
+case "$install_xcode" in
+  true|1|yes|on) install_xcode=1 ;;
+  false|0|no|off) install_xcode=0 ;;
+  *) die "install_xcode/DOTFILES_INSTALL_XCODE must be true or false." ;;
+esac
+
+if [ "$profile" != "full" ]; then
+  log "Xcode install skipped for $profile package profile."
+  exit 0
+fi
+
+if [ "$(uname -s)" != "Darwin" ]; then
+  log "Xcode install skipped on non-macOS host."
+  exit 0
+fi
+
+brew_shellenv
+have brew || die "Homebrew is required before Xcode setup can run."
+have jq || die "jq is required before Xcode setup can run; rerun brew bundle."
+have xcodes || die "xcodes is required for full Xcode setup; rerun brew bundle."
+
+triple_file="$HOME/.agents/state/ios-triple.json"
+[ -r "$triple_file" ] || die "Missing Xcode version pin: $triple_file"
+xcode_version="$(jq -r '.xcode_version // empty' "$triple_file")"
+[ -n "$xcode_version" ] || die "Missing .xcode_version in $triple_file"
+
+xcode_required_brews=(
+{{- $profileData := index .packages.profiles "full" }}
+{{- range default (list) (dig "xcode_required_brews" (list) $profileData) }}
+  {{ .name | quote }}
+{{- end }}
+)
+
+if xcodes installed "$xcode_version" >/dev/null 2>&1; then
+  log "Xcode $xcode_version already installed."
+elif [ "$install_xcode" = "1" ]; then
+  warn "Installing Xcode $xcode_version through xcodes may prompt for Apple ID login."
+  dotfiles_sudo_start "Xcode install needs administrator access. Enter your macOS password if prompted."
+  run_timed "xcodes install $xcode_version" xcodes install "$xcode_version" --experimental-unxip
+else
+  warn "Xcode $xcode_version is not installed. Skipping Xcode download because xcodes requires Apple ID login."
+  warn "Run this when you want the Apple ID-backed Xcode download: DOTFILES_INSTALL_XCODE=true chezmoi apply"
+  if [ "${#xcode_required_brews[@]}" -gt 0 ]; then
+    warn "Skipping Xcode-required Homebrew formulae until Xcode is installed: ${xcode_required_brews[*]}"
+  fi
+  exit 0
+fi
+
+dotfiles_sudo_start "Xcode setup needs administrator access. Enter your macOS password if prompted."
+run_timed "xcodes select $xcode_version" xcodes select "$xcode_version"
+run_timed "xcodebuild license" sudo xcodebuild -license accept
+run_timed "xcodebuild first launch" sudo xcodebuild -runFirstLaunch
+
+for formula in "${xcode_required_brews[@]}"; do
+  run_timed "brew install $formula" brew install "$formula"
+done
+{{- else }}
+log "Xcode install disabled."
+{{- end }}

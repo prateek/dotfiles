@@ -1,77 +1,127 @@
-# Agent Notes (personal)
+# Agent Notes
 
-This file is the durable repo contract for coding agents working in this dotfiles repo.
-Keep it short. Put recurring maintenance workflow in `$code-gardening`, not in long prose.
+This is the repo-specific contract for coding agents working in Prateek's dotfiles repo. Keep this file lean. Put repeatable maintenance workflow in `$code-gardening`, and keep deep topic guidance in the focused docs it points to.
 
-## Gardening
+`CLAUDE.md` is a symlink to this file. Do not duplicate root agent guidance.
 
-- Treat drift as real work. If code, tests, comments, docs, examples, or tooling disagree, do not just route around it.
-- If the fix is cheap and clearly part of the task, do it now. If it is broader, riskier, cross-cutting, or unclear, call it out explicitly.
-- Keep durable state in sync when facts change. That includes behavior, tests, comments, docs, examples, config, and agent instructions.
-- Use `$code-gardening` when you are touching durable state, hit a parser or config error, suspect a failure may be pre-existing, or do not trust your read of the code yet.
-- Before adding functionality, inventory the existing surface area and prefer extending or consolidating when semantics overlap. This includes CLI commands, flags, scripts, config keys, docs sections, agent guidance, tests, and helper APIs. State the inventory in the proposal — name the existing entries you considered and why each does or does not fit — before writing the new one. Treat the user's verb in a request ("can we probe…", "can we sync…") as a capability, not a command name; check whether an existing entry can grow a mode or flag first. If a new surface is still right, sync help, docs, and tests.
-- When I question a surface-area choice ("isn't this the same as X?", "shouldn't this be part of Y?"), default to consolidating, not redefining the new entry's scope. If you still think the split is right, say so explicitly and ask before continuing. Narrowing the new thing's definition to preserve it is the failure mode — it looks like agreement but ships the same shape.
-- When writing prose for humans, keep it short, concrete, and clear. Use the `writing-clearly-and-concisely` guidance.
+## Repo Map
 
-## Archaeology
+- `home/`: chezmoi source state. `.chezmoiroot` points here, so files materialize into `$HOME`.
+- `home/.chezmoidata/`: committed structured data for package profiles, secrets, license targets, and template inputs.
+- `home/.chezmoiscripts/`: idempotent setup run by `chezmoi apply`.
+- `home/.chezmoitemplates/`: shared templates, including Brewfile and plist merge helpers.
+- `home/dot_agents/docs/`: local agent/workflow convention docs. Read the relevant file before touching that workflow.
+- `home/dot_claude/`: Claude-specific commands and settings. Its `CLAUDE.md` target should symlink to `../.agents/AGENTS.md`.
+- `scripts/`: focused helpers for packages, macOS/app config, Tart, traces, audits, and hooks.
+- `docs/dev/`: plans and runbooks for repo changes.
+- `docs/adr/`: architectural decisions.
+- `docs/*.md`: operator-facing repo references.
 
-- If intent feels fuzzy, weird, or out of step with comments or docs, stop and do archaeology before changing behavior.
-- Read the whole file or doc before making large edits or when the local snippet feels misleading.
-- Check current behavior and tests first. Then use `git log --follow`, `git log -S`, and `git log -G` to recover intent.
-- Escalate to `git blame -w -M -C` and PR/review context when the provenance is still murky.
-- If the repo has PRs, review comments, issues, ADRs, or design notes, use them when history alone is not enough.
-- When history, comments, and behavior disagree, decide what is authoritative and sync the rest. Do not guess.
+Chezmoi is the ongoing command surface: prefer `chezmoi apply`, `chezmoi status`, `chezmoi diff`, `chezmoi verify`, `chezmoi managed`, and `chezmoi unmanaged` over adding a wrapper.
 
-## State Updates
+## Working Rules
 
-- Keep the root instruction file lean. Put repeatable maintenance workflow in `$code-gardening`, not in a giant wall of policy.
-- Update `AGENTS.md` when you learn a durable convention, recurring gotcha, or workflow change that future agents will actually need.
-- Do not put one-off session chatter or temporary debugging notes here. Those belong in task output, issues, or other working notes.
-- After editing a skill, validate it. Skill frontmatter and parser drift have bitten us enough times that this should be automatic.
+- Treat drift as real work. If code, tests, comments, docs, examples, config, or agent instructions disagree, either fix the local drift or call out the broader mismatch.
+- Use `$code-gardening` when touching durable docs/config, hitting parser errors, suspecting pre-existing drift, or syncing behavior with docs/tests.
+- Before adding functionality, inventory the existing surface: commands, flags, scripts, config keys, docs, tests, helper APIs, and agent guidance. Prefer extending or consolidating when semantics overlap.
+- If intent is fuzzy, do archaeology before changing behavior: inspect current behavior, tests, `git log --follow`, `git log -S`, `git log -G`, and blame or PR context when needed.
+- Keep edits scoped. Do not rewrite a system from scratch or remove comments unless the user asked or the current code proves they are false.
+- Use real config, real APIs, and real data paths. Test fixtures and deterministic harnesses are fine; fake product/runtime modes are not.
+- Match local style over generic style guides.
+- Keep comments evergreen. Avoid "new", "old", "improved", "recently changed", or migration-era names unless they describe an active compatibility contract.
 
-## Feature planning and decisions (dotfiles repo)
+## Docs And Decisions
 
-- Non-trivial features or initiatives that live in this repo get a plan doc at `dev/docs/<slug>-plan.md`. The plan covers problem, goals/non-goals, architecture, implementation phases, open questions, and success criteria. Keep it updated as the work evolves.
-- Architectural decisions get a numbered ADR at `dev/adr/<NNNN>-<slug>.md` with status, context, options considered, decision, consequences, and revisit criteria. New ADRs take the next free number; never renumber existing ones.
-- Plan docs reference the ADR(s) they depend on; ADRs reference the plan doc(s) that prompted them. Cross-link with absolute paths.
-- Small one-off fixes don't need either. The bar is roughly: would a future agent or reviewer benefit from understanding the decision context, or does the diff explain itself?
-- Treat plan docs and ADRs as durable state under the same Gardening rule: if a decision changes, update the ADR (don't delete — add a superseding entry) and sync the plan doc.
+- Non-trivial repo initiatives get a plan at `docs/dev/<slug>-plan.md`.
+- Architectural decisions get the next numbered ADR at `docs/adr/<NNNN>-<slug>.md`; never renumber existing ADRs.
+- Plan docs reference their ADRs, and ADRs reference the plan docs that prompted them. Prefer Markdown-relative links for in-repo docs.
+- Small one-off fixes do not need a plan or ADR.
+- `README.md` is user-facing and intentionally tiny. Move coding-agent or maintenance details here or into focused docs instead.
+- `AGENTS.md` should contain durable conventions only. Do not add one-off session notes.
+
+## Common Commands
+
+- Preview managed state: `chezmoi diff`, `chezmoi status`, `chezmoi apply --dry-run --verbose --exclude=scripts`.
+- Render package input: `scripts/packages/render-brewfile --profile core|full`.
+- Package/app audits: `scripts/audit/brew-inventory.sh`, `scripts/audit/brewfile-usage.sh`, `scripts/audit/app-inventory.sh`.
+- Fresh-shell checks: `scripts/audit/zsh-fresh-shells.zsh verify` and `bench`.
+- Test index: `tests/README.md`.
+- Tart local install lane: `docs/dev/tart-mini-validation.md`.
+- Worktree workflow: `home/dot_agents/docs/worktrees.md`.
+- Git/commit workflow: `home/dot_agents/docs/git.md`.
+
+## Chezmoi And App Config
+
+- Keep app config readable at the native target path under `home/` when possible.
+- Simple file-backed apps should use focused tests.
+- Nested preference plists use a desired-plist fragment at `home/.chezmoitemplates/<bundle-id>.plist.tmpl` driven by a 3-line `modify_` stub through the shared merge engine.
+- Plist fragments are Go templates. If a plist value contains literal `{{` or `}}`, escape it, as with Moom geometry strings.
+- Non-plist payloads that should not be templated stay under `home/.chezmoiassets/` and load via `include`, not `includeTemplate`.
+- Do not reintroduce `home/.chezmoidata/apps/*.toml`; that mechanism was retired with `bin/dotfiles`.
+- Gate optional app config in `home/.chezmoiignore`. Do not render empty placeholder config for absent apps.
+- Secret-backed configs and licenses are private templates under `home/`, driven by `home/.chezmoidata/secrets.toml` and `licenses.toml`; store only obfuscated `op://` refs.
+- Raw app captures live under `${XDG_STATE_HOME:-~/.local/state}/dotfiles/captures/`, not in the repo.
+- Mac App Store entries are opt-in with `DOTFILES_INSTALL_MAS_APPS=true`.
+- Setapp-managed apps install after Setapp login. Do not add config for a Setapp-installed app until the repo also has an install path for that app.
+- Chrome extension settings are not snapshotted from user profiles. Prefer Chrome Sync or extension-native export.
 
 ## Shell Startup
 
+Shell load order:
+
+```text
+zshenv -> zprofile -> zshrc -> init.sh -> zinit-init.zsh -> lib/*.zsh -> extra/*.zsh
+```
+
 - Keep baseline `PATH` entries in `zprofile`'s `path=(...)` array, not ad hoc `export PATH=...` snippets in `zshrc`.
-- Prefer explicit directories like `$HOME/go/bin` over indirect env vars like `$GOPATH/bin` when the goal is just shell PATH setup.
-- When startup only needs `mise` shims, add `$HOME/.local/share/mise/shims` to `zprofile` instead of running `mise activate --shims` on every shell.
-- Reserve `zshrc` PATH mutations for truly interactive or late overlays only.
-- Prefer autoloaded wrappers for optional or conflicting CLIs instead of source-time aliases when the command is not needed on every shell startup.
-- For zoxide, prefer lazy wrappers plus `zoxide init zsh --cmd j` over eager startup `eval`s; keep `zi` reserved for zinit.
-- Avoid source-time command substitutions such as `$(brew --prefix)` in shell startup files. Prefer `HOMEBREW_PREFIX`, `whence -p`, or resolution at call time.
-- When sourcing shell widgets or key-binding scripts, guard them behind `[[ -o zle ]]` so non-ZLE interactive shells like `zsh -ic` do not throw option or widget errors.
-- For shell widget or keymap debugging, prefer a real PTY login shell over `zsh -ic`; the latter can report `zle` as on without a tty and can miss deferred plugin state.
-- For authoritative shell validation, run `scripts/audit/zsh-fresh-shells.zsh verify` and `bench` on the host. Use `scripts/audit/zsh-fresh-shells.zsh doctor` only as a live-shell doctor/debug helper.
-- Synthetic shell harnesses must set `DOTFILES_SKIP_LAUNCHCTL_SYNC=1` so login-shell tests do not mutate the GUI session `PATH`.
-- If syncing `PATH` into `launchctl`, compare against the live `launchctl getenv PATH` value instead of trusting a persistent cache file across GUI sessions.
-- Keep repeatable shell benchmarking guidance in `skills/benchmark-zsh-startup`, not loose repo docs.
+- Prefer explicit directories like `$HOME/go/bin` over indirect env vars like `$GOPATH/bin` for shell PATH setup.
+- When startup only needs mise shims, add `$HOME/.local/share/mise/shims` to `zprofile` instead of running `mise activate --shims` on every shell.
+- Reserve `zshrc` PATH mutations for interactive or late overlays only.
+- Prefer autoloaded wrappers for optional or conflicting CLIs instead of source-time aliases.
+- For zoxide, prefer lazy wrappers plus `zoxide init zsh --cmd j`; keep `zi` reserved for zinit.
+- Avoid source-time command substitutions such as `$(brew --prefix)`. Prefer `HOMEBREW_PREFIX`, `whence -p`, or resolution at call time.
+- Guard shell widgets and key-binding scripts behind `[[ -o zle ]]`.
+- Use a real PTY login shell for shell widget/keymap debugging; `zsh -ic` can lie about ZLE.
+- Synthetic shell harnesses must set `DOTFILES_SKIP_LAUNCHCTL_SYNC=1`.
+- If syncing `PATH` into `launchctl`, compare against `launchctl getenv PATH`, not a persistent cache file.
 
-## Python deps (pyproject + type stubs + build system)
+## Validation
 
-- When adding a new Python import, declare the dependency in `pyproject.toml` (runtime vs test/dev/optional).
-- If type checking is enabled (e.g. Pyright/Mypy), add the appropriate stub package when required (`types-<pkg>` / `<pkg>-stubs`) and keep it in the test/dev optional dependency group.
-- If the repo mirrors Python deps into a build-system list (e.g. Bazel `virtual_deps` / requirements targets), update **all** relevant targets (runtime lib + tests + typecheck target) to include:
-  - the runtime package
-  - the stub package (when needed)
-- Watch out for name normalization mismatches between ecosystems (common patterns: `-` → `_`, `.` → `_`, lowercase normalization). Use whatever naming convention the repo’s build rules expect.
-- After updating deps, run the smallest local checks that match CI: dependency validation + typecheck, before pushing.
+- For code behavior changes, add or update the smallest meaningful tests and run the relevant local checks.
+- For docs/config-only changes, run the lightest checks that prove links, parsers, or generated output still make sense.
+- Mirror CI locally when practical by inspecting `.github/workflows`.
+- Current CI includes shellcheck, chezmoi dry-run smoke for `core` and `full`, Tart helper contract tests, trace conversion tests, package rendering, and core formula install checks.
+- CI does not boot a full macOS VM; that is local via Tart.
+- Never ignore test output. If expected errors are part of behavior, assert them.
 
-## Skill-creator eval review
+## Dependency And Tooling Gotchas
 
-- For skill-creator eval review, prefer `~/dotfiles/scripts/eval-review.py` over the canonical `skill-creator/eval-viewer/generate_review.py`.
-- Generates a single self-contained `review.html` from an iteration dir; no deps beyond stdlib.
-- Benchmark lives as a sidebar entry below the evals (not a top-level tab); feedback sits inline under the with/without side-by-side outputs.
-- Supports `--previous <iter>` for prior-iteration comparison, theme toggle, j/k nav, `/` to focus feedback, and tolerates missing `output.md` / `grading.json` / `benchmark.json`.
+- Python imports must be declared in `pyproject.toml`; add stubs and build-system dependency mirrors when typecheck/build rules need them.
+- For skill-creator eval review, prefer `~/dotfiles/scripts/eval-review.py` over the canonical skill viewer.
+- After editing a skill, validate it. Frontmatter/parser drift has bitten this repo before.
+- If CI says to run the build file generator and provides a diff, apply that diff exactly when local generation is blocked by auth/network/private module issues.
+- Use `git diff --check` before handoff on non-trivial docs or code changes.
 
-## Gazelle / generated BUILD file diffs
+## External Convention Docs
 
-- If CI fails with “run the build file generator” and shows a patch/diff, apply that diff and commit it (don’t ignore generator-required changes).
-- If you can’t run the generator locally (auth/network/private module issues), use the CI-provided diff/artifact as the source of truth and patch only what it requires.
-- Prefer minimal, targeted BUILD updates (avoid unrelated reformatting or broad generator churn unless the diff explicitly includes it).
+Read these when the task touches that workflow:
+
+- Python, uv, Docker: `~/.agents/docs/python-and-uv.md`
+- Git and commits: `~/.agents/docs/git.md`
+- Go: `~/.agents/docs/go.md`
+- Slack: `~/.agents/docs/slack.md`
+- Linear: `~/.agents/docs/linear.md`
+- Google Workspace: `~/.agents/docs/google-workspace.md`
+- Browser CDP: `~/.agents/docs/browser-cdp.md`
+- Twitter/X: `~/.agents/docs/twitter.md`
+- marimo: `~/.agents/docs/marimo.md`
+- iOS/Apple-platform work: `~/.agents/docs/ios.md`
+
+## Observability Provider Environment
+
+For Chronosphere tasks, use pre-exposed environment variables instead of hardcoding credentials:
+
+- `CHRONOSPHERE_ORG_NAME`
+- `CHRONOSPHERE_API_TOKEN`
+
+Never print, paste, diff, or include secret values in tool arguments or final output. If a required variable is missing, prompt before proceeding.

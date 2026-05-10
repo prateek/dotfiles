@@ -1,0 +1,170 @@
+model = "gpt-5.5"
+model_reasoning_effort = "xhigh"
+plan_mode_reasoning_effort = "xhigh"
+
+[agents]
+max_threads = 16
+max_depth = 3
+
+[projects."/Users/prateek/dotfiles"]
+trust_level = "trusted"
+
+[projects."/Users/prateek"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments/2026-04-03-calibre-setup"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/literotica"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments/2026-04-03-crosspoint-reader-tailscale"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments/2026-04-04-ebook-platform-eval"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/github.com/SillyTavern/SillyTavern"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments/2026-04-03-calibre-setup/serial-sync"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/gocode/src/github.com/prateek/movies.do-reverse-engineer"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments/movies.do-app"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments/2026-04-06-ios-silly-tavern"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments/2026-03-03-timeline-attempt"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments/2026-04-08-agent-spec-survey"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/Dropbox/Documents/Taxes"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments/2026-04-10-flowdeck-reverse-engineering"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments/2026-04-11-skill-evaluator"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments/2026-04-11-agent-runtime-space-eval"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/github.com/prateek/movies.do-app"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/github.com/prateek/ordercli"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/github.com/informalsystems/quint-llm-kit"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/github.com/prateek/pi-mobile-ios"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/github.com/wesm/agentsview"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments/2026-04-15-analyze-dolt-cxdb"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/github.com/badlogic/pi-mono"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments/2026-04-06-neo-g9-fw"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/Dropbox/Documents"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments/2026-04-17-agentsview-pharo"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments/git-woof"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/github.com/prateek/chris-app"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments/2026-04-18-stock-toy-example"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/.claude"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/Dropbox/Documents/99-archive/content-dumps"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments/2026-04-17-google-sheets-dashboards-interactive-systems"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/github.com/prateek/movies-do-app"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/github.com/chronosphereio/monorepo"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments/tca-ecosystem"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/experiments/2026-04-27-agent-safehouse"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/github.com/VorpalBlade/chezmoi_modify_manager"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/code/worktrees/homebrew-tap"]
+trust_level = "trusted"
+
+[projects."/Users/prateek/Downloads/2026-avantika-job-search"]
+trust_level = "trusted"
+
+[notice]
+hide_rate_limit_model_nudge = true
+
+[notice.model_migrations]
+gpt-5-codex = "gpt-5.3-codex"
+"gpt-5.2" = "gpt-5.3-codex"
+
+[mcp_servers.granola]
+enabled = false
+url = "https://mcp.granola.ai/mcp"
+
+[features]
+hooks = true
+multi_agent = true
+memories = true
+apps = false
+
+[plugins."last30days@last30days-skill"]
+enabled = true
+
+[tui]
+status_line = ["thread-title", "model-with-reasoning", "context-used", "five-hour-limit", "weekly-limit", "context-window-size", "current-dir"]
+
+[tui.model_availability_nux]
+"gpt-5.5" = 4
+
+[marketplaces.last30days-skill]
+last_updated = "2026-04-27T20:26:51Z"
+last_revision = "5b87cca886c98d47b0dcbf00a7363320d935c82e"
+source_type = "git"
+source = "https://github.com/mvanhorn/last30days-skill.git"
+
+[marketplaces.openai-bundled]
+last_updated = "2026-05-01T17:32:25Z"
+source_type = "local"
+source = "/Users/prateek/.codex/.tmp/bundled-marketplaces/openai-bundled"

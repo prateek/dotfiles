@@ -47,4 +47,4 @@ node_modules/
 .codex/skills/.system/
 
 # Hammerspoon build output
-.hammerspoon/init.generated.lua
+build/

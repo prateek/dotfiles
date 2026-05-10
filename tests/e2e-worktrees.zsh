@@ -92,10 +92,10 @@ chmod +x "$stub_bin/repo-index"
 
 # Worktrunk user config (symlink to dotfiles-managed config).
 mkdir -p "$XDG_CONFIG_HOME/worktrunk"
-ln -snf "$DOTFILES_ROOT/.config/worktrunk/config.toml" "$XDG_CONFIG_HOME/worktrunk/config.toml"
+ln -snf "$DOTFILES_ROOT/home/dot_config/worktrunk/config.toml" "$XDG_CONFIG_HOME/worktrunk/config.toml"
 
 # Load zsh autoloaded functions.
-fpath=("$DOTFILES_ROOT/zsh/autoload" $fpath)
+fpath=("$DOTFILES_ROOT/home/dot_config/zsh/autoload" $fpath)
 autoload -Uz repo_select w
 
 create_repo() {

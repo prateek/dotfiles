@@ -56,7 +56,9 @@ require_cmd git
 require_cmd zsh
 require_cmd python3
 require_cmd rsync
-[[ -r "$HOME/.zinit/bin/zinit.zsh" ]] || die "missing current zinit install at $HOME/.zinit/bin/zinit.zsh"
+if [[ ! -r "${XDG_DATA_HOME:-$HOME/.local/share}/zinit/zinit.git/zinit.zsh" && ! -r "$HOME/.zinit/bin/zinit.zsh" ]]; then
+  die "missing current zinit install"
+fi
 [[ -r "$FIXTURES_ROOT/prompt.txt" ]] || die "missing antidote fixture: $FIXTURES_ROOT/prompt.txt"
 [[ -r "$FIXTURES_ROOT/precompinit.txt" ]] || die "missing antidote fixture: $FIXTURES_ROOT/precompinit.txt"
 [[ -r "$FIXTURES_ROOT/postcompinit.txt" ]] || die "missing antidote fixture: $FIXTURES_ROOT/postcompinit.txt"
@@ -76,9 +78,22 @@ ensure_git_checkout() {
 link_startup_files() {
   local home_dir="$1"
 
-  ln -snf "$home_dir/dotfiles/zprofile" "$home_dir/.zprofile"
-  ln -snf "$home_dir/dotfiles/zshrc" "$home_dir/.zshrc"
-  ln -snf "$home_dir/dotfiles/zshenv" "$home_dir/.zshenv"
+  mkdir -p "$home_dir/.config/zsh"
+  cat >"$home_dir/.zshenv" <<EOF
+export XDG_CONFIG_HOME="\${XDG_CONFIG_HOME:-\$HOME/.config}"
+export XDG_CACHE_HOME="\${XDG_CACHE_HOME:-\$HOME/.cache}"
+export XDG_DATA_HOME="\${XDG_DATA_HOME:-\$HOME/.local/share}"
+export XDG_STATE_HOME="\${XDG_STATE_HOME:-\$HOME/.local/state}"
+export DOTFILES="\${DOTFILES:-$home_dir/dotfiles}"
+export ZDOTDIR="\${ZDOTDIR:-\$XDG_CONFIG_HOME/zsh}"
+export ZSHCONFIG="\${ZSHCONFIG:-\$ZDOTDIR}"
+if [[ ( "\$SHLVL" -eq 1 && ! -o LOGIN ) && -s "\$ZDOTDIR/.zprofile" ]]; then
+  source "\$ZDOTDIR/.zprofile"
+fi
+EOF
+  ln -snf "$home_dir/dotfiles/home/dot_config/zsh/dot_zprofile" "$home_dir/.config/zsh/.zprofile"
+  ln -snf "$home_dir/dotfiles/home/dot_config/zsh/dot_zshrc" "$home_dir/.config/zsh/.zshrc"
+  ln -snf "$home_dir/dotfiles/home/dot_config/zsh/dot_zlogin" "$home_dir/.config/zsh/.zlogin"
 }
 
 write_antidote_init() {
@@ -181,7 +196,7 @@ if ! source_if_readable "$HOME/.antidote/antidote.zsh"; then
   return 0 2>/dev/null || exit 0
 fi
 
-zsh_fns=${ZSHCONFIG}/zsh/autoload
+zsh_fns=${ZSHCONFIG}/autoload
 if [[ -d "$zsh_fns" ]]; then
     fpath=("$zsh_fns" $fpath)
     for func in "$zsh_fns"/*(N); do
@@ -195,7 +210,7 @@ if ! source_if_readable "$DOTFILES_ROOT/antidote-init.zsh"; then
   print -u2 "Missing $DOTFILES_ROOT/antidote-init.zsh; skipping plugin setup."
 fi
 
-zsh_libs=${ZSHCONFIG}/zsh/lib
+zsh_libs=${ZSHCONFIG}/lib
 if [[ -d "$zsh_libs" ]]; then
    for file in "$zsh_libs"/*.zsh(N); do
       source "$file"
@@ -203,7 +218,7 @@ if [[ -d "$zsh_libs" ]]; then
 fi
 unset zsh_libs
 
-extras=${ZSHCONFIG}/zsh/extra
+extras=${ZSHCONFIG}/extra
 if [[ -d "$extras" ]]; then
    for file in "$extras"/*.zsh(N); do
       source "$file"
@@ -225,7 +240,12 @@ setup_zinit_home() {
   mkdir -p "$home_dir"
   ln -snf "$DOTFILES_ROOT" "$home_dir/dotfiles"
   link_startup_files "$home_dir"
-  ln -snf "$HOME/.zinit" "$home_dir/.zinit"
+  if [[ -d "${XDG_DATA_HOME:-$HOME/.local/share}/zinit/zinit.git" ]]; then
+    mkdir -p "$home_dir/.local/share/zinit"
+    ln -snf "${XDG_DATA_HOME:-$HOME/.local/share}/zinit/zinit.git" "$home_dir/.local/share/zinit/zinit.git"
+  elif [[ -d "$HOME/.zinit" ]]; then
+    ln -snf "$HOME/.zinit" "$home_dir/.zinit"
+  fi
 
   print -r -- "$home_dir"
 }
