@@ -1,0 +1,335 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+print_usage() {
+  cat <<'EOF'
+Usage:
+  scripts/search-github-skills [options]
+
+Search GitHub code for files whose filename contains "skill.md" and whose
+path or content contains the search term. Results are enriched with repository
+stars, file commit count, and repository commit count.
+
+Options:
+  -t, --term <term>             Search term (default: chezmoi)
+  -s, --sort-by <field>         stars | file-commits | repo-commits (default: stars)
+  -d, --direction <direction>   asc | desc (default: desc)
+      --asc                     Shorthand for --direction asc
+      --desc                    Shorthand for --direction desc
+  -L, --limit <count>           Enrich at most this many search results (default: 25)
+      --all                     Fetch up to GitHub's 1000-result code-search cap
+      --progress                Show progress and incremental results on stderr
+      --no-progress             Suppress progress output
+      --no-header               Omit the header row
+  -h, --help                    Show this help
+
+Notes:
+  GitHub code search does the filename/content/path search server-side. Stars
+  and commit counts require follow-up API calls, so sorting happens locally.
+  GitHub code search has a low rate limit, so the default is intentionally
+  bounded.
+EOF
+}
+
+die() {
+  printf 'search-github-skills: %s\n' "$*" >&2
+  exit 2
+}
+
+require_value() {
+  local flag="$1"
+  local value="${2:-}"
+  [[ -n "$value" ]] || die "missing value for $flag"
+}
+
+normalize_count() {
+  local value="$1"
+  if [[ "$value" =~ ^[0-9]+$ ]]; then
+    printf '%s\n' "$value"
+  else
+    printf '0\n'
+  fi
+}
+
+progress_is_enabled() {
+  case "$PROGRESS_MODE" in
+    always) return 0 ;;
+    never) return 1 ;;
+    auto) [[ -t 2 ]] ;;
+  esac
+}
+
+progress_log() {
+  progress_is_enabled || return 0
+  printf 'progress\t%b\n' "$*" >&2
+}
+
+progress_result() {
+  progress_is_enabled || return 0
+  printf 'result\t%s\n' "$*" >&2
+}
+
+commit_count() {
+  local repo="$1"
+  local file_path="${2:-}"
+  local out link last body
+  local -a args
+
+  args=(api -i --method GET "repos/$repo/commits" -f per_page=1)
+  if [[ -n "$file_path" ]]; then
+    args+=(-f "path=$file_path")
+  fi
+
+  if ! out="$(gh "${args[@]}" 2>/dev/null)"; then
+    printf '0\n'
+    return
+  fi
+
+  link="$(printf '%s\n' "$out" | tr -d '\r' | awk '/^Link:/ {print}')"
+  last="$(printf '%s\n' "$link" | sed -nE 's/.*[?&]page=([0-9]+)[^,]*rel="last".*/\1/p')"
+  if [[ -n "$last" ]]; then
+    printf '%s\n' "$last"
+    return
+  fi
+
+  # With per_page=1 and no Link header, the total is either 0 or 1.
+  body="$(printf '%s\n' "$out" | awk 'found{print} /^\r?$/{found=1}')"
+  if grep -q '"sha"' <<<"$body"; then
+    printf '1\n'
+  else
+    printf '0\n'
+  fi
+}
+
+rate_limit_hint() {
+  local reset_epoch reset_text
+
+  reset_epoch="$(gh api rate_limit --jq '.resources.search.reset' 2>/dev/null || true)"
+  if [[ "$reset_epoch" =~ ^[0-9]+$ ]]; then
+    reset_text="$(date -r "$reset_epoch" '+%Y-%m-%d %H:%M:%S %Z' 2>/dev/null || date -d "@$reset_epoch" '+%Y-%m-%d %H:%M:%S %Z' 2>/dev/null || true)"
+    if [[ -n "$reset_text" ]]; then
+      printf ' GitHub search quota resets at %s.' "$reset_text"
+    fi
+  fi
+}
+
+search_page() {
+  local page="$1"
+  local per_page="$2"
+  local output
+
+  if ! output="$(gh api --method GET /search/code \
+    -f "q=$search_query" \
+    -f "per_page=$per_page" \
+    -f "page=$page" \
+    --jq '.items[] | [.repository.full_name, .path, .html_url] | @tsv' 2>"$search_error")"; then
+    if grep -Fqi 'rate limit' "$search_error"; then
+      printf 'search-github-skills: GitHub code search rate limit exceeded.%s\n' "$(rate_limit_hint)" >&2
+    else
+      sed 's/^/search-github-skills: /' "$search_error" >&2
+    fi
+    exit 1
+  fi
+
+  printf '%s\n' "$output"
+}
+
+SEARCH_TERM="chezmoi"
+SORT_BY="stars"
+DIRECTION="desc"
+LIMIT="25"
+PRINT_HEADER=1
+PROGRESS_MODE="auto"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -t|--term)
+      require_value "$1" "${2:-}"
+      SEARCH_TERM="$2"
+      shift 2
+      ;;
+    -s|--sort-by)
+      require_value "$1" "${2:-}"
+      SORT_BY="${2//_/-}"
+      shift 2
+      ;;
+    -d|--direction)
+      require_value "$1" "${2:-}"
+      DIRECTION="$2"
+      shift 2
+      ;;
+    --asc)
+      DIRECTION="asc"
+      shift
+      ;;
+    --desc)
+      DIRECTION="desc"
+      shift
+      ;;
+    -L|--limit)
+      require_value "$1" "${2:-}"
+      LIMIT="$2"
+      shift 2
+      ;;
+    --all)
+      LIMIT="1000"
+      shift
+      ;;
+    --progress)
+      PROGRESS_MODE="always"
+      shift
+      ;;
+    --no-progress)
+      PROGRESS_MODE="never"
+      shift
+      ;;
+    --no-header)
+      PRINT_HEADER=0
+      shift
+      ;;
+    -h|--help)
+      print_usage
+      exit 0
+      ;;
+    *)
+      die "unknown argument: $1"
+      ;;
+  esac
+done
+
+case "$SORT_BY" in
+  stars|file-commits|repo-commits) ;;
+  *) die "--sort-by must be stars, file-commits, or repo-commits" ;;
+esac
+
+case "$DIRECTION" in
+  asc|desc) ;;
+  *) die "--direction must be asc or desc" ;;
+esac
+
+if [[ -n "$LIMIT" && ! "$LIMIT" =~ ^[1-9][0-9]*$ ]]; then
+  die "--limit must be a positive integer"
+fi
+
+case "$PROGRESS_MODE" in
+  auto|always|never) ;;
+  *) die "internal error: invalid progress mode" ;;
+esac
+
+if ! command -v gh >/dev/null 2>&1; then
+  printf 'search-github-skills: gh CLI is not installed\n' >&2
+  exit 1
+fi
+
+tmp_results="$(mktemp)"
+search_error="$(mktemp)"
+trap 'rm -f "$tmp_results" "$search_error"' EXIT
+
+declare -A stars_by_repo=()
+declare -A repo_commits_by_repo=()
+
+search_query="$SEARCH_TERM filename:skill.md in:file,path"
+seen=0
+page=1
+per_page=100
+
+if (( LIMIT < per_page )); then
+  per_page="$LIMIT"
+fi
+
+progress_log "search\tquery=$search_query\tlimit=$LIMIT\tsort_by=$SORT_BY\tdirection=$DIRECTION"
+
+while (( seen < LIMIT )); do
+  progress_log "search_page\tpage=$page\tper_page=$per_page\tseen=$seen"
+  page_output="$(search_page "$page" "$per_page")"
+  if [[ -z "$page_output" ]]; then
+    progress_log "search_done\treason=no_more_results\tseen=$seen"
+    break
+  fi
+
+  while IFS=$'\t' read -r repo file_path url; do
+    [[ -n "$repo" ]] || continue
+    if (( seen >= LIMIT )); then
+      break
+    fi
+
+    progress_log "enrich\tindex=$((seen + 1))\trepo=$repo\tfile=$file_path"
+
+    if [[ -z "${stars_by_repo[$repo]+set}" ]]; then
+      if stars="$(gh api "repos/$repo" --jq '.stargazers_count' 2>/dev/null)"; then
+        stars_by_repo[$repo]="$(normalize_count "$stars")"
+      else
+        stars_by_repo[$repo]="0"
+      fi
+      repo_commits_by_repo[$repo]="$(commit_count "$repo")"
+    fi
+
+    file_commits="$(commit_count "$repo" "$file_path")"
+    row="$(
+      printf '%s\t%s\t%s\t%s\t%s\t%s' \
+        "${stars_by_repo[$repo]}" \
+        "$file_commits" \
+        "${repo_commits_by_repo[$repo]}" \
+        "$repo" \
+        "$file_path" \
+        "$url"
+    )"
+
+    printf '%s\n' "$row" >>"$tmp_results"
+    progress_result "$row"
+
+    seen=$((seen + 1))
+  done <<<"$page_output"
+
+  if (( $(printf '%s\n' "$page_output" | sed '/^$/d' | wc -l | tr -d ' ') < per_page )); then
+    progress_log "search_done\treason=partial_page\tseen=$seen"
+    break
+  fi
+
+  page=$((page + 1))
+done
+
+progress_log "sort\trows=$seen\tsort_by=$SORT_BY\tdirection=$DIRECTION"
+
+if [[ "$PRINT_HEADER" -eq 1 ]]; then
+  printf 'stars\tfile_commits\trepo_commits\trepo\tfile\turl\n'
+fi
+
+if [[ ! -s "$tmp_results" ]]; then
+  exit 0
+fi
+
+direction_suffix="nr"
+if [[ "$DIRECTION" == "asc" ]]; then
+  direction_suffix="n"
+fi
+
+case "$SORT_BY" in
+  stars)
+    sort -t $'\t' \
+      -k1,1"$direction_suffix" \
+      -k2,2"$direction_suffix" \
+      -k3,3"$direction_suffix" \
+      -k4,4 \
+      -k5,5 \
+      "$tmp_results"
+    ;;
+  file-commits)
+    sort -t $'\t' \
+      -k2,2"$direction_suffix" \
+      -k1,1"$direction_suffix" \
+      -k3,3"$direction_suffix" \
+      -k4,4 \
+      -k5,5 \
+      "$tmp_results"
+    ;;
+  repo-commits)
+    sort -t $'\t' \
+      -k3,3"$direction_suffix" \
+      -k1,1"$direction_suffix" \
+      -k2,2"$direction_suffix" \
+      -k4,4 \
+      -k5,5 \
+      "$tmp_results"
+    ;;
+esac

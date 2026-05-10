@@ -18,7 +18,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y shellcheck
       - name: Shellcheck
         run: |
-          shellcheck -x scripts/macos/apply.sh scripts/macos/capture.sh scripts/vm/test-install-tart.sh scripts/vm/check-install-log.sh scripts/trace/perfetto-trace.bash scripts/chezmoi-hooks/guard-running-apps.sh scripts/chezmoi-hooks/post-apply-plists.sh scripts/packages/render-brewfile
+          shellcheck -x scripts/macos/apply.sh scripts/macos/capture.sh scripts/vm/test-install-tart.sh scripts/vm/check-install-log.sh scripts/trace/perfetto-trace.bash scripts/chezmoi-hooks/guard-running-apps.sh scripts/chezmoi-hooks/post-apply-plists.sh scripts/packages/render-brewfile scripts/search-github-skills
 
   macos-dry-run:
     runs-on: macos-latest
@@ -48,6 +48,7 @@ jobs:
           make test-trace-perfetto
           make test-vm-install-log-scan
           make test-vm-postflight-macos
+          make test-search-github-skills
 
       - name: Bootstrap app list regression
         run: |
