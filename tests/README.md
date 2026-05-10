@@ -88,12 +88,6 @@ Run `grmrepo-refresh` config-generation tests:
 make test-grmrepo-refresh
 ```
 
-Run GitHub skill-search helper tests:
-
-```sh
-make test-search-github-skills
-```
-
 Run E2E worktree tests:
 
 ```sh

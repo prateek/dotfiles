@@ -85,7 +85,7 @@ zshenv -> zprofile -> zshrc -> init.sh -> zinit-init.zsh -> lib/*.zsh -> extra/*
 ## Dependency And Tooling Gotchas
 
 - Python imports must be declared in `pyproject.toml`; add stubs and build-system dependency mirrors when typecheck/build rules need them.
-- For skill-creator eval review, prefer `~/dotfiles/scripts/eval-review.py` over the canonical skill viewer.
+- For skill-creator eval review (the human-review HTML over an iteration directory), default to `scripts/eval-review.py`. Use the canonical skill viewer (`generate_review.py`) only if the user explicitly asks for it.
 - After editing a skill, validate it. Frontmatter/parser drift has bitten this repo before.
 - If CI says to run the build file generator and provides a diff, apply that diff exactly when local generation is blocked by auth/network/private module issues.
 - Use `git diff --check` before handoff on non-trivial docs or code changes.
