@@ -1,0 +1,17 @@
+{
+  // See https://go.microsoft.com/fwlink/?LinkId=733558
+  // for the documentation about the tasks.json format
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Format VSCode settings",
+      "type": "shell",
+      "command": "node ${workspaceFolder}/scripts/format-vscode-settings.mjs \"${workspaceFolder}/home/Library/Application Support/Code/User/settings.json\"",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "never",
+        "panel": "shared"
+      }
+    }
+  ]
+}

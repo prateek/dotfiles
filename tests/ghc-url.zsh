@@ -67,7 +67,7 @@ chmod +x "$stub_bin/git"
 echo "• ghc clones explicit GitHub URLs over SSH"
 : >"$GHC_TEST_LOG"
 GHPATH="$tmp_root/code/github.com" \
-  zsh "$DOTFILES_ROOT/zsh/autoload/ghc" "https://github.com/prateek/w"
+  zsh "$DOTFILES_ROOT/home/dot_config/zsh/autoload/ghc" "https://github.com/prateek/w"
 
 clone_url="$(awk -F '\t' 'NR==1 { print $2 }' "$GHC_TEST_LOG")"
 target_path="$(awk -F '\t' 'NR==1 { print $3 }' "$GHC_TEST_LOG")"

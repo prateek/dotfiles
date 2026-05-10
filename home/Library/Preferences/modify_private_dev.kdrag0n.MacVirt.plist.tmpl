@@ -1,0 +1,3 @@
+{{ template "plist-merge-prelude.py" . }}
+desired_xml = base64.b64decode("{{ includeTemplate "dev.kdrag0n.MacVirt.plist.tmpl" . | b64enc }}")
+{{ template "plist-merge-postlude.py" . }}

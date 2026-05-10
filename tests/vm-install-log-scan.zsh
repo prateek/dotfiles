@@ -66,4 +66,30 @@ assert_contains "$REPLY" "sealed system write"
 assert_contains "$REPLY" "unsupported Spotlight defaults write"
 assert_contains "$REPLY" "missing clean-VM Dock database path"
 
+loader_log="$tmp_root/loader.log"
+cat >"$loader_log" <<'EOF'
+`brew bundle` complete! 292 Brewfile dependencies now installed.
+dyld[36566]: Library not loaded: /opt/homebrew/opt/simdjson/lib/libsimdjson.31.dylib
+  Referenced from: <FD86D65B-7A6E-3DF7-BD83-D0BF5EE08125> /opt/homebrew/Cellar/node@24/24.14.1/bin/node
+  Reason: tried: '/opt/homebrew/opt/simdjson/lib/libsimdjson.31.dylib' (no such file)
+EOF
+
+assert_rc 1 bash "$SCRIPT" "$loader_log"
+assert_contains "$REPLY" "dynamic loader failure"
+assert_contains "$REPLY" "Library not loaded"
+
+bootstrap_log="$tmp_root/bootstrap.log"
+cat >"$bootstrap_log" <<'EOF'
+mise ERROR Failed to install core:ruby@latest: GitHub artifact attestations verification failed for ruby@4.0.3
+2026-05-10 01:38:13.260 systemsetup[73367:490181] ### Error:-99 File:/AppleInternal/Library/BuildRoots/4~CJ3IugCZu-TBVIdo7MkmNzjDu6yhNFVWYiW62oo/Library/Caches/com.apple.xbs/TemporaryDirectory.Fxezov/Sources/Admin/InternetServices.m Line:395
+2026-05-10 01:38:13.550 defaults[73419:490509] Could not write domain com.apple.universalaccess; exiting
+2026-05-10 01:38:14.711 defaults[73516:490913] Could not write domain /Users/prateek/Library/Containers/com.apple.Safari/Data/Library/Preferences/com.apple.Safari; exiting
+EOF
+
+assert_rc 1 bash "$SCRIPT" "$bootstrap_log"
+assert_contains "$REPLY" "mise GitHub attestation rate-limit failure"
+assert_contains "$REPLY" "unfiltered systemsetup InternetServices noise"
+assert_contains "$REPLY" "unhandled Universal Access defaults failure"
+assert_contains "$REPLY" "unhandled Safari defaults failure"
+
 print -- "OK vm-install-log-scan"

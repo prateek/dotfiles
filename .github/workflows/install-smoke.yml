@@ -18,16 +18,18 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y shellcheck
       - name: Shellcheck
         run: |
-          shellcheck -x install.sh scripts/macos/apply.sh scripts/macos/capture.sh scripts/vm/test-install-tart.sh scripts/vm/check-install-log.sh scripts/trace/perfetto-trace.bash
+          shellcheck -x scripts/macos/apply.sh scripts/macos/capture.sh scripts/vm/test-install-tart.sh scripts/vm/check-install-log.sh scripts/trace/perfetto-trace.bash scripts/chezmoi-hooks/guard-running-apps.sh scripts/chezmoi-hooks/post-apply-plists.sh scripts/packages/render-brewfile
 
   macos-dry-run:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install chezmoi
+        run: brew install chezmoi
+
       - name: Zsh syntax check
         run: |
-          zsh -n bootstrap.sh
           zsh -n scripts/trace/run-zsh
 
       - name: Python syntax check
@@ -36,38 +38,77 @@ jobs:
       - name: Tart helper contract
         run: |
           make test-tart-install-helper
+          make test-render-brewfile
+          make test-render-chrome-policy
+          make test-gemini-meeting-sync
+          make test-selected-app-plists
+          make test-zed-settings
+          make test-moom-plist
+          make test-plist-hooks
           make test-trace-perfetto
           make test-vm-install-log-scan
           make test-vm-postflight-macos
 
       - name: Bootstrap app list regression
         run: |
-          ! grep -En '^(cask "airflow"|cask "omnigraffle"|mas "MeetInOne")' Brewfile
+          if scripts/packages/render-brewfile --profile full | grep -En '^(cask "airflow"|cask "omnigraffle"|mas ")'; then
+            exit 1
+          fi
+          if scripts/packages/render-brewfile --profile full --include-mas | grep -En '^mas "MeetInOne"'; then
+            exit 1
+          fi
 
-      - name: Install smoke (dry-run)
+      - name: Bootstrap smoke — chezmoi init + apply --dry-run, both profiles
         run: |
-          ./install.sh --core --dry-run
-          ./install.sh --full --dry-run
-
-      - name: Remote install smoke (dry-run)
-        env:
-          REPO_URL: ${{ github.workspace }}
-          INSTALL_DIR: ${{ runner.temp }}/dotfiles-install
-        run: |
-          mkdir -p "${{ runner.temp }}/dotfiles-install-smoke"
-          cd "${{ runner.temp }}/dotfiles-install-smoke"
-          cat "${{ github.workspace }}/install.sh" | bash -s -- --core --dry-run
+          set -euo pipefail
+          for profile in core full; do
+            tmp_home="${RUNNER_TEMP}/chezmoi-${profile}"
+            rm -rf "$tmp_home"
+            mkdir -p "$tmp_home/.config/chezmoi" "$tmp_home/.cache/chezmoi" "$tmp_home/.local/state/chezmoi"
+            DOTFILES_INSTALL_PROFILE="$profile" \
+            DOTFILES_RUN_INSTALL_SCRIPTS=false \
+            DOTFILES_APPLY_DEFAULTS=false \
+            DOTFILES_SECRETS_ENABLED=false \
+            HOME="$tmp_home" \
+            XDG_CONFIG_HOME="$tmp_home/.config" \
+            XDG_CACHE_HOME="$tmp_home/.cache" \
+            XDG_STATE_HOME="$tmp_home/.local/state" \
+              chezmoi --no-tty \
+                --config "$tmp_home/.config/chezmoi/chezmoi.toml" \
+                --cache "$tmp_home/.cache/chezmoi" \
+                --persistent-state "$tmp_home/.local/state/chezmoi/state.boltdb" \
+                init --promptDefaults --source "${{ github.workspace }}"
+            DOTFILES_INSTALL_PROFILE="$profile" \
+            DOTFILES_RUN_INSTALL_SCRIPTS=false \
+            DOTFILES_APPLY_DEFAULTS=false \
+            DOTFILES_SECRETS_ENABLED=false \
+            HOME="$tmp_home" \
+            XDG_CONFIG_HOME="$tmp_home/.config" \
+            XDG_CACHE_HOME="$tmp_home/.cache" \
+            XDG_STATE_HOME="$tmp_home/.local/state" \
+              chezmoi --no-tty \
+                --config "$tmp_home/.config/chezmoi/chezmoi.toml" \
+                --source "${{ github.workspace }}/home" \
+                --destination "$tmp_home" \
+                --cache "$tmp_home/.cache/chezmoi" \
+                --persistent-state "$tmp_home/.local/state/chezmoi/state.boltdb" \
+                apply --dry-run
+          done
 
       - name: Brewfile parse
         run: |
-          brew bundle list --all --file Brewfile.core >/dev/null
-          brew bundle list --all --file Brewfile >/dev/null
+          scripts/packages/render-brewfile --profile core --output "${RUNNER_TEMP}/Brewfile.core"
+          scripts/packages/render-brewfile --profile full --output "${RUNNER_TEMP}/Brewfile"
+          scripts/packages/render-brewfile --profile full --include-mas --output "${RUNNER_TEMP}/Brewfile.mas"
+          brew bundle list --all --file "${RUNNER_TEMP}/Brewfile.core" >/dev/null
+          brew bundle list --all --file "${RUNNER_TEMP}/Brewfile" >/dev/null
+          brew bundle list --all --file "${RUNNER_TEMP}/Brewfile.mas" >/dev/null
 
       - name: Brew bundle (core formulae only)
         run: |
           set -euo pipefail
-          HOMEBREW_BUNDLE_CASK_SKIP="$(awk -F'"' '/^cask "/ { print $2 }' Brewfile.core | xargs)"
-          HOMEBREW_BUNDLE_MAS_SKIP="$(awk -F'"' '/^mas "/ { print $2 }' Brewfile.core | xargs)"
+          core_brewfile="${RUNNER_TEMP}/Brewfile.core"
+          scripts/packages/render-brewfile --profile core --output "$core_brewfile"
+          HOMEBREW_BUNDLE_CASK_SKIP="$(awk -F'"' '/^cask "/ { print $2 }' "$core_brewfile" | xargs)"
           export HOMEBREW_BUNDLE_CASK_SKIP
-          export HOMEBREW_BUNDLE_MAS_SKIP
-          brew bundle install --no-upgrade --file Brewfile.core
+          brew bundle install --no-upgrade --file "$core_brewfile"

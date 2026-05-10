@@ -18,8 +18,8 @@ This dotfiles repo wires up [git-repo-manager](https://github.com/hakoerber/git-
 
 ## Bootstrap
 
-- `~/dotfiles/bootstrap.sh` installs:
-  - `cask "hammerspoon"` (via Brewfile)
+- `chezmoi apply` installs (via `home/.chezmoiscripts/run_onchange_after_10-brew-bundle.sh.tmpl`):
+  - `cask "hammerspoon"` (declared in `home/.chezmoidata/packages.toml`)
   - `git-repo-manager` (via `cargo install git-repo-manager --locked`, if `cargo` exists)
 - It also symlinks:
   - `~/.config/grm/config.toml` → `~/dotfiles/.config/grm/config.toml`

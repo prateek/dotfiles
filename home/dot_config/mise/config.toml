@@ -1,0 +1,20 @@
+[tools]
+# Node: pinned (reproducible)
+node = "24.12.0"
+
+# Go/Ruby: track latest
+go = "latest"
+ruby = "latest"
+"npm:@google/gemini-cli" = "latest"
+"npm:@steipete/bird" = "latest"
+"npm:yarn" = "1.22.22"
+
+# Absurd durable-workflow CLI
+"pipx:absurdctl" = "latest"
+
+[settings.ruby]
+# Use mise's signed precompiled Ruby artifacts when available.
+compile = false
+# Fresh bootstrap often runs before GitHub auth exists; unauthenticated
+# attestation checks can exhaust the public API rate limit.
+github_attestations = false

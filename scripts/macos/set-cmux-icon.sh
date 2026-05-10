@@ -6,8 +6,8 @@ APP_PATH="${1:-/Applications/cmux.app}"
 DEST_ICON="$APP_PATH/Contents/Resources/AppIcon.icns"
 BACKUP_DIR="$HOME/Library/Application Support/cmux/icon-backups"
 BACKUP_ICON="$BACKUP_DIR/AppIcon.original.icns"
-PNG_SOURCE="$REPO_ROOT/osx-apps/cmux/icon.png"
-SVG_SOURCE="$REPO_ROOT/osx-apps/cmux/icon.svg"
+PNG_SOURCE="$REPO_ROOT/scripts/macos/assets/cmux/icon.png"
+SVG_SOURCE="$REPO_ROOT/scripts/macos/assets/cmux/icon.svg"
 
 if [ "$(uname -s)" != "Darwin" ]; then
   echo "set-cmux-icon.sh: macOS only; skipping."

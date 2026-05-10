@@ -2,10 +2,11 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
-BREWFILE="${BREWFILE:-$REPO_ROOT/Brewfile}"
+BREWFILE="${BREWFILE:-}"
+BREWFILE_PROFILE="${BREWFILE_PROFILE:-full}"
 
-if [ ! -f "$BREWFILE" ]; then
-  echo "Brewfile not found: $BREWFILE" >&2
+if [ -n "$BREWFILE" ] && [ ! -f "$BREWFILE" ]; then
+  echo "Package manifest not found: $BREWFILE" >&2
   exit 1
 fi
 
@@ -24,11 +25,27 @@ else
 fi
 
 extract_casks() {
-  sed -n 's/^cask "\([^"]*\)".*/\1/p' "$BREWFILE"
+  render_brewfile | sed -n 's/^cask "\([^"]*\)".*/\1/p'
 }
 
 extract_formulae() {
-  sed -n 's/^brew "\([^"]*\)".*/\1/p' "$BREWFILE"
+  render_brewfile | sed -n 's/^brew "\([^"]*\)".*/\1/p'
+}
+
+render_brewfile() {
+  if [ -n "$BREWFILE" ]; then
+    cat "$BREWFILE"
+  else
+    "$REPO_ROOT/scripts/packages/render-brewfile" --profile "$BREWFILE_PROFILE"
+  fi
+}
+
+brewfile_label() {
+  if [ -n "$BREWFILE" ]; then
+    echo "$BREWFILE"
+  else
+    echo "packages.toml profile '$BREWFILE_PROFILE'"
+  fi
 }
 
 if [ "$(uname -s)" = "Darwin" ]; then
@@ -175,8 +192,8 @@ days_since_epoch() {
   echo $(( (now - epoch) / 86400 ))
 }
 
-echo "# Brewfile usage report"
-echo "# Brewfile: $BREWFILE"
+echo "# Package usage report"
+echo "# Source: $(brewfile_label)"
 echo "# DAYS_UNUSED: $DAYS_UNUSED"
 echo
 
@@ -339,4 +356,4 @@ echo "# Notes"
 echo "# - Cask usage uses Spotlight metadata (mdls). Some apps may not update usage reliably."
 echo "# - Formula usage is a heuristic based on a guessed primary command and ~/.zsh_history."
 echo "# - If your ~/.zsh_history doesn't include timestamps, formula last-used may be blank."
-echo "# - Review flags are suggestions only; confirm before removing anything from Brewfile."
+echo "# - Review flags are suggestions only; confirm before removing anything from package data."

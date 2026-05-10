@@ -1,0 +1,11 @@
+{{- $root := .root -}}
+{{- $name := .name -}}
+{{- $profileName := default $root.packages.default_profile (get $root "install_profile") -}}
+{{- $profile := index $root.packages.profiles $profileName -}}
+{{- $enabled := false -}}
+{{- range $profile.casks -}}
+{{- if eq .name $name -}}
+{{- $enabled = true -}}
+{{- end -}}
+{{- end -}}
+{{- $enabled -}}

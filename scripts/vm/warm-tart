@@ -1,0 +1,212 @@
+#!/usr/bin/env bash
+#
+# warm-tart — long-lived Tart VM for fast iteration on chezmoi changes.
+#
+# Lifecycle:
+#   create    Clone the image into a named warm VM (no apply yet).
+#   bootstrap Start the warm VM with the host repo mounted, install
+#             chezmoi, run chezmoi init --apply once. Slow (~3 min).
+#   apply     Ensure VM running; run `chezmoi apply` against the mounted
+#             repo. Fast (seconds) after the initial bootstrap.
+#   status    Show whether the warm VM exists and is running.
+#   start     Boot the warm VM with the host repo mounted (no apply).
+#   stop      Stop the warm VM (preserve disk).
+#   shell     Open an interactive shell in the warm VM.
+#   refresh   destroy + create + bootstrap (use after major repo changes
+#             that won't apply incrementally — package profile bumps,
+#             chezmoi script reordering, etc.).
+#   destroy   Stop + delete the warm VM.
+#
+# Cold disposable lanes (test-install-tart-{smoke,full}) are unchanged
+# and remain the right tool for clean-machine proof. Use this for the
+# inner edit-test loop.
+#
+# Sync model: the host repo is mounted read-only into the VM, then rsync'd
+# into ~/dotfiles inside the VM (excluding .git so worktree pointers don't
+# break chezmoi's git operations). This means `warm-tart shell` sees the
+# snapshot from the last apply / bootstrap, NOT live host edits — re-run
+# `warm-tart apply` to push your latest changes through.
+#
+set -euo pipefail
+
+WARM_VM_NAME="${DOTFILES_WARM_VM_NAME:-dotfiles-warm}"
+WARM_IMAGE="${DOTFILES_WARM_IMAGE:-ghcr.io/cirruslabs/macos-tahoe-base:latest}"
+WARM_CPU="${DOTFILES_WARM_CPU:-4}"
+WARM_MEMORY="${DOTFILES_WARM_MEMORY:-8192}"
+WARM_PROFILE="${DOTFILES_INSTALL_PROFILE:-core}"
+
+REPO_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
+
+log() { printf '[warm-tart] %s\n' "$*"; }
+die() { printf '[warm-tart] error: %s\n' "$*" >&2; exit 1; }
+
+vm_exists() {
+  tart list 2>/dev/null | awk 'NR>1 {print $2}' | grep -qx "$WARM_VM_NAME"
+}
+
+vm_running() {
+  # Tart list columns: Source Name Disk Size State
+  tart list 2>/dev/null | awk -v n="$WARM_VM_NAME" 'NR>1 && $2==n {print $NF}' | grep -qx running
+}
+
+ensure_exists() {
+  vm_exists || die "warm VM '$WARM_VM_NAME' does not exist; run: $0 create"
+}
+
+ensure_running() {
+  ensure_exists
+  vm_running && return 0
+  log "Starting warm VM '$WARM_VM_NAME' (mounting $REPO_ROOT as /Volumes/My Shared Files/dotfiles)..."
+  tart run --no-graphics --dir "dotfiles:$REPO_ROOT:ro" "$WARM_VM_NAME" >/dev/null 2>&1 &
+  log "Waiting for guest agent..."
+  local start now
+  start="$(date +%s)"
+  until tart exec "$WARM_VM_NAME" true >/dev/null 2>&1; do
+    now="$(date +%s)"
+    if (( now - start > 120 )); then
+      # Don't leak the backgrounded `tart run` if the agent never appears.
+      tart stop "$WARM_VM_NAME" >/dev/null 2>&1 || true
+      die "guest agent did not respond within 120s; warm VM stopped to avoid leaking"
+    fi
+    sleep 2
+  done
+  log "Warm VM running (boot took $((now - start))s)."
+}
+
+# Per-VM mutex so two `warm-tart apply` invocations don't race on the
+# rsync-into-guest step (rsync's --delete makes torn writes destructive).
+# `mkdir` on an existing directory is portably atomic — tests and acquires
+# in one syscall — and works without macOS Homebrew's `flock` (not in the
+# default install).
+_with_lock() {
+  local lock_dir="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles"
+  local lock_path="$lock_dir/warm-tart-$WARM_VM_NAME.lock.d"
+  mkdir -p "$lock_dir"
+  if ! mkdir "$lock_path" 2>/dev/null; then
+    die "another warm-tart operation is in progress for '$WARM_VM_NAME' (lock: $lock_path)"
+  fi
+  trap 'rmdir "$lock_path" 2>/dev/null || true' EXIT
+}
+
+cmd_status() {
+  if vm_exists; then
+    if vm_running; then
+      log "$WARM_VM_NAME: exists, running"
+    else
+      log "$WARM_VM_NAME: exists, stopped"
+    fi
+  else
+    log "$WARM_VM_NAME: does not exist"
+  fi
+}
+
+cmd_create() {
+  if vm_exists; then
+    log "Warm VM '$WARM_VM_NAME' already exists. Use 'refresh' to recreate."
+    return 0
+  fi
+  log "Cloning '$WARM_IMAGE' into warm VM '$WARM_VM_NAME'..."
+  tart clone "$WARM_IMAGE" "$WARM_VM_NAME"
+  tart set "$WARM_VM_NAME" --cpu "$WARM_CPU" --memory "$WARM_MEMORY"
+  log "Warm VM created. Run '$0 bootstrap' to install chezmoi + first apply."
+}
+
+_sync_repo_into_vm() {
+  # The host worktree's .git is a file pointing to a path the VM can't
+  # see, which breaks any chezmoi git operations. rsync the mounted
+  # repo into ~/dotfiles inside the VM, excluding .git and other host-
+  # only metadata. The mount stays read-only; the VM-local copy is what
+  # chezmoi reads from.
+  tart exec "$WARM_VM_NAME" sh -lc '
+    set -e
+    /usr/bin/rsync -a --delete \
+      --exclude=.git \
+      --exclude=.specstory \
+      --exclude=__pycache__ \
+      --exclude=.DS_Store \
+      --exclude=node_modules \
+      "/Volumes/My Shared Files/dotfiles/" "$HOME/dotfiles/"
+  '
+}
+
+cmd_bootstrap() {
+  _with_lock
+  ensure_running
+  _sync_repo_into_vm
+  log "Bootstrapping chezmoi inside warm VM (profile=$WARM_PROFILE)..."
+  tart exec "$WARM_VM_NAME" env \
+    DOTFILES_INSTALL_PROFILE="$WARM_PROFILE" \
+    sh -lc '
+      set -e
+      export PATH="$HOME/.local/bin:$PATH"
+      sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
+      chezmoi --no-tty init --promptDefaults --apply --source "$HOME/dotfiles"
+    '
+  log "Bootstrap complete. Subsequent '$0 apply' runs use the same chezmoi config."
+}
+
+cmd_apply() {
+  _with_lock
+  ensure_running
+  _sync_repo_into_vm
+  log "Applying chezmoi inside warm VM..."
+  tart exec "$WARM_VM_NAME" sh -lc '
+    set -e
+    export PATH="$HOME/.local/bin:$PATH"
+    if ! command -v chezmoi >/dev/null 2>&1; then
+      echo "chezmoi not installed; run: warm-tart bootstrap" >&2
+      exit 1
+    fi
+    chezmoi --no-tty apply
+    chezmoi --no-tty status --exclude=scripts || true
+  '
+}
+
+cmd_start() {
+  ensure_running
+  log "Warm VM running. Connect via: $0 shell"
+}
+
+cmd_stop() {
+  ensure_exists
+  if vm_running; then
+    log "Stopping warm VM..."
+    tart stop "$WARM_VM_NAME" >/dev/null 2>&1 || true
+  else
+    log "Warm VM already stopped."
+  fi
+}
+
+cmd_shell() {
+  ensure_running
+  log "Opening shell in warm VM (^D to exit)..."
+  tart exec "$WARM_VM_NAME" bash -l
+}
+
+cmd_refresh() {
+  cmd_destroy
+  cmd_create
+  cmd_bootstrap
+}
+
+cmd_destroy() {
+  if vm_exists; then
+    cmd_stop
+    log "Deleting warm VM..."
+    tart delete "$WARM_VM_NAME" >/dev/null 2>&1 || true
+  fi
+}
+
+usage() {
+  sed -n '2,30p' "$0" | sed 's|^# \{0,1\}||'
+}
+
+cmd="${1:-}"
+case "$cmd" in
+  -h|--help|help|"") usage; exit 0 ;;
+  create|bootstrap|apply|status|start|stop|shell|refresh|destroy)
+    shift
+    "cmd_$cmd" "$@"
+    ;;
+  *) die "unknown command: $cmd (see -h)" ;;
+esac

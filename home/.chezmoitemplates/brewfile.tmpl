@@ -1,0 +1,85 @@
+{{- /*
+  brewfile.tmpl — Homebrew Bundle input rendered from .packages data.
+
+  Profile selection: env DOTFILES_INSTALL_PROFILE > chezmoi data
+  .install_profile (set by the inited config; may be absent when this
+  template is rendered against a worktree without the user's config) >
+  .packages.default_profile.
+
+  MAS opt-in: gated by env DOTFILES_INSTALL_MAS_APPS=true|1|yes|on.
+
+  Output shape: lines per section (tap, brew, cask, optionally mas), with
+  a single blank line separating non-empty sections, and exactly one
+  trailing newline at the end. This matches the format brew bundle parses.
+
+  Optional fields on items (url on tap, link/args on brew, link/args/appdir
+  on cask) are accessed via `dig` so missing keys do not error — Go
+  templates fail strictly on `.foo` against a map without "foo".
+*/ -}}
+{{- $profile := coalesce (env "DOTFILES_INSTALL_PROFILE") (dig "install_profile" "" .) .packages.default_profile -}}
+{{- if not (hasKey .packages.profiles $profile) -}}
+{{-   fail (printf "brewfile.tmpl: unknown package profile %q (available: %v)" $profile (keys .packages.profiles)) -}}
+{{- end -}}
+{{- $sel := index .packages.profiles $profile -}}
+{{- $masOptIn := env "DOTFILES_INSTALL_MAS_APPS" | lower -}}
+{{- $includeMas := has $masOptIn (list "1" "true" "yes" "on") -}}
+
+{{- /* Build each section as a list of lines. */ -}}
+{{- $tapLines := list -}}
+{{- range default (list) (dig "taps" (list) $sel) -}}
+{{-   $url := dig "url" "" . -}}
+{{-   if $url -}}
+{{-     $tapLines = mustAppend $tapLines (printf "tap %q, %q" .name $url) -}}
+{{-   else -}}
+{{-     $tapLines = mustAppend $tapLines (printf "tap %q" .name) -}}
+{{-   end -}}
+{{- end -}}
+
+{{- $brewLines := list -}}
+{{- range default (list) (dig "brews" (list) $sel) -}}
+{{-   $line := printf "brew %q" .name -}}
+{{-   if hasKey . "link" -}}
+{{-     $line = printf "%s, link: %t" $line .link -}}
+{{-   end -}}
+{{-   $args := dig "args" (list) . -}}
+{{-   if $args -}}
+{{-     $quoted := list -}}
+{{-     range $args -}}{{- $quoted = mustAppend $quoted (printf "%q" .) -}}{{- end -}}
+{{-     $line = printf "%s, args: [%s]" $line (join ", " $quoted) -}}
+{{-   end -}}
+{{-   $brewLines = mustAppend $brewLines $line -}}
+{{- end -}}
+
+{{- $caskLines := list -}}
+{{- range default (list) (dig "casks" (list) $sel) -}}
+{{-   $line := printf "cask %q" .name -}}
+{{-   if hasKey . "link" -}}
+{{-     $line = printf "%s, link: %t" $line .link -}}
+{{-   end -}}
+{{-   $args := dig "args" (list) . -}}
+{{-   if $args -}}
+{{-     $quoted := list -}}
+{{-     range $args -}}{{- $quoted = mustAppend $quoted (printf "%q" .) -}}{{- end -}}
+{{-     $line = printf "%s, args: [%s]" $line (join ", " $quoted) -}}
+{{-   end -}}
+{{-   $appdir := dig "appdir" "" . -}}
+{{-   if $appdir -}}
+{{-     $line = printf "%s, args: { appdir: %q }" $line $appdir -}}
+{{-   end -}}
+{{-   $caskLines = mustAppend $caskLines $line -}}
+{{- end -}}
+
+{{- $masLines := list -}}
+{{- if $includeMas -}}
+{{-   range default (list) (dig "mas" (list) $sel) -}}
+{{-     $masLines = mustAppend $masLines (printf "mas %q, id: %d" .name (int .id)) -}}
+{{-   end -}}
+{{- end -}}
+
+{{- /* Assemble non-empty sections separated by blank lines. */ -}}
+{{- $sections := list -}}
+{{- if $tapLines -}}{{- $sections = mustAppend $sections (join "\n" $tapLines) -}}{{- end -}}
+{{- if $brewLines -}}{{- $sections = mustAppend $sections (join "\n" $brewLines) -}}{{- end -}}
+{{- if $caskLines -}}{{- $sections = mustAppend $sections (join "\n" $caskLines) -}}{{- end -}}
+{{- if $masLines -}}{{- $sections = mustAppend $sections (join "\n" $masLines) -}}{{- end -}}
+{{ join "\n\n" $sections }}

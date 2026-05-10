@@ -1,0 +1,27 @@
+{{ template "script_lib.sh" . }}
+
+{{- if .run_install_scripts }}
+brew_shellenv
+
+# git + chezmoi are the minimum to run chezmoi apply. Other runtimes
+# (uv for ad-hoc helpers, mise, etc.) install via the brew-bundle step
+# or per-helper.
+missing=()
+for tool in git chezmoi; do
+  if ! have "$tool"; then
+    missing+=("$tool")
+  fi
+done
+
+if [ "${#missing[@]}" -eq 0 ]; then
+  exit 0
+fi
+
+if ! have brew; then
+  die "Missing core tools (${missing[*]}) and Homebrew is unavailable."
+fi
+
+brew install "${missing[@]}"
+{{- else }}
+log "Install scripts disabled; skipping core tool setup."
+{{- end }}

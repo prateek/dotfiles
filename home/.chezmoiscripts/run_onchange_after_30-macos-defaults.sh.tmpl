@@ -1,0 +1,40 @@
+{{ template "script_lib.sh" . }}
+
+{{- if and .run_install_scripts .apply_macos_defaults }}
+if [ "$(uname -s)" != "Darwin" ]; then
+  log "macOS defaults skipped on non-macOS host."
+  exit 0
+fi
+
+# Defaults applier lives at scripts/macos/defaults.sh — the canonical
+# source of truth (one file, ~150 keys covering boot/locale/menubar/input/
+# display/finder/dock/spotlight/per-app/symbolic-hotkeys/HIToolbox/SU).
+#
+# This wrapper just invokes it. chezmoi's run_onchange hashing covers
+# changes to the chezmoi-rendered template; defaults.sh changes are
+# tracked via the source-hash line below so editing the script forces
+# re-execution on the next apply.
+#
+# Idempotent: writing the same defaults value is a no-op at cfprefsd.
+#
+# Skip flags honoured by defaults.sh (set in env before chezmoi apply):
+#   DOTFILES_SKIP_LSREGISTER=1     skip the slow Open With rebuild
+#   DOTFILES_SKIP_REINDEX=1        skip Spotlight full reindex (sudo)
+#   DOTFILES_SKIP_APP_RESTART=1    don't killall Dock/Finder/Safari/...
+#   DOTFILES_SUDO_KEEPALIVE_STARTED=1  trust an already-running sudo loop
+#
+# Sudo behaviour: the chezmoi script library starts a shared keepalive
+# when Homebrew/package/defaults phases need administrator access.
+# defaults.sh also supports standalone interactive runs and starts its
+# own keepalive when DOTFILES_SUDO_KEEPALIVE_STARTED is not set.
+
+# Source-hash so chezmoi's run_onchange invalidates when defaults.sh
+# changes (the rendered template content is what chezmoi hashes; embedding
+# the script's sha into a comment makes its content part of that hash):
+# defaults_sha={{ output "shasum" "-a" "256" (printf "%s/scripts/macos/defaults.sh" .chezmoi.workingTree) | regexFind "^[a-f0-9]+" }}
+
+dotfiles_sudo_start "macOS defaults need administrator access. Enter your macOS password if prompted."
+DOTFILES_SUDO_KEEPALIVE_STARTED=1 bash {{ .dotfiles_dir }}/scripts/macos/defaults.sh
+{{- else }}
+log "macOS defaults are disabled."
+{{- end }}

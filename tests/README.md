@@ -3,7 +3,7 @@
 Harness comparison report:
 
 ```sh
-open ~/dotfiles/dev/docs/zsh-harness-comparison.html
+open ~/dotfiles/docs/dev/zsh-harness-comparison.html
 ```
 
 Run `ghc` URL handling tests:
@@ -41,6 +41,15 @@ Run Tart install-helper contract tests without booting a VM:
 
 ```sh
 make test-tart-install-helper
+make test-render-brewfile
+make test-render-chrome-policy
+make test-mise-install-script
+make test-xcode-install-script
+make test-secret-backed-files
+make test-selected-app-plists
+make test-plist-hooks
+make test-sudo-keepalive
+make test-brew-bundle-script
 make test-trace-perfetto
 make test-vm-install-log-scan
 make test-vm-postflight-macos
@@ -56,12 +65,15 @@ make test-install-tart-smoke
 make test-install-tart-full
 ```
 
-The current `mini` validation workflow is documented in `dev/docs/tart-mini-validation.md`.
+Smoke uses the Tahoe base image. Full uses the Tahoe Xcode image so routine validation does not spend the run downloading Xcode.
 
-Run managed macOS defaults coverage regression tests:
+The current `mini` validation workflow is documented in `docs/dev/tart-mini-validation.md`.
+
+Run focused-helper tests for the package renderer and Chrome managed-policy renderer:
 
 ```sh
-make test-macos-settings
+make test-render-brewfile
+make test-render-chrome-policy
 ```
 
 Run `repo-index` canonical clone discovery tests:

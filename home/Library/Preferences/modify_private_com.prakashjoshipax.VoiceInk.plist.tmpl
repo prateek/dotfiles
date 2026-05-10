@@ -1,0 +1,3 @@
+{{ template "plist-merge-prelude.py" . }}
+desired_xml = base64.b64decode("{{ includeTemplate "com.prakashjoshipax.VoiceInk.plist.tmpl" . | b64enc }}")
+{{ template "plist-merge-postlude.py" . }}
