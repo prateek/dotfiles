@@ -1,0 +1,12 @@
+{
+  "prompts": [
+    {
+      "id": "summarize",
+      "template": "Summarize the following input concisely:\n\n{{user_input}}\n\nContext: {{ context }}"
+    },
+    {
+      "id": "rewrite",
+      "template": "Rewrite {{user_input}} in a {{ tone }} tone."
+    }
+  ]
+}

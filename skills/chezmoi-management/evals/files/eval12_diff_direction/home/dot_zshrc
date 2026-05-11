@@ -1,0 +1,2 @@
+export EDITOR=nvim
+alias gs='git status'

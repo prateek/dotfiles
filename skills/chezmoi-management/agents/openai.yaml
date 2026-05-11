@@ -1,0 +1,4 @@
+interface:
+  display_name: "Chezmoi Management"
+  short_description: "Run chezmoi safely, edit source state, manage app config and secrets"
+  default_prompt: "Use $chezmoi-management to route this chezmoi task to the matching reference (workflow, app-config, packages-and-secrets) and follow the repo conventions before any edit or apply."

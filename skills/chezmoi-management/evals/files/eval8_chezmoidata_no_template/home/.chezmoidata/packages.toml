@@ -1,0 +1,12 @@
+[packages]
+default_profile = "full"
+
+[packages.profiles.core]
+description = "Core package set"
+brews = [ { name = "git" }, { name = "gh" }, { name = "mise" } ]
+casks = [ { name = "1password" }, { name = "ghostty" } ]
+
+[packages.profiles.full]
+description = "Full package set"
+brews = [ { name = "git" }, { name = "gh" }, { name = "mise" }, { name = "postgresql@16" } ]
+casks = [ { name = "1password" }, { name = "ghostty" }, { name = "docker" } ]

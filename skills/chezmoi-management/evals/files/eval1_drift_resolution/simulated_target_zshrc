@@ -1,0 +1,11 @@
+# Source-of-truth zshrc managed by chezmoi.
+# Target lives at ~/.zshrc.
+
+source "${ZDOTDIR:-$HOME}/.zprofile" 2>/dev/null
+
+alias gco='git checkout'
+alias gp='git pull'
+alias gpsh='git push'
+alias gst='git status'
+
+# user-tweakable section below

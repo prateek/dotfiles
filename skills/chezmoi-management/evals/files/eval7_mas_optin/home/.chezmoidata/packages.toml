@@ -1,0 +1,15 @@
+[packages]
+default_profile = "full"
+
+[packages.profiles.core]
+description = "Core package set"
+taps  = [ { name = "1password/tap" } ]
+brews = [ { name = "git" }, { name = "gh" }, { name = "mise" } ]
+casks = [ { name = "1password" }, { name = "ghostty" } ]
+
+[packages.profiles.full]
+description = "Full package set"
+taps  = [ { name = "1password/tap" } ]
+brews = [ { name = "git" }, { name = "gh" }, { name = "mise" }, { name = "postgresql@16" } ]
+casks = [ { name = "1password" }, { name = "ghostty" }, { name = "docker" } ]
+mas   = [ { name = "Xcode", id = 497799835 } ]

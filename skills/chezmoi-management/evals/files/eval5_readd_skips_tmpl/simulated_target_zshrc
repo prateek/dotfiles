@@ -1,0 +1,7 @@
+ZSH_THEME=agnoster
+
+# Aliases (edit these in the .tmpl, NOT in ~/.zshrc):
+alias gco='git checkout'
+alias gp='git pull'
+alias gpsh='git push'
+alias k=kubectl

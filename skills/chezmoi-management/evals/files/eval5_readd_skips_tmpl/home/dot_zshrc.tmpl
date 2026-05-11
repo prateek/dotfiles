@@ -1,0 +1,11 @@
+{{- /* Per-host theme injection. Edit aliases below the conditional block. */ -}}
+{{ if eq .chezmoi.hostname "work-laptop" -}}
+ZSH_THEME=robbyrussell
+{{- else -}}
+ZSH_THEME=agnoster
+{{- end }}
+
+# Aliases (edit these in the .tmpl, NOT in ~/.zshrc):
+alias gco='git checkout'
+alias gp='git pull'
+alias gpsh='git push'
