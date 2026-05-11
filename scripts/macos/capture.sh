@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 CAPTURE_ROOT="${DOTFILES_CAPTURE_ROOT:-${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/captures/app-settings}"
 
 if [ "$(uname -s)" != "Darwin" ]; then

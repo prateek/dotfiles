@@ -41,12 +41,16 @@ brewfile_formulae="$tmp_dir/brewfile_formulae.txt"
 installed_formulae_all="$tmp_dir/installed_formulae_all.txt"
 installed_formulae_requested="$tmp_dir/installed_formulae_requested.txt"
 
+normalize_formula_names() {
+  sed 's#^homebrew/core/##' | LC_ALL=C sort -u
+}
+
 render_brewfile | sed -n 's/^tap "\([^"]*\)".*/\1/p' | LC_ALL=C sort -u >"$brewfile_taps"
 brew tap 2>/dev/null | LC_ALL=C sort -u >"$installed_taps" || true
 
-render_brewfile | sed -n 's/^brew "\([^"]*\)".*/\1/p' | LC_ALL=C sort -u >"$brewfile_formulae"
-brew list --formula --full-name 2>/dev/null | LC_ALL=C sort -u >"$installed_formulae_all" || true
-brew list --formula --installed-on-request --full-name 2>/dev/null | LC_ALL=C sort -u >"$installed_formulae_requested" || true
+render_brewfile | sed -n 's/^brew "\([^"]*\)".*/\1/p' | normalize_formula_names >"$brewfile_formulae"
+brew list --formula --full-name 2>/dev/null | normalize_formula_names >"$installed_formulae_all" || true
+brew list --formula --installed-on-request --full-name 2>/dev/null | normalize_formula_names >"$installed_formulae_requested" || true
 
 echo "# Brew inventory"
 echo "# Source: $(brewfile_label)"

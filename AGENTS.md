@@ -7,7 +7,7 @@ This is the repo-specific contract for coding agents working in Prateek's dotfil
 - `home/`: chezmoi source state. `.chezmoiroot` points here, so files materialize into `$HOME`.
 - `home/.chezmoidata/`: committed structured data for package profiles, secrets, license targets, and template inputs.
 - `home/.chezmoiscripts/`: idempotent setup run by `chezmoi apply`.
-- `home/.chezmoitemplates/`: shared templates, including Brewfile and plist merge helpers.
+- `home/.chezmoitemplates/`: shared templates, including Brewfile, macOS defaults, and plist merge helpers.
 - `home/dot_agents/docs/`: local agent/workflow convention docs. Read the relevant file before touching that workflow.
 - `home/dot_claude/`: Claude-specific commands and settings. Its `CLAUDE.md` target should symlink to `../.agents/AGENTS.md`.
 - `scripts/`: focused helpers for packages, macOS/app config, Tart, traces, audits, and hooks.

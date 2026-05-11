@@ -42,7 +42,6 @@ Run Tart install-helper contract tests without booting a VM:
 ```sh
 make test-tart-install-helper
 make test-render-brewfile
-make test-render-chrome-policy
 make test-mise-install-script
 make test-xcode-install-script
 make test-secret-backed-files
@@ -50,6 +49,8 @@ make test-codex-config
 make test-selected-app-plists
 make test-plist-hooks
 make test-sudo-keepalive
+make test-macos-defaults-script
+make test-brew-inventory
 make test-brew-bundle-script
 make test-trace-perfetto
 make test-vm-install-log-scan
@@ -70,11 +71,10 @@ Smoke uses the Tahoe base image. Full uses the Tahoe Xcode image so routine vali
 
 The current `mini` validation workflow is documented in `docs/dev/tart-mini-validation.md`.
 
-Run focused-helper tests for the package renderer and Chrome managed-policy renderer:
+Run focused-helper tests for the package renderer:
 
 ```sh
 make test-render-brewfile
-make test-render-chrome-policy
 ```
 
 Run `repo-index` canonical clone discovery tests:

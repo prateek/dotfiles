@@ -1,5 +1,5 @@
 .PHONY: hammerspoon hammerspoon-check hammerspoon-reload
-.PHONY: test-gemini-meeting-sync test-ghc test-mise-install-script test-xcode-install-script test-secret-backed-files test-kanata-config test-codex-config test-cmux-plist test-ice-plist test-orbstack-plist test-selected-app-plists test-package-gated-configs test-moom-plist test-nvalt-colors test-nvalt-plist test-voiceink-plist test-plist-hooks test-sudo-keepalive test-brew-bundle-script test-render-brewfile test-render-chrome-policy test-repo-index test-grmrepo-refresh test-worktrees
+.PHONY: test-gemini-meeting-sync test-ghc test-mise-install-script test-xcode-install-script test-secret-backed-files test-kanata-config test-codex-config test-cmux-plist test-ice-plist test-orbstack-plist test-selected-app-plists test-package-gated-configs test-moom-plist test-nvalt-colors test-nvalt-plist test-voiceink-plist test-plist-hooks test-sudo-keepalive test-macos-defaults-script test-brew-inventory test-brew-bundle-script test-render-brewfile test-repo-index test-grmrepo-refresh test-worktrees
 .PHONY: test-zed-settings test-zsh-fresh-shells verify-zsh-fresh-shells bench-zsh-startup
 .PHONY: test-tart-install-helper test-trace-perfetto test-vm-install-log-scan test-vm-postflight-macos test-install-tart-dry-run test-install-tart-smoke test-install-tart-full test-install-tart-warm test-install-tart-warm-bootstrap test-install-tart-warm-refresh test-install-tart-warm-destroy
 
@@ -38,10 +38,6 @@ hammerspoon-reload: hammerspoon
 ## Regression tests for the focused Brewfile renderer.
 test-render-brewfile:
 	@zsh ./tests/render-brewfile.zsh
-
-## Regression tests for the focused Chrome managed-policy renderer.
-test-render-chrome-policy:
-	@zsh ./tests/render-chrome-policy.zsh
 
 ## Regression tests for Gemini meeting sync wrapper config.
 test-gemini-meeting-sync:
@@ -118,6 +114,14 @@ test-plist-hooks:
 ## Regression tests for shared sudo keepalive behavior.
 test-sudo-keepalive:
 	@zsh ./tests/sudo-keepalive.zsh
+
+## Regression tests for macOS defaults script side-effect guards.
+test-macos-defaults-script:
+	@zsh ./tests/macos-defaults-script.zsh
+
+## Regression tests for Homebrew inventory drift reporting.
+test-brew-inventory:
+	@zsh ./tests/brew-inventory.zsh
 
 ## Regression tests for brew bundle script concurrency flags.
 test-brew-bundle-script:

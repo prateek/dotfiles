@@ -531,7 +531,6 @@ for var in \
   DOTFILES_INSTALL_MAS_APPS \
   DOTFILES_RUN_INSTALL_SCRIPTS \
   DOTFILES_APPLY_DEFAULTS \
-  DOTFILES_APPLY_PRIVILEGED_APP_ASSETS \
   DOTFILES_SECRETS_ENABLED \
   DOTFILES_MANAGE_ZINIT_EXTERNAL \
   DOTFILES_SKIP_LSREGISTER \
@@ -590,6 +589,7 @@ case "$MODE" in
       # template + clones into source state, status reports what would
       # change. Avoid `apply --dry-run --verbose` because it streams every
       # file's diff and overruns Tart's gRPC transport.
+      # shellcheck disable=SC2016
       bootstrap_cmd='
         set -e
         export PATH="$HOME/.local/bin:$PATH"
@@ -598,6 +598,7 @@ case "$MODE" in
         chezmoi --no-tty status | head -50
       '
     else
+      # shellcheck disable=SC2016
       bootstrap_cmd='
         set -e
         export PATH="$HOME/.local/bin:$PATH"
@@ -619,6 +620,7 @@ case "$MODE" in
     log "Bootstrapping chezmoi inside VM (remote / github.com/prateek/dotfiles)…"
     POSTFLIGHT_DOTFILES_ROOT="${INSTALL_DIR:-}"
     if [ "$DRY_RUN" = "1" ]; then
+      # shellcheck disable=SC2016
       remote_cmd='
         set -e
         export PATH="$HOME/.local/bin:$PATH"
@@ -627,6 +629,7 @@ case "$MODE" in
         chezmoi --no-tty status | head -50
       '
     else
+      # shellcheck disable=SC2016
       remote_cmd='
         set -e
         export PATH="$HOME/.local/bin:$PATH"
