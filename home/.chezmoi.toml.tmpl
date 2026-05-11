@@ -43,6 +43,9 @@
 
 sourceDir = {{ $dotfilesDir | quote }}
 
+# Apply scripts can prompt for sudo. Do not let a pager own the same TTY.
+pager = ""
+
 [data]
 dotfiles_dir = {{ $dotfilesDir | quote }}
 xdg_config_dir = {{ (env "XDG_CONFIG_HOME" | default (joinPath .chezmoi.homeDir ".config")) | quote }}

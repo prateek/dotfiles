@@ -9,7 +9,9 @@ xcode-select --install
 sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply --source ~/dotfiles prateek
 ```
 
-The first run prompts for install profile (`core` or `full`), macOS defaults, install scripts, secret-backed files, and administrator access when Homebrew/packages/defaults need it. `full` installs `xcodes`, but the Xcode download itself is opt-in because Apple may require Apple ID login:
+The first run prompts for install profile (`core` or `full`), macOS defaults, install scripts, secret-backed files, and administrator access when Homebrew/packages/defaults need it. The generated chezmoi config disables chezmoi's pager so sudo can read from the terminal during apply. If an older local config still pages output, rerun with `chezmoi --no-pager apply`.
+
+`full` installs `xcodes`, but the Xcode download itself is opt-in because Apple may require Apple ID login:
 
 ```sh
 DOTFILES_INSTALL_XCODE=true chezmoi apply

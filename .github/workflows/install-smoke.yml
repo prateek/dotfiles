@@ -39,6 +39,7 @@ jobs:
         run: |
           make test-tart-install-helper
           make test-render-brewfile
+          make test-chezmoi-config
           make test-gemini-meeting-sync
           make test-selected-app-plists
           make test-zed-settings

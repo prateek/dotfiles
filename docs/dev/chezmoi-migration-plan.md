@@ -506,6 +506,8 @@ Reference: <https://www.chezmoi.io/user-guide/setup/> and <https://www.chezmoi.i
 
 Once answered, the values land in the rendered chezmoi config and survive subsequent `chezmoi apply` runs. Re-prompt by deleting the generated `~/.config/chezmoi/chezmoi.toml` and re-running `chezmoi init`.
 
+The rendered config sets `pager = ""`. Apply scripts can ask for sudo, and a pager such as `less` can take over the same TTY that sudo needs for password input. Existing machines with an older generated config can use `chezmoi --no-pager apply --verbose` as a one-shot escape hatch, or run `chezmoi --no-pager apply --init` to refresh the generated config from `home/.chezmoi.toml.tmpl`.
+
 Package install tuning is environment-only. `DOTFILES_HOMEBREW_BUNDLE_JOBS` controls `brew bundle install --jobs` when the installed Homebrew supports it; default is `auto`; native `HOMEBREW_BUNDLE_JOBS` is honored when the dotfiles override is unset. `DOTFILES_HOMEBREW_DOWNLOAD_CONCURRENCY` maps to `HOMEBREW_DOWNLOAD_CONCURRENCY`; default is `auto`.
 
 Ruby installs use mise's precompiled Ruby path with GitHub attestation checks disabled by default. Fresh machines usually do not have authenticated GitHub API access yet, and unauthenticated attestation verification can hit the public rate limit before the runtime install completes.
@@ -535,6 +537,12 @@ cd ~/dotfiles
 git pull --ff-only
 chezmoi apply
 chezmoi status
+```
+
+If apply output enters a pager while a script is asking for sudo, quit the pager and rerun with:
+
+```sh
+chezmoi --no-pager apply --verbose
 ```
 
 Preview before applying:
