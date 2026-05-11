@@ -5,7 +5,7 @@ description: Single entry point for chezmoi work in Prateek's dotfiles repo. (sn
 
 # Chezmoi Management (snapshot)
 
-This is a minimal snapshot of the skill for the meta-maintenance eval. The real SKILL.md lives at the parent skill directory.
+This is a minimal snapshot of the skill for the meta-maintenance eval. `setup_fixture.sh` materializes this file as `SKILL.md` inside the isolated eval workspace.
 
 ## Repo-Specific Gotchas (excerpt)
 

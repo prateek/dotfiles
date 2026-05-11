@@ -103,4 +103,4 @@ The harness keeps its contracts inline as zsh data and functions. It does not ad
 ## References
 
 - ADR: [../adr/0002-zsh-fresh-shell-validator.md](../adr/0002-zsh-fresh-shell-validator.md)
-- Benchmark guidance skill: `/Users/prateek/dotfiles/skills/benchmark-zsh-startup/SKILL.md`
+- Benchmark guidance skill: `/Users/prateek/dotfiles/.agents/skills/benchmark-zsh-startup/SKILL.md`

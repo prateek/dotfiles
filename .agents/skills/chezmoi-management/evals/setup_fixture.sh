@@ -9,10 +9,10 @@
 # pick a fresh DEST or delete the prior one yourself.
 #
 # Additionally, DEST must be absolute, must not equal $HOME, /, the skill
-# directory, or the experiment root, and must be a STRICT CHILD of one of:
+# directory, or the active skills root, and must be a STRICT CHILD of one of:
 # $TMPDIR (only the validated leaf under /tmp or /var/folders, NOT those
 # directories themselves), $DOTFILES_SKILL_SCRATCH (if set and not a broad
-# system path), or <experiment-repo>/chezmoi-management-workspace/.
+# system path), or /tmp.
 
 set -euo pipefail
 
@@ -23,8 +23,8 @@ fi
 
 FIXTURE="$1"
 DEST="$2"
-SKILL_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-EXPERIMENT_ROOT="$(cd "$SKILL_DIR/.." && pwd)"
+SKILL_DIR="$(cd "$(dirname "$0")/.." && pwd -P)"
+SKILLS_ROOT="$(cd "$SKILL_DIR/.." && pwd -P)"
 SRC="$SKILL_DIR/evals/files/$FIXTURE"
 
 if [[ ! -d "$SRC" ]]; then
@@ -55,7 +55,7 @@ SYSTEM_BROAD=(
   "/" "/private" "/var" "/var/folders" "/var/tmp" "/usr" "/usr/local"
   "/etc" "/bin" "/sbin" "/opt" "/Library" "/System" "/Volumes" "/Users"
   "/tmp" "/private/tmp" "/private/var" "/private/var/folders"
-  "$HOME" "$SKILL_DIR" "$EXPERIMENT_ROOT"
+  "$HOME" "$SKILL_DIR" "$SKILLS_ROOT"
 )
 
 is_broad() {
@@ -124,8 +124,6 @@ if [[ -n "${DOTFILES_SKILL_SCRATCH:-}" ]]; then
   ALLOWED_ROOTS+=("$(realpath_safe "$DOTFILES_SKILL_SCRATCH")")
 fi
 
-ALLOWED_ROOTS+=("$(realpath_safe "$EXPERIMENT_ROOT/chezmoi-management-workspace")")
-
 # DEST must not be equal to ANY allowed root. A path can be both a root in
 # its own right (e.g., $TMPDIR) and a strict child of a broader root
 # (/var/folders); rejecting equality against every root closes that loop.
@@ -153,6 +151,13 @@ if [[ "$ALLOWED" -ne 1 ]]; then
   exit 1
 fi
 
+case "$DEST_RESOLVED/" in
+  "$SKILLS_ROOT"/*)
+    echo "Refusing: DEST ($DEST_RESOLVED) is under the active skill-discovery root ($SKILLS_ROOT)." >&2
+    exit 1
+    ;;
+esac
+
 # Refuse to operate on a pre-existing DEST. No rm -rf — eliminates the
 # TOCTOU window between path validation and a destructive operation.
 if [[ -e "$DEST_RESOLVED" || -L "$DEST_RESOLVED" ]]; then
@@ -175,5 +180,12 @@ if [[ -L "$DEST_RESOLVED" ]]; then
 fi
 
 cp -R "$SRC"/. "$DEST_RESOLVED"/
+
+# Fixture snapshots that would otherwise be discovered as real repo-local
+# skills use a .fixture suffix in the repository. Materialize them only in
+# the isolated eval workspace.
+while IFS= read -r -d '' FIXTURE_FILE; do
+  mv -- "$FIXTURE_FILE" "${FIXTURE_FILE%.fixture}"
+done < <(find "$DEST_RESOLVED" -name 'SKILL.md.fixture' -print0)
 
 echo "Fixture ready at $DEST_RESOLVED"

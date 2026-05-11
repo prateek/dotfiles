@@ -38,7 +38,7 @@ Use this table to find the right file. If a change touches more than one file, u
 
 ## Editing Discipline
 
-1. **Read the whole file you are editing.** Frontmatter parsers are picky and structural drift is silent. The `SKILL.md` description field is one block; do not break it.
+1. **Read the whole file you are editing.** Frontmatter parsers are picky and structural drift is silent. The `SKILL.md` description field is one block and must stay at or below 1024 characters.
 2. **Update the cross-references.** If you add a new mode reference, add a row to the `SKILL.md` Mode Router table. If you delete one, remove the row.
 3. **Keep `SKILL.md` ≤ 200 lines.** If a section grows, push depth into a `references/<mode>.md`. The router pattern is the design.
 4. **Push universal rules sparingly.** A rule belongs in `SKILL.md` Universal Rules or Repo-Specific Gotchas only if violating it creates a destructive or hard-to-recover outcome. Otherwise it lives in a `references/<mode>.md` Common Pitfalls section.
@@ -74,21 +74,17 @@ When you add a mode or change a guardrail, also touch the evals:
 
 Keep the eval set tight: one happy-path plus one pitfall per mode is the target. Add evals only when a new guardrail, mode, or silent-fail surface lands; do not pad for coverage's sake. The current 12 evals span workflow, app-config, packages-and-secrets, meta, and source-target — extending them should follow the same proportion, not exceed it.
 
-## Migration From Experiment Repo To Dotfiles Repo
+## Repo-Local Location
 
-This skill currently lives at `/Users/prateek/code/experiments/2026-05-10-chezmoi-skill-authoring/chezmoi-management/`. Final home is `home/dot_agents/skills/chezmoi-management/` in the dotfiles repo.
+This skill lives at `/Users/prateek/dotfiles/.agents/skills/chezmoi-management/`. The managed-home skills tree under `home/dot_agents/skills/` is separate.
 
-Migration steps:
+Maintenance steps after structural edits:
 
-1. Copy the entire `chezmoi-management/` directory into `home/dot_agents/skills/`.
-2. Confirm sibling skill names do not collide: `ls home/dot_agents/skills/ | grep -i chezmoi` should return `chezmoi-management` only.
-3. Run the post-edit validation checklist above from the new location.
-4. If `home/dot_agents/skills/` has a registry/index file, register the skill there.
-5. Test trigger overlap with the existing 61 skills by spot-checking `code-gardening`, `setup-downstream-fork`, and `conventions-maintainer`.
-6. Open a PR with the standard `home/dot_agents/skills/<name>/` review checklist.
-7. Delete the experiment-repo copy after the PR merges.
+1. Confirm repo-local skill discovery only sees real top-level skills: `find .agents/skills -path '*/SKILL.md' -print` should not list fixture snapshots under `evals/`.
+2. Run the post-edit validation checklist above from this location.
+3. Test trigger overlap with the existing skills by spot-checking `code-gardening`, `setup-downstream-fork`, and `conventions-maintainer`.
 
-The skill's content does not need to change in the migration. All references inside the skill use repo-relative paths (`home/.chezmoidata/`, `home/.chezmoiscripts/`) which are valid in either location.
+All references inside the skill use repo-relative paths (`home/.chezmoidata/`, `home/.chezmoiscripts/`) so they remain valid from the repo-local skill tree.
 
 ## Anti-Patterns To Avoid In Maintenance
 

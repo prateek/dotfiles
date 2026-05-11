@@ -142,7 +142,10 @@ No migration-specific design decisions remain open. New work should get its own 
     repo-index
     wt-hook-sparse
     gemini-meeting-sync
-  skills/
+  .agents/
+    skills/                    # repo-local agent skills for this checkout
+  .claude/
+    skills -> ../.agents/skills # Claude Code adapter for repo-local skills
   scripts/
     packages/                   # focused renderer (render-brewfile)
     macos/                      # focused capture helper
@@ -182,7 +185,7 @@ Use native chezmoi files by default:
 - `.tmpl` only where host, OS, architecture, feature flags, paths, or secret references vary;
 - `symlink_` only for deliberate live links.
 
-Agent tool homes are normal chezmoi source state. Keep `.agents`, `.codex`, and `.claude` content under `home/dot_agents/`, `home/dot_codex/`, and `home/dot_claude/`. Shared instruction content lives in `home/dot_agents/AGENTS.md`; tool-specific entrypoints may use symlinks such as `home/dot_claude/symlink_CLAUDE.md` so guidance does not drift.
+Managed home tool config is normal chezmoi source state. Keep home-targeted `.agents`, `.codex`, and `.claude` content under `home/dot_agents/`, `home/dot_codex/`, and `home/dot_claude/`. Shared home instruction content lives in `home/dot_agents/AGENTS.md`; home tool-specific entrypoints may use symlinks such as `home/dot_claude/symlink_CLAUDE.md` so guidance does not drift. Repo-local project entrypoints stay at the repo root, and repo-local skills live in `.agents/skills/` with `.claude/skills` as the Claude Code adapter.
 
 Allowed live links are limited to repo-local executable wrappers that must run directly from the checkout and tool-adapter pointers that prevent duplicated instruction files. Everything else should be a rendered chezmoi target unless an app-specific plan says otherwise.
 
@@ -193,9 +196,9 @@ Allowed live links are limited to repo-local executable wrappers that must run d
 | `zshenv` | `home/dot_zshenv.tmpl` | 1 | implemented |
 | `zprofile`, `zshrc`, `zlogin` | `home/dot_config/zsh/dot_zprofile`, `dot_zshrc`, `dot_zlogin` | 1 | implemented |
 | `init.sh`, `zinit-init.zsh`, `zsh/` | `home/dot_config/zsh/` | 1 | implemented |
-| `.agents/` | `home/dot_agents/` rendered source state; move volatile state to XDG state | 1 | implemented rendered source state |
+| `.agents/` home target | `home/dot_agents/` rendered source state; move volatile state to XDG state | 1 | implemented rendered source state |
 | `.codex/` | `home/dot_codex/` rendered source state; split local project trust into local config | 1 | implemented rendered source state; trust split still open |
-| `.claude/` | `home/dot_claude/` rendered source state; `CLAUDE.md` is a symlink adapter to `../.agents/AGENTS.md` | 1 | implemented rendered source state plus instruction symlink |
+| `.claude/` home target | `home/dot_claude/` rendered source state; `CLAUDE.md` is a symlink adapter to `../.agents/AGENTS.md` | 1 | implemented rendered source state plus instruction symlink |
 | `.mcp.json` | `home/private_dot_mcp.json` | 1 | implemented |
 | `bin/` | repo root; selected wrappers exposed through `home/bin/symlink_*.tmpl` | 1 | implemented |
 | `.config/grm/config.toml` | `home/dot_config/grm/config.toml` | 1 | implemented |
@@ -229,7 +232,7 @@ Allowed live links are limited to repo-local executable wrappers that must run d
 | `LaunchControl, Monodraw, Arq, Superset` | package install only for apps with casks in `home/.chezmoidata/packages.toml`; no committed app config today. The sampled state is update/trial/window state, Arq warning/license flags, or Electron browser/cache/account state. | 3 | local-only app state |
 | `.hammerspoon/` | `home/dot_hammerspoon/` | 3 | implemented file-backed config |
 | `osx-apps/` | remove after stable files move into `home/`, declarations move into `home/.chezmoidata/`, and raw captures move to XDG state | all | implemented |
-| `.github/`, `.gitignore`, `.pre-commit-config.yaml`, `README.md`, `tests/`, `docs/`, `dev/`, `skills/` | repo root | all | repo-only |
+| `.github/`, `.gitignore`, `.pre-commit-config.yaml`, `README.md`, `tests/`, `docs/`, `dev/`, `.agents/skills/`, `.claude/skills` | repo root | all | repo-only |
 | `Makefile` | repo-root build/test facade for Hammerspoon compilation, source-state tests, shell validation, helper tests, and Tart lanes | all | repo-only |
 | `keyboard/` | `archive/keyboard/` | 2 | implemented |
 

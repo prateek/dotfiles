@@ -13,4 +13,4 @@ Expected behavior:
 5. Agent runs the post-edit validation checklist: YAML frontmatter parse, openai.yaml parse, evals.json parse, mode router cross-check.
 6. Agent does not paraphrase chezmoi.io docs into the skill (self-contained rule).
 
-The fixture's `chezmoi-management/` snapshot is intentionally minimal — the eval tests the agent's process, not the literal content of the snapshot.
+The fixture's `chezmoi-management/` snapshot is intentionally minimal — the eval tests the agent's process, not the literal content of the snapshot. Its source file is named `SKILL.md.fixture` so repo-local skill discovery does not treat it as a real skill; `setup_fixture.sh` materializes it as `SKILL.md` inside the isolated eval workspace.

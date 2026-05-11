@@ -49,7 +49,7 @@ latest_log_link() {
 }
 
 sync_script_path() {
-  echo "${GEMINI_MEETING_SYNC_SCRIPT:-$HOME/.codex/skills/gog-gemini-meeting-import/scripts/sync_gemini_meetings.py}"
+  echo "${GEMINI_MEETING_SYNC_SCRIPT:-$HOME/.agents/skills/gog-gemini-meeting-import/scripts/sync_gemini_meetings.py}"
 }
 
 ensure_dirs() {
@@ -292,7 +292,7 @@ cmd_run() {
 
   local script
   script="$(sync_script_path)"
-  [[ -f "$script" ]] || die "missing sync script at $script (run dotfiles bootstrap to link ~/.codex/skills)"
+  [[ -f "$script" ]] || die "missing sync script at $script (run dotfiles bootstrap to link ~/.agents/skills, or set GEMINI_MEETING_SYNC_SCRIPT)"
   command -v python3 >/dev/null 2>&1 || die "missing python3"
 
   if ! acquire_lock; then

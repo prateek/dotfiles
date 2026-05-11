@@ -8,8 +8,7 @@
 """Post-edit validator for the chezmoi-management skill.
 
 Run from anywhere; resolves paths relative to the script location so it
-works the same in this experiment repo and after migration to
-home/dot_agents/skills/chezmoi-management/ in the dotfiles repo.
+works from the repo-local .agents/skills location in the dotfiles repo.
 
 Exits 0 on success, 1 on any failure. Prints one line per check.
 """
@@ -26,6 +25,7 @@ import yaml
 
 
 SKILL_DIR = Path(__file__).resolve().parent.parent
+DESCRIPTION_MAX_CHARS = 1024
 FAILURES: list[str] = []
 
 
@@ -41,19 +41,34 @@ def check(label: str, ok: bool, detail: str = "") -> None:
         FAILURES.append(label)
 
 
+def extract_frontmatter(text: str) -> str | None:
+    lines = text.splitlines()
+    if not lines or lines[0] != "---":
+        return None
+    for index, line in enumerate(lines[1:], start=1):
+        if line == "---":
+            return "\n".join(lines[1:index])
+    return None
+
+
 def check_skill_md_frontmatter() -> None:
     text = _read("SKILL.md")
-    parts = text.split("---", 2)
-    check("SKILL.md has frontmatter delimiters", len(parts) >= 3)
-    if len(parts) < 3:
+    frontmatter = extract_frontmatter(text)
+    check("SKILL.md starts with standalone frontmatter delimiters", frontmatter is not None)
+    if frontmatter is None:
         return
-    meta = yaml.safe_load(parts[1])
+    meta = yaml.safe_load(frontmatter)
     check("SKILL.md frontmatter parses as YAML", isinstance(meta, dict))
+    if not isinstance(meta, dict):
+        return
     check("SKILL.md name == chezmoi-management", meta.get("name") == "chezmoi-management",
           detail=f"got {meta.get('name')!r}")
     desc = meta.get("description", "")
     check("SKILL.md description is a non-trivial string",
           isinstance(desc, str) and len(desc) > 100,
+          detail=f"len={len(desc)}")
+    check("SKILL.md description <= 1024 characters",
+          isinstance(desc, str) and len(desc) <= DESCRIPTION_MAX_CHARS,
           detail=f"len={len(desc)}")
 
 
@@ -100,6 +115,15 @@ def check_setup_fixture_executable() -> None:
     check("setup_fixture.sh is executable", os.access(path, os.X_OK))
 
 
+def check_no_discoverable_skill_fixtures() -> None:
+    bad = sorted(
+        str(path.relative_to(SKILL_DIR))
+        for path in (SKILL_DIR / "evals").rglob("SKILL.md")
+    )
+    check("No discoverable SKILL.md files under eval fixtures", not bad,
+          detail=f"offenders: {bad}")
+
+
 def check_no_external_doc_links() -> None:
     """Self-contained rule: no chezmoi.io doc URLs in references/.
 
@@ -135,6 +159,8 @@ def main() -> int:
     check_evals_json()
     print("[evals/setup_fixture.sh]")
     check_setup_fixture_executable()
+    print("[eval fixtures]")
+    check_no_discoverable_skill_fixtures()
     print("[Mode router consistency]")
     check_mode_router_consistency()
     print("[Self-containment]")
