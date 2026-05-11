@@ -8,16 +8,18 @@ This is the repo-specific contract for coding agents working in Prateek's dotfil
 - `home/.chezmoidata/`: committed structured data for package profiles, secrets, license targets, and template inputs.
 - `home/.chezmoiscripts/`: idempotent setup run by `chezmoi apply`.
 - `home/.chezmoitemplates/`: shared templates, including Brewfile, macOS defaults, and plist merge helpers.
-- `.agents/skills/`: repo-local agent skills for working in this checkout. Claude Code discovers the same tree through `.claude/skills`.
-- `home/dot_agents/docs/`: local agent/workflow convention docs. Read the relevant file before touching that workflow.
-- `home/dot_agents/skills/`: chezmoi-managed home skills. Keep these separate from repo-local `.agents/skills/`.
-- `home/dot_claude/`: Claude-specific commands and settings. Its `CLAUDE.md` target should symlink to `../.agents/AGENTS.md`.
+- `.agents/`: repo-local agent surface for this checkout. Keep repo-specific `AGENTS.md` and `CLAUDE.md` at the repo root; keep repo-local skills and tool adapters under `.agents/`.
+- `home/dot_agents/`: chezmoi-managed machine agent surface. Machine-wide `AGENTS.md`, docs, skills, and workflow conventions live here so they materialize under `~/.agents`.
+- `home/dot_claude/`: chezmoi-managed Claude config for this machine. Its `CLAUDE.md` target should symlink to `../.agents/AGENTS.md`.
+- `home/dot_codex/`: chezmoi-managed Codex config for this machine.
 - `scripts/`: focused helpers for packages, macOS/app config, Tart, traces, audits, and hooks.
 - `docs/dev/`: plans and runbooks for repo changes.
 - `docs/adr/`: architectural decisions.
 - `docs/*.md`: operator-facing repo references.
 
 Chezmoi is the ongoing command surface: prefer `chezmoi apply`, `chezmoi status`, `chezmoi diff`, `chezmoi verify`, `chezmoi managed`, and `chezmoi unmanaged` over adding a wrapper.
+
+Keep repo-local and machine-level agent state separate. Files that define how agents work in this dotfiles checkout stay at the repo root or under repo-root `.agents/`. Files that configure Prateek's machine-wide agent environment stay under `home/` so chezmoi materializes them into `$HOME`.
 
 ## Docs And Decisions
 

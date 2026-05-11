@@ -35,5 +35,5 @@ DOTFILES_SECRETS_ENABLED=true chezmoi apply
 ## Notes
 
 - Source state in `home/` materializes into `$HOME`.
-- Agent guidance lives in `AGENTS.md`; `CLAUDE.md` points there too. Repo-local skills live in `.agents/skills/`, with `.claude/skills` as the Claude Code adapter.
+- Repo-local agent guidance lives in `AGENTS.md`; `CLAUDE.md` points there too. Repo-local skills live in `.agents/skills/`, with `.claude/skills` as the Claude Code adapter. Machine-wide agent guidance and skills are managed under `home/dot_agents/` and materialize to `~/.agents`.
 - Plans live in `docs/dev/`; decisions live in `docs/adr/`.
