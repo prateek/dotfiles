@@ -1,5 +1,8 @@
 {{ template "script_lib.sh" . }}
 
+# zshenv sha256: {{ include "dot_zshenv.tmpl" | sha256sum }}
+# zshrc sha256: {{ include "dot_config/zsh/dot_zshrc" | sha256sum }}
+
 checks_failed=0
 
 check_file() {

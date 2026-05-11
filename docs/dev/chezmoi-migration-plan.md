@@ -89,8 +89,7 @@ Pending:
       run_onchange_after_15-xcode.sh.tmpl
       run_onchange_after_20-mise-install.sh.tmpl
       run_onchange_after_30-macos-defaults.sh.tmpl
-      run_after_90-verify.sh.tmpl
-      run_after_99-sudo.sh.tmpl
+      run_onchange_after_90-verify.sh.tmpl
     .chezmoitemplates/
       script_lib.sh              # shared shell helpers for chezmoi scripts
       plist-merge-prelude.py     # shared plist merge engine, imports
@@ -252,7 +251,7 @@ Rules:
 
 - Bootstrap is the chezmoi one-liner. `xcode-select --install` is a manual one-time prompt; everything after is `sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply prateek`. Homebrew installs via `run_once_before_00-homebrew.sh.tmpl`; other runtimes (uv for ad-hoc helpers, mise, etc.) come in via the chezmoi-driven `brew bundle` step or per-helper.
 - The `full` package profile installs `aria2` and the bottled `homebrew/core/xcodes` formula. It selects and sets up pinned Xcode when it is already installed. It downloads Xcode through `xcodes` only when `install_xcode=true` or `DOTFILES_INSTALL_XCODE=true`, because Apple may require Apple ID login. Xcode-required Homebrew formulae run after Xcode first-launch setup, not in the main Brewfile.
-- Privileged phases call the shared sudo helper only when they need it. The helper prompts once, keeps sudo warm until `run_after_99-sudo.sh.tmpl`, and does not clear a sudo credential that was already active before the apply.
+- Privileged phases call the shared sudo helper only when they need it. The helper prompts once, keeps sudo warm while the parent `chezmoi apply` is alive, cleans itself up shortly after that parent process exits, and does not clear a sudo credential that was already active before the apply.
 - Put package installs, mise runtime install, zinit compatibility wiring, Hammerspoon compilation, selected macOS defaults, and post-apply verification under `home/.chezmoiscripts/`.
 - Put shared shell helpers for those scripts under `home/.chezmoitemplates/` and include them from each script. Keep individual scripts short: data selection, command execution, and clear blocker output.
 - Use `run_once_before_` for one-time prerequisites and `run_onchange_after_` for work that should rerun when its rendered script content changes.
@@ -521,8 +520,7 @@ Chezmoi then owns ongoing setup:
 5. `run_onchange_after_15-xcode.sh.tmpl` selects the canonical Xcode for the `full` profile when it is installed, downloads it through `xcodes` only when explicitly opted in, runs Xcode first-launch setup, and then installs Xcode-required formulae.
 6. `run_onchange_after_20-mise-install.sh.tmpl` trusts repo-owned mise config and installs runtimes.
 7. `run_onchange_after_30-macos-defaults.sh.tmpl` includes the desired Apple/global defaults from `home/.chezmoitemplates/macos-defaults.sh.tmpl` as plain `defaults write` calls. Idempotent at the cfprefsd level; chezmoi run_onchange gates re-execution on rendered script-content change. There is no separate data file or repo-root applier helper.
-8. `run_after_90-verify.sh.tmpl` runs cheap post-apply validation and prints manual blockers for secrets, sign-in, licenses, or permissions.
-9. `run_after_99-sudo.sh.tmpl` stops the shared sudo keepalive if a privileged phase started it.
+8. `run_onchange_after_90-verify.sh.tmpl` runs cheap post-apply validation when the verifier or its shell startup inputs change, and prints manual blockers for secrets, sign-in, licenses, or permissions.
 
 Secret-bearing templates render only when `secrets_enabled=true`. Secret-backed paths are ignored otherwise, so public bootstrap does not create empty license/config files. If `op` is unauthenticated, chezmoi fails closed with the 1Password sign-in prompt.
 
@@ -658,7 +656,7 @@ chezmoi \
 
 Required checks:
 
-- native chezmoi: `chezmoi init`, `chezmoi apply`, `chezmoi status`, `chezmoi diff`, `chezmoi verify`, and `chezmoi apply --dry-run --verbose --exclude=scripts` against the temp home;
+- native chezmoi: `chezmoi init`, `chezmoi apply`, `chezmoi status`, `chezmoi diff`, `chezmoi verify`, and `chezmoi apply --dry-run --verbose --exclude=scripts` against the temp home. `tests/chezmoi-script-status.zsh` proves a second full `chezmoi status` is clean after an isolated apply;
 - rendered chezmoi script syntax: every `.chezmoiscripts/*.tmpl` and every per-app `modify_*.plist.tmpl` renders cleanly via `chezmoi execute-template --file` and parses as the language its shebang declares (`bash -n` for shell, `python -m py_compile` for Python);
 - `~/.zshenv` starts with `ZDOTDIR` unset, sets `DOTFILES` to the repo under test, and sets `ZDOTDIR` to `$tmp_home/.config/zsh`;
 - shell startup uses materialized `~/.config/zsh`;
@@ -666,7 +664,7 @@ Required checks:
 - defaults/app tests use fixtures, not the real user domain;
 - the **package renderer** (`scripts/packages/render-brewfile`, wrapping `home/.chezmoitemplates/brewfile.tmpl`) is covered by `tests/render-brewfile.zsh` for: profile selection (`core`/`full`), MAS opt-in (default off; `DOTFILES_INSTALL_MAS_APPS=true` and `--include-mas` opt-in), unknown-profile error, `--output` file mode, section ordering, single trailing newline, and keeping Xcode-required formulae out of the main Brewfile. `tests/brew-bundle-script.zsh` covers the rendered Brew Bundle script's `--jobs` and download-concurrency behavior. `tests/mise-install-script.zsh` covers the mise install ordering and the Ruby attestation setting used during fresh bootstrap. `tests/xcode-install-script.zsh` covers the full-profile Xcode setup order. CI parses each rendered Brewfile through `brew bundle list` and runs the core formulae through `brew bundle install`;
 - the **macOS defaults applier** lives in `home/.chezmoitemplates/macos-defaults.sh.tmpl` and is included by `home/.chezmoiscripts/run_onchange_after_30-macos-defaults.sh.tmpl`; the rendered script syntax-check (`bash -n`) covers it, and `tests/macos-defaults-script.zsh` covers sudo-session and app-restart guards;
-- the **sudo keepalive helper** is covered by `tests/sudo-keepalive.zsh`, which stubs `sudo` and proves one prompt can be shared without invalidating a preexisting sudo credential;
+- the **sudo keepalive helper** is covered by `tests/sudo-keepalive.zsh`, which stubs `sudo` and proves one prompt can be shared, a preexisting sudo credential is preserved, and automatic cleanup runs shortly after the parent apply process exits;
 - the **capture script** (`scripts/macos/capture.sh` and similar) is covered by a redaction test that verifies sensitive keys (account state, license fields, tokens) are not written to the captured output;
 - selected plist `modify_` tests prove owned keys are replaced while unrelated live plist keys are preserved;
 - the shared plist merge engine (`tests/plist-merge-engine.zsh`) covers delete-directive parsing, byte-identity skip, and verbose-mode output independent of any single app; `tests/plist-templates-lint.zsh` renders every `.chezmoitemplates/*.plist.tmpl` and pipes it through `plutil -lint`; `tests/plist-hooks.zsh` covers the apply-time guard and post-apply hook scripts;

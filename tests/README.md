@@ -46,6 +46,7 @@ make test-mise-install-script
 make test-xcode-install-script
 make test-secret-backed-files
 make test-chezmoi-config
+make test-chezmoi-script-status
 make test-codex-config
 make test-selected-app-plists
 make test-plist-hooks
