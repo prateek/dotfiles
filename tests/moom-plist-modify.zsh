@@ -21,6 +21,8 @@ script="$tmp_root/modify_moom.py"
 current_plist="$tmp_root/current.plist"
 merged_plist="$tmp_root/merged.plist"
 empty_merged_plist="$tmp_root/empty-merged.plist"
+semantic_current_plist="$tmp_root/semantic-current.plist"
+semantic_merged_plist="$tmp_root/semantic-merged.plist"
 
 /usr/bin/plutil -lint -s "$source_xml" || die "$source_xml is not a valid plist"
 
@@ -28,7 +30,7 @@ chezmoi \
   --source "$DOTFILES_ROOT" \
   --override-data '{"manage_zinit_external":false}' \
   execute-template \
-  --file "$DOTFILES_ROOT/home/Library/Preferences/modify_private_com.manytricks.Moom.plist.tmpl" \
+  --file "$DOTFILES_ROOT/home/Library/private_Preferences/modify_private_com.manytricks.Moom.plist.tmpl" \
   >"$script"
 chmod +x "$script"
 
@@ -51,23 +53,41 @@ PY
 "$script" <"$current_plist" | cat >"$merged_plist"
 "$script" </dev/null | cat >"$empty_merged_plist"
 
-uv run --quiet --python '>=3.11' python - "$merged_plist" "$empty_merged_plist" <<'PY'
+uv run --quiet --python '>=3.11' python - "$empty_merged_plist" "$semantic_current_plist" <<'PY'
+import pathlib
+import plistlib
+import sys
+
+payload = plistlib.loads(pathlib.Path(sys.argv[1]).read_bytes())
+pathlib.Path(sys.argv[2]).write_bytes(
+    plistlib.dumps(payload, fmt=plistlib.FMT_BINARY, sort_keys=True)
+)
+PY
+
+"$script" <"$semantic_current_plist" | cat >"$semantic_merged_plist"
+
+uv run --quiet --python '>=3.11' python - "$merged_plist" "$empty_merged_plist" "$semantic_current_plist" "$semantic_merged_plist" <<'PY'
 import pathlib
 import plistlib
 import sys
 
 merged = plistlib.loads(pathlib.Path(sys.argv[1]).read_bytes())
 empty_merged = plistlib.loads(pathlib.Path(sys.argv[2]).read_bytes())
+semantic_current = pathlib.Path(sys.argv[3]).read_bytes()
+semantic_merged = pathlib.Path(sys.argv[4]).read_bytes()
 
 assert merged["Application Mode"] == 2
 assert len(merged["Custom Controls"]) == 11
-assert len(merged["Custom Controls (4001)"]) == 10
-assert all(item.get("Title") != "Examples" for item in merged["Custom Controls (4001)"])
+assert len(merged["Custom Controls (4001)"]) == 11
+assert merged["Custom Controls (4001)"][0].get("Title") == "Examples"
 assert merged["Keyboard Controls"]["Visual Representation"] == "\u2303Q"
 assert merged["SULastCheckTime"] == "local-state"
 assert merged["Unmanaged Local Key"] == {"kept": True}
 assert empty_merged["Application Mode"] == 2
 assert len(empty_merged["Custom Controls"]) == 11
+assert len(empty_merged["Custom Controls (4001)"]) == 11
+assert plistlib.loads(semantic_current) == empty_merged
+assert semantic_merged == semantic_current
 PY
 
 print -- "OK moom-plist-modify"

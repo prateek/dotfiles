@@ -28,7 +28,7 @@ chezmoi \
   --source "$DOTFILES_ROOT" \
   --override-data '{"manage_zinit_external":false}' \
   execute-template \
-  --file "$DOTFILES_ROOT/home/Library/Preferences/modify_private_net.elasticthreads.nv.plist.tmpl" \
+  --file "$DOTFILES_ROOT/home/Library/private_Preferences/modify_private_net.elasticthreads.nv.plist.tmpl" \
   >"$script"
 chmod +x "$script"
 

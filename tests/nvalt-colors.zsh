@@ -19,6 +19,8 @@ trap 'rm -rf "$tmp_root"' EXIT
 source_json="$DOTFILES_ROOT/home/.chezmoiassets/Library/Colors/nvALT.clr.json"
 script="$tmp_root/modify_nvalt_colors.py"
 colors_plist="$tmp_root/nvALT.clr"
+semantic_current="$tmp_root/semantic-current.clr"
+semantic_merged="$tmp_root/semantic-merged.clr"
 
 uv run --quiet --python '>=3.11' python -m json.tool "$source_json" >/dev/null
 
@@ -26,7 +28,7 @@ chezmoi \
   --source "$DOTFILES_ROOT" \
   --override-data '{"manage_zinit_external":false}' \
   execute-template \
-  --file "$DOTFILES_ROOT/home/Library/Colors/modify_private_nvALT.clr.tmpl" \
+  --file "$DOTFILES_ROOT/home/Library/private_Colors/modify_nvALT.clr.tmpl" \
   >"$script"
 chmod +x "$script"
 
@@ -34,12 +36,27 @@ uv run --quiet --python '>=3.11' python -m py_compile "$script"
 
 "$script" </dev/null | cat >"$colors_plist"
 
-uv run --quiet --python '>=3.11' python - "$colors_plist" <<'PY'
+uv run --quiet --python '>=3.11' python - "$colors_plist" "$semantic_current" <<'PY'
 import pathlib
 import plistlib
 import sys
 
 payload = plistlib.loads(pathlib.Path(sys.argv[1]).read_bytes())
+pathlib.Path(sys.argv[2]).write_bytes(
+    plistlib.dumps(payload, fmt=plistlib.FMT_BINARY, sort_keys=True)
+)
+PY
+
+"$script" <"$semantic_current" | cat >"$semantic_merged"
+
+uv run --quiet --python '>=3.11' python - "$colors_plist" "$semantic_current" "$semantic_merged" <<'PY'
+import pathlib
+import plistlib
+import sys
+
+payload = plistlib.loads(pathlib.Path(sys.argv[1]).read_bytes())
+semantic_current = pathlib.Path(sys.argv[2]).read_bytes()
+semantic_merged = pathlib.Path(sys.argv[3]).read_bytes()
 objects = payload["$objects"]
 
 def obj(uid):
@@ -59,6 +76,7 @@ assert colors == [
     "0.9215686917 0.9058824182 0.8901961446",
     "0.2235294282 0.2235294282 0.2235294282",
 ]
+assert semantic_merged == semantic_current
 PY
 
 print -- "OK nvalt-colors"

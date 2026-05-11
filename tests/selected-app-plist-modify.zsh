@@ -36,7 +36,7 @@ for app_spec in "${apps[@]}"; do
     --source "$DOTFILES_ROOT" \
     --override-data '{"manage_zinit_external":false}' \
     execute-template \
-    --file "$DOTFILES_ROOT/home/Library/Preferences/modify_private_$domain.plist.tmpl" \
+    --file "$DOTFILES_ROOT/home/Library/private_Preferences/modify_private_$domain.plist.tmpl" \
     >"$script"
   chmod +x "$script"
   uv run --quiet --python '>=3.11' python -m py_compile "$script"

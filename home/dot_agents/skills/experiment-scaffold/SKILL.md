@@ -10,6 +10,7 @@ description: "Create a new experiment workspace directory: initialize git, write
 - Experiment directory name (a single path segment; no `/`)
 - Goal (1–3 sentences: what you’re trying to learn/build/test)
 - GitHub repos (repeatable; `owner/repo` or URL)
+- Optional sparse checkout paths for large repos (`repo=path[,path...]`, repeatable)
 - Reference URLs (repeatable; blogs/docs/API pages)
 - Notes (repeatable; bullets)
 - Optional root directory to create the experiment in (default: current directory)
@@ -26,6 +27,7 @@ python3 scripts/create_experiment.py \
   --name vector-search \
   --goal "Evaluate hybrid search with embeddings vs BM25." \
   --repo openai/openai-python \
+  --repo-sparse openai/openai-python=src/openai,examples \
   --repo facebookresearch/faiss \
   --url https://platform.openai.com/docs/ \
   --note "Measure latency/recall across configs"
@@ -45,6 +47,7 @@ python3 scripts/create_experiment.py \
 - If GRM is available and a canonical clone exists at `~/code/github.com/<owner>/<repo>`, the script fetches that clone and seeds the experiment copy from it.
 - Otherwise it uses a shared cache under `~/code/experiments/reference-cache/<host>/<owner>/<repo>`, cloning there once and reusing it for later experiments.
 - Experiment-local copies under `references/repos/` are made with `fastcp` when available for APFS copy-on-write behavior, then normalized to a clean default-branch checkout.
+- Repos with `--repo-sparse REPO=PATH[,PATH...]` avoid full working-tree copies. If a canonical/cache repo already exists, the script creates a sparse shared clone from it. If no seed exists, it makes a direct sparse partial clone instead of populating the full shared cache.
 - If a repo cannot be parsed as `owner/repo` or URL form, the script falls back to a direct clone into `references/repos/`.
 
 ## Cloning notes (`gh`, multiple accounts, SSH)
@@ -56,6 +59,7 @@ python3 scripts/create_experiment.py \
 ## Useful flags
 
 - `--depth N` for a shallow clone (default: 0, which is a full clone with complete history)
+- `--repo-sparse REPO=PATH[,PATH...]` to sparse-checkout only the listed repo-relative paths for one `--repo`; repeat it for more paths or repos
 - `--no-clone` to generate structure without cloning
 - `--strict` to stop on the first clone failure (otherwise record failures in `references/index.md`)
 - `--canonical-root PATH` to override the canonical clone root

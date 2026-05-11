@@ -1,0 +1,24 @@
+model = "gpt-5.5"
+model_reasoning_effort = "xhigh"
+plan_mode_reasoning_effort = "xhigh"
+service_tier = "fast"
+
+[agents]
+max_threads = 16
+max_depth = 3
+
+[mcp_servers.granola]
+enabled = false
+url = "https://mcp.granola.ai/mcp"
+
+[features]
+hooks = true
+multi_agent = true
+memories = true
+apps = false
+
+[plugins."last30days@last30days-skill"]
+enabled = true
+
+[tui]
+status_line = ["thread-title", "model-with-reasoning", "context-used", "five-hour-limit", "weekly-limit", "context-window-size", "current-dir"]

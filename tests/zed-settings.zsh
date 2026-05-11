@@ -13,7 +13,7 @@ die() {
 }
 
 DOTFILES_ROOT="${0:A:h:h}"
-template="$DOTFILES_ROOT/home/dot_config/zed/settings.json.tmpl"
+template="$DOTFILES_ROOT/home/dot_config/zed/private_settings.json.tmpl"
 tmp_root="$(mktemp -d)"
 trap 'rm -rf "$tmp_root"' EXIT
 
@@ -24,9 +24,13 @@ chezmoi --source "$DOTFILES_ROOT" execute-template --file "$template" >"$full_js
 python3 - "$full_json" <<'PY'
 import json
 import pathlib
+import re
 import sys
 
-full = json.loads(pathlib.Path(sys.argv[1]).read_text())
+text = pathlib.Path(sys.argv[1]).read_text()
+text = re.sub(r"(?m)^\s*//.*\n", "", text)
+text = re.sub(r",\s*([}\]])", r"\1", text)
+full = json.loads(text)
 
 assert full["auto_install_extensions"] == {
     "html": True,
@@ -34,6 +38,11 @@ assert full["auto_install_extensions"] == {
     "typst": True,
     "vscode-dark-plus": True,
 }
+assert full["project_panel"]["dock"] == "right"
+assert full["agent"]["dock"] == "left"
+assert full["ui_font_size"] == 16
+assert full["buffer_font_size"] == 15
+assert full["theme"]["dark"] == "One Dark"
 PY
 
 print -- "OK zed-settings"

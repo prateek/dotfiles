@@ -28,7 +28,7 @@ chezmoi \
   --source "$DOTFILES_ROOT" \
   --override-data '{"manage_zinit_external":false}' \
   execute-template \
-  --file "$DOTFILES_ROOT/home/Library/Preferences/modify_private_com.prakashjoshipax.VoiceInk.plist.tmpl" \
+  --file "$DOTFILES_ROOT/home/Library/private_Preferences/modify_private_com.prakashjoshipax.VoiceInk.plist.tmpl" \
   >"$script"
 chmod +x "$script"
 
@@ -81,8 +81,8 @@ assert merged["CurrentTranscriptionModel"] == "parakeet-tdt-0.6b-v3"
 assert merged["OpenAISelectedModel"] == "gpt-5.4-mini"
 assert merged["SelectedLanguage"] == "en"
 assert merged["audioInputMode"] == "Prioritized"
-assert merged["selectedAIProvider"] == "OpenAI"
-assert merged["isAIEnhancementEnabled"] is False
+assert merged["selectedAIProvider"] == "Gemini"
+assert merged["isAIEnhancementEnabled"] is True
 assert merged["isPauseMediaEnabled"] is False
 assert merged["isSystemMuteEnabled"] is True
 assert merged["useScreenCaptureContext"] is False
@@ -111,7 +111,8 @@ assert merged["SULastCheckTime"] == "local-update-state"
 assert merged["VoiceInkTrialStartDate"] == "local-trial-state"
 
 assert empty_merged["CurrentTranscriptionModel"] == "parakeet-tdt-0.6b-v3"
-assert empty_merged["selectedAIProvider"] == "OpenAI"
+assert empty_merged["selectedAIProvider"] == "Gemini"
+assert empty_merged["isAIEnhancementEnabled"] is True
 assert empty_merged["KeyboardShortcuts_pasteLastTranscription"] == '{"carbonKeyCode":9,"carbonModifiers":2304}'
 # Empty stdin (no current plist): the merge must not introduce
 # KeyboardShortcuts_toggleEnhancement, since the app owns its lifecycle.

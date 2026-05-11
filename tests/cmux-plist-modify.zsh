@@ -28,7 +28,7 @@ chezmoi \
   --source "$DOTFILES_ROOT" \
   --override-data '{"manage_zinit_external":false}' \
   execute-template \
-  --file "$DOTFILES_ROOT/home/Library/Preferences/modify_private_com.cmuxterm.app.plist.tmpl" \
+  --file "$DOTFILES_ROOT/home/Library/private_Preferences/modify_private_com.cmuxterm.app.plist.tmpl" \
   >"$script"
 chmod +x "$script"
 
@@ -62,7 +62,7 @@ import sys
 
 merged = plistlib.loads(pathlib.Path(sys.argv[1]).read_bytes())
 
-assert merged["appearanceMode"] == "system"
+assert merged["appearanceMode"] == "dark"
 assert merged["browserHostWhitelist"] == "chatgpt.com\ngoogle.com\ngmail.com\nanthropic.com\nopenai.com"
 assert merged["browserThemeMode"] == "system"
 assert merged["sidebarActiveTabIndicatorStyle"] == "solidFill"

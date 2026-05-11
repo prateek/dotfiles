@@ -26,10 +26,7 @@ if not isinstance(current, dict):
 
 
 def _byte_equal(a, b) -> bool:
-    """Round-trip equality on binary plist bytes — preserves byte layout
-    when the value already matches, avoiding spurious rewrites caused by
-    plistlib re-encoding semantically-identical values differently
-    (integer subtype widening, dict key reordering, etc.)."""
+    """Round-trip equality on binary plist bytes."""
     return (
         plistlib.dumps(a, fmt=plistlib.FMT_BINARY, sort_keys=False)
         == plistlib.dumps(b, fmt=plistlib.FMT_BINARY, sort_keys=False)
@@ -37,13 +34,9 @@ def _byte_equal(a, b) -> bool:
 
 
 # Track whether the merge actually mutated `current`. If nothing changed,
-# we can preserve the original stdin bytes verbatim — plistlib's binary
-# encoder sometimes produces a different byte sequence for the same
-# logical content (integer subtype widening, key ordering inside dicts,
-# version byte differences). chezmoi compares stdin to stdout to decide
-# whether to write; emitting `raw` instead of a re-encoded version avoids
-# spurious "modified" diffs the first time we manage an app's plist that
-# was previously written by the app.
+# preserve stdin bytes verbatim. plistlib can encode the same logical content
+# differently based on integer widths, dict key order, or version bytes, and
+# chezmoi compares stdin to stdout to decide whether to write.
 mutated = False
 
 # Pass 1: deletes
@@ -56,7 +49,7 @@ for key in deletes:
 
 # Pass 2: upserts with no-op skip
 for key, value in desired.items():
-    if key in current and _byte_equal(current[key], value):
+    if key in current and (current[key] == value or _byte_equal(current[key], value)):
         continue
     if verbose:
         state = "absent" if key not in current else "changed"

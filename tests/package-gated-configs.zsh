@@ -142,7 +142,7 @@ import sys
 
 config = json.loads(pathlib.Path(sys.argv[1]).read_text())
 assert config["type"] == "group"
-assert {item["key"] for item in config["actions"]} == {"t", "s", "v", "w", "b"}
+assert {item["key"] for item in config["actions"]} == {"t", "s", "v", "w", "b", "m"}
 PY
 
 print -- "OK package-gated-configs"

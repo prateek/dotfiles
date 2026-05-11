@@ -60,7 +60,12 @@
                                     "basic.to_if_alone_timeout_milliseconds": 200,
                                     "basic.to_if_held_down_threshold_milliseconds": 200
                                 },
-                                "to": [{ "key_code": "fn", "lazy": true }],
+                                "to": [
+                                    {
+                                        "key_code": "fn",
+                                        "lazy": true
+                                    }
+                                ],
                                 "to_if_alone": [{ "key_code": "f19" }],
                                 "to_if_held_down": [{ "key_code": "fn" }],
                                 "type": "basic"
@@ -78,11 +83,7 @@
                                 "to": [
                                     {
                                         "key_code": "left_shift",
-                                        "modifiers": [
-                                            "left_command",
-                                            "left_control",
-                                            "left_option"
-                                        ]
+                                        "modifiers": ["left_command", "left_control", "left_option"]
                                     }
                                 ],
                                 "type": "basic"
@@ -104,9 +105,7 @@
                                     "key_code": "left_shift",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "parameters": {
-                                    "basic.to_if_alone_timeout_milliseconds": 500
-                                },
+                                "parameters": { "basic.to_if_alone_timeout_milliseconds": 500 },
                                 "to": [{ "key_code": "left_shift" }],
                                 "to_after_key_up": [
                                     {

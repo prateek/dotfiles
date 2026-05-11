@@ -1,3 +1,7 @@
+{{/* Python bytecode generated while validating agent skills. */}}
+.agents/skills/**/__pycache__
+.agents/skills/**/*.pyc
+
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "cmux")) "true" }}
 Library/Preferences/com.cmuxterm.app.plist
 {{- end }}
@@ -47,5 +51,6 @@ Library/Preferences/com.prakashjoshipax.VoiceInk.plist
 {{- if not .secrets_enabled }}
 {{- range .licenses.paths }}
 {{ . }}
+{{ . | dir }}
 {{- end }}
 {{- end }}

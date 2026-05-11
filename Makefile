@@ -1,5 +1,5 @@
 .PHONY: hammerspoon hammerspoon-check hammerspoon-reload
-.PHONY: test-gemini-meeting-sync test-ghc test-mise-install-script test-xcode-install-script test-secret-backed-files test-kanata-config test-cmux-plist test-ice-plist test-orbstack-plist test-selected-app-plists test-package-gated-configs test-moom-plist test-nvalt-colors test-nvalt-plist test-voiceink-plist test-plist-hooks test-sudo-keepalive test-brew-bundle-script test-render-brewfile test-render-chrome-policy test-repo-index test-grmrepo-refresh test-worktrees
+.PHONY: test-gemini-meeting-sync test-ghc test-mise-install-script test-xcode-install-script test-secret-backed-files test-kanata-config test-codex-config test-cmux-plist test-ice-plist test-orbstack-plist test-selected-app-plists test-package-gated-configs test-moom-plist test-nvalt-colors test-nvalt-plist test-voiceink-plist test-plist-hooks test-sudo-keepalive test-brew-bundle-script test-render-brewfile test-render-chrome-policy test-repo-index test-grmrepo-refresh test-worktrees
 .PHONY: test-zed-settings test-zsh-fresh-shells verify-zsh-fresh-shells bench-zsh-startup
 .PHONY: test-tart-install-helper test-trace-perfetto test-vm-install-log-scan test-vm-postflight-macos test-install-tart-dry-run test-install-tart-smoke test-install-tart-full test-install-tart-warm test-install-tart-warm-bootstrap test-install-tart-warm-refresh test-install-tart-warm-destroy
 
@@ -66,6 +66,10 @@ test-secret-backed-files:
 ## Validate Kanata keyboard remap config with kanata's parser.
 test-kanata-config:
 	@zsh ./tests/kanata-config.zsh
+
+## Regression tests for Codex config merging.
+test-codex-config:
+	@zsh ./tests/codex-config-modify.zsh
 
 ## Regression tests for selected-key cmux plist merging.
 test-cmux-plist:

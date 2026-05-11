@@ -46,6 +46,7 @@ class CloneResult:
     status: str
     method: str | None = None
     detail: str | None = None
+    sparse_paths: tuple[str, ...] = ()
 
 
 @dataclasses.dataclass(frozen=True)
@@ -100,6 +101,86 @@ def parse_repo_ref(raw: str) -> RepoRef:
             )
 
     return RepoRef(raw=raw)
+
+
+def parse_repo_sparse_specs(raw_specs: list[str]) -> dict[str, list[str]]:
+    sparse_by_repo: dict[str, list[str]] = {}
+    for raw_spec in raw_specs:
+        if "=" not in raw_spec:
+            raise ValueError(
+                "Sparse checkout specs must use REPO=PATH[,PATH...] syntax."
+            )
+
+        repo_key, raw_paths = raw_spec.split("=", 1)
+        repo_key = repo_key.strip()
+        paths = [
+            normalize_sparse_path(path)
+            for path in raw_paths.split(",")
+            if path.strip()
+        ]
+
+        if not repo_key:
+            raise ValueError("Sparse checkout repo key must be non-empty.")
+        if not paths:
+            raise ValueError(
+                f"Sparse checkout spec for {repo_key!r} must include at least one path."
+            )
+
+        sparse_by_repo.setdefault(repo_key, []).extend(paths)
+
+    return sparse_by_repo
+
+
+def normalize_sparse_path(raw_path: str) -> str:
+    path = raw_path.strip()
+    while path.startswith("./"):
+        path = path[2:]
+    path = path.rstrip("/")
+
+    if not path or path == ".":
+        raise ValueError("Sparse checkout paths must be repo-relative paths.")
+    if path.startswith("/") or "\\" in path:
+        raise ValueError(f"Sparse checkout path must be repo-relative: {raw_path!r}")
+    if ".." in Path(path).parts:
+        raise ValueError(f"Sparse checkout path must not contain '..': {raw_path!r}")
+
+    return path
+
+
+def repo_sparse_match_keys(repo: RepoRef) -> list[str]:
+    keys = [
+        repo.raw,
+        repo.owner_repo,
+        repo.https_url,
+        repo.https_url.removesuffix(".git") if repo.https_url else None,
+        repo.ssh_url,
+    ]
+
+    deduped: list[str] = []
+    for key in keys:
+        if key and key not in deduped:
+            deduped.append(key)
+    return deduped
+
+
+def sparse_paths_for_repo(
+    repo: RepoRef,
+    sparse_by_repo: dict[str, list[str]],
+    consumed_keys: set[str],
+) -> tuple[str, ...]:
+    paths: list[str] = []
+    for key in repo_sparse_match_keys(repo):
+        repo_paths = sparse_by_repo.get(key)
+        if not repo_paths:
+            continue
+        consumed_keys.add(key)
+        paths.extend(repo_paths)
+
+    deduped: list[str] = []
+    for path in paths:
+        if path not in deduped:
+            deduped.append(path)
+    return tuple(deduped)
 
 
 def ensure_empty_dir(path: Path) -> None:
@@ -223,6 +304,28 @@ def normalize_repo_copy(repo_dir: Path) -> tuple[bool, str | None]:
     return True, ", ".join(detail_bits)
 
 
+def find_existing_seed_source(
+    repo: RepoRef,
+    *,
+    canonical_root: Path,
+    cache_root: Path,
+    use_grm: bool,
+) -> SeedSource | None:
+    canonical_path = canonical_repo_path(repo, canonical_root)
+    if use_grm and canonical_path and canonical_path.exists():
+        fetched, fetch_detail = git_fetch_prune(canonical_path)
+        detail = None if fetched else f"fetch_failed: {fetch_detail}"
+        return SeedSource(path=canonical_path, kind="canonical", detail=detail)
+
+    cache_path = cache_repo_path(repo, cache_root)
+    if cache_path.exists():
+        fetched, fetch_detail = git_fetch_prune(cache_path)
+        detail = None if fetched else f"fetch_failed: {fetch_detail}"
+        return SeedSource(path=cache_path, kind="cache", detail=detail)
+
+    return None
+
+
 def ensure_seed_source(
     repo: RepoRef,
     *,
@@ -232,17 +335,16 @@ def ensure_seed_source(
     strict: bool,
     use_grm: bool,
 ) -> tuple[SeedSource | None, CloneResult | None]:
-    canonical_path = canonical_repo_path(repo, canonical_root)
-    if use_grm and canonical_path and canonical_path.exists():
-        fetched, fetch_detail = git_fetch_prune(canonical_path)
-        detail = None if fetched else f"fetch_failed: {fetch_detail}"
-        return SeedSource(path=canonical_path, kind="canonical", detail=detail), None
+    seed_source = find_existing_seed_source(
+        repo,
+        canonical_root=canonical_root,
+        cache_root=cache_root,
+        use_grm=use_grm,
+    )
+    if seed_source is not None:
+        return seed_source, None
 
     cache_path = cache_repo_path(repo, cache_root)
-    if cache_path.exists():
-        fetched, fetch_detail = git_fetch_prune(cache_path)
-        detail = None if fetched else f"fetch_failed: {fetch_detail}"
-        return SeedSource(path=cache_path, kind="cache", detail=detail), None
 
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     clone_result = clone_repo(repo, dest=cache_path, depth=depth, strict=strict)
@@ -268,7 +370,20 @@ def materialize_repo(
     canonical_root: Path,
     cache_root: Path,
     use_grm: bool,
+    sparse_paths: tuple[str, ...] = (),
 ) -> CloneResult:
+    if sparse_paths:
+        return materialize_sparse_repo(
+            repo,
+            dest=dest,
+            depth=depth,
+            strict=strict,
+            canonical_root=canonical_root,
+            cache_root=cache_root,
+            use_grm=use_grm,
+            sparse_paths=sparse_paths,
+        )
+
     if dest.exists():
         return CloneResult(repo=repo, dest_relpath=dest.as_posix(), status="exists")
 
@@ -324,6 +439,242 @@ def materialize_repo(
         method=f"{copy_method}:{seed_source.kind}",
         detail=" | ".join(detail_parts),
     )
+
+
+def materialize_sparse_repo(
+    repo: RepoRef,
+    *,
+    dest: Path,
+    depth: int,
+    strict: bool,
+    canonical_root: Path,
+    cache_root: Path,
+    use_grm: bool,
+    sparse_paths: tuple[str, ...],
+) -> CloneResult:
+    if dest.exists():
+        return CloneResult(
+            repo=repo,
+            dest_relpath=dest.as_posix(),
+            status="exists",
+            sparse_paths=sparse_paths,
+        )
+
+    seed_source = None
+    if repo.owner and repo.name:
+        seed_source = find_existing_seed_source(
+            repo,
+            canonical_root=canonical_root,
+            cache_root=cache_root,
+            use_grm=use_grm,
+        )
+
+    if seed_source is not None:
+        cloned, clone_method, clone_detail = clone_sparse_from_seed(
+            seed_source, dest=dest
+        )
+        if not cloned:
+            return CloneResult(
+                repo=repo,
+                dest_relpath=dest.as_posix(),
+                status="failed",
+                method=clone_method,
+                detail=clone_detail,
+                sparse_paths=sparse_paths,
+            )
+
+        base_method = f"{clone_method}:{seed_source.kind}"
+        detail_parts = [f"seed={seed_source.kind}:{seed_source.path}"]
+        if seed_source.detail:
+            detail_parts.append(seed_source.detail)
+        if clone_detail:
+            detail_parts.append(clone_detail)
+    else:
+        clone_result = clone_sparse_repo(repo, dest=dest, depth=depth, strict=strict)
+        if clone_result.status == "failed":
+            return dataclasses.replace(clone_result, sparse_paths=sparse_paths)
+
+        base_method = clone_result.method or "git-sparse"
+        detail_parts = ["seed=direct-sparse-clone"]
+
+    initialized, init_detail = initialize_sparse_checkout(dest)
+    if not initialized:
+        _remove_if_exists(dest)
+        return CloneResult(
+            repo=repo,
+            dest_relpath=dest.as_posix(),
+            status="failed",
+            method=base_method,
+            detail=init_detail,
+            sparse_paths=sparse_paths,
+        )
+
+    normalized, normalize_detail = normalize_repo_copy(dest)
+    if not normalized:
+        _remove_if_exists(dest)
+        return CloneResult(
+            repo=repo,
+            dest_relpath=dest.as_posix(),
+            status="failed",
+            method=base_method,
+            detail=normalize_detail,
+            sparse_paths=sparse_paths,
+        )
+
+    sparse_set, sparse_detail = set_sparse_checkout_paths(dest, sparse_paths)
+    if not sparse_set:
+        _remove_if_exists(dest)
+        return CloneResult(
+            repo=repo,
+            dest_relpath=dest.as_posix(),
+            status="failed",
+            method=base_method,
+            detail=sparse_detail,
+            sparse_paths=sparse_paths,
+        )
+
+    if init_detail:
+        detail_parts.append(init_detail)
+    if normalize_detail:
+        detail_parts.append(normalize_detail)
+    if sparse_detail:
+        detail_parts.append(sparse_detail)
+
+    return CloneResult(
+        repo=repo,
+        dest_relpath=dest.as_posix(),
+        status="seeded" if seed_source is not None else "cloned",
+        method=base_method,
+        detail=" | ".join(detail_parts),
+        sparse_paths=sparse_paths,
+    )
+
+
+def clone_sparse_from_seed(
+    seed_source: SeedSource,
+    *,
+    dest: Path,
+) -> tuple[bool, str, str | None]:
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    result = _run(
+        ["git", "clone", "--no-checkout", "--shared", str(seed_source.path), str(dest)]
+    )
+    detail = (result.stderr or result.stdout or "").strip() or None
+    if result.returncode != 0:
+        return False, "git-sparse-shared", detail
+
+    origin = _run(["git", "config", "--get", "remote.origin.url"], cwd=seed_source.path)
+    origin_url = origin.stdout.strip()
+    if origin.returncode == 0 and origin_url:
+        set_url = _run(["git", "remote", "set-url", "origin", origin_url], cwd=dest)
+        if set_url.returncode != 0:
+            set_url_detail = (set_url.stderr or set_url.stdout or "").strip() or None
+            return False, "git-sparse-shared", set_url_detail
+
+    return True, "git-sparse-shared", detail
+
+
+def clone_sparse_repo(
+    repo: RepoRef,
+    *,
+    dest: Path,
+    depth: int,
+    strict: bool,
+) -> CloneResult:
+    if dest.exists():
+        return CloneResult(repo=repo, dest_relpath=dest.as_posix(), status="exists")
+
+    dest.parent.mkdir(parents=True, exist_ok=True)
+
+    git_flags = ["--no-checkout", "--filter=blob:none", "--sparse"]
+    if depth > 0:
+        git_flags.append(f"--depth={depth}")
+
+    if shutil.which("git") is None:
+        return CloneResult(
+            repo=repo,
+            dest_relpath=dest.as_posix(),
+            status="failed",
+            detail="`git` was not found on PATH.",
+        )
+
+    attempts = [
+        ("git-sparse:ssh", ["git", "clone", *git_flags, repo.ssh_url, str(dest)]),
+        ("git-sparse:https", ["git", "clone", *git_flags, repo.https_url, str(dest)]),
+        ("git-sparse:raw", ["git", "clone", *git_flags, repo.raw, str(dest)]),
+    ]
+    attempts = [
+        (label, cmd)
+        for (label, cmd) in attempts
+        if all(part is not None for part in cmd)
+    ]
+
+    if not attempts:
+        return CloneResult(
+            repo=repo,
+            dest_relpath=dest.as_posix(),
+            status="failed",
+            detail="No sparse clone URL could be resolved.",
+        )
+
+    for label, cmd in attempts:
+        _remove_if_exists(dest)
+        result = _run(cmd)
+        if result.returncode == 0:
+            return CloneResult(
+                repo=repo, dest_relpath=dest.as_posix(), status="cloned", method=label
+            )
+
+        if strict:
+            detail = (
+                result.stderr or result.stdout or ""
+            ).strip() or f"Command failed: {' '.join(cmd)}"
+            return CloneResult(
+                repo=repo,
+                dest_relpath=dest.as_posix(),
+                status="failed",
+                method=label,
+                detail=detail,
+            )
+
+    last_label, last_cmd = attempts[-1]
+    detail = f"All sparse clone attempts failed. Last attempt: {last_label}: {' '.join(last_cmd)}"
+    return CloneResult(
+        repo=repo,
+        dest_relpath=dest.as_posix(),
+        status="failed",
+        method=last_label,
+        detail=detail,
+    )
+
+
+def initialize_sparse_checkout(repo_dir: Path) -> tuple[bool, str | None]:
+    result = _run(["git", "sparse-checkout", "init", "--cone"], cwd=repo_dir)
+    detail = (result.stderr or result.stdout or "").strip() or None
+    return result.returncode == 0, detail
+
+
+def set_sparse_checkout_paths(
+    repo_dir: Path, sparse_paths: tuple[str, ...]
+) -> tuple[bool, str | None]:
+    cone = _run(["git", "sparse-checkout", "set", "--cone", *sparse_paths], cwd=repo_dir)
+    cone_detail = (cone.stderr or cone.stdout or "").strip() or None
+    if cone.returncode == 0:
+        return True, f"sparse=cone:{', '.join(sparse_paths)}"
+
+    init_no_cone = _run(["git", "sparse-checkout", "init", "--no-cone"], cwd=repo_dir)
+    if init_no_cone.returncode != 0:
+        init_detail = (init_no_cone.stderr or init_no_cone.stdout or "").strip()
+        return False, init_detail or cone_detail
+
+    no_cone = _run(
+        ["git", "sparse-checkout", "set", "--no-cone", *sparse_paths], cwd=repo_dir
+    )
+    no_cone_detail = (no_cone.stderr or no_cone.stdout or "").strip() or None
+    if no_cone.returncode == 0:
+        return True, f"sparse=no-cone:{', '.join(sparse_paths)}"
+
+    return False, no_cone_detail or cone_detail
 
 
 def clone_repo(
@@ -481,13 +832,24 @@ def format_index_md(
     ]
 
     if clone_results:
+        has_sparse_paths = any(r.sparse_paths for r in clone_results)
         lines.extend(["## Repos", ""])
-        lines.append("| Repo | Local path | Status |")
-        lines.append("| --- | --- | --- |")
+        if has_sparse_paths:
+            lines.append("| Repo | Local path | Sparse paths | Status |")
+            lines.append("| --- | --- | --- | --- |")
+        else:
+            lines.append("| Repo | Local path | Status |")
+            lines.append("| --- | --- | --- |")
         for r in clone_results:
             display = r.repo.owner_repo or r.repo.raw or "(unknown)"
             status = r.status if not r.method else f"{r.status} ({r.method})"
-            lines.append(f"| `{display}` | `{r.dest_relpath}` | {status} |")
+            if has_sparse_paths:
+                sparse = ", ".join(f"`{path}`" for path in r.sparse_paths) or "-"
+                lines.append(
+                    f"| `{display}` | `{r.dest_relpath}` | {sparse} | {status} |"
+                )
+            else:
+                lines.append(f"| `{display}` | `{r.dest_relpath}` | {status} |")
         lines.append("")
 
         failures = [r for r in clone_results if r.status == "failed"]
@@ -572,6 +934,13 @@ def main() -> int:
         help="GitHub repo reference (owner/repo or URL). Repeatable.",
     )
     parser.add_argument(
+        "--repo-sparse",
+        action="append",
+        default=[],
+        metavar="REPO=PATH[,PATH...]",
+        help="Sparse-checkout paths for a repo from --repo. Repeatable.",
+    )
+    parser.add_argument(
         "--url",
         "--link",
         dest="urls",
@@ -624,6 +993,11 @@ def main() -> int:
     except ValueError as e:
         parser.error(str(e))
 
+    try:
+        sparse_by_repo = parse_repo_sparse_specs(args.repo_sparse)
+    except ValueError as e:
+        parser.error(str(e))
+
     root = Path(args.root).expanduser().resolve()
     canonical_root = Path(args.canonical_root).expanduser().resolve()
     cache_root = Path(args.cache_root).expanduser().resolve()
@@ -652,12 +1026,21 @@ def main() -> int:
     (refs_dir / "links.md").write_text(format_links_md(args.urls))
 
     repo_refs = [parse_repo_ref(raw) for raw in args.repo]
+    consumed_sparse_keys: set[str] = set()
+    repo_sparse_paths = [
+        sparse_paths_for_repo(repo, sparse_by_repo, consumed_sparse_keys)
+        for repo in repo_refs
+    ]
+    unused_sparse_keys = set(sparse_by_repo) - consumed_sparse_keys
+    if unused_sparse_keys:
+        unused = ", ".join(sorted(unused_sparse_keys))
+        parser.error(f"--repo-sparse specified for repo not listed by --repo: {unused}")
 
     clone_results: list[CloneResult] = []
     any_failures = False
 
     if not args.no_clone and repo_refs:
-        for repo in repo_refs:
+        for repo, sparse_paths in zip(repo_refs, repo_sparse_paths, strict=True):
             if repo.owner and repo.name:
                 dest = repos_dir / repo.owner / repo.name
             else:
@@ -672,6 +1055,7 @@ def main() -> int:
                 canonical_root=canonical_root,
                 cache_root=cache_root,
                 use_grm=use_grm,
+                sparse_paths=sparse_paths,
             )
             dest_relpath = dest.relative_to(refs_dir).as_posix()
             clone_results.append(dataclasses.replace(res, dest_relpath=dest_relpath))
