@@ -144,6 +144,40 @@ dotfiles_sudo_stop
 EOF
 }
 
+run_parent_lookup_race_case() {
+  local race_bin="$tmp_root/race-bin"
+  mkdir -p "$race_bin"
+
+  cat >"$race_bin/ps" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+case "${1:-}:${2:-}:${3:-}:${4:-}" in
+  -o:ppid=:-p:"$DOTFILES_TEST_SELF_PID")
+    printf '2222\n'
+    ;;
+  -o:ppid=:-p:2222|-o:comm=:-p:2222)
+    exit 1
+    ;;
+  *)
+    exit 1
+    ;;
+esac
+EOF
+  chmod +x "$race_bin/ps"
+
+  PATH="$race_bin:/usr/bin:/bin:/usr/sbin:/sbin" \
+  DOTFILES_ROOT="$DOTFILES_ROOT" \
+  bash <<'EOF'
+set -euo pipefail
+source "$DOTFILES_ROOT/home/.chezmoitemplates/script_lib.sh"
+
+export DOTFILES_TEST_SELF_PID="$$"
+got="$(dotfiles_sudo_parent_pid)"
+[ "$got" = "2222" ]
+EOF
+}
+
 run_stale_parent_case() {
   PATH="$stub_bin:/usr/bin:/bin:/usr/sbin:/sbin" \
   DOTFILES_ROOT="$DOTFILES_ROOT" \
@@ -230,6 +264,10 @@ rm -f "$SUDO_WARMED"
 run_chezmoi_parent_case >/dev/null
 [[ "$(grep -c -- '^-v$' "$SUDO_LOG")" -eq 1 ]] || die "chezmoi parent should prompt once across managed scripts"
 [[ "$(grep -c -- '^-k$' "$SUDO_LOG")" -eq 1 ]] || die "chezmoi parent should clear a cold cache once"
+
+# Ancestors can exit while the helper walks the process tree; lookup should
+# fall back instead of aborting under set -euo pipefail.
+run_parent_lookup_race_case >/dev/null
 
 # A live helper whose parent process has exited is stale and must be replaced
 # before a new apply reuses the shared sudo state.

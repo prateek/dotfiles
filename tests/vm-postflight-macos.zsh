@@ -93,10 +93,9 @@ esac
 EOF
 chmod +x "$stub_bin/defaults"
 
-# Timezone (systemsetup) and Spotlight (mdutil) checks were dropped from
-# postflight along with the corresponding management in
-# run_onchange_after_30-macos-defaults.sh.tmpl. Re-add stubs + assertions
-# here when the management is re-enabled.
+# Timezone (systemsetup) checks were dropped from postflight along with the
+# corresponding management. Spotlight orderedItems are managed, but mdutil
+# reindex side effects are host-sensitive and intentionally unasserted.
 
 # Stub chezmoi to return empty status (no drift).
 cat >"$stub_bin/chezmoi" <<'EOF'

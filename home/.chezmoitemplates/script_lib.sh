@@ -71,7 +71,7 @@ dotfiles_sudo_parent_pid_file() {
 dotfiles_sudo_parent_pid() {
   local command_name current next parent
 
-  parent="$(ps -o ppid= -p "$$" 2>/dev/null | tr -d ' ')"
+  parent="$(ps -o ppid= -p "$$" 2>/dev/null | tr -d ' ' || true)"
   case "$parent" in
     ''|*[!0-9]*) printf '%s\n' "$$"; return 0 ;;
   esac
@@ -85,7 +85,7 @@ dotfiles_sudo_parent_pid() {
       return 0
     fi
 
-    next="$(ps -o ppid= -p "$current" 2>/dev/null | tr -d ' ')"
+    next="$(ps -o ppid= -p "$current" 2>/dev/null | tr -d ' ' || true)"
     case "$next" in
       ''|*[!0-9]*|0|1) break ;;
     esac

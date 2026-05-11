@@ -59,9 +59,8 @@ expect_default() {
 
 # Timezone management was dropped along with macos.toml's
 # [[system.macos.systemsetup]] block — set timezone manually if needed.
-# Spotlight management is currently inactive (commented out in
-# run_onchange_after_30-macos-defaults.sh.tmpl). Re-enable both checks
-# here when their respective management is brought back.
+# Spotlight orderedItems are managed by the macOS defaults script, but the
+# mdutil reindex side effects are host-sensitive and intentionally unasserted.
 
 expect_default key_repeat NSGlobalDomain KeyRepeat 1
 expect_default initial_key_repeat NSGlobalDomain InitialKeyRepeat 12
