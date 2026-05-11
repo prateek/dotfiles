@@ -128,4 +128,32 @@ op_calls="$(<"$OP_CALLS")"
 assert_contains "$op_calls" "signin --raw"
 assert_contains "$op_calls" "--session test-session read --no-newline op://vault-id/item-id/field-id"
 
+>"$OP_CALLS"
+local_config="$tmp_root/chezmoi.toml"
+cat >"$local_config" <<EOF
+sourceDir = "$DOTFILES_ROOT"
+
+[data]
+secrets_enabled = true
+manage_zinit_external = false
+
+[data.secrets.refs]
+example_license = "op://vault-id/item-id/field-id"
+EOF
+
+config_render="$(
+  PATH="$stub_bin:$PATH" \
+  chezmoi \
+    --config "$local_config" \
+    --destination "$tmp_root/home" \
+    --cache "$tmp_root/cache" \
+    --persistent-state "$tmp_root/config-state.boltdb" \
+    execute-template \
+    --file "$DOTFILES_ROOT/tests/fixtures/secret-backed-license.tmpl"
+)"
+[[ "$config_render" = "stub-license-value" ]] || die "local config [data.secrets.refs] did not render"
+
+config_op_calls="$(<"$OP_CALLS")"
+assert_contains "$config_op_calls" "--session test-session read --no-newline op://vault-id/item-id/field-id"
+
 print -- "OK secret-backed-files"

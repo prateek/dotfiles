@@ -7,15 +7,15 @@
   License/Alfred.alfredlicense.
 
   Set the ref locally:
-      chezmoi edit ~/.config/chezmoi/chezmoi.toml.local
+      chezmoi edit-config
   and add:
-      [secrets.refs]
+      [data.secrets.refs]
       alfred_license = "op://<vault>/<item>/<field>"
   Then: DOTFILES_SECRETS_ENABLED=true chezmoi apply
 */ -}}
 {{- if .secrets_enabled -}}
 {{-   if not .secrets.refs.alfred_license -}}
-{{-     fail "secrets_enabled=true but secrets.refs.alfred_license is empty; set it in ~/.config/chezmoi/chezmoi.toml.local under [secrets.refs] or run with secrets_enabled=false to skip license materialization" -}}
+{{-     fail "secrets_enabled=true but secrets.refs.alfred_license is empty; set it in ~/.config/chezmoi/chezmoi.toml under [data.secrets.refs] or run with secrets_enabled=false to skip license materialization" -}}
 {{-   end -}}
 {{ onepasswordRead .secrets.refs.alfred_license }}
 {{- end -}}

@@ -61,7 +61,7 @@ Recently completed (most recent first; see git log for the full set):
 - **Cleanup pass:** dead-data files (`bootstrap.toml`, `features.toml`, `permissions.toml`) deleted; `secrets.paths` stripped (always empty); license templates fail loudly when `secrets_enabled=true` but the op:// ref is empty; stale doc references fixed; AGENTS.md plist-storage rule corrected to match the actual layout.
 - **Warm-VM helper:** `scripts/vm/warm-tart` + `make test-install-tart-warm` for fast iteration on `mini` (~2s per re-apply against a long-lived VM). Cold disposable lanes unchanged.
 - **Tart postflight basics:** `scripts/vm/postflight-macos.sh` asserts full `chezmoi status` is empty after apply and checks hook-state-file cleanup, on top of the existing 6 inlined-defaults checks.
-- **License automation:** `home/.chezmoidata/licenses.toml` + 3 private templates for Moom, BetterTouchTool, Alfred. Refs go in `[secrets.refs]`; user fills them in `~/.config/chezmoi/chezmoi.toml.local`.
+- **License automation:** `home/.chezmoidata/licenses.toml` + 3 private templates for Moom, BetterTouchTool, Alfred. Committed refs live in `[secrets.refs]`; machine-local overrides go in `~/.config/chezmoi/chezmoi.toml` under `[data.secrets.refs]`.
 - **Plist refactor (hard cut):** all 11 apps moved to `home/.chezmoitemplates/<bundle-id>.plist.tmpl` + shared engine in `plist-merge-{prelude,postlude}.py`; legacy JSON sidecars under `home/.chezmoiassets/Library/Preferences/` deleted.
 - **Bootstrap simplification (Option C):** `install.sh` deleted; bootstrap is the chezmoi one-liner with `promptStringOnce` / `promptBoolOnce` for first-machine settings.
 
@@ -381,7 +381,7 @@ The 11 currently managed plists. The hard cut writes a fragment + stub for each,
 | `com.prakashjoshipax.VoiceInk` | `home/Library/private_Preferences/modify_private_com.prakashjoshipax.VoiceInk.plist.tmpl` | `home/.chezmoiassets/Library/Preferences/com.prakashjoshipax.VoiceInk.json` | `tests/voiceink-plist-modify.zsh` |
 | `dev.kdrag0n.MacVirt` | `home/Library/private_Preferences/modify_private_dev.kdrag0n.MacVirt.plist.tmpl` | `home/.chezmoiassets/Library/Preferences/dev.kdrag0n.MacVirt.json` | `tests/orbstack-plist-modify.zsh` |
 | `net.elasticthreads.nv` | `home/Library/private_Preferences/modify_private_net.elasticthreads.nv.plist.tmpl` | `home/.chezmoiassets/Library/Preferences/net.elasticthreads.nv.json` | `tests/nvalt-plist-modify.zsh` |
-| `com.cmuxterm.app` | `home/Library/private_Preferences/modify_private_com.cmuxterm.app.plist.tmpl` | `home/.chezmoiassets/cmux/preferences.json` (atypical path) | `tests/cmux-plist-modify.zsh` |
+| `com.cmuxterm.app` | `home/Library/private_Preferences/modify_private_com.cmuxterm.app.plist.tmpl` | `home/dot_config/cmux/preferences.json` now carries durable file-backed cmux preferences; generated `settings.json` stays local | `tests/cmux-plist-modify.zsh` |
 | `com.manytricks.Moom` | `home/Library/private_Preferences/modify_private_com.manytricks.Moom.plist.tmpl` | `home/.chezmoiassets/com.manytricks.Moom.plist` (raw XML, not JSON) | `tests/moom-plist-modify.zsh` |
 | `com.hegenberg.BetterTouchTool` | `home/Library/private_Preferences/modify_private_com.hegenberg.BetterTouchTool.plist.tmpl` | `home/.chezmoiassets/Library/Preferences/com.hegenberg.BetterTouchTool.json` | `tests/selected-app-plist-modify.zsh` |
 | `com.raycast.macos` | `home/Library/private_Preferences/modify_private_com.raycast.macos.plist.tmpl` | `home/.chezmoiassets/Library/Preferences/com.raycast.macos.json` | `tests/selected-app-plist-modify.zsh` |

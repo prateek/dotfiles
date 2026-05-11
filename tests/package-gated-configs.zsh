@@ -73,7 +73,7 @@ expect_ignored() {
   grep -Fx -- "$target_path" "$core_ignored" >/dev/null || die "expected ignored path: $target_path"
 }
 
-expect_unmanaged ".config/cmux" "$full_managed"
+expect_managed ".config/cmux/preferences.json" "$full_managed"
 expect_managed ".config/ghostty" "$full_managed"
 expect_managed ".hammerspoon" "$full_managed"
 expect_managed "Library/Preferences/com.hegenberg.BetterTouchTool.plist" "$full_managed"
@@ -110,6 +110,7 @@ expect_managed "Library/Preferences/dev.kdrag0n.MacVirt.plist" "$core_managed"
 expect_unmanaged "Library/Preferences/net.elasticthreads.nv.plist" "$core_managed"
 
 expect_ignored ".config/zed"
+expect_ignored ".config/cmux"
 expect_ignored ".hammerspoon"
 expect_ignored "Library/Colors/nvALT.clr"
 expect_ignored "Library/Preferences/com.jordanbaird.Ice.plist"

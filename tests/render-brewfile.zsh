@@ -25,6 +25,7 @@ core_out="$("$RENDER" --profile core)"
 [[ -n $core_out ]] || die "core profile rendered empty"
 [[ $core_out == *'tap "1password/tap"'* ]] || die "core: missing 1password/tap"
 [[ $core_out == *'brew "git"'* ]] || die "core: missing git brew"
+[[ $core_out == *'brew "crit"'* ]] || die "core: missing crit brew"
 [[ $core_out == *'cask "1password", args: { appdir: "/Applications" }'* ]] \
   || die "core: 1password cask appdir args missing or malformed"
 
@@ -39,6 +40,7 @@ fi
 [[ $full_with_mas == *'mas "Things", id: 904280696'* ]] \
   || die "full --include-mas: missing expected MAS entry"
 [[ $full_no_mas == *'brew "aria2"'* ]] || die "full: missing aria2"
+[[ $full_no_mas == *'brew "crit"'* ]] || die "full: missing crit"
 [[ $full_no_mas != *'tap "xcodesorg/made"'* ]] || die "full: should not tap source-building xcodesorg/made"
 [[ $full_no_mas == *'brew "homebrew/core/xcodes", args: ["force-bottle"]'* ]] \
   || die "full: missing bottled Homebrew core xcodes"

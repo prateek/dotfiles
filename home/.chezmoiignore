@@ -2,9 +2,22 @@
 .agents/skills/**/__pycache__
 .agents/skills/**/*.pyc
 
+{{/* Machine-local shell overlays sourced by the managed zsh startup files. */}}
+.zprofile.local
+.zshrc.local
+
+{{/* Machine-local credentials, trust databases, and tool state. */}}
+.config/chezmoi
+.config/op
+.gnupg
+.ssh
+
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "cmux")) "true" }}
+.config/cmux
 Library/Preferences/com.cmuxterm.app.plist
 {{- end }}
+{{/* Generated cmux settings stay local; preferences.json carries our durable choices. */}}
+.config/cmux/settings.json
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "zed")) "true" }}
 .config/zed
 {{- end }}

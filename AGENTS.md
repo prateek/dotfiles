@@ -62,6 +62,7 @@ zshenv -> zprofile -> zshrc -> init.sh -> zinit-init.zsh -> lib/*.zsh -> extra/*
 ```
 
 - Keep baseline `PATH` entries in `zprofile`'s `path=(...)` array, not ad hoc `export PATH=...` snippets in `zshrc`.
+- Keep host-local shell secrets and env overlays in `$HOME/.zprofile.local` or `$HOME/.zshrc.local`; they are sourced by managed zsh startup and ignored by chezmoi.
 - Prefer explicit directories like `$HOME/go/bin` over indirect env vars like `$GOPATH/bin` for shell PATH setup.
 - When startup only needs mise shims, add `$HOME/.local/share/mise/shims` to `zprofile` instead of running `mise activate --shims` on every shell.
 - Reserve `zshrc` PATH mutations for interactive or late overlays only.

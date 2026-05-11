@@ -346,6 +346,15 @@ name = "chopad-zig"
 worktree_setup = false
 
 [[trees.repos]]
+name = "CodexBar"
+worktree_setup = false
+
+[[trees.repos.remotes]]
+name = "origin"
+url = "git@github.com:prateek/CodexBar.git"
+type = "ssh"
+
+[[trees.repos]]
 name = "excalichat"
 worktree_setup = false
 
