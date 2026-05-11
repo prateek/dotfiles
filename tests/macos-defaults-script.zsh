@@ -19,6 +19,14 @@ assert_not_contains_file() {
   fi
 }
 
+assert_contains_file() {
+  local file="$1"
+  local needle="$2"
+  if ! grep -Fqx -- "$needle" "$file"; then
+    die "missing log line: $needle"
+  fi
+}
+
 DOTFILES_ROOT="${0:A:h:h}"
 
 tmp_root="$(mktemp -d)"
@@ -87,6 +95,10 @@ cat >"$stub_bin/killall" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 printf 'killall %s\n' "$*" >> "$MACOS_DEFAULTS_TEST_LOG"
+if [ "${1:-}" = "mds" ]; then
+  printf 'No matching processes belonging to you were found\n' >&2
+  exit 1
+fi
 exit 0
 EOF
 chmod +x "$stub_bin/killall"
@@ -115,12 +127,14 @@ bash -n "$script" || die "rendered macOS defaults script has invalid syntax"
 PATH="$stub_bin:/usr/bin:/bin:/usr/sbin:/sbin" \
 HOME="$home_dir" \
 DOTFILES_SKIP_LSREGISTER=1 \
-DOTFILES_SKIP_REINDEX=1 \
 DOTFILES_SKIP_APP_RESTART=1 \
 bash "$script" >/tmp/macos-defaults-script.out
 
 assert_not_contains_file "$log_file" "sudo -v"
 assert_not_contains_file "$log_file" "sudo -n true"
 assert_not_contains_file "$log_file" "killall -q Activity Monitor Dock Finder Google Chrome Messages Safari SystemUIServer"
+assert_contains_file "$log_file" "killall mds"
+assert_contains_file "$log_file" "sudo mdutil -i on /"
+assert_contains_file "$log_file" "sudo mdutil -E /"
 
 print -- "OK macos-defaults-script"

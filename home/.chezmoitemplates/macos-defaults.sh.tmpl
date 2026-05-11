@@ -415,9 +415,13 @@ defaults write com.apple.spotlight orderedItems -array \
 # `DOTFILES_SKIP_REINDEX=1` skips the whole block; the orderedItems write
 # above takes effect on next mds restart anyway.
 if [ "${DOTFILES_SKIP_REINDEX:-0}" != "1" ]; then
-	killall mds >/dev/null 2>&1
-	sudo mdutil -i on / >/dev/null
-	sudo mdutil -E / >/dev/null
+	killall mds >/dev/null 2>&1 || true
+	if ! sudo mdutil -i on / >/dev/null; then
+		warn "Spotlight indexing enable failed; continuing without full reindex."
+	fi
+	if ! sudo mdutil -E / >/dev/null; then
+		warn "Spotlight reindex failed; continuing with orderedItems only."
+	fi
 fi
 
 ###############################################################################

@@ -68,6 +68,34 @@ dotfiles_sudo_parent_pid_file() {
   printf '%s/parent.pid' "$(dotfiles_sudo_state_dir)"
 }
 
+dotfiles_sudo_parent_pid() {
+  local command_name current next parent
+
+  parent="$(ps -o ppid= -p "$$" 2>/dev/null | tr -d ' ')"
+  case "$parent" in
+    ''|*[!0-9]*) printf '%s\n' "$$"; return 0 ;;
+  esac
+
+  current="$parent"
+  while :; do
+    command_name="$(ps -o comm= -p "$current" 2>/dev/null | tr -d ' ' || true)"
+    command_name="${command_name##*/}"
+    if [ "$command_name" = "chezmoi" ]; then
+      printf '%s\n' "$current"
+      return 0
+    fi
+
+    next="$(ps -o ppid= -p "$current" 2>/dev/null | tr -d ' ')"
+    case "$next" in
+      ''|*[!0-9]*|0|1) break ;;
+    esac
+    [ "$next" = "$current" ] && break
+    current="$next"
+  done
+
+  printf '%s\n' "$parent"
+}
+
 dotfiles_sudo_keepalive_active() {
   local parent_pid parent_pid_file pid pid_file
   pid_file="$(dotfiles_sudo_pid_file)"
@@ -119,24 +147,38 @@ dotfiles_sudo_start() {
   fi
 
   printf '%s\n' "$preexisting" >"$preexisting_file"
-  parent_pid="$(ps -o ppid= -p "$$" | tr -d ' ')"
+  parent_pid="$(dotfiles_sudo_parent_pid)"
   printf '%s\n' "$parent_pid" >"$parent_pid_file"
 
-  (
+  # shellcheck disable=SC2016
+  nohup "${BASH:-bash}" -c '
+    set -u
+    pid_file="$1"
+    preexisting_file="$2"
+    parent_pid_file="$3"
+    parent_pid="$4"
+
+    cleanup() {
+      if [ "$(cat "$preexisting_file" 2>/dev/null || true)" = "0" ]; then
+        command -v sudo >/dev/null 2>&1 && sudo -k
+      fi
+      rm -f "$pid_file" "$preexisting_file" "$parent_pid_file"
+    }
+
     next_refresh=0
     while kill -0 "$parent_pid" 2>/dev/null; do
       now="$(date +%s)"
       if [ "$now" -ge "$next_refresh" ]; then
-        sudo -n -v >/dev/null 2>&1 || exit
+        if ! sudo -n -v >/dev/null 2>&1; then
+          cleanup
+          exit 0
+        fi
         next_refresh=$((now + 60))
       fi
       sleep 1
     done
-    if [ "$(cat "$preexisting_file" 2>/dev/null || true)" = "0" ]; then
-      have sudo && sudo -k
-    fi
-    rm -f "$pid_file" "$preexisting_file" "$parent_pid_file"
-  ) &
+    cleanup
+  ' dotfiles-sudo-keepalive "$pid_file" "$preexisting_file" "$parent_pid_file" "$parent_pid" >/dev/null 2>&1 &
 
   printf '%s\n' "$!" >"$pid_file"
 }

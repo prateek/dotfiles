@@ -120,6 +120,30 @@ EOF
   [[ ! -e "$preexisting_file" ]] || die "parent-exit cleanup should remove sudo preexisting marker"
 }
 
+run_chezmoi_parent_case() {
+  PATH="$stub_bin:/usr/bin:/bin:/usr/sbin:/sbin" \
+  DOTFILES_ROOT="$DOTFILES_ROOT" \
+  bash -c 'exec -a chezmoi bash -s' <<'EOF'
+set -euo pipefail
+
+run_managed_script() {
+  bash -c 'bash -s; :' <<'INNER'
+set -euo pipefail
+source "$DOTFILES_ROOT/home/.chezmoitemplates/script_lib.sh"
+
+dotfiles_sudo_start "managed script needs sudo"
+INNER
+}
+
+run_managed_script
+/bin/sleep 2
+run_managed_script
+
+source "$DOTFILES_ROOT/home/.chezmoitemplates/script_lib.sh"
+dotfiles_sudo_stop
+EOF
+}
+
 run_stale_parent_case() {
   PATH="$stub_bin:/usr/bin:/bin:/usr/sbin:/sbin" \
   DOTFILES_ROOT="$DOTFILES_ROOT" \
@@ -198,6 +222,14 @@ run_helper_case >/dev/null
 [[ "$(grep -c -- '^-v$' "$SUDO_LOG")" -eq 0 ]] || die "warm cache should not prompt with sudo -v"
 [[ "$(grep -c -- '^-k$' "$SUDO_LOG")" -eq 0 ]] || die "warm cache should not be invalidated"
 [[ -e "$SUDO_WARMED" ]] || die "warm cache marker should survive stop"
+
+# Separate chezmoi run scripts share one sudo validation through the long-lived
+# chezmoi apply process, even when short shell wrappers exit between scripts.
+: > "$SUDO_LOG"
+rm -f "$SUDO_WARMED"
+run_chezmoi_parent_case >/dev/null
+[[ "$(grep -c -- '^-v$' "$SUDO_LOG")" -eq 1 ]] || die "chezmoi parent should prompt once across managed scripts"
+[[ "$(grep -c -- '^-k$' "$SUDO_LOG")" -eq 1 ]] || die "chezmoi parent should clear a cold cache once"
 
 # A live helper whose parent process has exited is stale and must be replaced
 # before a new apply reuses the shared sudo state.
