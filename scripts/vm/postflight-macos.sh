@@ -82,12 +82,9 @@ expect_chezmoi_status_empty() {
     emit_result FAIL chezmoi_status "chezmoi not on PATH"
     return
   fi
-  # --exclude=scripts strips run_after_ + run_onchange_ entries that
-  # chezmoi always reports as pending until they run again. We only care
-  # about file-level drift in postflight.
-  out="$(chezmoi --no-tty status --exclude=scripts 2>&1 || true)"
+  out="$(chezmoi --no-tty status 2>&1 || true)"
   if [ -z "$out" ]; then
-    emit_result PASS chezmoi_status "empty (file targets)"
+    emit_result PASS chezmoi_status "empty"
   else
     local first
     first="$(printf '%s\n' "$out" | head -1)"

@@ -1,10 +1,11 @@
 ---
-status: active
+status: current
 doc_type: plan
 created: 2026-04-27
+updated: 2026-05-11
 related:
   - ../adr/0006-chezmoi-migration-prototype.md
-status_detail: "Accepted plan; implementation in progress on branch chezmoi-migration."
+status_detail: "Implemented on master; maintained as the current chezmoi architecture and operations reference."
 ---
 
 # Chezmoi Migration Plan
@@ -34,7 +35,7 @@ The canonical checkout stays at `~/dotfiles`.
 
 ## Current Implementation Snapshot
 
-This branch is rebased on `origin/master` at `8f54c73` and carries the migration as one local commit.
+The migration has landed on `master`. This section records the current architecture and the validation evidence that made the cutover safe.
 
 Implemented:
 
@@ -59,14 +60,12 @@ Recently completed (most recent first; see git log for the full set):
 
 - **Cleanup pass:** dead-data files (`bootstrap.toml`, `features.toml`, `permissions.toml`) deleted; `secrets.paths` stripped (always empty); license templates fail loudly when `secrets_enabled=true` but the op:// ref is empty; stale doc references fixed; AGENTS.md plist-storage rule corrected to match the actual layout.
 - **Warm-VM helper:** `scripts/vm/warm-tart` + `make test-install-tart-warm` for fast iteration on `mini` (~2s per re-apply against a long-lived VM). Cold disposable lanes unchanged.
-- **Tart postflight basics:** `scripts/vm/postflight-macos.sh` adds `chezmoi status --exclude=scripts` empty assertion + hook-state-file cleanup check, on top of the existing 6 inlined-defaults checks.
+- **Tart postflight basics:** `scripts/vm/postflight-macos.sh` asserts full `chezmoi status` is empty after apply and checks hook-state-file cleanup, on top of the existing 6 inlined-defaults checks.
 - **License automation:** `home/.chezmoidata/licenses.toml` + 3 private templates for Moom, BetterTouchTool, Alfred. Refs go in `[secrets.refs]`; user fills them in `~/.config/chezmoi/chezmoi.toml.local`.
 - **Plist refactor (hard cut):** all 11 apps moved to `home/.chezmoitemplates/<bundle-id>.plist.tmpl` + shared engine in `plist-merge-{prelude,postlude}.py`; legacy JSON sidecars under `home/.chezmoiassets/Library/Preferences/` deleted.
 - **Bootstrap simplification (Option C):** `install.sh` deleted; bootstrap is the chezmoi one-liner with `promptStringOnce` / `promptBoolOnce` for first-machine settings.
 
-Pending:
-
-- **Open design decisions** — only Phase 1 items remain (Apple/global key allowlist scope, Codex config split). Phase 3 design questions are resolved.
+No migration-specific design decisions remain open. New work should get its own focused plan or issue instead of reopening this migration plan.
 
 ## Target Layout
 
@@ -152,10 +151,9 @@ Pending:
     vm/                         # Tart VM lifecycle helpers
     trace/                      # Perfetto trace conversion
   tests/
-  dev/
-    adr/
-    docs/
   docs/
+    adr/
+    dev/
   archive/
     keyboard/
   .github/
@@ -306,7 +304,7 @@ home/.chezmoitemplates/
   voiceink-prompts.json
 ```
 
-Layout notes during the plist refactor: per-app fragments under `.chezmoitemplates/<bundle-id>.plist.tmpl` are the post-refactor home for plist source. The pre-refactor JSON files under `home/.chezmoiassets/Library/Preferences/` continue to work via the same shared engine until each app is migrated; see Plist Management for the migration order.
+Layout note: per-app fragments under `.chezmoitemplates/<bundle-id>.plist.tmpl` are the home for plist source. `home/.chezmoiassets/` holds only non-template supporting payloads.
 
 Rules:
 
@@ -803,7 +801,7 @@ Two lanes on `mini`:
 - **Iteration:** keep one warm Tart VM (`make test-install-tart-warm`). Boots once, reused across runs, refresh weekly. Fast cycle for iterating on chezmoi script changes.
 - **Checkpoint:** cold disposable VMs via `make test-install-tart-{smoke,full}`. Used for clean-machine proof before merging meaningful changes (bootstrap, package profile, defaults, plist refactor steps).
 
-`test-install-tart-dry-run` stays for `install.sh`-shaped checks → after the bootstrap simplification it just confirms the chezmoi one-liner parses and the rendered chezmoi config is valid.
+`test-install-tart-dry-run` confirms the chezmoi one-liner parses and the rendered chezmoi config is valid.
 
 ## References Used
 

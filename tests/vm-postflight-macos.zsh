@@ -103,7 +103,7 @@ cat >"$stub_bin/chezmoi" <<'EOF'
 #!/bin/sh
 set -eu
 case "$*" in
-  *status*--exclude=scripts*) exit 0 ;;  # empty status (file targets only)
+  *status*) exit 0 ;;
   *) exit 0 ;;
 esac
 EOF
@@ -140,7 +140,7 @@ cat >"$stub_bin/chezmoi" <<'EOF'
 #!/bin/sh
 set -eu
 case "$*" in
-  *status*--exclude=scripts*)
+  *status*)
     printf ' M /Users/test/.zshrc\n'
     ;;
 esac

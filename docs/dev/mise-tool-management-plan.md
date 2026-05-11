@@ -86,18 +86,14 @@ The task does this:
 - `pr <number>` resolves the PR head with `gh`, builds that exact SHA with Cargo, links it as `codex@pr-<number>`, and selects it
 - `brew` links the Homebrew-managed binary through a small prefix and selects `codex@brew`
 
-## Migration steps
+## Implemented State
 
-- Add ADR 0005.
-- Add this plan.
-- Add the Codex mise task.
-- Remove `bin/devtool` and `bin/devtool-shim`.
-- Remove `.config/devtools/config.toml`.
-- Remove `docs/devtools.md`.
-- Remove the devtools symlink block from `bootstrap.sh`.
-- Stop linking `devtool` into `~/bin`.
-- Update README references to point at mise.
-- Link `.config/mise/tasks` into `~/.config/mise/tasks` from `bootstrap.sh`.
+- ADR 0005 records the decision.
+- Codex selection lives in the repo-owned mise task under `home/dot_config/mise/tasks/`.
+- `bin/devtool`, `bin/devtool-shim`, `.config/devtools/config.toml`, and `docs/devtools.md` are removed.
+- `devtool` is no longer linked into `~/bin`.
+- Mise config and tasks are chezmoi-managed source state under `home/dot_config/mise/`.
+- Bootstrap is the chezmoi one-liner, not `bootstrap.sh` or `install.sh`.
 
 ## Validation
 
@@ -106,7 +102,7 @@ Use these checks after changes. In an untrusted checkout, either run `mise trust
 ```sh
 MISE_TRUSTED_CONFIG_PATHS="$PWD" mise tasks ls | rg 'codex:use'
 MISE_TRUSTED_CONFIG_PATHS="$PWD" mise run codex:use --help
-./install.sh --core --dry-run
+chezmoi apply --dry-run --verbose --exclude=scripts
 rg -n 'devtool|devtools|\.devtools\.toml' . --hidden -g '!*.git/*'
 ```
 
