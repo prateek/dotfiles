@@ -36,6 +36,8 @@ mkdir -p ~/Documents/[folder_name]
 # Path: [folder]/research_report_[YYYYMMDD]_[slug].md
 ```
 
+If a report is written under a repository `docs/` tree that has `docs/document-lifecycle.md`, use that lifecycle frontmatter. In Prateek's dotfiles repo, research docs use `status: draft` while being written and `doc_type: research`; mark completed snapshots `current` only if they will be maintained, otherwise `archived` with `closed` and `current_guidance`.
+
 ### Phase 8.2: Section Generation Loop
 
 **Pattern:** Generate section -> Write/Edit to file -> Move to next section

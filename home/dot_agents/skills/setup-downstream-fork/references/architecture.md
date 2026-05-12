@@ -2,7 +2,7 @@
 
 Written for an LLM extending or debugging this skill. Not for the end user of a generated fork — that audience is served by `templates/fork/references/architecture.md.tmpl`, which ships into the generated repo.
 
-Full rationale lives in `~/dotfiles/docs/adr/0001-downstream-fork-architecture.md`. The plan doc at `~/dotfiles/docs/dev/setup-downstream-fork-plan.md` carries the workflow recipes. This file is the operational summary.
+Full rationale lives in `docs/adr/0001-downstream-fork-architecture.md` in the dotfiles repo. The plan doc at `docs/plans/setup-downstream-fork-plan.md` is historical context only. This file is the operational summary.
 
 ## Core mental model
 

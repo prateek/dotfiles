@@ -24,6 +24,8 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: astral-sh/setup-uv@v5
 
@@ -33,9 +35,33 @@ jobs:
       - name: Zsh syntax check
         run: |
           zsh -n scripts/trace/run-zsh
+          zsh -n tests/docs-lifecycle.zsh
 
       - name: Python syntax check
-        run: python3 -m py_compile scripts/trace/xtrace-to-perfetto scripts/trace/merge-perfetto scripts/trace/open-perfetto
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          for path in (
+              "scripts/trace/xtrace-to-perfetto",
+              "scripts/trace/merge-perfetto",
+              "scripts/trace/open-perfetto",
+              "docs/validate-doc-lifecycle",
+          ):
+              compile(Path(path).read_text(encoding="utf-8"), path, "exec")
+          PY
+
+      - name: Docs lifecycle
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base_ref="${{ github.event.pull_request.base.ref }}"
+            git fetch --no-tags origin "${base_ref}:refs/remotes/origin/${base_ref}"
+            DOCS_LIFECYCLE_BASE="$(git merge-base "origin/${base_ref}" HEAD)" make test-docs-lifecycle
+          elif [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+            DOCS_LIFECYCLE_BASE="${{ github.event.before }}" make test-docs-lifecycle
+          else
+            make test-docs-lifecycle
+          fi
 
       - name: Tart helper contract
         run: |

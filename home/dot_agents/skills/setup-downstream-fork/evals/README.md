@@ -17,7 +17,7 @@ echo 'print("hello")' > app.py
 git add -A && git commit -q -m "initial"
 
 # run the skill's setup script in dry-run against the local upstream
-cd $DOTFILES/.agents/skills/setup-downstream-fork
+cd $DOTFILES/home/dot_agents/skills/setup-downstream-fork
 python3 scripts/setup_fork.py \
   --upstream /tmp/fork-eval-upstream \
   --fork-name glow \

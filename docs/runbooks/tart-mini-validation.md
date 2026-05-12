@@ -1,5 +1,5 @@
 ---
-status: current
+status: active
 doc_type: runbook
 related:
   - ../adr/0002-zsh-fresh-shell-validator.md

@@ -4,7 +4,9 @@ doc_type: adr
 created: 2026-04-17
 owner: Prateek
 related:
-  - ../dev/zsh-fresh-shell-validator-plan.md
+  - ../plans/zsh-fresh-shell-validator-plan.md
+  - ../../scripts/audit/zsh-fresh-shells.zsh
+status_detail: "Accepted decision record; current commands and behavior live in the zsh fresh-shell harness and tests."
 ---
 
 # ADR 0002 — Fresh-shell validator architecture

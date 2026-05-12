@@ -131,10 +131,23 @@ When editing prose humans will read, apply the `writing-clearly-and-concisely` g
 `AGENTS.md`, `CLAUDE.md`, `README`, `SKILL.md`, and long-lived guides are part of the system, not commentary about it. When you touch them, treat the whole doc as in scope, not just the local edit site:
 
 - Compare the doc against the live tree or live behavior, not the nearby excerpt.
+- If a repo has `docs/document-lifecycle.md`, read `docs/` frontmatter before using a doc as guidance. Update current/active docs for live behavior; treat archived, superseded, rejected, and accepted ADR bodies as historical records unless the lifecycle doc says otherwise.
 - Reread the whole doc before finishing. Drift often shows up as redundancy or stale structure, not wrong facts.
 - Remove migration-era notes once the migration is complete.
 - Collapse repeated lists or restatements when one index will do.
 - Prefer one authoritative section over several partial restatements.
+
+#### Docs indexes are routing surfaces
+
+When a repo has `docs/index.md`, keep it current as the docs routing table.
+Update it when adding, renaming, closing, superseding, or reclassifying docs.
+The index should point to current guidance and successor docs; it should not
+repeat the content of the docs it links to.
+
+When working in `docs/`, follow the folder purposes table in repo `AGENTS.md`.
+This skill does not duplicate folder rules; it points at them. The skill remains
+the place for ambient gardening conventions such as drift detection,
+frontmatter sync, and fixing small papercuts tied to the task.
 
 #### Git vs non-git workspaces
 
@@ -149,6 +162,7 @@ Provenance and rollback are weaker outside git. Raise the bar accordingly:
 - Use tool-native checks instead of regex guesses.
 - After editing a skill, run its validator or parser immediately.
 - After editing a durable doc, reread the whole file and check for redundancy, migration-era wording, and sections that disagree with the live tree.
+- After editing `docs/` in a repo with lifecycle frontmatter, run its docs lifecycle validator if one exists.
 - If a failure may be pre-existing, baseline it early.
 - Before commit or handoff on non-trivial work, run the smallest matching verification.
 

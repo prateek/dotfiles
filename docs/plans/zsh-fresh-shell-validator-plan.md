@@ -1,9 +1,14 @@
 ---
-status: active
+status: archived
 doc_type: plan
 owner: Prateek
+closed: 2026-05-11
+current_guidance:
+  - ../../scripts/audit/zsh-fresh-shells.zsh
+  - ../../tests/README.md
 related:
   - ../adr/0002-zsh-fresh-shell-validator.md
+status_detail: "Historical implementation plan; current commands and behavior live in the harness and test index."
 ---
 
 # zsh-fresh-shell-validator — plan

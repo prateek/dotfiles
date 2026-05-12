@@ -1,13 +1,17 @@
 ---
-status: current
-doc_type: plan
+status: active
+doc_type: reference
+created: 2026-04-27
+updated: 2026-05-12
 related:
   - ../adr/0005-mise-tool-management.md
+status_detail: "Implemented; maintained as the current mise tool-management reference."
 ---
 
-# Mise tool management plan
+# Mise Tool Management Reference
 
-This plan replaces the repo-local `devtool` shim system with mise-native tool selection.
+This reference records the steady-state mise-native tool selection model that
+replaced the repo-local `devtool` shim system.
 
 ## Problem
 

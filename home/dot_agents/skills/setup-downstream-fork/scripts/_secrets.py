@@ -11,7 +11,8 @@ Chain: ``env`` → ``config file`` → ``None``. Env wins so ad-hoc
 ``export`` overrides and CI-container injection keep working without
 touching the config.
 
-See ``docs/dev/setup-downstream-fork-secrets-plan.md``.
+Current behavior is defined in this module and the setup-downstream-fork skill.
+``docs/plans/setup-downstream-fork-secrets-plan.md`` is historical design context.
 """
 from __future__ import annotations
 

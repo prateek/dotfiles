@@ -7,7 +7,7 @@ description: Chezmoi workflow skill for Prateek's dotfiles repo. Use for `chezmo
 
 ## Overview
 
-Single entry point for chezmoi-related work in Prateek's dotfiles repo. SKILL.md is a router. Mode-specific depth lives in `references/<mode>.md`. Generic chezmoi knowledge lives in `references/chezmoi-cheatsheet.md` so this skill is self-contained and does not depend on chezmoi.io being reachable.
+Single entry point for chezmoi-related work in Prateek's dotfiles repo. SKILL.md is a router. Mode-specific depth lives in `references/<mode>.md`. Generic chezmoi knowledge lives in `references/chezmoi-cheatsheet.md`, and the repo architecture summary lives in `references/architecture.md`, so this skill is self-contained and does not depend on the docs tree or chezmoi.io being reachable.
 
 ## Trigger Check
 
@@ -63,6 +63,7 @@ Route by the file or command in scope. Load the matching reference plus `referen
 | `home/.chezmoitemplates/<bundle-id>.plist.tmpl`; `home/.chezmoiassets/`; capturing macOS app preferences; `modify_` stubs; `home/.chezmoiignore` for opt-in apps | `references/app-config.md` |
 | `home/.chezmoidata/{packages,secrets,licenses}.toml`; `brewfile.tmpl`; `DOTFILES_INSTALL_*` env vars; 1Password `op://` references | `references/packages-and-secrets.md` |
 | Translating `~/.<file>` ↔ `home/<dot_*>` source paths in any mode | `references/source-target-translation.md` |
+| Repo ownership, generated/runtime state, or source-vs-target questions | `references/architecture.md` |
 | Cross-cutting chezmoi command lookup, attribute grammar, "what does X do" | `references/chezmoi-cheatsheet.md` |
 | Updating this skill itself because chezmoi practices in the repo changed | `references/meta-skill-maintenance.md` |
 
@@ -80,6 +81,11 @@ These are short, high-stakes, and easy to violate. Keep them in working memory r
 - **Setapp-installed apps need an install path before config.** Do not add chezmoi-managed config for a Setapp app unless the repo has an install path for it.
 - **`home/.chezmoiscripts/` numeric ordering is load-bearing.** Insert new scripts at unused gap numbers; do not renumber existing ones. Current ordering listed in `references/workflow.md`.
 - **Raw app captures live under `${XDG_STATE_HOME:-~/.local/state}/dotfiles/captures/`, not in the repo.**
+- **Ignored source-state files can still render.** Check `.chezmoiignore` and rendered output before assuming ignored source has no target effect.
+- **Live adapter paths need tree checks.** Use `readlink` and directory-level inspection for `~/.agents`, `~/.codex`, `~/.claude`, and app config adapters; a file diff can miss a symlink boundary.
+- **Branch smoke tests are not full apply proof.** For source ownership or bootstrap changes, prefer a temp-home `chezmoi init/apply/status` lane over branch-local smoke alone.
+- **Plist work needs running-app guards.** Check the guard hooks and avoid applying preference changes while the app is running unless the hook explicitly permits it.
+- **Check home-vs-repo ownership before editing.** Decide whether `home/` source, live `$HOME`, or a repo-local adapter owns the behavior before making changes.
 
 ## Validation Lanes
 

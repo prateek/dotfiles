@@ -141,7 +141,7 @@ paths = [
 ]
 ```
 
-`.chezmoiignore` reads `licenses.paths` to skip these targets when `secrets_enabled=false`. Note: a `secrets.paths` table was once planned (and is referenced in the migration plan) but was retired as always-empty — do not add it back unless the ignore template is updated to consume it.
+`.chezmoiignore` reads `licenses.paths` to skip these targets when `secrets_enabled=false`. A `secrets.paths` table was once planned but was retired as always-empty; do not add it back unless the ignore template is updated to consume it.
 
 ## Secret-Backed Template Pattern
 

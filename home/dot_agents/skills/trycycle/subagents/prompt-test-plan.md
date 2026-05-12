@@ -97,6 +97,8 @@ The harness work is done first, before the tests that depend on it. Without it, 
 
 Save the test plan to: `docs/plans/YYYY-MM-DD-<feature-name>-test-plan.md`
 
+If the target repo has documented lifecycle frontmatter conventions, follow them. In Prateek's dotfiles repo, plans under `docs/` start with `status: draft` or `status: active` and `doc_type: plan`.
+
 The document should contain:
 
 1. **Harness requirements** (if any need to be built)

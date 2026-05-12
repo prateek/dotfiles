@@ -1,10 +1,14 @@
 ---
-status: draft
+status: archived
 doc_type: plan
 owner: Prateek
-skill_path: ~/dotfiles/.agents/skills/setup-downstream-fork/
+closed: 2026-05-11
+current_guidance:
+  - ../../home/dot_agents/skills/setup-downstream-fork/scripts/_secrets.py
+  - ../../home/dot_agents/skills/setup-downstream-fork/SKILL.md
 related:
   - setup-downstream-fork-plan.md
+status_detail: "Historical design draft; the resolver is implemented in the setup-downstream-fork skill."
 ---
 
 # setup-downstream-fork — pluggable secret resolver

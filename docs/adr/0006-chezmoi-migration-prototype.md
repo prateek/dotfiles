@@ -4,8 +4,9 @@ doc_type: adr
 created: 2026-04-26
 owner: Prateek
 related:
-  - ../dev/chezmoi-migration-plan.md
+  - ../references/chezmoi-architecture.md
   - 0004-tart-install-validation-and-tracing.md
+status_detail: "Accepted decision record; current architecture and operations live in ../references/chezmoi-architecture.md."
 ---
 
 # ADR 0006 — Chezmoi migration target architecture

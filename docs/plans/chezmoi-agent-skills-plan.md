@@ -1,10 +1,14 @@
 ---
-status: draft
+status: archived
 doc_type: plan
 created: 2026-05-10
 updated: 2026-05-10
+closed: 2026-05-11
+current_guidance:
+  - ../../home/dot_agents/skills/
 related:
-  - agent-skill-management-research.md
+  - ../research/agent-skill-management-research.md
+status_detail: "Historical draft; do not use as current skill-manifest guidance."
 ---
 
 # Chezmoi Agent Skills Plan

@@ -4,8 +4,9 @@ doc_type: adr
 created: 2026-04-27
 owner: Prateek
 related:
-  - ../dev/tart-mini-validation.md
+  - ../runbooks/tart-mini-validation.md
   - 0002-zsh-fresh-shell-validator.md
+status_detail: "Accepted decision record; current lane details live in ../runbooks/tart-mini-validation.md."
 ---
 
 # ADR 0004 - Tart install validation and Perfetto trace diagnostics

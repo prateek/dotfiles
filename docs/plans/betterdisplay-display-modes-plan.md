@@ -3,6 +3,7 @@ status: proposed
 doc_type: plan
 created: 2026-04-30
 related: []
+status_detail: "Proposed only; not implemented in this checkout."
 ---
 
 # BetterDisplay Display Modes Plan

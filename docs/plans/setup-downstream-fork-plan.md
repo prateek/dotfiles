@@ -1,11 +1,15 @@
 ---
-status: active
+status: superseded
 doc_type: plan
 owner: Prateek
-skill_path: ~/dotfiles/.agents/skills/setup-downstream-fork/
+closed: 2026-05-11
+superseded_by: ../../home/dot_agents/skills/setup-downstream-fork/SKILL.md
+current_guidance:
+  - ../../home/dot_agents/skills/setup-downstream-fork/SKILL.md
+  - ../../home/dot_agents/skills/setup-downstream-fork/references/architecture.md
 related:
   - ../adr/0001-downstream-fork-architecture.md
-status_detail: "Draft, in active development."
+status_detail: "Historical implementation plan; current guidance lives in the setup-downstream-fork skill."
 ---
 
 # setup-downstream-fork — plan

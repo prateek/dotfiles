@@ -7,7 +7,7 @@ description: "Set up or maintain an LLM-driven downstream fork of an upstream gi
 
 A skill for spinning up — and keeping healthy — a downstream fork of an upstream open-source project. The generated repo runs on cruise control: it tracks upstream daily, applies your patches, falls back to an LLM when patches drift, and only escalates to a human when a real design decision is needed.
 
-Full architectural rationale is in `docs/adr/0001-downstream-fork-architecture.md` in the dotfiles repo. Plan doc with concrete workflow recipes is at `docs/dev/setup-downstream-fork-plan.md`. Read `references/architecture.md` in this skill for an LLM-oriented summary if you need to extend the skill itself.
+Full architectural rationale is in `docs/adr/0001-downstream-fork-architecture.md` in the dotfiles repo. The old implementation plan at `docs/plans/setup-downstream-fork-plan.md` is historical context only. Use this skill and `references/architecture.md` as current guidance when extending the skill.
 
 ## When to use
 

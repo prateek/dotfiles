@@ -1,12 +1,12 @@
 ---
-status: active
+status: accepted
 doc_type: adr
 created: 2026-04-17
 owner: Prateek
 related:
-  - ../dev/setup-downstream-fork-plan.md
-  - ~/dotfiles/.agents/skills/setup-downstream-fork/
-status_detail: "In development; not yet shipped and subject to change while SKILL.md is being written."
+  - ../plans/setup-downstream-fork-plan.md
+  - ../../home/dot_agents/skills/setup-downstream-fork/
+status_detail: "Accepted decision record; current implementation guidance lives in the setup-downstream-fork skill."
 ---
 
 # ADR 0001 — Downstream fork repo architecture
