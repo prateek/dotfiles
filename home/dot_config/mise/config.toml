@@ -1,20 +1,12 @@
-[tools]
-# Node: pinned (reproducible)
-node = "24.12.0"
-
-# Go/Ruby: track latest
-go = "latest"
-ruby = "latest"
-"npm:@google/gemini-cli" = "latest"
-"npm:@steipete/bird" = "latest"
-"npm:yarn" = "1.22.22"
-
-# Absurd durable-workflow CLI
-"pipx:absurdctl" = "latest"
-
-[settings.ruby]
-# Use mise's signed precompiled Ruby artifacts when available.
-compile = false
-# Fresh bootstrap often runs before GitHub auth exists; unauthenticated
-# attestation checks can exhaust the public API rate limit.
-github_attestations = false
+# Mise loads `~/.config/mise/conf.d/*.toml` alphabetically after this file.
+# All current tool/env/settings entries live under conf.d/:
+#
+#   conf.d/runtimes.toml  - language runtimes (node, go, ruby) + ecosystem
+#                           package managers (yarn) + per-language settings
+#   conf.d/clis.toml      - standalone CLIs without associated env/settings
+#   conf.d/ask.toml       - tool + its [env] / [settings] / [hooks] kept
+#                           together when the concern spans multiple blocks
+#
+# Keep this file empty unless something truly belongs at the root layer
+# (e.g., a setting that must load before every conf.d file). See
+# `~/.dotfiles/docs/adr/0005-mise-tool-management.md`.

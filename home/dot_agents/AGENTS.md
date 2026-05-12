@@ -27,6 +27,7 @@
 - Raise larger cleanups before expanding scope. If the better fix becomes a broad refactor, changes architecture, touches multiple subsystems, adds dependencies, or changes user-visible behavior, stop and discuss the tradeoff.
 - No breadcrumbs. If you delete or move code, do not leave comments like "moved to X", "old path", or "kept for compatibility" unless that note is needed for an active compatibility contract.
 - Search before pivoting. If you are stuck or uncertain, check official docs, specs, source, or repo history before changing direction.
+- Don't recall third-party library APIs from memory. If local types or LSP settle it, that's enough. Otherwise read vendored source in the repo (committed code, submodules, fork checkouts), then fall back to `ask docs <spec>` / `ask src <spec>` at the lockfile-resolved or tag-pinned version. See the `ask` skill.
 - If code is confusing, try to simplify it. Add a small ASCII diagram only when it makes the code easier to understand.
 
 # Writing code
@@ -92,6 +93,8 @@
 # Technology and tool conventions
 
 Prefer repo-native task runners. If a `justfile` exists, prefer `just`; otherwise use the repo's `Makefile` if present; otherwise use the tool-native commands documented by the project.
+
+Install global CLIs through mise when an `npm:` / `cargo:` / `pipx:` / etc. target exists; fall back to Homebrew for native binaries. mise config lives at `~/.config/mise/`: simple `tool = "version"` entries grouped by kind in `conf.d/runtimes.toml` (language runtimes + ecosystem package managers) and `conf.d/clis.toml` (standalone CLIs); anything where the tool needs its own `[env]` / `[settings]` / `[hooks]` gets its own `conf.d/<name>.toml` so the whole concern lives in one file. `~/.config/mise/config.toml` is intentionally empty — add new entries to a `conf.d/` file, not the root. See `~/.dotfiles/docs/adr/0005-mise-tool-management.md`. Prefer XDG paths for app state and config (`XDG_CACHE_HOME`, `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_STATE_HOME`); when an app stores state outside XDG, check the app's docs (or [xdg-ninja](https://github.com/b3nj5m1n/xdg-ninja)) for the supported env var.
 
 If you are unsure how CI validates the repo, inspect `.github/workflows` and mirror the relevant checks locally when practical.
 

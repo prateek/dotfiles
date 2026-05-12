@@ -41,6 +41,17 @@ The replacement contract is:
 
 For Codex, this repo provides a file task at `~/.config/mise/tasks/codex/use`. It can select official releases, build `main`, build a PR head, or link the Homebrew-managed binary.
 
+### Config layout
+
+mise loads `~/.config/mise/conf.d/*.toml` alphabetically after `~/.config/mise/config.toml`. We use that to group each concern in its own file:
+
+- `conf.d/runtimes.toml` — language runtimes (node, go, ruby) and ecosystem package managers (yarn) plus per-language `[settings]`.
+- `conf.d/clis.toml` — standalone CLIs without associated env / settings / hooks.
+- `conf.d/<name>.toml` — any tool whose configuration spans `[tools]` + `[env]` (or `[settings]` / `[hooks]`), kept together so the whole concern lives in one file and removes cleanly.
+- `config.toml` — intentionally empty. Reserve for settings that must load before every `conf.d/` file. New tools go in a `conf.d/` file, not the root.
+
+Rule of thumb when adding a new tool: if the entry is one line and needs nothing alongside it, add it to `clis.toml` or `runtimes.toml`. If it brings its own env var, settings block, or hook, give it its own `conf.d/<name>.toml`.
+
 ## Options considered
 
 ### Option A - Keep `devtool`

@@ -48,3 +48,8 @@ node_modules/
 
 # Hammerspoon build output
 build/
+
+# Tripwire: this repo doesn't use `ask`'s declarative mode. A stray `ask add`
+# would scaffold `ask.json` and a subsequent `ask install` would clobber the
+# curated AGENTS.md. Surface it as untracked so it doesn't get committed.
+ask.json

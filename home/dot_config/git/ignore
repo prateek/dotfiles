@@ -1,1 +1,5 @@
 **/.claude/settings.local.json
+
+# `ask` project-local state: cache, vendored producer skills, skills-lock.json.
+# Always machine state, never committed in any repo.
+.ask/

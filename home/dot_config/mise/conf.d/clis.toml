@@ -1,0 +1,10 @@
+# Standalone CLIs without associated env / settings / hooks.
+# Anything that needs its own [env] etc. belongs in its own conf.d file
+# (see `ask.toml` for the pattern).
+
+[tools]
+"npm:@google/gemini-cli" = "latest"
+"npm:@steipete/bird" = "latest"
+
+# Absurd durable-workflow CLI.
+"pipx:absurdctl" = "latest"
