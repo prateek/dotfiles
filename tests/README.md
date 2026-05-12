@@ -58,6 +58,7 @@ make test-plist-hooks
 make test-sudo-keepalive
 make test-macos-defaults-script
 make test-brew-inventory
+make test-brew-install-wrapper
 make test-brew-bundle-script
 make test-trace-perfetto
 make test-vm-install-log-scan

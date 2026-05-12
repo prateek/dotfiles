@@ -1,0 +1,208 @@
+#!/usr/bin/env zsh
+# brew:install: agent-assisted package adoption for dotfiles.
+
+_brew_install_help() {
+  cat <<'EOF'
+Usage:
+  brew:install [--yes|-y] [--branch <branch>] [--trunk <ref>] <package-or-request>...
+
+Creates a fresh dotfiles worktree based on latest trunk, then runs Codex there
+to install/adopt the requested package into the repo-owned package config.
+
+Options:
+  -y, --yes             Use Codex's dangerous bypass mode.
+      --branch <name>   Override the generated worktree branch. Must not already exist.
+      --trunk <ref>     Override trunk ref after fetch (default: origin/HEAD).
+  -h, --help            Show this help.
+
+Environment:
+  DOTFILES_BREW_INSTALL_ROOT    Dotfiles checkout to fetch/use (default: $DOTFILES or ~/dotfiles).
+EOF
+}
+
+_brew_install_slug() {
+  local raw="$*"
+  local slug
+
+  slug="$(
+    printf '%s' "$raw" \
+      | tr '[:upper:]' '[:lower:]' \
+      | sed 's/[^a-z0-9_-]/-/g; s/-\{1,\}/-/g; s/^-//; s/-$//'
+  )"
+
+  if [[ -z "$slug" ]]; then
+    slug="package"
+  fi
+  print -r -- "${slug[1,60]}"
+}
+
+_brew_install_prompt() {
+  local request="$1"
+  local trunk_ref="$2"
+  local dangerous="$3"
+
+  cat <<EOF
+Install/adopt this package request in the dotfiles repo:
+
+${request}
+
+You are running in a dedicated dotfiles worktree created from ${trunk_ref}.
+
+Follow the repo contract:
+- Use the repo's AGENTS.md plus the chezmoi-management package workflow.
+- Keep package desired state in home/.chezmoidata/packages.toml.
+- Render through scripts/packages/render-brewfile; do not hand-edit generated Brewfiles.
+- Decide formula vs cask vs MAS, and core vs full, from repo conventions.
+- If this is better managed by mise (npm:, pipx:, cargo:, go:, aqua:, github:) or another existing repo mechanism, update that durable config instead of forcing it into Homebrew.
+- If the right install channel is ambiguous, inspect upstream/Homebrew metadata and make a conservative call.
+- Install from declared state after updating config; do not run a raw brew install that leaves the repo stale.
+- Do not run chezmoi apply.
+- Do not commit.
+- Validate with the smallest relevant checks, including make test-render-brewfile for packages.toml changes.
+- End with changed files, commands run, and any follow-up needed.
+
+Dangerous bypass mode requested by wrapper: ${dangerous}
+EOF
+}
+
+_brew_install_require_w() {
+  if (( ${+functions[w]} )) && [[ "${functions[w]}" != builtin\ autoload* ]]; then
+    return 0
+  fi
+
+  if autoload -Uz +X w 2>/dev/null; then
+    return 0
+  fi
+
+  unfunction w 2>/dev/null || true
+  print -u2 "brew:install: missing w worktree helper"
+  return 127
+}
+
+function brew:install() {
+  setopt localoptions pipefail no_aliases 2>/dev/null
+
+  local dangerous=0
+  local branch=""
+  local trunk_override=""
+  local -a request_args
+  request_args=()
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -y|--yes)
+        dangerous=1
+        shift
+        ;;
+      --branch)
+        branch="${2:?brew:install: missing --branch value}"
+        shift 2
+        ;;
+      --branch=*)
+        branch="${1#*=}"
+        shift
+        ;;
+      --trunk)
+        trunk_override="${2:?brew:install: missing --trunk value}"
+        shift 2
+        ;;
+      --trunk=*)
+        trunk_override="${1#*=}"
+        shift
+        ;;
+      -h|--help)
+        _brew_install_help
+        return 0
+        ;;
+      --)
+        shift
+        request_args+=("$@")
+        break
+        ;;
+      *)
+        request_args+=("$1")
+        shift
+        ;;
+    esac
+  done
+
+  if (( ${#request_args[@]} == 0 )); then
+    print -u2 "brew:install: missing package or request"
+    print -u2 "run: brew:install --help"
+    return 2
+  fi
+
+  if ! command -v git >/dev/null 2>&1; then
+    print -u2 "brew:install: missing git"
+    return 127
+  fi
+  _brew_install_require_w || return $?
+  if ! command -v codex >/dev/null 2>&1; then
+    print -u2 "brew:install: missing codex"
+    return 127
+  fi
+
+  local dotfiles_root="${DOTFILES_BREW_INSTALL_ROOT:-${DOTFILES:-$HOME/dotfiles}}"
+  dotfiles_root="${dotfiles_root:A}"
+
+  if [[ ! -d "$dotfiles_root/.git" && ! -f "$dotfiles_root/.git" ]]; then
+    print -u2 "brew:install: not a git checkout: $dotfiles_root"
+    return 1
+  fi
+
+  print -u2 "brew:install: fetching latest dotfiles trunk in $dotfiles_root"
+  git -C "$dotfiles_root" fetch --prune origin || return $?
+
+  local trunk_ref="$trunk_override"
+  if [[ -z "$trunk_ref" ]]; then
+    trunk_ref="$(git -C "$dotfiles_root" symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null || true)"
+  fi
+  if [[ -z "$trunk_ref" ]]; then
+    trunk_ref="origin/master"
+  fi
+
+  if ! git -C "$dotfiles_root" rev-parse --verify "${trunk_ref}^{commit}" >/dev/null 2>&1; then
+    print -u2 "brew:install: trunk ref not found after fetch: $trunk_ref"
+    return 1
+  fi
+
+  local request="${(j: :)request_args}"
+  if [[ -z "$branch" ]]; then
+    local stamp="${BREW_INSTALL_BRANCH_STAMP:-$(date +%Y%m%d%H%M%S)}"
+    branch="prateek/brew-install-$(_brew_install_slug "$request")-$stamp"
+  fi
+
+  if ! git -C "$dotfiles_root" check-ref-format --branch "$branch" >/dev/null 2>&1; then
+    print -u2 "brew:install: invalid branch name: $branch"
+    print -u2 "brew:install: choose a valid --branch name"
+    return 1
+  fi
+
+  if git -C "$dotfiles_root" show-ref --verify --quiet "refs/heads/$branch" \
+    || git -C "$dotfiles_root" show-ref --verify --quiet "refs/remotes/origin/$branch"; then
+    print -u2 "brew:install: branch already exists: $branch"
+    print -u2 "brew:install: choose a new --branch so the worktree starts from $trunk_ref"
+    return 1
+  fi
+
+  local agent_cmd
+  if (( dangerous )); then
+    agent_cmd="codex --dangerously-bypass-approvals-and-sandbox exec --skip-git-repo-check"
+  else
+    agent_cmd="codex exec --skip-git-repo-check"
+  fi
+
+  local prompt
+  prompt="$(_brew_install_prompt "$request" "$trunk_ref" "$dangerous")"
+
+  print -u2 "brew:install: branch $branch from $trunk_ref"
+  if (( dangerous )); then
+    print -u2 "brew:install: using Codex dangerous bypass mode"
+  else
+    print -u2 "brew:install: using vanilla codex exec"
+  fi
+
+  w run "$branch" --repo "$dotfiles_root" --base "$trunk_ref" --agent "$agent_cmd" -- "$prompt"
+}
+
+brew:install "$@"
