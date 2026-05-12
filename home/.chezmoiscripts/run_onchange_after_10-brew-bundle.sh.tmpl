@@ -19,11 +19,6 @@ esac
 brew_shellenv
 have brew || die "Homebrew is required before brew bundle can run."
 
-if [ "$profile" = "full" ]; then
-  log "Updating Homebrew before applying the full package profile."
-  run_timed "brew update" brew update --quiet
-fi
-
 # Render the desired Brewfile inline via the shared template fragment.
 # Single source of truth: home/.chezmoitemplates/brewfile.tmpl. Audit
 # scripts hit the same fragment via scripts/packages/render-brewfile.
@@ -33,8 +28,14 @@ cat <<'BREWFILE' >"$brewfile"
 {{ template "brewfile.tmpl" . -}}
 BREWFILE
 
-if [ "$(uname -s)" = "Darwin" ] && grep -q '^cask ' "$brewfile"; then
-  dotfiles_sudo_start "Package installs may need administrator access. Enter your macOS password if prompted."
+if HOMEBREW_NO_AUTO_UPDATE=1 brew bundle check --no-upgrade --verbose --file "$brewfile"; then
+  log "Homebrew Bundle dependencies are already satisfied; skipping install."
+  exit 0
+fi
+
+if [ "$profile" = "full" ]; then
+  log "Updating Homebrew before applying the full package profile."
+  run_timed "brew update" brew update --quiet
 fi
 
 if [ -n "${DOTFILES_HOMEBREW_DOWNLOAD_CONCURRENCY:-}" ]; then
@@ -73,6 +74,8 @@ elif [ -n "${DOTFILES_HOMEBREW_BUNDLE_JOBS:-}${HOMEBREW_BUNDLE_JOBS:-}" ]; then
   warn "Installed Homebrew does not support brew bundle --jobs; using sequential formula installs."
 fi
 
+# Do not pre-warm sudo here. Homebrew resets the sudo timestamp when `brew`
+# starts; cask/pkg installers will prompt through Homebrew only when needed.
 run_timed "brew bundle install ($profile)" brew "${bundle_args[@]}"
 {{- else }}
 log "Package install disabled; skipping brew bundle."

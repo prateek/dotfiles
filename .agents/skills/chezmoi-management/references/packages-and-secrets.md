@@ -98,6 +98,7 @@ Two flavors of env var:
 | `DOTFILES_SKIP_LSREGISTER` | Skip Launch Services re-registration in plist hooks |
 | `DOTFILES_SKIP_PLIST_HOOKS` | Disable the `scripts/chezmoi-hooks/post-apply-plists.sh` hook |
 | `DOTFILES_SKIP_REINDEX` | Skip Spotlight reindex side effects in plist hooks |
+| `DOTFILES_FORCE_MACOS_DEFAULTS` | Truthy values (`1`, `true`, `yes`, `on`) ignore the macOS defaults payload/snapshot stamp and run the defaults script again |
 
 Init-prompt vars are persisted at init time. Setting them on a later `chezmoi apply` (e.g., `DOTFILES_APPLY_DEFAULTS=false chezmoi apply`, `DOTFILES_SECRETS_ENABLED=true chezmoi apply`) does NOT take effect — the persisted answer in `~/.config/chezmoi/chezmoi.toml` wins. To change, run `chezmoi edit-config` or re-init.
 

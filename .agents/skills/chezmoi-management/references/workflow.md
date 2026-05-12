@@ -139,15 +139,16 @@ run_onchange_after_10-zinit-compat.sh.tmpl
 run_onchange_after_15-xcode.sh.tmpl
 run_onchange_after_20-mise-install.sh.tmpl
 run_onchange_after_25-hammerspoon.sh.tmpl
+run_after_29-macos-defaults-force.sh.tmpl
 run_onchange_after_30-macos-defaults.sh.tmpl
 run_onchange_after_90-verify.sh.tmpl
 ```
 
 Insert new scripts at unused numbers (e.g., `12-`, `35-`). Do not renumber.
 
-Sudo keepalive is no longer a separate `99-sudo` script. Privileged phases call the shared helper in `home/.chezmoitemplates/script_lib.sh`; it prompts once, keeps sudo warm while the parent `chezmoi apply` is alive, and cleans itself up shortly after the parent process exits. If a script needs sudo, source the helper rather than reintroducing a tail script.
+Sudo keepalive is no longer a separate `99-sudo` script. Privileged non-Homebrew phases call the shared helper in `home/.chezmoitemplates/script_lib.sh`; it prompts once, keeps sudo warm while the parent `chezmoi apply` is alive, and cleans itself up shortly after the parent process exits. Homebrew Bundle is the exception: the wrapper checks `brew bundle check` first and then lets Homebrew own any cask/pkg sudo prompt because `brew` resets the sudo timestamp when it starts. If another script needs sudo, source the helper rather than reintroducing a tail script.
 
-`macos-defaults.sh.tmpl` lives in `home/.chezmoitemplates/` (not as a sibling under `.chezmoiscripts/`). The `30-macos-defaults` script includes it via `{{ template ... }}`, so editing defaults means editing the template fragment.
+`macos-defaults.sh.tmpl` lives in `home/.chezmoitemplates/` (not as a sibling under `.chezmoiscripts/`). The `30-macos-defaults` script includes it via `{{ template ... }}` and embeds the rendered defaults payload hash plus snapshot-helper hash, so `run_onchange_` schedules it when source intent changes. Its runtime stamp compares the desired payload plus a read-only managed-key snapshot and skips the imperative defaults body when that pair is already converged. One-shot side effects inside the body, such as Launchpad reset, Spotlight reindex, `cfprefsd` nudges, and app restarts, intentionally run only when that body runs. `run_after_29-macos-defaults-force.sh.tmpl` renders empty unless `DOTFILES_FORCE_MACOS_DEFAULTS` is truthy; when set, it runs before the normal defaults wrapper and bypasses the stamp on every forced apply.
 
 ## Resetting Script State
 

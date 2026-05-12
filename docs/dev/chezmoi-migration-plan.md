@@ -41,7 +41,7 @@ Implemented:
 
 - Chezmoi source state lives under `home/` with `.chezmoiroot = home`.
 - `install.sh` and `bootstrap.sh` are both removed; bootstrap is the chezmoi-blessed `xcode-select --install` + `sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply prateek`. `home/.chezmoi.toml.tmpl` uses `promptStringOnce` / `promptBoolOnce` for first-machine settings (with env-var override for non-interactive runs). Root `Brewfile` and `Brewfile.core` are removed.
-- Package intent lives in `home/.chezmoidata/packages.toml`. The chezmoi script `home/.chezmoiscripts/run_onchange_after_10-brew-bundle.sh.tmpl` inlines `home/.chezmoitemplates/brewfile.tmpl` and pipes the rendered Brewfile into `brew bundle` (chezmoi declarative-install pattern). Audit scripts and CI invoke the same template via the focused wrapper `scripts/packages/render-brewfile`.
+- Package intent lives in `home/.chezmoidata/packages.toml`. The chezmoi script `home/.chezmoiscripts/run_onchange_after_10-brew-bundle.sh.tmpl` inlines `home/.chezmoitemplates/brewfile.tmpl`, checks whether the rendered Brewfile is already satisfied, and only runs `brew bundle install` when needed. Audit scripts and CI invoke the same template via the focused wrapper `scripts/packages/render-brewfile`.
 - The package data has been reconciled with the refreshed `origin/master` Homebrew profile, except `intellij-idea` and `prince` are intentionally omitted.
 - Mac App Store entries are omitted unless `DOTFILES_INSTALL_MAS_APPS=true` or `--include-mas` is used.
 - Raw app captures are not committed; capture and inventory output goes under XDG state.
@@ -87,6 +87,7 @@ No migration-specific design decisions remain open. New work should get its own 
       run_onchange_after_10-brew-bundle.sh.tmpl
       run_onchange_after_15-xcode.sh.tmpl
       run_onchange_after_20-mise-install.sh.tmpl
+      run_after_29-macos-defaults-force.sh.tmpl
       run_onchange_after_30-macos-defaults.sh.tmpl
       run_onchange_after_90-verify.sh.tmpl
     .chezmoitemplates/
@@ -203,9 +204,9 @@ Allowed live links are limited to repo-local executable wrappers that must run d
 | `bin/` | repo root; selected wrappers exposed through `home/bin/symlink_*.tmpl` | 1 | implemented |
 | `.config/grm/config.toml` | `home/dot_config/grm/config.toml` | 1 | implemented |
 | `.config/gemini-meeting-sync/config.json` | `home/dot_config/gemini-meeting-sync/config.json`; local `enabled` marker remains untracked | 2 | implemented |
-| `macos` defaults baseline | `home/.chezmoitemplates/macos-defaults.sh.tmpl`, included by `home/.chezmoiscripts/run_onchange_after_30-macos-defaults.sh.tmpl`. Idempotent at the cfprefsd level; chezmoi run_onchange gates re-execution on rendered script changes | 1 | implemented |
+| `macos` defaults baseline | `home/.chezmoitemplates/macos-defaults.sh.tmpl`, included by `home/.chezmoiscripts/run_onchange_after_30-macos-defaults.sh.tmpl`. The rendered script embeds the desired payload hash plus snapshot-helper hash, so chezmoi schedules it when source intent changes; `run_after_29-macos-defaults-force.sh.tmpl` renders empty unless `DOTFILES_FORCE_MACOS_DEFAULTS` is truthy and then bypasses the stamp on every forced apply. The runtime stamp only enters the imperative defaults body when the desired payload plus managed-key snapshot is not already converged | 1 | implemented |
 | `install.sh`, `bootstrap.sh` | both removed; bootstrap is the chezmoi one-liner (`sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply prateek`) plus a one-time `xcode-select --install` | 0 |`install.sh` and `bootstrap.sh` both deleted (commit `569cadb`) |
-| `Brewfile`, `Brewfile.core` | `home/.chezmoidata/packages.toml` declares profiles. `home/.chezmoitemplates/brewfile.tmpl` renders the Bundle input; `home/.chezmoiscripts/run_onchange_after_10-brew-bundle.sh.tmpl` inlines that template and pipes to `brew bundle`. Audit/CI use `scripts/packages/render-brewfile` to invoke the same template | 2 | implemented |
+| `Brewfile`, `Brewfile.core` | `home/.chezmoidata/packages.toml` declares profiles. `home/.chezmoitemplates/brewfile.tmpl` renders the Bundle input; `home/.chezmoiscripts/run_onchange_after_10-brew-bundle.sh.tmpl` inlines that template, checks for missing dependencies, and only runs `brew bundle install` when needed. Audit/CI use `scripts/packages/render-brewfile` to invoke the same template | 2 | implemented |
 | `.config/mise/`, `.config/tmux/`, `.config/worktrunk/`, `.config/borders/` | `home/dot_config/<name>/` | 2 | implemented |
 | `.config/kanata/kanata.kbd` | `home/dot_config/kanata/kanata.kbd`; replaces the previous Karabiner key remaps and targets `Apple Internal Keyboard / Trackpad` explicitly. Karabiner-Elements remains installed only for its macOS virtual HID driver until there is a driver-only package path. | 2 | implemented |
 | `nvim/` | `home/dot_config/nvim/` | 2 | implemented |
@@ -252,7 +253,7 @@ Rules:
 
 - Bootstrap is the chezmoi one-liner. `xcode-select --install` is a manual one-time prompt; everything after is `sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply prateek`. Homebrew installs via `run_once_before_00-homebrew.sh.tmpl`; other runtimes (uv for ad-hoc helpers, mise, etc.) come in via the chezmoi-driven `brew bundle` step or per-helper.
 - The `full` package profile installs `aria2` and the bottled `homebrew/core/xcodes` formula. It selects and sets up pinned Xcode when it is already installed. It downloads Xcode through `xcodes` only when `install_xcode=true` or `DOTFILES_INSTALL_XCODE=true`, because Apple may require Apple ID login. Xcode-required Homebrew formulae run after Xcode first-launch setup, not in the main Brewfile.
-- Privileged phases call the shared sudo helper only when they need it. The helper prompts once, keeps sudo warm while the parent `chezmoi apply` is alive, cleans itself up shortly after that parent process exits, and does not clear a sudo credential that was already active before the apply.
+- Privileged non-Homebrew phases call the shared sudo helper only when they need it. The helper prompts once, keeps sudo warm while the parent `chezmoi apply` is alive, cleans itself up shortly after that parent process exits, and does not clear a sudo credential that was already active before the apply. Brew Bundle lets Homebrew own cask/pkg sudo prompts because `brew` resets the sudo timestamp when it starts.
 - Put package installs, mise runtime install, zinit compatibility wiring, Hammerspoon compilation, selected macOS defaults, and post-apply verification under `home/.chezmoiscripts/`.
 - Put shared shell helpers for those scripts under `home/.chezmoitemplates/` and include them from each script. Keep individual scripts short: data selection, command execution, and clear blocker output.
 - Use `run_once_before_` for one-time prerequisites and `run_onchange_after_` for work that should rerun when its rendered script content changes.
@@ -312,7 +313,7 @@ Layout note: per-app fragments under `.chezmoitemplates/<bundle-id>.plist.tmpl` 
 Rules:
 
 - Stable target files go under `home/` at the real target path.
-- Apple/global macOS defaults live as plain `defaults write ...` calls in `home/.chezmoitemplates/macos-defaults.sh.tmpl`, included by `home/.chezmoiscripts/run_onchange_after_30-macos-defaults.sh.tmpl`, not in a separate data file. The `run_onchange_` mechanism re-runs the script when the rendered content changes, so editing a default is the only thing needed.
+- Apple/global macOS defaults live as plain `defaults write ...` calls in `home/.chezmoitemplates/macos-defaults.sh.tmpl`, included by `home/.chezmoiscripts/run_onchange_after_30-macos-defaults.sh.tmpl`, not in a separate data file. The rendered wrapper embeds the defaults payload hash plus snapshot-helper hash. Runtime hashing skips sudo/defaults/restart work when the desired payload and owned active surface are already converged; `run_after_29-macos-defaults-force.sh.tmpl` is the empty-by-default manual escape hatch for suspected live drift.
 - Bootstrap defaults are inlined as Go template literals inside `home/.chezmoi.toml.tmpl` (e.g. `"full"`, `false`, `true`) — chezmoi `init` renders the toml template before `.chezmoidata/*.toml` loads, so a separate data file is unreadable at init time. Same for the prompt fallbacks. There is no longer a `home/.chezmoidata/bootstrap.toml`, `features.toml`, or `permissions.toml` — those were dead-data files with no consumers and were deleted.
 - Machine-local bootstrap data lives in the generated chezmoi config under `[data]`, not in committed `.chezmoidata`. That includes the resolved `dotfiles_dir`, local source overrides, host identity, and any temporary Tart paths.
 - Per-app preferences (nested plists) go through the plist `modify_` pattern: a desired-plist fragment at `home/.chezmoitemplates/<bundle-id>.plist.tmpl` plus a 3-line `modify_` stub at the target path. See Plist Management. There is no `home/.chezmoidata/apps/` directory — that mechanism was retired with `bin/dotfiles`.
@@ -326,6 +327,7 @@ Rules:
 - Test fixtures live under `tests/fixtures/`; sanitized examples live under `docs/dev/` only when they explain a decision.
 - Mackup is a research/catalog input only. When Mackup is installed, first evaluate `chezmoi mackup add <application>` in a throwaway source state to discover candidate paths. The command reads `~/.mackup/<application>.cfg` before Mackup's packaged catalog, adds existing `configuration_files` from `$HOME`, maps `xdg_configuration_files` under `$XDG_CONFIG_HOME`, and ignores missing files.
 - Treat `chezmoi mackup add` output as local discovery input, not as an adoption step. Mackup is not the policy engine; it discovers candidate paths, and this repo only records the config it applies.
+- Mackup copy mode is backup/restore, not continuous desired-state apply. Mackup link mode is not used because current macOS releases do not reliably honor symlinked preferences.
 - Secret scanning for Mackup-derived candidates remains a Phase 3 adoption-tooling decision. That phase chooses whether discovery runs with `--secrets=error`, `--secrets=warning`, or `--secrets=ignore`.
 - Never use Mackup link mode, whole-domain `defaults import`, bulk folder adoption, direct TCC SQLite writes, or default PPPC profile installation.
 
@@ -443,8 +445,8 @@ chezmoi re-add
 
 Repo helper scripts live under `scripts/` and exist when shell or Go templates would be worse than typed code or already-tested logic. Examples in scope:
 
-- **Package renderer.** `home/.chezmoidata/packages.toml` is the desired state. `home/.chezmoitemplates/brewfile.tmpl` renders the Bundle input. `home/.chezmoiscripts/run_onchange_after_10-brew-bundle.sh.tmpl` inlines that template via `{{ template "brewfile.tmpl" . }}` and pipes to `brew bundle --file=-` (chezmoi declarative-install pattern). The same template is exposed to audit scripts and CI through the focused wrapper `scripts/packages/render-brewfile`. Profile selection (`core`/`full`), MAS opt-in (`DOTFILES_INSTALL_MAS_APPS=true` or `--include-mas`), tap URLs, cask args, appdir args, and quoting are covered by tests independent of the chezmoi script.
-- **macOS defaults applier.** `home/.chezmoitemplates/macos-defaults.sh.tmpl` holds `defaults write` calls for the desired Apple/global keys and is included by `home/.chezmoiscripts/run_onchange_after_30-macos-defaults.sh.tmpl`. No separate data file, no repo-root applier helper. The rendered script is the desired state.
+- **Package renderer.** `home/.chezmoidata/packages.toml` is the desired state. `home/.chezmoitemplates/brewfile.tmpl` renders the Bundle input. `home/.chezmoiscripts/run_onchange_after_10-brew-bundle.sh.tmpl` inlines that template via `{{ template "brewfile.tmpl" . }}`, runs `brew bundle check --no-upgrade`, and only runs `brew bundle install --no-upgrade --file <rendered>` when dependencies are missing. The same template is exposed to audit scripts and CI through the focused wrapper `scripts/packages/render-brewfile`. Profile selection (`core`/`full`), MAS opt-in (`DOTFILES_INSTALL_MAS_APPS=true` or `--include-mas`), tap URLs, cask args, appdir args, and quoting are covered by tests independent of the chezmoi script.
+- **macOS defaults applier.** `home/.chezmoitemplates/macos-defaults.sh.tmpl` holds `defaults write` calls for the desired Apple/global keys and is included by `home/.chezmoiscripts/run_onchange_after_30-macos-defaults.sh.tmpl`. No separate data file, no repo-root applier helper. The rendered defaults payload is the desired state; `scripts/macos/defaults-snapshot.sh` provides the read-only managed-key live-state hash used by the runtime stamp.
 - **Capture and audit helpers** under `scripts/macos/capture.sh` and `scripts/audit/*` encode redaction and classification knowledge that does not belong inline in chezmoi templates.
 - **Plist hooks** under `scripts/chezmoi-hooks/` (see Plist Management).
 
@@ -508,7 +510,7 @@ Once answered, the values land in the rendered chezmoi config and survive subseq
 
 The rendered config sets `pager = ""`. Apply scripts can ask for sudo, and a pager such as `less` can take over the same TTY that sudo needs for password input. Existing machines with an older generated config can use `chezmoi --no-pager apply --verbose` as a one-shot escape hatch, or run `chezmoi --no-pager apply --init` to refresh the generated config from `home/.chezmoi.toml.tmpl`.
 
-Package install tuning is environment-only. `DOTFILES_HOMEBREW_BUNDLE_JOBS` controls `brew bundle install --jobs` when the installed Homebrew supports it; default is `auto`; native `HOMEBREW_BUNDLE_JOBS` is honored when the dotfiles override is unset. `DOTFILES_HOMEBREW_DOWNLOAD_CONCURRENCY` maps to `HOMEBREW_DOWNLOAD_CONCURRENCY`; default is `auto`.
+Package install tuning is environment-only. `DOTFILES_HOMEBREW_BUNDLE_JOBS` controls `brew bundle install --jobs` when the installed Homebrew supports it; default is `auto`; native `HOMEBREW_BUNDLE_JOBS` is honored when the dotfiles override is unset. `DOTFILES_HOMEBREW_DOWNLOAD_CONCURRENCY` maps to `HOMEBREW_DOWNLOAD_CONCURRENCY`; default is `auto`. Truthy `DOTFILES_FORCE_MACOS_DEFAULTS` values (`1`, `true`, `yes`, `on`) ignore the local macOS defaults payload/snapshot stamp and run the defaults script again.
 
 Ruby installs use mise's precompiled Ruby path with GitHub attestation checks disabled by default. Fresh machines usually do not have authenticated GitHub API access yet, and unauthenticated attestation verification can hit the public rate limit before the runtime install completes.
 
@@ -517,10 +519,10 @@ Chezmoi then owns ongoing setup:
 1. `run_once_before_00-homebrew.sh.tmpl` installs Homebrew if missing (CLT bundles git, but not brew).
 2. `run_once_before_05-core-tools.sh.tmpl` ensures `git` and `chezmoi` exist (Homebrew-installed if missing). Other runtimes come in via the brew-bundle step or per-helper.
 3. `.chezmoiexternal.toml.tmpl` clones zinit and other clone-only dependencies and refreshes them according to their declared `refreshPeriod` or `chezmoi apply --refresh-externals=auto`.
-4. `run_onchange_after_10-brew-bundle.sh.tmpl` inlines `home/.chezmoitemplates/brewfile.tmpl` and pipes the rendered Brewfile into `brew bundle --file=-`.
+4. `run_onchange_after_10-brew-bundle.sh.tmpl` inlines `home/.chezmoitemplates/brewfile.tmpl`, runs `brew bundle check --no-upgrade`, and only invokes `brew bundle install --no-upgrade` when dependencies are missing.
 5. `run_onchange_after_15-xcode.sh.tmpl` selects the canonical Xcode for the `full` profile when it is installed, downloads it through `xcodes` only when explicitly opted in, runs Xcode first-launch setup, and then installs Xcode-required formulae.
 6. `run_onchange_after_20-mise-install.sh.tmpl` trusts repo-owned mise config and installs runtimes.
-7. `run_onchange_after_30-macos-defaults.sh.tmpl` includes the desired Apple/global defaults from `home/.chezmoitemplates/macos-defaults.sh.tmpl` as plain `defaults write` calls. Idempotent at the cfprefsd level; chezmoi run_onchange gates re-execution on rendered script-content change. There is no separate data file or repo-root applier helper.
+7. `run_onchange_after_30-macos-defaults.sh.tmpl` includes the desired Apple/global defaults from `home/.chezmoitemplates/macos-defaults.sh.tmpl` as plain `defaults write` calls. Its rendered content includes the desired payload hash plus snapshot-helper hash; a local payload/snapshot stamp skips sudo/defaults/restart work when the desired payload and owned active surface are already converged. One-shot side effects inside the defaults body, such as Launchpad reset, Spotlight reindex, `cfprefsd` nudges, and app restarts, intentionally run only when that body runs. `run_after_29-macos-defaults-force.sh.tmpl` renders empty unless `DOTFILES_FORCE_MACOS_DEFAULTS` is truthy and then runs the same defaults body before the normal wrapper. There is no separate data file or repo-root applier helper.
 8. `run_onchange_after_90-verify.sh.tmpl` runs cheap post-apply validation when the verifier or its shell startup inputs change, and prints manual blockers for secrets, sign-in, licenses, or permissions.
 
 Secret-bearing templates render only when `secrets_enabled=true`. Secret-backed paths are ignored otherwise, so public bootstrap does not create empty license/config files. If `op` is unauthenticated, chezmoi fails closed with the 1Password sign-in prompt.
@@ -663,8 +665,8 @@ Required checks:
 - shell startup uses materialized `~/.config/zsh`;
 - tests set `DOTFILES_SKIP_LAUNCHCTL_SYNC=1`, temp `HISTFILE`, temp zsh cache paths, and no-network/no-install guards;
 - defaults/app tests use fixtures, not the real user domain;
-- the **package renderer** (`scripts/packages/render-brewfile`, wrapping `home/.chezmoitemplates/brewfile.tmpl`) is covered by `tests/render-brewfile.zsh` for: profile selection (`core`/`full`), MAS opt-in (default off; `DOTFILES_INSTALL_MAS_APPS=true` and `--include-mas` opt-in), unknown-profile error, `--output` file mode, section ordering, single trailing newline, and keeping Xcode-required formulae out of the main Brewfile. `tests/brew-bundle-script.zsh` covers the rendered Brew Bundle script's `--jobs` and download-concurrency behavior. `tests/mise-install-script.zsh` covers the mise install ordering and the Ruby attestation setting used during fresh bootstrap. `tests/xcode-install-script.zsh` covers the full-profile Xcode setup order. CI parses each rendered Brewfile through `brew bundle list` and runs the core formulae through `brew bundle install`;
-- the **macOS defaults applier** lives in `home/.chezmoitemplates/macos-defaults.sh.tmpl` and is included by `home/.chezmoiscripts/run_onchange_after_30-macos-defaults.sh.tmpl`; the rendered script syntax-check (`bash -n`) covers it, and `tests/macos-defaults-script.zsh` covers sudo-session and app-restart guards;
+- the **package renderer** (`scripts/packages/render-brewfile`, wrapping `home/.chezmoitemplates/brewfile.tmpl`) is covered by `tests/render-brewfile.zsh` for: profile selection (`core`/`full`), MAS opt-in (default off; `DOTFILES_INSTALL_MAS_APPS=true` and `--include-mas` opt-in), unknown-profile error, `--output` file mode, section ordering, single trailing newline, and keeping Xcode-required formulae out of the main Brewfile. `tests/brew-bundle-script.zsh` covers the rendered Brew Bundle script's check-before-install, no pre-sudo, `--jobs`, and download-concurrency behavior. `tests/mise-install-script.zsh` covers the mise install ordering and the Ruby attestation setting used during fresh bootstrap. `tests/xcode-install-script.zsh` covers the full-profile Xcode setup order. CI parses each rendered Brewfile through `brew bundle list` and runs the core formulae through `brew bundle install`;
+- the **macOS defaults applier** lives in `home/.chezmoitemplates/macos-defaults.sh.tmpl` and is included by `home/.chezmoiscripts/run_onchange_after_30-macos-defaults.sh.tmpl`; the rendered script syntax-check (`bash -n`) covers it, and `tests/macos-defaults-script.zsh` covers sudo-session, app-restart guards, payload/snapshot stamp skips, forced reruns, and rerun on snapshot drift;
 - the **sudo keepalive helper** is covered by `tests/sudo-keepalive.zsh`, which stubs `sudo` and proves one prompt can be shared across separate run scripts by tracking the long-lived `chezmoi apply` parent, a preexisting sudo credential is preserved, and automatic cleanup runs shortly after the parent apply process exits;
 - the **capture script** (`scripts/macos/capture.sh` and similar) is covered by a redaction test that verifies sensitive keys (account state, license fields, tokens) are not written to the captured output;
 - selected plist `modify_` tests prove owned keys are replaced while unrelated live plist keys are preserved;
@@ -708,7 +710,7 @@ The smoke lane boots a disposable Tahoe guest, runs the chezmoi one-liner with `
 
 Use `make test-install-tart-dry-run` for Phase 0 bootstrap parsing and VM viability when changing chezmoi script ordering or the chezmoi-init template. Dry-run boots Tart and validates the chezmoi init/apply path, but it skips postflight tool and shell checks.
 
-Use `make test-install-tart-full` before relying on full package, cask, Xcode, or app-install behavior. The full lane uses an Xcode-backed Tahoe image by default so validation does not spend the run downloading Xcode unless that path is under test. Full-profile package application runs `brew update` before `brew bundle` so prebuilt VM images do not use stale cask metadata. Mac App Store entries are omitted from generated Brewfiles unless `DOTFILES_INSTALL_MAS_APPS=true` is set on a signed-in machine.
+Use `make test-install-tart-full` before relying on full package, cask, Xcode, or app-install behavior. The full lane uses an Xcode-backed Tahoe image by default so validation does not spend the run downloading Xcode unless that path is under test. Full-profile package application runs `brew bundle check` first; when dependencies are missing it runs `brew update` before `brew bundle install` so prebuilt VM images do not use stale cask metadata. Mac App Store entries are omitted from generated Brewfiles unless `DOTFILES_INSTALL_MAS_APPS=true` is set on a signed-in machine.
 
 Every Tart lane emits a plain-log timing summary before cleanup exits. Chezmoi package scripts also log `TIMING|...` records around expensive package/runtime/defaults steps. Use those timings first; enable Perfetto traces only when the plain log does not identify the slow phase.
 
@@ -766,7 +768,7 @@ Includes Homebrew profiles, package/app inventory, usage reports, native XDG con
 
 Exit criteria:
 
-- `run_onchange_after_10-brew-bundle.sh.tmpl` is idempotent, profile-aware, embeds dependency hashes for package data, and is covered by Tart smoke/full lanes as appropriate;
+- `run_onchange_after_10-brew-bundle.sh.tmpl` is idempotent, profile-aware, embeds dependency hashes for package data, skips install when `brew bundle check` is already satisfied, and is covered by Tart smoke/full lanes as appropriate;
 - inventory and usage captures are local, redacted, and gitignored;
 - stable app config applies without copying caches, account state, licenses, or whole app databases. Window/layout data is allowed only when it is intentional app config, such as selected Moom layouts and hotkeys;
 - `make test-install-tart-smoke` passes for core package/profile changes;
@@ -789,7 +791,7 @@ Exit criteria:
 
 All resolved. Recorded here so they don't re-open:
 
-- ~~Phase 1: exact Apple/global baseline key allowlist.~~ → The legacy `./macos` script's full ~150 keys, now owned by `home/.chezmoitemplates/macos-defaults.sh.tmpl` and included by the chezmoi run_onchange wrapper. Postflight asserts a representative subset (the 6 baseline Apple-domain keys + 14 per-app plist keys).
+- ~~Phase 1: exact Apple/global baseline key allowlist.~~ → The legacy `./macos` script's full ~150 keys, now owned by `home/.chezmoitemplates/macos-defaults.sh.tmpl` and included by the cached chezmoi wrapper. Postflight asserts a representative subset (the 6 baseline Apple-domain keys + 14 per-app plist keys).
 - ~~Phase 1: Codex config split between portable global settings and local project-trust state.~~ → Trust state lives in `~/.codex/internal_storage.json` (machine-local, not chezmoi-managed). Portable settings (model, reasoning_effort, agents.max_threads/max_depth) live in chezmoi-managed `home/dot_codex/config.toml`. Codex made this split unilaterally during normal use; we just committed the resulting config.
 - ~~Phase 1: final `install.sh` flag surface for Tart and local reruns.~~ → `install.sh` is deleted; bootstrap is the chezmoi one-liner with env-var overrides for non-interactive runs.
 - ~~Phase 3: app-by-app selection for native file, `.chezmoidata` declaration, app-native sync, or privileged asset.~~ → Native file for Ghostty/Hammerspoon/VS Code/Zed; plist `modify_` for the 11 apps in Plist Management; app-native sync for Alfred (excluded); no privileged Chrome policy helper.

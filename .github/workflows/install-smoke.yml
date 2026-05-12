@@ -18,7 +18,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y shellcheck
       - name: Shellcheck
         run: |
-          shellcheck -x scripts/macos/capture.sh scripts/vm/test-install-tart.sh scripts/vm/check-install-log.sh scripts/trace/perfetto-trace.bash scripts/chezmoi-hooks/guard-running-apps.sh scripts/chezmoi-hooks/post-apply-plists.sh scripts/packages/render-brewfile
+          shellcheck -x scripts/macos/capture.sh scripts/macos/defaults-snapshot.sh scripts/vm/test-install-tart.sh scripts/vm/check-install-log.sh scripts/trace/perfetto-trace.bash scripts/chezmoi-hooks/guard-running-apps.sh scripts/chezmoi-hooks/post-apply-plists.sh scripts/packages/render-brewfile
 
   macos-dry-run:
     runs-on: macos-latest
@@ -41,6 +41,8 @@ jobs:
         run: |
           make test-tart-install-helper
           make test-render-brewfile
+          make test-brew-bundle-script
+          make test-macos-defaults-script
           make test-chezmoi-config
           make test-chezmoi-script-status
           make test-chezmoi-drift-banner

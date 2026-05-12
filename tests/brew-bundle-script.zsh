@@ -46,7 +46,7 @@ write_stubs() {
 
   cat >"$dir/uname" <<'EOF'
 #!/usr/bin/env bash
-printf 'Linux\n'
+printf '%s\n' "${BREW_STUB_UNAME:-Linux}"
 EOF
 
   cat >"$dir/brew" <<'EOF'
@@ -54,6 +54,14 @@ EOF
 set -euo pipefail
 
 case "$*" in
+  bundle\ check*)
+    printf 'check_args=%s\n' "$*" >> "$BREW_CALLS"
+    printf 'check_no_auto_update=%s\n' "${HOMEBREW_NO_AUTO_UPDATE:-}" >> "$BREW_CALLS"
+    [ "${BREW_BUNDLE_SATISFIED:-0}" = "1" ]
+    ;;
+  "update --quiet")
+    printf 'update=%s\n' "$*" >> "$BREW_CALLS"
+    ;;
   "tap")
     printf '1password/tap\nfelixkratz/formulae\n'
     ;;
@@ -75,7 +83,14 @@ case "$*" in
 esac
 EOF
 
-  chmod +x "$dir/uname" "$dir/brew"
+  cat >"$dir/sudo" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf 'sudo=%s\n' "$*" >> "$BREW_CALLS"
+exit 1
+EOF
+
+  chmod +x "$dir/uname" "$dir/brew" "$dir/sudo"
 }
 
 script="$tmp_root/brew-bundle.sh"
@@ -114,5 +129,30 @@ BREW_CALLS="$calls_c" PATH="$stubs_c:/usr/bin:/bin:/usr/sbin:/sbin" HOME="$tmp_r
 out_c="$(<"$calls_c")"
 assert_not_contains "$out_c" "--jobs"
 assert_contains "$out_c" "download_concurrency=auto"
+
+# Already-satisfied Brewfiles should not run install at all.
+stubs_d="$tmp_root/stubs-d"
+write_stubs "$stubs_d"
+calls_d="$tmp_root/calls-d.log"
+BREW_CALLS="$calls_d" PATH="$stubs_d:/usr/bin:/bin:/usr/sbin:/sbin" HOME="$tmp_root/home-d" \
+  BREW_BUNDLE_SATISFIED=1 \
+  bash "$script" >/dev/null
+out_d="$(<"$calls_d")"
+assert_contains "$out_d" "check_args=bundle check --no-upgrade --verbose --file"
+assert_contains "$out_d" "check_no_auto_update=1"
+assert_not_contains "$out_d" "args=bundle install"
+assert_not_contains "$out_d" "--jobs"
+
+# Darwin cask installs are owned by Homebrew; the dotfiles wrapper must not
+# pre-warm sudo before invoking brew because brew resets the sudo timestamp.
+stubs_e="$tmp_root/stubs-e"
+write_stubs "$stubs_e"
+calls_e="$tmp_root/calls-e.log"
+BREW_CALLS="$calls_e" PATH="$stubs_e:/usr/bin:/bin:/usr/sbin:/sbin" HOME="$tmp_root/home-e" \
+  BREW_STUB_UNAME=Darwin \
+  bash "$script" >/dev/null
+out_e="$(<"$calls_e")"
+assert_contains "$out_e" "args=bundle install"
+assert_not_contains "$out_e" "sudo="
 
 print -- "OK brew-bundle-script"
