@@ -26,6 +26,13 @@ custom_top_level = "keep"
 max_threads = 1
 max_depth = 1
 
+[tui]
+status_line = ["old"]
+
+[tui.keymap.pager]
+page_down = "old"
+close = "old"
+
 [projects."/tmp/live-project"]
 trust_level = "trusted"
 
@@ -68,6 +75,27 @@ assert data["service_tier"] == "fast"
 assert data["custom_top_level"] == "keep"
 assert data["agents"]["max_threads"] == 16
 assert data["agents"]["max_depth"] == 3
+assert data["tui"]["status_line"] == [
+    "thread-title",
+    "model-with-reasoning",
+    "context-used",
+    "five-hour-limit",
+    "weekly-limit",
+    "context-window-size",
+    "current-dir",
+]
+assert data["tui"]["keymap"]["pager"] == {
+    "scroll_up": ["up", "k"],
+    "scroll_down": ["down", "j"],
+    "page_up": ["page-up", "shift-space", "ctrl-b"],
+    "page_down": ["page-down", "space", "ctrl-f"],
+    "half_page_up": "ctrl-u",
+    "half_page_down": "ctrl-d",
+    "jump_top": "home",
+    "jump_bottom": "end",
+    "close": ["q", "ctrl-c"],
+    "close_transcript": "ctrl-t",
+}
 assert data["projects"]["/tmp/live-project"]["trust_level"] == "trusted"
 assert data["marketplaces"]["last30days-skill"]["last_updated"] == "live"
 import os

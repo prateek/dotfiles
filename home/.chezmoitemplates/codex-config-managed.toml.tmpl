@@ -24,3 +24,15 @@ enabled = true
 
 [tui]
 status_line = ["thread-title", "model-with-reasoning", "context-used", "five-hour-limit", "weekly-limit", "context-window-size", "current-dir"]
+
+[tui.keymap.pager]
+scroll_up = ["up", "k"]
+scroll_down = ["down", "j"]
+page_up = ["page-up", "shift-space", "ctrl-b"]
+page_down = ["page-down", "space", "ctrl-f"]
+half_page_up = "ctrl-u"
+half_page_down = "ctrl-d"
+jump_top = "home"
+jump_bottom = "end"
+close = ["q", "ctrl-c"]
+close_transcript = "ctrl-t"
