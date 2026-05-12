@@ -3,11 +3,12 @@
 {{- if .run_install_scripts }}
 brew_shellenv
 
-# git + chezmoi are the minimum to run chezmoi apply. Other runtimes
-# (uv for ad-hoc helpers, mise, etc.) install via the brew-bundle step
-# or per-helper.
+# git, chezmoi, and uv are the minimum to run chezmoi apply: chezmoi-managed
+# `modify_*` scripts use `#!/usr/bin/env -S uv run --script` shebangs and
+# execute during chezmoi's file phase, before brew-bundle installs other
+# runtimes.
 missing=()
-for tool in git chezmoi; do
+for tool in git chezmoi uv; do
   if ! have "$tool"; then
     missing+=("$tool")
   fi

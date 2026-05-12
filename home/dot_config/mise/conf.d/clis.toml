@@ -4,6 +4,8 @@
 
 [tools]
 "go:github.com/tomasz-tomczyk/crit" = "latest"
+# CLI; the desktop app `claude` is a Homebrew cask in packages.toml.
+"npm:@anthropic-ai/claude-code" = "latest"
 "npm:@google/gemini-cli" = "latest"
 "npm:@steipete/bird" = "latest"
 

@@ -1,11 +1,81 @@
 # Python and uv Conventions
 
-## Preferences
+## Defaults
 
-- Use uv for everything (uv add, uv run, etc).
-- Do not use old fashioned methods for package management like poetry, pip or easy_install.
-- Make sure that there is a pyproject.toml file in the root directory.
-- If there isn't a pyproject.toml file, create one using uv by running uv init.
+Prefer `uv` over `pip`, `pipx`, `poetry`, and `pyenv`. Scripts and projects
+pin their own interpreter and dependencies so the same `uv` invocation
+works on a fresh machine, in CI, or on a Tart VM.
+
+Pick one of two forms:
+
+- **Project form** (`pyproject.toml` + `uv.lock`). Use for multi-file
+  packages, apps with multiple entry points, anything with tests, anything
+  that other code imports as a library, or anything that needs a stable
+  lockfile across contributors and CI. `uv init` to start, `uv add` for
+  deps, `uv run` to execute, commit `uv.lock`.
+- **Single-file script form** (PEP 723 inline metadata + `uv run --script`
+  shebang). Use for standalone scripts, one-off tools, chezmoi `modify_*`
+  scripts, and utilities under `scripts/`. The script declares its
+  interpreter and dependencies inline; no surrounding project required.
+
+Default to the single-file script form. Reach for the project form when
+you need a lockfile, tests, or library importability.
+
+## Exceptions
+
+Hold the line on `uv` unless one of the patterns below applies. When you
+add a new exception, append it here with the file path and the reason.
+
+- **Mid-file template fragments.** Files spliced into a host stub via
+  chezmoi `template` includes (e.g. `home/.chezmoitemplates/plist-merge-postlude.py`)
+  inherit the host's shebang and PEP 723 block and must not carry their
+  own.
+- **Library modules and the entry points that import them.** A `.py` that
+  is only imported (e.g. `agent_skill_lib.py` in the dotfiles repo at
+  `.agents/skills/agent-skill-management/scripts/`) is not an entry point
+  and inherits its importer's runtime. Migrate the importer and its
+  library together; until then, both stay on `python3`.
+- **Skill-package scripts under `home/dot_agents/packages/*/skills/`.**
+  Skill artifacts follow the conventions of their parent skill package,
+  not the dotfiles default. Convert as part of the package's own update,
+  not unrelated work.
+- **Vendored upstream code.** Third-party scripts copied in as-is keep
+  their upstream shebangs so diffs against upstream stay readable.
+- **Trivial inline `python3 -c '…'`.** Short shell-script snippets stay
+  inline. Promote to a `uv run --script` file once the snippet grows past
+  ~10 lines or takes a dependency.
+
+Add new exceptions only when they recur; "I felt like it" doesn't count.
+
+## Single-file script form (PEP 723)
+
+```python
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = []
+# ///
+```
+
+The shebang and `# /// script` block must sit on line 1 of the rendered
+file. Chezmoi template fragments include them only when the fragment
+renders at byte 0 of the host stub (a "prelude"); mid-file fragments
+omit them.
+
+Pin `requires-python` to the minimum your script needs; `>=3.11` is the
+default in this repo. Add dependencies to the `dependencies` list when
+needed (or via `uv add --script <file> <pkg>`); don't assume system Python
+ships anything beyond stdlib. In the dotfiles repo, `uv` is bootstrapped
+in `home/.chezmoiscripts/run_once_before_05-core-tools.sh.tmpl`, so it's
+available before chezmoi's file phase runs the modify scripts on a fresh
+machine.
+
+## Project form
+
+For multi-file projects, run `uv init` once. Use `uv add` for dependencies
+(it updates `pyproject.toml` and `uv.lock` together), `uv run` to execute,
+and commit `uv.lock` so collaborators and CI install the same versions.
+See the field manual below for the full command reference.
 
 ---
 

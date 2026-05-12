@@ -1,4 +1,8 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = []
+# ///
 """Generate a self-contained HTML review viewer for skill eval results.
 
 Walks an iteration directory containing eval-*/{with_skill,without_skill}/...

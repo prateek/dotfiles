@@ -1,4 +1,8 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = []
+# ///
 """Merge repo-owned Codex defaults into the live config.
 
 Codex writes machine-local trust, hook approval, NUX, and marketplace state into
@@ -8,6 +12,7 @@ local sections when applying.
 import base64
 import re
 import sys
+import tomllib
 
 desired_text = base64.b64decode(
     "{{ includeTemplate "codex-config-managed.toml.tmpl" . | b64enc }}"
@@ -91,14 +96,6 @@ def trim_trailing_blanks(lines: list[str]) -> list[str]:
 
 
 def toml_equal(left: str, right: str) -> bool:
-    try:
-        import tomllib
-    except ModuleNotFoundError:
-        try:
-            import tomli as tomllib
-        except ModuleNotFoundError:
-            return False
-
     try:
         return tomllib.loads(left) == tomllib.loads(right)
     except Exception:

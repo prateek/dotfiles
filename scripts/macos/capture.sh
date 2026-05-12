@@ -21,7 +21,6 @@ capture_mackup_candidates() {
   local mackup_state="$CAPTURE_ROOT/mackup-state.boltdb"
   local apps=(
     aerospace
-    bartender
     bettertouchtool
     caffeine
     codex
@@ -121,7 +120,6 @@ for domain in \
   com.rescuetime.RescueTime \
   com.soma-zone.LaunchControl \
   com.spotify.client \
-  com.surteesstudios.Bartender \
   com.tinyspeck.slackmacgap \
   dev.zed.Zed \
   md.obsidian \
