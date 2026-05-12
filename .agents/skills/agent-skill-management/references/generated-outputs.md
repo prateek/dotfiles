@@ -13,6 +13,12 @@ Apply-time generated live roots:
 - `~/.claude/skills/`: Claude root skill projection.
 - `~/.agents/plugins/`: shared local plugin marketplace.
 
+Codex resolves local plugin source paths from the supported marketplace root,
+not from the `marketplace.json` directory. For the live
+`~/.agents/plugins/marketplace.json` layout, Codex entries therefore point at
+`./.agents/plugins/plugins/<plugin>`. Claude Code entries in
+`.claude-plugin/marketplace.json` continue to point at `./plugins/<plugin>`.
+
 `home/.chezmoiscripts/run_onchange_after_35-agent-core-skills.sh.tmpl` and
 `home/.chezmoiscripts/run_onchange_after_36-agent-plugins.sh.tmpl` render those
 live roots during `chezmoi apply`. Their template comments include hashes for

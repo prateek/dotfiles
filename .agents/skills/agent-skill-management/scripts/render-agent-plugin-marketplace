@@ -20,6 +20,7 @@ from agent_skill_lib import (
 
 
 GENERATOR = ".agents/skills/agent-skill-management/scripts/render-agent-plugin-marketplace"
+CODEX_PLUGIN_SOURCE_ROOT = "./.agents/plugins/plugins"
 
 
 def codex_plugin_manifest(package) -> dict:
@@ -93,7 +94,12 @@ def render_plugins(target: Path, packages) -> None:
             codex_marketplace["plugins"].append(
                 {
                     "name": slug,
-                    "source": {"source": "local", "path": f"./plugins/{slug}"},
+                    # Codex resolves marketplace local paths from the supported
+                    # marketplace root, not from the marketplace.json directory.
+                    "source": {
+                        "source": "local",
+                        "path": f"{CODEX_PLUGIN_SOURCE_ROOT}/{slug}",
+                    },
                     "policy": {
                         "installation": "INSTALLED_BY_DEFAULT",
                         "authentication": "ON_INSTALL",

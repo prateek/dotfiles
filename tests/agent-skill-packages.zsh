@@ -234,6 +234,25 @@ plugins_root="$rendered_root/.agents/plugins"
 .agents/skills/agent-skill-management/scripts/render-agent-plugin-marketplace \
   --check \
   --plugins-root "$plugins_root"
+python3 - "$plugins_root" <<'PY'
+import json
+import pathlib
+import sys
+
+plugins_root = pathlib.Path(sys.argv[1])
+codex = json.loads((plugins_root / "marketplace.json").read_text())
+for plugin in codex["plugins"]:
+    name = plugin["name"]
+    assert plugin["source"] == {
+        "source": "local",
+        "path": f"./.agents/plugins/plugins/{name}",
+    }
+
+claude = json.loads((plugins_root / ".claude-plugin/marketplace.json").read_text())
+for plugin in claude["plugins"]:
+    name = plugin["name"]
+    assert plugin["source"] == f"./plugins/{name}"
+PY
 
 mkdir -p "$tmp_root/.agents/skills"
 cp -R \
