@@ -9,7 +9,7 @@ set -euo pipefail
 generator="{{ .chezmoi.sourceDir }}/../.agents/skills/agent-skill-management/scripts/render-agent-core-skills"
 
 [ -x "$generator" ] || die "Agent core skill renderer is missing or not executable: $generator"
-have python3 || die "python3 is required to render agent core skills."
+have uv || die "uv is required to render agent core skills."
 
 # The renderer resets both destinations before copying package-selected skills.
 run_timed "render agent core skills" \

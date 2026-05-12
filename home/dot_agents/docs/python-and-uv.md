@@ -30,17 +30,14 @@ add a new exception, append it here with the file path and the reason.
   chezmoi `template` includes (e.g. `home/.chezmoitemplates/plist-merge-postlude.py`)
   inherit the host's shebang and PEP 723 block and must not carry their
   own.
-- **Library modules and the entry points that import them.** A `.py` that
-  is only imported (e.g. `agent_skill_lib.py` in the dotfiles repo at
-  `.agents/skills/agent-skill-management/scripts/`) is not an entry point
-  and inherits its importer's runtime. Migrate the importer and its
-  library together; until then, both stay on `python3`.
 - **Skill-package scripts under `home/dot_agents/packages/*/skills/`.**
   Skill artifacts follow the conventions of their parent skill package,
   not the dotfiles default. Convert as part of the package's own update,
   not unrelated work.
-- **Vendored upstream code.** Third-party scripts copied in as-is keep
-  their upstream shebangs so diffs against upstream stay readable.
+- **Files git considers out of scope.** Anything `.gitignore`d or marked
+  in `.gitattributes` as `linguist-vendored=true` or `linguist-generated=true`.
+  To exempt a third-party script, mark it vendored in `.gitattributes`
+  rather than relying on convention.
 - **Trivial inline `python3 -c '…'`.** Short shell-script snippets stay
   inline. Promote to a `uv run --script` file once the snippet grows past
   ~10 lines or takes a dependency.
@@ -52,7 +49,7 @@ Add new exceptions only when they recur; "I felt like it" doesn't count.
 ```python
 #!/usr/bin/env -S uv run --script
 # /// script
-# requires-python = ">=3.11"
+# requires-python = ">=3.14"
 # dependencies = []
 # ///
 ```
@@ -62,8 +59,8 @@ file. Chezmoi template fragments include them only when the fragment
 renders at byte 0 of the host stub (a "prelude"); mid-file fragments
 omit them.
 
-Pin `requires-python` to the minimum your script needs; `>=3.11` is the
-default in this repo. Add dependencies to the `dependencies` list when
+Pin `requires-python` to the minimum your script needs; `>=3.14` is the
+default in this repo (the latest stable CPython at time of writing). Add dependencies to the `dependencies` list when
 needed (or via `uv add --script <file> <pkg>`); don't assume system Python
 ships anything beyond stdlib. In the dotfiles repo, `uv` is bootstrapped
 in `home/.chezmoiscripts/run_once_before_05-core-tools.sh.tmpl`, so it's
@@ -106,10 +103,10 @@ uv sync --locked                   # reproducible install (CI-safe)
 
 #### 1.2 Script-Centric Flow (PEP 723)
 
+For shebang and metadata conventions, see the "Single-file script form"
+section above. Transient dependencies without embedding:
+
 ```bash
-echo 'print("hi")' > hello.py
-uv run hello.py                    # zero-dep script, auto-env
-uv add --script hello.py rich      # embeds dep metadata
 uv run --with rich hello.py        # transient deps, no state
 ```
 

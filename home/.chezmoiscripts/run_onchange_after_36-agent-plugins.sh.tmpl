@@ -9,7 +9,7 @@ set -euo pipefail
 generator="{{ .chezmoi.sourceDir }}/../.agents/skills/agent-skill-management/scripts/render-agent-plugin-marketplace"
 
 [ -x "$generator" ] || die "Agent plugin renderer is missing or not executable: $generator"
-have python3 || die "python3 is required to render agent plugins."
+have uv || die "uv is required to render agent plugins."
 
 # The renderer resets the marketplace destination before copying package-selected plugins.
 run_timed "render agent plugins" \
