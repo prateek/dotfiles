@@ -1,5 +1,5 @@
 .PHONY: hammerspoon hammerspoon-check hammerspoon-reload
-.PHONY: test-gemini-meeting-sync test-ghc test-mise-install-script test-xcode-install-script test-secret-backed-files test-kanata-config test-chezmoi-config test-chezmoi-local-ignores test-chezmoi-script-status test-codex-config test-cmux-plist test-ice-plist test-orbstack-plist test-selected-app-plists test-package-gated-configs test-moom-plist test-nvalt-colors test-nvalt-plist test-voiceink-plist test-plist-hooks test-sudo-keepalive test-macos-defaults-script test-brew-inventory test-brew-bundle-script test-render-brewfile test-repo-index test-grmrepo-refresh test-worktrees
+.PHONY: test-gemini-meeting-sync test-ghc test-mise-install-script test-xcode-install-script test-secret-backed-files test-kanata-config test-chezmoi-config test-chezmoi-local-ignores test-chezmoi-script-status test-chezmoi-drift-banner test-codex-config test-cmux-plist test-ice-plist test-orbstack-plist test-selected-app-plists test-package-gated-configs test-moom-plist test-nvalt-colors test-nvalt-plist test-voiceink-plist test-plist-hooks test-sudo-keepalive test-macos-defaults-script test-brew-inventory test-brew-bundle-script test-render-brewfile test-repo-index test-grmrepo-refresh test-worktrees
 .PHONY: test-zed-settings test-zsh-fresh-shells verify-zsh-fresh-shells bench-zsh-startup
 .PHONY: test-tart-install-helper test-trace-perfetto test-vm-install-log-scan test-vm-postflight-macos test-install-tart-dry-run test-install-tart-smoke test-install-tart-full test-install-tart-warm test-install-tart-warm-bootstrap test-install-tart-warm-refresh test-install-tart-warm-destroy
 
@@ -74,6 +74,10 @@ test-chezmoi-local-ignores:
 ## Regression tests for steady-state chezmoi script status.
 test-chezmoi-script-status:
 	@zsh ./tests/chezmoi-script-status.zsh
+
+## Regression tests for the cached chezmoi drift shell banner.
+test-chezmoi-drift-banner:
+	@zsh ./tests/chezmoi-drift-banner.zsh
 
 ## Regression tests for Codex config merging.
 test-codex-config:
@@ -153,15 +157,15 @@ test-worktrees:
 
 ## End-to-end fresh-shell validator selftest (verify + bench + negative-path checks).
 test-zsh-fresh-shells:
-	@zsh ./scripts/audit/zsh-fresh-shells.zsh selftest
+	@zsh ./scripts/audit/zsh-fresh-shells.zsh selftest --dotfiles-root "$(CURDIR)"
 
 ## Authoritative fresh-shell correctness checks.
 verify-zsh-fresh-shells:
-	@zsh ./scripts/audit/zsh-fresh-shells.zsh verify
+	@zsh ./scripts/audit/zsh-fresh-shells.zsh verify --dotfiles-root "$(CURDIR)"
 
 ## Authoritative startup benchmark via pinned external zsh-bench.
 bench-zsh-startup:
-	@zsh ./scripts/audit/zsh-fresh-shells.zsh bench
+	@zsh ./scripts/audit/zsh-fresh-shells.zsh bench --dotfiles-root "$(CURDIR)"
 
 ## Regression tests for the Tart install helper (does not boot a VM).
 test-tart-install-helper:

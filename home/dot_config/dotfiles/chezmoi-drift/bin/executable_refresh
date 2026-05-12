@@ -1,0 +1,232 @@
+#!/usr/bin/env zsh
+
+set -euo pipefail
+
+usage() {
+  print -r -- 'Usage:'
+  print -r -- '  refresh [--if-stale]'
+  print -r -- ''
+  print -r -- 'Refresh the cached dotfiles drift banner from `chezmoi status`.'
+}
+
+die() {
+  print -u2 -- "chezmoi-drift refresh: $*"
+  exit 2
+}
+
+refresh_if_stale=0
+while (( $# > 0 )); do
+  case "$1" in
+    --if-stale)
+      refresh_if_stale=1
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    *)
+      die "unknown argument: $1"
+      ;;
+  esac
+  shift
+done
+
+root="${DOTFILES_CHEZMOI_DRIFT_ROOT:-${0:A:h:h}}"
+source "$root/lib/cache.sh"
+drift_load_config "$root"
+if [[ -r "$root/local.env" ]]; then
+  drift_load_local_config "$root/local.env"
+fi
+case "${DOTFILES_CHEZMOI_DRIFT_ENABLED:-1}" in
+  1) ;;
+  *) exit 0 ;;
+esac
+configured_scope="${DOTFILES_CHEZMOI_DRIFT_SCOPE:-files}"
+configured_banner_ttl="${DOTFILES_CHEZMOI_DRIFT_BANNER_TTL_SECONDS:-21600}"
+configured_refresh_ttl="${DOTFILES_CHEZMOI_DRIFT_REFRESH_TTL_SECONDS:-3600}"
+configured_renderer="$(drift_effective_renderer)"
+configured_palette="$(drift_effective_palette)"
+
+state_dir="$(drift_state_dir)"
+original_umask="$(umask)"
+umask 077
+/bin/mkdir -p "$state_dir"
+/bin/chmod 700 "$state_dir" 2>/dev/null || true
+
+cache_is_fresh() {
+  drift_state_is_fresh "$now" "$configured_refresh_ttl" "$configured_scope" "$state_dir" "$configured_renderer" "$configured_palette"
+}
+
+now="$(drift_now)"
+if [[ -r "$state_dir/state.env" ]]; then
+  drift_load_state "$state_dir/state.env" || true
+else
+  drift_reset_state
+fi
+
+if (( refresh_if_stale )); then
+  if cache_is_fresh; then
+    exit 0
+  fi
+fi
+
+lock_dir="$state_dir/refresh.lock"
+lock_token="$$:$now:${RANDOM:-0}"
+lock_grace_seconds=5
+lock_max_age_seconds=600
+if [[ -d "$lock_dir" ]]; then
+  lock_pid=''
+  lock_started_at=0
+  lock_owner_token=''
+  lock_mtime=0
+  [[ -r "$lock_dir/owner.pid" ]] && IFS= read -r lock_pid < "$lock_dir/owner.pid" || true
+  [[ -r "$lock_dir/started_at" ]] && IFS= read -r lock_started_at < "$lock_dir/started_at" || true
+  [[ -r "$lock_dir/owner.token" ]] && IFS= read -r lock_owner_token < "$lock_dir/owner.token" || true
+  if zmodload zsh/stat 2>/dev/null; then
+    typeset -A lock_stat
+    if zstat -H lock_stat +mtime "$lock_dir" 2>/dev/null; then
+      lock_mtime="$lock_stat[mtime]"
+    fi
+    unset lock_stat
+  fi
+
+  if ! drift_is_uint "$lock_pid" || ! drift_is_uint "$lock_started_at" || ! drift_is_token "$lock_owner_token"; then
+    if drift_is_uint "$lock_mtime" && (( now > 0 && lock_mtime > 0 && now - lock_mtime <= lock_grace_seconds )); then
+      exit 0
+    fi
+  elif kill -0 "$lock_pid" 2>/dev/null; then
+    if (( now > 0 && lock_started_at > 0 && lock_started_at <= now && now - lock_started_at <= lock_max_age_seconds )); then
+      exit 0
+    fi
+  fi
+
+  stale_lock_dir="$state_dir/refresh.lock.stale.$$"
+  if /bin/mv "$lock_dir" "$stale_lock_dir" 2>/dev/null; then
+    /bin/rm -rf "$stale_lock_dir"
+  else
+    exit 0
+  fi
+fi
+
+if ! /bin/mkdir "$lock_dir" 2>/dev/null; then
+  exit 0
+fi
+print -r -- "$$" >| "$lock_dir/owner.pid"
+print -r -- "$now" >| "$lock_dir/started_at"
+print -r -- "$lock_token" >| "$lock_dir/owner.token"
+
+cleanup_lock() {
+  local observed_token=''
+  [[ -r "$lock_dir/owner.token" ]] && IFS= read -r observed_token < "$lock_dir/owner.token" || true
+  if [[ "$observed_token" == "$lock_token" ]]; then
+    /bin/rm -rf "$lock_dir" 2>/dev/null || true
+  fi
+}
+
+trap 'cleanup_lock' EXIT
+trap 'cleanup_lock; exit 130' INT
+trap 'cleanup_lock; exit 143' TERM
+
+if [[ -r "$state_dir/state.env" ]]; then
+  drift_load_state "$state_dir/state.env" || true
+  now="$(drift_now)"
+else
+  drift_reset_state
+fi
+
+if (( refresh_if_stale )); then
+  if cache_is_fresh; then
+    exit 0
+  fi
+fi
+
+DOTFILES_CHEZMOI_DRIFT_SCOPE="$configured_scope"
+DOTFILES_CHEZMOI_DRIFT_BANNER_TTL_SECONDS="$configured_banner_ttl"
+DOTFILES_CHEZMOI_DRIFT_REFRESH_TTL_SECONDS="$configured_refresh_ttl"
+
+chezmoi_bin="${DOTFILES_CHEZMOI_DRIFT_CHEZMOI_BIN:-chezmoi}"
+scope="${DOTFILES_CHEZMOI_DRIFT_SCOPE:-files}"
+case "$scope" in
+  apply)
+    status_cmd=("$chezmoi_bin" --no-tty --no-pager --color=false --refresh-externals=never status)
+    ;;
+  files|*)
+    DOTFILES_CHEZMOI_DRIFT_SCOPE=files
+    status_cmd=("$chezmoi_bin" --no-tty --no-pager --color=false --refresh-externals=never status --exclude=scripts)
+    ;;
+esac
+
+previous_cache_usable=0
+previous_count="${DRIFT_STATE_STATUS_COUNT:-0}"
+previous_signature="${DRIFT_STATE_SIGNATURE:-clean}"
+previous_checked_label="${DRIFT_STATE_CHECKED_LABEL:-$(drift_checked_label "$now")}"
+previous_renderer="${DRIFT_STATE_RENDERER_EFFECTIVE:-$(drift_effective_renderer)}"
+if drift_state_cache_is_usable "$configured_scope" "$state_dir" "$configured_renderer" "$configured_palette"; then
+  previous_cache_usable=1
+fi
+
+status_output=''
+status_error_file="$state_dir/status.stderr.$$"
+: >| "$status_error_file"
+/bin/chmod 600 "$status_error_file" 2>/dev/null || true
+if ! status_output="$(umask "$original_umask"; "${status_cmd[@]}" 2>| "$status_error_file")"; then
+  status_error="$(<"$status_error_file")"
+  /bin/rm -f "$status_error_file"
+  drift_write_text_file "$state_dir/last_error" "updated_at=$now
+command=${status_cmd[*]}
+$status_error"
+  if (( previous_cache_usable )); then
+    drift_write_state_env \
+      "$state_dir" \
+      "$previous_count" \
+      "$previous_signature" \
+      "$now" \
+      "$previous_checked_label" \
+      "$previous_renderer" \
+      ok
+  else
+    drift_write_state_env \
+      "$state_dir" \
+      0 \
+      error \
+      "$now" \
+      "$(drift_checked_label "$now")" \
+      "$(drift_effective_renderer)" \
+      error
+  fi
+  exit 1
+fi
+/bin/rm -f "$status_error_file"
+
+count="$(drift_status_count "$status_output")"
+if (( count > 0 )); then
+  signature="$(print -r -- "$status_output" | /usr/bin/cksum)"
+  signature="${signature// /-}"
+else
+  signature='clean'
+fi
+
+checked_label="$(drift_checked_label "$now")"
+renderer="$configured_renderer"
+
+drift_write_text_file "$state_dir/status.txt" "$status_output"
+print -r -- "$signature" >| "$state_dir/signature"
+print -r -- "$now" >| "$state_dir/updated_at"
+
+if (( count > 0 )); then
+  drift_render_plain "$renderer" "$count" "$checked_label" >| "$state_dir/banner.txt.$$"
+  /bin/mv -f "$state_dir/banner.txt.$$" "$state_dir/banner.txt"
+  drift_render_ansi "$renderer" "$count" "$checked_label" >| "$state_dir/banner.ansi.$$"
+  /bin/mv -f "$state_dir/banner.ansi.$$" "$state_dir/banner.ansi"
+else
+  : >| "$state_dir/banner.txt.$$"
+  /bin/chmod 600 "$state_dir/banner.txt.$$" 2>/dev/null || true
+  /bin/mv -f "$state_dir/banner.txt.$$" "$state_dir/banner.txt"
+  : >| "$state_dir/banner.ansi.$$"
+  /bin/chmod 600 "$state_dir/banner.ansi.$$" 2>/dev/null || true
+  /bin/mv -f "$state_dir/banner.ansi.$$" "$state_dir/banner.ansi"
+  /bin/rm -f "$state_dir/last_shown" "$state_dir/last_shown_signature"
+fi
+
+drift_write_state_env "$state_dir" "$count" "$signature" "$now" "$checked_label" "$renderer" ok
+/bin/rm -f "$state_dir/last_error"

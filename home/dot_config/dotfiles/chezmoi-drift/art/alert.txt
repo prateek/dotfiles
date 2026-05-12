@@ -1,0 +1,3 @@
+ /\   dotfiles drift
+/!!\  files differ
+----  chezmoi status --exclude=scripts

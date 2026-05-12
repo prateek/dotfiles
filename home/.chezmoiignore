@@ -5,6 +5,7 @@
 {{/* Machine-local shell overlays sourced by the managed zsh startup files. */}}
 .zprofile.local
 .zshrc.local
+.config/dotfiles/chezmoi-drift/local.env
 
 {{/* Machine-local credentials, trust databases, and tool state. */}}
 .config/chezmoi

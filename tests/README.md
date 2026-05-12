@@ -37,7 +37,7 @@ git clone https://github.com/romkatv/zsh-bench ~/.cache/dotfiles-zsh-startup-ben
 git -C ~/.cache/dotfiles-zsh-startup-bench/zsh-bench checkout a3c48d65b9078ee1f8bbd4da8631a8fbc885c52a
 ```
 
-Run Tart install-helper contract tests without booting a VM:
+Run focused repo regression tests without booting a VM:
 
 ```sh
 make test-tart-install-helper
@@ -48,6 +48,7 @@ make test-secret-backed-files
 make test-chezmoi-config
 make test-chezmoi-local-ignores
 make test-chezmoi-script-status
+make test-chezmoi-drift-banner
 make test-codex-config
 make test-selected-app-plists
 make test-plist-hooks

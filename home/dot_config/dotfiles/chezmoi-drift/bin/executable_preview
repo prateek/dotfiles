@@ -1,0 +1,52 @@
+#!/usr/bin/env zsh
+
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage:
+  preview [--sample]
+
+Print the cached drift banner. Use --sample to render a sample banner without
+running chezmoi.
+EOF
+}
+
+sample=0
+while (( $# > 0 )); do
+  case "$1" in
+    --sample)
+      sample=1
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    *)
+      print -u2 -- "chezmoi-drift preview: unknown argument: $1"
+      exit 2
+      ;;
+  esac
+  shift
+done
+
+root="${DOTFILES_CHEZMOI_DRIFT_ROOT:-${0:A:h:h}}"
+source "$root/lib/cache.sh"
+drift_load_config "$root"
+if [[ -r "$root/local.env" ]]; then
+  drift_load_local_config "$root/local.env"
+fi
+
+if (( sample )); then
+  now="$(drift_now)"
+  renderer="$(drift_effective_renderer)"
+  drift_render_plain "$renderer" 3 "$(drift_checked_label "$now")"
+  exit 0
+fi
+
+state_dir="$(drift_state_dir)"
+if [[ -r "$state_dir/banner.txt" ]]; then
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    print -r -- "$line"
+  done < "$state_dir/banner.txt"
+fi
