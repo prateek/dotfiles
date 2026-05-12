@@ -1,0 +1,160 @@
+#!/usr/bin/env bash
+#MISE description="Switch Crit between release, main, PR, and local source builds"
+#MISE dir="{{cwd}}"
+#USAGE flag "--local" help="Write selection to mise.local.toml in the current repo"
+#USAGE flag "--global" help="Write selection to the global mise config"
+#USAGE arg "<channel>" help="Crit channel" default="latest" {
+#USAGE   choices "latest" "release" "main" "pr" "local"
+#USAGE }
+#USAGE arg "[value]" help="Release version, PR number, or local source path"
+#USAGE arg "[label]" help="Label for local source builds"
+set -euo pipefail
+
+scope="global"
+if [[ "${usage_local:-false}" == "true" ]]; then
+  scope="local"
+elif [[ "${usage_global:-false}" == "true" ]]; then
+  scope="global"
+elif [[ "${1:-}" == "--local" ]]; then
+  scope="local"
+  shift
+elif [[ "${1:-}" == "--global" ]]; then
+  scope="global"
+  shift
+fi
+
+channel="${usage_channel:-${1:-latest}}"
+value="${usage_value:-${2:-}}"
+label_arg="${usage_label:-${3:-}}"
+
+data_dir="${MISE_DATA_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/mise}"
+external_dir="$data_dir/external"
+
+usage() {
+  cat >&2 <<'USAGE'
+usage:
+  mise run crit:use [--global|--local] latest
+  mise run crit:use [--global|--local] release <version>
+  mise run crit:use [--global|--local] main
+  mise run crit:use [--global|--local] pr <number>
+  mise run crit:use [--global|--local] local <path> [label]
+USAGE
+}
+
+select_crit() {
+  local spec="$1"
+
+  if [[ "$scope" == "local" ]]; then
+    mise use --env local "$spec"
+  else
+    mise use -g "$spec"
+  fi
+}
+
+sanitize_label() {
+  local raw="$1"
+  raw="${raw//\//-}"
+  raw="${raw// /-}"
+  printf '%s\n' "$raw"
+}
+
+build_source_tree() {
+  local label="$1"
+  local source_dir="$2"
+  local version_label="$3"
+  local prefix="$external_dir/crit-$label"
+  local commit="unknown"
+
+  [[ -d "$source_dir" ]] || { echo "missing Crit source directory: $source_dir" >&2; exit 1; }
+  [[ -f "$source_dir/go.mod" ]] || { echo "Crit source directory has no go.mod: $source_dir" >&2; exit 1; }
+
+  mkdir -p "$prefix/bin"
+  commit="$(git -C "$source_dir" rev-parse --short HEAD 2>/dev/null || printf unknown)"
+
+  (
+    cd "$source_dir"
+    go build \
+      -ldflags "-s -w -X main.version=$version_label -X main.commit=$commit -X main.date=$(date -u +%Y-%m-%d)" \
+      -o "$prefix/bin/crit" \
+      .
+  )
+
+  mise link --force "go:github.com/tomasz-tomczyk/crit@$label" "$prefix"
+  select_crit "go:github.com/tomasz-tomczyk/crit@$label"
+}
+
+build_remote_ref() {
+  local label="$1"
+  local repo="$2"
+  local ref="$3"
+  local source_dir="$external_dir/src/crit-$label"
+
+  mkdir -p "$external_dir/src"
+  if [[ -d "$source_dir/.git" ]]; then
+    git -C "$source_dir" fetch --force "$repo" "$ref"
+  else
+    git clone --no-checkout "$repo" "$source_dir"
+    git -C "$source_dir" fetch --force "$repo" "$ref"
+  fi
+
+  git -C "$source_dir" checkout --detach FETCH_HEAD
+  build_source_tree "$label" "$source_dir" "$label"
+}
+
+case "$channel" in
+  latest)
+    select_crit "go:github.com/tomasz-tomczyk/crit@latest"
+    ;;
+
+  release)
+    if [[ -z "$value" ]]; then
+      usage
+      exit 2
+    fi
+    select_crit "go:github.com/tomasz-tomczyk/crit@$value"
+    ;;
+
+  main)
+    build_remote_ref "main" "https://github.com/tomasz-tomczyk/crit" "main"
+    ;;
+
+  pr)
+    if [[ -z "$value" ]]; then
+      usage
+      exit 2
+    fi
+
+    read -r head_repo head_sha < <(
+      gh pr view "$value" \
+        --repo prateek/crit \
+        --json headRepository,headRefOid \
+        --template '{{.headRepository.nameWithOwner}} {{.headRefOid}}'
+    )
+
+    if [[ -z "$head_repo" || "$head_repo" == "null" || -z "$head_sha" || "$head_sha" == "null" ]]; then
+      echo "Could not resolve prateek/crit PR $value" >&2
+      exit 1
+    fi
+
+    build_remote_ref "pr-$value" "https://github.com/$head_repo" "$head_sha"
+    ;;
+
+  local)
+    if [[ -z "$value" ]]; then
+      usage
+      exit 2
+    fi
+    label="$(sanitize_label "${label_arg:-local}")"
+    build_source_tree "$label" "$value" "$label"
+    ;;
+
+  -h|--help|help)
+    usage
+    ;;
+
+  *)
+    echo "unknown Crit channel: $channel" >&2
+    usage
+    exit 2
+    ;;
+esac

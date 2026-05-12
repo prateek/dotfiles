@@ -86,10 +86,24 @@ The task does this:
 - `pr <number>` resolves the PR head with `gh`, builds that exact SHA with Cargo, links it as `codex@pr-<number>`, and selects it
 - `brew` links the Homebrew-managed binary through a small prefix and selects `codex@brew`
 
+## Crit workflow
+
+Crit is managed by mise as a Go CLI, not Homebrew:
+
+```sh
+mise run crit:use latest
+mise run crit:use release v0.12.0
+mise run crit:use --local pr 1
+mise run crit:use --local local /Users/prateek/code/github.com/tomasz-tomczyk/crit pr-1
+```
+
+Use `latest` or `release` for normal use. Use `pr` when GitHub is reachable, or `local` when a PR branch is already checked out locally and you want mise to build and link that exact source tree.
+
 ## Implemented State
 
 - ADR 0005 records the decision.
 - Codex selection lives in the repo-owned mise task under `home/dot_config/mise/tasks/`.
+- Crit is selected through `home/dot_config/mise/conf.d/clis.toml` and the `crit:use` task; it is intentionally absent from Brewfile profiles.
 - `bin/devtool`, `bin/devtool-shim`, `.config/devtools/config.toml`, and `docs/devtools.md` are removed.
 - `devtool` is no longer linked into `~/bin`.
 - Mise config and tasks are chezmoi-managed source state under `home/dot_config/mise/`.

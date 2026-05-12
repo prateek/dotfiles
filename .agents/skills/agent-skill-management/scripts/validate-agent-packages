@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import sys
 from collections import defaultdict
+from re import fullmatch
 
 from agent_skill_lib import (
     AGENTS,
@@ -13,7 +14,7 @@ from agent_skill_lib import (
 
 
 def apm_dependencies(path):
-    """Yield each apm dependency entry as (line, is_pinned). Pinned means '#' ref present."""
+    """Yield each apm dependency entry as (line, pinned_ref)."""
     in_dependencies = False
     in_apm = False
     for line in path.read_text().splitlines():
@@ -33,7 +34,8 @@ def apm_dependencies(path):
             continue
         if in_apm and stripped.startswith("- "):
             entry = stripped.removeprefix("- ").strip()
-            yield entry, "#" in entry
+            pinned_ref = entry.rsplit("#", 1)[1] if "#" in entry else None
+            yield entry, pinned_ref
 
 
 def main() -> int:
@@ -63,11 +65,11 @@ def main() -> int:
             if name_line != f"name: {package.package_id}":
                 errors.append(f"{package.package_id}: apm.yml name must match package id")
             deps = list(apm_dependencies(apm))
-            for dependency, pinned in deps:
-                if pinned:
+            for dependency, pinned_ref in deps:
+                if pinned_ref and not fullmatch(r"[0-9a-fA-F]{40}", pinned_ref):
                     errors.append(
-                        f"{package.package_id}: apm.yml dependency should target latest; "
-                        f"remove ref pin from {dependency}"
+                        f"{package.package_id}: apm.yml dependency ref pins must be "
+                        f"full commit SHAs; got {dependency}"
                     )
             if deps and not (package.path / "apm.lock.yaml").exists():
                 errors.append(f"{package.package_id}: missing apm.lock.yaml for APM dependencies")

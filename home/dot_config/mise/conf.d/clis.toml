@@ -3,6 +3,7 @@
 # (see `ask.toml` for the pattern).
 
 [tools]
+"go:github.com/tomasz-tomczyk/crit" = "latest"
 "npm:@google/gemini-cli" = "latest"
 "npm:@steipete/bird" = "latest"
 

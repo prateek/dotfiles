@@ -59,7 +59,9 @@ Use one APM project per package.
 Rules:
 
 - Keep package `apm.yml` dependencies unpinned so they target latest upstream
-  refs by default.
+  refs by default. Use an explicit full-SHA `#ref` pin only when intentionally
+  testing or dogfooding PR-specific skill content, and keep the lockfile plus
+  vendored source in sync.
 - Use `apm.lock.yaml` as the reproducible reviewed snapshot.
 - Vendor accepted remote skill folders into `skills/vendor/<skill-id>/`.
 - Keep one `SOURCE.md` in each vendored remote skill root.

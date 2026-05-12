@@ -109,7 +109,11 @@ def upstream_url(dependency: dict[str, object]) -> str:
 def apm_dependency(dependency: dict[str, object]) -> str:
     repo = str(dependency["repo_url"])
     virtual_path = str(dependency.get("virtual_path", "")).strip("/")
-    return f"{repo}/{virtual_path}" if virtual_path else repo
+    name = f"{repo}/{virtual_path}" if virtual_path else repo
+    resolved_ref = str(dependency.get("resolved_ref", "")).strip()
+    if resolved_ref:
+        return f"{name}#{resolved_ref}"
+    return name
 
 
 def source_note(dependency: dict[str, object], existing: str | None) -> str:

@@ -25,9 +25,11 @@ core_out="$("$RENDER" --profile core)"
 [[ -n $core_out ]] || die "core profile rendered empty"
 [[ $core_out == *'tap "1password/tap"'* ]] || die "core: missing 1password/tap"
 [[ $core_out == *'brew "git"'* ]] || die "core: missing git brew"
-[[ $core_out == *'brew "crit"'* ]] || die "core: missing crit brew"
+[[ $core_out != *'brew "crit"'* ]] || die "core: crit should be managed by mise, not Homebrew"
 [[ $core_out == *'cask "1password", args: { appdir: "/Applications" }'* ]] \
   || die "core: 1password cask appdir args missing or malformed"
+rg -q '"go:github.com/tomasz-tomczyk/crit" = "latest"' "$DOTFILES_ROOT/home/dot_config/mise/conf.d/clis.toml" \
+  || die "crit should be declared as a mise Go CLI"
 
 # -- MAS opt-in gating -------------------------------------------------------
 
@@ -40,7 +42,7 @@ fi
 [[ $full_with_mas == *'mas "Things", id: 904280696'* ]] \
   || die "full --include-mas: missing expected MAS entry"
 [[ $full_no_mas == *'brew "aria2"'* ]] || die "full: missing aria2"
-[[ $full_no_mas == *'brew "crit"'* ]] || die "full: missing crit"
+[[ $full_no_mas != *'brew "crit"'* ]] || die "full: crit should be managed by mise, not Homebrew"
 [[ $full_no_mas != *'tap "xcodesorg/made"'* ]] || die "full: should not tap source-building xcodesorg/made"
 [[ $full_no_mas == *'brew "homebrew/core/xcodes", args: ["force-bottle"]'* ]] \
   || die "full: missing bottled Homebrew core xcodes"

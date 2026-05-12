@@ -86,6 +86,47 @@ cat >"$sample_package/skills/vendor/stale-skill/SOURCE.md" <<'MD'
 - License: MIT.
 - Notes: Should be removed when APM no longer deploys it.
 MD
+
+invalid_pin_package="$packages_root/invalid-pin"
+mkdir -p "$invalid_pin_package/skills/local/invalid-pin-skill"
+cat >"$invalid_pin_package/package.toml" <<'TOML'
+display_name = "Invalid Pin"
+
+[render]
+codex = "none"
+claude = "none"
+TOML
+cat >"$invalid_pin_package/apm.yml" <<'YAML'
+name: invalid-pin
+version: 1.0.0
+targets:
+  - agent-skills
+
+dependencies:
+  apm:
+    - example/repo/skills/invalid#main
+YAML
+cat >"$invalid_pin_package/apm.lock.yaml" <<'YAML'
+lockfile_version: '1'
+dependencies: []
+YAML
+cat >"$invalid_pin_package/skills/local/invalid-pin-skill/SKILL.md" <<'SKILL'
+---
+name: invalid-pin-skill
+description: Local skill for invalid pin validation tests.
+---
+
+# Invalid Pin Skill
+SKILL
+if AGENT_SKILL_PACKAGES_ROOT="$packages_root" \
+  .agents/skills/agent-skill-management/scripts/validate-agent-packages \
+  >"$tmp_root/invalid-pin.out" 2>&1; then
+  echo "expected validate-agent-packages to reject non-SHA APM ref pins" >&2
+  exit 1
+fi
+grep -q 'dependency ref pins must be full commit SHAs' "$tmp_root/invalid-pin.out"
+rm -rf "$invalid_pin_package"
+
 cat >"$fake_bin/apm" <<'SH'
 #!/usr/bin/env zsh
 set -euo pipefail

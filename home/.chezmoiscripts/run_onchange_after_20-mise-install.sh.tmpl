@@ -1,6 +1,9 @@
 {{ template "script_lib.sh" . }}
 
 # mise config sha256: {{ include "dot_config/mise/config.toml" | sha256sum }}
+# mise ask sha256: {{ include "dot_config/mise/conf.d/ask.toml" | sha256sum }}
+# mise clis sha256: {{ include "dot_config/mise/conf.d/clis.toml" | sha256sum }}
+# mise runtimes sha256: {{ include "dot_config/mise/conf.d/runtimes.toml" | sha256sum }}
 
 {{- if .run_install_scripts }}
 if ! have mise; then
@@ -11,6 +14,7 @@ fi
 export MISE_RUBY_GITHUB_ATTESTATIONS="${MISE_RUBY_GITHUB_ATTESTATIONS:-false}"
 mise trust "$HOME/.config/mise/config.toml" >/dev/null 2>&1 || true
 run_timed "mise install node" mise install -y node || warn "mise node install failed; retry with: mise install -y node"
+run_timed "mise install go" mise install -y go || warn "mise go install failed; retry with: mise install -y go"
 run_timed "mise install" mise exec node -- mise install -y || warn "mise install failed; retry with: mise exec node -- mise install -y"
 {{- else }}
 log "mise runtime install disabled."

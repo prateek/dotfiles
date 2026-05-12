@@ -44,7 +44,7 @@ printf '%s\n' "$*" >> "$MISE_CALLS"
 EOF
 chmod +x "$stub_bin/mise"
 
-rg -q '^github_attestations = false$' "$DOTFILES_ROOT/home/dot_config/mise/config.toml" \
+rg -q '^github_attestations = false$' "$DOTFILES_ROOT/home/dot_config/mise/conf.d/runtimes.toml" \
   || die "mise config should disable unauthenticated Ruby attestation checks during bootstrap"
 
 script="$tmp_root/mise-install.sh"
@@ -63,6 +63,7 @@ PATH="$stub_bin:/usr/bin:/bin" HOME="$tmp_root/home" bash "$script" >/dev/null
 calls=("${(@f)$(<"$MISE_CALLS")}")
 assert_match "${calls[1]}" 'trust */home/.config/mise/config.toml'
 assert_eq "${calls[2]}" 'install -y node'
-assert_eq "${calls[3]}" 'exec node -- mise install -y'
+assert_eq "${calls[3]}" 'install -y go'
+assert_eq "${calls[4]}" 'exec node -- mise install -y'
 
 print -- "OK mise-install-script"

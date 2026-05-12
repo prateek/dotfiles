@@ -479,7 +479,8 @@ Rules:
   APM local-path dependencies.
 - Remote skills should be represented in the package `apm.yml` when possible.
 - Keep package `apm.yml` dependencies unpinned so they target latest upstream
-  refs by default.
+  refs by default. Use explicit full-SHA `#ref` pins only when intentionally
+  testing or dogfooding PR-specific skill content.
 - Commit `apm.lock.yaml` whenever a package has APM dependencies.
 - Use `apm.lock.yaml` as the reproducible resolved snapshot for vendored
   content.
