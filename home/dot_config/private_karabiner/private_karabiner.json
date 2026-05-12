@@ -4,32 +4,15 @@
             "complex_modifications": {
                 "rules": [
                     {
-                        "description": "Akimbo cmd to F12",
+                        "description": "Apple internal: caps_lock to left_control when held, escape when tapped.",
                         "manipulators": [
                             {
-                                "from": {
-                                    "simultaneous": [
-                                        { "key_code": "left_command" },
-                                        { "key_code": "right_command" }
-                                    ],
-                                    "simultaneous_options": {
-                                        "to_after_key_up": [
-                                            {
-                                                "key_code": "f12",
-                                                "modifiers": ["fn"]
-                                            }
-                                        ]
+                                "conditions": [
+                                    {
+                                        "identifiers": [{ "is_built_in_keyboard": true }],
+                                        "type": "device_if"
                                     }
-                                },
-                                "to": [{ "key_code": "vk_none" }],
-                                "type": "basic"
-                            }
-                        ]
-                    },
-                    {
-                        "description": "Change caps_lock to left_control if pressed with other keys, change caps_lock to escape if pressed alone.",
-                        "manipulators": [
-                            {
+                                ],
                                 "from": {
                                     "key_code": "caps_lock",
                                     "modifiers": { "optional": ["any"] }
@@ -41,41 +24,63 @@
                         ]
                     },
                     {
-                        "description": "Map fn to left_option and left_control to F19 when tapped, fn when held.",
+                        "description": "Apple internal: map fn to left_option.",
                         "manipulators": [
                             {
+                                "conditions": [
+                                    {
+                                        "identifiers": [{ "is_built_in_keyboard": true }],
+                                        "type": "device_if"
+                                    }
+                                ],
                                 "from": {
                                     "key_code": "fn",
                                     "modifiers": { "optional": ["any"] }
                                 },
                                 "to": [{ "key_code": "left_option" }],
                                 "type": "basic"
-                            },
+                            }
+                        ]
+                    },
+                    {
+                        "description": "Apple internal: map left_control to Meh when held, F19 when tapped.",
+                        "manipulators": [
                             {
+                                "conditions": [
+                                    {
+                                        "identifiers": [{ "is_built_in_keyboard": true }],
+                                        "type": "device_if"
+                                    }
+                                ],
                                 "from": {
                                     "key_code": "left_control",
                                     "modifiers": { "optional": ["any"] }
                                 },
                                 "parameters": {
-                                    "basic.to_if_alone_timeout_milliseconds": 200,
-                                    "basic.to_if_held_down_threshold_milliseconds": 200
+                                    "basic.to_if_alone_timeout_milliseconds": 200
                                 },
                                 "to": [
                                     {
-                                        "key_code": "fn",
+                                        "key_code": "left_shift",
+                                        "modifiers": ["left_control", "left_option"],
                                         "lazy": true
                                     }
                                 ],
                                 "to_if_alone": [{ "key_code": "f19" }],
-                                "to_if_held_down": [{ "key_code": "fn" }],
                                 "type": "basic"
                             }
                         ]
                     },
                     {
-                        "description": "Map left_option to Hyper.",
+                        "description": "Apple internal: map left_option to Hyper.",
                         "manipulators": [
                             {
+                                "conditions": [
+                                    {
+                                        "identifiers": [{ "is_built_in_keyboard": true }],
+                                        "type": "device_if"
+                                    }
+                                ],
                                 "from": {
                                     "key_code": "left_option",
                                     "modifiers": { "optional": ["any"] }
@@ -83,86 +88,8 @@
                                 "to": [
                                     {
                                         "key_code": "left_shift",
-                                        "modifiers": ["left_command", "left_control", "left_option"]
-                                    }
-                                ],
-                                "type": "basic"
-                            }
-                        ]
-                    },
-                    {
-                        "description": "Double tap left_shift to one-shot Hyper.",
-                        "manipulators": [
-                            {
-                                "conditions": [
-                                    {
-                                        "name": "left_shift_tap_pending",
-                                        "type": "variable_if",
-                                        "value": 1
-                                    }
-                                ],
-                                "from": {
-                                    "key_code": "left_shift",
-                                    "modifiers": { "optional": ["any"] }
-                                },
-                                "parameters": { "basic.to_if_alone_timeout_milliseconds": 500 },
-                                "to": [{ "key_code": "left_shift" }],
-                                "to_after_key_up": [
-                                    {
-                                        "set_variable": {
-                                            "name": "left_shift_tap_pending",
-                                            "value": 0
-                                        }
-                                    }
-                                ],
-                                "to_if_alone": [
-                                    { "sticky_modifier": { "left_control": "on" } },
-                                    { "sticky_modifier": { "left_option": "on" } },
-                                    { "sticky_modifier": { "left_shift": "on" } },
-                                    { "sticky_modifier": { "left_command": "on" } },
-                                    {
-                                        "set_variable": {
-                                            "name": "left_shift_tap_pending",
-                                            "value": 0
-                                        }
-                                    }
-                                ],
-                                "type": "basic"
-                            },
-                            {
-                                "from": {
-                                    "key_code": "left_shift",
-                                    "modifiers": { "optional": ["any"] }
-                                },
-                                "parameters": {
-                                    "basic.to_delayed_action_delay_milliseconds": 500,
-                                    "basic.to_if_alone_timeout_milliseconds": 200
-                                },
-                                "to": [{ "key_code": "left_shift" }],
-                                "to_delayed_action": {
-                                    "to_if_canceled": [
-                                        {
-                                            "set_variable": {
-                                                "name": "left_shift_tap_pending",
-                                                "value": 0
-                                            }
-                                        }
-                                    ],
-                                    "to_if_invoked": [
-                                        {
-                                            "set_variable": {
-                                                "name": "left_shift_tap_pending",
-                                                "value": 0
-                                            }
-                                        }
-                                    ]
-                                },
-                                "to_if_alone": [
-                                    {
-                                        "set_variable": {
-                                            "name": "left_shift_tap_pending",
-                                            "value": 1
-                                        }
+                                        "modifiers": ["left_command", "left_control", "left_option"],
+                                        "lazy": true
                                     }
                                 ],
                                 "type": "basic"
