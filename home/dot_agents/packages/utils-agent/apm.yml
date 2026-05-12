@@ -1,0 +1,9 @@
+name: utils-agent
+version: 1.0.0
+targets:
+  - agent-skills
+
+dependencies:
+  apm:
+    - openai/skills/skills/.curated/cli-creator
+    - danshapiro/trycycle

@@ -42,6 +42,13 @@ mise.local.toml
 
 # Include local formatter dependencies
 node_modules/
+!home/dot_agents/packages/**/node_modules/
+!home/dot_agents/packages/**/node_modules/**
+
+# Apply-time generated agent projections
+home/dot_agents/skills/
+home/dot_agents/plugins/
+home/dot_claude/skills/
 
 # Codex system skills (installed automatically)
 .codex/skills/.system/

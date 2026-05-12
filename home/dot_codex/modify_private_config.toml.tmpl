@@ -22,6 +22,14 @@ managed_tables = {
 }
 
 
+def is_managed_table(header: str) -> bool:
+    if header in managed_tables:
+        return True
+    if header == "marketplaces.prateek-local":
+        return True
+    return re.match(r'^plugins\."[^"]+@prateek-local"$', header) is not None
+
+
 def table_header(line: str) -> str | None:
     match = re.match(r"^\s*\[([^\]]+)\]\s*$", line)
     return match.group(1) if match else None
@@ -110,14 +118,14 @@ output: list[str] = []
 output.extend(merge_root(current_root, desired_root))
 
 for header in desired_table_order:
-    if header not in managed_tables:
+    if not is_managed_table(header):
         continue
     if output:
         output.append("")
     output.extend(desired_table_map[header])
 
 for header, block in current_tables:
-    if header in managed_tables:
+    if is_managed_table(header):
         continue
     if output:
         output.append("")

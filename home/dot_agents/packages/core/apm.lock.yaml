@@ -1,0 +1,29 @@
+lockfile_version: '1'
+generated_at: '2026-05-12T04:49:58.123486+00:00'
+apm_version: 0.13.0
+dependencies:
+- repo_url: 199-biotechnologies/claude-deep-research-skill
+  host: github.com
+  resolved_commit: f2f2c0fa4e7617ca84c86b63f4bb40f77a746933
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/claude-deep-research-skill
+  content_hash: sha256:ea1e3a0f58097c73f41654a9934b92c74c05a866e26a89d1947fb27e7eaab325
+- repo_url: aiskillstore/marketplace
+  host: github.com
+  resolved_commit: 914da9cb960770f654b2e37302210912975bdb6c
+  virtual_path: skills/cygnusfear/writing-clearly-and-concisely
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/writing-clearly-and-concisely
+  content_hash: sha256:3733ecc19e57f3e748ef62c4224ac902298e12bbf17b9f52a85960a2dd69445e
+- repo_url: wiseiodev/skills
+  host: github.com
+  resolved_commit: cc5319edc5c213be85aac5217bb035f13503a048
+  virtual_path: code-principles
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/code-principles
+  content_hash: sha256:91e5d974073fe0cf2a2fec514a50700fea0efa4d6fda5613d4d10ee63b52c23f

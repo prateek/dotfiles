@@ -1,0 +1,9 @@
+name: design
+version: 1.0.0
+targets:
+  - agent-skills
+
+dependencies:
+  apm:
+    - raintree-technology/apple-hig-skills
+    - nextlevelbuilder/ui-ux-pro-max-skill

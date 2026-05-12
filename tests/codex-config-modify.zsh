@@ -8,7 +8,6 @@ trap 'rm -rf "$tmp_root"' EXIT
 script="$tmp_root/modify_codex_config.py"
 current="$tmp_root/current.toml"
 merged="$tmp_root/merged.toml"
-semantic_current="$tmp_root/semantic-current.toml"
 semantic_merged="$tmp_root/semantic-merged.toml"
 
 chezmoi \
@@ -36,6 +35,17 @@ last_revision = "live-revision"
 source_type = "git"
 source = "https://example.invalid/skill.git"
 
+[marketplaces.prateek-local]
+last_updated = "old"
+source_type = "git"
+source = "https://example.invalid/old.git"
+
+[plugins."stale@prateek-local"]
+enabled = false
+
+[plugins."other@other-market"]
+enabled = false
+
 [hooks.state]
 
 [hooks.state."/Users/prateek/.codex/hooks.json:pre_tool_use:0:0"]
@@ -60,52 +70,34 @@ assert data["agents"]["max_threads"] == 16
 assert data["agents"]["max_depth"] == 3
 assert data["projects"]["/tmp/live-project"]["trust_level"] == "trusted"
 assert data["marketplaces"]["last30days-skill"]["last_updated"] == "live"
+import os
+assert data["marketplaces"]["prateek-local"]["source_type"] == "local"
+assert data["marketplaces"]["prateek-local"]["source"] == os.path.expanduser("~/.agents/plugins")
+assert data["plugins"]["design@prateek-local"]["enabled"] is True
+assert data["plugins"]["experimental@prateek-local"]["enabled"] is True
+assert data["plugins"]["ios@prateek-local"]["enabled"] is True
+assert data["plugins"]["review@prateek-local"]["enabled"] is True
+assert data["plugins"]["utils-agent@prateek-local"]["enabled"] is True
+assert data["plugins"]["utils-human@prateek-local"]["enabled"] is True
+assert "stale@prateek-local" not in data["plugins"]
+assert data["plugins"]["other@other-market"]["enabled"] is False
 assert data["hooks"]["state"]["/Users/prateek/.codex/hooks.json:pre_tool_use:0:0"]["trusted_hash"] == "sha256:live"
 PY
 
-cat >"$semantic_current" <<'TOML'
-model = "gpt-5.5"
-model_reasoning_effort = "xhigh"
-plan_mode_reasoning_effort = "xhigh"
-service_tier = "fast"
-custom_top_level = "keep"
+"$script" <"$merged" >"$semantic_merged"
+cmp -s "$merged" "$semantic_merged"
 
-[projects."/tmp/live-project"]
-trust_level = "trusted"
+# From-scratch: empty config in -> prateek-local marketplace and plugins injected.
+empty_current="$tmp_root/empty-current.toml"
+empty_merged="$tmp_root/empty-merged.toml"
+: >"$empty_current"
+"$script" <"$empty_current" >"$empty_merged"
+python3 - "$empty_merged" <<'PY'
+import sys
+import tomllib
 
-[marketplaces.last30days-skill]
-last_updated = "live"
-last_revision = "live-revision"
-source_type = "git"
-source = "https://example.invalid/skill.git"
-
-[hooks.state]
-
-[hooks.state."/Users/prateek/.codex/hooks.json:pre_tool_use:0:0"]
-enabled = false
-trusted_hash = "sha256:live"
-
-[agents]
-max_threads = 16
-max_depth = 3
-
-[mcp_servers.granola]
-enabled = false
-url = "https://mcp.granola.ai/mcp"
-
-[features]
-hooks = true
-multi_agent = true
-memories = true
-apps = false
-
-[plugins."last30days@last30days-skill"]
-enabled = true
-
-[tui]
-status_line = ["thread-title", "model-with-reasoning", "context-used", "five-hour-limit", "weekly-limit", "context-window-size", "current-dir"]
-TOML
-
-"$script" <"$semantic_current" >"$semantic_merged"
-
-cmp -s "$semantic_current" "$semantic_merged"
+data = tomllib.loads(open(sys.argv[1], "rb").read().decode())
+assert data["marketplaces"]["prateek-local"]["source_type"] == "local"
+for slug in ("design", "experimental", "ios", "review", "utils-agent", "utils-human"):
+    assert data["plugins"][f"{slug}@prateek-local"]["enabled"] is True
+PY

@@ -1,0 +1,103 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import sys
+from collections import defaultdict
+
+from agent_skill_lib import (
+    AGENTS,
+    VALID_RENDER_VALUES,
+    iter_skill_metadata,
+    load_packages,
+)
+
+
+def apm_dependencies(path):
+    """Yield each apm dependency entry as (line, is_pinned). Pinned means '#' ref present."""
+    in_dependencies = False
+    in_apm = False
+    for line in path.read_text().splitlines():
+        stripped = line.strip()
+        if stripped == "dependencies:":
+            in_dependencies = True
+            in_apm = False
+            continue
+        if not in_dependencies:
+            continue
+        if stripped and not line.startswith(" "):
+            break
+        if stripped == "apm: []":
+            return
+        if stripped == "apm:":
+            in_apm = True
+            continue
+        if in_apm and stripped.startswith("- "):
+            entry = stripped.removeprefix("- ").strip()
+            yield entry, "#" in entry
+
+
+def main() -> int:
+    errors: list[str] = []
+    skill_locations: dict[str, list[str]] = defaultdict(list)
+    skill_name_locations: dict[str, list[str]] = defaultdict(list)
+
+    try:
+        packages = load_packages()
+    except Exception as exc:
+        print(f"validate-agent-packages: {exc}", file=sys.stderr)
+        return 1
+
+    for package in packages:
+        for agent in AGENTS:
+            value = package.render.get(agent, "none")
+            if value not in VALID_RENDER_VALUES:
+                errors.append(f"{package.package_id}: invalid render.{agent}={value!r}")
+        apm = package.path / "apm.yml"
+        if not apm.exists():
+            errors.append(f"{package.package_id}: missing apm.yml")
+        else:
+            name_line = next(
+                (line.strip() for line in apm.read_text().splitlines() if line.startswith("name:")),
+                None,
+            )
+            if name_line != f"name: {package.package_id}":
+                errors.append(f"{package.package_id}: apm.yml name must match package id")
+            deps = list(apm_dependencies(apm))
+            for dependency, pinned in deps:
+                if pinned:
+                    errors.append(
+                        f"{package.package_id}: apm.yml dependency should target latest; "
+                        f"remove ref pin from {dependency}"
+                    )
+            if deps and not (package.path / "apm.lock.yaml").exists():
+                errors.append(f"{package.package_id}: missing apm.lock.yaml for APM dependencies")
+        if not package.skills:
+            errors.append(f"{package.package_id}: package has no skills")
+        for skill in package.skills:
+            skill_locations[skill.skill_id].append(str(skill.path))
+            if skill.kind == "vendor" and not (skill.path / "SOURCE.md").exists():
+                errors.append(f"{skill.path}: missing SOURCE.md")
+        try:
+            for skill_dir, meta in iter_skill_metadata(package.path / "skills"):
+                skill_name_locations[meta["name"]].append(str(skill_dir))
+        except Exception as exc:
+            errors.append(str(exc))
+
+    for skill_id, locations in sorted(skill_locations.items()):
+        if len(locations) > 1:
+            errors.append(f"duplicate skill id {skill_id}: {locations}")
+
+    for skill_name, locations in sorted(skill_name_locations.items()):
+        if len(locations) > 1:
+            errors.append(f"duplicate skill name {skill_name}: {locations}")
+
+    if errors:
+        for error in errors:
+            print(f"validate-agent-packages: {error}", file=sys.stderr)
+        return 1
+    print("OK validate-agent-packages")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

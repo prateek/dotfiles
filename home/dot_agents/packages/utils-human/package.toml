@@ -1,0 +1,5 @@
+display_name = "Human Utilities"
+
+[render]
+codex = "plugin"
+claude = "plugin"

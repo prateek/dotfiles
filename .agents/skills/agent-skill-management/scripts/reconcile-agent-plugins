@@ -1,0 +1,35 @@
+#!/usr/bin/env python3
+"""Print native CLI commands needed to reconcile the local plugin marketplace.
+
+This is a preview-only helper: copy/paste the printed commands. There is no
+apply path here; native Codex and Claude CLIs own the installed/cache state.
+"""
+from __future__ import annotations
+
+from agent_skill_lib import load_packages
+
+
+def main() -> int:
+    commands = [
+        "claude plugin marketplace add ~/.agents/plugins --scope user",
+        "claude plugin marketplace update prateek-local",
+        "codex plugin marketplace upgrade prateek-local",
+    ]
+    for package in load_packages():
+        if package.render.get("claude") == "plugin":
+            commands.append(
+                f"claude plugin install {package.package_id}@prateek-local --scope user"
+            )
+            commands.append(
+                f"claude plugin enable {package.package_id}@prateek-local --scope user"
+            )
+        if package.render.get("codex") == "plugin":
+            commands.append(f"codex plugin install {package.package_id}@prateek-local")
+            commands.append(f"codex plugin enable {package.package_id}@prateek-local")
+    for command in commands:
+        print(command)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -3,7 +3,7 @@
 Harness comparison report:
 
 ```sh
-open "${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/captures/zsh-harness-comparison.html"
+open ~/dotfiles/docs/dev/zsh-harness-comparison.html
 ```
 
 Run `ghc` URL handling tests:
@@ -50,6 +50,9 @@ make test-chezmoi-local-ignores
 make test-chezmoi-script-status
 make test-chezmoi-drift-banner
 make test-codex-config
+make test-claude-settings
+make test-agent-skill-packages
+make test-agent-skill-packages-native
 make test-selected-app-plists
 make test-plist-hooks
 make test-sudo-keepalive
@@ -63,6 +66,10 @@ make test-vm-postflight-macos
 
 `make test-trace-perfetto` covers the zsh xtrace converter, function-derived span layout, trace merge behavior, private artifact permissions, conversion failure handling, and the local Perfetto viewer URL helper.
 
+`make test-agent-skill-packages-native` requires Claude Code's `claude`
+command because it validates the generated local plugin marketplace with
+`claude plugin validate`.
+
 Run Tart VM install checks locally:
 
 ```sh
@@ -73,7 +80,7 @@ make test-install-tart-full
 
 Smoke uses the Tahoe base image. Full uses the Tahoe Xcode image so routine validation does not spend the run downloading Xcode.
 
-The current `mini` validation workflow is documented in `docs/runbooks/tart-mini-validation.md`.
+The current `mini` validation workflow is documented in `docs/dev/tart-mini-validation.md`.
 
 Run focused-helper tests for the package renderer:
 
@@ -81,10 +88,16 @@ Run focused-helper tests for the package renderer:
 make test-render-brewfile
 ```
 
-Run docs lifecycle frontmatter checks:
+Run agent skill package projection checks:
 
 ```sh
-make test-docs-lifecycle
+make test-agent-skill-packages
+```
+
+Run native Claude Code plugin validation for generated local plugins:
+
+```sh
+make test-agent-skill-packages-native
 ```
 
 Run `repo-index` canonical clone discovery tests:

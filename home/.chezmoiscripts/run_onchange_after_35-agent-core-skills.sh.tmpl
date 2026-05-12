@@ -1,0 +1,18 @@
+{{ template "script_lib.sh" . }}
+
+# render-agent-core-skills sha256: {{ include (printf "%s/../.agents/skills/agent-skill-management/scripts/render-agent-core-skills" .chezmoi.sourceDir) | sha256sum }}
+# agent_skill_lib.py sha256: {{ include (printf "%s/../.agents/skills/agent-skill-management/scripts/agent_skill_lib.py" .chezmoi.sourceDir) | sha256sum }}
+# dot_agents/packages tree sha256: {{ includeTemplate "agent-packages-tree-hash.tmpl" . }}
+
+set -euo pipefail
+
+generator="{{ .chezmoi.sourceDir }}/../.agents/skills/agent-skill-management/scripts/render-agent-core-skills"
+
+[ -x "$generator" ] || die "Agent core skill renderer is missing or not executable: $generator"
+have python3 || die "python3 is required to render agent core skills."
+
+# The renderer resets both destinations before copying package-selected skills.
+run_timed "render agent core skills" \
+  "$generator" \
+  --codex-root "$HOME/.agents/skills" \
+  --claude-root "$HOME/.claude/skills"

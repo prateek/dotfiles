@@ -1,0 +1,299 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+from agent_skill_lib import PACKAGES_ROOT, skill_frontmatter
+
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+AUDIT_SCRIPT = SCRIPT_DIR / "audit-apm-source-surface"
+VALIDATE_SCRIPT = SCRIPT_DIR / "validate-agent-packages"
+
+
+def run(cmd: list[str], cwd, env: dict[str, str] | None = None) -> int:
+    print(" ".join(cmd))
+    return subprocess.call(cmd, cwd=cwd, env=env)
+
+
+def yaml_value(line: str) -> str:
+    return line.split(":", 1)[1].strip().strip("'\"")
+
+
+def lock_dependencies(path: Path) -> list[dict[str, object]]:
+    dependencies: list[dict[str, object]] = []
+    current: dict[str, object] | None = None
+    in_deployed_files = False
+
+    for line in path.read_text().splitlines():
+        stripped = line.strip()
+        if line.startswith("- repo_url:"):
+            if current is not None:
+                dependencies.append(current)
+            current = {"repo_url": yaml_value(line), "deployed_files": []}
+            in_deployed_files = False
+            continue
+        if current is None:
+            continue
+        if stripped == "deployed_files:":
+            in_deployed_files = True
+            continue
+        if in_deployed_files and line.startswith("  - "):
+            current["deployed_files"].append(stripped.removeprefix("- ").strip())
+            continue
+        in_deployed_files = False
+        if line.startswith("  ") and ":" in stripped:
+            key, value = stripped.split(":", 1)
+            current[key] = value.strip().strip("'\"")
+
+    if current is not None:
+        dependencies.append(current)
+    return dependencies
+
+
+def deployed_skill_id(path: str) -> str | None:
+    prefix = ".agents/skills/"
+    if not path.startswith(prefix):
+        return None
+    remainder = path.removeprefix(prefix).strip("/")
+    return remainder.split("/", 1)[0] if remainder else None
+
+
+def deployed_skill_metadata(lockfile: Path) -> dict[str, dict[str, object]]:
+    metadata: dict[str, dict[str, object]] = {}
+    for dependency in lock_dependencies(lockfile):
+        for deployed_file in dependency.get("deployed_files", []):
+            skill_id = deployed_skill_id(str(deployed_file))
+            if skill_id:
+                metadata[skill_id] = dependency
+    return metadata
+
+
+def deployed_skill_counts(metadata: dict[str, dict[str, object]]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for dependency in metadata.values():
+        dependency_name = apm_dependency(dependency)
+        counts[dependency_name] = counts.get(dependency_name, 0) + 1
+    return counts
+
+
+def source_field(existing: str | None, field: str, fallback: str) -> str:
+    if existing:
+        match = re.search(rf"^- {re.escape(field)}: (.+)$", existing, re.MULTILINE)
+        if match:
+            return match.group(1)
+    return fallback
+
+
+def source_apm_dependency(source_text: str) -> str | None:
+    value = source_field(source_text, "APM dependency", "")
+    return value.strip().strip("`") or None
+
+
+def upstream_url(dependency: dict[str, object]) -> str:
+    host = str(dependency.get("host", "github.com"))
+    repo = str(dependency["repo_url"])
+    ref = str(dependency["resolved_commit"])
+    virtual_path = str(dependency.get("virtual_path", "")).strip("/")
+    suffix = f"/{virtual_path}" if virtual_path else ""
+    return f"https://{host}/{repo}/tree/{ref}{suffix}"
+
+
+def apm_dependency(dependency: dict[str, object]) -> str:
+    repo = str(dependency["repo_url"])
+    virtual_path = str(dependency.get("virtual_path", "")).strip("/")
+    return f"{repo}/{virtual_path}" if virtual_path else repo
+
+
+def source_note(dependency: dict[str, object], existing: str | None) -> str:
+    license_note = source_field(existing, "License", "TODO: review upstream license.")
+    notes = source_field(existing, "Notes", "Vendored by APM; review before activating.")
+    return (
+        "# Source\n\n"
+        f"- Upstream: {upstream_url(dependency)}\n"
+        f"- APM dependency: `{apm_dependency(dependency)}`\n"
+        f"- Ref: `{dependency['resolved_commit']}`\n"
+        f"- License: {license_note}\n"
+        f"- Notes: {notes}\n"
+    )
+
+
+def existing_vendor_dirs_by_dependency(vendor_root: Path) -> dict[str, list[Path]]:
+    result: dict[str, list[Path]] = {}
+    if not vendor_root.exists():
+        return result
+    for path in sorted(p for p in vendor_root.iterdir() if p.is_dir()):
+        source_md = path / "SOURCE.md"
+        if not source_md.exists():
+            continue
+        dependency = source_apm_dependency(source_md.read_text())
+        if dependency:
+            result.setdefault(dependency, []).append(path)
+    return result
+
+
+def matching_skill_name(path: Path, skill_name: str) -> bool:
+    try:
+        return skill_frontmatter(path)["name"] == skill_name
+    except Exception:
+        return False
+
+
+def vendor_target(
+    vendor_root: Path,
+    staged_skill: Path,
+    dependency: dict[str, object],
+    existing_dirs: dict[str, list[Path]],
+    dependency_deploy_counts: dict[str, int],
+) -> Path:
+    staged_skill_id = staged_skill.name
+    dependency_name = apm_dependency(dependency)
+    candidates = existing_dirs.get(dependency_name, [])
+    if not candidates:
+        return vendor_root / staged_skill_id
+    exact_matches = [path for path in candidates if path.name == staged_skill_id]
+    if len(exact_matches) == 1:
+        return exact_matches[0]
+    staged_skill_name = skill_frontmatter(staged_skill)["name"]
+    skill_name_matches = [
+        path for path in candidates if matching_skill_name(path, staged_skill_name)
+    ]
+    if len(skill_name_matches) == 1:
+        return skill_name_matches[0]
+    if len(candidates) == 1:
+        if dependency_deploy_counts.get(dependency_name, 0) == 1:
+            return candidates[0]
+        return vendor_root / staged_skill_id
+
+    names = ", ".join(str(path) for path in candidates)
+    raise RuntimeError(f"multiple vendor directories for {dependency_name}: {names}")
+
+
+def remove_stale_apm_vendor_dirs(vendor_root: Path, expected_targets: set[Path]) -> None:
+    if not vendor_root.exists():
+        return
+    for path in sorted(p for p in vendor_root.iterdir() if p.is_dir()):
+        source_md = path / "SOURCE.md"
+        if not source_md.exists() or not source_apm_dependency(source_md.read_text()):
+            continue
+        if path not in expected_targets:
+            shutil.rmtree(path)
+
+
+def copy_vendored_skills(
+    staging_root: Path,
+    package_root: Path,
+    metadata: dict[str, dict[str, object]],
+) -> None:
+    staged_skills = staging_root / ".agents/skills"
+    dependency_counts = deployed_skill_counts(metadata)
+    vendor_root = package_root / "skills/vendor"
+    vendor_root.mkdir(parents=True, exist_ok=True)
+    existing_dirs = existing_vendor_dirs_by_dependency(vendor_root)
+    expected_targets: set[Path] = set()
+
+    if not staged_skills.exists():
+        if metadata:
+            raise RuntimeError(
+                f"apm produced no .agents/skills/ output but lockfile declares "
+                f"{len(metadata)} deployed skill(s); refusing to wipe vendor tree"
+            )
+        remove_stale_apm_vendor_dirs(vendor_root, expected_targets)
+        return
+
+    for staged_skill in sorted(p for p in staged_skills.iterdir() if p.is_dir()):
+        skill_id = staged_skill.name
+        dependency = metadata.get(skill_id)
+        if dependency is None:
+            raise RuntimeError(f"missing lock metadata for deployed skill {skill_id}")
+
+        target = vendor_target(
+            vendor_root,
+            staged_skill,
+            dependency,
+            existing_dirs,
+            dependency_counts,
+        )
+        expected_targets.add(target)
+        existing_source = None
+        source_path = target / "SOURCE.md"
+        if source_path.exists():
+            existing_source = source_path.read_text()
+        if target.exists():
+            shutil.rmtree(target)
+        shutil.copytree(staged_skill, target)
+        (target / "SOURCE.md").write_text(source_note(dependency, existing_source))
+    remove_stale_apm_vendor_dirs(vendor_root, expected_targets)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("package")
+    parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--packages-root", type=Path, default=PACKAGES_ROOT)
+    args = parser.parse_args()
+
+    package_root = args.packages_root / args.package
+    if not (package_root / "apm.yml").exists():
+        print(f"vendor-agent-package: unknown package {args.package}", file=sys.stderr)
+        return 1
+    if shutil.which("apm") is None:
+        print("vendor-agent-package: apm is not installed", file=sys.stderr)
+        return 1
+
+    with tempfile.TemporaryDirectory() as tmp:
+        staging_root = Path(tmp)
+        shutil.copy2(package_root / "apm.yml", staging_root / "apm.yml")
+        lockfile = package_root / "apm.lock.yaml"
+        if lockfile.exists():
+            shutil.copy2(lockfile, staging_root / "apm.lock.yaml")
+
+        base_cmd = ["apm", "install", "--only=apm", "--target", "agent-skills", "--https"]
+        if run(base_cmd + ["--dry-run"], staging_root) != 0:
+            return 1
+        if args.dry_run:
+            return 0
+        if run(base_cmd, staging_root) != 0:
+            return 1
+        source_audit_root = staging_root / "apm_modules"
+        if source_audit_root.exists() and run(
+            [str(AUDIT_SCRIPT), str(source_audit_root)],
+            staging_root,
+        ) != 0:
+            return 1
+        if run(
+            ["apm", "audit", "--ci", "--no-policy", "--format", "json"],
+            staging_root,
+        ) != 0:
+            return 1
+        try:
+            staged_lockfile = staging_root / "apm.lock.yaml"
+            metadata = (
+                deployed_skill_metadata(staged_lockfile)
+                if staged_lockfile.exists()
+                else {}
+            )
+            copy_vendored_skills(staging_root, package_root, metadata)
+        except RuntimeError as error:
+            print(f"vendor-agent-package: {error}", file=sys.stderr)
+            return 1
+        if staged_lockfile.exists():
+            shutil.copy2(staged_lockfile, lockfile)
+        elif lockfile.exists():
+            lockfile.unlink()
+        validate_env = os.environ.copy()
+        validate_env["AGENT_SKILL_PACKAGES_ROOT"] = str(args.packages_root)
+        if run([str(VALIDATE_SCRIPT)], package_root, env=validate_env) != 0:
+            return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

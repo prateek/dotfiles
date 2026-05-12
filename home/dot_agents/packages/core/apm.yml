@@ -1,0 +1,10 @@
+name: core
+version: 1.0.0
+targets:
+  - agent-skills
+
+dependencies:
+  apm:
+    - 199-biotechnologies/claude-deep-research-skill
+    - wiseiodev/skills/code-principles
+    - aiskillstore/marketplace/skills/cygnusfear/writing-clearly-and-concisely

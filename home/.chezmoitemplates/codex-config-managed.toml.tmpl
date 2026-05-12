@@ -20,5 +20,7 @@ apps = false
 [plugins."last30days@last30days-skill"]
 enabled = true
 
+{{ includeTemplate "agent-codex-plugin-config.toml.tmpl" . }}
+
 [tui]
 status_line = ["thread-title", "model-with-reasoning", "context-used", "five-hour-limit", "weekly-limit", "context-window-size", "current-dir"]

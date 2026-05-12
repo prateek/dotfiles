@@ -1,0 +1,7 @@
+name: utils-human
+version: 1.0.0
+targets:
+  - agent-skills
+
+dependencies:
+  apm: []

@@ -1,0 +1,9 @@
+name: review
+version: 1.0.0
+targets:
+  - agent-skills
+
+dependencies:
+  apm:
+    - tomasz-tomczyk/crit/integrations/codex/skills/crit
+    - tomasz-tomczyk/crit/integrations/codex/skills/crit-cli

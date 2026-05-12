@@ -1,13 +1,29 @@
 {{ template "script_lib.sh" . }}
 
-{{ $snapshotHelper := joinPath .chezmoi.workingTree "scripts/macos/defaults-snapshot.sh" }}
-{{ $snapshotHelperHash := output "shasum" "-a" "256" $snapshotHelper | trim | splitList " " | first }}
-{{ $defaultsHash := includeTemplate "macos-defaults.sh.tmpl" . | sha256sum }}
-# macos-defaults payload sha256: {{ $defaultsHash }}
-# macos-defaults snapshot helper sha256: {{ $snapshotHelperHash }}
-
 {{- if and .run_install_scripts .apply_macos_defaults }}
-{{ template "macos-defaults-runner.sh.tmpl" (dict "root" . "defaultsHash" $defaultsHash "snapshotHelper" $snapshotHelper "forceMacosDefaults" false) }}
+if [ "$(uname -s)" != "Darwin" ]; then
+  log "macOS defaults skipped on non-macOS host."
+  exit 0
+fi
+
+# The defaults body lives in home/.chezmoitemplates/macos-defaults.sh.tmpl.
+# Including it here makes the rendered run_onchange script the complete
+# desired state, so editing a default naturally forces re-execution on the
+# next apply.
+#
+# Idempotent: writing the same defaults value is a no-op at cfprefsd.
+#
+# Skip flags honoured by the defaults template (set in env before chezmoi apply):
+#   DOTFILES_SKIP_LSREGISTER=1     skip the slow Open With rebuild
+#   DOTFILES_SKIP_REINDEX=1        skip Spotlight full reindex (sudo)
+#   DOTFILES_SKIP_APP_RESTART=1    don't killall Dock/Finder/Safari/...
+#
+# Sudo behaviour: the chezmoi script library starts the shared keepalive
+# before running the defaults body. The defaults template does not maintain its
+# own sudo session.
+
+dotfiles_sudo_start "macOS defaults need administrator access. Enter your macOS password if prompted."
+{{ template "macos-defaults.sh.tmpl" . }}
 {{- else }}
 log "macOS defaults are disabled."
 {{- end }}

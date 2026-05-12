@@ -1,0 +1,10 @@
+name: ios
+version: 1.0.0
+targets:
+  - agent-skills
+
+dependencies:
+  apm:
+    - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+    - efremidze/swift-patterns-skill
+    - AvdLee/SwiftUI-Agent-Skill

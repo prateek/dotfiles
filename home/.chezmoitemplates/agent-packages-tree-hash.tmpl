@@ -1,0 +1,7 @@
+{{- /*
+Tree hash of home/dot_agents/packages used as a change marker on the
+run_onchange_after_3{5,6} scripts so chezmoi reruns them only when package
+source or renderer code changes. Returns a hex sha256 of the sorted (path,
+content) stream under that subtree.
+*/ -}}
+{{ output "python3" "-c" "import hashlib,pathlib,sys; root=pathlib.Path(sys.argv[1])/'dot_agents/packages'; h=hashlib.sha256(); [h.update(p.relative_to(root).as_posix().encode()+b'\\0'+p.read_bytes()+b'\\0') for p in sorted(root.rglob('*')) if p.is_file()]; print(h.hexdigest())" .chezmoi.sourceDir | trim -}}

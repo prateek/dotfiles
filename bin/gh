@@ -7,7 +7,7 @@
 #
 # If multi-account `gh` routing is needed again, keep that logic in a
 # separate sourced rules file and leave this wrapper as the thin execution
-# layer. See `docs/references/grmrepo.md` for the expected shape.
+# layer. See `docs/grmrepo.md` for the expected shape.
 
 set -euo pipefail
 unsetopt xtrace 2>/dev/null || true

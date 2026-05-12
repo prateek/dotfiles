@@ -1,0 +1,168 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import tempfile
+from pathlib import Path
+
+from agent_skill_lib import (
+    REPO_ROOT,
+    compare_dirs,
+    copy_skill_tree,
+    load_packages,
+    package_skills_by_name,
+    require_no_drift,
+    reset_dir,
+    skill_frontmatter,
+    write_generated_readme,
+    write_skills_gitignore,
+)
+
+
+GENERATOR = ".agents/skills/agent-skill-management/scripts/render-agent-core-skills"
+
+
+def live_skill_roots(root: Path) -> tuple[list[tuple[str, Path]], list[str]]:
+    if not root.exists():
+        return [], []
+    skills: list[tuple[str, Path]] = []
+    errors: list[str] = []
+    for path in sorted(p for p in root.iterdir() if p.is_dir() or p.is_symlink()):
+        skill_md = path / "SKILL.md"
+        if not skill_md.exists():
+            continue
+        try:
+            skills.append((skill_frontmatter(path)["name"], path))
+        except Exception as error:
+            errors.append(f"{path}: invalid live skill metadata: {error}")
+    return skills, errors
+
+
+def display_path(path: Path) -> str:
+    try:
+        return path.relative_to(REPO_ROOT).as_posix()
+    except ValueError:
+        return str(path)
+
+
+def check_live_skill_root(root: Path, source_skills, errors: list[str]) -> None:
+    live_skills, live_errors = live_skill_roots(root)
+    errors.extend(live_errors)
+    for skill_name, live_path in live_skills:
+        source = source_skills.get(skill_name)
+        if source is None:
+            errors.append(f"{root}: live-only skill {skill_name}")
+            continue
+        for diff in compare_dirs(source.path, live_path):
+            errors.append(
+                f"{live_path}: differs from {display_path(source.path)}: {diff}"
+            )
+
+
+def check_live_preflight(packages) -> None:
+    home = Path.home()
+    source_skills, duplicates = package_skills_by_name(packages)
+    errors: list[str] = []
+
+    for name, sources in sorted(duplicates.items()):
+        locations = ", ".join(display_path(skill.path) for skill in sources)
+        errors.append(f"source duplicate skill name {name}: {locations}")
+
+    for root in (home / ".agents/skills", home / ".claude/skills"):
+        check_live_skill_root(root, source_skills, errors)
+
+    codex_skills = home / ".codex/skills"
+    expected_codex_target = home / ".agents/skills"
+    if codex_skills.is_symlink():
+        if codex_skills.resolve() != expected_codex_target.resolve():
+            errors.append(
+                f"{codex_skills}: stale compatibility symlink -> "
+                f"{codex_skills.resolve()}"
+            )
+    elif codex_skills.exists():
+        kind = "directory" if codex_skills.is_dir() else "file"
+        errors.append(
+            f"{codex_skills}: expected compatibility symlink -> "
+            f"{expected_codex_target}, found {kind}"
+        )
+        if codex_skills.is_dir():
+            # Surface what's inside the misshaped dir so the user can decide what to keep.
+            check_live_skill_root(codex_skills, source_skills, errors)
+
+    claude_skills = home / ".claude/skills"
+    if claude_skills.is_symlink():
+        errors.append(
+            f"{claude_skills}: expected chezmoi-managed directory, "
+            f"found symlink -> {claude_skills.resolve()}"
+        )
+
+    if errors:
+        preview = "\n".join(f"  - {error}" for error in errors[:30])
+        more = "" if len(errors) <= 30 else f"\n  ... {len(errors) - 30} more"
+        raise SystemExit(f"live skill preflight failed:\n{preview}{more}")
+
+
+def render_root(target: Path, agent: str, packages) -> None:
+    reset_dir(target)
+    write_generated_readme(
+        target,
+        GENERATOR,
+        f"This root contains packages with `render.{agent} = \"root\"`.",
+    )
+    if agent == "codex":
+        write_skills_gitignore(target)
+    for package in packages:
+        if package.render.get(agent) != "root":
+            continue
+        for skill in package.skills:
+            copy_skill_tree(skill.path, target / skill.skill_id)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--codex-root",
+        type=Path,
+        help="Codex root-skill output directory to render or check",
+    )
+    parser.add_argument(
+        "--claude-root",
+        type=Path,
+        help="Claude root-skill output directory to render or check",
+    )
+    parser.add_argument("--check", action="store_true")
+    parser.add_argument("--check-live", action="store_true")
+    args = parser.parse_args()
+    packages = load_packages()
+
+    codex_root = args.codex_root.expanduser() if args.codex_root else None
+    claude_root = args.claude_root.expanduser() if args.claude_root else None
+
+    if args.check:
+        if codex_root is None or claude_root is None:
+            parser.error("--check requires --codex-root and --claude-root")
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            expected_codex = tmp_path / "codex"
+            expected_claude = tmp_path / "claude"
+            render_root(expected_codex, "codex", packages)
+            render_root(expected_claude, "claude", packages)
+            require_no_drift(expected_codex, codex_root, str(codex_root))
+            require_no_drift(expected_claude, claude_root, str(claude_root))
+
+    if args.check_live:
+        check_live_preflight(packages)
+
+    if args.check or args.check_live:
+        return 0
+
+    if codex_root is None or claude_root is None:
+        parser.error("--codex-root and --claude-root are required")
+
+    render_root(codex_root, "codex", packages)
+    render_root(claude_root, "claude", packages)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

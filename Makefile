@@ -1,5 +1,5 @@
 .PHONY: hammerspoon hammerspoon-check hammerspoon-reload
-.PHONY: test-docs-lifecycle test-gemini-meeting-sync test-ghc test-mise-install-script test-xcode-install-script test-secret-backed-files test-kanata-config test-chezmoi-config test-chezmoi-local-ignores test-chezmoi-script-status test-chezmoi-drift-banner test-codex-config test-cmux-plist test-ice-plist test-orbstack-plist test-selected-app-plists test-package-gated-configs test-moom-plist test-nvalt-colors test-nvalt-plist test-voiceink-plist test-plist-hooks test-sudo-keepalive test-macos-defaults-script test-brew-inventory test-brew-bundle-script test-render-brewfile test-repo-index test-grmrepo-refresh test-worktrees
+.PHONY: test-gemini-meeting-sync test-ghc test-mise-install-script test-xcode-install-script test-secret-backed-files test-kanata-config test-chezmoi-config test-chezmoi-local-ignores test-chezmoi-script-status test-chezmoi-drift-banner test-codex-config test-claude-settings test-agent-skill-packages test-agent-skill-packages-native test-cmux-plist test-ice-plist test-orbstack-plist test-selected-app-plists test-package-gated-configs test-moom-plist test-nvalt-colors test-nvalt-plist test-voiceink-plist test-plist-hooks test-sudo-keepalive test-macos-defaults-script test-brew-inventory test-brew-bundle-script test-render-brewfile test-repo-index test-grmrepo-refresh test-worktrees
 .PHONY: test-zed-settings test-zsh-fresh-shells verify-zsh-fresh-shells bench-zsh-startup
 .PHONY: test-tart-install-helper test-trace-perfetto test-vm-install-log-scan test-vm-postflight-macos test-install-tart-dry-run test-install-tart-smoke test-install-tart-full test-install-tart-warm test-install-tart-warm-bootstrap test-install-tart-warm-refresh test-install-tart-warm-destroy
 
@@ -38,19 +38,6 @@ hammerspoon-reload: hammerspoon
 ## Regression tests for the focused Brewfile renderer.
 test-render-brewfile:
 	@zsh ./tests/render-brewfile.zsh
-
-## Validate docs/ lifecycle frontmatter and historical-doc rules.
-test-docs-lifecycle:
-	@zsh ./tests/docs-lifecycle.zsh
-	@base="$${DOCS_LIFECYCLE_BASE:-}"; \
-	if [ -z "$$base" ]; then \
-		base="$$(git merge-base origin/master HEAD 2>/dev/null || true)"; \
-	fi; \
-	if [ -n "$$base" ]; then \
-		python3 ./docs/validate-doc-lifecycle --base "$$base"; \
-	else \
-		python3 ./docs/validate-doc-lifecycle; \
-	fi
 
 ## Regression tests for Gemini meeting sync wrapper config.
 test-gemini-meeting-sync:
@@ -95,6 +82,18 @@ test-chezmoi-drift-banner:
 ## Regression tests for Codex config merging.
 test-codex-config:
 	@zsh ./tests/codex-config-modify.zsh
+
+## Regression tests for Claude Code settings merging.
+test-claude-settings:
+	@zsh ./tests/claude-settings-modify.zsh
+
+## Regression tests for agent skill package rendering.
+test-agent-skill-packages:
+	@zsh ./tests/agent-skill-packages.zsh
+
+## Native Claude Code validation for generated local plugin marketplace.
+test-agent-skill-packages-native:
+	@zsh ./tests/agent-skill-packages-native.zsh
 
 ## Regression tests for selected-key cmux plist merging.
 test-cmux-plist:

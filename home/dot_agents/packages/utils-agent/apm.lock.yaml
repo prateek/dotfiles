@@ -1,0 +1,20 @@
+lockfile_version: '1'
+generated_at: '2026-05-12T04:50:03.406759+00:00'
+apm_version: 0.13.0
+dependencies:
+- repo_url: danshapiro/trycycle
+  host: github.com
+  resolved_commit: 229b6764cc7f4ee6b7d9a9ec01c9f69a31407d70
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/trycycle
+  content_hash: sha256:bc3e3ec7a1dcb0e682089322f66610c96ac14f72a697a7ba0298702c294cbe94
+- repo_url: openai/skills
+  host: github.com
+  resolved_commit: 4c4058ebf44f6734e62c70ab4a81246d4d093fc8
+  virtual_path: skills/.curated/cli-creator
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/cli-creator
+  content_hash: sha256:c8548eec5d64000583c0dc409d4354f2ef119067caa1fedd730287ba650741f1

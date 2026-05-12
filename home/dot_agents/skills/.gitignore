@@ -1,3 +1,0 @@
-# Codex writes runtime system skills here via the ~/.codex/skills symlink.
-# These change with Codex versions and should not be version-controlled.
-.system/

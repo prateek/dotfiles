@@ -1,0 +1,5 @@
+display_name = "Agent Utilities"
+
+[render]
+codex = "plugin"
+claude = "plugin"

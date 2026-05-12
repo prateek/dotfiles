@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+
+from agent_skill_lib import iter_skill_dirs, skill_frontmatter
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--agent", choices=["codex", "claude"], default="codex")
+    parser.add_argument("root", nargs="?", default=".")
+    args = parser.parse_args()
+
+    root = Path(args.root)
+    rows = []
+    for skill_dir in iter_skill_dirs(root):
+        skill_md = skill_dir / "SKILL.md"
+        try:
+            meta = skill_frontmatter(skill_dir)
+        except ValueError as exc:
+            rows.append({"path": str(skill_md), "error": str(exc)})
+            continue
+        rows.append(
+            {
+                "path": str(skill_md),
+                "name": meta["name"],
+                "description_chars": len(meta["description"]),
+                "description_words": len(meta["description"].split()),
+            }
+        )
+    print(json.dumps({"agent": args.agent, "skills": rows}, indent=2, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

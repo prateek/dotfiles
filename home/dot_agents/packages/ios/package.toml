@@ -1,0 +1,5 @@
+display_name = "iOS"
+
+[render]
+codex = "plugin"
+claude = "plugin"

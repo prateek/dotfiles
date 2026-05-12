@@ -4,8 +4,7 @@ doc_type: adr
 created: 2026-04-27
 owner: Prateek
 related:
-  - ../references/mise-tool-management.md
-status_detail: "Accepted decision record; current tool-management guidance lives in ../references/mise-tool-management.md."
+  - ../dev/mise-tool-management-plan.md
 ---
 
 # ADR 0005 - Mise-managed tool selection

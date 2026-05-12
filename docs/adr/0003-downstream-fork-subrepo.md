@@ -2,9 +2,8 @@
 status: superseded
 doc_type: adr
 created: 2026-04-17
-closed: 2026-04-17
 superseded_by: 0001-downstream-fork-architecture.md
-status_detail: "Superseded by ADR 0001 and retained only as a historical numbering record."
+status_detail: "Merged into ADR 0001."
 ---
 
 # ADR 0003 — git-subrepo-managed `src/` subdir (merged into 0001)

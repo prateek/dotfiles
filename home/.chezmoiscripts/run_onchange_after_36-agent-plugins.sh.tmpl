@@ -1,0 +1,18 @@
+{{ template "script_lib.sh" . }}
+
+# render-agent-plugin-marketplace sha256: {{ include (printf "%s/../.agents/skills/agent-skill-management/scripts/render-agent-plugin-marketplace" .chezmoi.sourceDir) | sha256sum }}
+# agent_skill_lib.py sha256: {{ include (printf "%s/../.agents/skills/agent-skill-management/scripts/agent_skill_lib.py" .chezmoi.sourceDir) | sha256sum }}
+# dot_agents/packages tree sha256: {{ includeTemplate "agent-packages-tree-hash.tmpl" . }}
+
+set -euo pipefail
+
+generator="{{ .chezmoi.sourceDir }}/../.agents/skills/agent-skill-management/scripts/render-agent-plugin-marketplace"
+
+[ -x "$generator" ] || die "Agent plugin renderer is missing or not executable: $generator"
+have python3 || die "python3 is required to render agent plugins."
+
+# The renderer resets the marketplace destination before copying package-selected plugins.
+run_timed "render agent plugins" \
+  "$generator" \
+  --plugins-root "$HOME/.agents/plugins" \
+  --skip-config-templates
