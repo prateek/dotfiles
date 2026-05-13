@@ -11,6 +11,9 @@ ruby = "latest"
 # Yarn: pinned, tied to the Node ecosystem.
 "npm:yarn" = "1.22.22"
 
+# pnpm: track latest, tied to the Node ecosystem.
+"npm:pnpm" = "latest"
+
 [settings.ruby]
 # Use mise's signed precompiled Ruby artifacts when available.
 compile = false
