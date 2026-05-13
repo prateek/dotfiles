@@ -26,6 +26,15 @@ GitHub renders markdown in PR descriptions, PR/issue/review comments, and issue 
 - Applies to `gh pr create --body`, `gh pr comment --body`, `gh issue create --body`, `gh pr review --body`, and any heredoc piped into them.
 - If you need a literal line break inside a paragraph, use Markdown's line-break syntax (two trailing spaces, or a trailing `\`) — not a column wrap.
 
+## Templates and idioms
+
+Before creating an issue, PR, or review comment, check whether the repo already has a convention to follow. Matching the local style beats inventing your own.
+
+- Look for `.github/ISSUE_TEMPLATE/`, `.github/PULL_REQUEST_TEMPLATE.md` (or `pull_request_template.md`), and `.github/PULL_REQUEST_TEMPLATE/` for templates. Use them.
+- If no template file exists, scan a few recent merged PRs or issues for the de facto shape (sections, checklist, labels, linked-issue syntax) and follow it.
+- Check `CONTRIBUTING.md`, `.github/CODEOWNERS`, and any `docs/` contributor guide for required reviewers, labels, or commit/PR title rules (e.g. conventional-commit prefixes, ticket IDs).
+- For `gh pr create` / `gh issue create`, pass `--template <name>` when a specific template applies; otherwise pre-fill `--body` to match the template structure rather than submitting an empty body.
+
 ## Defaults
 
 - Prefer worktree-first workflow via `w` (Worktrunk wrapper).
