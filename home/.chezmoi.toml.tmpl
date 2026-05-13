@@ -38,6 +38,29 @@
 {{-   $applyDefaults = promptBoolOnce . "apply_macos_defaults" "Apply macOS defaults from this repo?" true | toString -}}
 {{- end -}}
 
+{{- /* Machine class drives the elevation hook. Currently only Jamf-managed
+       work macs need a special step before sudo works; personal/homelab fall
+       through to the ordinary sudo prompt. See
+       docs/jamf-self-service-elevation.md. */ -}}
+{{- $machineType := env "DOTFILES_MACHINE_TYPE" -}}
+{{- if not $machineType -}}
+{{-   $machineType = promptChoiceOnce . "machine_type" "Machine type" (list "personal" "homelab" "work") "personal" -}}
+{{- end -}}
+
+{{- $elevationMethod := env "DOTFILES_ELEVATION_METHOD" -}}
+{{- if not $elevationMethod -}}
+{{-   if eq $machineType "work" -}}
+{{-     $elevationMethod = promptStringOnce . "elevation_method" "Admin elevation method (jamf-self-service / none)" "jamf-self-service" -}}
+{{-   else -}}
+{{-     $elevationMethod = "none" -}}
+{{-   end -}}
+{{- end -}}
+
+{{- $jamfPolicyId := env "DOTFILES_JAMF_POLICY_ID" -}}
+{{- if and (not $jamfPolicyId) (eq $elevationMethod "jamf-self-service") -}}
+{{-   $jamfPolicyId = promptStringOnce . "jamf_self_service_policy_id" "Jamf Self Service policy ID for temp admin (see docs/jamf-self-service-elevation.md)" "" -}}
+{{- end -}}
+
 {{- $installXcode := env "DOTFILES_INSTALL_XCODE" | default "false" -}}
 {{- $manageZinitExternal := env "DOTFILES_MANAGE_ZINIT_EXTERNAL" | default "true" -}}
 
@@ -57,6 +80,11 @@ run_install_scripts = {{ $runInstallScripts }}
 apply_macos_defaults = {{ $applyDefaults }}
 install_xcode = {{ $installXcode }}
 manage_zinit_external = {{ $manageZinitExternal }}
+machine_type = {{ $machineType | quote }}
+
+[data.elevation]
+method = {{ $elevationMethod | quote }}
+jamf_policy_id = {{ $jamfPolicyId | quote }}
 
 # Render binary plists as XML for `chezmoi diff`. Affects diff output only;
 # apply still writes binary. See docs/dev/chezmoi-migration-plan.md > Plist Management.

@@ -50,6 +50,49 @@ brew_shellenv() {
   fi
 }
 
+# Optional pre-sudo hook for machines where this user is not in the admin
+# group by default (e.g. MDM-managed work Macs). Runs before the keepalive's
+# `sudo -v` probe so a no-admin user can be elevated first. Sources
+# ~/.config/dotfiles/elevation.sh (rendered from chezmoi data) to discover the
+# configured method; defaults to a no-op when the file is missing or when
+# DOTFILES_ELEVATION_METHOD is "none". See docs/jamf-self-service-elevation.md.
+dotfiles_admin_elevate() {
+  local config="${HOME}/.config/dotfiles/elevation.sh"
+  [ -r "$config" ] || return 0
+  # shellcheck disable=SC1090
+  . "$config"
+  case "${DOTFILES_ELEVATION_METHOD:-none}" in
+    none|"") return 0 ;;
+    jamf-self-service) _dotfiles_elevate_jamf_self_service ;;
+    *) warn "Unknown DOTFILES_ELEVATION_METHOD: ${DOTFILES_ELEVATION_METHOD}"; return 0 ;;
+  esac
+}
+
+_dotfiles_elevate_jamf_self_service() {
+  local policy_id="${DOTFILES_JAMF_POLICY_ID:-}"
+  if [ -z "$policy_id" ]; then
+    warn "elevation method is jamf-self-service but DOTFILES_JAMF_POLICY_ID is empty; skipping"
+    return 1
+  fi
+  if id -Gn 2>/dev/null | tr ' ' '\n' | grep -qx admin; then
+    return 0
+  fi
+  log "Triggering Jamf Self Service policy id=${policy_id} for temporary admin..."
+  if ! "${DOTFILES_OPEN:-open}" "jamfselfservice://content?entity=policy&action=execute&id=${policy_id}" >/dev/null 2>&1; then
+    warn "Failed to open Self Service URL for policy ${policy_id}"
+    return 1
+  fi
+  local _attempt
+  for _attempt in $(seq 1 30); do
+    sleep 1
+    if id -Gn 2>/dev/null | tr ' ' '\n' | grep -qx admin; then
+      return 0
+    fi
+  done
+  warn "Timed out waiting for admin group membership after Self Service trigger (policy ${policy_id})."
+  return 1
+}
+
 dotfiles_sudo_state_dir() {
   local base
   base="${XDG_RUNTIME_DIR:-${TMPDIR:-/tmp}}"
@@ -141,6 +184,9 @@ dotfiles_sudo_start() {
     preexisting=1
   else
     log "$reason"
+    if ! dotfiles_admin_elevate; then
+      die "Could not elevate to administrator. See docs/jamf-self-service-elevation.md or set DOTFILES_ELEVATION_METHOD=none to skip the hook."
+    fi
     if ! sudo -v; then
       die "Administrator access is required for this dotfiles step. Make sure this macOS user is an Administrator, or install Homebrew manually and rerun chezmoi apply."
     fi

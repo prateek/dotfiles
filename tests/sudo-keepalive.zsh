@@ -242,6 +242,63 @@ dotfiles_sudo_stop
 EOF
 }
 
+# Drives dotfiles_admin_elevate with stub `open` and `id` against a synthetic
+# elevation.sh under a fake HOME. Returns the path to the `open.log` so
+# callers can assert what was invoked. With already_admin=1 the marker is
+# pre-created so the first `id -Gn` already reports admin and `open` should
+# never run.
+run_admin_elevate_case() {
+  local case_name="$1" method="$2" policy_id="$3" already_admin="$4"
+  local case_root="$tmp_root/$case_name"
+  local elev_dir="$case_root/home/.config/dotfiles"
+  local case_bin="$case_root/bin"
+  local marker="$case_root/became-admin"
+  local open_log="$case_root/open.log"
+
+  mkdir -p "$elev_dir" "$case_bin"
+  {
+    printf 'DOTFILES_ELEVATION_METHOD=%s\n' "$method"
+    [ -n "$policy_id" ] && printf 'DOTFILES_JAMF_POLICY_ID=%s\n' "$policy_id"
+  } >"$elev_dir/elevation.sh"
+
+  cat >"$case_bin/open" <<EOF
+#!/usr/bin/env bash
+printf '%s\n' "\$*" >> "$open_log"
+: > "$marker"
+EOF
+  chmod +x "$case_bin/open"
+
+  if [[ "$already_admin" == "1" ]]; then
+    : > "$marker"
+  fi
+
+  cat >"$case_bin/id" <<EOF
+#!/usr/bin/env bash
+if [[ "\${1:-}" == "-Gn" ]]; then
+  if [[ -e "$marker" ]]; then
+    printf 'staff admin\n'
+  else
+    printf 'staff\n'
+  fi
+else
+  exec /usr/bin/id "\$@"
+fi
+EOF
+  chmod +x "$case_bin/id"
+
+  PATH="$case_bin:/usr/bin:/bin:/usr/sbin:/sbin" \
+  HOME="$case_root/home" \
+  DOTFILES_ROOT="$DOTFILES_ROOT" \
+  bash >/dev/null <<'EOF'
+set -euo pipefail
+source "$DOTFILES_ROOT/home/.chezmoitemplates/script_lib.sh"
+
+dotfiles_admin_elevate
+EOF
+
+  printf '%s\n' "$open_log"
+}
+
 # Cold sudo cache: one real validation, reused by the second start, then cleared.
 : > "$SUDO_LOG"
 rm -f "$SUDO_WARMED"
@@ -296,5 +353,21 @@ run_auto_cleanup_case >/dev/null
 [[ "$(grep -c -- '^-v$' "$SUDO_LOG")" -eq 1 ]] || die "parent-exit cleanup should prompt once for a cold cache"
 [[ "$(grep -c -- '^-k$' "$SUDO_LOG")" -eq 1 ]] || die "parent-exit cleanup should clear a cold cache"
 [[ ! -e "$SUDO_WARMED" ]] || die "parent-exit cleanup should clear the warm marker"
+
+# Elevation hook: jamf-self-service triggers `open` exactly once, polls until
+# `id -Gn` reports admin, and exits successfully.
+elev_log="$(run_admin_elevate_case "elev-cold" "jamf-self-service" "4242" "0")"
+[[ -s "$elev_log" ]] || die "jamf-self-service elevation should invoke open"
+[[ "$(grep -c 'jamfselfservice://content?entity=policy&action=execute&id=4242' "$elev_log")" -eq 1 ]] \
+  || die "elevation should call open with the configured policy URL exactly once; got: $(cat "$elev_log")"
+
+# Already-admin short-circuit: dotfiles_admin_elevate must not invoke `open`
+# when the user is already in the admin group, regardless of method.
+elev_log="$(run_admin_elevate_case "elev-warm" "jamf-self-service" "4242" "1")"
+[[ ! -s "$elev_log" ]] || die "already-admin should skip the Self Service trigger; got: $(cat "$elev_log")"
+
+# Method=none is the explicit opt-out and must never invoke `open`.
+elev_log="$(run_admin_elevate_case "elev-none" "none" "" "0")"
+[[ ! -s "$elev_log" ]] || die "method=none should skip the Self Service trigger; got: $(cat "$elev_log")"
 
 print -- "OK sudo-keepalive"
