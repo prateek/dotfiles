@@ -8,3 +8,6 @@ dependencies:
     - openai/skills/skills/.curated/cli-creator
     - danshapiro/trycycle
     - stablyai/orca/skills/orca-cli
+    - git: stablyai/orca
+      path: skills/orchestration
+      alias: orca-stration
