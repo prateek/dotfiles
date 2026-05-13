@@ -26,10 +26,10 @@ python3 scripts/create_experiment.py \
   --root ~/experiments \
   --name vector-search \
   --goal "Evaluate hybrid search with embeddings vs BM25." \
-  --repo openai/openai-python \
-  --repo-sparse openai/openai-python=src/openai,examples \
+  --repo langchain-ai/langchain \
+  --repo-sparse langchain-ai/langchain=libs/langchain,cookbook \
   --repo facebookresearch/faiss \
-  --url https://platform.openai.com/docs/ \
+  --url https://python.langchain.com/docs/concepts/retrievers/ \
   --note "Measure latency/recall across configs"
 ```
 

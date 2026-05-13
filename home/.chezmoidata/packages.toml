@@ -26,6 +26,7 @@ brews = [
   { name = "uv" },
   { name = "shellcheck" },
   { name = "tmux" },
+  { name = "worktrunk" },
 ]
 casks = [
   { name = "codex" },
@@ -283,6 +284,8 @@ brews = [
   { name = "wget" },
   { name = "winetricks" },
   { name = "wireshark" },
+  # `worktrunk` ships the `wt` binary; conflicts with `wiredtiger` if ever installed.
+  { name = "worktrunk" },
   { name = "xcbeautify" },
   { name = "homebrew/core/xcodes", args = ["force-bottle"] },
   { name = "xcodegen" },

@@ -1,6 +1,6 @@
 ---
 name: github-pr-review-setup
-description: Prepare a clean local checkout for a GitHub PR (worktree-first via `wf`/`wt`), fetch the PR base ref, and emit PR context (CI checks + PR comments/reviews) as JSON for downstream review.
+description: Prepare a clean local checkout for a GitHub PR (worktree-first via `wt`), fetch the PR base ref, and emit PR context (CI checks + PR comments/reviews) as JSON for downstream review.
 ---
 
 # GitHub PR Review Setup
@@ -9,7 +9,7 @@ description: Prepare a clean local checkout for a GitHub PR (worktree-first via 
 
 - `pr`: PR number or URL (preferred)
 - `repo` (optional): `OWNER/REPO` (used when `pr` is a number and repo can’t be inferred)
-- `repo-dir` (optional): local clone path (required for non-`openai/openai` PRs if you aren’t already in that repo)
+- `repo-dir` (optional): local clone path (required when you aren’t already in the target repo)
 - `checkout-mode` (optional): `worktree` (default) or `inplace`
 - `worktree-name` (optional): override worktree/branch name (default: `pr-review-<number>`)
 - `out` (optional): path to also write the JSON payload
@@ -19,7 +19,7 @@ description: Prepare a clean local checkout for a GitHub PR (worktree-first via 
 - Prepare a PR review workspace + print JSON:
   - `python "<path-to-skill>/scripts/prepare_github_pr_review.py" --pr "<number-or-url>"`
   - Add `--repo "<owner/repo>"` when `--pr` is just a number and repo inference isn’t possible.
-  - Add `--repo-dir "<path-to-local-clone>"` for non-`openai/openai` PRs when needed.
+  - Add `--repo-dir "<path-to-local-clone>"` when not running inside the target repo.
 
 ## Output (JSON)
 
@@ -34,7 +34,7 @@ The script prints one JSON object to stdout containing at least:
 
 ### 1) Create / reuse a clean checkout (default: worktree)
 
-- Uses `wf` for `openai/openai` and `wt` for all other repos.
+- Uses `wt` (Worktrunk) to create a clean worktree for the PR.
 - For `--checkout-mode inplace`, checks out the PR branch directly in the target clone (requires a clean repo).
 
 ### 2) Fetch the PR base ref (shared prerequisite)

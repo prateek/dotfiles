@@ -53,7 +53,7 @@ create_repo() {
 }
 
 create_repo "$GHPATH/test-owner/test-repo"
-create_repo "$HOME/code/openai" "git@github.com:openai/openai.git"
+create_repo "$GHPATH/other-owner/other-repo"
 
 mkdir -p "$GHPATH/test-owner/worktree-like"
 cat >"$GHPATH/test-owner/worktree-like/.git" <<'EOF'
@@ -62,16 +62,19 @@ EOF
 
 echo "• repo-index emits canonical clones as TSV"
 tsv_output="$(zsh "$DOTFILES_ROOT/bin/repo-index" --format tsv)"
-assert_contains_line "$tsv_output" "openai/openai	https://github.com/openai/openai	$HOME/code/openai"
 assert_contains_line "$tsv_output" "test-owner/test-repo	https://github.com/test-owner/test-repo	$GHPATH/test-owner/test-repo"
+assert_contains_line "$tsv_output" "other-owner/other-repo	https://github.com/other-owner/other-repo	$GHPATH/other-owner/other-repo"
 if print -r -- "$tsv_output" | grep -Fq "worktree-like"; then
   die "expected worktree-like entry to be ignored"
 fi
 
 echo "• repo-index emits slugs"
 slugs_output="$(zsh "$DOTFILES_ROOT/bin/repo-index" --format slugs)"
-assert_contains_line "$slugs_output" "openai/openai"
 assert_contains_line "$slugs_output" "test-owner/test-repo"
+assert_contains_line "$slugs_output" "other-owner/other-repo"
+if print -r -- "$slugs_output" | grep -Fq "worktree-like"; then
+  die "expected worktree-like entry to be ignored"
+fi
 
 echo "• repo-index rejects unsupported formats"
 set +e

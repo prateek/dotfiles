@@ -10,9 +10,6 @@ This machine uses [git-repo-manager](https://github.com/hakoerber/git-repo-manag
 ## Key conventions
 
 - **Canonical clones** live under `~/code/github.com/<owner>/<repo>`
-- **Exceptions**
-  - `github.com/openai/openai` → `~/code/openai`
-  - `github.com/chronosphereio/chronosphere-openai` → `~/code/chronosphere-openai`
 - **Worktrees can be anywhere** and are *not* tracked by the GRM config here.
 
 ## Quick start

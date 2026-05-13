@@ -268,46 +268,6 @@ def _gh_api_paginate_json(endpoint: str) -> Any:
         raise PrepareError(f"failed to parse `gh api` output as JSON for {endpoint!r}") from exc
 
 
-def _wf_prepare(pr_number: int, *, worktree_name: str, repo: str) -> Path:
-    _require_cmd("wf")
-    _require_cmd("gh")
-
-    wf_proc = _run(["wf", "new", "--reuse", "--json", worktree_name], capture=True)
-    try:
-        wf_data = json.loads(wf_proc.stdout)
-    except json.JSONDecodeError as exc:
-        raise PrepareError("failed to parse `wf new --json` output") from exc
-
-    openai_path = wf_data.get("openai_path")
-    if not openai_path:
-        raise PrepareError("`wf new --json` did not return openai_path")
-    worktree_dir = Path(openai_path).expanduser().resolve()
-
-    if not _git_is_clean(worktree_dir):
-        raise PrepareError(
-            f"worktree is dirty: {worktree_dir}\n"
-            f"clean it up or remove it (e.g. `wf rm {worktree_name} -y`) and retry"
-        )
-
-    _run(
-        [
-            "gh",
-            "pr",
-            "checkout",
-            str(pr_number),
-            "-R",
-            repo,
-            "--branch",
-            worktree_name,
-            "--force",
-        ],
-        cwd=worktree_dir,
-        capture=True,
-    )
-
-    return worktree_dir
-
-
 def _wt_prepare(pr_number: int, *, worktree_name: str, repo: str, repo_dir: Path) -> Path:
     _require_cmd("wt")
     _require_cmd("gh")
@@ -384,7 +344,7 @@ def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(
         description=(
             "Prepare a local checkout for reviewing a GitHub PR and emit review context as JSON. "
-            "Defaults to a clean worktree checkout (wf for openai/openai, wt otherwise)."
+            "Defaults to a clean worktree checkout via `wt` (Worktrunk)."
         )
     )
     parser.add_argument("--pr", required=True, help="PR number or GitHub PR URL")
@@ -394,7 +354,7 @@ def main(argv: list[str]) -> int:
     )
     parser.add_argument(
         "--repo-dir",
-        help="Local repo dir (required for non-openai/openai PRs unless running inside that repo)",
+        help="Local repo dir (required when not running inside the target repo)",
     )
     parser.add_argument(
         "--checkout-mode",
@@ -415,7 +375,6 @@ def main(argv: list[str]) -> int:
     repo = (args.repo or parsed.repo or "").strip() or None
 
     if repo is None:
-        # Try to infer from local repo (if available); otherwise default to openai/openai.
         if args.repo_dir:
             repo = _git_origin_repo(_git_root(Path(args.repo_dir)))
         else:
@@ -425,7 +384,10 @@ def main(argv: list[str]) -> int:
                 repo = None
 
     if repo is None:
-        repo = "openai/openai"
+        raise PrepareError(
+            "could not determine PR repo; pass --repo OWNER/REPO or --repo-dir <path-to-clone>, "
+            "or run from inside the target repo"
+        )
 
     worktree_name = args.worktree_name or f"pr-review-{pr_number}"
 
@@ -436,26 +398,19 @@ def main(argv: list[str]) -> int:
         raise PrepareError("`gh pr view` did not return baseRefName/headRefName")
 
     checkout_mode = args.checkout_mode
+    repo_path = Path(args.repo_dir) if args.repo_dir else Path.cwd()
     if checkout_mode == "worktree":
-        if repo.lower() == "openai/openai":
-            worktree_dir = _wf_prepare(pr_number, worktree_name=worktree_name, repo=repo)
-            worktree_type = "wf"
-            repo_dir: str | None = None
-        else:
-            repo_path = Path(args.repo_dir) if args.repo_dir else Path.cwd()
-            worktree_dir = _wt_prepare(
-                pr_number,
-                worktree_name=worktree_name,
-                repo=repo,
-                repo_dir=repo_path,
-            )
-            worktree_type = "wt"
-            repo_dir = str(_git_root(repo_path))
+        worktree_dir = _wt_prepare(
+            pr_number,
+            worktree_name=worktree_name,
+            repo=repo,
+            repo_dir=repo_path,
+        )
+        worktree_type = "wt"
     else:
-        repo_path = Path(args.repo_dir) if args.repo_dir else Path.cwd()
         worktree_dir = _inplace_prepare(pr_number, branch_name=worktree_name, repo=repo, repo_dir=repo_path)
         worktree_type = "inplace"
-        repo_dir = str(_git_root(repo_path))
+    repo_dir: str | None = str(_git_root(repo_path))
 
     if not _git_is_clean(worktree_dir):
         raise PrepareError(

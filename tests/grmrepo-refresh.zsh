@@ -57,18 +57,12 @@ create_repo() {
 config_path="$tmp_root/grm-config.toml"
 create_repo "$GHPATH/test-owner/test-repo" "git@github.com:test-owner/test-repo.git"
 
-echo "• grmrepo-refresh writes conditional special-path header"
+echo "• grmrepo-refresh emits a tree per owner with canonical-root header"
 GRMREPO_CONFIG="$config_path" zsh "$DOTFILES_ROOT/bin/grmrepo-refresh" >/dev/null
 config_contents="$(<"$config_path")"
-assert_contains_line "$config_contents" "# Supported special-case paths (included only when present locally):"
-assert_not_contains_line "$config_contents" "#   - github.com/openai/openai -> ~/code/openai"
-assert_not_contains_line "$config_contents" "#   - github.com/chronosphereio/chronosphere-openai -> ~/code/chronosphere-openai"
-
-echo "• grmrepo-refresh still includes supported special paths when present"
-create_repo "$HOME/code/openai" "git@github.com:openai/openai.git"
-GRMREPO_CONFIG="$config_path" zsh "$DOTFILES_ROOT/bin/grmrepo-refresh" >/dev/null
-config_contents="$(<"$config_path")"
+assert_contains_line "$config_contents" "# Canonical clone root:"
+assert_contains_line "$config_contents" "#   - ~/code/github.com/<owner>/<repo>"
 assert_contains_line "$config_contents" "[[trees]]"
-assert_contains_line "$config_contents" "root = \"~/code\""
-assert_contains_line "$config_contents" "name = \"openai\""
-assert_contains_line "$config_contents" "url = \"git@github.com:openai/openai.git\""
+assert_contains_line "$config_contents" "root = \"~/code/github.com/test-owner\""
+assert_contains_line "$config_contents" "name = \"test-repo\""
+assert_contains_line "$config_contents" "url = \"git@github.com:test-owner/test-repo.git\""

@@ -52,22 +52,10 @@ function ghc() {
     return 2
   fi
 
-  local code_root ghpath
+  local ghpath
   ghpath="${GHPATH:-$HOME/code/github.com}"
-  code_root="${ghpath%/github.com}"
 
-  local target
-  case "$slug" in
-    (openai/openai)
-      target="$code_root/openai"
-      ;;
-    (chronosphereio/chronosphere-openai)
-      target="$code_root/chronosphere-openai"
-      ;;
-    (*)
-      target="$ghpath/$slug"
-      ;;
-  esac
+  local target="$ghpath/$slug"
 
   if [[ ! -d "$target/.git" ]]; then
     mkdir -p "$(dirname "$target")"

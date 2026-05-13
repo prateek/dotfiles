@@ -4,12 +4,14 @@ This dotfiles repo provides a fast workflow for creating Git worktrees across re
 
 ## Prereqs
 
-- `wt` (Worktrunk)
+- `wt` (Worktrunk) — installed via Homebrew (`worktrunk` is in both `core` and `full` profiles in `home/.chezmoidata/packages.toml`).
 - `fzf`, `zoxide` (installed via Brewfile)
+- `w`, `wta`, `wtn` are zsh autoload functions shipped by these dotfiles (`home/dot_config/zsh/autoload/`); `init.sh` adds the autoload dir to `fpath` so they're available in any interactive shell after `chezmoi apply`.
 - `chezmoi apply` symlinks `repo-index` + `wt-hook-sparse` into `~/bin` (via `home/bin/symlink_*.tmpl`)
-- Worktrunk installs via `cargo install worktrunk --locked` when `cargo` is available (or via Homebrew if listed in the package profile)
 
-If `wt` isn’t installed:
+Note: the `worktrunk` formula installs a `wt` binary that conflicts with `wiredtiger`. We don't ship `wiredtiger`, so this is only relevant if a future package addition pulls it in.
+
+Manual install fallback if Homebrew isn't an option:
 
 ```sh
 cargo install worktrunk --locked

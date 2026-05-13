@@ -7,8 +7,7 @@ Use this playbook for Git/GitHub workflows on this machine.
 ## When to use
 
 - Creating/switching branches/worktrees.
-- Working in `openai/openai`.
-- Running GitHub CLI commands where identity selection matters.
+- Running GitHub CLI commands.
 - Committing, pushing, or any git operation.
 
 ## Commit messages
@@ -18,22 +17,19 @@ Use this playbook for Git/GitHub workflows on this machine.
 - Commit messages should be written in the imperative mood.
 - Commit messages should be written in the present tense.
 
+## Writing prose for GitHub
+
+GitHub renders markdown in PR descriptions, PR/issue/review comments, and issue bodies, and it word-wraps prose to the reader's viewport. **Do not hard-wrap text at a column boundary (80/100/120) when writing prose for these surfaces.**
+
+- Write each paragraph as one long line, or one-sentence-per-line. Either is fine.
+- Column wraps make the source ugly to edit and do not improve the rendered output.
+- Applies to `gh pr create --body`, `gh pr comment --body`, `gh issue create --body`, `gh pr review --body`, and any heredoc piped into them.
+- If you need a literal line break inside a paragraph, use Markdown's line-break syntax (two trailing spaces, or a trailing `\`) — not a column wrap.
+
 ## Defaults
 
 - Prefer worktree-first workflow via `w` (Worktrunk wrapper).
-- Prefer sparse checkout for `openai/openai`.
-- Use wrapped `gh` and verify identity before sensitive operations.
-
-## Authentication and remotes
-
-- For OpenAI-owned repos, prefer SSH remotes (`git@github-openai:openai/<repo>.git` or `git@github.com:openai/<repo>.git`).
-- Use Secretive + `am keysign` for OpenAI GitHub SSH auth.
-- For device-code auth flows, use `oai_gh` (not manual browser/device-code URL flows).
-- For non-OpenAI repos, OpenAI SSH certs do not apply by default.
-- `chronosphere-openai` convention:
-  - Default `origin` to `https://github.com/chronosphereio/chronosphere-openai.git`.
-  - Keep optional `origin-ssh` only if using a separate non-OpenAI SSH key setup.
-  - Do not add an `openai` remote by default.
+- Use the wrapped `gh` (see below).
 
 ## Workflow
 
@@ -46,7 +42,7 @@ Use this playbook for Git/GitHub workflows on this machine.
   - `w run fix-bug --agent claude -- 'Fix GH #322'`
 - Target a specific repo:
   - `w feature/auth --here`
-  - `w feature/auth --repo openai/openai`
+  - `w feature/auth --repo chronosphereio/monorepo`
   - `w feature/auth --repo /path/to/repo`
 - Worktree maintenance:
   - `w ls`
@@ -57,38 +53,15 @@ Use this playbook for Git/GitHub workflows on this machine.
 Worktree reference:
 - [worktrees.md](worktrees.md)
 
-### 2) For `openai/openai`, keep sparse checkout minimal
+### 2) Use the `gh` wrapper
 
-When creating a worktree for `openai/openai`, prefer sparse checkout and keep it minimal.
-
-- Create sparse worktree:
-  - `w new my-branch --repo openai/openai --sparse api --sparse codex`
-- Add dirs later (inside worktree):
-  - `git sparse-checkout add docs`
-  - `git sparse-checkout list`
-
-Venv notes:
-- Per-worktree venv is auto-installed by dotfiles hook.
-- Path pattern: `~/.virtualenvs/openai-<branch_sanitized>`.
-
-### 3) Use the `gh` wrapper correctly
-
-This machine wraps `gh` to select GitHub identity automatically.
+This machine wraps `gh` via `~/bin/gh` → `~/dotfiles/bin/gh`. The wrapper passes through to the real `gh` and triggers a background `grmrepo-refresh` after successful `gh repo clone/create`.
 
 - Wrapper path: `~/bin/gh` -> `~/dotfiles/bin/gh`
-- Identity signals (priority):
-  - `-R/--repo`
-  - current repo `origin`
-  - some positional repo args (for example `gh repo clone owner/repo`)
-- Force identity when needed:
-  - `GH_WRAPPER_USER=prateek-oai gh ...`
-  - `GH_WRAPPER_USER=prateek gh ...`
 - Check active identity:
   - `gh api user -q .login`
 
-Common failure:
-- If you see `GraphQL: Could not resolve to a Repository ...`, retry with:
-  - `GH_WRAPPER_USER=prateek-oai`
+If this machine ever needs multiple authenticated `gh` users again, the recommended shape lives in `docs/grmrepo.md` (section "Extending Back To Multiple `gh` Users").
 
 ## Safety protocols
 
@@ -153,7 +126,6 @@ Remember: Quality tools are guardrails that help you, not barriers that block yo
 ## Validation checklist
 
 - Worktree created/switched via `w` (or explicitly justified otherwise).
-- Sparse checkout used for `openai/openai`.
 - `gh` identity verified before repo/PR operations.
 - Commit messages follow conventional commit format.
 - Pre-commit hooks pass before every commit.
