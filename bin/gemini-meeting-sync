@@ -334,7 +334,7 @@ cmd_run() {
 
   run_dir="$(grep -m1 '^Run dir: ' "$log_path" 2>/dev/null | sed -E 's/^Run dir: //' || true)"
   if [[ -n "$run_dir" && -f "$run_dir/summary.json" ]]; then
-    errors="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["errors"])' "$run_dir/summary.json" 2>/dev/null || echo unknown)"
+    errors="$(jq -r '.errors // "unknown"' "$run_dir/summary.json" 2>/dev/null || echo unknown)"
   fi
 
   post_count="$(count_processed "$OUT_DIR")"

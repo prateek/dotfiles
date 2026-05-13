@@ -28,7 +28,7 @@ New app config request
 
 ## Plist Fragment Anatomy
 
-A `modify_` stub at the target path under `home/Library/private_Preferences/` (the parent directory carries `private_` so chezmoi enforces 0700 mode on `~/Library/Preferences`). Three lines, Python-shaped (because the prelude and postlude are Python and run as the modify script).
+A `modify_` stub at the target path under `home/Library/private_Preferences/` (the parent directory carries `private_` so chezmoi enforces 0700 mode on `~/Library/Preferences`). Each stub is a small bash shim that exec's the shared merge tool at `scripts/macos/plist-merge`.
 
 Stub path:
 
@@ -36,19 +36,22 @@ Stub path:
 home/Library/private_Preferences/modify_private_<bundle-id>.plist.tmpl
 ```
 
-Stub content (the contract: include the prelude, bind `desired_xml` from a base64-encoded fragment, include the postlude):
+Stub content (the contract: hardcode the bundle ID, embed the desired XML fragment as base64):
 
 ```text
-{{ template "plist-merge-prelude.py" . }}
-desired_xml = base64.b64decode("{{ includeTemplate "<bundle-id>.plist.tmpl" . | b64enc }}")
-{{ template "plist-merge-postlude.py" . }}
+#!/usr/bin/env bash
+exec '{{ .chezmoi.sourceDir }}/../scripts/macos/plist-merge' \
+  --bundle-id '<bundle-id>' \
+  --desired-b64 '{{ includeTemplate "<bundle-id>.plist.tmpl" . | b64enc }}'
 ```
 
-The prelude and postlude lines use the `{{ template ... }}` action because they only need to emit Python code into the rendered stub. The `desired_xml` line uses `{{ includeTemplate ... | b64enc }}` because it needs to *pipe* the rendered fragment through `b64enc` — `template` is an action that returns nothing and cannot be piped, so the function form `includeTemplate` is required there. Match this split exactly; it mirrors the live stubs.
+The `desired-b64` arg uses `includeTemplate ... | b64enc` because it needs to *pipe* the rendered fragment through `b64enc` — `template` is an action that returns nothing and cannot be piped, so the function form `includeTemplate` is required there.
 
-The fragment itself is plain plist XML at `home/.chezmoitemplates/<bundle-id>.plist.tmpl`. Chezmoi renders the stub as a Python script that:
+Each per-app stub stays explicit (one source file per target) rather than being generated from a `range` over `.chezmoidata`. Explicit wins for `git log --follow`, grep, and `.chezmoiignore`-based per-app opt-outs; the duplication is 4 lines and changes only when adding/removing a managed app. Single-quoting the stub args is safe because bundle IDs are reverse-DNS (no quotes) and base64 padding is `=`-only; if you adapt this pattern to a value class that can contain quotes, switch to a heredoc or escape explicitly.
+
+The fragment itself is plain plist XML at `home/.chezmoitemplates/<bundle-id>.plist.tmpl`. Chezmoi renders the stub as a bash script; bash exec's the merge tool. The tool:
 1. Reads the existing destination plist from stdin (chezmoi `modify_` contract).
-2. Parses `desired_xml` as the desired key set.
+2. Decodes `--desired-b64` and parses it as the desired key set.
 3. Applies any `<!-- chezmoi-delete: key1, key2 -->` directives found in the rendered XML (see "Deleting Keys" below).
 4. Merges desired keys into current, skipping byte-identical values to avoid spurious rewrites.
 5. Writes the binary plist to stdout.
@@ -130,7 +133,7 @@ The `modify_` mechanism works for any config where chezmoi owns some keys and th
 - `home/dot_codex/modify_private_config.toml.tmpl` — TOML modify_ stub.
 - `home/.chezmoitemplates/codex-config-managed.toml.tmpl` — fragment of chezmoi-owned defaults.
 
-**Important: TOML modify_ stubs do NOT use the plist prelude/postlude split.** They are standalone Python scripts (with `#!/usr/bin/env python3` and their own imports) that:
+**Important: TOML modify_ stubs do NOT use the plist bash-shim pattern.** They are standalone Python scripts (`#!/usr/bin/env -S uv run --script` with their own PEP 723 metadata and imports) that:
 
 1. Pull the chezmoi-owned fragment via `desired_text = base64.b64decode("{{ includeTemplate "codex-config-managed.toml.tmpl" . | b64enc }}").decode()` — only the fragment line uses `includeTemplate`.
 2. Read stdin (current `~/.codex/config.toml`).
@@ -139,7 +142,7 @@ The `modify_` mechanism works for any config where chezmoi owns some keys and th
 
 Use the `chezmoi-delete`-style directive only inside plist fragments; for TOML the merge logic is inlined in the stub script itself.
 
-When you need a similar pattern for a new format (YAML, JSON, INI, etc.), copy the standalone-Python-script shape from the Codex stub rather than the plist prelude/postlude template includes.
+When you need a similar pattern for a new format (YAML, JSON, INI, etc.), copy the standalone-Python-script shape from the Codex stub. (The plist case is special: 11 stubs share the same merge logic, so they delegate to a single `scripts/macos/plist-merge` tool via a bash shim. For one-off formats, an inline modify_ script keeps things simpler.)
 
 ## Retired Mechanisms (Do Not Reintroduce)
 

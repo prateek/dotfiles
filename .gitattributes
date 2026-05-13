@@ -1,2 +1,14 @@
 home/.chezmoitemplates/agent-codex-plugin-config.toml.tmpl linguist-generated=true -whitespace
 home/.chezmoitemplates/agent-claude-plugin-settings.json.tmpl linguist-generated=true -whitespace
+
+# Upstream-managed skill payloads (apm-cli-vendored). Do not rewrite their
+# shebangs, dependencies, or metadata.
+home/dot_agents/packages/**/vendor/** linguist-vendored=true
+
+# Eval fixture trees: code samples representing what skills encounter in the
+# wild, not code we own.
+home/dot_agents/packages/**/evals/files/** linguist-vendored=true
+
+# Template payloads rendered into other projects. Shebangs and metadata
+# inside target the rendered output, not this repo.
+*.tmpl.literal linguist-vendored=true

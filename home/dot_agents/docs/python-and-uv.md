@@ -26,21 +26,18 @@ you need a lockfile, tests, or library importability.
 Hold the line on `uv` unless one of the patterns below applies. When you
 add a new exception, append it here with the file path and the reason.
 
-- **Mid-file template fragments.** Files spliced into a host stub via
-  chezmoi `template` includes (e.g. `home/.chezmoitemplates/plist-merge-postlude.py`)
-  inherit the host's shebang and PEP 723 block and must not carry their
-  own.
-- **Skill-package scripts under `home/dot_agents/packages/*/skills/`.**
-  Skill artifacts follow the conventions of their parent skill package,
-  not the dotfiles default. Convert as part of the package's own update,
-  not unrelated work.
 - **Files git considers out of scope.** Anything `.gitignore`d or marked
   in `.gitattributes` as `linguist-vendored=true` or `linguist-generated=true`.
-  To exempt a third-party script, mark it vendored in `.gitattributes`
-  rather than relying on convention.
-- **Trivial inline `python3 -c '…'`.** Short shell-script snippets stay
-  inline. Promote to a `uv run --script` file once the snippet grows past
-  ~10 lines or takes a dependency.
+  Use this for third-party / vendored scripts and for fixture trees that
+  simulate code in the wild (e.g. eval inputs).
+
+Inline `python3 -c '…'` in shell scripts isn't an exception. Promote any
+Python you need into a `uv run --script` file. A snippet too small to
+deserve its own file is a snippet you can write in shell or `jq`. If you
+need a chezmoi `modify_*` stub to share Python logic with sibling stubs,
+extract the shared logic into a real PEP 723 script (e.g.
+`scripts/macos/plist-merge`) and have the stubs invoke it via a small
+bash shim — don't splice Python fragments mid-file.
 
 Add new exceptions only when they recur; "I felt like it" doesn't count.
 
@@ -55,9 +52,9 @@ Add new exceptions only when they recur; "I felt like it" doesn't count.
 ```
 
 The shebang and `# /// script` block must sit on line 1 of the rendered
-file. Chezmoi template fragments include them only when the fragment
-renders at byte 0 of the host stub (a "prelude"); mid-file fragments
-omit them.
+file. Chezmoi template fragments are not used to splice Python mid-file
+in this repo; if you need to share logic across `modify_` stubs, see the
+positive rule under Exceptions above.
 
 Pin `requires-python` to the minimum your script needs; `>=3.14` is the
 default in this repo (the latest stable CPython at time of writing). Add dependencies to the `dependencies` list when

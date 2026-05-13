@@ -10,6 +10,15 @@ status_detail: "Implemented on master; maintained as the current chezmoi archite
 
 # Chezmoi Migration Plan
 
+> **Architecture evolution (post-merge):** The plist merge engine has been
+> refactored from prelude/postlude template fragments
+> (`home/.chezmoitemplates/plist-merge-{prelude,postlude}.py`) to a
+> standalone `uv run --script` tool at `scripts/macos/plist-merge`,
+> invoked by a small bash shim in each per-app modify_ stub. See
+> `.agents/skills/chezmoi-management/references/app-config.md` for the
+> current spec. Sections below describing the prelude/postlude pattern
+> are historical.
+
 ## Goal
 
 Make this repo a reproducible, reviewable Mac configuration:

@@ -1,3 +1,4 @@
-{{ template "plist-merge-prelude.py" . }}
-desired_xml = base64.b64decode("{{ includeTemplate "pro.betterdisplay.BetterDisplay.plist.tmpl" . | b64enc }}")
-{{ template "plist-merge-postlude.py" . }}
+#!/usr/bin/env bash
+exec '{{ .chezmoi.sourceDir }}/../scripts/macos/plist-merge' \
+  --bundle-id 'pro.betterdisplay.BetterDisplay' \
+  --desired-b64 '{{ includeTemplate "pro.betterdisplay.BetterDisplay.plist.tmpl" . | b64enc }}'

@@ -32,7 +32,7 @@ chezmoi \
   >"$script"
 chmod +x "$script"
 
-uv run --quiet --python '>=3.11' python -m py_compile "$script"
+bash -n "$script"
 
 uv run --quiet --python '>=3.11' python - "$current_plist" <<'PY'
 import pathlib

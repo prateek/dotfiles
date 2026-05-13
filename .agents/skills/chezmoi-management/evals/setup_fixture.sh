@@ -32,10 +32,12 @@ if [[ ! -d "$SRC" ]]; then
   exit 1
 fi
 
-# Resolve `.`/`..`/symlinks even for nonexistent paths.
+# Resolve `.`/`..`/symlinks even for nonexistent paths. Tries GNU `realpath -m`
+# (Linux) then `grealpath -m` (macOS Homebrew coreutils).
 realpath_safe() {
   realpath -m -- "$1" 2>/dev/null \
-    || python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$1"
+    || grealpath -m -- "$1" 2>/dev/null \
+    || { echo "realpath_safe: need GNU coreutils (Linux: realpath; macOS: brew install coreutils)." >&2; exit 1; }
 }
 
 # --- Safety checks on DEST before rm -rf ---

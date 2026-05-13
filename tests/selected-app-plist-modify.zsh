@@ -39,7 +39,7 @@ for app_spec in "${apps[@]}"; do
     --file "$DOTFILES_ROOT/home/Library/private_Preferences/modify_private_$domain.plist.tmpl" \
     >"$script"
   chmod +x "$script"
-  uv run --quiet --python '>=3.11' python -m py_compile "$script"
+  bash -n "$script"
 done
 
 uv run --quiet --python '>=3.11' python - "$tmp_root" "$DOTFILES_ROOT" <<'PY'

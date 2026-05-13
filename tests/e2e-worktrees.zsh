@@ -192,10 +192,10 @@ print -r -- "$sparse_list" | grep -Eq '^src/?$' || die "expected sparse-checkout
 print -r -- "$sparse_list" | grep -Eq '^docs/?$' || die "expected sparse-checkout list to include docs; got: $sparse_list"
 
 echo "• w list shows centralized worktrees"
-list_json="$(w ls --format json)"
-printf '%s' "$list_json" | python3 -c 'import json,sys; d=json.load(sys.stdin); print("\n".join(sorted({i.get("path","") for i in d})))' | grep -Fqx "$wt1" || die "w list missing: $wt1"
-printf '%s' "$list_json" | python3 -c 'import json,sys; d=json.load(sys.stdin); print("\n".join(sorted({i.get("path","") for i in d})))' | grep -Fqx "$wt2" || die "w list missing: $wt2"
-printf '%s' "$list_json" | python3 -c 'import json,sys; d=json.load(sys.stdin); print("\n".join(sorted({i.get("path","") for i in d})))' | grep -Fqx "$wt3" || die "w list missing: $wt3"
+worktree_paths="$(w ls --format json | jq -r '.[].path')"
+print -r -- "$worktree_paths" | grep -Fqx "$wt1" || die "w list missing: $wt1"
+print -r -- "$worktree_paths" | grep -Fqx "$wt2" || die "w list missing: $wt2"
+print -r -- "$worktree_paths" | grep -Fqx "$wt3" || die "w list missing: $wt3"
 
 echo "• w rm removes a clean worktree with --yes"
 w rm --yes --filter "feature/foo" >/dev/null

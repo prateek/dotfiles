@@ -2,7 +2,7 @@
 name = "disk-usage-audit-skill"
 version = "0.1.0"
 description = "Clone-aware disk usage audit helpers for the disk-usage-audit skill."
-requires-python = ">=3.11"
+requires-python = ">=3.14"
 dependencies = []
 
 [build-system]

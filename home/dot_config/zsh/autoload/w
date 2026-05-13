@@ -143,7 +143,8 @@ _w_worktree_path_for_branch() {
   local repo_root="$1"
   local branch="$2"
 
-  wt -C "$repo_root" list --format json 2>/dev/null | BRANCH="$branch" python3 -c $'import json,os,sys\nbranch=os.environ.get("BRANCH","")\ntry:\n  items=json.load(sys.stdin)\nexcept Exception:\n  print(\"\")\n  raise SystemExit(0)\nfor item in items:\n  if item.get(\"kind\")==\"worktree\" and item.get(\"branch\")==branch:\n    print(item.get(\"path\") or \"\")\n    break\nelse:\n  print(\"\")'
+  wt -C "$repo_root" list --format json 2>/dev/null \
+    | jq -r --arg b "$branch" '[.[] | select(.kind=="worktree" and .branch==$b)] | .[0].path // ""' 2>/dev/null
 }
 
 _w_worktree_path_from_switch_output() {
@@ -1320,7 +1321,24 @@ EOF
       done
       ;;
     json)
-      printf '%s\n' "${rows[@]}" | python3 -c $'import json,sys\nout=[]\nfor l in sys.stdin:\n  l=l.rstrip("\\n")\n  if not l.strip():\n    continue\n  parts=l.split("\\t")\n  parts += [""]*(10-len(parts))\n  _,_,slug,branch,path,dirty,kind,main,upstream,is_current=parts[:10]\n  out.append({"slug":slug,"branch":branch,"path":path,"dirty":(dirty=="1") if dirty else None,"kind":kind,"main":main,"upstream":upstream,"is_current":(is_current=="1")})\nprint(json.dumps(out, indent=2))'
+      # TSV columns built upstream by _w_list_collect_rows:
+      # 0=cur_sort, 1=kind_sort (sort keys), 2=slug, 3=branch, 4=path,
+      # 5=dirty ("1"/"0"/"" — empty means unknown/not-checked),
+      # 6=kind, 7=main, 8=upstream, 9=is_current ("1"/"0").
+      printf '%s\n' "${rows[@]}" | jq -R -s '
+        split("\n")
+        | map(select(length > 0))
+        | map(split("\t"))
+        | map({
+            slug: (.[2] // ""),
+            branch: (.[3] // ""),
+            path: (.[4] // ""),
+            dirty: (.[5] | if . == null or . == "" then null elif . == "1" then true else false end),
+            kind: (.[6] // ""),
+            main: (.[7] // ""),
+            upstream: (.[8] // ""),
+            is_current: (.[9] == "1")
+          })'
       ;;
     table)
       local is_tty=0

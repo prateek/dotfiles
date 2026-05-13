@@ -1,3 +1,4 @@
-{{ template "plist-merge-prelude.py" . }}
-desired_xml = base64.b64decode("{{ includeTemplate "net.elasticthreads.nv.plist.tmpl" . | b64enc }}")
-{{ template "plist-merge-postlude.py" . }}
+#!/usr/bin/env bash
+exec '{{ .chezmoi.sourceDir }}/../scripts/macos/plist-merge' \
+  --bundle-id 'net.elasticthreads.nv' \
+  --desired-b64 '{{ includeTemplate "net.elasticthreads.nv.plist.tmpl" . | b64enc }}'

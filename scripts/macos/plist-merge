@@ -1,0 +1,97 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.14"
+# dependencies = []
+# ///
+"""Merge a desired plist fragment into a current binary plist on stdin.
+
+Reads stdin as the current binary plist, merges keys from a desired XML
+plist fragment (preserving keys we don't manage), applies `chezmoi-delete`
+directives parsed from the rendered XML, and writes the merged binary
+plist to stdout.
+
+Used by chezmoi `modify_*.plist.tmpl` stubs; each stub is a bash shim
+that passes the bundle ID and base64-encoded desired XML.
+
+The chezmoi-delete directive is an XML comment in the desired fragment:
+    <!-- chezmoi-delete: key1, key2 -->
+"""
+import argparse
+import base64
+import copy
+import io
+import os
+import plistlib
+import re
+import sys
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--bundle-id", required=True, help="Bundle ID for log lines.")
+    parser.add_argument(
+        "--desired-b64",
+        required=True,
+        help="Base64-encoded desired plist XML fragment.",
+    )
+    args = parser.parse_args()
+
+    bundle_id = args.bundle_id
+    desired_xml = base64.b64decode(args.desired_b64)
+    verbose = bool(
+        os.environ.get("CHEZMOI_VERBOSE") or os.environ.get("DOTFILES_PLIST_VERBOSE")
+    )
+
+    deletes: list[str] = []
+    for match in re.finditer(rb"<!--\s*chezmoi-delete:\s*([^-]+?)\s*-->", desired_xml):
+        deletes.extend(k.strip() for k in match.group(1).decode().split(",") if k.strip())
+
+    desired = plistlib.loads(desired_xml)
+    if not isinstance(desired, dict):
+        sys.exit(f"plist-merge[{bundle_id}]: desired plist must be a dict at root")
+
+    raw = sys.stdin.buffer.read()
+    current = plistlib.loads(raw) if raw.strip() else {}
+    if not isinstance(current, dict):
+        current = {}
+
+    def byte_equal(a, b) -> bool:
+        return (
+            plistlib.dumps(a, fmt=plistlib.FMT_BINARY, sort_keys=False)
+            == plistlib.dumps(b, fmt=plistlib.FMT_BINARY, sort_keys=False)
+        )
+
+    # plistlib re-encodes the same logical content with different integer
+    # widths, dict order, or version bytes. Preserve stdin verbatim when no
+    # logical change occurred so chezmoi sees stdout == stdin and skips the
+    # write.
+    mutated = False
+
+    for key in deletes:
+        if key in current:
+            if verbose:
+                print(f"plist-merge[{bundle_id}]: delete {key}", file=sys.stderr)
+            current.pop(key, None)
+            mutated = True
+
+    for key, value in desired.items():
+        if key in current and (current[key] == value or byte_equal(current[key], value)):
+            continue
+        if verbose:
+            state = "absent" if key not in current else "changed"
+            print(f"plist-merge[{bundle_id}]: set {key} ({state})", file=sys.stderr)
+        current[key] = copy.deepcopy(value)
+        mutated = True
+
+    if not mutated and raw:
+        sys.stdout.buffer.write(raw)
+    else:
+        out = io.BytesIO()
+        plistlib.dump(current, out, fmt=plistlib.FMT_BINARY, sort_keys=False)
+        sys.stdout.buffer.write(out.getvalue())
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

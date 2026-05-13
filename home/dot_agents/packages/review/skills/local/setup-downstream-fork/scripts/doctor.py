@@ -1,4 +1,8 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.14"
+# dependencies = []
+# ///
 """Executor for the setup-downstream-fork skill, Mode 2 (doctor).
 
 Audits an existing downstream fork for drift against the layout this skill

@@ -1,3 +1,4 @@
-{{ template "plist-merge-prelude.py" . }}
-desired_xml = base64.b64decode("{{ includeTemplate "com.cmuxterm.app.plist.tmpl" . | b64enc }}")
-{{ template "plist-merge-postlude.py" . }}
+#!/usr/bin/env bash
+exec '{{ .chezmoi.sourceDir }}/../scripts/macos/plist-merge' \
+  --bundle-id 'com.cmuxterm.app' \
+  --desired-b64 '{{ includeTemplate "com.cmuxterm.app.plist.tmpl" . | b64enc }}'
