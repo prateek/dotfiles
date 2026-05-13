@@ -3,14 +3,13 @@
 # requires-python = ">=3.14"
 # dependencies = []
 # ///
-"""Merge repo-owned Claude Code plugin settings into the live settings file.
+"""Deep-merge chezmoi's desired Claude settings into ~/.claude/settings.json.
 
-Claude Code writes unrelated user preferences and plugin cache state beside
-settings.json. Chezmoi owns the local marketplace declaration and which
-repo-rendered plugins should be enabled, while preserving everything else.
+Desired wins on conflicts; unrelated keys pass through untouched. Malformed
+input propagates from `json.loads` to chezmoi. See SKILL.md and ADR 0007 for
+the override model and the stale-key trade-off.
 """
 import base64
-import copy
 import json
 import sys
 
@@ -19,6 +18,21 @@ desired = json.loads(
         "{{ includeTemplate "agent-claude-plugin-settings.json.tmpl" . | b64enc }}"
     ).decode()
 )
+desired.pop("_generated", None)  # template-file marker, not a settings value
+
+
+def deep_merge(base, overlay):
+    """Deep-merge overlay into base in place; overlay wins on conflicts.
+
+    Recurses into any pair of mapping-like values (anything with `.items()`).
+    """
+    for key, value in overlay.items():
+        existing = base.get(key)
+        if hasattr(existing, "items") and hasattr(value, "items"):
+            deep_merge(existing, value)
+        else:
+            base[key] = value
+    return base
 
 
 def load_current(text: str) -> dict:
@@ -37,29 +51,7 @@ def semantic_equal(left: str, right: str) -> bool:
 
 current_text = sys.stdin.read()
 current = load_current(current_text)
-merged = copy.deepcopy(current)
+deep_merge(current, desired)
 
-marketplaces = merged.get("extraKnownMarketplaces")
-if not isinstance(marketplaces, dict):
-    marketplaces = {}
-marketplaces["prateek-local"] = desired["extraKnownMarketplaces"]["prateek-local"]
-merged["extraKnownMarketplaces"] = marketplaces
-
-enabled_plugins = merged.get("enabledPlugins")
-if not isinstance(enabled_plugins, dict):
-    enabled_plugins = {}
-desired_plugins = desired["enabledPlugins"]
-# Preserve user-set @prateek-local overrides so per-machine flips survive
-# `chezmoi apply`. Drop stale @prateek-local keys for packages that no longer
-# render as plugins. Non-prateek-local entries pass through untouched.
-result = {
-    name: enabled
-    for name, enabled in enabled_plugins.items()
-    if not name.endswith("@prateek-local")
-}
-for name, desired_enabled in desired_plugins.items():
-    result[name] = enabled_plugins.get(name, desired_enabled)
-merged["enabledPlugins"] = result
-
-merged_text = json.dumps(merged, indent=2) + "\n"
+merged_text = json.dumps(current, indent=2) + "\n"
 sys.stdout.write(current_text if semantic_equal(current_text, merged_text) else merged_text)

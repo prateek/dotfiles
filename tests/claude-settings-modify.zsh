@@ -87,38 +87,35 @@ import os
 assert local["path"] == os.path.expanduser("~/.agents/plugins")
 
 plugins = data["enabledPlugins"]
-# Reflects default_loaded in each package.toml.
+# Reflects default_loaded in each package.toml; flip the source there if rotated.
 assert plugins["design@prateek-local"] is False
 assert plugins["experimental@prateek-local"] is False
 assert plugins["ios@prateek-local"] is False
 assert plugins["utils-human@prateek-local"] is False
 assert plugins["review@prateek-local"] is True
 assert plugins["utils-agent@prateek-local"] is True
-assert "stale@prateek-local" not in plugins
+# Stale @prateek-local entries persist as harmless cruft (no automatic cleanup).
+assert plugins["stale@prateek-local"] is False
 assert plugins["other@other-market"] is True
 PY
 
 "$script" <"$merged" >"$semantic_merged"
 cmp -s "$merged" "$semantic_merged"
 
-# Per-machine override: a user-added @prateek-local entry must survive apply.
-# This is the mechanism documented in agent-skill-management/SKILL.md.
-override_input="$tmp_root/override-input.json"
-override_output="$tmp_root/override-output.json"
-python3 - "$merged" "$override_input" <<'PY'
+# Nested merge: a user-added sibling under a managed marketplace table
+# survives the merge (deep-merge passes through what desired doesn't own).
+nested_input="$tmp_root/nested-input.json"
+nested_output="$tmp_root/nested-output.json"
+python3 - "$merged" "$nested_input" <<'PY'
 import json, sys
 data = json.load(open(sys.argv[1]))
-data["enabledPlugins"]["design@prateek-local"] = True   # user flips a default-disabled plugin on
-data["enabledPlugins"]["review@prateek-local"] = False  # user flips a default-enabled plugin off
+data["extraKnownMarketplaces"]["prateek-local"]["userTag"] = "keep-me"
 json.dump(data, open(sys.argv[2], "w"))
 PY
-"$script" <"$override_input" >"$override_output"
-python3 - "$override_output" <<'PY'
-import json, sys
-plugins = json.load(open(sys.argv[1]))["enabledPlugins"]
-assert plugins["design@prateek-local"] is True, plugins
-assert plugins["review@prateek-local"] is False, plugins
-# Untouched plugins still reflect their package.toml defaults.
-assert plugins["ios@prateek-local"] is False, plugins
-assert plugins["utils-agent@prateek-local"] is True, plugins
+"$script" <"$nested_input" >"$nested_output"
+python3 - "$nested_output" <<'PY'
+import json, sys, os
+local = json.load(open(sys.argv[1]))["extraKnownMarketplaces"]["prateek-local"]
+assert local["userTag"] == "keep-me", local
+assert local["source"]["path"] == os.path.expanduser("~/.agents/plugins"), local
 PY

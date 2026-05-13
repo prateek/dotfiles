@@ -1,175 +1,50 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.14"
-# dependencies = []
+# dependencies = ["tomlkit>=0.13"]
 # ///
-"""Merge repo-owned Codex defaults into the live config.
+"""Deep-merge chezmoi's desired Codex config into ~/.codex/config.toml.
 
-Codex writes machine-local trust, hook approval, NUX, and marketplace state into
-config.toml on this host. Chezmoi owns stable defaults, but must preserve those
-local sections when applying.
+Desired wins on conflicts; unrelated tables, keys, comments, and formatting
+pass through untouched (preserved by tomlkit). Malformed input propagates
+from `tomlkit.loads` to chezmoi. See SKILL.md and ADR 0007 for the override
+model and the stale-key trade-off.
 """
 import base64
-import re
 import sys
-import tomllib
+
+import tomlkit
 
 desired_text = base64.b64decode(
     "{{ includeTemplate "codex-config-managed.toml.tmpl" . | b64enc }}"
 ).decode()
 
-managed_tables = {
-    "agents",
-    "mcp_servers.granola",
-    "features",
-    'plugins."last30days@last30days-skill"',
-    "tui",
-    "tui.keymap.pager",
-}
 
+def deep_merge(base, overlay):
+    """Deep-merge overlay into base in place; overlay wins on conflicts.
 
-PRATEEK_PLUGIN_RE = re.compile(r'^plugins\."[^"]+@prateek-local"$')
-
-
-def is_prateek_plugin_table(header: str) -> bool:
-    return PRATEEK_PLUGIN_RE.match(header) is not None
-
-
-def is_managed_table(header: str) -> bool:
-    if header in managed_tables:
-        return True
-    if header == "marketplaces.prateek-local":
-        return True
-    return is_prateek_plugin_table(header)
-
-
-def merge_prateek_plugin_block(
-    desired_block: list[str], current_block: list[str] | None
-) -> list[str]:
-    """Preserve a user-set `enabled = ...` in a [plugins."*@prateek-local"] table.
-
-    The desired block from the chezmoi-rendered template carries the default
-    `enabled` value derived from package.toml `default_loaded`. If the user
-    set a different value in their config, keep theirs so per-machine flips
-    survive `chezmoi apply`. Any user-added keys and comment lines in the
-    same table also pass through. The header line stays from desired so the
-    table layout is canonical.
+    Recurses into any pair of mapping-like values (anything with `.items()`).
     """
-    if current_block is None:
-        return desired_block
-    user_keys = {
-        key for line in current_block if (key := key_for_line(line)) is not None
-    }
-    merged = [
-        line
-        for line in desired_block
-        if (key := key_for_line(line)) is None or key not in user_keys
-    ]
-    for line in current_block[1:]:  # skip the header; desired's header wins
-        if line.strip():
-            merged.append(line)
-    return merged
-
-
-def table_header(line: str) -> str | None:
-    match = re.match(r"^\s*\[([^\]]+)\]\s*$", line)
-    return match.group(1) if match else None
-
-
-def split_toml(text: str) -> tuple[list[str], list[tuple[str, list[str]]]]:
-    root: list[str] = []
-    tables: list[tuple[str, list[str]]] = []
-    current_header: str | None = None
-    current_block: list[str] = []
-
-    for line in text.splitlines():
-        header = table_header(line)
-        if header is not None:
-            if current_header is not None:
-                tables.append((current_header, current_block))
-            current_header = header
-            current_block = [line]
-        elif current_header is None:
-            root.append(line)
+    for key, value in overlay.items():
+        existing = base.get(key)
+        if hasattr(existing, "items") and hasattr(value, "items"):
+            deep_merge(existing, value)
         else:
-            current_block.append(line)
-
-    if current_header is not None:
-        tables.append((current_header, current_block))
-
-    return root, tables
+            base[key] = value
+    return base
 
 
-def key_for_line(line: str) -> str | None:
-    stripped = line.strip()
-    if not stripped or stripped.startswith("#") or "=" not in stripped:
-        return None
-    return stripped.split("=", 1)[0].strip()
-
-
-def merge_root(current: list[str], desired: list[str]) -> list[str]:
-    desired_key_lines = [line for line in desired if key_for_line(line)]
-    desired_keys = {key_for_line(line) for line in desired_key_lines}
-    preserved = [
-        line
-        for line in current
-        if key_for_line(line) is None or key_for_line(line) not in desired_keys
-    ]
-
-    merged = desired_key_lines[:]
-    if preserved:
-        if merged and preserved[0].strip():
-            merged.append("")
-        merged.extend(preserved)
-    return trim_trailing_blanks(merged)
-
-
-def trim_trailing_blanks(lines: list[str]) -> list[str]:
-    while lines and not lines[-1].strip():
-        lines.pop()
-    return lines
-
-
-def toml_equal(left: str, right: str) -> bool:
+def semantic_equal(left: str, right: str) -> bool:
     try:
-        return tomllib.loads(left) == tomllib.loads(right)
+        return tomlkit.loads(left).unwrap() == tomlkit.loads(right).unwrap()
     except Exception:
         return False
 
 
 current_text = sys.stdin.read()
-current_root, current_tables = split_toml(current_text)
-desired_root, desired_tables = split_toml(desired_text)
+current = tomlkit.loads(current_text) if current_text.strip() else tomlkit.document()
+desired = tomlkit.loads(desired_text)
+deep_merge(current, desired)
 
-desired_table_map: dict[str, list[str]] = {}
-desired_table_order: list[str] = []
-for header, block in desired_tables:
-    desired_table_map[header] = trim_trailing_blanks(block[:])
-    desired_table_order.append(header)
-
-current_table_map: dict[str, list[str]] = {
-    header: trim_trailing_blanks(block[:]) for header, block in current_tables
-}
-
-output: list[str] = []
-output.extend(merge_root(current_root, desired_root))
-
-for header in desired_table_order:
-    if not is_managed_table(header):
-        continue
-    if output:
-        output.append("")
-    block = desired_table_map[header]
-    if is_prateek_plugin_table(header):
-        block = merge_prateek_plugin_block(block, current_table_map.get(header))
-    output.extend(block)
-
-for header, block in current_tables:
-    if is_managed_table(header):
-        continue
-    if output:
-        output.append("")
-    output.extend(trim_trailing_blanks(block[:]))
-
-merged_text = "\n".join(trim_trailing_blanks(output)) + "\n"
-sys.stdout.write(current_text if toml_equal(current_text, merged_text) else merged_text)
+merged_text = tomlkit.dumps(current)
+sys.stdout.write(current_text if semantic_equal(current_text, merged_text) else merged_text)

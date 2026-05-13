@@ -54,33 +54,24 @@ packages should render as `plugin` or `none`.
 
 ### Default-loaded policy
 
-`package.toml` may set `default_loaded = false` to ship a package installed but
-disabled. The renderer emits `enabledPlugins[<pkg>@prateek-local] = false`
-(Claude) and `enabled = false` (Codex). The plugin tree still renders, so the
-skills are one flip away. Default is `true`. Today set to `false` on `design`,
-`experimental`, `ios`, `utils-human`.
+`package.toml` may set `default_loaded = false` to ship a package installed
+but disabled. Default is `true`. Today set to `false` on `design`,
+`experimental`, `ios`, `utils-human`. The plugin tree still renders, so
+the skills are one flip away.
 
-Override paths:
+To flip a plugin globally, change `default_loaded` and re-render. To flip
+one on for a single project, drop a project-root override:
 
-- Per-machine, Claude: edit `~/.claude/settings.json` directly and add
-  `"enabledPlugins": { "design@prateek-local": true }`. The chezmoi modify
-  script (`home/dot_claude/modify_private_settings.json.tmpl`) preserves
-  user-set `*@prateek-local` entries on each apply and only drops keys for
-  packages that no longer render as plugins.
-- Per-project, Claude: drop `.claude/settings.json` at the project root with
-  the same key. Project settings override user settings.
-- Per-machine, Codex: edit `~/.codex/config.toml` and add
-  `[plugins."design@prateek-local"] enabled = true`. The chezmoi modify
-  script (`home/dot_codex/modify_private_config.toml.tmpl`) preserves
-  user-set keys inside `[plugins."*@prateek-local"]` tables on each apply
-  and only drops tables for packages that no longer render as plugins.
-- Per-project, Codex: drop `.codex/config.toml` at the project root with
-  the same key. Codex walks `.codex/config.toml` from the project root
-  down to cwd and deep-merges layers (closest wins), so this overrides
-  both the user-level value and any per-machine override. The project
-  must be trusted on first use (`codex trust` or the one-time UI prompt).
-  Project root is whatever `project_root_markers` resolves to (default:
-  any ancestor with `.git`).
+- Claude: `.claude/settings.json` with
+  `"enabledPlugins": { "design@prateek-local": true }`.
+- Codex: `.codex/config.toml` with
+  `[plugins."design@prateek-local"] enabled = true`. The project must be
+  trusted on first use (`codex trust`).
+
+Per-machine override of managed keys is not supported via the agent
+settings files; the chezmoi modify scripts deep-merge desired into each
+file on every apply. See [ADR 0007](../../../docs/adr/0007-default-loaded-plugin-policy.md)
+for the merge mechanism and the stale-key trade-off.
 
 ## APM And Vendoring
 

@@ -109,13 +109,50 @@ assert data["plugins"]["ios@prateek-local"]["enabled"] is False
 assert data["plugins"]["utils-human@prateek-local"]["enabled"] is False
 assert data["plugins"]["review@prateek-local"]["enabled"] is True
 assert data["plugins"]["utils-agent@prateek-local"]["enabled"] is True
-assert "stale@prateek-local" not in data["plugins"]
+# Stale @prateek-local tables persist as harmless cruft (no automatic cleanup).
+assert data["plugins"]["stale@prateek-local"]["enabled"] is False
 assert data["plugins"]["other@other-market"]["enabled"] is False
 assert data["hooks"]["state"]["/Users/prateek/.codex/hooks.json:pre_tool_use:0:0"]["trusted_hash"] == "sha256:live"
 PY
 
 "$script" <"$merged" >"$semantic_merged"
 cmp -s "$merged" "$semantic_merged"
+
+# tomlkit comment preservation: comments next to non-managed keys/tables in
+# the user's config must round-trip through the merge.
+comment_input="$tmp_root/comment-input.toml"
+comment_output="$tmp_root/comment-output.toml"
+cat >"$comment_input" <<'TOML'
+# user-authored top-of-file comment
+custom_top_level = "keep"  # inline comment
+
+[unrelated]
+# explanatory comment for the unrelated section
+note = "preserve"
+TOML
+"$script" <"$comment_input" >"$comment_output"
+raw="$(cat "$comment_output")"
+[[ "$raw" == *"# user-authored top-of-file comment"* ]] || { echo "missing top comment" >&2; exit 1; }
+[[ "$raw" == *"# inline comment"* ]] || { echo "missing inline comment" >&2; exit 1; }
+[[ "$raw" == *"# explanatory comment for the unrelated section"* ]] || { echo "missing section comment" >&2; exit 1; }
+
+# Nested merge: a user-added sibling key inside a managed table survives.
+# (Demonstrates deep-merge passes through what desired doesn't own.)
+nested_input="$tmp_root/nested-input.toml"
+nested_output="$tmp_root/nested-output.toml"
+cat >"$nested_input" <<'TOML'
+[marketplaces.prateek-local]
+user_tag = "keep-me"
+TOML
+"$script" <"$nested_input" >"$nested_output"
+python3 - "$nested_output" <<'PY'
+import sys, tomllib, os
+data = tomllib.loads(open(sys.argv[1], "rb").read().decode())
+local = data["marketplaces"]["prateek-local"]
+assert local["user_tag"] == "keep-me", local
+assert local["source_type"] == "local", local
+assert local["source"] == os.path.expanduser("~/.agents/plugins"), local
+PY
 
 # From-scratch: empty config in -> prateek-local marketplace and plugins seeded
 # with their package.toml defaults.
@@ -141,36 +178,3 @@ for slug, want in expected.items():
     assert data["plugins"][f"{slug}@prateek-local"]["enabled"] is want, slug
 PY
 
-# Per-machine override: a user-set @prateek-local enabled value must survive
-# `chezmoi apply`, along with any user-added keys and comment lines inside
-# the same table. Mirrors the Claude per-machine override contract documented
-# in agent-skill-management/SKILL.md.
-override_input="$tmp_root/override-input.toml"
-override_output="$tmp_root/override-output.toml"
-cat >"$override_input" <<'TOML'
-[plugins."design@prateek-local"]
-# pinned for the apple-platform sprint
-enabled = true
-priority = 5
-
-[plugins."review@prateek-local"]
-enabled = false
-TOML
-"$script" <"$override_input" >"$override_output"
-python3 - "$override_output" <<'PY'
-import sys
-import tomllib
-
-raw = open(sys.argv[1]).read()
-data = tomllib.loads(raw)
-plugins = data["plugins"]
-# User flips survive.
-assert plugins["design@prateek-local"]["enabled"] is True, plugins
-assert plugins["review@prateek-local"]["enabled"] is False, plugins
-# Untouched plugins still reflect their package.toml defaults.
-assert plugins["ios@prateek-local"]["enabled"] is False, plugins
-assert plugins["utils-agent@prateek-local"]["enabled"] is True, plugins
-# User-added unrelated keys and comments inside a managed plugin table survive.
-assert plugins["design@prateek-local"]["priority"] == 5, plugins
-assert "# pinned for the apple-platform sprint" in raw, raw
-PY

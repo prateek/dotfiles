@@ -27,12 +27,12 @@ Mark the following packages as `default_loaded = false` in this iteration:
 - `ios`
 - `utils-human`
 
-Override paths for both agents are scoped to the place the override actually applies:
+Override paths are project-scoped. The chezmoi modify scripts (`home/dot_claude/modify_private_settings.json.tmpl` for JSON via stdlib, `home/dot_codex/modify_private_config.toml.tmpl` for TOML via tomlkit) deep-merge the rendered desired tree into the user's `~/.claude/settings.json` and `~/.codex/config.toml` on every apply, with desired winning on conflicts. There is no provenance tracking, so per-machine override of managed keys via these files is not supported (any user edit gets overwritten on the next apply).
 
-- Per-machine Claude: edit `~/.claude/settings.json` directly. The chezmoi modify script `home/dot_claude/modify_private_settings.json.tmpl` preserves user-set `*@prateek-local` entries on each apply (only stale keys for packages that no longer render as plugins are dropped).
-- Per-project Claude: drop `.claude/settings.json` at the project root. Project settings override user settings.
-- Per-machine Codex: edit `~/.codex/config.toml` directly. The chezmoi modify script `home/dot_codex/modify_private_config.toml.tmpl` preserves user-set keys inside `[plugins."*@prateek-local"]` tables on each apply (only stale tables for packages that no longer render as plugins are dropped). This mirrors the Claude per-machine override contract.
+- Per-project Claude: drop `.claude/settings.json` at the project root with `"enabledPlugins": { "design@prateek-local": true }`. Project settings override user settings.
 - Per-project Codex: drop `.codex/config.toml` at the project root with `[plugins."<pkg>@prateek-local"] enabled = true`. Codex walks `.codex/config.toml` from the project root down to cwd and deep-merges layers (closest wins, [docs](https://developers.openai.com/codex/config-advanced)). The project must be trusted on first use.
+
+To flip a plugin globally, change `default_loaded` in `package.toml` and re-render. Stale `*@prateek-local` keys for retired packages persist as harmless cruft (the deep-merge engine treats `desired` as additive); clean them up by hand if they accumulate.
 
 ## Consequences
 
