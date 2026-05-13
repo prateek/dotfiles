@@ -36,6 +36,7 @@ def main() -> int:
                 "id": package.package_id,
                 "display_name": package.display_name,
                 "render": package.render,
+                "default_loaded": package.default_loaded,
                 "skills": skills,
             }
         )

@@ -45,6 +45,7 @@ class Package:
     display_name: str
     render: dict[str, str]
     skills: tuple[SkillSource, ...]
+    default_loaded: bool = True
 
 
 def load_packages() -> list[Package]:
@@ -60,6 +61,12 @@ def load_packages() -> list[Package]:
             agent: str(data.get("render", {}).get(agent, "none"))
             for agent in AGENTS
         }
+        default_loaded = data.get("default_loaded", True)
+        if not isinstance(default_loaded, bool):
+            raise ValueError(
+                f"{manifest}: default_loaded must be a TOML boolean, "
+                f"got {type(default_loaded).__name__} {default_loaded!r}"
+            )
         packages.append(
             Package(
                 package_id=path.name,
@@ -67,6 +74,7 @@ def load_packages() -> list[Package]:
                 display_name=str(data.get("display_name", path.name)),
                 render=render,
                 skills=tuple(iter_package_skills(path)),
+                default_loaded=default_loaded,
             )
         )
     return packages

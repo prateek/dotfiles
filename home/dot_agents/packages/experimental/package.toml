@@ -1,4 +1,5 @@
 display_name = "Experimental"
+default_loaded = false
 
 [render]
 codex = "plugin"

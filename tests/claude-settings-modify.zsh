@@ -87,15 +87,38 @@ import os
 assert local["path"] == os.path.expanduser("~/.agents/plugins")
 
 plugins = data["enabledPlugins"]
-assert plugins["design@prateek-local"] is True
-assert plugins["experimental@prateek-local"] is True
-assert plugins["ios@prateek-local"] is True
+# Reflects default_loaded in each package.toml.
+assert plugins["design@prateek-local"] is False
+assert plugins["experimental@prateek-local"] is False
+assert plugins["ios@prateek-local"] is False
+assert plugins["utils-human@prateek-local"] is False
 assert plugins["review@prateek-local"] is True
 assert plugins["utils-agent@prateek-local"] is True
-assert plugins["utils-human@prateek-local"] is True
 assert "stale@prateek-local" not in plugins
 assert plugins["other@other-market"] is True
 PY
 
 "$script" <"$merged" >"$semantic_merged"
 cmp -s "$merged" "$semantic_merged"
+
+# Per-machine override: a user-added @prateek-local entry must survive apply.
+# This is the mechanism documented in agent-skill-management/SKILL.md.
+override_input="$tmp_root/override-input.json"
+override_output="$tmp_root/override-output.json"
+python3 - "$merged" "$override_input" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1]))
+data["enabledPlugins"]["design@prateek-local"] = True   # user flips a default-disabled plugin on
+data["enabledPlugins"]["review@prateek-local"] = False  # user flips a default-enabled plugin off
+json.dump(data, open(sys.argv[2], "w"))
+PY
+"$script" <"$override_input" >"$override_output"
+python3 - "$override_output" <<'PY'
+import json, sys
+plugins = json.load(open(sys.argv[1]))["enabledPlugins"]
+assert plugins["design@prateek-local"] is True, plugins
+assert plugins["review@prateek-local"] is False, plugins
+# Untouched plugins still reflect their package.toml defaults.
+assert plugins["ios@prateek-local"] is False, plugins
+assert plugins["utils-agent@prateek-local"] is True, plugins
+PY

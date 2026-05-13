@@ -1,4 +1,5 @@
 display_name = "Human Utilities"
+default_loaded = false
 
 [render]
 codex = "plugin"

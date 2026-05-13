@@ -55,6 +55,7 @@ If another skill already owns the task shape, keep that skill primary. Use garde
 - Read the actual file, not just the excerpt.
 - Run the actual command, test, build, parser, or validator when feasible.
 - Inspect logs and outputs before speculating.
+- When sweeping for a known-stale reference (deprecated flag, removed command, renamed identifier, snapshotted output), grep the file or repo for the pattern before editing. Sequential rereading reveals structure but misses identical matches in distant sections.
 
 If the file is large, shared, or foundational, read the whole thing before editing.
 

@@ -48,13 +48,18 @@ merged["extraKnownMarketplaces"] = marketplaces
 enabled_plugins = merged.get("enabledPlugins")
 if not isinstance(enabled_plugins, dict):
     enabled_plugins = {}
-enabled_plugins = {
+desired_plugins = desired["enabledPlugins"]
+# Preserve user-set @prateek-local overrides so per-machine flips survive
+# `chezmoi apply`. Drop stale @prateek-local keys for packages that no longer
+# render as plugins. Non-prateek-local entries pass through untouched.
+result = {
     name: enabled
     for name, enabled in enabled_plugins.items()
     if not name.endswith("@prateek-local")
 }
-enabled_plugins.update(desired["enabledPlugins"])
-merged["enabledPlugins"] = enabled_plugins
+for name, desired_enabled in desired_plugins.items():
+    result[name] = enabled_plugins.get(name, desired_enabled)
+merged["enabledPlugins"] = result
 
 merged_text = json.dumps(merged, indent=2) + "\n"
 sys.stdout.write(current_text if semantic_equal(current_text, merged_text) else merged_text)

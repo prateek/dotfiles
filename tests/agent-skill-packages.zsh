@@ -337,4 +337,39 @@ rm -rf "$tmp_root/.codex"
 chezmoi --source home execute-template \
   --file home/.chezmoitemplates/agent-claude-plugin-settings.json.tmpl \
   | python3 -m json.tool >/dev/null
+
+# default_loaded = false in package.toml must propagate to both rendered
+# settings templates as `false` / `enabled = false`. This catches a regression
+# in either renderer emitter independently of the --check baseline.
+python3 - <<'PY'
+import json, subprocess, tomllib
+expected = {
+    "design@prateek-local": False,
+    "experimental@prateek-local": False,
+    "ios@prateek-local": False,
+    "utils-human@prateek-local": False,
+    "review@prateek-local": True,
+    "utils-agent@prateek-local": True,
+}
+claude_json = subprocess.check_output([
+    "chezmoi", "--source", "home", "execute-template",
+    "--file", "home/.chezmoitemplates/agent-claude-plugin-settings.json.tmpl",
+])
+claude = json.loads(claude_json)["enabledPlugins"]
+assert {k: claude[k] for k in expected} == expected, claude
+
+codex_text = open("home/.chezmoitemplates/agent-codex-plugin-config.toml.tmpl").read()
+codex = tomllib.loads(codex_text)["plugins"]
+assert {k: codex[k]["enabled"] for k in expected} == expected, codex
+PY
+
+# inventory-agent-skills must surface default_loaded so audit tooling sees it.
+.agents/skills/agent-skill-management/scripts/inventory-agent-skills \
+  | python3 -c '
+import json, sys
+for p in json.load(sys.stdin)["packages"]:
+    assert "default_loaded" in p, p
+    assert isinstance(p["default_loaded"], bool), p
+'
+
 [[ "$(cat home/dot_codex/symlink_skills)" == "../.agents/skills" ]]

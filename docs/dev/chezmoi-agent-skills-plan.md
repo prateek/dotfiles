@@ -2,10 +2,11 @@
 status: active
 doc_type: plan
 created: 2026-05-10
-updated: 2026-05-12
+updated: 2026-05-13
 related:
   - agent-skill-management-research.md
-status_detail: "Package source is committed; root skills and plugin marketplace are rendered at chezmoi apply time."
+  - ../adr/0007-default-loaded-plugin-policy.md
+status_detail: "Package source is committed; root skills and plugin marketplace are rendered at chezmoi apply time. Plugin enable defaults are now per-package via package.toml `default_loaded`; the example below predates that and shows every plugin enabled. See ADR 0007."
 ---
 
 # Chezmoi Agent Skills Plan
@@ -387,6 +388,8 @@ preserving unrelated user settings.
 
 The Claude merge should manage stable entries like:
 
+<!-- Stale snapshot: predates the per-package `default_loaded` flag. After ADR 0007 the renderer emits per-package true/false derived from `package.toml`. See agent-skill-management/SKILL.md for current behavior. -->
+
 ```json
 {
   "extraKnownMarketplaces": {
@@ -587,17 +590,10 @@ If this becomes useful outside this checkout, move or copy the skill into the
 `core` machine-wide package as a later, reviewable change.
 
 `reconcile-agent-plugins` is preview-only: it prints native commands for the
-current render policy so the user can copy/paste them. Sample output:
-
-```sh
-claude plugin marketplace add ~/.agents/plugins --scope user
-claude plugin marketplace update prateek-local
-codex plugin marketplace upgrade prateek-local
-claude plugin install review@prateek-local --scope user
-claude plugin enable review@prateek-local --scope user
-codex plugin install review@prateek-local
-codex plugin enable review@prateek-local
-```
+current render policy so the user can copy/paste them. See
+`agent-skill-management/SKILL.md` and `references/plugin-reconcile.md` for
+the current shape (the script honors `default_loaded` and skips Codex CLI
+toggles since the current `codex plugin` CLI only exposes `marketplace`).
 
 Only use native commands for tool-owned cache and install records. Do not write
 those records directly.

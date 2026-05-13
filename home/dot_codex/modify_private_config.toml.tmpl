@@ -28,12 +28,47 @@ managed_tables = {
 }
 
 
+PRATEEK_PLUGIN_RE = re.compile(r'^plugins\."[^"]+@prateek-local"$')
+
+
+def is_prateek_plugin_table(header: str) -> bool:
+    return PRATEEK_PLUGIN_RE.match(header) is not None
+
+
 def is_managed_table(header: str) -> bool:
     if header in managed_tables:
         return True
     if header == "marketplaces.prateek-local":
         return True
-    return re.match(r'^plugins\."[^"]+@prateek-local"$', header) is not None
+    return is_prateek_plugin_table(header)
+
+
+def merge_prateek_plugin_block(
+    desired_block: list[str], current_block: list[str] | None
+) -> list[str]:
+    """Preserve a user-set `enabled = ...` in a [plugins."*@prateek-local"] table.
+
+    The desired block from the chezmoi-rendered template carries the default
+    `enabled` value derived from package.toml `default_loaded`. If the user
+    set a different value in their config, keep theirs so per-machine flips
+    survive `chezmoi apply`. Any user-added keys and comment lines in the
+    same table also pass through. The header line stays from desired so the
+    table layout is canonical.
+    """
+    if current_block is None:
+        return desired_block
+    user_keys = {
+        key for line in current_block if (key := key_for_line(line)) is not None
+    }
+    merged = [
+        line
+        for line in desired_block
+        if (key := key_for_line(line)) is None or key not in user_keys
+    ]
+    for line in current_block[1:]:  # skip the header; desired's header wins
+        if line.strip():
+            merged.append(line)
+    return merged
 
 
 def table_header(line: str) -> str | None:
@@ -112,6 +147,10 @@ for header, block in desired_tables:
     desired_table_map[header] = trim_trailing_blanks(block[:])
     desired_table_order.append(header)
 
+current_table_map: dict[str, list[str]] = {
+    header: trim_trailing_blanks(block[:]) for header, block in current_tables
+}
+
 output: list[str] = []
 output.extend(merge_root(current_root, desired_root))
 
@@ -120,7 +159,10 @@ for header in desired_table_order:
         continue
     if output:
         output.append("")
-    output.extend(desired_table_map[header])
+    block = desired_table_map[header]
+    if is_prateek_plugin_table(header):
+        block = merge_prateek_plugin_block(block, current_table_map.get(header))
+    output.extend(block)
 
 for header, block in current_tables:
     if is_managed_table(header):

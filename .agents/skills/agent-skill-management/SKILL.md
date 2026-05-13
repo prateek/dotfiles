@@ -52,6 +52,36 @@ Allowed render policy values:
 In the first implementation, use `root` only for the `core` package. Non-core
 packages should render as `plugin` or `none`.
 
+### Default-loaded policy
+
+`package.toml` may set `default_loaded = false` to ship a package installed but
+disabled. The renderer emits `enabledPlugins[<pkg>@prateek-local] = false`
+(Claude) and `enabled = false` (Codex). The plugin tree still renders, so the
+skills are one flip away. Default is `true`. Today set to `false` on `design`,
+`experimental`, `ios`, `utils-human`.
+
+Override paths:
+
+- Per-machine, Claude: edit `~/.claude/settings.json` directly and add
+  `"enabledPlugins": { "design@prateek-local": true }`. The chezmoi modify
+  script (`home/dot_claude/modify_private_settings.json.tmpl`) preserves
+  user-set `*@prateek-local` entries on each apply and only drops keys for
+  packages that no longer render as plugins.
+- Per-project, Claude: drop `.claude/settings.json` at the project root with
+  the same key. Project settings override user settings.
+- Per-machine, Codex: edit `~/.codex/config.toml` and add
+  `[plugins."design@prateek-local"] enabled = true`. The chezmoi modify
+  script (`home/dot_codex/modify_private_config.toml.tmpl`) preserves
+  user-set keys inside `[plugins."*@prateek-local"]` tables on each apply
+  and only drops tables for packages that no longer render as plugins.
+- Per-project, Codex: drop `.codex/config.toml` at the project root with
+  the same key. Codex walks `.codex/config.toml` from the project root
+  down to cwd and deep-merges layers (closest wins), so this overrides
+  both the user-level value and any per-machine override. The project
+  must be trusted on first use (`codex trust` or the one-time UI prompt).
+  Project root is whatever `project_root_markers` resolves to (default:
+  any ancestor with `.git`).
+
 ## APM And Vendoring
 
 Use one APM project per package.
@@ -127,6 +157,19 @@ chezmoi does not render those records.
 
 ## Validation
 
+This subsystem is exercised by three independent test scripts. Run all three
+when you change `package.toml`, the renderer, or either modify script — the
+per-suite Makefile targets do not aggregate, and individual targets cover
+disjoint behavior:
+
+```sh
+make test-agent-skill-packages   # validators, renderers, --check, inventory
+make test-claude-settings        # ~/.claude/settings.json modify-script merge
+make test-codex-config           # ~/.codex/config.toml modify-script merge
+```
+
+Skipping any of the three lets a schema flip silently rot a sibling test.
+
 After editing package source, run validation against explicit temp roots:
 
 ```sh
@@ -152,6 +195,15 @@ Before a live `chezmoi apply` that may replace `~/.agents/skills` or
 
 ```sh
 .agents/skills/agent-skill-management/scripts/render-agent-core-skills --check-live
+```
+
+When previewing chezmoi templates from a worktree, pass `--source <repo>` so
+chezmoi reads from the worktree instead of the configured `sourceDir`
+(typically `~/dotfiles`):
+
+```sh
+chezmoi --source "$PWD" execute-template \
+  --file home/dot_claude/modify_private_settings.json.tmpl
 ```
 
 For context-budget work, use:

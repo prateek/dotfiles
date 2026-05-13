@@ -24,7 +24,7 @@ Keep repo-local and machine-level agent state separate. Files that define how ag
 Use `$agent-skill-management` for changes to `home/dot_agents/packages/`,
 apply-time skill/plugin render scripts, Codex or Claude rendered plugin
 activation, and the related docs (`docs/dev/chezmoi-agent-skills-plan.md`,
-`docs/dev/agent-skill-management-research.md`). The generated live roots are
+`docs/dev/agent-skill-management-research.md`, `docs/adr/0007-default-loaded-plugin-policy.md`). The generated live roots are
 `~/.agents/skills`, `~/.claude/skills`, and `~/.agents/plugins`; do not commit
 source copies under `home/dot_agents/skills`, `home/dot_claude/skills`, or
 `home/dot_agents/plugins`.

@@ -101,12 +101,14 @@ assert data["marketplaces"]["last30days-skill"]["last_updated"] == "live"
 import os
 assert data["marketplaces"]["prateek-local"]["source_type"] == "local"
 assert data["marketplaces"]["prateek-local"]["source"] == os.path.expanduser("~/.agents/plugins")
-assert data["plugins"]["design@prateek-local"]["enabled"] is True
-assert data["plugins"]["experimental@prateek-local"]["enabled"] is True
-assert data["plugins"]["ios@prateek-local"]["enabled"] is True
+# Reflects default_loaded in each package.toml; flip the source there if
+# this rotates.
+assert data["plugins"]["design@prateek-local"]["enabled"] is False
+assert data["plugins"]["experimental@prateek-local"]["enabled"] is False
+assert data["plugins"]["ios@prateek-local"]["enabled"] is False
+assert data["plugins"]["utils-human@prateek-local"]["enabled"] is False
 assert data["plugins"]["review@prateek-local"]["enabled"] is True
 assert data["plugins"]["utils-agent@prateek-local"]["enabled"] is True
-assert data["plugins"]["utils-human@prateek-local"]["enabled"] is True
 assert "stale@prateek-local" not in data["plugins"]
 assert data["plugins"]["other@other-market"]["enabled"] is False
 assert data["hooks"]["state"]["/Users/prateek/.codex/hooks.json:pre_tool_use:0:0"]["trusted_hash"] == "sha256:live"
@@ -115,7 +117,8 @@ PY
 "$script" <"$merged" >"$semantic_merged"
 cmp -s "$merged" "$semantic_merged"
 
-# From-scratch: empty config in -> prateek-local marketplace and plugins injected.
+# From-scratch: empty config in -> prateek-local marketplace and plugins seeded
+# with their package.toml defaults.
 empty_current="$tmp_root/empty-current.toml"
 empty_merged="$tmp_root/empty-merged.toml"
 : >"$empty_current"
@@ -126,6 +129,48 @@ import tomllib
 
 data = tomllib.loads(open(sys.argv[1], "rb").read().decode())
 assert data["marketplaces"]["prateek-local"]["source_type"] == "local"
-for slug in ("design", "experimental", "ios", "review", "utils-agent", "utils-human"):
-    assert data["plugins"][f"{slug}@prateek-local"]["enabled"] is True
+expected = {
+    "design": False,
+    "experimental": False,
+    "ios": False,
+    "utils-human": False,
+    "review": True,
+    "utils-agent": True,
+}
+for slug, want in expected.items():
+    assert data["plugins"][f"{slug}@prateek-local"]["enabled"] is want, slug
+PY
+
+# Per-machine override: a user-set @prateek-local enabled value must survive
+# `chezmoi apply`, along with any user-added keys and comment lines inside
+# the same table. Mirrors the Claude per-machine override contract documented
+# in agent-skill-management/SKILL.md.
+override_input="$tmp_root/override-input.toml"
+override_output="$tmp_root/override-output.toml"
+cat >"$override_input" <<'TOML'
+[plugins."design@prateek-local"]
+# pinned for the apple-platform sprint
+enabled = true
+priority = 5
+
+[plugins."review@prateek-local"]
+enabled = false
+TOML
+"$script" <"$override_input" >"$override_output"
+python3 - "$override_output" <<'PY'
+import sys
+import tomllib
+
+raw = open(sys.argv[1]).read()
+data = tomllib.loads(raw)
+plugins = data["plugins"]
+# User flips survive.
+assert plugins["design@prateek-local"]["enabled"] is True, plugins
+assert plugins["review@prateek-local"]["enabled"] is False, plugins
+# Untouched plugins still reflect their package.toml defaults.
+assert plugins["ios@prateek-local"]["enabled"] is False, plugins
+assert plugins["utils-agent@prateek-local"]["enabled"] is True, plugins
+# User-added unrelated keys and comments inside a managed plugin table survive.
+assert plugins["design@prateek-local"]["priority"] == 5, plugins
+assert "# pinned for the apple-platform sprint" in raw, raw
 PY

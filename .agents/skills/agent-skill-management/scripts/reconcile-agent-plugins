@@ -14,22 +14,22 @@ from agent_skill_lib import load_packages
 
 
 def main() -> int:
+    # Codex picks plugins up purely from ~/.codex/config.toml (chezmoi-managed
+    # marketplace + per-plugin tables). The current `codex plugin` CLI only
+    # exposes a `marketplace` subcommand — there is no `codex plugin install`
+    # or `codex plugin enable/disable` to mirror the Claude commands here.
     commands = [
         "claude plugin marketplace add ~/.agents/plugins --scope user",
         "claude plugin marketplace update prateek-local",
         "codex plugin marketplace upgrade prateek-local",
     ]
     for package in load_packages():
-        if package.render.get("claude") == "plugin":
-            commands.append(
-                f"claude plugin install {package.package_id}@prateek-local --scope user"
-            )
-            commands.append(
-                f"claude plugin enable {package.package_id}@prateek-local --scope user"
-            )
-        if package.render.get("codex") == "plugin":
-            commands.append(f"codex plugin install {package.package_id}@prateek-local")
-            commands.append(f"codex plugin enable {package.package_id}@prateek-local")
+        if package.render.get("claude") != "plugin":
+            continue
+        slug = f"{package.package_id}@prateek-local"
+        toggle = "enable" if package.default_loaded else "disable"
+        commands.append(f"claude plugin install {slug} --scope user")
+        commands.append(f"claude plugin {toggle} {slug} --scope user")
     for command in commands:
         print(command)
     return 0

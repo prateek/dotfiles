@@ -144,7 +144,7 @@ def render_codex_config_template(path: Path, packages) -> None:
             [
                 "",
                 f'[plugins."{package.package_id}@prateek-local"]',
-                "enabled = true",
+                f"enabled = {'true' if package.default_loaded else 'false'}",
             ]
         )
     write_text(path, "\n".join(lines) + "\n")
@@ -152,7 +152,7 @@ def render_codex_config_template(path: Path, packages) -> None:
 
 def render_claude_settings_template(path: Path, packages) -> None:
     enabled_plugins = {
-        f"{package.package_id}@prateek-local": True
+        f"{package.package_id}@prateek-local": package.default_loaded
         for package in packages
         if package.render.get("claude") == "plugin"
     }
