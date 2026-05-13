@@ -11,3 +11,6 @@
 
 # Absurd durable-workflow CLI.
 "pipx:absurdctl" = "latest"
+
+# Agent Package Manager — drives `vendor-agent-package` for skill packages.
+"pipx:apm-cli" = "latest"

@@ -7,3 +7,4 @@ dependencies:
   apm:
     - openai/skills/skills/.curated/cli-creator
     - danshapiro/trycycle
+    - stablyai/orca/skills/orca-cli
