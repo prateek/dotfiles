@@ -2,10 +2,12 @@
 # All current tool/env/settings entries live under conf.d/:
 #
 #   conf.d/runtimes.toml  - language runtimes (node, go, ruby) + ecosystem
-#                           package managers (yarn) + per-language settings
-#   conf.d/clis.toml      - standalone CLIs without associated env/settings
-#   conf.d/ask.toml       - tool + its [env] / [settings] / [hooks] kept
-#                           together when the concern spans multiple blocks
+#                           package managers (yarn, pnpm) + per-language settings
+#   conf.d/clis.toml      - standalone CLIs grouped by purpose (dev-deps, AI
+#                           harnesses, agent skill backends), with any
+#                           tool-tied [env] in the same file
+#   conf.d/<name>.toml    - promote a category here once it has ~3+ stable
+#                           entries that share env / settings / hooks
 #
 # Keep this file empty unless something truly belongs at the root layer
 # (e.g., a setting that must load before every conf.d file). See

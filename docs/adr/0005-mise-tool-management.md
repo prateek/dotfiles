@@ -45,12 +45,18 @@ For Codex, this repo provides a file task at `~/.config/mise/tasks/codex/use`. I
 
 mise loads `~/.config/mise/conf.d/*.toml` alphabetically after `~/.config/mise/config.toml`. We use that to group each concern in its own file:
 
-- `conf.d/runtimes.toml` — language runtimes (node, go, ruby) and ecosystem package managers (yarn) plus per-language `[settings]`.
-- `conf.d/clis.toml` — standalone CLIs without associated env / settings / hooks.
-- `conf.d/<name>.toml` — any tool whose configuration spans `[tools]` + `[env]` (or `[settings]` / `[hooks]`), kept together so the whole concern lives in one file and removes cleanly.
+- `conf.d/runtimes.toml` — language runtimes (node, go, ruby) and ecosystem package managers (yarn, pnpm) plus per-language `[settings]`.
+- `conf.d/clis.toml` — standalone CLIs grouped into purpose sections (see below). Tool-tied `[env]` entries live in the same file when they're a single line with an obvious owner.
+- `conf.d/<name>.toml` — promoted category file once a section in `clis.toml` reaches roughly 3+ stable entries that share env, settings, or hooks. Promote earlier if the tool needs hooks, since hooks have side effects worth isolating.
 - `config.toml` — intentionally empty. Reserve for settings that must load before every `conf.d/` file. New tools go in a `conf.d/` file, not the root.
 
-Rule of thumb when adding a new tool: if the entry is one line and needs nothing alongside it, add it to `clis.toml` or `runtimes.toml`. If it brings its own env var, settings block, or hook, give it its own `conf.d/<name>.toml`.
+Inside `clis.toml`, group by **purpose**, not by install backend. Current sections are:
+
+- **Dotfiles dev dependencies** — required to author or maintain this repo, not to run it (e.g. `apm-cli`, which drives `vendor-agent-package`). When we have a module system that gates installs by role, mark these as dev-only and skip on machines that just consume the dotfiles.
+- **AI coding harnesses** — interactive AI coding tools the human runs directly (`claude-code`, `gemini-cli`, eventually `codex`).
+- **Agent skill backends** — CLIs the agent reaches for, either via a `SKILL.md` wrapper or via convention docs in `~/.agents/docs/`.
+
+Within a section, sort alphabetically by full key. Add an inline comment when the binary name, install source, or skill pairing is non-obvious. Singleton categories don't need a section header — slot them into the closest existing section or leave them ungrouped at the bottom.
 
 ## Options considered
 

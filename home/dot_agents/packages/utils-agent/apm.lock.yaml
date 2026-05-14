@@ -1,5 +1,5 @@
 lockfile_version: '1'
-generated_at: '2026-05-13T00:16:57.816326+00:00'
+generated_at: '2026-05-14T18:12:28.534367+00:00'
 apm_version: 0.13.0
 dependencies:
 - repo_url: danshapiro/trycycle
@@ -9,6 +9,15 @@ dependencies:
   deployed_files:
   - .agents/skills/trycycle
   content_hash: sha256:bc3e3ec7a1dcb0e682089322f66610c96ac14f72a697a7ba0298702c294cbe94
+- repo_url: hefgi/skills
+  host: github.com
+  resolved_commit: 4169204d176fc10ab42a86658128a3f91d8602e3
+  virtual_path: shortcut
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/shortcut
+  content_hash: sha256:c8e8c62e311d1edffef6ec6aca2fd28fc4241513bfb201f077f3e3336b6d7369
 - repo_url: openai/skills
   host: github.com
   resolved_commit: 4c4058ebf44f6734e62c70ab4a81246d4d093fc8

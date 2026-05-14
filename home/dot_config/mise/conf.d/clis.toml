@@ -1,16 +1,40 @@
-# Standalone CLIs without associated env / settings / hooks.
-# Anything that needs its own [env] etc. belongs in its own conf.d file
-# (see `ask.toml` for the pattern).
+# Standalone CLIs installed via mise.
+#
+# Sections group CLIs by purpose, not by install backend. Within a section,
+# entries are sorted alphabetically by full key. Add an inline comment when
+# the binary name, install source, or skill pairing is non-obvious.
+#
+# Promotion rule: when a section grows to ~3+ stable entries that share env,
+# settings, or hooks, promote it to its own `conf.d/<category>.toml`. Until
+# then, keep it inline so the whole CLI surface fits in one file.
+#
+# Future work: split "dotfiles dev dependencies" (only needed when authoring
+# or maintaining this repo) from production CLIs (needed on every machine
+# that runs the dotfiles). Tracked at the dev-deps section header below.
 
 [tools]
-"go:github.com/tomasz-tomczyk/crit" = "latest"
-# CLI; the desktop app `claude` is a Homebrew cask in packages.toml.
+# === Dotfiles dev dependencies ===
+# Required to author / maintain this repo, not to run it. When we have a
+# module system that gates installs by role, mark these as dev-only and
+# skip on machines that just consume the dotfiles.
+"pipx:apm-cli" = "latest"  # drives `vendor-agent-package` for skill packages
+
+# === AI coding harnesses ===
+# Interactive AI coding tools the human runs directly. The desktop `claude`
+# app is a Homebrew cask in packages.toml; this is the CLI.
 "npm:@anthropic-ai/claude-code" = "latest"
 "npm:@google/gemini-cli" = "latest"
-"npm:@steipete/bird" = "latest"
 
-# Absurd durable-workflow CLI.
-"pipx:absurdctl" = "latest"
+# === Agent skill backends ===
+# CLIs the agent reaches for, either via a SKILL.md wrapper or via the
+# convention docs in ~/.agents/docs/. Inline comment names the consumer
+# when the package name doesn't make it obvious.
+"go:github.com/tomasz-tomczyk/crit" = "latest"            # crit, crit-cli (review pkg)
+"npm:@pleaseai/ask" = "latest"                             # ask skill (utils-agent); see [env] below
+"npm:@shortcut-cli/shortcut-cli" = "latest"                # shortcut skill; binary is `short`
+"npm:@steipete/bird" = "latest"                            # twitter; see ~/.agents/docs/twitter.md
+"pipx:absurdctl" = "latest"                                # durable-workflow CLI for agent use
 
-# Agent Package Manager — drives `vendor-agent-package` for skill packages.
-"pipx:apm-cli" = "latest"
+[env]
+# ask: cache lives under XDG_CACHE_HOME so it stays out of $HOME root.
+ASK_HOME = "{{ get_env(name='XDG_CACHE_HOME', default='~/.cache') }}/ask"
