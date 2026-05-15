@@ -1,0 +1,74 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.14"
+# dependencies = []
+# ///
+"""Deep-merge chezmoi's desired Yojam mutations into ~/Library/Application Support/Yojam/config.json.
+
+Top-level scalars: desired wins. Array fields with stable identity
+(`browsers`, `emailClients` keyed by `bundleIdentifier`; `rules` keyed by
+`id`): desired entries override matching live entries field-by-field via
+`dict.update` (shallow merge — fragment entries are intentionally flat;
+no nested object merge for now). Unmatched desired entries are appended;
+unmatched live entries (Yojam's auto-discovered browsers, learned-domain
+churn, etc.) pass through. See SKILL.md for the override model and the
+stale-key trade-off.
+"""
+import base64
+import json
+import sys
+
+desired = json.loads(
+    base64.b64decode(
+        "{{ include (printf "%s/.chezmoiassets/yojam-config.json" .chezmoi.sourceDir) | b64enc }}"
+    ).decode()
+)
+
+ARRAY_KEYS = {
+    "browsers": "bundleIdentifier",
+    "emailClients": "bundleIdentifier",
+    "rules": "id",
+}
+
+
+def merge_array(current_arr, desired_arr, key):
+    by_id = {entry[key]: entry for entry in current_arr if key in entry}
+    for d in desired_arr:
+        if key in d and d[key] in by_id:
+            by_id[d[key]].update(d)
+        else:
+            current_arr.append(d)
+            if key in d:
+                by_id[d[key]] = d
+    return current_arr
+
+
+def merge(current, desired):
+    for key, value in desired.items():
+        if key in ARRAY_KEYS and isinstance(value, list) and isinstance(current.get(key), list):
+            merge_array(current[key], value, ARRAY_KEYS[key])
+        else:
+            current[key] = value
+    return current
+
+
+def load_current(text: str) -> dict:
+    if not text.strip():
+        return {}
+    value = json.loads(text)
+    return value if isinstance(value, dict) else {}
+
+
+def semantic_equal(left: str, right: str) -> bool:
+    try:
+        return json.loads(left) == json.loads(right)
+    except Exception:
+        return False
+
+
+current_text = sys.stdin.read()
+current = load_current(current_text)
+merge(current, desired)
+
+merged_text = json.dumps(current, indent=2) + "\n"
+sys.stdout.write(current_text if semantic_equal(current_text, merged_text) else merged_text)

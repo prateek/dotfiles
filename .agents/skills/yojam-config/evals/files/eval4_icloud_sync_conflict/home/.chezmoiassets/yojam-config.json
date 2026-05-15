@@ -1,0 +1,13 @@
+{
+  "rules": [
+    {
+      "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "name": "notion.so -> Chrome",
+      "matchType": "domainSuffix",
+      "pattern": "notion.so",
+      "targetBundleId": "com.google.Chrome",
+      "targetAppName": "Chrome",
+      "stripUTMParams": true
+    }
+  ]
+}

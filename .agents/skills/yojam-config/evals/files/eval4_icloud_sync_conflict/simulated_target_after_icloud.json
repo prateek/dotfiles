@@ -1,0 +1,7 @@
+{
+  "version": 5,
+  "iCloudSync": true,
+  "rules": [
+    {"id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", "name": "linear.app -> Safari (from other Mac)", "enabled": true, "matchType": "domainSuffix", "pattern": "linear.app", "targetBundleId": "com.apple.Safari", "targetAppName": "Safari", "isBuiltIn": false, "priority": 1, "stripUTMParams": true, "rewriteRules": []}
+  ]
+}

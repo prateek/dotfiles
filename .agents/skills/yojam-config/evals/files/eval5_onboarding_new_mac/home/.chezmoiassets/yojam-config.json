@@ -1,0 +1,12 @@
+{
+  "activationMode": "holdShift",
+  "defaultSelection": "smart",
+  "launchAtLogin": true,
+  "browsers": [
+    {
+      "bundleIdentifier": "com.apple.Safari",
+      "enabled": false
+    }
+  ],
+  "rules": []
+}

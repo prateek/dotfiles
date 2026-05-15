@@ -1,0 +1,22 @@
+{
+  "rules": [
+    {
+      "id": "77777777-7777-7777-7777-777777777777",
+      "name": "duckduckgo -> Brave (broken)",
+      "matchType": "domainSuffix",
+      "pattern": "duckduckgo.com",
+      "targetBundleId": "/Applications/Brave Browser.app",
+      "targetAppName": "Brave Browser",
+      "stripUTMParams": true
+    },
+    {
+      "id": "88888888-8888-8888-8888-888888888888",
+      "name": "github.com -> Chrome (works)",
+      "matchType": "domainSuffix",
+      "pattern": "github.com",
+      "targetBundleId": "com.google.Chrome",
+      "targetAppName": "Chrome",
+      "stripUTMParams": true
+    }
+  ]
+}

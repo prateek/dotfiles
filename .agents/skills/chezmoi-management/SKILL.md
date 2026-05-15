@@ -80,6 +80,7 @@ These are short, high-stakes, and easy to violate. Keep them in working memory r
 - **Setapp-installed apps need an install path before config.** Do not add chezmoi-managed config for a Setapp app unless the repo has an install path for it.
 - **`home/.chezmoiscripts/` numeric ordering is load-bearing.** Insert new scripts at unused gap numbers; do not renumber existing ones. Current ordering listed in `references/workflow.md`.
 - **Raw app captures live under `${XDG_STATE_HOME:-~/.local/state}/dotfiles/captures/`, not in the repo.**
+- **Yojam's `~/Library/Application Support/Yojam/config.json` has a focused skill.** See `$yojam-config` for the deltas-only desired-fragment + JSON deep-merge flow, schema, and import-time security pass.
 
 ## Validation Lanes
 

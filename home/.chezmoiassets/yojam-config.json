@@ -1,0 +1,32 @@
+{
+  "version": 5,
+  "activationMode": "holdShift",
+  "defaultSelection": "smart",
+  "launchAtLogin": true,
+  "browsers": [
+    {
+      "bundleIdentifier": "com.stablyai.orca",
+      "displayName": "Orca",
+      "source": "manual"
+    },
+    {
+      "bundleIdentifier": "com.apple.Safari",
+      "enabled": false
+    },
+    {
+      "bundleIdentifier": "com.google.Chrome",
+      "enabled": false
+    }
+  ],
+  "rules": [
+    {
+      "id": "42519A5E-1A12-4F7D-82F1-834AC7D72227",
+      "name": "Orca Testing",
+      "matchType": "urlPrefix",
+      "pattern": "http://localhost:",
+      "sourceAppBundleId": "com.stablyai.orca",
+      "targetAppName": "Orca",
+      "targetBundleId": "com.stablyai.orca"
+    }
+  ]
+}

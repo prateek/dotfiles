@@ -1,0 +1,7 @@
+{
+  "version": 5,
+  "iCloudSync": false,
+  "rules": [
+    {"id": "cccccccc-cccc-cccc-cccc-cccccccccccc", "name": "Slack -> Chrome with window position", "enabled": false, "matchType": "all", "pattern": "", "targetBundleId": "com.google.Chrome", "targetAppName": "Chrome", "isBuiltIn": false, "priority": 1, "stripUTMParams": true, "rewriteRules": [], "sourceAppBundleId": "com.tinyspeck.slackmacgap", "ruleCustomLaunchArgs": "--window-position=0,0 $URL"}
+  ]
+}

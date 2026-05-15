@@ -1,0 +1,3 @@
+{{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "yojam")) "true" }}
+Library/Application Support/Yojam/config.json
+{{- end }}

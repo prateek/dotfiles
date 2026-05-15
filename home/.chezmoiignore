@@ -25,6 +25,9 @@ Library/Preferences/com.cmuxterm.app.plist
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "leader-key")) "true" }}
 Library/Application Support/Leader Key/config.json
 {{- end }}
+{{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "yojam")) "true" }}
+Library/Application Support/Yojam/config.json
+{{- end }}
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "ghostty")) "true" }}
 .config/ghostty
 {{- end }}

@@ -6,6 +6,7 @@ description = "Core package set"
 taps = [
   { name = "1password/tap" },
   { name = "felixkratz/formulae" },
+  { name = "fluffypony/yojam" },
 ]
 brews = [
   { name = "direnv" },
@@ -48,6 +49,7 @@ casks = [
   { name = "tailscale-app" },
   { name = "visual-studio-code" },
   { name = "voiceink" },
+  { name = "yojam" },
 ]
 mas = []
 disabled_casks = [
@@ -67,6 +69,7 @@ taps = [
   { name = "f/mcptools" },
   { name = "facebook/fb" },
   { name = "felixkratz/formulae" },
+  { name = "fluffypony/yojam" },
   { name = "go-delve/delve" },
   { name = "hashicorp/tap" },
   { name = "holgerbrandl/tap" },
@@ -356,6 +359,7 @@ casks = [
   { name = "voiceink" },
   { name = "xquartz" },
   { name = "tailscale-app" },
+  { name = "yojam" },
   { name = "zed" },
 ]
 mas = [

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Yojam Config"
+  short_description: "Maintain Yojam browser-router config via the modify_ + desired-fragment delta pattern in chezmoi"
+  default_prompt: "Use $yojam-config to handle this Yojam config edit. Edit the desired-mutations fragment at home/.chezmoiassets/yojam-config.json, mint a stable UUID for new rules, then chezmoi apply. Bisect a silently-disabled rule against the import-time security pass. Do NOT use chezmoi re-add — the source is a modify_ script, not a captured file."

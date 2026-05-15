@@ -1,0 +1,8 @@
+{
+  "version": 5,
+  "iCloudSync": false,
+  "rules": [
+    {"id": "77777777-7777-7777-7777-777777777777", "name": "duckduckgo -> Brave (broken)", "enabled": false, "matchType": "domainSuffix", "pattern": "duckduckgo.com", "targetBundleId": "/Applications/Brave Browser.app", "targetAppName": "Brave Browser", "isBuiltIn": false, "priority": 1, "stripUTMParams": true, "rewriteRules": []},
+    {"id": "88888888-8888-8888-8888-888888888888", "name": "github.com -> Chrome (works)", "enabled": true, "matchType": "domainSuffix", "pattern": "github.com", "targetBundleId": "com.google.Chrome", "targetAppName": "Chrome", "isBuiltIn": false, "priority": 2, "stripUTMParams": true, "rewriteRules": []}
+  ]
+}

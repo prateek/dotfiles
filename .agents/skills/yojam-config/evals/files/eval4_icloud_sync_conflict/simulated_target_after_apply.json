@@ -1,0 +1,7 @@
+{
+  "version": 5,
+  "iCloudSync": true,
+  "rules": [
+    {"id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", "name": "notion.so -> Chrome", "enabled": true, "matchType": "domainSuffix", "pattern": "notion.so", "targetBundleId": "com.google.Chrome", "targetAppName": "Chrome", "isBuiltIn": false, "priority": 1, "stripUTMParams": true, "rewriteRules": []}
+  ]
+}

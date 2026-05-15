@@ -1,0 +1,7 @@
+[packages]
+default_profile = "core"
+
+[packages.profiles.core]
+description = "Core package set"
+taps  = [{ name = "fluffypony/yojam" }]
+casks = [{ name = "yojam" }]

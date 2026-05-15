@@ -1,0 +1,107 @@
+{
+  "skill_name": "yojam-config",
+  "evals": [
+    {
+      "id": 1,
+      "name": "add-rule-to-fragment",
+      "tags": ["happy-path", "workflow-add-rule"],
+      "prompt": "I want to route github.com to my Work Chrome profile via Yojam. Add the rule to my chezmoi-managed Yojam config and make it apply.",
+      "expected_output": "The agent edits the desired-mutations fragment at `home/.chezmoiassets/yojam-config.json` (NOT the live `~/Library/Application Support/Yojam/config.json`, NOT a captured source JSON file). It mints a stable UUID with `uuidgen` for the rule's `id` field (required by Yojam's decoder AND by the modify_ merge so subsequent applies don't append duplicates). Provides a sparse rule entry: `id`, `name`, `matchType`, `pattern`, `targetBundleId: com.google.Chrome`, `targetAppName: Chrome`. Optional fields like `enabled` (defaults true), `priority` (defaults 100), `rewriteRules` (defaults []) are omitted. Then runs `chezmoi apply` to merge into live. Does NOT use `chezmoi re-add` to capture from a hypothetical GUI edit (re-add doesn't round-trip the modify_ stub).",
+      "files": ["evals/files/eval1_add_rule_to_fragment"],
+      "expectations": [
+        "Edits `home/.chezmoiassets/yojam-config.json` (the fragment), NOT the live `~/Library/Application Support/Yojam/config.json` and NOT a captured-source JSON file",
+        "Mints a stable UUID for the rule (e.g. via `uuidgen`) and pins it in the fragment so the modify_ merge finds the rule on subsequent applies instead of appending duplicates",
+        "Sets `targetBundleId` to `com.google.Chrome` (reverse-DNS bundle ID), NOT a path like `/Applications/Google Chrome.app`",
+        "Provides a sparse rule entry — only the keys that differ from upstream defaults; does NOT pad with `enabled: true`, `priority: 100`, `rewriteRules: []`, etc.",
+        "Runs `chezmoi apply` (or `chezmoi diff` first) to merge the fragment into live",
+        "Does NOT recommend `chezmoi re-add` (the source is a `modify_` stub, not a captured file)",
+        "Does NOT suggest editing the live `~/Library/Application Support/Yojam/config.json` directly"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "bisect-silent-disable-target-bundle-id",
+      "tags": ["pitfall", "security-pass", "regression"],
+      "prompt": "I added a rule to my Yojam fragment that should route brave-browser links to /Applications/Brave Browser.app. After `chezmoi apply`, the rule isn't firing and the GUI shows it as disabled. The other rules I added at the same time work fine. What's going on?",
+      "expected_output": "The agent identifies the import-time security pass in `SettingsStore.importJSON`, specifically the path-prefixed `targetBundleId` trigger that silently disables rules whose targetBundleId starts with `/`. Fix: switch to a reverse-DNS bundle identifier (e.g. `com.brave.Browser`) in the fragment AND add `\"enabled\": true` to that rule entry, because live already carries `enabled: false` from the prior security-disable and the deltas-only merge (`dict.update`) preserves keys absent in the fragment. Then `chezmoi apply` re-merges; Yojam re-imports, the security pass passes, the rule fires.",
+      "files": ["evals/files/eval2_bisect_silent_disable"],
+      "expectations": [
+        "Identifies the import-time security pass as the cause (not a decoder issue, not a chezmoi issue)",
+        "Names the specific trigger: `targetBundleId.hasPrefix(\"/\")` (or equivalent description of path-prefixed targetBundleId)",
+        "Cites `SettingsStore.importJSON` (or names the import-time security pass) as the source",
+        "Recommends switching the rule to use a reverse-DNS bundle identifier (com.brave.Browser) instead of an .app path",
+        "Recognizes that live carries `enabled: false` for this rule (security-disabled at import) and the deltas-only `dict.update` merge cannot reset it by omission — so the fragment entry must explicitly include `\"enabled\": true` to flip it back on at the next merge",
+        "Notes that the fix lives in the fragment (`home/.chezmoiassets/yojam-config.json`), then `chezmoi apply`",
+        "Does NOT suggest the decoder is at fault, the cask install is broken, or the file format is wrong",
+        "Does NOT recommend hand-editing live's `enabled` flag (it would be re-disabled on the next import unless the fragment also overrides it)"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "re-add-does-not-roundtrip",
+      "tags": ["pitfall", "modify-pattern"],
+      "prompt": "I changed a Yojam setting in the GUI. To capture it back into source I ran `chezmoi re-add \"$HOME/Library/Application Support/Yojam/config.json\"`. Either it errored or it overwrote my modify_ stub with raw JSON. What's the right way to capture a GUI change?",
+      "expected_output": "The agent identifies that `chezmoi re-add` doesn't work for the modify_ + fragment pattern: re-add captures the live target verbatim into source, but the source here is a `modify_config.json.tmpl` script, not a captured file. The right flow is to hand-edit the desired fragment at `home/.chezmoiassets/yojam-config.json` to add only the keys that should be portable, then `chezmoi apply` to merge. If the user did overwrite the modify_ stub, they restore it from git (`git restore home/Library/Application Support/Yojam/`).",
+      "files": ["evals/files/eval3_re_add_does_not_roundtrip"],
+      "expectations": [
+        "Identifies that `chezmoi re-add` is incompatible with the `modify_` + fragment pattern (the source is a script, not a captured file)",
+        "Recommends hand-editing the fragment at `home/.chezmoiassets/yojam-config.json` instead",
+        "Calls out that the fragment should hold only the keys that should be portable across machines — not a full capture",
+        "If the modify_ stub got overwritten, recommends restoring it from git rather than rebuilding by hand",
+        "Does NOT recommend `chezmoi add --force` as a workaround (same problem)",
+        "Does NOT suggest renaming the source back to a plain `.json` file (loses the merge engine and re-introduces the full-capture noise the pattern exists to avoid)"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "icloud-sync-conflict",
+      "tags": ["pitfall", "two-way-sync"],
+      "prompt": "Every time I `chezmoi apply` my Yojam config, within a few seconds the file changes back to something different. I noticed I have iCloud sync enabled on Yojam across two Macs. How do I make chezmoi the source of truth?",
+      "expected_output": "The agent identifies the conflict between Yojam's iCloud KV sync and chezmoi ownership. Both are trying to be authoritative. Recommends adding `\"iCloudSync\": false` to the desired fragment at `home/.chezmoiassets/yojam-config.json`, then `chezmoi apply` so the merge writes iCloudSync=false into live, then turning iCloud sync OFF on the other Mac via the Yojam GUI (or by applying the same fragment there).",
+      "files": ["evals/files/eval4_icloud_sync_conflict"],
+      "expectations": [
+        "Identifies Yojam's iCloud sync as the source of the overwrites (not chezmoi misbehaving, not a watcher loop)",
+        "Names the `iCloudSync` field",
+        "Recommends adding `iCloudSync: false` to the desired fragment at `home/.chezmoiassets/yojam-config.json`",
+        "Recommends `chezmoi apply` to merge the false value into live",
+        "Suggests propagating to the other Mac via `chezmoi apply` rather than via iCloud",
+        "Does NOT suggest disabling chezmoi management of the file or moving it out of source",
+        "Does NOT suggest editing the live target directly or fighting the watcher with timing tricks"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "onboarding-new-mac",
+      "tags": ["happy-path", "workflow-onboarding"],
+      "prompt": "I just provisioned a new Mac with the dotfiles. Yojam is installed via the cask in packages.toml. How do I get my existing rule set onto this Mac?",
+      "expected_output": "The agent walks through: (1) `chezmoi apply` runs the modify_ stub against an empty live (no config.json yet), so its output is the desired fragment re-serialized through `json.dumps` with 2-space indent; (2) launch Yojam from /Applications and approve the macOS prompt to set Yojam as the default browser (Apple requires user confirmation for default-browser changes); (3) Yojam imports the fragment, fills upstream defaults, and auto-discovers browsers/email clients. Notes that opting a Mac out is via the cask-presence gate in `home/.chezmoiignore`.",
+      "files": ["evals/files/eval5_onboarding_new_mac"],
+      "expectations": [
+        "Walks through the install -> chezmoi apply -> first launch -> default browser approval sequence",
+        "Notes that on a fresh Mac the modify_ stub runs against empty stdin and emits the fragment re-serialized through `json.dumps` (2-space indent), not literal-bytes verbatim",
+        "Notes that macOS requires user confirmation to change the default browser (so it's an interactive step, not automatable)",
+        "Mentions Yojam imports the file on launch; auto-discovery fills in browsers/email; defaults fill in everything else not in the fragment",
+        "Notes the .chezmoiignore cask-presence gate as the opt-out mechanism for hosts that should NOT inherit",
+        "Does NOT suggest hand-copying the live config.json from another Mac",
+        "Does NOT suggest using Yojam's iCloud sync as an alternative (chezmoi owns the file)"
+      ]
+    },
+    {
+      "id": 6,
+      "name": "bisect-silent-disable-rule-launch-args",
+      "tags": ["pitfall", "security-pass"],
+      "prompt": "I added a Yojam rule to my fragment that opens Slack links with a custom launch argument so a specific Chrome window position is forced. The rule has `ruleCustomLaunchArgs: \"--window-position=0,0 $URL\"`. After `chezmoi apply`, Yojam's GUI shows the rule as disabled. The targetBundleId is the normal `com.google.Chrome` reverse-DNS form, so the path-prefix trigger doesn't apply. Why is it disabled and what's my fix?",
+      "expected_output": "The agent identifies the second rule-level security trigger in `SettingsStore.importJSON`: any non-null `ruleCustomLaunchArgs` causes silent disable, even with a clean targetBundleId. The fix is two steps because the merge cannot delete a key by omission: (1) drop `ruleCustomLaunchArgs` from the fragment AND add `\"enabled\": true` to the rule entry; (2) clear `ruleCustomLaunchArgs` out of live (delete the rule in the Yojam GUI so the next `chezmoi apply` re-creates it from the now-clean fragment, or `jq del` the field from `~/Library/Application Support/Yojam/config.json` before re-applying). The same trigger applies to BrowserEntry-level `customLaunchArgs`, so a dedicated browser entry doesn't help — Yojam treats both as code-execution vectors by design.",
+      "files": ["evals/files/eval6_bisect_rule_launch_args"],
+      "expectations": [
+        "Identifies `ruleCustomLaunchArgs` non-null as the trigger (NOT path-prefixed targetBundleId, NOT the regex check, NOT a chezmoi issue)",
+        "Cites `SettingsStore.importJSON` (or names the import-time security pass) as the source",
+        "Recommends dropping `ruleCustomLaunchArgs` from the fragment as the realistic fix (or notes that the design intent is to refuse code-execution vectors via imported config)",
+        "Recognizes that the deltas-only `dict.update` merge cannot delete `ruleCustomLaunchArgs` from the live entry by omission — Yojam would re-trip the trigger on the next import — so the fix also requires clearing live (delete the rule in the Yojam GUI before re-applying, or `jq del` the field from live)",
+        "Adds `\"enabled\": true` to the fragment entry so the next merge flips live's `enabled: false` back on once the offending field is gone",
+        "If the agent suggests a dedicated BrowserEntry as a workaround, it must note that BrowserEntry-level `customLaunchArgs` triggers the same disable",
+        "Does NOT confuse this with the path-prefixed targetBundleId trigger covered in eval2"
+      ]
+    }
+  ]
+}

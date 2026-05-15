@@ -1,0 +1,10 @@
+{
+  "activationMode": "holdShift",
+  "browsers": [
+    {
+      "bundleIdentifier": "com.apple.Safari",
+      "enabled": false
+    }
+  ],
+  "rules": []
+}

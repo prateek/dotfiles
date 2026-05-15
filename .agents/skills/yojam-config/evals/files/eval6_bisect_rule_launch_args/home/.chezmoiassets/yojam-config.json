@@ -1,0 +1,14 @@
+{
+  "rules": [
+    {
+      "id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+      "name": "Slack -> Chrome with window position",
+      "matchType": "all",
+      "targetBundleId": "com.google.Chrome",
+      "targetAppName": "Chrome",
+      "sourceAppBundleId": "com.tinyspeck.slackmacgap",
+      "ruleCustomLaunchArgs": "--window-position=0,0 $URL",
+      "stripUTMParams": true
+    }
+  ]
+}
