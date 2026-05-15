@@ -5,3 +5,12 @@ repos:
       # Use system gitleaks (installed via Homebrew in Brewfile/Brewfile.core).
       - id: gitleaks-system
         pass_filenames: false
+
+  - repo: local
+    hooks:
+      - id: chezmoi-dry-run
+        name: chezmoi apply --dry-run
+        entry: make test-chezmoi-apply
+        language: system
+        pass_filenames: false
+        files: ^home/

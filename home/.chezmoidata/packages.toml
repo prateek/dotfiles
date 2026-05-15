@@ -248,7 +248,7 @@ brews = [
   { name = "pigz" },
   { name = "plotutils" },
   { name = "poppler" },
-  { name = "pre-commit", link = false },
+  { name = "prek" },  # Rust-based drop-in replacement for pre-commit (faster, no Python runtime)
   { name = "pstree" },
   { name = "pth" },
   { name = "pure" },
