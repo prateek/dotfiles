@@ -49,6 +49,7 @@ jobs:
           make test-agent-skill-packages
           make test-gemini-meeting-sync
           make test-brew-install-wrapper
+          make test-gh-extensions-script
           make test-selected-app-plists
           make test-zed-settings
           make test-moom-plist

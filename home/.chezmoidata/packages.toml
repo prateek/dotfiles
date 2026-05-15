@@ -55,6 +55,9 @@ mas = []
 disabled_casks = [
   { name = "cleanshot", reason = "Optional: CleanShot X (often licensed/installed via Setapp)" },
 ]
+gh_extensions = [
+  { name = "enthus-appdev/gh-attach" },
+]
 
 [packages.profiles.full]
 description = "Full package set"
@@ -377,4 +380,7 @@ xcode_required_brews = [
 disabled_casks = [
   { name = "cleanshot", reason = "CleanShot X is installed via Setapp after login" },
   { name = "mtmr", reason = "Upstream cask download fails TLS negotiation from fresh macOS guests" },
+]
+gh_extensions = [
+  { name = "enthus-appdev/gh-attach" },
 ]

@@ -43,6 +43,7 @@ Run focused repo regression tests without booting a VM:
 make test-tart-install-helper
 make test-render-brewfile
 make test-mise-install-script
+make test-gh-extensions-script
 make test-xcode-install-script
 make test-secret-backed-files
 make test-chezmoi-config
