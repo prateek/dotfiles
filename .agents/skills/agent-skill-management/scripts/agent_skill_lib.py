@@ -145,7 +145,28 @@ def copy_skill_tree(source: Path, target: Path) -> None:
         target.unlink()
     elif target.exists():
         shutil.rmtree(target)
-    shutil.copytree(source, target, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+    shutil.copytree(
+        source,
+        target,
+        ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+        copy_function=_copy_stripping_literal_prefix,
+    )
+
+
+def _copy_stripping_literal_prefix(src: str, dst: str) -> None:
+    # Mirror chezmoi's `literal_` attribute prefix so vendored files that collide
+    # with chezmoi script prefixes (e.g. `run_*.py`) land at their real names in
+    # the rendered tree, matching the names chezmoi materializes from the source.
+    # `shutil.copytree` hands `copy_function` os.path.join'd strings, hence str args.
+    dst_path = Path(dst)
+    if dst_path.name.startswith("literal_"):
+        stripped = dst_path.with_name(dst_path.name.removeprefix("literal_"))
+        if stripped.exists():
+            raise FileExistsError(
+                f"literal_-stripped target already exists: {stripped}"
+            )
+        dst_path = stripped
+    shutil.copy2(src, dst_path)
 
 
 def reset_dir(path: Path) -> None:
