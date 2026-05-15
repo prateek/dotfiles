@@ -64,6 +64,18 @@ in `home/.chezmoiscripts/run_once_before_05-core-tools.sh.tmpl`, so it's
 available before chezmoi's file phase runs the modify scripts on a fresh
 machine.
 
+**For chezmoi `modify_*` scripts:** Use `#!/usr/bin/env -S uv run --quiet --script`
+instead. Chezmoi executes modify scripts on every command (including read-only
+`chezmoi status`/`diff`) to check for drift. Without `--quiet`, `uv` prints
+package installation messages to stderr on each invocation, cluttering output.
+The `--quiet` flag silences these messages while preserving error reporting.
+
+**When NOT to use `--quiet`:** For user-invoked scripts (`scripts/`, agent
+skills, eval tools), keep the default verbose output. The "Installed N packages"
+messages provide useful feedback that the script is working and explain any
+initial delay. Only use `--quiet` for scripts executed automatically and
+frequently where the messages become noise.
+
 ## Project form
 
 For multi-file projects, run `uv init` once. Use `uv add` for dependencies

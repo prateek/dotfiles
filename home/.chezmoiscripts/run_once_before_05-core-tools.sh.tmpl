@@ -4,7 +4,7 @@
 brew_shellenv
 
 # git, chezmoi, and uv are the minimum to run chezmoi apply: chezmoi-managed
-# `modify_*` scripts use `#!/usr/bin/env -S uv run --script` shebangs and
+# `modify_*` scripts use `#!/usr/bin/env -S uv run --quiet --script` shebangs and
 # execute during chezmoi's file phase, before brew-bundle installs other
 # runtimes.
 missing=()

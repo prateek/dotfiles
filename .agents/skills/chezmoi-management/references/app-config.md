@@ -136,7 +136,7 @@ The `modify_` mechanism works for any config where chezmoi owns some keys and th
 - `home/dot_codex/modify_private_config.toml.tmpl` — TOML modify_ stub.
 - `home/.chezmoitemplates/codex-config-managed.toml.tmpl` — fragment of chezmoi-owned defaults.
 
-**Important: TOML modify_ stubs do NOT use the plist bash-shim pattern.** They are standalone Python scripts (`#!/usr/bin/env -S uv run --script` with their own PEP 723 metadata and imports) that:
+**Important: TOML modify_ stubs do NOT use the plist bash-shim pattern.** They are standalone Python scripts (`#!/usr/bin/env -S uv run --quiet --script` with their own PEP 723 metadata and imports) that:
 
 1. Pull the chezmoi-owned fragment via `desired_text = base64.b64decode("{{ includeTemplate "codex-config-managed.toml.tmpl" . | b64enc }}").decode()` — only the fragment line uses `includeTemplate`.
 2. Read stdin (current `~/.codex/config.toml`).
