@@ -55,7 +55,7 @@ brew_shellenv() {
 # `sudo -v` probe so a no-admin user can be elevated first. Sources
 # ~/.config/dotfiles/elevation.sh (rendered from chezmoi data) to discover the
 # configured method; defaults to a no-op when the file is missing or when
-# DOTFILES_ELEVATION_METHOD is "none". See docs/jamf-self-service-elevation.md.
+# DOTFILES_ELEVATION_METHOD is "none". See docs/references/jamf-self-service-elevation.md.
 dotfiles_admin_elevate() {
   local config="${HOME}/.config/dotfiles/elevation.sh"
   [ -r "$config" ] || return 0
@@ -185,7 +185,7 @@ dotfiles_sudo_start() {
   else
     log "$reason"
     if ! dotfiles_admin_elevate; then
-      die "Could not elevate to administrator. See docs/jamf-self-service-elevation.md or set DOTFILES_ELEVATION_METHOD=none to skip the hook."
+      die "Could not elevate to administrator. See docs/references/jamf-self-service-elevation.md or set DOTFILES_ELEVATION_METHOD=none to skip the hook."
     fi
     if ! sudo -v; then
       die "Administrator access is required for this dotfiles step. Make sure this macOS user is an Administrator, or install Homebrew manually and rerun chezmoi apply."

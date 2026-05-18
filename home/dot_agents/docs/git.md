@@ -70,7 +70,7 @@ This machine wraps `gh` via `~/bin/gh` → `~/dotfiles/bin/gh`. The wrapper pass
 - Check active identity:
   - `gh api user -q .login`
 
-If this machine ever needs multiple authenticated `gh` users again, the recommended shape lives in `docs/grmrepo.md` (section "Extending Back To Multiple `gh` Users").
+If this machine ever needs multiple authenticated `gh` users again, the recommended shape lives in `docs/references/grmrepo.md` (section "Extending Back To Multiple `gh` Users").
 
 #### Attaching files with `gh attach`
 

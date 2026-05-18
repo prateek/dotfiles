@@ -3,6 +3,10 @@ status: current
 doc_type: reference
 created: 2026-05-12
 updated: 2026-05-12
+related:
+  - ../adr/0008-sudo-askpass-1password.md
+  - ../plans/sudo-askpass-1password-plan.md
+status_detail: "Current behavior until ADR 0008 lands in code; the checkout still uses dotfiles_sudo_start and sudo-keepalive."
 ---
 
 # Jamf Self Service elevation hook

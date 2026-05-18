@@ -1,17 +1,24 @@
 ---
-status: draft
+status: active
 doc_type: plan
 owner: Prateek
-skill_path: ~/dotfiles/.agents/skills/setup-downstream-fork/
+updated: 2026-05-15
 related:
   - setup-downstream-fork-plan.md
+  - ../../home/dot_agents/packages/review/skills/local/setup-downstream-fork/SKILL.md
+status_detail: "Implementation has landed in the setup-downstream-fork skill (_secrets.py, --init-config, --validate-config); this plan remains active for validation, test, and checklist cleanup."
 ---
 
 # setup-downstream-fork — pluggable secret resolver
 
 ## Problem
 
-The skill needs four secrets at setup time: `ANTHROPIC_API_KEY` (or `OPENAI_API_KEY`), `FORK_SYNC_PAT` (optional, for the PAT-based sync path), and `FORK_APP_ID` + `FORK_APP_PRIVATE_KEY` (for the GitHub App-based sync path, once that lands). Today they're read from `os.environ`. That forces the operator to either:
+The skill needs resolver access to setup-time secrets: `anthropic_api_key`
+(required), `openai_api_key` (optional alternate provider), `fork_sync_pat`
+(optional PAT sync path), and GitHub App credentials (`fork_app_id`,
+`fork_app_private_key`, `fork_app_installation_id`) for App-based sync. Before
+`_secrets.py`, these were read directly from `os.environ`. That forced the
+operator to either:
 
 - prefix every invocation with `export` lines, leaking values into shell history, OR
 - keep the secrets in `.envrc`/`~/.zshenv` as plaintext.
@@ -111,7 +118,9 @@ The `command` provider is the escape hatch. Any store with a CLI is one line of 
 
 1. Check for `~/.config/setup-downstream-fork/config.toml`. If present, offer `--force` behavior and exit otherwise.
 2. Ask for `default_provider`. Default: `op` if `op` is on `$PATH`, else `env`.
-3. For each required secret (`anthropic_api_key`, `fork_sync_pat`, `fork_app_id`, `fork_app_private_key`):
+3. For each configured secret (`anthropic_api_key` required; `openai_api_key`,
+   `fork_sync_pat`, `fork_app_id`, `fork_app_private_key`, and
+   `fork_app_installation_id` optional):
    - Prompt for a reference. Show a per-provider example.
    - Immediately invoke the resolver to validate — catch typos, missing 1Password items, stale file paths at config time, not at fork time.
    - On failure, re-prompt or let the user skip (optional secrets only).
@@ -142,27 +151,31 @@ Existing fail-closed behavior is unchanged: if the resolver returns `None` for `
 - **No caching across phases.** Resolve on demand; don't stash values in the `SetupContext` dataclass (which gets serialized to the debug log).
 - **Reference strings are safe to log.** `op://Personal/Anthropic/credential` is a pointer, not a secret. Include those in the audit log for debuggability.
 
-## Implementation plan
+## Implementation status
 
-New file: `scripts/_secrets.py` (~180 lines).
+Landed in the setup-downstream-fork skill:
 
-- `SecretResolver` abstract base.
-- `EnvResolver(key_map: dict)`.
-- `ConfigResolver(config_path: Path)` that internally dispatches to:
+- `scripts/_secrets.py` with `SecretResolver`, `EnvResolver`, and
+  `ConfigResolver`.
+- `ConfigResolver(config_path: Path)` dispatches to:
   - `OpProvider` (shells to `op read`).
   - `FileProvider` (reads file, 0o600 check).
   - `CommandProvider` (sh -c, 30s timeout, empty env + allowlist).
-- `ChainResolver(*resolvers)`.
-- `load_config(path) -> dict` (tomllib, stdlib-only, Python 3.11+).
-- `build_default_resolver() -> SecretResolver` — one-call factory that picks up the XDG config.
+- `ChainResolver(*resolvers)`, `load_config(path)`, and
+  `build_default_resolver()`.
+- `scripts/setup_fork.py` has `--init-config`, `--validate-config`, and
+  `--force`.
+- `scripts/_ci_gates.py` accepts an optional API key so `setup_fork.py` can
+  resolve the key before calling it.
+- `SKILL.md` documents the config bootstrap path.
 
-Wiring:
+Remaining cleanup:
 
-- `scripts/setup_fork.py`: import `_secrets`; construct resolver once in `main()`, pass through to preflight/configure_gh. Add `--init-config`, `--validate-config`, `--force` flags.
-- `scripts/_ci_gates.py`: `analyze_workflows` takes an optional `api_key` parameter so it doesn't need to know about the resolver. `setup_fork.py` resolves the key and passes it in. Keeps `_ci_gates` reusable by `doctor.py` without dragging in config.
-- `scripts/doctor.py`: same pattern — construct resolver in `main()`, pass `api_key` into the drift check.
-- `SKILL.md`: document `--init-config` as the recommended first-run step.
-- `tests/fixtures/`: add a mock op shim (`MOCK_OP_RESPONSE` env → stub `op` binary) so CI can exercise the `op` path without real 1Password.
+- Verify `setup_fork.py`'s GitHub repo-secret handoff against the resolver
+  flow. The selected provider secret still has env/manual `gh secret set`
+  paths in setup and hand-off output.
+- Refresh tests and checklist text around which secrets are required versus
+  optional.
 
 ## Follow-ups (not v1)
 
@@ -174,4 +187,5 @@ Wiring:
 ## Open questions
 
 - Should `fork_app_private_key` be resolved as a path rather than a value? The file is multi-line PEM; `op read` can return it as a string, but `gh secret set --body` vs `gh secret set < file` wants different shapes. Lean toward: resolver always returns the value; `configure_gh` writes it to a tempfile with 0o600 when a command line needs a path, deletes after.
-- Where to put `--init-config` interactively — dedicated Python module or a tiny shell wrapper? Lean Python so the validation round-trip is in-process.
+- Closed: `--init-config` lives in Python so the validation round-trip stays
+  in-process.

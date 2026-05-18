@@ -4,7 +4,7 @@ doc_type: adr
 created: 2026-04-26
 owner: Prateek
 related:
-  - ../dev/chezmoi-migration-plan.md
+  - ../references/chezmoi-architecture.md
   - 0004-tart-install-validation-and-tracing.md
 ---
 

@@ -41,7 +41,7 @@
 {{- /* Machine class drives the elevation hook. Currently only Jamf-managed
        work macs need a special step before sudo works; personal/homelab fall
        through to the ordinary sudo prompt. See
-       docs/jamf-self-service-elevation.md. */ -}}
+       docs/references/jamf-self-service-elevation.md. */ -}}
 {{- $machineType := env "DOTFILES_MACHINE_TYPE" -}}
 {{- if not $machineType -}}
 {{-   $machineType = promptChoiceOnce . "machine_type" "Machine type" (list "personal" "homelab" "work") "personal" -}}
@@ -58,7 +58,7 @@
 
 {{- $jamfPolicyId := env "DOTFILES_JAMF_POLICY_ID" -}}
 {{- if and (not $jamfPolicyId) (eq $elevationMethod "jamf-self-service") -}}
-{{-   $jamfPolicyId = promptStringOnce . "jamf_self_service_policy_id" "Jamf Self Service policy ID for temp admin (see docs/jamf-self-service-elevation.md)" "" -}}
+{{-   $jamfPolicyId = promptStringOnce . "jamf_self_service_policy_id" "Jamf Self Service policy ID for temp admin (see docs/references/jamf-self-service-elevation.md)" "" -}}
 {{- end -}}
 
 {{- $installXcode := env "DOTFILES_INSTALL_XCODE" | default "false" -}}
@@ -87,7 +87,7 @@ method = {{ $elevationMethod | quote }}
 jamf_policy_id = {{ $jamfPolicyId | quote }}
 
 # Render binary plists as XML for `chezmoi diff`. Affects diff output only;
-# apply still writes binary. See docs/dev/chezmoi-migration-plan.md > Plist Management.
+# apply still writes binary. See docs/references/chezmoi-architecture.md > Plist Management.
 [[textconv]]
 pattern = "**/Library/Preferences/*.plist"
 command = "plutil"

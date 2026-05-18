@@ -1,13 +1,14 @@
 ---
 status: current
-doc_type: plan
+doc_type: reference
 related:
   - ../adr/0005-mise-tool-management.md
 ---
 
-# Mise tool management plan
+# Mise Tool Management Reference
 
-This plan replaces the repo-local `devtool` shim system with mise-native tool selection.
+This reference describes the implemented replacement for the repo-local
+`devtool` shim system: mise-native tool selection.
 
 ## Problem
 

@@ -4,7 +4,7 @@ doc_type: adr
 created: 2026-05-13
 owner: Prateek
 related:
-  - ../dev/chezmoi-agent-skills-plan.md
+  - ../plans/chezmoi-agent-skills-plan.md
   - 0006-chezmoi-migration-prototype.md
 ---
 

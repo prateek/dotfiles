@@ -1,6 +1,6 @@
 ---
 name: agent-skill-management
-description: Manage this repo's dotfiles-backed agent skill packages, apply-time skill and plugin projections, and Codex or Claude rendered plugin activation. Use when editing home/dot_agents package sources, generated live skill or plugin output scripts, agent plugin config, or the related docs/dev plans and research docs.
+description: Manage this repo's dotfiles-backed agent skill packages, apply-time skill and plugin projections, and Codex or Claude rendered plugin activation. Use when editing home/dot_agents package sources, generated live skill or plugin output scripts, agent plugin config, or the related docs in docs/plans, docs/research, and docs/adr.
 ---
 
 # Agent Skill Management
@@ -46,7 +46,7 @@ There is no global package manifest. The renderers walk
 Allowed render policy values:
 
 - `root`: materialize the package into the agent's default always-on skill root.
-- `plugin`: render the package as an enabled local plugin for that agent.
+- `plugin`: render the package as a local plugin for that agent.
 - `none`: do not render the package for that agent.
 
 In the first implementation, use `root` only for the `core` package. Non-core
@@ -209,6 +209,6 @@ root. Budget rollup is not implemented yet.
 ## Supporting Docs
 
 This `SKILL.md` is the operational entrypoint. Use the files in `references/`
-for focused detail, and `docs/dev/chezmoi-agent-skills-plan.md` for historical
+for focused detail, and `docs/plans/chezmoi-agent-skills-plan.md` for historical
 plan context when needed. Do not require agents to read the plan before using
 this skill.

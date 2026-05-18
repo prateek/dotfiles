@@ -4,8 +4,7 @@ doc_type: plan
 owner: Prateek
 created: 2026-05-13
 updated: 2026-05-13
-related:
-  - https://github.com/anthropics/claude-code/issues/58591
+status_detail: "Draft for a separate Go repo/tool; dotfiles integration is limited to eventual install and skill wiring."
 ---
 
 # orcactl — kubectl-shaped CLI for working with Orca

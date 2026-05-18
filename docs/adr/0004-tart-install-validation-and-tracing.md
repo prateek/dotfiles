@@ -4,7 +4,7 @@ doc_type: adr
 created: 2026-04-27
 owner: Prateek
 related:
-  - ../dev/tart-mini-validation.md
+  - ../runbooks/tart-mini-validation.md
   - 0002-zsh-fresh-shell-validator.md
 ---
 

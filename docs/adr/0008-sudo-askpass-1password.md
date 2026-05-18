@@ -5,9 +5,10 @@ created: 2026-05-13
 updated: 2026-05-14
 owner: Prateek
 related:
-  - ../dev/sudo-askpass-1password-plan.md
+  - ../plans/sudo-askpass-1password-plan.md
   - 0006-chezmoi-migration-prototype.md
-  - ../jamf-self-service-elevation.md
+  - ../references/jamf-self-service-elevation.md
+status_detail: "Accepted decision; implementation is pending in this checkout. Current operational behavior still uses dotfiles_sudo_start and the sudo-keepalive tests."
 ---
 
 # ADR 0008 — Sudo askpass via 1Password
@@ -26,7 +27,7 @@ Brew cask installs come along for free. Per Homebrew's `Library/Homebrew/system_
 
 ## Decision
 
-Replace the keepalive subsystem with a `SUDO_ASKPASS` helper backed by the 1Password CLI desktop-app integration. Keep the Jamf Self Service elevation hook unchanged (orthogonal — it manages admin-group membership, not sudo caching). Implementation in [`docs/dev/sudo-askpass-1password-plan.md`](../dev/sudo-askpass-1password-plan.md).
+Replace the keepalive subsystem with a `SUDO_ASKPASS` helper backed by the 1Password CLI desktop-app integration. Keep the Jamf Self Service elevation hook unchanged (orthogonal — it manages admin-group membership, not sudo caching). Implementation in [`docs/plans/sudo-askpass-1password-plan.md`](../plans/sudo-askpass-1password-plan.md).
 
 Helper at `~/.config/dotfiles/sudo-askpass.sh` (chezmoi-managed, mode 0700) `exec`s `op read --no-newline op://Vault/Item/password`. The 1Password reference is per-machine data templated in directly from `[data.sudo].op_ref` in `chezmoi.toml`, gated on `machine_type == "work"` so non-mscp Macs don't get the prompt. The helper file itself is gated on the same `machine_type` value via `home/.chezmoiignore`, so personal and homelab Macs never see it on disk.
 

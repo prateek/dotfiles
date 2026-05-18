@@ -1,11 +1,15 @@
 ---
-status: current
+status: archived
 doc_type: plan
 created: 2026-04-27
-updated: 2026-05-11
+updated: 2026-05-15
+closed: 2026-05-15
+current_guidance:
+  - ../references/chezmoi-architecture.md
 related:
   - ../adr/0006-chezmoi-migration-prototype.md
-status_detail: "Implemented on master; maintained as the current chezmoi architecture and operations reference."
+  - ../references/chezmoi-architecture.md
+status_detail: "Historical migration plan; current architecture and operations guidance lives in the Chezmoi Architecture reference."
 ---
 
 # Chezmoi Migration Plan
@@ -613,7 +617,7 @@ Validation has three layers:
 2. CI and host contracts prove helper behavior without booting Tart.
 3. Local Tart validation proves the installer on a clean macOS guest.
 
-CI does not boot Tart today. The clean-machine lane is local on `mini`; see [tart-mini-validation.md](tart-mini-validation.md) and [../adr/0004-tart-install-validation-and-tracing.md](../adr/0004-tart-install-validation-and-tracing.md).
+CI does not boot Tart today. The clean-machine lane is local on `mini`; see [tart-mini-validation.md](../runbooks/tart-mini-validation.md) and [../adr/0004-tart-install-validation-and-tracing.md](../adr/0004-tart-install-validation-and-tracing.md).
 
 ### Temp-Home Chezmoi Contract
 
@@ -840,4 +844,4 @@ Two lanes on `mini`:
 - Gitleaks: `https://github.com/gitleaks/gitleaks`
 - detect-secrets: `https://github.com/Yelp/detect-secrets`
 - Tart install validation ADR: [../adr/0004-tart-install-validation-and-tracing.md](../adr/0004-tart-install-validation-and-tracing.md)
-- Tart mini validation runbook: [tart-mini-validation.md](tart-mini-validation.md)
+- Tart mini validation runbook: [tart-mini-validation.md](../runbooks/tart-mini-validation.md)

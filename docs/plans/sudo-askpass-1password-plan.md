@@ -3,11 +3,12 @@ status: accepted
 doc_type: plan
 owner: Prateek
 created: 2026-05-13
-updated: 2026-05-14
+updated: 2026-05-15
 related:
   - ../adr/0008-sudo-askpass-1password.md
   - ../adr/0006-chezmoi-migration-prototype.md
-  - ../jamf-self-service-elevation.md
+  - ../references/jamf-self-service-elevation.md
+status_detail: "Accepted design; implementation is pending in this checkout. Current code still uses dotfiles_sudo_start, test-sudo-keepalive, and the Jamf keepalive reference."
 ---
 
 # Sudo Askpass via 1Password Plan
@@ -39,7 +40,7 @@ Add a new block to `home/.chezmoiignore`, placed after the credentials block (ar
 
 ```text
 {{/* sudo-askpass helper is only meaningful on Macs with mscp-style no-cache
-     sudo policy. See docs/dev/sudo-askpass-1password-plan.md. */}}
+     sudo policy. See docs/plans/sudo-askpass-1password-plan.md. */}}
 {{- if ne .machine_type "work" }}
 .config/dotfiles/sudo-askpass.sh
 {{- end }}
@@ -59,7 +60,7 @@ Replace `dotfiles_sudo_start` with `dotfiles_sudo_setup`, placed where the delet
 dotfiles_sudo_setup() {
   if ! groups | grep -qw admin; then
     log "Administrator group membership required."
-    dotfiles_admin_elevate || die "Could not elevate to administrator. See docs/jamf-self-service-elevation.md."
+    dotfiles_admin_elevate || die "Could not elevate to administrator. See docs/references/jamf-self-service-elevation.md."
   fi
 
   local helper="${HOME}/.config/dotfiles/sudo-askpass.sh"
@@ -128,7 +129,7 @@ Asymmetry note: the askpass helper inlines the templated `op_ref` directly rathe
 2. Confirm `op` is on PATH. Already in `home/.chezmoidata/packages.toml` (cask `1password-cli`, in both core and full profiles, lines 34 and 304).
 3. Locate the 1Password item for the macOS user password (most users already have one). If absent, create it interactively in the 1Password app — don't pass the password as a CLI argument (it would land in shell history and `ps` output).
 4. Capture the secret reference: 1Password app → right-click item → "Copy Secret Reference". Looks like `op://Private/Mac Login - foo/password`.
-5. Bootstrap the reference. The env-var path bakes the value directly into rendered `~/.config/chezmoi/chezmoi.toml` (bypassing `promptStringOnce`); to change later, re-run with the new value or edit `chezmoi.toml` directly. Mirrors the `jamf_policy_id` bootstrap pattern in `docs/jamf-self-service-elevation.md`:
+5. Bootstrap the reference. The env-var path bakes the value directly into rendered `~/.config/chezmoi/chezmoi.toml` (bypassing `promptStringOnce`); to change later, re-run with the new value or edit `chezmoi.toml` directly. Mirrors the `jamf_policy_id` bootstrap pattern in `docs/references/jamf-self-service-elevation.md`:
    ```sh
    DOTFILES_SUDO_OP_REF='op://Private/Mac Login - foo/password' chezmoi init …
    ```
@@ -173,7 +174,7 @@ Then real `chezmoi apply` on the work Mac: expect exactly one TouchID tap at the
 
 ## Documentation
 
-Edit `docs/jamf-self-service-elevation.md`:
+Edit `docs/references/jamf-self-service-elevation.md`:
 - Subhead changes from "sudo keepalive" to "Askpass + Jamf elevation".
 - Update "How it wires up": `dotfiles_sudo_setup` calls `dotfiles_admin_elevate` first (gated on `groups | grep -qw admin`), then exports `SUDO_ASKPASS` and shadows `sudo()` when an op-backed helper is present.
 - Cross-reference this plan and ADR 0008.
@@ -184,5 +185,5 @@ No new reference doc.
 
 - **IT exception ask for `os_sudo_timeout_configure.odv`** — best long-term fix, but a conversation, not a code change. See [ADR 0008 Future work](../adr/0008-sudo-askpass-1password.md#future-work).
 - **TouchID via `/etc/pam.d/sudo_local`** for everyday non-chezmoi sudo — separate small commit.
-- **Per-script `dotfiles_admin_recheck` for >1h Jamf grant expiry** — apply takes ~5 min in practice; document as a known limitation in `docs/jamf-self-service-elevation.md` instead.
+- **Per-script `dotfiles_admin_recheck` for >1h Jamf grant expiry** — apply takes ~5 min in practice; document as a known limitation in `docs/references/jamf-self-service-elevation.md` instead.
 - **Concurrent `chezmoi apply` runs** — `op` may return `another sign-in is in progress` for the loser; sudo surfaces the failure on stderr. Acceptable; no data corruption.

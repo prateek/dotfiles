@@ -1,7 +1,7 @@
 ---
 status: current
 doc_type: reference
-updated: 2026-05-10
+updated: 2026-05-15
 ---
 
 # GRM (git-repo-manager) on this machine
@@ -24,19 +24,24 @@ This dotfiles repo wires up [git-repo-manager](https://github.com/hakoerber/git-
 - `chezmoi apply` installs (via `home/.chezmoiscripts/run_onchange_after_10-brew-bundle.sh.tmpl`):
   - `cask "hammerspoon"` (declared in `home/.chezmoidata/packages.toml`)
   - `git-repo-manager` (via `cargo install git-repo-manager --locked`, if `cargo` exists)
-- It also symlinks:
-  - `~/.config/grm/config.toml` → `~/dotfiles/.config/grm/config.toml`
-  - `~/.hammerspoon/init.lua` → `~/dotfiles/.hammerspoon/init.lua`
-  - `~/bin/{gh,grmrepo,grmrepo-refresh,repo-index}` → `~/dotfiles/bin/*`
+- It also materializes:
+  - `~/.config/grm/config.toml` from `home/dot_config/grm/config.toml`
+  - `~/.hammerspoon/init.lua` from `home/dot_hammerspoon/init.lua`
+  - `~/bin/{gh,grmrepo,grmrepo-refresh,repo-index}` from `home/bin/symlink_*`
+    templates that point back to the repo-local `bin/` scripts
 
 ## Keeping GRM config up to date
 
 - Refresh config from local clones:
   - `grmrepo refresh`
 - Hooks:
-  - Interactive `git clone` and `git worktree {add,remove,prune}` trigger a background refresh (`zsh/lib/grmrepo.zsh`)
-  - Interactive shells trigger a background refresh at most once per day (catches manual deletes) (`zsh/lib/grmrepo.zsh`)
-  - `gh repo clone/create` triggers a background refresh (via `~/bin/gh` wrapper)
+  - Interactive `git clone` and `git worktree {add,remove,prune}` trigger a
+    background refresh from `home/dot_config/zsh/lib/grmrepo.zsh`
+    (materialized to `~/.config/zsh/lib/grmrepo.zsh`)
+  - Interactive shells trigger a background refresh at most once per day
+    (catches manual deletes) from the same zsh library
+  - `gh repo clone/create` triggers a background refresh (via the managed
+    `~/bin/gh` wrapper)
   - `ghc` triggers a background refresh after cloning
 
 Config file: `~/.config/grm/config.toml`
@@ -65,7 +70,7 @@ If this machine needs multiple authenticated `gh` users again, keep the current 
 
 Recommended shape:
 
-- Add a rules file such as `~/dotfiles/zsh/lib/gh-user-rules.zsh`
+- Add a rules file such as `~/.config/zsh/lib/gh-user-rules.zsh`
 - Define one function with a narrow interface:
   - `gh_user_for_context <origin_url> <repo_slug>`
 - In `~/bin/gh`:

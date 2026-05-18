@@ -13,9 +13,13 @@ This is the repo-specific contract for coding agents working in Prateek's dotfil
 - `home/dot_claude/`: chezmoi-managed Claude config for this machine. Its `CLAUDE.md` target should symlink to `../.agents/AGENTS.md`.
 - `home/dot_codex/`: chezmoi-managed Codex config for this machine.
 - `scripts/`: focused helpers for packages, macOS/app config, Tart, traces, audits, and hooks.
-- `docs/dev/`: plans and runbooks for repo changes.
+- `docs/index.md`: starting point for current guidance, active plans, ADRs, and historical records.
+- `docs/document-lifecycle.md`: canonical frontmatter statuses and transition rules for `docs/`.
+- `docs/plans/`: non-trivial repo change plans.
+- `docs/references/`: current operator-facing architecture and reference docs.
+- `docs/runbooks/`: current step-by-step operational procedures.
+- `docs/research/`: source-backed investigations and background reports.
 - `docs/adr/`: architectural decisions.
-- `docs/*.md`: operator-facing repo references.
 
 Chezmoi is the ongoing command surface: prefer `chezmoi apply`, `chezmoi status`, `chezmoi diff`, `chezmoi verify`, `chezmoi managed`, and `chezmoi unmanaged` over adding a wrapper.
 
@@ -23,17 +27,19 @@ Keep repo-local and machine-level agent state separate. Files that define how ag
 
 Use `$agent-skill-management` for changes to `home/dot_agents/packages/`,
 apply-time skill/plugin render scripts, Codex or Claude rendered plugin
-activation, and the related docs (`docs/dev/chezmoi-agent-skills-plan.md`,
-`docs/dev/agent-skill-management-research.md`, `docs/adr/0007-default-loaded-plugin-policy.md`). The generated live roots are
+activation, and the related docs (`docs/plans/chezmoi-agent-skills-plan.md`,
+`docs/research/agent-skill-management-research.md`, `docs/adr/0007-default-loaded-plugin-policy.md`). The generated live roots are
 `~/.agents/skills`, `~/.claude/skills`, and `~/.agents/plugins`; do not commit
 source copies under `home/dot_agents/skills`, `home/dot_claude/skills`, or
 `home/dot_agents/plugins`.
 
 ## Docs And Decisions
 
-- Non-trivial repo initiatives get a plan at `docs/dev/<slug>-plan.md`.
+- Non-trivial repo initiatives get a plan at `docs/plans/<slug>-plan.md`.
 - Architectural decisions get the next numbered ADR at `docs/adr/<NNNN>-<slug>.md`; never renumber existing ADRs.
 - Markdown docs under `docs/` must use YAML frontmatter with a canonical `status`; follow [docs/document-lifecycle.md](docs/document-lifecycle.md) for states and transitions.
+- Update [docs/index.md](docs/index.md) when docs are added, moved, closed, or reclassified.
+- Current operational guidance belongs in `docs/references/` or `docs/runbooks/`. Completed plans should be archived or superseded and point to current guidance.
 - Plan docs reference their ADRs, and ADRs reference the plan docs that prompted them. Prefer Markdown-relative links for in-repo docs.
 - Small one-off fixes do not need a plan or ADR.
 - `README.md` is user-facing and intentionally tiny. Move coding-agent or maintenance details here or into focused docs instead.
@@ -45,8 +51,9 @@ source copies under `home/dot_agents/skills`, `home/dot_claude/skills`, or
 - Render package input: `scripts/packages/render-brewfile --profile core|full`.
 - Package/app audits: `scripts/audit/brew-inventory.sh`, `scripts/audit/brewfile-usage.sh`, `scripts/audit/app-inventory.sh`.
 - Fresh-shell checks: `scripts/audit/zsh-fresh-shells.zsh verify` and `bench`.
+- Docs lifecycle checks: `make test-docs-lifecycle` for the local diff and `DOCS_LIFECYCLE_BASE=origin/master make test-docs-lifecycle` for a full branch check.
 - Test index: `tests/README.md`.
-- Tart local install lane: `docs/dev/tart-mini-validation.md`.
+- Tart local install lane: `docs/runbooks/tart-mini-validation.md`.
 - Worktree workflow: `home/dot_agents/docs/worktrees.md`.
 - Git/commit workflow: `home/dot_agents/docs/git.md`.
 

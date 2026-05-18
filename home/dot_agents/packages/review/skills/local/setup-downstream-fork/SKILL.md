@@ -7,7 +7,7 @@ description: "Set up or maintain an LLM-driven downstream fork of an upstream gi
 
 A skill for spinning up — and keeping healthy — a downstream fork of an upstream open-source project. The generated repo runs on cruise control: it tracks upstream daily, applies your patches, falls back to an LLM when patches drift, and only escalates to a human when a real design decision is needed.
 
-Full architectural rationale is in `docs/adr/0001-downstream-fork-architecture.md` in the dotfiles repo. Plan doc with concrete workflow recipes is at `docs/dev/setup-downstream-fork-plan.md`. Read `references/architecture.md` in this skill for an LLM-oriented summary if you need to extend the skill itself.
+Full architectural rationale is in `docs/adr/0001-downstream-fork-architecture.md` in the dotfiles repo. Historical plan context is at `docs/plans/setup-downstream-fork-plan.md`. Read `references/architecture.md` in this skill for an LLM-oriented summary if you need to extend the skill itself.
 
 ## When to use
 
@@ -53,6 +53,7 @@ Run in parallel. Fail loudly if any is broken.
 - Scan upstream's `.github/workflows/` for any `fork-*.yml` filenames. If any exist, fail loudly — we use that prefix and cannot silently collide.
 - Upstream repo size < 2GB (via GitHub API). If larger, warn and recommend the patch-stack-only variant (not yet scoped; for now, just warn and proceed).
 - Mergify GitHub App install status on the target org (offer to install if missing).
+- Resolver config is ready for local setup checks: run `scripts/setup_fork.py --validate-config` when a config exists; start with `scripts/setup_fork.py --init-config` if it does not. Provider repo secrets are still pushed from env when present or set manually with `gh secret set` during hand-off.
 
 ### Step 3 — Execute the scaffold
 
@@ -71,7 +72,7 @@ Call `scripts/setup_fork.py` to do the heavy lifting. Narrate as phases run.
 11. **Configure GitHub side**:
     - Enable auto-merge on the repo.
     - Enable Actions.
-    - Add secrets: `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` (whichever provider the user picked). Store via `gh secret set`.
+    - Add the selected provider secret (`ANTHROPIC_API_KEY` or `OPENAI_API_KEY`). If the key is in env, setup pushes it; otherwise follow the `gh secret set` hand-off instructions. Add optional fork sync GitHub App/PAT secrets when using those paths.
     - Set branch protection on `main`: require the `build`, `smoke-test`, and `drift-recheck` status checks; require PRs (no direct pushes); allow auto-merge.
     - Install/enable Mergify App on the repo (link to the install flow if not already installed org-wide).
 12. **Trigger first sync**: `gh workflow run fork-upstream-sync.yml`. Verifies the pipeline is wired.

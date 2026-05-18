@@ -2,6 +2,7 @@
 status: superseded
 doc_type: adr
 created: 2026-04-17
+closed: 2026-04-17
 superseded_by: 0001-downstream-fork-architecture.md
 status_detail: "Merged into ADR 0001."
 ---

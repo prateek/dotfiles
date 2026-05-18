@@ -4,7 +4,7 @@ doc_type: research
 created: 2026-05-10
 updated: 2026-05-11
 related:
-  - chezmoi-agent-skills-plan.md
+  - ../plans/chezmoi-agent-skills-plan.md
 ---
 
 # Agent Skill Management Research
@@ -16,7 +16,7 @@ counts grow. It is intentionally tool-agnostic except where a tool's behavior
 affects OpenAI Codex, Claude Code, or shared `.agents/skills` layouts.
 
 The companion dotfiles implementation plan is
-[chezmoi-agent-skills-plan.md](chezmoi-agent-skills-plan.md).
+[chezmoi-agent-skills-plan.md](../plans/chezmoi-agent-skills-plan.md).
 
 ## Summary
 

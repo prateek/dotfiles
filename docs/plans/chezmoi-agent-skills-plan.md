@@ -1,12 +1,16 @@
 ---
-status: active
+status: archived
 doc_type: plan
 created: 2026-05-10
-updated: 2026-05-13
-related:
-  - agent-skill-management-research.md
+updated: 2026-05-15
+closed: 2026-05-15
+current_guidance:
+  - ../../.agents/skills/agent-skill-management/SKILL.md
   - ../adr/0007-default-loaded-plugin-policy.md
-status_detail: "Package source is committed; root skills and plugin marketplace are rendered at chezmoi apply time. Plugin enable defaults are now per-package via package.toml `default_loaded`; the example below predates that and shows every plugin enabled. See ADR 0007."
+related:
+  - ../research/agent-skill-management-research.md
+  - ../adr/0007-default-loaded-plugin-policy.md
+status_detail: "Historical implementation plan. Current package layout and plugin operations live in the agent-skill-management skill; default-loaded policy lives in ADR 0007."
 ---
 
 # Chezmoi Agent Skills Plan

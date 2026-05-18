@@ -1,9 +1,9 @@
 # Tests
 
-Harness comparison report:
+Run docs lifecycle checks:
 
 ```sh
-open ~/dotfiles/docs/dev/zsh-harness-comparison.html
+make test-docs-lifecycle
 ```
 
 Run `ghc` URL handling tests:
@@ -83,7 +83,7 @@ make test-install-tart-full
 
 Smoke uses the Tahoe base image. Full uses the Tahoe Xcode image so routine validation does not spend the run downloading Xcode.
 
-The current `mini` validation workflow is documented in `docs/dev/tart-mini-validation.md`.
+The current `mini` validation workflow is documented in `docs/runbooks/tart-mini-validation.md`.
 
 Run focused-helper tests for the package renderer:
 

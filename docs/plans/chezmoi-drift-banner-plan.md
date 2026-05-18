@@ -1,9 +1,15 @@
 ---
-status: active
+status: archived
 doc_type: plan
 owner: Prateek
 created: 2026-05-11
-updated: 2026-05-11
+updated: 2026-05-15
+closed: 2026-05-15
+current_guidance:
+  - ../../home/dot_config/dotfiles/chezmoi-drift/README.md
+related:
+  - ../../tests/chezmoi-drift-banner.zsh
+status_detail: "Implemented. Current behavior and configuration live with the managed source under home/dot_config/dotfiles/chezmoi-drift/."
 ---
 
 # Chezmoi Drift Banner Plan

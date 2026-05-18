@@ -1,5 +1,5 @@
 .PHONY: test test-chezmoi-apply hammerspoon hammerspoon-check hammerspoon-reload
-.PHONY: test-gemini-meeting-sync test-ghc test-gh-extensions-script test-mise-install-script test-xcode-install-script test-secret-backed-files test-kanata-config test-chezmoi-config test-chezmoi-local-ignores test-chezmoi-script-status test-chezmoi-drift-banner test-codex-config test-claude-settings test-agent-skill-packages test-agent-skill-packages-native test-cmux-plist test-ice-plist test-orbstack-plist test-selected-app-plists test-package-gated-configs test-moom-plist test-nvalt-colors test-nvalt-plist test-voiceink-plist test-plist-hooks test-sudo-keepalive test-macos-defaults-script test-brew-inventory test-brew-install-wrapper test-brew-bundle-script test-render-brewfile test-repo-index test-grmrepo-refresh test-worktrees
+.PHONY: test-gemini-meeting-sync test-ghc test-gh-extensions-script test-mise-install-script test-xcode-install-script test-secret-backed-files test-kanata-config test-chezmoi-config test-chezmoi-local-ignores test-chezmoi-script-status test-chezmoi-drift-banner test-codex-config test-claude-settings test-agent-skill-packages test-agent-skill-packages-native test-cmux-plist test-ice-plist test-orbstack-plist test-selected-app-plists test-package-gated-configs test-moom-plist test-nvalt-colors test-nvalt-plist test-voiceink-plist test-plist-hooks test-sudo-keepalive test-macos-defaults-script test-brew-inventory test-brew-install-wrapper test-brew-bundle-script test-render-brewfile test-docs-lifecycle test-repo-index test-grmrepo-refresh test-worktrees
 .PHONY: test-zed-settings test-zsh-fresh-shells verify-zsh-fresh-shells bench-zsh-startup
 .PHONY: test-tart-install-helper test-trace-perfetto test-vm-install-log-scan test-vm-postflight-macos test-install-tart-dry-run test-install-tart-smoke test-install-tart-full test-install-tart-warm test-install-tart-warm-bootstrap test-install-tart-warm-refresh test-install-tart-warm-destroy
 
@@ -15,6 +15,7 @@ endif
 TART_CPU ?= 2
 TART_MEMORY ?= 4096
 TART_FLAGS ?=
+DOCS_LIFECYCLE_BASE ?= HEAD
 
 ## Compile Hammerspoon config (Fennel -> Lua).
 hammerspoon: $(HAMMERSPOON_OUT)
@@ -35,7 +36,7 @@ hammerspoon-reload: hammerspoon
 	@command -v hs >/dev/null 2>&1 || { echo "Missing 'hs' CLI"; exit 1; }
 	@hs -c 'hs.reload(); "ok"' -q
 
-## Pre-commit validation: chezmoi template syntax and apply dry-run.
+## Default validation: chezmoi template syntax and apply dry-run.
 test: test-chezmoi-apply
 
 ## Validate chezmoi apply --dry-run to catch template errors before commit.
@@ -47,6 +48,21 @@ test-chezmoi-apply:
 ## Regression tests for the focused Brewfile renderer.
 test-render-brewfile:
 	@zsh ./tests/render-brewfile.zsh
+
+## Validate docs lifecycle frontmatter, routing, and historical doc edits.
+test-docs-lifecycle:
+	@command -v uv >/dev/null 2>&1 || { echo "Missing 'uv' for docs lifecycle validation. Install uv or run chezmoi bootstrap first."; exit 1; }
+	@zsh ./tests/docs-lifecycle.zsh
+	@base="$(DOCS_LIFECYCLE_BASE)"; \
+	if [ "$$base" = "none" ]; then \
+		./docs/validate-doc-lifecycle.py; \
+	else \
+		if ! git rev-parse --verify "$$base^{commit}" >/dev/null 2>&1; then \
+			echo "Missing docs lifecycle base '$$base'. Fetch it or set DOCS_LIFECYCLE_BASE=<ref>; use DOCS_LIFECYCLE_BASE=none only for current-tree checks." >&2; \
+			exit 1; \
+		fi; \
+		./docs/validate-doc-lifecycle.py --base "$$base"; \
+	fi
 
 ## Regression tests for Gemini meeting sync wrapper config.
 test-gemini-meeting-sync:

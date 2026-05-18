@@ -1,3 +1,4 @@
+# Hook config is pre-commit compatible, but this repo runs it with `prek`.
 repos:
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.30.0
@@ -14,3 +15,9 @@ repos:
         language: system
         pass_filenames: false
         files: ^home/
+      - id: docs-lifecycle
+        name: docs lifecycle validation
+        entry: env DOCS_LIFECYCLE_BASE=HEAD make test-docs-lifecycle
+        language: system
+        always_run: true
+        pass_filenames: false

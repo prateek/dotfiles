@@ -1,11 +1,16 @@
 ---
-status: active
+status: archived
 doc_type: plan
 owner: Prateek
-skill_path: ~/dotfiles/.agents/skills/setup-downstream-fork/
+updated: 2026-05-15
+closed: 2026-05-15
+current_guidance:
+  - ../../home/dot_agents/packages/review/skills/local/setup-downstream-fork/SKILL.md
+  - ../adr/0001-downstream-fork-architecture.md
 related:
   - ../adr/0001-downstream-fork-architecture.md
-status_detail: "Draft, in active development."
+  - ../../home/dot_agents/packages/review/skills/local/setup-downstream-fork/SKILL.md
+status_detail: "Historical implementation plan. The setup-downstream-fork skill is the current operator entrypoint; remaining hardening should get a smaller follow-up plan."
 ---
 
 # setup-downstream-fork — plan

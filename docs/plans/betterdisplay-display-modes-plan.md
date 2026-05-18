@@ -3,6 +3,7 @@ status: proposed
 doc_type: plan
 created: 2026-04-30
 related: []
+status_detail: "Proposal only; no displayctl code, config, apply script, or tests exist in this checkout yet."
 ---
 
 # BetterDisplay Display Modes Plan
