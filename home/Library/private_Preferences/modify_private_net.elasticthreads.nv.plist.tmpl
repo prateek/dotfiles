@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-exec '{{ .chezmoi.sourceDir }}/../scripts/macos/plist-merge' \
-  --bundle-id 'net.elasticthreads.nv' \
-  --desired-b64 '{{ includeTemplate "net.elasticthreads.nv.plist.tmpl" . | b64enc }}'

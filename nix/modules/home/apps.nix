@@ -63,6 +63,21 @@ in
       };
     })
 
+    (mkIf config.profile.apps.yojam.enable {
+      # Yojam config uses partial-merge semantics (preserve auto-discovered
+      # browsers etc.). Activation invokes the yojam-config-merge helper
+      # with the desired fragment.
+      home.activation.yojamConfigMerge = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+        merger="${toString ../../../scripts/merge/yojam-config-merge}"
+        fragment="${toString ../../../home/dot_config/yojam/desired-fragment.json}"
+        target="$HOME/Library/Application Support/Yojam/config.json"
+        if [ -x "$merger" ] && command -v uv >/dev/null 2>&1; then
+          run "$merger" "$fragment" "$target" \
+            || echo "[home-manager] warn: yojam-config-merge failed." >&2
+        fi
+      '';
+    })
+
     (mkIf config.profile.apps.borders.enable {
       xdg.configFile."borders/bordersrc".source =
         ../../../home/dot_config/borders/bordersrc;
@@ -89,14 +104,19 @@ in
       home.file."Library/Application Support/Code".recursive = true;
     })
 
-    (mkIf (config.profile.apps.nvalt.enable && config.profile.applyMacosDefaults) {
-      # nvALT color list lives under Library/Colors/. The chezmoi side
-      # used a modify_ stub that generated the .clr file; if you need the
-      # generator, port modify_nvALT.clr.tmpl manually. Until then, we
-      # mount the static asset if it exists.
-      home.file."Library/Colors/nvALT.clr".source =
-        lib.mkIf (builtins.pathExists ../../../home/.chezmoiassets/Library/Colors/nvALT.clr)
-          ../../../home/.chezmoiassets/Library/Colors/nvALT.clr;
+    (mkIf config.profile.apps.nvalt.enable {
+      # nvALT color list: built from a JSON source via scripts/macos/build-nvalt-colorlist.
+      # The .clr is a binary NSKeyedArchiver plist, not a literal file
+      # placement candidate.
+      home.activation.buildNvaltColorlist = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+        builder="${toString ../../../scripts/macos/build-nvalt-colorlist}"
+        src="${toString ../../../home/macos/nvalt/nvALT.clr.json}"
+        target="$HOME/Library/Colors/nvALT.clr"
+        if [ -x "$builder" ] && command -v uv >/dev/null 2>&1; then
+          run "$builder" --source "$src" --target "$target" \
+            || echo "[home-manager] warn: nvALT colorlist build failed." >&2
+        fi
+      '';
     })
 
     (mkIf config.profile.apps.bin.enable {

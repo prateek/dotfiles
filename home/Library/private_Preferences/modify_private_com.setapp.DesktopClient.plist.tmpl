@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-exec '{{ .chezmoi.sourceDir }}/../scripts/macos/plist-merge' \
-  --bundle-id 'com.setapp.DesktopClient' \
-  --desired-b64 '{{ includeTemplate "com.setapp.DesktopClient.plist.tmpl" . | b64enc }}'

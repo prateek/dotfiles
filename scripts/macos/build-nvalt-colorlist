@@ -1,0 +1,121 @@
+#!/usr/bin/env -S uv run --quiet --script
+# /// script
+# requires-python = ">=3.14"
+# dependencies = []
+# ///
+"""Build the nvALT .clr (NSKeyedArchiver binary plist) from a JSON source.
+
+Reads JSON-encoded `[{name, rgb: [r, g, b]}, ...]` from --source, writes the
+binary plist to --target. Skips the write when the target is already in
+sync (byte-equal under NSKeyedArchiver round-trip).
+
+Usage: build-nvalt-colorlist --source <json> --target <clr>
+
+Originally lived as the chezmoi `modify_nvALT.clr.tmpl` stub; ported to a
+plain command invoked from home-manager activation under nix-darwin.
+"""
+from __future__ import annotations
+
+import argparse
+import io
+import json
+import pathlib
+import plistlib
+
+
+def archived_entries(raw: bytes) -> list[tuple[str, str]] | None:
+    try:
+        payload = plistlib.loads(raw)
+        objects = payload["$objects"]
+
+        def obj(uid):
+            return objects[uid.data]
+
+        keys = [obj(uid) for uid in obj(payload["$top"]["NSKeys"])["NS.objects"]]
+        colors = [
+            obj(uid)["NSRGB"].decode("ascii").rstrip("\0")
+            for uid in obj(payload["$top"]["NSColors"])["NS.objects"]
+        ]
+        return list(zip(keys, colors))
+    except Exception:
+        return None
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--source", required=True, type=pathlib.Path)
+    parser.add_argument("--target", required=True, type=pathlib.Path)
+    args = parser.parse_args()
+
+    entries = json.loads(args.source.read_text())
+    desired_entries = [(entry["name"], " ".join(entry["rgb"])) for entry in entries]
+
+    if args.target.exists():
+        raw = args.target.read_bytes()
+        if raw.strip() and archived_entries(raw) == desired_entries:
+            return 0
+
+    key_indexes = list(range(2, 2 + len(entries)))
+    array_class_index = 2 + len(entries)
+    color_array_index = array_class_index + 1
+    first_color_index = color_array_index + 1
+    color_class_index = first_color_index + 1
+    color_indexes = [first_color_index]
+    color_indexes.extend(range(color_class_index + 1, color_class_index + len(entries)))
+
+    objects = [
+        "$null",
+        {
+            "$class": plistlib.UID(array_class_index),
+            "NS.objects": [plistlib.UID(index) for index in key_indexes],
+        },
+    ]
+    objects.extend(entry["name"] for entry in entries)
+    objects.append(
+        {
+            "$classes": ["NSMutableArray", "NSArray", "NSObject"],
+            "$classname": "NSMutableArray",
+        }
+    )
+    objects.append(
+        {
+            "$class": plistlib.UID(array_class_index),
+            "NS.objects": [plistlib.UID(index) for index in color_indexes],
+        }
+    )
+
+    for index, entry in enumerate(entries):
+        if index == 1:
+            objects.append(
+                {
+                    "$classes": ["NSColor", "NSObject"],
+                    "$classname": "NSColor",
+                }
+            )
+        objects.append(
+            {
+                "$class": plistlib.UID(color_class_index),
+                "NSColorSpace": 2,
+                "NSRGB": (" ".join(entry["rgb"]) + "\0").encode("ascii"),
+            }
+        )
+
+    payload = {
+        "$archiver": "NSKeyedArchiver",
+        "$objects": objects,
+        "$top": {
+            "NSColors": plistlib.UID(color_array_index),
+            "NSKeys": plistlib.UID(1),
+        },
+        "$version": 100000,
+    }
+
+    output = io.BytesIO()
+    plistlib.dump(payload, output, fmt=plistlib.FMT_BINARY, sort_keys=False)
+    args.target.parent.mkdir(parents=True, exist_ok=True)
+    args.target.write_bytes(output.getvalue())
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

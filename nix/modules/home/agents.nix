@@ -22,11 +22,11 @@ let
   pluginRenderer =
     ../../../.agents/skills/agent-skill-management/scripts/render-agent-plugin-marketplace;
   claudeFragment =
-    ../../../home/.chezmoitemplates/agent-claude-plugin-settings.json.tmpl;
+    ../../../home/dot_agents/templates/claude-plugin-settings.json;
   codexFragment =
-    ../../../home/.chezmoitemplates/codex-config-managed.toml.tmpl;
+    ../../../home/dot_agents/templates/codex-config-managed.toml;
   pluginCodexFragment =
-    ../../../home/.chezmoitemplates/agent-codex-plugin-config.toml.tmpl;
+    ../../../home/dot_agents/templates/codex-plugin-config.toml;
   jsonMerger = ../../../scripts/merge/json-deep-merge;
   tomlMerger = ../../../scripts/merge/toml-deep-merge;
 
@@ -84,28 +84,25 @@ in
 
     mergeClaudeSettings = lib.hm.dag.entryAfter [ "renderAgentPlugins" ] ''
       if [ -x "${toString jsonMerger}" ] && command -v uv >/dev/null 2>&1; then
-        run "${toString jsonMerger}" \
-          "${toString claudeFragment}" \
-          "$HOME/.claude/settings.json" \
+        tmp="$(mktemp -t claude-settings.XXXXXX.json)"
+        sed "s|__HOME__|$HOME|g" "${toString claudeFragment}" > "$tmp"
+        run "${toString jsonMerger}" "$tmp" "$HOME/.claude/settings.json" \
           || echo "[home-manager] warn: claude settings merge failed." >&2
+        rm -f "$tmp"
       fi
     '';
 
     mergeCodexConfig = lib.hm.dag.entryAfter [ "renderAgentPlugins" ] ''
       if [ -x "${toString tomlMerger}" ] && command -v uv >/dev/null 2>&1; then
-        # codex-config-managed.toml.tmpl includes
-        # agent-codex-plugin-config.toml.tmpl at chezmoi-render-time; with no
-        # templating layer we just concatenate the two fragments before merge.
+        # Concatenate the managed config + the plugin fragment, substituting
+        # the __HOME__ placeholder in the plugin section.
         tmp="$(mktemp -t codex-managed.XXXXXX.toml)"
         cat "${toString codexFragment}" > "$tmp"
-        # The codex fragment already references the plugin fragment via a
-        # chezmoi `includeTemplate` directive; tomlkit will reject that as
-        # invalid TOML. Strip the directive line before parse.
-        sed -i.bak '/includeTemplate/d' "$tmp"
-        cat "${toString pluginCodexFragment}" >> "$tmp"
+        echo "" >> "$tmp"
+        sed "s|__HOME__|$HOME|g" "${toString pluginCodexFragment}" >> "$tmp"
         run "${toString tomlMerger}" "$tmp" "$HOME/.codex/config.toml" \
           || echo "[home-manager] warn: codex config merge failed." >&2
-        rm -f "$tmp" "$tmp.bak"
+        rm -f "$tmp"
       fi
     '';
   };

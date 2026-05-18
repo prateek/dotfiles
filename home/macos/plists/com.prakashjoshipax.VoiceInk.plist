@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CurrentTranscriptionModel</key>             <string>parakeet-tdt-0.6b-v3</string>
+  <key>OpenAISelectedModel</key>                   <string>gpt-5.4-mini</string>
+  <key>SelectedLanguage</key>                      <string>en</string>
+  <key>audioInputMode</key>                        <string>Prioritized</string>
+  <key>selectedAIProvider</key>                    <string>Gemini</string>
+  <key>isAIEnhancementEnabled</key>                <true/>
+  <key>isPauseMediaEnabled</key>                   <false/>
+  <key>isSystemMuteEnabled</key>                   <true/>
+  <key>useScreenCaptureContext</key>               <false/>
+  <key>IsMenuBarOnly</key>                         <true/>
+  <key>powerModeUIFlag</key>                       <false/>
+  <key>selectedPromptId</key>                      <string>E7CF4884-519C-4024-AA3C-EEDF43EC372B</string>
+  <key>KeyboardShortcuts_pasteLastTranscription</key> <string>{"carbonKeyCode":9,"carbonModifiers":2304}</string>
+  <key>KeyboardShortcuts_toggleMiniRecorder2</key> <string>{"carbonKeyCode":80,"carbonModifiers":0}</string>
+  <key>selectedHotkey1</key>                       <string>none</string>
+  <key>selectedHotkey2</key>                       <string>custom</string>
+  <key>didMigrateHotkeys_v2</key>                  <true/>
+  <!-- customPrompts is injected by the activation script: it base64-encodes
+       home/macos/plists/voiceink-prompts.json and replaces __VOICEINK_PROMPTS_B64__. -->
+  <key>customPrompts</key>                         <data>__VOICEINK_PROMPTS_B64__</data>
+</dict>
+</plist>

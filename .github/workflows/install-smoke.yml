@@ -18,76 +18,52 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y shellcheck
       - name: Shellcheck
         run: |
-          shellcheck -x scripts/macos/capture.sh scripts/vm/test-install-tart.sh scripts/vm/check-install-log.sh scripts/trace/perfetto-trace.bash scripts/chezmoi-hooks/guard-running-apps.sh scripts/chezmoi-hooks/post-apply-plists.sh scripts/packages/render-brewfile scripts/chezmoi/test-apply-dry-run.sh
+          shellcheck -x \
+            scripts/macos/capture.sh \
+            scripts/vm/test-install-tart.sh \
+            scripts/vm/check-install-log.sh \
+            scripts/trace/perfetto-trace.bash
 
-  macos-dry-run:
+  nix-flake-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@v14
+      - uses: DeterminateSystems/magic-nix-cache-action@v8
+      - name: nix flake check
+        run: nix flake check --no-build
+
+  macos-build:
     runs-on: macos-latest
+    needs: nix-flake-check
     steps:
       - uses: actions/checkout@v4
 
       - uses: astral-sh/setup-uv@v5
 
-      - name: Install chezmoi
-        run: brew install chezmoi
+      - uses: DeterminateSystems/nix-installer-action@v14
+      - uses: DeterminateSystems/magic-nix-cache-action@v8
 
       - name: Zsh syntax check
-        run: |
-          zsh -n scripts/trace/run-zsh
+        run: zsh -n scripts/trace/run-zsh
 
       - name: Python syntax check
-        run: python3 -m py_compile scripts/trace/xtrace-to-perfetto scripts/trace/merge-perfetto scripts/trace/open-perfetto
+        run: |
+          python3 -m py_compile scripts/trace/xtrace-to-perfetto scripts/trace/merge-perfetto scripts/trace/open-perfetto
+          python3 -m py_compile scripts/merge/json-deep-merge scripts/merge/toml-deep-merge scripts/merge/yojam-config-merge
 
       - name: Tart helper contract
         run: |
           make test-tart-install-helper
-          make test-render-brewfile
-          make test-chezmoi-config
-          make test-chezmoi-script-status
-          make test-chezmoi-drift-banner
-          make test-codex-config
-          make test-claude-settings
-          make test-agent-skill-packages
-          make test-gemini-meeting-sync
-          make test-brew-install-wrapper
-          make test-gh-extensions-script
-          make test-selected-app-plists
-          make test-zed-settings
-          make test-moom-plist
-          make test-plist-hooks
           make test-trace-perfetto
           make test-vm-install-log-scan
-          make test-vm-postflight-macos
+          make test-gemini-meeting-sync
 
-      - name: Bootstrap app list regression
+      - name: darwin-rebuild build (no switch)
         run: |
-          if scripts/packages/render-brewfile --profile full | grep -En '^(cask "airflow"|cask "omnigraffle"|mas ")'; then
-            exit 1
-          fi
-          if scripts/packages/render-brewfile --profile full --include-mas | grep -En '^mas "MeetInOne"'; then
-            exit 1
-          fi
-
-      - name: Bootstrap smoke — chezmoi init + apply --dry-run, both profiles
-        run: |
-          set -euo pipefail
-          for profile in core full; do
-            ./scripts/chezmoi/test-apply-dry-run.sh "$profile" "${{ github.workspace }}"
-          done
-
-      - name: Brewfile parse
-        run: |
-          scripts/packages/render-brewfile --profile core --output "${RUNNER_TEMP}/Brewfile.core"
-          scripts/packages/render-brewfile --profile full --output "${RUNNER_TEMP}/Brewfile"
-          scripts/packages/render-brewfile --profile full --include-mas --output "${RUNNER_TEMP}/Brewfile.mas"
-          brew bundle list --all --file "${RUNNER_TEMP}/Brewfile.core" >/dev/null
-          brew bundle list --all --file "${RUNNER_TEMP}/Brewfile" >/dev/null
-          brew bundle list --all --file "${RUNNER_TEMP}/Brewfile.mas" >/dev/null
-
-      - name: Brew bundle (core formulae only)
-        run: |
-          set -euo pipefail
-          core_brewfile="${RUNNER_TEMP}/Brewfile.core"
-          scripts/packages/render-brewfile --profile core --output "$core_brewfile"
-          HOMEBREW_BUNDLE_CASK_SKIP="$(awk -F'"' '/^cask "/ { print $2 }' "$core_brewfile" | xargs)"
-          export HOMEBREW_BUNDLE_CASK_SKIP
-          brew bundle install --no-upgrade --file "$core_brewfile"
+          # Evaluate and build the system closure without applying it.
+          # The build verifies modules type-check, file paths resolve,
+          # and nix-darwin/home-manager wiring is consistent.
+          nix --extra-experimental-features 'nix-command flakes' \
+            build .#darwinConfigurations.prateek-mac.system \
+            --no-link

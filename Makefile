@@ -1,7 +1,11 @@
-.PHONY: test test-chezmoi-apply hammerspoon hammerspoon-check hammerspoon-reload
-.PHONY: test-gemini-meeting-sync test-ghc test-gh-extensions-script test-mise-install-script test-xcode-install-script test-secret-backed-files test-kanata-config test-chezmoi-config test-chezmoi-local-ignores test-chezmoi-script-status test-chezmoi-drift-banner test-codex-config test-claude-settings test-agent-skill-packages test-agent-skill-packages-native test-cmux-plist test-ice-plist test-orbstack-plist test-selected-app-plists test-package-gated-configs test-moom-plist test-nvalt-colors test-nvalt-plist test-voiceink-plist test-plist-hooks test-sudo-keepalive test-macos-defaults-script test-brew-inventory test-brew-install-wrapper test-brew-bundle-script test-render-brewfile test-repo-index test-grmrepo-refresh test-worktrees
-.PHONY: test-zed-settings test-zsh-fresh-shells verify-zsh-fresh-shells bench-zsh-startup
-.PHONY: test-tart-install-helper test-trace-perfetto test-vm-install-log-scan test-vm-postflight-macos test-install-tart-dry-run test-install-tart-smoke test-install-tart-full test-install-tart-warm test-install-tart-warm-bootstrap test-install-tart-warm-refresh test-install-tart-warm-destroy
+.PHONY: test hammerspoon hammerspoon-check hammerspoon-reload
+.PHONY: nix-check nix-build nix-switch nix-update nix-fmt
+.PHONY: test-gemini-meeting-sync test-ghc test-kanata-config test-repo-index test-grmrepo-refresh test-worktrees
+.PHONY: test-zsh-fresh-shells verify-zsh-fresh-shells bench-zsh-startup
+.PHONY: test-tart-install-helper test-trace-perfetto test-vm-install-log-scan
+.PHONY: test-install-tart-dry-run test-install-tart-smoke test-install-tart-full
+.PHONY: test-install-tart-warm test-install-tart-warm-bootstrap test-install-tart-warm-refresh test-install-tart-warm-destroy
+.PHONY: test-brew-inventory
 
 HAMMERSPOON_SRC := home/dot_hammerspoon/init.fnl
 HAMMERSPOON_OUT := build/hammerspoon/init.generated.lua
@@ -15,6 +19,34 @@ endif
 TART_CPU ?= 2
 TART_MEMORY ?= 4096
 TART_FLAGS ?=
+
+HOST ?= prateek-mac
+
+## Default validation: run nix flake check (the pre-commit equivalent).
+test: nix-check
+
+## Validate the flake without building (fast, evaluation-only).
+nix-check:
+	@command -v nix >/dev/null 2>&1 || { echo "Skipping nix validation (nix not installed)"; exit 0; }
+	@nix --extra-experimental-features 'nix-command flakes' flake check --no-build
+
+## Build the system closure (no apply).
+nix-build:
+	@command -v nix >/dev/null 2>&1 || { echo "nix not installed"; exit 1; }
+	@nix --extra-experimental-features 'nix-command flakes' build .#darwinConfigurations.$(HOST).system
+
+## Apply the system closure (requires nix-darwin already installed).
+nix-switch:
+	@command -v darwin-rebuild >/dev/null 2>&1 || { echo "darwin-rebuild not installed; run 'nix run nix-darwin -- switch --flake .#$(HOST)' first"; exit 1; }
+	@darwin-rebuild switch --flake .#$(HOST)
+
+## Update all flake inputs.
+nix-update:
+	@nix --extra-experimental-features 'nix-command flakes' flake update
+
+## Format nix files.
+nix-fmt:
+	@nix --extra-experimental-features 'nix-command flakes' fmt
 
 ## Compile Hammerspoon config (Fennel -> Lua).
 hammerspoon: $(HAMMERSPOON_OUT)
@@ -35,19 +67,6 @@ hammerspoon-reload: hammerspoon
 	@command -v hs >/dev/null 2>&1 || { echo "Missing 'hs' CLI"; exit 1; }
 	@hs -c 'hs.reload(); "ok"' -q
 
-## Pre-commit validation: chezmoi template syntax and apply dry-run.
-test: test-chezmoi-apply
-
-## Validate chezmoi apply --dry-run to catch template errors before commit.
-test-chezmoi-apply:
-	@command -v chezmoi >/dev/null 2>&1 || { echo "Skipping chezmoi validation (chezmoi not installed)"; exit 0; }
-	@./scripts/chezmoi/test-apply-dry-run.sh core "$(CURDIR)"
-	@./scripts/chezmoi/test-apply-dry-run.sh full "$(CURDIR)"
-
-## Regression tests for the focused Brewfile renderer.
-test-render-brewfile:
-	@zsh ./tests/render-brewfile.zsh
-
 ## Regression tests for Gemini meeting sync wrapper config.
 test-gemini-meeting-sync:
 	@zsh ./tests/gemini-meeting-sync.zsh
@@ -56,121 +75,9 @@ test-gemini-meeting-sync:
 test-ghc:
 	@zsh ./tests/ghc-url.zsh
 
-## Regression tests for mise runtime install script ordering.
-test-mise-install-script:
-	@zsh ./tests/mise-install-script.zsh
-
-## Regression tests for gh extensions install script.
-test-gh-extensions-script:
-	@zsh ./tests/gh-extensions-script.zsh
-
-## Regression tests for full-profile Xcode install script ordering.
-test-xcode-install-script:
-	@zsh ./tests/xcode-install-script.zsh
-
-## Regression tests for secret-backed private files.
-test-secret-backed-files:
-	@zsh ./tests/secret-backed-files.zsh
-
 ## Validate Kanata keyboard remap config with kanata's parser.
 test-kanata-config:
 	@zsh ./tests/kanata-config.zsh
-
-## Regression tests for generated chezmoi config defaults.
-test-chezmoi-config:
-	@zsh ./tests/chezmoi-config.zsh
-
-## Regression tests for ignored machine-local chezmoi state.
-test-chezmoi-local-ignores:
-	@zsh ./tests/chezmoi-local-ignores.zsh
-
-## Regression tests for steady-state chezmoi script status.
-test-chezmoi-script-status:
-	@zsh ./tests/chezmoi-script-status.zsh
-
-## Regression tests for the cached chezmoi drift shell banner.
-test-chezmoi-drift-banner:
-	@zsh ./tests/chezmoi-drift-banner.zsh
-
-## Regression tests for Codex config merging.
-test-codex-config:
-	@zsh ./tests/codex-config-modify.zsh
-
-## Regression tests for Claude Code settings merging.
-test-claude-settings:
-	@zsh ./tests/claude-settings-modify.zsh
-
-## Regression tests for agent skill package rendering.
-test-agent-skill-packages:
-	@zsh ./tests/agent-skill-packages.zsh
-
-## Native Claude Code validation for generated local plugin marketplace.
-test-agent-skill-packages-native:
-	@zsh ./tests/agent-skill-packages-native.zsh
-
-## Regression tests for selected-key cmux plist merging.
-test-cmux-plist:
-	@zsh ./tests/cmux-plist-modify.zsh
-
-## Regression tests for selected-key Ice plist merging.
-test-ice-plist:
-	@zsh ./tests/ice-plist-modify.zsh
-
-## Regression tests for selected-key OrbStack plist merging.
-test-orbstack-plist:
-	@zsh ./tests/orbstack-plist-modify.zsh
-
-## Regression tests for selected-key app plist merging.
-test-selected-app-plists:
-	@zsh ./tests/selected-app-plist-modify.zsh
-
-## Regression tests for package-profile gated app config targets.
-test-package-gated-configs:
-	@zsh ./tests/package-gated-configs.zsh
-
-## Regression tests for Zed settings JSON.
-test-zed-settings:
-	@zsh ./tests/zed-settings.zsh
-
-## Regression tests for selected-key Moom plist merging.
-test-moom-plist:
-	@zsh ./tests/moom-plist-modify.zsh
-
-## Regression tests for selected-key nvALT plist merging.
-test-nvalt-plist:
-	@zsh ./tests/nvalt-plist-modify.zsh
-
-## Regression tests for nvALT color-list generation.
-test-nvalt-colors:
-	@zsh ./tests/nvalt-colors.zsh
-
-## Regression tests for selected-key VoiceInk plist merging.
-test-voiceink-plist:
-	@zsh ./tests/voiceink-plist-modify.zsh
-
-## Regression tests for chezmoi apply hooks: running-app guard + cfprefsd nudge + optional relaunch.
-test-plist-hooks:
-	@zsh ./tests/plist-hooks.zsh
-
-## Regression tests for shared sudo keepalive behavior.
-test-sudo-keepalive:
-	@zsh ./tests/sudo-keepalive.zsh
-
-## Regression tests for macOS defaults script side-effect guards.
-test-macos-defaults-script:
-	@zsh ./tests/macos-defaults-script.zsh
-
-## Regression tests for Homebrew inventory drift reporting.
-test-brew-inventory:
-	@zsh ./tests/brew-inventory.zsh
-
-## Regression tests for the agent-assisted brew:install wrapper.
-test-brew-install-wrapper:
-	@zsh ./tests/brew-install-wrapper.zsh
-
-## Regression tests for brew bundle script concurrency flags.
-test-brew-bundle-script:
-	@zsh ./tests/brew-bundle-script.zsh
 
 ## Regression tests for repo-index canonical clone discovery.
 test-repo-index:
@@ -183,6 +90,10 @@ test-grmrepo-refresh:
 ## E2E tests for worktree helpers (w + hooks).
 test-worktrees:
 	@zsh ./tests/e2e-worktrees.zsh
+
+## Regression tests for Homebrew inventory drift reporting.
+test-brew-inventory:
+	@zsh ./tests/brew-inventory.zsh
 
 ## End-to-end fresh-shell validator selftest (verify + bench + negative-path checks).
 test-zsh-fresh-shells:
@@ -208,11 +119,9 @@ test-trace-perfetto:
 test-vm-install-log-scan:
 	@zsh ./tests/vm-install-log-scan.zsh
 
-## Regression tests for VM macOS postflight assertions.
-test-vm-postflight-macos:
-	@zsh ./tests/vm-postflight-macos.zsh
-
 ## Tart smoke lane, dry-run only. Pulls/boots a VM but skips actual installs.
+## NOTE: scripts/vm/test-install-tart.sh still expects the chezmoi bootstrap;
+## see TODO(nix) — port to nix-darwin install before relying on this.
 test-install-tart-dry-run:
 	@./scripts/vm/test-install-tart.sh --lane smoke --dry-run --image "$(TART_SMOKE_IMAGE)" --cpu "$(TART_CPU)" --memory "$(TART_MEMORY)" $(TART_FLAGS)
 
@@ -226,7 +135,7 @@ test-install-tart-full:
 
 ## Warm Tart VM for fast iteration. First call: `make test-install-tart-warm-bootstrap` (slow, ~3 min).
 ## Subsequent: `make test-install-tart-warm` (fast — chezmoi apply against the persistent VM).
-## Use `make test-install-tart-warm-refresh` after major repo changes (chezmoi script reordering, profile bumps).
+## Use `make test-install-tart-warm-refresh` after major repo changes.
 test-install-tart-warm:
 	@./scripts/vm/warm-tart apply
 

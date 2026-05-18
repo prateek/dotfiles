@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-exec '{{ .chezmoi.sourceDir }}/../scripts/macos/plist-merge' \
-  --bundle-id 'com.hegenberg.BetterTouchTool' \
-  --desired-b64 '{{ includeTemplate "com.hegenberg.BetterTouchTool.plist.tmpl" . | b64enc }}'

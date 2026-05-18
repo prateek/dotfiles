@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-exec '{{ .chezmoi.sourceDir }}/../scripts/macos/plist-merge' \
-  --bundle-id 'com.raycast.macos' \
-  --desired-b64 '{{ includeTemplate "com.raycast.macos.plist.tmpl" . | b64enc }}'

@@ -1,2 +1,0 @@
-dotfiles drift | files differ | checked HH:MM
-run: chezmoi status --exclude=scripts    details: chezmoi diff --exclude=scripts

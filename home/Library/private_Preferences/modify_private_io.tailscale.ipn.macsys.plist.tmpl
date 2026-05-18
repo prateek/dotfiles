@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-exec '{{ .chezmoi.sourceDir }}/../scripts/macos/plist-merge' \
-  --bundle-id 'io.tailscale.ipn.macsys' \
-  --desired-b64 '{{ includeTemplate "io.tailscale.ipn.macsys.plist.tmpl" . | b64enc }}'

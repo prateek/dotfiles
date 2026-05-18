@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-exec '{{ .chezmoi.sourceDir }}/../scripts/macos/plist-merge' \
-  --bundle-id 'com.manytricks.Moom' \
-  --desired-b64 '{{ includeTemplate "com.manytricks.Moom.plist.tmpl" . | b64enc }}'

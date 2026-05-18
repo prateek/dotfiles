@@ -8,9 +8,9 @@ repos:
 
   - repo: local
     hooks:
-      - id: chezmoi-dry-run
-        name: chezmoi apply --dry-run
-        entry: make test-chezmoi-apply
+      - id: nix-flake-check
+        name: nix flake check
+        entry: bash -c 'command -v nix >/dev/null 2>&1 || { echo "skip: nix not installed"; exit 0; }; nix --extra-experimental-features "nix-command flakes" flake check --no-build'
         language: system
         pass_filenames: false
-        files: ^home/
+        files: '^(flake\.nix|flake\.lock|nix/.*)$'

@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-exec '{{ .chezmoi.sourceDir }}/../scripts/macos/plist-merge' \
-  --bundle-id 'dev.kdrag0n.MacVirt' \
-  --desired-b64 '{{ includeTemplate "dev.kdrag0n.MacVirt.plist.tmpl" . | b64enc }}'

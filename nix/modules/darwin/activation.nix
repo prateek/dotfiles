@@ -16,36 +16,54 @@
 let
   inherit (lib) optionalString;
 
+  plistRoot = ../../../home/macos/plists;
+
   # Bundles whose preferences need partial-merge semantics (preserve
   # runtime-managed keys). Each value is the path to a plain .plist file
-  # describing the keys we manage. The activation iterates these, base64s
-  # the file contents, and shells out to scripts/macos/plist-merge.
+  # describing the keys we manage. The activation iterates these, applies
+  # the VoiceInk prompts substitution where needed, and shells out to
+  # scripts/macos/plist-merge.
   managedPlists = {
-    "com.raycast.macos" = ../../../home/.chezmoitemplates/com.raycast.macos.plist.tmpl;
-    "com.hegenberg.BetterTouchTool" = ../../../home/.chezmoitemplates/com.hegenberg.BetterTouchTool.plist.tmpl;
-    "io.tailscale.ipn.macsys" = ../../../home/.chezmoitemplates/io.tailscale.ipn.macsys.plist.tmpl;
-    "com.prakashjoshipax.VoiceInk" = ../../../home/.chezmoitemplates/com.prakashjoshipax.VoiceInk.plist.tmpl;
-    "net.elasticthreads.nv" = ../../../home/.chezmoitemplates/net.elasticthreads.nv.plist.tmpl;
-    "dev.kdrag0n.MacVirt" = ../../../home/.chezmoitemplates/dev.kdrag0n.MacVirt.plist.tmpl;
-    "com.manytricks.Moom" = ../../../home/.chezmoitemplates/com.manytricks.Moom.plist.tmpl;
-    "com.jordanbaird.Ice" = ../../../home/.chezmoitemplates/com.jordanbaird.Ice.plist.tmpl;
-    "com.cmuxterm.app" = ../../../home/.chezmoitemplates/com.cmuxterm.app.plist.tmpl;
-    "com.setapp.DesktopClient" = ../../../home/.chezmoitemplates/com.setapp.DesktopClient.plist.tmpl;
-    "pro.betterdisplay.BetterDisplay" = ../../../home/.chezmoitemplates/pro.betterdisplay.BetterDisplay.plist.tmpl;
+    "com.raycast.macos" = "${toString plistRoot}/com.raycast.macos.plist";
+    "com.hegenberg.BetterTouchTool" = "${toString plistRoot}/com.hegenberg.BetterTouchTool.plist";
+    "io.tailscale.ipn.macsys" = "${toString plistRoot}/io.tailscale.ipn.macsys.plist";
+    "com.prakashjoshipax.VoiceInk" = "${toString plistRoot}/com.prakashjoshipax.VoiceInk.plist";
+    "net.elasticthreads.nv" = "${toString plistRoot}/net.elasticthreads.nv.plist";
+    "dev.kdrag0n.MacVirt" = "${toString plistRoot}/dev.kdrag0n.MacVirt.plist";
+    "com.manytricks.Moom" = "${toString plistRoot}/com.manytricks.Moom.plist";
+    "com.jordanbaird.Ice" = "${toString plistRoot}/com.jordanbaird.Ice.plist";
+    "com.cmuxterm.app" = "${toString plistRoot}/com.cmuxterm.app.plist";
+    "com.setapp.DesktopClient" = "${toString plistRoot}/com.setapp.DesktopClient.plist";
+    "pro.betterdisplay.BetterDisplay" = "${toString plistRoot}/pro.betterdisplay.BetterDisplay.plist";
   };
+
+  voiceinkPrompts = "${toString plistRoot}/voiceink-prompts.json";
 
   plistMerge = ../../../scripts/macos/plist-merge;
 
-  # Repo root at evaluation time. nix-darwin activation runs against the
-  # _stored_ derivation paths, so we copy the merger and the desired
-  # fragments into the activation closure via builtins.toString.
+  # VoiceInk's plist embeds a base64-encoded `customPrompts` blob keyed by
+  # the placeholder __VOICEINK_PROMPTS_B64__ (formerly a chezmoi `include`).
+  # For VoiceInk we materialise the plist into a temp file with the
+  # substitution applied; for everything else we pass through unmodified.
   mkPlistMergeCall = bundleId: fragmentPath: ''
-    if [ -r "${toString fragmentPath}" ]; then
-      base64_payload="$(base64 < "${toString fragmentPath}" | tr -d '\n')"
+    if [ -r "${fragmentPath}" ]; then
+      plist_src="${fragmentPath}"
+      ${lib.optionalString (bundleId == "com.prakashjoshipax.VoiceInk") ''
+        if [ -r "${voiceinkPrompts}" ]; then
+          prompts_b64="$(base64 < "${voiceinkPrompts}" | tr -d '\n')"
+          plist_src="$(mktemp -t voiceink.XXXXXX.plist)"
+          sed "s|__VOICEINK_PROMPTS_B64__|$prompts_b64|" \
+            "${fragmentPath}" > "$plist_src"
+        fi
+      ''}
+      base64_payload="$(base64 < "$plist_src" | tr -d '\n')"
       ${toString plistMerge} \
         --bundle-id '${bundleId}' \
         --desired-b64 "$base64_payload" \
         || echo "[nix-darwin] warn: plist-merge failed for ${bundleId}." >&2
+      ${lib.optionalString (bundleId == "com.prakashjoshipax.VoiceInk") ''
+        [ "$plist_src" != "${fragmentPath}" ] && rm -f "$plist_src"
+      ''}
     fi
   '';
 in
