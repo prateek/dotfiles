@@ -90,6 +90,7 @@ taps = [
   { name = "romkatv/powerlevel10k" },
   { name = "saulpw/vd" },
   { name = "steipete/tap" },
+  { name = "stablyai/orca" },
   { name = "thoughtbot/formulae" },
 ]
 brews = [
@@ -348,6 +349,7 @@ casks = [
   { name = "nvalt", appdir = "/Applications" },
   { name = "obsidian" },
   { name = "ollama-app" },
+  { name = "stablyai/orca/orca" },
   { name = "orbstack" },
   { name = "periphery" },
   { name = "raycast" },
