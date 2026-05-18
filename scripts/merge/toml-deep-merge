@@ -1,0 +1,63 @@
+#!/usr/bin/env -S uv run --quiet --script
+# /// script
+# requires-python = ">=3.14"
+# dependencies = ["tomlkit>=0.13"]
+# ///
+"""Deep-merge a desired TOML file into a target TOML file in place.
+
+Reads the desired fragment from a file path argument, the current state
+from the target path, and writes the merged result back to the target.
+Desired wins on key conflicts; non-conflicting tables, keys, comments,
+and formatting pass through (preserved by tomlkit).
+
+Usage: toml-deep-merge <desired-fragment.toml> <target.toml>
+
+Originally ported from the chezmoi `modify_private_config.toml.tmpl`
+helper invoked from home-manager activation under nix-darwin.
+"""
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+import tomlkit
+
+
+def deep_merge(base, overlay):
+    for key, value in overlay.items():
+        existing = base.get(key)
+        if hasattr(existing, "items") and hasattr(value, "items"):
+            deep_merge(existing, value)
+        else:
+            base[key] = value
+    return base
+
+
+def main() -> int:
+    if len(sys.argv) != 3:
+        print("usage: toml-deep-merge <desired> <target>", file=sys.stderr)
+        return 2
+    desired_path = Path(sys.argv[1])
+    target_path = Path(sys.argv[2])
+
+    desired = tomlkit.loads(desired_path.read_text())
+
+    current_text = target_path.read_text() if target_path.exists() else ""
+    current = tomlkit.loads(current_text) if current_text.strip() else tomlkit.document()
+
+    deep_merge(current, desired)
+    merged_text = tomlkit.dumps(current)
+
+    try:
+        if current_text.strip() and tomlkit.loads(current_text).unwrap() == tomlkit.loads(merged_text).unwrap():
+            return 0
+    except Exception:
+        pass
+
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    target_path.write_text(merged_text)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,80 @@
+#!/usr/bin/env -S uv run --quiet --script
+# /// script
+# requires-python = ">=3.14"
+# dependencies = []
+# ///
+"""Deep-merge a desired JSON file into a target JSON file in place.
+
+Reads the desired fragment from a file path argument, the current state
+from the target path, and writes the merged result back to the target.
+Desired wins on key conflicts; non-conflicting keys pass through.
+
+Usage: json-deep-merge <desired-fragment.json> <target.json>
+
+Behaviour:
+- Missing target is treated as `{}`.
+- Empty/whitespace target is treated as `{}`.
+- Malformed JSON in either file is fatal.
+- No write when the merged output is semantically equal to the current
+  contents (avoids cfprefsd churn / unnecessary diffs).
+
+Originally ported from the chezmoi `modify_private_settings.json.tmpl`
+helper invoked from home-manager activation under nix-darwin.
+"""
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+
+def deep_merge(base: dict, overlay: dict) -> dict:
+    for key, value in overlay.items():
+        existing = base.get(key)
+        if hasattr(existing, "items") and hasattr(value, "items"):
+            deep_merge(existing, value)
+        else:
+            base[key] = value
+    return base
+
+
+def load(path: Path) -> dict:
+    if not path.exists():
+        return {}
+    text = path.read_text()
+    if not text.strip():
+        return {}
+    value = json.loads(text)
+    return value if isinstance(value, dict) else {}
+
+
+def main() -> int:
+    if len(sys.argv) != 3:
+        print("usage: json-deep-merge <desired> <target>", file=sys.stderr)
+        return 2
+    desired_path = Path(sys.argv[1])
+    target_path = Path(sys.argv[2])
+
+    desired = json.loads(desired_path.read_text())
+    if isinstance(desired, dict):
+        # Drop generator-emitted markers.
+        desired.pop("_generated", None)
+
+    current = load(target_path)
+    merged = deep_merge(current, desired)
+    merged_text = json.dumps(merged, indent=2) + "\n"
+
+    current_text = target_path.read_text() if target_path.exists() else ""
+    try:
+        if current_text.strip() and json.loads(current_text) == merged:
+            return 0
+    except Exception:
+        pass
+
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    target_path.write_text(merged_text)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

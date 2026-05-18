@@ -1,0 +1,88 @@
+#!/usr/bin/env -S uv run --quiet --script
+# /// script
+# requires-python = ">=3.14"
+# dependencies = []
+# ///
+"""Merge a Yojam desired-config fragment into the live Yojam config.json.
+
+Top-level scalars: desired wins. Array fields with stable identity
+(`browsers`, `emailClients` keyed by `bundleIdentifier`; `rules` keyed
+by `id`): desired entries override matching live entries field-by-field
+via `dict.update` (shallow merge). Unmatched desired entries are
+appended; unmatched live entries (Yojam's auto-discovered browsers,
+learned-domain churn, etc.) pass through.
+
+Usage: yojam-config-merge <desired-fragment.json> <target.json>
+
+Originally ported from the chezmoi `modify_config.json.tmpl` helper.
+"""
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+ARRAY_KEYS = {
+    "browsers": "bundleIdentifier",
+    "emailClients": "bundleIdentifier",
+    "rules": "id",
+}
+
+
+def merge_array(current_arr, desired_arr, key):
+    by_id = {entry[key]: entry for entry in current_arr if key in entry}
+    for d in desired_arr:
+        if key in d and d[key] in by_id:
+            by_id[d[key]].update(d)
+        else:
+            current_arr.append(d)
+            if key in d:
+                by_id[d[key]] = d
+    return current_arr
+
+
+def merge(current, desired):
+    for key, value in desired.items():
+        if key in ARRAY_KEYS and isinstance(value, list) and isinstance(current.get(key), list):
+            merge_array(current[key], value, ARRAY_KEYS[key])
+        else:
+            current[key] = value
+    return current
+
+
+def load(path: Path) -> dict:
+    if not path.exists():
+        return {}
+    text = path.read_text()
+    if not text.strip():
+        return {}
+    value = json.loads(text)
+    return value if isinstance(value, dict) else {}
+
+
+def main() -> int:
+    if len(sys.argv) != 3:
+        print("usage: yojam-config-merge <desired> <target>", file=sys.stderr)
+        return 2
+    desired_path = Path(sys.argv[1])
+    target_path = Path(sys.argv[2])
+
+    desired = json.loads(desired_path.read_text())
+    current = load(target_path)
+    merged = merge(current, desired)
+    merged_text = json.dumps(merged, indent=2) + "\n"
+
+    current_text = target_path.read_text() if target_path.exists() else ""
+    try:
+        if current_text.strip() and json.loads(current_text) == merged:
+            return 0
+    except Exception:
+        pass
+
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    target_path.write_text(merged_text)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
