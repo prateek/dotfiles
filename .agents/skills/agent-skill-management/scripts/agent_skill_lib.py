@@ -19,10 +19,10 @@ PACKAGES_ROOT = Path(
     )
 )
 CODEX_PLUGIN_CONFIG_TEMPLATE = (
-    REPO_ROOT / "home/.chezmoitemplates/agent-codex-plugin-config.toml.tmpl"
+    REPO_ROOT / "home/dot_agents/templates/codex-plugin-config.toml"
 )
 CLAUDE_PLUGIN_SETTINGS_TEMPLATE = (
-    REPO_ROOT / "home/.chezmoitemplates/agent-claude-plugin-settings.json.tmpl"
+    REPO_ROOT / "home/dot_agents/templates/claude-plugin-settings.json"
 )
 
 GENERATED_README = "README.generated.md"

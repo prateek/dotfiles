@@ -35,7 +35,7 @@ ZINIT_HOME="${ZINIT_HOME:-${XDG_DATA_HOME:-$HOME/.local/share}/zinit/zinit.git}"
 #-----------------------------------------------------
 if ! source_if_readable "$ZINIT_HOME/zinit.zsh"; then
   if ! source_if_readable "$HOME/.zinit/bin/zinit.zsh"; then
-    print -u2 "zinit not found at $ZINIT_HOME/zinit.zsh (run dotfiles apply chezmoi)."
+    print -u2 "zinit not found at $ZINIT_HOME/zinit.zsh (run darwin-rebuild switch)."
     return 0 2>/dev/null || exit 0
   fi
 fi

@@ -96,7 +96,7 @@ def check_live_preflight(packages) -> None:
     claude_skills = home / ".claude/skills"
     if claude_skills.is_symlink():
         errors.append(
-            f"{claude_skills}: expected chezmoi-managed directory, "
+            f"{claude_skills}: expected home-manager-managed directory, "
             f"found symlink -> {claude_skills.resolve()}"
         )
 

@@ -45,11 +45,10 @@ in
       home.file."Library/Application Support/Leader Key".recursive = true;
     })
 
-    (mkIf config.profile.apps.bettertouchtool.enable {
-      home.file."Library/Application Support/BetterTouchTool".source =
-        ../../../home/Library/Application Support/BetterTouchTool;
-      home.file."Library/Application Support/BetterTouchTool".recursive = true;
-    })
+    # BetterTouchTool config is owned by the app itself (huge runtime blob)
+    # and is not file-managed by this repo. The license file is written by
+    # secrets.nix when a 1Password ref is configured; preferences are
+    # merged via the .plist activation hook.
 
     (mkIf config.profile.apps.karabiner.enable {
       xdg.configFile."karabiner/karabiner.json".source =
