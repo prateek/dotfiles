@@ -2,7 +2,7 @@
 status: current
 doc_type: reference
 created: 2026-05-12
-updated: 2026-05-12
+updated: 2026-06-15
 related:
   - ../adr/0008-sudo-askpass-1password.md
   - ../plans/sudo-askpass-1password-plan.md
@@ -44,6 +44,27 @@ otherwise fail because the user isn't yet admin.
 
 If `DOTFILES_ELEVATION_METHOD` is `none` (or the env file is missing), the
 hook is a no-op and behavior matches a personal Mac.
+
+## Trigger on demand from Raycast
+
+The apply-time hook only fires during `chezmoi apply`. To grab temp admin any
+time without an apply, there is a Raycast Script Command, **Temp Admin**, at
+`~/.config/raycast/scripts/temp-admin.sh` (chezmoi source:
+`home/dot_config/raycast/scripts/executable_temp-admin.sh`, gated on the
+`raycast` cask). It does the same thing as
+`_dotfiles_elevate_jamf_self_service`: returns early if already `admin`,
+otherwise sources `~/.config/dotfiles/elevation.sh` for the method and policy
+ID, opens the Self Service deep-link, and polls `id -Gn` for up to 30s. The
+policy ID is read at runtime, so nothing org-specific is committed.
+
+One-time setup per machine (Raycast does not persist script directories in its
+readable plist, so this cannot be automated):
+
+1. Raycast → Settings → Extensions → `+` → **Add Script Directory**.
+2. Select `~/.config/raycast/scripts`.
+
+The command then appears in root search as **Temp Admin**. On a personal Mac
+(method `none`) it just reports that you are already an administrator.
 
 ## Overrides
 
