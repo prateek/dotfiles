@@ -63,15 +63,16 @@ teardown_vs() {
   "$CLI" discard --nameLike="$VS_NAME" 2>/dev/null || true
 }
 
-# UUIDs of all connected physical G95NC panes, one per line. The count distinguishes
-# single-cable (1) from dual-cable PBP (2). Matches MATCH in the display's name field,
-# so it survives the DP/HDMI EDID renames and ignores virtual screens / groups.
-g95_uuids() {
+# One line per connected G95NC pane as "UUID<TAB>name". Matches MATCH in the display's
+# name field, so it survives the DP/HDMI EDID renames and ignores virtual screens/groups.
+# The line count distinguishes single-cable (1) from dual-cable PBP (2).
+g95_panes() {
   "$CLI" get --identifiers 2>/dev/null | awk -F'"' -v m="$MATCH" '
     $2=="UUID" { u=$4 }
-    $2=="name" && tolower($4) ~ tolower(m) { print u }
+    $2=="name" && tolower($4) ~ tolower(m) { print u "\t" $4 }
   '
 }
+g95_uuids() { g95_panes | cut -f1; }
 
 require_cli() {
   command -v "$CLI" >/dev/null 2>&1 || { echo "error: '$CLI' not found in PATH" >&2; exit 1; }
@@ -81,36 +82,66 @@ require_cli() {
   disp --resolution >/dev/null || { echo "error: no display matching '$MATCH' (set G95_MATCH)" >&2; exit 1; }
 }
 
-cmd_check() {
+# State block + trap notes for one display. Args: $1 selector flag, $2 mode (single|dual).
+report_pane() {
+  local sel="$1" mode="$2" name="$3"
   local res rr hidpi main cmode depth rrlist
-  res="$(disp --resolution)"; rr="$(disp --refreshRate)"; hidpi="$(disp --hiDPI)"
-  main="$(disp --main)"; cmode="$(disp --connectionMode)"; depth="$(disp --colordepth)"
-  rrlist="$(disp --refreshRateList)"
+  res="$("$CLI" get "$sel" --resolution 2>/dev/null)"
+  rr="$("$CLI" get "$sel" --refreshRate 2>/dev/null)"
+  hidpi="$("$CLI" get "$sel" --hiDPI 2>/dev/null)"
+  main="$("$CLI" get "$sel" --main 2>/dev/null)"
+  cmode="$("$CLI" get "$sel" --connectionMode 2>/dev/null)"
+  depth="$("$CLI" get "$sel" --colordepth 2>/dev/null)"
+  rrlist="$("$CLI" get "$sel" --refreshRateList 2>/dev/null)"
 
-  bar; echo "STEP 0 — current state & negotiation traps"; bar
+  bar; echo "${name:-(unknown display)}"; bar
   printf '  %-22s %s\n' "Resolution (logical)" "$res"
   printf '  %-22s %s\n' "Refresh (current)"    "$rr"
   printf '  %-22s %s\n' "HiDPI"                "$hidpi"
   printf '  %-22s %s\n' "Colour depth"         "$depth"
   printf '  %-22s %s\n' "Main display"         "$main"
   printf '  %-22s %s\n' "Connection mode"      "$cmode"
-  echo "  Refresh rates exposed at THIS mode:"
-  printf '%s\n' "$rrlist" | sed 's/^/      /'
-
-  echo; echo "Trap checks:"
-  case "$rr" in 60Hz|59*|60.0*) echo "  [!] Pinned at 60Hz." ;; *) echo "  [ok] Above 60Hz." ;; esac
+  printf '  %-22s %s\n' "Refresh rates here"   "$(printf '%s' "$rrlist" | tr '\n' ' ')"
+  case "$rr" in
+    60Hz|59*|60.0*)
+      if [ "$mode" = dual ]; then echo "  [i] 60Hz is expected for a PBP pane on this cable."
+      else echo "  [!] Pinned at 60Hz — the full-panel negotiation lock."; fi ;;
+    *) echo "  [ok] Running above 60Hz." ;;
+  esac
   if printf '%s' "$cmode" | grep -q '10bit'; then
-    echo "  [!] Link negotiated 10-bit colour — bandwidth-heavy; 8-bit frees headroom for higher Hz."
+    echo "  [i] 10-bit colour negotiated — heavier; 8-bit frees bandwidth for higher Hz."
   fi
-  if [ "$(printf '%s\n' "$rrlist" | grep -c Hz)" -le 1 ]; then
-    echo "  [!] Only one refresh rate offered at this mode (the classic G95NC 60Hz lock)."
+}
+
+cmd_check() {
+  local panes n mode u nm first sel
+  panes="$(g95_panes)"
+  n="$(printf '%s' "$panes" | grep -c .)"
+  if [ "$n" -ge 2 ]; then mode=dual; else mode=single; fi
+
+  bar; echo "STEP 0 — $n G95NC pane(s) detected (${mode}-cable)"; bar
+  echo
+  if [ "$n" -eq 0 ]; then
+    report_pane "--nameLike=$MATCH" single ""
+  else
+    printf '%s\n' "$panes" | while IFS=$'\t' read -r u nm; do
+      [ -n "$u" ] || continue
+      report_pane "--UUID=$u" "$mode" "$nm"
+      echo
+    done
   fi
 
-  echo; echo "High-refresh signal modes the link actually offers (no workaround needed):"
-  disp --connectionModeListAll \
-    | grep -E '11[0-9]\.|120\.|239\.' \
-    | grep -Ei '5120x1440|3840x2160' \
-    | sed 's/^/  /'
+  if [ "$mode" = single ]; then
+    first="$(printf '%s\n' "$panes" | head -1 | cut -f1)"
+    if [ -n "$first" ]; then sel="--UUID=$first"; else sel="--nameLike=$MATCH"; fi
+    echo "High-refresh signal modes the link offers (no workaround needed):"
+    "$CLI" get "$sel" --connectionModeListAll 2>/dev/null \
+      | grep -E '11[0-9]\.|120\.|239\.' \
+      | grep -Ei '5120x1440|3840x2160|5120x2160' \
+      | sed 's/^/  /' | head -10
+  else
+    echo "PBP note: each pane caps at ~60Hz on this cable; higher Hz needs reduced per-pane resolution."
+  fi
 }
 
 # Daily driver: sharp HiDPI @ 60Hz via a mirrored virtual screen. Lands at
