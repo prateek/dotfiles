@@ -2,7 +2,7 @@
 status: current
 doc_type: index
 created: 2026-05-12
-updated: 2026-05-18
+updated: 2026-06-20
 related:
   - document-lifecycle.md
   - ../home/dot_agents/packages/core/skills/local/code-gardening/SKILL.md
@@ -30,6 +30,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [Jamf Self Service Elevation](references/jamf-self-service-elevation.md) | Temporary admin elevation on Jamf-managed work Macs. |
 | [Mise Tool Management](references/mise-tool-management.md) | Mise-native CLI and tool selection. |
 | [Tart Mini Validation](runbooks/tart-mini-validation.md) | Local disposable-VM install validation. |
+| [USB-C Cable Audit](runbooks/usb-c-cable-audit.md) | Auditing unlabeled USB-C cables for speed, power, generation, and TB5 capability. |
 
 ## Open And Proposed Work
 
