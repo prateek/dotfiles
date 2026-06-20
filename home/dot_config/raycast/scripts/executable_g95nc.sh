@@ -222,18 +222,19 @@ cmd_set() {
   fi
   sleep 2
 
-  # dual: re-assert the comms pane(s) to RGB Full (before claiming main)
+  # make the mirrored work desktop the main display (at 0,0) — verify + one retry (flaky)
+  "$CLI" set --name="$VS_NAME" --main=on 2>/dev/null || true
+  sleep 1
+  [ "$("$CLI" get --name="$VS_NAME" --main 2>/dev/null)" = "true" ] || { "$CLI" set --name="$VS_NAME" --main=on 2>/dev/null || true; sleep 1; }
+
+  # dual: re-assert comms to RGB Full and place it at the work desktop's right edge
   if [ "$mode" = dual ]; then
     g95_uuids | while IFS= read -r u; do [ -n "$u" ] || continue
       [ "$u" = "$work" ] && continue
       normalize_rgb_full "--UUID=$u"
+      "$CLI" set --UUID="$u" --placement="${landw}x0" 2>/dev/null || true
     done
   fi
-
-  # make the mirrored work desktop the main display, last — verify + one retry (it's flaky)
-  "$CLI" set --name="$VS_NAME" --main=on 2>/dev/null || true
-  sleep 1
-  [ "$("$CLI" get --name="$VS_NAME" --main 2>/dev/null)" = "true" ] || { "$CLI" set --name="$VS_NAME" --main=on 2>/dev/null || true; sleep 1; }
 
   local vres vhid; vres="$("$CLI" get --name="$VS_NAME" --resolution 2>/dev/null)"; vhid="$("$CLI" get --name="$VS_NAME" --hiDPI 2>/dev/null)"
   echo ">> desktop (virtual): $vres HiDPI=$vhid  (drag BetterDisplay's Resolution slider to fine-tune)"
@@ -253,7 +254,7 @@ cmd_set() {
 # Either way it drops all protections/mirrors/streams/PIPs and every virtual screen.
 # EDID renames are left intact. Force a mode with: reset single | reset dual.
 cmd_reset() {
-  local mode="${1:-auto}" u uuids n first sel res hidpi
+  local mode="${1:-auto}" u uuids n first sel res hidpi work
   uuids="$(g95_uuids)"
   n="$(printf '%s' "$uuids" | grep -c .)"
   case "$mode" in
@@ -303,17 +304,27 @@ cmd_reset() {
       *) echo "[!] Not at 3840x1080 (got $res) — re-run, or 'g95nc check'." ;;
     esac
   else
-    echo ">> PBP clean slate: overlays cleared; panes native + normalized to RGB Full; renames kept."
+    echo ">> PBP clean slate: overlays cleared; panes native + RGB Full; comms right of work; renames kept."
+    work="$(printf '%s\n' "$uuids" | while IFS= read -r u; do [ -n "$u" ] || continue
+      "$CLI" get --UUID="$u" --displayModeList 2>/dev/null | grep -q '5120x2160' && { printf '%s' "$u"; break; }; done)"
     if [ "$n" -gt 0 ]; then
       printf '%s\n' "$uuids" | while IFS= read -r u; do
         [ -n "$u" ] || continue
-        if "$CLI" get --UUID="$u" --displayModeList 2>/dev/null | grep -q '5120x2160'; then
+        if [ "$u" = "$work" ]; then
           "$CLI" set --UUID="$u" --resolution=5120x2160 2>/dev/null || true
           "$CLI" set --UUID="$u" --hidpi=on 2>/dev/null || true
           sleep 1
         fi
         normalize_rgb_full "--UUID=$u"
         echo "   pane: $("$CLI" get --UUID="$u" --resolution 2>/dev/null) HiDPI=$("$CLI" get --UUID="$u" --hiDPI 2>/dev/null) | $("$CLI" get --UUID="$u" --connectionMode 2>/dev/null | grep -oE '[0-9]+bit .*SRGB' | sed 's/ SRGB//')"
+      done
+    fi
+    # work pane = main; comms to its right
+    if [ -n "$work" ]; then
+      "$CLI" set --UUID="$work" --main=on 2>/dev/null || true; sleep 1
+      printf '%s\n' "$uuids" | while IFS= read -r u; do [ -n "$u" ] || continue
+        [ "$u" = "$work" ] && continue
+        "$CLI" set --UUID="$u" --placement=2560x0 2>/dev/null || true  # comms right of the 2560-wide (5120 HiDPI) work pane
       done
     fi
   fi
