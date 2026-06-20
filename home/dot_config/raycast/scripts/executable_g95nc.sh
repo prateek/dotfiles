@@ -17,7 +17,7 @@
 #
 # g95nc — drive the Samsung Odyssey G95NC (7680x2160, 32:9) on Apple Silicon
 # through the BetterDisplay CLI. Doubles as a Raycast command (dropdown above)
-# and a plain CLI tool: `g95nc {check|set|fast|reset}` (defaults to check).
+# and a plain CLI tool: `g95nc {check|set|fast|reset [single|dual]}` (defaults to check).
 #
 # This panel renegotiates down to 60Hz on an HBR3 / DP 1.4 link and hides its
 # higher modes. On this cable you can't have sharp + 120Hz at once, so:
@@ -26,7 +26,10 @@
 #             but the app-menu slider scales the whole HiDPI ladder (virtual-screen
 #             mirror; needs the GUI "Enable resolutions over 8K" toggle). Daily driver.
 #   fast   -> 5120x1440 LoDPI @ 120Hz  smooth motion, slightly soft text (native).
-#   reset  -> 3840x1080 HiDPI @ 60Hz   native safe fallback / bail-out.
+#   reset  -> clean slate, auto-detects cabling: single-cable restores the whole panel
+#             to 3840x1080 HiDPI; dual-cable PBP clears overlays and leaves both panes
+#             native. Drops all protections/mirrors/PIPs + virtual screens; renames kept.
+#             Force with: reset single | reset dual.
 #   check  -> read-only state + negotiation-trap report.
 #
 # Note: deliberately NOT `set -e` — betterdisplaycli returns non-zero on some
@@ -46,8 +49,35 @@ disp()  { "$CLI" get --nameLike="$MATCH" "$@" 2>/dev/null; }
 setp()  { "$CLI" set --nameLike="$MATCH" "$@"; }
 bar()   { printf '%s\n' "------------------------------------------------------------"; }
 
+# Stop any mirror/stream/pip from our virtual screen and discard it. Used by every
+# mode so switching modes always starts from a clean slate.
+teardown_vs() {
+  # stop any mirror/stream/PIP that targets the panel itself
+  setp --mirror=off 2>/dev/null || true
+  setp --stream=off 2>/dev/null || true
+  setp --pip=off 2>/dev/null || true
+  # stop and discard this script's virtual screen
+  "$CLI" set --name="$VS_NAME" --pip=off 2>/dev/null || true
+  "$CLI" set --name="$VS_NAME" --stream=off 2>/dev/null || true
+  "$CLI" set --name="$VS_NAME" --mirror=off 2>/dev/null || true
+  "$CLI" discard --nameLike="$VS_NAME" 2>/dev/null || true
+}
+
+# UUIDs of all connected physical G95NC panes, one per line. The count distinguishes
+# single-cable (1) from dual-cable PBP (2). Matches MATCH in the display's name field,
+# so it survives the DP/HDMI EDID renames and ignores virtual screens / groups.
+g95_uuids() {
+  "$CLI" get --identifiers 2>/dev/null | awk -F'"' -v m="$MATCH" '
+    $2=="UUID" { u=$4 }
+    $2=="name" && tolower($4) ~ tolower(m) { print u }
+  '
+}
+
 require_cli() {
   command -v "$CLI" >/dev/null 2>&1 || { echo "error: '$CLI' not found in PATH" >&2; exit 1; }
+  # The CLI is a thin client for the BetterDisplay app; with the app down its calls
+  # hang or return empty, which masquerades as "no display". Check the app is up first.
+  pgrep -x BetterDisplay >/dev/null 2>&1 || { echo "error: BetterDisplay isn't running — launch it ('open -a BetterDisplay') and retry." >&2; exit 1; }
   disp --resolution >/dev/null || { echo "error: no display matching '$MATCH' (set G95_MATCH)" >&2; exit 1; }
 }
 
@@ -90,8 +120,8 @@ cmd_check() {
 cmd_set() {
   echo ">> set: $DEFAULT_HIDPI HiDPI @ 60Hz (sharp) via virtual-screen mirror; slider scales from here."
   setp --protectAll=off 2>/dev/null || true   # let the mirror reconfigure the panel
+  teardown_vs
 
-  "$CLI" discard --nameLike="$VS_NAME" 2>/dev/null || true
   "$CLI" create --devicetype=virtualscreen --virtualscreenname="$VS_NAME" --aspectWidth=32 --aspectHeight=9
   # Generated resolutions (not a fixed list) so the app-menu slider scales the full
   # HiDPI ladder live. It lands on DEFAULT_HIDPI below; drag the slider to taste.
@@ -127,9 +157,8 @@ cmd_set() {
 
 # Motion mode: native 5120x1440 LoDPI @ 120Hz (slightly soft text, rock solid).
 cmd_fast() {
-  setp --protectAll=off 2>/dev/null || true              # drop any protections/mirror from `set`
-  "$CLI" set --name="$VS_NAME" --mirror=off 2>/dev/null || true
-  "$CLI" discard --nameLike="$VS_NAME" 2>/dev/null || true
+  setp --protectAll=off 2>/dev/null || true
+  teardown_vs
   setp --main=on 2>/dev/null || true
 
   echo ">> fast: 5120x1440 @ 120Hz (LoDPI). The screen will blank/flicker briefly."
@@ -155,18 +184,76 @@ cmd_fast() {
   esac
 }
 
-# Safe fallback / bail-out: native 3840x1080 HiDPI @ 60Hz.
+# Clean-slate bail-out. Auto-detects cabling by counting connected panes and resets
+# appropriately:
+#   single-cable (1 pane) -> whole panel back to native 3840x1080 HiDPI @ 60Hz
+#   dual-cable PBP (2 panes) -> clear overlays, leave both panes native (work/5120-capable
+#                               pane to 5120x2160 HiDPI)
+# Either way it drops all protections/mirrors/streams/PIPs and every virtual screen.
+# EDID renames are left intact. Force a mode with: reset single | reset dual.
 cmd_reset() {
-  echo ">> reset: clear protections, stop mirror, discard virtual screen, restore 3840x1080 HiDPI @ 60Hz"
-  setp --protectAll=off 2>/dev/null || true
-  "$CLI" set --name="$VS_NAME" --mirror=off 2>/dev/null || true
-  "$CLI" discard --nameLike="$VS_NAME" 2>/dev/null || true
-  setp --main=on 2>/dev/null || true
-  setp --reinitialize 2>/dev/null || true
-  # colour depth is a connectionMode knob, NOT a display-mode attribute — forcing it here fails the match
-  setp --resolution=3840x1080 --hidpi=on --refreshrate=60Hz || true
-  sleep 2
-  echo ">> now: $(disp --resolution) @ $(disp --refreshRate), HiDPI $(disp --hiDPI)"
+  local mode="${1:-auto}" u uuids n first sel res hidpi
+  uuids="$(g95_uuids)"
+  n="$(printf '%s' "$uuids" | grep -c .)"
+  case "$mode" in
+    auto)        if [ "$n" -ge 2 ]; then mode=dual; else mode=single; fi
+                 echo ">> reset: detected $n G95NC pane(s) -> $mode mode" ;;
+    single|dual) echo ">> reset: forced $mode mode ($n pane(s) detected)" ;;
+    *)           echo "usage: $0 reset [single|dual]" >&2; return 2 ;;
+  esac
+
+  # Common teardown: drop protections + any mirror/stream/PIP on every detected pane,
+  # then nuke every virtual screen (by type, so name/config drift can't hide one).
+  if [ "$n" -gt 0 ]; then
+    printf '%s\n' "$uuids" | while IFS= read -r u; do
+      [ -n "$u" ] || continue
+      "$CLI" set --UUID="$u" --protectAll=off 2>/dev/null || true
+      "$CLI" set --UUID="$u" --mirror=off 2>/dev/null || true
+      "$CLI" set --UUID="$u" --stream=off 2>/dev/null || true
+      "$CLI" set --UUID="$u" --pip=off 2>/dev/null || true
+    done
+  else
+    setp --protectAll=off 2>/dev/null || true
+    setp --mirror=off 2>/dev/null || true
+  fi
+  "$CLI" discard --type=VirtualScreen 2>/dev/null || true
+  sleep 1
+
+  if [ "$mode" = single ]; then
+    first="$(printf '%s\n' "$uuids" | head -1)"
+    if [ -n "$first" ]; then sel="--UUID=$first"; else sel="--nameLike=$MATCH"; fi
+    "$CLI" set "$sel" --main=on 2>/dev/null || true
+    "$CLI" set "$sel" --reinitialize 2>/dev/null || true
+    # colour depth is a connectionMode knob, not a display-mode attribute — don't force it here
+    "$CLI" set "$sel" --resolution=3840x1080 2>/dev/null || true
+    "$CLI" set "$sel" --hidpi=on 2>/dev/null || true
+    sleep 2
+    res="$("$CLI" get "$sel" --resolution 2>/dev/null)"; hidpi="$("$CLI" get "$sel" --hiDPI 2>/dev/null)"
+    if [ "$res" != "3840x1080" ]; then
+      "$CLI" set "$sel" --reinitialize 2>/dev/null || true; sleep 1
+      "$CLI" set "$sel" --resolution=3840x1080 2>/dev/null || true
+      "$CLI" set "$sel" --hidpi=on 2>/dev/null || true; sleep 2
+      res="$("$CLI" get "$sel" --resolution 2>/dev/null)"; hidpi="$("$CLI" get "$sel" --hiDPI 2>/dev/null)"
+    fi
+    echo ">> now: $res HiDPI=$hidpi"
+    case "$res" in
+      3840x1080) echo "[ok] Clean slate: single display, 3840x1080 HiDPI @ 60Hz." ;;
+      *) echo "[!] Not at 3840x1080 (got $res) — re-run, or 'g95nc check'." ;;
+    esac
+  else
+    echo ">> PBP clean slate: overlays cleared; panes left native, renames untouched."
+    if [ "$n" -gt 0 ]; then
+      printf '%s\n' "$uuids" | while IFS= read -r u; do
+        [ -n "$u" ] || continue
+        if "$CLI" get --UUID="$u" --displayModeList 2>/dev/null | grep -q '5120x2160'; then
+          "$CLI" set --UUID="$u" --resolution=5120x2160 2>/dev/null || true
+          "$CLI" set --UUID="$u" --hidpi=on 2>/dev/null || true
+          sleep 1
+        fi
+        echo "   pane: $("$CLI" get --UUID="$u" --resolution 2>/dev/null) HiDPI=$("$CLI" get --UUID="$u" --hiDPI 2>/dev/null)"
+      done
+    fi
+  fi
 }
 
 main() {
@@ -175,8 +262,8 @@ main() {
     check)  cmd_check ;;
     set)    cmd_set ;;
     fast)   cmd_fast ;;
-    reset)  cmd_reset ;;
-    *) echo "usage: $0 {check|set|fast|reset}" >&2; exit 2 ;;
+    reset)  cmd_reset "${2:-auto}" ;;
+    *) echo "usage: $0 {check|set|fast|reset [single|dual]}" >&2; exit 2 ;;
   esac
 }
 main "$@"
