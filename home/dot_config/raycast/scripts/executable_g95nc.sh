@@ -74,6 +74,21 @@ g95_panes() {
 }
 g95_uuids() { g95_panes | cut -f1; }
 
+# Force a display (selector flag, e.g. "--UUID=...") to the best SDR RGB Full connection
+# mode, preferring 10-bit. HDMI/PBP panes otherwise default to washed-out YCbCr Limited;
+# DP panes are already RGB Full so this is a no-op there. A protect call is attempted but
+# CLI colour-mode protection is unreliable in this build, so reset re-applies on demand.
+normalize_rgb_full() {
+  local sel="$1" cml id
+  cml="$("$CLI" get "$sel" --connectionModeList 2>/dev/null)"
+  id="$(printf '%s\n' "$cml" | grep -i 'SDR' | grep -i 'RGB Full' | grep '10bit' | head -1 | awk '{print $1}')"
+  [ -n "$id" ] || id="$(printf '%s\n' "$cml" | grep -i 'SDR' | grep -i 'RGB Full' | head -1 | awk '{print $1}')"
+  if [ -n "$id" ]; then
+    "$CLI" set "$sel" --connectionMode="$id" 2>/dev/null || true
+    "$CLI" set "$sel" --protectSDRColorMode=on 2>/dev/null || true
+  fi
+}
+
 require_cli() {
   command -v "$CLI" >/dev/null 2>&1 || { echo "error: '$CLI' not found in PATH" >&2; exit 1; }
   # The CLI is a thin client for the BetterDisplay app; with the app down its calls
@@ -266,13 +281,14 @@ cmd_reset() {
       "$CLI" set "$sel" --hidpi=on 2>/dev/null || true; sleep 2
       res="$("$CLI" get "$sel" --resolution 2>/dev/null)"; hidpi="$("$CLI" get "$sel" --hiDPI 2>/dev/null)"
     fi
+    normalize_rgb_full "$sel"
     echo ">> now: $res HiDPI=$hidpi"
     case "$res" in
       3840x1080) echo "[ok] Clean slate: single display, 3840x1080 HiDPI @ 60Hz." ;;
       *) echo "[!] Not at 3840x1080 (got $res) — re-run, or 'g95nc check'." ;;
     esac
   else
-    echo ">> PBP clean slate: overlays cleared; panes left native, renames untouched."
+    echo ">> PBP clean slate: overlays cleared; panes native + normalized to RGB Full; renames kept."
     if [ "$n" -gt 0 ]; then
       printf '%s\n' "$uuids" | while IFS= read -r u; do
         [ -n "$u" ] || continue
@@ -281,7 +297,8 @@ cmd_reset() {
           "$CLI" set --UUID="$u" --hidpi=on 2>/dev/null || true
           sleep 1
         fi
-        echo "   pane: $("$CLI" get --UUID="$u" --resolution 2>/dev/null) HiDPI=$("$CLI" get --UUID="$u" --hiDPI 2>/dev/null)"
+        normalize_rgb_full "--UUID=$u"
+        echo "   pane: $("$CLI" get --UUID="$u" --resolution 2>/dev/null) HiDPI=$("$CLI" get --UUID="$u" --hiDPI 2>/dev/null) | $("$CLI" get --UUID="$u" --connectionMode 2>/dev/null | grep -oE '[0-9]+bit .*SRGB' | sed 's/ SRGB//')"
       done
     fi
   fi
