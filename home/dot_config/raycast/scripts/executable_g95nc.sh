@@ -8,24 +8,23 @@
 #
 # Optional parameters:
 # @raycast.icon 🖥️
-# @raycast.argument1 { "type": "dropdown", "placeholder": "mode", "data": [{"title": "Sharp — HiDPI 60Hz", "value": "set"}, {"title": "Fast — 120Hz", "value": "fast"}, {"title": "Reset — 1080p HiDPI", "value": "reset"}, {"title": "Check status", "value": "check"}] }
+# @raycast.argument1 { "type": "dropdown", "placeholder": "mode", "data": [{"title": "Sharp — HiDPI 60Hz", "value": "set"}, {"title": "Reset — clean slate", "value": "reset"}, {"title": "Check status", "value": "check"}] }
 # @raycast.needsConfirmation false
 #
 # Documentation:
-# @raycast.description Switch the Samsung Odyssey G95NC between sharp HiDPI 60Hz (set), smooth 120Hz (fast), and the native 1080p-HiDPI fallback (reset); or check current state. Drives the BetterDisplay CLI.
+# @raycast.description Set the Samsung Odyssey G95NC to sharp HiDPI 60Hz (set), reset to a native clean slate (reset), or check current state. Drives the BetterDisplay CLI.
 # @raycast.author Prateek Rungta
 #
 # g95nc — drive the Samsung Odyssey G95NC (7680x2160, 32:9) on Apple Silicon
 # through the BetterDisplay CLI. Doubles as a Raycast command (dropdown above)
-# and a plain CLI tool: `g95nc {check|set|fast|reset [single|dual]}` (defaults to check).
+# and a plain CLI tool: `g95nc {check|set|reset [single|dual]}` (defaults to check).
 #
-# This panel renegotiates down to 60Hz on an HBR3 / DP 1.4 link and hides its
-# higher modes. On this cable you can't have sharp + 120Hz at once, so:
+# This panel renegotiates down to 60Hz on an HBR3 / DP 1.4 link and hides its higher
+# modes; sharp HiDPI at the full framebuffer is bandwidth-capped to 60Hz on this cable.
 #
 #   set    -> sharp HiDPI @ 60Hz       full workspace; lands at 4352x1224 (85% of 1440p)
 #             but the app-menu slider scales the whole HiDPI ladder (virtual-screen
 #             mirror; needs the GUI "Enable resolutions over 8K" toggle). Daily driver.
-#   fast   -> 5120x1440 LoDPI @ 120Hz  smooth motion, slightly soft text (native).
 #   reset  -> clean slate, auto-detects cabling: single-cable restores the whole panel
 #             to 3840x1080 HiDPI; dual-cable PBP clears overlays and leaves both panes
 #             native. Drops all protections/mirrors/PIPs + virtual screens; renames kept.
@@ -195,39 +194,10 @@ cmd_set() {
   vhid="$("$CLI" get --name="$VS_NAME" --hiDPI 2>/dev/null)"
   echo ">> desktop (virtual): $vres HiDPI=$vhid   physical: $(disp --resolution) @ $(disp --refreshRate)"
   if [ "$vres" = "$DEFAULT_HIDPI" ] && [ "$vhid" = "on" ]; then
-    echo "[ok] Sharp $DEFAULT_HIDPI HiDPI @ 60Hz active. Virtual-screen mode — red/purple flicker, freezes, or panic on wake? run: $0 reset (or $0 fast)"
+    echo "[ok] Sharp $DEFAULT_HIDPI HiDPI @ 60Hz active. Virtual-screen mode — red/purple flicker, freezes, or panic on wake? run: $0 reset"
   else
     echo "[!] HiDPI mirror didn't come up cleanly — reverting."; cmd_reset
   fi
-}
-
-# Motion mode: native 5120x1440 LoDPI @ 120Hz (slightly soft text, rock solid).
-cmd_fast() {
-  setp --protectAll=off 2>/dev/null || true
-  teardown_vs
-  setp --main=on 2>/dev/null || true
-
-  echo ">> fast: 5120x1440 @ 120Hz (LoDPI). The screen will blank/flicker briefly."
-  # Colour depth is a connectionMode knob, NOT a display-mode attribute — don't force it here.
-  setp --resolution=5120x1440 --hidpi=off --refreshrate=120Hz || true
-  sleep 3
-  local rr; rr="$(disp --refreshRate)"
-  if [[ "$rr" != 120* && "$rr" != 119* ]]; then
-    local m; m="$(disp --displayModeList | awk '/5120x1440 120Hz/{print $1; exit}')"
-    [ -n "$m" ] && { echo ">> retry via display mode #$m"; setp --displayModeNumber="$m" || true; sleep 3; rr="$(disp --refreshRate)"; }
-  fi
-  if [[ "$rr" != 120* && "$rr" != 119* ]]; then
-    echo ">> 10-bit 120Hz didn't hold ($rr); dropping to 8-bit and retrying"
-    setp --connectionMode=bpc:8 2>/dev/null || true
-    setp --resolution=5120x1440 --hidpi=off --refreshrate=120Hz || true; sleep 3; rr="$(disp --refreshRate)"
-  fi
-  case "$rr" in
-    120*|119*)
-      # Lock BOTH refresh and resolution — refresh-only protection lets the panel drift back down.
-      setp --protectRefreshRate=on --protectResolution=on 2>/dev/null || true
-      echo "[ok] now: $(disp --resolution) @ $(disp --refreshRate) ($(disp --colordepth)bpc); refresh+resolution protected. Text is non-Retina here (expected)." ;;
-    *) echo "[!] Did not reach 120Hz (got $rr) — reverting to known-good."; cmd_reset ;;
-  esac
 }
 
 # Clean-slate bail-out. Auto-detects cabling by counting connected panes and resets
@@ -309,9 +279,8 @@ main() {
   case "${1:-check}" in
     check)  cmd_check ;;
     set)    cmd_set ;;
-    fast)   cmd_fast ;;
     reset)  cmd_reset "${2:-auto}" ;;
-    *) echo "usage: $0 {check|set|fast|reset [single|dual]}" >&2; exit 2 ;;
+    *) echo "usage: $0 {check|set|reset [single|dual]}" >&2; exit 2 ;;
   esac
 }
 main "$@"
