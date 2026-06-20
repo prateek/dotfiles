@@ -17,14 +17,16 @@
 #
 # g95nc — drive the Samsung Odyssey G95NC (7680x2160, 32:9) on Apple Silicon
 # through the BetterDisplay CLI. Doubles as a Raycast command (dropdown above)
-# and a plain CLI tool: `g95nc {check|set|reset [single|dual]}` (defaults to check).
+# and a plain CLI tool: `g95nc {check|set [WxH]|reset [single|dual]}` (defaults to check).
 #
 # This panel renegotiates down to 60Hz on an HBR3 / DP 1.4 link and hides its higher
 # modes; sharp HiDPI at the full framebuffer is bandwidth-capped to 60Hz on this cable.
 #
-#   set    -> sharp HiDPI @ 60Hz       full workspace; lands at 4352x1224 (85% of 1440p)
-#             but the app-menu slider scales the whole HiDPI ladder (virtual-screen
-#             mirror; needs the GUI "Enable resolutions over 8K" toggle). Daily driver.
+#   set [WxH] -> sharp HiDPI via virtual-screen mirror with a working app-menu slider.
+#             Cabling-aware: single-cable mirrors the whole panel (default 4352x1224);
+#             dual-cable mirrors the work/DP pane (default 2900x1224) + re-asserts the
+#             comms pane to RGB Full. Optional WxH snaps to nearest step; slide to tune.
+#             Denser than 2x needs the GUI "Enable resolutions over 8K" toggle.
 #   reset  -> clean slate, auto-detects cabling: single-cable restores the whole panel
 #             to 3840x1080 HiDPI; dual-cable PBP clears overlays and leaves both panes
 #             native. Drops all protections/mirrors/PIPs + virtual screens; renames kept.
@@ -42,7 +44,6 @@ export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 CLI="${BD_CLI:-betterdisplaycli}"
 MATCH="${G95_MATCH:-Odyssey}"           # nameLike match for the physical G95NC
 VS_NAME="${G95_VS_NAME:-G95-HiDPI}"     # virtual screen used by the sharp mode
-DEFAULT_HIDPI="${G95_HIDPI:-4352x1224}" # default 'looks like' size for `set` — 85% of 5120x1440 (1440p ultrawide)
 
 disp()  { "$CLI" get --nameLike="$MATCH" "$@" 2>/dev/null; }
 setp()  { "$CLI" set --nameLike="$MATCH" "$@"; }
@@ -158,45 +159,89 @@ cmd_check() {
   fi
 }
 
-# Daily driver: sharp HiDPI @ 60Hz via a mirrored virtual screen. Lands at
-# DEFAULT_HIDPI; the app-menu slider scales the rest of the ladder. True
-# 5120x1440 HiDPI needs a 10240px framebuffer, which exceeds Apple Silicon's
-# 7680px native cap — so it only exists on a virtual screen with over-8K enabled.
+# Sharp HiDPI via a mirrored virtual screen, with a working BetterDisplay scaling slider.
+# Cabling-aware: single-cable mirrors the whole panel; dual-cable PBP mirrors the work
+# (5120x2160 / DP) pane and re-asserts the comms pane to RGB Full. Optional target
+# "looks like" resolution as the first arg (e.g. `set 3200x1350`) — snapped to the nearest
+# generated step (k * aspect) so it matches a real ladder entry; the slider fine-tunes.
 cmd_set() {
-  echo ">> set: $DEFAULT_HIDPI HiDPI @ 60Hz (sharp) via virtual-screen mirror; slider scales from here."
-  setp --protectAll=off 2>/dev/null || true   # let the mirror reconfigure the panel
-  teardown_vs
+  local want="${1:-}"
+  local panes n mode; panes="$(g95_panes)"; n="$(printf '%s' "$panes" | grep -c .)"
+  if [ "$n" -ge 2 ]; then mode=dual; else mode=single; fi
 
-  "$CLI" create --devicetype=virtualscreen --virtualscreenname="$VS_NAME" --aspectWidth=32 --aspectHeight=9
-  # Generated resolutions (not a fixed list) so the app-menu slider scales the full
-  # HiDPI ladder live. It lands on DEFAULT_HIDPI below; drag the slider to taste.
+  local aspectw aspecth default work=""
+  if [ "$mode" = dual ]; then
+    work="$(g95_uuids | while IFS= read -r u; do [ -n "$u" ] || continue
+      "$CLI" get --UUID="$u" --displayModeList 2>/dev/null | grep -q '5120x2160' && { printf '%s' "$u"; break; }; done)"
+    aspectw=64; aspecth=27; default=2900x1224
+  else
+    aspectw=32; aspecth=9; default=4352x1224
+  fi
+  [ -n "$want" ] || want="$default"
+  case "$want" in [0-9]*x[0-9]*) : ;; *) echo ">> '$want' isn't WxH; using $default"; want="$default" ;; esac
+  if [ "$mode" = dual ] && [ -z "$work" ]; then
+    echo "[!] Couldn't identify the 5120x2160 work pane — run 'g95nc check'. Aborting."; return 1
+  fi
+
+  # Snap the requested width to the nearest generated step (k * aspect) so the set matches
+  # a real ladder entry; the BetterDisplay slider then fine-tunes around it.
+  local kw k landw landh land
+  kw="${want%%x*}"
+  k=$(( (kw + aspectw / 2) / aspectw )); [ "$k" -lt 1 ] && k=1
+  landw=$(( k * aspectw )); landh=$(( k * aspecth )); land="${landw}x${landh}"
+  echo ">> set (${mode}-cable): mirror $land HiDPI onto the work pane (requested $want); slider fine-tunes."
+
+  # clear overlays on every pane; nuke virtual screens
+  if [ "$n" -gt 0 ]; then
+    g95_uuids | while IFS= read -r u; do [ -n "$u" ] || continue
+      "$CLI" set --UUID="$u" --protectAll=off 2>/dev/null || true
+      "$CLI" set --UUID="$u" --mirror=off 2>/dev/null || true
+      "$CLI" set --UUID="$u" --pip=off 2>/dev/null || true
+    done
+  else
+    setp --protectAll=off 2>/dev/null || true
+  fi
+  "$CLI" discard --type=VirtualScreen 2>/dev/null || true
+  sleep 1
+
+  # GENERATED-resolution virtual screen => the app-menu scaling slider works
+  "$CLI" create --devicetype=virtualscreen --virtualscreenname="$VS_NAME" --aspectWidth="$aspectw" --aspectHeight="$aspecth"
   "$CLI" set --name="$VS_NAME" --useResolutionList=off --virtualScreenHiDPI=on
   "$CLI" set --name="$VS_NAME" --connected=on
   sleep 2
 
-  # prove over-8K actually yielded the HiDPI mode before touching the live screen
-  if ! "$CLI" get --name="$VS_NAME" --displayModeList 2>/dev/null | grep -Eiq '10240x2880|5120x1440.*hidpi'; then
-    echo "[!] No 5120x1440 HiDPI mode — enable Settings > Displays > Additional settings… > 'Enable resolutions over 8K'. Cleaning up, no live change."
-    "$CLI" discard --nameLike="$VS_NAME" 2>/dev/null || true
-    return 1
-  fi
-  echo "[ok] Virtual screen exposes 5120x1440 HiDPI."
-
-  # base the panel on a 5120x1440 signal, mirror VS -> panel, make VS the desktop
-  setp --resolution=5120x1440 --hidpi=off --refreshrate=60Hz 2>/dev/null || true
-  "$CLI" set --name="$VS_NAME" --resolution="$DEFAULT_HIDPI" --hidpi=on 2>/dev/null || true
-  "$CLI" set --name="$VS_NAME" --mirror=on --targetNameLike="$MATCH"
-  "$CLI" set --name="$VS_NAME" --main=on
-  sleep 3
-
-  local vres vhid
-  vres="$("$CLI" get --name="$VS_NAME" --resolution 2>/dev/null)"
-  vhid="$("$CLI" get --name="$VS_NAME" --hiDPI 2>/dev/null)"
-  echo ">> desktop (virtual): $vres HiDPI=$vhid   physical: $(disp --resolution) @ $(disp --refreshRate)"
-  if [ "$vres" = "$DEFAULT_HIDPI" ] && [ "$vhid" = "on" ]; then
-    echo "[ok] Sharp $DEFAULT_HIDPI HiDPI @ 60Hz active. Virtual-screen mode — red/purple flicker, freezes, or panic on wake? run: $0 reset"
+  # land on the snapped resolution, mirror onto the work pane
+  if [ "$mode" = dual ]; then
+    "$CLI" set --UUID="$work" --resolution=5120x2160 --hidpi=off 2>/dev/null || true
+    "$CLI" set --name="$VS_NAME" --resolution="$land" --hidpi=on 2>/dev/null || true
+    "$CLI" set --name="$VS_NAME" --mirror=on --targetUUID="$work"
   else
-    echo "[!] HiDPI mirror didn't come up cleanly — reverting."; cmd_reset
+    setp --resolution=5120x1440 --hidpi=off --refreshrate=60Hz 2>/dev/null || true
+    "$CLI" set --name="$VS_NAME" --resolution="$land" --hidpi=on 2>/dev/null || true
+    "$CLI" set --name="$VS_NAME" --mirror=on --targetNameLike="$MATCH"
+  fi
+  sleep 2
+
+  # dual: re-assert the comms pane(s) to RGB Full (before claiming main)
+  if [ "$mode" = dual ]; then
+    g95_uuids | while IFS= read -r u; do [ -n "$u" ] || continue
+      [ "$u" = "$work" ] && continue
+      normalize_rgb_full "--UUID=$u"
+    done
+  fi
+
+  # make the mirrored work desktop the main display, last — verify + one retry (it's flaky)
+  "$CLI" set --name="$VS_NAME" --main=on 2>/dev/null || true
+  sleep 1
+  [ "$("$CLI" get --name="$VS_NAME" --main 2>/dev/null)" = "true" ] || { "$CLI" set --name="$VS_NAME" --main=on 2>/dev/null || true; sleep 1; }
+
+  local vres vhid; vres="$("$CLI" get --name="$VS_NAME" --resolution 2>/dev/null)"; vhid="$("$CLI" get --name="$VS_NAME" --hiDPI 2>/dev/null)"
+  echo ">> desktop (virtual): $vres HiDPI=$vhid  (drag BetterDisplay's Resolution slider to fine-tune)"
+  if [ "$vres" = "$land" ] && [ "$vhid" = "on" ]; then
+    echo "[ok] Sharp HiDPI mirror live. Flicker/freeze/panic-on-wake? run: $0 reset"
+  else
+    echo "[!] Didn't land at $land HiDPI (got $vres / $vhid). Going denser than 2x on a single cable needs the 'Enable resolutions over 8K' toggle. Reverting."
+    cmd_reset "$mode"
   fi
 }
 
@@ -278,9 +323,9 @@ main() {
   require_cli
   case "${1:-check}" in
     check)  cmd_check ;;
-    set)    cmd_set ;;
+    set)    cmd_set "${2:-}" ;;
     reset)  cmd_reset "${2:-auto}" ;;
-    *) echo "usage: $0 {check|set|reset [single|dual]}" >&2; exit 2 ;;
+    *) echo "usage: $0 {check|set [WxH]|reset [single|dual]}" >&2; exit 2 ;;
   esac
 }
 main "$@"
