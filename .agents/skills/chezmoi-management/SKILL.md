@@ -91,7 +91,7 @@ Pick the matching lane for the work. All lanes are existing repo conventions; do
 |---|---|
 | workflow | `chezmoi diff`, `chezmoi verify`, `chezmoi apply --dry-run --verbose --exclude=scripts` (file-only) or `... --include=scripts` (when scripts changed), `shellcheck` on rendered scripts. `make test-chezmoi-script-status` after touching scripts. |
 | app-config | `make test-plist-hooks`, `make test-codex-config` (if you touched the codex modify_ stub), `make test-macos-defaults-script` (if you touched macOS defaults), `chezmoi diff <target>`, `chezmoi execute-template < home/.chezmoitemplates/<bundle>.plist.tmpl` |
-| packages-and-secrets | `make test-render-brewfile`, `make test-secret-backed-files`, `make test-chezmoi-config` (init defaults), `make test-brew-inventory` (if you touched packages.toml), `scripts/packages/render-brewfile --profile core`, `... --profile full`, `... --profile full --include-mas` |
+| packages-and-secrets | `make test-render-brewfile`, `make test-brew-bundle-script`, `make test-secret-backed-files`, `make test-chezmoi-config` (init defaults), `make test-brew-inventory` (if you touched packages.toml), `scripts/packages/render-brewfile --profile core`, `... --profile full`, `... --profile full --include-mas` |
 | any | `git diff --check` before handoff |
 
 After editing this skill itself: see `references/meta-skill-maintenance.md` for the parser/frontmatter check.

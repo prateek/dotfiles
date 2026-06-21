@@ -61,6 +61,12 @@ scripts/packages/render-brewfile --profile core    # eyeball
 scripts/packages/render-brewfile --profile full    # eyeball
 ```
 
+The apply script treats `packages.toml` as the trust source. Keep formulae and
+casks from non-official taps tap-qualified in package data. The rendered
+Brewfile marks those tap-qualified formulae and casks with `trusted: true`,
+excluding official `homebrew/*` entries. Do not commit Homebrew's generated
+trust store; let apply recreate that local state from package data.
+
 **MAS entries need an explicit flag to appear in output.** The plain `render-brewfile` invocations above omit `mas` lines because the wrapper script clears `DOTFILES_INSTALL_MAS_APPS` from the environment by default (`env -u DOTFILES_INSTALL_MAS_APPS`); setting it inline like `DOTFILES_INSTALL_MAS_APPS=true scripts/packages/render-brewfile ...` does NOT work for that reason. Use the wrapper flag instead:
 
 ```text
@@ -166,6 +172,7 @@ A `op signin` is still required before any apply that resolves secret refs, sinc
 
 ```text
 make test-render-brewfile           # for any packages.toml or brewfile.tmpl change
+make test-brew-bundle-script        # for package apply script or Homebrew trust behavior
 make test-secret-backed-files       # for any secrets/licenses change
 chezmoi data                        # dump computed data tree to verify load
 chezmoi data --format=yaml | grep -i <key>

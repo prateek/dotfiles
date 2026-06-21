@@ -2,7 +2,7 @@
 status: current
 doc_type: reference
 created: 2026-04-27
-updated: 2026-05-15
+updated: 2026-06-21
 related:
   - ../index.md
   - ../adr/0006-chezmoi-migration-prototype.md
@@ -75,7 +75,9 @@ Scripts must be idempotent. A rerun should converge or report a clear blocker.
 - Package intent lives in `home/.chezmoidata/packages.toml`.
 - `home/.chezmoitemplates/brewfile.tmpl` renders the Brewfile input.
 - `home/.chezmoiscripts/run_onchange_after_10-brew-bundle.sh.tmpl` runs
-  `brew bundle` from that rendered input.
+  `brew bundle` from that rendered input. The rendered Brewfile marks
+  tap-qualified third-party formulae and casks with `trusted: true`, and the
+  script pre-taps declared taps before Bundle runs.
 - `scripts/packages/render-brewfile --profile core|full` is the audit and CI
   entrypoint for the same template.
 - Mac App Store entries render only when `DOTFILES_INSTALL_MAS_APPS=true` or

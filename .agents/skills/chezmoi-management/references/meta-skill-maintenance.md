@@ -72,7 +72,7 @@ When you add a mode or change a guardrail, also touch the evals:
 - New `Do Not` rule → add an eval where the user asks for the forbidden action and the expected outcome is "agent declines and explains."
 - New chezmoi command → add a recipe row, no eval needed unless it replaces a command users routinely run.
 
-Keep the eval set tight: one happy-path plus one pitfall per mode is the target. Add evals only when a new guardrail, mode, or silent-fail surface lands; do not pad for coverage's sake. The current 12 evals span workflow, app-config, packages-and-secrets, meta, and source-target — extending them should follow the same proportion, not exceed it.
+Keep the eval set tight: one happy-path plus one pitfall per mode is the target. Add evals only when a new guardrail, mode, or silent-fail surface lands; do not pad for coverage's sake. The evals should stay balanced across workflow, app-config, packages-and-secrets, meta, and source-target.
 
 ## Repo-Local Location
 

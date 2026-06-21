@@ -19,7 +19,9 @@ trap 'rm -rf "$tmp_home"' EXIT
 tmp_config="$tmp_home/.config/chezmoi/chezmoi.toml"
 tmp_cache="$tmp_home/.cache/chezmoi"
 tmp_state="$tmp_home/.local/state/chezmoi/state.boltdb"
-mkdir -p "$tmp_home/.config/chezmoi" "$tmp_cache" "${tmp_state:h}"
+tmp_github_root="$tmp_home/code/github.com"
+tmp_grmrepo_config="$tmp_home/.local/state/grmrepo/config.toml"
+mkdir -p "$tmp_home/.config/chezmoi" "$tmp_cache" "${tmp_state:h}" "$tmp_github_root" "${tmp_grmrepo_config:h}"
 
 run_chezmoi() {
   DOTFILES_ROOT="$DOTFILES_ROOT" \
@@ -30,10 +32,13 @@ run_chezmoi() {
   DOTFILES_INSTALL_XCODE=false \
   DOTFILES_MANAGE_ZINIT_EXTERNAL=false \
   DOTFILES_SKIP_PLIST_HOOKS=1 \
+  GHPATH="$tmp_github_root" \
+  GRMREPO_CONFIG="$tmp_grmrepo_config" \
   HOME="$tmp_home" \
   XDG_CONFIG_HOME="$tmp_home/.config" \
   XDG_CACHE_HOME="$tmp_home/.cache" \
   XDG_STATE_HOME="$tmp_home/.local/state" \
+  ZDOTDIR="$tmp_home/.config/zsh" \
     chezmoi --no-pager --no-tty \
       --config "$tmp_config" \
       --cache "$tmp_cache" \

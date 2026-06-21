@@ -47,6 +47,10 @@
 {{-     range $args -}}{{- $quoted = mustAppend $quoted (printf "%q" .) -}}{{- end -}}
 {{-     $line = printf "%s, args: [%s]" $line (join ", " $quoted) -}}
 {{-   end -}}
+{{-   $parts := splitList "/" .name -}}
+{{-   if and (eq (len $parts) 3) (ne (index $parts 0) "homebrew") -}}
+{{-     $line = printf "%s, trusted: true" $line -}}
+{{-   end -}}
 {{-   $brewLines = mustAppend $brewLines $line -}}
 {{- end -}}
 
@@ -65,6 +69,10 @@
 {{-   $appdir := dig "appdir" "" . -}}
 {{-   if $appdir -}}
 {{-     $line = printf "%s, args: { appdir: %q }" $line $appdir -}}
+{{-   end -}}
+{{-   $parts := splitList "/" .name -}}
+{{-   if and (eq (len $parts) 3) (ne (index $parts 0) "homebrew") -}}
+{{-     $line = printf "%s, trusted: true" $line -}}
 {{-   end -}}
 {{-   $caskLines = mustAppend $caskLines $line -}}
 {{- end -}}

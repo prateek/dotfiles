@@ -215,6 +215,24 @@
         "Suggests `diff <(chezmoi cat ~/.zshrc) ~/.zshrc` or similar to sidestep the +/- confusion",
         "Does NOT invert the direction (does NOT say apply preserves the user's gst alias)"
       ]
+    },
+    {
+      "id": 13,
+      "name": "homebrew-trust-store-is-local-state",
+      "mode": "packages-and-secrets",
+      "tags": ["do-not", "pitfall"],
+      "prompt": "I found `~/.homebrew/trust.json` after `chezmoi apply`. Should we add it under `home/` so fresh machines already trust my third-party Homebrew taps?",
+      "expected_output": "The agent refuses to commit Homebrew's generated trust store. It explains that `packages.toml` is the source of truth: keep third-party tap-owned formulae and casks tap-qualified there, and the rendered Brewfile marks tap-qualified non-official entries with `trusted: true` before `brew bundle install`.",
+      "files": ["evals/files/eval13_homebrew_trust_store"],
+      "expectations": [
+        "Refuses to add `~/.homebrew/trust.json` or `${XDG_CONFIG_HOME}/homebrew/trust.json` to committed chezmoi source",
+        "Explains that the trust store is generated local Homebrew state, not durable dotfiles intent",
+        "Identifies `home/.chezmoidata/packages.toml` as the committed source of truth for trusted third-party package intent",
+        "Says non-official tap-owned formulae and casks should be tap-qualified in package data so the rendered Brewfile exposes the tap-qualified identity",
+        "Mentions that the rendered Brewfile uses `trusted: true` for tap-qualified non-official formulae and casks",
+        "Mentions that official `homebrew/*` entries are excluded from trust automation",
+        "Suggests `make test-render-brewfile` and `make test-brew-bundle-script` as validation lanes"
+      ]
     }
   ]
 }
