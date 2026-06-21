@@ -28,6 +28,7 @@ CLAUDE_PLUGIN_SETTINGS_TEMPLATE = (
 GENERATED_README = "README.generated.md"
 VALID_RENDER_VALUES = {"root", "plugin", "none"}
 AGENTS = ("codex", "claude")
+MAX_SKILL_DESCRIPTION_CHARS = 1024
 
 
 @dataclass(frozen=True)
@@ -103,12 +104,30 @@ def skill_frontmatter(path: Path) -> dict[str, str]:
             break
     if end is None:
         raise ValueError(f"{skill_md} missing closing YAML frontmatter")
+    frontmatter = lines[1:end]
     data: dict[str, str] = {}
-    for line in lines[1:end]:
+    index = 0
+    while index < len(frontmatter):
+        line = frontmatter[index]
+        index += 1
         if ":" not in line:
             continue
         key, value = line.split(":", 1)
-        value = value.strip().strip('"').strip("'")
+        value = value.strip()
+        if value in {">", ">-", ">+", "|", "|-", "|+"}:
+            block_lines: list[str] = []
+            while index < len(frontmatter):
+                block_line = frontmatter[index]
+                if block_line and not block_line.startswith((" ", "\t")):
+                    break
+                block_lines.append(block_line.strip())
+                index += 1
+            if value.startswith(">"):
+                value = " ".join(part for part in block_lines if part)
+            else:
+                value = "\n".join(block_lines)
+        else:
+            value = value.strip('"').strip("'")
         data[key.strip()] = value
     if not data.get("name") or not data.get("description"):
         raise ValueError(f"{skill_md} must define name and description")

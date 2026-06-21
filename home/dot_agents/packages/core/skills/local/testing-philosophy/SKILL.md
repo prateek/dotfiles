@@ -1,19 +1,16 @@
 ---
 name: testing-philosophy
 description: >-
-  Reason about tests like a senior engineer instead of cargo-culting "add a unit test with mocks."
-  Use whenever you write, add, review, design, or repair tests in any language, or decide what — or
-  whether — to test. Triggers: "write a test" / "add tests", "what should I test", "how do I test
-  this", "is this tested", "review my tests", "TDD", "test coverage" / "bump coverage", "this test
-  is flaky / brittle", "tests keep breaking when I refactor", "too many mocks" / "should I mock
-  this", "unit vs integration", "snapshot / golden test", "property-based testing" / "fuzzing",
-  "regression test", "how do I test concurrency / time / the database / the network", "the test
-  suite is slow", "my tests pass but the code is broken". Also fire proactively before adding a test
-  mid-task, when choosing assertions or test doubles, and whenever you are tempted to delete, skip,
-  weaken, or blindly update a failing test to make a suite go green. Provides a purity×extent model,
-  rules for testing behavior through stable seams, a technique toolbox, speed and determinism rules,
-  an anti-pattern catalog, a review checklist, and conduct rules for an agent. Skip only for pure
-  runtime/app debugging with no test involved.
+  Use when writing, reviewing, designing, or repairing tests, or deciding what to test. Triggers on
+  add/write tests, what should I test, how do I test this, is this tested, review my tests, TDD,
+  coverage, flaky or brittle tests, refactor-broken tests, too many mocks, should I mock, unit vs
+  integration, snapshot or golden tests, property-based tests, fuzzing, regression tests,
+  concurrency, time, database or network tests, slow suites, or tests that pass while code is
+  broken. Also use proactively before adding a test mid-task, choosing assertions or test doubles,
+  or deleting, skipping, weakening, or blindly updating a failing test. Provides the purity x extent
+  model, behavior-through-stable-seams guidance, a toolbox, determinism rules, anti-patterns, a
+  review checklist, and agent conduct rules. Skip only for pure runtime/app debugging with no test
+  involved.
 ---
 
 # Testing Philosophy

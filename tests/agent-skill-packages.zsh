@@ -127,6 +127,43 @@ fi
 grep -q 'dependency ref pins must be full commit SHAs' "$tmp_root/invalid-pin.out"
 rm -rf "$invalid_pin_package"
 
+long_description_package="$packages_root/long-description"
+mkdir -p "$long_description_package/skills/local/long-description-skill"
+cat >"$long_description_package/package.toml" <<'TOML'
+display_name = "Long Description"
+
+[render]
+codex = "none"
+claude = "none"
+TOML
+cat >"$long_description_package/apm.yml" <<'YAML'
+name: long-description
+version: 1.0.0
+targets:
+  - agent-skills
+
+dependencies:
+  apm: []
+YAML
+long_description="$(printf '%*s' 1100 '' | tr ' ' x)"
+{
+  print -- '---'
+  print -- 'name: long-description-skill'
+  print -- 'description: >-'
+  print -- "  $long_description"
+  print -- '---'
+  print -- ''
+  print -- '# Long Description Skill'
+} >"$long_description_package/skills/local/long-description-skill/SKILL.md"
+if AGENT_SKILL_PACKAGES_ROOT="$packages_root" \
+  .agents/skills/agent-skill-management/scripts/validate-agent-packages \
+  >"$tmp_root/long-description.out" 2>&1; then
+  echo "expected validate-agent-packages to reject long skill descriptions" >&2
+  exit 1
+fi
+grep -q 'description exceeds 1024 chars' "$tmp_root/long-description.out"
+rm -rf "$long_description_package"
+
 cat >"$fake_bin/apm" <<'SH'
 #!/usr/bin/env zsh
 set -euo pipefail

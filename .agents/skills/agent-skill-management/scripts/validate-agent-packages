@@ -11,6 +11,7 @@ from re import fullmatch
 
 from agent_skill_lib import (
     AGENTS,
+    MAX_SKILL_DESCRIPTION_CHARS,
     VALID_RENDER_VALUES,
     iter_skill_metadata,
     load_packages,
@@ -86,6 +87,12 @@ def main() -> int:
         try:
             for skill_dir, meta in iter_skill_metadata(package.path / "skills"):
                 skill_name_locations[meta["name"]].append(str(skill_dir))
+                description = meta["description"]
+                if len(description) > MAX_SKILL_DESCRIPTION_CHARS:
+                    errors.append(
+                        f"{skill_dir / 'SKILL.md'}: description exceeds "
+                        f"{MAX_SKILL_DESCRIPTION_CHARS} chars ({len(description)})"
+                    )
         except Exception as exc:
             errors.append(str(exc))
 
