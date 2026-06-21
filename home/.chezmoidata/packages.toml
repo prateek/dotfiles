@@ -363,6 +363,7 @@ casks = [
   { name = "setapp" },
   { name = "slack" },
   { name = "spotify", appdir = "/Applications" },
+  { name = "steermouse" },  # SteerMouse: button/scroll/accel remap for the Kensington SlimBlade Pro trackball
   { name = "superset" },
   { name = "taskpaper", appdir = "/Applications" },
   { name = "tuist" },
