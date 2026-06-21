@@ -8,11 +8,9 @@
 #                 nothing (so we never re-mute a mic you had on yourself).
 #   STOP press  — re-mute the device we opened.
 #
-# Media auto-resume is intentionally NOT done here yet: resuming only what *we*
-# caused to pause requires reading the now-playing state, and MediaRemote's read
-# API is restricted on macOS 15.4+. Once that's confirmed workable (see the
-# `media` CLI's `is-playing` probe), a guarded resume can be added to the STOP
-# branch — never a blind toggle.
+# Media is left alone: Ghost Pepper pauses playback on dictation start, but
+# auto-resume can't be done reliably — knowing whether *we* paused it needs
+# MediaRemote's read API, which is restricted on macOS 15.4+ — so we don't touch it.
 set -uo pipefail
 
 bindir="$(cd "$(dirname "$0")" && pwd)"

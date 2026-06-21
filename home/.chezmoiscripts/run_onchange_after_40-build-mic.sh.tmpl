@@ -1,0 +1,22 @@
+{{ template "script_lib.sh" . }}
+
+# Build the `mic` CoreAudio input-mute CLI from Swift source into ~/.local/bin/mic.
+# run_onchange: this rendered script embeds the source below (via include), so
+# chezmoi recompiles it whenever mic.swift changes. Skips cleanly when swiftc is
+# absent (e.g. a bare machine before Xcode Command Line Tools; ordered after the
+# Xcode step so the toolchain is present on a normal apply).
+have swiftc || { warn "build-mic: swiftc not found; skipping (install Xcode Command Line Tools)"; exit 0; }
+
+out="${HOME}/.local/bin/mic"
+mkdir -p "$(dirname "$out")"
+
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+
+cat >"${tmp}/mic.swift" <<'MIC_SOURCE'
+{{ include ".chezmoiassets/mic.swift" }}
+MIC_SOURCE
+
+swiftc -O "${tmp}/mic.swift" -o "$out"
+chmod 0755 "$out"
+log "build-mic: compiled $out"
