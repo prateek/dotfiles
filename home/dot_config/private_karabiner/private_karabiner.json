@@ -73,7 +73,7 @@
                         ]
                     },
                     {
-                        "description": "8BitDo Zero 2: A → F19 (Ghost Pepper toggle), X → backspace, B → enter",
+                        "description": "8BitDo Zero 2: A → F19 (Ghost Pepper toggle), X → backspace, B → enter, Y → escape",
                         "manipulators": [
                             {
                                 "conditions": [
@@ -125,12 +125,7 @@
                                 "from": { "key_code": "j" },
                                 "to": [{ "key_code": "return_or_enter" }],
                                 "type": "basic"
-                            }
-                        ]
-                    },
-                    {
-                        "description": "8BitDo Zero 2: Y/L/R/Select/Start → no-op (for now)",
-                        "manipulators": [
+                            },
                             {
                                 "conditions": [
                                     {
@@ -144,41 +139,14 @@
                                     }
                                 ],
                                 "from": { "key_code": "i" },
-                                "to": [{ "key_code": "vk_none" }],
+                                "to": [{ "key_code": "escape" }],
                                 "type": "basic"
-                            },
-                            {
-                                "conditions": [
-                                    {
-                                        "identifiers": [
-                                            {
-                                                "product_id": 36888,
-                                                "vendor_id": 11720
-                                            }
-                                        ],
-                                        "type": "device_if"
-                                    }
-                                ],
-                                "from": { "key_code": "k" },
-                                "to": [{ "key_code": "vk_none" }],
-                                "type": "basic"
-                            },
-                            {
-                                "conditions": [
-                                    {
-                                        "identifiers": [
-                                            {
-                                                "product_id": 36888,
-                                                "vendor_id": 11720
-                                            }
-                                        ],
-                                        "type": "device_if"
-                                    }
-                                ],
-                                "from": { "key_code": "m" },
-                                "to": [{ "key_code": "vk_none" }],
-                                "type": "basic"
-                            },
+                            }
+                        ]
+                    },
+                    {
+                        "description": "8BitDo Zero 2: Select/Start → no-op (for now)",
+                        "manipulators": [
                             {
                                 "conditions": [
                                     {
@@ -209,6 +177,43 @@
                                 ],
                                 "from": { "key_code": "o" },
                                 "to": [{ "key_code": "vk_none" }],
+                                "type": "basic"
+                            }
+                        ]
+                    },
+                    {
+                        "description": "8BitDo Zero 2: L/R bumpers → scroll (tap = nudge, hold = sustained)",
+                        "manipulators": [
+                            {
+                                "conditions": [
+                                    {
+                                        "identifiers": [
+                                            {
+                                                "product_id": 36888,
+                                                "vendor_id": 11720
+                                            }
+                                        ],
+                                        "type": "device_if"
+                                    }
+                                ],
+                                "from": { "key_code": "k" },
+                                "to": [{ "mouse_key": { "vertical_wheel": 40 } }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "identifiers": [
+                                            {
+                                                "product_id": 36888,
+                                                "vendor_id": 11720
+                                            }
+                                        ],
+                                        "type": "device_if"
+                                    }
+                                ],
+                                "from": { "key_code": "m" },
+                                "to": [{ "mouse_key": { "vertical_wheel": -40 } }],
                                 "type": "basic"
                             }
                         ]
