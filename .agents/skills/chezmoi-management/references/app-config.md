@@ -7,7 +7,7 @@ Capturing, editing, and templating macOS app preferences. Load when working unde
 ```text
 New app config request
 │
-├── Single file at a native path (e.g., ~/.config/karabiner/karabiner.json)?
+├── Single file at a native path (e.g., ~/.config/kanata/kanata.kbd)?
 │       Place at the native target path under home/.
 │       Add to home/.chezmoiignore if app is opt-in for some hosts.
 │       Two-way-sync GUI apps need a cask-presence gate and may have

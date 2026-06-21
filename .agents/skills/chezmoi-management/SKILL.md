@@ -32,7 +32,7 @@ Should trigger:
 - `Add Anthropic CLI to the core profile and render the Brewfile.`
 - `Capture the Moom plist into home/.chezmoitemplates/.`
 - `Toggle DOTFILES_INSTALL_MAS_APPS for this run.`
-- `What is the source path for ~/.config/karabiner/karabiner.json?`
+- `What is the source path for ~/.config/karabiner.edn?`
 - `Test a chezmoi change from a git worktree, then reset to the default source.`
 
 Should not trigger by itself:

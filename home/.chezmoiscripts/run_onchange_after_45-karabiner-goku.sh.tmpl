@@ -1,0 +1,47 @@
+{{ template "script_lib.sh" . }}
+
+# Compile ~/.config/karabiner.edn -> ~/.config/karabiner/karabiner.json with goku.
+# run_onchange: the edn's hash is embedded below, so chezmoi reruns this whenever the
+# source changes. goku replaces only the "Default" profile's complex_modifications
+# (preserving devices/virtual_hid_keyboard) and fails if that profile is missing, so we
+# ensure it exists first. Skips cleanly when goku/jq or the edn are absent (e.g. a bare
+# machine before brew bundle, or a profile without karabiner-elements; ordered after the
+# brew step so the toolchain is present on a normal apply).
+#
+# karabiner.edn sha256: {{ include "dot_config/karabiner.edn.tmpl" | sha256sum }}
+brew_shellenv
+have goku || { warn "karabiner-goku: goku not found; skipping (brew install yqrashawn/goku/goku)"; exit 0; }
+have jq   || { warn "karabiner-goku: jq not found; skipping"; exit 0; }
+
+edn="${HOME}/.config/karabiner.edn"
+[ -f "$edn" ] || { warn "karabiner-goku: $edn missing; skipping"; exit 0; }
+
+kbjson="${HOME}/.config/karabiner/karabiner.json"
+mkdir -p "$(dirname "$kbjson")"
+
+if [ ! -f "$kbjson" ]; then
+  # Fresh machine (Karabiner has not created its config yet): seed a base whose only
+  # profile is "Default", carrying our device-ignore + virtual_hid_keyboard settings.
+  cat >"$kbjson" <<'KB_BASE'
+{{ include ".chezmoiassets/karabiner-base.json" }}
+KB_BASE
+  log "karabiner-goku: seeded base karabiner.json"
+elif ! jq -e '.profiles[] | select(.name == "Default")' "$kbjson" >/dev/null 2>&1; then
+  # Existing config without a "Default" profile (e.g. Karabiner created its factory
+  # "Default profile"): rename the first selected profile (else the first one). Refuse to
+  # touch a file that isn't valid JSON rather than letting goku fail downstream.
+  jq -e . "$kbjson" >/dev/null 2>&1 || die "karabiner-goku: $kbjson is not valid JSON; refusing to modify it"
+  tmp="$(mktemp)"
+  if jq '(.profiles | map(.selected == true) | index(true)) as $i
+         | if $i != null then .profiles[$i].name = "Default"
+           else .profiles[0].name = "Default" end' "$kbjson" >"$tmp"; then
+    mv "$tmp" "$kbjson"
+    log "karabiner-goku: renamed active Karabiner profile to \"Default\""
+  else
+    rm -f "$tmp"
+    die "karabiner-goku: could not set a \"Default\" profile in $kbjson"
+  fi
+fi
+
+goku >/dev/null
+log "karabiner-goku: compiled karabiner.json"

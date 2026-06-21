@@ -7,6 +7,7 @@ taps = [
   { name = "1password/tap" },
   { name = "felixkratz/formulae" },
   { name = "fluffypony/yojam" },
+  { name = "yqrashawn/goku" },
 ]
 brews = [
   { name = "direnv" },
@@ -28,6 +29,7 @@ brews = [
   { name = "shellcheck" },
   { name = "tmux" },
   { name = "worktrunk" },
+  { name = "yqrashawn/goku/goku" },  # goku: compiles ~/.config/karabiner.edn → karabiner.json
 ]
 casks = [
   { name = "codex" },
@@ -92,6 +94,7 @@ taps = [
   { name = "steipete/tap" },
   { name = "stablyai/orca" },
   { name = "thoughtbot/formulae" },
+  { name = "yqrashawn/goku" },
 ]
 brews = [
   { name = "ack" },
@@ -307,6 +310,7 @@ brews = [
   { name = "felixkratz/formulae/borders" },
   { name = "hudochenkov/sshpass/sshpass" },
   { name = "oven-sh/bun/bun" },
+  { name = "yqrashawn/goku/goku" },  # goku: compiles ~/.config/karabiner.edn → karabiner.json
 ]
 casks = [
   { name = "1password", appdir = "/Applications" },

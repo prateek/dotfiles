@@ -72,7 +72,7 @@ run_before_once_...                      INVALID (once_ before before_)
 
 ```text
 home/dot_zshrc                                            -> ~/.zshrc
-home/dot_config/karabiner/karabiner.json                  -> ~/.config/karabiner/karabiner.json
+home/dot_config/karabiner.edn.tmpl                        -> ~/.config/karabiner.edn (templated; karabiner.json is goku-generated and chezmoiignored)
 home/Library/private_Preferences/modify_private_com.manytricks.Moom.plist.tmpl
                                                           -> ~/Library/Preferences/com.manytricks.Moom.plist 0600 (modify_ stub, templated; parent dir 0700 via private_Preferences/)
 home/.chezmoiscripts/run_once_before_00-homebrew.sh.tmpl  -> script, no destination file

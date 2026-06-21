@@ -2,7 +2,7 @@
 status: current
 doc_type: index
 created: 2026-05-12
-updated: 2026-06-20
+updated: 2026-06-21
 related:
   - document-lifecycle.md
   - ../home/dot_agents/packages/core/skills/local/code-gardening/SKILL.md
@@ -38,6 +38,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | --- | --- |
 | [BetterDisplay Display Modes](plans/betterdisplay-display-modes-plan.md) | Proposed only; no `displayctl` implementation exists in this checkout. |
 | [Orcactl](plans/orcactl-plan.md) | Draft for a separate Go repo/tool; dotfiles integration is future install/skill wiring. |
+| [Goku Karabiner Migration](plans/goku-karabiner-migration-plan.md) | Active; Karabiner config now compiles from `karabiner.edn` via goku — on-device pad verification pending. |
 | [Setup Downstream Fork Secrets](plans/setup-downstream-fork-secrets-plan.md) | Active cleanup plan; `_secrets.py`, `--init-config`, and `--validate-config` already exist. |
 | [Sudo Askpass 1Password](plans/sudo-askpass-1password-plan.md) | Accepted design; implementation pending, current code still uses sudo keepalive. |
 | [Zsh Fresh-Shell Validator](plans/zsh-fresh-shell-validator-plan.md) | Active plan for shell correctness and startup checks. |
@@ -57,6 +58,7 @@ for day-to-day implementation details.
 | [ADR 0006 - Chezmoi migration target architecture](adr/0006-chezmoi-migration-prototype.md) | [Chezmoi Architecture](references/chezmoi-architecture.md). |
 | [ADR 0007 - Default-loaded plugin policy](adr/0007-default-loaded-plugin-policy.md) | [Agent Skill Management](../.agents/skills/agent-skill-management/SKILL.md). |
 | [ADR 0008 - Sudo askpass via 1Password](adr/0008-sudo-askpass-1password.md) | Current behavior remains [Jamf Self Service Elevation](references/jamf-self-service-elevation.md); accepted askpass design is tracked in [Sudo Askpass 1Password](plans/sudo-askpass-1password-plan.md). |
+| [ADR 0009 - Karabiner config via Goku codegen](adr/0009-goku-karabiner-codegen.md) | [Goku Karabiner Migration](plans/goku-karabiner-migration-plan.md); edit `karabiner.edn`, never `karabiner.json`. |
 
 ## Research
 

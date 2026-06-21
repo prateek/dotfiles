@@ -1,0 +1,48 @@
+;; Karabiner-Elements config, authored in Goku EDN and compiled to
+;; ~/.config/karabiner/karabiner.json by `goku` at `chezmoi apply` time
+;; (see run_onchange_after_45-karabiner-goku). Edit THIS file, never the JSON.
+;;
+;; 8BitDo Zero 2 (keyboard mode, held rotated 90° left): a sticky "mouse mode"
+;; toggled by Start. The pad emits letter keycodes; :zero2 scopes every rule to
+;; it. The only templated value is the dictation-sidekick path.
+
+{:devices {:zero2    [{:vendor_id 11720 :product_id 36888}]
+           :internal [{:is_built_in_keyboard true}]}
+
+ :main
+ [{:des "8BitDo: Start toggles mouse mode"
+   :rules [[:o [{:set ["pad_mouse_mode" 0]} {:noti {:id :pad_mouse_mode :text ""}}]              [:zero2 :pad_mouse_mode]]
+           [:o [{:set ["pad_mouse_mode" 1]} {:noti {:id :pad_mouse_mode :text "🖱 Mouse mode"}}] [:zero2 :!pad_mouse_mode]]]}
+
+  {:des "8BitDo mouse mode: d-pad cursor, A/B click, X/Y no-op"
+   :rules [[:f {:mkey {:y -1536}} [:zero2 :pad_mouse_mode]]
+           [:e {:mkey {:y 1536}}  [:zero2 :pad_mouse_mode]]
+           [:c {:mkey {:x -1536}} [:zero2 :pad_mouse_mode]]
+           [:d {:mkey {:x 1536}}  [:zero2 :pad_mouse_mode]]
+           [:g {:pkey :button1}   [:zero2 :pad_mouse_mode]]
+           [:j {:pkey :button2}   [:zero2 :pad_mouse_mode]]
+           [:h :vk_none           [:zero2 :pad_mouse_mode]]
+           [:i :vk_none           [:zero2 :pad_mouse_mode]]]}
+
+  {:des "8BitDo normal mode: d-pad arrows, A dictation, X bksp, B enter, Y esc"
+   :rules [[:f :up_arrow    [:zero2 :!pad_mouse_mode]]
+           [:e :down_arrow  [:zero2 :!pad_mouse_mode]]
+           [:c :left_arrow  [:zero2 :!pad_mouse_mode]]
+           [:d :right_arrow [:zero2 :!pad_mouse_mode]]
+           [:g [{:shell "{{ .chezmoi.homeDir }}/.local/bin/dictation-sidekick"} :f19] [:zero2 :!pad_mouse_mode]]
+           [:h :delete_or_backspace [:zero2 :!pad_mouse_mode]]
+           [:j :return_or_enter     [:zero2 :!pad_mouse_mode]]
+           [:i :escape              [:zero2 :!pad_mouse_mode]]]}
+
+  {:des "8BitDo always-on: L/R scroll, Select no-op"
+   :rules [[:k {:mkey {:vwheel 40}}  [:zero2]]
+           [:m {:mkey {:vwheel -40}} [:zero2]]
+           [:n :vk_none              [:zero2]]]}
+
+  {:des "Apple internal: modifier remaps"
+   :rules [[:##caps_lock    :left_control [:internal] {:alone :escape}]
+           [:##fn           :left_option  [:internal]]
+           [:##left_control {:key :left_shift :modi [:left_control :left_option] :lazy true}
+            [:internal] {:alone :f19 :params {:alone 200}}]
+           [:##left_option  {:key :left_shift :modi [:left_command :left_control :left_option] :lazy true}
+            [:internal]]]}]}

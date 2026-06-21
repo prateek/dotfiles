@@ -48,6 +48,7 @@ make test-xcode-install-script
 make test-secret-backed-files
 make test-chezmoi-apply
 make test-chezmoi-config
+make test-karabiner-goku
 make test-chezmoi-local-ignores
 make test-chezmoi-script-status
 make test-chezmoi-drift-banner
