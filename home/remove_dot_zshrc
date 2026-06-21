@@ -1,0 +1,1 @@
+# Obsolete Orca shell-ready workaround. The fixed wrapper now sources XDG ZDOTDIR directly.
