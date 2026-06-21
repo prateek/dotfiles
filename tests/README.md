@@ -12,6 +12,12 @@ Run `ghc`/`ohc` URL handling tests:
 make test-ghc
 ```
 
+Run Raycast Orca worktree extension core tests:
+
+```sh
+make test-raycast-orca-worktree
+```
+
 Run the full fresh-shell selftest:
 
 ```sh

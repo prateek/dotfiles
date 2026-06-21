@@ -52,6 +52,11 @@ function ohc() {
     return 127
   fi
 
+  local helper_dir="${${(%):-%x}:A:h}"
+  if [[ -d "$helper_dir" ]]; then
+    fpath=("$helper_dir" $fpath)
+  fi
+
   autoload -Uz ghc 2>/dev/null || true
   if ! whence -w ghc >/dev/null 2>&1; then
     echo "ohc: ghc helper is not available" >&2

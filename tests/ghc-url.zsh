@@ -38,7 +38,7 @@ mkdir -p "$stub_bin"
 export PATH="$stub_bin:/usr/bin:/bin"
 export GHC_TEST_LOG="$tmp_root/ghc.log"
 export ORCA_TEST_LOG="$tmp_root/orca.log"
-export FPATH="$DOTFILES_ROOT/home/dot_config/zsh/autoload:${FPATH:-}"
+export FPATH=""
 
 cat >"$stub_bin/git" <<'EOF'
 #!/bin/sh
