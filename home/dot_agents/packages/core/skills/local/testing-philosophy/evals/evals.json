@@ -1,0 +1,85 @@
+{
+  "skill_name": "testing-philosophy",
+  "evals": [
+    {
+      "id": 1,
+      "name": "write-tests-for-pure-module",
+      "mode": "generate",
+      "prompt": "Write tests for this discount engine. It's a pure function `price(cart, coupons, now)` that returns a total; it has no I/O. Here's the signature and a couple of rules: percentage coupons stack additively, expired coupons (by `now`) are ignored, and the total never goes below zero. Add a sensible test suite.",
+      "expected_output": "A behavioral test suite that drives the public `price` function through a single check-style helper with data cases, covers boundary cases (no coupons, stacked coupons, expired coupon via an injected/passed `now`, floor-at-zero), and does not mock internals or add I/O.",
+      "expectations": [
+        "Routes cases through a single helper (e.g. check(cart, coupons, now, expected)) rather than repeating assert boilerplate per case",
+        "Tests the public price() behavior, not private/internal helpers",
+        "Includes boundary cases: empty/no coupons, multiple stacked coupons, an expired coupon, and the floor-at-zero rule",
+        "Passes `now` explicitly (controls the clock) instead of reading the real wall clock",
+        "Does not introduce mocks of the module's own logic",
+        "Does not add filesystem, network, or sleep-based I/O to a pure function's tests"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "fix-flaky-test",
+      "mode": "generate",
+      "prompt": "This test is flaky — it passes most of the time but fails maybe 1 in 10 runs in CI. It starts a worker thread, then does `time.sleep(0.2)` and asserts the result was written. How should I fix it?",
+      "expected_output": "Identifies sleep-based synchronization and unawaited background work as the root cause, and fixes it by making completion observable (await a real signal / join the worker / return a handle), not by increasing the sleep or adding retries.",
+      "expectations": [
+        "Names the sleep-as-synchronization (and/or unawaited background work) as the cause",
+        "Recommends awaiting a real completion signal, joining the worker, or returning something awaitable",
+        "Explicitly does NOT recommend increasing the sleep duration or adding automatic retries as the fix",
+        "Frames flakiness as a real bug to fix at its source rather than tolerate"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "review-over-mocked-tests",
+      "mode": "review",
+      "prompt": "Review these tests. Each one constructs the service, then uses a mocking library to assert that `repo.save()` was called once and `mailer.send()` was called with a specific argument. Are these good tests?",
+      "expected_output": "Critique that these are interaction tests welded to the call graph and the service's own internals; recommends asserting on observable outcomes (persisted state via a fake repo, an emitted event) and reserving interaction assertions for cases where the interaction itself is the contract.",
+      "expectations": [
+        "Flags asserting on internal call sequences / mocking the system's own collaborators as brittle",
+        "Recommends a fake at the real I/O seam (e.g. in-memory repo) and asserting on observable state/outcome",
+        "Notes interaction assertions are legitimate only when the interaction IS the behavior (e.g. send exactly one email/charge)",
+        "Connects the brittleness to breaking on refactors that don't change behavior"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "what-to-test-decision",
+      "mode": "generate",
+      "prompt": "I have a service with an HTTP handler, a chunk of business rules, and a Postgres data-access layer. I don't know what to test or whether to call them unit or integration tests. How should I think about this?",
+      "expected_output": "Reframes away from unit-vs-integration toward purity and extent; recommends testing the business rules as a pure core with wide extent, faking Postgres at the real seam (or an in-memory/local fake), and a thin layer of higher-extent tests through the HTTP boundary.",
+      "expectations": [
+        "Reframes the question away from 'unit vs integration' toward purity and/or extent",
+        "Recommends pushing the database I/O to the edge and testing the business rules as a pure core",
+        "Suggests a fake/in-memory or local Postgres seam rather than mocking the business logic",
+        "Advises a thin set of tests through the observable boundary (HTTP contract / persisted state)"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "bug-regression-first",
+      "mode": "generate",
+      "prompt": "Users report that deleting the last item in a list crashes the app with an index error. Fix it.",
+      "expected_output": "Writes a failing regression test that reproduces the empty-list/last-item crash first, confirms it fails for the right reason, then fixes the code and shows the test passing.",
+      "expectations": [
+        "Writes a regression test reproducing the bug before (or alongside) the fix",
+        "Test targets the observable behavior (deleting the last item) rather than internal indices",
+        "Confirms or states the test fails for the right reason before the fix",
+        "Does not silence or skip the failing case to move on"
+      ]
+    },
+    {
+      "id": 6,
+      "name": "coverage-target-pushback",
+      "mode": "generate",
+      "prompt": "Management wants us at 90% line coverage before the release next week. Write whatever tests get us there fastest.",
+      "expected_output": "Pushes back on coverage-as-a-target, explains that line coverage rewards assertion-free tests, and steers toward meaningful behavioral tests on risky code plus coverage used diagnostically to find real gaps.",
+      "expectations": [
+        "Warns that a coverage percentage as a hard target incentivizes assertion-free tests that don't catch bugs",
+        "Recommends using coverage diagnostically to find untested risky branches, not as the goal",
+        "Prioritizes meaningful behavioral tests on load-bearing code over padding the number",
+        "Does not just generate trivial tests that execute lines without asserting behavior"
+      ]
+    }
+  ]
+}
