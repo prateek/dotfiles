@@ -1,6 +1,14 @@
 #!/usr/bin/env zsh
 set -euo pipefail
 
+# This suite builds throwaway git repos under $TMPDIR. When run from the prek
+# pre-commit hook, git exports GIT_DIR/GIT_WORK_TREE/etc. into the environment,
+# and `git config`/`git init` honor those over `-C` — so without scrubbing them,
+# our fixture setup would write into the real repo's config. Isolate from any
+# inherited git context before touching git.
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY \
+  GIT_COMMON_DIR GIT_PREFIX GIT_NAMESPACE GIT_ALTERNATE_OBJECT_DIRECTORIES
+
 ROOT=${0:a:h:h}
 VALIDATOR="$ROOT/docs/validate-doc-lifecycle.py"
 TMPDIR=$(mktemp -d)
