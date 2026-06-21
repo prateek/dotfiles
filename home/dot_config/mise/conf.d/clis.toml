@@ -35,6 +35,9 @@
 "npm:@steipete/bird" = "latest"                            # twitter; see ~/.agents/docs/twitter.md
 "pipx:absurdctl" = "latest"                                # durable-workflow CLI for agent use
 
+# === Secrets & encryption ===
+sops = "latest"                                            # aqua:getsops/sops; SOPS secrets editor
+
 [env]
 # ask: cache lives under XDG_CACHE_HOME so it stays out of $HOME root.
 ASK_HOME = "{{ get_env(name='XDG_CACHE_HOME', default='~/.cache') }}/ask"

@@ -11,4 +11,4 @@
 #
 # Keep this file empty unless something truly belongs at the root layer
 # (e.g., a setting that must load before every conf.d file). See
-# `~/.dotfiles/docs/adr/0005-mise-tool-management.md`.
+# `~/dotfiles/docs/adr/0005-mise-tool-management.md`.
