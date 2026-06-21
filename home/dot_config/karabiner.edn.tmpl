@@ -5,6 +5,19 @@
 ;; 8BitDo Zero 2 (keyboard mode, held rotated 90° left): a sticky "mouse mode"
 ;; toggled by Start. The pad emits letter keycodes; :zero2 scopes every rule to
 ;; it. The only templated value is the dictation-sidekick path.
+;;
+;; Physical button -> emitted keycode (per-button actions are in each :des below):
+;;
+;;     [L] k                                       m [R]
+;;     ─────────────────────────────────────────────────
+;;
+;;             (f) Up                      (h) X
+;;     (c) Left      (d) Right         (i) Y     (g) A
+;;             (e) Down                    (j) B
+;;
+;;                  (n) Select   (o) Start
+;;
+;;           └──── D-PAD ────┘        └──── FACE ────┘
 
 {:devices {:zero2    [{:vendor_id 11720 :product_id 36888}]
            :internal [{:is_built_in_keyboard true}]}
