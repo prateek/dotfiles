@@ -1,0 +1,31 @@
+{{ template "script_lib.sh" . }}
+
+# Compile the repo's Swift CLIs from .chezmoiassets into ~/.local/bin.
+# run_onchange: this rendered script embeds each source below (via include), so
+# chezmoi recompiles whenever any source changes. Skips cleanly when swiftc is
+# absent (e.g. a bare machine before Xcode Command Line Tools are installed;
+# ordered after the Xcode step so the toolchain is present on a normal apply).
+have swiftc || { warn "build-swift-clis: swiftc not found; skipping (install Xcode Command Line Tools)"; exit 0; }
+
+bindir="${HOME}/.local/bin"
+mkdir -p "$bindir"
+
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+
+build() {
+    swiftc -O "${tmp}/$1.swift" -o "${bindir}/$1"
+    chmod 0755 "${bindir}/$1"
+    log "build-swift-clis: compiled ${bindir}/$1"
+}
+
+cat >"${tmp}/mic.swift" <<'SWIFT_SOURCE'
+{{ include ".chezmoiassets/mic.swift" }}
+SWIFT_SOURCE
+
+cat >"${tmp}/media.swift" <<'SWIFT_SOURCE'
+{{ include ".chezmoiassets/media.swift" }}
+SWIFT_SOURCE
+
+build mic
+build media

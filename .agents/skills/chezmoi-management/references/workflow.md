@@ -136,10 +136,14 @@ run_once_before_00-homebrew.sh.tmpl
 run_once_before_05-core-tools.sh.tmpl
 run_onchange_after_10-brew-bundle.sh.tmpl
 run_onchange_after_10-zinit-compat.sh.tmpl
+run_onchange_after_12-gh-extensions.sh.tmpl
 run_onchange_after_15-xcode.sh.tmpl
 run_onchange_after_20-mise-install.sh.tmpl
 run_onchange_after_25-hammerspoon.sh.tmpl
 run_onchange_after_30-macos-defaults.sh.tmpl
+run_onchange_after_35-agent-core-skills.sh.tmpl
+run_onchange_after_36-agent-plugins.sh.tmpl
+run_onchange_after_40-build-mic.sh.tmpl
 run_onchange_after_90-verify.sh.tmpl
 ```
 
@@ -163,6 +167,48 @@ Use sparingly. Both clear ALL script history, not just one script.
 ## Path Translation
 
 Always invoke `chezmoi source-path` / `target-path` / `managed`. Full grammar and edge cases in `source-target-translation.md`.
+
+## Working From a Git Worktree
+
+The default source is pinned by `sourceDir` in `~/.config/chezmoi/chezmoi.toml` (the dotfiles checkout, e.g. `~/dotfiles`); `.chezmoiroot` resolves the effective source to `<checkout>/home`. Confirm any time with `chezmoi source-path` (no args) — it should print `<checkout>/home`, never a worktree.
+
+To iterate on managed files inside a git worktree WITHOUT disturbing the global config, override the source **per command** with `-S <worktree>/home` (the resolved `home/` subdir, i.e. post-`.chezmoiroot`):
+
+```text
+WT="$HOME/code/worktrees/dotfiles/<branch>/home"
+
+chezmoi -S "$WT" source-path <target>                # confirm -S resolves INTO the worktree
+chezmoi -S "$WT" diff <target>                       # worktree source -> live
+chezmoi -S "$WT" apply --dry-run --verbose <target>  # structural preview
+chezmoi -S "$WT" apply <target>                      # deploy the worktree's version to test it live
+chezmoi -S "$WT" re-add <target>                     # capture a live edit back onto the worktree BRANCH
+```
+
+`-S` / `--source` is transient: a per-invocation override that writes nothing to disk and persists nothing. `chezmoi init <path>` and the config `sourceDir` DO persist — never point either at a worktree.
+
+### MUST reset when done
+
+Because `-S` leaves no persistent state, the "reset" is mostly verification — but the LIVE target may now reflect the worktree branch. Before walking away:
+
+```text
+# 1. Default source is still the canonical checkout, not a worktree:
+chezmoi source-path                  # expect <checkout>/home
+
+# 2. How live diverges from the DEFAULT source (no -S):
+chezmoi diff
+
+# 3. Either LAND the work so the default source has it (merge the worktree
+#    branch, or re-add from the main checkout once it is on that branch), OR
+#    DISCARD it — then converge live to the default source:
+chezmoi apply
+
+# 4. Confirm convergence:
+chezmoi verify                       # exit 0 = live matches default source
+```
+
+If `chezmoi source-path` ever prints a worktree path, the override got persisted (someone ran `chezmoi init` against it or edited `sourceDir`). Restore `sourceDir` to the canonical checkout in `~/.config/chezmoi/chezmoi.toml` (or re-run `chezmoi init <checkout>`), then re-check step 1.
+
+> Motivating gotcha: live or GUI edits made while developing in a worktree do NOT reach dotfiles unless you `chezmoi -S <worktree>/home re-add <target>`. A plain `re-add` targets whatever branch the MAIN checkout currently has out — usually not your feature branch — so the capture silently lands on the wrong branch.
 
 ## Conflict Handling on Apply
 

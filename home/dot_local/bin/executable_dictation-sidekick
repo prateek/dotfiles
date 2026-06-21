@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# dictation-sidekick — manage the default mic around a Ghost Pepper dictation
+# toggle, wired to the 8BitDo dictation button (Karabiner) next to F19.
+#
+# The button is a toggle, so this runs on every press and alternates:
+#   START press — if the default input is muted, unmute it, remember which
+#                 device we opened, and notify. If it was already live, do
+#                 nothing (so we never re-mute a mic you had on yourself).
+#   STOP press  — re-mute the device we opened.
+#
+# Media auto-resume is intentionally NOT done here yet: resuming only what *we*
+# caused to pause requires reading the now-playing state, and MediaRemote's read
+# API is restricted on macOS 15.4+. Once that's confirmed workable (see the
+# `media` CLI's `is-playing` probe), a guarded resume can be added to the STOP
+# branch — never a blind toggle.
+set -uo pipefail
+
+bindir="$(cd "$(dirname "$0")" && pwd)"
+mic="$bindir/mic"
+[ -x "$mic" ] || exit 0
+
+state_dir="${XDG_STATE_HOME:-$HOME/.local/state}"
+flag="$state_dir/dictation-sidekick.armed"
+
+if [ -f "$flag" ]; then
+    # STOP: restore the device we opened back to muted.
+    dev="$(<"$flag")"
+    rm -f "$flag"
+    if [ -n "$dev" ]; then
+        "$mic" -d "$dev" mute >/dev/null 2>&1 || true
+    else
+        "$mic" mute >/dev/null 2>&1 || true
+    fi
+    exit 0
+fi
+
+# START: unmute only if the current default input is muted. `mic status` prints
+# tab-separated rows `<state>\t<*|->\t<device>`; column 2 marks the default `*`.
+opened="$("$mic" status 2>/dev/null | awk -F'\t' '$2 == "*" && $1 == "muted" { print $3; exit }')"
+[ -n "$opened" ] || exit 0
+
+# Arm before opening: record the device first so a failed unmute can disarm,
+# rather than leaving the mic open with nothing to re-mute it. The unmute acts
+# on the default input (the device awk just matched).
+mkdir -p "$state_dir"
+printf '%s' "$opened" >"$flag" || exit 0
+"$mic" unmute >/dev/null 2>&1 || { rm -f "$flag"; exit 0; }
+/usr/bin/osascript -e 'display notification "Mic was muted — unmuted for dictation" with title "Ghost Pepper"' >/dev/null 2>&1 || true

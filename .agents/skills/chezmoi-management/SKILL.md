@@ -33,6 +33,7 @@ Should trigger:
 - `Capture the Moom plist into home/.chezmoitemplates/.`
 - `Toggle DOTFILES_INSTALL_MAS_APPS for this run.`
 - `What is the source path for ~/.config/karabiner/karabiner.json?`
+- `Test a chezmoi change from a git worktree, then reset to the default source.`
 
 Should not trigger by itself:
 
