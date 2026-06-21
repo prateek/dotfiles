@@ -679,6 +679,19 @@ audit_probe_helpers() {
     audit_fail ghc_usage "rc=$rc stderr=$(tr '\n' ' ' <"$err_file")"
   fi
 
+  : >| "$err_file"
+  : >| "$out_file"
+
+  set +e
+  ohc >"$out_file" 2>"$err_file"
+  rc=$?
+  set -e
+  if [[ "$rc" -eq 2 && "$(<"$err_file")" == *"usage: ohc"* ]]; then
+    audit_pass ohc_usage "rc=$rc"
+  else
+    audit_fail ohc_usage "rc=$rc stderr=$(tr '\n' ' ' <"$err_file")"
+  fi
+
   local candidate candidate_bin candidate_help gs_bin
   gs_bin=''
   for candidate in gs git-spice; do

@@ -1,0 +1,104 @@
+#!/usr/bin/env zsh
+# `ohc`: Orca GitHub checkout -- clone with `ghc`, register in Orca, create a worktree.
+# usage: `$ ohc <github-user>/<github-repo> [orca worktree create options]`
+
+function ohc() {
+  setopt localoptions pipefail no_aliases 2> /dev/null
+
+  _ohc_usage() {
+    local stream="${1:-2}"
+    print -u "$stream" -r -- "usage: ohc <owner>/<repo>  (or [https://]github.com/<owner>/<repo>) [worktree options]"
+    print -u "$stream" -r -- "try: ohc --help"
+  }
+
+  _ohc_help() {
+    print -r -- "usage: ohc <owner>/<repo>  (or [https://]github.com/<owner>/<repo>) [worktree options]"
+    print -r -- ""
+    print -r -- "Clone or update a GitHub repo with ghc, add it to Orca, and create an Orca worktree."
+    print -r -- ""
+    print -r -- "ohc options:"
+    print -r -- "  -h, --help                  Show this help message"
+    print -r -- ""
+    print -r -- "Supported Orca worktree options:"
+    print -r -- "  --name <name>               Worktree name; defaults to the repo directory name"
+    print -r -- "  --agent <id>                Launch a known TUI agent in the first terminal"
+    print -r -- "  --prompt <text>             Prompt text for an agent-backed worktree"
+    print -r -- "  --setup run|skip|inherit    Setup policy for repo-defined setup hooks"
+    print -r -- "  --base-branch <ref>         Base branch/ref to create the worktree from"
+    print -r -- "  --issue <number|null>       Linked GitHub issue number"
+    print -r -- "  --linear-issue <id|url|null> Linked Linear issue identifier or URL"
+    print -r -- "  --comment <text>            Comment stored in Orca metadata"
+    print -r -- "  --parent-worktree <selector> Parent selector for related work"
+    print -r -- "  --no-parent                 Force no Orca parent lineage"
+    print -r -- "  --run-hooks                 Legacy alias for --setup run"
+    print -r -- "  --activate                  Reveal the new worktree in Orca"
+    print -r -- ""
+    print -r -- "ohc owns the Orca repo selector. Do not pass --repo, --project, --host, or --project-host-setup."
+    print -r -- "ohc emits Orca JSON output. Run 'orca worktree create --help' for Orca's authoritative help."
+  }
+
+  if [[ $# -lt 1 ]]; then
+    _ohc_usage 2
+    return 2
+  fi
+
+  if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    _ohc_help
+    return 0
+  fi
+
+  if ! command -v orca >/dev/null 2>&1; then
+    echo "ohc: orca CLI not found on PATH" >&2
+    return 127
+  fi
+
+  autoload -Uz ghc 2>/dev/null || true
+  if ! whence -w ghc >/dev/null 2>&1; then
+    echo "ohc: ghc helper is not available" >&2
+    return 127
+  fi
+
+  local repo_spec="$1"
+  shift
+
+  local arg
+  for arg in "$@"; do
+    case "$arg" in
+      --repo|--repo=*|--project|--project=*|--host|--host=*|--project-host-setup|--project-host-setup=*)
+        echo "ohc: $arg is managed by ohc; pass the GitHub repo as the first argument" >&2
+        return 2
+        ;;
+    esac
+  done
+
+  ghc "$repo_spec" || return $?
+
+  local repo_path="${PWD:A}"
+  local default_name="${repo_path:t}"
+
+  if ! orca status --json >/dev/null 2>&1; then
+    orca open --json >/dev/null || return $?
+    orca status --json >/dev/null || return $?
+  fi
+
+  orca repo add --path "$repo_path" --json >/dev/null || return $?
+
+  local has_name=0
+  for arg in "$@"; do
+    if [[ "$arg" == "--name" || "$arg" == --name=* ]]; then
+      has_name=1
+      break
+    fi
+  done
+
+  local -a create_args
+  create_args=(worktree create --repo "path:$repo_path")
+  if (( ! has_name )); then
+    create_args+=(--name "$default_name")
+  fi
+  create_args+=("$@" --json)
+
+  orca "${create_args[@]}"
+}
+
+ohc "$@"

@@ -68,7 +68,7 @@ test-docs-lifecycle:
 test-gemini-meeting-sync:
 	@zsh ./tests/gemini-meeting-sync.zsh
 
-## E2E tests for ghc URL handling.
+## E2E tests for ghc/ohc URL handling.
 test-ghc:
 	@zsh ./tests/ghc-url.zsh
 

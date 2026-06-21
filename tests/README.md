@@ -6,7 +6,7 @@ Run docs lifecycle checks:
 make test-docs-lifecycle
 ```
 
-Run `ghc` URL handling tests:
+Run `ghc`/`ohc` URL handling tests:
 
 ```sh
 make test-ghc
