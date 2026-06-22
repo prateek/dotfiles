@@ -1,7 +1,7 @@
 {{ template "script_lib.sh" . }}
 
-# Raycast Orca extension package sha256: {{ include "dot_config/raycast/extensions/orca-worktree/package.json" | sha256sum }}
-# Raycast Orca extension lockfile sha256: {{ include "dot_config/raycast/extensions/orca-worktree/package-lock.json" | sha256sum }}
+# Raycast Orca extension package sha256: {{ include "dot_local/share/raycast-extensions/orca-worktree/package.json" | sha256sum }}
+# Raycast Orca extension lockfile sha256: {{ include "dot_local/share/raycast-extensions/orca-worktree/package-lock.json" | sha256sum }}
 
 {{- if and .run_install_scripts (eq (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "raycast")) "true") }}
 if ! have npm; then
@@ -9,17 +9,21 @@ if ! have npm; then
   exit 0
 fi
 
-extension_dir="$HOME/.config/raycast/extensions/orca-worktree"
+extension_dir="$HOME/.local/share/raycast-extensions/orca-worktree"
 if [ ! -f "$extension_dir/package-lock.json" ]; then
   warn "Raycast Orca extension lockfile missing: $extension_dir/package-lock.json"
   exit 0
 fi
 
 if run_timed "raycast orca-worktree npm ci" npm ci --omit=dev --prefix "$extension_dir"; then
-  (
-    cd "$extension_dir" || exit 1
-    run_timed "raycast orca-worktree ray build" npm exec -- ray build --non-interactive
-  ) || warn "Raycast Orca extension build failed; retry with: cd $extension_dir && npm exec -- ray build --non-interactive"
+  if (cd "$extension_dir" && run_timed "raycast orca-worktree ray build" npm exec -- ray build --non-interactive); then
+    # Building leaves a runnable bundle in place, but Raycast only loads a
+    # development extension after a one-time import. chezmoi cannot do that
+    # import (it writes to Raycast's own store), so register it once per machine.
+    log "Raycast Orca extension built. First-time setup: register it with Raycast by running 'cd $extension_dir && npm run dev' once, then stop it with Ctrl-C. The 'Create Orca Worktree' command then stays available."
+  else
+    warn "Raycast Orca extension build failed; retry with: cd $extension_dir && npm exec -- ray build --non-interactive"
+  fi
 else
   warn "Raycast Orca extension dependency install failed; retry with: npm ci --omit=dev --prefix $extension_dir"
 fi

@@ -9,7 +9,7 @@ import {
   parseOrcaJson,
   resultMarkdown,
   summarizeResult,
-} from "../src/orca.js";
+} from "../src/orca.mjs";
 
 test("parseGitHubRepo accepts owner/repo", () => {
   assert.deepEqual(parseGitHubRepo("stablyai/orca"), { ok: true, slug: "stablyai/orca" });

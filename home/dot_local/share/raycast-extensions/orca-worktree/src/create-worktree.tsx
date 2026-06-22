@@ -23,7 +23,7 @@ import {
   resultMarkdown,
   summarizeResult,
   execCli,
-} from "./orca.js";
+} from "./orca.mjs";
 
 type FormValues = {
   repo: string;
@@ -41,6 +41,20 @@ type FormValues = {
   focusOrca: boolean;
 };
 
+// Defaults applied to the advanced knobs so that hiding them keeps the same
+// behavior as leaving the fields untouched. Values from rendered fields win.
+const ADVANCED_DEFAULTS = {
+  setup: "inherit",
+  baseBranch: "",
+  issue: "",
+  linearIssue: "",
+  comment: "",
+  parentWorktree: "",
+  noParent: false,
+  runHooks: false,
+  focusOrca: true,
+} as const;
+
 type ResultSummary = ReturnType<typeof summarizeResult>;
 
 export default function CreateWorktreeCommand() {
@@ -50,6 +64,7 @@ export default function CreateWorktreeCommand() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [repoError, setRepoError] = useState<string>();
   const [nameError, setNameError] = useState<string>();
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   useEffect(() => {
     loadAgentIds()
@@ -76,6 +91,10 @@ export default function CreateWorktreeCommand() {
       return;
     }
 
+    // Advanced fields are unmounted when hidden, so they are absent from
+    // `values`; fall back to the defaults to preserve behavior.
+    const merged = { ...ADVANCED_DEFAULTS, ...values };
+
     setIsSubmitting(true);
     const toast = await showToast({
       style: Toast.Style.Animated,
@@ -85,13 +104,13 @@ export default function CreateWorktreeCommand() {
 
     try {
       const helperPath = await resolveOhcHelperPath();
-      const stdout = await execCli("zsh", [helperPath, ...buildOhcArgs(values, repo.slug)], {
+      const stdout = await execCli("zsh", [helperPath, ...buildOhcArgs(merged, repo.slug)], {
         timeout: 1000 * 60 * 20,
       });
       const response = parseOrcaJson(stdout);
       const summary = summarizeResult(response);
 
-      if (values.focusOrca) {
+      if (merged.focusOrca) {
         await focusOrca(summary);
       }
 
@@ -159,20 +178,25 @@ export default function CreateWorktreeCommand() {
         placeholder="Ask the agent what to do in the new worktree"
         info="Drafts are preserved if you leave Raycast before submitting."
       />
-      <Form.Separator />
-      <Form.Dropdown id="setup" title="Setup Hooks" defaultValue="inherit">
-        <Form.Dropdown.Item value="inherit" title="Repo default" />
-        <Form.Dropdown.Item value="run" title="Run" />
-        <Form.Dropdown.Item value="skip" title="Skip" />
-      </Form.Dropdown>
-      <Form.TextField id="baseBranch" title="Base Branch" placeholder="origin/main" />
-      <Form.TextField id="issue" title="GitHub Issue" placeholder="123" />
-      <Form.TextField id="linearIssue" title="Linear Issue" placeholder="STA-335 or URL" />
-      <Form.TextField id="comment" title="Comment" placeholder="Short Orca worktree note" />
-      <Form.TextField id="parentWorktree" title="Parent" placeholder="active, current, id:..., branch:..." />
-      <Form.Checkbox id="noParent" label="Create as an independent worktree" defaultValue={false} />
-      <Form.Checkbox id="runHooks" label="Run setup hooks now" defaultValue={false} />
-      <Form.Checkbox id="focusOrca" label="Open and focus Orca after creation" defaultValue={true} />
+      <Form.Checkbox id="showAdvanced" label="Show advanced options" value={showAdvanced} onChange={setShowAdvanced} />
+      {showAdvanced ? (
+        <>
+          <Form.Separator />
+          <Form.Dropdown id="setup" title="Setup Hooks" defaultValue="inherit">
+            <Form.Dropdown.Item value="inherit" title="Repo default" />
+            <Form.Dropdown.Item value="run" title="Run" />
+            <Form.Dropdown.Item value="skip" title="Skip" />
+          </Form.Dropdown>
+          <Form.TextField id="baseBranch" title="Base Branch" placeholder="origin/main" />
+          <Form.TextField id="issue" title="GitHub Issue" placeholder="123" />
+          <Form.TextField id="linearIssue" title="Linear Issue" placeholder="STA-335 or URL" />
+          <Form.TextField id="comment" title="Comment" placeholder="Short Orca worktree note" />
+          <Form.TextField id="parentWorktree" title="Parent" placeholder="active, current, id:..., branch:..." />
+          <Form.Checkbox id="noParent" label="Create as an independent worktree" defaultValue={false} />
+          <Form.Checkbox id="runHooks" label="Run setup hooks now" defaultValue={false} />
+          <Form.Checkbox id="focusOrca" label="Open and focus Orca after creation" defaultValue={true} />
+        </>
+      ) : null}
     </Form>
   );
 }

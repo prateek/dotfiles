@@ -74,7 +74,7 @@ test-ghc:
 
 ## Unit tests for the Raycast Orca worktree extension core.
 test-raycast-orca-worktree:
-	@npm test --prefix ./home/dot_config/raycast/extensions/orca-worktree
+	@npm test --prefix ./home/dot_local/share/raycast-extensions/orca-worktree
 
 ## Regression tests for mise runtime install script ordering.
 test-mise-install-script:

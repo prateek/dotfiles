@@ -40,12 +40,12 @@ Library/Preferences/com.hegenberg.BetterTouchTool.plist
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "raycast")) "true" }}
 Library/Preferences/com.raycast.macos.plist
 .config/raycast/scripts/temp-admin.sh
-.config/raycast/extensions
+.local/share/raycast-extensions
 {{- end }}
 {{/* Raycast extension dependencies are installed by run_onchange_after_21-raycast-extensions.sh.tmpl. */}}
-.config/raycast/extensions/*/node_modules
+.local/share/raycast-extensions/*/node_modules
 {{/* Raycast builds root-level command bundles from src/*.tsx. */}}
-.config/raycast/extensions/*/*.js
+.local/share/raycast-extensions/*/*.js
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "tailscale-app")) "true" }}
 Library/Preferences/io.tailscale.ipn.macsys.plist
 {{- end }}

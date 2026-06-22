@@ -2,7 +2,6 @@
   "name": "orca-worktree",
   "title": "Orca Worktree",
   "description": "Create Orca worktrees from GitHub repositories.",
-  "type": "module",
   "icon": "orca.png",
   "author": "prateek",
   "platforms": [

@@ -79,7 +79,7 @@ expect_managed ".hammerspoon" "$full_managed"
 expect_managed "Library/Preferences/com.hegenberg.BetterTouchTool.plist" "$full_managed"
 expect_managed "Library/Preferences/com.raycast.macos.plist" "$full_managed"
 expect_managed ".config/raycast/scripts/temp-admin.sh" "$full_managed"
-expect_managed ".config/raycast/extensions/orca-worktree/package.json" "$full_managed"
+expect_managed ".local/share/raycast-extensions/orca-worktree/package.json" "$full_managed"
 expect_managed "Library/Preferences/io.tailscale.ipn.macsys.plist" "$full_managed"
 expect_managed "Library/Preferences/com.setapp.DesktopClient.plist" "$full_managed"
 expect_managed "Library/Preferences/pro.betterdisplay.BetterDisplay.plist" "$full_managed"
@@ -99,7 +99,7 @@ expect_unmanaged ".hammerspoon" "$core_managed"
 expect_managed "Library/Preferences/com.hegenberg.BetterTouchTool.plist" "$core_managed"
 expect_managed "Library/Preferences/com.raycast.macos.plist" "$core_managed"
 expect_managed ".config/raycast/scripts/temp-admin.sh" "$core_managed"
-expect_managed ".config/raycast/extensions/orca-worktree/package.json" "$core_managed"
+expect_managed ".local/share/raycast-extensions/orca-worktree/package.json" "$core_managed"
 expect_managed "Library/Preferences/io.tailscale.ipn.macsys.plist" "$core_managed"
 expect_managed "Library/Preferences/com.setapp.DesktopClient.plist" "$core_managed"
 expect_unmanaged "Library/Preferences/pro.betterdisplay.BetterDisplay.plist" "$core_managed"
@@ -137,7 +137,7 @@ grep -Fx -- "Library/Preferences/com.raycast.macos.plist" "$minimal_ignored" >/d
   die "expected Raycast to be ignored when profile has no raycast cask"
 grep -Fx -- ".config/raycast/scripts/temp-admin.sh" "$minimal_ignored" >/dev/null ||
   die "expected Raycast temp-admin script to be ignored when profile has no raycast cask"
-grep -Fx -- ".config/raycast/extensions" "$minimal_ignored" >/dev/null ||
+grep -Fx -- ".local/share/raycast-extensions" "$minimal_ignored" >/dev/null ||
   die "expected Raycast extensions to be ignored when profile has no raycast cask"
 grep -Fx -- "Library/Preferences/io.tailscale.ipn.macsys.plist" "$minimal_ignored" >/dev/null ||
   die "expected Tailscale to be ignored when profile has no tailscale-app cask"
