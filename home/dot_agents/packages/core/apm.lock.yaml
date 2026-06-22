@@ -18,6 +18,15 @@ dependencies:
   deployed_files:
   - .agents/skills/writing-clearly-and-concisely
   content_hash: sha256:3733ecc19e57f3e748ef62c4224ac902298e12bbf17b9f52a85960a2dd69445e
+- repo_url: forjd/better-writing
+  host: github.com
+  resolved_commit: 061fe778e8855c4d5c019889e3a6014a4b027adf
+  virtual_path: skills/better-writing
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/better-writing
+  content_hash: sha256:62e2d5ced566dfa76e7b85adda85682763600fc69c398efd777dde7d8054e56e
 - repo_url: wiseiodev/skills
   host: github.com
   resolved_commit: cc5319edc5c213be85aac5217bb035f13503a048

@@ -6,5 +6,6 @@ targets:
 dependencies:
   apm:
     - 199-biotechnologies/claude-deep-research-skill
+    - forjd/better-writing/skills/better-writing
     - wiseiodev/skills/code-principles
     - aiskillstore/marketplace/skills/cygnusfear/writing-clearly-and-concisely
