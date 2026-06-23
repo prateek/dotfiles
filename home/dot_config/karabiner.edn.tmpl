@@ -32,10 +32,11 @@
 ;;
 ;;           └──── D-PAD ────┘        └──── FACE ────┘
 ;;
-;; Two layers. The base layer is the unconditional default; the mouse layer is an overlay
-;; gated on pad_mouse_mode and listed FIRST, so it wins by order when the toggle is on and
-;; otherwise falls through to base. Held rotated, the face diamond reads A=up, B=right,
-;; Y=down, X=left:
+;; Overlays in priority order — Karabiner takes the first matching manipulator. The mouse
+;; overlay (gated on pad_mouse_mode) is listed FIRST so it wins when the toggle is on. Next
+;; come the per-app overlays (each gated on a frontmost app), so their bumper remaps beat the
+;; base layer but still yield to mouse mode. The base layer is the unconditional default and
+;; falls through last. Held rotated, the face diamond reads A=up, B=right, Y=down, X=left:
 ;;
 ;;   key        base layer (default)          mouse layer (toggle on)
 ;;   ─────────  ───────────────────────────   ────────────────────────
@@ -51,9 +52,20 @@
 ;;   k  L       —                              right click (button2)
 ;;   n  Select  —                              —
 ;;   o  Start   toggle on (🖱 notification)    toggle off
+;;
+;; Per-app overlays (frontmost app, mouse toggle off) remap just the two bumpers, keeping R =
+;; "previous" and L = "next" (R sits above L when held):
+;;
+;;   app   R bumper (m)            L bumper (k)
+;;   ────  ─────────────────────   ─────────────────
+;;   Orca  ⌘⇧↑ previous worktree   ⌘⇧↓ next worktree
+;;   Arc   ⌘⇧[ previous tab        ⌘⇧] next tab
 
 {:devices {:zero2    [{:vendor_id 11720 :product_id 36888}]
            :internal [{:is_built_in_keyboard true}]}
+
+ :applications {:orca ["^com\\.stablyai\\.orca$"]
+                :arc  ["^company\\.thebrowser\\.Browser$"]}
 
  :main
  [{:des "8BitDo: Start toggles the mouse layer (with notification)"
@@ -73,6 +85,16 @@
            [:h {:mkey {:x -1536}}]
            [:m {:pkey :button1}]
            [:k {:pkey :button2}]]}
+
+  {:des "8BitDo Orca overlay (base layer, Orca frontmost): bumpers navigate worktrees"
+   :rules [[:condi :zero2 :orca]
+           [:m {:key :up_arrow   :modi [:left_command :left_shift]}]
+           [:k {:key :down_arrow :modi [:left_command :left_shift]}]]}
+
+  {:des "8BitDo Arc overlay (base layer, Arc frontmost): bumpers switch tabs"
+   :rules [[:condi :zero2 :arc]
+           [:m {:key :open_bracket  :modi [:left_command :left_shift]}]
+           [:k {:key :close_bracket :modi [:left_command :left_shift]}]]}
 
   {:des "8BitDo base layer (default): d-pad arrows, A dictation, X bksp, B enter, Y esc"
    :rules [[:condi :zero2]
