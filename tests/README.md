@@ -48,6 +48,7 @@ Run focused repo regression tests without booting a VM:
 ```sh
 make test-tart-install-helper
 make test-render-brewfile
+make test-zsh-prompt-host
 make test-mise-install-script
 make test-gh-extensions-script
 make test-xcode-install-script

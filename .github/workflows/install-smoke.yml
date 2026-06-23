@@ -70,6 +70,7 @@ jobs:
           make test-gh-extensions-script
           make test-selected-app-plists
           make test-zed-settings
+          make test-zsh-prompt-host
           make test-moom-plist
           make test-plist-hooks
           make test-trace-perfetto

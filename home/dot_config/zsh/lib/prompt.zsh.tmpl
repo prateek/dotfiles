@@ -1,0 +1,24 @@
+#!/usr/bin/env zsh
+# vim:syntax=zsh
+# vim:filetype=zsh
+
+
+export PURE_PROMPT_SYMBOL="λ"
+export PURE_PROMPT_VICMD_SYMBOL="Λ"
+
+# Add a dim hostname prefix (Pure only shows the host over SSH/container/root),
+# colored per chezmoi machine type. Use zstyle, not prompt_pure_colors[]: Pure
+# rebuilds its color map from zstyle every precmd and clobbers direct writes.
+{{- $green := "108" -}}
+{{- $blue  := "109" -}}
+{{- $rose  := "167" -}}
+{{- $grey  := "242" -}}
+{{- $prefixColor := get (dict "personal" $green "homelab" $blue "work" $rose) .machine_type | default $grey }}
+zstyle ':prompt:pure:custom:prefix' color {{ $prefixColor }}
+
+# psvar[22] is Pure's custom-prefix slot; psvar[13] its user@host flag (set on
+# SSH/container/root, where Pure already shows the host).
+prompt_pure_precustom() {
+    (( psvar[13] )) && return
+    psvar[22]=${(%):-%m}
+}
