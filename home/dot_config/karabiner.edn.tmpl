@@ -2,11 +2,24 @@
 ;; ~/.config/karabiner/karabiner.json by `goku` at `chezmoi apply` time
 ;; (see run_onchange_after_45-karabiner-goku). Edit THIS file, never the JSON.
 ;;
-;; 8BitDo Zero 2 (keyboard mode, held rotated 90° left): a sticky "mouse mode"
-;; toggled by Start. The pad emits letter keycodes; :zero2 scopes every rule to
-;; it. The only templated value is the dictation-sidekick path.
+;; NOTE to future agents: don't guess goku or Karabiner syntax/behavior from memory — use
+;; the `ask` skill against the real sources. `ask src github:yqrashawn/GokuRakuJoudo@master`
+;; for goku internals (e.g. :condi in-rule conditions, simlayers, :set/:noti/:mkey to-event
+;; shortcuts — features the tutorial omits), and the Karabiner docs at
+;; karabiner-elements.pqrs.org for manipulator semantics like mouse_key wheel signs. When in
+;; doubt, compile with `goku --dry-run-all` and diff the JSON before/after.
 ;;
-;; Physical button -> emitted keycode (per-button actions are in each :des below):
+;; 8BitDo Zero 2 (keyboard mode), held rotated 90° left so the A button points up.
+;; Start toggles a sticky mouse layer (press once to enter — shows a "🖱 Mouse mode"
+;; notification — press again to exit). The pad emits letter keycodes; the only templated
+;; value is the dictation path.
+;;
+;; Each :rules block opens with a [:condi …] marker — a Goku in-rule condition that gets
+;; merged into every following rule in that block (and reset at the block's end). So the
+;; device scope (:zero2) and the layer gate (:pad_mouse_mode) are stated once per block
+;; instead of on every rule.
+;;
+;; Buttons -> emitted keycode (controller's native orientation; rotate 90° left to hold):
 ;;
 ;;     [L] k                                       m [R]
 ;;     ─────────────────────────────────────────────────
@@ -18,39 +31,62 @@
 ;;                  (n) Select   (o) Start
 ;;
 ;;           └──── D-PAD ────┘        └──── FACE ────┘
+;;
+;; Two layers. The base layer is the unconditional default; the mouse layer is an overlay
+;; gated on pad_mouse_mode and listed FIRST, so it wins by order when the toggle is on and
+;; otherwise falls through to base. Held rotated, the face diamond reads A=up, B=right,
+;; Y=down, X=left:
+;;
+;;   key        base layer (default)          mouse layer (toggle on)
+;;   ─────────  ───────────────────────────   ────────────────────────
+;;   f  D-up    ↑ arrow                        scroll up
+;;   e  D-down  ↓ arrow                        scroll down
+;;   c  D-left  ← arrow                        scroll left
+;;   d  D-right → arrow                        scroll right
+;;   g  A       dictation (sidekick + F19)     move cursor up
+;;   j  B       return / enter                 move cursor right
+;;   i  Y       escape                         move cursor down
+;;   h  X       delete / backspace             move cursor left
+;;   m  R       —                              left click  (button1)
+;;   k  L       —                              right click (button2)
+;;   n  Select  —                              —
+;;   o  Start   toggle on (🖱 notification)    toggle off
 
 {:devices {:zero2    [{:vendor_id 11720 :product_id 36888}]
            :internal [{:is_built_in_keyboard true}]}
 
  :main
- [{:des "8BitDo: Start toggles mouse mode"
-   :rules [[:o [{:set ["pad_mouse_mode" 0]} {:noti {:id :pad_mouse_mode :text ""}}]              [:zero2 :pad_mouse_mode]]
-           [:o [{:set ["pad_mouse_mode" 1]} {:noti {:id :pad_mouse_mode :text "🖱 Mouse mode"}}] [:zero2 :!pad_mouse_mode]]]}
+ [{:des "8BitDo: Start toggles the mouse layer (with notification)"
+   :rules [[:condi :zero2]
+           [:o [{:set ["pad_mouse_mode" 0]} {:noti {:id :pad_mouse_mode :text ""}}]              :pad_mouse_mode]
+           [:o [{:set ["pad_mouse_mode" 1]} {:noti {:id :pad_mouse_mode :text "🖱 Mouse mode"}}] :!pad_mouse_mode]]}
 
-  {:des "8BitDo mouse mode: d-pad cursor, A/B click, X/Y no-op"
-   :rules [[:f {:mkey {:y -1536}} [:zero2 :pad_mouse_mode]]
-           [:e {:mkey {:y 1536}}  [:zero2 :pad_mouse_mode]]
-           [:c {:mkey {:x -1536}} [:zero2 :pad_mouse_mode]]
-           [:d {:mkey {:x 1536}}  [:zero2 :pad_mouse_mode]]
-           [:g {:pkey :button1}   [:zero2 :pad_mouse_mode]]
-           [:j {:pkey :button2}   [:zero2 :pad_mouse_mode]]
-           [:h :vk_none           [:zero2 :pad_mouse_mode]]
-           [:i :vk_none           [:zero2 :pad_mouse_mode]]]}
+  {:des "8BitDo mouse overlay (toggle on): d-pad scrolls, face moves cursor, R/L click"
+   :rules [[:condi :zero2 :pad_mouse_mode]
+           [:f {:mkey {:vwheel -40}}]
+           [:e {:mkey {:vwheel 40}}]
+           [:c {:mkey {:hwheel 40}}]
+           [:d {:mkey {:hwheel -40}}]
+           [:g {:mkey {:y -1536}}]
+           [:j {:mkey {:x 1536}}]
+           [:i {:mkey {:y 1536}}]
+           [:h {:mkey {:x -1536}}]
+           [:m {:pkey :button1}]
+           [:k {:pkey :button2}]]}
 
-  {:des "8BitDo normal mode: d-pad arrows, A dictation, X bksp, B enter, Y esc"
-   :rules [[:f :up_arrow    [:zero2 :!pad_mouse_mode]]
-           [:e :down_arrow  [:zero2 :!pad_mouse_mode]]
-           [:c :left_arrow  [:zero2 :!pad_mouse_mode]]
-           [:d :right_arrow [:zero2 :!pad_mouse_mode]]
-           [:g [{:shell "{{ .chezmoi.homeDir }}/.local/bin/dictation-sidekick"} :f19] [:zero2 :!pad_mouse_mode]]
-           [:h :delete_or_backspace [:zero2 :!pad_mouse_mode]]
-           [:j :return_or_enter     [:zero2 :!pad_mouse_mode]]
-           [:i :escape              [:zero2 :!pad_mouse_mode]]]}
-
-  {:des "8BitDo always-on: L/R scroll, Select no-op"
-   :rules [[:k {:mkey {:vwheel 40}}  [:zero2]]
-           [:m {:mkey {:vwheel -40}} [:zero2]]
-           [:n :vk_none              [:zero2]]]}
+  {:des "8BitDo base layer (default): d-pad arrows, A dictation, X bksp, B enter, Y esc"
+   :rules [[:condi :zero2]
+           [:f :up_arrow]
+           [:e :down_arrow]
+           [:c :left_arrow]
+           [:d :right_arrow]
+           [:g [{:shell "{{ .chezmoi.homeDir }}/.local/bin/dictation-sidekick"} :f19]]
+           [:j :return_or_enter]
+           [:i :escape]
+           [:h :delete_or_backspace]
+           [:m :vk_none]
+           [:k :vk_none]
+           [:n :vk_none]]}
 
   {:des "Apple internal: modifier remaps"
    :rules [[:##caps_lock    :left_control [:internal] {:alone :escape}]

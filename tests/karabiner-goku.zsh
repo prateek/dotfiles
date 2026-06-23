@@ -40,45 +40,66 @@ jq '[.profiles[] | select(.name == "Default").complex_modifications.rules[].mani
   "$work/out.json" > "$work/manips.json"
 
 count="$(jq 'length' "$work/manips.json")"
-[[ "$count" == 25 ]] || die "expected 25 manipulators, got $count"
+[[ "$count" == 27 ]] || die "expected 27 manipulators, got $count"
 
 assert() { jq -e "$1" "$work/manips.json" >/dev/null || die "missing behavior: $2"; }
 
-# Mouse-mode rules are gated on variable_if pad_mouse_mode and scoped to the pad.
-# Gating on the condition (not just the key) is what makes a normal/mouse mode swap fail
-# here, since the same physical keys exist in both modes.
-assert 'any(.[]; .from.key_code=="f" and .to[0].mouse_key.y==-1536
+# Mouse-overlay rules are gated on variable_if pad_mouse_mode and scoped to the pad, and
+# emitted before the base layer so they win by order while the toggle is on. Held rotated,
+# the face diamond reads A=up, B=right, Y=down, X=left; the d-pad scrolls; bumpers click.
+assert 'any(.[]; .from.key_code=="g" and .to[0].mouse_key.y==-1536
   and any(.conditions[]; .type=="variable_if" and .name=="pad_mouse_mode")
   and any(.conditions[]; .type=="device_if" and any(.identifiers[]; .vendor_id==11720 and .product_id==36888)))' \
-  "mouse mode: d-pad up moves cursor (gated on pad_mouse_mode, pad-scoped)"
-assert 'any(.[]; .from.key_code=="g" and .to[0].pointing_button=="button1"
+  "mouse overlay: A moves cursor up (gated on pad_mouse_mode, pad-scoped)"
+assert 'any(.[]; .from.key_code=="f" and .to[0].mouse_key.vertical_wheel==-40
   and any(.conditions[]; .type=="variable_if" and .name=="pad_mouse_mode"))' \
-  "mouse mode: A = left click (gated)"
-assert 'any(.[]; .from.key_code=="j" and .to[0].pointing_button=="button2"
+  "mouse overlay: d-pad up scrolls up (gated)"
+assert 'any(.[]; .from.key_code=="c" and .to[0].mouse_key.horizontal_wheel==40
   and any(.conditions[]; .type=="variable_if" and .name=="pad_mouse_mode"))' \
-  "mouse mode: B = right click (gated)"
+  "mouse overlay: d-pad left scrolls left (gated)"
+assert 'any(.[]; .from.key_code=="m" and .to[0].pointing_button=="button1"
+  and any(.conditions[]; .type=="variable_if" and .name=="pad_mouse_mode"))' \
+  "mouse overlay: R bumper = left click (gated)"
+assert 'any(.[]; .from.key_code=="k" and .to[0].pointing_button=="button2"
+  and any(.conditions[]; .type=="variable_if" and .name=="pad_mouse_mode"))' \
+  "mouse overlay: L bumper = right click (gated)"
 
-# The same physical keys map differently when mouse mode is OFF (variable_unless).
+# The base layer is the unconditional default: device-scoped only, with NO variable gate
+# (the overlay above shadows it when the toggle is on). Asserting the absence of a variable
+# condition pins the default-plus-overlay structure. The bumpers/select are inert here.
 assert 'any(.[]; .from.key_code=="f" and .to[0].key_code=="up_arrow"
-  and any(.conditions[]; .type=="variable_unless" and .name=="pad_mouse_mode"))' \
-  "normal mode: d-pad up = arrow (gated)"
+  and any(.conditions[]; .type=="device_if" and any(.identifiers[]; .vendor_id==11720 and .product_id==36888))
+  and (any(.conditions[]; .type | startswith("variable")) | not))' \
+  "base layer: d-pad up = arrow (pad-scoped, no variable gate)"
 assert 'any(.[]; .from.key_code=="i" and .to[0].key_code=="escape"
-  and any(.conditions[]; .type=="variable_unless" and .name=="pad_mouse_mode"))' \
-  "normal mode: Y = escape (gated)"
+  and (any(.conditions[]; .type | startswith("variable")) | not))' \
+  "base layer: Y = escape (no variable gate)"
+assert 'any(.[]; .from.key_code=="m" and .to[0].key_code=="vk_none"
+  and (any(.conditions[]; .type | startswith("variable")) | not))' \
+  "base layer: R bumper inert (no scroll)"
+assert 'any(.[]; .from.key_code=="n" and .to[0].key_code=="vk_none")' \
+  "base layer: Select inert"
 
-# Sticky toggle on Start: enter sets pad_mouse_mode=1 + shows the indicator; exit sets 0.
-# Checking the set values catches an inverted toggle.
-assert 'any(.[]; .from.key_code=="o" and any(.conditions[]; .type=="variable_unless")
+# Ordering is load-bearing: the mouse overlay must be emitted before the base layer so its
+# gated rules win while the toggle is on. If a reorder shadowed the overlay (base's
+# device-only f -> up_arrow ahead of the gated f -> scroll), the overlay would be dead.
+assert '([.[] | (.from.key_code=="f" and .to[0].mouse_key.vertical_wheel==-40)] | index(true)) as $o
+  | ([.[] | (.from.key_code=="f" and .to[0].key_code=="up_arrow")] | index(true)) as $b
+  | ($o != null and $b != null and $o < $b)' \
+  "ordering: mouse overlay precedes base layer (overlay wins by rule order)"
+
+# Sticky toggle on Start: enter sets pad_mouse_mode=1 and shows the indicator; exit sets 0
+# and clears it. Checking the set values + notification catches an inverted or silent toggle.
+assert 'any(.[]; .from.key_code=="o" and any(.conditions[]; .type=="variable_unless" and .name=="pad_mouse_mode")
   and any(.to[]; .set_variable.name=="pad_mouse_mode" and .set_variable.value==1)
-  and any(.to[]; .set_notification_message != null and .set_notification_message.text != ""))' \
-  "Start enters mouse mode (set 1 + indicator)"
-assert 'any(.[]; .from.key_code=="o" and any(.conditions[]; .type=="variable_if")
-  and any(.to[]; .set_variable.name=="pad_mouse_mode" and .set_variable.value==0))' \
-  "Start exits mouse mode (set 0)"
+  and any(.to[]; .set_notification_message.id=="pad_mouse_mode" and .set_notification_message.text != ""))' \
+  "Start enters mouse mode (set 1 + notification)"
+assert 'any(.[]; .from.key_code=="o" and any(.conditions[]; .type=="variable_if" and .name=="pad_mouse_mode")
+  and any(.to[]; .set_variable.name=="pad_mouse_mode" and .set_variable.value==0)
+  and any(.to[]; .set_notification_message.id=="pad_mouse_mode" and .set_notification_message.text==""))' \
+  "Start exits mouse mode (set 0 + clears notification)"
 
-# Always-on + Apple rules.
-assert 'any(.[]; .from.key_code=="k" and .to[0].mouse_key.vertical_wheel==40)' \
-  "L bumper scrolls"
+# Apple rules.
 assert 'any(.[]; .from.key_code=="left_control" and .parameters."basic.to_if_alone_timeout_milliseconds"==200)' \
   "Apple Meh/F19 tap timeout preserved"
 assert 'any(.[]; .from.key_code=="caps_lock" and .to_if_alone[0].key_code=="escape"

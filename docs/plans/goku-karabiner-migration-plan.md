@@ -2,7 +2,7 @@
 status: active
 doc_type: plan
 created: 2026-06-21
-updated: 2026-06-21
+updated: 2026-06-22
 owner: Prateek
 related:
   - ../adr/0009-goku-karabiner-codegen.md
@@ -33,6 +33,18 @@ verification trail.
 - **Removed:** `home/dot_config/private_karabiner/private_karabiner.json` (retired).
 - **Test:** `tests/karabiner-goku.zsh` + `make test-karabiner-goku` (+ README, `.PHONY`).
 - **Docs:** [ADR 0009](../adr/0009-goku-karabiner-codegen.md); this plan; index updated.
+- **Post-migration remap:** the pad was reorganized into a default base layer plus a
+  Start-toggled mouse overlay (now 27 manipulators) — the face diamond drives the cursor,
+  the d-pad scrolls, the bumpers click, and the always-on scroll was removed. The toggle
+  is the manual `:set` + variable-condition pattern (goku has no native toggle layer; its
+  `:layers`/`:simlayers` are hold-to-activate), and it fires a "🖱 Mouse mode" notification.
+  The base layer is the unconditional default; the overlay is gated on `pad_mouse_mode` and
+  listed first so it wins by order. Per-rule condition repetition is factored with Goku's
+  in-rule `[:condi …]` marker (verified from goku source — `rules.clj`
+  `add-current-in-rule-conditions`): each block states `:zero2` (and the layer gate) once,
+  and goku merges it into every following rule, compiling to output byte-identical to the
+  explicit form. The 25/25 equivalence below is the migration baseline, intentionally
+  superseded by this change. Layout table lives in the `karabiner.edn.tmpl` header.
 
 ## Verification
 
@@ -43,9 +55,11 @@ verification trail.
 - **Tooling (done):** apply script renders and passes shellcheck; `chezmoi status` shows
   `karabiner.edn` managed and `karabiner.json` ignored; `make test-karabiner-goku` parses
   and skips pre-apply, passes post-apply.
-- **On-device (pending Prateek):** with the physical 8BitDo — Start toggles "🖱 Mouse
-  mode"; d-pad cursor + A/B click in mouse mode; arrows / dictation / enter / escape +
-  L/R scroll in normal mode.
+- **On-device (pending Prateek):** with the physical 8BitDo, held rotated 90° left (A up) —
+  press Start to toggle the mouse layer (expect the "🖱 Mouse mode" notification on enter,
+  cleared on exit). Mouse layer: face diamond moves the cursor (A=up, B=right, Y=down,
+  X=left), d-pad scrolls, R = left click, L = right click. Base layer: d-pad arrows, A
+  dictation, X backspace, B enter, Y escape, bumpers/select inert.
 
 ## Follow-ups
 
