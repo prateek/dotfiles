@@ -3,7 +3,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 BREWFILE="${BREWFILE:-}"
-BREWFILE_PROFILE="${BREWFILE_PROFILE:-full}"
+BREWFILE_MACHINE_TYPE="${BREWFILE_MACHINE_TYPE:-personal}"
 
 if [ -n "$BREWFILE" ] && [ ! -f "$BREWFILE" ]; then
   echo "Package manifest not found: $BREWFILE" >&2
@@ -22,7 +22,7 @@ render_brewfile() {
   if [ -n "$BREWFILE" ]; then
     cat "$BREWFILE"
   else
-    "$REPO_ROOT/scripts/packages/render-brewfile" --profile "$BREWFILE_PROFILE"
+    "$REPO_ROOT/scripts/packages/render-brewfile" --machine-type "$BREWFILE_MACHINE_TYPE"
   fi
 }
 
@@ -30,7 +30,7 @@ brewfile_label() {
   if [ -n "$BREWFILE" ]; then
     echo "$BREWFILE"
   else
-    echo "packages.toml profile '$BREWFILE_PROFILE'"
+    echo "packages.toml machine type '$BREWFILE_MACHINE_TYPE'"
   fi
 }
 

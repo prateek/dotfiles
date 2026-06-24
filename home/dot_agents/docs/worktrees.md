@@ -4,7 +4,7 @@ This dotfiles repo provides a fast workflow for creating Git worktrees across re
 
 ## Prereqs
 
-- `wt` (Worktrunk) — installed via Homebrew (`worktrunk` is in both `core` and `full` profiles in `home/.chezmoidata/packages.toml`).
+- `wt` (Worktrunk) — installed via Homebrew (`worktrunk` is in the `base` package group in `home/.chezmoidata/packages.toml`, so every machine type gets it).
 - `fzf`, `zoxide` (installed via Brewfile)
 - `w`, `wta`, `wtn` are zsh autoload functions shipped by these dotfiles (`home/dot_config/zsh/autoload/`); `init.sh` adds the autoload dir to `fpath` so they're available in any interactive shell after `chezmoi apply`.
 - `chezmoi apply` symlinks `repo-index` + `wt-hook-sparse` into `~/bin` (via `home/bin/symlink_*.tmpl`)

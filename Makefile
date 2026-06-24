@@ -42,8 +42,8 @@ test: test-chezmoi-apply
 ## Validate chezmoi apply --dry-run to catch template errors before commit.
 test-chezmoi-apply:
 	@command -v chezmoi >/dev/null 2>&1 || { echo "Skipping chezmoi validation (chezmoi not installed)"; exit 0; }
-	@./scripts/chezmoi/test-apply-dry-run.sh core "$(CURDIR)"
-	@./scripts/chezmoi/test-apply-dry-run.sh full "$(CURDIR)"
+	@./scripts/chezmoi/test-apply-dry-run.sh ci "$(CURDIR)"
+	@./scripts/chezmoi/test-apply-dry-run.sh personal "$(CURDIR)"
 
 ## Regression tests for the focused Brewfile renderer.
 test-render-brewfile:
@@ -89,7 +89,7 @@ test-mise-install-script:
 test-gh-extensions-script:
 	@zsh ./tests/gh-extensions-script.zsh
 
-## Regression tests for full-profile Xcode install script ordering.
+## Regression tests for Xcode install script ordering.
 test-xcode-install-script:
 	@zsh ./tests/xcode-install-script.zsh
 
@@ -153,7 +153,7 @@ test-orbstack-plist:
 test-selected-app-plists:
 	@zsh ./tests/selected-app-plist-modify.zsh
 
-## Regression tests for package-profile gated app config targets.
+## Regression tests for machine-type gated app config targets.
 test-package-gated-configs:
 	@zsh ./tests/package-gated-configs.zsh
 
@@ -245,17 +245,17 @@ test-vm-postflight-macos:
 test-install-tart-dry-run:
 	@./scripts/vm/test-install-tart.sh --lane smoke --dry-run --image "$(TART_SMOKE_IMAGE)" --cpu "$(TART_CPU)" --memory "$(TART_MEMORY)" $(TART_FLAGS)
 
-## Tart smoke lane. Core profile, casks/MAS skipped, zsh postflight enabled.
+## Tart smoke lane. ci machine type, casks/MAS skipped, zsh postflight enabled.
 test-install-tart-smoke:
 	@./scripts/vm/test-install-tart.sh --lane smoke --image "$(TART_SMOKE_IMAGE)" --cpu "$(TART_CPU)" --memory "$(TART_MEMORY)" $(TART_FLAGS)
 
-## Tart full lane. Full profile, Xcode image, casks included, MAS opt-in, zsh postflight enabled.
+## Tart full lane. personal machine type, Xcode image, casks included, MAS opt-in, zsh postflight enabled.
 test-install-tart-full:
 	@./scripts/vm/test-install-tart.sh --lane full --image "$(TART_FULL_IMAGE)" --cpu "$(TART_CPU)" --memory "$(TART_MEMORY)" $(TART_FLAGS)
 
 ## Warm Tart VM for fast iteration. First call: `make test-install-tart-warm-bootstrap` (slow, ~3 min).
 ## Subsequent: `make test-install-tart-warm` (fast — chezmoi apply against the persistent VM).
-## Use `make test-install-tart-warm-refresh` after major repo changes (chezmoi script reordering, profile bumps).
+## Use `make test-install-tart-warm-refresh` after major repo changes (chezmoi script reordering, package bumps).
 test-install-tart-warm:
 	@./scripts/vm/warm-tart apply
 

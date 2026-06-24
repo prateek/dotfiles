@@ -1,11 +1,25 @@
+{{- /*
+  package-cask-enabled.tmpl — returns "true" when cask `name` is in the cask
+  union of the selected machine type's groups, else "false". Used by
+  home/.chezmoiignore (and the raycast extensions script) to gate app config on
+  whether the app is actually installed for this machine type.
+
+  Machine-type selection mirrors brewfile.tmpl: env DOTFILES_MACHINE_TYPE >
+  data .machine_type > .packages.default_machine_type.
+*/ -}}
 {{- $root := .root -}}
 {{- $name := .name -}}
-{{- $profileName := default $root.packages.default_profile (get $root "install_profile") -}}
-{{- $profile := index $root.packages.profiles $profileName -}}
-{{- $enabled := false -}}
-{{- range $profile.casks -}}
-{{- if eq .name $name -}}
-{{- $enabled = true -}}
+{{- $machineType := coalesce (env "DOTFILES_MACHINE_TYPE") (dig "machine_type" "" $root) $root.packages.default_machine_type -}}
+{{- if not (hasKey $root.packages.machine_types $machineType) -}}
+{{-   fail (printf "package-cask-enabled.tmpl: unknown machine type %q (available: %v)" $machineType (keys $root.packages.machine_types)) -}}
 {{- end -}}
+{{- $groups := (index $root.packages.machine_types $machineType).groups -}}
+{{- $enabled := false -}}
+{{- range $gname := $groups -}}
+{{-   if not (hasKey $root.packages.groups $gname) -}}{{- fail (printf "package-cask-enabled.tmpl: machine type %q references undefined group %q" $machineType $gname) -}}{{- end -}}
+{{-   $g := index $root.packages.groups $gname -}}
+{{-   range default (list) (dig "casks" (list) $g) -}}
+{{-     if eq .name $name -}}{{- $enabled = true -}}{{- end -}}
+{{-   end -}}
 {{- end -}}
 {{- $enabled -}}

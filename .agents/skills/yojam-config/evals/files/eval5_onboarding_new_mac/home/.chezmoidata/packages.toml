@@ -1,7 +1,10 @@
 [packages]
-default_profile = "core"
+default_machine_type = "personal"
 
-[packages.profiles.core]
-description = "Core package set"
+[packages.groups.base]
+description = "Essentials on every machine"
 taps  = [{ name = "fluffypony/yojam" }]
 casks = [{ name = "yojam" }]
+
+[packages.machine_types.personal]
+groups = ["base"]

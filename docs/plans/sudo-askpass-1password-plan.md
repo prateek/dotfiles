@@ -126,7 +126,7 @@ Asymmetry note: the askpass helper inlines the templated `op_ref` directly rathe
 ## Bootstrap (one-time per work Mac)
 
 1. Confirm 1Password 8 desktop app is installed, signed in, and unlocked. Settings → Developer → "Integrate with 1Password CLI" must be ON.
-2. Confirm `op` is on PATH. Already in `home/.chezmoidata/packages.toml` (cask `1password-cli`, in both core and full profiles, lines 34 and 304).
+2. Confirm `op` is on PATH. Already in `home/.chezmoidata/packages.toml` (cask `1password-cli`, in the `base` package group, so every machine type gets it).
 3. Locate the 1Password item for the macOS user password (most users already have one). If absent, create it interactively in the 1Password app — don't pass the password as a CLI argument (it would land in shell history and `ps` output).
 4. Capture the secret reference: 1Password app → right-click item → "Copy Secret Reference". Looks like `op://Private/Mac Login - foo/password`.
 5. Bootstrap the reference. The env-var path bakes the value directly into rendered `~/.config/chezmoi/chezmoi.toml` (bypassing `promptStringOnce`); to change later, re-run with the new value or edit `chezmoi.toml` directly. Mirrors the `jamf_policy_id` bootstrap pattern in `docs/references/jamf-self-service-elevation.md`:

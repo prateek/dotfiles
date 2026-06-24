@@ -7,7 +7,7 @@ DEFAULT_SMOKE_IMAGE="ghcr.io/cirruslabs/macos-tahoe-base:latest"
 DEFAULT_FULL_IMAGE="ghcr.io/cirruslabs/macos-tahoe-xcode:latest"
 IMAGE=""
 LANE="smoke"
-PROFILE="core"
+MACHINE_TYPE="ci"
 MODE="local"
 DRY_RUN=0
 KEEP_VM=0
@@ -56,8 +56,8 @@ Options:
   --image <oci-image>     Tart image to clone (default: smoke uses ghcr.io/cirruslabs/macos-tahoe-base:latest;
                           full uses ghcr.io/cirruslabs/macos-tahoe-xcode:latest)
   --lane <smoke|full>     Test lane to run (default: smoke)
-                          smoke: core profile, skip Homebrew casks/MAS
-                          full: full profile, include casks; MAS requires opt-in
+                          smoke: ci machine type, skip Homebrew casks/MAS
+                          full: personal machine type, include casks; MAS requires opt-in
   --cpu <count>           VM CPU count (default: 2)
   --memory <mb>           VM memory in MB (default: 4096)
   --mode <local|remote>   local: mount current repo into VM (default)
@@ -203,11 +203,11 @@ done
 
 case "$LANE" in
   smoke)
-    PROFILE="core"
+    MACHINE_TYPE="ci"
     IMAGE="${IMAGE:-$DEFAULT_SMOKE_IMAGE}"
     ;;
   full)
-    PROFILE="full"
+    MACHINE_TYPE="personal"
     IMAGE="${IMAGE:-$DEFAULT_FULL_IMAGE}"
     ;;
   *) die "--lane must be 'smoke' or 'full' (got: $LANE)" ;;
@@ -356,11 +356,11 @@ brewfile_entries() {
   awk -v kind="$kind" -F'"' '$1 ~ "^" kind " " { print $2 }' "$brewfile" | xargs
 }
 
-render_profile_brewfile() {
-  local profile="$1"
+render_machine_brewfile() {
+  local machine_type="$1"
   local output="$2"
 
-  "$REPO_ROOT/scripts/packages/render-brewfile" --profile "$profile" --output "$output"
+  "$REPO_ROOT/scripts/packages/render-brewfile" --machine-type "$machine_type" --output "$output"
 }
 
 cleanup() {
@@ -422,7 +422,7 @@ log "VM: $VM_NAME"
 log "Image: $IMAGE"
 log "Lane: $LANE"
 log "Mode: $MODE"
-log "Profile: $PROFILE"
+log "Machine type: $MACHINE_TYPE"
 log "CPU: $VM_CPU"
 log "Memory MB: $VM_MEMORY"
 log "Dry-run: $DRY_RUN"
@@ -550,8 +550,8 @@ if [ "$USE_HOMEBREW_CACHE" = "1" ]; then
   )
 fi
 if [ "$LANE" = "smoke" ]; then
-  HOST_PROFILE_BREWFILE="$(mktemp "${TMPDIR:-/tmp}/dotfiles-brewfile-core.XXXXXX")"
-  render_profile_brewfile core "$HOST_PROFILE_BREWFILE"
+  HOST_PROFILE_BREWFILE="$(mktemp "${TMPDIR:-/tmp}/dotfiles-brewfile-ci.XXXXXX")"
+  render_machine_brewfile ci "$HOST_PROFILE_BREWFILE"
   SMOKE_CASK_SKIP="$(brewfile_entries cask "$HOST_PROFILE_BREWFILE")"
   INSTALL_ENV+=(
     HOMEBREW_BUNDLE_CASK_SKIP="$SMOKE_CASK_SKIP"
@@ -565,7 +565,7 @@ fi
 #      home/.chezmoi.toml.tmpl prompts (DOTFILES_* env overrides applied
 #      by INSTALL_ENV via promptDefaults fallback).
 # DRY_RUN=1 splits init from apply so we can pass --dry-run.
-INSTALL_ENV+=(DOTFILES_INSTALL_PROFILE="$PROFILE")
+INSTALL_ENV+=(DOTFILES_MACHINE_TYPE="$MACHINE_TYPE")
 
 case "$MODE" in
   local)

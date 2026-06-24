@@ -5,10 +5,10 @@
 
 set -euo pipefail
 
-profile="${1:-core}"
-case "$profile" in
-  core|full) ;;
-  *) echo "Invalid profile: $profile (must be 'core' or 'full')" >&2; exit 1 ;;
+machine_type="${1:-ci}"
+case "$machine_type" in
+  ci|personal|homelab|work) ;;
+  *) echo "Invalid machine type: $machine_type (must be ci, personal, homelab, or work)" >&2; exit 1 ;;
 esac
 
 dotfiles_root="${2:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
@@ -20,7 +20,7 @@ mkdir -p "$tmp_home/.config/chezmoi" "$tmp_home/.cache/chezmoi" "$tmp_home/.loca
 
 run_chezmoi() {
   DOTFILES_ROOT="$dotfiles_root" \
-  DOTFILES_INSTALL_PROFILE="$profile" \
+  DOTFILES_MACHINE_TYPE="$machine_type" \
   DOTFILES_RUN_INSTALL_SCRIPTS=false \
   DOTFILES_APPLY_DEFAULTS=false \
   DOTFILES_SECRETS_ENABLED=false \

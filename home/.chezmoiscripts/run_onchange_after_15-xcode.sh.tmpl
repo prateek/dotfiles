@@ -4,7 +4,9 @@
 # ios-triple.json sha256: {{ include "dot_agents/state/ios-triple.json" | sha256sum }}
 
 {{- if .run_install_scripts }}
-profile={{ .install_profile | default .packages.default_profile | quote }}
+{{- $machineType := coalesce (env "DOTFILES_MACHINE_TYPE") (dig "machine_type" "" .) .packages.default_machine_type }}
+machine_type={{ $machineType | quote }}
+has_apple={{ has "dev-apple" (index .packages.machine_types $machineType).groups | toString | quote }}
 install_xcode={{ .install_xcode | default false | toString | quote }}
 env_install_xcode={{ env "DOTFILES_INSTALL_XCODE" | quote }}
 if [ -n "$env_install_xcode" ]; then
@@ -17,8 +19,8 @@ case "$install_xcode" in
   *) die "install_xcode/DOTFILES_INSTALL_XCODE must be true or false." ;;
 esac
 
-if [ "$profile" != "full" ]; then
-  log "Xcode install skipped for $profile package profile."
+if [ "$has_apple" != "true" ]; then
+  log "Xcode install skipped for $machine_type machine type (no dev-apple group)."
   exit 0
 fi
 
@@ -30,7 +32,7 @@ fi
 brew_shellenv
 have brew || die "Homebrew is required before Xcode setup can run."
 have jq || die "jq is required before Xcode setup can run; rerun brew bundle."
-have xcodes || die "xcodes is required for full Xcode setup; rerun brew bundle."
+have xcodes || die "xcodes is required for Xcode setup; rerun brew bundle."
 
 triple_file="$HOME/.agents/state/ios-triple.json"
 [ -r "$triple_file" ] || die "Missing Xcode version pin: $triple_file"
@@ -38,9 +40,19 @@ xcode_version="$(jq -r '.xcode_version // empty' "$triple_file")"
 [ -n "$xcode_version" ] || die "Missing .xcode_version in $triple_file"
 
 xcode_required_brews=(
-{{- $profileData := index .packages.profiles "full" }}
-{{- range default (list) (dig "xcode_required_brews" (list) $profileData) }}
-  {{ .name | quote }}
+{{- $xb := list -}}
+{{- $xseen := list -}}
+{{- range $gname := (index .packages.machine_types $machineType).groups -}}
+{{-   $g := index $.packages.groups $gname -}}
+{{-   range default (list) (dig "xcode_required_brews" (list) $g) -}}
+{{-     if not (has .name $xseen) -}}
+{{-       $xb = mustAppend $xb .name -}}
+{{-       $xseen = mustAppend $xseen .name -}}
+{{-     end -}}
+{{-   end -}}
+{{- end }}
+{{- range $xb }}
+  {{ . | quote }}
 {{- end }}
 )
 
@@ -64,7 +76,8 @@ run_timed "xcodes select $xcode_version" xcodes select "$xcode_version"
 run_timed "xcodebuild license" sudo xcodebuild -license accept
 run_timed "xcodebuild first launch" sudo xcodebuild -runFirstLaunch
 
-for formula in "${xcode_required_brews[@]}"; do
+# ${arr[@]+"${arr[@]}"} stays safe under macOS Bash 3.2 + set -u if the group declares none.
+for formula in ${xcode_required_brews[@]+"${xcode_required_brews[@]}"}; do
   run_timed "brew install $formula" brew install "$formula"
 done
 {{- else }}

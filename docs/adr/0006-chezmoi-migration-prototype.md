@@ -6,6 +6,7 @@ owner: Prateek
 related:
   - ../references/chezmoi-architecture.md
   - 0004-tart-install-validation-and-tracing.md
+  - 0010-machine-type-package-selection.md
 ---
 
 # ADR 0006 — Chezmoi migration target architecture

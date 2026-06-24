@@ -16,15 +16,20 @@ DOTFILES_ROOT="${0:A:h:h}"
 tmp_root="$(mktemp -d)"
 trap 'rm -rf "$tmp_root"' EXIT
 
-full_managed="$tmp_root/full-managed.txt"
-core_managed="$tmp_root/core-managed.txt"
-core_ignored="$tmp_root/core-ignored.txt"
-minimal_ignored="$tmp_root/minimal-ignored.txt"
+personal_managed="$tmp_root/personal-managed.txt"
+ci_managed="$tmp_root/ci-managed.txt"
+ci_ignored="$tmp_root/ci-ignored.txt"
+work_managed="$tmp_root/work-managed.txt"
+work_ignored="$tmp_root/work-ignored.txt"
+empty_ignored="$tmp_root/empty-ignored.txt"
 leader_key_json="$tmp_root/leader-key.json"
 state_file="$tmp_root/chezmoi-state.boltdb"
 
+# package-cask-enabled.tmpl resolves machine type as env > data > default, so
+# unset the ambient DOTFILES_MACHINE_TYPE (this machine's config sets it) and
+# pin machine_type via --override-data for each render.
 chezmoi_isolated() {
-  chezmoi \
+  env -u DOTFILES_MACHINE_TYPE chezmoi \
     --source "$DOTFILES_ROOT" \
     --destination "$tmp_root/home" \
     --cache "$tmp_root/cache" \
@@ -33,86 +38,109 @@ chezmoi_isolated() {
 }
 
 chezmoi_isolated \
-  --override-data '{"manage_zinit_external":false}' \
-  managed --path-style relative >"$full_managed"
+  --override-data '{"manage_zinit_external":false,"machine_type":"personal"}' \
+  managed --path-style relative >"$personal_managed"
 
 chezmoi_isolated \
-  --override-data '{"manage_zinit_external":false,"install_profile":"core"}' \
-  managed --path-style relative >"$core_managed"
+  --override-data '{"manage_zinit_external":false,"machine_type":"ci"}' \
+  managed --path-style relative >"$ci_managed"
 
 chezmoi_isolated \
-  --override-data '{"manage_zinit_external":false,"install_profile":"core"}' \
-  ignored >"$core_ignored"
+  --override-data '{"manage_zinit_external":false,"machine_type":"ci"}' \
+  ignored >"$ci_ignored"
 
 chezmoi_isolated \
-  --override-data '{"manage_zinit_external":false,"install_profile":"minimal","packages":{"default_profile":"minimal","profiles":{"minimal":{"casks":[]}}}}' \
-  ignored >"$minimal_ignored"
+  --override-data '{"manage_zinit_external":false,"machine_type":"work"}' \
+  managed --path-style relative >"$work_managed"
 
 chezmoi_isolated \
-  --override-data '{"manage_zinit_external":false}' \
+  --override-data '{"manage_zinit_external":false,"machine_type":"work"}' \
+  ignored >"$work_ignored"
+
+# Empty group set ⇒ no casks enabled ⇒ every gated config ignored. Arrays in
+# --override-data replace rather than merge, so groups=[] wins.
+chezmoi_isolated \
+  --override-data '{"manage_zinit_external":false,"machine_type":"ci","packages":{"machine_types":{"ci":{"groups":[]}}}}' \
+  ignored >"$empty_ignored"
+
+chezmoi_isolated \
+  --override-data '{"manage_zinit_external":false,"machine_type":"personal"}' \
   execute-template \
   --file "$DOTFILES_ROOT/home/Library/Application Support/Leader Key/config.json.tmpl" \
   >"$leader_key_json"
 
 expect_managed() {
-  local target_path="$1"
-  local file="$2"
-  grep -Fx -- "$target_path" "$file" >/dev/null || die "expected managed path: $target_path"
+  local target_path="$1" file="$2"
+  grep -Fx -- "$target_path" "$file" >/dev/null || die "expected managed path: $target_path (${file:t})"
 }
 
 expect_unmanaged() {
-  local target_path="$1"
-  local file="$2"
+  local target_path="$1" file="$2"
   if grep -Fx -- "$target_path" "$file" >/dev/null; then
-    die "expected unmanaged path: $target_path"
+    die "expected unmanaged path: $target_path (${file:t})"
   fi
 }
 
 expect_ignored() {
-  local target_path="$1"
-  grep -Fx -- "$target_path" "$core_ignored" >/dev/null || die "expected ignored path: $target_path"
+  local target_path="$1" file="${2:-$ci_ignored}"
+  grep -Fx -- "$target_path" "$file" >/dev/null || die "expected ignored path: $target_path (${file:t})"
 }
 
-expect_managed ".config/cmux/preferences.json" "$full_managed"
-expect_managed ".config/ghostty" "$full_managed"
-expect_managed ".hammerspoon" "$full_managed"
-expect_managed "Library/Preferences/com.hegenberg.BetterTouchTool.plist" "$full_managed"
-expect_managed "Library/Preferences/com.raycast.macos.plist" "$full_managed"
-expect_managed ".config/raycast/scripts/temp-admin.sh" "$full_managed"
-expect_managed ".local/share/raycast-extensions/orca-worktree/package.json" "$full_managed"
-expect_managed "Library/Preferences/io.tailscale.ipn.macsys.plist" "$full_managed"
-expect_managed "Library/Preferences/com.setapp.DesktopClient.plist" "$full_managed"
-expect_managed "Library/Preferences/pro.betterdisplay.BetterDisplay.plist" "$full_managed"
-expect_managed ".config/zed" "$full_managed"
-expect_managed "Library/Application Support/Leader Key/config.json" "$full_managed"
-expect_managed "Library/Application Support/Code/User" "$full_managed"
-expect_managed "Library/Colors/nvALT.clr" "$full_managed"
-expect_managed "Library/Preferences/com.jordanbaird.Ice.plist" "$full_managed"
-expect_managed "Library/Preferences/com.cmuxterm.app.plist" "$full_managed"
-expect_managed "Library/Preferences/com.prakashjoshipax.VoiceInk.plist" "$full_managed"
-expect_managed "Library/Preferences/dev.kdrag0n.MacVirt.plist" "$full_managed"
-expect_managed "Library/Preferences/net.elasticthreads.nv.plist" "$full_managed"
+# --- personal: everything managed (base + dev + dev-apple + personal-apps) ---
+expect_managed ".config/cmux/preferences.json" "$personal_managed"
+expect_managed ".config/ghostty" "$personal_managed"
+expect_managed ".hammerspoon" "$personal_managed"
+expect_managed "Library/Preferences/com.hegenberg.BetterTouchTool.plist" "$personal_managed"
+expect_managed "Library/Preferences/com.raycast.macos.plist" "$personal_managed"
+expect_managed ".config/raycast/scripts/temp-admin.sh" "$personal_managed"
+expect_managed ".local/share/raycast-extensions/orca-worktree/package.json" "$personal_managed"
+expect_managed "Library/Preferences/io.tailscale.ipn.macsys.plist" "$personal_managed"
+expect_managed "Library/Preferences/com.setapp.DesktopClient.plist" "$personal_managed"
+expect_managed "Library/Preferences/pro.betterdisplay.BetterDisplay.plist" "$personal_managed"
+expect_managed ".config/zed" "$personal_managed"
+expect_managed "Library/Application Support/Leader Key/config.json" "$personal_managed"
+expect_managed "Library/Application Support/Code/User" "$personal_managed"
+expect_managed "Library/Colors/nvALT.clr" "$personal_managed"
+expect_managed "Library/Preferences/com.jordanbaird.Ice.plist" "$personal_managed"
+expect_managed "Library/Preferences/com.cmuxterm.app.plist" "$personal_managed"
+expect_managed "Library/Preferences/com.prakashjoshipax.VoiceInk.plist" "$personal_managed"
+expect_managed "Library/Preferences/dev.kdrag0n.MacVirt.plist" "$personal_managed"
+expect_managed "Library/Preferences/net.elasticthreads.nv.plist" "$personal_managed"
 
-expect_unmanaged ".config/cmux" "$core_managed"
-expect_managed ".config/ghostty" "$core_managed"
-expect_unmanaged ".hammerspoon" "$core_managed"
-expect_managed "Library/Preferences/com.hegenberg.BetterTouchTool.plist" "$core_managed"
-expect_managed "Library/Preferences/com.raycast.macos.plist" "$core_managed"
-expect_managed ".config/raycast/scripts/temp-admin.sh" "$core_managed"
-expect_managed ".local/share/raycast-extensions/orca-worktree/package.json" "$core_managed"
-expect_managed "Library/Preferences/io.tailscale.ipn.macsys.plist" "$core_managed"
-expect_managed "Library/Preferences/com.setapp.DesktopClient.plist" "$core_managed"
-expect_unmanaged "Library/Preferences/pro.betterdisplay.BetterDisplay.plist" "$core_managed"
-expect_unmanaged ".config/zed" "$core_managed"
-expect_managed "Library/Application Support/Leader Key/config.json" "$core_managed"
-expect_managed "Library/Application Support/Code/User" "$core_managed"
-expect_unmanaged "Library/Colors/nvALT.clr" "$core_managed"
-expect_unmanaged "Library/Preferences/com.jordanbaird.Ice.plist" "$core_managed"
-expect_unmanaged "Library/Preferences/com.cmuxterm.app.plist" "$core_managed"
-expect_managed "Library/Preferences/com.prakashjoshipax.VoiceInk.plist" "$core_managed"
-expect_managed "Library/Preferences/dev.kdrag0n.MacVirt.plist" "$core_managed"
-expect_unmanaged "Library/Preferences/net.elasticthreads.nv.plist" "$core_managed"
+# --- ci: base only. dev/dev-apple/personal-app configs unmanaged. ---
+expect_unmanaged ".config/cmux" "$ci_managed"
+expect_managed ".config/ghostty" "$ci_managed"
+expect_unmanaged ".hammerspoon" "$ci_managed"
+expect_managed "Library/Preferences/com.hegenberg.BetterTouchTool.plist" "$ci_managed"
+expect_managed "Library/Preferences/com.raycast.macos.plist" "$ci_managed"
+expect_managed ".config/raycast/scripts/temp-admin.sh" "$ci_managed"
+expect_managed "Library/Preferences/com.setapp.DesktopClient.plist" "$ci_managed"
+expect_managed "Library/Preferences/dev.kdrag0n.MacVirt.plist" "$ci_managed"
+expect_managed "Library/Application Support/Leader Key/config.json" "$ci_managed"
+expect_managed "Library/Application Support/Code/User" "$ci_managed"
+expect_unmanaged "Library/Preferences/pro.betterdisplay.BetterDisplay.plist" "$ci_managed"
+expect_unmanaged ".config/zed" "$ci_managed"
+expect_unmanaged "Library/Colors/nvALT.clr" "$ci_managed"
+expect_unmanaged "Library/Preferences/com.jordanbaird.Ice.plist" "$ci_managed"
+expect_unmanaged "Library/Preferences/com.cmuxterm.app.plist" "$ci_managed"
+expect_unmanaged "Library/Preferences/net.elasticthreads.nv.plist" "$ci_managed"
+# tailscale + voiceink are personal apps now, so the base-only ci type drops them.
+expect_unmanaged "Library/Preferences/io.tailscale.ipn.macsys.plist" "$ci_managed"
+expect_unmanaged "Library/Preferences/com.prakashjoshipax.VoiceInk.plist" "$ci_managed"
 
+# --- work: full dev machine minus the personal apps (the core requirement) ---
+expect_managed ".config/ghostty" "$work_managed"
+expect_managed ".hammerspoon" "$work_managed"
+expect_managed "Library/Preferences/pro.betterdisplay.BetterDisplay.plist" "$work_managed"
+expect_managed ".config/zed" "$work_managed"
+expect_managed "Library/Preferences/com.cmuxterm.app.plist" "$work_managed"
+expect_managed "Library/Preferences/com.setapp.DesktopClient.plist" "$work_managed"
+expect_unmanaged "Library/Preferences/io.tailscale.ipn.macsys.plist" "$work_managed"
+expect_unmanaged "Library/Preferences/com.prakashjoshipax.VoiceInk.plist" "$work_managed"
+expect_ignored "Library/Preferences/io.tailscale.ipn.macsys.plist" "$work_ignored"
+expect_ignored "Library/Preferences/com.prakashjoshipax.VoiceInk.plist" "$work_ignored"
+
+# --- ci ignored set: dev/dev-apple/personal-app configs (default file = ci_ignored) ---
 expect_ignored ".config/zed"
 expect_ignored ".config/cmux"
 expect_ignored ".hammerspoon"
@@ -121,28 +149,33 @@ expect_ignored "Library/Preferences/com.jordanbaird.Ice.plist"
 expect_ignored "Library/Preferences/com.cmuxterm.app.plist"
 expect_ignored "Library/Preferences/net.elasticthreads.nv.plist"
 expect_ignored "Library/Preferences/pro.betterdisplay.BetterDisplay.plist"
-grep -Fx -- "Library/Application Support/Leader Key/config.json" "$minimal_ignored" >/dev/null ||
-  die "expected Leader Key to be ignored when profile has no leader-key cask"
-grep -Fx -- ".config/ghostty" "$minimal_ignored" >/dev/null ||
-  die "expected Ghostty to be ignored when profile has no ghostty cask"
-grep -Fx -- "Library/Application Support/Code/User" "$minimal_ignored" >/dev/null ||
-  die "expected VS Code to be ignored when profile has no visual-studio-code cask"
-grep -Fx -- "Library/Preferences/dev.kdrag0n.MacVirt.plist" "$minimal_ignored" >/dev/null ||
-  die "expected OrbStack to be ignored when profile has no orbstack cask"
-grep -Fx -- "Library/Preferences/com.prakashjoshipax.VoiceInk.plist" "$minimal_ignored" >/dev/null ||
-  die "expected VoiceInk to be ignored when profile has no voiceink cask"
-grep -Fx -- "Library/Preferences/com.hegenberg.BetterTouchTool.plist" "$minimal_ignored" >/dev/null ||
-  die "expected BetterTouchTool to be ignored when profile has no bettertouchtool cask"
-grep -Fx -- "Library/Preferences/com.raycast.macos.plist" "$minimal_ignored" >/dev/null ||
-  die "expected Raycast to be ignored when profile has no raycast cask"
-grep -Fx -- ".config/raycast/scripts/temp-admin.sh" "$minimal_ignored" >/dev/null ||
-  die "expected Raycast temp-admin script to be ignored when profile has no raycast cask"
-grep -Fx -- ".local/share/raycast-extensions" "$minimal_ignored" >/dev/null ||
-  die "expected Raycast extensions to be ignored when profile has no raycast cask"
-grep -Fx -- "Library/Preferences/io.tailscale.ipn.macsys.plist" "$minimal_ignored" >/dev/null ||
-  die "expected Tailscale to be ignored when profile has no tailscale-app cask"
-grep -Fx -- "Library/Preferences/com.setapp.DesktopClient.plist" "$minimal_ignored" >/dev/null ||
-  die "expected Setapp to be ignored when profile has no setapp cask"
+expect_ignored "Library/Preferences/io.tailscale.ipn.macsys.plist"
+expect_ignored "Library/Preferences/com.prakashjoshipax.VoiceInk.plist"
+
+# --- empty group set ⇒ every gated config ignored ---
+for p in \
+  "Library/Application Support/Leader Key/config.json" \
+  ".config/ghostty" \
+  "Library/Application Support/Code/User" \
+  "Library/Preferences/dev.kdrag0n.MacVirt.plist" \
+  "Library/Preferences/com.prakashjoshipax.VoiceInk.plist" \
+  "Library/Preferences/com.hegenberg.BetterTouchTool.plist" \
+  "Library/Preferences/com.raycast.macos.plist" \
+  ".config/raycast/scripts/temp-admin.sh" \
+  ".local/share/raycast-extensions" \
+  "Library/Preferences/io.tailscale.ipn.macsys.plist" \
+  "Library/Preferences/com.setapp.DesktopClient.plist"; do
+  expect_ignored "$p" "$empty_ignored"
+done
+
+# An unknown machine type must fail loudly through the gate, not silently treat
+# every app as disabled.
+set +e
+bogus_out="$(chezmoi_isolated --override-data '{"manage_zinit_external":false,"machine_type":"bogus"}' ignored 2>&1)"
+bogus_rc=$?
+set -e
+[[ $bogus_rc -ne 0 ]] || die "unknown machine type should fail the ignored evaluation"
+[[ $bogus_out == *"unknown machine type"* ]] || die "expected 'unknown machine type' error, got: $bogus_out"
 
 python3 - "$leader_key_json" <<'PY'
 import json

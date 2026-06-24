@@ -9,9 +9,9 @@ xcode-select --install
 sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply --source ~/dotfiles prateek
 ```
 
-The first run prompts for install profile (`core` or `full`), macOS defaults, install scripts, secret-backed files, and administrator access when Homebrew/packages/defaults need it. The generated chezmoi config disables chezmoi's pager so sudo can read from the terminal during apply. If an older local config still pages output, rerun with `chezmoi --no-pager apply`.
+The first run prompts for machine type (`personal`, `homelab`, or `work`), macOS defaults, install scripts, secret-backed files, and administrator access when Homebrew/packages/defaults need it. Machine type drives package selection — `work` skips the personal apps (Tailscale, Arq, VoiceInk). The generated chezmoi config disables chezmoi's pager so sudo can read from the terminal during apply. If an older local config still pages output, rerun with `chezmoi --no-pager apply`.
 
-`full` installs `xcodes`, but the Xcode download itself is opt-in because Apple may require Apple ID login:
+Personal, homelab, and work machines install `xcodes`, but the Xcode download itself is opt-in because Apple may require Apple ID login:
 
 ```sh
 DOTFILES_INSTALL_XCODE=true chezmoi apply
@@ -19,10 +19,10 @@ DOTFILES_INSTALL_XCODE=true chezmoi apply
 
 Answers live in `~/.config/chezmoi/chezmoi.toml`.
 
-Use a faster profile with:
+Use the minimal `ci` machine type for a faster, base-only install:
 
 ```sh
-DOTFILES_INSTALL_PROFILE=core \
+DOTFILES_MACHINE_TYPE=ci \
   sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply --source ~/dotfiles prateek
 ```
 

@@ -1,32 +1,32 @@
 #!/usr/bin/env bash
 #
-# render-brewfile — emit a Homebrew Bundle Brewfile for a given package
-# profile, sourced from home/.chezmoidata/packages.toml.
+# render-brewfile — emit a Homebrew Bundle Brewfile for a given machine
+# type, sourced from home/.chezmoidata/packages.toml.
 #
 # Implementation: invokes chezmoi to render
 # home/.chezmoitemplates/brewfile.tmpl. The template is the single source
 # of truth for Brewfile shape; this wrapper just normalizes the CLI for
 # audit scripts and CI (where the user's chezmoi config might not match
-# the profile being inspected).
+# the machine type being inspected).
 #
 # Usage:
-#   scripts/packages/render-brewfile [--profile <name>] [--include-mas] [--output <file>]
+#   scripts/packages/render-brewfile [--machine-type <name>] [--include-mas] [--output <file>]
 #
 # Exit non-zero on rendering failure.
 #
 set -euo pipefail
 
-profile=""
+machine_type=""
 include_mas=""
 output=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --profile)
-      [[ $# -ge 2 ]] || { printf 'render-brewfile: --profile requires a value\n' >&2; exit 2; }
-      profile="$2"; shift 2 ;;
-    --profile=*)
-      profile="${1#*=}"; shift ;;
+    --machine-type)
+      [[ $# -ge 2 ]] || { printf 'render-brewfile: --machine-type requires a value\n' >&2; exit 2; }
+      machine_type="$2"; shift 2 ;;
+    --machine-type=*)
+      machine_type="${1#*=}"; shift ;;
     --include-mas)
       include_mas="true"; shift ;;
     --output)
@@ -35,7 +35,7 @@ while [[ $# -gt 0 ]]; do
     --output=*)
       output="${1#*=}"; shift ;;
     -h|--help)
-      sed -n '2,16p' "$0" >&2
+      sed -n '2,17p' "$0" >&2
       exit 0 ;;
     *)
       printf 'render-brewfile: unknown argument: %s\n' "$1" >&2
@@ -48,14 +48,15 @@ template="$repo_root/home/.chezmoitemplates/brewfile.tmpl"
 [[ -f $template ]] || { printf 'render-brewfile: missing template: %s\n' "$template" >&2; exit 1; }
 
 env_args=()
-[[ -n $profile ]] && env_args+=("DOTFILES_INSTALL_PROFILE=$profile")
+[[ -n $machine_type ]] && env_args+=("DOTFILES_MACHINE_TYPE=$machine_type")
 [[ -n $include_mas ]] && env_args+=("DOTFILES_INSTALL_MAS_APPS=$include_mas")
 
 # Render via chezmoi. --source pins the source dir so the wrapper works
 # from any cwd and from any user with any home chezmoi config.
 render() {
-  env -u DOTFILES_INSTALL_PROFILE -u DOTFILES_INSTALL_MAS_APPS \
-    "${env_args[@]}" \
+  # ${arr[@]+"${arr[@]}"} keeps an empty env_args safe under macOS Bash 3.2 + set -u.
+  env -u DOTFILES_MACHINE_TYPE -u DOTFILES_INSTALL_MAS_APPS \
+    ${env_args[@]+"${env_args[@]}"} \
     chezmoi --source "$repo_root/home" execute-template --file "$template"
 }
 

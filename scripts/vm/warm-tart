@@ -33,7 +33,7 @@ WARM_VM_NAME="${DOTFILES_WARM_VM_NAME:-dotfiles-warm}"
 WARM_IMAGE="${DOTFILES_WARM_IMAGE:-ghcr.io/cirruslabs/macos-tahoe-base:latest}"
 WARM_CPU="${DOTFILES_WARM_CPU:-4}"
 WARM_MEMORY="${DOTFILES_WARM_MEMORY:-8192}"
-WARM_PROFILE="${DOTFILES_INSTALL_PROFILE:-core}"
+WARM_MACHINE_TYPE="${DOTFILES_MACHINE_TYPE:-ci}"
 
 REPO_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 
@@ -133,9 +133,9 @@ cmd_bootstrap() {
   _with_lock
   ensure_running
   _sync_repo_into_vm
-  log "Bootstrapping chezmoi inside warm VM (profile=$WARM_PROFILE)..."
+  log "Bootstrapping chezmoi inside warm VM (machine_type=$WARM_MACHINE_TYPE)..."
   tart exec "$WARM_VM_NAME" env \
-    DOTFILES_INSTALL_PROFILE="$WARM_PROFILE" \
+    DOTFILES_MACHINE_TYPE="$WARM_MACHINE_TYPE" \
     sh -lc '
       set -e
       export PATH="$HOME/.local/bin:$PATH"

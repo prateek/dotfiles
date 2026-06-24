@@ -27,7 +27,7 @@ tmp_cache="$tmp_home/.cache/chezmoi"
 tmp_state="$tmp_home/.local/state/chezmoi/state.boltdb"
 mkdir -p "$tmp_home/.config/chezmoi" "$tmp_cache" "${tmp_state:h}"
 
-DOTFILES_INSTALL_PROFILE=core \
+DOTFILES_MACHINE_TYPE=ci \
 DOTFILES_RUN_INSTALL_SCRIPTS=false \
 DOTFILES_APPLY_DEFAULTS=false \
 DOTFILES_SECRETS_ENABLED=false \
@@ -43,6 +43,10 @@ XDG_STATE_HOME="$tmp_home/.local/state" \
 
 config_text="$(<"$tmp_config")"
 assert_contains "$config_text" 'pager = ""'
+# DOTFILES_MACHINE_TYPE=ci above must persist as the single package-selection axis;
+# the retired install_profile must not reappear in the rendered config.
+assert_contains "$config_text" 'machine_type = "ci"'
+[[ "$config_text" != *install_profile* ]] || die "install_profile should no longer be persisted to chezmoi.toml"
 
 dump="$(
   chezmoi \
@@ -52,5 +56,6 @@ dump="$(
     dump-config
 )"
 assert_contains "$dump" '"pager": ""'
+assert_contains "$dump" '"machine_type": "ci"'
 
 print -- "OK chezmoi-config"

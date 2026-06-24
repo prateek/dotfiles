@@ -7,6 +7,7 @@ owner: Prateek
 related:
   - ../plans/goku-karabiner-migration-plan.md
   - 0006-chezmoi-migration-prototype.md
+  - 0010-machine-type-package-selection.md
 status_detail: "Accepted and implemented: karabiner.edn + goku codegen replace the hand-written karabiner.json."
 ---
 

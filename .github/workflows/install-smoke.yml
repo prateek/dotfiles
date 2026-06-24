@@ -59,6 +59,9 @@ jobs:
         run: |
           make test-tart-install-helper
           make test-render-brewfile
+          make test-package-gated-configs
+          make test-brew-bundle-script
+          make test-xcode-install-script
           make test-chezmoi-config
           make test-chezmoi-script-status
           make test-chezmoi-drift-banner
@@ -79,34 +82,41 @@ jobs:
 
       - name: Bootstrap app list regression
         run: |
-          if scripts/packages/render-brewfile --profile full | grep -En '^(cask "airflow"|cask "omnigraffle"|mas ")'; then
+          if scripts/packages/render-brewfile --machine-type personal | grep -En '^(cask "airflow"|cask "omnigraffle"|mas ")'; then
             exit 1
           fi
-          if scripts/packages/render-brewfile --profile full --include-mas | grep -En '^mas "MeetInOne"'; then
+          if scripts/packages/render-brewfile --machine-type personal --include-mas | grep -En '^mas "MeetInOne"'; then
+            exit 1
+          fi
+          # Work machines must not get the personal apps.
+          if scripts/packages/render-brewfile --machine-type work | grep -En '^cask "(tailscale-app|arq|voiceink)"'; then
+            echo "work machine type leaked a personal app cask" >&2
             exit 1
           fi
 
-      - name: Bootstrap smoke — chezmoi init + apply --dry-run, both profiles
+      - name: Bootstrap smoke — chezmoi init + apply --dry-run, key machine types
         run: |
           set -euo pipefail
-          for profile in core full; do
-            ./scripts/chezmoi/test-apply-dry-run.sh "$profile" "${{ github.workspace }}"
+          for machine_type in ci personal work; do
+            ./scripts/chezmoi/test-apply-dry-run.sh "$machine_type" "${{ github.workspace }}"
           done
 
       - name: Brewfile parse
         run: |
-          scripts/packages/render-brewfile --profile core --output "${RUNNER_TEMP}/Brewfile.core"
-          scripts/packages/render-brewfile --profile full --output "${RUNNER_TEMP}/Brewfile"
-          scripts/packages/render-brewfile --profile full --include-mas --output "${RUNNER_TEMP}/Brewfile.mas"
-          brew bundle list --all --file "${RUNNER_TEMP}/Brewfile.core" >/dev/null
+          scripts/packages/render-brewfile --machine-type ci --output "${RUNNER_TEMP}/Brewfile.ci"
+          scripts/packages/render-brewfile --machine-type personal --output "${RUNNER_TEMP}/Brewfile"
+          scripts/packages/render-brewfile --machine-type personal --include-mas --output "${RUNNER_TEMP}/Brewfile.mas"
+          scripts/packages/render-brewfile --machine-type work --output "${RUNNER_TEMP}/Brewfile.work"
+          brew bundle list --all --file "${RUNNER_TEMP}/Brewfile.ci" >/dev/null
           brew bundle list --all --file "${RUNNER_TEMP}/Brewfile" >/dev/null
           brew bundle list --all --file "${RUNNER_TEMP}/Brewfile.mas" >/dev/null
+          brew bundle list --all --file "${RUNNER_TEMP}/Brewfile.work" >/dev/null
 
-      - name: Brew bundle (core formulae only)
+      - name: Brew bundle (ci formulae only)
         run: |
           set -euo pipefail
-          core_brewfile="${RUNNER_TEMP}/Brewfile.core"
-          scripts/packages/render-brewfile --profile core --output "$core_brewfile"
-          HOMEBREW_BUNDLE_CASK_SKIP="$(awk -F'"' '/^cask "/ { print $2 }' "$core_brewfile" | xargs)"
+          ci_brewfile="${RUNNER_TEMP}/Brewfile.ci"
+          scripts/packages/render-brewfile --machine-type ci --output "$ci_brewfile"
+          HOMEBREW_BUNDLE_CASK_SKIP="$(awk -F'"' '/^cask "/ { print $2 }' "$ci_brewfile" | xargs)"
           export HOMEBREW_BUNDLE_CASK_SKIP
-          brew bundle install --no-upgrade --file "$core_brewfile"
+          brew bundle install --no-upgrade --file "$ci_brewfile"

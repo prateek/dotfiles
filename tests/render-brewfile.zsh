@@ -19,55 +19,70 @@ RENDER="$DOTFILES_ROOT/scripts/packages/render-brewfile"
 
 [[ -x $RENDER ]] || die "missing renderer: $RENDER"
 
-# -- shape: required sections ------------------------------------------------
+# -- shape: required sections (ci = base-only minimal tier) ------------------
 
-core_out="$("$RENDER" --profile core)"
-[[ -n $core_out ]] || die "core profile rendered empty"
-[[ $core_out == *'tap "1password/tap"'* ]] || die "core: missing 1password/tap"
-[[ $core_out == *'brew "git"'* ]] || die "core: missing git brew"
-[[ $core_out != *'brew "crit"'* ]] || die "core: crit should be managed by mise, not Homebrew"
-[[ $core_out == *'cask "1password", args: { appdir: "/Applications" }'* ]] \
-  || die "core: 1password cask appdir args missing or malformed"
+ci_out="$("$RENDER" --machine-type ci)"
+[[ -n $ci_out ]] || die "ci machine type rendered empty"
+[[ $ci_out == *'tap "1password/tap"'* ]] || die "ci: missing 1password/tap"
+[[ $ci_out == *'brew "git"'* ]] || die "ci: missing git brew"
+[[ $ci_out != *'brew "crit"'* ]] || die "ci: crit should be managed by mise, not Homebrew"
+[[ $ci_out == *'cask "1password", args: { appdir: "/Applications" }'* ]] \
+  || die "ci: 1password cask appdir args missing or malformed"
+# ci is the lean base; it must not pull the dev toolchain or personal apps.
+[[ $ci_out != *'brew "aria2"'* ]] || die "ci: should not include the dev group (aria2 leaked)"
+[[ $ci_out != *'cask "tailscale-app"'* ]] || die "ci: should not include personal apps"
 rg -q '"go:github.com/tomasz-tomczyk/crit" = "latest"' "$DOTFILES_ROOT/home/dot_config/mise/conf.d/clis.toml" \
   || die "crit should be declared as a mise Go CLI"
 
-# -- MAS opt-in gating -------------------------------------------------------
+# -- dev machine types (personal): base + dev + dev-apple + personal-apps -----
 
-full_no_mas="$("$RENDER" --profile full)"
-full_with_mas="$("$RENDER" --profile full --include-mas)"
+personal_no_mas="$("$RENDER" --machine-type personal)"
+personal_with_mas="$("$RENDER" --machine-type personal --include-mas)"
 
-if [[ $full_no_mas == *'mas "'* ]]; then
-  die "full without --include-mas should not contain mas entries"
+if [[ $personal_no_mas == *'mas "'* ]]; then
+  die "personal without --include-mas should not contain mas entries"
 fi
-[[ $full_with_mas == *'mas "Things", id: 904280696'* ]] \
-  || die "full --include-mas: missing expected MAS entry"
-[[ $full_no_mas == *'brew "aria2"'* ]] || die "full: missing aria2"
-[[ $full_no_mas != *'brew "crit"'* ]] || die "full: crit should be managed by mise, not Homebrew"
-[[ $full_no_mas != *'tap "xcodesorg/made"'* ]] || die "full: should not tap source-building xcodesorg/made"
-[[ $full_no_mas == *'brew "homebrew/core/xcodes", args: ["force-bottle"]'* ]] \
-  || die "full: missing bottled Homebrew core xcodes"
-[[ $full_no_mas != *'facebook/fb/idb-companion'* ]] \
-  || die "full Brewfile should not install idb-companion before Xcode setup"
-[[ $full_no_mas != *'brew "swiftlint"'* ]] \
-  || die "full Brewfile should not install swiftlint before Xcode setup"
+[[ $personal_with_mas == *'mas "Things", id: 904280696'* ]] \
+  || die "personal --include-mas: missing expected MAS entry"
+[[ $personal_no_mas == *'brew "aria2"'* ]] || die "personal: missing aria2 (dev group)"
+[[ $personal_no_mas != *'brew "crit"'* ]] || die "personal: crit should be managed by mise, not Homebrew"
+[[ $personal_no_mas != *'tap "xcodesorg/made"'* ]] || die "personal: should not tap source-building xcodesorg/made"
+[[ $personal_no_mas == *'brew "homebrew/core/xcodes", args: ["force-bottle"]'* ]] \
+  || die "personal: missing bottled Homebrew core xcodes (dev-apple group)"
+[[ $personal_no_mas != *'facebook/fb/idb-companion'* ]] \
+  || die "personal Brewfile should not install idb-companion before Xcode setup"
+[[ $personal_no_mas != *'brew "swiftlint"'* ]] \
+  || die "personal Brewfile should not install swiftlint before Xcode setup"
 
-# -- profile error reporting -------------------------------------------------
+# -- personal apps are present on personal, absent on work --------------------
+
+for app in tailscale-app arq voiceink; do
+  [[ $personal_no_mas == *"cask \"$app\""* ]] || die "personal: missing personal app cask $app"
+done
+work_out="$("$RENDER" --machine-type work)"
+[[ $work_out == *'brew "aria2"'* ]] || die "work: missing aria2 (work keeps the dev group)"
+[[ $work_out == *'brew "homebrew/core/xcodes"'* ]] || die "work: missing xcodes (work keeps dev-apple)"
+for app in tailscale-app arq voiceink; do
+  [[ $work_out != *"cask \"$app\""* ]] || die "work should not install personal app cask $app"
+done
+
+# -- machine-type error reporting --------------------------------------------
 
 set +e
-err_out="$("$RENDER" --profile bogus 2>&1)"
+err_out="$("$RENDER" --machine-type bogus 2>&1)"
 err_rc=$?
 set -e
-[[ $err_rc -ne 0 ]] || die "unknown profile should exit non-zero"
-[[ $err_out == *"unknown package profile"* ]] \
-  || die "unknown profile error message missing 'unknown package profile'"
+[[ $err_rc -ne 0 ]] || die "unknown machine type should exit non-zero"
+[[ $err_out == *"unknown machine type"* ]] \
+  || die "unknown machine type error message missing 'unknown machine type'"
 
 # -- --output writes a file --------------------------------------------------
 
 tmp="$(mktemp)"
 trap 'rm -f "$tmp"' EXIT
-"$RENDER" --profile core --output "$tmp"
+"$RENDER" --machine-type ci --output "$tmp"
 [[ -s $tmp ]] || die "--output produced empty file"
-diff <("$RENDER" --profile core) "$tmp" >/dev/null \
+diff <("$RENDER" --machine-type ci) "$tmp" >/dev/null \
   || die "--output content differs from stdout content"
 
 # -- single trailing newline -------------------------------------------------
@@ -82,7 +97,7 @@ diff <("$RENDER" --profile core) "$tmp" >/dev/null \
 
 awk_check() {
   local section_first
-  section_first="$(printf '%s\n' "$core_out" | awk '
+  section_first="$(printf '%s\n' "$ci_out" | awk '
     /^tap "/ { if (!seen) { seen="tap"; exit } }
     /^brew "/ { if (!seen) { seen="brew"; exit } }
     /^cask "/ { if (!seen) { seen="cask"; exit } }

@@ -2,11 +2,11 @@
 
 Minimal snapshot for the meta-maintenance eval. The real reference lives at the parent skill directory.
 
-## Profile And Install Env Vars
+## Machine-Type And Install Env Vars
 
 | Variable | Default | Effect |
 |---|---|---|
-| `DOTFILES_INSTALL_PROFILE` | `core` | Selects which profile from `packages.toml` activates |
+| `DOTFILES_MACHINE_TYPE` | `personal` | Selects which machine type's package groups activate |
 | `DOTFILES_INSTALL_MAS_APPS` | unset | Renders MAS entries only when `true` |
 | `DOTFILES_SECRETS_ENABLED` | unset | Renders secret-backed templates only when `true` |
 | `DOTFILES_INSTALL_XCODE` | unset | Runs the Xcode install script only when `true` |

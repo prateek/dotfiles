@@ -21,8 +21,8 @@ verification trail.
 
 - **Source:** `home/dot_config/karabiner.edn.tmpl` — the full config in Goku EDN. Only the
   `dictation-sidekick` `shell_command` path is templated (`{{ .chezmoi.homeDir }}`).
-- **Toolchain:** `goku` (tap `yqrashawn/goku`, formula `yqrashawn/goku/goku`) added to the
-  `core` and `full` profiles in `home/.chezmoidata/packages.toml`.
+- **Toolchain:** `goku` (tap `yqrashawn/goku`, formula `yqrashawn/goku/goku`) in the
+  `base` package group in `home/.chezmoidata/packages.toml`.
 - **Codegen:** `home/.chezmoiscripts/run_onchange_after_45-karabiner-goku.sh.tmpl` — hash-
   triggered on the EDN; ensures a `Default` profile exists (seed on a fresh machine, else
   rename the active profile), then runs `goku`. Skips cleanly without goku/jq/edn.

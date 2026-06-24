@@ -5,7 +5,7 @@ This is the repo-specific contract for coding agents working in Prateek's dotfil
 ## Repo Map
 
 - `home/`: chezmoi source state. `.chezmoiroot` points here, so files materialize into `$HOME`.
-- `home/.chezmoidata/`: committed structured data for package profiles, secrets, license targets, and template inputs.
+- `home/.chezmoidata/`: committed structured data for package groups and machine types, secrets, license targets, and template inputs.
 - `home/.chezmoiscripts/`: idempotent setup run by `chezmoi apply`.
 - `home/.chezmoitemplates/`: shared templates, including Brewfile, macOS defaults, and plist merge helpers.
 - `.agents/`: repo-local agent surface for this checkout. Keep repo-specific `AGENTS.md` and `CLAUDE.md` at the repo root; keep repo-local skills and tool adapters under `.agents/`.
@@ -48,7 +48,7 @@ source copies under `home/dot_agents/skills`, `home/dot_claude/skills`, or
 ## Common Commands
 
 - Preview managed state: `chezmoi diff`, `chezmoi status`, `chezmoi apply --dry-run --verbose --exclude=scripts`.
-- Render package input: `scripts/packages/render-brewfile --profile core|full`.
+- Render package input: `scripts/packages/render-brewfile --machine-type <type>` (ci/personal/homelab/work).
 - Package/app audits: `scripts/audit/brew-inventory.sh`, `scripts/audit/brewfile-usage.sh`, `scripts/audit/app-inventory.sh`.
 - Fresh-shell checks: `scripts/audit/zsh-fresh-shells.zsh verify` and `bench`.
 - Docs lifecycle checks: `make test-docs-lifecycle` for the local diff and `DOCS_LIFECYCLE_BASE=origin/master make test-docs-lifecycle` for a full branch check.
@@ -98,7 +98,7 @@ zshenv -> zprofile -> zshrc -> init.sh -> zinit-init.zsh -> lib/*.zsh -> extra/*
 - For code behavior changes, add or update the smallest meaningful tests and run the relevant local checks.
 - For docs/config-only changes, run the lightest checks that prove links, parsers, or generated output still make sense.
 - Mirror CI locally when practical by inspecting `.github/workflows`.
-- Current CI includes shellcheck, chezmoi dry-run smoke for `core` and `full`, Tart helper contract tests, trace conversion tests, package rendering, and core formula install checks.
+- Current CI includes shellcheck, chezmoi dry-run smoke for the `ci`, `personal`, and `work` machine types, Tart helper contract tests, trace conversion tests, package rendering, and `ci` formula install checks.
 - CI does not boot a full macOS VM; that is local via Tart.
 - Never ignore test output. If expected errors are part of behavior, assert them.
 

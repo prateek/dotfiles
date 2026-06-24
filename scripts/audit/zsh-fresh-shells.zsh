@@ -252,7 +252,7 @@ prepare_home() {
   env -u ZDOTDIR \
     HOME="$home_dir" \
     DOTFILES_ROOT="$dotfiles_root" \
-    DOTFILES_INSTALL_PROFILE=core \
+    DOTFILES_MACHINE_TYPE=ci \
     DOTFILES_SECRETS_ENABLED=false \
     DOTFILES_RUN_INSTALL_SCRIPTS=false \
     DOTFILES_APPLY_DEFAULTS=false \
@@ -273,7 +273,7 @@ prepare_home() {
   env -u ZDOTDIR \
     HOME="$home_dir" \
     DOTFILES_ROOT="$dotfiles_root" \
-    DOTFILES_INSTALL_PROFILE=core \
+    DOTFILES_MACHINE_TYPE=ci \
     DOTFILES_SECRETS_ENABLED=false \
     DOTFILES_RUN_INSTALL_SCRIPTS=false \
     DOTFILES_APPLY_DEFAULTS=false \

@@ -17,7 +17,7 @@ Use this skill when any of these are true:
 - Editing or adding files under `home/.chezmoitemplates/`, `home/.chezmoiassets/`, `home/.chezmoiscripts/`, `home/.chezmoidata/`, or `home/.chezmoiexternal.*` (zinit and other clone/pull-only dependencies).
 - Capturing or modifying macOS app preferences via plist fragments.
 - Touching `home/.chezmoidata/{packages,secrets,licenses}.toml` or `brewfile.tmpl`.
-- Toggling chezmoi-owned `DOTFILES_*` env vars — init prompts (`INSTALL_PROFILE`, `RUN_INSTALL_SCRIPTS`, `APPLY_DEFAULTS`, `SECRETS_ENABLED`), env-set-at-init (`INSTALL_XCODE`, `MANAGE_ZINIT_EXTERNAL` — env-or-default, not interactively prompted), or apply-time gates (MAS, Homebrew tuning, plist hooks, post-apply relaunch). Full table with effects and out-of-scope test/VM vars in `references/packages-and-secrets.md`.
+- Toggling chezmoi-owned `DOTFILES_*` env vars — init prompts (`MACHINE_TYPE`, `RUN_INSTALL_SCRIPTS`, `APPLY_DEFAULTS`, `SECRETS_ENABLED`), env-set-at-init (`INSTALL_XCODE`, `MANAGE_ZINIT_EXTERNAL` — env-or-default, not interactively prompted), or apply-time gates (MAS, Homebrew tuning, plist hooks, post-apply relaunch). `MACHINE_TYPE` also selects the package groups. Full table with effects and out-of-scope test/VM vars in `references/packages-and-secrets.md`.
 - Wiring a 1Password `op://` reference.
 - Translating between `~/.<file>` and `home/<dot_*>` source paths.
 
@@ -29,7 +29,7 @@ Should trigger:
 
 - `chezmoi diff is showing changes I do not understand. Walk me through them.`
 - `I edited ~/.zshrc directly. Get this back into the source tree without losing the template.`
-- `Add Anthropic CLI to the core profile and render the Brewfile.`
+- `Add Anthropic CLI to the base package group and render the Brewfile.`
 - `Capture the Moom plist into home/.chezmoitemplates/.`
 - `Toggle DOTFILES_INSTALL_MAS_APPS for this run.`
 - `What is the source path for ~/.config/karabiner.edn?`
@@ -91,7 +91,7 @@ Pick the matching lane for the work. All lanes are existing repo conventions; do
 |---|---|
 | workflow | `chezmoi diff`, `chezmoi verify`, `chezmoi apply --dry-run --verbose --exclude=scripts` (file-only) or `... --include=scripts` (when scripts changed), `shellcheck` on rendered scripts. `make test-chezmoi-script-status` after touching scripts. |
 | app-config | `make test-plist-hooks`, `make test-codex-config` (if you touched the codex modify_ stub), `make test-macos-defaults-script` (if you touched macOS defaults), `chezmoi diff <target>`, `chezmoi execute-template < home/.chezmoitemplates/<bundle>.plist.tmpl` |
-| packages-and-secrets | `make test-render-brewfile`, `make test-brew-bundle-script`, `make test-secret-backed-files`, `make test-chezmoi-config` (init defaults), `make test-brew-inventory` (if you touched packages.toml), `scripts/packages/render-brewfile --profile core`, `... --profile full`, `... --profile full --include-mas` |
+| packages-and-secrets | `make test-render-brewfile`, `make test-brew-bundle-script`, `make test-secret-backed-files`, `make test-chezmoi-config` (init defaults), `make test-brew-inventory` (if you touched packages.toml), `scripts/packages/render-brewfile --machine-type ci`, `... --machine-type personal`, `... --machine-type personal --include-mas` |
 | any | `git diff --check` before handoff |
 
 After editing this skill itself: see `references/meta-skill-maintenance.md` for the parser/frontmatter check.

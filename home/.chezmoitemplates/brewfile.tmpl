@@ -1,10 +1,15 @@
 {{- /*
   brewfile.tmpl — Homebrew Bundle input rendered from .packages data.
 
-  Profile selection: env DOTFILES_INSTALL_PROFILE > chezmoi data
-  .install_profile (set by the inited config; may be absent when this
-  template is rendered against a worktree without the user's config) >
-  .packages.default_profile.
+  Machine-type selection: env DOTFILES_MACHINE_TYPE > chezmoi data
+  .machine_type (set by the inited config; may be absent when this template
+  is rendered against a worktree without the user's config) >
+  .packages.default_machine_type.
+
+  A machine type composes reusable groups (.packages.machine_types.<type>.groups).
+  Each Brewfile section (tap/brew/cask/mas) is the UNION of that section across
+  the selected groups, deduped by name (group order, then item order, first
+  occurrence wins).
 
   MAS opt-in: gated by env DOTFILES_INSTALL_MAS_APPS=true|1|yes|on.
 
@@ -16,17 +21,39 @@
   on cask) are accessed via `dig` so missing keys do not error — Go
   templates fail strictly on `.foo` against a map without "foo".
 */ -}}
-{{- $profile := coalesce (env "DOTFILES_INSTALL_PROFILE") (dig "install_profile" "" .) .packages.default_profile -}}
-{{- if not (hasKey .packages.profiles $profile) -}}
-{{-   fail (printf "brewfile.tmpl: unknown package profile %q (available: %v)" $profile (keys .packages.profiles)) -}}
+{{- $root := . -}}
+{{- $machineType := coalesce (env "DOTFILES_MACHINE_TYPE") (dig "machine_type" "" .) .packages.default_machine_type -}}
+{{- if not (hasKey .packages.machine_types $machineType) -}}
+{{-   fail (printf "brewfile.tmpl: unknown machine type %q (available: %v)" $machineType (keys .packages.machine_types)) -}}
 {{- end -}}
-{{- $sel := index .packages.profiles $profile -}}
+{{- $groups := (index .packages.machine_types $machineType).groups -}}
 {{- $masOptIn := env "DOTFILES_INSTALL_MAS_APPS" | lower -}}
 {{- $includeMas := has $masOptIn (list "1" "true" "yes" "on") -}}
 
-{{- /* Build each section as a list of lines. */ -}}
+{{- /* Union every section across the selected groups in a single pass. */ -}}
+{{- $taps := list -}}{{- $tapSeen := list -}}
+{{- $brews := list -}}{{- $brewSeen := list -}}
+{{- $casks := list -}}{{- $caskSeen := list -}}
+{{- $mas := list -}}{{- $masSeen := list -}}
+{{- range $gname := $groups -}}
+{{-   if not (hasKey $root.packages.groups $gname) -}}{{- fail (printf "brewfile.tmpl: machine type %q references undefined group %q" $machineType $gname) -}}{{- end -}}
+{{-   $g := index $root.packages.groups $gname -}}
+{{-   range default (list) (dig "taps" (list) $g) -}}
+{{-     if not (has .name $tapSeen) -}}{{- $taps = mustAppend $taps . -}}{{- $tapSeen = mustAppend $tapSeen .name -}}{{- end -}}
+{{-   end -}}
+{{-   range default (list) (dig "brews" (list) $g) -}}
+{{-     if not (has .name $brewSeen) -}}{{- $brews = mustAppend $brews . -}}{{- $brewSeen = mustAppend $brewSeen .name -}}{{- end -}}
+{{-   end -}}
+{{-   range default (list) (dig "casks" (list) $g) -}}
+{{-     if not (has .name $caskSeen) -}}{{- $casks = mustAppend $casks . -}}{{- $caskSeen = mustAppend $caskSeen .name -}}{{- end -}}
+{{-   end -}}
+{{-   range default (list) (dig "mas" (list) $g) -}}
+{{-     if not (has .name $masSeen) -}}{{- $mas = mustAppend $mas . -}}{{- $masSeen = mustAppend $masSeen .name -}}{{- end -}}
+{{-   end -}}
+{{- end -}}
+
 {{- $tapLines := list -}}
-{{- range default (list) (dig "taps" (list) $sel) -}}
+{{- range $taps -}}
 {{-   $url := dig "url" "" . -}}
 {{-   if $url -}}
 {{-     $tapLines = mustAppend $tapLines (printf "tap %q, %q" .name $url) -}}
@@ -36,7 +63,7 @@
 {{- end -}}
 
 {{- $brewLines := list -}}
-{{- range default (list) (dig "brews" (list) $sel) -}}
+{{- range $brews -}}
 {{-   $line := printf "brew %q" .name -}}
 {{-   if hasKey . "link" -}}
 {{-     $line = printf "%s, link: %t" $line .link -}}
@@ -55,7 +82,7 @@
 {{- end -}}
 
 {{- $caskLines := list -}}
-{{- range default (list) (dig "casks" (list) $sel) -}}
+{{- range $casks -}}
 {{-   $line := printf "cask %q" .name -}}
 {{-   if hasKey . "link" -}}
 {{-     $line = printf "%s, link: %t" $line .link -}}
@@ -79,7 +106,7 @@
 
 {{- $masLines := list -}}
 {{- if $includeMas -}}
-{{-   range default (list) (dig "mas" (list) $sel) -}}
+{{-   range $mas -}}
 {{-     $masLines = mustAppend $masLines (printf "mas %q, id: %d" .name (int .id)) -}}
 {{-   end -}}
 {{- end -}}

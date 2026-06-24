@@ -73,12 +73,22 @@ Scripts must be idempotent. A rerun should converge or report a clear blocker.
 ## Packages And Tools
 
 - Package intent lives in `home/.chezmoidata/packages.toml`.
-- `home/.chezmoitemplates/brewfile.tmpl` renders the Brewfile input.
+- Selection is driven by a single axis, `machine_type`. Reusable
+  `[packages.groups.*]` (`base`, `dev`, `dev-apple`, `personal-apps`) are
+  composed per `[packages.machine_types.*]`: `ci=[base]`,
+  `personal=homelab=[base,dev,dev-apple,personal-apps]`, `work=[base,dev,dev-apple]`.
+  Work omits the personal apps; `ci` is the env-only minimal tier for CI/Tart/audits.
+  See [ADR 0010](../adr/0010-machine-type-package-selection.md).
+- `home/.chezmoitemplates/brewfile.tmpl` renders the Brewfile input as the union
+  of each section across the selected machine type's groups, deduped by name.
+  `package-cask-enabled.tmpl` gates app config the same way. Both resolve the
+  machine type as `env DOTFILES_MACHINE_TYPE > data .machine_type >
+  .packages.default_machine_type`.
 - `home/.chezmoiscripts/run_onchange_after_10-brew-bundle.sh.tmpl` runs
   `brew bundle` from that rendered input. The rendered Brewfile marks
   tap-qualified third-party formulae and casks with `trusted: true`, and the
   script pre-taps declared taps before Bundle runs.
-- `scripts/packages/render-brewfile --profile core|full` is the audit and CI
+- `scripts/packages/render-brewfile --machine-type <type>` is the audit and CI
   entrypoint for the same template.
 - Mac App Store entries render only when `DOTFILES_INSTALL_MAS_APPS=true` or
   `--include-mas` is used.
@@ -132,7 +142,7 @@ rendered source state unless a focused app plan says otherwise.
 Use the smallest check that proves the changed surface:
 
 - Docs lifecycle: `make test-docs-lifecycle`
-- Package rendering: `scripts/packages/render-brewfile --profile core|full`
+- Package rendering: `scripts/packages/render-brewfile --machine-type <type>`
 - File-only apply preview:
   `chezmoi apply --dry-run --verbose --exclude=scripts`
 - Full managed-state preview: `chezmoi diff` and `chezmoi status`

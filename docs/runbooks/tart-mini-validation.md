@@ -8,7 +8,7 @@ related:
 
 # Tart mini validation
 
-This is the current end-to-end install validation lane for this repo. It is one validation path, not the whole test strategy. Today it gives us a disposable macOS guest, a real chezmoi-bootstrap run with `DOTFILES_INSTALL_PROFILE=core` (or `full`), and the same fresh-shell postflight checks we trust on the host.
+This is the current end-to-end install validation lane for this repo. It is one validation path, not the whole test strategy. Today it gives us a disposable macOS guest, a real chezmoi-bootstrap run with `DOTFILES_MACHINE_TYPE=ci` (or `personal`), and the same fresh-shell postflight checks we trust on the host.
 
 The current target is a Tart VM launched on `mini` over SSH. The VM storage lives on the external APFS volume at `/Volumes/Extra`, with Tart state under `/Volumes/Extra/.tart`. A future version may move this into a self-hosted GitHub Actions runner, a pinned base image, or a fuller wrapper script that owns preflight, sync, execution, postflight, and cleanup.
 
@@ -38,7 +38,7 @@ Guest trace semantics come from zsh function structure. `run-zsh` records each c
 
 - the configured Tart images can boot on the validation host
 - the repo can be copied into a clean macOS guest
-- the chezmoi one-liner with `DOTFILES_INSTALL_PROFILE=core` can run against a real macOS install
+- the chezmoi one-liner with `DOTFILES_MACHINE_TYPE=ci` can run against a real macOS install
 - smoke-lane Homebrew casks and Mac App Store entries are skipped
 - core tools are installed
 - `scripts/audit/zsh-fresh-shells.zsh verify` passes after bootstrap
@@ -54,13 +54,13 @@ Guest trace semantics come from zsh function structure. `run-zsh` records each c
 
 ## Lanes and Modes
 
-The helper exposes lanes only. The install profile is derived internally from the lane.
+The helper exposes lanes only. The machine type is derived internally from the lane.
 
-`smoke` is the default lane. It uses the Tahoe base image, the core profile, explicit Homebrew cask/MAS skip lists, and fresh-shell postflight verification.
+`smoke` is the default lane. It uses the Tahoe base image, the `ci` machine type, explicit Homebrew cask/MAS skip lists, and fresh-shell postflight verification.
 
-`full` is explicit and slower. It uses the Tahoe Xcode image, the full profile, and includes cask behavior. The Xcode image keeps routine full-lane validation from spending the run downloading Xcode; the full profile selects and sets up Xcode when it is present, and only downloads Xcode through `xcodes` when `install_xcode=true` or `DOTFILES_INSTALL_XCODE=true`.
+`full` is explicit and slower. It uses the Tahoe Xcode image, the `personal` machine type, and includes cask behavior. The Xcode image keeps routine full-lane validation from spending the run downloading Xcode; the `personal` machine type (which includes the `dev-apple` group) selects and sets up Xcode when it is present, and only downloads Xcode through `xcodes` when `install_xcode=true` or `DOTFILES_INSTALL_XCODE=true`.
 
-Full-profile package application runs `brew update` before `brew bundle`. Prebuilt Tart images can carry Homebrew metadata that is old enough to misparse current casks.
+Dev machine types run `brew update` before `brew bundle`. Prebuilt Tart images can carry Homebrew metadata that is old enough to misparse current casks.
 
 Mac App Store entries are omitted from generated Brewfiles by default because disposable Tart guests are not signed in to the App Store. Set `DOTFILES_INSTALL_MAS_APPS=true` only on a signed-in machine where MAS installs are intended.
 

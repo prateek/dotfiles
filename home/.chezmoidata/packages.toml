@@ -1,8 +1,15 @@
-[packages]
-default_profile = "full"
+# Package selection is driven by a single axis: machine_type.
+# A machine type composes reusable groups; the brewfile and the
+# package-cask-enabled gate union each group section deduped by name.
+# See docs/adr/0010-machine-type-package-selection.md.
 
-[packages.profiles.core]
-description = "Core package set"
+[packages]
+default_machine_type = "personal"
+
+# === Reusable groups ===
+
+[packages.groups.base]
+description = "Essentials installed on every machine, including the ci type"
 taps = [
   { name = "1password/tap" },
   { name = "felixkratz/formulae" },
@@ -28,7 +35,7 @@ brews = [
   { name = "uv" },
   { name = "shellcheck" },
   { name = "tmux" },
-  { name = "worktrunk" },
+  { name = "worktrunk" },  # worktrunk ships the `wt` binary; conflicts with `wiredtiger` if ever installed.
   { name = "yqrashawn/goku/goku" },  # goku: compiles ~/.config/karabiner.edn → karabiner.json
 ]
 casks = [
@@ -50,23 +57,19 @@ casks = [
   { name = "orbstack" },
   { name = "raycast" },
   { name = "setapp" },
-  { name = "tailscale-app" },
   { name = "visual-studio-code" },
-  { name = "voiceink" },
   { name = "yojam" },
-]
-mas = []
-disabled_casks = [
-  { name = "cleanshot", reason = "Optional: CleanShot X (often licensed/installed via Setapp)" },
 ]
 gh_extensions = [
   { name = "enthus-appdev/gh-attach" },
 ]
+disabled_casks = [
+  { name = "cleanshot", reason = "Optional: CleanShot X (often licensed/installed via Setapp)" },
+]
 
-[packages.profiles.full]
-description = "Full package set"
+[packages.groups.dev]
+description = "Full dev toolchain for real machines (excluded from ci)"
 taps = [
-  { name = "1password/tap" },
   { name = "aspnet/dnx" },
   { name = "bazelbuild/tap" },
   { name = "cirruslabs/cli" },
@@ -74,9 +77,6 @@ taps = [
   { name = "discoteq/discoteq" },
   { name = "eugene1g/safehouse" },
   { name = "f/mcptools" },
-  { name = "facebook/fb" },
-  { name = "felixkratz/formulae" },
-  { name = "fluffypony/yojam" },
   { name = "go-delve/delve" },
   { name = "hashicorp/tap" },
   { name = "holgerbrandl/tap" },
@@ -87,14 +87,12 @@ taps = [
   { name = "neovim/neovim" },
   { name = "nikitabobko/tap" },
   { name = "oven-sh/bun" },
-  { name = "peripheryapp/periphery" },
   { name = "prateek/tap" },
   { name = "romkatv/powerlevel10k" },
   { name = "saulpw/vd" },
   { name = "steipete/tap" },
   { name = "stablyai/orca" },
   { name = "thoughtbot/formulae" },
-  { name = "yqrashawn/goku" },
 ]
 brews = [
   { name = "ack" },
@@ -108,7 +106,6 @@ brews = [
   { name = "webp" },
   { name = "asciinema" },
   { name = "autoconf" },
-  { name = "zoxide" },
   { name = "automake" },
   { name = "bash" },
   { name = "bat" },
@@ -124,7 +121,6 @@ brews = [
   { name = "isl" },
   { name = "cloog" },
   { name = "cmake" },
-  { name = "ripgrep" },
   { name = "coreutils" },
   { name = "cscope" },
   { name = "csshx" },
@@ -134,7 +130,6 @@ brews = [
   { name = "czmq" },
   { name = "datamash" },
   { name = "ddcctl" },
-  { name = "direnv" },
   { name = "docker" },
   { name = "dos2unix" },
   { name = "doxygen" },
@@ -151,8 +146,6 @@ brews = [
   { name = "codex-acp" },
   { name = "extract_url" },
   { name = "fabric-ai" },
-  { name = "fastlane" },
-  { name = "fd" },
   { name = "fdupes" },
   { name = "libogg" },
   { name = "libvorbis" },
@@ -160,21 +153,16 @@ brews = [
   { name = "findutils" },
   { name = "libtool" },
   { name = "fontforge" },
-  { name = "fzf" },
   { name = "forgit" },
   { name = "fswatch" },
   { name = "fennel" },
   { name = "mpfr" },
   { name = "gawk" },
   { name = "gdrive" },
-  { name = "gh" },
   { name = "gibo" },
-  { name = "git" },
   { name = "git-delta" },
-  { name = "gitleaks" },
   { name = "git-review" },
   { name = "git-revise" },
-  { name = "git-spice" },
   { name = "git-subrepo" },
   { name = "gitui" },
   { name = "gl2ps" },
@@ -199,7 +187,6 @@ brews = [
   { name = "graphviz" },
   { name = "helix" },
   { name = "htop" },
-  { name = "tmux" },
   { name = "hub" },
   { name = "hyperfine" },
   { name = "imagemagick" },
@@ -210,17 +197,14 @@ brews = [
   { name = "juxt/allium/allium" },
   { name = "lzlib" },
   { name = "librdkafka" },
-  { name = "kanata" },
   { name = "kcat" },
   { name = "kubernetes-cli" },
   { name = "lazygit" },
   { name = "leiningen" },
   { name = "less" },
   { name = "libmagic" },
-  { name = "libpq" },
   { name = "libusb-compat" },
   { name = "libvterm" },
-  { name = "llm" },
   { name = "lua" },
   { name = "luajit" },
   { name = "lynx" },
@@ -228,7 +212,6 @@ brews = [
   { name = "mas" },
   { name = "mcpm" },
   { name = "meson" },
-  { name = "mise" },
   { name = "moreutils" },
   { name = "protobuf" },
   { name = "mosh" },
@@ -236,7 +219,6 @@ brews = [
   { name = "msmtp" },
   { name = "mycli" },
   { name = "mysql" },
-  { name = "neovim" },
   { name = "netcat" },
   { name = "ngrep" },
   { name = "nmap" },
@@ -274,13 +256,11 @@ brews = [
   { name = "scmpuff" },
   { name = "sdl2_image" },
   { name = "sdl2_mixer" },
-  { name = "shellcheck" },
   { name = "sip" },
   { name = "smartmontools" },
   { name = "socat" },
   { name = "ssh-copy-id", link = true },
   { name = "st" },
-  { name = "swiftformat" },
   { name = "telnet" },
   { name = "terminal-notifier" },
   { name = "hashicorp/tap/terraform" },
@@ -289,39 +269,25 @@ brews = [
   { name = "tree" },
   { name = "typst" },
   { name = "urlview" },
-  { name = "uv" },
   { name = "vim" },
   { name = "watch" },
   { name = "watchman" },
   { name = "wget" },
   { name = "winetricks" },
   { name = "wireshark" },
-  # `worktrunk` ships the `wt` binary; conflicts with `wiredtiger` if ever installed.
-  { name = "worktrunk" },
-  { name = "xcbeautify" },
-  { name = "homebrew/core/xcodes", args = ["force-bottle"] },
-  { name = "xcodegen" },
   { name = "zig" },
   { name = "zip" },
   { name = "zplug" },
   { name = "zsh" },
   { name = "cirruslabs/cli/tart" },
   { name = "f/mcptools/mcp" },
-  { name = "felixkratz/formulae/borders" },
   { name = "hudochenkov/sshpass/sshpass" },
   { name = "oven-sh/bun/bun" },
-  { name = "yqrashawn/goku/goku" },  # goku: compiles ~/.config/karabiner.edn → karabiner.json
 ]
 casks = [
-  { name = "1password", appdir = "/Applications" },
-  { name = "1password-cli" },
-  { name = "codex" },
   { name = "nikitabobko/tap/aerospace" },
-  { name = "alfred", appdir = "/Applications" },
   { name = "prateek/tap/agentsview-desktop" },
-  { name = "arq", appdir = "/Applications" },
   { name = "betterdisplay" },
-  { name = "bettertouchtool" },
   { name = "caffeine", appdir = "/Applications" },
   { name = "claude" },
   { name = "cmux" },
@@ -330,50 +296,31 @@ casks = [
   { name = "fastscripts", appdir = "/Applications" },
   { name = "font-inter" },
   { name = "font-meslo-for-powerline" },
-  { name = "font-hack-nerd-font" },
-  { name = "font-jetbrains-mono" },
   { name = "font-jetbrains-mono-nerd-font" },
   { name = "gcloud-cli" },
-  { name = "ghostty" },
   { name = "google-drive" },
   { name = "hammerspoon", appdir = "/Applications" },
-  { name = "google-chrome" },
   { name = "mattt/tap/imcp" },
-  { name = "iterm2" },
   { name = "jordanbaird-ice" },
-  { name = "jump-desktop" },
-  { name = "jump-desktop-connect" },
-  { name = "karabiner-elements" },
   { name = "key-codes", appdir = "/Applications" },
   { name = "launchcontrol", appdir = "/Applications" },
-  { name = "leader-key" },
   { name = "mitmproxy" },
   { name = "monodraw", appdir = "/Applications" },
-  { name = "moom", appdir = "/Applications" },
   { name = "nvalt", appdir = "/Applications" },
   { name = "obsidian" },
   { name = "ollama-app" },
   { name = "stablyai/orca/orca" },
-  { name = "orbstack" },
-  { name = "peripheryapp/periphery/periphery" },
-  { name = "raycast" },
   { name = "rescuetime", appdir = "/Applications" },
   { name = "rocket" },
   { name = "scrivener", appdir = "/Applications" },
-  { name = "setapp" },
   { name = "slack" },
   { name = "spotify", appdir = "/Applications" },
   { name = "steermouse" },  # SteerMouse: button/scroll/accel remap for the Kensington SlimBlade Pro trackball
   { name = "superset" },
   { name = "taskpaper", appdir = "/Applications" },
-  { name = "tuist" },
   { name = "utm" },
-  { name = "visual-studio-code" },
   { name = "vlc" },
-  { name = "voiceink" },
   { name = "xquartz" },
-  { name = "tailscale-app" },
-  { name = "yojam" },
   { name = "zed" },
 ]
 mas = [
@@ -384,14 +331,54 @@ mas = [
   { name = "Okta Verify", id = 490179405 },
   { name = "Things", id = 904280696 },
 ]
+disabled_casks = [
+  { name = "mtmr", reason = "Upstream cask download fails TLS negotiation from fresh macOS guests" },
+]
+
+[packages.groups.dev-apple]
+description = "Xcode / iOS toolchain; presence gates the Xcode setup step. xcode_required_brews install after Xcode setup, not via the Brewfile."
+taps = [
+  { name = "facebook/fb" },
+  { name = "peripheryapp/periphery" },
+]
+brews = [
+  { name = "fastlane" },
+  { name = "swiftformat" },
+  { name = "xcbeautify" },
+  { name = "homebrew/core/xcodes", args = ["force-bottle"] },
+  { name = "xcodegen" },
+]
+casks = [
+  { name = "peripheryapp/periphery/periphery" },
+  { name = "tuist" },
+]
 xcode_required_brews = [
   { name = "facebook/fb/idb-companion" },
   { name = "swiftlint" },
 ]
-disabled_casks = [
-  { name = "cleanshot", reason = "CleanShot X is installed via Setapp after login" },
-  { name = "mtmr", reason = "Upstream cask download fails TLS negotiation from fresh macOS guests" },
+
+[packages.groups.personal-apps]
+description = "Personal apps for personal/homelab machines; never installed on work"
+casks = [
+  { name = "arq", appdir = "/Applications" },
+  { name = "voiceink" },
+  { name = "tailscale-app" },
 ]
-gh_extensions = [
-  { name = "enthus-appdev/gh-attach" },
-]
+
+# === Machine types compose groups ===
+
+[packages.machine_types.ci]
+description = "Minimal/fast tier for CI dry-run, Tart smoke, and shell audits"
+groups = ["base"]
+
+[packages.machine_types.personal]
+description = "Personal daily-driver Mac"
+groups = ["base", "dev", "dev-apple", "personal-apps"]
+
+[packages.machine_types.homelab]
+description = "Homelab Mac"
+groups = ["base", "dev", "dev-apple", "personal-apps"]
+
+[packages.machine_types.work]
+description = "Managed work Mac (no personal apps)"
+groups = ["base", "dev", "dev-apple"]

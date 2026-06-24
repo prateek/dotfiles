@@ -29,13 +29,13 @@ trap 'rm -rf "$tmp_root"' EXIT
 
 render_script() {
   local out="$1"
-  local profile="${2:-core}"
-  chezmoi \
+  local machine_type="${2:-ci}"
+  env -u DOTFILES_MACHINE_TYPE chezmoi \
     --source "$DOTFILES_ROOT" \
     --destination "$tmp_root/home" \
     --cache "$tmp_root/cache" \
     --persistent-state "$tmp_root/state.boltdb" \
-    --override-data "{\"run_install_scripts\":true,\"apply_macos_defaults\":false,\"secrets_enabled\":false,\"install_profile\":\"$profile\",\"manage_zinit_external\":false}" \
+    --override-data "{\"run_install_scripts\":true,\"apply_macos_defaults\":false,\"secrets_enabled\":false,\"machine_type\":\"$machine_type\",\"manage_zinit_external\":false}" \
     execute-template \
     --file "$DOTFILES_ROOT/home/.chezmoiscripts/run_onchange_after_12-gh-extensions.sh.tmpl" \
     >"$out"
@@ -58,7 +58,7 @@ EOF
 }
 
 script="$tmp_root/gh-extensions.sh"
-render_script "$script" core
+render_script "$script" ci
 bash -n "$script" || die "rendered script has invalid syntax"
 assert_contains "$(<"$script")" 'enthus-appdev/gh-attach'
 
@@ -107,7 +107,7 @@ XDG_DATA_HOME="$tmp_root/home-4/.local/share" \
   || die "script should not abort when an individual extension install fails"
 assert_contains "$out" 'gh extension install failed for enthus-appdev/gh-attach'
 
-# Case 5: empty extensions list (future profile with no gh_extensions) is a no-op
+# Case 5: empty extensions list (a machine type whose groups declare no gh_extensions) is a no-op
 # and must not abort under `set -u` — guards the bash 3.2 empty-array idiom.
 empty_script="$tmp_root/gh-extensions-empty.sh"
 # Strip every entry line so `extensions=(` and `)` are adjacent — a truly empty

@@ -1,12 +1,21 @@
 [packages]
-default_profile = "full"
+default_machine_type = "personal"
 
-[packages.profiles.core]
-description = "Core package set"
+[packages.groups.base]
+description = "Essentials on every machine, including ci"
 brews = [ { name = "git" }, { name = "gh" }, { name = "mise" } ]
 casks = [ { name = "1password" }, { name = "ghostty" } ]
 
-[packages.profiles.full]
-description = "Full package set"
-brews = [ { name = "git" }, { name = "gh" }, { name = "mise" }, { name = "postgresql@16" } ]
-casks = [ { name = "1password" }, { name = "ghostty" }, { name = "docker" } ]
+[packages.groups.dev]
+description = "Full dev toolchain (real machines, not ci)"
+brews = [ { name = "postgresql@16" } ]
+casks = [ { name = "docker" } ]
+
+[packages.machine_types.ci]
+groups = ["base"]
+
+[packages.machine_types.personal]
+groups = ["base", "dev"]
+
+[packages.machine_types.work]
+groups = ["base", "dev"]

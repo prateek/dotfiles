@@ -6,6 +6,7 @@ owner: Prateek
 related:
   - ../runbooks/tart-mini-validation.md
   - 0002-zsh-fresh-shell-validator.md
+  - 0010-machine-type-package-selection.md
 ---
 
 # ADR 0004 - Tart install validation and Perfetto trace diagnostics

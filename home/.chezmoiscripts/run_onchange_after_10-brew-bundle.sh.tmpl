@@ -4,13 +4,16 @@
 # brewfile.tmpl sha256: {{ include ".chezmoitemplates/brewfile.tmpl" | sha256sum }}
 
 {{- if .run_install_scripts }}
-profile={{ .install_profile | default .packages.default_profile | quote }}
+{{- $machineType := coalesce (env "DOTFILES_MACHINE_TYPE") (dig "machine_type" "" .) .packages.default_machine_type -}}
+{{- $hasDev := has "dev" (index .packages.machine_types $machineType).groups }}
+machine_type={{ $machineType | quote }}
+has_dev={{ $hasDev | toString | quote }}
 mas_opt_in={{ env "DOTFILES_INSTALL_MAS_APPS" | default "false" | quote }}
 
 case "$mas_opt_in" in
   1|true|TRUE|yes|YES|on|ON) ;;
   *)
-    if [ "$profile" = "full" ]; then
+    if [ "$has_dev" = "true" ]; then
       warn "Mac App Store installs disabled; set DOTFILES_INSTALL_MAS_APPS=true to opt in."
     fi
     ;;
@@ -19,8 +22,8 @@ esac
 brew_shellenv
 have brew || die "Homebrew is required before brew bundle can run."
 
-if [ "$profile" = "full" ]; then
-  log "Updating Homebrew before applying the full package profile."
+if [ "$has_dev" = "true" ]; then
+  log "Refreshing Homebrew before a large package install."
   run_timed "brew update" brew update --quiet
 fi
 
@@ -73,7 +76,7 @@ elif [ -n "${DOTFILES_HOMEBREW_BUNDLE_JOBS:-}${HOMEBREW_BUNDLE_JOBS:-}" ]; then
   warn "Installed Homebrew does not support brew bundle --jobs; using sequential formula installs."
 fi
 
-run_timed "brew bundle install ($profile)" brew "${bundle_args[@]}"
+run_timed "brew bundle install ($machine_type)" brew "${bundle_args[@]}"
 {{- else }}
 log "Package install disabled; skipping brew bundle."
 {{- end }}

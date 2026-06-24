@@ -25,7 +25,7 @@ mkdir -p "$tmp_home/.config/chezmoi" "$tmp_cache" "${tmp_state:h}" "$tmp_github_
 
 run_chezmoi() {
   DOTFILES_ROOT="$DOTFILES_ROOT" \
-  DOTFILES_INSTALL_PROFILE=core \
+  DOTFILES_MACHINE_TYPE=ci \
   DOTFILES_RUN_INSTALL_SCRIPTS=false \
   DOTFILES_APPLY_DEFAULTS=false \
   DOTFILES_SECRETS_ENABLED=false \

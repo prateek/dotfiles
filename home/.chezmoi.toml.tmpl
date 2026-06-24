@@ -1,6 +1,6 @@
 {{- /*
   First-machine settings. Each value resolves with explicit short-circuit:
-    1. Environment variable (e.g. DOTFILES_INSTALL_PROFILE) — for CI / Tart
+    1. Environment variable (e.g. DOTFILES_MACHINE_TYPE) — for CI / Tart
        non-interactive runs.
     2. promptStringOnce / promptBoolOnce — interactive prompt the first time
        chezmoi init runs on a new machine; the answer is saved in the
@@ -18,11 +18,6 @@
 {{- /* Defaults inlined here because chezmoi init does not load
        .chezmoidata/*.toml (data is bound after init renders this
        template). Keep the docstring above as the canonical reference. */ -}}
-{{- $profile := env "DOTFILES_INSTALL_PROFILE" -}}
-{{- if not $profile -}}
-{{-   $profile = promptStringOnce . "install_profile" "Install profile (core/full)" "full" -}}
-{{- end -}}
-
 {{- $secretsEnabled := env "DOTFILES_SECRETS_ENABLED" -}}
 {{- if not $secretsEnabled -}}
 {{-   $secretsEnabled = promptBoolOnce . "secrets_enabled" "Render secret-backed files via 1Password? (you can flip with DOTFILES_SECRETS_ENABLED=true later)" false | toString -}}
@@ -38,10 +33,14 @@
 {{-   $applyDefaults = promptBoolOnce . "apply_macos_defaults" "Apply macOS defaults from this repo?" true | toString -}}
 {{- end -}}
 
-{{- /* Machine class drives the elevation hook. Currently only Jamf-managed
-       work macs need a special step before sudo works; personal/homelab fall
-       through to the ordinary sudo prompt. See
-       docs/references/jamf-self-service-elevation.md. */ -}}
+{{- /* Machine type is the single axis driving package selection and the
+       elevation hook. Package groups are composed per machine type in
+       home/.chezmoidata/packages.toml (see
+       docs/adr/0010-machine-type-package-selection.md): work omits the
+       personal apps; the env-only `ci` type is the minimal CI/Tart/audit
+       tier. For elevation, only Jamf-managed work macs need a special step
+       before sudo works; personal/homelab fall through to the ordinary sudo
+       prompt (see docs/references/jamf-self-service-elevation.md). */ -}}
 {{- $machineType := env "DOTFILES_MACHINE_TYPE" -}}
 {{- if not $machineType -}}
 {{-   $machineType = promptChoiceOnce . "machine_type" "Machine type" (list "personal" "homelab" "work") "personal" -}}
@@ -74,7 +73,6 @@ dotfiles_dir = {{ $dotfilesDir | quote }}
 xdg_config_dir = {{ (env "XDG_CONFIG_HOME" | default (joinPath .chezmoi.homeDir ".config")) | quote }}
 xdg_cache_dir = {{ (env "XDG_CACHE_HOME" | default (joinPath .chezmoi.homeDir ".cache")) | quote }}
 xdg_state_dir = {{ (env "XDG_STATE_HOME" | default (joinPath .chezmoi.homeDir ".local/state")) | quote }}
-install_profile = {{ $profile | quote }}
 secrets_enabled = {{ $secretsEnabled }}
 run_install_scripts = {{ $runInstallScripts }}
 apply_macos_defaults = {{ $applyDefaults }}

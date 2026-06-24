@@ -280,7 +280,7 @@ tests/displayctl-config.zsh
 
 Package gating:
 
-- add the `betterdisplay` cask to the full package profile if needed;
+- add the `betterdisplay` cask to the `dev` package group if needed;
 - ignore the BetterDisplay config and onchange script when the cask is absent;
 - keep `displayctl` available as a repo tool, but make the apply script no-op without BetterDisplay.
 
