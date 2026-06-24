@@ -49,8 +49,6 @@ casks = [
   { name = "ghostty" },
   { name = "iterm2" },
   { name = "google-chrome" },
-  { name = "jump-desktop" },
-  { name = "jump-desktop-connect" },
   { name = "karabiner-elements" },
   { name = "leader-key" },
   { name = "moom", appdir = "/Applications" },
@@ -331,9 +329,6 @@ mas = [
   { name = "Okta Verify", id = 490179405 },
   { name = "Things", id = 904280696 },
 ]
-disabled_casks = [
-  { name = "mtmr", reason = "Upstream cask download fails TLS negotiation from fresh macOS guests" },
-]
 
 [packages.groups.dev-apple]
 description = "Xcode / iOS toolchain; presence gates the Xcode setup step. xcode_required_brews install after Xcode setup, not via the Brewfile."
@@ -360,6 +355,8 @@ xcode_required_brews = [
 [packages.groups.personal-apps]
 description = "Personal apps for personal/homelab machines; never installed on work"
 casks = [
+  { name = "jump-desktop" },
+  { name = "jump-desktop-connect" },
   { name = "arq", appdir = "/Applications" },
   { name = "voiceink" },
   { name = "tailscale-app" },
