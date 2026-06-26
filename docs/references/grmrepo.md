@@ -1,7 +1,7 @@
 ---
 status: current
 doc_type: reference
-updated: 2026-05-15
+updated: 2026-06-25
 ---
 
 # GRM (git-repo-manager) on this machine
@@ -25,7 +25,8 @@ This dotfiles repo wires up [git-repo-manager](https://github.com/hakoerber/git-
   - `cask "hammerspoon"` (declared in `home/.chezmoidata/packages.toml`)
   - `git-repo-manager` (via `cargo install git-repo-manager --locked`, if `cargo` exists)
 - It also materializes:
-  - `~/.config/grm/config.toml` from `home/dot_config/grm/config.toml`
+  - `~/.config/grm/config.toml` rendered by chezmoi from `home/dot_config/grm/config.toml.tmpl`
+    (base + machine-type fragments; see "Machine-type config")
   - `~/.hammerspoon/init.lua` from `home/dot_hammerspoon/init.lua`
   - `~/bin/{gh,grmrepo,grmrepo-refresh,repo-index}` from `home/bin/symlink_*`
     templates that point back to the repo-local `bin/` scripts
@@ -44,7 +45,23 @@ This dotfiles repo wires up [git-repo-manager](https://github.com/hakoerber/git-
     `~/bin/gh` wrapper)
   - `ghc` triggers a background refresh after cloning
 
-Config file: `~/.config/grm/config.toml`
+Config file: `~/.config/grm/config.toml` (generated; do not edit by hand)
+
+### Machine-type config (base + per-type; work stays local)
+
+`~/.config/grm/config.toml` is rendered by chezmoi from `home/dot_config/grm/config.toml.tmpl`,
+which merges:
+
+- **base** — `home/.chezmoiassets/grm/base.toml` (committed; every machine; curate by hand).
+- **personal / homelab** — `home/.chezmoiassets/grm/<machine_type>.toml` (committed; synced to
+  same-type machines).
+- **work** — `~/.config/grm/config.local.toml` (host-local, **never committed**; chezmoi-ignored).
+
+`grmrepo refresh` regenerates only *this* machine's fragment — the host-local file on a `work`
+machine, otherwise the committed `<machine_type>.toml` — skips owners already covered by `base.toml`,
+and re-renders `config.toml`. Work-org clones therefore never enter the dotfiles repo. After
+refreshing on a personal/homelab machine, commit the updated
+`home/.chezmoiassets/grm/<machine_type>.toml`.
 
 ### Config structure note
 

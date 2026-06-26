@@ -7,6 +7,9 @@
 .zshrc.local
 .config/dotfiles/chezmoi-drift/local.env
 
+{{/* Host-local grm trees (work repos) merged into config.toml by grmrepo-refresh. */}}
+.config/grm/config.local.toml
+
 {{/* Machine-local credentials, trust databases, and tool state. */}}
 .config/chezmoi
 .config/op
