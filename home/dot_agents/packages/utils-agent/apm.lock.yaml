@@ -1,5 +1,5 @@
 lockfile_version: '1'
-generated_at: '2026-05-14T18:12:28.534367+00:00'
+generated_at: '2026-06-26T19:09:44.117095+00:00'
 apm_version: 0.13.0
 dependencies:
 - repo_url: danshapiro/trycycle
@@ -27,6 +27,15 @@ dependencies:
   deployed_files:
   - .agents/skills/cli-creator
   content_hash: sha256:c8548eec5d64000583c0dc409d4354f2ef119067caa1fedd730287ba650741f1
+- repo_url: stablyai/agent-slack
+  host: github.com
+  resolved_commit: 6775fa878dfe7d38ca15899c765a2e19c9718a39
+  virtual_path: skills/agent-slack
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/agent-slack
+  content_hash: sha256:98d04f59417d89162b9e86721981f0db501a7dd886b00b5b3d96c173b1c16c15
 - repo_url: stablyai/orca
   host: github.com
   resolved_commit: cfe2a83145cea3fef41736ae0e1f2ce1de906476

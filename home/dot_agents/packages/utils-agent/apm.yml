@@ -8,6 +8,7 @@ dependencies:
     - openai/skills/skills/.curated/cli-creator
     - danshapiro/trycycle
     - hefgi/skills/shortcut
+    - stablyai/agent-slack/skills/agent-slack
     - stablyai/orca/skills/orca-cli
     - git: stablyai/orca
       path: skills/orchestration

@@ -4,3 +4,13 @@ type = "git-repo"
 url = "https://github.com/zdharma-continuum/zinit.git"
 refreshPeriod = "168h"
 {{- end }}
+{{- if eq .machine_type "work" }}
+{{/* Private overlays (internal/work-specific) composed into generated docs by
+     run_after_37-agent-slack-doc. Work machines only; CI/personal/homelab and
+     forks never reference the private repo. Gated on machine_type (always
+     present) because chezmoi errors on missing data keys. */}}
+[".local/share/dotfiles/private"]
+type = "git-repo"
+url = "git@github.com:prateek/dotfiles-private.git"
+refreshPeriod = "168h"
+{{- end }}

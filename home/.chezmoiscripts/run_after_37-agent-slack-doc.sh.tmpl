@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Compose ~/.agents/docs/slack.md = public agent-slack playbook (base, embedded
+# below from .chezmoitemplates/agent-slack-base.md) + the Chronosphere internal
+# map from the private overlay (prateek/dotfiles-private), cloned by
+# .chezmoiexternal into ~/.local/share/dotfiles/private on work machines
+# (machine_type=work). Runs every apply (not onchange) so private-overlay
+# refreshes flow through: the fragment lives on the target side and can't be
+# hashed at render. Writes atomically via a temp file + mv.
+set -euo pipefail
+
+dest="{{ .chezmoi.homeDir }}/.agents/docs/slack.md"
+frag="{{ .chezmoi.homeDir }}/.local/share/dotfiles/private/agents/docs/slack-chronosphere.md"
+
+mkdir -p "$(dirname "$dest")"
+tmp="$(mktemp "${dest}.XXXXXX")"
+trap 'rm -f "$tmp"' EXIT
+
+{
+cat <<'AGENT_SLACK_BASE_EOF'
+{{ includeTemplate "agent-slack-base.md" | trim }}
+AGENT_SLACK_BASE_EOF
+printf '\n\n'
+if [ -r "$frag" ]; then
+  cat "$frag"
+else
+  cat <<'AGENT_SLACK_PTR_EOF'
+## Chronosphere internal map
+
+Not rendered on this machine. The Chronosphere overlay composes only on work
+machines (machine_type = work) with access to the private overlay repo.
+AGENT_SLACK_PTR_EOF
+fi
+} > "$tmp"
+
+mv -f "$tmp" "$dest"

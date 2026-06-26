@@ -61,6 +61,7 @@ for day-to-day implementation details.
 | [ADR 0008 - Sudo askpass via 1Password](adr/0008-sudo-askpass-1password.md) | Current behavior remains [Jamf Self Service Elevation](references/jamf-self-service-elevation.md); accepted askpass design is tracked in [Sudo Askpass 1Password](plans/sudo-askpass-1password-plan.md). |
 | [ADR 0009 - Karabiner config via Goku codegen](adr/0009-goku-karabiner-codegen.md) | [Goku Karabiner Migration](plans/goku-karabiner-migration-plan.md); edit `karabiner.edn`, never `karabiner.json`. |
 | [ADR 0010 - Single machine_type axis for package selection](adr/0010-machine-type-package-selection.md) | [Chezmoi Architecture](references/chezmoi-architecture.md) > Packages And Tools; [plan](plans/machine-type-package-selection-plan.md). |
+| [ADR 0011 - Private repo for config overlays](adr/0011-private-repo-config-overlays.md) | `prateek/dotfiles-private` cloned via gated `.chezmoiexternal`, composed by `run_after_37-agent-slack-doc`; first consumer `~/.agents/docs/slack.md`. |
 
 ## Research
 

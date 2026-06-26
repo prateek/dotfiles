@@ -36,4 +36,4 @@ run_chezmoi() {
 }
 
 run_chezmoi init --promptDefaults --source "$dotfiles_root" >/dev/null
-run_chezmoi apply --dry-run --source "$dotfiles_root/home" --destination "$tmp_home" >/dev/null
+run_chezmoi apply --dry-run --refresh-externals=never --source "$dotfiles_root/home" --destination "$tmp_home" >/dev/null

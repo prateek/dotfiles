@@ -70,7 +70,8 @@ Optional sections when useful:
 
 ### 4) Topic-specific rules (Slack)
 
-- Prefer the OpenAI Slack connector for channel discovery and message operations.
+- Prefer the `agent-slack` CLI for channel discovery and message operations; pass `--workspace` explicitly. See `~/.agents/docs/slack.md`.
+- `slack.md` is generated at chezmoi apply (public base `home/.chezmoitemplates/agent-slack-base.md` plus a private overlay); edit the base template and the overlay source, never the rendered `~/.agents/docs/slack.md`.
 - Do not guess channel IDs. Resolve IDs from Slack tools.
 - If an ID cannot be resolved, mark it as `UNKNOWN` and add a short verification note.
 - Include channel usage guidance ("what it is for" and "when to use it").
