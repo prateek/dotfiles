@@ -35,7 +35,7 @@ render_script() {
     --destination "$tmp_root/home" \
     --cache "$tmp_root/cache" \
     --persistent-state "$tmp_root/state.boltdb" \
-    --override-data "{\"run_install_scripts\":true,\"apply_macos_defaults\":false,\"secrets_enabled\":false,\"machine_type\":\"$machine_type\",\"manage_zinit_external\":false}" \
+    --override-data "{\"run_install_scripts\":true,\"apply_macos_defaults\":false,\"secrets_enabled\":false,\"machine_type\":\"$machine_type\"}" \
     execute-template \
     --file "$DOTFILES_ROOT/home/.chezmoiscripts/run_onchange_after_12-gh-extensions.sh.tmpl" \
     >"$out"

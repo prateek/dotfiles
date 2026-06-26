@@ -255,8 +255,7 @@ prepare_home() {
     DOTFILES_MACHINE_TYPE=ci \
     DOTFILES_SECRETS_ENABLED=false \
     DOTFILES_RUN_INSTALL_SCRIPTS=false \
-    DOTFILES_APPLY_DEFAULTS=false \
-    DOTFILES_MANAGE_ZINIT_EXTERNAL=false \
+    DOTFILES_APPLY_MACOS_DEFAULTS=false \
     DOTFILES_SKIP_PLIST_HOOKS=1 \
     XDG_CONFIG_HOME="$xdg_config_home" \
     XDG_CACHE_HOME="$xdg_cache_home" \
@@ -276,8 +275,7 @@ prepare_home() {
     DOTFILES_MACHINE_TYPE=ci \
     DOTFILES_SECRETS_ENABLED=false \
     DOTFILES_RUN_INSTALL_SCRIPTS=false \
-    DOTFILES_APPLY_DEFAULTS=false \
-    DOTFILES_MANAGE_ZINIT_EXTERNAL=false \
+    DOTFILES_APPLY_MACOS_DEFAULTS=false \
     DOTFILES_SKIP_PLIST_HOOKS=1 \
     XDG_CONFIG_HOME="$xdg_config_home" \
     XDG_CACHE_HOME="$xdg_cache_home" \
@@ -289,7 +287,7 @@ prepare_home() {
       --cache "$xdg_cache_home/chezmoi" \
       --persistent-state "$xdg_state_home/chezmoi/state.boltdb" \
       --refresh-externals=never \
-      apply --exclude=scripts >/dev/null
+      apply --exclude=scripts,externals >/dev/null
 
   if [[ -d "${XDG_DATA_HOME:-$HOME/.local/share}/zinit/zinit.git" ]]; then
     mkdir -p "$home_dir/.local/share/zinit"

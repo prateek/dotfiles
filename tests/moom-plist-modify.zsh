@@ -28,7 +28,7 @@ semantic_merged_plist="$tmp_root/semantic-merged.plist"
 
 chezmoi \
   --source "$DOTFILES_ROOT" \
-  --override-data '{"manage_zinit_external":false}' \
+  --override-data '{}' \
   execute-template \
   --file "$DOTFILES_ROOT/home/Library/private_Preferences/modify_private_com.manytricks.Moom.plist.tmpl" \
   >"$script"

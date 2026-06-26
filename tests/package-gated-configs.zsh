@@ -38,33 +38,33 @@ chezmoi_isolated() {
 }
 
 chezmoi_isolated \
-  --override-data '{"manage_zinit_external":false,"machine_type":"personal"}' \
+  --override-data '{"machine_type":"personal"}' \
   managed --path-style relative >"$personal_managed"
 
 chezmoi_isolated \
-  --override-data '{"manage_zinit_external":false,"machine_type":"ci"}' \
+  --override-data '{"machine_type":"ci"}' \
   managed --path-style relative >"$ci_managed"
 
 chezmoi_isolated \
-  --override-data '{"manage_zinit_external":false,"machine_type":"ci"}' \
+  --override-data '{"machine_type":"ci"}' \
   ignored >"$ci_ignored"
 
 chezmoi_isolated \
-  --override-data '{"manage_zinit_external":false,"machine_type":"work"}' \
+  --override-data '{"machine_type":"work"}' \
   managed --path-style relative >"$work_managed"
 
 chezmoi_isolated \
-  --override-data '{"manage_zinit_external":false,"machine_type":"work"}' \
+  --override-data '{"machine_type":"work"}' \
   ignored >"$work_ignored"
 
 # Empty group set ⇒ no casks enabled ⇒ every gated config ignored. Arrays in
 # --override-data replace rather than merge, so groups=[] wins.
 chezmoi_isolated \
-  --override-data '{"manage_zinit_external":false,"machine_type":"ci","packages":{"machine_types":{"ci":{"groups":[]}}}}' \
+  --override-data '{"machine_type":"ci","packages":{"machine_types":{"ci":{"groups":[]}}}}' \
   ignored >"$empty_ignored"
 
 chezmoi_isolated \
-  --override-data '{"manage_zinit_external":false,"machine_type":"personal"}' \
+  --override-data '{"machine_type":"personal"}' \
   execute-template \
   --file "$DOTFILES_ROOT/home/Library/Application Support/Leader Key/config.json.tmpl" \
   >"$leader_key_json"
@@ -171,7 +171,7 @@ done
 # An unknown machine type must fail loudly through the gate, not silently treat
 # every app as disabled.
 set +e
-bogus_out="$(chezmoi_isolated --override-data '{"manage_zinit_external":false,"machine_type":"bogus"}' ignored 2>&1)"
+bogus_out="$(chezmoi_isolated --override-data '{"machine_type":"bogus"}' ignored 2>&1)"
 bogus_rc=$?
 set -e
 [[ $bogus_rc -ne 0 ]] || die "unknown machine type should fail the ignored evaluation"

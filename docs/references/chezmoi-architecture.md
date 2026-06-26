@@ -2,7 +2,7 @@
 status: current
 doc_type: reference
 created: 2026-04-27
-updated: 2026-06-21
+updated: 2026-06-26
 related:
   - ../index.md
   - ../adr/0006-chezmoi-migration-prototype.md
@@ -77,7 +77,8 @@ Scripts must be idempotent. A rerun should converge or report a clear blocker.
   `[packages.groups.*]` (`base`, `dev`, `dev-apple`, `personal-apps`) are
   composed per `[packages.machine_types.*]`: `ci=[base]`,
   `personal=homelab=[base,dev,dev-apple,personal-apps]`, `work=[base,dev,dev-apple]`.
-  Work omits the personal apps; `ci` is the env-only minimal tier for CI/Tart/audits.
+  Work omits the personal apps; `ci` is the minimal CI/Tart/audit tier — a listed
+  `machine_type`, also selectable via `DOTFILES_MACHINE_TYPE`.
   See [ADR 0010](../adr/0010-machine-type-package-selection.md).
 - `home/.chezmoitemplates/brewfile.tmpl` renders the Brewfile input as the union
   of each section across the selected machine type's groups, deduped by name.
@@ -94,6 +95,13 @@ Scripts must be idempotent. A rerun should converge or report a clear blocker.
   `--include-mas` is used.
 - Mise owns active tool selection and shims. See
   [Mise Tool Management](mise-tool-management.md).
+
+## Config Gating
+
+Feature toggles split by timing: render-time/auto-derived versus init-time/declared.
+See [ADR 0012](../adr/0012-config-gating-convention.md) for the convention, the
+missing-key and `default`-both-arms gotchas, and the accepted going-forward
+direction (one identity prompt plus a layered `machines.toml`, no config env vars).
 
 ## App Config
 

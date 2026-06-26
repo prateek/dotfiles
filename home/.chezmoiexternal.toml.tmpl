@@ -1,9 +1,7 @@
-{{- if .manage_zinit_external }}
 [".local/share/zinit/zinit.git"]
 type = "git-repo"
 url = "https://github.com/zdharma-continuum/zinit.git"
 refreshPeriod = "168h"
-{{- end }}
 {{- if eq .machine_type "work" }}
 {{/* Private overlays (internal/work-specific) composed into generated docs by
      run_after_37-agent-slack-doc. Work machines only; CI/personal/homelab and

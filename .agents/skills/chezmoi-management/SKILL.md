@@ -17,7 +17,7 @@ Use this skill when any of these are true:
 - Editing or adding files under `home/.chezmoitemplates/`, `home/.chezmoiassets/`, `home/.chezmoiscripts/`, `home/.chezmoidata/`, or `home/.chezmoiexternal.*` (zinit and other clone/pull-only dependencies).
 - Capturing or modifying macOS app preferences via plist fragments.
 - Touching `home/.chezmoidata/{packages,secrets,licenses}.toml` or `brewfile.tmpl`.
-- Toggling chezmoi-owned `DOTFILES_*` env vars — init prompts (`MACHINE_TYPE`, `RUN_INSTALL_SCRIPTS`, `APPLY_DEFAULTS`, `SECRETS_ENABLED`), env-set-at-init (`INSTALL_XCODE`, `MANAGE_ZINIT_EXTERNAL` — env-or-default, not interactively prompted), or apply-time gates (MAS, Homebrew tuning, plist hooks, post-apply relaunch). `MACHINE_TYPE` also selects the package groups. Full table with effects and out-of-scope test/VM vars in `references/packages-and-secrets.md`.
+- Toggling chezmoi-owned `DOTFILES_*` env vars — init prompts (`MACHINE_TYPE`, `RUN_INSTALL_SCRIPTS`, `APPLY_MACOS_DEFAULTS`, `SECRETS_ENABLED`) or apply-time gates (MAS, Homebrew tuning, plist hooks, post-apply relaunch, `INSTALL_XCODE` force-download). `MACHINE_TYPE` also selects the package groups. Full table with effects and out-of-scope test/VM vars in `references/packages-and-secrets.md`.
 - Wiring a 1Password `op://` reference.
 - Translating between `~/.<file>` and `home/<dot_*>` source paths.
 

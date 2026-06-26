@@ -22,7 +22,7 @@ run_chezmoi() {
   DOTFILES_ROOT="$dotfiles_root" \
   DOTFILES_MACHINE_TYPE="$machine_type" \
   DOTFILES_RUN_INSTALL_SCRIPTS=false \
-  DOTFILES_APPLY_DEFAULTS=false \
+  DOTFILES_APPLY_MACOS_DEFAULTS=false \
   DOTFILES_SECRETS_ENABLED=false \
   HOME="$tmp_home" \
   XDG_CONFIG_HOME="$tmp_home/.config" \

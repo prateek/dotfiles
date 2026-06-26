@@ -1,6 +1,5 @@
 {{ template "script_lib.sh" . }}
 
-{{- if .manage_zinit_external }}
 zinit_dir="${XDG_DATA_HOME:-$HOME/.local/share}/zinit/zinit.git"
 legacy_dir="$HOME/.zinit"
 legacy_link="$legacy_dir/bin"
@@ -21,6 +20,3 @@ if [ -e "$legacy_link" ] || [ -L "$legacy_link" ]; then
   fi
 fi
 ln -snf "$zinit_dir" "$legacy_link"
-{{- else }}
-log "zinit external disabled."
-{{- end }}

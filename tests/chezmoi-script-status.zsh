@@ -27,10 +27,9 @@ run_chezmoi() {
   DOTFILES_ROOT="$DOTFILES_ROOT" \
   DOTFILES_MACHINE_TYPE=ci \
   DOTFILES_RUN_INSTALL_SCRIPTS=false \
-  DOTFILES_APPLY_DEFAULTS=false \
+  DOTFILES_APPLY_MACOS_DEFAULTS=false \
   DOTFILES_SECRETS_ENABLED=false \
   DOTFILES_INSTALL_XCODE=false \
-  DOTFILES_MANAGE_ZINIT_EXTERNAL=false \
   DOTFILES_SKIP_PLIST_HOOKS=1 \
   GHPATH="$tmp_github_root" \
   GRMREPO_CONFIG="$tmp_grmrepo_config" \
@@ -47,9 +46,9 @@ run_chezmoi() {
 }
 
 run_chezmoi init --promptDefaults --source "$DOTFILES_ROOT"
-run_chezmoi apply >/dev/null
+run_chezmoi apply --exclude=externals >/dev/null
 
-status_output="$(run_chezmoi status)"
+status_output="$(run_chezmoi status --exclude=externals)"
 [[ -z "$status_output" ]] || die "expected clean chezmoi status after apply, got: $status_output"
 
 print -- "OK chezmoi-script-status"

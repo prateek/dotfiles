@@ -26,7 +26,7 @@ source_xml="$DOTFILES_ROOT/home/.chezmoitemplates/com.cmuxterm.app.plist.tmpl"
 
 chezmoi \
   --source "$DOTFILES_ROOT" \
-  --override-data '{"manage_zinit_external":false}' \
+  --override-data '{}' \
   execute-template \
   --file "$DOTFILES_ROOT/home/Library/private_Preferences/modify_private_com.cmuxterm.app.plist.tmpl" \
   >"$script"

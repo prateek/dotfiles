@@ -34,7 +34,7 @@ for app_spec in "${apps[@]}"; do
 
   chezmoi \
     --source "$DOTFILES_ROOT" \
-    --override-data '{"manage_zinit_external":false}' \
+    --override-data '{}' \
     execute-template \
     --file "$DOTFILES_ROOT/home/Library/private_Preferences/modify_private_$domain.plist.tmpl" \
     >"$script"

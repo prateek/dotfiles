@@ -29,7 +29,7 @@ mkdir -p "$tmp_home/.config/chezmoi" "$tmp_cache" "${tmp_state:h}"
 
 DOTFILES_MACHINE_TYPE=ci \
 DOTFILES_RUN_INSTALL_SCRIPTS=false \
-DOTFILES_APPLY_DEFAULTS=false \
+DOTFILES_APPLY_MACOS_DEFAULTS=false \
 DOTFILES_SECRETS_ENABLED=false \
 HOME="$tmp_home" \
 XDG_CONFIG_HOME="$tmp_home/.config" \

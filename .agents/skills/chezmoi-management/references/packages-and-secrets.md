@@ -63,7 +63,7 @@ groups = ["base", "dev", "dev-apple", "personal-apps"]
 groups = ["base", "dev", "dev-apple"]
 ```
 
-Selection is controlled by `DOTFILES_MACHINE_TYPE` (overrides `default_machine_type`). Interactive values: `personal`, `homelab`, `work`. `ci` is an env-only minimal tier for CI/Tart/audits. See `docs/adr/0010-machine-type-package-selection.md`.
+Selection is controlled by `DOTFILES_MACHINE_TYPE` (overrides `default_machine_type`). Interactive values: `personal`, `homelab`, `work`, `ci`. `ci` is the minimal tier for CI/Tart/audits (also selectable via `DOTFILES_MACHINE_TYPE`). See `docs/adr/0010-machine-type-package-selection.md`.
 
 ## Brewfile Rendering
 
@@ -97,19 +97,17 @@ Two flavors of env var:
 
 | Init env var | Persisted as | Interactive prompt? | Default |
 |---|---|---|---|
-| `DOTFILES_MACHINE_TYPE` | `machine_type` | Yes (`promptChoiceOnce`: personal/homelab/work) — env overrides the prompt; `ci` is env-only | `personal` (matches `default_machine_type` in `packages.toml`) |
+| `DOTFILES_MACHINE_TYPE` | `machine_type` | Yes (`promptChoiceOnce`: personal/homelab/work/ci) — env overrides the prompt | `personal` (matches `default_machine_type` in `packages.toml`) |
 | `DOTFILES_RUN_INSTALL_SCRIPTS` | `run_install_scripts` | Yes (`promptBoolOnce`) — env overrides the prompt | `true` |
-| `DOTFILES_APPLY_DEFAULTS` | `apply_macos_defaults` | Yes (`promptBoolOnce`) — env overrides the prompt | `true` |
+| `DOTFILES_APPLY_MACOS_DEFAULTS` | `apply_macos_defaults` | Yes (`promptBoolOnce`) — env overrides the prompt | `true` |
 | `DOTFILES_SECRETS_ENABLED` | `secrets_enabled` | Yes (`promptBoolOnce`) — env overrides the prompt | `false` |
-| `DOTFILES_INSTALL_XCODE` | `install_xcode` | **No** — env-or-default only; not prompted. The `15-xcode` script also re-reads the env var at apply time so `DOTFILES_INSTALL_XCODE=true chezmoi apply` triggers a one-off download without re-init. | `false` |
-| `DOTFILES_MANAGE_ZINIT_EXTERNAL` | `manage_zinit_external` | **No** — env-or-default only; not prompted. `home/.chezmoiexternal.toml.tmpl` gates on the persisted `.manage_zinit_external` value, NOT on the env var, so a one-off `DOTFILES_MANAGE_ZINIT_EXTERNAL=false chezmoi apply` does NOT disable zinit on an already-initialized machine — re-init or `chezmoi edit-config` to change. (Test harnesses such as `scripts/audit/zsh-fresh-shells.zsh` export this var around BOTH init and apply in their own private XDG dir; only the init export ends up persisted, and the apply-side export is inert for the external gate because the template reads the persisted data value.) | `true` |
 
 **Apply-time env vars (read on every `chezmoi apply` via `env` template function):**
 
 | Apply env var | Effect |
 |---|---|
 | `DOTFILES_INSTALL_MAS_APPS` | Renders MAS entries in Brewfile only when `true` |
-| `DOTFILES_INSTALL_XCODE` | One-off apply-time override that triggers the Apple ID-backed Xcode download in `run_onchange_after_15-xcode.sh.tmpl`. Persisted value comes from `install_xcode`; set this env var on a specific apply to opt into the download without re-initing. |
+| `DOTFILES_INSTALL_XCODE` | Forces the Apple ID-backed Xcode download in `run_onchange_after_15-xcode.sh.tmpl`. The script check&sets Xcode by presence: on a dev-apple machine it installs the pinned version when absent (interactive apply, or this set), otherwise it fails loudly. |
 | `DOTFILES_HOMEBREW_BUNDLE_JOBS` | Parallelism for `brew bundle install` |
 | `DOTFILES_HOMEBREW_DOWNLOAD_CONCURRENCY` | Per-bottle download concurrency for Homebrew |
 | `DOTFILES_PLIST_VERBOSE` | Verbose logging from the plist merge engine |
@@ -117,9 +115,9 @@ Two flavors of env var:
 | `DOTFILES_SKIP_APP_RESTART` | Skip app-restart side effects in plist hooks |
 | `DOTFILES_SKIP_LSREGISTER` | Skip Launch Services re-registration in plist hooks |
 | `DOTFILES_SKIP_PLIST_HOOKS` | Disable the `scripts/chezmoi-hooks/post-apply-plists.sh` hook |
-| `DOTFILES_SKIP_REINDEX` | Skip Spotlight reindex side effects in plist hooks |
+| `DOTFILES_SKIP_SPOTLIGHT_REINDEX` | Skip Spotlight reindex side effects in plist hooks |
 
-Init-prompt vars are persisted at init time. Setting them on a later `chezmoi apply` (e.g., `DOTFILES_APPLY_DEFAULTS=false chezmoi apply`, `DOTFILES_SECRETS_ENABLED=true chezmoi apply`) does NOT take effect — the persisted answer in `~/.config/chezmoi/chezmoi.toml` wins. To change, run `chezmoi edit-config` or re-init.
+Init-prompt vars are persisted at init time. Setting them on a later `chezmoi apply` (e.g., `DOTFILES_APPLY_MACOS_DEFAULTS=false chezmoi apply`, `DOTFILES_SECRETS_ENABLED=true chezmoi apply`) does NOT take effect — the persisted answer in `~/.config/chezmoi/chezmoi.toml` wins. To change, run `chezmoi edit-config` or re-init.
 
 **Out of scope for this skill** (test/VM/harness/shell-startup vars; do not trigger on these): `DOTFILES_AUDIT_DIRENV`, `DOTFILES_CAPTURE_ROOT`, `DOTFILES_ROOT`, `DOTFILES_SKIP_LAUNCHCTL_SYNC`, `DOTFILES_SUDO_*`, `DOTFILES_TART_*`, `DOTFILES_TRACE*`, `DOTFILES_WARM_*`.
 
@@ -205,9 +203,9 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply prateek
 # apply_macos_defaults, secrets_enabled (each overridable via the matching
 # DOTFILES_* env var for non-interactive runs).
 #
-# install_xcode is NOT prompted interactively. It defaults to false; set
-# DOTFILES_INSTALL_XCODE=true at init time to persist `true`, or set it on a
-# specific `chezmoi apply` for a one-off Xcode download without re-initing.
+# Xcode is not a config toggle: the 15-xcode script check&sets it by presence.
+# On a dev-apple machine it installs the pinned Xcode when absent (interactive
+# apply, or DOTFILES_INSTALL_XCODE=true to force a non-interactive download).
 ```
 
 Non-interactive variant for Tart / CI:
@@ -215,9 +213,8 @@ Non-interactive variant for Tart / CI:
 ```text
 DOTFILES_MACHINE_TYPE=ci \
 DOTFILES_RUN_INSTALL_SCRIPTS=true \
-DOTFILES_APPLY_DEFAULTS=false \
+DOTFILES_APPLY_MACOS_DEFAULTS=false \
 DOTFILES_SECRETS_ENABLED=false \
-DOTFILES_INSTALL_XCODE=false \
   sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply prateek
 ```
 

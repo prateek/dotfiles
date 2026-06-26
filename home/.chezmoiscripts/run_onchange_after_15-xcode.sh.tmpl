@@ -7,17 +7,6 @@
 {{- $machineType := coalesce (env "DOTFILES_MACHINE_TYPE") (dig "machine_type" "" .) .packages.default_machine_type }}
 machine_type={{ $machineType | quote }}
 has_apple={{ has "dev-apple" (index .packages.machine_types $machineType).groups | toString | quote }}
-install_xcode={{ .install_xcode | default false | toString | quote }}
-env_install_xcode={{ env "DOTFILES_INSTALL_XCODE" | quote }}
-if [ -n "$env_install_xcode" ]; then
-  install_xcode="$env_install_xcode"
-fi
-
-case "$install_xcode" in
-  true|1|yes|on) install_xcode=1 ;;
-  false|0|no|off) install_xcode=0 ;;
-  *) die "install_xcode/DOTFILES_INSTALL_XCODE must be true or false." ;;
-esac
 
 if [ "$has_apple" != "true" ]; then
   log "Xcode install skipped for $machine_type machine type (no dev-apple group)."
@@ -38,6 +27,11 @@ triple_file="$HOME/.agents/state/ios-triple.json"
 [ -r "$triple_file" ] || die "Missing Xcode version pin: $triple_file"
 xcode_version="$(jq -r '.xcode_version // empty' "$triple_file")"
 [ -n "$xcode_version" ] || die "Missing .xcode_version in $triple_file"
+# Optional minimum: when set, any selected Xcode >= it satisfies the pin.
+xcode_version_min="$(jq -r '.xcode_version_min // empty' "$triple_file")"
+
+# version_ge a b -> 0 (true) if a >= b, comparing dotted versions via sort -V.
+version_ge() { [ "$(printf '%s\n%s\n' "$1" "$2" | sort -V | tail -n1)" = "$1" ]; }
 
 xcode_required_brews=(
 {{- $xb := list -}}
@@ -56,23 +50,38 @@ xcode_required_brews=(
 {{- end }}
 )
 
+# check & set: use a satisfying Xcode if present, otherwise download it.
+select_version="$xcode_version"
+have_xcode=0
 if xcodes installed "$xcode_version" >/dev/null 2>&1; then
-  log "Xcode $xcode_version already installed."
-elif [ "$install_xcode" = "1" ]; then
-  warn "Installing Xcode $xcode_version through xcodes may prompt for Apple ID login."
-  dotfiles_sudo_start "Xcode install needs administrator access. Enter your macOS password if prompted."
-  run_timed "xcodes install $xcode_version" xcodes install "$xcode_version" --experimental-unxip
-else
-  warn "Xcode $xcode_version is not installed. Skipping Xcode download because xcodes requires Apple ID login."
-  warn "Run this when you want the Apple ID-backed Xcode download: DOTFILES_INSTALL_XCODE=true chezmoi apply"
-  if [ "${#xcode_required_brews[@]}" -gt 0 ]; then
-    warn "Skipping Xcode-required Homebrew formulae until Xcode is installed: ${xcode_required_brews[*]}"
+  have_xcode=1
+elif [ -n "$xcode_version_min" ]; then
+  current_xcode="$(xcodebuild -version 2>/dev/null | awk 'NR==1 {print $2}' || true)"
+  if [ -n "$current_xcode" ] && version_ge "$current_xcode" "$xcode_version_min"; then
+    have_xcode=1
+    select_version="$current_xcode"
   fi
-  exit 0
+fi
+
+if [ "$have_xcode" = "1" ]; then
+  log "Xcode $select_version satisfies the pin (>= ${xcode_version_min:-$xcode_version})."
+else
+  # Not present. xcodes needs an interactive Apple ID login to download, so install
+  # only when interactive or explicitly forced; otherwise fail loudly rather than
+  # silently skip (a dev-apple machine is expected to end up with Xcode).
+  force_xcode=0
+  case "${DOTFILES_INSTALL_XCODE:-}" in true|1|yes|on) force_xcode=1 ;; esac
+  if [ "$force_xcode" = "1" ] || { [ -t 0 ] && [ -t 1 ]; }; then
+    warn "Installing Xcode $xcode_version through xcodes; this may prompt for Apple ID login."
+    dotfiles_sudo_start "Xcode install needs administrator access. Enter your macOS password if prompted."
+    run_timed "xcodes install $xcode_version" xcodes install "$xcode_version" --experimental-unxip
+  else
+    die "Xcode $xcode_version is not installed and this apply is non-interactive. xcodes needs an interactive Apple ID login to download Xcode. Re-run interactively, or set DOTFILES_INSTALL_XCODE=true to force the download."
+  fi
 fi
 
 dotfiles_sudo_start "Xcode setup needs administrator access. Enter your macOS password if prompted."
-run_timed "xcodes select $xcode_version" xcodes select "$xcode_version"
+run_timed "xcodes select $select_version" xcodes select "$select_version"
 run_timed "xcodebuild license" sudo xcodebuild -license accept
 run_timed "xcodebuild first launch" sudo xcodebuild -runFirstLaunch
 

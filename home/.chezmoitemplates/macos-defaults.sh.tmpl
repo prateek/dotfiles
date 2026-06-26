@@ -412,9 +412,9 @@ defaults write com.apple.spotlight orderedItems -array \
 	'{"enabled" = 0;"name" = "MENU_SPOTLIGHT_SUGGESTIONS";}'
 
 # Full reindex + the `killall mds` that triggers it. Minutes of fan noise.
-# `DOTFILES_SKIP_REINDEX=1` skips the whole block; the orderedItems write
+# `DOTFILES_SKIP_SPOTLIGHT_REINDEX=1` skips the whole block; the orderedItems write
 # above takes effect on next mds restart anyway.
-if [ "${DOTFILES_SKIP_REINDEX:-0}" != "1" ]; then
+if [ "${DOTFILES_SKIP_SPOTLIGHT_REINDEX:-0}" != "1" ]; then
 	killall mds >/dev/null 2>&1 || true
 	if ! sudo mdutil -i on / >/dev/null; then
 		warn "Spotlight indexing enable failed; continuing without full reindex."

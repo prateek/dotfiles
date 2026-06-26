@@ -26,7 +26,7 @@ uv run --quiet --python '>=3.11' python -m json.tool "$source_json" >/dev/null
 
 chezmoi \
   --source "$DOTFILES_ROOT" \
-  --override-data '{"manage_zinit_external":false}' \
+  --override-data '{}' \
   execute-template \
   --file "$DOTFILES_ROOT/home/Library/private_Colors/modify_nvALT.clr.tmpl" \
   >"$script"

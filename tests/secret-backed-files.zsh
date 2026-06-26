@@ -53,7 +53,6 @@ EOF
 chmod +x "$stub_bin/op"
 
 override='{
-  "manage_zinit_external": false,
   "secrets": {
     "refs": {
       "example_license": "op://vault-id/item-id/field-id"
@@ -94,7 +93,6 @@ disabled_render="$(
 [[ ! -e "$OP_CALLS" ]] || die "expected disabled secret template not to call op"
 
 enabled_override='{
-  "manage_zinit_external": false,
   "secrets_enabled": true,
   "secrets": {
     "refs": {
@@ -135,7 +133,6 @@ sourceDir = "$DOTFILES_ROOT"
 
 [data]
 secrets_enabled = true
-manage_zinit_external = false
 
 [data.secrets.refs]
 example_license = "op://vault-id/item-id/field-id"

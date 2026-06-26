@@ -1,26 +1,29 @@
 {{- /*
-  First-machine settings. Each value resolves with explicit short-circuit:
-    1. Environment variable (e.g. DOTFILES_MACHINE_TYPE) — for CI / Tart
+  First-machine settings. Values resolve in this order:
+    1. Environment variable (e.g. DOTFILES_MACHINE_TYPE), used by CI and Tart
        non-interactive runs.
-    2. promptStringOnce / promptBoolOnce — interactive prompt the first time
-       chezmoi init runs on a new machine; the answer is saved in the
-       persistent state and reused on subsequent applies.
+    2. promptStringOnce / promptBoolOnce, prompted once during chezmoi init on
+       a new machine. Chezmoi saves the answer in state and reuses it on later
+       applies.
 
-  Note: `default x (promptStringOnce ...)` is wrong — Go templates evaluate
-  both arms of `default`, so the prompt would fire even when the env var is
-  set. We use explicit if/else to short-circuit.
+  Do not write `default x (promptStringOnce ...)`. Go templates evaluate both
+  arms of `default`, so the prompt fires even when the env var is set. Use
+  explicit if/else to short-circuit.
 
-  Reset by deleting the rendered ~/.config/chezmoi/chezmoi.toml and re-running
-  `chezmoi init`.
+  To reset, delete the rendered ~/.config/chezmoi/chezmoi.toml and run
+  `chezmoi init` again.
+
+  For toggle style choices (env|default, prompt*Once, or machine_type-derived),
+  see docs/adr/0012-config-gating-convention.md.
 */ -}}
 {{- $dotfilesDir := env "DOTFILES_ROOT" | default (joinPath .chezmoi.homeDir "dotfiles") -}}
 
-{{- /* Defaults inlined here because chezmoi init does not load
-       .chezmoidata/*.toml (data is bound after init renders this
-       template). Keep the docstring above as the canonical reference. */ -}}
+{{- /* Defaults live here because chezmoi init does not load
+       .chezmoidata/*.toml. Data is bound after this template renders. Keep
+       the comment above as the reference. */ -}}
 {{- $secretsEnabled := env "DOTFILES_SECRETS_ENABLED" -}}
 {{- if not $secretsEnabled -}}
-{{-   $secretsEnabled = promptBoolOnce . "secrets_enabled" "Render secret-backed files via 1Password? (you can flip with DOTFILES_SECRETS_ENABLED=true later)" false | toString -}}
+{{-   $secretsEnabled = promptBoolOnce . "secrets_enabled" "Render secret-backed files via 1Password? (change later with chezmoi edit-config or re-init)" false | toString -}}
 {{- end -}}
 
 {{- $runInstallScripts := env "DOTFILES_RUN_INSTALL_SCRIPTS" -}}
@@ -28,22 +31,22 @@
 {{-   $runInstallScripts = promptBoolOnce . "run_install_scripts" "Run install scripts (Homebrew bundle, mise, etc.) on apply?" true | toString -}}
 {{- end -}}
 
-{{- $applyDefaults := env "DOTFILES_APPLY_DEFAULTS" -}}
+{{- $applyDefaults := env "DOTFILES_APPLY_MACOS_DEFAULTS" -}}
 {{- if not $applyDefaults -}}
 {{-   $applyDefaults = promptBoolOnce . "apply_macos_defaults" "Apply macOS defaults from this repo?" true | toString -}}
 {{- end -}}
 
-{{- /* Machine type is the single axis driving package selection and the
-       elevation hook. Package groups are composed per machine type in
+{{- /* Machine type selects package groups and elevation behavior. Package
+       groups are composed per machine type in
        home/.chezmoidata/packages.toml (see
-       docs/adr/0010-machine-type-package-selection.md): work omits the
-       personal apps; the env-only `ci` type is the minimal CI/Tart/audit
-       tier. For elevation, only Jamf-managed work macs need a special step
-       before sudo works; personal/homelab fall through to the ordinary sudo
+       docs/adr/0010-machine-type-package-selection.md): work skips personal
+       apps; `ci` is the minimal CI/Tart/audit tier (a listed prompt choice). Only
+       Jamf-managed work Macs need elevation before sudo works; personal and
+       homelab use the normal sudo
        prompt (see docs/references/jamf-self-service-elevation.md). */ -}}
 {{- $machineType := env "DOTFILES_MACHINE_TYPE" -}}
 {{- if not $machineType -}}
-{{-   $machineType = promptChoiceOnce . "machine_type" "Machine type" (list "personal" "homelab" "work") "personal" -}}
+{{-   $machineType = promptChoiceOnce . "machine_type" "Machine type" (list "personal" "homelab" "work" "ci") "personal" -}}
 {{- end -}}
 
 {{- $elevationMethod := env "DOTFILES_ELEVATION_METHOD" -}}
@@ -60,12 +63,9 @@
 {{-   $jamfPolicyId = promptStringOnce . "jamf_self_service_policy_id" "Jamf Self Service policy ID for temp admin (see docs/references/jamf-self-service-elevation.md)" "" -}}
 {{- end -}}
 
-{{- $installXcode := env "DOTFILES_INSTALL_XCODE" | default "false" -}}
-{{- $manageZinitExternal := env "DOTFILES_MANAGE_ZINIT_EXTERNAL" | default "true" -}}
-
 sourceDir = {{ $dotfilesDir | quote }}
 
-# Apply scripts can prompt for sudo. Do not let a pager own the same TTY.
+# Apply scripts can prompt for sudo, so disable the pager to keep the TTY free.
 pager = ""
 
 [data]
@@ -76,29 +76,27 @@ xdg_state_dir = {{ (env "XDG_STATE_HOME" | default (joinPath .chezmoi.homeDir ".
 secrets_enabled = {{ $secretsEnabled }}
 run_install_scripts = {{ $runInstallScripts }}
 apply_macos_defaults = {{ $applyDefaults }}
-install_xcode = {{ $installXcode }}
-manage_zinit_external = {{ $manageZinitExternal }}
 machine_type = {{ $machineType | quote }}
 
 [data.elevation]
 method = {{ $elevationMethod | quote }}
 jamf_policy_id = {{ $jamfPolicyId | quote }}
 
-# Render binary plists as XML for `chezmoi diff`. Affects diff output only;
-# apply still writes binary. See docs/references/chezmoi-architecture.md > Plist Management.
+# Render binary plists as XML for `chezmoi diff`. This only changes diff output.
+# Apply still writes binary plists. See docs/references/chezmoi-architecture.md > Plist Management.
 [[textconv]]
 pattern = "**/Library/Preferences/*.plist"
 command = "plutil"
 args = ["-convert", "xml1", "-o", "-", "-"]
 
-# Plist apply guards. The pre-hook computes which managed plists would change
-# this apply (via `chezmoi status`) and refuses if any of those apps is running,
-# to avoid the app overwriting our writes when it quits. The post-hook nudges
-# cfprefsd if anything changed and optionally relaunches quit apps.
-# Set DOTFILES_SKIP_PLIST_HOOKS=1 to short-circuit both hooks (used by
-#   sandboxed applies, e.g. zsh-fresh-shells.zsh; also acts as a force-apply
-#   override when you want to apply over running apps without the cfprefsd kill).
-# Enable optional relaunch of quit apps after a real apply with
+# Plist apply guards. The pre-hook reads `chezmoi status` to find managed
+# plists that would change in this apply. It fails if any matching app is
+# running because the app can overwrite our writes when it quits. The post-hook
+# nudges cfprefsd after plist changes and can relaunch quit apps.
+# Set DOTFILES_SKIP_PLIST_HOOKS=1 to skip both hooks. Sandboxed applies use it,
+#   for example zsh-fresh-shells.zsh. It also force-applies over running apps
+#   without killing cfprefsd.
+# To relaunch quit apps after a real apply, set
 #   DOTFILES_RELAUNCH_AFTER_APPLY=1.
 [hooks.apply.pre]
 command = "{{ $dotfilesDir }}/scripts/chezmoi-hooks/guard-running-apps.sh"

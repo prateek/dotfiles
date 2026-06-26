@@ -52,7 +52,7 @@ unmanaged="$(
     --destination "$home" \
     --cache "$tmp_root/cache" \
     --persistent-state "$tmp_root/state.boltdb" \
-    --override-data '{"manage_zinit_external":false}' \
+    --override-data '{}' \
     unmanaged \
     --path-style relative
 )"
