@@ -19,3 +19,8 @@
 # 
 # [diff]
 # 	colorMoved = default
+
+# Host-local overrides (machine- and work-specific). This file is created per
+# machine and is NOT managed by chezmoi, so nothing host-specific is synced.
+[include]
+	path = ~/.config/git/config.local
