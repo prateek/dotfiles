@@ -61,6 +61,12 @@ manpath=(
 )
 manpath=($^manpath(N-/))
 
+if [[ -d "$HOME/.orbstack" ]]; then
+  path+=("$HOME/.orbstack/bin")
+  fpath+=("$HOME/.orbstack/shell/completions/zsh")
+  export DOCKER_HOST="unix://$HOME/.orbstack/run/docker.sock"
+fi
+
 if [ -f "$HOME/.zprofile.local" ]; then
   source "$HOME/.zprofile.local"
 fi
