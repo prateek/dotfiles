@@ -122,6 +122,8 @@ For marimo notebooks with uv, read: ~/.agents/docs/marimo.md
 
 For iOS and Apple-platform work (Xcode toolchain, Tuist, simulator leasing, version pinning, Makefile targets, CI cost control), read: ~/.agents/docs/ios.md
 
+For debugging agent sessions and behavior (agentsview), read: ~/.agents/docs/agentsview.md
+
 ## Observability provider environment
 
 For Chronosphere tasks, use pre-exposed environment variables instead of hardcoding credentials.
