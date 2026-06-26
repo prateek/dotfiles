@@ -51,7 +51,7 @@ Before creating an issue, PR, or review comment, check whether the repo already 
   - `w run fix-bug --agent claude -- 'Fix GH #322'`
 - Target a specific repo:
   - `w feature/auth --here`
-  - `w feature/auth --repo chronosphereio/monorepo`
+  - `w feature/auth --repo owner/repo`
   - `w feature/auth --repo /path/to/repo`
 - Worktree maintenance:
   - `w ls`
