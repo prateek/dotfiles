@@ -55,7 +55,9 @@ executed. So:
   for extent, test count, coverage percentage, or how "unit" a test looks.
 
 When someone asks "should this be a unit or an integration test?", reframe: "How pure can we make
-it, and what is the smallest stable seam that exercises the real behavior?"
+it, and what is the smallest stable seam that exercises the real behavior?" But when the caller
+*names* the layer, that layer is part of the requirement, not an open question — honor it and
+optimize purity *within* it (see "Choosing the test layer").
 
 ## Default move
 
@@ -64,13 +66,45 @@ When asked to add or repair a test:
 1. **Identify the behavior and a stable boundary.** For a library, the public API; for an app, what
    a user or calling service observes (CLI output, HTTP response, persisted state, emitted event).
 2. **Pick the smallest meaningful test** that protects that behavior — small setup and fast feedback,
-   not "mock every collaborator."
+   not "mock every collaborator." *Unless the caller named a layer* (integration, scenario, E2E,
+   service-start): then that layer is the deliverable — see "Choosing the test layer."
 3. **Push impurity outward** with fakes, a fake clock, seeded randomness, in-memory stores, or
    sans-I/O drivers before reaching for disk, sleeps, real services, or subprocesses.
 4. **Route shared cases through one `check` helper** when several cases have the same shape.
 5. **Run the focused test and read the failure** before changing anything.
 6. **For a bug, write the regression test first** when practical: make it fail for the bug, then
    pass for the fix.
+
+## Choosing the test layer
+
+The steps above optimize for purity and behavior fidelity. *Which* layer to test is a separate
+decision, and the answer depends on who makes it.
+
+- **Named layer → honor it.** When the caller names a layer (integration, scenario, E2E,
+  service-start), that layer is the deliverable. A single mocked interaction, a recording fake around
+  one component, or a fake-only seam test does **not** count as integration/scenario coverage — at
+  most it is supporting coverage. If you add one, label it as supporting and say plainly the named
+  layer is still owed; never pass a narrower test off as the named coverage.
+- **Apply this philosophy inside the layer.** Keep it behavior-focused, fake only the external I/O
+  the harness normally fakes, avoid brittle internal assertions, and synchronize on real observable
+  signals. Purity work happens *within* the requested extent, not by shrinking it. If you also work
+  test-first, write the failing test at the named layer; an inner-loop test is supporting only.
+- **Open layer → choose by purity and risk, not by size.** When no layer is named (or the ask is
+  "whatever's best"), don't reflexively reach for the smallest unit test or the largest E2E. Take the
+  highest-purity test that still exercises the real behavior, with extent as wide as the behavior
+  needs. Climb to impure rungs — real services, network, E2E — only when the risk lives in the wiring
+  (cross-service, persistence, money, migrations) or the behavior is observable nowhere else.
+- **Infeasible, mismatched, or genuinely ambiguous → surface it, don't guess.** Name the missing
+  harness or blocker, or why a named layer doesn't fit the behavior; when the layer is open and the
+  choice materially changes cost or coverage, state the assumption you're making (or ask). Don't
+  silently pick, and don't ship a narrower test as if it satisfied a request for a bigger one.
+
+- *"Add an E2E scenario for tracing and consumption."* **Good:** a real scenario that ingests traces
+  and asserts the externally visible consumption telemetry. **Bad:** a package-level recording fake
+  around the client, claimed as scenario coverage.
+- *"Add a local integration test like the existing consumption one."* **Good:** a harness that drives
+  several real components together, faking only the outer infrastructure boundary. **Bad:** call a
+  private method, assert one mocked interaction, and call it integration coverage.
 
 ## What to test: behavior through stable seams
 

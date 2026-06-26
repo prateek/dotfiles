@@ -80,6 +80,74 @@
         "Prioritizes meaningful behavioral tests on load-bearing code over padding the number",
         "Does not just generate trivial tests that execute lines without asserting behavior"
       ]
+    },
+    {
+      "id": 7,
+      "name": "respect-explicit-e2e-scenario",
+      "mode": "generate",
+      "prompt": "Add a real E2E scenario test that ingests traces and checks the resulting consumption telemetry.",
+      "expected_output": "Keeps the E2E scenario as the deliverable: a scenario that ingests traces end-to-end and asserts the externally visible consumption telemetry. Does not substitute a unit or recording-fake test for the requested layer, and does not claim scenario coverage from a narrower test.",
+      "expectations": [
+        "Treats the E2E scenario as the thing to deliver, not an open layer choice to reconsider",
+        "Asserts externally visible behavior (consumption telemetry) rather than internal call interactions",
+        "Does NOT replace the scenario with a unit test or a fake-only/recording-fake seam test",
+        "If it adds smaller tests, frames them as supporting coverage, not as satisfying the scenario request",
+        "Does not claim the requested scenario coverage was delivered by a narrower test"
+      ]
+    },
+    {
+      "id": 8,
+      "name": "respect-explicit-integration",
+      "mode": "generate",
+      "prompt": "Add an integration test like our existing consumption integration test.",
+      "expected_output": "Pursues a real local integration seam that drives multiple real components together, faking only at the outer infrastructure boundary. If harness pieces are missing, names the gap rather than silently downgrading. A recording fake around a single component does not satisfy the request.",
+      "expectations": [
+        "Aims for a real integration seam exercising multiple real components together",
+        "Fakes only at the outer infrastructure/I/O boundary, not the system's own components",
+        "If the integration harness is missing pieces, names the gap instead of quietly substituting a smaller test",
+        "States that a single recording/mock fake alone does NOT constitute the requested integration coverage",
+        "May add lower-level tests only as explicitly supporting coverage"
+      ]
+    },
+    {
+      "id": 9,
+      "name": "layer-open-choose-by-purity-and-risk",
+      "mode": "generate",
+      "prompt": "Add tests for kept/dropped span consumption accounting.",
+      "expected_output": "With no layer named, applies the open-layer guardrail: chooses by purity and behavior fidelity rather than by size. Takes the highest-purity test that still exercises the real kept/dropped accounting, faking only at the I/O boundary (wide extent is fine), and neither reflexively shrinks to a trivial unit test nor reaches for real infrastructure or E2E the behavior does not require. Surfaces an assumption if the layer choice is material.",
+      "expectations": [
+        "Chooses the layer by purity and behavior fidelity, not by reflexively picking the smallest or largest",
+        "Takes a high-purity test that exercises the real behavior, faking only at the I/O boundary (wide extent is acceptable)",
+        "Does not reach for real services, network, or E2E when the behavior is observable in-memory",
+        "Asserts the kept/dropped consumption outcome for known input, not internal calls or private state",
+        "If the layer materially changes cost or coverage, states the assumption made (or asks) rather than silently deciding"
+      ]
+    },
+    {
+      "id": 10,
+      "name": "escalate-only-on-real-risk",
+      "mode": "generate",
+      "prompt": "Add coverage for a new cross-service billing reconciliation path, whatever layer is best.",
+      "expected_output": "Picks the layer by where the risk lives: because the risk is cross-service wiring and persistence, escalates to an integration/E2E test that exercises the real path, rather than defaulting to a small unit test or reaching for the heaviest layer reflexively.",
+      "expectations": [
+        "Selects the test layer based on where the risk lives, not a fixed default",
+        "Escalates to integration/E2E specifically because cross-service wiring/persistence is the risk",
+        "Justifies the layer choice by the failure modes that matter (wiring, persistence), not by ceremony",
+        "Would not be satisfied by a pure in-memory unit test that skips the cross-service path"
+      ]
+    },
+    {
+      "id": 11,
+      "name": "integration-with-fallback",
+      "mode": "generate",
+      "prompt": "Add an integration test, but if that's too hard just add a unit test.",
+      "expected_output": "Starts on the integration path. If it falls back to a unit test, it first names the concrete blocker, and states explicitly that the unit fallback does not provide full integration coverage.",
+      "expectations": [
+        "Attempts the integration test first rather than jumping straight to the unit test",
+        "If falling back, names the specific blocker that made integration infeasible",
+        "States explicitly that the unit fallback is NOT equivalent to the requested integration coverage",
+        "Does not silently deliver only a unit test and imply the integration request was satisfied"
+      ]
     }
   ]
 }
