@@ -1,0 +1,16 @@
+{
+  "agents": {
+    "agpt": {
+      "command": "cursor-agent",
+      "args": ["--model", "gpt-5.5-high", "acp"]
+    },
+    "aopus": {
+      "command": "cursor-agent",
+      "args": ["--model", "claude-opus-4-8-thinking-max", "acp"]
+    },
+    "agemini": {
+      "command": "cursor-agent",
+      "args": ["--model", "gemini-3.1-pro", "acp"]
+    }
+  }
+}

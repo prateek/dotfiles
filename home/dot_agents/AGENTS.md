@@ -124,6 +124,8 @@ For iOS and Apple-platform work (Xcode toolchain, Tuist, simulator leasing, vers
 
 For debugging agent sessions and behavior (agentsview), read: ~/.agents/docs/agentsview.md
 
+For acpx (agent-to-agent ACP CLI) and the custom model shortcuts (agpt/aopus/agemini), read: ~/.agents/docs/acpx.md
+
 ## Observability provider environment
 
 For Chronosphere tasks, use pre-exposed environment variables instead of hardcoding credentials.

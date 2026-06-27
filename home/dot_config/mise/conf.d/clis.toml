@@ -33,6 +33,7 @@
 "npm:@pleaseai/ask" = "latest"                             # ask skill (utils-agent); see [env] below
 "npm:@shortcut-cli/shortcut-cli" = "latest"                # shortcut skill; binary is `short`
 "npm:@steipete/bird" = "latest"                            # twitter; see ~/.agents/docs/twitter.md
+"npm:acpx" = "latest"                                      # acpx CLI; acpx skill (utils-agent), headless ACP client. see ~/.agents/docs/acpx.md
 "npm:agent-slack" = "latest"                               # agent-slack CLI; slack skill (utils-agent), see ~/.agents/docs/slack.md
 "pipx:absurdctl" = "latest"                                # durable-workflow CLI for agent use
 

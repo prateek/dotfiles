@@ -1,5 +1,5 @@
 lockfile_version: '1'
-generated_at: '2026-06-26T19:09:44.117095+00:00'
+generated_at: '2026-06-27T04:52:31.167998+00:00'
 apm_version: 0.13.0
 dependencies:
 - repo_url: danshapiro/trycycle
@@ -27,6 +27,15 @@ dependencies:
   deployed_files:
   - .agents/skills/cli-creator
   content_hash: sha256:c8548eec5d64000583c0dc409d4354f2ef119067caa1fedd730287ba650741f1
+- repo_url: openclaw/acpx
+  host: github.com
+  resolved_commit: bd85a5ac4e3db340d9967f299d629758d8451fc8
+  virtual_path: skills/acpx
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/acpx
+  content_hash: sha256:c7bba623522b83899068a3880a060a034a07b3f7cd21b0482d80f968e0e3beb9
 - repo_url: stablyai/agent-slack
   host: github.com
   resolved_commit: 6775fa878dfe7d38ca15899c765a2e19c9718a39
