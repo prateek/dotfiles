@@ -125,7 +125,6 @@ def render_workflow(wf: dict, index: int, embed_images: bool) -> str:
     status_class = "status-pass" if success else "status-fail"
     status_text = "PASS" if success else "FAIL"
 
-    # Build step cards and arrows
     flow_parts = []
     failed_steps = []
 
@@ -147,7 +146,6 @@ def render_workflow(wf: dict, index: int, embed_images: bool) -> str:
       <div class="arrow-label">{interaction}</div>
     </div>''')
 
-        # Add step card
         img_tag = f'<img class="{img_class}" src="{img_src}" alt="{desc}">' if img_src else f'<div class="{img_class}" style="background:#1B2029;display:flex;align-items:center;justify-content:center;"><span style="color:#555;">No screenshot</span></div>'
 
         flow_parts.append(f'''
@@ -165,7 +163,6 @@ def render_workflow(wf: dict, index: int, embed_images: bool) -> str:
 
     flow_html = "".join(flow_parts)
 
-    # Issues
     issues_html = ""
     if failed_steps:
         issues_items = "".join(
@@ -202,7 +199,6 @@ def main():
     workflows = data.get("workflows", [])
     run_date = data.get("run_time", "Unknown")[:10]
 
-    # Stats
     total_wf = len(workflows)
     passed = sum(1 for w in workflows if w.get("success", True))
     failed = total_wf - passed
@@ -211,7 +207,6 @@ def main():
         1 for w in workflows for s in w.get("steps", []) if s.get("screenshot_path")
     )
 
-    # Render workflows
     wf_html = "".join(render_workflow(w, i, args.embed_images) for i, w in enumerate(workflows))
 
     html = HTML_TEMPLATE.format(

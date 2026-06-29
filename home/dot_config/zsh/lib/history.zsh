@@ -15,6 +15,6 @@ setopt HIST_IGNORE_ALL_DUPS   # Even if there are commands inbetween commands th
 setopt HIST_IGNORE_DUPS       # If I type cd and then cd again, only save the last one
 setopt HIST_IGNORE_SPACE      # If a line starts with a space, don't save it.
 setopt HIST_NO_STORE          # dont store invocations of history command.
-setopt HIST_REDUCE_BLANKS     # Pretty    Obvious.  Right?
+setopt HIST_REDUCE_BLANKS
 setopt HIST_SAVE_NO_DUPS      # dont save dupes
 setopt INC_APPEND_HISTORY     # Write after each command

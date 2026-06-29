@@ -25,9 +25,6 @@
 
 set -euo pipefail
 
-##############################################################################
-# 0. Helper — dependency checker
-##############################################################################
 need_cmd() { command -v "$1" >/dev/null 2>&1; }
 
 require() {
@@ -44,9 +41,6 @@ require() {
   exit 1
 }
 
-##############################################################################
-# 1. Parse flags
-##############################################################################
 RECURSE=false
 EXTRACT_TEXT=false
 
@@ -62,18 +56,12 @@ shift $((OPTIND - 1))
 DIR="${1:-.}"
 [[ -d "$DIR" ]] || { echo "Directory not found: $DIR" >&2; exit 1; }
 
-##############################################################################
-# 2. Dependency checks
-##############################################################################
 require ocrmypdf ocrmypdf ocrmypdf
 require tesseract tesseract tesseract-ocr
 if $EXTRACT_TEXT; then
   require pdftotext poppler poppler-utils
 fi
 
-##############################################################################
-# 3. Collect PDFs
-##############################################################################
 if $RECURSE; then
   mapfile -t PDFS < <(find "$DIR" -type f -iname '*.pdf' | sort)
 else
@@ -83,9 +71,6 @@ fi
 [[ ${#PDFS[@]} -eq 0 ]] && { echo "No PDFs found in $DIR"; exit 0; }
 echo "Found ${#PDFS[@]} PDFs … starting OCR"
 
-##############################################################################
-# 4. OCR + optional text extraction
-##############################################################################
 for SRC in "${PDFS[@]}"; do
   OUT_PDF="${SRC%.pdf}-searchable.pdf"
 

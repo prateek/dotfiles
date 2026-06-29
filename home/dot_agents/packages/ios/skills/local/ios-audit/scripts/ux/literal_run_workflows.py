@@ -362,7 +362,6 @@ def execute_step(
         screenshot_path = capture_screenshot(output_dir, screenshot_id, udid=udid)
         result["screenshot_path"] = screenshot_path
 
-    # Capture accessibility tree
     accessibility = capture_accessibility(sim_skill_dir, udid=udid)
     result["accessibility"] = accessibility
 
@@ -497,7 +496,6 @@ def main():
             status = "PASS" if wf_result["success"] else "FAIL"
             print(f"  {status}: {passed}/{step_count} steps succeeded ({boot_message})")
 
-    # Save results
     results_path = os.path.join(args.output_dir, "results.json")
     with open(results_path, "w") as f:
         json.dump(all_results, f, indent=2, default=str)

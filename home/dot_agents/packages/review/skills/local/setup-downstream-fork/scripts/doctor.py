@@ -42,9 +42,9 @@ STATUS_ERROR = "error"
 STATUS_SKIP = "skip"
 
 PREFIXES = {
-    STATUS_OK: "✓",       # ✓
-    STATUS_WARN: "⚠",     # ⚠
-    STATUS_ERROR: "✗",    # ✗
+    STATUS_OK: "✓",
+    STATUS_WARN: "⚠",
+    STATUS_ERROR: "✗",
     STATUS_SKIP: "-",
 }
 

@@ -84,11 +84,9 @@ def build_flow_scene(
     raw = markdown_path.read_text(encoding="utf-8", errors="replace")
     body = _strip_frontmatter(raw)
 
-    # Extract the document title
     h1 = H1_RE.search(body)
     title = h1.group(1).strip() if h1 else markdown_path.stem.replace("_", " ").title()
 
-    # Find all step headers
     step_matches = list(STEP_HEADER_RE.finditer(body))
     if not step_matches:
         return None

@@ -66,7 +66,6 @@ USAGE
     esac
   done
 
-  # sanity checks
   for cmd in op jq fzf; do
     command -v "$cmd" >/dev/null || { echo "Missing '$cmd' in PATH" >&2; return 1; }
   done
@@ -91,7 +90,6 @@ USAGE
 
   [[ -z "$rows" ]] && { echo "No items selected." >&2; return 1; }
 
-  # build env content
   local env_content=""
   while IFS=$'\t' read -r id title _vault; do
     local line
@@ -126,7 +124,6 @@ USAGE
     fi
   fi
 
-  # write the file
   echo -n "$env_content" > "$outfile"
   
   # set restrictive perms (harmless even though refs only)

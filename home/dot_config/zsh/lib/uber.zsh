@@ -43,8 +43,6 @@ function reposearch() {
     | jq -r '.response.data[] | "\(.fields.name) - https://code.uberinternal.com/diffusion/\(.fields.callsign)"'
 }
 
-# functions to make working with arc suck less.
-## WIP quick git commit
 alias wip='git commit -am "fixup! WIP"'
 
 # return the name of the default branch

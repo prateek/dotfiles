@@ -115,7 +115,6 @@ FZF-EOF"
 
 # FIXME: alias ssh=sshrc
 
-# Aliases
 alias ls='ls -G'
 alias ll='ls -lhG'
 alias vimd='vim -d'
