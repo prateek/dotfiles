@@ -377,5 +377,5 @@ description = "Homelab Mac"
 groups = ["base", "dev", "dev-apple", "personal-apps"]
 
 [packages.machine_types.work]
-description = "Managed work Mac (no personal apps)"
-groups = ["base", "dev", "dev-apple"]
+description = "Managed work Mac (no personal apps, no Apple/iOS toolchain)"
+groups = ["base", "dev"]

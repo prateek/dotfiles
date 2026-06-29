@@ -61,7 +61,8 @@ for app in tailscale-app arq voiceink; do
 done
 work_out="$("$RENDER" --machine-type work)"
 [[ $work_out == *'brew "aria2"'* ]] || die "work: missing aria2 (work keeps the dev group)"
-[[ $work_out == *'brew "homebrew/core/xcodes"'* ]] || die "work: missing xcodes (work keeps dev-apple)"
+[[ $work_out != *'brew "homebrew/core/xcodes"'* ]] || die "work should not include xcodes (no dev-apple group)"
+[[ $work_out != *'brew "fastlane"'* ]] || die "work should not include the dev-apple toolchain (fastlane leaked)"
 for app in tailscale-app arq voiceink; do
   [[ $work_out != *"cask \"$app\""* ]] || die "work should not install personal app cask $app"
 done

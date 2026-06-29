@@ -2,7 +2,7 @@
 status: current
 doc_type: reference
 created: 2026-04-27
-updated: 2026-06-26
+updated: 2026-06-29
 related:
   - ../index.md
   - ../adr/0006-chezmoi-migration-prototype.md
@@ -76,8 +76,9 @@ Scripts must be idempotent. A rerun should converge or report a clear blocker.
 - Selection is driven by a single axis, `machine_type`. Reusable
   `[packages.groups.*]` (`base`, `dev`, `dev-apple`, `personal-apps`) are
   composed per `[packages.machine_types.*]`: `ci=[base]`,
-  `personal=homelab=[base,dev,dev-apple,personal-apps]`, `work=[base,dev,dev-apple]`.
-  Work omits the personal apps; `ci` is the minimal CI/Tart/audit tier — a listed
+  `personal=homelab=[base,dev,dev-apple,personal-apps]`, `work=[base,dev]`.
+  Work omits the personal apps and the `dev-apple` Apple/iOS toolchain (no Xcode
+  setup); `ci` is the minimal CI/Tart/audit tier — a listed
   `machine_type`, also selectable via `DOTFILES_MACHINE_TYPE`.
   See [ADR 0010](../adr/0010-machine-type-package-selection.md).
 - `home/.chezmoitemplates/brewfile.tmpl` renders the Brewfile input as the union
