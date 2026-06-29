@@ -239,7 +239,6 @@ brews = [
   { name = "pth" },
   { name = "pure" },
   { name = "pv" },
-  { name = "prateek/tap/agentsview" },
   { name = "python-yq" },
   { name = "python@3.11" },
   { name = "qcachegrind" },
@@ -284,7 +283,7 @@ brews = [
 ]
 casks = [
   { name = "nikitabobko/tap/aerospace" },
-  { name = "prateek/tap/agentsview-desktop" },
+  { name = "agentsview" },
   { name = "betterdisplay" },
   { name = "caffeine", appdir = "/Applications" },
   { name = "claude" },
