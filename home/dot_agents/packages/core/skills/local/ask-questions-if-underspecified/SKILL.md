@@ -27,7 +27,12 @@ If multiple plausible interpretations exist, assume it is underspecified.
 
 Ask 1-5 questions in the first pass. Prefer questions that eliminate whole branches of work.
 
-Make questions easy to answer:
+**Prefer your harness's native structured-question tool** for discrete choices. It gives the user one-click options and hands you a clean, parseable answer instead of a prose reply you have to interpret:
+- Claude Code `AskUserQuestion`, Codex `request_user_input`, Cursor `AskQuestion`, Pi `question` extension.
+- Lead with the recommended option, keep it to a few questions, and batch independent decisions into one call instead of a back-and-forth.
+- Reserve plain prose for open-ended or iterative questions, where each answer reshapes the next. Never hand-roll a multiple-choice question as a plain-text message when the tool is available.
+
+When no structured-question tool is available, ask in prose and make it easy to answer:
 - Optimize for scannability (short, numbered questions; avoid paragraphs)
 - Offer multiple-choice options when possible
 - Suggest reasonable defaults when appropriate (mark them clearly as the default/recommended choice; bold the recommended choice in the list, or if you present options in a code block, put a bold "Recommended" line immediately above the block and also tag defaults inside the block)
@@ -75,3 +80,4 @@ Reply with: defaults (or 1a 2a)
 
 - Don't ask questions you can answer with a quick, low-risk discovery read (e.g., configs, existing patterns, docs).
 - Don't ask open-ended questions if a tight multiple-choice or yes/no would eliminate ambiguity faster.
+- Don't paste a numbered options list into chat when a native structured-question tool is available — use the tool.

@@ -67,6 +67,7 @@
 
 - Inspect local repo, docs, history, shell state, or live system behavior before asking me to clarify something discoverable.
 - Ask for clarification when local evidence cannot resolve a material ambiguity, when the next action is destructive or irreversible, or when multiple plausible interpretations would lead to meaningfully different work.
+- When you ask me to choose between discrete options, prefer your harness's native structured-question tool over prose (Claude `AskUserQuestion`, Codex `request_user_input`, Cursor `AskQuestion`, Pi `question`): lead with the recommended option, batch related choices into one call, and never hand-roll a multiple-choice question as plain text. Use prose for open-ended or iterative questions.
 - If I say not to ask, proceed with a stated assumption unless there is a hard blocker.
 - If a named skill is unavailable and I made that skill mandatory, stop and report that. If fallback is allowed, state the fallback and continue.
 
