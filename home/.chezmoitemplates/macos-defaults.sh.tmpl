@@ -265,7 +265,6 @@ defaults write NSGlobalDomain PMPrintingExpandedStateForPrint2 -bool true
 
 defaults write NSGlobalDomain NSDocumentSaveNewDocumentsToCloud -bool false
 defaults write com.apple.print.PrintingPrefs "Quit When Finished" -bool true
-defaults write com.apple.LaunchServices LSQuarantine -bool false
 
 # Rebuild the Open With menu (de-dupes apps). Slow on populated systems.
 if [ "${DOTFILES_SKIP_LSREGISTER:-0}" != "1" ]; then
