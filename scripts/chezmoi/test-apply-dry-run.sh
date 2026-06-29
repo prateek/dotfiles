@@ -13,6 +13,15 @@ esac
 
 dotfiles_root="${2:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 
+# The dry-run renders templates that shell out through mise shims (e.g.
+# `output "python3"` to hash a tree). mise refuses to parse the caller's global
+# config unless it is trusted, and the isolated temp HOME below does not carry
+# mise's trust state, so the render fails with "config not trusted". Trust the
+# caller's real mise config dir for the render. Captured here while HOME/XDG are
+# still the caller's. No-op where mise is not installed (e.g. CI), where python3
+# is the system binary rather than a mise shim.
+mise_config_dir="${MISE_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/mise}"
+
 tmp_home="$(mktemp -d)"
 trap 'rm -rf "$tmp_home"' EXIT
 
@@ -28,6 +37,7 @@ run_chezmoi() {
   XDG_CONFIG_HOME="$tmp_home/.config" \
   XDG_CACHE_HOME="$tmp_home/.cache" \
   XDG_STATE_HOME="$tmp_home/.local/state" \
+  MISE_TRUSTED_CONFIG_PATHS="$mise_config_dir" \
     chezmoi --no-tty \
       --config "$tmp_home/.config/chezmoi/chezmoi.toml" \
       --cache "$tmp_home/.cache/chezmoi" \
