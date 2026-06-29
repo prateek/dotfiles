@@ -49,7 +49,11 @@
 {{-   $machineType = promptChoiceOnce . "machine_type" "Machine type" (list "personal" "homelab" "work" "ci") "personal" -}}
 {{- end -}}
 
+{{- /* Reuse a persisted answer before prompting: it lives under
+       [data.elevation].method, so read that nested path (dig is nil-safe on a
+       fresh machine) rather than the prompt field, which never matches. */ -}}
 {{- $elevationMethod := env "DOTFILES_ELEVATION_METHOD" -}}
+{{- if not $elevationMethod -}}{{- $elevationMethod = dig "elevation" "method" "" . -}}{{- end -}}
 {{- if not $elevationMethod -}}
 {{-   if eq $machineType "work" -}}
 {{-     $elevationMethod = promptStringOnce . "elevation_method" "Admin elevation method (jamf-self-service / none)" "jamf-self-service" -}}
@@ -59,6 +63,7 @@
 {{- end -}}
 
 {{- $jamfPolicyId := env "DOTFILES_JAMF_POLICY_ID" -}}
+{{- if not $jamfPolicyId -}}{{- $jamfPolicyId = dig "elevation" "jamf_policy_id" "" . -}}{{- end -}}
 {{- if and (not $jamfPolicyId) (eq $elevationMethod "jamf-self-service") -}}
 {{-   $jamfPolicyId = promptStringOnce . "jamf_self_service_policy_id" "Jamf Self Service policy ID for temp admin (see docs/references/jamf-self-service-elevation.md)" "" -}}
 {{- end -}}

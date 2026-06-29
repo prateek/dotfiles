@@ -1,8 +1,8 @@
 # Slack Conventions (agent-slack CLI)
 
-<!-- Generated file: composed at chezmoi apply by run_after_37-agent-slack-doc.
-     Edit the base in home/.chezmoitemplates/agent-slack-base.md; the Chronosphere
-     internal map is appended from the private overlay (prateek/dotfiles-private). -->
+<!-- Generated file: composed at chezmoi apply by the agent-slack-doc script.
+     Edit the base in home/.chezmoitemplates/agent-slack-base.md; the internal map
+     is appended from the private overlay (prateek/dotfiles-private). -->
 
 ## Purpose
 
@@ -21,9 +21,10 @@ with the full command map and flags under its `references/`.
 
 - Use the `agent-slack` CLI for every Slack interaction. Invoke it directly
   (`agent-slack ...`); it is a CLI, not a subagent.
-- **Workspace is explicit.** Several workspaces are configured and the default is
-  *not* Chronosphere, so pass `--workspace chronosphereio` on every command except
-  `auth whoami`. `agent-slack auth whoami` lists configured workspaces;
+- **Workspace is explicit.** Several workspaces are configured and the one you want
+  is usually not the default, so pass `--workspace <workspace>` on every command
+  except `auth whoami` (the exact workspace name is in the internal map below).
+  `agent-slack auth whoami` lists configured workspaces;
   `agent-slack auth test --workspace <ws>` confirms identity.
 - **Read first.** `search`, `message get`/`list`, `channel list`, `user list`/`get`,
   `unreads`, `later list`, and `canvas get` are safe to run freely.
@@ -39,24 +40,24 @@ with the full command map and flags under its `references/`.
 
 ```sh
 agent-slack auth whoami                                   # list configured workspaces
-agent-slack channel list --workspace chronosphereio       # your channels (resolve IDs/names)
-agent-slack user get --workspace chronosphereio @handle   # resolve a person
+agent-slack channel list --workspace <workspace>       # your channels (resolve IDs/names)
+agent-slack user get --workspace <workspace> @handle   # resolve a person
 ```
 
 ### 2) Read / search
 
 ```sh
-agent-slack search messages "query" --workspace chronosphereio --limit 20 --resolve-users
-agent-slack message get  --workspace chronosphereio "SLACK_URL" --resolve-users
-agent-slack message list --workspace chronosphereio "#channel" --thread-ts <ts> --resolve-users
-agent-slack unreads --workspace chronosphereio
+agent-slack search messages "query" --workspace <workspace> --limit 20 --resolve-users
+agent-slack message get  --workspace <workspace> "SLACK_URL" --resolve-users
+agent-slack message list --workspace <workspace> "#channel" --thread-ts <ts> --resolve-users
+agent-slack unreads --workspace <workspace>
 ```
 
 ### 3) Send (only when asked)
 
 ```sh
-agent-slack message draft --workspace chronosphereio "#channel" "text"      # native rich editor
-agent-slack message send  --workspace chronosphereio "#channel" "text" --thread-ts <ts>
+agent-slack message draft --workspace <workspace> "#channel" "text"      # native rich editor
+agent-slack message send  --workspace <workspace> "#channel" "text" --thread-ts <ts>
 ```
 
 **Compose natively — do not `pbcopy` a hand-assembled draft for manual pasting.**
@@ -73,8 +74,8 @@ There is no fixed `r?` prefix convention here. To ask for a code review, post th
 merge-request / PR link with a one-line description and @mention the reviewer(s) in
 the relevant team channel; **"PTAL"** (please take a look) is the common phrasing.
 Reference the tracker story when one exists. Workspace-specific review host, tracker
-org, and channel routing are in the Chronosphere internal map below (rendered when
-the private overlay is enabled).
+org, and channel routing are in the internal map below (rendered when the private
+overlay is enabled).
 
 ## Notes / limitations
 
@@ -86,7 +87,7 @@ the private overlay is enabled).
 
 ## Validation checklist
 
-- `--workspace chronosphereio` passed on every non-`whoami` call.
+- `--workspace <workspace>` passed on every non-`whoami` call.
 - Channel/user IDs resolved, not guessed.
 - Correct channel for the audience and sensitivity (private = need-to-know).
 - For sends: explicit user request, confirmed target, drafted and reviewed first.

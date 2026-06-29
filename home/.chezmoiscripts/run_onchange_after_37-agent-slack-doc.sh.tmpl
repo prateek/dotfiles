@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# Compose ~/.agents/docs/slack.md = public agent-slack playbook (base, embedded
+# below from .chezmoitemplates/agent-slack-base.md) + the internal map from the
+# private overlay (prateek/dotfiles-private), cloned by .chezmoiexternal into
+# ~/.local/share/dotfiles/private on work machines (machine_type=work).
+# run_onchange: the hashes below cover the base template and the target-side
+# overlay fragment (hashed at render via `output`), so the compose reruns when
+# either input changes. Writes atomically via temp + mv.
+#
+# base sha256:    {{ includeTemplate "agent-slack-base.md" | sha256sum }}
+# overlay sha256: {{ output "sh" "-c" (printf "cat %s/.local/share/dotfiles/private/agents/docs/slack-*.md 2>/dev/null | shasum -a 256 | cut -d' ' -f1 || true" .chezmoi.homeDir) | trim }}
+set -euo pipefail
+
+dest="{{ .chezmoi.homeDir }}/.agents/docs/slack.md"
+overlay_dir="{{ .chezmoi.homeDir }}/.local/share/dotfiles/private/agents/docs"
+
+mkdir -p "$(dirname "$dest")"
+tmp="$(mktemp "${dest}.XXXXXX")"
+trap 'rm -f "$tmp"' EXIT
+
+shopt -s nullglob
+frags=("$overlay_dir"/slack-*.md)
+
+{
+cat <<'AGENT_SLACK_BASE_EOF'
+{{ includeTemplate "agent-slack-base.md" | trim }}
+AGENT_SLACK_BASE_EOF
+printf '\n\n'
+if [ "${#frags[@]}" -gt 0 ]; then
+  cat "${frags[@]}"
+else
+  cat <<'AGENT_SLACK_PTR_EOF'
+## Internal map
+
+Not rendered on this machine. The internal overlay composes only on work
+machines (machine_type = work) with access to the private overlay repo.
+AGENT_SLACK_PTR_EOF
+fi
+} > "$tmp"
+
+mv -f "$tmp" "$dest"

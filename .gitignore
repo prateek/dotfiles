@@ -60,3 +60,6 @@ build/
 # would scaffold `ask.json` and a subsequent `ask install` would clobber the
 # curated AGENTS.md. Surface it as untracked so it doesn't get committed.
 ask.json
+
+# Unused grm fragment: ci uses only base.toml; grmrepo-refresh regenerates this as cruft.
+home/.chezmoiassets/grm/ci.toml

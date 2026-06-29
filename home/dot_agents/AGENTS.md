@@ -127,18 +127,12 @@ For debugging agent sessions and behavior (agentsview), read: ~/.agents/docs/age
 
 For acpx (agent-to-agent ACP CLI) and the custom model shortcuts (agpt/aopus/agemini), read: ~/.agents/docs/acpx.md
 
-## Observability provider environment
+## Secret-backed env vars
 
-For Chronosphere tasks, use pre-exposed environment variables instead of hardcoding credentials.
-
-Available variable names (no values):
-
-- `CHRONOSPHERE_ORG_NAME`
-- `CHRONOSPHERE_API_TOKEN`
-
-Secret handling:
+Some tasks expose credentials through pre-set environment variables (provider- or
+employer-specific names) instead of hardcoded secrets. Handle them carefully:
 
 - Never print, paste, diff, or include secret values in tool arguments or final output.
 - When editing files that may contain secrets, use redacted inspection or targeted commands that avoid echoing values.
-- Use these environment variables as the default auth/config path.
+- Use the provided environment variables as the default auth/config path.
 - If a required variable is missing, prompt the user before proceeding.
