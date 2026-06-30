@@ -1,7 +1,10 @@
 ---
-status: current
+status: archived
 doc_type: reference
 updated: 2026-06-25
+closed: 2026-06-29
+current_guidance: ../../home/dot_agents/docs/git.md
+status_detail: "Custom grm integration removed (grmrepo, grmrepo-refresh, the bin/gh shim, grm config). Repos are now cloned with ghc/gh; see the git conventions doc."
 ---
 
 # GRM (git-repo-manager) on this machine

@@ -20,15 +20,13 @@ tmp_config="$tmp_home/.config/chezmoi/chezmoi.toml"
 tmp_cache="$tmp_home/.cache/chezmoi"
 tmp_state="$tmp_home/.local/state/chezmoi/state.boltdb"
 tmp_github_root="$tmp_home/code/github.com"
-tmp_grmrepo_config="$tmp_home/.local/state/grmrepo/config.toml"
-mkdir -p "$tmp_home/.config/chezmoi" "$tmp_cache" "${tmp_state:h}" "$tmp_github_root" "${tmp_grmrepo_config:h}"
+mkdir -p "$tmp_home/.config/chezmoi" "$tmp_cache" "${tmp_state:h}" "$tmp_github_root"
 
 run_chezmoi() {
   DOTFILES_ROOT="$DOTFILES_ROOT" \
   DOTFILES_INSTALL_XCODE=false \
   DOTFILES_SKIP_PLIST_HOOKS=1 \
   GHPATH="$tmp_github_root" \
-  GRMREPO_CONFIG="$tmp_grmrepo_config" \
   HOME="$tmp_home" \
   XDG_CONFIG_HOME="$tmp_home/.config" \
   XDG_CACHE_HOME="$tmp_home/.cache" \

@@ -1,3 +1,0 @@
-# grm trees shared across ALL machines, regardless of machine_type.
-# Curate by hand. Owners listed here are skipped by grmrepo-refresh when it
-# writes a per-machine-type fragment, so they are never duplicated.

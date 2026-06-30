@@ -32,7 +32,6 @@ brews = [
   { name = "uv" },
   { name = "shellcheck" },
   { name = "tmux" },
-  { name = "worktrunk" },  # worktrunk ships the `wt` binary; conflicts with `wiredtiger` if ever installed.
   { name = "yqrashawn/goku/goku" },  # goku: compiles ~/.config/karabiner.edn → karabiner.json
 ]
 casks = [

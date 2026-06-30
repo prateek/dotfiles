@@ -268,41 +268,72 @@ def _gh_api_paginate_json(endpoint: str) -> Any:
         raise PrepareError(f"failed to parse `gh api` output as JSON for {endpoint!r}") from exc
 
 
-def _wt_prepare(pr_number: int, *, worktree_name: str, repo: str, repo_dir: Path) -> Path:
-    _require_cmd("wt")
-    _require_cmd("gh")
-
-    repo_dir = repo_dir.expanduser().resolve()
-    repo_root = _git_root(repo_dir)
-
-    if not _git_is_clean(repo_root):
-        raise PrepareError(
-            f"repo has uncommitted changes: {repo_root}\n"
-            "stash/commit them (or use a clean clone) before creating a PR review worktree"
-        )
-
-    origin_repo = _git_origin_repo(repo_root)
-    if origin_repo and origin_repo.lower() != repo.lower():
-        raise PrepareError(
-            f"repo mismatch: local origin is {origin_repo}, but requested PR repo is {repo}\n"
-            f"pass the correct `--repo-dir` pointing at a clone of {repo}"
-        )
-
-    worktree_dir = repo_root.parent / worktree_name
-    _run(
-        [
-            "wt",
-            "pr",
-            str(pr_number),
-            "--path",
-            str(worktree_dir),
-            "--editor",
-            "none",
-        ],
-        cwd=repo_root,
+def _resolve_ohc() -> str:
+    # Same resolution order as the Raycast orca-worktree extension.
+    candidates = [
+        os.environ.get("OHC_HELPER_PATH"),
+        str(Path.home() / ".config" / "zsh" / "autoload" / "ohc"),
+        str(Path.home() / "dotfiles" / "home" / "dot_config" / "zsh" / "autoload" / "ohc"),
+    ]
+    for candidate in candidates:
+        if candidate and Path(candidate).is_file():
+            return candidate
+    raise PrepareError(
+        "could not find the `ohc` helper; run `chezmoi apply` or set OHC_HELPER_PATH "
+        "(or use --checkout-mode inplace, which does not need Orca)"
     )
 
-    return worktree_dir.resolve()
+
+def _ohc_worktree_path(stdout: str) -> Path:
+    # ohc emits Orca JSON, possibly preceded by log lines; slice to the JSON object.
+    start = stdout.find("{")
+    end = stdout.rfind("}")
+    if start == -1 or end == -1 or end < start:
+        raise PrepareError(f"ohc did not emit JSON output:\n{stdout.strip()}")
+    try:
+        data = json.loads(stdout[start : end + 1])
+    except json.JSONDecodeError as exc:
+        raise PrepareError("failed to parse ohc JSON output") from exc
+    worktree = ((data.get("result") or {}).get("worktree")) or {}
+    path = worktree.get("path")
+    if not path:
+        raise PrepareError("ohc JSON did not include result.worktree.path")
+    return Path(path).expanduser().resolve()
+
+
+def _git_clone_root(worktree_dir: Path) -> Path:
+    proc = _run(
+        ["git", "-C", str(worktree_dir), "rev-parse", "--git-common-dir"],
+        capture=True,
+    )
+    common = Path(proc.stdout.strip())
+    if not common.is_absolute():
+        common = worktree_dir / common
+    return common.resolve().parent
+
+
+def _ohc_prepare(pr_number: int, *, worktree_name: str, repo: str) -> Path:
+    # Orca owns worktrees. `ohc` clones the repo (via `ghc`), registers it with Orca,
+    # and creates the worktree; we then check the PR head into that worktree with `gh`,
+    # which handles same-repo and fork PRs uniformly.
+    _require_cmd("zsh")
+    _require_cmd("orca")
+    _require_cmd("gh")
+    ohc = _resolve_ohc()
+
+    _, owner, repo_name = _split_repo(repo)
+    proc = _run(
+        ["zsh", ohc, f"{owner}/{repo_name}", "--name", worktree_name, "--setup", "skip", "--json"],
+        capture=True,
+    )
+    worktree_dir = _ohc_worktree_path(proc.stdout)
+
+    _run(
+        ["gh", "pr", "checkout", str(pr_number), "-R", repo, "--branch", worktree_name, "--force"],
+        cwd=worktree_dir,
+        capture=True,
+    )
+    return worktree_dir
 
 
 def _inplace_prepare(pr_number: int, *, branch_name: str, repo: str, repo_dir: Path) -> Path:
@@ -344,7 +375,7 @@ def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(
         description=(
             "Prepare a local checkout for reviewing a GitHub PR and emit review context as JSON. "
-            "Defaults to a clean worktree checkout via `wt` (Worktrunk)."
+            "Defaults to a clean Orca worktree via `ohc`."
         )
     )
     parser.add_argument("--pr", required=True, help="PR number or GitHub PR URL")
@@ -400,17 +431,17 @@ def main(argv: list[str]) -> int:
     checkout_mode = args.checkout_mode
     repo_path = Path(args.repo_dir) if args.repo_dir else Path.cwd()
     if checkout_mode == "worktree":
-        worktree_dir = _wt_prepare(
+        worktree_dir = _ohc_prepare(
             pr_number,
             worktree_name=worktree_name,
             repo=repo,
-            repo_dir=repo_path,
         )
-        worktree_type = "wt"
+        worktree_type = "ohc"
+        repo_dir: str | None = str(_git_clone_root(worktree_dir))
     else:
         worktree_dir = _inplace_prepare(pr_number, branch_name=worktree_name, repo=repo, repo_dir=repo_path)
         worktree_type = "inplace"
-    repo_dir: str | None = str(_git_root(repo_path))
+        repo_dir = str(_git_root(repo_path))
 
     if not _git_is_clean(worktree_dir):
         raise PrepareError(

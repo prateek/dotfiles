@@ -26,7 +26,6 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [Document Lifecycle](document-lifecycle.md) | Frontmatter, status transitions, and index rules for `docs/`. |
 | [Chezmoi Architecture](references/chezmoi-architecture.md) | Dotfiles source-state architecture and validation entrypoints. |
 | [Chezmoi Drift Banner](../home/dot_config/dotfiles/chezmoi-drift/README.md) | Cached shell banner for managed chezmoi drift. |
-| [GRM Repo](references/grmrepo.md) | Canonical clone discovery, GRM config refresh, and repo URL insertion. |
 | [Jamf Self Service Elevation](references/jamf-self-service-elevation.md) | Temporary admin elevation on Jamf-managed work Macs. |
 | [Mise Tool Management](references/mise-tool-management.md) | Mise-native CLI and tool selection. |
 | [Tart Mini Validation](runbooks/tart-mini-validation.md) | Local disposable-VM install validation. |
@@ -83,4 +82,6 @@ or `superseded_by` frontmatter before using them.
 | [Config-Gating Simplification](plans/config-gating-simplification-plan.md) | [ADR 0012](adr/0012-config-gating-convention.md) and [Chezmoi Architecture](references/chezmoi-architecture.md). |
 | [Machine-Type Package Selection](plans/machine-type-package-selection-plan.md) | [ADR 0010](adr/0010-machine-type-package-selection.md) and [Chezmoi Architecture](references/chezmoi-architecture.md). |
 | [Docs Reorg And Agent-Surface Refresh](plans/docs-reorg-plan.md) | `AGENTS.md`, [Documentation Index](index.md), and [Document Lifecycle](document-lifecycle.md). |
+| [GRM Repo](references/grmrepo.md) | [Git Conventions](../home/dot_agents/docs/git.md) for the `gh`/clone workflow; repos are cloned with `ghc`/`gh`. |
 | [Setup Downstream Fork Plan](plans/setup-downstream-fork-plan.md) | [`setup-downstream-fork` skill](../home/dot_agents/packages/review/skills/local/setup-downstream-fork/SKILL.md) and [ADR 0001](adr/0001-downstream-fork-architecture.md). |
+| [Worktree Convention Cleanup](plans/worktree-convention-cleanup-plan.md) | [Worktrees](../home/dot_agents/docs/worktrees.md) and [Git Conventions](../home/dot_agents/docs/git.md) for the Orca worktree workflow; worktrunk and the custom `grm` integration were removed. |

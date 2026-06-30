@@ -129,15 +129,3 @@ Run `repo-index` canonical clone discovery tests:
 ```sh
 make test-repo-index
 ```
-
-Run `grmrepo-refresh` config-generation tests:
-
-```sh
-make test-grmrepo-refresh
-```
-
-Run E2E worktree tests:
-
-```sh
-make test-worktrees
-```

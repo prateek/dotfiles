@@ -1,21 +1,48 @@
-# Git Conventions
+# Git and GitHub
 
-## Purpose
+Use this playbook for Git and GitHub work on this machine: worktrees, commits,
+pull requests, issue comments, reviews, and safety checks.
 
-Use this playbook for Git/GitHub workflows on this machine.
+## Defaults
 
-## When to use
+- Prefer a worktree-first workflow. Create worktrees with Orca through `ohc`, the
+  Orca UI, or `orca worktree create`; see [worktrees.md](worktrees.md).
+- Use the real `gh` CLI directly for GitHub operations.
+- Verify the active GitHub identity before changing repository state:
 
-- Creating/switching branches/worktrees.
-- Running GitHub CLI commands.
-- Committing, pushing, or any git operation.
+  ```sh
+  gh api user -q .login
+  ```
 
-## Commit messages
+## Worktrees
 
-- Commit messages should be concise and descriptive.
-- Commit messages should follow the conventional commit format.
-- Commit messages should be written in the imperative mood.
-- Commit messages should be written in the present tense.
+Start new tasks in an Orca worktree:
+
+```sh
+ohc <owner>/<repo> [orca worktree create options]
+```
+
+`ohc` clones through `ghc`, registers the repo in Orca, and creates the
+worktree. Existing Orca-registered repos can also use the Orca UI or
+`orca worktree create`.
+
+Worktrees land at:
+
+```text
+~/code/worktrees/<repo>/<name>
+```
+
+Use [worktrees.md](worktrees.md) for the full workflow, including `orca.yaml`
+setup hooks and `.orca/` overrides.
+
+## Commits
+
+- Use conventional commit format when the repo expects it, for example
+  `fix: handle empty PR body`.
+- Write the subject in the imperative mood and present tense.
+- Keep the subject concise. Put context in the body when the change needs it.
+- Inspect staged and unstaged changes before committing.
+- Let hooks run. If a hook fails, follow the safety protocol below.
 
 ## Writing prose for GitHub
 
@@ -35,42 +62,35 @@ Before creating an issue, PR, or review comment, check whether the repo already 
 - Check `CONTRIBUTING.md`, `.github/CODEOWNERS`, and any `docs/` contributor guide for required reviewers, labels, or commit/PR title rules (e.g. conventional-commit prefixes, ticket IDs).
 - For `gh pr create` / `gh issue create`, pass `--template <name>` when a specific template applies; otherwise pre-fill `--body` to match the template structure rather than submitting an empty body.
 
-## Defaults
+## GitHub CLI
 
-- Prefer worktree-first workflow via `w` (Worktrunk wrapper).
-- Use the wrapped `gh` (see below).
+Use `gh` for GitHub reads and writes from the terminal. Prefer explicit repo
+arguments when you are not already inside the target repo.
 
-## Workflow
+Common reads:
 
-### 1) Create/switch worktree (`w`)
+```sh
+gh pr view <number> -R <owner>/<repo> --json title,state,author,baseRefName,headRefName
+gh pr checks <number> -R <owner>/<repo>
+gh issue view <number> -R <owner>/<repo>
+```
 
-- Create/switch + `cd` (repo picker by default):
-  - `w feature/auth`
-- Create/switch + run an agent command:
-  - `w fix-bug -- 'Fix GH #322'`
-  - `w run fix-bug --agent claude -- 'Fix GH #322'`
-- Target a specific repo:
-  - `w feature/auth --here`
-  - `w feature/auth --repo owner/repo`
-  - `w feature/auth --repo /path/to/repo`
-- Worktree maintenance:
-  - `w ls`
-  - `w rm <branch>` (remove a selected worktree)
-  - `w prune` (dry-run stale cleanup)
-  - `w prune --yes` (apply stale cleanup)
+Common writes:
 
-Worktree reference:
-- [worktrees.md](worktrees.md)
+```sh
+gh pr create --title "<title>" --body "$(cat <<'EOF'
+<body>
+EOF
+)"
 
-### 2) Use the `gh` wrapper
+gh pr comment <number> -R <owner>/<repo> --body "$(cat <<'EOF'
+<comment>
+EOF
+)"
+```
 
-This machine wraps `gh` via `~/bin/gh` → `~/dotfiles/bin/gh`. The wrapper passes through to the real `gh` and triggers a background `grmrepo-refresh` after successful `gh repo clone/create`.
-
-- Wrapper path: `~/bin/gh` -> `~/dotfiles/bin/gh`
-- Check active identity:
-  - `gh api user -q .login`
-
-If this machine ever needs multiple authenticated `gh` users again, the recommended shape lives in `docs/references/grmrepo.md` (section "Extending Back To Multiple `gh` Users").
+Use heredocs for multi-line bodies so Markdown stays readable in shell history
+and command transcripts.
 
 #### Attaching files with `gh attach`
 
@@ -138,7 +158,7 @@ Remember: Quality tools are guardrails that help you, not barriers that block yo
 
 ## Validation checklist
 
-- Worktree created/switched via `w` (or explicitly justified otherwise).
+- Worktree created/switched via Orca (`ohc`), or explicitly justified otherwise.
 - `gh` identity verified before repo/PR operations.
 - Commit messages follow conventional commit format.
 - Pre-commit hooks pass before every commit.

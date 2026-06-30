@@ -1,0 +1,12 @@
+# orca.yaml — committed per-repo Orca config for this dotfiles repo.
+# Applies to every Orca worktree of this repo, on every machine (trust-gated
+# once per machine). A sane starting point; extend as worktree needs grow.
+# Recognized keys only: scripts.setup, scripts.archive, issueCommand, defaultTabs.
+scripts:
+  # Runs after a worktree is created. Env: $ORCA_WORKTREE_PATH, $ORCA_ROOT_PATH.
+  # This repo's tool versions are managed by mise (~/.config/mise); trust the
+  # new worktree so mise will honor any repo-local config without a prompt.
+  setup: |
+    mise trust "$ORCA_WORKTREE_PATH" >/dev/null 2>&1 || true
+defaultTabs:
+  - title: shell

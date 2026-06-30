@@ -62,10 +62,6 @@ function ghc() {
 
     local clone_url="git@github.com:${slug}.git"
     git clone "$clone_url" "$target" || return 1
-
-    if command -v grmrepo-refresh >/dev/null 2>&1; then
-      grmrepo-refresh >/dev/null 2>&1 &!
-    fi
   fi
 
   cd "$target" || return 1
