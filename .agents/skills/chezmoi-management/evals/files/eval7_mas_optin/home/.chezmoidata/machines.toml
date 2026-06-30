@@ -1,0 +1,10 @@
+# Machine types compose the reusable groups in packages.toml; resolved at apply
+# time by home/.chezmoitemplates/features.tmpl. See docs/adr/0012-config-gating-convention.md.
+[machines.type.ci]
+groups = ["base"]
+
+[machines.type.personal]
+groups = ["base", "dev"]
+
+[machines.type.work]
+groups = ["base", "dev"]

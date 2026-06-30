@@ -41,15 +41,21 @@ DOTFILES_ROOT="${0:A:h:h}"
 tmp_root="$(mktemp -d)"
 trap 'rm -rf "$tmp_root"' EXIT
 
+# Empty --config isolates renders from this host's chezmoi config so a local
+# [data.machines_local] cannot skew results; machine_type is pinned per render.
+empty_config="$tmp_root/empty-chezmoi.toml"
+: >"$empty_config"
+
 render_script() {
   local script="$1"
   local machine_type="${2:-ci}"
-  env -u DOTFILES_MACHINE_TYPE chezmoi \
+  chezmoi \
     --source "$DOTFILES_ROOT" \
+    --config "$empty_config" \
     --destination "$tmp_root/home" \
     --cache "$tmp_root/cache" \
     --persistent-state "$tmp_root/state.boltdb" \
-    --override-data "{\"run_install_scripts\":true,\"apply_macos_defaults\":false,\"secrets_enabled\":false,\"machine_type\":\"$machine_type\"}" \
+    --override-data "{\"machine_type\":\"$machine_type\",\"machines_local\":{\"run_install_scripts\":true}}" \
     execute-template \
     --file "$DOTFILES_ROOT/home/.chezmoiscripts/run_onchange_after_10-brew-bundle.sh.tmpl" \
     >"$script"
@@ -150,12 +156,10 @@ render_script "$script_personal" personal
 bash -n "$script_personal" || die "rendered personal brew bundle script has invalid syntax"
 script_personal_content="$(<"$script_personal")"
 assert_contains "$script_personal_content" 'brew "eugene1g/safehouse/agent-safehouse", trusted: true'
-assert_contains "$script_personal_content" 'brew "prateek/tap/agentsview", trusted: true'
 assert_contains "$script_personal_content" 'cask "dagger/tap/container-use", trusted: true'
 assert_contains "$script_personal_content" 'cask "mattt/tap/imcp", trusted: true'
 assert_contains "$script_personal_content" 'cask "nikitabobko/tap/aerospace", trusted: true'
 assert_contains "$script_personal_content" 'cask "peripheryapp/periphery/periphery", trusted: true'
-assert_contains "$script_personal_content" 'cask "prateek/tap/agentsview-desktop", trusted: true'
 assert_contains "$script_personal_content" 'cask "stablyai/orca/orca", trusted: true'
 assert_not_contains "$script_personal_content" 'brew "homebrew/core/xcodes", args: ["force-bottle"], trusted: true'
 stubs_d="$tmp_root/stubs-d"

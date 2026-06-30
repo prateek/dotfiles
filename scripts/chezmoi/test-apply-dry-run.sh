@@ -29,15 +29,11 @@ mkdir -p "$tmp_home/.config/chezmoi" "$tmp_home/.cache/chezmoi" "$tmp_home/.loca
 
 run_chezmoi() {
   DOTFILES_ROOT="$dotfiles_root" \
-  DOTFILES_MACHINE_TYPE="$machine_type" \
-  DOTFILES_RUN_INSTALL_SCRIPTS=false \
-  DOTFILES_APPLY_MACOS_DEFAULTS=false \
-  DOTFILES_SECRETS_ENABLED=false \
+  MISE_TRUSTED_CONFIG_PATHS="$mise_config_dir" \
   HOME="$tmp_home" \
   XDG_CONFIG_HOME="$tmp_home/.config" \
   XDG_CACHE_HOME="$tmp_home/.cache" \
   XDG_STATE_HOME="$tmp_home/.local/state" \
-  MISE_TRUSTED_CONFIG_PATHS="$mise_config_dir" \
     chezmoi --no-tty \
       --config "$tmp_home/.config/chezmoi/chezmoi.toml" \
       --cache "$tmp_home/.cache/chezmoi" \
@@ -45,5 +41,9 @@ run_chezmoi() {
       "$@"
 }
 
-run_chezmoi init --promptDefaults --source "$dotfiles_root" >/dev/null
+# Select the machine type non-interactively (--promptChoice keys on the prompt
+# text). run_install_scripts / apply_macos_defaults / secrets_enabled now resolve
+# from machines.toml per type, so they need no env override here; --dry-run never
+# executes scripts regardless of how those resolve.
+run_chezmoi init --promptDefaults --promptChoice "machine_type=$machine_type" --source "$dotfiles_root" >/dev/null
 run_chezmoi apply --dry-run --refresh-externals=never --source "$dotfiles_root/home" --destination "$tmp_home" >/dev/null

@@ -33,7 +33,7 @@ WARM_VM_NAME="${DOTFILES_WARM_VM_NAME:-dotfiles-warm}"
 WARM_IMAGE="${DOTFILES_WARM_IMAGE:-ghcr.io/cirruslabs/macos-tahoe-base:latest}"
 WARM_CPU="${DOTFILES_WARM_CPU:-4}"
 WARM_MEMORY="${DOTFILES_WARM_MEMORY:-8192}"
-WARM_MACHINE_TYPE="${DOTFILES_MACHINE_TYPE:-ci}"
+WARM_MACHINE_TYPE="${DOTFILES_WARM_MACHINE_TYPE:-ci}"
 
 REPO_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 
@@ -135,12 +135,12 @@ cmd_bootstrap() {
   _sync_repo_into_vm
   log "Bootstrapping chezmoi inside warm VM (machine_type=$WARM_MACHINE_TYPE)..."
   tart exec "$WARM_VM_NAME" env \
-    DOTFILES_MACHINE_TYPE="$WARM_MACHINE_TYPE" \
+    DOTFILES_INIT_MACHINE_TYPE="$WARM_MACHINE_TYPE" \
     sh -lc '
       set -e
       export PATH="$HOME/.local/bin:$PATH"
       sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
-      chezmoi --no-tty init --promptDefaults --apply --source "$HOME/dotfiles"
+      chezmoi --no-tty init --promptDefaults --promptChoice "machine_type=$DOTFILES_INIT_MACHINE_TYPE" --apply --source "$HOME/dotfiles"
     '
   log "Bootstrap complete. Subsequent '$0 apply' runs use the same chezmoi config."
 }

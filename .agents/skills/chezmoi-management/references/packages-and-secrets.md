@@ -5,17 +5,19 @@ Managing data files under `home/.chezmoidata/`, rendering Brewfiles, gating inst
 ## Files Owned By This Mode
 
 ```text
-home/.chezmoidata/packages.toml          # Homebrew formulae, casks, MAS apps, groups, machine types
+home/.chezmoidata/packages.toml          # Homebrew formulae, casks, MAS apps, reusable groups
+home/.chezmoidata/machines.toml          # per-machine_type group + behavior layers (resolved by features.tmpl)
 home/.chezmoidata/secrets.toml           # [secrets.refs] obfuscated op:// refs only
 home/.chezmoidata/licenses.toml          # [licenses] paths = [...] target paths (refs live in secrets.toml)
-home/.chezmoitemplates/brewfile.tmpl     # renders to a Brewfile from packages.toml
+home/.chezmoitemplates/brewfile.tmpl     # renders to a Brewfile from packages.toml + the resolver
+home/.chezmoitemplates/features.tmpl     # resolves machines.toml layers into one feature set (JSON)
 ```
 
 `home/.chezmoidata/` files are loaded BEFORE the template engine starts. **They cannot themselves be templates.** Dynamic data goes in `home/.chezmoi.<format>.tmpl` at the source root, or via template functions in the templates that consume the data.
 
 ## Packages.toml Structure
 
-`packages.toml` uses a top-level `[packages]` table with a `default_machine_type`, reusable `[packages.groups.<name>]` sub-tables, and `[packages.machine_types.<type>]` sub-tables whose `groups = [...]` list composes them. Each group body uses **inline arrays of inline tables**. Do NOT use TOML array-of-tables syntax (`[[packages.groups.base.brews]]`) — that mixes two definitions of the same key and is invalid against the existing inline shape. The Brewfile renderer and the `package-cask-enabled.tmpl` gate union each section across the selected machine type's groups, deduped by name, so shape and key names must match.
+`packages.toml` defines reusable `[packages.groups.<name>]` sub-tables. Which groups each machine type installs is declared separately in `home/.chezmoidata/machines.toml` (`[machines.type.<type>].groups`), resolved by `home/.chezmoitemplates/features.tmpl` (see "Machine Types And Config Gating" below). Each group body uses **inline arrays of inline tables**. Do NOT use TOML array-of-tables syntax (`[[packages.groups.base.brews]]`) — that mixes two definitions of the same key and is invalid against the existing inline shape. The Brewfile renderer and the `package-cask-enabled.tmpl` gate union each section across the selected machine type's groups, deduped by name, so shape and key names must match.
 
 Group keys (all optional except `description`):
 
@@ -31,9 +33,7 @@ Group keys (all optional except `description`):
 | `disabled_casks` | inventory only — NOT consumed by `brewfile.tmpl` | Record of casks intentionally excluded with the reason. To actually disable a cask, remove it from `casks`; the `disabled_casks` entry is documentation, not a filter. |
 
 ```toml
-[packages]
-default_machine_type = "personal"
-
+# packages.toml — reusable group definitions only.
 [packages.groups.base]
 description = "Essentials on every machine, including ci"
 taps  = [ { name = "1password/tap" }, { name = "felixkratz/formulae" } ]
@@ -54,16 +54,19 @@ xcode_required_brews = [ { name = "swiftlint" } ]
 [packages.groups.personal-apps]
 description = "Personal apps; never installed on work"
 casks = [ { name = "tailscale-app" } ]
-
-[packages.machine_types.ci]
-groups = ["base"]
-[packages.machine_types.personal]
-groups = ["base", "dev", "dev-apple", "personal-apps"]
-[packages.machine_types.work]
-groups = ["base", "dev", "dev-apple"]
 ```
 
-Selection is controlled by `DOTFILES_MACHINE_TYPE` (overrides `default_machine_type`). Interactive values: `personal`, `homelab`, `work`, `ci`. `ci` is the minimal tier for CI/Tart/audits (also selectable via `DOTFILES_MACHINE_TYPE`). See `docs/adr/0010-machine-type-package-selection.md`.
+```toml
+# machines.toml — which groups (and other behavior) each machine type gets.
+[machines.type.ci]
+groups = ["base"]
+[machines.type.personal]
+groups = ["base", "dev", "dev-apple", "personal-apps"]
+[machines.type.work]
+groups = ["base", "dev"]
+```
+
+Machine type resolves from `[data].machine_type` (default `personal`), set by the `chezmoi init` prompt or `chezmoi init --promptChoice 'machine_type=<type>'`; there is no `DOTFILES_MACHINE_TYPE`. Interactive values: `personal`, `homelab`, `work`, `ci`. `ci` is the minimal tier for CI/Tart/audits and a first-class prompt choice. See `docs/adr/0010-machine-type-package-selection.md` and `docs/adr/0012-config-gating-convention.md`.
 
 ## Brewfile Rendering
 
@@ -89,18 +92,22 @@ scripts/packages/render-brewfile --machine-type personal --include-mas
 
 `--include-mas` re-injects `DOTFILES_INSTALL_MAS_APPS=true` into the renderer's environment, so the rendered Brewfile contains the `mas "<name>", id: <int>` lines. Diff the with-flag vs without-flag output to confirm the gate is doing its job.
 
-## Machine-Type And Install Env Vars
+## Machine Types And Config Gating
 
-Two flavors of env var:
+`[data]` in `home/.chezmoi.toml.tmpl` holds **identity only**: `machine_type` (the sole first-run prompt), the `xdg_*` / `dotfiles_dir` paths, and `jamf_policy_id`. All machine *behavior* is composed at apply time from the layered `home/.chezmoidata/machines.toml`, resolved by `home/.chezmoitemplates/features.tmpl` into one JSON feature set. Consumers read it with a single include:
 
-**Init values (persisted to `~/.config/chezmoi/chezmoi.toml` during `chezmoi init`):** after init, the persisted answer is baked in — see the persistence note below the apply-time table for how to change it.
+```text
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- if $f.run_install_scripts }} ... {{- end }}
+{{- range $f.groups }} ... {{- end }}
+```
 
-| Init env var | Persisted as | Interactive prompt? | Default |
-|---|---|---|---|
-| `DOTFILES_MACHINE_TYPE` | `machine_type` | Yes (`promptChoiceOnce`: personal/homelab/work/ci) — env overrides the prompt | `personal` (matches `default_machine_type` in `packages.toml`) |
-| `DOTFILES_RUN_INSTALL_SCRIPTS` | `run_install_scripts` | Yes (`promptBoolOnce`) — env overrides the prompt | `true` |
-| `DOTFILES_APPLY_MACOS_DEFAULTS` | `apply_macos_defaults` | Yes (`promptBoolOnce`) — env overrides the prompt | `true` |
-| `DOTFILES_SECRETS_ENABLED` | `secrets_enabled` | Yes (`promptBoolOnce`) — env overrides the prompt | `false` |
+Feature keys: `groups`, `run_install_scripts`, `apply_macos_defaults`, `secrets_enabled`, `private_overlay`, `elevation`, plus the resolved `machine_type`. Layers merge low→high: `defaults < os.<os> < type.<machine_type> < host.<hostname>` < host-local `[data].machines_local`. A list (e.g. `groups`) is replaced wholesale by the highest layer that sets it; an unknown `machine_type` fails the resolver loudly (the typo guard).
+
+- **Change behavior for a role:** edit `[machines.type.<type>]` in `machines.toml`. It is render-time, so it lands on the next `chezmoi apply` with no re-init.
+- **One-off per-machine exception:** add a host-local `[data].machines_local` block in `~/.config/chezmoi/chezmoi.toml` (chezmoi-ignored), e.g. `[data.machines_local]` with `secrets_enabled = true`.
+- **Select the type non-interactively:** `chezmoi init --promptChoice 'machine_type=<type>'` (the flag keys on the prompt text); `--promptDefaults` only yields `personal`.
+- There are **no** per-flag config env vars: `DOTFILES_MACHINE_TYPE`, `DOTFILES_RUN_INSTALL_SCRIPTS`, `DOTFILES_APPLY_MACOS_DEFAULTS`, and `DOTFILES_SECRETS_ENABLED` were removed. The apply-time runtime switches below are separate and still env-driven.
 
 **Apply-time env vars (read on every `chezmoi apply` via `env` template function):**
 
@@ -117,7 +124,7 @@ Two flavors of env var:
 | `DOTFILES_SKIP_PLIST_HOOKS` | Disable the `scripts/chezmoi-hooks/post-apply-plists.sh` hook |
 | `DOTFILES_SKIP_SPOTLIGHT_REINDEX` | Skip Spotlight reindex side effects in plist hooks |
 
-Init-prompt vars are persisted at init time. Setting them on a later `chezmoi apply` (e.g., `DOTFILES_APPLY_MACOS_DEFAULTS=false chezmoi apply`, `DOTFILES_SECRETS_ENABLED=true chezmoi apply`) does NOT take effect — the persisted answer in `~/.config/chezmoi/chezmoi.toml` wins. To change, run `chezmoi edit-config` or re-init.
+`machine_type` is persisted at init time; the behavior toggles are NOT persisted — they resolve from `machines.toml` on every apply, so editing a `[machines.type.*]` layer (or a host-local `[data].machines_local` block) takes effect on the next `chezmoi apply` with no re-init. To change `machine_type` itself, `chezmoi edit-config` or re-init with `--promptChoice`.
 
 **Out of scope for this skill** (test/VM/harness/shell-startup vars; do not trigger on these): `DOTFILES_AUDIT_DIRENV`, `DOTFILES_CAPTURE_ROOT`, `DOTFILES_ROOT`, `DOTFILES_SKIP_LAUNCHCTL_SYNC`, `DOTFILES_SUDO_*`, `DOTFILES_TART_*`, `DOTFILES_TRACE*`, `DOTFILES_WARM_*`.
 
@@ -165,18 +172,18 @@ paths = [
 A template that needs a secret reads `.secrets.refs.<name>` via `onepasswordRead`, gated by `secrets_enabled`:
 
 ```text
-{{- if .secrets_enabled -}}
+{{- if (includeTemplate "features.tmpl" . | fromJson).secrets_enabled -}}
 {{- $ref := .secrets.refs.bettertouchtool_license -}}
 {{- if $ref -}}
 {{ onepasswordRead $ref }}
 {{- else -}}
-{{- /* secrets_enabled=true but ref is empty — fail loudly */ -}}
-{{ fail "bettertouchtool_license: secrets_enabled=true but ref is empty" }}
+{{- /* secrets enabled but ref is empty — fail loudly */ -}}
+{{ fail "bettertouchtool_license: secrets_enabled is true but ref is empty" }}
 {{- end -}}
 {{- end -}}
 ```
 
-`secrets_enabled` is set during `chezmoi init` (default `false`; override with `DOTFILES_SECRETS_ENABLED=true` at init time). To change it on an existing machine, `chezmoi edit-config` or re-init — see the env var note above.
+`secrets_enabled` resolves from `machines.toml` (default `false` for every type). Enable it per machine with a host-local `[data.machines_local]` block (`secrets_enabled = true`) in `~/.config/chezmoi/chezmoi.toml`; it takes effect on the next apply with no re-init.
 
 A `op signin` is still required before any apply that resolves secret refs, since `onepasswordRead` shells out to the `op` CLI.
 
@@ -184,6 +191,7 @@ A `op signin` is still required before any apply that resolves secret refs, sinc
 
 ```text
 make test-render-brewfile           # for any packages.toml or brewfile.tmpl change
+make test-machines-features         # for machines.toml / features.tmpl / machine-behavior changes
 make test-brew-bundle-script        # for package apply script or Homebrew trust behavior
 make test-secret-backed-files       # for any secrets/licenses change
 chezmoi data                        # dump computed data tree to verify load
@@ -199,29 +207,25 @@ First-machine sequence (already documented in repo README):
 ```text
 xcode-select --install
 sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply prateek
-# during init, prompts interactively for: machine_type, run_install_scripts,
-# apply_macos_defaults, secrets_enabled (each overridable via the matching
-# DOTFILES_* env var for non-interactive runs).
+# during init, prompts interactively for machine_type (and, on work, the Jamf
+# Self Service policy ID). All behavior toggles resolve from machines.toml, not
+# from prompts or env vars.
 #
 # Xcode is not a config toggle: the 15-xcode script check&sets it by presence.
 # On a dev-apple machine it installs the pinned Xcode when absent (interactive
 # apply, or DOTFILES_INSTALL_XCODE=true to force a non-interactive download).
 ```
 
-Non-interactive variant for Tart / CI:
+Non-interactive variant for Tart / CI (`--promptChoice` keys on the prompt text):
 
 ```text
-DOTFILES_MACHINE_TYPE=ci \
-DOTFILES_RUN_INSTALL_SCRIPTS=true \
-DOTFILES_APPLY_MACOS_DEFAULTS=false \
-DOTFILES_SECRETS_ENABLED=false \
-  sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply prateek
+sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply --promptChoice 'machine_type=ci' prateek
 ```
 
 After init, to enable secrets on an existing machine:
 
 ```text
-chezmoi edit-config       # set secrets_enabled = true
+chezmoi edit-config       # add [data.machines_local] with secrets_enabled = true
 op signin
 chezmoi apply
 ```

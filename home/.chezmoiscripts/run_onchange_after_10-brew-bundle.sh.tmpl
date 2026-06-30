@@ -1,12 +1,13 @@
 {{ template "script_lib.sh" . }}
 
 # packages.toml sha256: {{ include ".chezmoidata/packages.toml" | sha256sum }}
+# machines.toml sha256: {{ include ".chezmoidata/machines.toml" | sha256sum }}
 # brewfile.tmpl sha256: {{ include ".chezmoitemplates/brewfile.tmpl" | sha256sum }}
 
-{{- if .run_install_scripts }}
-{{- $machineType := coalesce (env "DOTFILES_MACHINE_TYPE") (dig "machine_type" "" .) .packages.default_machine_type -}}
-{{- $hasDev := has "dev" (index .packages.machine_types $machineType).groups }}
-machine_type={{ $machineType | quote }}
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- if $f.run_install_scripts }}
+{{- $hasDev := has "dev" $f.groups }}
+machine_type={{ $f.machine_type | quote }}
 has_dev={{ $hasDev | toString | quote }}
 mas_opt_in={{ env "DOTFILES_INSTALL_MAS_APPS" | default "false" | quote }}
 

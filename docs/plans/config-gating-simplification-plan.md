@@ -1,13 +1,17 @@
 ---
-status: accepted
+status: superseded
 doc_type: plan
 owner: Prateek
 created: 2026-06-26
+updated: 2026-06-29
+closed: 2026-06-29
+superseded_by: ../adr/0012-config-gating-convention.md
+current_guidance: ../references/chezmoi-architecture.md
 related:
   - ../adr/0012-config-gating-convention.md
   - ../adr/0010-machine-type-package-selection.md
   - ../references/chezmoi-architecture.md
-status_detail: "Accepted direction (layered table, no config env vars); implementation pending."
+status_detail: "Implemented; the layered machines.toml + features.tmpl model is live. Current guidance is ADR 0012 and the chezmoi architecture reference."
 ---
 
 # Config-Gating Simplification Plan

@@ -1,15 +1,10 @@
 {{- /*
   brewfile.tmpl — Homebrew Bundle input rendered from .packages data.
 
-  Machine-type selection: env DOTFILES_MACHINE_TYPE > chezmoi data
-  .machine_type (set by the inited config; may be absent when this template
-  is rendered against a worktree without the user's config) >
-  .packages.default_machine_type.
-
-  A machine type composes reusable groups (.packages.machine_types.<type>.groups).
-  Each Brewfile section (tap/brew/cask/mas) is the UNION of that section across
-  the selected groups, deduped by name (group order, then item order, first
-  occurrence wins).
+  Package groups are selected by the machines.toml resolver (features.tmpl):
+  the selected machine type's `groups`. Each Brewfile section (tap/brew/cask/mas)
+  is the UNION of that section across the selected groups, deduped by name
+  (group order, then item order, first occurrence wins).
 
   MAS opt-in: gated by env DOTFILES_INSTALL_MAS_APPS=true|1|yes|on.
 
@@ -22,11 +17,7 @@
   templates fail strictly on `.foo` against a map without "foo".
 */ -}}
 {{- $root := . -}}
-{{- $machineType := coalesce (env "DOTFILES_MACHINE_TYPE") (dig "machine_type" "" .) .packages.default_machine_type -}}
-{{- if not (hasKey .packages.machine_types $machineType) -}}
-{{-   fail (printf "brewfile.tmpl: unknown machine type %q (available: %v)" $machineType (keys .packages.machine_types)) -}}
-{{- end -}}
-{{- $groups := (index .packages.machine_types $machineType).groups -}}
+{{- $groups := (includeTemplate "features.tmpl" . | fromJson).groups -}}
 {{- $masOptIn := env "DOTFILES_INSTALL_MAS_APPS" | lower -}}
 {{- $includeMas := has $masOptIn (list "1" "true" "yes" "on") -}}
 
@@ -36,7 +27,7 @@
 {{- $casks := list -}}{{- $caskSeen := list -}}
 {{- $mas := list -}}{{- $masSeen := list -}}
 {{- range $gname := $groups -}}
-{{-   if not (hasKey $root.packages.groups $gname) -}}{{- fail (printf "brewfile.tmpl: machine type %q references undefined group %q" $machineType $gname) -}}{{- end -}}
+{{-   if not (hasKey $root.packages.groups $gname) -}}{{- fail (printf "brewfile.tmpl: machine type references undefined group %q" $gname) -}}{{- end -}}
 {{-   $g := index $root.packages.groups $gname -}}
 {{-   range default (list) (dig "taps" (list) $g) -}}
 {{-     if not (has .name $tapSeen) -}}{{- $taps = mustAppend $taps . -}}{{- $tapSeen = mustAppend $tapSeen .name -}}{{- end -}}

@@ -53,7 +53,7 @@ chezmoi \
   --destination "$tmp_root/home" \
   --cache "$tmp_root/cache" \
   --persistent-state "$tmp_root/chezmoi-state.boltdb" \
-  --override-data '{"run_install_scripts":true}' \
+  --override-data '{"machines_local":{"run_install_scripts":true}}' \
   execute-template \
   --file "$DOTFILES_ROOT/home/.chezmoiscripts/run_onchange_after_20-mise-install.sh.tmpl" \
   >"$script"

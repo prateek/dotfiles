@@ -1,10 +1,7 @@
-# Package selection is driven by a single axis: machine_type.
-# A machine type composes reusable groups; the brewfile and the
-# package-cask-enabled gate union each group section deduped by name.
+# Reusable package groups. Each machine type selects a set of these groups via
+# home/.chezmoidata/machines.toml (resolved by features.tmpl); the brewfile and
+# the package-cask-enabled gate union each group's sections, deduped by name.
 # See docs/adr/0010-machine-type-package-selection.md.
-
-[packages]
-default_machine_type = "personal"
 
 # === Reusable groups ===
 
@@ -360,21 +357,3 @@ casks = [
   { name = "voiceink" },
   { name = "tailscale-app" },
 ]
-
-# === Machine types compose groups ===
-
-[packages.machine_types.ci]
-description = "Minimal/fast tier for CI dry-run, Tart smoke, and shell audits"
-groups = ["base"]
-
-[packages.machine_types.personal]
-description = "Personal daily-driver Mac"
-groups = ["base", "dev", "dev-apple", "personal-apps"]
-
-[packages.machine_types.homelab]
-description = "Homelab Mac"
-groups = ["base", "dev", "dev-apple", "personal-apps"]
-
-[packages.machine_types.work]
-description = "Managed work Mac (no personal apps, no Apple/iOS toolchain)"
-groups = ["base", "dev"]

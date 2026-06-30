@@ -17,7 +17,8 @@ Use this skill when any of these are true:
 - Editing or adding files under `home/.chezmoitemplates/`, `home/.chezmoiassets/`, `home/.chezmoiscripts/`, `home/.chezmoidata/`, or `home/.chezmoiexternal.*` (zinit and other clone/pull-only dependencies).
 - Capturing or modifying macOS app preferences via plist fragments.
 - Touching `home/.chezmoidata/{packages,secrets,licenses}.toml` or `brewfile.tmpl`.
-- Toggling chezmoi-owned `DOTFILES_*` env vars — init prompts (`MACHINE_TYPE`, `RUN_INSTALL_SCRIPTS`, `APPLY_MACOS_DEFAULTS`, `SECRETS_ENABLED`) or apply-time gates (MAS, Homebrew tuning, plist hooks, post-apply relaunch, `INSTALL_XCODE` force-download). `MACHINE_TYPE` also selects the package groups. Full table with effects and out-of-scope test/VM vars in `references/packages-and-secrets.md`.
+- Selecting `machine_type` (the one init prompt, or `chezmoi init --promptChoice 'machine_type=<type>'`) or changing machine behavior via the layered `home/.chezmoidata/machines.toml` (resolved by `features.tmpl`) — package groups, install scripts, macOS defaults, secrets, the private overlay, elevation. Per-machine exceptions go in a host-local `[data].machines_local`.
+- Toggling chezmoi-owned apply-time `DOTFILES_*` env vars (MAS, Homebrew tuning, plist hooks, post-apply relaunch, `INSTALL_XCODE` force-download). Full table with effects and out-of-scope test/VM vars in `references/packages-and-secrets.md`.
 - Wiring a 1Password `op://` reference.
 - Translating between `~/.<file>` and `home/<dot_*>` source paths.
 

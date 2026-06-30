@@ -2,7 +2,7 @@
 status: current
 doc_type: reference
 created: 2026-05-12
-updated: 2026-06-15
+updated: 2026-06-29
 related:
   - ../adr/0008-sudo-askpass-1password.md
   - ../plans/sudo-askpass-1password-plan.md
@@ -24,10 +24,13 @@ otherwise fail because the user isn't yet admin.
 ## How it wires up
 
 1. `chezmoi init` prompts once for `machine_type` (`personal` / `homelab` /
-   `work`). On `work` it also prompts once for the Jamf Self Service
+   `work` / `ci`). On `work` it also prompts once for the Jamf Self Service
    policy ID that grants temp admin (see "Finding the policy ID" below).
-2. Both values are written to `~/.config/chezmoi/chezmoi.toml` under
-   `[data]` and `[data.elevation]`.
+2. `machine_type` and the policy ID are written to
+   `~/.config/chezmoi/chezmoi.toml` under `[data]` (identity). The elevation
+   method is not stored there; it resolves at apply time from
+   `home/.chezmoidata/machines.toml` (`work` → `jamf-self-service`, others →
+   `none`).
 3. `chezmoi apply` materializes them into `~/.config/dotfiles/elevation.sh`
    from `home/dot_config/dotfiles/elevation.sh.tmpl`. That file just sets
    `DOTFILES_ELEVATION_METHOD` and `DOTFILES_JAMF_POLICY_ID`.
@@ -70,13 +73,15 @@ The command then appears in root search as **Temp Admin**. On a personal Mac
 
 | Variable                       | Effect                                           |
 | ------------------------------ | ------------------------------------------------ |
-| `DOTFILES_MACHINE_TYPE`        | Skip the `chezmoi init` prompt for machine type. |
 | `DOTFILES_ELEVATION_METHOD`    | Force `none` / `jamf-self-service` per shell.    |
 | `DOTFILES_JAMF_POLICY_ID`      | Override the rendered policy ID per shell.       |
 
-To change the persistent values, either edit
-`~/.config/chezmoi/chezmoi.toml` directly or rerun `chezmoi init` with the
-relevant `DOTFILES_*` env var set.
+These two are per-shell runtime overrides read by `elevation.sh`. To change the
+persistent values: select the machine type with
+`chezmoi init --promptChoice 'machine_type=<type>'`; the elevation method follows
+from `machines.toml` (override per machine via a host-local `[data.machines_local]`
+block); the policy ID lives at `[data].jamf_policy_id` — edit
+`~/.config/chezmoi/chezmoi.toml` or rerun `chezmoi init`.
 
 ## Finding the policy ID
 
@@ -122,9 +127,10 @@ ID, the deep-link will silently no-op. Symptoms:
 
 Re-run the discovery steps above and update the ID with one of:
 
-- `DOTFILES_JAMF_POLICY_ID=<new-id> chezmoi init` (re-renders config), or
-- Edit `jamf_self_service_policy_id` under `[data.elevation]` in
-  `~/.config/chezmoi/chezmoi.toml`, then `chezmoi apply` to re-render
+- `DOTFILES_JAMF_POLICY_ID=<new-id> chezmoi apply` for a one-shot run (the
+  runtime env var wins for that apply's elevation), or
+- Edit `jamf_policy_id` under `[data]` in `~/.config/chezmoi/chezmoi.toml` (or
+  rerun `chezmoi init`), then `chezmoi apply` to re-render
   `~/.config/dotfiles/elevation.sh`.
 
 ## Auditability note

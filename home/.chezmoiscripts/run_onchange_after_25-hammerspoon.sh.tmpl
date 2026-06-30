@@ -2,7 +2,8 @@
 
 # Hammerspoon source sha256: {{ include "dot_hammerspoon/init.fnl" | sha256sum }}
 
-{{- if .run_install_scripts }}
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- if $f.run_install_scripts }}
 src="$HOME/.hammerspoon/init.fnl"
 out="$HOME/.hammerspoon/init.generated.lua"
 

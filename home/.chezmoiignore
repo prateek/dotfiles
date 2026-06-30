@@ -83,7 +83,7 @@ Library/Preferences/com.prakashjoshipax.VoiceInk.plist
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "karabiner-elements")) "true" }}
 .config/karabiner.edn
 {{- end }}
-{{- if not .secrets_enabled }}
+{{- if not (includeTemplate "features.tmpl" . | fromJson).secrets_enabled }}
 {{- range .licenses.paths }}
 {{ . }}
 {{ . | dir }}

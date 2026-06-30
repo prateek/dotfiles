@@ -1,6 +1,7 @@
 {{ template "script_lib.sh" . }}
 
-{{- if .run_install_scripts }}
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- if $f.run_install_scripts }}
 brew_shellenv
 
 # git, chezmoi, and uv are the minimum to run chezmoi apply: chezmoi-managed

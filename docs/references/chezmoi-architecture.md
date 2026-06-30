@@ -72,20 +72,22 @@ Scripts must be idempotent. A rerun should converge or report a clear blocker.
 
 ## Packages And Tools
 
-- Package intent lives in `home/.chezmoidata/packages.toml`.
-- Selection is driven by a single axis, `machine_type`. Reusable
-  `[packages.groups.*]` (`base`, `dev`, `dev-apple`, `personal-apps`) are
-  composed per `[packages.machine_types.*]`: `ci=[base]`,
-  `personal=homelab=[base,dev,dev-apple,personal-apps]`, `work=[base,dev]`.
-  Work omits the personal apps and the `dev-apple` Apple/iOS toolchain (no Xcode
-  setup); `ci` is the minimal CI/Tart/audit tier — a listed
-  `machine_type`, also selectable via `DOTFILES_MACHINE_TYPE`.
-  See [ADR 0010](../adr/0010-machine-type-package-selection.md).
+- Reusable package groups (`[packages.groups.*]`: `base`, `dev`, `dev-apple`,
+  `personal-apps`) live in `home/.chezmoidata/packages.toml`.
+- Selection is driven by a single axis, `machine_type`. Each type composes a set
+  of groups via the layered `home/.chezmoidata/machines.toml` table
+  (`[machines.type.*].groups`), resolved by `home/.chezmoitemplates/features.tmpl`:
+  `ci=[base]`, `personal=homelab=[base,dev,dev-apple,personal-apps]`,
+  `work=[base,dev]`. Work omits the personal apps and the `dev-apple` Apple/iOS
+  toolchain (no Xcode setup); `ci` is the minimal CI/Tart/audit tier and a
+  first-class `machine_type` prompt choice. See
+  [ADR 0010](../adr/0010-machine-type-package-selection.md) and the config-gating
+  convention in [ADR 0012](../adr/0012-config-gating-convention.md).
 - `home/.chezmoitemplates/brewfile.tmpl` renders the Brewfile input as the union
   of each section across the selected machine type's groups, deduped by name.
-  `package-cask-enabled.tmpl` gates app config the same way. Both resolve the
-  machine type as `env DOTFILES_MACHINE_TYPE > data .machine_type >
-  .packages.default_machine_type`.
+  `package-cask-enabled.tmpl` gates app config the same way. Both read the
+  selected groups from the `features.tmpl` resolver, which resolves
+  `machine_type` from `[data]` (default `personal`).
 - `home/.chezmoiscripts/run_onchange_after_10-brew-bundle.sh.tmpl` runs
   `brew bundle` from that rendered input. The rendered Brewfile marks
   tap-qualified third-party formulae and casks with `trusted: true`, and the
@@ -99,10 +101,20 @@ Scripts must be idempotent. A rerun should converge or report a clear blocker.
 
 ## Config Gating
 
-Feature toggles split by timing: render-time/auto-derived versus init-time/declared.
-See [ADR 0012](../adr/0012-config-gating-convention.md) for the convention, the
-missing-key and `default`-both-arms gotchas, and the accepted going-forward
-direction (one identity prompt plus a layered `machines.toml`, no config env vars).
+`[data]` in `home/.chezmoi.toml.tmpl` holds identity only: `machine_type` (the
+sole first-run prompt, also selectable with `chezmoi init --promptChoice
+'machine_type=<type>'`), the `xdg_*`/`dotfiles_dir` paths, and `jamf_policy_id`. All
+machine behavior — package groups, install scripts, macOS defaults, secrets, the
+private overlay, the elevation method — is composed at apply time from the layered
+`home/.chezmoidata/machines.toml` table, resolved by
+`home/.chezmoitemplates/features.tmpl`. Layers merge low→high:
+`defaults < os.<os> < type.<machine_type> < host.<hostname>` < host-local
+`[data].machines_local`; consumers read it with one
+`{{- $f := includeTemplate "features.tmpl" . | fromJson -}}`. Per-machine
+exceptions go in a host-local `[data].machines_local` block; apply-time runtime
+switches (`DOTFILES_SKIP_*`, etc.) stay separate and are never managed desired
+state. See [ADR 0012](../adr/0012-config-gating-convention.md) for the convention
+and the missing-key / `default`-both-arms gotchas.
 
 ## App Config
 

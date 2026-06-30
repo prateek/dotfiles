@@ -11,11 +11,11 @@
   and add:
       [data.secrets.refs]
       moom_license = "op://<vault>/<item>/<field>"
-  Then: DOTFILES_SECRETS_ENABLED=true chezmoi apply
+  Then enable [data.machines_local] secrets_enabled = true and run: chezmoi apply
 */ -}}
-{{- if .secrets_enabled -}}
+{{- if (includeTemplate "features.tmpl" . | fromJson).secrets_enabled -}}
 {{-   if not .secrets.refs.moom_license -}}
-{{-     fail "secrets_enabled=true but secrets.refs.moom_license is empty; set it in ~/.config/chezmoi/chezmoi.toml under [data.secrets.refs] or run with secrets_enabled=false to skip license materialization" -}}
+{{-     fail "secrets_enabled is true but secrets.refs.moom_license is empty; set it in ~/.config/chezmoi/chezmoi.toml under [data.secrets.refs] or disable secrets to skip license materialization" -}}
 {{-   end -}}
 {{ onepasswordRead .secrets.refs.moom_license }}
 {{- end -}}

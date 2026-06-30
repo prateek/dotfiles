@@ -25,10 +25,6 @@ mkdir -p "$tmp_home/.config/chezmoi" "$tmp_cache" "${tmp_state:h}" "$tmp_github_
 
 run_chezmoi() {
   DOTFILES_ROOT="$DOTFILES_ROOT" \
-  DOTFILES_MACHINE_TYPE=ci \
-  DOTFILES_RUN_INSTALL_SCRIPTS=false \
-  DOTFILES_APPLY_MACOS_DEFAULTS=false \
-  DOTFILES_SECRETS_ENABLED=false \
   DOTFILES_INSTALL_XCODE=false \
   DOTFILES_SKIP_PLIST_HOOKS=1 \
   GHPATH="$tmp_github_root" \
@@ -42,10 +38,11 @@ run_chezmoi() {
       --config "$tmp_config" \
       --cache "$tmp_cache" \
       --persistent-state "$tmp_state" \
+      --override-data '{"machines_local":{"run_install_scripts":false}}' \
       "$@"
 }
 
-run_chezmoi init --promptDefaults --source "$DOTFILES_ROOT"
+run_chezmoi init --promptDefaults --promptChoice 'machine_type=ci' --source "$DOTFILES_ROOT"
 run_chezmoi apply --exclude=externals >/dev/null
 
 status_output="$(run_chezmoi status --exclude=externals)"

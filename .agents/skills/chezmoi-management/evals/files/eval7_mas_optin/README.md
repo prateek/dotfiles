@@ -1,6 +1,6 @@
 # Eval 7 Fixture: MAS App Opt-In Gate
 
-Simulated state: an existing `home/.chezmoidata/packages.toml` with `base` and `dev` package groups composed by machine types. The `dev` group already has a `mas` array with one entry (Xcode); `base` has no `mas` key.
+Simulated state: an existing `home/.chezmoidata/packages.toml` with `base` and `dev` package groups, and `home/.chezmoidata/machines.toml` composing them per machine type (resolved by `features.tmpl`). The `dev` group already has a `mas` array with one entry (Xcode); `base` has no `mas` key.
 
 User asks to add Things 3 (App Store ID `904280696`) "so I get it on every fresh machine."
 

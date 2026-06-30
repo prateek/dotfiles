@@ -3,7 +3,8 @@
 # Raycast Orca extension package sha256: {{ include "dot_local/share/raycast-extensions/orca-worktree/package.json" | sha256sum }}
 # Raycast Orca extension lockfile sha256: {{ include "dot_local/share/raycast-extensions/orca-worktree/package-lock.json" | sha256sum }}
 
-{{- if and .run_install_scripts (eq (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "raycast")) "true") }}
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- if and $f.run_install_scripts (eq (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "raycast")) "true") }}
 if ! have npm; then
   warn "npm is not installed; skipping Raycast extension dependency install."
   exit 0

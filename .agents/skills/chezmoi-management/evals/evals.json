@@ -52,7 +52,7 @@
         "Notes that human-readable refs go in `~/.config/chezmoi/chezmoi.toml.local`, which is not committed",
         "References the repo rule about obfuscated `op://` refs only in committed source",
         "Suggests `make test-secret-backed-files` as the validation lane",
-        "Notes that `secrets_enabled` (in `chezmoi.toml`) controls whether the template renders, not the env var on every apply"
+        "Notes that `secrets_enabled` (resolved from `machines.toml`, default false) controls whether the template renders, not an env var on every apply"
       ]
     },
     {
@@ -123,7 +123,7 @@
         "Classifies `DOTFILES_INSTALL_MAS_APPS` as an APPLY-time gate (read on every `chezmoi apply` via env template function), NOT an init-time prompt persisted to `chezmoi.toml`. The user must export the var on each invocation, not just at init.",
         "Reasons about which group to add it to and how groups compose into machine types (a machine type is the union of its groups): `base` reaches every machine type including `ci`, `dev` excludes `ci`",
         "Suggests a GATED render verification using `scripts/packages/render-brewfile --machine-type <type> --include-mas` (the wrapper flag — the bare `DOTFILES_INSTALL_MAS_APPS=true` env-form does NOT work because the wrapper script clears that var with `env -u`). Plain `make test-render-brewfile` or `render-brewfile --machine-type <type>` without the flag is insufficient because they omit `mas` lines entirely.",
-        "Specifically names the repo's `default_machine_type = \"personal\"` setting (the TOML key, not just the concept) when reasoning about the default machine type",
+        "Understands machine_type composition lives in `home/.chezmoidata/machines.toml` (resolved by `features.tmpl`, default `personal`) when reasoning about which group reaches every machine type, not a `[packages]`-level or per-app setting",
         "References the apply-time vs init-prompt split documented in `references/packages-and-secrets.md` (e.g., explicitly mentions the apply-time env var table or the two-flavors-of-env-var distinction)"
       ]
     },
@@ -133,13 +133,13 @@
       "mode": "packages-and-secrets",
       "tags": ["universal-rule", "do-not"],
       "prompt": "Make home/.chezmoidata/packages.toml conditional on hostname so my work laptop gets a different brew list than my personal one. I figured I'd just rename it to packages.toml.tmpl and add `{{ if eq .chezmoi.hostname \"work\" }}` blocks.",
-      "expected_output": "The agent refuses the rename and explains: `home/.chezmoidata/` files load BEFORE the template engine starts; they cannot themselves be templates. It offers correct alternatives: per-machine-type selection via `DOTFILES_MACHINE_TYPE` (the existing repo pattern), or per-host data via `home/.chezmoi.toml.tmpl` [data] section, or `home/.chezmoiignore` to gate files by host. It does NOT propose any solution where a `.chezmoidata/*.tmpl` file exists.",
+      "expected_output": "The agent refuses the rename and explains: `home/.chezmoidata/` files load BEFORE the template engine starts; they cannot themselves be templates. It offers correct alternatives: per-machine-type selection via `machine_type` (the repo's pattern — chosen at `chezmoi init` / `--promptChoice` and composing groups in `home/.chezmoidata/machines.toml`), or per-host data via `home/.chezmoi.toml.tmpl` [data] section, or `home/.chezmoiignore` to gate files by host. It does NOT propose any solution where a `.chezmoidata/*.tmpl` file exists.",
       "files": ["evals/files/eval8_chezmoidata_no_template"],
       "expectations": [
         "Refuses the rename to `.tmpl` and explains: `home/.chezmoidata/` loads BEFORE the template engine",
         "Cites the rule from SKILL.md Universal Rules (Rule 4) or packages-and-secrets.md",
-        "Offers at least one correct alternative: per-machine-type via `DOTFILES_MACHINE_TYPE`, OR per-host data injected via `home/.chezmoi.toml.tmpl` [data], OR file-level gating via `home/.chezmoiignore`",
-        "Recommends per-machine-type selection (`DOTFILES_MACHINE_TYPE`) when the use case is package-set selection per machine, since that matches the existing repo pattern",
+        "Offers at least one correct alternative: per-machine-type via `machine_type` (chezmoi init / --promptChoice + machines.toml), OR per-host data injected via `home/.chezmoi.toml.tmpl` [data], OR file-level gating via `home/.chezmoiignore`",
+        "Recommends per-machine-type selection (`machine_type` via the init prompt / --promptChoice, composing groups in machines.toml) when the use case is package-set selection per machine, since that matches the repo pattern",
         "Does NOT propose any solution where a file under `home/.chezmoidata/` has a `.tmpl` extension",
         "Mentions `home/.chezmoi.<format>.tmpl` (at the source root, not under .chezmoidata/) as the place for dynamic chezmoi-data values if needed"
       ]

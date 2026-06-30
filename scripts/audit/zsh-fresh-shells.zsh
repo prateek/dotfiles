@@ -252,10 +252,6 @@ prepare_home() {
   env -u ZDOTDIR \
     HOME="$home_dir" \
     DOTFILES_ROOT="$dotfiles_root" \
-    DOTFILES_MACHINE_TYPE=ci \
-    DOTFILES_SECRETS_ENABLED=false \
-    DOTFILES_RUN_INSTALL_SCRIPTS=false \
-    DOTFILES_APPLY_MACOS_DEFAULTS=false \
     DOTFILES_SKIP_PLIST_HOOKS=1 \
     XDG_CONFIG_HOME="$xdg_config_home" \
     XDG_CACHE_HOME="$xdg_cache_home" \
@@ -267,15 +263,11 @@ prepare_home() {
       --cache "$xdg_cache_home/chezmoi" \
       --persistent-state "$xdg_state_home/chezmoi/state.boltdb" \
       --refresh-externals=never \
-      init >/dev/null
+      init --promptChoice 'machine_type=ci' >/dev/null
 
   env -u ZDOTDIR \
     HOME="$home_dir" \
     DOTFILES_ROOT="$dotfiles_root" \
-    DOTFILES_MACHINE_TYPE=ci \
-    DOTFILES_SECRETS_ENABLED=false \
-    DOTFILES_RUN_INSTALL_SCRIPTS=false \
-    DOTFILES_APPLY_MACOS_DEFAULTS=false \
     DOTFILES_SKIP_PLIST_HOOKS=1 \
     XDG_CONFIG_HOME="$xdg_config_home" \
     XDG_CACHE_HOME="$xdg_cache_home" \

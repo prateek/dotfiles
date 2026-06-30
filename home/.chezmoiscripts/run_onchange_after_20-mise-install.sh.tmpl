@@ -4,7 +4,8 @@
 # mise clis sha256: {{ include "dot_config/mise/conf.d/clis.toml" | sha256sum }}
 # mise runtimes sha256: {{ include "dot_config/mise/conf.d/runtimes.toml" | sha256sum }}
 
-{{- if .run_install_scripts }}
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- if $f.run_install_scripts }}
 if ! have mise; then
   warn "mise is not installed; skipping runtime install."
   exit 0

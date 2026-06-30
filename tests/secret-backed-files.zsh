@@ -65,10 +65,17 @@ override='{
   }
 }'
 
+# Empty --config isolates from this host's chezmoi config so a local
+# [data.machines_local] secrets_enabled=true cannot leak into the disabled-render
+# assertions; secrets state is supplied per render via --override-data.
+empty_config="$tmp_root/empty-chezmoi.toml"
+: >"$empty_config"
+
 chezmoi_isolated() {
   PATH="$stub_bin:$PATH" \
   chezmoi \
     --source "$DOTFILES_ROOT" \
+    --config "$empty_config" \
     --destination "$tmp_root/home" \
     --cache "$tmp_root/cache" \
     --persistent-state "$tmp_root/state.boltdb" \
@@ -93,7 +100,7 @@ disabled_render="$(
 [[ ! -e "$OP_CALLS" ]] || die "expected disabled secret template not to call op"
 
 enabled_override='{
-  "secrets_enabled": true,
+  "machines_local": { "secrets_enabled": true },
   "secrets": {
     "refs": {
       "example_license": "op://vault-id/item-id/field-id"
@@ -131,7 +138,7 @@ local_config="$tmp_root/chezmoi.toml"
 cat >"$local_config" <<EOF
 sourceDir = "$DOTFILES_ROOT"
 
-[data]
+[data.machines_local]
 secrets_enabled = true
 
 [data.secrets.refs]

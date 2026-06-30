@@ -27,15 +27,21 @@ DOTFILES_ROOT="${0:A:h:h}"
 tmp_root="$(mktemp -d)"
 trap 'rm -rf "$tmp_root"' EXIT
 
+# Empty --config isolates renders from this host's chezmoi config so a local
+# [data.machines_local] cannot skew results; machine_type is pinned per render.
+empty_config="$tmp_root/empty-chezmoi.toml"
+: >"$empty_config"
+
 render_script() {
   local out="$1"
   local machine_type="${2:-ci}"
-  env -u DOTFILES_MACHINE_TYPE chezmoi \
+  chezmoi \
     --source "$DOTFILES_ROOT" \
+    --config "$empty_config" \
     --destination "$tmp_root/home" \
     --cache "$tmp_root/cache" \
     --persistent-state "$tmp_root/state.boltdb" \
-    --override-data "{\"run_install_scripts\":true,\"apply_macos_defaults\":false,\"secrets_enabled\":false,\"machine_type\":\"$machine_type\"}" \
+    --override-data "{\"machine_type\":\"$machine_type\",\"machines_local\":{\"run_install_scripts\":true}}" \
     execute-template \
     --file "$DOTFILES_ROOT/home/.chezmoiscripts/run_onchange_after_12-gh-extensions.sh.tmpl" \
     >"$out"

@@ -7,7 +7,7 @@ related:
   - ../references/chezmoi-architecture.md
   - 0010-machine-type-package-selection.md
   - 0011-private-repo-config-overlays.md
-status_detail: "Accepted convention for chezmoi config toggles; conforms two current flags to it (env-var naming, ci as a first-class type)."
+status_detail: "Accepted convention for chezmoi config toggles. The going-forward layered-table model (machines.toml + features.tmpl, no config env vars) is implemented; current guidance is docs/references/chezmoi-architecture.md."
 ---
 
 # ADR 0012 — Config-gating convention

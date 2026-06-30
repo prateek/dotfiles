@@ -60,6 +60,8 @@ jobs:
           make test-tart-install-helper
           make test-render-brewfile
           make test-package-gated-configs
+          make test-machines-features
+          make test-elevation-render
           make test-brew-bundle-script
           make test-xcode-install-script
           make test-chezmoi-config

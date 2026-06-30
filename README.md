@@ -9,9 +9,9 @@ xcode-select --install
 sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply --source ~/dotfiles prateek
 ```
 
-The first run prompts for machine type (`personal`, `homelab`, or `work`), macOS defaults, install scripts, secret-backed files, and administrator access when Homebrew/packages/defaults need it. Machine type drives package selection — `work` skips the personal apps (Tailscale, Arq, VoiceInk). The generated chezmoi config disables chezmoi's pager so sudo can read from the terminal during apply. If an older local config still pages output, rerun with `chezmoi --no-pager apply`.
+The first run prompts for machine type (`personal`, `homelab`, `work`, or `ci`) and, on `work`, the Jamf policy ID; it also asks for administrator access when Homebrew/packages/defaults need it. Machine type drives package selection and behavior (install scripts, macOS defaults, secret-backed files, elevation) via `home/.chezmoidata/machines.toml` — `work` skips the personal apps (Tailscale, Arq, VoiceInk) and the Apple/iOS toolchain. The generated chezmoi config disables chezmoi's pager so sudo can read from the terminal during apply. If an older local config still pages output, rerun with `chezmoi --no-pager apply`.
 
-Personal, homelab, and work machines install `xcodes`, but the Xcode download itself is opt-in because Apple may require Apple ID login:
+Personal and homelab machines install `xcodes`, but the Xcode download itself is opt-in because Apple may require Apple ID login:
 
 ```sh
 DOTFILES_INSTALL_XCODE=true chezmoi apply
@@ -19,17 +19,17 @@ DOTFILES_INSTALL_XCODE=true chezmoi apply
 
 Answers live in `~/.config/chezmoi/chezmoi.toml`.
 
-Use the minimal `ci` machine type for a faster, base-only install:
+Use the minimal `ci` machine type for a faster, base-only install (`--promptChoice` keys on the prompt name):
 
 ```sh
-DOTFILES_MACHINE_TYPE=ci \
-  sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply --source ~/dotfiles prateek
+sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply --promptChoice 'machine_type=ci' --source ~/dotfiles prateek
 ```
 
-After 1Password CLI is signed in, render private config with:
+Secret-backed files (1Password) are off by default. After `op` is signed in, enable them for this machine and apply:
 
 ```sh
-DOTFILES_SECRETS_ENABLED=true chezmoi apply
+chezmoi edit-config   # add a [data.machines_local] block with secrets_enabled = true
+chezmoi apply
 ```
 
 ## Notes

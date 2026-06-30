@@ -2,12 +2,16 @@
 # Edit home/.chezmoiassets/grm/{base,<machine_type>}.toml, or (machine_type=work)
 # ~/.config/grm/config.local.toml, or run `grmrepo refresh`; then `chezmoi apply`.
 
+{{- /* machine_type is identity (selecting a per-type grm fragment), so read it
+       bare with the same default as the resolver rather than running the full
+       feature merge — see the note in features.tmpl. */ -}}
+{{- $mt := coalesce (dig "machine_type" "" .) "personal" }}
 {{ include ".chezmoiassets/grm/base.toml" }}
-{{- if eq .machine_type "work" }}
+{{- if eq $mt "work" }}
 {{- $local := joinPath .chezmoi.homeDir ".config/grm/config.local.toml" }}
 {{- if stat $local }}
 {{ output "cat" $local }}
 {{- end }}
-{{- else if or (eq .machine_type "personal") (eq .machine_type "homelab") }}
-{{ include (printf ".chezmoiassets/grm/%s.toml" .machine_type) }}
+{{- else if or (eq $mt "personal") (eq $mt "homelab") }}
+{{ include (printf ".chezmoiassets/grm/%s.toml" $mt) }}
 {{- end }}

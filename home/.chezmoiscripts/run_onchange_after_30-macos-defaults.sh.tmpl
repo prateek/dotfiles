@@ -1,6 +1,7 @@
 {{ template "script_lib.sh" . }}
 
-{{- if and .run_install_scripts .apply_macos_defaults }}
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- if and $f.run_install_scripts $f.apply_macos_defaults }}
 if [ "$(uname -s)" != "Darwin" ]; then
   log "macOS defaults skipped on non-macOS host."
   exit 0

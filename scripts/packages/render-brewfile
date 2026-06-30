@@ -47,25 +47,52 @@ repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 template="$repo_root/home/.chezmoitemplates/brewfile.tmpl"
 [[ -f $template ]] || { printf 'render-brewfile: missing template: %s\n' "$template" >&2; exit 1; }
 
+cleanup_files=()
+cleanup_dirs=()
+cleanup() {
+  [[ ${#cleanup_files[@]} -gt 0 ]] && rm -f "${cleanup_files[@]}"
+  [[ ${#cleanup_dirs[@]} -gt 0 ]] && rm -rf "${cleanup_dirs[@]}"
+  return 0
+}
+trap cleanup EXIT
+
+# MAS opt-in stays a runtime env switch (the template reads it via env).
 env_args=()
-[[ -n $machine_type ]] && env_args+=("DOTFILES_MACHINE_TYPE=$machine_type")
 [[ -n $include_mas ]] && env_args+=("DOTFILES_INSTALL_MAS_APPS=$include_mas")
+
+# Pin the machine type through a dedicated temp chezmoi config rather than
+# --override-data: a temp --config makes chezmoi IGNORE the user's own config,
+# so a host-local [data.machines_local] (e.g. a groups override) cannot leak
+# into this canonical per-type render. --override-data would merge over the
+# user's config and let machines_local win. With no --machine-type, fall back to
+# the user's config so the resolver renders the current machine.
+config_args=()
+if [[ -n $machine_type ]]; then
+  # chezmoi infers config format from the extension, so the file must be named
+  # *.toml; put it in a temp dir since BSD mktemp templates end in X's.
+  cfg_dir="$(mktemp -d)"
+  cleanup_dirs+=("$cfg_dir")
+  cfg="$cfg_dir/chezmoi.toml"
+  printf '[data]\nmachine_type = "%s"\n' "$machine_type" >"$cfg"
+  config_args+=(--config "$cfg")
+fi
 
 # Render via chezmoi. --source pins the source dir so the wrapper works
 # from any cwd and from any user with any home chezmoi config.
 render() {
-  # ${arr[@]+"${arr[@]}"} keeps an empty env_args safe under macOS Bash 3.2 + set -u.
-  env -u DOTFILES_MACHINE_TYPE -u DOTFILES_INSTALL_MAS_APPS \
+  # ${arr[@]+"${arr[@]}"} keeps empty arrays safe under macOS Bash 3.2 + set -u.
+  env -u DOTFILES_INSTALL_MAS_APPS \
     ${env_args[@]+"${env_args[@]}"} \
-    chezmoi --source "$repo_root/home" execute-template --file "$template"
+    chezmoi --source "$repo_root/home" \
+    ${config_args[@]+"${config_args[@]}"} \
+    execute-template --file "$template"
 }
 
 if [[ -n $output ]]; then
   tmp="$(mktemp)"
-  trap 'rm -f "$tmp"' EXIT
+  cleanup_files+=("$tmp")
   render >"$tmp"
   mv "$tmp" "$output"
-  trap - EXIT
 else
   render
 fi

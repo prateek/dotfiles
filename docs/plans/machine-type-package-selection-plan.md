@@ -1,13 +1,16 @@
 ---
-status: active
+status: archived
 doc_type: plan
 owner: Prateek
 created: 2026-06-23
-updated: 2026-06-23
+updated: 2026-06-29
+closed: 2026-06-29
+current_guidance: ../references/chezmoi-architecture.md
 related:
   - ../adr/0010-machine-type-package-selection.md
+  - ../adr/0012-config-gating-convention.md
   - ../references/chezmoi-architecture.md
-status_detail: "Implemented on the prateek/machine-profiles branch; landing in progress."
+status_detail: "Implemented (ADR 0010). The body's target model is historical: per-type group composition now lives in home/.chezmoidata/machines.toml (resolved by features.tmpl) and machine_type is selected via the chezmoi init prompt / --promptChoice; see ADR 0012 and the chezmoi architecture reference for current guidance."
 ---
 
 # Machine-type package selection plan

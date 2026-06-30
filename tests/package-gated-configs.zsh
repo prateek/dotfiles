@@ -25,12 +25,16 @@ empty_ignored="$tmp_root/empty-ignored.txt"
 leader_key_json="$tmp_root/leader-key.json"
 state_file="$tmp_root/chezmoi-state.boltdb"
 
-# package-cask-enabled.tmpl resolves machine type as env > data > default, so
-# unset the ambient DOTFILES_MACHINE_TYPE (this machine's config sets it) and
-# pin machine_type via --override-data for each render.
+# package-cask-enabled.tmpl resolves package groups through the machines.toml
+# resolver (features.tmpl), which reads .machine_type from data, pinned per
+# render via --override-data. An empty --config isolates from this host's own
+# chezmoi config so a local [data.machines_local] cannot skew the result.
+empty_config="$tmp_root/empty-chezmoi.toml"
+: >"$empty_config"
 chezmoi_isolated() {
-  env -u DOTFILES_MACHINE_TYPE chezmoi \
+  chezmoi \
     --source "$DOTFILES_ROOT" \
+    --config "$empty_config" \
     --destination "$tmp_root/home" \
     --cache "$tmp_root/cache" \
     --persistent-state "$state_file" \
@@ -58,9 +62,9 @@ chezmoi_isolated \
   ignored >"$work_ignored"
 
 # Empty group set ⇒ no casks enabled ⇒ every gated config ignored. Arrays in
-# --override-data replace rather than merge, so groups=[] wins.
+# --override-data replace rather than merge, so the ci type layer's groups=[] wins.
 chezmoi_isolated \
-  --override-data '{"machine_type":"ci","packages":{"machine_types":{"ci":{"groups":[]}}}}' \
+  --override-data '{"machine_type":"ci","machines":{"type":{"ci":{"groups":[]}}}}' \
   ignored >"$empty_ignored"
 
 chezmoi_isolated \

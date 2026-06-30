@@ -1,71 +1,34 @@
 {{- /*
-  First-machine settings. Values resolve in this order:
-    1. Environment variable (e.g. DOTFILES_MACHINE_TYPE), used by CI and Tart
-       non-interactive runs.
-    2. promptStringOnce / promptBoolOnce, prompted once during chezmoi init on
-       a new machine. Chezmoi saves the answer in state and reuses it on later
-       applies.
+  First-machine identity. machine_type is the only first-run prompt; every other
+  toggle is resolved at apply time from the layered machines.toml table (see
+  home/.chezmoitemplates/features.tmpl, docs/adr/0012-config-gating-convention.md,
+  and docs/references/chezmoi-architecture.md). chezmoi does not load
+  .chezmoidata during `chezmoi init`, so this template cannot use that resolver;
+  it sets identity inline.
 
-  Do not write `default x (promptStringOnce ...)`. Go templates evaluate both
-  arms of `default`, so the prompt fires even when the env var is set. Use
-  explicit if/else to short-circuit.
+  Select the machine type non-interactively (the flag keys on the prompt text):
+      chezmoi init --apply --promptChoice 'machine_type=work'   # any type, incl. ci
+      chezmoi init --apply --promptDefaults                     # personal default only
+  Call promptChoiceOnce unguarded so --promptChoice can select non-interactively;
+  it errors clearly (it does not hang) when a non-interactive run gives no answer.
 
-  To reset, delete the rendered ~/.config/chezmoi/chezmoi.toml and run
+  Paths still resolve from env with a default; those are plumbing, not feature
+  gates. To reset, delete the rendered ~/.config/chezmoi/chezmoi.toml and run
   `chezmoi init` again.
-
-  For toggle style choices (env|default, prompt*Once, or machine_type-derived),
-  see docs/adr/0012-config-gating-convention.md.
 */ -}}
 {{- $dotfilesDir := env "DOTFILES_ROOT" | default (joinPath .chezmoi.homeDir "dotfiles") -}}
+{{- $machineType := promptChoiceOnce . "machine_type" "machine_type" (list "personal" "homelab" "work" "ci") "personal" -}}
 
-{{- /* Defaults live here because chezmoi init does not load
-       .chezmoidata/*.toml. Data is bound after this template renders. Keep
-       the comment above as the reference. */ -}}
-{{- $secretsEnabled := env "DOTFILES_SECRETS_ENABLED" -}}
-{{- if not $secretsEnabled -}}
-{{-   $secretsEnabled = promptBoolOnce . "secrets_enabled" "Render secret-backed files via 1Password? (change later with chezmoi edit-config or re-init)" false | toString -}}
-{{- end -}}
-
-{{- $runInstallScripts := env "DOTFILES_RUN_INSTALL_SCRIPTS" -}}
-{{- if not $runInstallScripts -}}
-{{-   $runInstallScripts = promptBoolOnce . "run_install_scripts" "Run install scripts (Homebrew bundle, mise, etc.) on apply?" true | toString -}}
-{{- end -}}
-
-{{- $applyDefaults := env "DOTFILES_APPLY_MACOS_DEFAULTS" -}}
-{{- if not $applyDefaults -}}
-{{-   $applyDefaults = promptBoolOnce . "apply_macos_defaults" "Apply macOS defaults from this repo?" true | toString -}}
-{{- end -}}
-
-{{- /* Machine type selects package groups and elevation behavior. Package
-       groups are composed per machine type in
-       home/.chezmoidata/packages.toml (see
-       docs/adr/0010-machine-type-package-selection.md): work skips personal
-       apps; `ci` is the minimal CI/Tart/audit tier (a listed prompt choice). Only
-       Jamf-managed work Macs need elevation before sudo works; personal and
-       homelab use the normal sudo
-       prompt (see docs/references/jamf-self-service-elevation.md). */ -}}
-{{- $machineType := env "DOTFILES_MACHINE_TYPE" -}}
-{{- if not $machineType -}}
-{{-   $machineType = promptChoiceOnce . "machine_type" "Machine type" (list "personal" "homelab" "work" "ci") "personal" -}}
-{{- end -}}
-
-{{- /* Reuse a persisted answer before prompting: it lives under
-       [data.elevation].method, so read that nested path (dig is nil-safe on a
-       fresh machine) rather than the prompt field, which never matches. */ -}}
-{{- $elevationMethod := env "DOTFILES_ELEVATION_METHOD" -}}
-{{- if not $elevationMethod -}}{{- $elevationMethod = dig "elevation" "method" "" . -}}{{- end -}}
-{{- if not $elevationMethod -}}
-{{-   if eq $machineType "work" -}}
-{{-     $elevationMethod = promptStringOnce . "elevation_method" "Admin elevation method (jamf-self-service / none)" "jamf-self-service" -}}
-{{-   else -}}
-{{-     $elevationMethod = "none" -}}
-{{-   end -}}
-{{- end -}}
-
-{{- $jamfPolicyId := env "DOTFILES_JAMF_POLICY_ID" -}}
-{{- if not $jamfPolicyId -}}{{- $jamfPolicyId = dig "elevation" "jamf_policy_id" "" . -}}{{- end -}}
-{{- if and (not $jamfPolicyId) (eq $elevationMethod "jamf-self-service") -}}
-{{-   $jamfPolicyId = promptStringOnce . "jamf_self_service_policy_id" "Jamf Self Service policy ID for temp admin (see docs/references/jamf-self-service-elevation.md)" "" -}}
+{{- /* The Jamf Self Service policy ID is identity (which Jamf policy elevates
+       this box), not a behavior toggle, so it stays in [data]. The elevation
+       method resolves to jamf-self-service on work via machines.toml, so prompt
+       for the policy ID only on work. Reuse a persisted answer before prompting,
+       including the legacy nested [data.elevation].jamf_policy_id so a re-init
+       migrates it to the top level instead of dropping it (dig is nil-safe on a
+       fresh machine). */ -}}
+{{- $jamfPolicyId := or (dig "jamf_policy_id" "" .) (dig "elevation" "jamf_policy_id" "" .) -}}
+{{- if and (not $jamfPolicyId) (eq $machineType "work") -}}
+{{-   $jamfPolicyId = promptStringOnce . "jamf_policy_id" "Jamf Self Service policy ID for temp admin (see docs/references/jamf-self-service-elevation.md)" "" -}}
 {{- end -}}
 
 sourceDir = {{ $dotfilesDir | quote }}
@@ -78,13 +41,7 @@ dotfiles_dir = {{ $dotfilesDir | quote }}
 xdg_config_dir = {{ (env "XDG_CONFIG_HOME" | default (joinPath .chezmoi.homeDir ".config")) | quote }}
 xdg_cache_dir = {{ (env "XDG_CACHE_HOME" | default (joinPath .chezmoi.homeDir ".cache")) | quote }}
 xdg_state_dir = {{ (env "XDG_STATE_HOME" | default (joinPath .chezmoi.homeDir ".local/state")) | quote }}
-secrets_enabled = {{ $secretsEnabled }}
-run_install_scripts = {{ $runInstallScripts }}
-apply_macos_defaults = {{ $applyDefaults }}
 machine_type = {{ $machineType | quote }}
-
-[data.elevation]
-method = {{ $elevationMethod | quote }}
 jamf_policy_id = {{ $jamfPolicyId | quote }}
 
 # Render binary plists as XML for `chezmoi diff`. This only changes diff output.

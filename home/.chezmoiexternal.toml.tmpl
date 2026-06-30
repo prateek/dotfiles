@@ -2,11 +2,11 @@
 type = "git-repo"
 url = "https://github.com/zdharma-continuum/zinit.git"
 refreshPeriod = "168h"
-{{- if eq .machine_type "work" }}
+{{- if (includeTemplate "features.tmpl" . | fromJson).private_overlay }}
 {{/* Private overlays (internal/work-specific) composed into generated docs by
-     run_after_37-agent-slack-doc. Work machines only; CI/personal/homelab and
-     forks never reference the private repo. Gated on machine_type (always
-     present) because chezmoi errors on missing data keys. */}}
+     run_after_37-agent-slack-doc. The private_overlay feature is true only on
+     work in machines.toml; CI/personal/homelab and forks never reference the
+     private repo. */}}
 [".local/share/dotfiles/private"]
 type = "git-repo"
 url = "git@github.com:prateek/dotfiles-private.git"

@@ -48,6 +48,8 @@ Run focused repo regression tests without booting a VM:
 ```sh
 make test-tart-install-helper
 make test-render-brewfile
+make test-machines-features
+make test-elevation-render
 make test-zsh-prompt-host
 make test-mise-install-script
 make test-gh-extensions-script
@@ -97,6 +99,8 @@ Run focused-helper tests for the package renderer:
 
 ```sh
 make test-render-brewfile
+make test-machines-features
+make test-elevation-render
 ```
 
 Run agent skill package projection checks:

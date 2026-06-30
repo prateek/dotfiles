@@ -117,7 +117,7 @@ chezmoi \
   --destination "$home_dir" \
   --cache "$tmp_root/cache" \
   --persistent-state "$tmp_root/chezmoi-state.boltdb" \
-  --override-data '{"run_install_scripts":true,"apply_macos_defaults":true,"secrets_enabled":false,"machine_type":"personal"}' \
+  --override-data '{"machine_type":"personal","machines_local":{"run_install_scripts":true,"apply_macos_defaults":true}}' \
   execute-template \
   --file "$DOTFILES_ROOT/home/.chezmoiscripts/run_onchange_after_30-macos-defaults.sh.tmpl" \
   >"$script"

@@ -8,7 +8,7 @@ related:
 
 # Tart mini validation
 
-This is the current end-to-end install validation lane for this repo. It is one validation path, not the whole test strategy. Today it gives us a disposable macOS guest, a real chezmoi-bootstrap run with `DOTFILES_MACHINE_TYPE=ci` (or `personal`), and the same fresh-shell postflight checks we trust on the host.
+This is the current end-to-end install validation lane for this repo. It is one validation path, not the whole test strategy. Today it gives us a disposable macOS guest, a real chezmoi-bootstrap run for the `ci` (or `personal`) machine type, and the same fresh-shell postflight checks we trust on the host.
 
 The current target is a Tart VM launched on `mini` over SSH. The VM storage lives on the external APFS volume at `/Volumes/Extra`, with Tart state under `/Volumes/Extra/.tart`. A future version may move this into a self-hosted GitHub Actions runner, a pinned base image, or a fuller wrapper script that owns preflight, sync, execution, postflight, and cleanup.
 
@@ -26,7 +26,7 @@ The current target is a Tart VM launched on `mini` over SSH. The VM storage live
 2. set VM CPU and memory
 3. run headless with the repo mounted read-only
 4. copy the repo into the guest home
-5. download chezmoi via `get.chezmoi.io` and run `chezmoi init --apply --no-tty --promptDefaults --source ~/dotfiles` (local) or `chezmoi init --apply --no-tty --promptDefaults prateek` (remote)
+5. download chezmoi via `get.chezmoi.io` and run `chezmoi init --apply --no-tty --promptDefaults --promptChoice 'machine_type=ci' --source ~/dotfiles` (local) or `chezmoi init --apply --no-tty --promptDefaults --promptChoice 'machine_type=ci' prateek` (remote) — the lane derives the type (`ci` for smoke, `personal` for full)
 6. run postflight checks
 7. delete the VM unless `--keep-vm` is set
 
@@ -38,7 +38,7 @@ Guest trace semantics come from zsh function structure. `run-zsh` records each c
 
 - the configured Tart images can boot on the validation host
 - the repo can be copied into a clean macOS guest
-- the chezmoi one-liner with `DOTFILES_MACHINE_TYPE=ci` can run against a real macOS install
+- the chezmoi one-liner (selecting the `ci` machine type via `--promptChoice`) can run against a real macOS install
 - smoke-lane Homebrew casks and Mac App Store entries are skipped
 - core tools are installed
 - `scripts/audit/zsh-fresh-shells.zsh verify` passes after bootstrap
@@ -66,7 +66,7 @@ Mac App Store entries are omitted from generated Brewfiles by default because di
 
 Every Tart run prints a slowest-phase timing summary before cleanup exits. The guest package scripts also emit `TIMING|...` log lines around expensive setup steps, so a slow run can usually be diagnosed from the plain log before opening a Perfetto trace.
 
-Dry-run is a mode layered on top of the smoke lane. `make test-install-tart-dry-run` boots Tart, downloads chezmoi via `get.chezmoi.io`, runs `chezmoi init --promptDefaults --source ~/dotfiles`, and then `chezmoi apply --dry-run --verbose`; it can continue past missing Xcode Command Line Tools because the point is to validate the bootstrap path, not install tools.
+Dry-run is a mode layered on top of the smoke lane. `make test-install-tart-dry-run` boots Tart, downloads chezmoi via `get.chezmoi.io`, runs `chezmoi init --promptDefaults --promptChoice 'machine_type=ci' --source ~/dotfiles`, and then `chezmoi apply --dry-run --verbose`; it can continue past missing Xcode Command Line Tools because the point is to validate the bootstrap path, not install tools.
 
 ## Host assumptions
 

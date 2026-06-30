@@ -523,15 +523,12 @@ if ! run_traced_logged "check Xcode CLT" tart exec "$VM_NAME" sh -lc 'xcode-sele
 fi
 
 INSTALL_ENV=(DOTFILES_SUDO_PASSWORD="$VM_SUDO_PASSWORD")
-# Forward the chezmoi.toml.tmpl gates from host env so a full-coverage
-# E2E lane can exercise privileged + secrets + MAS branches without
-# hand-editing this script. Each is a passthrough; chezmoi reads them
-# via promptStringOnce/promptBoolOnce env-var fallback.
+# Forward runtime switches from host env. Machine behavior (install scripts,
+# macOS defaults, secrets, groups) now resolves from machines.toml per machine
+# type, not from these env vars; the machine type is selected below via
+# --promptChoice. Only genuine runtime switches and MAS opt-in pass through here.
 for var in \
   DOTFILES_INSTALL_MAS_APPS \
-  DOTFILES_RUN_INSTALL_SCRIPTS \
-  DOTFILES_APPLY_MACOS_DEFAULTS \
-  DOTFILES_SECRETS_ENABLED \
   DOTFILES_SKIP_LSREGISTER \
   DOTFILES_SKIP_SPOTLIGHT_REINDEX \
   DOTFILES_SKIP_APP_RESTART \
@@ -560,11 +557,12 @@ fi
 # Bootstrap inside the VM via the chezmoi-blessed pattern:
 #   1. Download chezmoi via get.chezmoi.io (no permanent install — chezmoi
 #      itself comes in via brew bundle later). Lands in $HOME/.local/bin.
-#   2. chezmoi init --apply --no-tty --promptDefaults reads
-#      home/.chezmoi.toml.tmpl prompts (DOTFILES_* env overrides applied
-#      by INSTALL_ENV via promptDefaults fallback).
+#   2. chezmoi init reads home/.chezmoi.toml.tmpl; --promptChoice selects the
+#      machine type (carried into the guest via DOTFILES_INIT_MACHINE_TYPE in
+#      INSTALL_ENV — a plain transport var, not a chezmoi config knob) and
+#      --promptDefaults answers any other prompt.
 # DRY_RUN=1 splits init from apply so we can pass --dry-run.
-INSTALL_ENV+=(DOTFILES_MACHINE_TYPE="$MACHINE_TYPE")
+INSTALL_ENV+=(DOTFILES_INIT_MACHINE_TYPE="$MACHINE_TYPE")
 
 case "$MODE" in
   local)
@@ -593,7 +591,7 @@ case "$MODE" in
         set -e
         export PATH="$HOME/.local/bin:$PATH"
         sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
-        chezmoi --no-tty init --promptDefaults --source "$HOME/dotfiles"
+        chezmoi --no-tty init --promptDefaults --promptChoice "machine_type=$DOTFILES_INIT_MACHINE_TYPE" --source "$HOME/dotfiles"
         chezmoi --no-tty status | head -50
       '
     else
@@ -602,7 +600,7 @@ case "$MODE" in
         set -e
         export PATH="$HOME/.local/bin:$PATH"
         sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
-        chezmoi --no-tty init --promptDefaults --apply --source "$HOME/dotfiles"
+        chezmoi --no-tty init --promptDefaults --promptChoice "machine_type=$DOTFILES_INIT_MACHINE_TYPE" --apply --source "$HOME/dotfiles"
       '
     fi
     if [ "$TRACE_ENABLED" = "1" ]; then
@@ -624,7 +622,7 @@ case "$MODE" in
         set -e
         export PATH="$HOME/.local/bin:$PATH"
         sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
-        chezmoi --no-tty init --promptDefaults prateek
+        chezmoi --no-tty init --promptDefaults --promptChoice "machine_type=$DOTFILES_INIT_MACHINE_TYPE" prateek
         chezmoi --no-tty status | head -50
       '
     else
@@ -633,7 +631,7 @@ case "$MODE" in
         set -e
         export PATH="$HOME/.local/bin:$PATH"
         sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
-        chezmoi --no-tty init --promptDefaults --apply prateek
+        chezmoi --no-tty init --promptDefaults --promptChoice "machine_type=$DOTFILES_INIT_MACHINE_TYPE" --apply prateek
       '
     fi
     run_traced_tee "install remote" tart exec "$VM_NAME" env "${INSTALL_ENV[@]}" sh -lc "$remote_cmd"

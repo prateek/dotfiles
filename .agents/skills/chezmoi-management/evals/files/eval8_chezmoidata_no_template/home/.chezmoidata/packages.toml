@@ -1,6 +1,3 @@
-[packages]
-default_machine_type = "personal"
-
 [packages.groups.base]
 description = "Essentials on every machine, including ci"
 brews = [ { name = "git" }, { name = "gh" }, { name = "mise" } ]
@@ -10,12 +7,3 @@ casks = [ { name = "1password" }, { name = "ghostty" } ]
 description = "Full dev toolchain (real machines, not ci)"
 brews = [ { name = "postgresql@16" } ]
 casks = [ { name = "docker" } ]
-
-[packages.machine_types.ci]
-groups = ["base"]
-
-[packages.machine_types.personal]
-groups = ["base", "dev"]
-
-[packages.machine_types.work]
-groups = ["base", "dev"]

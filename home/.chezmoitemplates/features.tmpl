@@ -1,0 +1,37 @@
+{{- /*
+  features.tmpl — resolve this machine's behavior from the layered
+  home/.chezmoidata/machines.toml table. Merges the applicable layers, low→high:
+
+    defaults < os.<os> < type.<machine_type> < host.<hostname>
+        < host-local [data].machines_local
+
+  Later layers win; a list (e.g. groups) is replaced wholesale by the highest
+  layer that sets it. The merged feature set is emitted as JSON so consumers
+  fromJson it into native bools/lists with a single include:
+
+    {{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+    {{- if $f.run_install_scripts }} ... {{- end }}
+    {{- range $f.groups }} ... {{- end }}
+
+  Read behavior through this resolver, never a bare data key. (machine_type
+  itself is identity, set unconditionally in [data]; reading it bare for
+  per-type asset/color selection — grm, the shell prompt — is fine.)
+
+  An unknown machine_type matches no type layer and fails loud: this is the
+  typo guard, since chezmoi's --promptChoice does not validate its value.
+
+  Note: chezmoi does not load .chezmoidata during `chezmoi init`, so this
+  resolver cannot run from home/.chezmoi.toml.tmpl; identity stays inlined there.
+*/ -}}
+{{- $mt := coalesce (dig "machine_type" "" .) "personal" -}}
+{{- $M := .machines -}}
+{{- if not (hasKey $M.type $mt) -}}
+{{-   fail (printf "features.tmpl: unknown machine type %q (add a [machines.type.%s] layer to home/.chezmoidata/machines.toml)" $mt $mt) -}}
+{{- end -}}
+{{- $f := deepCopy (dig "defaults" dict $M) -}}
+{{- $f = mergeOverwrite $f (deepCopy (dig "os"   .chezmoi.os       dict $M)) -}}
+{{- $f = mergeOverwrite $f (deepCopy (dig "type" $mt               dict $M)) -}}
+{{- $f = mergeOverwrite $f (deepCopy (dig "host" .chezmoi.hostname dict $M)) -}}
+{{- $f = mergeOverwrite $f (deepCopy (dig "machines_local" dict .)) -}}
+{{- $f = mergeOverwrite $f (dict "machine_type" $mt) -}}
+{{- $f | toJson -}}

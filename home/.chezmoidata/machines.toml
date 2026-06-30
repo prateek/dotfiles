@@ -1,0 +1,51 @@
+# Machine behavior, composed in layers by home/.chezmoitemplates/features.tmpl.
+#
+# The resolver merges the applicable layers, low precedence to high:
+#   defaults < os.<os> < type.<machine_type> < host.<hostname>
+#       < host-local [data].machines_local
+# Later layers win. Scalars are last-writer-wins; a list (e.g. groups) is
+# replaced wholesale by the highest layer that sets it (not concatenated).
+# Keep feature values flat — scalars and lists, no nested tables — so the merge
+# stays a simple last-writer-wins. See docs/adr/0012-config-gating-convention.md.
+#
+# [data] holds identity only (machine_type, paths, jamf_policy_id); all behavior
+# lives here and resolves at apply time, so a change lands on the next
+# `chezmoi apply` with no re-init. A new role is a [machines.type.*] layer; a
+# richer attribute (OS, host, flavor) is a [machines.os.*] / [machines.host.*]
+# layer — no new enum, no per-file `eq .machine_type` ladders.
+
+[machines.defaults]
+groups = ["base"]
+run_install_scripts = true
+apply_macos_defaults = true
+secrets_enabled = false          # enable per machine via [data].machines_local
+private_overlay = false
+elevation = "none"
+
+# Minimal/fast tier for CI dry-run, Tart smoke, and shell audits. Keeps the
+# defaults' run_install_scripts/apply_macos_defaults = true so the Tart smoke
+# lane (a real, minimal install) still runs the install scripts; non-installing
+# contexts (the chezmoi-script-status test) opt out via [data].machines_local,
+# and dry-runs never execute scripts regardless.
+[machines.type.ci]
+groups = ["base"]
+
+# Personal daily-driver Mac.
+[machines.type.personal]
+groups = ["base", "dev", "dev-apple", "personal-apps"]
+
+# Homelab Mac: uses the personal daily-driver package set.
+[machines.type.homelab]
+groups = ["base", "dev", "dev-apple", "personal-apps"]
+
+# Managed work Mac: no personal apps, no Apple/iOS toolchain; Jamf elevation and
+# the private config overlay.
+[machines.type.work]
+groups = ["base", "dev"]
+private_overlay = true
+elevation = "jamf-self-service"
+
+# os.<os> and host.<hostname> layers are intentionally absent until needed.
+# The resolver digs them with an empty-dict default, so a missing layer is a
+# no-op. Add e.g. [machines.os.windows] or [machines.host.gaming-rig] when a
+# Linux homelab flavor or a Windows box needs to compose extra behavior.

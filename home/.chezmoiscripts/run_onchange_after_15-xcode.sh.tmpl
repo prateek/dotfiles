@@ -1,12 +1,13 @@
 {{ template "script_lib.sh" . }}
 
 # packages.toml sha256: {{ include ".chezmoidata/packages.toml" | sha256sum }}
+# machines.toml sha256: {{ include ".chezmoidata/machines.toml" | sha256sum }}
 # ios-triple.json sha256: {{ include "dot_agents/state/ios-triple.json" | sha256sum }}
 
-{{- if .run_install_scripts }}
-{{- $machineType := coalesce (env "DOTFILES_MACHINE_TYPE") (dig "machine_type" "" .) .packages.default_machine_type }}
-machine_type={{ $machineType | quote }}
-has_apple={{ has "dev-apple" (index .packages.machine_types $machineType).groups | toString | quote }}
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- if $f.run_install_scripts }}
+machine_type={{ $f.machine_type | quote }}
+has_apple={{ has "dev-apple" $f.groups | toString | quote }}
 
 if [ "$has_apple" != "true" ]; then
   log "Xcode install skipped for $machine_type machine type (no dev-apple group)."
@@ -36,7 +37,7 @@ version_ge() { [ "$(printf '%s\n%s\n' "$1" "$2" | sort -V | tail -n1)" = "$1" ];
 xcode_required_brews=(
 {{- $xb := list -}}
 {{- $xseen := list -}}
-{{- range $gname := (index .packages.machine_types $machineType).groups -}}
+{{- range $gname := $f.groups -}}
 {{-   $g := index $.packages.groups $gname -}}
 {{-   range default (list) (dig "xcode_required_brews" (list) $g) -}}
 {{-     if not (has .name $xseen) -}}
