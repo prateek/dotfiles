@@ -1,0 +1,8 @@
+# Per-machine_type Orca settings overlays, merged over orca-settings.base.json.tmpl
+# by modify_orca-data.json.tmpl. Machine types without an entry inherit base only.
+[orca.machine_types.work]
+defaultTuiAgent = "claude"
+disabledTuiAgents = ["codex"]
+
+[orca.machine_types.homelab]
+disabledTuiAgents = ["claude-agent-teams"]

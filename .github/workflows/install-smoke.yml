@@ -20,7 +20,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y shellcheck
       - name: Shellcheck
         run: |
-          shellcheck -x scripts/macos/capture.sh scripts/vm/test-install-tart.sh scripts/vm/check-install-log.sh scripts/trace/perfetto-trace.bash scripts/chezmoi-hooks/guard-running-apps.sh scripts/chezmoi-hooks/post-apply-plists.sh scripts/packages/render-brewfile scripts/chezmoi/test-apply-dry-run.sh
+          shellcheck -x scripts/macos/capture.sh scripts/vm/test-install-tart.sh scripts/vm/check-install-log.sh scripts/trace/perfetto-trace.bash scripts/chezmoi-hooks/guard-running-apps.sh scripts/chezmoi-hooks/post-apply-plists.sh scripts/packages/render-brewfile scripts/chezmoi/test-apply-dry-run.sh scripts/audit/orca-settings.sh
 
   macos-dry-run:
     runs-on: macos-latest
@@ -69,6 +69,7 @@ jobs:
           make test-chezmoi-drift-banner
           make test-codex-config
           make test-claude-settings
+          make test-orca-settings
           make test-agent-skill-packages
           make test-gemini-meeting-sync
           make test-brew-install-wrapper

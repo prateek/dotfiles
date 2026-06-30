@@ -1,5 +1,5 @@
 .PHONY: test test-chezmoi-apply hammerspoon hammerspoon-check hammerspoon-reload
-.PHONY: test-gemini-meeting-sync test-ghc test-gh-extensions-script test-mise-install-script test-xcode-install-script test-secret-backed-files test-kanata-config test-karabiner-goku test-chezmoi-config test-chezmoi-local-ignores test-chezmoi-script-status test-chezmoi-drift-banner test-codex-config test-claude-settings test-agent-skill-packages test-agent-skill-packages-native test-cmux-plist test-ice-plist test-orbstack-plist test-selected-app-plists test-package-gated-configs test-machines-features test-elevation-render test-moom-plist test-nvalt-colors test-nvalt-plist test-voiceink-plist test-plist-hooks test-sudo-keepalive test-macos-defaults-script test-brew-inventory test-brew-install-wrapper test-brew-bundle-script test-render-brewfile test-docs-lifecycle test-repo-index test-grmrepo-refresh test-worktrees test-raycast-orca-worktree
+.PHONY: test-gemini-meeting-sync test-ghc test-gh-extensions-script test-mise-install-script test-xcode-install-script test-secret-backed-files test-kanata-config test-karabiner-goku test-chezmoi-config test-chezmoi-local-ignores test-chezmoi-script-status test-chezmoi-drift-banner test-codex-config test-claude-settings test-orca-settings test-agent-skill-packages test-agent-skill-packages-native test-cmux-plist test-ice-plist test-orbstack-plist test-selected-app-plists test-package-gated-configs test-machines-features test-elevation-render test-moom-plist test-nvalt-colors test-nvalt-plist test-voiceink-plist test-plist-hooks test-sudo-keepalive test-macos-defaults-script test-brew-inventory test-brew-install-wrapper test-brew-bundle-script test-render-brewfile test-docs-lifecycle test-repo-index test-grmrepo-refresh test-worktrees test-raycast-orca-worktree
 .PHONY: test-zed-settings test-zsh-prompt-host test-zsh-fresh-shells verify-zsh-fresh-shells bench-zsh-startup
 .PHONY: test-tart-install-helper test-trace-perfetto test-vm-install-log-scan test-vm-postflight-macos test-install-tart-dry-run test-install-tart-smoke test-install-tart-full test-install-tart-warm test-install-tart-warm-bootstrap test-install-tart-warm-refresh test-install-tart-warm-destroy
 
@@ -129,6 +129,10 @@ test-codex-config:
 test-claude-settings:
 	@zsh ./tests/claude-settings-modify.zsh
 
+## Regression tests for Orca settings merging.
+test-orca-settings:
+	@zsh ./tests/orca-settings-modify.zsh
+
 ## Regression tests for agent skill package rendering.
 test-agent-skill-packages:
 	@zsh ./tests/agent-skill-packages.zsh
@@ -234,6 +238,12 @@ verify-zsh-fresh-shells:
 ## Authoritative startup benchmark via pinned external zsh-bench.
 bench-zsh-startup:
 	@zsh ./scripts/audit/zsh-fresh-shells.zsh bench --dotfiles-root "$(CURDIR)"
+
+## Audit tracked Orca settings against the installed app's current defaults
+## (refreshes scripts/audit/orca-defaults.snapshot.json; needs Orca installed).
+.PHONY: audit-orca-settings
+audit-orca-settings:
+	@bash ./scripts/audit/orca-settings.sh
 
 ## Regression tests for the Tart install helper (does not boot a VM).
 test-tart-install-helper:

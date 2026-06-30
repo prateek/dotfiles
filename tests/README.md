@@ -63,6 +63,7 @@ make test-chezmoi-script-status
 make test-chezmoi-drift-banner
 make test-codex-config
 make test-claude-settings
+make test-orca-settings
 make test-agent-skill-packages
 make test-agent-skill-packages-native
 make test-selected-app-plists
@@ -82,6 +83,14 @@ make test-vm-postflight-macos
 `make test-agent-skill-packages-native` requires Claude Code's `claude`
 command because it validates the generated local plugin marketplace with
 `claude plugin validate`.
+
+Audit tracked Orca settings against the installed app's current defaults (run
+after upgrading Orca or a settings spree; refreshes the committed defaults
+snapshot, and its git diff shows what an Orca upgrade moved):
+
+```sh
+make audit-orca-settings
+```
 
 Run Tart VM install checks locally:
 

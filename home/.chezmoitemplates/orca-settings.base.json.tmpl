@@ -1,0 +1,35 @@
+{
+  "defaultTuiAgent": "codex",
+  "diffDefaultView": "side-by-side",
+  "experimentalActivity": true,
+  "experimentalMobile": true,
+  "experimentalPet": true,
+  "experimentalTerminalAttention": true,
+  "floatingTerminalTriggerLocation": "status-bar",
+  "mobileAutoRestoreFitMs": 60000,
+  "openInApplications": [
+    { "command": "cursor", "id": "cursor", "label": "Cursor" },
+    { "command": "code", "id": "vscode", "label": "VS Code" }
+  ],
+  "refreshLocalBaseRefOnWorktreeCreate": true,
+  "setupScriptLaunchMode": "split-horizontal",
+  "skipDeleteWorktreeConfirm": true,
+  "terminalAllowOsc52Clipboard": true,
+  "terminalDividerColorDark": "#ff0000",
+  "terminalFontFamily": "JetBrains Mono",
+  "terminalGpuAcceleration": "on",
+  "terminalLigatures": "on",
+  "terminalQuickCommands": [
+    { "action": "terminal-command", "appendEnter": true, "command": "open . && exit",
+      "id": "open-in-finder", "label": "Open in Finder", "scope": { "type": "global" } },
+    { "action": "terminal-command", "appendEnter": true, "command": "cursor . && exit",
+      "id": "open-in-cursor", "label": "Open in Cursor", "scope": { "type": "global" } },
+    { "action": "terminal-command", "appendEnter": true, "command": "code . && exit",
+      "id": "open-in-vscode", "label": "Open in VS Code", "scope": { "type": "global" } }
+  ],
+  "terminalScrollbackBytes": 25000000,
+  "terminalShortcutPolicy": "terminal-first",
+  "terminalUseSeparateLightTheme": false,
+  "theme": "dark",
+  "workspaceDir": {{ printf "%s/code/worktrees" .chezmoi.homeDir | toJson }}
+}

@@ -103,6 +103,8 @@ expect_managed "Library/Preferences/com.setapp.DesktopClient.plist" "$personal_m
 expect_managed "Library/Preferences/pro.betterdisplay.BetterDisplay.plist" "$personal_managed"
 expect_managed ".config/zed" "$personal_managed"
 expect_managed "Library/Application Support/Leader Key/config.json" "$personal_managed"
+expect_managed "Library/Application Support/orca/orca-data.json" "$personal_managed"
+expect_managed ".orca/keybindings.json" "$personal_managed"
 expect_managed "Library/Application Support/Code/User" "$personal_managed"
 expect_managed "Library/Colors/nvALT.clr" "$personal_managed"
 expect_managed "Library/Preferences/com.jordanbaird.Ice.plist" "$personal_managed"
@@ -127,6 +129,8 @@ expect_unmanaged ".config/zed" "$ci_managed"
 expect_unmanaged "Library/Colors/nvALT.clr" "$ci_managed"
 expect_unmanaged "Library/Preferences/com.jordanbaird.Ice.plist" "$ci_managed"
 expect_unmanaged "Library/Preferences/com.cmuxterm.app.plist" "$ci_managed"
+expect_unmanaged "Library/Application Support/orca/orca-data.json" "$ci_managed"
+expect_unmanaged ".orca/keybindings.json" "$ci_managed"
 expect_unmanaged "Library/Preferences/net.elasticthreads.nv.plist" "$ci_managed"
 # tailscale + voiceink are personal apps now, so the base-only ci type drops them.
 expect_unmanaged "Library/Preferences/io.tailscale.ipn.macsys.plist" "$ci_managed"
@@ -137,6 +141,8 @@ expect_managed ".config/ghostty" "$work_managed"
 expect_managed ".hammerspoon" "$work_managed"
 expect_managed "Library/Preferences/pro.betterdisplay.BetterDisplay.plist" "$work_managed"
 expect_managed ".config/zed" "$work_managed"
+expect_managed "Library/Application Support/orca/orca-data.json" "$work_managed"
+expect_managed ".orca/keybindings.json" "$work_managed"
 expect_managed "Library/Preferences/com.cmuxterm.app.plist" "$work_managed"
 expect_managed "Library/Preferences/com.setapp.DesktopClient.plist" "$work_managed"
 expect_unmanaged "Library/Preferences/io.tailscale.ipn.macsys.plist" "$work_managed"
@@ -147,6 +153,8 @@ expect_ignored "Library/Preferences/com.prakashjoshipax.VoiceInk.plist" "$work_i
 # --- ci ignored set: dev/dev-apple/personal-app configs (default file = ci_ignored) ---
 expect_ignored ".config/zed"
 expect_ignored ".config/cmux"
+expect_ignored "Library/Application Support/orca/orca-data.json"
+expect_ignored ".orca/keybindings.json"
 expect_ignored ".hammerspoon"
 expect_ignored "Library/Colors/nvALT.clr"
 expect_ignored "Library/Preferences/com.jordanbaird.Ice.plist"
@@ -159,6 +167,7 @@ expect_ignored "Library/Preferences/com.prakashjoshipax.VoiceInk.plist"
 # --- empty group set ⇒ every gated config ignored ---
 for p in \
   "Library/Application Support/Leader Key/config.json" \
+  "Library/Application Support/orca/orca-data.json" \
   ".config/ghostty" \
   "Library/Application Support/Code/User" \
   "Library/Preferences/dev.kdrag0n.MacVirt.plist" \

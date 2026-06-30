@@ -35,6 +35,10 @@ Library/Application Support/Leader Key/config.json
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "yojam")) "true" }}
 Library/Application Support/Yojam/config.json
 {{- end }}
+{{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "stablyai/orca/orca")) "true" }}
+Library/Application Support/orca/orca-data.json
+.orca/keybindings.json
+{{- end }}
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "ghostty")) "true" }}
 .config/ghostty
 {{- end }}
