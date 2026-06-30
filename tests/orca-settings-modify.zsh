@@ -44,7 +44,7 @@ cat >"$current" <<'JSON'
   "repos": [
     { "id": "abc", "path": "/Users/prungta/code/repo", "displayName": "repo" }
   ],
-  "worktreeMeta": { "abc::/tmp/wt": { "comment": "keep me" } },
+  "worktreeMeta": { "abc::/tmp/wt": { "comment": "keep me — ✳ café" } },
   "settings": {
     "theme": "system",
     "terminalFontFamily": "SF Mono",
@@ -80,9 +80,11 @@ assert s["disabledTuiAgents"] == ["codex"], s["disabledTuiAgents"]
 assert s["userOnlyPreference"] == "untouched", s
 assert data["schemaVersion"] == 1
 assert data["repos"][0]["id"] == "abc"
-assert data["worktreeMeta"]["abc::/tmp/wt"]["comment"] == "keep me"
+assert data["worktreeMeta"]["abc::/tmp/wt"]["comment"] == "keep me — ✳ café"
 assert data["workspaceSession"]["activeRepoId"] == "abc"
 PY
+
+grep -qF "keep me — ✳ café" "$merged" || { echo "FAIL: non-ASCII state not preserved (ensure_ascii)" >&2; exit 1; }
 
 "$work_script" <"$merged" >"$idempotent"
 cmp -s "$merged" "$idempotent" || { echo "FAIL: merge is not idempotent" >&2; exit 1; }

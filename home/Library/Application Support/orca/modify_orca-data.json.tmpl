@@ -42,5 +42,5 @@ current_text = sys.stdin.read()
 current = load_current(current_text)
 current.setdefault("settings", {}).update(desired)
 
-merged_text = json.dumps(current, indent=2) + "\n"
+merged_text = json.dumps(current, indent=2, ensure_ascii=False) + "\n"
 sys.stdout.write(current_text if semantic_equal(current_text, merged_text) else merged_text)
