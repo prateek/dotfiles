@@ -1,0 +1,20 @@
+# Targets removed when worktrunk and the custom grm integration were retired
+# (see the archived worktree-convention-cleanup plan). chezmoi does not delete a
+# deployed target when its source is removed, so list the orphans here. Safe to
+# prune these entries once every machine has applied them.
+
+# worktrunk
+bin/wt-hook-sparse
+.config/worktrunk
+.config/zsh/autoload/w
+.config/zsh/autoload/wta
+.config/zsh/autoload/wtn
+.config/zsh/extra/worktrees.zsh
+
+# custom grm integration + the gh wrapper
+bin/gh
+bin/grmrepo
+bin/grmrepo-refresh
+.config/grm
+.config/zsh/lib/grmrepo.zsh
+.agents/packages/utils-agent/skills/local/grmrepo
