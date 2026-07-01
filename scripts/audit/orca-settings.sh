@@ -9,7 +9,7 @@ APP="/Applications/Orca.app"
 ASAR="$APP/Contents/Resources/app.asar"
 EXTRACTOR="$REPO_ROOT/scripts/audit/orca-extract-defaults.mjs"
 SNAPSHOT="$REPO_ROOT/scripts/audit/orca-defaults.snapshot.json"
-STUB="$REPO_ROOT/home/Library/Application Support/orca/modify_orca-data.json.tmpl"
+STUB="$REPO_ROOT/home/Library/Application Support/private_orca/modify_orca-data.json.tmpl"
 LIVE="$HOME/Library/Application Support/orca/orca-data.json"
 
 if [[ ! -f "$ASAR" ]]; then

@@ -27,7 +27,7 @@ render() {
     --config "$empty_config" \
     --override-data "{\"machine_type\":\"$1\"}" \
     execute-template \
-    --file "$REPO_ROOT/home/Library/Application Support/orca/modify_orca-data.json.tmpl" \
+    --file "$REPO_ROOT/home/Library/Application Support/private_orca/modify_orca-data.json.tmpl" \
     >"$2"
   chmod +x "$2"
 }
