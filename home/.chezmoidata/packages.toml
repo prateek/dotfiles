@@ -62,6 +62,7 @@ casks = [
   { name = "ghostty" },
   { name = "visual-studio-code" },
   { name = "zed" },
+  { name = "cursor" },
 
   # Fonts.
   { name = "font-inter" },
@@ -81,19 +82,27 @@ casks = [
   { name = "bettertouchtool" },
   { name = "karabiner-elements" },
   { name = "nikitabobko/tap/aerospace" },
+  { name = "bentobox" },
   { name = "leader-key" },
   { name = "moom", appdir = "/Applications" },
   { name = "hammerspoon", appdir = "/Applications" },
   { name = "raycast" },
+  { name = "alfred" },
   { name = "yojam" },
 
   # Display, menu bar, diagnostics, and local virtualization.
   { name = "betterdisplay" },
   { name = "caffeine", appdir = "/Applications" },
   { name = "jordanbaird-ice" },
+  { name = "whatcable" },
   { name = "key-codes", appdir = "/Applications" },
   { name = "launchcontrol", appdir = "/Applications" },
   { name = "orbstack" },
+
+  # Notes, media, and subscription apps shared across daily-driver laptops.
+  { name = "obsidian" },
+  { name = "spotify", appdir = "/Applications" },
+  { name = "setapp" },
 ]
 mas = [
   { name = "Okta Verify", id = 490179405 },
@@ -119,6 +128,8 @@ taps = [
   { name = "holgerbrandl/tap" },
   { name = "hudochenkov/sshpass" },
   { name = "saulpw/vd" },
+  { name = "sourcegraph/src-cli" },
+  { name = "juxt/allium" },
   { name = "thoughtbot/formulae" },
 ]
 brews = [
@@ -149,6 +160,7 @@ brews = [
   { name = "cscope" },
   { name = "ctags" },
   { name = "buildifier" },
+  { name = "juxt/allium/allium" },
   { name = "prek" },
 
   # Search, text processing, and shell ergonomics.
@@ -173,6 +185,7 @@ brews = [
   { name = "zsh" },
   { name = "pure" },
   { name = "vim" },
+  { name = "helix" },
   { name = "ranger" },
 
   # Build systems, compilers, and language runtimes.
@@ -199,6 +212,9 @@ brews = [
   { name = "hashicorp/tap/terraform" },
   { name = "gdrive" },
   { name = "gogcli" },
+  { name = "googleworkspace-cli" },
+  { name = "ldcli" },
+  { name = "sourcegraph/src-cli/src-cli" },
   { name = "mackup" },
 
   # Databases, queues, and structured data stores.
@@ -308,8 +324,6 @@ taps = [
   { name = "mattt/tap" },
 ]
 casks = [
-  { name = "setapp" },
-  { name = "obsidian" },
   { name = "nvalt", appdir = "/Applications" },
   { name = "taskpaper", appdir = "/Applications" },
   { name = "monodraw", appdir = "/Applications" },
@@ -319,7 +333,6 @@ casks = [
   { name = "utm" },
   { name = "mattt/tap/imcp" },
   { name = "voiceink" },
-  { name = "spotify", appdir = "/Applications" },
   { name = "vlc" },
 ]
 mas = [

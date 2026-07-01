@@ -146,6 +146,8 @@ expect_unmanaged "Library/Preferences/io.tailscale.ipn.macsys.plist" "$ci_manage
 expect_unmanaged "Library/Preferences/com.prakashjoshipax.VoiceInk.plist" "$ci_managed"
 
 # --- work: Mac desktop + dev + work apps, no personal/homelab config ---------
+# setapp is shared across daily-driver laptops (mac-desktop group), so its
+# config follows the install onto work; nvALT/VoiceInk stay personal-only.
 expect_managed ".config/ghostty" "$work_managed"
 expect_managed ".hammerspoon" "$work_managed"
 expect_managed "Library/Preferences/pro.betterdisplay.BetterDisplay.plist" "$work_managed"
@@ -153,12 +155,11 @@ expect_managed ".config/zed" "$work_managed"
 expect_managed "Library/Application Support/orca/orca-data.json" "$work_managed"
 expect_managed ".orca/keybindings.json" "$work_managed"
 expect_managed "Library/Preferences/com.cmuxterm.app.plist" "$work_managed"
-expect_unmanaged "Library/Preferences/com.setapp.DesktopClient.plist" "$work_managed"
+expect_managed "Library/Preferences/com.setapp.DesktopClient.plist" "$work_managed"
 expect_unmanaged "Library/Colors/nvALT.clr" "$work_managed"
 expect_unmanaged "Library/Preferences/net.elasticthreads.nv.plist" "$work_managed"
 expect_unmanaged "Library/Preferences/io.tailscale.ipn.macsys.plist" "$work_managed"
 expect_unmanaged "Library/Preferences/com.prakashjoshipax.VoiceInk.plist" "$work_managed"
-expect_ignored "Library/Preferences/com.setapp.DesktopClient.plist" "$work_ignored"
 expect_ignored "Library/Preferences/io.tailscale.ipn.macsys.plist" "$work_ignored"
 expect_ignored "Library/Preferences/com.prakashjoshipax.VoiceInk.plist" "$work_ignored"
 

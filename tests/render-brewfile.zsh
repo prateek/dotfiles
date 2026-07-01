@@ -67,6 +67,7 @@ for app in arq voiceink; do
   [[ $personal_no_mas == *"cask \"$app\""* ]] || die "personal: missing personal app cask $app"
 done
 [[ $personal_no_mas == *'cask "google-drive"'* ]] || die "personal: missing shared laptop cask google-drive"
+[[ $personal_no_mas == *'cask "setapp"'* ]] || die "personal: missing shared subscription cask setapp"
 [[ $personal_no_mas == *'cask "jump-desktop"'* ]] || die "personal: missing Jump Desktop viewer"
 [[ $personal_no_mas != *'cask "ghostpepper"'* ]] || die "personal: should not include work app ghostpepper"
 [[ $personal_no_mas != *'cask "tailscale-app"'* ]] || die "personal: should not install homelab remote app tailscale-app"
@@ -80,6 +81,7 @@ work_with_mas="$("$RENDER" --machine-type work --include-mas)"
 [[ $work_out == *'cask "ghostpepper"'* ]] || die "work: missing work app cask ghostpepper"
 [[ $work_out == *'cask "slack"'* ]] || die "work: missing work app cask slack"
 [[ $work_out == *'cask "google-drive"'* ]] || die "work: missing shared laptop cask google-drive"
+[[ $work_out == *'cask "setapp"'* ]] || die "work: missing shared subscription cask setapp"
 [[ $work_with_mas == *'mas "Okta Verify", id: 490179405'* ]] \
   || die "work --include-mas: missing shared Okta Verify MAS entry"
 for app in tailscale-app arq voiceink; do
