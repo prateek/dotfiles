@@ -297,6 +297,7 @@ xcode_required_brews = [
 [packages.groups.work-apps]
 description = "Work-only collaboration, identity, and desktop apps"
 casks = [
+  { name = "ghostpepper" },
   { name = "slack" },
 ]
 
