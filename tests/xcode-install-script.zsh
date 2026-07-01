@@ -119,12 +119,12 @@ stubs="$tmp_root/stubs"
 write_stubs "$stubs"
 base_path="$stubs:/usr/bin:/bin:/usr/sbin:/sbin"
 
-# ci has no dev-apple group: render, syntax-check, and confirm it skips cleanly.
+# ci has no apple-development group: render, syntax-check, and confirm it skips cleanly.
 ci_script="$tmp_root/xcode-ci.sh"
 render_script ci "$ci_script"
 bash -n "$ci_script" || die "rendered ci script has invalid syntax"
 ci_out="$(XCODE_CALLS=/dev/null PATH="$base_path" HOME="$home_dir" bash "$ci_script" </dev/null 2>&1)"
-assert_contains "$ci_out" "no dev-apple group"
+assert_contains "$ci_out" "no apple-development group"
 
 personal_script="$tmp_root/xcode-personal.sh"
 render_script personal "$personal_script"

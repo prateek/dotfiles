@@ -6,15 +6,15 @@
 
 {{- $f := includeTemplate "features.tmpl" . | fromJson -}}
 {{- if $f.run_install_scripts }}
-{{- $hasDev := has "dev" $f.groups }}
+{{- $hasDeveloperTools := has "developer-tools" $f.groups }}
 machine_type={{ $f.machine_type | quote }}
-has_dev={{ $hasDev | toString | quote }}
+has_developer_tools={{ $hasDeveloperTools | toString | quote }}
 mas_opt_in={{ env "DOTFILES_INSTALL_MAS_APPS" | default "false" | quote }}
 
 case "$mas_opt_in" in
   1|true|TRUE|yes|YES|on|ON) ;;
   *)
-    if [ "$has_dev" = "true" ]; then
+    if [ "$has_developer_tools" = "true" ]; then
       warn "Mac App Store installs disabled; set DOTFILES_INSTALL_MAS_APPS=true to opt in."
     fi
     ;;
@@ -23,7 +23,7 @@ esac
 brew_shellenv
 have brew || die "Homebrew is required before brew bundle can run."
 
-if [ "$has_dev" = "true" ]; then
+if [ "$has_developer_tools" = "true" ]; then
   log "Refreshing Homebrew before a large package install."
   run_timed "brew update" brew update --quiet
 fi

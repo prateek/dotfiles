@@ -21,6 +21,8 @@ ci_managed="$tmp_root/ci-managed.txt"
 ci_ignored="$tmp_root/ci-ignored.txt"
 work_managed="$tmp_root/work-managed.txt"
 work_ignored="$tmp_root/work-ignored.txt"
+homelab_managed="$tmp_root/homelab-managed.txt"
+homelab_ignored="$tmp_root/homelab-ignored.txt"
 empty_ignored="$tmp_root/empty-ignored.txt"
 leader_key_json="$tmp_root/leader-key.json"
 state_file="$tmp_root/chezmoi-state.boltdb"
@@ -61,6 +63,14 @@ chezmoi_isolated \
   --override-data '{"machine_type":"work"}' \
   ignored >"$work_ignored"
 
+chezmoi_isolated \
+  --override-data '{"machine_type":"homelab"}' \
+  managed --path-style relative >"$homelab_managed"
+
+chezmoi_isolated \
+  --override-data '{"machine_type":"homelab"}' \
+  ignored >"$homelab_ignored"
+
 # Empty group set ⇒ no casks enabled ⇒ every gated config ignored. Arrays in
 # --override-data replace rather than merge, so the ci type layer's groups=[] wins.
 chezmoi_isolated \
@@ -90,7 +100,7 @@ expect_ignored() {
   grep -Fx -- "$target_path" "$file" >/dev/null || die "expected ignored path: $target_path (${file:t})"
 }
 
-# --- personal: everything managed (base + dev + dev-apple + personal-apps) ---
+# --- personal: Mac desktop + dev + Apple + personal apps ---------------------
 expect_managed ".config/cmux/preferences.json" "$personal_managed"
 expect_managed ".config/ghostty" "$personal_managed"
 expect_managed ".hammerspoon" "$personal_managed"
@@ -98,7 +108,6 @@ expect_managed "Library/Preferences/com.hegenberg.BetterTouchTool.plist" "$perso
 expect_managed "Library/Preferences/com.raycast.macos.plist" "$personal_managed"
 expect_managed ".config/raycast/scripts/temp-admin.sh" "$personal_managed"
 expect_managed ".local/share/raycast-extensions/orca-worktree/package.json" "$personal_managed"
-expect_managed "Library/Preferences/io.tailscale.ipn.macsys.plist" "$personal_managed"
 expect_managed "Library/Preferences/com.setapp.DesktopClient.plist" "$personal_managed"
 expect_managed "Library/Preferences/pro.betterdisplay.BetterDisplay.plist" "$personal_managed"
 expect_managed ".config/zed" "$personal_managed"
@@ -112,18 +121,19 @@ expect_managed "Library/Preferences/com.cmuxterm.app.plist" "$personal_managed"
 expect_managed "Library/Preferences/com.prakashjoshipax.VoiceInk.plist" "$personal_managed"
 expect_managed "Library/Preferences/dev.kdrag0n.MacVirt.plist" "$personal_managed"
 expect_managed "Library/Preferences/net.elasticthreads.nv.plist" "$personal_managed"
+expect_unmanaged "Library/Preferences/io.tailscale.ipn.macsys.plist" "$personal_managed"
 
-# --- ci: base only. dev/dev-apple/personal-app configs unmanaged. ---
+# --- ci: core only. All cask-gated app configs are unmanaged. -----------
 expect_unmanaged ".config/cmux" "$ci_managed"
-expect_managed ".config/ghostty" "$ci_managed"
+expect_unmanaged ".config/ghostty" "$ci_managed"
 expect_unmanaged ".hammerspoon" "$ci_managed"
-expect_managed "Library/Preferences/com.hegenberg.BetterTouchTool.plist" "$ci_managed"
-expect_managed "Library/Preferences/com.raycast.macos.plist" "$ci_managed"
-expect_managed ".config/raycast/scripts/temp-admin.sh" "$ci_managed"
-expect_managed "Library/Preferences/com.setapp.DesktopClient.plist" "$ci_managed"
-expect_managed "Library/Preferences/dev.kdrag0n.MacVirt.plist" "$ci_managed"
-expect_managed "Library/Application Support/Leader Key/config.json" "$ci_managed"
-expect_managed "Library/Application Support/Code/User" "$ci_managed"
+expect_unmanaged "Library/Preferences/com.hegenberg.BetterTouchTool.plist" "$ci_managed"
+expect_unmanaged "Library/Preferences/com.raycast.macos.plist" "$ci_managed"
+expect_unmanaged ".config/raycast/scripts/temp-admin.sh" "$ci_managed"
+expect_unmanaged "Library/Preferences/com.setapp.DesktopClient.plist" "$ci_managed"
+expect_unmanaged "Library/Preferences/dev.kdrag0n.MacVirt.plist" "$ci_managed"
+expect_unmanaged "Library/Application Support/Leader Key/config.json" "$ci_managed"
+expect_unmanaged "Library/Application Support/Code/User" "$ci_managed"
 expect_unmanaged "Library/Preferences/pro.betterdisplay.BetterDisplay.plist" "$ci_managed"
 expect_unmanaged ".config/zed" "$ci_managed"
 expect_unmanaged "Library/Colors/nvALT.clr" "$ci_managed"
@@ -132,11 +142,10 @@ expect_unmanaged "Library/Preferences/com.cmuxterm.app.plist" "$ci_managed"
 expect_unmanaged "Library/Application Support/orca/orca-data.json" "$ci_managed"
 expect_unmanaged ".orca/keybindings.json" "$ci_managed"
 expect_unmanaged "Library/Preferences/net.elasticthreads.nv.plist" "$ci_managed"
-# tailscale + voiceink are personal apps now, so the base-only ci type drops them.
 expect_unmanaged "Library/Preferences/io.tailscale.ipn.macsys.plist" "$ci_managed"
 expect_unmanaged "Library/Preferences/com.prakashjoshipax.VoiceInk.plist" "$ci_managed"
 
-# --- work: full dev machine minus the personal apps (the core requirement) ---
+# --- work: Mac desktop + dev + work apps, no personal/homelab config ---------
 expect_managed ".config/ghostty" "$work_managed"
 expect_managed ".hammerspoon" "$work_managed"
 expect_managed "Library/Preferences/pro.betterdisplay.BetterDisplay.plist" "$work_managed"
@@ -144,13 +153,41 @@ expect_managed ".config/zed" "$work_managed"
 expect_managed "Library/Application Support/orca/orca-data.json" "$work_managed"
 expect_managed ".orca/keybindings.json" "$work_managed"
 expect_managed "Library/Preferences/com.cmuxterm.app.plist" "$work_managed"
-expect_managed "Library/Preferences/com.setapp.DesktopClient.plist" "$work_managed"
+expect_unmanaged "Library/Preferences/com.setapp.DesktopClient.plist" "$work_managed"
+expect_unmanaged "Library/Colors/nvALT.clr" "$work_managed"
+expect_unmanaged "Library/Preferences/net.elasticthreads.nv.plist" "$work_managed"
 expect_unmanaged "Library/Preferences/io.tailscale.ipn.macsys.plist" "$work_managed"
 expect_unmanaged "Library/Preferences/com.prakashjoshipax.VoiceInk.plist" "$work_managed"
+expect_ignored "Library/Preferences/com.setapp.DesktopClient.plist" "$work_ignored"
 expect_ignored "Library/Preferences/io.tailscale.ipn.macsys.plist" "$work_ignored"
 expect_ignored "Library/Preferences/com.prakashjoshipax.VoiceInk.plist" "$work_ignored"
 
-# --- ci ignored set: dev/dev-apple/personal-app configs (default file = ci_ignored) ---
+# --- homelab: dev + Apple + remote/admin apps, no Mac desktop/personal apps ---
+expect_managed "Library/Preferences/io.tailscale.ipn.macsys.plist" "$homelab_managed"
+expect_unmanaged ".config/ghostty" "$homelab_managed"
+expect_unmanaged ".hammerspoon" "$homelab_managed"
+expect_unmanaged "Library/Preferences/com.hegenberg.BetterTouchTool.plist" "$homelab_managed"
+expect_unmanaged "Library/Preferences/com.raycast.macos.plist" "$homelab_managed"
+expect_unmanaged "Library/Preferences/com.setapp.DesktopClient.plist" "$homelab_managed"
+expect_unmanaged "Library/Preferences/pro.betterdisplay.BetterDisplay.plist" "$homelab_managed"
+expect_unmanaged ".config/zed" "$homelab_managed"
+expect_unmanaged "Library/Colors/nvALT.clr" "$homelab_managed"
+expect_unmanaged "Library/Preferences/com.jordanbaird.Ice.plist" "$homelab_managed"
+expect_unmanaged "Library/Preferences/com.cmuxterm.app.plist" "$homelab_managed"
+expect_unmanaged "Library/Application Support/orca/orca-data.json" "$homelab_managed"
+expect_unmanaged ".orca/keybindings.json" "$homelab_managed"
+expect_unmanaged "Library/Preferences/com.prakashjoshipax.VoiceInk.plist" "$homelab_managed"
+expect_ignored ".config/ghostty" "$homelab_ignored"
+expect_ignored "Library/Preferences/com.setapp.DesktopClient.plist" "$homelab_ignored"
+expect_ignored "Library/Preferences/com.prakashjoshipax.VoiceInk.plist" "$homelab_ignored"
+
+# --- ci ignored set: non-core app configs (default file = ci_ignored) ---
+expect_ignored ".config/ghostty"
+expect_ignored "Library/Preferences/com.hegenberg.BetterTouchTool.plist"
+expect_ignored "Library/Preferences/com.raycast.macos.plist"
+expect_ignored ".config/raycast/scripts/temp-admin.sh"
+expect_ignored "Library/Application Support/Leader Key/config.json"
+expect_ignored "Library/Application Support/Code/User"
 expect_ignored ".config/zed"
 expect_ignored ".config/cmux"
 expect_ignored "Library/Application Support/orca/orca-data.json"

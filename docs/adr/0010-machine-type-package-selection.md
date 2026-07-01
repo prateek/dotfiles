@@ -10,7 +10,7 @@ related:
   - 0008-sudo-askpass-1password.md
   - 0012-config-gating-convention.md
   - ../references/chezmoi-architecture.md
-status_detail: "Accepted and implemented on the prateek/machine-profiles branch. The single-machine_type-axis decision stands, but per-type group composition moved to home/.chezmoidata/machines.toml (resolved by features.tmpl) and machine_type is selected via prompt/--promptChoice (no DOTFILES_MACHINE_TYPE); see ADR 0012. The body below is the historical record (e.g. it predates work dropping dev-apple)."
+status_detail: "Accepted and implemented on the prateek/machine-profiles branch. The single-machine_type-axis decision stands, but per-type group composition moved to home/.chezmoidata/machines.toml (resolved by features.tmpl) and machine_type is selected via prompt/--promptChoice (no DOTFILES_MACHINE_TYPE); see ADR 0012. The body below is the historical record and predates the current package group names; see docs/references/chezmoi-architecture.md for current composition."
 ---
 
 # ADR 0010 — Single machine_type axis for package selection

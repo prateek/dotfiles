@@ -19,22 +19,23 @@ RENDER="$DOTFILES_ROOT/scripts/packages/render-brewfile"
 
 [[ -x $RENDER ]] || die "missing renderer: $RENDER"
 
-# -- shape: required sections (ci = base-only minimal tier) ------------------
+# -- shape: required sections (ci = core-only minimal tier) --------------
 
 ci_out="$("$RENDER" --machine-type ci)"
 [[ -n $ci_out ]] || die "ci machine type rendered empty"
 [[ $ci_out == *'tap "1password/tap"'* ]] || die "ci: missing 1password/tap"
 [[ $ci_out == *'brew "git"'* ]] || die "ci: missing git brew"
 [[ $ci_out != *'brew "crit"'* ]] || die "ci: crit should be managed by mise, not Homebrew"
-[[ $ci_out == *'cask "1password", args: { appdir: "/Applications" }'* ]] \
-  || die "ci: 1password cask appdir args missing or malformed"
-# ci is the lean base; it must not pull the dev toolchain or personal apps.
-[[ $ci_out != *'brew "aria2"'* ]] || die "ci: should not include the dev group (aria2 leaked)"
-[[ $ci_out != *'cask "tailscale-app"'* ]] || die "ci: should not include personal apps"
+[[ $ci_out == *'cask "1password-cli"'* ]] || die "ci: missing 1password CLI cask"
+# ci is the core layer; it must not pull GUI, dev, Apple, or overlay groups.
+[[ $ci_out != *'cask "1password", args: { appdir: "/Applications" }'* ]] \
+  || die "ci: should not include the interactive 1Password app"
+[[ $ci_out != *'brew "aria2"'* ]] || die "ci: should not include developer-tools (aria2 leaked)"
+[[ $ci_out != *'cask "tailscale-app"'* ]] || die "ci: should not include homelab overlay apps"
 rg -q '"go:github.com/tomasz-tomczyk/crit" = "latest"' "$DOTFILES_ROOT/home/dot_config/mise/conf.d/clis.toml" \
   || die "crit should be declared as a mise Go CLI"
 
-# -- dev machine types (personal): base + dev + dev-apple + personal-apps -----
+# -- personal machine type: core + interactive + dev + Apple + personal --
 
 personal_no_mas="$("$RENDER" --machine-type personal)"
 personal_with_mas="$("$RENDER" --machine-type personal --include-mas)"
@@ -44,28 +45,57 @@ if [[ $personal_no_mas == *'mas "'* ]]; then
 fi
 [[ $personal_with_mas == *'mas "Things", id: 904280696'* ]] \
   || die "personal --include-mas: missing expected MAS entry"
-[[ $personal_no_mas == *'brew "aria2"'* ]] || die "personal: missing aria2 (dev group)"
+[[ $personal_with_mas == *'mas "Okta Verify", id: 490179405'* ]] \
+  || die "personal --include-mas: missing shared Okta Verify MAS entry"
+[[ $personal_no_mas == *'brew "aria2"'* ]] || die "personal: missing aria2 (developer-tools group)"
 [[ $personal_no_mas != *'brew "crit"'* ]] || die "personal: crit should be managed by mise, not Homebrew"
 [[ $personal_no_mas != *'tap "xcodesorg/made"'* ]] || die "personal: should not tap source-building xcodesorg/made"
 [[ $personal_no_mas == *'brew "homebrew/core/xcodes", args: ["force-bottle"]'* ]] \
-  || die "personal: missing bottled Homebrew core xcodes (dev-apple group)"
+  || die "personal: missing bottled Homebrew core xcodes (apple-development group)"
+[[ $personal_no_mas == *'brew "cirruslabs/cli/tart", trusted: true'* ]] \
+  || die "personal: missing Tart VM CLI (apple-development group)"
+[[ $personal_no_mas == *'brew "f/mcptools/mcp", trusted: true'* ]] \
+  || die "personal: missing MCP CLI (developer-tools group)"
 [[ $personal_no_mas != *'facebook/fb/idb-companion'* ]] \
   || die "personal Brewfile should not install idb-companion before Xcode setup"
 [[ $personal_no_mas != *'brew "swiftlint"'* ]] \
   || die "personal Brewfile should not install swiftlint before Xcode setup"
 
-# -- personal apps are present on personal, absent on work --------------------
+# -- overlays are scoped by role ---------------------------------------------
 
-for app in tailscale-app arq voiceink; do
+for app in arq voiceink; do
   [[ $personal_no_mas == *"cask \"$app\""* ]] || die "personal: missing personal app cask $app"
 done
+[[ $personal_no_mas == *'cask "google-drive"'* ]] || die "personal: missing shared laptop cask google-drive"
+[[ $personal_no_mas == *'cask "jump-desktop"'* ]] || die "personal: missing Jump Desktop viewer"
+[[ $personal_no_mas != *'cask "tailscale-app"'* ]] || die "personal: should not install homelab remote app tailscale-app"
 work_out="$("$RENDER" --machine-type work)"
-[[ $work_out == *'brew "aria2"'* ]] || die "work: missing aria2 (work keeps the dev group)"
-[[ $work_out != *'brew "homebrew/core/xcodes"'* ]] || die "work should not include xcodes (no dev-apple group)"
-[[ $work_out != *'brew "fastlane"'* ]] || die "work should not include the dev-apple toolchain (fastlane leaked)"
+work_with_mas="$("$RENDER" --machine-type work --include-mas)"
+[[ $work_out == *'brew "aria2"'* ]] || die "work: missing aria2 (work keeps developer-tools)"
+[[ $work_out != *'brew "homebrew/core/xcodes"'* ]] || die "work should not include xcodes (no apple-development group)"
+[[ $work_out != *'brew "fastlane"'* ]] || die "work should not include the Apple development toolchain (fastlane leaked)"
+[[ $work_out != *'brew "cirruslabs/cli/tart"'* ]] || die "work should not include Tart (no apple-development group)"
+[[ $work_out == *'brew "f/mcptools/mcp", trusted: true'* ]] || die "work: missing MCP CLI (developer-tools group)"
+[[ $work_out == *'cask "slack"'* ]] || die "work: missing work overlay cask slack"
+[[ $work_out == *'cask "google-drive"'* ]] || die "work: missing shared laptop cask google-drive"
+[[ $work_with_mas == *'mas "Okta Verify", id: 490179405'* ]] \
+  || die "work --include-mas: missing shared Okta Verify MAS entry"
 for app in tailscale-app arq voiceink; do
-  [[ $work_out != *"cask \"$app\""* ]] || die "work should not install personal app cask $app"
+  [[ $work_out != *"cask \"$app\""* ]] || die "work should not install non-work overlay cask $app"
 done
+homelab_out="$("$RENDER" --machine-type homelab)"
+[[ $homelab_out == *'brew "homebrew/core/xcodes", args: ["force-bottle"]'* ]] \
+  || die "homelab: missing Apple development xcodes"
+[[ $homelab_out == *'brew "cirruslabs/cli/tart", trusted: true'* ]] \
+  || die "homelab: missing Tart VM CLI"
+[[ $homelab_out == *'brew "f/mcptools/mcp", trusted: true'* ]] \
+  || die "homelab: missing MCP CLI"
+[[ $homelab_out != *'brew "mas"'* ]] || die "homelab: should not include MAS CLI without Mac desktop/MAS apps"
+[[ $homelab_out == *'cask "tailscale-app"'* ]] || die "homelab: missing homelab remote cask tailscale-app"
+[[ $homelab_out == *'cask "jump-desktop"'* ]] || die "homelab: missing Jump Desktop viewer"
+[[ $homelab_out != *'cask "setapp"'* ]] || die "homelab: should not include personal GUI/licensed app setapp"
+[[ $homelab_out != *'cask "ghostty"'* ]] || die "homelab: should not include interactive desktop cask ghostty"
+[[ $homelab_out != *'cask "google-drive"'* ]] || die "homelab: should not include shared interactive cask google-drive"
 
 # -- machine-type error reporting --------------------------------------------
 

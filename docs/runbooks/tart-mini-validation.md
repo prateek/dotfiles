@@ -58,7 +58,7 @@ The helper exposes lanes only. The machine type is derived internally from the l
 
 `smoke` is the default lane. It uses the Tahoe base image, the `ci` machine type, explicit Homebrew cask/MAS skip lists, and fresh-shell postflight verification.
 
-`full` is explicit and slower. It uses the Tahoe Xcode image, the `personal` machine type, and includes cask behavior. The Xcode image keeps routine full-lane validation from spending the run downloading Xcode; the `personal` machine type (which includes the `dev-apple` group) selects and sets up Xcode when it is present, and downloads Xcode through `xcodes` only when it is absent and the apply is interactive or forced with `DOTFILES_INSTALL_XCODE=true`.
+`full` is explicit and slower. It uses the Tahoe Xcode image, the `personal` machine type, and includes cask behavior. The Xcode image keeps routine full-lane validation from spending the run downloading Xcode; the `personal` machine type includes `apple-development`, so it selects and sets up Xcode when it is present, and downloads Xcode through `xcodes` only when it is absent and the apply is interactive or forced with `DOTFILES_INSTALL_XCODE=true`.
 
 Dev machine types run `brew update` before `brew bundle`. Prebuilt Tart images can carry Homebrew metadata that is old enough to misparse current casks.
 

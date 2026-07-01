@@ -15,7 +15,7 @@
 # layer — no new enum, no per-file `eq .machine_type` ladders.
 
 [machines.defaults]
-groups = ["base"]
+groups = ["core"]
 run_install_scripts = true
 apply_macos_defaults = true
 secrets_enabled = false          # enable per machine via [data].machines_local
@@ -28,20 +28,21 @@ elevation = "none"
 # contexts (the chezmoi-script-status test) opt out via [data].machines_local,
 # and dry-runs never execute scripts regardless.
 [machines.type.ci]
-groups = ["base"]
+groups = ["core"]
 
 # Personal daily-driver Mac.
 [machines.type.personal]
-groups = ["base", "dev", "dev-apple", "personal-apps"]
+groups = ["core", "mac-desktop", "developer-tools", "apple-development", "personal-apps"]
 
-# Homelab Mac: uses the personal daily-driver package set.
+# Homelab Mac mini: development plus Apple tooling and remote/admin access,
+# without the full interactive personal desktop surface.
 [machines.type.homelab]
-groups = ["base", "dev", "dev-apple", "personal-apps"]
+groups = ["core", "developer-tools", "apple-development", "homelab-admin"]
 
 # Managed work Mac: no personal apps, no Apple/iOS toolchain; Jamf elevation and
 # the private config overlay.
 [machines.type.work]
-groups = ["base", "dev"]
+groups = ["core", "mac-desktop", "developer-tools", "work-apps"]
 private_overlay = true
 elevation = "jamf-self-service"
 

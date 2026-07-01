@@ -79,7 +79,7 @@ case "$*" in
     if [ -n "${BREW_INSTALLED_TAPS:-}" ]; then
       printf '%s\n' "$BREW_INSTALLED_TAPS"
     else
-      printf '1password/tap\nfelixkratz/formulae\nfluffypony/yojam\nyqrashawn/goku\n'
+      printf '1password/tap\n'
     fi
     ;;
   tap\ *)
@@ -113,8 +113,9 @@ script="$tmp_root/brew-bundle.sh"
 render_script "$script"
 bash -n "$script" || die "rendered brew bundle script has invalid syntax"
 script_content="$(<"$script")"
-assert_contains "$script_content" 'brew "felixkratz/formulae/borders", trusted: true'
-assert_contains "$script_content" 'brew "yqrashawn/goku/goku", trusted: true'
+assert_not_contains "$script_content" 'felixkratz/formulae'
+assert_contains "$script_content" 'cask "1password-cli"'
+assert_not_contains "$script_content" 'yqrashawn/goku'
 
 # New Homebrew: use --jobs auto and default parallel downloads.
 stubs_a="$tmp_root/stubs-a"
@@ -157,11 +158,17 @@ bash -n "$script_personal" || die "rendered personal brew bundle script has inva
 script_personal_content="$(<"$script_personal")"
 assert_contains "$script_personal_content" 'brew "eugene1g/safehouse/agent-safehouse", trusted: true'
 assert_contains "$script_personal_content" 'cask "dagger/tap/container-use", trusted: true'
+assert_contains "$script_personal_content" 'tap "mattt/tap"'
 assert_contains "$script_personal_content" 'cask "mattt/tap/imcp", trusted: true'
 assert_contains "$script_personal_content" 'cask "nikitabobko/tap/aerospace", trusted: true'
 assert_contains "$script_personal_content" 'cask "peripheryapp/periphery/periphery", trusted: true'
 assert_contains "$script_personal_content" 'cask "stablyai/orca/orca", trusted: true'
 assert_not_contains "$script_personal_content" 'brew "homebrew/core/xcodes", args: ["force-bottle"], trusted: true'
+script_work="$tmp_root/brew-bundle-work.sh"
+render_script "$script_work" work
+bash -n "$script_work" || die "rendered work brew bundle script has invalid syntax"
+script_work_content="$(<"$script_work")"
+assert_not_contains "$script_work_content" 'mattt/tap'
 stubs_d="$tmp_root/stubs-d"
 write_stubs "$stubs_d"
 calls_d="$tmp_root/calls-d.log"
@@ -169,6 +176,7 @@ BREW_CALLS="$calls_d" PATH="$stubs_d:/usr/bin:/bin:/usr/sbin:/sbin" HOME="$tmp_r
   bash "$script_personal" >/dev/null
 out_d="$(<"$calls_d")"
 assert_before "$out_d" "tap=tap eugene1g/safehouse" "bundle_args="
+assert_before "$out_d" "tap=tap mattt/tap" "bundle_args="
 assert_before "$out_d" "tap=tap stablyai/orca" "bundle_args="
 
 print -- "OK brew-bundle-script"

@@ -17,7 +17,7 @@ home/.chezmoitemplates/features.tmpl     # resolves machines.toml layers into on
 
 ## Packages.toml Structure
 
-`packages.toml` defines reusable `[packages.groups.<name>]` sub-tables. Which groups each machine type installs is declared separately in `home/.chezmoidata/machines.toml` (`[machines.type.<type>].groups`), resolved by `home/.chezmoitemplates/features.tmpl` (see "Machine Types And Config Gating" below). Each group body uses **inline arrays of inline tables**. Do NOT use TOML array-of-tables syntax (`[[packages.groups.base.brews]]`) — that mixes two definitions of the same key and is invalid against the existing inline shape. The Brewfile renderer and the `package-cask-enabled.tmpl` gate union each section across the selected machine type's groups, deduped by name, so shape and key names must match.
+`packages.toml` defines reusable `[packages.groups.<name>]` sub-tables. Which groups each machine type installs is declared separately in `home/.chezmoidata/machines.toml` (`[machines.type.<type>].groups`), resolved by `home/.chezmoitemplates/features.tmpl` (see "Machine Types And Config Gating" below). Each group body uses **inline arrays of inline tables**. Do NOT use TOML array-of-tables syntax (`[[packages.groups.core.brews]]`) — that mixes two definitions of the same key and is invalid against the existing inline shape. The Brewfile renderer and the `package-cask-enabled.tmpl` gate union each section across the selected machine type's groups, deduped by name, so shape and key names must match.
 
 Group keys (all optional except `description`):
 
@@ -29,41 +29,51 @@ Group keys (all optional except `description`):
 | `casks` | `brewfile.tmpl` | Homebrew casks |
 | `mas` | `brewfile.tmpl` (gated on `DOTFILES_INSTALL_MAS_APPS=true`) | Mac App Store entries |
 | `gh_extensions` | `home/.chezmoiscripts/run_onchange_after_12-gh-extensions.sh.tmpl` | `gh` CLI extensions |
-| `xcode_required_brews` | `home/.chezmoiscripts/run_onchange_after_15-xcode.sh.tmpl` | Formulae that need Xcode CLT first; installed AFTER Xcode setup, NOT in the main Brewfile. Lives in the `dev-apple` group, whose presence also gates the Xcode setup step. |
+| `xcode_required_brews` | `home/.chezmoiscripts/run_onchange_after_15-xcode.sh.tmpl` | Formulae that need Xcode CLT first; installed AFTER Xcode setup, NOT in the main Brewfile. Lives in the `apple-development` group, whose presence also gates the Xcode setup step. |
 | `disabled_casks` | inventory only — NOT consumed by `brewfile.tmpl` | Record of casks intentionally excluded with the reason. To actually disable a cask, remove it from `casks`; the `disabled_casks` entry is documentation, not a filter. |
 
 ```toml
 # packages.toml — reusable group definitions only.
-[packages.groups.base]
-description = "Essentials on every machine, including ci"
-taps  = [ { name = "1password/tap" }, { name = "felixkratz/formulae" } ]
+[packages.groups.core]
+description = "Headless-safe baseline for every managed machine, including ci"
+taps  = [ { name = "1password/tap" } ]
 brews = [ { name = "git" }, { name = "gh" }, { name = "mise" } ]
+casks = [ { name = "1password-cli" } ]
+
+[packages.groups.mac-desktop]
+description = "Shared GUI apps and Mac control tools for daily-driver laptops"
 casks = [ { name = "1password" }, { name = "ghostty" } ]
 
-[packages.groups.dev]
-description = "Full dev toolchain (real machines, not ci)"
+[packages.groups.developer-tools]
+description = "General development toolchain for real development machines"
 brews = [ { name = "postgresql@16" } ]
 casks = [ { name = "docker" } ]
-mas   = [ { name = "Things", id = 904280696 } ]   # id is INTEGER (renderer interpolates as %d)
 
-[packages.groups.dev-apple]
+[packages.groups.apple-development]
 description = "Xcode / iOS toolchain; presence gates Xcode setup"
 brews = [ { name = "homebrew/core/xcodes", args = ["force-bottle"] } ]
 xcode_required_brews = [ { name = "swiftlint" } ]
 
 [packages.groups.personal-apps]
-description = "Personal apps; never installed on work"
+description = "Personal laptop GUI, licensed, media, and productivity apps"
+casks = [ { name = "arq" } ]
+mas   = [ { name = "Things", id = 904280696 } ]   # id is INTEGER (renderer interpolates as %d)
+
+[packages.groups.homelab-admin]
+description = "Remote access and administration tools for homelab Mac minis"
 casks = [ { name = "tailscale-app" } ]
 ```
 
 ```toml
 # machines.toml — which groups (and other behavior) each machine type gets.
 [machines.type.ci]
-groups = ["base"]
+groups = ["core"]
 [machines.type.personal]
-groups = ["base", "dev", "dev-apple", "personal-apps"]
+groups = ["core", "mac-desktop", "developer-tools", "apple-development", "personal-apps"]
+[machines.type.homelab]
+groups = ["core", "developer-tools", "apple-development", "homelab-admin"]
 [machines.type.work]
-groups = ["base", "dev"]
+groups = ["core", "mac-desktop", "developer-tools", "work-apps"]
 ```
 
 Machine type resolves from `[data].machine_type` (default `personal`), set by the `chezmoi init` prompt or `chezmoi init --promptChoice 'machine_type=<type>'`; there is no `DOTFILES_MACHINE_TYPE`. Interactive values: `personal`, `homelab`, `work`, `ci`. `ci` is the minimal tier for CI/Tart/audits and a first-class prompt choice. See `docs/adr/0010-machine-type-package-selection.md` and `docs/adr/0012-config-gating-convention.md`.
@@ -74,7 +84,7 @@ The same logic lives in `home/.chezmoitemplates/brewfile.tmpl` and runs during `
 
 ```text
 make test-render-brewfile                              # validates rendering
-scripts/packages/render-brewfile --machine-type ci        # eyeball (base only)
+scripts/packages/render-brewfile --machine-type ci        # eyeball (core only)
 scripts/packages/render-brewfile --machine-type personal  # eyeball (full set)
 ```
 
@@ -114,7 +124,7 @@ Feature keys: `groups`, `run_install_scripts`, `apply_macos_defaults`, `secrets_
 | Apply env var | Effect |
 |---|---|
 | `DOTFILES_INSTALL_MAS_APPS` | Renders MAS entries in Brewfile only when `true` |
-| `DOTFILES_INSTALL_XCODE` | Forces the Apple ID-backed Xcode download in `run_onchange_after_15-xcode.sh.tmpl`. The script check&sets Xcode by presence: on a dev-apple machine it installs the pinned version when absent (interactive apply, or this set), otherwise it fails loudly. |
+| `DOTFILES_INSTALL_XCODE` | Forces the Apple ID-backed Xcode download in `run_onchange_after_15-xcode.sh.tmpl`. The script check&sets Xcode by presence: on an `apple-development` machine it installs the pinned version when absent (interactive apply, or this set), otherwise it fails loudly. |
 | `DOTFILES_HOMEBREW_BUNDLE_JOBS` | Parallelism for `brew bundle install` |
 | `DOTFILES_HOMEBREW_DOWNLOAD_CONCURRENCY` | Per-bottle download concurrency for Homebrew |
 | `DOTFILES_PLIST_VERBOSE` | Verbose logging from the plist merge engine |
@@ -212,7 +222,7 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply prateek
 # from prompts or env vars.
 #
 # Xcode is not a config toggle: the 15-xcode script check&sets it by presence.
-# On a dev-apple machine it installs the pinned Xcode when absent (interactive
+# On an apple-development machine it installs the pinned Xcode when absent (interactive
 # apply, or DOTFILES_INSTALL_XCODE=true to force a non-interactive download).
 ```
 
@@ -235,5 +245,5 @@ chezmoi apply
 - **Committing human-readable `op://` paths.** Strip down to obfuscated IDs before commit; put readable form in `~/.config/chezmoi/chezmoi.toml.local`.
 - **Writing license `op://` refs into `licenses.toml`.** That file holds target paths only. Refs go in `secrets.toml` under `[secrets.refs]` with matching key names.
 - **Putting refs at the top level of `secrets.toml`.** Templates read `.secrets.refs.<name>`. A top-level `github_token = "op://..."` will not be reachable.
-- **Putting a package in the wrong group in `packages.toml`.** `base` reaches every machine (including `ci`); `dev`/`dev-apple` reach real machines; `personal-apps` is excluded from `work`. Choose the group by which machine types should get the package.
+- **Putting a package in the wrong group in `packages.toml`.** `core` reaches every machine (including `ci`); `mac-desktop` reaches work/personal laptops only; `developer-tools` reaches work/personal/homelab; `apple-development` reaches personal/homelab; `work-apps`, `personal-apps`, and `homelab-admin` are role-specific. Choose the group by which machine types should get the package.
 - **Adding a new env var without documenting it in the env var table above.** SKILL.md Repo-Specific Gotchas is reserved for high-stakes vars (per `meta-skill-maintenance.md`); promote there only when the rule is destructive or surprising on a fresh machine.

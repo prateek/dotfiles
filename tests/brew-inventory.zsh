@@ -26,9 +26,9 @@ mkdir -p "$stub_bin"
 
 brewfile="$tmp_root/Brewfile"
 cat >"$brewfile" <<'EOF'
-tap "felixkratz/formulae"
+tap "yqrashawn/goku"
 brew "homebrew/core/xcodes", args: ["force-bottle"]
-brew "felixkratz/formulae/borders"
+brew "yqrashawn/goku/goku"
 EOF
 
 cat >"$stub_bin/brew" <<'EOF'
@@ -37,13 +37,13 @@ set -euo pipefail
 
 case "$*" in
   tap)
-    printf 'felixkratz/formulae\n'
+    printf 'yqrashawn/goku\n'
     ;;
   "list --formula --full-name")
-    printf 'xcodes\nfelixkratz/formulae/borders\n'
+    printf 'xcodes\nyqrashawn/goku/goku\n'
     ;;
   "list --formula --installed-on-request --full-name")
-    printf 'xcodes\nfelixkratz/formulae/borders\n'
+    printf 'xcodes\nyqrashawn/goku/goku\n'
     ;;
   *)
     printf 'unexpected brew call: %s\n' "$*" >&2

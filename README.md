@@ -9,7 +9,7 @@ xcode-select --install
 sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply --source ~/dotfiles prateek
 ```
 
-The first run prompts for machine type (`personal`, `homelab`, `work`, or `ci`) and, on `work`, the Jamf policy ID; it also asks for administrator access when Homebrew/packages/defaults need it. Machine type drives package selection and behavior (install scripts, macOS defaults, secret-backed files, elevation) via `home/.chezmoidata/machines.toml` — `work` skips the personal apps (Tailscale, Arq, VoiceInk) and the Apple/iOS toolchain. The generated chezmoi config disables chezmoi's pager so sudo can read from the terminal during apply. If an older local config still pages output, rerun with `chezmoi --no-pager apply`.
+The first run prompts for machine type (`personal`, `homelab`, `work`, or `ci`) and, on `work`, the Jamf policy ID; it also asks for administrator access when Homebrew/packages/defaults need it. Machine type drives package selection and behavior (install scripts, macOS defaults, secret-backed files, elevation) via `home/.chezmoidata/machines.toml`. `work` gets the Mac desktop and developer stack without personal apps or Apple-development packages; `personal` gets Mac desktop, developer, Apple-development, and personal apps; `homelab` gets developer, Apple-development, and remote/admin apps without the full Mac desktop surface. The generated chezmoi config disables chezmoi's pager so sudo can read from the terminal during apply. If an older local config still pages output, rerun with `chezmoi --no-pager apply`.
 
 Personal and homelab machines install `xcodes`, but the Xcode download itself is opt-in because Apple may require Apple ID login:
 
@@ -19,7 +19,7 @@ DOTFILES_INSTALL_XCODE=true chezmoi apply
 
 Answers live in `~/.config/chezmoi/chezmoi.toml`.
 
-Use the minimal `ci` machine type for a faster, base-only install (`--promptChoice` keys on the prompt name):
+Use the minimal `ci` machine type for a faster, core-only install (`--promptChoice` keys on the prompt name):
 
 ```sh
 sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply --promptChoice 'machine_type=ci' --source ~/dotfiles prateek

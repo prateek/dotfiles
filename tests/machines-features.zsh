@@ -58,19 +58,19 @@ if not eval(expr, {"f": f}):
 
 # --- per-type composition matches the retired packages.machine_types ----------
 assert_json '{"machine_type":"ci"}' \
-  'f["groups"]==["base"] and f["run_install_scripts"] is True and f["apply_macos_defaults"] is True and f["secrets_enabled"] is False and f["private_overlay"] is False and f["elevation"]=="none" and f["machine_type"]=="ci"' \
+  'f["groups"]==["core"] and f["run_install_scripts"] is True and f["apply_macos_defaults"] is True and f["secrets_enabled"] is False and f["private_overlay"] is False and f["elevation"]=="none" and f["machine_type"]=="ci"' \
   "ci composition"
 
 assert_json '{"machine_type":"personal"}' \
-  'f["groups"]==["base","dev","dev-apple","personal-apps"] and f["run_install_scripts"] is True and f["apply_macos_defaults"] is True and f["secrets_enabled"] is False and f["elevation"]=="none" and f["private_overlay"] is False' \
+  'f["groups"]==["core","mac-desktop","developer-tools","apple-development","personal-apps"] and f["run_install_scripts"] is True and f["apply_macos_defaults"] is True and f["secrets_enabled"] is False and f["elevation"]=="none" and f["private_overlay"] is False' \
   "personal composition"
 
 assert_json '{"machine_type":"homelab"}' \
-  'f["groups"]==["base","dev","dev-apple","personal-apps"]' \
+  'f["groups"]==["core","developer-tools","apple-development","homelab-admin"]' \
   "homelab composition"
 
 assert_json '{"machine_type":"work"}' \
-  'f["groups"]==["base","dev"] and f["private_overlay"] is True and f["elevation"]=="jamf-self-service"' \
+  'f["groups"]==["core","mac-desktop","developer-tools","work-apps"] and f["private_overlay"] is True and f["elevation"]=="jamf-self-service"' \
   "work composition"
 
 # --- machine_type default: absent resolves to personal ------------------------
@@ -83,8 +83,8 @@ assert_json '{"machine_type":"work","machines_local":{"elevation":"none"}}' \
   'f["elevation"]=="none"' "machines_local overrides work elevation"
 
 # --- a list is replaced wholesale by the highest layer that sets it -----------
-assert_json '{"machine_type":"work","machines_local":{"groups":["base"]}}' \
-  'f["groups"]==["base"]' "machines_local replaces groups (no concat)"
+assert_json '{"machine_type":"work","machines_local":{"groups":["core"]}}' \
+  'f["groups"]==["core"]' "machines_local replaces groups (no concat)"
 
 # --- os layer composes for a matching .chezmoi.os (darwin on this host) -------
 assert_json '{"machine_type":"personal","machines":{"os":{"darwin":{"apply_macos_defaults":false}}}}' \

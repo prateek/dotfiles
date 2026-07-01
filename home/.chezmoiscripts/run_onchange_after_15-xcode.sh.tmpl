@@ -7,10 +7,10 @@
 {{- $f := includeTemplate "features.tmpl" . | fromJson -}}
 {{- if $f.run_install_scripts }}
 machine_type={{ $f.machine_type | quote }}
-has_apple={{ has "dev-apple" $f.groups | toString | quote }}
+has_apple_development={{ has "apple-development" $f.groups | toString | quote }}
 
-if [ "$has_apple" != "true" ]; then
-  log "Xcode install skipped for $machine_type machine type (no dev-apple group)."
+if [ "$has_apple_development" != "true" ]; then
+  log "Xcode install skipped for $machine_type machine type (no apple-development group)."
   exit 0
 fi
 
@@ -69,7 +69,7 @@ if [ "$have_xcode" = "1" ]; then
 else
   # Not present. xcodes needs an interactive Apple ID login to download, so install
   # only when interactive or explicitly forced; otherwise fail loudly rather than
-  # silently skip (a dev-apple machine is expected to end up with Xcode).
+  # silently skip (an apple-development machine is expected to end up with Xcode).
   force_xcode=0
   case "${DOTFILES_INSTALL_XCODE:-}" in true|1|yes|on) force_xcode=1 ;; esac
   if [ "$force_xcode" = "1" ] || { [ -t 0 ] && [ -t 1 ]; }; then
