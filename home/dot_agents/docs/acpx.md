@@ -23,11 +23,13 @@ Defined in `~/.acpx/config.json` (`agents` map). Each pins a model + reasoning
 tier and runs through `cursor-agent` as the ACP adapter. Reasoning tier is
 encoded in the model id itself.
 
-| Shortcut  | Model                              | Use for                         |
-| --------- | ---------------------------------- | ------------------------------- |
-| `agpt`    | `gpt-5.5-high`                     | Best general GPT, high reasoning |
-| `aopus`   | `claude-opus-4-8-thinking-max`     | Best Claude, max thinking, 1M ctx |
-| `agemini` | `gemini-3.1-pro`                   | Best Gemini                     |
+| Shortcut     | Model                                   | Use for                            |
+| ------------ | --------------------------------------- | ---------------------------------- |
+| `agpt`       | `gpt-5.5-high-fast`                      | Best general GPT, high reasoning   |
+| `agpt-extra` | `gpt-5.5-extra-high-fast`               | GPT for the hardest problems       |
+| `aopus`      | `claude-opus-4-8-thinking-xhigh-fast`   | Best Claude, xhigh thinking, 1M ctx |
+| `aopus-max`  | `claude-opus-4-8-thinking-max-fast`     | Claude at max thinking, 1M ctx     |
+| `agemini`    | `gemini-3.1-pro`                        | Best Gemini                        |
 
 Invoke by name; `acpx <name>` is enough — the model is baked into the config.
 
@@ -70,7 +72,7 @@ acpx config show
 
 - The model ids match `cursor-agent --list-models` (the catalog drifts; if a
   shortcut errors on an unknown model, refresh the id in `~/.acpx/config.json`).
-- `acpx config show` lists `agpt` / `aopus` / `agemini`.
+- `acpx config show` lists `agpt` / `agpt-extra` / `aopus` / `aopus-max` / `agemini`.
 - The shortcut actually ran on the pinned model (ask it; or check session
   metadata) — `cursor-agent` must honor `--model <id> acp`.
 - No write action was taken by the spawned agent without an appropriate
