@@ -1,16 +1,41 @@
 #!/bin/sh
-# Claude Code status line (statusLine.command in the managed settings
-# fragment points here). Self-contained renderer over the statusline JSON
-# payload on stdin. One line.
+# Claude Code status line, split into logical and physical halves.
 #
-# Subscription session (rate_limits present -> usage meters, no cost;
-# weekly appears only at >=80%):
-#   Fable 5 xhigh | dotfiles/claude-acpx | ⏱ 2h50m | ctx ██████░░░░ 58% 116k/200k | 5h ████░░░░░░ 42% (15m) | 7d 85% (3d)
-# API-billed session (no rate_limits -> session cost instead of meters):
-#   Fable 5 xhigh | dotfiles/claude-acpx | ⏱ 2h50m | $6.84 | ctx ██████░░░░ 58% 116k/200k
+# The pipeline:
+#
+#   payload JSON ──jq LOGIC──▶ logical JSON ──jq TO_SH──▶ vars ──shell──▶ ANSI line
+#
+# LOGIC is the whole brain: every decision (token-source selection, the
+# zero-percent fix, the billing switch, severity levels, humanized numbers,
+# relative times) happens there, producing a small self-describing document:
+#
+#   {
+#     "model":     {"name": "Fable 5", "effort": "xhigh"},
+#     "dir":       "dotfiles/claude-acpx",
+#     "duration":  "2h50m",
+#     "cost":      null,                          // "$6.84" only when API-billed
+#     "ctx":       {"pct": 58, "used": "116k", "size": "200k",
+#                   "level": "ok", "compactions": 2},
+#     "five_hour": {"pct": 42, "level": "ok", "reset": "15m"},
+#     "seven_day": null                           // {"pct", "reset"} at >= D7_SHOW
+#   }
+#
+# Absent segment -> null. "level" is ok|warn|crit; the renderer maps it to a
+# color but decides nothing. Run with --logical to print this document
+# instead of rendering — that is also the testing seam.
+#
+# The shell half only does I/O and paint: read stdin, count compactions in
+# the transcript (grep beats loading a multi-MB file into jq), then draw
+# bars, colors, and separators from the flattened vars.
 #
 # Payload reference: https://code.claude.com/docs/en/statusline
 set -u
+
+# Severity thresholds: warn/crit per meter; the weekly meter is hidden
+# entirely below D7_SHOW.
+CTX_WARN=80 CTX_CRIT=90
+H5_WARN=50 H5_CRIT=80
+D7_SHOW=80
 
 if ! command -v jq >/dev/null 2>&1; then
   cat >/dev/null
@@ -18,31 +43,154 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 0
 fi
 
-# Defaults keep set -u and shellcheck satisfied; jq failure exits before eval,
-# and an empty payload leaves these in place.
-model='?' effort='' dir='' dur_ms='' cost_c='' has_rl=''
-ctx_pct='' ctx_tok='' ctx_size='' h5_pct='' h5_reset='' d7_pct='' d7_reset=''
+payload=$(cat)
 
-# All numerics are normalized to integers (or "") here so the shell never
-# touches floats.
-vars=$(jq -r '
-  def int: if type == "number" then floor else "" end;
-  @sh "model=\(.model.display_name // .model.id // "?")",
-  @sh "effort=\(.effort.level // "")",
-  @sh "dir=\(.workspace.current_dir // .cwd // "")",
-  @sh "dur_ms=\(.cost.total_duration_ms // "" | int)",
-  @sh "cost_c=\(.cost.total_cost_usd // "" | if type == "number" then (. * 100 | round) else "" end)",
-  @sh "has_rl=\(if .rate_limits then 1 else "" end)",
-  @sh "ctx_pct=\(.context_window.used_percentage // "" | int)",
-  @sh "ctx_tok=\(.context_window.total_input_tokens // "" | int)",
-  @sh "ctx_size=\(.context_window.context_window_size // "" | int)",
-  @sh "h5_pct=\(.rate_limits.five_hour.used_percentage // "" | int)",
-  @sh "h5_reset=\(.rate_limits.five_hour.resets_at // "" | int)",
-  @sh "d7_pct=\(.rate_limits.seven_day.used_percentage // "" | int)",
-  @sh "d7_reset=\(.rate_limits.seven_day.resets_at // "" | int)"
-' 2>/dev/null) || { printf 'statusline: unreadable payload\n'; exit 0; }
+# Compactions this session. Mentions of the marker inside message content
+# don't false-match: their quotes are JSON-escaped in the transcript.
+transcript=$(printf '%s' "$payload" | jq -r '.transcript_path // empty' 2>/dev/null)
+compacts=0
+if [ -n "$transcript" ] && [ -r "$transcript" ]; then
+  compacts=$(grep -c '"subtype":"compact_boundary"' "$transcript" 2>/dev/null) || compacts=0
+fi
+
+# ---------------------------------------------------------------------------
+# LOGIC: payload -> logical document. Pure jq; the only outside inputs are
+# the thresholds and the compaction count.
+# ---------------------------------------------------------------------------
+# shellcheck disable=SC2016 # $vars below belong to jq, not the shell
+LOGIC='
+def level($warn; $crit): if . >= $crit then "crit" elif . >= $warn then "warn" else "ok" end;
+
+def human:
+  if . >= 1000000 then "\(. / 1000000 | floor)M"
+  elif . >= 1000 then "\(. / 1000 | floor)k"
+  else tostring end;
+
+# "3h10m" from seconds.
+def hm: "\(. / 3600 | floor)h\(. % 3600 / 60 | floor)m";
+
+# "2h50m" / "50m" from milliseconds.
+def duration:
+  (. / 1000 | floor)
+  | if . >= 3600 then hm else "\(. / 60 | floor)m" end;
+
+# Relative time until an epoch: "42m", "3h10m", or "3d". now is floored to
+# whole seconds to match integer date +%s arithmetic at minute boundaries.
+def until:
+  (. - (now | floor) | if . < 0 then 0 else . end)
+  | if . < 3600 then "\(. / 60 | floor)m"
+    elif . < 172800 then hm
+    else "\((. + 43200) / 86400 | floor)d" end;
+
+def int_or_null: if type == "number" then floor else null end;
+
+def fmt(f): if type == "number" then f else null end;
+
+(.context_window // {}) as $cw
+| ($cw.used_percentage | int_or_null // 0) as $rawpct
+| ($cw.context_window_size | int_or_null) as $size
+| ($cw.current_usage
+   | if type == "object"
+     then (.input_tokens // 0) + (.cache_creation_input_tokens // 0)
+          + (.cache_read_input_tokens // 0)
+     else 0 end) as $cusum
+| ($cw.total_input_tokens | int_or_null) as $total
+# current_usage is per-response and resets on compaction; total_input_tokens
+# was cumulative before Claude Code 2.1.132 and can exceed the window, so it
+# is only trusted when it fits.
+| (if $cusum > 0 then $cusum
+   elif $total == null then null
+   elif $size == null or $total <= $size then $total
+   elif $rawpct > 0 and $rawpct <= 100 then ($rawpct * $size / 100 | floor)
+   else null end) as $tokens
+# A fresh session can report used_percentage 0 while real tokens are already
+# loaded; an all-zero segment is noise (pct 0 -> ctx: null below).
+| (if $rawpct > 0 then $rawpct
+   elif $tokens != null and $tokens > 0 and ($size // 0) > 0
+   then ($tokens * 100 / $size | floor)
+   else 0 end) as $pct
+| ((.cost.total_cost_usd // 0) * 100 | round) as $cents
+| {
+    model: {
+      name: (.model.display_name // .model.id // "?"),
+      effort: (.effort.level // null)
+    },
+    dir: ((.workspace.current_dir // .cwd // null)
+      | if . == null then null
+        else (split("/") | if length >= 2 then "\(.[-2])/\(.[-1])" else .[0] end) end),
+    duration: (.cost.total_duration_ms | fmt(duration)),
+    # Billing switch: subscription sessions carry rate_limits and get the
+    # usage meters; only API-billed sessions show the session cost.
+    cost: (if .rate_limits == null and $cents > 0
+           then "$\($cents / 100 | floor).\($cents % 100 | if . < 10 then "0\(.)" else tostring end)"
+           else null end),
+    ctx: (if $pct <= 0 then null else {
+      pct: $pct,
+      used: ($tokens | fmt(human)),
+      size: ($size | fmt(human)),
+      level: ($pct | level($ctx_warn; $ctx_crit)),
+      compactions: (if $compactions > 0 then $compactions else null end)
+    } end),
+    five_hour: (.rate_limits.five_hour as $w
+      | ($w.used_percentage | int_or_null) as $p
+      | if $p != null then {
+          pct: $p,
+          level: ($p | level($h5_warn; $h5_crit)),
+          reset: ($w.resets_at | fmt(until))
+        } else null end),
+    seven_day: (.rate_limits.seven_day as $w
+      | ($w.used_percentage | int_or_null) as $p
+      | if $p != null and $p >= $d7_show then {
+          pct: $p,
+          reset: ($w.resets_at | fmt(until))
+        } else null end)
+  }
+'
+
+# TO_SH: logical document -> shell assignments. Mechanical; no decisions.
+TO_SH='
+  @sh "model=\(.model.name)",
+  @sh "effort=\(.model.effort // "")",
+  @sh "dir=\(.dir // "")",
+  @sh "duration=\(.duration // "")",
+  @sh "cost=\(.cost // "")",
+  @sh "ctx_pct=\(.ctx.pct // "")",
+  @sh "ctx_used=\(.ctx.used // "")",
+  @sh "ctx_size=\(.ctx.size // "")",
+  @sh "ctx_level=\(.ctx.level // "")",
+  @sh "ctx_compacts=\(.ctx.compactions // "")",
+  @sh "h5_pct=\(.five_hour.pct // "")",
+  @sh "h5_level=\(.five_hour.level // "")",
+  @sh "h5_reset=\(.five_hour.reset // "")",
+  @sh "d7_pct=\(.seven_day.pct // "")",
+  @sh "d7_reset=\(.seven_day.reset // "")"
+'
+
+run_logic() {
+  printf '%s' "$payload" | jq \
+    --argjson ctx_warn "$CTX_WARN" --argjson ctx_crit "$CTX_CRIT" \
+    --argjson h5_warn "$H5_WARN" --argjson h5_crit "$H5_CRIT" \
+    --argjson d7_show "$D7_SHOW" --argjson compactions "$compacts" \
+    "$@"
+}
+
+if [ "${1:-}" = "--logical" ]; then
+  run_logic "$LOGIC" 2>/dev/null || printf 'statusline: unreadable payload\n'
+  exit 0
+fi
+
+# Defaults keep set -u and shellcheck satisfied; jq failure exits before eval.
+model='' effort='' dir='' duration='' cost=''
+ctx_pct='' ctx_used='' ctx_size='' ctx_level='' ctx_compacts=''
+h5_pct='' h5_level='' h5_reset='' d7_pct='' d7_reset=''
+
+vars=$(run_logic -r "$LOGIC | $TO_SH" 2>/dev/null) \
+  || { printf 'statusline: unreadable payload\n'; exit 0; }
 eval "$vars"
 
+# ---------------------------------------------------------------------------
+# Renderer: paint the flattened logical vars. Empty var -> segment hidden.
+# ---------------------------------------------------------------------------
 esc=$(printf '\033')
 rst="${esc}[0m"
 dim="${esc}[2m"
@@ -52,16 +200,12 @@ ylw="${esc}[33m"
 blu="${esc}[34m"
 mag="${esc}[35m"
 
-# Green below $2 percent, yellow from $2, red from $3.
-pct_color() {
-  p=$1
-  if [ "$p" -ge "$3" ]; then
-    printf '%s' "$red"
-  elif [ "$p" -ge "$2" ]; then
-    printf '%s' "$ylw"
-  else
-    printf '%s' "$grn"
-  fi
+level_color() {
+  case "$1" in
+    crit) printf '%s' "$red" ;;
+    warn) printf '%s' "$ylw" ;;
+    *) printf '%s' "$grn" ;;
+  esac
 }
 
 # 10-cell bar, rounded to the nearest cell.
@@ -75,42 +219,6 @@ bar() {
   done
 }
 
-human_tokens() {
-  if [ "$1" -ge 1000000 ]; then
-    printf '%sM' "$(( $1 / 1000000 ))"
-  elif [ "$1" -ge 1000 ]; then
-    printf '%sk' "$(( $1 / 1000 ))"
-  else
-    printf '%s' "$1"
-  fi
-}
-
-# "2h50m" / "50m" from milliseconds.
-duration() {
-  s=$(( $1 / 1000 ))
-  h=$(( s / 3600 ))
-  m=$(( (s % 3600) / 60 ))
-  if [ "$h" -gt 0 ]; then printf '%sh%sm' "$h" "$m"; else printf '%sm' "$m"; fi
-}
-
-# Relative time until an epoch: "42m", "3h10m", or "3d".
-until_epoch() {
-  diff=$(( $1 - now ))
-  [ "$diff" -lt 0 ] && diff=0
-  if [ "$diff" -lt 3600 ]; then
-    printf '%sm' "$(( diff / 60 ))"
-  elif [ "$diff" -lt 172800 ]; then
-    printf '%sh%sm' "$(( diff / 3600 ))" "$(( (diff % 3600) / 60 ))"
-  else
-    printf '%sd' "$(( (diff + 43200) / 86400 ))"
-  fi
-}
-
-is_num() {
-  case "$1" in '' | *[!0-9]*) return 1 ;; *) return 0 ;; esac
-}
-
-now=$(date +%s)
 sep=" ${dim}|${rst} "
 line=""
 add() {
@@ -122,44 +230,28 @@ seg="$model"
 [ -n "$effort" ] && seg="${seg} ${mag}${effort}${rst}"
 add "$seg"
 
-if [ -n "$dir" ]; then
-  case "$dir" in
-    */*) short="${dir%/*}"; short="${short##*/}/${dir##*/}" ;;
-    *) short=$dir ;;
-  esac
-  add "${blu}${short}${rst}"
-fi
+[ -n "$dir" ] && add "${blu}${dir}${rst}"
+[ -n "$duration" ] && add "${dim}⏱ ${duration}${rst}"
+[ -n "$cost" ] && add "${ylw}${cost}${rst}"
 
-is_num "$dur_ms" && add "${dim}⏱ $(duration "$dur_ms")${rst}"
-
-# Billing switch: subscription sessions carry rate_limits and get the usage
-# meters; API-billed sessions get the session cost instead. Cost arrives as
-# integer cents from jq: float printf misparses under comma-decimal locales.
-# The -gt 0 also hides the bogus $0.00 a subscription session reports before
-# its first API response populates rate_limits.
-if [ -z "$has_rl" ] && is_num "$cost_c" && [ "$cost_c" -gt 0 ]; then
-  add "${ylw}$(printf '$%d.%02d' "$(( cost_c / 100 ))" "$(( cost_c % 100 ))")${rst}"
-fi
-
-if is_num "$ctx_pct"; then
-  c=$(pct_color "$ctx_pct" 80 90)
+if [ -n "$ctx_pct" ]; then
+  c=$(level_color "$ctx_level")
   seg="${dim}ctx${rst} ${c}$(bar "$ctx_pct") ${ctx_pct}%${rst}"
-  if is_num "$ctx_tok" && is_num "$ctx_size"; then
-    seg="${seg} ${dim}$(human_tokens "$ctx_tok")/$(human_tokens "$ctx_size")${rst}"
-  fi
+  [ -n "$ctx_used" ] && [ -n "$ctx_size" ] && seg="${seg} ${dim}${ctx_used}/${ctx_size}${rst}"
+  [ -n "$ctx_compacts" ] && seg="${seg} ${dim}(✂${ctx_compacts})${rst}"
   add "$seg"
 fi
 
-if is_num "$h5_pct"; then
-  c=$(pct_color "$h5_pct" 50 80)
+if [ -n "$h5_pct" ]; then
+  c=$(level_color "$h5_level")
   seg="${dim}5h${rst} ${c}$(bar "$h5_pct") ${h5_pct}%${rst}"
-  is_num "$h5_reset" && seg="${seg} ${dim}($(until_epoch "$h5_reset"))${rst}"
+  [ -n "$h5_reset" ] && seg="${seg} ${dim}(${h5_reset})${rst}"
   add "$seg"
 fi
 
-if is_num "$d7_pct" && [ "$d7_pct" -ge 80 ]; then
+if [ -n "$d7_pct" ]; then
   seg="${red}7d ${d7_pct}%${rst}"
-  is_num "$d7_reset" && seg="${seg} ${dim}($(until_epoch "$d7_reset"))${rst}"
+  [ -n "$d7_reset" ] && seg="${seg} ${dim}(${d7_reset})${rst}"
   add "$seg"
 fi
 

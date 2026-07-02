@@ -50,6 +50,44 @@ for absent in "5h" "7d"; do
   [[ "$out" != *"$absent "* ]] || die "unexpected '$absent' in API render: $out"
 done
 
+# Pre-2.1.132 payloads report total_input_tokens as a cumulative session
+# total. current_usage wins when present; otherwise the count is derived
+# from used_percentage instead of showing an over-window number.
+cumulative=$(printf '%s' "$base" | jq -c '.context_window.total_input_tokens = 800000
+  | .context_window.current_usage = {input_tokens: 100000, cache_creation_input_tokens: 6000, cache_read_input_tokens: 10000}')
+out=$(printf '%s' "$cumulative" | sh "$script" | strip_ansi)
+[[ "$out" == *"58% 116k/200k"* ]] || die "current_usage not preferred: $out"
+cumulative=$(printf '%s' "$base" | jq -c '.context_window.total_input_tokens = 800000')
+out=$(printf '%s' "$cumulative" | sh "$script" | strip_ansi)
+[[ "$out" == *"58% 116k/200k"* ]] || die "cumulative tokens not derived from pct: $out"
+[[ "$out" != *"800k"* ]] || die "over-window token count leaked: $out"
+
+# used_percentage 0 with real tokens loaded recomputes the percentage;
+# 0 with no tokens hides the segment.
+zeroed=$(printf '%s' "$base" | jq -c '.context_window = {used_percentage: 0,
+  total_input_tokens: 20000, context_window_size: 200000}')
+out=$(printf '%s' "$zeroed" | sh "$script" | strip_ansi)
+[[ "$out" == *"ctx █░░░░░░░░░ 10% 20k/200k"* ]] || die "zero pct not recomputed: $out"
+empty=$(printf '%s' "$base" | jq -c '.context_window = {used_percentage: 0,
+  total_input_tokens: 0, context_window_size: 200000}')
+out=$(printf '%s' "$empty" | sh "$script" | strip_ansi)
+[[ "$out" != *"ctx"* ]] || die "empty context segment not hidden: $out"
+
+# Compaction count comes from transcript compact_boundary entries; the same
+# string inside message content is JSON-escaped and must not count.
+transcript=$(mktemp)
+trap 'rm -f "$transcript"' EXIT
+{
+  print -r -- '{"type":"system","subtype":"compact_boundary","compactMetadata":{"trigger":"auto"}}'
+  print -r -- '{"type":"user","message":{"content":"discussing \"subtype\":\"compact_boundary\" markers"}}'
+  print -r -- '{"type":"system","subtype":"compact_boundary","compactMetadata":{"trigger":"manual"}}'
+} > "$transcript"
+compacted=$(printf '%s' "$base" | jq -c --arg t "$transcript" '.transcript_path = $t')
+out=$(printf '%s' "$compacted" | sh "$script" | strip_ansi)
+[[ "$out" == *"116k/200k (✂2)"* ]] || die "missing compaction count: $out"
+out=$(printf '%s' "$base" | sh "$script" | strip_ansi)
+[[ "$out" != *"✂"* ]] || die "compaction marker without transcript: $out"
+
 # Minimal payload renders one line and exits cleanly.
 minimal='{"model": {"display_name": "Fable 5"}, "workspace": {"current_dir": "/tmp"}}'
 out=$(printf '%s' "$minimal" | sh "$script" | strip_ansi)
@@ -64,6 +102,17 @@ fi
 # Malformed stdin must not crash or hang.
 out=$(printf 'not json' | sh "$script")
 [[ "$out" == "statusline: unreadable payload" ]] || die "unexpected garbage render: $out"
+out=$(printf 'not json' | sh "$script" --logical)
+[[ "$out" == "statusline: unreadable payload" ]] || die "unexpected garbage logical: $out"
+
+# --logical is the testing seam: the computed document as JSON, no ANSI.
+logical=$(printf '%s' "$sub" | sh "$script" --logical)
+for probe in '.model.name == "Fable 5"' '.model.effort == "xhigh"' \
+  '.ctx.pct == 58' '.ctx.used == "116k"' '.ctx.level == "ok"' \
+  '.cost == null' '.five_hour.pct == 42' '.seven_day == null'; do
+  printf '%s' "$logical" | jq -e "$probe" >/dev/null \
+    || die "logical probe failed: $probe in: $logical"
+done
 
 # The managed settings fragment points at the applied script path.
 command=$(chezmoi --source "$REPO_ROOT/home" execute-template \
