@@ -16,6 +16,14 @@
       "command": "cursor-agent",
       "args": ["--model", "claude-opus-4-8-thinking-max-fast", "acp"]
     },
+    "afable": {
+      "command": "env",
+      "args": ["ANTHROPIC_MODEL=fable", "CLAUDE_CODE_EFFORT_LEVEL=xhigh", "claude-agent-acp"]
+    },
+    "afable-max": {
+      "command": "env",
+      "args": ["ANTHROPIC_MODEL=fable", "CLAUDE_CODE_EFFORT_LEVEL=max", "claude-agent-acp"]
+    },
     "agemini": {
       "command": "cursor-agent",
       "args": ["--model", "gemini-3.1-pro", "acp"]

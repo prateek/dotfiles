@@ -63,6 +63,7 @@ make test-chezmoi-script-status
 make test-chezmoi-drift-banner
 make test-codex-config
 make test-claude-settings
+make test-claude-statusline
 make test-orca-settings
 make test-agent-skill-packages
 make test-agent-skill-packages-native

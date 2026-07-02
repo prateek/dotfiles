@@ -20,8 +20,11 @@ they are not a way to switch your own model.
 ## Model shortcuts
 
 Defined in `~/.acpx/config.json` (`agents` map). Each pins a model + reasoning
-tier and runs through `cursor-agent` as the ACP adapter. Reasoning tier is
-encoded in the model id itself.
+tier. The `agpt*`/`aopus*`/`agemini` shortcuts run through `cursor-agent` as
+the ACP adapter, with the reasoning tier encoded in the model id itself. The
+`afable*` shortcuts run Claude Code through `claude-agent-acp`, with the model
+and effort pinned via `ANTHROPIC_MODEL` and `CLAUDE_CODE_EFFORT_LEVEL` env
+vars in the entry (the adapter takes no model/effort CLI args).
 
 | Shortcut     | Model                                   | Use for                            |
 | ------------ | --------------------------------------- | ---------------------------------- |
@@ -29,6 +32,8 @@ encoded in the model id itself.
 | `agpt-extra` | `gpt-5.5-extra-high-fast`               | GPT for the hardest problems       |
 | `aopus`      | `claude-opus-4-8-thinking-xhigh-fast`   | Best Claude, xhigh thinking, 1M ctx |
 | `aopus-max`  | `claude-opus-4-8-thinking-max-fast`     | Claude at max thinking, 1M ctx     |
+| `afable`     | `fable` at `xhigh` effort               | Claude Code on Fable, xhigh effort |
+| `afable-max` | `fable` at `max` effort                 | Claude Code on Fable, max effort   |
 | `agemini`    | `gemini-3.1-pro`                        | Best Gemini                        |
 
 Invoke by name; `acpx <name>` is enough — the model is baked into the config.
@@ -63,17 +68,25 @@ acpx config show
 ## Prerequisites
 
 - `acpx` CLI: installed via mise (`npm:acpx`).
-- `cursor-agent` on PATH: backs every shortcut. Installed via its own installer
-  (`~/.local/bin/cursor-agent`), not mise-managed. `cursor-agent login` once.
+- `cursor-agent` on PATH: backs the `agpt*`/`aopus*`/`agemini` shortcuts.
+  Installed via its own installer (`~/.local/bin/cursor-agent`), not
+  mise-managed. `cursor-agent login` once.
+- `claude-agent-acp` on PATH: backs the `afable*` shortcuts. Installed via
+  mise (`npm:@agentclientprotocol/claude-agent-acp`). Uses the `claude` CLI's
+  own auth; log in with `claude` once.
 - State lives under `~/.acpx/` (sessions, queues, flows). acpx has no XDG /
   relocation env var, so this path is fixed.
 
 ## Validation checklist
 
-- The model ids match `cursor-agent --list-models` (the catalog drifts; if a
-  shortcut errors on an unknown model, refresh the id in `~/.acpx/config.json`).
-- `acpx config show` lists `agpt` / `agpt-extra` / `aopus` / `aopus-max` / `agemini`.
+- The `cursor-agent` model ids match `cursor-agent --list-models` (the catalog
+  drifts; if a shortcut errors on an unknown model, refresh the id in
+  `~/.acpx/config.json`). The `afable*` entries use the `fable` alias, which
+  tracks the latest Fable release on its own.
+- `acpx config show` lists `agpt` / `agpt-extra` / `aopus` / `aopus-max` /
+  `afable` / `afable-max` / `agemini`.
 - The shortcut actually ran on the pinned model (ask it; or check session
-  metadata) — `cursor-agent` must honor `--model <id> acp`.
+  metadata) — `cursor-agent` must honor `--model <id> acp`, and the `afable*`
+  entries need `claude-agent-acp` on PATH.
 - No write action was taken by the spawned agent without an appropriate
   permission mode.

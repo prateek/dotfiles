@@ -8,17 +8,27 @@
 Desired wins on conflicts; unrelated keys pass through untouched. Malformed
 input propagates from `json.loads` to chezmoi. See SKILL.md and ADR 0007 for
 the override model and the stale-key trade-off.
+
+Two desired fragments: the generated plugin-marketplace fragment and the
+hand-maintained managed settings (claude-settings-managed.json.tmpl). The
+managed fragment merges last and wins where the two overlap.
 """
 import base64
 import json
 import sys
 
-desired = json.loads(
+plugins = json.loads(
     base64.b64decode(
         "{{ includeTemplate "agent-claude-plugin-settings.json.tmpl" . | b64enc }}"
     ).decode()
 )
-desired.pop("_generated", None)  # template-file marker, not a settings value
+plugins.pop("_generated", None)  # template-file marker, not a settings value
+
+managed = json.loads(
+    base64.b64decode(
+        "{{ includeTemplate "claude-settings-managed.json.tmpl" . | b64enc }}"
+    ).decode()
+)
 
 
 def deep_merge(base, overlay):
@@ -51,7 +61,8 @@ def semantic_equal(left: str, right: str) -> bool:
 
 current_text = sys.stdin.read()
 current = load_current(current_text)
-deep_merge(current, desired)
+deep_merge(current, plugins)
+deep_merge(current, managed)
 
 merged_text = json.dumps(current, indent=2) + "\n"
 sys.stdout.write(current_text if semantic_equal(current_text, merged_text) else merged_text)

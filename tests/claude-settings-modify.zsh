@@ -10,12 +10,14 @@ current="$tmp_root/current.json"
 merged="$tmp_root/merged.json"
 semantic_merged="$tmp_root/semantic-merged.json"
 template="$tmp_root/template.json"
+managed_template="$tmp_root/managed-template.json"
 
-chezmoi \
-  --source "$REPO_ROOT/home" \
-  execute-template \
-  --file "$REPO_ROOT/home/.chezmoitemplates/agent-claude-plugin-settings.json.tmpl" \
-  >"$template"
+render() {
+  chezmoi --source "$REPO_ROOT/home" execute-template --file "$1"
+}
+
+render "$REPO_ROOT/home/.chezmoitemplates/agent-claude-plugin-settings.json.tmpl" >"$template"
+render "$REPO_ROOT/home/.chezmoitemplates/claude-settings-managed.json.tmpl" >"$managed_template"
 
 python3 - "$template" <<'PY'
 import json
@@ -28,11 +30,7 @@ assert data["_generated"].startswith(
 )
 PY
 
-chezmoi \
-  --source "$REPO_ROOT/home" \
-  execute-template \
-  --file "$REPO_ROOT/home/dot_claude/modify_private_settings.json.tmpl" \
-  >"$script"
+render "$REPO_ROOT/home/dot_claude/modify_private_settings.json.tmpl" >"$script"
 chmod +x "$script"
 
 cat >"$current" <<'JSON'
@@ -71,15 +69,18 @@ JSON
 
 "$script" <"$current" >"$merged"
 
-python3 - "$merged" <<'PY'
+python3 - "$merged" "$managed_template" <<'PY'
 import json
 import sys
 
 data = json.load(open(sys.argv[1]))
+managed = json.load(open(sys.argv[2]))
 
 assert "_generated" not in data
 assert data["permissions"]["allow"] == ["Bash(gh auth *)"]
-assert data["statusLine"]["command"] == "printf status"
+# Managed settings win over user edits (statusLine is chezmoi-owned).
+# claude-statusline.zsh owns the fragment's exact command path.
+assert data["statusLine"] == managed["statusLine"]
 assert data["extraKnownMarketplaces"]["other-market"]["source"]["repo"] == "example/plugins"
 local = data["extraKnownMarketplaces"]["prateek-local"]["source"]
 assert local["source"] == "directory"

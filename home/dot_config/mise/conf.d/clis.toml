@@ -30,6 +30,7 @@
 # convention docs in ~/.agents/docs/. Inline comment names the consumer
 # when the package name doesn't make it obvious.
 "go:github.com/tomasz-tomczyk/crit" = "latest"            # crit, crit-cli (review pkg)
+"npm:@agentclientprotocol/claude-agent-acp" = "latest"     # claude-agent-acp; ACP adapter for acpx afable shortcuts. see ~/.agents/docs/acpx.md
 "npm:@pleaseai/ask" = "latest"                             # ask skill (utils-agent); see [env] below
 "npm:@shortcut-cli/shortcut-cli" = "latest"                # shortcut skill; binary is `short`
 "npm:@steipete/bird" = "latest"                            # twitter; see ~/.agents/docs/twitter.md

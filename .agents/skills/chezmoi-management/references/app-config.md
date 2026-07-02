@@ -131,21 +131,22 @@ From the capture, hand-author the desired-state fragment under `home/.chezmoitem
 
 ## The `modify_` Pattern Extends Beyond Plists
 
-The `modify_` mechanism works for any config where chezmoi owns some keys and the app/user owns others — it's not plist-only. Real example in the repo:
+The `modify_` mechanism works for any config where chezmoi owns some keys and the app/user owns others — it's not plist-only. Real examples in the repo:
 
 - `home/dot_codex/modify_private_config.toml.tmpl` — TOML modify_ stub.
 - `home/.chezmoitemplates/codex-config-managed.toml.tmpl` — fragment of chezmoi-owned defaults.
+- `home/dot_claude/modify_private_settings.json.tmpl` — JSON modify_ stub merging two fragments (generated plugin fragment + hand-maintained `claude-settings-managed.json.tmpl`; the managed fragment merges last and wins).
 
-**Important: TOML modify_ stubs do NOT use the plist bash-shim pattern.** They are standalone Python scripts (`#!/usr/bin/env -S uv run --quiet --script` with their own PEP 723 metadata and imports) that:
+**Important: non-plist modify_ stubs (TOML, JSON) do NOT use the plist bash-shim pattern.** They are standalone Python scripts (`#!/usr/bin/env -S uv run --quiet --script` with their own PEP 723 metadata and imports) that:
 
 1. Pull the chezmoi-owned fragment via `desired_text = base64.b64decode("{{ includeTemplate "codex-config-managed.toml.tmpl" . | b64enc }}").decode()` — only the fragment line uses `includeTemplate`.
 2. Read stdin (current `~/.codex/config.toml`).
 3. Implement their own merge logic — typically a `managed_tables` allowlist plus per-key/per-table overlay that preserves any unmanaged sections (for Codex: trust, hook approval, NUX, marketplace state).
 4. Write the merged TOML to stdout.
 
-Use the `chezmoi-delete`-style directive only inside plist fragments; for TOML the merge logic is inlined in the stub script itself.
+Use the `chezmoi-delete`-style directive only inside plist fragments; for TOML/JSON the merge logic is inlined in the stub script itself.
 
-When you need a similar pattern for a new format (YAML, JSON, INI, etc.), copy the standalone-Python-script shape from the Codex stub. (The plist case is special: 11 stubs share the same merge logic, so they delegate to a single `scripts/macos/plist-merge` tool via a bash shim. For one-off formats, an inline modify_ script keeps things simpler.)
+When you need a similar pattern for a new format (YAML, INI, etc.), copy the standalone-Python-script shape from the Codex (TOML) or Claude (JSON) stub. (The plist case is special: 11 stubs share the same merge logic, so they delegate to a single `scripts/macos/plist-merge` tool via a bash shim. For one-off formats, an inline modify_ script keeps things simpler.)
 
 ## Retired Mechanisms (Do Not Reintroduce)
 
@@ -161,12 +162,13 @@ Chrome extension settings are NOT snapshotted from user profiles. Use Chrome Syn
 ```text
 make test-plist-hooks                                                # plist modify_ stubs round-trip
 make test-codex-config                                               # non-plist modify_ pattern (Codex TOML)
+make test-claude-settings                                            # non-plist modify_ pattern (Claude JSON)
 make test-macos-defaults-script                                      # 30-macos-defaults side-effect guards
 chezmoi diff <target>
 chezmoi execute-template < home/.chezmoitemplates/com.<vendor>.<app>.plist.tmpl
 ```
 
-The `execute-template` smoke catches template syntax errors before `chezmoi apply` runs the merge. Use `test-codex-config` when you touch the codex-config-managed template; use `test-macos-defaults-script` when you touch `home/.chezmoitemplates/macos-defaults.sh.tmpl`.
+The `execute-template` smoke catches template syntax errors before `chezmoi apply` runs the merge. Use `test-codex-config` when you touch the codex-config-managed template; use `test-claude-settings` when you touch claude-settings-managed or the Claude modify_ stub; use `test-macos-defaults-script` when you touch `home/.chezmoitemplates/macos-defaults.sh.tmpl`.
 
 ## Common Pitfalls
 
