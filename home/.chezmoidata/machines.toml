@@ -32,17 +32,18 @@ groups = ["core"]
 
 # Personal daily-driver Mac.
 [machines.type.personal]
-groups = ["core", "mac-desktop", "developer-tools", "apple-development", "personal-apps"]
+groups = ["core", "mac-desktop", "ai-agent-apps", "developer-tools", "apple-development", "personal-apps"]
 
-# Homelab Mac mini: development plus Apple tooling and remote/admin access,
-# without the full interactive personal desktop surface.
+# Homelab Mac mini: development plus Apple tooling, remote/admin access, and
+# AI agent apps (agentsview + Orca need each other to be useful), without the
+# full interactive personal desktop surface.
 [machines.type.homelab]
-groups = ["core", "developer-tools", "apple-development", "homelab-admin"]
+groups = ["core", "ai-agent-apps", "developer-tools", "apple-development", "homelab-admin"]
 
 # Managed work Mac: no personal apps, no Apple/iOS toolchain; Jamf elevation and
 # the private config overlay.
 [machines.type.work]
-groups = ["core", "mac-desktop", "developer-tools", "work-apps"]
+groups = ["core", "mac-desktop", "ai-agent-apps", "developer-tools", "work-apps"]
 private_overlay = true
 elevation = "jamf-self-service"
 

@@ -163,8 +163,11 @@ expect_unmanaged "Library/Preferences/com.prakashjoshipax.VoiceInk.plist" "$work
 expect_ignored "Library/Preferences/io.tailscale.ipn.macsys.plist" "$work_ignored"
 expect_ignored "Library/Preferences/com.prakashjoshipax.VoiceInk.plist" "$work_ignored"
 
-# --- homelab: dev + Apple + remote/admin apps, no Mac desktop/personal apps ---
+# --- homelab: dev + Apple + remote/admin + AI agent apps, no Mac desktop/personal apps ---
 expect_managed "Library/Preferences/io.tailscale.ipn.macsys.plist" "$homelab_managed"
+expect_managed "Library/Preferences/com.cmuxterm.app.plist" "$homelab_managed"
+expect_managed "Library/Application Support/orca/orca-data.json" "$homelab_managed"
+expect_managed ".orca/keybindings.json" "$homelab_managed"
 expect_unmanaged ".config/ghostty" "$homelab_managed"
 expect_unmanaged ".hammerspoon" "$homelab_managed"
 expect_unmanaged "Library/Preferences/com.hegenberg.BetterTouchTool.plist" "$homelab_managed"
@@ -174,9 +177,6 @@ expect_unmanaged "Library/Preferences/pro.betterdisplay.BetterDisplay.plist" "$h
 expect_unmanaged ".config/zed" "$homelab_managed"
 expect_unmanaged "Library/Colors/nvALT.clr" "$homelab_managed"
 expect_unmanaged "Library/Preferences/com.jordanbaird.Ice.plist" "$homelab_managed"
-expect_unmanaged "Library/Preferences/com.cmuxterm.app.plist" "$homelab_managed"
-expect_unmanaged "Library/Application Support/orca/orca-data.json" "$homelab_managed"
-expect_unmanaged ".orca/keybindings.json" "$homelab_managed"
 expect_unmanaged "Library/Preferences/com.prakashjoshipax.VoiceInk.plist" "$homelab_managed"
 expect_ignored ".config/ghostty" "$homelab_ignored"
 expect_ignored "Library/Preferences/com.setapp.DesktopClient.plist" "$homelab_ignored"

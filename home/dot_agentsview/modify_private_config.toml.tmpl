@@ -1,0 +1,42 @@
+#!/usr/bin/env -S uv run --quiet --script
+# /// script
+# requires-python = ">=3.14"
+# dependencies = ["tomlkit>=0.13"]
+# ///
+"""Set codex_sessions_dirs in ~/.agentsview/config.toml.
+
+Orca launches Codex with its own CODEX_HOME under its runtime-home dir
+instead of ~/.codex (see home/dot_agents/docs/agentsview.md), so
+agentsview's default Codex scan misses those sessions. Setting
+codex_sessions_dirs replaces agentsview's defaults rather than extending
+them, so the stock paths are listed alongside both Orca builds' paths.
+
+Only this one key is touched; every other key (auth_token, cursor_secret,
+and anything else agentsview or the user has written) round-trips
+untouched, preserved verbatim by tomlkit.
+"""
+import sys
+
+import tomlkit
+
+DESIRED_DIRS = [
+    "{{ .chezmoi.homeDir }}/.codex/sessions",
+    "{{ .chezmoi.homeDir }}/.codex/archived_sessions",
+    "{{ .chezmoi.homeDir }}/Library/Application Support/orca/codex-runtime-home/home/sessions",
+    "{{ .chezmoi.homeDir }}/Library/Application Support/orca-dev/codex-runtime-home/home/sessions",
+]
+
+
+def semantic_equal(left: str, right: str) -> bool:
+    try:
+        return tomlkit.loads(left).unwrap() == tomlkit.loads(right).unwrap()
+    except Exception:
+        return False
+
+
+current_text = sys.stdin.read()
+doc = tomlkit.loads(current_text) if current_text.strip() else tomlkit.document()
+doc["codex_sessions_dirs"] = DESIRED_DIRS
+
+merged_text = tomlkit.dumps(doc)
+sys.stdout.write(current_text if semantic_equal(current_text, merged_text) else merged_text)

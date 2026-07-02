@@ -21,6 +21,48 @@ The store is read-only ground truth about past agent behavior. Treat it as evide
 - Treat the store as **read-only**. Never write to, mutate, or run `agentsview prune` against the live DB while debugging. Work on the `/tmp` copy.
 - Per-agent breakdowns come from joining `tool_calls` / `messages` to `sessions` on `session_id` and grouping by `sessions.agent`.
 
+## Orca-launched Codex sessions live outside ~/.codex
+
+Orca gives Codex processes it launches their own private `CODEX_HOME` at
+`<ORCA_USER_DATA_PATH>/codex-runtime-home/home` instead of the real `~/.codex`
+(`~/Library/Application Support/orca/codex-runtime-home/home` on macOS, or
+`orca-dev` for the dev build). This keeps Orca's own automation hooks out of
+your real Codex profile, but it also means agentsview's default Codex root
+(`~/.codex/sessions` + `~/.codex/archived_sessions`) silently misses every
+session Orca launched.
+
+The fix is `codex_sessions_dirs` in `~/.agentsview/config.toml`. Setting it
+**replaces** agentsview's built-in defaults rather than extending them, so the
+stock paths must be listed explicitly alongside the Orca one(s):
+
+```toml
+codex_sessions_dirs = [
+  "~/.codex/sessions",
+  "~/.codex/archived_sessions",
+  "~/Library/Application Support/orca/codex-runtime-home/home/sessions",
+  "~/Library/Application Support/orca-dev/codex-runtime-home/home/sessions",
+]
+```
+
+This repo keeps that key in sync via
+`home/dot_agentsview/modify_private_config.toml.tmpl`, a chezmoi `modify_`
+script (same pattern as `home/dot_codex/modify_private_config.toml.tmpl`)
+that sets only `codex_sessions_dirs` and never reads or reasons about any
+other key. Everything else in the file, including the `auth_token` and
+`cursor_secret` that agentsview generates itself, round-trips untouched,
+preserved verbatim by `tomlkit`.
+
+agentsview has no config-layering or include mechanism to keep those
+secrets in a separate file (checked the source at v0.35.2), and no env var
+that can express more than one Codex directory (`CODEX_SESSIONS_DIR` sets
+exactly one path, and env always wins over the config-file array wholesale
+rather than merging) — the config-file array plus a narrowly-scoped
+`modify_` script is the least-risk way to keep this durable.
+
+After the config changes, an already-running daemon needs a restart to pick
+it up: `agentsview serve --background --replace`. `agentsview sync` alone
+just re-syncs against the daemon's stale in-memory config.
+
 ## Workflow
 
 ### 1) Copy the live DB before any SQLite query

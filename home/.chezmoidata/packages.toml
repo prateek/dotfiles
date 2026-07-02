@@ -40,8 +40,6 @@ taps = [
   { name = "yqrashawn/goku" },
   { name = "nikitabobko/tap" },
   { name = "fluffypony/yojam" },
-  { name = "manaflow-ai/cmux" },
-  { name = "stablyai/orca" },
 ]
 brews = [
   # Keyboard and display control.
@@ -71,13 +69,6 @@ casks = [
   { name = "font-jetbrains-mono-nerd-font" },
   { name = "font-meslo-for-powerline" },
 
-  # AI and agent apps.
-  { name = "codex" },
-  { name = "claude" },
-  { name = "agentsview" },
-  { name = "cmux" },
-  { name = "stablyai/orca/orca" },
-
   # Input, window, launcher, and browser-routing tools.
   { name = "bettertouchtool" },
   { name = "karabiner-elements" },
@@ -106,6 +97,21 @@ casks = [
 ]
 mas = [
   { name = "Okta Verify", id = 490179405 },
+]
+
+# Applies to: personal, work, homelab.
+[packages.groups.ai-agent-apps]
+description = "AI coding agent CLIs, desktop apps, and the Orca orchestrator"
+taps = [
+  { name = "manaflow-ai/cmux" },
+  { name = "stablyai/orca" },
+]
+casks = [
+  { name = "codex" },
+  { name = "claude" },
+  { name = "agentsview" },
+  { name = "cmux" },
+  { name = "stablyai/orca/orca" },
 ]
 
 # Applies to: personal, homelab, work.

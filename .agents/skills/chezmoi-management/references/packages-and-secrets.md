@@ -69,11 +69,11 @@ casks = [ { name = "tailscale-app" } ]
 [machines.type.ci]
 groups = ["core"]
 [machines.type.personal]
-groups = ["core", "mac-desktop", "developer-tools", "apple-development", "personal-apps"]
+groups = ["core", "mac-desktop", "ai-agent-apps", "developer-tools", "apple-development", "personal-apps"]
 [machines.type.homelab]
-groups = ["core", "developer-tools", "apple-development", "homelab-admin"]
+groups = ["core", "ai-agent-apps", "developer-tools", "apple-development", "homelab-admin"]
 [machines.type.work]
-groups = ["core", "mac-desktop", "developer-tools", "work-apps"]
+groups = ["core", "mac-desktop", "ai-agent-apps", "developer-tools", "work-apps"]
 ```
 
 Machine type resolves from `[data].machine_type` (default `personal`), set by the `chezmoi init` prompt or `chezmoi init --promptChoice 'machine_type=<type>'`; there is no `DOTFILES_MACHINE_TYPE`. Interactive values: `personal`, `homelab`, `work`, `ci`. `ci` is the minimal tier for CI/Tart/audits and a first-class prompt choice. See `docs/adr/0010-machine-type-package-selection.md` and `docs/adr/0012-config-gating-convention.md`.
@@ -245,5 +245,5 @@ chezmoi apply
 - **Committing human-readable `op://` paths.** Strip down to obfuscated IDs before commit; put readable form in `~/.config/chezmoi/chezmoi.toml.local`.
 - **Writing license `op://` refs into `licenses.toml`.** That file holds target paths only. Refs go in `secrets.toml` under `[secrets.refs]` with matching key names.
 - **Putting refs at the top level of `secrets.toml`.** Templates read `.secrets.refs.<name>`. A top-level `github_token = "op://..."` will not be reachable.
-- **Putting a package in the wrong group in `packages.toml`.** `core` reaches every machine (including `ci`); `mac-desktop` reaches work/personal laptops only; `developer-tools` reaches work/personal/homelab; `apple-development` reaches personal/homelab; `work-apps`, `personal-apps`, and `homelab-admin` are role-specific. Choose the group by which machine types should get the package.
+- **Putting a package in the wrong group in `packages.toml`.** `core` reaches every machine (including `ci`); `mac-desktop` reaches work/personal laptops only; `ai-agent-apps` reaches work/personal/homelab; `developer-tools` reaches work/personal/homelab; `apple-development` reaches personal/homelab; `work-apps`, `personal-apps`, and `homelab-admin` are role-specific. Choose the group by which machine types should get the package.
 - **Adding a new env var without documenting it in the env var table above.** SKILL.md Repo-Specific Gotchas is reserved for high-stakes vars (per `meta-skill-maintenance.md`); promote there only when the rule is destructive or surprising on a fresh machine.

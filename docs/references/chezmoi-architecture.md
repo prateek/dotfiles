@@ -73,19 +73,20 @@ Scripts must be idempotent. A rerun should converge or report a clear blocker.
 ## Packages And Tools
 
 - Reusable package groups (`[packages.groups.*]`: `core`, `mac-desktop`,
-  `developer-tools`, `apple-development`, `work-apps`, `personal-apps`,
-  `homelab-admin`) live in
+  `ai-agent-apps`, `developer-tools`, `apple-development`, `work-apps`,
+  `personal-apps`, `homelab-admin`) live in
   `home/.chezmoidata/packages.toml`.
 - Selection is driven by a single axis, `machine_type`. Each type composes a set
   of groups via the layered `home/.chezmoidata/machines.toml` table
   (`[machines.type.*].groups`), resolved by `home/.chezmoitemplates/features.tmpl`:
   `ci=[core]`,
-  `work=[core,mac-desktop,developer-tools,work-apps]`,
-  `personal=[core,mac-desktop,developer-tools,apple-development,personal-apps]`,
-  and `homelab=[core,developer-tools,apple-development,homelab-admin]`.
-  Work omits personal apps and Apple/iOS tooling; homelab keeps Apple tooling
-  and remote/admin tools without the full interactive desktop surface. `ci` is
-  the minimal CI/Tart/audit tier and a first-class `machine_type` prompt choice.
+  `work=[core,mac-desktop,ai-agent-apps,developer-tools,work-apps]`,
+  `personal=[core,mac-desktop,ai-agent-apps,developer-tools,apple-development,personal-apps]`,
+  and `homelab=[core,ai-agent-apps,developer-tools,apple-development,homelab-admin]`.
+  Work omits personal apps and Apple/iOS tooling; homelab keeps Apple tooling,
+  remote/admin tools, and AI agent apps (agentsview + Orca) without the full
+  interactive desktop surface. `ci` is the minimal CI/Tart/audit tier and a
+  first-class `machine_type` prompt choice.
   See
   [ADR 0010](../adr/0010-machine-type-package-selection.md) and the config-gating
   convention in [ADR 0012](../adr/0012-config-gating-convention.md).
