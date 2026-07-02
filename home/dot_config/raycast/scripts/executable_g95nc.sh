@@ -41,6 +41,14 @@ export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 CLI="${BD_CLI:-betterdisplaycli}"
 MATCH="${G95_MATCH:-Odyssey}"           # nameLike match for the physical G95NC
 VS_NAME="${G95_VS_NAME:-G95-HiDPI}"     # virtual screen used by the sharp mode
+# Pinned EDID identity for the virtual screen (vendor is BetterDisplay's fixed
+# 2198). macOS derives the display UUID from vendor/model/serial, so a pinned
+# identity means every recreate yields the SAME display — and BetterDisplay
+# settings keyed to it survive teardown, notably "associate with display"
+# (auto connect/disconnect the virtual screen with the physical panel).
+# Set that association once in the BetterDisplay menu; it then persists.
+VS_SERIAL="${G95_VS_SERIAL:-90570057}"
+VS_MODEL="${G95_VS_MODEL:-9057}"
 
 disp()  { "$CLI" get --nameLike="$MATCH" "$@" 2>/dev/null; }
 setp()  { "$CLI" set --nameLike="$MATCH" "$@"; }
@@ -62,6 +70,11 @@ require_cli() {
   # The CLI is a thin client for the BetterDisplay app; with the app down its calls
   # hang or return empty, which masquerades as "no display". Check the app is up first.
   pgrep -x BetterDisplay >/dev/null 2>&1 || { echo "error: BetterDisplay isn't running — launch it ('open -a BetterDisplay') and retry." >&2; exit 1; }
+}
+
+# check/set need the physical panel; reset must NOT require it — its main job
+# after an unplug is discarding the orphaned virtual screen the panel left behind.
+require_display() {
   disp --resolution >/dev/null || { echo "error: no display matching '$MATCH' (set G95_MATCH)" >&2; exit 1; }
 }
 
@@ -89,6 +102,23 @@ cmd_check() {
   esac
   if printf '%s' "$cmode" | grep -q '10bit'; then
     echo "  [i] 10-bit colour negotiated — heavier; 8-bit frees bandwidth for higher Hz."
+  fi
+  # Display association has no CLI surface (GUI-only), so read the app's prefs:
+  # associating writes associatedDisplays/enforceAssociated* keys and flips
+  # virtualScreenLinked to 1 on the physical display's record. Association is
+  # what auto-disconnects the virtual screen when the panel unplugs, so its
+  # absence is the "invisible main display ate my cursor" foot-gun.
+  local assoc
+  assoc="$(defaults read pro.betterdisplay.BetterDisplay 2>/dev/null \
+    | grep -E '"(associatedDisplays|enforceAssociated(Connect|Disconnect))@|virtualScreenLinked@[^"]*" = 1' \
+    | sed 's/^[[:space:]]*//;s/;$//')"
+  if [ -n "$assoc" ]; then
+    printf '  %-22s %s\n' "VS association"      "configured"
+    printf '%s\n' "$assoc" | sed 's/^/      /'
+  else
+    printf '  %-22s %s\n' "VS association"      "NOT SET"
+    echo "  [!] Virtual screen won't auto-disconnect on unplug. One-time fix:"
+    echo "      BetterDisplay menu > $VS_NAME > Manage Virtual Screen > Configure Virtual Screen… > associate with '$MATCH'."
   fi
   echo
   echo "High-refresh signal modes the link offers (no workaround needed):"
@@ -119,7 +149,8 @@ cmd_set() {
   teardown
 
   # GENERATED-resolution virtual screen => the app-menu scaling slider works
-  "$CLI" create --devicetype=virtualscreen --virtualscreenname="$VS_NAME" --aspectWidth="$aspectw" --aspectHeight="$aspecth"
+  "$CLI" create --devicetype=virtualscreen --virtualscreenname="$VS_NAME" --aspectWidth="$aspectw" --aspectHeight="$aspecth" \
+    --virtualScreenSerial="$VS_SERIAL" --virtualScreenModelNumber="$VS_MODEL"
   "$CLI" set --name="$VS_NAME" --useResolutionList=off --virtualScreenHiDPI=on
   "$CLI" set --name="$VS_NAME" --connected=on
   sleep 2
@@ -150,9 +181,15 @@ cmd_set() {
 # way back from any state.
 cmd_reset() {
   local sel="--nameLike=$MATCH" res hidpi
-  echo ">> reset: clearing overlays + virtual screens, restoring native 3840x1080 HiDPI"
+  echo ">> reset: clearing overlays + virtual screens"
   teardown
 
+  if ! disp --resolution >/dev/null; then
+    echo "[ok] Panel not connected — overlays and virtual screens cleared; skipping panel restore."
+    return 0
+  fi
+
+  echo ">> restoring native 3840x1080 HiDPI"
   "$CLI" set "$sel" --main=on 2>/dev/null || true
   "$CLI" set "$sel" --reinitialize 2>/dev/null || true
   # colour depth is a connectionMode knob, not a display-mode attribute — don't force it here
@@ -176,8 +213,8 @@ cmd_reset() {
 main() {
   require_cli
   case "${1:-check}" in
-    check)  cmd_check ;;
-    set)    cmd_set "${2:-}" ;;
+    check)  require_display; cmd_check ;;
+    set)    require_display; cmd_set "${2:-}" ;;
     reset)  cmd_reset ;;
     *) echo "usage: $0 {check|set [WxH]|reset}" >&2; exit 2 ;;
   esac
