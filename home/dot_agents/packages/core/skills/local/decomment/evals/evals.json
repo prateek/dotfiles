@@ -1,0 +1,111 @@
+{
+  "skill_name": "decomment",
+  "evals": [
+    {
+      "id": 1,
+      "name": "explicit-decomment-dense-file",
+      "mode": "rewrite",
+      "prompt": "Decomment ratelimit.go and ratelimit_test.go.",
+      "expected_output": "The agent deletes every planted slop comment in the two named files, trims the padded linter-floor godoc to one line, and leaves keepers, directives, the license header, and the generated file untouched. It does not add comments, change non-comment lines, or stage anything.",
+      "files": ["evals/files/eval1_failure_modes"],
+      "expectations": [
+        "ratelimit.go no longer contains 'Note: a limit of -1 means' (duplicate fact deleted from Allow's doc)",
+        "ratelimit.go still contains 'Limit returns the max, or -1 for unlimited' (the owning doc survives)",
+        "ratelimit.go no longer contains 'the backing cache every minute' or 'Always non-nil at every wiring site' (exported Store doc reduced to its contract)",
+        "ratelimit.go no longer contains 'buildKey constructs the cache key' (godoc on unexported func deleted)",
+        "ratelimit.go no longer contains 'applyLimits applies the volume thresholds' or 'Callers must populate' (precondition godoc on unexported method deleted whole, not trimmed to its lead)",
+        "ratelimit.go no longer contains 'Sum the sizes of all pending items' or 'Return early if the context was cancelled' (inline narration deleted)",
+        "ratelimit.go no longer contains 'so the client can weight per-key consumption during refresh' (fake-why narration deleted)",
+        "ratelimit.go no longer contains 'Redis is a redis client' (field comment restating its name deleted)",
+        "ratelimit.go no longer contains 'Defaults to 8' (default restated from setDefaults deleted)",
+        "ratelimit.go no longer contains 'configuration parameters and dependencies' but WriterConfig still has a one-line godoc starting '// WriterConfig' (linter floor trimmed, not deleted)",
+        "ratelimit_test.go no longer contains 'seed the fake with an empty config', 'so the limiter refreshes', or 'exceeded after a single 10-byte request' (test setup narration and re-derived arithmetic deleted)",
+        "These keepers are present verbatim: 'Redis MGET caps batches at 512 keys', '//go:generate', '//nolint:gocyclo', 'Copyright (c) 2024 Example Authors', 'Zero-limit tenants pass through untouched'",
+        "cache.pb.go is byte-identical to the fixture (its '// GetTenant returns the tenant.' slop is still present because generated files are never touched)",
+        "No new comments were added and no non-comment code lines changed",
+        "Nothing was staged or committed"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "git-scope-discipline",
+      "mode": "rewrite",
+      "prompt": "decomment",
+      "expected_output": "The agent resolves scope from the git working tree, deletes only the slop comments introduced by the uncommitted changes, and leaves both pre-existing comments alone, including the mildly redundant one it did not author. The tree is left unstaged.",
+      "files": ["evals/files/eval2_git_scope"],
+      "expectations": [
+        "queue.go no longer contains 'flushAll flushes all pending items' (godoc added on unexported func deleted)",
+        "queue.go no longer contains 'Loop over the pending items' (inline narration deleted)",
+        "queue.go no longer contains 'validation moved to the sink layer' (diff-narration comment deleted)",
+        "queue.go no longer contains 'Check if the sink is nil' (guard narration deleted)",
+        "queue.go still contains 'Drains in FIFO order; consumers rely on ordering for dedup.' verbatim (pre-existing WHY untouched)",
+        "queue.go still contains 'push appends an item to the queue.' verbatim (pre-existing comment survives even though it is redundant, because the agent did not author it)",
+        "The agent demonstrates diff-based scoping, for example by running git diff or git status before editing",
+        "No commits were made (git log still shows only the 'human baseline' commit) and nothing is staged"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "generation-no-slop",
+      "mode": "generate",
+      "prompt": "Add a --dry-run flag to backup.zsh that prints what would be copied without copying anything.",
+      "expected_output": "The agent implements the flag with clean code and near-zero new comments. Any new comment states a non-obvious WHY. Pre-existing comments and the shebang are untouched.",
+      "files": ["evals/files/eval3_zsh_generate"],
+      "expectations": [
+        "No added comment narrates the next line ('# Check if', '# Loop over', '# Parse the', '# Set the' class comments are absent)",
+        "No diff-narration comments ('# Added:', '# New:', '# Changed:') are present",
+        "At most 2 new comments exist in the diff, and each states a non-obvious WHY rather than restating the code",
+        "The shebang, the '# --- config ---' line, and the 'rsync -a preserves permissions; --delete keeps the mirror exact.' comment are unchanged",
+        "backup.zsh still parses (zsh -n backup.zsh exits 0) and implements a working --dry-run flag"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "borderline-under-pruning-guard",
+      "mode": "rewrite",
+      "prompt": "This package has too many comments, trim it.",
+      "expected_output": "The agent deletes at least 9 of the 12 planted borderline comments despite each sounding individually defensible, trims the padded linter floor to one line, and keeps all 3 genuine keepers. It does not claim most comments were fine.",
+      "files": ["evals/files/eval4_borderline"],
+      "expectations": [
+        "At least 9 of these 12 planted markers are gone from writer.go and writer_test.go: 'queryDiscarded reads the cumulative', 'Callers must seal the batch', 'weight per-tier consumption', 'must cover two poll intervals', 'configuration parameters', 'Defaults to 3', 'DropReasonTierLimit is used when', 'keep the shadow tier warm', 'lives only on the global bucket' (planted at two sites; at most one may survive), 'so the flusher refreshes', 'overflows on the first write', 'recorded as discarded against the global bucket'",
+        "SinkConfig still has a one-line godoc starting '// SinkConfig' (linter floor trimmed, not deleted)",
+        "All 3 keepers are present verbatim: 'The sink rejects batches over 4 MiB; split before send.', 'Internal traffic bypasses tier limits so platform batches can't be', '//nolint:errcheck'",
+        "The response does not claim that most comments were fine or high quality; deleting little is reported as a finding only if the scan actually ran",
+        "No comments were added and no non-comment code lines changed"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "python-report-slop",
+      "mode": "rewrite",
+      "prompt": "Clean up the comments in report.py.",
+      "expected_output": "The agent deletes the section-label narration comments, the trailing comments restating dict literal values, and the private-helper docstring that restates its name, while keeping the shebang, the module docstring, and the escape-WHY comment. The script still compiles.",
+      "files": ["evals/files/eval5_python_report"],
+      "expectations": [
+        "report.py no longer contains '# Extract the document title', '# Find all step headers', '# Render workflows', '# Stats', or '# Save results' (section-label narration deleted)",
+        "The PREFIXES entries no longer carry trailing comments restating their own values (no '# ✓', '# ⚠', or '# ✗' comments remain)",
+        "The _slug helper no longer has the 'Slugify the name.' docstring (private-helper docstring restating its name deleted)",
+        "The comment 'Escape </script> so the JSON can safely sit inside a <script> block.' is present verbatim (real WHY kept)",
+        "The shebang and the module docstring 'Render a workflow summary page from captured step files.' are unchanged",
+        "python3 -m py_compile report.py succeeds and no non-comment code lines changed",
+        "No new comments were added"
+      ]
+    },
+    {
+      "id": 6,
+      "name": "zsh-envfile-slop",
+      "mode": "rewrite",
+      "prompt": "remove all the self-evident/obvious/redundant/verbose comments (only retain a comment if it provides value for future readers)",
+      "expected_output": "The agent deletes the numbered section banners and the step-narration comments, keeps the shellcheck directive and the secrets WHY comment, and leaves the code lines untouched.",
+      "files": ["evals/files/eval6_zsh_envfile"],
+      "expectations": [
+        "envgen.zsh no longer contains '# 1. Parse flags' or '# 2. Dependency checks' (numbered section banners deleted, including their ##### frame lines)",
+        "envgen.zsh no longer contains '# sanity checks', '# build env content', or '# write the file' (step narration deleted)",
+        "The '# shellcheck disable=SC2059' directive is present verbatim (directives are protected)",
+        "The comment 'env files carry secrets; keep them owner-only' is present verbatim (real WHY kept)",
+        "The shebang is unchanged, zsh -n envgen.zsh exits 0, and no non-comment code lines changed",
+        "No new comments were added"
+      ]
+    }
+  ]
+}

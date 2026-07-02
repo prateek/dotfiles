@@ -1,6 +1,6 @@
 # Agent Notes
 
-This is the repo-specific contract for coding agents working in Prateek's dotfiles repo. Keep this file lean. Put repeatable maintenance workflow in `$code-gardening`, and keep deep topic guidance in the focused docs it points to.
+This is the repo-specific contract for coding agents working in Prateek's dotfiles repo. Keep this file lean. Put repeatable maintenance workflow in the `code-gardening` skill, and keep deep topic guidance in the focused docs it points to.
 
 ## Repo Map
 
@@ -25,7 +25,7 @@ Chezmoi is the ongoing command surface: prefer `chezmoi apply`, `chezmoi status`
 
 Keep repo-local and machine-level agent state separate. Files that define how agents work in this dotfiles checkout stay at the repo root or under repo-root `.agents/`. Files that configure Prateek's machine-wide agent environment stay under `home/` so chezmoi materializes them into `$HOME`.
 
-Use `$agent-skill-management` for changes to `home/dot_agents/packages/`,
+Use the `agent-skill-management` skill for changes to `home/dot_agents/packages/`,
 apply-time skill/plugin render scripts, Codex or Claude rendered plugin
 activation, and the related docs (`docs/plans/chezmoi-agent-skills-plan.md`,
 `docs/research/agent-skill-management-research.md`, `docs/adr/0007-default-loaded-plugin-policy.md`). The generated live roots are

@@ -33,7 +33,7 @@ Refactor code to be easier to read and maintain without changing what it does. P
    - Remove redundant code and abstractions; consolidate tightly related logic.
    - Use descriptive names for variables, functions, and types; keep responsibilities focused.
    - Avoid nested ternary operators; use `if/else` chains or `switch` for multi-branch logic.
-   - Delete comments that restate obvious code; keep comments that explain “why” or tricky constraints.
+   - Delete comments that restate obvious code; keep comments that explain “why” or tricky constraints. For a dedicated comment-pruning pass, use the decomment skill after simplifying.
 
 5. Validate
    - Run the smallest relevant checks (tests, typecheck, build) if available.

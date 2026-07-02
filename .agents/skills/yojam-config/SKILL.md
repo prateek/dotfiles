@@ -1,6 +1,6 @@
 ---
 name: yojam-config
-description: Maintain Prateek's Yojam browser-router config under chezmoi using the deltas-only `modify_` + desired-fragment pattern. Use when editing the desired-mutations fragment at `home/.chezmoiassets/yojam-config.json`, debugging rules that disappear or stay disabled after `chezmoi apply` (the import-time security pass), bumping the schema `version` field on a Yojam upgrade, adding a new rule (which needs a stable UUID), or onboarding a new Mac. Do not use for installing the Yojam cask itself (that lives in `$chezmoi-management` → packages-and-secrets), for the broader OSS-browser-router research that lives under `docs/`, or for editing the live `~/Library/Application Support/Yojam/config.json` directly (always edit the fragment instead).
+description: Maintain Prateek's Yojam browser-router config under chezmoi using the deltas-only `modify_` + desired-fragment pattern. Use when editing the desired-mutations fragment at `home/.chezmoiassets/yojam-config.json`, debugging rules that disappear or stay disabled after `chezmoi apply` (the import-time security pass), bumping the schema `version` field on a Yojam upgrade, adding a new rule (which needs a stable UUID), or onboarding a new Mac. Do not use for installing the Yojam cask itself (that lives in the chezmoi-management skill → packages-and-secrets), for the broader OSS-browser-router research that lives under `docs/`, or for editing the live `~/Library/Application Support/Yojam/config.json` directly (always edit the fragment instead).
 ---
 
 # Yojam Config
@@ -18,7 +18,7 @@ contain your **mutations**. Two source files do that:
   fragment. Hand-authored, small, contains only the keys that differ
   from upstream defaults. Plain JSON (no Go template directives), so
   it lives under `.chezmoiassets/` and loads via `include` per
-  `$chezmoi-management` → `references/app-config.md`.
+  the `chezmoi-management` skill → `references/app-config.md`.
 - **`home/Library/Application Support/Yojam/modify_config.json.tmpl`**
   — the `modify_` stub. A `uv` Python script that reads live on stdin,
   merges the fragment over it, writes the result to stdout. Same
@@ -26,7 +26,7 @@ contain your **mutations**. Two source files do that:
   `home/dot_claude/modify_private_settings.json.tmpl`.
 
 This skill covers the *config* side. Cask install lives in
-`$chezmoi-management` → `references/packages-and-secrets.md`.
+the `chezmoi-management` skill → `references/packages-and-secrets.md`.
 
 ## Universal Rules
 
@@ -184,14 +184,14 @@ chezmoi apply --dry-run --verbose --exclude=scripts
 The stub's `semantic_equal` short-circuit returns `current_text`
 unchanged on a no-op merge, so chezmoi diff stays clean even if Yojam
 reorders keys or shifts whitespace. After editing this skill, run the
-parser/frontmatter check from `$chezmoi-management` →
+parser/frontmatter check from the `chezmoi-management` skill →
 `references/meta-skill-maintenance.md`.
 
 ## Related
 
-- Cask install + profile gating: `$chezmoi-management` →
+- Cask install + profile gating: the `chezmoi-management` skill →
   `references/packages-and-secrets.md`.
-- The `modify_` + deep-merge pattern in general: `$chezmoi-management`
+- The `modify_` + deep-merge pattern in general: the `chezmoi-management` skill
   → `references/app-config.md`, plus
   `home/dot_codex/modify_private_config.toml.tmpl` and
   `home/dot_claude/modify_private_settings.json.tmpl` as JSON/TOML

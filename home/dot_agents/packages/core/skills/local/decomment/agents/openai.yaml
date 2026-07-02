@@ -1,0 +1,4 @@
+interface:
+  display_name: "Decomment"
+  short_description: "Prune slop and restating comments from your changes"
+  default_prompt: "Prune comments added or modified by the current work: delete restatement and narration, trim doc comments to their contract, and leave pre-existing comments alone."

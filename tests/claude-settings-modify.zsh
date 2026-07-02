@@ -63,7 +63,8 @@ cat >"$current" <<'JSON'
   "statusLine": {
     "type": "command",
     "command": "printf status"
-  }
+  },
+  "skillListingBudgetFraction": 0.01
 }
 JSON
 
@@ -98,6 +99,11 @@ assert plugins["utils-agent@prateek-local"] is True
 # Stale @prateek-local entries persist as harmless cruft (no automatic cleanup).
 assert plugins["stale@prateek-local"] is False
 assert plugins["other@other-market"] is True
+
+# Hand-managed keys ride the same merge and win over user edits (the fixture
+# seeds a conflicting 0.01; the managed fragment owns the value).
+assert data["skillListingBudgetFraction"] == managed["skillListingBudgetFraction"]
+assert data["skillListingBudgetFraction"] != 0.01
 PY
 
 "$script" <"$merged" >"$semantic_merged"

@@ -2,7 +2,7 @@
 status: current
 doc_type: index
 created: 2026-05-12
-updated: 2026-06-29
+updated: 2026-07-01
 related:
   - document-lifecycle.md
   - ../home/dot_agents/packages/core/skills/local/code-gardening/SKILL.md
@@ -36,6 +36,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | Doc | Status |
 | --- | --- |
 | [BetterDisplay Display Modes](plans/betterdisplay-display-modes-plan.md) | Proposed only; no `displayctl` implementation exists in this checkout. |
+| [Decomment Skill](plans/decomment-skill-plan.md) | Active; decomment core skill, trigger-channel fixes, and evals under implementation. |
 | [Orcactl](plans/orcactl-plan.md) | Draft for a separate Go repo/tool; dotfiles integration is future install/skill wiring. |
 | [Goku Karabiner Migration](plans/goku-karabiner-migration-plan.md) | Active; Karabiner config now compiles from `karabiner.edn` via goku — on-device pad verification pending. |
 | [Setup Downstream Fork Secrets](plans/setup-downstream-fork-secrets-plan.md) | Active cleanup plan; `_secrets.py`, `--init-config`, and `--validate-config` already exist. |
