@@ -1,0 +1,4 @@
+interface:
+  display_name: "Land Changes"
+  short_description: "Land a dotfiles branch onto master: rebase+squash to one commit, run the diff's checks, ff-only merge, push; chezmoi apply only on request"
+  default_prompt: "Use $land-changes to land this finished branch. Rebase onto the latest origin/master and squash to one commit, run the checks for that diff, fast-forward-only merge into the ~/dotfiles checkout, and push. Then confirm chezmoi's source is ~/dotfiles and summarize the pending apply. Do NOT run chezmoi apply unless I ask; never force-push or create a merge commit on master."
