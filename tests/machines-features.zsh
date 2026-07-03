@@ -66,7 +66,7 @@ assert_json '{"machine_type":"personal"}' \
   "personal composition"
 
 assert_json '{"machine_type":"homelab"}' \
-  'f["groups"]==["core","ai-agent-apps","developer-tools","apple-development","homelab-admin"]' \
+  'f["groups"]==["core","ai-agent-apps","developer-tools","apple-development","homelab-overlay"] and f["runner_vm_name"]=="tartelet-runner" and f["runner_vm_count"]==1 and f["runner_scope"]=="repo" and f["runner_start_on_launch"] is True' \
   "homelab composition"
 
 assert_json '{"machine_type":"work"}' \

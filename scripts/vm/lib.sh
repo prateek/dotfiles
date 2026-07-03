@@ -14,6 +14,10 @@ log() {
   fi
 }
 
+warn() {
+  log "WARNING: $*"
+}
+
 die() {
   log "ERROR: $*"
   exit 1

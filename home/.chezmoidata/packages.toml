@@ -350,10 +350,11 @@ mas = [
 ]
 
 # Applies to: homelab.
-[packages.groups.homelab-admin]
-description = "Remote access and administration tools for homelab Mac minis"
+[packages.groups.homelab-overlay]
+description = "Homelab-specific apps: remote access, administration, and CI runner host"
 casks = [
   { name = "tailscale-app" },
   { name = "jump-desktop-connect" },
   { name = "jump-desktop" },
+  { name = "tartelet" },  # ephemeral GitHub Actions runner host on Tart; see docs/plans/tartelet-runner-plan.md
 ]

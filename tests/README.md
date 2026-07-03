@@ -69,6 +69,7 @@ make test-orca-settings
 make test-agent-skill-packages
 make test-agent-skill-packages-native
 make test-selected-app-plists
+make test-tartelet-settings
 make test-plist-hooks
 make test-sudo-keepalive
 make test-macos-defaults-script

@@ -79,6 +79,9 @@ Library/Preferences/dev.kdrag0n.MacVirt.plist
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "voiceink")) "true" }}
 Library/Preferences/com.prakashjoshipax.VoiceInk.plist
 {{- end }}
+{{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "tartelet")) "true" }}
+Library/LaunchAgents/com.prateek.tartelet-runner.plist
+{{- end }}
 {{/* karabiner.json is generated from karabiner.edn by goku at apply time; never manage it directly. */}}
 .config/karabiner/karabiner.json
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "karabiner-elements")) "true" }}

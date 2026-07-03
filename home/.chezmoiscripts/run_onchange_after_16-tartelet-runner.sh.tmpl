@@ -1,0 +1,39 @@
+{{ template "script_lib.sh" . }}
+
+# packages.toml sha256: {{ include ".chezmoidata/packages.toml" | sha256sum }}
+# machines.toml sha256: {{ include ".chezmoidata/machines.toml" | sha256sum }}
+# ios-triple.json sha256: {{ include "dot_agents/state/ios-triple.json" | sha256sum }}
+
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- $tartelet := includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "tartelet") -}}
+{{- if $f.run_install_scripts }}
+has_tartelet={{ eq $tartelet "true" | toString | quote }}
+build_script={{ printf "%s/../scripts/vm/build-runner-image.sh" .chezmoi.sourceDir | quote }}
+
+if [ "$(uname -s)" != "Darwin" ]; then
+  log "Tartelet runner image skipped on non-macOS host."
+  exit 0
+fi
+
+if [ "$has_tartelet" != "true" ]; then
+  log "Tartelet runner image skipped (tartelet cask not selected for this machine)."
+  exit 0
+fi
+
+# Building the golden VM pulls several GB and boots a macOS guest, so it is not
+# part of a routine apply. This script fires when the Xcode pin (or package/machine
+# data) changes; it (re)builds only under an explicit opt-in, otherwise it points
+# at the standalone builder. Mirrors the interactive-only gate on Xcode install.
+case "${DOTFILES_BUILD_TARTELET_IMAGE:-}" in
+  true|1|yes|on)
+    have tart || die "tart is required to build the runner image; rerun brew bundle."
+    run_timed "build tartelet runner image" "$build_script"
+    ;;
+  *)
+    log "Tartelet runner image not rebuilt (set DOTFILES_BUILD_TARTELET_IMAGE=true to build now)."
+    log "Or run it directly: $build_script"
+    ;;
+esac
+{{- else }}
+log "Tartelet runner image build disabled."
+{{- end }}

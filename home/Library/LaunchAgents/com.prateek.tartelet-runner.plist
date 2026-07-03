@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Launch Tartelet at login on a runner host and keep it running. Paired with the
+  startVirtualMachinesOnLaunch=true key in the managed dk.shape.Tartelet.plist, so
+  login -> running ephemeral runners is unattended. Gated in .chezmoiignore on the
+  tartelet cask, so it only lands on hosts that install Tartelet (homelab).
+
+  Loads at the next login automatically; to load immediately after apply:
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.prateek.tartelet-runner.plist
+
+  If the runner VMs need specific `tart run` flags (bridged networking, extra
+  mounts), add an EnvironmentVariables dict setting TARTELET_RUN_OPTIONS — the only
+  environment variable Tartelet honors.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.prateek.tartelet-runner</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Applications/Tartelet.app/Contents/MacOS/Tartelet</string>
+  </array>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>LimitLoadToSessionType</key>
+  <string>Aqua</string>
+</dict>
+</plist>

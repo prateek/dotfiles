@@ -38,7 +38,15 @@ groups = ["core", "mac-desktop", "ai-agent-apps", "developer-tools", "apple-deve
 # AI agent apps (agentsview + Orca need each other to be useful), without the
 # full interactive personal desktop surface.
 [machines.type.homelab]
-groups = ["core", "ai-agent-apps", "developer-tools", "apple-development", "homelab-admin"]
+groups = ["core", "ai-agent-apps", "developer-tools", "apple-development", "homelab-overlay"]
+# Non-secret Tartelet runner facts consumed by the managed dk.shape.Tartelet.plist
+# fragment (verified key encodings from Tartelet source; see the runner plan). The
+# secret half (org, App ID, private key, SSH login) is keychain-only and GUI-entered.
+runner_vm_name = "tartelet-runner"
+runner_vm_count = 1
+runner_labels = "tartelet,homelab"
+runner_scope = "repo"                  # GitHubRunnerScope rawValue: "organization" | "repo"; repo = one runner per repo
+runner_start_on_launch = true
 
 # Managed work Mac: no personal apps, no Apple/iOS toolchain; Jamf elevation and
 # the private config overlay.

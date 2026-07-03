@@ -2,6 +2,7 @@
 
 # zshenv sha256: {{ include "dot_zshenv.tmpl" | sha256sum }}
 # zshrc sha256: {{ include "dot_config/zsh/dot_zshrc" | sha256sum }}
+# packages.toml sha256: {{ include ".chezmoidata/packages.toml" | sha256sum }}
 
 checks_failed=0
 
@@ -21,6 +22,23 @@ check_file "${ZDOTDIR:-$HOME/.config/zsh}/.zshrc"
 if [ {{ (includeTemplate "features.tmpl" . | fromJson).secrets_enabled | quote }} != "true" ]; then
   log "secrets disabled; sign in to 1Password and enable [data.machines_local] secrets_enabled = true when needed."
 fi
+
+{{- if eq (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "tartelet")) "true" }}
+check_file "/Applications/Tartelet.app"
+check_file "$HOME/Library/LaunchAgents/com.prateek.tartelet-runner.plist"
+check_file "$HOME/Library/Preferences/dk.shape.Tartelet.plist"
+# Golden VM and credentials are not chezmoi-managed: the VM is built on demand
+# (scripts/vm/build-runner-image.sh) and credentials are entered once in Tartelet's
+# UI. Surface their status without failing the apply.
+if command -v tart >/dev/null 2>&1; then
+  if tart list --quiet --source local 2>/dev/null | grep -qx {{ (includeTemplate "features.tmpl" . | fromJson).runner_vm_name | quote }}; then
+    log "ok: golden runner VM {{ (includeTemplate "features.tmpl" . | fromJson).runner_vm_name | quote }} present"
+  else
+    log "note: golden runner VM {{ (includeTemplate "features.tmpl" . | fromJson).runner_vm_name | quote }} not built yet — run scripts/vm/build-runner-image.sh on the runner host."
+  fi
+fi
+log "reminder: enter Tartelet's GitHub App credentials once in the UI; see docs/runbooks/tartelet-runner-setup.md."
+{{- end }}
 
 if [ "$checks_failed" -gt 0 ]; then
   exit 1

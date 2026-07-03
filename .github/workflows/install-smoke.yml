@@ -20,7 +20,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y shellcheck
       - name: Shellcheck
         run: |
-          shellcheck -x scripts/macos/capture.sh scripts/vm/test-install-tart.sh scripts/vm/check-install-log.sh scripts/trace/perfetto-trace.bash scripts/chezmoi-hooks/plist-hooks.sh scripts/packages/render-brewfile scripts/chezmoi/test-apply-dry-run.sh scripts/audit/orca-settings.sh
+          shellcheck -x scripts/macos/capture.sh scripts/vm/test-install-tart.sh scripts/vm/build-runner-image.sh scripts/vm/check-install-log.sh scripts/trace/perfetto-trace.bash scripts/chezmoi-hooks/plist-hooks.sh scripts/packages/render-brewfile scripts/chezmoi/test-apply-dry-run.sh scripts/audit/orca-settings.sh
 
   macos-dry-run:
     runs-on: macos-latest
@@ -79,6 +79,7 @@ jobs:
           make test-zed-settings
           make test-zsh-prompt-host
           make test-moom-plist
+          make test-tartelet-settings
           make test-plist-hooks
           make test-trace-perfetto
           make test-vm-install-log-scan

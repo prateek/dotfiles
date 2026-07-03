@@ -74,7 +74,7 @@ Scripts must be idempotent. A rerun should converge or report a clear blocker.
 
 - Reusable package groups (`[packages.groups.*]`: `core`, `mac-desktop`,
   `ai-agent-apps`, `developer-tools`, `apple-development`, `work-apps`,
-  `personal-apps`, `homelab-admin`) live in
+  `personal-apps`, `homelab-overlay`) live in
   `home/.chezmoidata/packages.toml`.
 - Selection is driven by a single axis, `machine_type`. Each type composes a set
   of groups via the layered `home/.chezmoidata/machines.toml` table
@@ -82,7 +82,7 @@ Scripts must be idempotent. A rerun should converge or report a clear blocker.
   `ci=[core]`,
   `work=[core,mac-desktop,ai-agent-apps,developer-tools,work-apps]`,
   `personal=[core,mac-desktop,ai-agent-apps,developer-tools,apple-development,personal-apps]`,
-  and `homelab=[core,ai-agent-apps,developer-tools,apple-development,homelab-admin]`.
+  and `homelab=[core,ai-agent-apps,developer-tools,apple-development,homelab-overlay]`.
   Work omits personal apps and Apple/iOS tooling; homelab keeps Apple tooling,
   remote/admin tools, and AI agent apps (agentsview + Orca) without the full
   interactive desktop surface. `ci` is the minimal CI/Tart/audit tier and a

@@ -1,0 +1,79 @@
+{{ template "script_lib.sh" . }}
+
+# packages.toml sha256: {{ include ".chezmoidata/packages.toml" | sha256sum }}
+# machines.toml sha256: {{ include ".chezmoidata/machines.toml" | sha256sum }}
+
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- $tartelet := includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "tartelet") -}}
+{{- if and $f.run_install_scripts (eq $tartelet "true") }}
+if [ "$(uname -s)" != "Darwin" ]; then
+  log "Tartelet settings skipped on non-macOS host."
+  exit 0
+fi
+
+# The runner_* facts below exist only on machines that select Tartelet, so this
+# whole block is gated on the cask at template time; other machine types render
+# the no-op branch and never reference the (absent) facts.
+# Tartelet stores non-secret settings in UserDefaults, but once it has run,
+# cfprefsd owns the values and a direct plist file write is silently reverted on
+# the app's next launch. So apply through `defaults` (the cfprefsd-authoritative
+# path) with the app quit. Credentials stay keychain-only and are never touched
+# here. Key encodings are verified against Tartelet source; re-derive on upgrade
+# with: ask src github:framna-dk/tartelet
+domain="dk.shape.Tartelet"
+scope={{ $f.runner_scope | quote }}
+labels={{ $f.runner_labels | quote }}
+vm="virtualMachine={{ $f.runner_vm_name }}"
+count={{ $f.runner_vm_count }}
+{{- if $f.runner_start_on_launch }}
+start_read=1; start_write=true
+{{- else }}
+start_read=0; start_write=false
+{{- end }}
+# tartHomeFolderURL points Tartelet at the same store as the host TART_HOME, so it
+# finds the golden VM. Sourced from the machines.host layer (same as zprofile),
+# not the ambient env, which a chezmoi script does not inherit. Empty on hosts
+# without a dedicated store, where Tartelet's ~/.tart default already matches.
+tart_home={{ $f.tart_home | default "" | quote }}
+
+differs() { [ "$(defaults read "$domain" "$1" 2>/dev/null)" != "$2" ]; }
+
+change=0
+differs githubRunnerScope "$scope" && change=1
+differs gitHubRunnerLabels "$labels" && change=1
+differs virtualMachine "$vm" && change=1
+differs numberOfVirtualMachines "$count" && change=1
+differs startVirtualMachinesOnLaunch "$start_read" && change=1
+if [ -n "$tart_home" ]; then differs tartHomeFolderURL "$tart_home" && change=1; fi
+
+if [ "$change" = "0" ]; then
+  log "Tartelet settings already match; nothing to do."
+  exit 0
+fi
+
+# Quit Tartelet first so the writes are authoritative and not clobbered on its
+# next launch; relaunch afterwards if it was running (interrupts any active runner).
+was_running=0
+if pgrep -x Tartelet >/dev/null 2>&1; then
+  was_running=1
+  warn "Quitting Tartelet to apply settings (interrupts any in-progress runner)."
+  osascript -e 'tell application "Tartelet" to quit' >/dev/null 2>&1 || true
+  for _ in $(seq 1 15); do pgrep -x Tartelet >/dev/null 2>&1 || break; sleep 1; done
+  pgrep -x Tartelet >/dev/null 2>&1 && killall Tartelet 2>/dev/null || true
+fi
+
+defaults write "$domain" githubRunnerScope -string "$scope"
+defaults write "$domain" gitHubRunnerLabels -string "$labels"
+defaults write "$domain" virtualMachine -string "$vm"
+defaults write "$domain" numberOfVirtualMachines -int "$count"
+defaults write "$domain" startVirtualMachinesOnLaunch -bool "$start_write"
+[ -n "$tart_home" ] && defaults write "$domain" tartHomeFolderURL -string "$tart_home"
+log "Applied Tartelet settings via defaults (scope=$scope, vms=$count)."
+
+if [ "$was_running" = "1" ]; then
+  open -a Tartelet >/dev/null 2>&1 || true
+  log "Relaunched Tartelet."
+fi
+{{- else }}
+log "Tartelet settings skipped (install scripts disabled or tartelet cask not selected)."
+{{- end }}
