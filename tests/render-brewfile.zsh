@@ -32,7 +32,7 @@ ci_out="$("$RENDER" --machine-type ci)"
   || die "ci: should not include the interactive 1Password app"
 [[ $ci_out != *'brew "aria2"'* ]] || die "ci: should not include developer-tools (aria2 leaked)"
 [[ $ci_out != *'cask "tailscale-app"'* ]] || die "ci: should not include homelab overlay apps"
-rg -q '"go:github.com/tomasz-tomczyk/crit" = "latest"' "$DOTFILES_ROOT/home/dot_config/mise/conf.d/clis.toml" \
+rg -q '"go:github.com/tomasz-tomczyk/crit/cmd/crit" = "latest"' "$DOTFILES_ROOT/home/dot_config/mise/conf.d/clis.toml" \
   || die "crit should be declared as a mise Go CLI"
 
 # -- personal machine type: core + interactive + dev + Apple + personal --
