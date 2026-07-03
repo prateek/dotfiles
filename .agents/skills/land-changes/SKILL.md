@@ -79,7 +79,7 @@ Fix failures on the branch and re-run. Never land red.
 ```sh
 git -C "$MAIN" merge --ff-only "$BRANCH"
 git -C "$MAIN" push origin master
-git -C "$MAIN" rev-parse --short origin/master HEAD          # both must match
+git -C "$MAIN" rev-parse origin/master HEAD                  # both must print the same hash
 ```
 
 If the merge refuses, master moved while you worked — refetch and redo step 2.
