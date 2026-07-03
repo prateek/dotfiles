@@ -75,16 +75,21 @@ build_source_tree() {
   mkdir -p "$prefix/bin"
   commit="$(git -C "$source_dir" rev-parse --short HEAD 2>/dev/null || printf unknown)"
 
+  # Upstream moved the main package to cmd/crit; older refs keep it at the root.
+  local pkg="."
+  [[ -d "$source_dir/cmd/crit" ]] && pkg="./cmd/crit"
+
   (
     cd "$source_dir"
     go build \
       -ldflags "-s -w -X main.version=$version_label -X main.commit=$commit -X main.date=$(date -u +%Y-%m-%d)" \
       -o "$prefix/bin/crit" \
-      .
+      "$pkg"
   )
 
-  mise link --force "go:github.com/tomasz-tomczyk/crit@$label" "$prefix"
-  select_crit "go:github.com/tomasz-tomczyk/crit@$label"
+  # Link under the same tool id clis.toml pins so zz-local.toml overrides it.
+  mise link --force "go:github.com/tomasz-tomczyk/crit/cmd/crit@$label" "$prefix"
+  select_crit "go:github.com/tomasz-tomczyk/crit/cmd/crit@$label"
 }
 
 build_remote_ref() {
