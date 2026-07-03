@@ -79,6 +79,9 @@ link_startup_files() {
   local home_dir="$1"
 
   mkdir -p "$home_dir/.config/zsh"
+  # Mirror the plain exports from dot_zshenv.tmpl. Its host-gated TART_HOME block
+  # needs full chezmoi context (features.tmpl + hostname) and is irrelevant to
+  # startup latency, so this isolated env omits it.
   cat >"$home_dir/.zshenv" <<EOF
 export XDG_CONFIG_HOME="\${XDG_CONFIG_HOME:-\$HOME/.config}"
 export XDG_CACHE_HOME="\${XDG_CACHE_HOME:-\$HOME/.cache}"
@@ -91,11 +94,7 @@ if [[ ( "\$SHLVL" -eq 1 && ! -o LOGIN ) && -s "\$ZDOTDIR/.zprofile" ]]; then
   source "\$ZDOTDIR/.zprofile"
 fi
 EOF
-  # dot_zprofile is a chezmoi template (host-gated TART_HOME), so render it
-  # rather than symlink the raw {{...}} source. dot_zshrc/dot_zlogin are plain.
-  chezmoi execute-template --source "$home_dir/dotfiles/home" \
-    <"$home_dir/dotfiles/home/dot_config/zsh/dot_zprofile.tmpl" \
-    >"$home_dir/.config/zsh/.zprofile"
+  ln -snf "$home_dir/dotfiles/home/dot_config/zsh/dot_zprofile" "$home_dir/.config/zsh/.zprofile"
   ln -snf "$home_dir/dotfiles/home/dot_config/zsh/dot_zshrc" "$home_dir/.config/zsh/.zshrc"
   ln -snf "$home_dir/dotfiles/home/dot_config/zsh/dot_zlogin" "$home_dir/.config/zsh/.zlogin"
 }
