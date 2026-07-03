@@ -231,14 +231,14 @@ seg="$model"
 add "$seg"
 
 [ -n "$dir" ] && add "${blu}${dir}${rst}"
-[ -n "$duration" ] && add "${dim}⏱ ${duration}${rst}"
+[ -n "$duration" ] && add "${dim}${duration}${rst}"
 [ -n "$cost" ] && add "${ylw}${cost}${rst}"
 
 if [ -n "$ctx_pct" ]; then
   c=$(level_color "$ctx_level")
   seg="${dim}ctx${rst} ${c}$(bar "$ctx_pct") ${ctx_pct}%${rst}"
   [ -n "$ctx_used" ] && [ -n "$ctx_size" ] && seg="${seg} ${dim}${ctx_used}/${ctx_size}${rst}"
-  [ -n "$ctx_compacts" ] && seg="${seg} ${dim}(✂${ctx_compacts})${rst}"
+  [ -n "$ctx_compacts" ] && seg="${seg} ${dim}(x${ctx_compacts})${rst}"
   add "$seg"
 fi
 

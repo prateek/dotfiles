@@ -29,7 +29,7 @@ d7_reset=$(( $(date +%s) + 250000 ))  # ~2.9d out
 sub=$(printf '%s' "$base" | jq -c --argjson h "$h5_reset" --argjson d "$d7_reset" \
   '.rate_limits = {five_hour: {used_percentage: 42, resets_at: $h}, seven_day: {used_percentage: 63, resets_at: $d}}')
 out=$(printf '%s' "$sub" | sh "$script" | strip_ansi)
-for want in "Fable 5 xhigh" "dotfiles/claude-acpx" "⏱ 2h50m" \
+for want in "Fable 5 xhigh" "dotfiles/claude-acpx" "2h50m" \
   "ctx ██████░░░░ 58% 116k/200k" "5h ████░░░░░░ 42% (15m)"; do
   [[ "$out" == *"$want"* ]] || die "missing '$want' in: $out"
 done
@@ -84,9 +84,9 @@ trap 'rm -f "$transcript"' EXIT
 } > "$transcript"
 compacted=$(printf '%s' "$base" | jq -c --arg t "$transcript" '.transcript_path = $t')
 out=$(printf '%s' "$compacted" | sh "$script" | strip_ansi)
-[[ "$out" == *"116k/200k (✂2)"* ]] || die "missing compaction count: $out"
+[[ "$out" == *"116k/200k (x2)"* ]] || die "missing compaction count: $out"
 out=$(printf '%s' "$base" | sh "$script" | strip_ansi)
-[[ "$out" != *"✂"* ]] || die "compaction marker without transcript: $out"
+[[ "$out" != *"116k/200k (x"* ]] || die "compaction marker without transcript: $out"
 
 # Minimal payload renders one line and exits cleanly.
 minimal='{"model": {"display_name": "Fable 5"}, "workspace": {"current_dir": "/tmp"}}'
