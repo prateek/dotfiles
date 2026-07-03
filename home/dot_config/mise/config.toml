@@ -8,6 +8,9 @@
 #                           tool-tied [env] in the same file
 #   conf.d/<name>.toml    - promote a category here once it has ~3+ stable
 #                           entries that share env / settings / hooks
+#   conf.d/zz-local.toml  - host-local channel selections written by
+#                           `mise run crit:use` / `codex:use`; unmanaged,
+#                           sorts last so it overrides clis.toml pins
 #
 # Keep this file empty unless something truly belongs at the root layer
 # (e.g., a setting that must load before every conf.d file). See

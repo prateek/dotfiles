@@ -45,7 +45,11 @@ select_codex() {
   if [[ "$scope" == "local" ]]; then
     mise use --env local "$spec"
   else
-    mise use -g "$spec"
+    # Host-local overlay, not `mise use -g`: chezmoi owns the global
+    # config.toml (kept empty) and conf.d/*.toml loads after it, so a global
+    # write there is both drift and a no-op. zz-local.toml sorts last in
+    # conf.d and wins; chezmoi leaves it unmanaged.
+    mise use --path "${MISE_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/mise}/conf.d/zz-local.toml" "$spec"
   fi
 }
 
