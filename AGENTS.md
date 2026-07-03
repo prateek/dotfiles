@@ -81,6 +81,8 @@ Shell load order:
 zshenv -> zprofile -> zshrc -> init.sh -> zinit-init.zsh -> lib/*.zsh -> extra/*.zsh
 ```
 
+- An env var that must reach **every** shell — including inherited-`ZDOTDIR` ones (agent tool-shells, `make` children, nested subshells) — belongs in `$ZDOTDIR/.zshenv` (`home/dot_config/zsh/dot_zshenv.tmpl`), not `$HOME/.zshenv`. zsh reads exactly one `.zshenv`, chosen at startup by whether `ZDOTDIR` is set: unset reads `$HOME/.zshenv`, set reads `$ZDOTDIR/.zshenv`. `$HOME/.zshenv` (`home/dot_zshenv.tmpl`) is a thin bootstrap that sets `ZDOTDIR` and sources `$ZDOTDIR/.zshenv`, so the unset path lands the same env.
+- Verify env-var placement in both startup paths with any inherited value cleared, so the shell must re-derive it: `env -u VAR zsh -c 'echo $VAR'` (set `ZDOTDIR`) and `env -u VAR -u ZDOTDIR zsh -c 'echo $VAR'` (unset) must both print it. A parent that already exports `VAR` masks a wrong placement.
 - Keep baseline `PATH` entries in `zprofile`'s `path=(...)` array, not ad hoc `export PATH=...` snippets in `zshrc`.
 - Keep host-local shell secrets and env overlays in `$HOME/.zprofile.local` or `$HOME/.zshrc.local`; they are sourced by managed zsh startup and ignored by chezmoi.
 - Prefer explicit directories like `$HOME/go/bin` over indirect env vars like `$GOPATH/bin` for shell PATH setup.
