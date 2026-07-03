@@ -1,7 +1,7 @@
 # Source
 
-- Upstream: https://github.com/tomasz-tomczyk/crit/tree/0efaa6f861995c03efe8648260b70a2460443c78/integrations/codex/skills/crit
-- APM dependency: `tomasz-tomczyk/crit/integrations/codex/skills/crit`
-- Ref: `0efaa6f861995c03efe8648260b70a2460443c78`
+- Upstream: https://github.com/tomasz-tomczyk/crit/tree/ea3e089eaf188be2d4c1c5d25dc42a18072b9560/integrations/claude-code/skills/crit
+- APM dependency: `tomasz-tomczyk/crit/integrations/claude-code/skills/crit`
+- Ref: `ea3e089eaf188be2d4c1c5d25dc42a18072b9560`
 - License: MIT.
-- Notes: Vendored from Crit's Codex integration skills.
+- Notes: Vendored from Crit's Claude Code integration skills. Local delta: description keeps the codex variant's "Use when ..." trigger clause so Claude auto-invokes the skill; drop the delta once upstream restores it.

@@ -29,7 +29,7 @@
 # CLIs the agent reaches for, either via a SKILL.md wrapper or via the
 # convention docs in ~/.agents/docs/. Inline comment names the consumer
 # when the package name doesn't make it obvious.
-"go:github.com/tomasz-tomczyk/crit" = "latest"            # crit, crit-cli (review pkg)
+"go:github.com/tomasz-tomczyk/crit/cmd/crit" = "latest"   # crit, crit-cli (review pkg); main package lives under cmd/crit
 "npm:@agentclientprotocol/claude-agent-acp" = "latest"     # claude-agent-acp; ACP adapter for acpx afable shortcuts. see ~/.agents/docs/acpx.md
 "npm:@pleaseai/ask" = "latest"                             # ask skill (utils-agent); see [env] below
 "npm:@shortcut-cli/shortcut-cli" = "latest"                # shortcut skill; binary is `short`
@@ -44,3 +44,6 @@ sops = "latest"                                            # aqua:getsops/sops; 
 [env]
 # ask: cache lives under XDG_CACHE_HOME so it stays out of $HOME root.
 ASK_HOME = "{{ get_env(name='XDG_CACHE_HOME', default='~/.cache') }}/ask"
+# crit: integrations are APM-vendored (ADR 0013); silence the startup tip that
+# tells agents to run `crit install`, which would clobber renderer-owned roots.
+CRIT_NO_INTEGRATION_CHECK = "1"

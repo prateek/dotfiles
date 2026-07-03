@@ -35,6 +35,8 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 
 | Doc | Status |
 | --- | --- |
+| [Agent Plugin Renderer](plans/agent-plugin-renderer-plan.md) | Active; single plugin-only render mode with APM payload pass-through landed — pack-bundle vendoring stays deferred. |
+| [Crit Integration](plans/crit-integration-plan.md) | Active; claude-code skills re-vendored with plan-hook via managed settings — live rollout smoke and upstream description PR remaining. |
 | [BetterDisplay Display Modes](plans/betterdisplay-display-modes-plan.md) | Proposed only; no `displayctl` implementation exists in this checkout. |
 | [Decomment Skill](plans/decomment-skill-plan.md) | Active; decomment core skill, trigger-channel fixes, and evals under implementation. |
 | [Orcactl](plans/orcactl-plan.md) | Draft for a separate Go repo/tool; dotfiles integration is future install/skill wiring. |
@@ -62,6 +64,7 @@ for day-to-day implementation details.
 | [ADR 0010 - Single machine_type axis for package selection](adr/0010-machine-type-package-selection.md) | [Chezmoi Architecture](references/chezmoi-architecture.md) > Packages And Tools. |
 | [ADR 0011 - Private repo for config overlays](adr/0011-private-repo-config-overlays.md) | `prateek/dotfiles-private` cloned via gated `.chezmoiexternal`, composed by `run_after_37-agent-slack-doc`; first consumer `~/.agents/docs/slack.md`. |
 | [ADR 0012 - Config-gating convention](adr/0012-config-gating-convention.md) | chezmoi toggle convention (render-time vs init-time), implemented as one identity prompt + a layered `machines.toml` resolved by `features.tmpl`. Current guidance: [Chezmoi Architecture](references/chezmoi-architecture.md) > Config Gating. |
+| [ADR 0013 - Agent tool integrations stay APM-vendored](adr/0013-apm-vendored-tool-integrations.md) | [Crit Integration](plans/crit-integration-plan.md) and [Agent Skill Management](../.agents/skills/agent-skill-management/SKILL.md). |
 
 ## Research
 

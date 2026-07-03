@@ -1,0 +1,82 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.14"
+# dependencies = []
+# ///
+"""Maintain the legacy skill roots now that every package renders as a plugin.
+
+~/.agents/skills survives as an empty stub because ~/.codex/skills symlinks to
+it and Codex writes runtime `.system/` skills through that path. ~/.claude/skills
+has no such consumer and is removed when it is our generated root.
+"""
+from __future__ import annotations
+
+import argparse
+import shutil
+import sys
+from pathlib import Path
+
+from agent_skill_lib import (
+    GENERATED_README,
+    write_generated_readme,
+    write_skills_gitignore,
+)
+
+
+GENERATOR = ".agents/skills/agent-skill-management/scripts/maintain-agent-skill-roots"
+CODEX_STUB_KEEP = {".system", ".gitignore", GENERATED_README}
+
+
+def maintain_codex_stub(root: Path) -> None:
+    root.mkdir(parents=True, exist_ok=True)
+    for entry in sorted(root.iterdir()):
+        if entry.name in CODEX_STUB_KEEP:
+            continue
+        if entry.is_symlink() or entry.is_file():
+            entry.unlink()
+        else:
+            shutil.rmtree(entry)
+    write_generated_readme(
+        root,
+        GENERATOR,
+        "Codex runtime skill root. Package skills ship as plugins from"
+        " `~/.agents/plugins`; Codex writes its own `.system/` skills here"
+        " through the `~/.codex/skills` symlink.",
+    )
+    write_skills_gitignore(root)
+
+
+def remove_claude_root(root: Path) -> None:
+    if not root.exists() and not root.is_symlink():
+        return
+    if root.is_dir() and (root / GENERATED_README).exists():
+        shutil.rmtree(root)
+        return
+    print(
+        f"warning: {root} is not a generated skill root; leaving it in place",
+        file=sys.stderr,
+    )
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--codex-root",
+        type=Path,
+        required=True,
+        help="Codex runtime skill root to keep as an empty stub",
+    )
+    parser.add_argument(
+        "--claude-root",
+        type=Path,
+        required=True,
+        help="retired Claude root-skill directory to remove when generated",
+    )
+    args = parser.parse_args()
+    maintain_codex_stub(args.codex_root.expanduser())
+    remove_claude_root(args.claude_root.expanduser())
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

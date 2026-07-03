@@ -3,5 +3,19 @@
     "type": "command",
     "command": "~/.claude/statusline.sh"
   },
-  "skillListingBudgetFraction": 0.04
+  "skillListingBudgetFraction": 0.04,
+  "hooks": {
+    "PermissionRequest": [
+      {
+        "matcher": "ExitPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "crit plan-hook",
+            "timeout": 345600
+          }
+        ]
+      }
+    ]
+  }
 }

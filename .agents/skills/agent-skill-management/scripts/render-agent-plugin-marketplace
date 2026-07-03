@@ -6,6 +6,8 @@
 from __future__ import annotations
 
 import argparse
+import shutil
+import sys
 import tempfile
 from pathlib import Path
 
@@ -25,6 +27,10 @@ from agent_skill_lib import (
 
 GENERATOR = ".agents/skills/agent-skill-management/scripts/render-agent-plugin-marketplace"
 CODEX_PLUGIN_SOURCE_ROOT = "./.agents/plugins/plugins"
+
+# Codex plugins consume skills and hooks; the remaining payload kinds are
+# Claude-only until Codex grows an equivalent surface.
+CODEX_UNMAPPED_PAYLOADS = {"commands", "agents", ".mcp.json"}
 
 
 def codex_plugin_manifest(package) -> dict:
@@ -55,6 +61,29 @@ def claude_plugin_manifest(package) -> dict:
         "author": {"name": "Prateek"},
         "skills": ["./skills"],
     }
+
+
+def copy_payloads(package, plugin_root: Path) -> None:
+    # Payloads land at the plugin-spec conventional locations both agents
+    # auto-discover; manifests only need the explicit skills key.
+    for payload in package.payloads:
+        source = package.path / payload
+        if payload == "hooks.json":
+            target = plugin_root / "hooks/hooks.json"
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, target)
+        elif payload == ".mcp.json":
+            shutil.copy2(source, plugin_root / ".mcp.json")
+        else:
+            shutil.copytree(source, plugin_root / payload)
+    if package.render.get("codex") == "plugin":
+        for payload in package.payloads:
+            if payload in CODEX_UNMAPPED_PAYLOADS:
+                print(
+                    f"warning: {package.package_id}: codex has no mapping for "
+                    f"{payload}; that payload is claude-only",
+                    file=sys.stderr,
+                )
 
 
 def render_plugins(target: Path, packages) -> None:
@@ -93,6 +122,7 @@ def render_plugins(target: Path, packages) -> None:
             write_json(plugin_root / ".claude-plugin/plugin.json", claude_plugin_manifest(package))
         for skill in package.skills:
             copy_skill_tree(skill.path, skills_root / skill.skill_id)
+        copy_payloads(package, plugin_root)
 
         if package.render.get("codex") == "plugin":
             codex_marketplace["plugins"].append(

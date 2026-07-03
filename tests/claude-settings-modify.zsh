@@ -60,6 +60,29 @@ cat >"$current" <<'JSON'
     "other@other-market": true,
     "stale@prateek-local": false
   },
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "printf user-owned-hook"
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "matcher": "ExitPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "printf stale-plan-hook"
+          }
+        ]
+      }
+    ]
+  },
   "statusLine": {
     "type": "command",
     "command": "printf status"
@@ -88,8 +111,17 @@ assert local["source"] == "directory"
 import os
 assert local["path"] == os.path.expanduser("~/.agents/plugins")
 
+# The managed fragment owns the PermissionRequest hook list (crit plan-hook);
+# the fixture seeds a stale entry to prove managed wins. Hook events managed
+# doesn't own (UserPromptSubmit) pass through untouched.
+assert data["hooks"]["PermissionRequest"] == managed["hooks"]["PermissionRequest"]
+assert data["hooks"]["PermissionRequest"][0]["hooks"][0]["command"] == "crit plan-hook"
+user_hooks = data["hooks"]["UserPromptSubmit"]
+assert user_hooks[0]["hooks"][0]["command"] == "printf user-owned-hook"
+
 plugins = data["enabledPlugins"]
 # Reflects default_loaded in each package.toml; flip the source there if rotated.
+assert plugins["core@prateek-local"] is True
 assert plugins["design@prateek-local"] is False
 assert plugins["experimental@prateek-local"] is False
 assert plugins["ios@prateek-local"] is False

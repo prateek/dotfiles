@@ -26,9 +26,14 @@ CLAUDE_PLUGIN_SETTINGS_TEMPLATE = (
 )
 
 GENERATED_README = "README.generated.md"
-VALID_RENDER_VALUES = {"root", "plugin", "none"}
+VALID_RENDER_VALUES = {"plugin", "none"}
 AGENTS = ("codex", "claude")
 MAX_SKILL_DESCRIPTION_CHARS = 1024
+
+# Plugin-shaped payload surface a package may carry beyond skills/, mirroring
+# what APM projects (and what `apm pack` bundles emit).
+PAYLOAD_DIRS = ("commands", "agents")
+PAYLOAD_FILES = ("hooks.json", ".mcp.json")
 
 
 @dataclass(frozen=True)
@@ -47,6 +52,7 @@ class Package:
     render: dict[str, str]
     skills: tuple[SkillSource, ...]
     default_loaded: bool = True
+    payloads: tuple[str, ...] = ()
 
 
 def load_packages() -> list[Package]:
@@ -76,9 +82,19 @@ def load_packages() -> list[Package]:
                 render=render,
                 skills=tuple(iter_package_skills(path)),
                 default_loaded=default_loaded,
+                payloads=tuple(iter_package_payloads(path)),
             )
         )
     return packages
+
+
+def iter_package_payloads(package_path: Path) -> Iterable[str]:
+    for kind in PAYLOAD_DIRS:
+        if (package_path / kind).is_dir():
+            yield kind
+    for kind in PAYLOAD_FILES:
+        if (package_path / kind).is_file():
+            yield kind
 
 
 def iter_package_skills(package_path: Path) -> Iterable[SkillSource]:

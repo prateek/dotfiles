@@ -141,7 +141,7 @@ run_onchange_after_15-xcode.sh.tmpl
 run_onchange_after_20-mise-install.sh.tmpl
 run_onchange_after_25-hammerspoon.sh.tmpl
 run_onchange_after_30-macos-defaults.sh.tmpl
-run_onchange_after_35-agent-core-skills.sh.tmpl
+run_onchange_after_35-agent-skill-roots.sh.tmpl
 run_onchange_after_36-agent-plugins.sh.tmpl
 run_onchange_after_40-build-mic.sh.tmpl
 run_onchange_after_90-verify.sh.tmpl

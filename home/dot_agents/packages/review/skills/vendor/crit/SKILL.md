@@ -1,26 +1,34 @@
 ---
 name: crit
-description: Review code changes or a plan with crit inline comments. Use when asked to review code, a plan, a diff, or when you want structured human feedback on your work.
+description: "Review code changes, a plan, a live page (running dev server), or a local HTML file with crit inline comments. Use when asked to review code, a plan, a diff, a running web app, or when you want structured human feedback on your work."
+allowed-tools: Bash(crit:*), Bash(command ls:*), Read, Edit, Glob
+argument-hint: "[file|url]"
 ---
 
 # Review with Crit
 
-Review and revise code changes or a plan using `crit` for inline comment review.
+Review and revise code changes, plans, live pages (running dev servers, staging URLs), or local HTML files using `crit` for inline comment review.
 
-## Step 1: Determine review mode
+## Step 1: Pass arguments to `crit`
 
-Pick whichever applies — don't ask for confirmation:
+The CLI auto-detects the review mode from its arguments. **Do not ask the user which mode to use.** Pass `$ARGUMENTS` through:
 
-1. **User argument** — user specified a file (e.g. `crit my-plan.md`) → review that file
-2. **Recent plan** — no argument, but a plan was written earlier in this conversation → `crit <plan-file>`
-3. **Branch review** — otherwise → bare `crit`. Auto-detects uncommitted changes or branch-vs-default-branch diff. Works on clean branches.
-4. **PR or commit range** — user asked to review a specific GitHub PR or commit range → `crit --pr <num|url>` or `crit --range <baseSHA>..<headSHA>`. Boots crit in *range mode*, scoping the review to a fixed range of commits rather than the working tree.
+```
+crit $ARGUMENTS               # file, dir, URL, .html — CLI auto-detects mode
+crit --pr <num|url>            # GitHub PR (range mode)
+crit --range <base>..<head>    # commit range (range mode)
+crit                           # no args → branch diff
+```
+If no arguments, check conversation context:
+
+1. A plan file was written earlier in this conversation → `crit <plan-file>`
+2. Otherwise → bare `crit` (branch diff)
 
 ## Step 2: Launch crit and block until review completes
 
 **CRITICAL — you MUST run this step. Do NOT skip it. Do NOT proceed without it.**
 
-Run `crit` in the foreground and block until it exits:
+Run `crit` **in the background** using `run_in_background: true`:
 
 ```bash
 crit <plan-file>   # specific file
@@ -33,23 +41,19 @@ If a crit server is already running from earlier in this conversation, `crit` au
 
 > **"Crit is open at http://localhost:<port>. Leave inline comments, then click Finish Review."**
 
-**Do NOT proceed until `crit` completes.** Do NOT ask the user to type anything. Do NOT read the review file early. Wait for the foreground command to finish — that is how you know the human is done reviewing.
+**Do NOT proceed until `crit` completes.** Do NOT ask the user to type anything. Do NOT read the review file early. Wait for the background task to finish — that is how you know the human is done reviewing.
 
 ## Step 3: Read the review output
 
-When `crit` completes, its stdout includes the path to the review file (e.g. "Review comments are in /path/to/review.json"). Read it.
+When `crit` completes, read **stdout** and follow its instructions. Check **stderr** for `approved: true` or `approved: false`.
 
-The file contains structured JSON. Three comment types:
-- `review_comments` (top-level, `r_`-prefixed IDs) — general feedback
-- File comments (per-file `comments` array, no `start_line`/`end_line`) — about the file as a whole
-- Line comments (per-file `comments` array, with `start_line`/`end_line`) — about specific lines
-
-Identify all comments where `resolved` is `false` or missing.
-
-When a comment has these fields:
+<important if="a comment has a quote, anchor, or drifted field">
 - `quote`: the specific text the reviewer selected — focus your changes on the quoted text rather than the entire line range
 - `anchor`: use it to locate the current position of the content; line numbers may be stale after edits
 - `drifted: true`: original content was removed or heavily rewritten — line numbers are approximate at best
+</important>
+
+**Fallback** (mid-round re-entry, plan hooks, or headless workflows): `crit comments` / `crit comments --json`. Use `crit comments --plan <slug>` for plan-mode reviews.
 
 ## Step 4: Address each review comment
 
@@ -57,30 +61,28 @@ For each unresolved comment:
 
 1. Understand what the comment asks for
 2. If it contains a suggestion block, apply that specific change
-3. Revise the referenced file (plan or code file from the diff)
-4. Reply with what you did: `crit comment --reply-to <id> --author 'Codex' '<what you did>'` (reply bodies support markdown)
+3. Revise the referenced file (plan or code file from the diff) using Edit
+4. Reply with what you did: `crit comment --reply-to <id> --author 'Claude Code' '<what you did>'` (reply bodies support markdown)
 5. **Do not pass `--resolve`.** Resolving is the reviewer's call. Only add `--resolve` if the user explicitly asks.
 
 Editing the plan file triggers Crit's live reload — the user sees changes in the browser immediately.
 
-### When replying to multiple comments
-
+<important if="you are replying to multiple comments at once">
 Use `--json` for a single bulk call instead of one invocation per comment:
 
 ```bash
 echo '[
   {"reply_to": "c_a1b2c3", "body": "Fixed"},
   {"reply_to": "c_d4e5f6", "body": "Refactored as suggested"}
-]' | crit comment --json --author 'Codex'
+]' | crit comment --json --author 'Claude Code'
 ```
-
-**If there are zero review comments**: inform the user no changes were requested and stop.
+</important>
 
 ## Step 5: Signal completion and start next round
 
 **CRITICAL — you MUST run this step. Do NOT skip it. Do NOT proceed without it.**
 
-When Step 2's `crit` command exits with feedback, it prints `Next round: crit <args>` to stdout. Run that command verbatim — the daemon is keyed by args, so mismatched args spawn a new daemon instead of reconnecting.
+The finish prompt on stdout includes the command to run again — use it to start a new round.
 
 On subsequent calls, `crit` automatically signals round-complete first, then blocks until the next "Finish Review" click.
 
@@ -88,26 +90,25 @@ Tell the user: **"Changes applied. Review the diff in your browser and click Fin
 
 **Do NOT proceed until `crit` completes.** When it does, return to Step 3. If the user finishes with zero comments, the review is approved — stop the loop and proceed.
 
-## Sharing
-
-If the user asks for a URL, a shareable link, or to share the review:
+<important if="the user asks for a URL, a shareable link, or a QR code for the review">
 
 ```bash
 crit share <file>
 ```
 
-**Always relay the full output to the user** — copy the URL directly into your response. Don't make them dig through tool output.
+**Always relay the full output to the user** — copy the URL (and QR code if `--qr` was used) directly into your response. Don't make them dig through tool output.
 
 To remove a shared review:
 
 ```bash
-crit unpublish
+crit unpublish [file...]
 ```
+</important>
 
-### QR codes
-
-Only use `--qr` in real terminal environments with monospace rendering. Skip it in mobile apps or web chat UIs — Unicode block characters won't render.
+<important if="you are about to add --qr to a share command">
+Only use `--qr` in real terminal environments with monospace rendering. Skip it in mobile apps (Claude Code mobile) or web chat UIs — Unicode block characters won't render.
 
 ```bash
 crit share --qr <file>
 ```
+</important>

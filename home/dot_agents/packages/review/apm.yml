@@ -5,5 +5,5 @@ targets:
 
 dependencies:
   apm:
-    - tomasz-tomczyk/crit/integrations/codex/skills/crit
-    - tomasz-tomczyk/crit/integrations/codex/skills/crit-cli
+    - tomasz-tomczyk/crit/integrations/claude-code/skills/crit
+    - tomasz-tomczyk/crit/integrations/claude-code/skills/crit-cli

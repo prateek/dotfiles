@@ -1,0 +1,19 @@
+{{ template "script_lib.sh" . }}
+
+# maintain-agent-skill-roots sha256: {{ include (printf "%s/../.agents/skills/agent-skill-management/scripts/maintain-agent-skill-roots" .chezmoi.sourceDir) | sha256sum }}
+# agent_skill_lib.py sha256: {{ include (printf "%s/../.agents/skills/agent-skill-management/scripts/agent_skill_lib.py" .chezmoi.sourceDir) | sha256sum }}
+
+set -euo pipefail
+
+maintainer="{{ .chezmoi.sourceDir }}/../.agents/skills/agent-skill-management/scripts/maintain-agent-skill-roots"
+
+[ -x "$maintainer" ] || die "Agent skill root maintainer is missing or not executable: $maintainer"
+have uv || die "uv is required to maintain agent skill roots."
+
+# Keeps ~/.agents/skills as Codex's writable stub (its .system/ skills arrive
+# via the ~/.codex/skills symlink) and removes the retired ~/.claude/skills
+# root; package skills ship as plugins from ~/.agents/plugins.
+run_timed "maintain agent skill roots" \
+  "$maintainer" \
+  --codex-root "$HOME/.agents/skills" \
+  --claude-root "$HOME/.claude/skills"

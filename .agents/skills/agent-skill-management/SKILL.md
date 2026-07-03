@@ -39,18 +39,22 @@ Expected package files:
 - `skills/vendor/<skill-id>/`: reviewed remote skill source.
 - `skills/vendor/<skill-id>/SOURCE.md`: upstream URL, resolved ref, license
   note, scanner commands, and reviewer notes.
+- Optional plugin-shaped payloads at the package root, mirroring what APM
+  projects: `commands/`, `agents/`, `hooks.json`, `.mcp.json`. The renderer
+  passes them through to the plugin tree's conventional locations. Claude
+  consumes all of them; Codex consumes skills and hooks, and the renderer
+  warns (and continues) for payload kinds Codex cannot map.
 
 There is no global package manifest. The renderers walk
 `home/dot_agents/packages/*/package.toml`; the package id is the directory name.
 
 Allowed render policy values:
 
-- `root`: materialize the package into the agent's default always-on skill root.
 - `plugin`: render the package as a local plugin for that agent.
 - `none`: do not render the package for that agent.
 
-In the first implementation, use `root` only for the `core` package. Non-core
-packages should render as `plugin` or `none`.
+Every rendered package is a plugin; there is no root-skill projection. Keep
+always-on packages (like `core`) as plugins with `default_loaded = true`.
 
 ### Default-loaded policy
 
@@ -86,6 +90,15 @@ Rules:
 - Use `apm.lock.yaml` as the reproducible reviewed snapshot.
 - Vendor accepted remote skill folders into `skills/vendor/<skill-id>/`.
 - Keep one `SOURCE.md` in each vendored remote skill root.
+- Record intentional divergence from upstream as a "Local delta" note in
+  `SOURCE.md`. Re-vendoring overwrites the skill tree, so re-apply noted
+  deltas afterward and drop them once upstreamed.
+- Agent tool integrations (for example crit) vendor like any other dependency;
+  see [ADR 0013](../../../docs/adr/0013-apm-vendored-tool-integrations.md).
+  When the tool's binary moves (`mise run crit:use ...`), re-run
+  `vendor-agent-package` for its package so skills match the installed CLI.
+  crit's plan-review hook ships via `claude-settings-managed.json.tmpl`, not
+  the plugin tree.
 - Reject non-skill APM primitives unless this workflow is explicitly extended
   to support them.
 
@@ -100,15 +113,20 @@ add `SOURCE.md`, and keep the package inactive until validation passes.
 
 ## Generated Outputs
 
-Apply-time generated live roots:
+Apply-time generated state:
 
-- `~/.agents/skills`: Codex root skill projection.
-- `~/.claude/skills`: Claude root skill projection.
-- `~/.agents/plugins`: shared local plugin marketplace.
+- `~/.agents/plugins`: shared local plugin marketplace; the only skill
+  projection.
+- `~/.agents/skills`: empty maintained stub. It exists because
+  `~/.codex/skills` symlinks to it and Codex writes runtime `.system/`
+  skills through that path; the maintainer preserves `.system/` and clears
+  everything else.
+- `~/.claude/skills`: retired. The maintainer removes it when it is our
+  generated root and leaves (with a warning) anything hand-authored.
 
 The apply-time scripts are:
 
-- `home/.chezmoiscripts/run_onchange_after_35-agent-core-skills.sh.tmpl`
+- `home/.chezmoiscripts/run_onchange_after_35-agent-skill-roots.sh.tmpl`
 - `home/.chezmoiscripts/run_onchange_after_36-agent-plugins.sh.tmpl`
 
 Those scripts should fail loudly, own their destination roots, clean stale
@@ -166,26 +184,12 @@ After editing package source, run validation against explicit temp roots:
 ```sh
 tmp="$(mktemp -d)"
 .agents/skills/agent-skill-management/scripts/validate-agent-packages
-.agents/skills/agent-skill-management/scripts/render-agent-core-skills \
-  --codex-root "$tmp/.agents/skills" \
-  --claude-root "$tmp/.claude/skills"
 .agents/skills/agent-skill-management/scripts/render-agent-plugin-marketplace \
   --plugins-root "$tmp/.agents/plugins" \
   --skip-config-templates
-.agents/skills/agent-skill-management/scripts/render-agent-core-skills \
-  --check \
-  --codex-root "$tmp/.agents/skills" \
-  --claude-root "$tmp/.claude/skills"
 .agents/skills/agent-skill-management/scripts/render-agent-plugin-marketplace \
   --check \
   --plugins-root "$tmp/.agents/plugins"
-```
-
-Before a live `chezmoi apply` that may replace `~/.agents/skills` or
-`~/.claude/skills`, run:
-
-```sh
-.agents/skills/agent-skill-management/scripts/render-agent-core-skills --check-live
 ```
 
 When previewing chezmoi templates from a worktree, pass `--source <repo>` so

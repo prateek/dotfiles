@@ -296,16 +296,7 @@ PATH="$fake_bin:$PATH" \
 [[ ! -e "$empty_package/apm.lock.yaml" ]]
 
 rendered_root="$tmp_root/rendered"
-codex_skills_root="$rendered_root/.agents/skills"
-claude_skills_root="$rendered_root/.claude/skills"
 plugins_root="$rendered_root/.agents/plugins"
-.agents/skills/agent-skill-management/scripts/render-agent-core-skills \
-  --codex-root "$codex_skills_root" \
-  --claude-root "$claude_skills_root"
-.agents/skills/agent-skill-management/scripts/render-agent-core-skills \
-  --check \
-  --codex-root "$codex_skills_root" \
-  --claude-root "$claude_skills_root"
 .agents/skills/agent-skill-management/scripts/render-agent-plugin-marketplace \
   --plugins-root "$plugins_root" \
   --skip-config-templates
@@ -332,44 +323,34 @@ for plugin in claude["plugins"]:
     assert plugin["source"] == f"./plugins/{name}"
 PY
 
-mkdir -p "$tmp_root/.agents/skills"
-cp -R \
-  home/dot_agents/packages/core/skills/local/code-gardening \
-  "$tmp_root/.agents/skills/code-gardening"
-printf '\n# local-only drift\n' >>"$tmp_root/.agents/skills/code-gardening/SKILL.md"
-if HOME="$tmp_root" \
-  .agents/skills/agent-skill-management/scripts/render-agent-core-skills --check-live \
-  >"$tmp_root/check-live.out" 2>&1; then
-  echo "expected --check-live to reject content drift" >&2
-  exit 1
-fi
-grep -q 'differs from home/dot_agents/packages/core/skills/local/code-gardening' \
-  "$tmp_root/check-live.out"
-rm -rf "$tmp_root/.agents/skills/code-gardening"
-HOME="$tmp_root" \
-  .agents/skills/agent-skill-management/scripts/render-agent-core-skills --check-live
+# maintain-agent-skill-roots keeps Codex's writable stub (preserving .system/)
+# and removes the retired Claude root only when it is our generated dir.
+roots_home="$tmp_root/roots"
+mkdir -p "$roots_home/.agents/skills/.system/runtime" \
+  "$roots_home/.agents/skills/stale-core-skill" \
+  "$roots_home/.claude/skills"
+: >"$roots_home/.agents/skills/.system/runtime/SKILL.md"
+: >"$roots_home/.agents/skills/stale-core-skill/SKILL.md"
+: >"$roots_home/.claude/skills/README.generated.md"
+.agents/skills/agent-skill-management/scripts/maintain-agent-skill-roots \
+  --codex-root "$roots_home/.agents/skills" \
+  --claude-root "$roots_home/.claude/skills"
+[[ -e "$roots_home/.agents/skills/.system/runtime/SKILL.md" ]]
+[[ ! -e "$roots_home/.agents/skills/stale-core-skill" ]]
+[[ -e "$roots_home/.agents/skills/README.generated.md" ]]
+[[ -e "$roots_home/.agents/skills/.gitignore" ]]
+[[ ! -e "$roots_home/.claude/skills" ]]
 
-mkdir -p "$tmp_root/.codex/skills/local-only"
-cat >"$tmp_root/.codex/skills/local-only/SKILL.md" <<'SKILL'
----
-name: local-only
-description: Local-only Codex skill.
----
-
-# Local Only
-SKILL
-if HOME="$tmp_root" \
-  .agents/skills/agent-skill-management/scripts/render-agent-core-skills --check-live \
-  >"$tmp_root/check-live-codex.out" 2>&1; then
-  echo "expected --check-live to reject a real ~/.codex/skills directory" >&2
-  exit 1
-fi
-grep -q 'expected compatibility symlink' "$tmp_root/check-live-codex.out"
-grep -q 'live-only skill local-only' "$tmp_root/check-live-codex.out"
-rm -rf "$tmp_root/.codex"
+mkdir -p "$roots_home/.claude/skills/hand-authored"
+.agents/skills/agent-skill-management/scripts/maintain-agent-skill-roots \
+  --codex-root "$roots_home/.agents/skills" \
+  --claude-root "$roots_home/.claude/skills" \
+  2>"$roots_home/maintain.err"
+grep -q 'not a generated skill root' "$roots_home/maintain.err"
+[[ -e "$roots_home/.claude/skills/hand-authored" ]]
 
 .agents/skills/agent-skill-management/scripts/audit-skill-context \
-  --agent codex "$codex_skills_root" \
+  --agent codex "$plugins_root/plugins/core/skills" \
   | python3 -m json.tool >/dev/null
 chezmoi --source home execute-template \
   --file home/.chezmoitemplates/agent-claude-plugin-settings.json.tmpl \
@@ -381,6 +362,7 @@ chezmoi --source home execute-template \
 python3 - <<'PY'
 import json, subprocess, tomllib
 expected = {
+    "core@prateek-local": True,
     "design@prateek-local": False,
     "experimental@prateek-local": False,
     "ios@prateek-local": False,
