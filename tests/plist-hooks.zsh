@@ -6,20 +6,23 @@ set +x 2>/dev/null || true
 unsetopt verbose 2>/dev/null || true
 set +v 2>/dev/null || true
 
+zmodload zsh/datetime
+zmodload zsh/zpty
+zmodload zsh/zselect
+
 die() {
   print -u2 -- "plist-hooks: $*"
   exit 1
 }
 
 DOTFILES_ROOT="${0:A:h:h}"
-guard_src="$DOTFILES_ROOT/scripts/chezmoi-hooks/guard-running-apps.sh"
-post_src="$DOTFILES_ROOT/scripts/chezmoi-hooks/post-apply-plists.sh"
+hooks_src="$DOTFILES_ROOT/scripts/chezmoi-hooks/plist-hooks.sh"
+guard_src="$hooks_src"
+post_src="$hooks_src"
 
-[[ -x $guard_src ]] || die "missing guard script: $guard_src"
-[[ -x $post_src ]] || die "missing post-apply script: $post_src"
+[[ -x $hooks_src ]] || die "missing plist-hooks script: $hooks_src"
 
-bash -n "$guard_src" || die "guard script syntax error"
-bash -n "$post_src" || die "post-apply script syntax error"
+bash -n "$hooks_src" || die "plist-hooks script syntax error"
 
 tmp_root="$(mktemp -d)"
 trap 'rm -rf "$tmp_root"' EXIT
@@ -95,6 +98,95 @@ EOF
   sed -i '' "s|/usr/bin/killall|$stubdir/killall|g; s|/usr/bin/open|$stubdir/open|g" "$target"
 }
 
+# One lsappinfo/osascript stub pair, shared by every interactive case: which
+# ids are running and which of those are "stuck" (osascript is invoked but
+# they never actually quit) is chosen per-run via STUB_RUNNING_IDS /
+# STUB_STUCK_IDS env vars rather than baked into the script text.
+write_quit_stubs() {
+  local dir="$1"
+  mkdir -p "$dir"
+  cat >"$dir/lsappinfo" <<'EOF'
+#!/usr/bin/env bash
+if [[ "$1" == "info" && "$3" == "bundleid" ]]; then
+  id="$4"
+  case " $STUB_RUNNING_IDS " in
+    *" $id "*) ;;
+    *) exit 0 ;;
+  esac
+  [[ -e "$STUB_MARKERS_DIR/$id.quit" ]] && exit 0
+  printf '"LSBundleIdentifier"="%s"\n' "$id"
+fi
+EOF
+  cat >"$dir/osascript" <<'EOF'
+#!/usr/bin/env bash
+echo "$*" >> "$STUB_MARKERS_DIR/osascript.log"
+id="$(printf '%s\n' "$2" | sed -n 's/.*id "\(.*\)" to quit.*/\1/p')"
+case " $STUB_STUCK_IDS " in
+  *" $id "*) ;;
+  *) : > "$STUB_MARKERS_DIR/$id.quit" ;;
+esac
+EOF
+  chmod +x "$dir/lsappinfo" "$dir/osascript"
+}
+
+# Runs a guard copy under a real pty (chezmoi wires a hook's stdin/stdout to
+# its own, so the guard only takes its interactive branch under a real tty —
+# see run_adapter_tty in tests/chezmoi-drift-banner.zsh for the same idiom).
+# $1: output file to write combined stdout+stderr to (the guard's own exit
+# code is appended as "EXIT_CODE:<n>" so the caller can assert on it without
+# a second pty run); $2: guard copy path; $3: env assignment lines to export
+# inside the pty; $4: response to send at the "[Y/n]" prompt ("" = bare
+# Enter). Writes to a file rather than returning via command substitution:
+# `$(...)` runs in a subshell, and zpty's job bookkeeping gets confused
+# spawned from inside one.
+run_guard_interactive() {
+  local outfile="$1" guard="$2" envlines="$3" response="$4"
+  local name="ph_${RANDOM}_${RANDOM}"
+  local runner="$tmp_root/runner_${name}.sh"
+  cat >"$runner" <<EOF
+#!/usr/bin/env bash
+$envlines
+"$guard" pre
+echo "EXIT_CODE:\$?"
+EOF
+  chmod +x "$runner"
+
+  local output='' chunk='' start
+  zpty -b "$name" "$runner"
+
+  start=$EPOCHREALTIME
+  while (( EPOCHREALTIME - start < 5 )); do
+    if zpty -rt "$name" chunk 2>/dev/null; then
+      output+="$chunk"
+      [[ "$output" == *'[Y/n]'* ]] && break
+    fi
+    zselect -t 0.02 >/dev/null 2>&1 || true
+  done
+  # zpty -w with an empty string sends nothing at all (not even the trailing
+  # newline that non-empty strings get) - send a bare newline explicitly for
+  # the default-yes ("" = Enter) case.
+  if [[ -z "$response" ]]; then
+    zpty -w -n "$name" $'\n'
+  else
+    zpty -w "$name" "$response"
+  fi
+
+  local quiet_start=$EPOCHREALTIME
+  start=$EPOCHREALTIME
+  while (( EPOCHREALTIME - start < 10 )); do
+    if zpty -rt "$name" chunk 2>/dev/null; then
+      output+="$chunk"
+      quiet_start=$EPOCHREALTIME
+      continue
+    fi
+    [[ "$output" == *'EXIT_CODE:'* ]] && (( EPOCHREALTIME - quiet_start > 0.3 )) && break
+    zselect -t 0.05 >/dev/null 2>&1 || true
+  done
+  zpty -d "$name" 2>/dev/null || true
+
+  print -r -- "${output//$'\r'/}" > "$outfile"
+}
+
 # -- guard-running-apps tests -----------------------------------------------
 
 # Case A: pending change, app running -> exit 1
@@ -104,7 +196,7 @@ stubs_a="$(write_chezmoi_status_stub a "  printf ' M %s/Library/Preferences/com.
 guard_a="$tmp_root/guard_a.sh"
 guard_copy_with_lsappinfo "$guard_a" com.example.foo
 set +e
-PATH="$stubs_a:$PATH" XDG_STATE_HOME="$state_a" HOME="$home_a" bash "$guard_a" >/dev/null 2>&1
+PATH="$stubs_a:$PATH" XDG_STATE_HOME="$state_a" HOME="$home_a" bash "$guard_a" pre >/dev/null 2>&1
 rc_a=$?
 set -e
 [[ $rc_a -eq 1 ]] || die "case A: expected exit 1, got $rc_a"
@@ -116,7 +208,7 @@ mkdir -p "$home_b" "$state_b"
 stubs_b="$(write_chezmoi_status_stub b "  printf ' M %s/Library/Preferences/com.example.foo.plist\n' \"\$HOME\"")"
 guard_b="$tmp_root/guard_b.sh"
 guard_copy_with_lsappinfo "$guard_b"  # no running apps
-PATH="$stubs_b:$PATH" XDG_STATE_HOME="$state_b" HOME="$home_b" bash "$guard_b" >/dev/null 2>&1
+PATH="$stubs_b:$PATH" XDG_STATE_HOME="$state_b" HOME="$home_b" bash "$guard_b" pre >/dev/null 2>&1
 [[ "$(<"$state_b/dotfiles/plist-pending.txt")" == "com.example.foo" ]] || die "case B: pending file mismatch"
 
 # Case C: SKIP=1 short-circuits the guard (now a single env var that
@@ -127,7 +219,7 @@ stubs_c="$(write_chezmoi_status_stub c "  printf ' M %s/Library/Preferences/com.
 guard_c="$tmp_root/guard_c.sh"
 guard_copy_with_lsappinfo "$guard_c" com.example.foo
 PATH="$stubs_c:$PATH" XDG_STATE_HOME="$state_c" HOME="$home_c" \
-  DOTFILES_SKIP_PLIST_HOOKS=1 bash "$guard_c" >/dev/null 2>&1
+  DOTFILES_SKIP_PLIST_HOOKS=1 bash "$guard_c" pre >/dev/null 2>&1
 
 # Case D: no pending changes -> exit 0, empty pending file
 home_d="$tmp_root/home_d"; state_d="$tmp_root/state_d"
@@ -135,7 +227,7 @@ mkdir -p "$home_d" "$state_d"
 stubs_d="$(write_chezmoi_status_stub d "  :")"
 guard_d="$tmp_root/guard_d.sh"
 guard_copy_with_lsappinfo "$guard_d"
-PATH="$stubs_d:$PATH" XDG_STATE_HOME="$state_d" HOME="$home_d" bash "$guard_d" >/dev/null 2>&1
+PATH="$stubs_d:$PATH" XDG_STATE_HOME="$state_d" HOME="$home_d" bash "$guard_d" pre >/dev/null 2>&1
 [[ ! -s "$state_d/dotfiles/plist-pending.txt" ]] || die "case D: pending file must be empty"
 
 # Case E: sandbox container path is recognized
@@ -144,7 +236,7 @@ mkdir -p "$home_e" "$state_e"
 stubs_e="$(write_chezmoi_status_stub e "  printf ' M %s/Library/Containers/com.example.bar/Data/Library/Preferences/com.example.bar.plist\n' \"\$HOME\"")"
 guard_e="$tmp_root/guard_e.sh"
 guard_copy_with_lsappinfo "$guard_e"  # not running
-PATH="$stubs_e:$PATH" XDG_STATE_HOME="$state_e" HOME="$home_e" bash "$guard_e" >/dev/null 2>&1
+PATH="$stubs_e:$PATH" XDG_STATE_HOME="$state_e" HOME="$home_e" bash "$guard_e" pre >/dev/null 2>&1
 [[ "$(<"$state_e/dotfiles/plist-pending.txt")" == "com.example.bar" ]] || die "case E: sandbox path not recognized"
 
 # -- post-apply-plists tests ------------------------------------------------
@@ -156,7 +248,7 @@ mkdir -p "$state_f/dotfiles"
 post_f="$tmp_root/post_f.sh"
 log_f="$tmp_root/calls_f.log"
 post_copy_with_logging "$post_f" "$log_f"
-XDG_STATE_HOME="$state_f" bash "$post_f"
+XDG_STATE_HOME="$state_f" bash "$post_f" post
 [[ ! -e "$state_f/dotfiles/plist-pending.txt" ]] || die "case F: file should be removed"
 [[ ! -s "$log_f" ]] || die "case F: no commands should have run"
 
@@ -165,7 +257,7 @@ state_g="$tmp_root/state_g"
 post_g="$tmp_root/post_g.sh"
 log_g="$tmp_root/calls_g.log"
 post_copy_with_logging "$post_g" "$log_g"
-XDG_STATE_HOME="$state_g" bash "$post_g"
+XDG_STATE_HOME="$state_g" bash "$post_g" post
 [[ ! -e "$log_g" ]] || die "case G: no commands should have run"
 
 # Case H: pending list, no relaunch -> killall once, no opens
@@ -175,7 +267,7 @@ printf 'com.example.foo\ncom.example.bar\n' > "$state_h/dotfiles/plist-pending.t
 post_h="$tmp_root/post_h.sh"
 log_h="$tmp_root/calls_h.log"
 post_copy_with_logging "$post_h" "$log_h"
-XDG_STATE_HOME="$state_h" bash "$post_h"
+XDG_STATE_HOME="$state_h" bash "$post_h" post
 [[ ! -e "$state_h/dotfiles/plist-pending.txt" ]] || die "case H: file should be removed"
 [[ "$(grep -c killall "$log_h")" -eq 1 ]] || die "case H: expected 1 killall, got $(grep -c killall "$log_h")"
 [[ "$(grep -c '\[open\]' "$log_h")" -eq 0 ]] || die "case H: expected 0 opens"
@@ -187,7 +279,7 @@ printf 'com.example.foo\ncom.example.bar\n' > "$state_i/dotfiles/plist-pending.t
 post_i="$tmp_root/post_i.sh"
 log_i="$tmp_root/calls_i.log"
 post_copy_with_logging "$post_i" "$log_i"
-XDG_STATE_HOME="$state_i" DOTFILES_RELAUNCH_AFTER_APPLY=1 bash "$post_i"
+XDG_STATE_HOME="$state_i" DOTFILES_RELAUNCH_AFTER_APPLY=1 bash "$post_i" post
 [[ "$(grep -c killall "$log_i")" -eq 1 ]] || die "case I: expected 1 killall"
 [[ "$(grep -c '\[open\]' "$log_i")" -eq 2 ]] || die "case I: expected 2 opens, got $(grep -c '\[open\]' "$log_i")"
 
@@ -208,7 +300,7 @@ run_pre_dryrun_case() {
   cp "$guard_j_base" "$guard_copy"
   set +e
   CHEZMOI_ARGS="$args" PATH="$stubs:$PATH" XDG_STATE_HOME="$state" HOME="$home" \
-    bash "$guard_copy" >/dev/null 2>&1
+    bash "$guard_copy" pre >/dev/null 2>&1
   local rc=$?
   set -e
   if [[ $expect == yes ]]; then
@@ -236,7 +328,7 @@ run_post_dryrun_case() {
   local post_copy="$tmp_root/post_j_$label.sh"
   local log="$tmp_root/calls_j_$label.log"
   post_copy_with_logging "$post_copy" "$log"
-  CHEZMOI_ARGS="$args" XDG_STATE_HOME="$state" bash "$post_copy"
+  CHEZMOI_ARGS="$args" XDG_STATE_HOME="$state" bash "$post_copy" post
   if [[ $expect == yes ]]; then
     [[ ! -e "$log" ]] || die "case J/$label: post-hook must not invoke killall/open on dry-run"
     [[ -s "$state/dotfiles/plist-pending.txt" ]] || die "case J/$label: post-hook must leave state on dry-run"
@@ -272,7 +364,7 @@ guard_copy_with_lsappinfo "$guard_k1" com.example.foo
 set +e
 DOTFILES_SKIP_PLIST_HOOKS=1 \
   PATH="$stub_dir_k1:$PATH" XDG_STATE_HOME="$state_k1" HOME="$home_k1" \
-  bash "$guard_k1" >/dev/null 2>&1
+  bash "$guard_k1" pre >/dev/null 2>&1
 rc_k1=$?
 set -e
 [[ $rc_k1 -eq 0 ]] || die "case K1: SKIP=1 must exit 0, got $rc_k1"
@@ -286,8 +378,125 @@ printf 'com.example.foo\n' > "$state_k2/dotfiles/plist-pending.txt"
 post_k2="$tmp_root/post_k2.sh"
 log_k2="$tmp_root/calls_k2.log"
 post_copy_with_logging "$post_k2" "$log_k2"
-DOTFILES_SKIP_PLIST_HOOKS=1 XDG_STATE_HOME="$state_k2" bash "$post_k2"
+DOTFILES_SKIP_PLIST_HOOKS=1 XDG_STATE_HOME="$state_k2" bash "$post_k2" post
 [[ ! -e "$log_k2" ]] || die "case K2: SKIP=1 post-hook must not call killall/open"
 [[ -s "$state_k2/dotfiles/plist-pending.txt" ]] || die "case K2: SKIP=1 post-hook must leave state file untouched"
+
+# -- interactive quit-and-relaunch prompt (pre-hook, under a real pty) ------
+
+quit_stub_dir="$tmp_root/quit-stubs"
+write_quit_stubs "$quit_stub_dir"
+
+guard_copy_with_quit_stubs() {
+  local target="$1"
+  cp "$hooks_src" "$target"
+  sed -i '' "s|/usr/bin/lsappinfo|$quit_stub_dir/lsappinfo|g; s|/usr/bin/osascript|$quit_stub_dir/osascript|g" "$target"
+}
+
+quit_env_lines() {
+  # $1 stub PATH prefix; $2 XDG_STATE_HOME; $3 HOME; $4 STUB_RUNNING_IDS;
+  # $5 STUB_STUCK_IDS; $6 STUB_MARKERS_DIR; $7 extra env line (optional)
+  print -r -- "export PATH=\"$1:\$PATH\""
+  print -r -- "export XDG_STATE_HOME=\"$2\""
+  print -r -- "export HOME=\"$3\""
+  print -r -- "export STUB_RUNNING_IDS=\"$4\""
+  print -r -- "export STUB_STUCK_IDS=\"$5\""
+  print -r -- "export STUB_MARKERS_DIR=\"$6\""
+  [[ -n "${7:-}" ]] && print -r -- "$7"
+}
+
+# Case L: interactive, single "yes" answers for two running apps, both
+# actually quit -> exit 0, osascript invoked for both, both land in
+# plist-quit-by-guard.txt.
+home_l="$tmp_root/home_l"; state_l="$tmp_root/state_l"; markers_l="$tmp_root/markers_l"
+mkdir -p "$home_l" "$state_l" "$markers_l"
+stubs_l="$(write_chezmoi_status_stub l "  printf ' M %s/Library/Preferences/com.example.foo.plist\n M %s/Library/Preferences/com.example.bar.plist\n' \"\$HOME\" \"\$HOME\"")"
+guard_l="$tmp_root/guard_l.sh"
+guard_copy_with_quit_stubs "$guard_l"
+outfile_l="$tmp_root/out_l.txt"
+run_guard_interactive "$outfile_l" "$guard_l" \
+  "$(quit_env_lines "$stubs_l" "$state_l" "$home_l" "com.example.foo com.example.bar" "" "$markers_l")" \
+  ""
+out_l="$(<"$outfile_l")"
+[[ "$out_l" == *'EXIT_CODE:0'* ]] || die "case L: expected exit 0; got: $out_l"
+grep -q "com.example.foo" "$markers_l/osascript.log" || die "case L: osascript not called for foo"
+grep -q "com.example.bar" "$markers_l/osascript.log" || die "case L: osascript not called for bar"
+quit_l="$state_l/dotfiles/plist-quit-by-guard.txt"
+[[ -s "$quit_l" ]] || die "case L: quit-by-guard file missing/empty"
+grep -qx "com.example.foo" "$quit_l" || die "case L: foo missing from quit-by-guard"
+grep -qx "com.example.bar" "$quit_l" || die "case L: bar missing from quit-by-guard"
+
+# Case M: interactive, answers no -> exit 0, osascript never called, nothing
+# quit, pending list untouched (risk accepted, apply proceeds anyway).
+home_m="$tmp_root/home_m"; state_m="$tmp_root/state_m"; markers_m="$tmp_root/markers_m"
+mkdir -p "$home_m" "$state_m" "$markers_m"
+stubs_m="$(write_chezmoi_status_stub m "  printf ' M %s/Library/Preferences/com.example.foo.plist\n M %s/Library/Preferences/com.example.bar.plist\n' \"\$HOME\" \"\$HOME\"")"
+guard_m="$tmp_root/guard_m.sh"
+guard_copy_with_quit_stubs "$guard_m"
+outfile_m="$tmp_root/out_m.txt"
+run_guard_interactive "$outfile_m" "$guard_m" \
+  "$(quit_env_lines "$stubs_m" "$state_m" "$home_m" "com.example.foo com.example.bar" "" "$markers_m")" \
+  "n"
+out_m="$(<"$outfile_m")"
+[[ "$out_m" == *'EXIT_CODE:0'* ]] || die "case M: expected exit 0; got: $out_m"
+[[ ! -e "$markers_m/osascript.log" ]] || die "case M: osascript must not be called when declining"
+[[ ! -s "$state_m/dotfiles/plist-quit-by-guard.txt" ]] || die "case M: quit-by-guard file must stay empty"
+grep -qx "com.example.foo" "$state_m/dotfiles/plist-pending.txt" || die "case M: pending file missing foo"
+grep -qx "com.example.bar" "$state_m/dotfiles/plist-pending.txt" || die "case M: pending file missing bar"
+
+# Case N: interactive, answers yes, one app quits and the other never does
+# (a save dialog is "stuck" open) -> exit 0 either way (never blocks), only
+# the one that actually quit lands in plist-quit-by-guard.txt. Timeout
+# forced to 1s so the case doesn't wait out the real 20s default.
+home_n="$tmp_root/home_n"; state_n="$tmp_root/state_n"; markers_n="$tmp_root/markers_n"
+mkdir -p "$home_n" "$state_n" "$markers_n"
+stubs_n="$(write_chezmoi_status_stub n "  printf ' M %s/Library/Preferences/com.example.foo.plist\n M %s/Library/Preferences/com.example.bar.plist\n' \"\$HOME\" \"\$HOME\"")"
+guard_n="$tmp_root/guard_n.sh"
+guard_copy_with_quit_stubs "$guard_n"
+outfile_n="$tmp_root/out_n.txt"
+run_guard_interactive "$outfile_n" "$guard_n" \
+  "$(quit_env_lines "$stubs_n" "$state_n" "$home_n" "com.example.foo com.example.bar" "com.example.bar" "$markers_n" \
+    "export DOTFILES_PLIST_QUIT_TIMEOUT_SECS=1")" \
+  ""
+out_n="$(<"$outfile_n")"
+[[ "$out_n" == *'EXIT_CODE:0'* ]] || die "case N: expected exit 0 (never blocks); got: $out_n"
+[[ "$out_n" == *"com.example.bar did not quit"* ]] || die "case N: expected a did-not-quit warning for bar"
+quit_n="$state_n/dotfiles/plist-quit-by-guard.txt"
+grep -qx "com.example.foo" "$quit_n" || die "case N: foo (which quit) missing from quit-by-guard"
+! grep -qx "com.example.bar" "$quit_n" || die "case N: bar (stuck) should not be in quit-by-guard"
+
+# -- post-hook relaunch selection --------------------------------------------
+
+# Case O: plist-quit-by-guard.txt relaunches unconditionally; an id only in
+# plist-pending.txt (RELAUNCH_AFTER_APPLY unset) does not.
+state_o="$tmp_root/state_o"
+mkdir -p "$state_o/dotfiles"
+printf 'com.example.foo\ncom.example.bar\n' > "$state_o/dotfiles/plist-pending.txt"
+printf 'com.example.foo\n' > "$state_o/dotfiles/plist-quit-by-guard.txt"
+post_o="$tmp_root/post_o.sh"
+log_o="$tmp_root/calls_o.log"
+post_copy_with_logging "$post_o" "$log_o"
+XDG_STATE_HOME="$state_o" bash "$post_o" post
+[[ "$(grep -c '\[open\]' "$log_o")" -eq 1 ]] || die "case O: expected exactly 1 open, got $(grep -c '\[open\]' "$log_o")"
+grep -q 'com.example.foo' "$log_o" || die "case O: expected an open for com.example.foo"
+! grep -q 'com.example.bar' "$log_o" || die "case O: com.example.bar should not have been opened"
+
+# Case P: after a run, plist-quit-by-guard.txt is removed alongside the
+# pending file.
+[[ ! -e "$state_o/dotfiles/plist-quit-by-guard.txt" ]] || die "case P: quit-by-guard file should be removed"
+[[ ! -e "$state_o/dotfiles/plist-pending.txt" ]] || die "case P: pending file should be removed"
+
+# Case Q: an id in both plist-quit-by-guard.txt and (RELAUNCH_AFTER_APPLY=1)
+# plist-pending.txt is only opened once.
+state_q="$tmp_root/state_q"
+mkdir -p "$state_q/dotfiles"
+printf 'com.example.foo\ncom.example.bar\n' > "$state_q/dotfiles/plist-pending.txt"
+printf 'com.example.foo\n' > "$state_q/dotfiles/plist-quit-by-guard.txt"
+post_q="$tmp_root/post_q.sh"
+log_q="$tmp_root/calls_q.log"
+post_copy_with_logging "$post_q" "$log_q"
+XDG_STATE_HOME="$state_q" DOTFILES_RELAUNCH_AFTER_APPLY=1 bash "$post_q" post
+[[ "$(grep -c '\[open\]' "$log_q")" -eq 2 ]] || die "case Q: expected 2 opens (foo deduped), got $(grep -c '\[open\]' "$log_q")"
+[[ "$(grep -c 'com.example.foo' "$log_q")" -eq 1 ]] || die "case Q: com.example.foo should only be opened once"
 
 print -- "OK plist-hooks"

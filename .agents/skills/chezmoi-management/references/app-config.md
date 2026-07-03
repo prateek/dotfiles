@@ -59,7 +59,7 @@ The fragment itself is plain plist XML at `home/.chezmoitemplates/<bundle-id>.pl
 4. Merges desired keys into current, skipping byte-identical values to avoid spurious rewrites.
 5. Writes the binary plist to stdout.
 
-Apply-time hooks at `scripts/chezmoi-hooks/guard-running-apps.sh` and `scripts/chezmoi-hooks/post-apply-plists.sh` guard against modifying running apps and nudge `cfprefsd` to pick up changes.
+Apply-time hooks in `scripts/chezmoi-hooks/plist-hooks.sh` (dispatched as `pre` and `post` modes) guard against modifying running apps and nudge `cfprefsd` to pick up changes.
 
 ## Deleting Keys
 

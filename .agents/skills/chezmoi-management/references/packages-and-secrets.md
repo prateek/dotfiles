@@ -127,11 +127,12 @@ Feature keys: `groups`, `run_install_scripts`, `apply_macos_defaults`, `secrets_
 | `DOTFILES_INSTALL_XCODE` | Forces the Apple ID-backed Xcode download in `run_onchange_after_15-xcode.sh.tmpl`. The script check&sets Xcode by presence: on an `apple-development` machine it installs the pinned version when absent (interactive apply, or this set), otherwise it fails loudly. |
 | `DOTFILES_HOMEBREW_BUNDLE_JOBS` | Parallelism for `brew bundle install` |
 | `DOTFILES_HOMEBREW_DOWNLOAD_CONCURRENCY` | Per-bottle download concurrency for Homebrew |
+| `DOTFILES_PLIST_QUIT_TIMEOUT_SECS` | How long (default 20) the plist guard waits for an app to actually quit after the user agrees to close it |
 | `DOTFILES_PLIST_VERBOSE` | Verbose logging from the plist merge engine |
-| `DOTFILES_RELAUNCH_AFTER_APPLY` | Whether the post-apply hook relaunches affected apps |
+| `DOTFILES_RELAUNCH_AFTER_APPLY` | Whether the post-apply hook relaunches the full pending list, not just apps the pre-hook quit |
 | `DOTFILES_SKIP_APP_RESTART` | Skip app-restart side effects in plist hooks |
 | `DOTFILES_SKIP_LSREGISTER` | Skip Launch Services re-registration in plist hooks |
-| `DOTFILES_SKIP_PLIST_HOOKS` | Disable the `scripts/chezmoi-hooks/post-apply-plists.sh` hook |
+| `DOTFILES_SKIP_PLIST_HOOKS` | Disable both `scripts/chezmoi-hooks/plist-hooks.sh` modes entirely, with no interactive prompt (pre-hook guard and post-hook cfprefsd/relaunch) |
 | `DOTFILES_SKIP_SPOTLIGHT_REINDEX` | Skip Spotlight reindex side effects in plist hooks |
 
 `machine_type` is persisted at init time; the behavior toggles are NOT persisted — they resolve from `machines.toml` on every apply, so editing a `[machines.type.*]` layer (or a host-local `[data].machines_local` block) takes effect on the next `chezmoi apply` with no re-init. To change `machine_type` itself, `chezmoi edit-config` or re-init with `--promptChoice`.

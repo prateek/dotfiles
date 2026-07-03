@@ -51,17 +51,25 @@ pattern = "**/Library/Preferences/*.plist"
 command = "plutil"
 args = ["-convert", "xml1", "-o", "-", "-"]
 
-# Plist apply guards. The pre-hook reads `chezmoi status` to find managed
-# plists that would change in this apply. It fails if any matching app is
-# running because the app can overwrite our writes when it quits. The post-hook
-# nudges cfprefsd after plist changes and can relaunch quit apps.
-# Set DOTFILES_SKIP_PLIST_HOOKS=1 to skip both hooks. Sandboxed applies use it,
-#   for example zsh-fresh-shells.zsh. It also force-applies over running apps
-#   without killing cfprefsd.
-# To relaunch quit apps after a real apply, set
-#   DOTFILES_RELAUNCH_AFTER_APPLY=1.
+# Plist apply guards, both dispatched from one script by mode arg. The pre
+# mode reads `chezmoi status` to find managed plists that would change in
+# this apply and checks whether any matching app is running, because the app
+# can overwrite our writes when it quits. At a terminal it offers to quit
+# those apps (and relaunch them after apply) instead of just failing;
+# declining, or running non-interactively (CI, cron), refuses the apply
+# instead. The post mode nudges cfprefsd after plist changes and relaunches
+# whatever the pre mode quit, plus (opt-in) the rest of the pending list.
+# Set DOTFILES_SKIP_PLIST_HOOKS=1 to skip both modes entirely, with no
+#   prompt. Sandboxed applies use it, for example zsh-fresh-shells.zsh. It
+#   also force-applies over running apps without killing cfprefsd.
+# DOTFILES_PLIST_QUIT_TIMEOUT_SECS (default 20) bounds how long the pre mode
+#   waits for a quit to actually take effect before giving up on it.
+# To relaunch the full pending list (not just what the pre mode quit) after
+#   a real apply, set DOTFILES_RELAUNCH_AFTER_APPLY=1.
 [hooks.apply.pre]
-command = "{{ $dotfilesDir }}/scripts/chezmoi-hooks/guard-running-apps.sh"
+command = "{{ $dotfilesDir }}/scripts/chezmoi-hooks/plist-hooks.sh"
+args = ["pre"]
 
 [hooks.apply.post]
-command = "{{ $dotfilesDir }}/scripts/chezmoi-hooks/post-apply-plists.sh"
+command = "{{ $dotfilesDir }}/scripts/chezmoi-hooks/plist-hooks.sh"
+args = ["post"]
