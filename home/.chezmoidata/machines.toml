@@ -51,3 +51,11 @@ elevation = "jamf-self-service"
 # The resolver digs them with an empty-dict default, so a missing layer is a
 # no-op. Add e.g. [machines.os.windows] or [machines.host.gaming-rig] when a
 # Linux homelab flavor or a Windows box needs to compose extra behavior.
+
+# Homelab mini with a dedicated external SSD for Tart. tart_home points TART_HOME
+# at the volume so VM images and disks never fill the boot drive. It is honored
+# only when the SSD is actually mounted; see home/dot_zshenv.tmpl (shell startup)
+# and scripts/vm/lib.sh (the multi-GB lane guard). Absent on other hosts, so tart
+# falls back to its ~/.tart default there.
+[machines.host.m4mini]
+tart_home = "/Volumes/TartVMs/tart"

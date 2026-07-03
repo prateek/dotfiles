@@ -7,6 +7,7 @@ related:
   - ../references/chezmoi-architecture.md
   - 0004-tart-install-validation-and-tracing.md
   - 0010-machine-type-package-selection.md
+status_detail: "Historical prototype ADR. The `mini` Tart-validation-cadence reference in the 2026-05-02 update is retired; the lane now runs on `m4mini` with storage on `/Volumes/TartVMs`. See ../runbooks/tart-mini-validation.md."
 ---
 
 # ADR 0006 — Chezmoi migration target architecture

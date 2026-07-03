@@ -104,7 +104,7 @@ make test-install-tart-full
 
 Smoke uses the Tahoe base image. Full uses the Tahoe Xcode image so routine validation does not spend the run downloading Xcode.
 
-The current `mini` validation workflow is documented in `docs/runbooks/tart-mini-validation.md`.
+The current Tart install validation workflow is documented in `docs/runbooks/tart-mini-validation.md`.
 
 Run focused-helper tests for the package renderer:
 

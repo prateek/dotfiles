@@ -56,3 +56,31 @@ require_integer_at_least() {
 vm_exists() {
   tart list --quiet --source local 2>/dev/null | grep -qx "$VM_NAME"
 }
+
+# True when the effective TART_HOME resolves onto a different volume than the
+# boot disk (i.e. the external SSD is actually mounted). Walks up to the nearest
+# existing ancestor so an as-yet-uncreated TART_HOME still reports the device of
+# the volume it would be created on. Unset TART_HOME falls back to ~/.tart, which
+# is on the boot volume, so this returns false. Keep in sync with the mount check
+# in home/dot_config/zsh/dot_zprofile.tmpl.
+tart_home_on_external_volume() {
+  local probe="${TART_HOME:-$HOME/.tart}"
+  while [ ! -e "$probe" ] && [ "$probe" != "/" ]; do
+    probe="$(dirname "$probe")"
+  done
+  [ "$(stat -f %d "$probe" 2>/dev/null)" != "$(stat -f %d / 2>/dev/null)" ]
+}
+
+# Abort guard for the multi-GB lanes: refuse to pull images or create VM disks
+# when TART_HOME would land on the boot disk. Set DOTFILES_TART_ALLOW_BOOT_DISK=1
+# to override (CI plumbing tests, or a deliberate boot-disk run). Prints guidance
+# on stderr and returns nonzero so the caller can die with its own formatting.
+check_tart_home_external() {
+  [ "${DOTFILES_TART_ALLOW_BOOT_DISK:-0}" = "1" ] && return 0
+  if ! tart_home_on_external_volume; then
+    printf 'tart storage would land on the boot disk (TART_HOME=%s).\n' "${TART_HOME:-unset}" >&2
+    printf 'Mount the external SSD, or set DOTFILES_TART_ALLOW_BOOT_DISK=1 to override.\n' >&2
+    return 1
+  fi
+  return 0
+}

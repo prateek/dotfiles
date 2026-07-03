@@ -6,11 +6,11 @@ related:
   - ../adr/0004-tart-install-validation-and-tracing.md
 ---
 
-# Tart mini validation
+# Tart install validation
 
 This is the current end-to-end install validation lane for this repo. It is one validation path, not the whole test strategy. Today it gives us a disposable macOS guest, a real chezmoi-bootstrap run for the `ci` (or `personal`) machine type, and the same fresh-shell postflight checks we trust on the host.
 
-The current target is a Tart VM launched on `mini` over SSH. The VM storage lives on the external APFS volume at `/Volumes/Extra`, with Tart state under `/Volumes/Extra/.tart`. A future version may move this into a self-hosted GitHub Actions runner, a pinned base image, or a fuller wrapper script that owns preflight, sync, execution, postflight, and cleanup.
+The lane runs locally on a Mac mini with a dedicated external SSD. Tart storage lives on that SSD so VM images and disks never fill the boot drive; `TART_HOME` is set from the `machines.host.<hostname>` layer in `home/.chezmoidata/machines.toml` and the helper refuses to run when it would land on the boot volume (see below). A future version may move this into a self-hosted GitHub Actions runner, a pinned base image, or a fuller wrapper script that owns preflight, execution, postflight, and cleanup.
 
 ## Current implementation
 
@@ -70,50 +70,48 @@ Dry-run is a mode layered on top of the smoke lane. `make test-install-tart-dry-
 
 ## Host assumptions
 
-Before using `mini` as the target, verify:
+On the validation host, verify:
 
 ```sh
-ssh mini 'uname -m && sw_vers'
-ssh mini 'command -v tart && tart --version'
-ssh mini 'mount | grep " /Volumes/Extra "'
-ssh mini 'df -h /Volumes/Extra'
-ssh mini 'TART_HOME=/Volumes/Extra/.tart tart list --source local --format json'
+uname -m && sw_vers
+command -v tart && tart --version
+mount | grep ' /Volumes/TartVMs '
+df -h /Volumes/TartVMs
+tart list --source local --format json   # TART_HOME is set automatically; see below
 ```
 
 Expected shape:
 
 - Apple Silicon host
 - Tart installed
-- `/Volumes/Extra` mounted as APFS
-- Tart home at `/Volumes/Extra/.tart`
+- the external SSD mounted as APFS (`/Volumes/TartVMs` on `m4mini`)
+- `TART_HOME` resolving onto that SSD (`echo $TART_HOME`)
 - at least 100 GiB free for smoke runs
 - no unrelated local Tart VM using the planned test name
 
-The known-good host as of 2026-04-26 is `mini`: Apple Silicon M4, macOS 26.4.1, about 16 GB RAM, Tart 2.32.1, and the external APFS drive mounted at `/Volumes/Extra`.
+The known-good host as of 2026-07-03 is `m4mini`: Apple Silicon M4, macOS 26.4.1, 16 GB RAM, Tart 2.32.1, and the external APFS SSD mounted at `/Volumes/TartVMs` (`TART_HOME=/Volumes/TartVMs/tart`).
 
 The default VM shape is 2 CPU and 4096 MB RAM. For tighter runs, use 1 CPU and 3072 MB RAM.
 
 The 100 GiB floor is conservative for cached smoke runs. First image pulls and full-lane experiments need more headroom. Run one VM at a time unless the host budget is remeasured.
 
+## TART_HOME and the boot-disk guard
+
+The helper refuses to pull images or create VM disks when `TART_HOME` would land on the boot volume (`scripts/vm/lib.sh` `check_tart_home_external`, called by `test-install-tart.sh` and `warm-tart`). This keeps a stray or unmounted external drive from silently filling the home drive. Override a deliberate boot-disk run with `DOTFILES_TART_ALLOW_BOOT_DISK=1`.
+
+On a host with a `machines.host.<hostname>` layer that sets `tart_home` in `home/.chezmoidata/machines.toml` (for example `m4mini` → `/Volumes/TartVMs/tart`), `TART_HOME` is exported automatically at shell startup by `home/dot_zshenv.tmpl`, but only while that SSD is actually mounted. On a host without such a layer, export `TART_HOME` onto its external volume yourself before running the lane.
+
 ## Run the smoke lane
 
-From the repo checkout on your laptop:
+From the repo checkout on the validation host. `TART_HOME` is already set on the SSD; trace and cache paths default to a sibling of `TART_HOME` (`/Volumes/TartVMs/homebrew-cache`), so they only need to be set to override:
 
 ```sh
 make test-tart-install-helper
 make test-zsh-fresh-shells
 
-rsync -a --delete --exclude .git ./ mini:/Volumes/Extra/dotfiles-tart-test/
-
-ssh mini 'set -euo pipefail
-  cd /Volumes/Extra/dotfiles-tart-test
-  export TART_HOME=/Volumes/Extra/.tart
-  export LOG_FILE=/Volumes/Extra/dotfiles-tart-smoke.log
-  export DOTFILES_TRACE=1
-  export DOTFILES_TART_TRACE_FILE=/Volumes/Extra/dotfiles-tart-smoke.trace.json
-  export DOTFILES_TART_HOMEBREW_CACHE_DIR=/Volumes/Extra/homebrew-cache
-  vm_name="dotfiles-tart-smoke-$(date +%Y%m%d-%H%M%S)"
-  make test-install-tart-smoke TART_FLAGS="--vm-name $vm_name"'
+DOTFILES_TRACE=1 \
+DOTFILES_TART_TRACE_FILE=/Volumes/TartVMs/dotfiles-tart-smoke.trace.json \
+  make test-install-tart-smoke TART_FLAGS="--vm-name dotfiles-tart-smoke-$(date +%Y%m%d-%H%M%S)"
 ```
 
 The run should end with:
@@ -126,14 +124,14 @@ Install finished successfully.
 Afterward, confirm cleanup:
 
 ```sh
-ssh mini 'TART_HOME=/Volumes/Extra/.tart tart list --source local --format json'
+tart list --source local --format json
 ```
 
 An empty JSON list means no local Tart VMs are left behind.
 
 When `DOTFILES_TRACE=1` is set, the helper writes a merged Chrome/Perfetto-compatible trace. `DOTFILES_TART_TRACE_FILE` can override the final JSON path. Raw guest xtrace, stdout/stderr logs, and per-process trace files live next to it under `<trace>.artifacts/` with private file permissions. If tracing is requested and conversion or merge fails after an otherwise successful install, the run fails instead of silently returning a partial trace.
 
-The helper mounts a persistent host-backed Homebrew cache into the guest by default. On `mini`, the runbook uses `/Volumes/Extra/homebrew-cache`. The guest sees that directory as `/Volumes/My Shared Files/homebrew-cache` and receives it through `HOMEBREW_CACHE` plus `HOMEBREW_BUNDLE_USER_CACHE`. This is only an optimization: a cold cache behaves like a normal install, and later VMs can reuse downloaded API metadata and bottles. The cache is writable from the guest, so disable it when validating an untrusted install path.
+The helper mounts a persistent host-backed Homebrew cache into the guest by default. It defaults to a sibling of `TART_HOME` (`/Volumes/TartVMs/homebrew-cache`); override it with `DOTFILES_TART_HOMEBREW_CACHE_DIR`. The guest sees that directory as `/Volumes/My Shared Files/homebrew-cache` and receives it through `HOMEBREW_CACHE` plus `HOMEBREW_BUNDLE_USER_CACHE`. This is only an optimization: a cold cache behaves like a normal install, and later VMs can reuse downloaded API metadata and bottles. The cache is writable from the guest, so disable it when validating an untrusted install path.
 
 To disable the cache for a debugging run:
 
@@ -144,22 +142,15 @@ make test-install-tart-smoke TART_FLAGS="--no-homebrew-cache"
 Run the full lane when changing full package, cask, or app-install behavior:
 
 ```sh
-ssh mini 'set -euo pipefail
-  cd /Volumes/Extra/dotfiles-tart-test
-  export TART_HOME=/Volumes/Extra/.tart
-  export LOG_FILE=/Volumes/Extra/dotfiles-tart-full.log
-  export DOTFILES_TART_HOMEBREW_CACHE_DIR=/Volumes/Extra/homebrew-cache
-  vm_name="dotfiles-tart-full-$(date +%Y%m%d-%H%M%S)"
-  make test-install-tart-full TART_FLAGS="--vm-name $vm_name"'
+make test-install-tart-full TART_FLAGS="--vm-name dotfiles-tart-full-$(date +%Y%m%d-%H%M%S)"
 ```
 
 `make test-install-tart-full` defaults to `ghcr.io/cirruslabs/macos-tahoe-xcode:latest`. Override it with `TART_FULL_IMAGE=...` only when validating a specific Xcode image or a pinned digest.
 
-Open a trace from your laptop with:
+Open a captured trace with:
 
 ```sh
-scp mini:/Volumes/Extra/dotfiles-tart-smoke.trace.json /tmp/dotfiles-tart-smoke.trace.json
-./scripts/trace/open-perfetto /tmp/dotfiles-tart-smoke.trace.json --print-url
+./scripts/trace/open-perfetto /Volumes/TartVMs/dotfiles-tart-smoke.trace.json --print-url
 ```
 
 The helper also scans the captured install log for macOS command failures that older defaults scripts can hide.
@@ -168,10 +159,10 @@ The helper also scans the captured install log for macOS command failures that o
 
 The useful split is:
 
-- preflight host checks: SSH, APFS volume, Tart install, free space, image state
+- preflight host checks: APFS volume, `TART_HOME` on the SSD, Tart install, free space, image state
 - VM runner: clone, configure, boot, mount repo, run install, cleanup
 - guest postflight: tools, symlinks, shell verifier, future bootstrap assertions
-- convenience wrapper: local checks, rsync, remote run, cleanup assertion, log path
+- convenience wrapper: local checks, cleanup assertion, log path
 
 `scripts/vm/test-install-tart.sh` owns the VM runner today. As we add more guest assertions, prefer moving postflight checks into a separate script instead of turning the runner into a long checklist.
 

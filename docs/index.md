@@ -2,7 +2,7 @@
 status: current
 doc_type: index
 created: 2026-05-12
-updated: 2026-07-01
+updated: 2026-07-03
 related:
   - document-lifecycle.md
   - ../home/dot_agents/packages/core/skills/local/code-gardening/SKILL.md
@@ -28,7 +28,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [Chezmoi Drift Banner](../home/dot_config/dotfiles/chezmoi-drift/README.md) | Cached shell banner for managed chezmoi drift. |
 | [Jamf Self Service Elevation](references/jamf-self-service-elevation.md) | Temporary admin elevation on Jamf-managed work Macs. |
 | [Mise Tool Management](references/mise-tool-management.md) | Mise-native CLI and tool selection. |
-| [Tart Mini Validation](runbooks/tart-mini-validation.md) | Local disposable-VM install validation. |
+| [Tart Install Validation](runbooks/tart-mini-validation.md) | Local disposable-VM install validation on a Mac mini. |
 | [USB-C Cable Audit](runbooks/usb-c-cable-audit.md) | Auditing unlabeled USB-C cables for speed, power, generation, and TB5 capability. |
 
 ## Open And Proposed Work
@@ -55,7 +55,7 @@ for day-to-day implementation details.
 | [ADR 0001 - Downstream fork repo architecture](adr/0001-downstream-fork-architecture.md) | [`setup-downstream-fork` skill](../home/dot_agents/packages/review/skills/local/setup-downstream-fork/SKILL.md). |
 | [ADR 0002 - Fresh-shell validator architecture](adr/0002-zsh-fresh-shell-validator.md) | `scripts/audit/zsh-fresh-shells.zsh` and [tests index](../tests/README.md). |
 | [ADR 0003 - git-subrepo-managed `src/`](adr/0003-downstream-fork-subrepo.md) | Superseded by [ADR 0001](adr/0001-downstream-fork-architecture.md). |
-| [ADR 0004 - Tart install validation and tracing](adr/0004-tart-install-validation-and-tracing.md) | [Tart Mini Validation](runbooks/tart-mini-validation.md). |
+| [ADR 0004 - Tart install validation and tracing](adr/0004-tart-install-validation-and-tracing.md) | [Tart Install Validation](runbooks/tart-mini-validation.md). |
 | [ADR 0005 - Mise-managed tool selection](adr/0005-mise-tool-management.md) | [Mise Tool Management](references/mise-tool-management.md). |
 | [ADR 0006 - Chezmoi migration target architecture](adr/0006-chezmoi-migration-prototype.md) | [Chezmoi Architecture](references/chezmoi-architecture.md). |
 | [ADR 0007 - Default-loaded plugin policy](adr/0007-default-loaded-plugin-policy.md) | [Agent Skill Management](../.agents/skills/agent-skill-management/SKILL.md). |

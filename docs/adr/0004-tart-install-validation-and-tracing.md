@@ -7,6 +7,7 @@ related:
   - ../runbooks/tart-mini-validation.md
   - 0002-zsh-fresh-shell-validator.md
   - 0010-machine-type-package-selection.md
+status_detail: "Decision in force; the host facts in the body are historical. The lane no longer runs on `mini`/`/Volumes/Extra` (that host is retired). It now runs on `m4mini` with Tart storage on `/Volumes/TartVMs`, `TART_HOME` set from the `machines.host` layer in `home/.chezmoidata/machines.toml` and guarded against the boot disk by `scripts/vm/lib.sh`. Current guidance: ../runbooks/tart-mini-validation.md."
 ---
 
 # ADR 0004 - Tart install validation and Perfetto trace diagnostics

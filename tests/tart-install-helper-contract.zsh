@@ -107,8 +107,19 @@ esac
 EOF
 chmod +x "$stub_bin/tart"
 
+# The boot-disk guard aborts before any tart call when TART_HOME would land on
+# the boot volume and the override is unset. $tmp_root is on the boot disk.
+assert_rc 1 env \
+  PATH="$stub_bin:/usr/bin:/bin" \
+  TART_HOME="$tmp_root/would-be-on-boot-disk" \
+  LOG_FILE="$tmp_root/guard.log" \
+  bash "$SCRIPT" --lane smoke --dry-run --vm-name dotfiles-guard-contract --no-homebrew-cache
+assert_contains "$REPLY" "boot disk"
+
+# The override lets the stubbed plumbing run to completion despite no external SSD.
 LOG_FILE="$tmp_root/install.log" \
 DOTFILES_INSTALL_MAS_APPS=true \
+DOTFILES_TART_ALLOW_BOOT_DISK=1 \
 PATH="$stub_bin:$PATH" \
   bash "$SCRIPT" --lane full --dry-run --vm-name dotfiles-helper-contract --no-homebrew-cache >/dev/null
 

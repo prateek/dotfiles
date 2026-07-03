@@ -91,7 +91,11 @@ if [[ ( "\$SHLVL" -eq 1 && ! -o LOGIN ) && -s "\$ZDOTDIR/.zprofile" ]]; then
   source "\$ZDOTDIR/.zprofile"
 fi
 EOF
-  ln -snf "$home_dir/dotfiles/home/dot_config/zsh/dot_zprofile" "$home_dir/.config/zsh/.zprofile"
+  # dot_zprofile is a chezmoi template (host-gated TART_HOME), so render it
+  # rather than symlink the raw {{...}} source. dot_zshrc/dot_zlogin are plain.
+  chezmoi execute-template --source "$home_dir/dotfiles/home" \
+    <"$home_dir/dotfiles/home/dot_config/zsh/dot_zprofile.tmpl" \
+    >"$home_dir/.config/zsh/.zprofile"
   ln -snf "$home_dir/dotfiles/home/dot_config/zsh/dot_zshrc" "$home_dir/.config/zsh/.zshrc"
   ln -snf "$home_dir/dotfiles/home/dot_config/zsh/dot_zlogin" "$home_dir/.config/zsh/.zlogin"
 }

@@ -236,6 +236,11 @@ if [ "$USE_HOMEBREW_CACHE" = "1" ] && [ -z "$HOST_HOMEBREW_CACHE_DIR" ]; then
   fi
 fi
 
+# Refuse to pull images / create VM disks onto the boot drive. On hosts with an
+# external SSD, TART_HOME is set at shell startup; this fails fast if it is unset
+# or the SSD is unmounted. Override with DOTFILES_TART_ALLOW_BOOT_DISK=1.
+check_tart_home_external || die "aborting to protect the boot disk"
+
 LOG_FILE="${LOG_FILE:-/tmp/${VM_NAME}.log}"
 touch "$LOG_FILE"
 

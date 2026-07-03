@@ -37,6 +37,11 @@ WARM_MACHINE_TYPE="${DOTFILES_WARM_MACHINE_TYPE:-ci}"
 
 REPO_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 
+# Sourced before warm-tart's own log/die/vm_exists so those definitions win;
+# we only want the shared tart-home guard (check_tart_home_external).
+# shellcheck source=scripts/vm/lib.sh
+source "$REPO_ROOT/scripts/vm/lib.sh"
+
 log() { printf '[warm-tart] %s\n' "$*"; }
 die() { printf '[warm-tart] error: %s\n' "$*" >&2; exit 1; }
 
@@ -105,6 +110,7 @@ cmd_create() {
     log "Warm VM '$WARM_VM_NAME' already exists. Use 'refresh' to recreate."
     return 0
   fi
+  check_tart_home_external || die "aborting to protect the boot disk (mount the external SSD or set DOTFILES_TART_ALLOW_BOOT_DISK=1)"
   log "Cloning '$WARM_IMAGE' into warm VM '$WARM_VM_NAME'..."
   tart clone "$WARM_IMAGE" "$WARM_VM_NAME"
   tart set "$WARM_VM_NAME" --cpu "$WARM_CPU" --memory "$WARM_MEMORY"
