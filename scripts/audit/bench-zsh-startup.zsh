@@ -79,9 +79,9 @@ link_startup_files() {
   local home_dir="$1"
 
   mkdir -p "$home_dir/.config/zsh"
-  # Mirror the plain exports from dot_zshenv.tmpl. Its host-gated TART_HOME block
-  # needs full chezmoi context (features.tmpl + hostname) and is irrelevant to
-  # startup latency, so this isolated env omits it.
+  # Mirror the plain-export bootstrap from dot_zshenv.tmpl, which hands off to
+  # $ZDOTDIR/.zshenv. ZDOTDIR is unset here, so this $HOME/.zshenv runs and
+  # sources the per-shell zshenv below.
   cat >"$home_dir/.zshenv" <<EOF
 export XDG_CONFIG_HOME="\${XDG_CONFIG_HOME:-\$HOME/.config}"
 export XDG_CACHE_HOME="\${XDG_CACHE_HOME:-\$HOME/.cache}"
@@ -90,6 +90,12 @@ export XDG_STATE_HOME="\${XDG_STATE_HOME:-\$HOME/.local/state}"
 export DOTFILES="\${DOTFILES:-$home_dir/dotfiles}"
 export ZDOTDIR="\${ZDOTDIR:-\$XDG_CONFIG_HOME/zsh}"
 export ZSHCONFIG="\${ZSHCONFIG:-\$ZDOTDIR}"
+[[ "\$ZDOTDIR/.zshenv" != "\$HOME/.zshenv" && -r "\$ZDOTDIR/.zshenv" ]] && source "\$ZDOTDIR/.zshenv"
+EOF
+  # Mirror dot_config/zsh/dot_zshenv.tmpl's .zprofile bridge. Its host-gated
+  # TART_HOME block needs full chezmoi context (features.tmpl + hostname) and is
+  # irrelevant to startup latency, so this isolated env omits it.
+  cat >"$home_dir/.config/zsh/.zshenv" <<EOF
 if [[ ( "\$SHLVL" -eq 1 && ! -o LOGIN ) && -s "\$ZDOTDIR/.zprofile" ]]; then
   source "\$ZDOTDIR/.zprofile"
 fi

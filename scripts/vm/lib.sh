@@ -62,7 +62,7 @@ vm_exists() {
 # existing ancestor so an as-yet-uncreated TART_HOME still reports the device of
 # the volume it would be created on. Unset TART_HOME falls back to ~/.tart, which
 # is on the boot volume, so this returns false. Keep in sync with the mount check
-# in home/dot_zshenv.tmpl.
+# in home/dot_config/zsh/dot_zshenv.tmpl.
 tart_home_on_external_volume() {
   local probe="${TART_HOME:-$HOME/.tart}"
   while [ ! -e "$probe" ] && [ "$probe" != "/" ]; do

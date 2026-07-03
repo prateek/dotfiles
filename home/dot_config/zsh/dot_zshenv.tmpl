@@ -1,0 +1,34 @@
+#!/usr/bin/env zsh
+# vim:syntax=zsh
+# vim:filetype=zsh
+
+# zsh reads exactly one .zshenv, chosen by whether ZDOTDIR is set at startup:
+# ZDOTDIR set -> this file; ZDOTDIR unset -> $HOME/.zshenv (which then sources
+# this file). Inherited-ZDOTDIR shells (agent tool-shells, make children,
+# nested subshells) only ever reach this file, so per-shell env that must apply
+# everywhere lives here rather than in $HOME/.zshenv.
+
+{{- $f := includeTemplate "features.tmpl" . | fromJson }}
+{{- if hasKey $f "tart_home" }}
+# Tart VM storage on this host's external SSD (machines.host.{{ .chezmoi.hostname }} in
+# machines.toml). Only redirect TART_HOME when the SSD is actually mounted (a
+# distinct device from the boot volume); a stray path on the boot disk would
+# otherwise silently fill the home drive. Falls back to tart's ~/.tart default.
+# Keep the mount check in sync with tart_home_on_external_volume in scripts/vm/lib.sh.
+if [[ -z "${TART_HOME:-}" ]]; then
+  __tart_home={{ $f.tart_home | quote }}
+  __tart_probe="$__tart_home"
+  while [[ ! -e "$__tart_probe" && "$__tart_probe" != "/" ]]; do
+    __tart_probe="${__tart_probe:h}"
+  done
+  if [[ "$(stat -f %d "$__tart_probe" 2>/dev/null)" != "$(stat -f %d / 2>/dev/null)" ]]; then
+    export TART_HOME="$__tart_home"
+  fi
+  unset __tart_home __tart_probe
+fi
+{{- end }}
+
+# Ensure that a non-login, non-interactive shell has a defined environment.
+if [[ ( "$SHLVL" -eq 1 && ! -o LOGIN ) && -s "$ZDOTDIR/.zprofile" ]]; then
+  source "$ZDOTDIR/.zprofile"
+fi
