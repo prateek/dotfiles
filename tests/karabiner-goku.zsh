@@ -40,7 +40,7 @@ jq '[.profiles[] | select(.name == "Default").complex_modifications.rules[].mani
   "$work/out.json" > "$work/manips.json"
 
 count="$(jq 'length' "$work/manips.json")"
-[[ "$count" == 27 ]] || die "expected 27 manipulators, got $count"
+[[ "$count" == 33 ]] || die "expected 33 manipulators, got $count"
 
 assert() { jq -e "$1" "$work/manips.json" >/dev/null || die "missing behavior: $2"; }
 
@@ -105,5 +105,16 @@ assert 'any(.[]; .from.key_code=="left_control" and .parameters."basic.to_if_alo
 assert 'any(.[]; .from.key_code=="caps_lock" and .to_if_alone[0].key_code=="escape"
   and any(.conditions[]; .type=="device_if" and any(.identifiers[]; .is_built_in_keyboard==true)))' \
   "Apple caps_lock tap = escape, scoped to the built-in keyboard"
+
+# Tap-⌘-for-Leader-Key: both command keys stay ⌘ when held (lazy) and emit F18 on a clean
+# tap. Ungated, so no device/variable condition. F18 is Leader Key's activation hotkey.
+assert 'any(.[]; .from.key_code=="left_command" and .to[0].key_code=="left_command"
+  and .to[0].lazy==true and .to_if_alone[0].key_code=="f18"
+  and .parameters."basic.to_if_alone_timeout_milliseconds"==200
+  and (has("conditions") | not))' \
+  "left ⌘: hold = ⌘ (lazy), tap = F18, ungated"
+assert 'any(.[]; .from.key_code=="right_command" and .to[0].key_code=="right_command"
+  and .to[0].lazy==true and .to_if_alone[0].key_code=="f18")' \
+  "right ⌘: hold = ⌘ (lazy), tap = F18"
 
 print -- "OK karabiner-goku"

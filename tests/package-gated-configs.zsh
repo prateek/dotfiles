@@ -77,11 +77,9 @@ chezmoi_isolated \
   --override-data '{"machine_type":"ci","machines":{"type":{"ci":{"groups":[]}}}}' \
   ignored >"$empty_ignored"
 
-chezmoi_isolated \
-  --override-data '{"machine_type":"personal"}' \
-  execute-template \
-  --file "$DOTFILES_ROOT/home/Library/Application Support/Leader Key/config.json.tmpl" \
-  >"$leader_key_json"
+# Leader Key config lives at the XDG path (~/.config/leader-key/config.json) and is plain
+# JSON (Leader Key reads JSON only, not a template), so copy it verbatim.
+cp "$DOTFILES_ROOT/home/dot_config/leader-key/config.json" "$leader_key_json"
 
 expect_managed() {
   local target_path="$1" file="$2"
@@ -111,7 +109,8 @@ expect_managed ".local/share/raycast-extensions/orca-worktree/package.json" "$pe
 expect_managed "Library/Preferences/com.setapp.DesktopClient.plist" "$personal_managed"
 expect_managed "Library/Preferences/pro.betterdisplay.BetterDisplay.plist" "$personal_managed"
 expect_managed ".config/zed" "$personal_managed"
-expect_managed "Library/Application Support/Leader Key/config.json" "$personal_managed"
+expect_managed ".config/leader-key/config.json" "$personal_managed"
+expect_managed "Library/Preferences/com.brnbw.Leader-Key.plist" "$personal_managed"
 expect_managed "Library/Application Support/orca/orca-data.json" "$personal_managed"
 expect_managed ".orca/keybindings.json" "$personal_managed"
 expect_managed "Library/Application Support/Code/User" "$personal_managed"
@@ -132,7 +131,8 @@ expect_unmanaged "Library/Preferences/com.raycast.macos.plist" "$ci_managed"
 expect_unmanaged ".config/raycast/scripts/temp-admin.sh" "$ci_managed"
 expect_unmanaged "Library/Preferences/com.setapp.DesktopClient.plist" "$ci_managed"
 expect_unmanaged "Library/Preferences/dev.kdrag0n.MacVirt.plist" "$ci_managed"
-expect_unmanaged "Library/Application Support/Leader Key/config.json" "$ci_managed"
+expect_unmanaged ".config/leader-key/config.json" "$ci_managed"
+expect_unmanaged "Library/Preferences/com.brnbw.Leader-Key.plist" "$ci_managed"
 expect_unmanaged "Library/Application Support/Code/User" "$ci_managed"
 expect_unmanaged "Library/Preferences/pro.betterdisplay.BetterDisplay.plist" "$ci_managed"
 expect_unmanaged ".config/zed" "$ci_managed"
@@ -187,7 +187,8 @@ expect_ignored ".config/ghostty"
 expect_ignored "Library/Preferences/com.hegenberg.BetterTouchTool.plist"
 expect_ignored "Library/Preferences/com.raycast.macos.plist"
 expect_ignored ".config/raycast/scripts/temp-admin.sh"
-expect_ignored "Library/Application Support/Leader Key/config.json"
+expect_ignored ".config/leader-key/config.json"
+expect_ignored "Library/Preferences/com.brnbw.Leader-Key.plist"
 expect_ignored "Library/Application Support/Code/User"
 expect_ignored ".config/zed"
 expect_ignored ".config/cmux"
@@ -204,7 +205,8 @@ expect_ignored "Library/Preferences/com.prakashjoshipax.VoiceInk.plist"
 
 # --- empty group set ⇒ every gated config ignored ---
 for p in \
-  "Library/Application Support/Leader Key/config.json" \
+  ".config/leader-key/config.json" \
+  "Library/Preferences/com.brnbw.Leader-Key.plist" \
   "Library/Application Support/orca/orca-data.json" \
   ".config/ghostty" \
   "Library/Application Support/Code/User" \
@@ -235,7 +237,12 @@ import sys
 
 config = json.loads(pathlib.Path(sys.argv[1]).read_text())
 assert config["type"] == "group"
-assert {item["key"] for item in config["actions"]} == {"t", "s", "v", "w", "b", "m"}
+top = {item["key"]: item for item in config["actions"]}
+assert set(top) == {"t", "s", "b", "g", "c", "o", "w", "m", "p", "f", "z"}, sorted(top)
+# "z" is the misc group; confirm nesting renders and its utility/GhostPepper binds exist.
+misc = top["z"]
+assert misc["type"] == "group"
+assert {"d", "m", "z", "t", "r", "g"} <= {a["key"] for a in misc["actions"]}
 PY
 
 print -- "OK package-gated-configs"

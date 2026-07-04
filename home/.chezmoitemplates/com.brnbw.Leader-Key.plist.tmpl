@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Desired Leader Key prefs, merged into ~/Library/Preferences/com.brnbw.Leader-Key.plist
+  by scripts/macos/plist-merge (additive: window/Sparkle/other state is preserved).
+
+  configDir moves the config to XDG (~/.config/leader-key/config.json); Leader Key always
+  reads a file named config.json (JSON only) from this directory.
+
+  KeyboardShortcuts_activate is the global hotkey Leader Key listens for, stored by the
+  KeyboardShortcuts library as a JSON string of {carbonKeyCode, carbonModifiers}. F18
+  (kVK_F18 = 0x4F = 79), no modifiers — Karabiner emits F18 on a clean ⌘ tap.
+-->
+<plist version="1.0">
+<dict>
+	<key>configDir</key>
+	<string>{{ .chezmoi.homeDir }}/.config/leader-key</string>
+	<key>KeyboardShortcuts_activate</key>
+	<string>{"carbonKeyCode":79,"carbonModifiers":0}</string>
+</dict>
+</plist>
