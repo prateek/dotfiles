@@ -158,8 +158,11 @@ while [[ $i -lt ${#names[@]} ]]; do
     log "installing fork $name"
     if [[ "$kind" == "cask" ]]; then
       # Fork app builds are ad-hoc signed; a quarantined ad-hoc binary is
-      # SIGKILLed by Gatekeeper on launch. These are our own builds.
-      brew install --cask --no-quarantine "$name"
+      # SIGKILLed by Gatekeeper on launch. These are our own builds. Recent
+      # Homebrew dropped the `--no-quarantine` install flag, so pass it through
+      # HOMEBREW_CASK_OPTS (preserving any caller value) instead.
+      HOMEBREW_CASK_OPTS="${HOMEBREW_CASK_OPTS:+$HOMEBREW_CASK_OPTS }--no-quarantine" \
+        brew install --cask "$name"
     else
       brew install --formula "$name"
     fi

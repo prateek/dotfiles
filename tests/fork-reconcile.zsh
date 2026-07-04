@@ -9,6 +9,9 @@
 set -euo pipefail
 unsetopt xtrace 2>/dev/null || true
 setopt typeset_silent 2>/dev/null || true
+# Deterministic env: the reconciler only sets HOMEBREW_CASK_OPTS for the cask
+# install, so an ambient value would leak into the mock's recording of every call.
+unset HOMEBREW_CASK_OPTS 2>/dev/null || true
 
 die() {
   print -u2 -- "fork-reconcile: $*"
@@ -65,7 +68,9 @@ export BREW_REPO="$tmp_root/brew-repo"
 cat >"$stub_bin/brew" <<'EOF'
 #!/bin/sh
 set -eu
-printf '%s\n' "$*" >>"$BREW_CALLS"
+# Record HOMEBREW_CASK_OPTS alongside argv so the test can assert that
+# --no-quarantine is passed through the env (it is no longer a CLI flag).
+printf '%s%s\n' "${HOMEBREW_CASK_OPTS:+CASK_OPTS=$HOMEBREW_CASK_OPTS }" "$*" >>"$BREW_CALLS"
 case "$1" in
   --repository)
     printf '%s\n' "$BREW_REPO" ;;
@@ -102,10 +107,10 @@ assert_contains "$calls" "tap prateek/forks https://github.com/prateek/forks" "a
 assert_contains "$calls" "uninstall --formula forkstub" "adopt"
 assert_contains "$calls" "install --formula prateek/forks/forkstub-fork" "adopt"
 assert_contains "$calls" "uninstall --cask forkstub-app" "adopt"
-assert_contains "$calls" "install --cask --no-quarantine prateek/forks/forkstub-app-fork" "adopt"
+assert_contains "$calls" "CASK_OPTS=--no-quarantine install --cask prateek/forks/forkstub-app-fork" "adopt"
 assert_line_before "$calls" "tap prateek/forks https://github.com/prateek/forks" "install --formula prateek/forks/forkstub-fork" "adopt"
 assert_line_before "$calls" "uninstall --formula forkstub" "install --formula prateek/forks/forkstub-fork" "adopt"
-assert_line_before "$calls" "uninstall --cask forkstub-app" "install --cask --no-quarantine prateek/forks/forkstub-app-fork" "adopt"
+assert_line_before "$calls" "uninstall --cask forkstub-app" "CASK_OPTS=--no-quarantine install --cask prateek/forks/forkstub-app-fork" "adopt"
 
 printf 'forkstub-fork\n' >"$BREW_FORMULAS"
 printf 'forkstub-app-fork\n' >"$BREW_CASKS"
