@@ -1,13 +1,17 @@
 ---
-status: accepted
+status: superseded
 doc_type: adr
 created: 2026-04-17
-updated: 2026-05-15
+updated: 2026-07-03
+closed: 2026-07-03
 owner: Prateek
+superseded_by: 0015-downstream-fork-daily-driver.md
+current_guidance:
+  - 0015-downstream-fork-daily-driver.md
+  - ../../.agents/skills/fork-lifecycle/SKILL.md
 related:
   - ../plans/setup-downstream-fork-plan.md
-  - ../../home/dot_agents/packages/review/skills/local/setup-downstream-fork/SKILL.md
-status_detail: "Architecture accepted. The setup-downstream-fork skill exists; remaining hardening should use smaller follow-up plans."
+status_detail: "Clone-as-base fork architecture, replaced wholesale by the thin assembly-repo model in ADR 0015. The setup-downstream-fork skill it describes was deleted."
 ---
 
 # ADR 0001 — Downstream fork repo architecture

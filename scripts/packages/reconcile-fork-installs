@@ -1,0 +1,200 @@
+#!/usr/bin/env bash
+#
+# reconcile-fork-installs — swap downstream-fork builds in and out of Homebrew.
+#
+# Input: TSV on stdin or --entries-file, one active fork per line:
+#
+#   <full-name> <TAB> <kind> <TAB> <replaces>
+#
+#   full-name  tap-qualified token, e.g. prateek/homebrew-tap/ghost-pepper-fork
+#   kind       formula | cask
+#   replaces   official package the fork shadows (may be empty)
+#
+# Reconciles, idempotently and in this order:
+#   1. Tap every tap referenced by an entry.
+#   2. Per entry: uninstall the `replaces` package if installed, then install
+#      the fork package if missing.
+#   3. Uninstall managed forks that are no longer listed: installed packages
+#      whose token ends in -fork and whose definition lives in the fork tap.
+#      brew bundle reinstalls the replaced official afterwards — it returns to
+#      the Brewfile as soon as its fork entry is gone.
+#
+# Runs before brew bundle (run_onchange_after_09-fork-reconcile) so that on
+# retire the fork is gone before bundle reinstalls the official.
+#
+# Brew state is snapshotted once at startup and mutations are tracked
+# in-memory: two brew-list spawns per run regardless of entry count, and one
+# consistent view of install state for the whole reconciliation.
+#
+# Usage:
+#   scripts/packages/reconcile-fork-installs [--entries-file <path>] [--tap <user/repo>]
+#
+set -euo pipefail
+
+# Canonical brew tap name (brew strips the repo's homebrew- prefix).
+fork_tap="prateek/forks"
+entries_file=""
+
+# Non-conventional taps (repo not named homebrew-*) need an explicit URL for
+# `brew tap`; conventional taps resolve from the name alone. Returns "" for the
+# latter.
+tap_url_for() {
+  case "$1" in
+    prateek/forks) printf 'https://github.com/prateek/forks' ;;
+    *) printf '' ;;
+  esac
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --entries-file)
+      [[ $# -ge 2 ]] || { printf 'reconcile-fork-installs: --entries-file requires a path\n' >&2; exit 2; }
+      entries_file="$2"; shift 2 ;;
+    --entries-file=*)
+      entries_file="${1#*=}"; shift ;;
+    --tap)
+      [[ $# -ge 2 ]] || { printf 'reconcile-fork-installs: --tap requires a value\n' >&2; exit 2; }
+      fork_tap="$2"; shift 2 ;;
+    --tap=*)
+      fork_tap="${1#*=}"; shift ;;
+    -h|--help)
+      sed -n '2,31p' "$0" >&2
+      exit 0 ;;
+    *)
+      printf 'reconcile-fork-installs: unknown argument: %s\n' "$1" >&2
+      exit 2 ;;
+  esac
+done
+
+log() { printf 'reconcile-fork-installs: %s\n' "$*"; }
+
+command -v brew >/dev/null 2>&1 || { log "brew not found; nothing to reconcile"; exit 0; }
+
+installed_formulas="$(brew list --formula 2>/dev/null || true)"
+installed_casks="$(brew list --cask 2>/dev/null || true)"
+
+list_has() {
+  printf '%s\n' "$1" | grep -Fqx -- "$2"
+}
+
+list_add() {
+  list_has "$1" "$2" && { printf '%s\n' "$1"; return; }
+  printf '%s\n%s\n' "$1" "$2" | sed '/^$/d'
+}
+
+list_remove() {
+  printf '%s\n' "$1" | grep -Fvx -- "$2" || true
+}
+
+installed() {
+  case "$1" in
+    cask) list_has "$installed_casks" "$2" ;;
+    *) list_has "$installed_formulas" "$2" ;;
+  esac
+}
+
+mark_installed() {
+  case "$1" in
+    cask) installed_casks="$(list_add "$installed_casks" "$2")" ;;
+    *) installed_formulas="$(list_add "$installed_formulas" "$2")" ;;
+  esac
+}
+
+mark_uninstalled() {
+  case "$1" in
+    cask) installed_casks="$(list_remove "$installed_casks" "$2")" ;;
+    *) installed_formulas="$(list_remove "$installed_formulas" "$2")" ;;
+  esac
+}
+
+brew_flag() {
+  case "$1" in
+    cask) printf -- '--cask' ;;
+    *) printf -- '--formula' ;;
+  esac
+}
+
+names=() kinds=() replaces=() tokens=()
+while IFS=$'\t' read -r name kind rep; do
+  [[ -n "$name" ]] || continue
+  names+=("$name")
+  kinds+=("${kind:-formula}")
+  replaces+=("${rep:-}")
+  tokens+=("${name##*/}")
+done < "${entries_file:-/dev/stdin}"
+
+if [[ ${#names[@]} -gt 0 ]]; then
+  tapped="$(brew tap 2>/dev/null || true)"
+  seen_taps=""
+  for name in "${names[@]}"; do
+    tap="${name%/*}"
+    [[ "$tap" == */* && "$tap" != "$name" ]] || continue
+    case "$seen_taps" in *" $tap "*) continue ;; esac
+    seen_taps="$seen_taps $tap "
+    if ! list_has "$tapped" "$tap"; then
+      log "tapping $tap"
+      tap_url="$(tap_url_for "$tap")"
+      if [[ -n "$tap_url" ]]; then
+        brew tap "$tap" "$tap_url"
+      else
+        brew tap "$tap"
+      fi
+    fi
+  done
+fi
+
+# Counter loop: macOS ships bash 3.2, where expanding an empty array under
+# `set -u` is an unbound-variable error.
+i=0
+while [[ $i -lt ${#names[@]} ]]; do
+  name="${names[$i]}" kind="${kinds[$i]}" rep="${replaces[$i]}" token="${tokens[$i]}"
+  i=$((i + 1))
+  if [[ -n "$rep" ]] && installed "$kind" "$rep"; then
+    log "uninstalling official $rep (replaced by $token)"
+    brew uninstall "$(brew_flag "$kind")" "$rep"
+    mark_uninstalled "$kind" "$rep"
+  fi
+  if ! installed "$kind" "$token"; then
+    log "installing fork $name"
+    if [[ "$kind" == "cask" ]]; then
+      # Fork app builds are ad-hoc signed; a quarantined ad-hoc binary is
+      # SIGKILLed by Gatekeeper on launch. These are our own builds.
+      brew install --cask --no-quarantine "$name"
+    else
+      brew install --formula "$name"
+    fi
+    mark_installed "$kind" "$token"
+  fi
+done
+
+# On disk the tap keeps its full homebrew-prefixed repo name.
+tap_dir="$(brew --repository 2>/dev/null)/Library/Taps/${fork_tap%%/*}/homebrew-${fork_tap##*/}"
+
+desired_has() {
+  local want="$1" j=0
+  while [[ $j -lt ${#tokens[@]} ]]; do
+    [[ "${tokens[$j]}" == "$want" ]] && return 0
+    j=$((j + 1))
+  done
+  return 1
+}
+
+if [[ -d "$tap_dir" ]]; then
+  while IFS= read -r f; do
+    [[ "$f" == *-fork ]] || continue
+    [[ -e "$tap_dir/Formula/$f.rb" ]] || continue
+    desired_has "$f" && continue
+    log "uninstalling retired fork formula $f"
+    brew uninstall --formula "$f"
+  done <<< "$installed_formulas"
+
+  while IFS= read -r c; do
+    [[ "$c" == *-fork ]] || continue
+    [[ -e "$tap_dir/Casks/$c.rb" ]] || continue
+    desired_has "$c" && continue
+    log "uninstalling retired fork cask $c"
+    brew uninstall --cask "$c"
+  done <<< "$installed_casks"
+fi
+
+log "done"

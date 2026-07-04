@@ -82,7 +82,7 @@ Maintenance steps after structural edits:
 
 1. Confirm repo-local skill discovery only sees real top-level skills: `find .agents/skills -path '*/SKILL.md' -print` should not list fixture snapshots under `evals/`.
 2. Run the post-edit validation checklist above from this location.
-3. Test trigger overlap with the existing skills by spot-checking `code-gardening`, `setup-downstream-fork`, and `conventions-maintainer`.
+3. Test trigger overlap with the existing skills by spot-checking `code-gardening`, `fork-lifecycle`, and `conventions-maintainer`.
 
 All references inside the skill use repo-relative paths (`home/.chezmoidata/`, `home/.chezmoiscripts/`) so they remain valid from the repo-local skill tree.
 

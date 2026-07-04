@@ -1,0 +1,35 @@
+{{ template "script_lib.sh" . }}
+
+# reconcile-fork-installs sha256: {{ include (printf "%s/../scripts/packages/reconcile-fork-installs" .chezmoi.sourceDir) | sha256sum }}
+
+{{- $f := includeTemplate "features.tmpl" . | fromJson }}
+{{- if and $f.run_install_scripts (has "forks" $f.groups) }}
+{{- $entries := list }}
+{{- if hasKey .packages.groups "forks" }}
+{{-   $entries = default (list) (dig "entries" (list) (index .packages.groups "forks")) }}
+{{- end }}
+
+# Runs before 10-brew-bundle so a retired fork is uninstalled before brew
+# bundle reinstalls the official package it was shadowing.
+
+reconciler="{{ .chezmoi.sourceDir }}/../scripts/packages/reconcile-fork-installs"
+[ -x "$reconciler" ] || die "Fork reconciler is missing or not executable: $reconciler"
+
+brew_shellenv
+have brew || die "Homebrew is required before fork reconciliation can run."
+
+entries_file="$(mktemp "${TMPDIR:-/tmp}/dotfiles-forks.XXXXXX")"
+trap 'rm -f "$entries_file"' EXIT
+: >"$entries_file"
+{{- range $entries }}
+printf '%s\t%s\t%s\n' {{ .name | quote }} {{ dig "kind" "formula" . | quote }} {{ dig "replaces" "" . | quote }} >>"$entries_file"
+{{- end }}
+
+if [ "$(uname -s)" = "Darwin" ]; then
+  dotfiles_sudo_start "Fork app swaps may need administrator access. Enter your macOS password if prompted."
+fi
+
+run_timed "reconcile fork installs" "$reconciler" --entries-file "$entries_file"
+{{- else }}
+log "Fork reconciliation not applicable on this machine; skipping."
+{{- end }}

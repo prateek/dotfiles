@@ -62,7 +62,7 @@ assert_json '{"machine_type":"ci"}' \
   "ci composition"
 
 assert_json '{"machine_type":"personal"}' \
-  'f["groups"]==["core","mac-desktop","ai-agent-apps","developer-tools","apple-development","personal-apps"] and f["run_install_scripts"] is True and f["apply_macos_defaults"] is True and f["secrets_enabled"] is False and f["elevation"]=="none" and f["private_overlay"] is False' \
+  'f["groups"]==["core","mac-desktop","ai-agent-apps","developer-tools","apple-development","personal-apps","forks"] and f["run_install_scripts"] is True and f["apply_macos_defaults"] is True and f["secrets_enabled"] is False and f["elevation"]=="none" and f["private_overlay"] is False' \
   "personal composition"
 
 assert_json '{"machine_type":"homelab"}' \
@@ -70,7 +70,7 @@ assert_json '{"machine_type":"homelab"}' \
   "homelab composition"
 
 assert_json '{"machine_type":"work"}' \
-  'f["groups"]==["core","mac-desktop","ai-agent-apps","developer-tools","work-apps"] and f["private_overlay"] is True and f["elevation"]=="jamf-self-service"' \
+  'f["groups"]==["core","mac-desktop","ai-agent-apps","developer-tools","work-apps","forks"] and f["private_overlay"] is True and f["elevation"]=="jamf-self-service"' \
   "work composition"
 
 # --- machine_type default: absent resolves to personal ------------------------

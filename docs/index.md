@@ -42,8 +42,8 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [BetterDisplay Display Modes](plans/betterdisplay-display-modes-plan.md) | Proposed only; no `displayctl` implementation exists in this checkout. |
 | [Decomment Skill](plans/decomment-skill-plan.md) | Active; decomment core skill, trigger-channel fixes, and evals under implementation. |
 | [Orcactl](plans/orcactl-plan.md) | Draft for a separate Go repo/tool; dotfiles integration is future install/skill wiring. |
+| [Downstream Fork](plans/downstream-fork-plan.md) | Active; thin assembly-repo forks as daily drivers on the `prateek/forks` fleet monorepo — engine, three-job template, harness, security review, monorepo scaffold, and fleet digest done; dotfiles gardening landed bar the retoken; provisioning + ghost-pepper migration pending Prateek. |
 | [Goku Karabiner Migration](plans/goku-karabiner-migration-plan.md) | Active; Karabiner config now compiles from `karabiner.edn` via goku — on-device pad verification pending. |
-| [Setup Downstream Fork Secrets](plans/setup-downstream-fork-secrets-plan.md) | Active cleanup plan; `_secrets.py`, `--init-config`, and `--validate-config` already exist. |
 | [Sudo Askpass 1Password](plans/sudo-askpass-1password-plan.md) | Accepted design; implementation pending, current code still uses sudo keepalive. |
 | [Tartelet Self-Hosted Runners](plans/tartelet-runner-plan.md) | Active; cask, managed plist, LaunchAgent, host data, VM-image builder, and runbook landed. On-mini end-to-end (golden VM build + first-run credential paste) still to be exercised. |
 | [Zsh Fresh-Shell Validator](plans/zsh-fresh-shell-validator-plan.md) | Active plan for shell correctness and startup checks. |
@@ -55,7 +55,7 @@ for day-to-day implementation details.
 
 | ADR | Current guidance |
 | --- | --- |
-| [ADR 0001 - Downstream fork repo architecture](adr/0001-downstream-fork-architecture.md) | [`setup-downstream-fork` skill](../home/dot_agents/packages/review/skills/local/setup-downstream-fork/SKILL.md). |
+| [ADR 0001 - Downstream fork repo architecture](adr/0001-downstream-fork-architecture.md) | Superseded by [ADR 0015](adr/0015-downstream-fork-daily-driver.md). |
 | [ADR 0002 - Fresh-shell validator architecture](adr/0002-zsh-fresh-shell-validator.md) | `scripts/audit/zsh-fresh-shells.zsh` and [tests index](../tests/README.md). |
 | [ADR 0003 - git-subrepo-managed `src/`](adr/0003-downstream-fork-subrepo.md) | Superseded by [ADR 0001](adr/0001-downstream-fork-architecture.md). |
 | [ADR 0004 - Tart install validation and tracing](adr/0004-tart-install-validation-and-tracing.md) | [Tart Install Validation](runbooks/tart-mini-validation.md). |
@@ -69,6 +69,7 @@ for day-to-day implementation details.
 | [ADR 0012 - Config-gating convention](adr/0012-config-gating-convention.md) | chezmoi toggle convention (render-time vs init-time), implemented as one identity prompt + a layered `machines.toml` resolved by `features.tmpl`. Current guidance: [Chezmoi Architecture](references/chezmoi-architecture.md) > Config Gating. |
 | [ADR 0013 - Agent tool integrations stay APM-vendored](adr/0013-apm-vendored-tool-integrations.md) | [Crit Integration](plans/crit-integration-plan.md) and [Agent Skill Management](../.agents/skills/agent-skill-management/SKILL.md). |
 | [ADR 0014 - Tartelet self-hosted runners](adr/0014-tartelet-self-hosted-runners.md) | [Tartelet Self-Hosted Runners](plans/tartelet-runner-plan.md). |
+| [ADR 0015 - Downstream forks as thin assembly repos](adr/0015-downstream-fork-daily-driver.md) | [Downstream Fork plan](plans/downstream-fork-plan.md) and the [`fork-lifecycle` skill](../.agents/skills/fork-lifecycle/SKILL.md) (fleet ops live in the `fork-ops` skill in `prateek/forks`). |
 
 ## Research
 
@@ -91,5 +92,6 @@ or `superseded_by` frontmatter before using them.
 | [Machine-Type Package Selection](plans/machine-type-package-selection-plan.md) | [ADR 0010](adr/0010-machine-type-package-selection.md) and [Chezmoi Architecture](references/chezmoi-architecture.md). |
 | [Docs Reorg And Agent-Surface Refresh](plans/docs-reorg-plan.md) | `AGENTS.md`, [Documentation Index](index.md), and [Document Lifecycle](document-lifecycle.md). |
 | [GRM Repo](references/grmrepo.md) | [Git Conventions](../home/dot_agents/docs/git.md) for the `gh`/clone workflow; repos are cloned with `ghc`/`gh`. |
-| [Setup Downstream Fork Plan](plans/setup-downstream-fork-plan.md) | [`setup-downstream-fork` skill](../home/dot_agents/packages/review/skills/local/setup-downstream-fork/SKILL.md) and [ADR 0001](adr/0001-downstream-fork-architecture.md). |
+| [Setup Downstream Fork Plan](plans/setup-downstream-fork-plan.md) | [ADR 0015](adr/0015-downstream-fork-daily-driver.md) and the [`fork-lifecycle` skill](../.agents/skills/fork-lifecycle/SKILL.md). |
+| [Setup Downstream Fork Secrets](plans/setup-downstream-fork-secrets-plan.md) | [ADR 0015](adr/0015-downstream-fork-daily-driver.md); credentials now flow through a 1Password service account. |
 | [Worktree Convention Cleanup](plans/worktree-convention-cleanup-plan.md) | [Worktrees](../home/dot_agents/docs/worktrees.md) and [Git Conventions](../home/dot_agents/docs/git.md) for the Orca worktree workflow; worktrunk and the custom `grm` integration were removed. |

@@ -13,6 +13,7 @@ from agent_skill_lib import (
     AGENTS,
     MAX_SKILL_DESCRIPTION_CHARS,
     VALID_RENDER_VALUES,
+    iter_package_skill_dirs,
     iter_skill_metadata,
     load_packages,
 )
@@ -80,6 +81,9 @@ def main() -> int:
                 errors.append(f"{package.package_id}: missing apm.lock.yaml for APM dependencies")
         if not package.skills:
             errors.append(f"{package.package_id}: package has no skills")
+        for _kind, child in iter_package_skill_dirs(package.path):
+            if not (child / "SKILL.md").exists():
+                errors.append(f"{child}: missing SKILL.md")
         for skill in package.skills:
             skill_locations[skill.skill_id].append(str(skill.path))
             if skill.kind == "vendor" and not (skill.path / "SOURCE.md").exists():

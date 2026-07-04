@@ -62,6 +62,7 @@ an empty stub for Codex runtime skills); do not commit source copies under
 
 - Keep app config readable at the native target path under `home/` when possible.
 - Simple file-backed apps should use focused tests.
+- Apply-time hooks that consult expensive external state (brew, mise, launchctl) snapshot it once at startup and reconcile against the snapshot, tracking their own mutations in-memory; never re-query per item. See `scripts/packages/reconcile-fork-installs`.
 - Nested preference plists use a desired-plist fragment at `home/.chezmoitemplates/<bundle-id>.plist.tmpl` driven by a 3-line `modify_` stub through the shared merge engine.
 - Plist fragments are Go templates. If a plist value contains literal `{{` or `}}`, escape it, as with Moom geometry strings.
 - Non-plist payloads that should not be templated stay under `home/.chezmoiassets/` and load via `include`, not `includeTemplate`.

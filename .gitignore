@@ -28,6 +28,7 @@ Temporary Items
 
 *.pyc
 __pycache__/
+.venv/
 
 # zsh compiled files
 *.zwc
@@ -60,3 +61,6 @@ build/
 # would scaffold `ask.json` and a subsequent `ask install` would clobber the
 # curated AGENTS.md. Surface it as untracked so it doesn't get committed.
 ask.json
+
+# Go build artifact of the downstream-fork engine.
+home/dot_agents/packages/review/skills/local/downstream-fork/engine/forkengine

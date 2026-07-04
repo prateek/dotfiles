@@ -1,12 +1,16 @@
 ---
-status: active
+status: superseded
 doc_type: plan
 owner: Prateek
-updated: 2026-05-15
+updated: 2026-07-03
+closed: 2026-07-03
+superseded_by: ../adr/0015-downstream-fork-daily-driver.md
+current_guidance:
+  - ../adr/0015-downstream-fork-daily-driver.md
+  - ../../.agents/skills/fork-lifecycle/SKILL.md
 related:
   - setup-downstream-fork-plan.md
-  - ../../home/dot_agents/packages/review/skills/local/setup-downstream-fork/SKILL.md
-status_detail: "Implementation has landed in the setup-downstream-fork skill (_secrets.py, --init-config, --validate-config); this plan remains active for validation, test, and checklist cleanup."
+status_detail: "Secret handling for the deleted setup-downstream-fork skill. The downstream-fork design distributes credentials via a 1Password service account instead; see the skill's Credentials section."
 ---
 
 # setup-downstream-fork — pluggable secret resolver

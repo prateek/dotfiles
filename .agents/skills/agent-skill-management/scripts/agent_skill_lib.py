@@ -99,13 +99,18 @@ def iter_package_payloads(package_path: Path) -> Iterable[str]:
 
 def iter_package_skills(package_path: Path) -> Iterable[SkillSource]:
     package_id = package_path.name
+    for kind, path in iter_package_skill_dirs(package_path):
+        if (path / "SKILL.md").exists():
+            yield SkillSource(package_id, kind, path.name, path)
+
+
+def iter_package_skill_dirs(package_path: Path) -> Iterable[tuple[str, Path]]:
     for kind in ("local", "vendor"):
         root = package_path / "skills" / kind
         if not root.exists():
             continue
         for path in sorted(p for p in root.iterdir() if p.is_dir()):
-            if (path / "SKILL.md").exists():
-                yield SkillSource(package_id, kind, path.name, path)
+            yield kind, path
 
 
 def skill_frontmatter(path: Path) -> dict[str, str]:
@@ -183,7 +188,9 @@ def copy_skill_tree(source: Path, target: Path) -> None:
     shutil.copytree(
         source,
         target,
-        ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+        ignore=shutil.ignore_patterns(
+            "__pycache__", "*.pyc", ".venv", ".cache", ".data", "forkengine"
+        ),
         copy_function=_copy_stripping_literal_prefix,
     )
 

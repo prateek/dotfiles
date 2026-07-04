@@ -36,7 +36,7 @@ groups = ["core"]
 
 # Personal daily-driver Mac.
 [machines.type.personal]
-groups = ["core", "mac-desktop", "ai-agent-apps", "developer-tools", "apple-development", "personal-apps"]
+groups = ["core", "mac-desktop", "ai-agent-apps", "developer-tools", "apple-development", "personal-apps", "forks"]
 agent_clis = ["claude", "codex"]
 
 # Homelab Mac mini: development plus Apple tooling, remote/admin access, and
@@ -57,7 +57,7 @@ agent_clis = ["claude", "codex"]
 # Managed work Mac: no personal apps, no Apple/iOS toolchain; Jamf elevation and
 # the private config overlay.
 [machines.type.work]
-groups = ["core", "mac-desktop", "ai-agent-apps", "developer-tools", "work-apps"]
+groups = ["core", "mac-desktop", "ai-agent-apps", "developer-tools", "work-apps", "forks"]
 private_overlay = true
 elevation = "jamf-self-service"
 agent_clis = ["cursor-agent", "claude"]

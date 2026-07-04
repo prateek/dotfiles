@@ -21,6 +21,23 @@
 {{- $masOptIn := env "DOTFILES_INSTALL_MAS_APPS" | lower -}}
 {{- $includeMas := has $masOptIn (list "1" "true" "yes" "on") -}}
 
+{{- /* Officials shadowed by an active downstream fork are subtracted from the
+       Brewfile so brew bundle never reinstalls one underneath its fork build.
+       scripts/packages/reconcile-fork-installs owns the actual swap. */ -}}
+{{- $replacedBrews := list -}}{{- $replacedCasks := list -}}
+{{- if and (has "forks" $groups) (hasKey $root.packages.groups "forks") -}}
+{{-   range default (list) (dig "entries" (list) (index $root.packages.groups "forks")) -}}
+{{-     $rep := dig "replaces" "" . -}}
+{{-     if $rep -}}
+{{-       if eq (dig "kind" "formula" .) "cask" -}}
+{{-         $replacedCasks = mustAppend $replacedCasks $rep -}}
+{{-       else -}}
+{{-         $replacedBrews = mustAppend $replacedBrews $rep -}}
+{{-       end -}}
+{{-     end -}}
+{{-   end -}}
+{{- end -}}
+
 {{- /* Union every section across the selected groups in a single pass. */ -}}
 {{- $taps := list -}}{{- $tapSeen := list -}}
 {{- $brews := list -}}{{- $brewSeen := list -}}
@@ -33,10 +50,10 @@
 {{-     if not (has .name $tapSeen) -}}{{- $taps = mustAppend $taps . -}}{{- $tapSeen = mustAppend $tapSeen .name -}}{{- end -}}
 {{-   end -}}
 {{-   range default (list) (dig "brews" (list) $g) -}}
-{{-     if not (has .name $brewSeen) -}}{{- $brews = mustAppend $brews . -}}{{- $brewSeen = mustAppend $brewSeen .name -}}{{- end -}}
+{{-     if and (not (has .name $brewSeen)) (not (has .name $replacedBrews)) -}}{{- $brews = mustAppend $brews . -}}{{- $brewSeen = mustAppend $brewSeen .name -}}{{- end -}}
 {{-   end -}}
 {{-   range default (list) (dig "casks" (list) $g) -}}
-{{-     if not (has .name $caskSeen) -}}{{- $casks = mustAppend $casks . -}}{{- $caskSeen = mustAppend $caskSeen .name -}}{{- end -}}
+{{-     if and (not (has .name $caskSeen)) (not (has .name $replacedCasks)) -}}{{- $casks = mustAppend $casks . -}}{{- $caskSeen = mustAppend $caskSeen .name -}}{{- end -}}
 {{-   end -}}
 {{-   range default (list) (dig "mas" (list) $g) -}}
 {{-     if not (has .name $masSeen) -}}{{- $mas = mustAppend $mas . -}}{{- $masSeen = mustAppend $masSeen .name -}}{{- end -}}

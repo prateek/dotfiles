@@ -129,6 +129,7 @@ taps = [
   { name = "eugene1g/safehouse" },
   { name = "f/mcptools" },
   { name = "prateek/tap" },
+  { name = "prateek/forks", url = "https://github.com/prateek/forks" },
   { name = "steipete/tap" },
   { name = "discoteq/discoteq" },
   { name = "holgerbrandl/tap" },
@@ -357,4 +358,14 @@ casks = [
   { name = "jump-desktop-connect" },
   { name = "jump-desktop" },
   { name = "tartelet" },  # ephemeral GitHub Actions runner host on Tart; see docs/plans/tartelet-runner-plan.md
+]
+
+# Applies to: personal, work. Entries are written only by fork-lifecycle
+# automation. Each entry installs a tap build in place of the official package
+# named by `replaces`; the reconciler performs the swap before brew bundle, and
+# brewfile.tmpl subtracts the replaced official while the entry exists.
+[packages.groups.forks]
+description = "Active downstream-fork builds installed from the prateek/forks tap"
+entries = [
+  { name = "prateek/forks/ghostpepper-fork", kind = "cask", replaces = "ghostpepper" },
 ]

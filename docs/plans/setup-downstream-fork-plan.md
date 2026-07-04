@@ -2,15 +2,14 @@
 status: archived
 doc_type: plan
 owner: Prateek
-updated: 2026-05-15
+updated: 2026-07-03
 closed: 2026-05-15
 current_guidance:
-  - ../../home/dot_agents/packages/review/skills/local/setup-downstream-fork/SKILL.md
-  - ../adr/0001-downstream-fork-architecture.md
+  - ../adr/0015-downstream-fork-daily-driver.md
+  - ../../.agents/skills/fork-lifecycle/SKILL.md
 related:
   - ../adr/0001-downstream-fork-architecture.md
-  - ../../home/dot_agents/packages/review/skills/local/setup-downstream-fork/SKILL.md
-status_detail: "Historical implementation plan. The setup-downstream-fork skill is the current operator entrypoint; remaining hardening should get a smaller follow-up plan."
+status_detail: "Historical implementation plan for the deleted setup-downstream-fork skill. The downstream-fork skill and ADR 0015 replaced the whole approach."
 ---
 
 # setup-downstream-fork — plan

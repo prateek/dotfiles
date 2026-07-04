@@ -78,6 +78,7 @@ make test-macos-defaults-script
 make test-brew-inventory
 make test-brew-install-wrapper
 make test-brew-bundle-script
+make test-fork-reconcile
 make test-trace-perfetto
 make test-vm-install-log-scan
 make test-vm-postflight-macos

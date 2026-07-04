@@ -1,0 +1,108 @@
+#!/usr/bin/env python3
+"""fork-lifecycle-entry - edit the forks package group in packages.toml.
+
+The fork-lifecycle automation is the single writer of
+[packages.groups.forks].entries; this is the tool it writes with. Also fine
+to run by hand.
+
+    fork-lifecycle-entry add    --file <packages.toml> --name <tap-token> \
+                                --kind formula|cask [--replaces <official>]
+    fork-lifecycle-entry remove --file <packages.toml> --name <tap-token>
+
+Edits are idempotent: adding an existing name or removing a missing one is a
+no-op that says so. The result must still parse as TOML or the file is left
+untouched.
+"""
+
+from __future__ import annotations
+
+import argparse
+import re
+import sys
+import tomllib
+from pathlib import Path
+
+FORKS_TABLE = "[packages.groups.forks]"
+
+
+def find_entries_span(text: str) -> tuple[int, int]:
+    """Byte span strictly inside the entries = [ ... ] brackets of the forks
+    table, so edits can never touch another table's same-named key."""
+    table_at = text.find(FORKS_TABLE)
+    if table_at < 0:
+        sys.exit(f"no {FORKS_TABLE} table found")
+    next_table = re.compile(r"(?m)^\[").search(text, table_at + len(FORKS_TABLE))
+    table_end = next_table.start() if next_table else len(text)
+
+    entries = re.compile(r"(?m)^entries\s*=\s*\[").search(text, table_at, table_end)
+    if not entries:
+        sys.exit(f"no entries = [ ... ] inside {FORKS_TABLE}")
+    close = text.find("]", entries.end())
+    if close < 0 or close > table_end:
+        sys.exit("entries array is not closed inside the forks table")
+    return entries.end(), close
+
+
+def parse_check(path: Path, text: str) -> None:
+    try:
+        tomllib.loads(text)
+    except tomllib.TOMLDecodeError as err:
+        sys.exit(f"refusing to write {path}: edit would break TOML parsing: {err}")
+
+
+def cmd_add(args: argparse.Namespace) -> None:
+    text = args.file.read_text()
+    start, end = find_entries_span(text)
+    if f'name = "{args.name}"' in text[start:end]:
+        print(f"fork-lifecycle-entry: {args.name} already listed; nothing to do")
+        return
+    entry = f'  {{ name = "{args.name}", kind = "{args.kind}"'
+    if args.replaces:
+        entry += f', replaces = "{args.replaces}"'
+    entry += " },\n"
+    body = text[start:end]
+    if not body.strip():
+        body = "\n"
+    updated = text[:start] + body.rstrip(" ") + entry + text[end:]
+    parse_check(args.file, updated)
+    args.file.write_text(updated)
+    print(f"fork-lifecycle-entry: added {args.name}")
+
+
+def cmd_remove(args: argparse.Namespace) -> None:
+    text = args.file.read_text()
+    start, end = find_entries_span(text)
+    body = text[start:end]
+    kept = [line for line in body.splitlines(keepends=True)
+            if f'name = "{args.name}"' not in line]
+    if "".join(kept) == body:
+        print(f"fork-lifecycle-entry: {args.name} not listed; nothing to do")
+        return
+    updated = text[:start] + "".join(kept) + text[end:]
+    parse_check(args.file, updated)
+    args.file.write_text(updated)
+    print(f"fork-lifecycle-entry: removed {args.name}")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    add = sub.add_parser("add", help="add a fork entry")
+    add.add_argument("--file", type=Path, required=True)
+    add.add_argument("--name", required=True, help="tap-qualified token, e.g. prateek/tap/x-fork")
+    add.add_argument("--kind", choices=("formula", "cask"), required=True)
+    add.add_argument("--replaces", default="", help="official package the fork shadows")
+    add.set_defaults(func=cmd_add)
+
+    remove = sub.add_parser("remove", help="remove a fork entry")
+    remove.add_argument("--file", type=Path, required=True)
+    remove.add_argument("--name", required=True)
+    remove.set_defaults(func=cmd_remove)
+
+    args = parser.parse_args()
+    args.func(args)
+
+
+if __name__ == "__main__":
+    main()

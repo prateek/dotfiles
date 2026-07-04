@@ -2,6 +2,11 @@
 .agents/skills/**/__pycache__
 .agents/skills/**/*.pyc
 
+{{/* Dev artifacts of uv projects and test runs inside skill packages. */}}
+.agents/packages/**/.venv
+.agents/packages/**/__pycache__
+.agents/packages/**/*.pyc
+
 {{/* Machine-local shell overlays sourced by the managed zsh startup files. */}}
 .zprofile.local
 .zshrc.local
