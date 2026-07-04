@@ -70,6 +70,7 @@ make test-agent-skill-packages
 make test-agent-skill-packages-native
 make test-selected-app-plists
 make test-tartelet-settings
+make test-tartelet-softnet-wrapper
 make test-plist-hooks
 make test-sudo-keepalive
 make test-macos-defaults-script

@@ -1,0 +1,53 @@
+{{ template "script_lib.sh" . }}
+
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- $tartelet := includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "tartelet") -}}
+{{- if and $f.run_install_scripts (eq $tartelet "true") }}
+if [ "$(uname -s)" != "Darwin" ]; then
+  log "tart softnet wrapper skipped on non-macOS host."
+  exit 0
+fi
+
+# Runner guests must be isolated from the homelab LAN. softnet does that via
+# `tart run --net-softnet`, but Tartelet drives `tart run` at a fixed path with no
+# way to pass the flag, so we own that path with a wrapper. This runs on every
+# apply, not on change: `brew upgrade tart` restores the plain symlink and drops
+# isolation until the next apply re-lays the wrapper.
+#
+# TODO: migrate off this brew-path override. Land TARTELET_RUN_OPTIONS support in a
+# Tartelet release (then set the env var in the LaunchAgent and delete this wrapper),
+# or move the runner host to Ekiden/Orchard, which pass tart run flags natively.
+# Tracked in docs/plans/tartelet-runner-plan.md.
+target="/opt/homebrew/bin/tart"
+real="/opt/homebrew/opt/tart/bin/tart"
+
+if [ ! -x "$real" ]; then
+  warn "tart not installed at $real; skipping softnet wrapper."
+  exit 0
+fi
+
+# Materialize the wrapper from the asset and install only when it differs from
+# what is there (a plain symlink after a brew upgrade, or nothing on a fresh host).
+tmp="$(mktemp)"
+cat > "$tmp" <<'WRAPPER'
+{{ include ".chezmoiassets/tart-softnet-wrapper.sh" }}
+WRAPPER
+chmod 0755 "$tmp"
+
+if [ -f "$target" ] && [ ! -L "$target" ] && cmp -s "$tmp" "$target"; then
+  rm -f "$tmp"
+else
+  if [ -L "$target" ]; then was="brew symlink"; elif [ -e "$target" ]; then was="stale file"; else was="absent"; fi
+  mv "$tmp" "$target"
+  chmod 0755 "$target"
+  log "Installed tart softnet wrapper at $target (replaced: $was)."
+fi
+
+# The wrapper is inert without the passwordless-sudo grant softnet needs at run
+# time; that grant is a one-time manual runbook step, so only warn if it is absent.
+if ! sudo -n /opt/homebrew/bin/softnet --help >/dev/null 2>&1; then
+  warn "softnet sudo grant missing: guests will fail to boot under --net-softnet. See the runner runbook (softnet grant step)."
+fi
+{{- else }}
+log "tart softnet wrapper skipped (install scripts disabled or tartelet cask not selected)."
+{{- end }}

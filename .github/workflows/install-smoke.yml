@@ -80,6 +80,7 @@ jobs:
           make test-zsh-prompt-host
           make test-moom-plist
           make test-tartelet-settings
+          make test-tartelet-softnet-wrapper
           make test-plist-hooks
           make test-trace-perfetto
           make test-vm-install-log-scan

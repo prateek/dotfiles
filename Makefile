@@ -1,5 +1,5 @@
 .PHONY: test test-chezmoi-apply hammerspoon hammerspoon-check hammerspoon-reload
-.PHONY: test-gemini-meeting-sync test-ghc test-gh-extensions-script test-mise-install-script test-xcode-install-script test-secret-backed-files test-kanata-config test-karabiner-goku test-chezmoi-config test-chezmoi-local-ignores test-chezmoi-script-status test-chezmoi-drift-banner test-codex-config test-agentsview-config test-claude-settings test-claude-statusline test-orca-settings test-agent-skill-packages test-agent-skill-packages-native test-cmux-plist test-ice-plist test-orbstack-plist test-selected-app-plists test-package-gated-configs test-machines-features test-elevation-render test-moom-plist test-nvalt-colors test-nvalt-plist test-voiceink-plist test-tartelet-settings test-plist-hooks test-sudo-keepalive test-macos-defaults-script test-brew-inventory test-brew-install-wrapper test-brew-bundle-script test-render-brewfile test-docs-lifecycle test-repo-index test-raycast-orca-worktree
+.PHONY: test-gemini-meeting-sync test-ghc test-gh-extensions-script test-mise-install-script test-xcode-install-script test-secret-backed-files test-kanata-config test-karabiner-goku test-chezmoi-config test-chezmoi-local-ignores test-chezmoi-script-status test-chezmoi-drift-banner test-codex-config test-agentsview-config test-claude-settings test-claude-statusline test-orca-settings test-agent-skill-packages test-agent-skill-packages-native test-cmux-plist test-ice-plist test-orbstack-plist test-selected-app-plists test-package-gated-configs test-machines-features test-elevation-render test-moom-plist test-nvalt-colors test-nvalt-plist test-voiceink-plist test-tartelet-settings test-tartelet-softnet-wrapper test-plist-hooks test-sudo-keepalive test-macos-defaults-script test-brew-inventory test-brew-install-wrapper test-brew-bundle-script test-render-brewfile test-docs-lifecycle test-repo-index test-raycast-orca-worktree
 .PHONY: test-zed-settings test-zsh-prompt-host test-zsh-fresh-shells verify-zsh-fresh-shells bench-zsh-startup
 .PHONY: test-tart-install-helper test-trace-perfetto test-vm-install-log-scan test-vm-postflight-macos test-install-tart-dry-run test-install-tart-smoke test-install-tart-full test-install-tart-warm test-install-tart-warm-bootstrap test-install-tart-warm-refresh test-install-tart-warm-destroy
 
@@ -203,6 +203,11 @@ test-voiceink-plist:
 test-tartelet-settings:
 	@command -v chezmoi >/dev/null 2>&1 || { echo "Skipping tartelet-settings test (chezmoi not installed)"; exit 0; }
 	@zsh ./tests/tartelet-settings.zsh
+
+## Regression tests for the tart softnet wrapper installer: render + machine-type gating.
+test-tartelet-softnet-wrapper:
+	@command -v chezmoi >/dev/null 2>&1 || { echo "Skipping tartelet-softnet-wrapper test (chezmoi not installed)"; exit 0; }
+	@zsh ./tests/tartelet-softnet-wrapper.zsh
 
 ## Regression tests for chezmoi apply hooks: running-app guard + cfprefsd nudge + optional relaunch.
 test-plist-hooks:

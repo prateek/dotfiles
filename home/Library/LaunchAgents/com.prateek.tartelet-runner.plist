@@ -9,9 +9,9 @@
   Loads at the next login automatically; to load immediately after apply:
     launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.prateek.tartelet-runner.plist
 
-  If the runner VMs need specific `tart run` flags (bridged networking, extra
-  mounts), add an EnvironmentVariables dict setting TARTELET_RUN_OPTIONS — the only
-  environment variable Tartelet honors.
+  Runner-guest LAN isolation is not set here. Tartelet cannot pass networking flags
+  to `tart run`, so the tart wrapper at /opt/homebrew/bin/tart adds --net-softnet
+  instead (installed by run_after_18-tartelet-tart-softnet-wrapper). See the runbook.
 -->
 <plist version="1.0">
 <dict>

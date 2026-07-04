@@ -9,7 +9,7 @@ related:
   - ../adr/0004-tart-install-validation-and-tracing.md
   - ../runbooks/tartelet-runner-setup.md
   - ../runbooks/tart-mini-validation.md
-status_detail: "Landed and verified live on m4mini: cask, defaults-based settings, LaunchAgent, host facts, golden VM builder, verify check, runbook. Runner registered end-to-end. Remaining: fresh-mini reproducibility only."
+status_detail: "Landed and verified live on m4mini: cask, defaults settings, LaunchAgent, host facts, golden VM builder, verify check, runbook, and softnet LAN isolation via the tart wrapper (a GitHub Actions job runs on the isolated runner with the LAN blocked). Remaining: fresh-mini reproducibility, and retiring the wrapper once tart run flags can be passed without it."
 ---
 
 # Tartelet Self-Hosted Runner Plan
@@ -188,9 +188,21 @@ scope and VM count reverted). `defaults` is the cfprefsd-authoritative path.
   Tartelet at login on runner hosts only. This is the repo's first launchd surface;
   keep it minimal and gated on the cask being present. Together with the plist key,
   login → running runners is unattended.
-- If the runner VMs need specific `tart run` flags (bridged networking, extra
-  mounts), set `TARTELET_RUN_OPTIONS` in the LaunchAgent's `EnvironmentVariables` —
-  the only env hook Tartelet honors (see the persistence model). Otherwise omit it.
+- Isolate runner guests from the homelab LAN with softnet. `tart run --net-softnet`
+  keeps internet egress via the vmnet gateway (runners register, builds fetch deps)
+  but drops the guest onto its own subnet with the LAN denied. `softnet` ships as a
+  `tart` dependency.
+
+  Tartelet cannot pass this flag — it drives `tart run` at a fixed path,
+  `/opt/homebrew/bin/tart`, with no flag hook. So a wrapper at that path
+  (`home/.chezmoiassets/tart-softnet-wrapper.sh`, installed by
+  `run_after_18-tartelet-tart-softnet-wrapper`) forwards to the real tart and adds
+  `--net-softnet`. The wrapper prepends the brew bin to `PATH` so tart can find
+  `softnet`, and reinstalls on every apply since `brew upgrade tart` restores the
+  plain symlink. softnet needs a passwordless-sudo grant, a one-time
+  `/etc/sudoers.d` drop-in per host (runbook). Widen access with
+  `--net-softnet-allow=<cidr>`; never revert to NAT. The wrapper is a stopgap — see
+  the migration item under Open questions and risks.
 
 ### 7. Runbook and validation
 
@@ -220,6 +232,19 @@ scope and VM count reverted). `defaults` is the cfprefsd-authoritative path.
   means more hosts.
 - **Golden-image drift.** The image must be rebuilt when the Xcode pin moves;
   phase 2 keys the rebuild off the `ios-triple.json` sha.
+- **The tart wrapper is a stopgap; migrate off it.** It owns `/opt/homebrew/bin/tart`
+  and injects softnet into every `tart run` on the host — fine for a dedicated
+  runner mini, but a global override that `brew upgrade tart` resets (hence the
+  every-apply reinstall). Retire it by landing `TARTELET_RUN_OPTIONS` support in a
+  Tartelet release (then set the env var in the LaunchAgent and delete the wrapper),
+  or by moving the host to Ekiden or Orchard, which pass `tart run` flags natively.
+  A local from-source Tartelet build is not a path: it loses the vendor-signed
+  keychain access group that holds the runner credentials.
+- **softnet coexists with Tartelet's guest control.** softnet isolates the guest's
+  outbound traffic; Tartelet still reaches into the guest over SSH and the guest
+  still registers to GitHub. If a future softnet or Tart release regresses this,
+  widen the guest subnet with `--net-softnet-allow=<cidr>` rather than reverting to
+  NAT.
 - **Deviation from Tartelet's host-account model.** Tartelet's own setup guide
   runs the app under a dedicated auto-login non-admin "runner" *host* user with a
   hardening checklist (no sleep, no auto-update, scoped sudoers). This plan's
