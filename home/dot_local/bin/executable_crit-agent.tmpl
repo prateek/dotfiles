@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Dispatch a crit review comment to an acpx agent, reply-only. crit invokes this
+# with cwd=repo root and the built prompt as $1. Reads are auto-approved for
+# context; --no-terminal and --non-interactive-permissions deny refuse writes, so
+# the agent suggests a reply but never edits the tree. crit's dispatch API carries
+# no model choice, so the wrapper resolves one below.
+#
+# The GPT- and Claude-family targets are baked in at chezmoi apply time from this
+# machine's agent CLIs (machines.toml agent_clis, via features.tmpl), so the
+# bridge stays independent of the acpx config and always names a runnable agent.
+set -euo pipefail
+{{- $clis := (includeTemplate "features.tmpl" . | fromJson).agent_clis | default (list) -}}
+{{- $gpt := "" -}}{{- if or (has "cursor-agent" $clis) (has "codex" $clis) }}{{ $gpt = "agpt" }}{{ end -}}
+{{- $claude := "" -}}{{- if has "cursor-agent" $clis }}{{ $claude = "aopus" }}{{ else if has "claude" $clis }}{{ $claude = "afable" }}{{ end -}}
+{{- $default := $gpt -}}{{- if not $default }}{{ $default = $claude }}{{ end }}
+
+model="${CRIT_AGENT_MODEL:-}"
+
+# Contrast with whoever started the crit daemon. AI_AGENT is Orca's clean
+# discriminator (claude-code_*, codex_*, cursor_*); CLAUDECODE is the portable
+# Claude-family fallback. CODEX_HOME is ambient (set even in Claude sessions), so
+# it must not be used as a launcher signal.
+if [[ -z "$model" ]]; then
+  case "${AI_AGENT:-}" in
+    codex_*|cursor_*) model="{{ $claude }}" ;;   # non-Claude reviewer -> Claude
+    claude-code_*)    model="{{ $gpt }}" ;;      # Claude reviewer     -> GPT
+  esac
+  [[ -z "$model" && "${CLAUDECODE:-}" == "1" ]] && model="{{ $gpt }}"
+fi
+
+model="${model:-{{ $default }}}"
+[[ -n "$model" ]] || { echo "crit-agent: no acpx agent CLI available for the bridge on this machine" >&2; exit 1; }
+
+exec acpx --format quiet --no-terminal --non-interactive-permissions deny \
+  "$model" exec "$1"

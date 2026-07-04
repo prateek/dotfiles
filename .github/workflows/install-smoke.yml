@@ -71,6 +71,7 @@ jobs:
           make test-claude-settings
           make test-claude-statusline
           make test-orca-settings
+          make test-crit-config
           make test-agent-skill-packages
           make test-gemini-meeting-sync
           make test-brew-install-wrapper

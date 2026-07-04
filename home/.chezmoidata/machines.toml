@@ -21,6 +21,10 @@ apply_macos_defaults = true
 secrets_enabled = false          # enable per machine via [data].machines_local
 private_overlay = false
 elevation = "none"
+# ACP-backed agent CLIs present on this machine. The acpx config emits only the
+# shortcuts whose CLI is listed, and the crit review bridge picks its model from
+# the same list. Empty by default so a machine opts in explicitly.
+agent_clis = []
 
 # Minimal/fast tier for CI dry-run, Tart smoke, and shell audits. Keeps the
 # defaults' run_install_scripts/apply_macos_defaults = true so the Tart smoke
@@ -33,6 +37,7 @@ groups = ["core"]
 # Personal daily-driver Mac.
 [machines.type.personal]
 groups = ["core", "mac-desktop", "ai-agent-apps", "developer-tools", "apple-development", "personal-apps"]
+agent_clis = ["claude", "codex"]
 
 # Homelab Mac mini: development plus Apple tooling, remote/admin access, and
 # AI agent apps (agentsview + Orca need each other to be useful), without the
@@ -47,6 +52,7 @@ runner_vm_count = 1
 runner_labels = "tartelet,homelab"
 runner_scope = "repo"                  # GitHubRunnerScope rawValue: "organization" | "repo"; repo = one runner per repo
 runner_start_on_launch = true
+agent_clis = ["claude", "codex"]
 
 # Managed work Mac: no personal apps, no Apple/iOS toolchain; Jamf elevation and
 # the private config overlay.
@@ -54,6 +60,7 @@ runner_start_on_launch = true
 groups = ["core", "mac-desktop", "ai-agent-apps", "developer-tools", "work-apps"]
 private_overlay = true
 elevation = "jamf-self-service"
+agent_clis = ["cursor-agent", "claude"]
 
 # os.<os> and host.<hostname> layers are intentionally absent until needed.
 # The resolver digs them with an empty-dict default, so a missing layer is a

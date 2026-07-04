@@ -1,0 +1,23 @@
+{{- /* acpx shortcuts gated by this machine's agent CLIs (machines.toml
+       agent_clis, via features.tmpl): a shortcut is emitted only when a backing
+       CLI is present. The GPT tiers ride cursor-agent where it exists and fall
+       back to the Codex adapter otherwise. See docs/plans/crit-agent-bridge-plan.md. */ -}}
+{{- $clis := (includeTemplate "features.tmpl" . | fromJson).agent_clis | default (list) -}}
+{{- $agents := dict -}}
+{{- if has "cursor-agent" $clis -}}
+{{-   $agents = set $agents "agpt"       (dict "command" "cursor-agent" "args" (list "--model" "gpt-5.5-high-fast" "acp")) -}}
+{{-   $agents = set $agents "agpt-extra" (dict "command" "cursor-agent" "args" (list "--model" "gpt-5.5-extra-high-fast" "acp")) -}}
+{{- else if has "codex" $clis -}}
+{{-   $agents = set $agents "agpt"       (dict "command" "codex-acp" "args" (list "-c" "model_reasoning_effort=high")) -}}
+{{-   $agents = set $agents "agpt-extra" (dict "command" "codex-acp" "args" (list "-c" "model_reasoning_effort=xhigh")) -}}
+{{- end -}}
+{{- if has "cursor-agent" $clis -}}
+{{-   $agents = set $agents "aopus"      (dict "command" "cursor-agent" "args" (list "--model" "claude-opus-4-8-thinking-xhigh-fast" "acp")) -}}
+{{-   $agents = set $agents "aopus-max"  (dict "command" "cursor-agent" "args" (list "--model" "claude-opus-4-8-thinking-max-fast" "acp")) -}}
+{{-   $agents = set $agents "agemini"    (dict "command" "cursor-agent" "args" (list "--model" "gemini-3.1-pro" "acp")) -}}
+{{- end -}}
+{{- if has "claude" $clis -}}
+{{-   $agents = set $agents "afable"     (dict "command" "env" "args" (list "ANTHROPIC_MODEL=fable" "CLAUDE_CODE_EFFORT_LEVEL=xhigh" "claude-agent-acp")) -}}
+{{-   $agents = set $agents "afable-max" (dict "command" "env" "args" (list "ANTHROPIC_MODEL=fable" "CLAUDE_CODE_EFFORT_LEVEL=max" "claude-agent-acp")) -}}
+{{- end -}}
+{{ dict "agents" $agents | toPrettyJson }}

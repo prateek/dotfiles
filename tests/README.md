@@ -66,6 +66,7 @@ make test-agentsview-config
 make test-claude-settings
 make test-claude-statusline
 make test-orca-settings
+make test-crit-config
 make test-agent-skill-packages
 make test-agent-skill-packages-native
 make test-selected-app-plists

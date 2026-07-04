@@ -21,10 +21,12 @@ they are not a way to switch your own model.
 
 Defined in `~/.acpx/config.json` (`agents` map). Each pins a model + reasoning
 tier. The `agpt*`/`aopus*`/`agemini` shortcuts run through `cursor-agent` as
-the ACP adapter, with the reasoning tier encoded in the model id itself. The
-`afable*` shortcuts run Claude Code through `claude-agent-acp`, with the model
-and effort pinned via `ANTHROPIC_MODEL` and `CLAUDE_CODE_EFFORT_LEVEL` env
-vars in the entry (the adapter takes no model/effort CLI args).
+the ACP adapter, with the reasoning tier encoded in the model id itself; where
+`cursor-agent` is absent, `agpt*` fall back to the Codex adapter (`codex-acp`,
+GPT model from `~/.codex/config.toml`). The `afable*` shortcuts run Claude Code
+through `claude-agent-acp`, with the model and effort pinned via
+`ANTHROPIC_MODEL` and `CLAUDE_CODE_EFFORT_LEVEL` env vars in the entry (the
+adapter takes no model/effort CLI args).
 
 | Shortcut     | Model                                   | Use for                            |
 | ------------ | --------------------------------------- | ---------------------------------- |
@@ -36,7 +38,10 @@ vars in the entry (the adapter takes no model/effort CLI args).
 | `afable-max` | `fable` at `max` effort                 | Claude Code on Fable, max effort   |
 | `agemini`    | `gemini-3.1-pro`                        | Best Gemini                        |
 
-Invoke by name; `acpx <name>` is enough — the model is baked into the config.
+Invoke by name: `acpx <name>` is enough, since the model is baked into the
+config. The config is templated per machine, so it emits only the shortcuts
+whose backing CLI is present (machines.toml `agent_clis`); a box without
+`cursor-agent` won't list the `agpt*`/`aopus*`/`agemini` entries.
 
 ## Defaults
 
@@ -65,6 +70,32 @@ acpx compare agpt aopus agemini 'Summarize this repo in 3 lines.'
 acpx config show
 ```
 
+## Crit review bridge
+
+crit's per-comment "send to agent" button dispatches the comment to whatever
+`agent_cmd` names in `~/.crit.config.json`. It is wired to
+`~/.local/bin/crit-agent`, which runs an acpx agent **reply-only**: reads are
+auto-approved for context, but `--no-terminal --non-interactive-permissions
+deny` refuse writes, so the agent suggests a reply and never edits the tree.
+crit posts the wrapper's stdout back as the reply; the human or the original
+in-session agent applies any change.
+
+crit sends no model choice, so the wrapper picks one (first match wins):
+
+1. `CRIT_AGENT_MODEL`: explicit host-local override (`.envrc` / mise), any acpx
+   shortcut.
+2. Launcher-aware contrast: a model unlike whoever started the crit daemon, read
+   from `AI_AGENT` / `CLAUDECODE`. The GPT target is `agpt` (cursor-agent, or the
+   Codex adapter where absent); the Claude target is `aopus` with `cursor-agent`,
+   else `afable`.
+3. Machine default: the GPT-family target above, baked into the wrapper at apply
+   time from machines.toml `agent_clis`. A machine with no agent CLIs can't
+   dispatch, and the wrapper says so.
+
+Both the wrapper and the acpx shortcut list derive from the same `agent_clis`
+overlay, so the bridge stays independent of the acpx config. Full design in the
+dotfiles repo: `docs/plans/crit-agent-bridge-plan.md`.
+
 ## Prerequisites
 
 - `acpx` CLI: installed via mise (`npm:acpx`).
@@ -83,8 +114,9 @@ acpx config show
   drifts; if a shortcut errors on an unknown model, refresh the id in
   `~/.acpx/config.json`). The `afable*` entries use the `fable` alias, which
   tracks the latest Fable release on its own.
-- `acpx config show` lists `agpt` / `agpt-extra` / `aopus` / `aopus-max` /
-  `afable` / `afable-max` / `agemini`.
+- `acpx config show` lists the shortcuts for this machine's `agent_clis`: all
+  seven where `cursor-agent` and `claude` are both present, `afable*` only on a
+  claude-without-cursor-agent box, none where `agent_clis` is empty.
 - The shortcut actually ran on the pinned model (ask it; or check session
   metadata) — `cursor-agent` must honor `--model <id> acp`, and the `afable*`
   entries need `claude-agent-acp` on PATH.

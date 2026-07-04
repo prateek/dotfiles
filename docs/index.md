@@ -38,6 +38,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | --- | --- |
 | [Agent Plugin Renderer](plans/agent-plugin-renderer-plan.md) | Active; single plugin-only render mode with APM payload pass-through landed — pack-bundle vendoring stays deferred. |
 | [Crit Integration](plans/crit-integration-plan.md) | Active; claude-code skills re-vendored with plan-hook via managed settings — live rollout smoke and upstream description PR remaining. |
+| [Crit Agent Bridge](plans/crit-agent-bridge-plan.md) | Active; wires crit's `agent_cmd` hook to acpx for reply-only cross-model comment dispatch. Implemented and tested; live smoke pending. |
 | [BetterDisplay Display Modes](plans/betterdisplay-display-modes-plan.md) | Proposed only; no `displayctl` implementation exists in this checkout. |
 | [Decomment Skill](plans/decomment-skill-plan.md) | Active; decomment core skill, trigger-channel fixes, and evals under implementation. |
 | [Orcactl](plans/orcactl-plan.md) | Draft for a separate Go repo/tool; dotfiles integration is future install/skill wiring. |

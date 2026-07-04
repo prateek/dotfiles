@@ -1,0 +1,42 @@
+#!/usr/bin/env -S uv run --quiet --script
+# /// script
+# requires-python = ">=3.14"
+# dependencies = []
+# ///
+"""Set agent_cmd in ~/.crit.config.json.
+
+crit's "send to agent" button runs the configured agent_cmd; pointing it at the
+crit-agent wrapper dispatches review comments to an acpx agent (reply-only). See
+docs/plans/crit-agent-bridge-plan.md.
+
+Only agent_cmd is touched. crit's own keys (auth_token, share_consented,
+auth_user_*, live_cookie, and anything else crit or the user has written)
+round-trip untouched. crit honors agent_cmd only from this global file for
+security, not from a project .crit.config.json.
+"""
+import json
+import sys
+
+AGENT_CMD = "crit-agent {prompt}"
+
+
+def load_current(text: str) -> dict:
+    if not text.strip():
+        return {}
+    value = json.loads(text)
+    return value if isinstance(value, dict) else {}
+
+
+def semantic_equal(left: str, right: str) -> bool:
+    try:
+        return json.loads(left) == json.loads(right)
+    except Exception:
+        return False
+
+
+current_text = sys.stdin.read()
+current = load_current(current_text)
+current["agent_cmd"] = AGENT_CMD
+
+merged_text = json.dumps(current, indent=2, ensure_ascii=False) + "\n"
+sys.stdout.write(current_text if semantic_equal(current_text, merged_text) else merged_text)
