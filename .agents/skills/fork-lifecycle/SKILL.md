@@ -30,7 +30,12 @@ gh api repos/prateek/forks/releases \
   --jq '[.[]|select(.tag_name|startswith("<tool>-v"))][0].tag_name'
 # retire self-issues (they record what to flip back to)
 gh issue list --repo prateek/forks --author "app/prateek-fork-automation" --state open
+# fork-specific build/sync gotchas, if a fork won't adopt cleanly (404 = none yet)
+gh api repos/prateek/forks/contents/<tool>/learnings.md --jq .content | base64 -d
 ```
+
+Build-resolution learnings are recorded on the `prateek/forks` side (the
+`fork-ops` skill writes `<tool>/learnings.md`); this skill only reads them.
 
 A fork is **adopt-eligible** when it has a `<tool>-v*` release and no
 `.fork/retired`. It is **retire-eligible** when `.fork/retired` exists (or it
