@@ -3,13 +3,13 @@ status: active
 doc_type: plan
 owner: Prateek
 created: 2026-07-03
-updated: 2026-07-03
+updated: 2026-07-04
 related:
   - ../adr/0014-tartelet-self-hosted-runners.md
   - ../adr/0004-tart-install-validation-and-tracing.md
   - ../runbooks/tartelet-runner-setup.md
   - ../runbooks/tart-mini-validation.md
-status_detail: "Landed and verified live on m4mini: cask, defaults settings, LaunchAgent, host facts, golden VM builder, verify check, runbook, and softnet LAN isolation via the tart wrapper (a GitHub Actions job runs on the isolated runner with the LAN blocked). Remaining: fresh-mini reproducibility, and retiring the wrapper once tart run flags can be passed without it."
+status_detail: "Landed and verified live on m4mini: cask, defaults settings, LaunchAgent, host facts, golden VM builder, verify check, runbook, and softnet LAN isolation via the tart wrapper (a GitHub Actions job runs on the isolated runner with the LAN blocked). Remaining: fresh-mini reproducibility, and retiring the wrapper once tart run flags can be passed without it. A memory-pressure circuit breaker (phase 8) is proposed but not landed after a 2026-07-03 jetsam wedge."
 ---
 
 # Tartelet Self-Hosted Runner Plan
@@ -218,6 +218,16 @@ scope and VM count reverted). `defaults` is the cfprefsd-authoritative path.
   runner registered in GitHub.
 - Update `docs/index.md` and this plan's status as phases land.
 
+### 8. Host memory-pressure circuit breaker (proposed, not landed)
+
+A 2026-07-03 jetsam wedge — an 8 GB runner build exhausted the 16 GB host and macOS
+killed host processes (Claude, Codex, OrbStack, Orca) rather than the VM — motivates a
+watchdog that sheds the runner before jetsam fires. A prototype was built and validated
+during the investigation but not kept in-tree, so the mini is not yet protected; the
+design is captured for a clean implementation. Full write-up, incident evidence, design,
+and decision points:
+[Tartelet runner memory-guard proposal](tartelet-runner-memory-guard-proposal.md).
+
 ## Open questions and risks
 
 - **Plist keys can drift on upgrade.** Phase 5's keys come from Tartelet source, so
@@ -230,6 +240,11 @@ scope and VM count reverted). `defaults` is the cfprefsd-authoritative path.
   design; there is no fallback that makes this scriptable without Framna's identity.
 - **Two-VM framework cap.** `runner_vm_count` must stay ≤ 2. More parallelism
   means more hosts.
+- **16 GB is marginal for a co-hosted runner.** An 8 GB guest plus an active
+  workstation exceeds 16 GB and drove the host into jetsam on 2026-07-03. The
+  proposed memory guard (phase 8) would make that failure graceful rather than a
+  wedge, but it is a safety net, not headroom: keep `runner_vm_count = 1` on 16 GB,
+  and treat a dedicated mini or a higher-RAM host as the real fix.
 - **Golden-image drift.** The image must be rebuilt when the Xcode pin moves;
   phase 2 keys the rebuild off the `ios-triple.json` sha.
 - **The tart wrapper is a stopgap; migrate off it.** It owns `/opt/homebrew/bin/tart`
