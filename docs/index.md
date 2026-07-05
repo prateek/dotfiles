@@ -49,6 +49,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [Tartelet Self-Hosted Runners](plans/tartelet-runner-plan.md) | Active; cask, managed plist, LaunchAgent, host data, VM-image builder, and runbook landed. On-mini end-to-end (golden VM build + first-run credential paste) still to be exercised. |
 | [Tartelet Runner Memory-Guard](plans/tartelet-runner-memory-guard-proposal.md) | Proposed; design for a circuit breaker that sheds the runner under host memory pressure after a 2026-07-03 jetsam wedge. Prototyped and validated, then dropped — no code in-tree. |
 | [Zsh Fresh-Shell Validator](plans/zsh-fresh-shell-validator-plan.md) | Active plan for shell correctness and startup checks. |
+| [Test-Suite Rebuild](plans/test-suite-rebuild-plan.md) | Proposed; rebuild the `tests/*.zsh` suite from scratch on two primitives — assertions derived from source-of-truth, and self-enforcing coverage — with a five-tier pyramid and a shared harness. Not started. |
 
 ## Decision Records
 
