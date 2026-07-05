@@ -38,13 +38,11 @@ assert_has 'cmp -s "$tmp" "$target"'
 # Warns rather than fails when the softnet sudo grant is absent.
 assert_has 'sudo -n /opt/homebrew/bin/softnet'
 
-# Personal has no tartelet cask, so the script must skip via the template gate and
-# never touch /opt/homebrew/bin/tart.
+# Personal has no tartelet cask, so the gate renders nothing: chezmoi skips the
+# empty script entirely, which keeps `chezmoi status` clean (see the invariant in
+# tests/chezmoi-script-status.zsh). Empty also means the wrapper install can't leak.
 personal="$tmp_root/personal.sh"
 render '{"machine_type":"personal"}' >"$personal"
-bash -n "$personal" || die "personal render is not valid bash"
-grep -qF 'tart softnet wrapper skipped' "$personal" || die "personal render should skip the wrapper install"
-grep -qF 'target="/opt/homebrew/bin/tart"' "$personal" \
-  && die "personal render leaked the wrapper install (template guard missing)" || true
+[[ -s "$personal" ]] && die "personal render should be empty (gate must skip the wrapper install)" || true
 
 print -- "OK tartelet-softnet-wrapper"

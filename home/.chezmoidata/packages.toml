@@ -190,7 +190,6 @@ brews = [
   # Shells, editors, and terminal UI.
   { name = "bash" },
   { name = "zsh" },
-  { name = "pure" },
   { name = "vim" },
   { name = "helix" },
   { name = "ranger" },

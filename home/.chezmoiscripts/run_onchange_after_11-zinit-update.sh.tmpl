@@ -1,0 +1,24 @@
+{{ template "script_lib.sh" . }}
+
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- if $f.run_install_scripts }}
+# zinit clones its plugins once and never refreshes them, so machines set up at
+# different times drift apart. The ISO-week bucket below changes this script's
+# rendered content every week, so chezmoi re-runs it (run_onchange) on the first
+# apply of a new week: it pulls each plugin to latest, recompiles, and fires the
+# atpull hooks declared in zinit-init.zsh. chezmoi's change tracking keeps
+# `chezmoi status` clean between runs; zinit itself is a separate 168h external.
+# week: {{ output "date" "+%G-%V" | trim }}
+ZINIT_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/zinit/zinit.git"
+if [ ! -r "$ZINIT_HOME/zinit.zsh" ]; then
+  warn "zinit not present yet ($ZINIT_HOME); skipping plugin update."
+  exit 0
+fi
+have zsh || { warn "zsh not found; skipping zinit plugin update."; exit 0; }
+
+# shellcheck disable=SC2016  # $1 is expanded by the inner zsh, not by bash
+run_timed "zinit update" zsh -c 'source "$1/zinit.zsh" >/dev/null 2>&1; zinit update --all --parallel' zinit-update "$ZINIT_HOME" \
+  || warn "zinit update failed (network?); will retry next week."
+{{- else }}
+log "zinit plugin update disabled."
+{{- end }}
