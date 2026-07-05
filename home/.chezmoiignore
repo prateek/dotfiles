@@ -31,9 +31,12 @@ Library/Preferences/com.cmuxterm.app.plist
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "zed")) "true" }}
 .config/zed
 {{- end }}
-{{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "leader-key")) "true" }}
-.config/leader-key/config.json
-Library/Preferences/com.brnbw.Leader-Key.plist
+{{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "tuna")) "true" }}
+.config/tuna/config.toml
+Library/Preferences/com.brnbw.Tuna.plist
+Library/Scripts/g95-sharp.sh
+Library/Scripts/panw-password.sh
+Library/Scripts/temp-admin.sh
 {{- end }}
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "yojam")) "true" }}
 Library/Application Support/Yojam/config.json

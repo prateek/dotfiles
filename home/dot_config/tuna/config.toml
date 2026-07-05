@@ -1,0 +1,102 @@
+schemaVersion = 1
+
+[catalogs]
+sortOrders = []
+
+    [[catalogs.globalScopes]]
+    catalogIdentifier = 'Tuna.EffectsCatalog'
+    mode = 'none'
+    selectedItemKeys = []
+
+    [[catalogs.globalScopes]]
+    catalogIdentifier = 'TunaEmoji.EmojiCatalog'
+    mode = 'none'
+    selectedItemKeys = []
+
+[[comboMode.bindings]]
+key = 't'
+url = 'tuna://run/path.%252FApplications%252FOrca.app/Open'
+
+[[comboMode.bindings]]
+key = 'b'
+url = 'tuna://run/path.%252FApplications%252FArc.app/Open'
+
+[[comboMode.bindings]]
+key = 'c'
+url = 'tuna://run/path.%252FApplications%252FCursor.app/Open'
+
+[[comboMode.bindings]]
+key = 's'
+url = 'tuna://run/path.%252FApplications%252FSlack.app/Open'
+
+[[comboMode.bindings]]
+key = 'm'
+url = 'tuna://run/path.%252FApplications%252FSpotify.app/Open'
+
+[[comboMode.bindings]]
+key = 'f'
+url = 'tuna://run/path.%252FSystem%252FLibrary%252FCoreServices%252FFinder.app/Open'
+
+[[comboMode.bindings]]
+key = '1'
+url = 'tuna://run/path.%252FApplications%252F1Password.app/Open'
+
+[[comboMode.bindings]]
+iconPath = 'wrench.and.screwdriver'
+key = 'z'
+label = 'misc'
+
+    [[comboMode.bindings.children]]
+    iconPath = 'display'
+    key = 'd'
+    label = 'G95NC sharp'
+    url = 'tuna://run/text.%2522%2524HOME%252Fbin%252Fg95nc%2522%2520set/Run%20Text%20as%20Shell%20Command'
+
+    [[comboMode.bindings.children]]
+    iconPath = 'macmini'
+    key = 'm'
+    label = 'm4mini VNC'
+    url = 'tuna://run/url.vnc:%252F%252Fm4mini._rfb._tcp.local%253Fquality=high&numVirtualDisplays=1/TunaCore.CommonActionsCatalog.Open%20URL'
+
+    [[comboMode.bindings.children]]
+    iconPath = 'key.fill'
+    key = 'z'
+    label = 'PANW password'
+    url = 'tuna://run/text.PATH%253D%2522%252Fopt%252Fhomebrew%252Fbin%253A%252Fusr%252Flocal%252Fbin%253A%2524PATH%2522%253B%2520pw%253D%2524%2528op%2520read%2520%2522op%253A%252F%252Fsit2vqyvky7qzyumcj7j3mlf24%252Fiwkie33ipaj5jydxy4qx3ngoqe%252Fpassword%2522%2529%2520%257C%257C%2520exit%25201%253B%2520old%253D%2524%2528pbpaste%25202%253E%252Fdev%252Fnull%2529%253B%2520printf%2520%2525s%2520%2522%2524pw%2522%2520%257C%2520pbcopy%253B%2520sleep%25200.15%253B%2520osascript%2520-e%2520%2527tell%2520application%2520%2522System%2520Events%2522%2520to%2520keystroke%2520%2522v%2522%2520using%2520command%2520down%2527%253B%2520sleep%25200.4%253B%2520printf%2520%2525s%2520%2522%2524old%2522%2520%257C%2520pbcopy/Run%20Text%20as%20Shell%20Command'
+
+    [[comboMode.bindings.children]]
+    iconPath = 'lock.shield'
+    key = 't'
+    label = 'Temp admin'
+    url = 'tuna://run/text.%2522%2524HOME%252F.config%252Fraycast%252Fscripts%252Ftemp-admin.sh%2522/Run%20Text%20as%20Shell%20Command'
+
+    [[comboMode.bindings.children]]
+    iconPath = 'mic.fill'
+    key = 'r'
+    label = 'GhostPepper record'
+    url = 'tuna://run/url.hammerspoon:%252F%252Fgp-record/TunaCore.CommonActionsCatalog.Open%20URL'
+
+    [[comboMode.bindings.children]]
+    iconPath = 'doc.on.clipboard'
+    key = 'g'
+    label = 'GhostPepper transcript'
+    url = 'tuna://run/url.hammerspoon:%252F%252Fgp-copy/TunaCore.CommonActionsCatalog.Open%20URL'
+
+[hotkeys]
+custom = []
+
+    [hotkeys.app.activate]
+    carbonKeyCode = 49
+    carbonModifiers = 256
+
+    [hotkeys.app.comboMode]
+    carbonKeyCode = 79
+    carbonModifiers = 0
+
+[settings]
+comboModeCheatsheetDelayMS = 1000
+comboModeCheatsheetShowDetails = false
+comboModeThemeStyle = 'cheatsheet'
+screenPreference = 'activeWindow'
+shelfAutoCloseWhenTasksComplete = true
+themeIdentifier = 'com.brnbw.tuna.themes.default'

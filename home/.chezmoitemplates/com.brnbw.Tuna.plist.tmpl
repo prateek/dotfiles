@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Desired Tuna prefs, merged into ~/Library/Preferences/com.brnbw.Tuna.plist by
+  scripts/macos/plist-merge (additive: window/Sparkle/telemetry/catalog state preserved).
+
+  Tuna keeps its config in a folder you choose; pointing it at the XDG path makes
+  ~/.config/tuna/config.toml authoritative and dotfile-managed. Tuna re-imports that file
+  on `tuna config reload` (see run_onchange_after_46-tuna-reload). Hotkeys and binds live
+  in config.toml ([hotkeys.app.*], [[comboMode.bindings]]); Tuna writes them into this
+  plist's KeyboardShortcuts_* keys on import, so they are not set here.
+
+  CLIEnabled turns on the `tuna` CLI so the reload hook works; Tuna self-installs
+  ~/.local/bin/tuna on its next launch when this is set, removing the manual Settings step.
+
+  URLSchemeAllowsShellCommandExecution lets EXTERNAL `tuna://run/.../Run Text as Shell
+  Command` links execute shell (internal combo binds run shell regardless). Enabled so Tuna
+  is scriptable from other tools; note this is the gate any app/webpage would need to run a
+  shell command through Tuna, so it is a deliberate trust choice.
+-->
+<plist version="1.0">
+<dict>
+	<key>ConfigSyncUsesCustomFolder</key>
+	<true/>
+	<key>ConfigSyncCustomFolderPath</key>
+	<string>{{ .chezmoi.homeDir }}/.config/tuna</string>
+	<key>CLIEnabled</key>
+	<true/>
+	<key>URLSchemeAllowsShellCommandExecution</key>
+	<true/>
+</dict>
+</plist>

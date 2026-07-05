@@ -1,0 +1,22 @@
+{{ template "script_lib.sh" . }}
+
+# Re-import ~/.config/tuna/config.toml into Tuna after it changes. Tuna keeps app-owned
+# state and treats the custom sync folder (set via com.brnbw.Tuna.plist) as authoritative;
+# `tuna config reload` pulls the on-disk config into the running app (launching it if
+# needed). Skips cleanly when Tuna or its CLI helper is absent (bare machine, ci/homelab,
+# or the CLI not yet enabled in Tuna Settings -> General -> Command Line).
+#
+# Apply semantics are under evaluation (reload vs. quit+relaunch); this uses reload. Note
+# for a fresh machine: the first time the sync-folder pointer is set, Tuna must be
+# restarted to read it before a reload will import from the new folder.
+#
+# config.toml sha256: {{ include "dot_config/tuna/config.toml" | sha256sum }}
+[ -d "/Applications/Tuna.app" ] || { log "tuna-reload: Tuna not installed; skipping"; exit 0; }
+tuna_cli="${HOME}/.local/bin/tuna"
+[ -x "$tuna_cli" ] || { warn "tuna-reload: CLI helper missing (enable it in Tuna Settings -> General -> Command Line); skipping"; exit 0; }
+
+if "$tuna_cli" config reload >/dev/null 2>&1; then
+  log "tuna-reload: reloaded config.toml"
+else
+  warn "tuna-reload: reload failed (is Tuna able to launch?)"
+fi

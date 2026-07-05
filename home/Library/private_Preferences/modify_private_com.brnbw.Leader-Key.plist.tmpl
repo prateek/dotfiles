@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-exec '{{ .chezmoi.sourceDir }}/../scripts/macos/plist-merge' \
-  --bundle-id 'com.brnbw.Leader-Key' \
-  --desired-b64 '{{ includeTemplate "com.brnbw.Leader-Key.plist.tmpl" . | b64enc }}'
