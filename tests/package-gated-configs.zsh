@@ -24,7 +24,7 @@ work_ignored="$tmp_root/work-ignored.txt"
 homelab_managed="$tmp_root/homelab-managed.txt"
 homelab_ignored="$tmp_root/homelab-ignored.txt"
 empty_ignored="$tmp_root/empty-ignored.txt"
-leader_key_json="$tmp_root/leader-key.json"
+tuna_config="$tmp_root/tuna-config.toml"
 state_file="$tmp_root/chezmoi-state.boltdb"
 
 # package-cask-enabled.tmpl resolves package groups through the machines.toml
@@ -77,9 +77,9 @@ chezmoi_isolated \
   --override-data '{"machine_type":"ci","machines":{"type":{"ci":{"groups":[]}}}}' \
   ignored >"$empty_ignored"
 
-# Leader Key config lives at the XDG path (~/.config/leader-key/config.json) and is plain
-# JSON (Leader Key reads JSON only, not a template), so copy it verbatim.
-cp "$DOTFILES_ROOT/home/dot_config/leader-key/config.json" "$leader_key_json"
+# Tuna config lives at the XDG path (~/.config/tuna/config.toml), plain TOML managed as the
+# authoritative sync-folder source (Tuna owns the format), so copy it verbatim.
+cp "$DOTFILES_ROOT/home/dot_config/tuna/config.toml" "$tuna_config"
 
 expect_managed() {
   local target_path="$1" file="$2"
@@ -109,8 +109,11 @@ expect_managed ".local/share/raycast-extensions/orca-worktree/package.json" "$pe
 expect_managed "Library/Preferences/com.setapp.DesktopClient.plist" "$personal_managed"
 expect_managed "Library/Preferences/pro.betterdisplay.BetterDisplay.plist" "$personal_managed"
 expect_managed ".config/zed" "$personal_managed"
-expect_managed ".config/leader-key/config.json" "$personal_managed"
-expect_managed "Library/Preferences/com.brnbw.Leader-Key.plist" "$personal_managed"
+expect_managed ".config/tuna/config.toml" "$personal_managed"
+expect_managed "Library/Preferences/com.brnbw.Tuna.plist" "$personal_managed"
+expect_managed "Library/Scripts/g95-sharp.sh" "$personal_managed"
+expect_managed "Library/Scripts/panw-password.sh" "$personal_managed"
+expect_managed "Library/Scripts/temp-admin.sh" "$personal_managed"
 expect_managed "Library/Application Support/orca/orca-data.json" "$personal_managed"
 expect_managed ".orca/keybindings.json" "$personal_managed"
 expect_managed "Library/Application Support/Code/User" "$personal_managed"
@@ -131,8 +134,8 @@ expect_unmanaged "Library/Preferences/com.raycast.macos.plist" "$ci_managed"
 expect_unmanaged ".config/raycast/scripts/temp-admin.sh" "$ci_managed"
 expect_unmanaged "Library/Preferences/com.setapp.DesktopClient.plist" "$ci_managed"
 expect_unmanaged "Library/Preferences/dev.kdrag0n.MacVirt.plist" "$ci_managed"
-expect_unmanaged ".config/leader-key/config.json" "$ci_managed"
-expect_unmanaged "Library/Preferences/com.brnbw.Leader-Key.plist" "$ci_managed"
+expect_unmanaged ".config/tuna/config.toml" "$ci_managed"
+expect_unmanaged "Library/Preferences/com.brnbw.Tuna.plist" "$ci_managed"
 expect_unmanaged "Library/Application Support/Code/User" "$ci_managed"
 expect_unmanaged "Library/Preferences/pro.betterdisplay.BetterDisplay.plist" "$ci_managed"
 expect_unmanaged ".config/zed" "$ci_managed"
@@ -187,8 +190,11 @@ expect_ignored ".config/ghostty"
 expect_ignored "Library/Preferences/com.hegenberg.BetterTouchTool.plist"
 expect_ignored "Library/Preferences/com.raycast.macos.plist"
 expect_ignored ".config/raycast/scripts/temp-admin.sh"
-expect_ignored ".config/leader-key/config.json"
-expect_ignored "Library/Preferences/com.brnbw.Leader-Key.plist"
+expect_ignored ".config/tuna/config.toml"
+expect_ignored "Library/Preferences/com.brnbw.Tuna.plist"
+expect_ignored "Library/Scripts/g95-sharp.sh"
+expect_ignored "Library/Scripts/panw-password.sh"
+expect_ignored "Library/Scripts/temp-admin.sh"
 expect_ignored "Library/Application Support/Code/User"
 expect_ignored ".config/zed"
 expect_ignored ".config/cmux"
@@ -205,8 +211,8 @@ expect_ignored "Library/Preferences/com.prakashjoshipax.VoiceInk.plist"
 
 # --- empty group set ⇒ every gated config ignored ---
 for p in \
-  ".config/leader-key/config.json" \
-  "Library/Preferences/com.brnbw.Leader-Key.plist" \
+  ".config/tuna/config.toml" \
+  "Library/Preferences/com.brnbw.Tuna.plist" \
   "Library/Application Support/orca/orca-data.json" \
   ".config/ghostty" \
   "Library/Application Support/Code/User" \
@@ -230,19 +236,20 @@ set -e
 [[ $bogus_rc -ne 0 ]] || die "unknown machine type should fail the ignored evaluation"
 [[ $bogus_out == *"unknown machine type"* ]] || die "expected 'unknown machine type' error, got: $bogus_out"
 
-python3 - "$leader_key_json" <<'PY'
-import json
+python3 - "$tuna_config" <<'PY'
 import pathlib
 import sys
+import tomllib
 
-config = json.loads(pathlib.Path(sys.argv[1]).read_text())
-assert config["type"] == "group"
-top = {item["key"]: item for item in config["actions"]}
-assert set(top) == {"t", "s", "b", "g", "c", "o", "w", "m", "p", "f", "z"}, sorted(top)
+config = tomllib.loads(pathlib.Path(sys.argv[1]).read_text())
+binds = {b["key"]: b for b in config["comboMode"]["bindings"]}
+assert set(binds) == {"1", "t", "s", "b", "c", "m", "f", "z"}, sorted(binds)
 # "z" is the misc group; confirm nesting renders and its utility/GhostPepper binds exist.
-misc = top["z"]
-assert misc["type"] == "group"
-assert {"d", "m", "z", "t", "r", "g"} <= {a["key"] for a in misc["actions"]}
+misc = binds["z"]
+assert misc.get("label") == "misc"
+assert {"d", "m", "z", "t", "r", "g"} <= {a["key"] for a in misc["children"]}
+# ⌘-tap emits F18; Tuna opens combo mode on it.
+assert config["hotkeys"]["app"]["comboMode"] == {"carbonKeyCode": 79, "carbonModifiers": 0}
 PY
 
 print -- "OK package-gated-configs"

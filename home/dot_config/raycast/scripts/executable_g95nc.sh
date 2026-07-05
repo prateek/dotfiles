@@ -23,7 +23,7 @@
 # modes; sharp HiDPI at the full framebuffer is bandwidth-capped to 60Hz on this cable.
 #
 #   set [WxH] -> sharp HiDPI via a mirrored virtual screen, with a working app-menu
-#                scaling slider. Mirrors the whole panel (default 4352x1224); an optional
+#                scaling slider. Mirrors the whole panel (default 4864x1368); an optional
 #                target "looks like" WxH snaps to the nearest generated step (k * 32:9).
 #                Going denser than 2x needs the GUI "Enable resolutions over 8K" toggle.
 #   reset     -> clean-slate bail-out: drops all protections/mirrors/streams/PIPs and
@@ -134,7 +134,7 @@ cmd_check() {
 # a real ladder entry; the BetterDisplay slider then fine-tunes around it.
 cmd_set() {
   local want="${1:-}"
-  local aspectw=32 aspecth=9 default=4352x1224
+  local aspectw=32 aspecth=9 default=4864x1368
   [ -n "$want" ] || want="$default"
   case "$want" in [0-9]*x[0-9]*) : ;; *) echo ">> '$want' isn't WxH; using $default"; want="$default" ;; esac
 

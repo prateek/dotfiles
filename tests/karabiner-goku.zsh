@@ -106,15 +106,16 @@ assert 'any(.[]; .from.key_code=="caps_lock" and .to_if_alone[0].key_code=="esca
   and any(.conditions[]; .type=="device_if" and any(.identifiers[]; .is_built_in_keyboard==true)))' \
   "Apple caps_lock tap = escape, scoped to the built-in keyboard"
 
-# Tap-⌘-for-Leader-Key: both command keys stay ⌘ when held (lazy) and emit F18 on a clean
-# tap. Ungated, so no device/variable condition. F18 is Leader Key's activation hotkey.
-assert 'any(.[]; .from.key_code=="left_command" and .to[0].key_code=="left_command"
-  and .to[0].lazy==true and .to_if_alone[0].key_code=="f18"
-  and .parameters."basic.to_if_alone_timeout_milliseconds"==200
+# Tap-⇧-for-Tuna: both shift keys send a REAL (non-lazy) ⇧ when held so app ⇧-click/⇧-drag
+# and ⇧-shortcuts work, and emit F18 on a clean quick tap. Ungated, no device/variable
+# condition. F18 is Tuna's combo-mode hotkey. Non-lazy is asserted so shift+mouse survives.
+assert 'any(.[]; .from.key_code=="left_shift" and .to[0].key_code=="left_shift"
+  and (.to[0]|has("lazy")|not) and .to_if_alone[0].key_code=="f18"
+  and .parameters."basic.to_if_alone_timeout_milliseconds"==100
   and (has("conditions") | not))' \
-  "left ⌘: hold = ⌘ (lazy), tap = F18, ungated"
-assert 'any(.[]; .from.key_code=="right_command" and .to[0].key_code=="right_command"
-  and .to[0].lazy==true and .to_if_alone[0].key_code=="f18")' \
-  "right ⌘: hold = ⌘ (lazy), tap = F18"
+  "left ⇧: hold = real ⇧ (mouse/click work), quick tap = F18, ungated"
+assert 'any(.[]; .from.key_code=="right_shift" and .to[0].key_code=="right_shift"
+  and (.to[0]|has("lazy")|not) and .to_if_alone[0].key_code=="f18")' \
+  "right ⇧: hold = real ⇧, quick tap = F18"
 
 print -- "OK karabiner-goku"

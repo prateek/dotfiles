@@ -63,7 +63,12 @@ sanitize_defaults_export() {
   local plist="$2"
 
   case "$domain" in
-    com.brnbw.Leader-Key|com.runningwithcrayons.Alfred-Preferences)
+    com.brnbw.Tuna)
+      delete_plist_key "$plist" "CatalogTelemetryStoreData"
+      delete_plist_key "$plist" "UsageTelemetryDailyActiveBuckets"
+      delete_plist_key "$plist" "ProModeTelemetryDailyCounters"
+      ;;
+    com.runningwithcrayons.Alfred-Preferences)
       delete_plist_key "$plist" "NSOSPLastRootDirectory"
       ;;
     io.tailscale.ipn.macsys)
@@ -109,7 +114,7 @@ mkdir -p "$CAPTURE_ROOT/defaults"
 capture_mackup_candidates
 
 for domain in \
-  com.brnbw.Leader-Key \
+  com.brnbw.Tuna \
   bobko.aerospace \
   com.cmuxterm.app \
   com.electron.ollama \

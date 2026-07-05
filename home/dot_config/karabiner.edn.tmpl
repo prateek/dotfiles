@@ -2,10 +2,10 @@
 ;; ~/.config/karabiner/karabiner.json by `goku` at `chezmoi apply` time
 ;; (see run_onchange_after_45-karabiner-goku). Edit THIS file, never the JSON.
 ;;
-;; Command keys: tap either ⌘ alone to open Leader Key — Karabiner sends F18, which is set
-;; as Leader Key's activation hotkey (see ~/.config/leader-key and the app's
-;; KeyboardShortcuts_activate pref). Hold ⌘ with any other key and it stays a normal ⌘.
-;; See the "Tap either ⌘" rule near the bottom of :main.
+;; Shift keys: tap either ⇧ alone to open Tuna combo mode — Karabiner sends F18, which is
+;; set as Tuna's comboMode hotkey (see ~/.config/tuna/config.toml and the app's
+;; KeyboardShortcuts_comboMode pref). Hold ⇧ with any other key and it stays a normal ⇧.
+;; See the "Tap either ⇧" rule near the bottom of :main.
 ;;
 ;; NOTE to future agents: don't guess goku or Karabiner syntax/behavior from memory — use
 ;; the `ask` skill against the real sources. `ask src github:yqrashawn/GokuRakuJoudo@master`
@@ -115,12 +115,14 @@
            [:k :vk_none]
            [:n :vk_none]]}
 
-  {:des "Tap either ⌘ opens Leader Key (F18); hold ⌘ + key stays ⌘"
-   ;; Ungated (every keyboard). :lazy defers the ⌘ modifier until it's combined with another
-   ;; key, and :alone fires only on a clean tap-and-release — so ⌘C/⌘Tab/⌘Space stay ⌘. The
-   ;; 200ms tap window matches the left_control rule below.
-   :rules [[:##left_command  {:key :left_command  :lazy true} nil {:alone :f18 :params {:alone 200}}]
-           [:##right_command {:key :right_command :lazy true} nil {:alone :f18 :params {:alone 200}}]]}
+  {:des "Tap either ⇧ opens Tuna combo mode (F18); hold ⇧ + key/click stays ⇧"
+   ;; Ungated (every keyboard). ⇧ is sent as a REAL held modifier (deliberately NOT :lazy) so
+   ;; app-default ⇧-click / ⇧-drag actions and ⇧+key shortcuts all see the modifier. :alone
+   ;; fires F18 only on a clean tap-and-release within 100ms — a really quick flick releases
+   ;; ⇧ before F18, so the combo trigger stays clean (a bare ⇧ tap is inert). Anything held
+   ;; longer never fires F18 and is just ⇧.
+   :rules [[:##left_shift  {:key :left_shift}  nil {:alone :f18 :params {:alone 100}}]
+           [:##right_shift {:key :right_shift} nil {:alone :f18 :params {:alone 100}}]]}
 
   {:des "Apple internal: modifier remaps"
    :rules [[:##caps_lock    :left_control [:internal] {:alone :escape}]

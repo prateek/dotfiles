@@ -74,7 +74,7 @@ casks = [
   { name = "karabiner-elements" },
   { name = "nikitabobko/tap/aerospace" },
   { name = "bentobox" },
-  { name = "leader-key" },
+  { name = "tuna" },
   { name = "moom", appdir = "/Applications" },
   { name = "hammerspoon", appdir = "/Applications" },
   { name = "raycast" },

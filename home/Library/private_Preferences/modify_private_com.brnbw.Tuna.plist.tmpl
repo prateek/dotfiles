@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+exec '{{ .chezmoi.sourceDir }}/../scripts/macos/plist-merge' \
+  --bundle-id 'com.brnbw.Tuna' \
+  --desired-b64 '{{ includeTemplate "com.brnbw.Tuna.plist.tmpl" . | b64enc }}'
