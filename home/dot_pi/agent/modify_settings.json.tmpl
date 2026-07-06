@@ -6,15 +6,21 @@
 """Merge durable pi package settings into ~/.pi/agent/settings.json.
 
 The npm command is managed directly. The package list preserves existing entries
-and appends the Cursor SDK bridge if it is missing. Unrelated live preferences
-such as provider, model, theme, changelog state, and trust decisions pass
-through untouched.
+while keeping the Cursor SDK bridge and its runtime peers in dependency order.
+Unrelated live preferences such as provider, model, theme, changelog state, and
+trust decisions pass through untouched.
 """
 import json
 import sys
 
 NPM_COMMAND = ["mise", "exec", "node", "--", "npm"]
-CURSOR_SDK_PACKAGE = "npm:pi-cursor-sdk"
+REQUIRED_PACKAGES = [
+    "npm:@earendil-works/pi-ai",
+    "npm:@earendil-works/pi-coding-agent",
+    "npm:@earendil-works/pi-tui",
+    "npm:pi-cursor-sdk",
+    "npm:typebox",
+]
 
 
 def load_current(text: str) -> dict:
@@ -37,8 +43,7 @@ current["npmCommand"] = NPM_COMMAND
 packages = current.get("packages")
 if not isinstance(packages, list):
     packages = []
-if CURSOR_SDK_PACKAGE not in packages:
-    packages.append(CURSOR_SDK_PACKAGE)
+packages = REQUIRED_PACKAGES + [package for package in packages if package not in REQUIRED_PACKAGES]
 current["packages"] = packages
 
 merged_text = json.dumps(current, indent=2) + "\n"

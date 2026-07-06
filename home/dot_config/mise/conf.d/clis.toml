@@ -23,8 +23,8 @@
 # Interactive AI coding tools the human runs directly. The desktop `claude`
 # app is a Homebrew cask in packages.toml; this is the CLI.
 "npm:@anthropic-ai/claude-code" = "latest"
+"npm:@earendil-works/pi-coding-agent" = "latest"                 # pi; Cursor SDK bridge peers are managed in ~/.pi/agent/settings.json
 "npm:@google/gemini-cli" = "latest"
-"npm:@mariozechner/pi-coding-agent" = "latest"                 # pi; Cursor SDK bridge package is managed in ~/.pi/agent/settings.json
 
 # === Agent skill backends ===
 # CLIs the agent reaches for, either via a SKILL.md wrapper or via the
