@@ -18,13 +18,16 @@
 #      whose token ends in -fork and whose definition lives in the fork tap.
 #      brew bundle reinstalls the replaced official afterwards — it returns to
 #      the Brewfile as soon as its fork entry is gone.
+#   4. Report (never upgrade) any active fork whose installed build is behind
+#      the tap's latest known build.
 #
 # Runs before brew bundle (run_onchange_after_09-fork-reconcile) so that on
 # retire the fork is gone before bundle reinstalls the official.
 #
 # Brew state is snapshotted once at startup and mutations are tracked
 # in-memory: two brew-list spawns per run regardless of entry count, and one
-# consistent view of install state for the whole reconciliation.
+# consistent view of install state for the whole reconciliation. The freshness
+# report adds at most two `brew outdated` probes.
 #
 # Usage:
 #   scripts/packages/reconcile-fork-installs [--entries-file <path>] [--tap <user/repo>]
@@ -198,6 +201,30 @@ if [[ -d "$tap_dir" ]]; then
     log "uninstalling retired fork cask $c"
     brew uninstall --cask "$c"
   done <<< "$installed_casks"
+fi
+
+# Report-only, never upgrade: fork builds ship from open upstream PRs, often
+# several a day, so moving to one is a manual, reviewed step; auto-upgrade would
+# adopt unvetted builds and replace running apps mid-session. Freshness is only
+# as current as the local tap clone, and the probe stays offline
+# (HOMEBREW_NO_AUTO_UPDATE) to keep the reconciler cheap.
+if [[ ${#names[@]} -gt 0 ]]; then
+  outdated=""
+  if printf '%s\n' "${kinds[@]}" | grep -qx formula; then
+    outdated+="$(HOMEBREW_NO_AUTO_UPDATE=1 brew outdated --formula --verbose 2>/dev/null || true)"$'\n'
+  fi
+  if printf '%s\n' "${kinds[@]}" | grep -qx cask; then
+    outdated+="$(HOMEBREW_NO_AUTO_UPDATE=1 brew outdated --cask --verbose 2>/dev/null || true)"$'\n'
+  fi
+  i=0
+  while [[ $i -lt ${#names[@]} ]]; do
+    kind="${kinds[$i]}" token="${tokens[$i]}"
+    i=$((i + 1))
+    installed "$kind" "$token" || continue
+    line="$(printf '%s\n' "$outdated" | awk -v t="$token" '$1 == t { print; exit }')"
+    [[ -n "$line" ]] || continue
+    log "outdated fork: $line (report-only; run 'brew upgrade $(brew_flag "$kind") $token' to update)"
+  done
 fi
 
 log "done"

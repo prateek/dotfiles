@@ -64,6 +64,8 @@ export BREW_FORMULAS="$tmp_root/installed-formulas"
 export BREW_CASKS="$tmp_root/installed-casks"
 export BREW_TAPS="$tmp_root/tapped"
 export BREW_REPO="$tmp_root/brew-repo"
+export BREW_OUTDATED="$tmp_root/outdated"
+: >"$BREW_OUTDATED"
 
 cat >"$stub_bin/brew" <<'EOF'
 #!/bin/sh
@@ -83,6 +85,8 @@ case "$1" in
       "list --cask")
         cat "$BREW_CASKS" 2>/dev/null || true ;;
     esac ;;
+  outdated)
+    cat "$BREW_OUTDATED" 2>/dev/null || true ;;
   install|uninstall) ;;
 esac
 EOF
@@ -91,6 +95,12 @@ chmod +x "$stub_bin/brew"
 run_reconciler() {
   : >"$BREW_CALLS"
   PATH="$stub_bin:/usr/bin:/bin" "$reconciler" --entries-file "$1" >/dev/null
+}
+
+# Variant that returns stdout so freshness reports can be asserted.
+run_reconciler_out() {
+  : >"$BREW_CALLS"
+  PATH="$stub_bin:/usr/bin:/bin" "$reconciler" --entries-file "$1"
 }
 
 entries="$tmp_root/entries-adopt"
@@ -120,6 +130,18 @@ run_reconciler "$entries"
 calls="$(<"$BREW_CALLS")"
 assert_no_line_prefix "$calls" "install " "steady"
 assert_no_line_prefix "$calls" "uninstall " "steady"
+
+# Report-only: an installed fork behind the tap's latest build is flagged with
+# an upgrade hint, but the reconciler never upgrades or reinstalls it.
+printf 'forkstub-app-fork (20260704.13.1) != 20260705.14.1\n' >"$BREW_OUTDATED"
+out="$(run_reconciler_out "$entries")"
+calls="$(<"$BREW_CALLS")"
+assert_contains "$out" "outdated fork: forkstub-app-fork (20260704.13.1) != 20260705.14.1" "report-only (flags the stale fork)"
+assert_contains "$out" "brew upgrade --cask forkstub-app-fork" "report-only (hints the upgrade)"
+assert_no_line_prefix "$calls" "install " "report-only (no install)"
+assert_no_line_prefix "$calls" "upgrade " "report-only (no upgrade)"
+assert_not_contains "$out" "outdated fork: forkstub-fork" "report-only (current fork not flagged)"
+: >"$BREW_OUTDATED"
 
 tap_dir="$BREW_REPO/Library/Taps/prateek/homebrew-forks"
 mkdir -p "$tap_dir/Formula" "$tap_dir/Casks"
