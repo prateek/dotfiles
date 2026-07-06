@@ -1,0 +1,45 @@
+#!/usr/bin/env -S uv run --quiet --script
+# /// script
+# requires-python = ">=3.14"
+# dependencies = []
+# ///
+"""Merge durable pi package settings into ~/.pi/agent/settings.json.
+
+The npm command is managed directly. The package list preserves existing entries
+and appends the Cursor SDK bridge if it is missing. Unrelated live preferences
+such as provider, model, theme, changelog state, and trust decisions pass
+through untouched.
+"""
+import json
+import sys
+
+NPM_COMMAND = ["mise", "exec", "node", "--", "npm"]
+CURSOR_SDK_PACKAGE = "npm:pi-cursor-sdk"
+
+
+def load_current(text: str) -> dict:
+    if not text.strip():
+        return {}
+    value = json.loads(text)
+    return value if isinstance(value, dict) else {}
+
+
+def semantic_equal(left: str, right: str) -> bool:
+    try:
+        return json.loads(left) == json.loads(right)
+    except Exception:
+        return False
+
+
+current_text = sys.stdin.read()
+current = load_current(current_text)
+current["npmCommand"] = NPM_COMMAND
+packages = current.get("packages")
+if not isinstance(packages, list):
+    packages = []
+if CURSOR_SDK_PACKAGE not in packages:
+    packages.append(CURSOR_SDK_PACKAGE)
+current["packages"] = packages
+
+merged_text = json.dumps(current, indent=2) + "\n"
+sys.stdout.write(current_text if semantic_equal(current_text, merged_text) else merged_text)
