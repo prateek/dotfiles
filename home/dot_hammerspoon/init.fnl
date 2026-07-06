@@ -1800,59 +1800,6 @@
   (hs.timer.doEvery intervalSeconds _geminiMaybeRun)
   (hs.timer.doAfter 15 _geminiMaybeRun))
 
-;; GhostPepper automation --------------------------------------------------
-;; Leader Key fires hammerspoon://gp-copy and hammerspoon://gp-record. GhostPepper's
-;; ghostpepper:// x-callback-url scheme returns values (transcript text, recording
-;; status) only to a NON-web x-success, so the value sinks live here instead of a shell
-;; one-liner. start/stop/get-last-transcription need "Allow automation" in GhostPepper >
-;; Settings > Automation; a FORBIDDEN (or NOT_READY, etc.) is surfaced by gp-error.
-(local gpBase "ghostpepper://x-callback-url")
-
-;; percent-encode a hammerspoon://<event> callback so it survives as one query value
-(fn _gpCb [event] (.. "hammerspoon%3A%2F%2F" event))
-
-(fn _gpNotify [text]
-  (: (hs.notify.new {:title "GhostPepper" :informativeText text :withdrawAfter 4}) :send))
-
-(fn _gpOpen [path]
-  (hs.urlevent.openURL (.. gpBase path)))
-
-;; copy last transcript -> clipboard (GhostPepper calls gp-transcript-sink with ?text=…)
-(hs.urlevent.bind "gp-copy"
-                  (fn []
-                    (_gpOpen (.. "/get-last-transcription?x-success=" (_gpCb "gp-transcript-sink")
-                                 "&x-error=" (_gpCb "gp-error")))))
-
-(hs.urlevent.bind "gp-transcript-sink"
-                  (fn [_ params]
-                    (let [text (or (. params :text) "")]
-                      (if (= text "")
-                          (_gpNotify "No transcript to copy")
-                          (do
-                            (hs.pasteboard.setContents text)
-                            (_gpNotify "Transcript copied"))))))
-
-;; toggle recording: read status, then start or stop (each confirms via its own sink)
-(hs.urlevent.bind "gp-record"
-                  (fn []
-                    (_gpOpen (.. "/get-status?x-success=" (_gpCb "gp-status-sink")
-                                 "&x-error=" (_gpCb "gp-error")))))
-
-(hs.urlevent.bind "gp-status-sink"
-                  (fn [_ params]
-                    (if (= (or (. params :recording) "") "true")
-                        (_gpOpen (.. "/stop-meeting?x-success=" (_gpCb "gp-stopped")
-                                     "&x-error=" (_gpCb "gp-error")))
-                        (_gpOpen (.. "/start-meeting?x-success=" (_gpCb "gp-started")
-                                     "&x-error=" (_gpCb "gp-error"))))))
-
-(hs.urlevent.bind "gp-started" (fn [] (_gpNotify "🔴 Recording started")))
-(hs.urlevent.bind "gp-stopped" (fn [] (_gpNotify "⏹ Recording stopped")))
-
-(hs.urlevent.bind "gp-error"
-                  (fn [_ params]
-                    (_gpNotify (.. "Error: " (or (. params :errorMessage) "unknown")))))
-
 ;; Recompile + reload (Fennel -> Lua)
 (local hyper ["ctrl" "alt" "cmd" "shift"])
 (hs.hotkey.bind hyper "r"
