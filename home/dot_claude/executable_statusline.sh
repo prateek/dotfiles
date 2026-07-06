@@ -45,8 +45,8 @@ fi
 
 payload=$(cat)
 
-# Compactions this session. Mentions of the marker inside message content
-# don't false-match: their quotes are JSON-escaped in the transcript.
+# Compactions this session. Mentions of the Claude marker inside message
+# content don't false-match: their quotes are JSON-escaped in the transcript.
 transcript=$(printf '%s' "$payload" | jq -r '.transcript_path // empty' 2>/dev/null)
 compacts=0
 if [ -n "$transcript" ] && [ -r "$transcript" ]; then

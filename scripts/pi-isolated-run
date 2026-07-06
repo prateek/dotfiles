@@ -1,0 +1,167 @@
+#!/usr/bin/env bash
+#
+# Launch Pi with an isolated config/package/session directory rendered from this
+# repo's managed Pi settings. This lets package or statusline experiments avoid
+# touching ~/.pi/agent or already-running agents in other terminals.
+#
+# Usage:
+#   scripts/pi-isolated-run [--empty] [--keep] [--root <dir>] [--no-install] [--print-settings|--dry-run] [-- <pi args...>]
+#
+# Examples:
+#   scripts/pi-isolated-run -- --approve
+#   scripts/pi-isolated-run --print-settings
+#   scripts/pi-isolated-run --keep -- --approve
+#
+set -euo pipefail
+
+repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+source_dir="$repo_root/home"
+modify_template="$source_dir/dot_pi/agent/modify_settings.json.tmpl"
+statusline_source="$source_dir/dot_pi/agent/executable_statusline.sh"
+
+real_home="$HOME"
+base_settings="${real_home}/.pi/agent/settings.json"
+use_empty=false
+keep=false
+dry_run=false
+print_settings=false
+install_packages=true
+root=""
+pi_args=()
+
+usage() {
+  awk 'NR == 1 { next } /^#/ { line = $0; sub(/^# ?/, "", line); print line; next } { exit }' "$0" >&2
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --empty)
+      use_empty=true
+      shift
+      ;;
+    --keep)
+      keep=true
+      shift
+      ;;
+    --root)
+      [[ $# -ge 2 ]] || { printf 'pi-isolated-run: --root requires a directory\n' >&2; exit 2; }
+      root="$2"
+      keep=true
+      shift 2
+      ;;
+    --root=*)
+      root="${1#*=}"
+      keep=true
+      shift
+      ;;
+    --print-settings)
+      print_settings=true
+      shift
+      ;;
+    --no-install)
+      install_packages=false
+      shift
+      ;;
+    --dry-run)
+      dry_run=true
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    --)
+      shift
+      pi_args+=("$@")
+      break
+      ;;
+    -*)
+      printf 'pi-isolated-run: unknown argument: %s\n' "$1" >&2
+      exit 2
+      ;;
+    *)
+      pi_args+=("$1")
+      shift
+      ;;
+  esac
+done
+
+[[ -f $modify_template ]] || { printf 'pi-isolated-run: missing template: %s\n' "$modify_template" >&2; exit 1; }
+[[ -f $statusline_source ]] || { printf 'pi-isolated-run: missing statusline: %s\n' "$statusline_source" >&2; exit 1; }
+
+if [[ -z $root ]]; then
+  root="$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-pi-isolated.XXXXXX")"
+fi
+
+cleanup() {
+  if [[ $keep == false ]]; then
+    rm -rf -- "$root"
+  fi
+}
+trap cleanup EXIT
+
+isolated_home="$root/home"
+agent_dir="$isolated_home/.pi/agent"
+session_dir="$root/sessions"
+mkdir -p -- "$agent_dir" "$session_dir"
+
+cp -- "$statusline_source" "$agent_dir/statusline.sh"
+chmod +x "$agent_dir/statusline.sh"
+
+modify_script="$root/modify_pi_settings.py"
+chezmoi --source "$source_dir" execute-template --file "$modify_template" >"$modify_script"
+chmod +x "$modify_script"
+
+if [[ $use_empty == true || ! -f $base_settings ]]; then
+  "$modify_script" </dev/null >"$agent_dir/settings.json"
+else
+  "$modify_script" <"$base_settings" >"$agent_dir/settings.json"
+fi
+
+if [[ $print_settings == true ]]; then
+  cat "$agent_dir/settings.json"
+  exit 0
+fi
+
+common_env=(
+  "HOME=$isolated_home"
+  "PI_CODING_AGENT_DIR=$agent_dir"
+  "PI_CODING_AGENT_SESSION_DIR=$session_dir"
+)
+
+if [[ ${#pi_args[@]} -eq 0 ]]; then
+  pi_args=(--approve)
+fi
+
+if [[ $dry_run == true ]]; then
+  printf 'HOME=%q\n' "$isolated_home"
+  printf 'PI_CODING_AGENT_DIR=%q\n' "$agent_dir"
+  printf 'PI_CODING_AGENT_SESSION_DIR=%q\n' "$session_dir"
+  if [[ $install_packages == true ]]; then
+    printf 'pi update --extensions\n'
+  fi
+  printf 'pi'
+  for arg in "${pi_args[@]}"; do
+    printf ' %q' "$arg"
+  done
+  printf '\n'
+  if [[ $keep == true ]]; then
+    printf 'cleanup: rm -rf %q\n' "$root"
+  else
+    printf 'cleanup: automatic rm -rf %q\n' "$root"
+  fi
+  exit 0
+fi
+
+if [[ $install_packages == true ]]; then
+  printf 'pi-isolated-run: installing/updating packages in %s\n' "$agent_dir" >&2
+  env "${common_env[@]}" pi update --extensions
+fi
+
+if [[ $keep == true ]]; then
+  printf 'pi-isolated-run: keeping isolated state at %s\n' "$root" >&2
+else
+  printf 'pi-isolated-run: isolated state will be removed after Pi exits: %s\n' "$root" >&2
+fi
+
+env "${common_env[@]}" pi "${pi_args[@]}"

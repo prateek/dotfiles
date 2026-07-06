@@ -64,8 +64,9 @@ make test-chezmoi-drift-banner
 make test-codex-config
 make test-agentsview-config
 make test-claude-settings
-make test-pi-settings
 make test-claude-statusline
+make test-pi-settings
+make test-pi-statusline
 make test-orca-settings
 make test-crit-config
 make test-agent-skill-packages

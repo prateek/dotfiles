@@ -21,7 +21,24 @@ REQUIRED_PACKAGES = [
     "npm:pi-claude-marketplace",
     "npm:pi-cursor-sdk",
     "npm:typebox",
+    "npm:pi-vim",
+    "npm:pi-statusline",
 ]
+PI_VIM_SETTINGS = {
+    "clipboardMirror": "yank",
+    "modeColors": {
+        "insert": "borderMuted",
+        "normal": "borderAccent",
+        "ex": "warning",
+    },
+    "syncBorderColorWithMode": True,
+}
+STATUS_LINE_SETTINGS = {
+    "type": "command",
+    "command": "~/.pi/agent/statusline.sh",
+    "placement": "footer",
+    "debounceMs": 300,
+}
 
 
 def load_current(text: str) -> dict:
@@ -46,6 +63,18 @@ if not isinstance(packages, list):
     packages = []
 packages = REQUIRED_PACKAGES + [package for package in packages if package not in REQUIRED_PACKAGES]
 current["packages"] = packages
+pi_vim = current.get("piVim")
+if not isinstance(pi_vim, dict):
+    pi_vim = {}
+mode_colors = pi_vim.get("modeColors")
+if not isinstance(mode_colors, dict):
+    mode_colors = {}
+mode_colors.update(PI_VIM_SETTINGS["modeColors"])
+pi_vim.update({key: value for key, value in PI_VIM_SETTINGS.items() if key != "modeColors"})
+pi_vim["modeColors"] = mode_colors
+current["piVim"] = pi_vim
+# Pi has one active command statusline; keep that renderer owned as a unit.
+current["statusLine"] = STATUS_LINE_SETTINGS
 
 merged_text = json.dumps(current, indent=2) + "\n"
 sys.stdout.write(current_text if semantic_equal(current_text, merged_text) else merged_text)

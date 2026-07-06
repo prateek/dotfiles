@@ -8,7 +8,9 @@ trap 'rm -rf "$tmp_root"' EXIT
 script="$tmp_root/modify_pi_settings.py"
 current="$tmp_root/current.json"
 merged="$tmp_root/merged.json"
-semantic_merged="$tmp_root/semantic-merged.json"
+idempotent="$tmp_root/idempotent.json"
+empty_in="$tmp_root/empty.json"
+empty_out="$tmp_root/empty-out.json"
 pi_plugins="$tmp_root/pi-claude-plugins.json"
 claude_settings="$tmp_root/claude-plugin-settings.json"
 
@@ -21,13 +23,32 @@ chmod +x "$script"
 
 cat >"$current" <<'JSON'
 {
-  "provider": "anthropic",
-  "model": "claude-opus-4-1",
+  "npmCommand": ["npm"],
   "packages": [
     "npm:pi-cursor-sdk",
+    "npm:pi-vim",
     "npm:custom-package"
   ],
-  "theme": "user-owned"
+  "provider": "openai",
+  "model": "gpt-5.5",
+  "theme": "user-owned",
+  "piVim": {
+    "clipboardMirror": "all",
+    "modeColors": {
+      "visual": "borderStrong"
+    },
+    "modeChange": {
+      "insert": "printf insert",
+      "normal": "printf normal"
+    }
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "printf old"
+  },
+  "trust": {
+    "/Users/prungta/code/worktrees/dotfiles": true
+  }
 }
 JSON
 
@@ -39,27 +60,79 @@ import sys
 
 data = json.load(open(sys.argv[1]))
 
-assert data["provider"] == "anthropic"
-assert data["model"] == "claude-opus-4-1"
+assert data["provider"] == "openai"
+assert data["model"] == "gpt-5.5"
 assert data["theme"] == "user-owned"
-assert data["npmCommand"] == ["mise", "exec", "node", "--", "npm"]
-
-packages = data["packages"]
-expected_prefix = [
+assert data["npmCommand"] == ["mise", "exec", "node", "--", "npm"], data["npmCommand"]
+assert data["packages"] == [
     "npm:@earendil-works/pi-ai",
     "npm:@earendil-works/pi-coding-agent",
     "npm:@earendil-works/pi-tui",
     "npm:pi-claude-marketplace",
     "npm:pi-cursor-sdk",
     "npm:typebox",
-]
-assert packages[: len(expected_prefix)] == expected_prefix, packages
-assert packages.count("npm:pi-cursor-sdk") == 1, packages
-assert packages[-1] == "npm:custom-package", packages
+    "npm:pi-vim",
+    "npm:pi-statusline",
+    "npm:custom-package",
+], data["packages"]
+assert data["packages"].count("npm:pi-cursor-sdk") == 1, data["packages"]
+assert data["packages"].count("npm:pi-vim") == 1, data["packages"]
+assert data["piVim"] == {
+    "clipboardMirror": "yank",
+    "modeChange": {
+        "insert": "printf insert",
+        "normal": "printf normal",
+    },
+    "modeColors": {
+        "visual": "borderStrong",
+        "insert": "borderMuted",
+        "normal": "borderAccent",
+        "ex": "warning",
+    },
+    "syncBorderColorWithMode": True,
+}, data["piVim"]
+assert data["statusLine"] == {
+    "type": "command",
+    "command": "~/.pi/agent/statusline.sh",
+    "placement": "footer",
+    "debounceMs": 300,
+}, data["statusLine"]
+assert data["trust"]["/Users/prungta/code/worktrees/dotfiles"] is True
 PY
 
-"$script" <"$merged" >"$semantic_merged"
-cmp -s "$merged" "$semantic_merged"
+"$script" <"$merged" >"$idempotent"
+cmp -s "$merged" "$idempotent" || { echo "FAIL: merge is not idempotent" >&2; exit 1; }
+
+: >"$empty_in"
+"$script" <"$empty_in" >"$empty_out"
+
+python3 - "$empty_out" <<'PY'
+import json
+import sys
+
+data = json.load(open(sys.argv[1]))
+assert data["npmCommand"] == ["mise", "exec", "node", "--", "npm"]
+assert data["packages"] == [
+    "npm:@earendil-works/pi-ai",
+    "npm:@earendil-works/pi-coding-agent",
+    "npm:@earendil-works/pi-tui",
+    "npm:pi-claude-marketplace",
+    "npm:pi-cursor-sdk",
+    "npm:typebox",
+    "npm:pi-vim",
+    "npm:pi-statusline",
+]
+assert data["piVim"] == {
+    "clipboardMirror": "yank",
+    "modeColors": {
+        "insert": "borderMuted",
+        "normal": "borderAccent",
+        "ex": "warning",
+    },
+    "syncBorderColorWithMode": True,
+}
+assert data["statusLine"]["command"] == "~/.pi/agent/statusline.sh"
+PY
 
 render "$REPO_ROOT/home/dot_pi/agent/claude-plugins.json.tmpl" >"$pi_plugins"
 render "$REPO_ROOT/home/.chezmoitemplates/agent-claude-plugin-settings.json.tmpl" >"$claude_settings"
@@ -90,3 +163,5 @@ pi_enabled = {
 }
 assert pi_enabled == claude_enabled, (pi_enabled, claude_enabled)
 PY
+
+echo "ok: pi settings modify (packages, plugins, pi-vim, pi statusline, passthrough, idempotence)"
