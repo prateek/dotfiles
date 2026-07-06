@@ -74,13 +74,13 @@ label = 'misc'
     iconPath = 'mic.fill'
     key = 'r'
     label = 'GhostPepper record'
-    url = 'tuna://run/url.hammerspoon:%252F%252Fgp-record/TunaCore.CommonActionsCatalog.Open%20URL'
+    url = 'tuna://run/url.ghostpepper:%252F%252Fstart-meeting%253Fx-error=ghostpepper%25253A%25252F%25252Fstop-meeting/TunaCore.CommonActionsCatalog.Open%20URL'
 
     [[comboMode.bindings.children]]
     iconPath = 'doc.on.clipboard'
     key = 'g'
-    label = 'GhostPepper transcript'
-    url = 'tuna://run/url.hammerspoon:%252F%252Fgp-copy/TunaCore.CommonActionsCatalog.Open%20URL'
+    label = 'Copy last recording'
+    url = 'tuna://run/url.ghostpepper:%252F%252Fcopy-last-recording/TunaCore.CommonActionsCatalog.Open%20URL'
 
 [hotkeys]
 custom = []
