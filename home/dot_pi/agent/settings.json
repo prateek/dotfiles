@@ -1,0 +1,12 @@
+{
+  "npmCommand": [
+    "mise",
+    "exec",
+    "node",
+    "--",
+    "npm"
+  ],
+  "packages": [
+    "npm:pi-cursor-sdk"
+  ]
+}
