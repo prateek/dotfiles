@@ -380,6 +380,13 @@ assert {k: claude[k] for k in expected} == expected, claude
 codex_text = open("home/.chezmoitemplates/agent-codex-plugin-config.toml.tmpl").read()
 codex = tomllib.loads(codex_text)["plugins"]
 assert {k: codex[k]["enabled"] for k in expected} == expected, codex
+
+pi_json = subprocess.check_output([
+    "chezmoi", "--source", "home", "execute-template",
+    "--file", "home/dot_pi/agent/claude-plugins.json.tmpl",
+])
+pi = json.loads(pi_json)["plugins"]
+assert {k: pi[k]["enabled"] for k in expected} == expected, pi
 PY
 
 # inventory-agent-skills must surface default_loaded so audit tooling sees it.

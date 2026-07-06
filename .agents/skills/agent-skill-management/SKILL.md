@@ -1,6 +1,6 @@
 ---
 name: agent-skill-management
-description: Manage this repo's dotfiles-backed agent skill packages, apply-time skill and plugin projections, and Codex or Claude rendered plugin activation. Use when editing home/dot_agents package sources, generated live skill or plugin output scripts, agent plugin config, or the related docs in docs/plans, docs/research, and docs/adr.
+description: Manage this repo's dotfiles-backed agent skill packages, apply-time skill and plugin projections, and Codex, Claude, or pi rendered plugin activation. Use when editing home/dot_agents package sources, generated live skill or plugin output scripts, agent plugin config, or the related docs in docs/plans, docs/research, and docs/adr.
 ---
 
 # Agent Skill Management
@@ -8,7 +8,7 @@ description: Manage this repo's dotfiles-backed agent skill packages, apply-time
 Use this skill for machine-wide agent skill package work in this dotfiles repo:
 package source under `home/dot_agents/packages/`, apply-time projections into
 `~/.agents/skills`, `~/.claude/skills`, and `~/.agents/plugins`, and the Codex
-or Claude config that activates rendered plugins.
+Claude, or pi config that activates rendered plugins.
 
 ## Operating Model
 
@@ -16,7 +16,7 @@ Keep three ownership layers separate:
 
 - Human-edited source lives under `home/dot_agents/packages/<package>/`.
 - Chezmoi renders live generated roots during `chezmoi apply`.
-- Codex and Claude Code own their plugin install caches.
+- Codex, Claude Code, and pi own their plugin install caches.
 
 Do not commit generated trees under `home/dot_agents/skills/`,
 `home/dot_claude/skills/`, or `home/dot_agents/plugins/`. Those paths are
@@ -137,6 +137,7 @@ Committed generated config fragments:
 
 - `home/.chezmoitemplates/agent-codex-plugin-config.toml.tmpl`
 - `home/.chezmoitemplates/agent-claude-plugin-settings.json.tmpl`
+- `home/dot_pi/agent/claude-plugins.json.tmpl`
 
 They are projections of `package.toml` render policy, not separate desired
 state.
@@ -166,7 +167,7 @@ chezmoi does not render those records.
 
 ## Validation
 
-This subsystem is exercised by three independent test scripts. Run all three
+This subsystem is exercised by four independent test scripts. Run all four
 when you change `package.toml`, the renderer, or either modify script — the
 per-suite Makefile targets do not aggregate, and individual targets cover
 disjoint behavior:
@@ -175,9 +176,10 @@ disjoint behavior:
 make test-agent-skill-packages   # validators, renderers, --check, inventory
 make test-claude-settings        # ~/.claude/settings.json modify-script merge
 make test-codex-config           # ~/.codex/config.toml modify-script merge
+make test-pi-settings            # ~/.pi/agent settings and Claude marketplace config
 ```
 
-Skipping any of the three lets a schema flip silently rot a sibling test.
+Skipping any of the four lets a schema flip silently rot a sibling test.
 
 After editing package source, run validation against explicit temp roots:
 

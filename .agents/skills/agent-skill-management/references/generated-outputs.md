@@ -6,6 +6,8 @@ Committed generated fragments:
   config fragment.
 - `home/.chezmoitemplates/agent-claude-plugin-settings.json.tmpl`: Claude
   plugin settings fragment.
+- `home/dot_pi/agent/claude-plugins.json.tmpl`: pi Claude marketplace plugin
+  config.
 
 Apply-time generated state:
 

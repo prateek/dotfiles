@@ -1,5 +1,6 @@
 home/.chezmoitemplates/agent-codex-plugin-config.toml.tmpl linguist-generated=true -whitespace
 home/.chezmoitemplates/agent-claude-plugin-settings.json.tmpl linguist-generated=true -whitespace
+home/dot_pi/agent/claude-plugins.json.tmpl linguist-generated=true -whitespace
 
 # Upstream-managed skill payloads (apm-cli-vendored). Do not rewrite their
 # shebangs, dependencies, or metadata.

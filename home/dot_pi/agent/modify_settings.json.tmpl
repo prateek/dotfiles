@@ -6,9 +6,9 @@
 """Merge durable pi package settings into ~/.pi/agent/settings.json.
 
 The npm command is managed directly. The package list preserves existing entries
-while keeping the Cursor SDK bridge and its runtime peers in dependency order.
-Unrelated live preferences such as provider, model, theme, changelog state, and
-trust decisions pass through untouched.
+while keeping managed pi packages in dependency order. Unrelated live preferences
+such as provider, model, theme, changelog state, and trust decisions pass through
+untouched.
 """
 import json
 import sys
@@ -18,6 +18,7 @@ REQUIRED_PACKAGES = [
     "npm:@earendil-works/pi-ai",
     "npm:@earendil-works/pi-coding-agent",
     "npm:@earendil-works/pi-tui",
+    "npm:pi-claude-marketplace",
     "npm:pi-cursor-sdk",
     "npm:typebox",
 ]

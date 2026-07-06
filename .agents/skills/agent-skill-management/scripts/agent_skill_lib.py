@@ -24,6 +24,7 @@ CODEX_PLUGIN_CONFIG_TEMPLATE = (
 CLAUDE_PLUGIN_SETTINGS_TEMPLATE = (
     REPO_ROOT / "home/.chezmoitemplates/agent-claude-plugin-settings.json.tmpl"
 )
+PI_CLAUDE_PLUGINS_TEMPLATE = REPO_ROOT / "home/dot_pi/agent/claude-plugins.json.tmpl"
 
 GENERATED_README = "README.generated.md"
 VALID_RENDER_VALUES = {"plugin", "none"}
