@@ -107,7 +107,7 @@ Treat `git status` and `git diff` as read-only context. Never revert, overwrite,
 
 For Python, uv, and Docker conventions, read: ~/.agents/docs/python-and-uv.md
 
-For Git workflows, commit format, and safety protocols, read: ~/.agents/docs/git.md
+For Git workflows, commit format, GitHub comment attribution, and safety protocols, read: ~/.agents/docs/git.md
 
 For Go conventions, read: ~/.agents/docs/go.md
 

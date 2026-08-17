@@ -8,6 +8,8 @@ pull requests, issue comments, reviews, and safety checks.
 - Prefer a worktree-first workflow. Create worktrees with Orca through `ohc`, the
   Orca UI, or `orca worktree create`; see [worktrees.md](worktrees.md).
 - Use the real `gh` CLI directly for GitHub operations.
+- Attribute every GitHub comment you post, and never answer a human reviewer
+  unless Prateek asked you to.
 - Verify the active GitHub identity before changing repository state:
 
   ```sh
@@ -53,6 +55,45 @@ GitHub renders markdown in PR descriptions, PR/issue/review comments, and issue 
 - Applies to `gh pr create --body`, `gh pr comment --body`, `gh issue create --body`, `gh pr review --body`, and any heredoc piped into them.
 - If you need a literal line break inside a paragraph, use Markdown's line-break syntax (two trailing spaces, or a trailing `\`) — not a column wrap.
 
+## GitHub comments on my behalf
+
+Applies to PR comments, issue comments, reviews, inline review replies, and any
+`gh api` call that writes a comment body. Comments post under Prateek's account,
+so a reader cannot tell an agent from him unless the comment says so.
+
+### Who you may reply to
+
+- Post without asking when replying to Prateek, to a bot, or to the PR author
+  when Prateek is the reviewer.
+- Bots are accounts with `type: Bot` (`github-actions[bot]`, `dependabot[bot]`,
+  `cursor[bot]`, Bugbot, and friends) and any comment carrying the
+  `agent-comment` marker below.
+- Do not answer a human reviewer unprompted. Draft the reply, show it to
+  Prateek, and let him send or revise it.
+- "Prompted" means Prateek named the comment, thread, reviewer, or URL and asked
+  you to reply, resolve, or babysit it. A standing "work this PR" does not cover
+  answering humans on it.
+
+### Attribution
+
+Append the footer exactly once to every comment you post:
+
+```md
+<message>
+
+---
+_via Prateek's agent (`<tool-or-skill>`)_
+
+<!-- agent-comment:v1 principal=prateek tool=<tool-or-skill> -->
+```
+
+- Use a stable tool or skill name (`claude-code`, `codex`, `babysit`,
+  `pr-lifecycle`). Leave model names out unless Prateek asks for them.
+- The HTML marker is what other agents grep to tell agent comments from human
+  ones. Keep it even when the visible line feels redundant.
+- Skip the footer if the host already injects one — Chronosphere devboxes
+  install their own self-identification rule, and two footers is worse than one.
+
 ## Templates and idioms
 
 Before creating an issue, PR, or review comment, check whether the repo already has a convention to follow. Matching the local style beats inventing your own.
@@ -85,6 +126,11 @@ EOF
 
 gh pr comment <number> -R <owner>/<repo> --body "$(cat <<'EOF'
 <comment>
+
+---
+_via Prateek's agent (`<tool-or-skill>`)_
+
+<!-- agent-comment:v1 principal=prateek tool=<tool-or-skill> -->
 EOF
 )"
 ```
@@ -162,3 +208,6 @@ Remember: Quality tools are guardrails that help you, not barriers that block yo
 - `gh` identity verified before repo/PR operations.
 - Commit messages follow conventional commit format.
 - Pre-commit hooks pass before every commit.
+- Every GitHub comment you posted carries the attribution footer and the
+  `agent-comment:v1` marker, once.
+- No human reviewer was answered without Prateek asking for that reply.
