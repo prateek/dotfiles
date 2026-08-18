@@ -74,14 +74,14 @@ PY
 render work dot_acpx/config.json.tmpl | python3 -c '
 import sys, json
 d = json.load(sys.stdin)["agents"]
-assert set(d) == {"agpt","agpt-extra","aopus","aopus-max","agemini","afable","afable-max"}, sorted(d)
+assert set(d) == {"agpt","agptx","aopus","aopusx","agemini","afable","afablex"}, sorted(d)
 assert d["agpt"]["command"] == "cursor-agent", d["agpt"]
 '
 # personal (claude + codex): GPT tiers ride the Codex adapter; afable* via claude.
 render personal dot_acpx/config.json.tmpl | python3 -c '
 import sys, json
 d = json.load(sys.stdin)["agents"]
-assert set(d) == {"agpt","agpt-extra","afable","afable-max"}, sorted(d)
+assert set(d) == {"agpt","agptx","afable","afablex"}, sorted(d)
 assert d["agpt"]["command"] == "codex-acp", d["agpt"]
 '
 # ci (no agent_clis): empty agents map.

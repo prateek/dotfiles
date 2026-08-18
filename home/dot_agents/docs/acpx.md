@@ -28,15 +28,23 @@ through `claude-agent-acp`, with the model and effort pinned via
 `ANTHROPIC_MODEL` and `CLAUDE_CODE_EFFORT_LEVEL` env vars in the entry (the
 adapter takes no model/effort CLI args).
 
-| Shortcut     | Model                                   | Use for                            |
-| ------------ | --------------------------------------- | ---------------------------------- |
-| `agpt`       | `gpt-5.5-high-fast`                      | Best general GPT, high reasoning   |
-| `agpt-extra` | `gpt-5.5-extra-high-fast`               | GPT for the hardest problems       |
-| `aopus`      | `claude-opus-4-8-thinking-xhigh-fast`   | Best Claude, xhigh thinking, 1M ctx |
-| `aopus-max`  | `claude-opus-4-8-thinking-max-fast`     | Claude at max thinking, 1M ctx     |
-| `afable`     | `fable` at `xhigh` effort               | Claude Code on Fable, xhigh effort |
-| `afable-max` | `fable` at `max` effort                 | Claude Code on Fable, max effort   |
-| `agemini`    | `gemini-3.1-pro`                        | Best Gemini                        |
+| Shortcut  | Model                                 | Use for                            |
+| --------- | ------------------------------------- | ---------------------------------- |
+| `agpt`    | `gpt-5.6-sol-high-fast`               | Best general GPT, high reasoning   |
+| `agptx`   | `gpt-5.6-sol-xhigh-fast`              | GPT for the hardest problems       |
+| `aopus`   | `claude-opus-5-thinking-xhigh-fast`   | Best Claude, xhigh thinking, 1M ctx |
+| `aopusx`  | `claude-opus-5-thinking-max-fast`     | Claude at max thinking, 1M ctx     |
+| `afable`  | `fable` at `xhigh` effort             | Claude Code on Fable, xhigh effort |
+| `afablex` | `fable` at `max` effort               | Claude Code on Fable, max effort   |
+| `agemini` | `gemini-3.1-pro`                      | Best Gemini                        |
+
+The `cursor-agent` ids are pins to the current latest of each family and go
+stale as the catalog moves; cursor-agent's own bare aliases (`opus`, `gpt`,
+`sonnet`, ...) resolve to *older* generations, so they are not a
+latest-tracking escape hatch. Run the drift audit in the dotfiles repo
+(`scripts/audit/acpx-model-drift.sh`) to flag pins the catalog dropped or
+superseded, then refresh the ids in `home/dot_acpx/config.json.tmpl` and this
+table together.
 
 Invoke by name: `acpx <name>` is enough, since the model is baked into the
 config. The config is templated per machine, so it emits only the shortcuts
@@ -113,10 +121,9 @@ dotfiles repo: `docs/plans/crit-agent-bridge-plan.md`.
 
 ## Validation checklist
 
-- The `cursor-agent` model ids match `cursor-agent --list-models` (the catalog
-  drifts; if a shortcut errors on an unknown model, refresh the id in
-  `~/.acpx/config.json`). The `afable*` entries use the `fable` alias, which
-  tracks the latest Fable release on its own.
+- The `cursor-agent` model ids pass the drift audit (see Model shortcuts
+  above). The `afable*` entries use the `fable` alias, which tracks the latest
+  Fable release on its own.
 - `acpx config show` lists the shortcuts for this machine's `agent_clis`: all
   seven where `cursor-agent` and `claude` are both present, `afable*` only on a
   claude-without-cursor-agent box, none where `agent_clis` is empty.
