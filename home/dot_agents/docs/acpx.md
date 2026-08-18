@@ -48,6 +48,9 @@ whose backing CLI is present (machines.toml `agent_clis`); a box without
 - One-shot, no saved state: `acpx <name> exec '<prompt>'`.
 - Quiet final answer only: `acpx --format quiet <name> exec '<prompt>'`.
 - Machine-readable for scripts: `acpx --format json --json-strict <name> exec '<prompt>'`.
+- Long prompt from a file: `acpx <name> exec -f prompt.md` (`-` reads stdin).
+  Global flags such as `--format`, `--prompt-retries`, and the permission modes
+  go before `<name>`; only `-f/--file` belongs after `exec`.
 - Persistent multi-turn session in a repo: `acpx <name> 'prompt'` (auto-resumes
   by `(agent, cwd, name)`; bootstrap with `acpx <name> sessions ensure` first).
 - Permission mode defaults to `approve-reads` (reads auto-approved, writes

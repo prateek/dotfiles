@@ -80,6 +80,15 @@ cat >"$current" <<'JSON'
             "command": "printf stale-plan-hook"
           }
         ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "printf third-party-hook"
+          }
+        ]
       }
     ]
   },
@@ -111,11 +120,16 @@ assert local["source"] == "directory"
 import os
 assert local["path"] == os.path.expanduser("~/.agents/plugins")
 
-# The managed fragment owns the PermissionRequest hook list (crit plan-hook);
-# the fixture seeds a stale entry to prove managed wins. Hook events managed
-# doesn't own (UserPromptSubmit) pass through untouched.
-assert data["hooks"]["PermissionRequest"] == managed["hooks"]["PermissionRequest"]
-assert data["hooks"]["PermissionRequest"][0]["hooks"][0]["command"] == "crit plan-hook"
+# Managed owns only the matchers it names. The stale ExitPlanMode entry loses;
+# blocks other tools inject (Orca, Superset) under other matchers survive, as do
+# whole events managed doesn't own.
+plan_hooks = data["hooks"]["PermissionRequest"]
+assert plan_hooks[0] == managed["hooks"]["PermissionRequest"][0]
+assert plan_hooks[0]["hooks"][0]["command"] == "crit plan-hook"
+assert [b for b in plan_hooks if b["matcher"] == "ExitPlanMode"] == [plan_hooks[0]]
+third_party = [b for b in plan_hooks if b["matcher"] == "*"]
+assert len(third_party) == 1, plan_hooks
+assert third_party[0]["hooks"][0]["command"] == "printf third-party-hook"
 user_hooks = data["hooks"]["UserPromptSubmit"]
 assert user_hooks[0]["hooks"][0]["command"] == "printf user-owned-hook"
 

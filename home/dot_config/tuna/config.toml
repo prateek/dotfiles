@@ -94,9 +94,11 @@ custom = []
     carbonModifiers = 0
 
 [settings]
+activationDoublePressTrigger = 'leftOption'
 comboModeCheatsheetDelayMS = 1000
 comboModeCheatsheetShowDetails = false
 comboModeThemeStyle = 'cheatsheet'
+fuzzyModeTriggerType = 'doublePress'
 screenPreference = 'activeWindow'
 shelfAutoCloseWhenTasksComplete = true
 themeIdentifier = 'com.brnbw.tuna.themes.default'
