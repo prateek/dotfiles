@@ -325,9 +325,13 @@ casks = [
 
 # Applies to: personal.
 [packages.groups.personal-apps]
-description = "Personal laptop GUI, licensed, media, and productivity apps"
+description = "Personal-only CLI tools, GUI, licensed, media, and productivity apps"
 taps = [
   { name = "mattt/tap" },
+]
+brews = [
+  # Personal AI agent integrations.
+  { name = "steipete/tap/imsg" },
 ]
 casks = [
   { name = "nvalt", appdir = "/Applications" },

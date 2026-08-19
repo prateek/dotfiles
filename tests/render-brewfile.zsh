@@ -58,6 +58,8 @@ fi
   || die "personal should not include Tart (no apple-development group)"
 [[ $personal_no_mas == *'brew "f/mcptools/mcp", trusted: true'* ]] \
   || die "personal: missing MCP CLI (developer-tools group)"
+[[ $personal_no_mas == *'brew "steipete/tap/imsg", trusted: true'* ]] \
+  || die "personal: missing iMessage CLI for AI agents"
 [[ $personal_no_mas != *'facebook/fb/idb-companion'* ]] \
   || die "personal Brewfile should not install idb-companion before Xcode setup"
 [[ $personal_no_mas != *'brew "swiftlint"'* ]] \
@@ -80,6 +82,7 @@ work_with_mas="$("$RENDER" --machine-type work --include-mas)"
 [[ $work_out != *'brew "fastlane"'* ]] || die "work should not include the Apple development toolchain (fastlane leaked)"
 [[ $work_out != *'brew "cirruslabs/cli/tart"'* ]] || die "work should not include Tart (no apple-development group)"
 [[ $work_out == *'brew "f/mcptools/mcp", trusted: true'* ]] || die "work: missing MCP CLI (developer-tools group)"
+[[ $work_out != *'brew "steipete/tap/imsg"'* ]] || die "work should not install the personal iMessage CLI"
 [[ $work_out != *'cask "ghostpepper"'* ]] || die "work: official ghostpepper should be subtracted (replaced by the reconciler-managed fork)"
 [[ $work_out == *'cask "slack"'* ]] || die "work: missing work app cask slack"
 [[ $work_out == *'cask "google-drive"'* ]] || die "work: missing shared laptop cask google-drive"
@@ -96,6 +99,7 @@ homelab_out="$("$RENDER" --machine-type homelab)"
   || die "homelab: missing Tart VM CLI"
 [[ $homelab_out == *'brew "f/mcptools/mcp", trusted: true'* ]] \
   || die "homelab: missing MCP CLI"
+[[ $homelab_out != *'brew "steipete/tap/imsg"'* ]] || die "homelab should not install the personal iMessage CLI"
 [[ $homelab_out != *'brew "mas"'* ]] || die "homelab: should not include MAS CLI without Mac desktop/MAS apps"
 [[ $homelab_out == *'cask "tailscale-app"'* ]] || die "homelab: missing homelab remote cask tailscale-app"
 [[ $homelab_out == *'cask "jump-desktop"'* ]] || die "homelab: missing Jump Desktop viewer"

@@ -144,6 +144,7 @@
                 "workbench.editor.enablePreviewFromQuickOpen": false,
                 "workbench.iconTheme": "vs-seti",
                 "workbench.productIconTheme": "Default",
+                "workbench.secondarySideBar.defaultVisibility": "hidden",
                 "workbench.startupEditor": "welcomePageInEmptyWorkbench",
 
                 // === amp ===
@@ -157,6 +158,9 @@
 
                 // === chat ===
                 "chat.agent.enabled": false,
+
+                // === chatgpt ===
+                "chatgpt.openOnStartup": false,
 
                 // === cursor ===
                 "cursor.cmdk.autoSelect": false,
@@ -775,4 +779,5 @@
                 "[python]": {
         "editor.defaultFormatter": "charliermarsh.ruff"
     }
+
 }
