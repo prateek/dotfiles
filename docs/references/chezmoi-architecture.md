@@ -80,13 +80,13 @@ Scripts must be idempotent. A rerun should converge or report a clear blocker.
   of groups via the layered `home/.chezmoidata/machines.toml` table
   (`[machines.type.*].groups`), resolved by `home/.chezmoitemplates/features.tmpl`:
   `ci=[core]`,
-  `work=[core,mac-desktop,ai-agent-apps,developer-tools,work-apps]`,
-  `personal=[core,mac-desktop,ai-agent-apps,developer-tools,apple-development,personal-apps]`,
+  `work=[core,mac-desktop,ai-agent-apps,developer-tools,work-apps,forks]`,
+  `personal=[core,mac-desktop,ai-agent-apps,developer-tools,personal-apps,forks]`,
   and `homelab=[core,ai-agent-apps,developer-tools,apple-development,homelab-overlay]`.
-  Work omits personal apps and Apple/iOS tooling; homelab keeps Apple tooling,
-  remote/admin tools, and AI agent apps (agentsview + Orca) without the full
-  interactive desktop surface. `ci` is the minimal CI/Tart/audit tier and a
-  first-class `machine_type` prompt choice.
+  Work omits personal apps and Apple/iOS tooling; personal omits Apple/iOS
+  tooling for now; homelab keeps Apple tooling, remote/admin tools, and AI agent
+  apps (agentsview + Orca) without the full interactive desktop surface. `ci` is
+  the minimal CI/Tart/audit tier and a first-class `machine_type` prompt choice.
   See
   [ADR 0010](../adr/0010-machine-type-package-selection.md) and the config-gating
   convention in [ADR 0012](../adr/0012-config-gating-convention.md).

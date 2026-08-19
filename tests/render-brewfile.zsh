@@ -35,7 +35,7 @@ ci_out="$("$RENDER" --machine-type ci)"
 rg -q '"go:github.com/tomasz-tomczyk/crit/cmd/crit" = "latest"' "$DOTFILES_ROOT/home/dot_config/mise/conf.d/clis.toml" \
   || die "crit should be declared as a mise Go CLI"
 
-# -- personal machine type: core + interactive + dev + Apple + personal --
+# -- personal machine type: core + interactive + dev + personal --
 
 personal_no_mas="$("$RENDER" --machine-type personal)"
 personal_with_mas="$("$RENDER" --machine-type personal --include-mas)"
@@ -50,10 +50,12 @@ fi
 [[ $personal_no_mas == *'brew "aria2"'* ]] || die "personal: missing aria2 (developer-tools group)"
 [[ $personal_no_mas != *'brew "crit"'* ]] || die "personal: crit should be managed by mise, not Homebrew"
 [[ $personal_no_mas != *'tap "xcodesorg/made"'* ]] || die "personal: should not tap source-building xcodesorg/made"
-[[ $personal_no_mas == *'brew "homebrew/core/xcodes", args: ["force-bottle"]'* ]] \
-  || die "personal: missing bottled Homebrew core xcodes (apple-development group)"
-[[ $personal_no_mas == *'brew "cirruslabs/cli/tart", trusted: true'* ]] \
-  || die "personal: missing Tart VM CLI (apple-development group)"
+[[ $personal_no_mas != *'brew "homebrew/core/xcodes"'* ]] \
+  || die "personal should not include xcodes (no apple-development group)"
+[[ $personal_no_mas != *'brew "fastlane"'* ]] \
+  || die "personal should not include the Apple development toolchain (fastlane leaked)"
+[[ $personal_no_mas != *'brew "cirruslabs/cli/tart"'* ]] \
+  || die "personal should not include Tart (no apple-development group)"
 [[ $personal_no_mas == *'brew "f/mcptools/mcp", trusted: true'* ]] \
   || die "personal: missing MCP CLI (developer-tools group)"
 [[ $personal_no_mas != *'facebook/fb/idb-companion'* ]] \

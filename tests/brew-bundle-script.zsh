@@ -161,9 +161,11 @@ assert_contains "$script_personal_content" 'cask "dagger/tap/container-use", tru
 assert_contains "$script_personal_content" 'tap "mattt/tap"'
 assert_contains "$script_personal_content" 'cask "mattt/tap/imcp", trusted: true'
 assert_contains "$script_personal_content" 'cask "nikitabobko/tap/aerospace", trusted: true'
-assert_contains "$script_personal_content" 'cask "peripheryapp/periphery/periphery", trusted: true'
 assert_contains "$script_personal_content" 'cask "stablyai/orca/orca", trusted: true'
-assert_not_contains "$script_personal_content" 'brew "homebrew/core/xcodes", args: ["force-bottle"], trusted: true'
+assert_not_contains "$script_personal_content" 'cask "peripheryapp/periphery/periphery", trusted: true'
+assert_not_contains "$script_personal_content" 'brew "homebrew/core/xcodes"'
+assert_not_contains "$script_personal_content" 'brew "fastlane"'
+assert_not_contains "$script_personal_content" 'brew "cirruslabs/cli/tart"'
 script_work="$tmp_root/brew-bundle-work.sh"
 render_script "$script_work" work
 bash -n "$script_work" || die "rendered work brew bundle script has invalid syntax"
