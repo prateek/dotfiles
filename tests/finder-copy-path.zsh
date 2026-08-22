@@ -13,7 +13,7 @@ die() {
 }
 
 DOTFILES_ROOT="${0:A:h:h}"
-workflow="$DOTFILES_ROOT/home/Library/Services/Copy Paths.workflow"
+workflow="$DOTFILES_ROOT/home/Library/private_Services/Copy Paths.workflow"
 info="$workflow/Contents/Info.plist"
 document="$workflow/Contents/Resources/document.wflow"
 
@@ -51,6 +51,14 @@ expected_command=$'printf \'%s\\n\' "$@" | /usr/bin/pbcopy'
 
 tmp_root="$(mktemp -d)"
 trap 'rm -rf "$tmp_root"' EXIT
+rendered_home="$tmp_root/rendered-home"
+mkdir -p "$rendered_home/Library"
+DOTFILES_SKIP_PLIST_HOOKS=1 chezmoi --source "$DOTFILES_ROOT" --destination "$rendered_home" \
+  apply --no-tty "$rendered_home/Library/Services" >/dev/null \
+  || die "cannot render the Quick Action into an isolated home"
+services_mode="$(stat -f '%Lp' "$rendered_home/Library/Services")"
+[[ "$services_mode" == 700 ]] || die "Services directory mode: expected 700, got $services_mode"
+
 first="$tmp_root/first path.txt"
 second="$tmp_root/second [path].txt"
 touch "$first" "$second"
