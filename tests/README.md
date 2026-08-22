@@ -56,6 +56,7 @@ make test-gh-extensions-script
 make test-xcode-install-script
 make test-secret-backed-files
 make test-chezmoi-apply
+make test-finder-copy-path
 make test-chezmoi-config
 make test-karabiner-goku
 make test-chezmoi-local-ignores
