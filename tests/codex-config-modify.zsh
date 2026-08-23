@@ -69,7 +69,7 @@ import tomllib
 path = sys.argv[1]
 data = tomllib.loads(open(path, "rb").read().decode())
 
-assert data["model"] == "gpt-5.5"
+assert data["model"] == "gpt-5.6-sol"
 assert data["model_reasoning_effort"] == "xhigh"
 assert data["service_tier"] == "fast"
 assert data["custom_top_level"] == "keep"
@@ -177,4 +177,3 @@ expected = {
 for slug, want in expected.items():
     assert data["plugins"][f"{slug}@prateek-local"]["enabled"] is want, slug
 PY
-
