@@ -3,7 +3,7 @@ status: active
 doc_type: plan
 owner: Prateek
 created: 2026-07-01
-updated: 2026-07-02
+updated: 2026-08-23
 related:
   - ../adr/0007-default-loaded-plugin-policy.md
   - ../../home/dot_agents/packages/core/skills/local/decomment/SKILL.md
@@ -493,47 +493,34 @@ human comments and leave the agent's own additions fair game.
 
 ## Proposed Path Forward
 
-One SKILL.md source serves both agents: `core` package skills render to
-`~/.claude/skills` (Claude) and `~/.agents/skills` (Codex) at `chezmoi apply`,
-and the AGENTS.md edits reach both through the `~/.claude/CLAUDE.md` symlink.
-The skill is user-invocable out of the box: `/decomment` in Claude Code
-(`user-invocable` defaults to true) and `$decomment` in Codex via the
-openai.yaml interface.
+One SKILL.md source serves both agents. At `chezmoi apply`, the `core` package
+renders into the shared local marketplace at `~/.agents/plugins`; its Codex
+and Claude manifests expose the same skill source. The AGENTS.md edits reach
+both agents through the `~/.claude/CLAUDE.md` symlink. The skill is
+user-invocable as `/decomment` in Claude Code and `$decomment` in Codex.
 
 ### New skill: `home/dot_agents/packages/core/skills/local/decomment/SKILL.md`
 
-Frontmatter is `name` + `description` only (repo validator's required set;
-~830 chars, under the 1,536 cap):
+Frontmatter is `name` + `description` only. The description stays compact for
+the cross-agent listing budget while preserving its routing boundaries:
 
 ```yaml
 ---
 name: decomment
 description: >-
-  Prune comments in code you wrote or modified: delete restating, narrating,
-  redundant, and slop comments; trim bloated doc comments down to their
-  contract. Subtractive only — never adds comments or refactors code.
-  Triggers aggressively: run as a final pass at the end of ANY nontrivial
-  code-writing task before reporting done, and before any commit, PR, or
-  handoff. Apply by default unless told to skip. Also use on explicit asks
-  like "decomment", "remove comments", "too many comments", "comment slop",
-  or "clean up comments" on a file, diff, branch, or PR. On automatic runs,
-  scope is only comments added or modified by the current work — never
-  pre-existing comments. Do not use for prose or docs (write-for-humans),
-  for syncing comments that drifted from behavior (code-gardening), or as
-  cover for refactoring (code-simplifier).
+  Prune comments from code changed in the current task. Run after nontrivial
+  code edits and before handoff; delete narration and restatement, trim doc
+  comments to contracts, and preserve directives. Subtractive only. Route
+  factual drift to code-gardening and refactoring to code-simplifier. Skip
+  prose, docs, and pre-existing comments unless explicitly scoped.
 ---
 ```
 
-The closing "Do not use for" clauses are routing boundaries, not scope creep.
-Three neighboring skills already touch comments, and the Claude Code docs name
-overlapping descriptions as the main cause of wrong-skill loads. So the
-description says who owns what: `write-for-humans` owns prose, `code-gardening`
-owns comments that no longer match behavior (decomment deletes and shortens
-but never corrects facts), and `code-simplifier` owns refactoring. Without
-them, a "clean up comments" request could load the wrong skill, or a decomment
-pass could drift into rewriting drifted comments or restructuring code. The
-repo's other core skills draw the same boundaries: code-gardening has a
-Trigger Boundaries section and write-for-humans a Scope paragraph.
+The routing clauses remain load-bearing even in the compact description.
+`write-for-humans` owns prose, `code-gardening` owns comments that no longer
+match behavior, and `code-simplifier` owns refactoring. Without those
+boundaries, a "clean up comments" request can load the wrong skill or let a
+decomment pass rewrite drifted comments or restructure code.
 
 Body: keep Cody's core question, deletion bias, five failure modes,
 test-comment sharpener, procedure, and anti-patterns near-verbatim.
@@ -736,19 +723,21 @@ context; the code patterns themselves are public.
 
 Standard agent-skill pipeline (see
 [Agent Skill Management](../../.agents/skills/agent-skill-management/SKILL.md)):
-`validate-agent-packages`; render core skills and plugin marketplace to temp
-roots plus `--check`; `make test-agent-skill-packages test-claude-settings
-test-codex-config`; `audit-skill-context --agent codex .`;
-`render-agent-core-skills --check-live`; `chezmoi apply`. Then run the eval
-suite via the skill-creator harness into transient iteration directories, one
-per comparative-benchmark arm, and review with `scripts/eval-review.py`. Only
-`evals/` sources are committed; iteration directories are not.
+`validate-agent-packages`; render the plugin marketplace to a temp root plus
+`--check`; `make test-agent-skill-packages test-claude-settings
+test-codex-config test-pi-settings`; `audit-skill-context --agent codex .`;
+`chezmoi apply`; then run the native commands printed by
+`reconcile-agent-plugins`. Run the eval suite via the skill-creator harness
+into transient iteration directories, one per comparative-benchmark arm, and
+review with `scripts/eval-review.py`. Only `evals/` sources are committed;
+iteration directories are not.
 
-Post-apply checks: `decomment/` present in both live skill roots; `/decomment`
-in the slash menu; `/doctor` and `/context` confirm decomment's and
-code-gardening's descriptions survive the listing budget; a bare "decomment"
-smoke test in a scratch git repo; a smoke test in the work monorepo, where
-repo-local comment rules must win.
+Post-apply checks: `core/skills/decomment` exists in the generated marketplace;
+both clients discover the refreshed core plugin; `/decomment` and `$decomment`
+are available; context inspection confirms decomment's and code-gardening's
+descriptions survive the listing budget. Run a bare "decomment" smoke test in
+a scratch git repo and one in the work monorepo, where repo-local comment
+rules must win.
 
 Single commit, because the AGENTS.md directive must not land without the
 skill: `feat(skills): add decomment core skill and rescope comment rules`.

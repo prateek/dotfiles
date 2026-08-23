@@ -1,6 +1,6 @@
 ---
 name: write-for-humans
-description: Detect and rewrite AI-slop prose so it reads like a human wrote it. Triggers aggressively on ANY prose-writing or prose-editing task — drafts, rewrites, reviews, commit messages, PR descriptions, READMEs, docs, Slack/email, issue text, SKILL.md / AGENTS.md / CLAUDE.md bodies, and any long natural-language reply to the user. Apply by default unless explicitly told to skip. Use whenever you are about to emit more than a sentence or two of prose, whenever the user asks you to "write", "draft", "rewrite", "humanize", "clean up", "de-slop", "fix the tone", "review this", "too corporate", "too formal", "sounds like AI", "less LinkedIn", or any variant. Also use when reviewing prose the user just wrote if they ask for feedback. Complementary to writing-clearly-and-concisely (which handles Strunk-style structural clarity); this skill handles register, texture, and AI-specific tells.
+description: Rewrite prose to remove AI tells while preserving meaning and voice. Use for drafts, docs, READMEs, messages, reviews, and long user-facing replies; apply by default unless told to skip. Pair with writing-clearly-and-concisely for structural edits.
 ---
 
 # Write for Humans

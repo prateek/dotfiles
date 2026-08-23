@@ -352,6 +352,40 @@ grep -q 'not a generated skill root' "$roots_home/maintain.err"
 .agents/skills/agent-skill-management/scripts/audit-skill-context \
   --agent codex "$plugins_root/plugins/core/skills" \
   | python3 -m json.tool >/dev/null
+
+reconcile_output="$(
+  .agents/skills/agent-skill-management/scripts/reconcile-agent-plugins
+)"
+python3 - "$reconcile_output" <<'PY'
+import sys
+
+commands = sys.argv[1].splitlines()
+expected_commands = [
+    "claude plugin marketplace add ~/.agents/plugins --scope user",
+    "claude plugin marketplace update prateek-local",
+    "codex plugin add core@prateek-local",
+    "codex plugin add review@prateek-local",
+    "codex plugin add utils-agent@prateek-local",
+    "claude plugin install core@prateek-local --scope user",
+    "claude plugin enable core@prateek-local --scope user",
+    "claude plugin install design@prateek-local --scope user",
+    "claude plugin disable design@prateek-local --scope user",
+    "claude plugin install experimental@prateek-local --scope user",
+    "claude plugin disable experimental@prateek-local --scope user",
+    "claude plugin install ios@prateek-local --scope user",
+    "claude plugin disable ios@prateek-local --scope user",
+    "claude plugin install mattpocock@prateek-local --scope user",
+    "claude plugin disable mattpocock@prateek-local --scope user",
+    "claude plugin install review@prateek-local --scope user",
+    "claude plugin enable review@prateek-local --scope user",
+    "claude plugin install utils-agent@prateek-local --scope user",
+    "claude plugin enable utils-agent@prateek-local --scope user",
+    "claude plugin install utils-human@prateek-local --scope user",
+    "claude plugin disable utils-human@prateek-local --scope user",
+]
+assert commands == expected_commands, commands
+PY
+
 chezmoi --source home execute-template \
   --file home/.chezmoitemplates/agent-claude-plugin-settings.json.tmpl \
   | python3 -m json.tool >/dev/null

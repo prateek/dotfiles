@@ -5,16 +5,19 @@ and install records.
 
 Run `.agents/skills/agent-skill-management/scripts/reconcile-agent-plugins` to
 print the native commands for the current package render policy. The script is
-preview-only — copy/paste the output; it has no apply path. It emits the three
-marketplace commands, then a `claude plugin install` per package plus an
-`enable` or `disable` matching the package's `default_loaded` value. Output is
-sorted alphabetically by package id (`design`, `experimental`, `ios`, `review`,
-`utils-agent`, `utils-human`):
+preview-only — copy/paste the output; it has no apply path. It refreshes the
+Codex cache for default-loaded packages with `codex plugin add`, then emits a
+`claude plugin install` per package plus an `enable` or `disable` matching the
+package's `default_loaded` value. Output is sorted alphabetically by package id:
 
 ```sh
 claude plugin marketplace add ~/.agents/plugins --scope user
 claude plugin marketplace update prateek-local
-codex plugin marketplace upgrade prateek-local
+codex plugin add core@prateek-local
+codex plugin add review@prateek-local
+codex plugin add utils-agent@prateek-local
+claude plugin install core@prateek-local --scope user
+claude plugin enable core@prateek-local --scope user
 claude plugin install design@prateek-local --scope user
 claude plugin disable design@prateek-local --scope user
 # ... experimental and ios (both disabled) ...
@@ -26,9 +29,12 @@ claude plugin install utils-human@prateek-local --scope user
 claude plugin disable utils-human@prateek-local --scope user
 ```
 
-The script does not emit any `codex plugin install/enable/disable` commands:
-the current `codex plugin` CLI only exposes a `marketplace` subcommand, and
-Codex picks up plugin enable state from `~/.codex/config.toml` directly.
+`codex plugin add` refreshes the installed cache but also writes
+`enabled = true`. The helper therefore emits it only for packages whose
+`default_loaded` policy is true. Disabled package source still renders into the
+local marketplace. To refresh one for project-only use, run `codex plugin add`
+and then `chezmoi apply ~/.codex/config.toml` to restore its user-level
+`enabled = false` policy before relying on the project override.
 
 Do not render or edit `~/.claude/plugins/known_marketplaces.json`,
 `~/.claude/plugins/installed_plugins.json`, or either tool's plugin cache.

@@ -1,6 +1,6 @@
 ---
 name: ask
-description: Fetch version-accurate library documentation, source trees, and producer-shipped skills so the agent works against the exact version installed in the project, not training-data guesses. Use this skill whenever the user needs docs for a dependency, wants to read a library's real source, asks "how does X work internally", needs to pin reading to a specific version or ref, mentions ask docs / ask src / ask skills, or any task that would benefit from a library's actual README / source / skill files over recalled knowledge — even when they don't explicitly name the "ask" CLI. Preferred over inferring API shape from memory whenever accuracy matters.
+description: Fetch version-matched dependency docs, source, and producer skills with `ask`. Use for library API docs, internal behavior, or source pinned to a project version or ref, especially when recalled knowledge may be stale. Skip when the user supplied the source file.
 allowed-tools: Bash(ask:*)
 ---
 

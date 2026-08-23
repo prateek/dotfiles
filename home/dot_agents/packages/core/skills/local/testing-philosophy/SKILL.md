@@ -1,16 +1,10 @@
 ---
 name: testing-philosophy
 description: >-
-  Use when writing, reviewing, designing, or repairing tests, or deciding what to test. Triggers on
-  add/write tests, what should I test, how do I test this, is this tested, review my tests, TDD,
-  coverage, flaky or brittle tests, refactor-broken tests, too many mocks, should I mock, unit vs
-  integration, snapshot or golden tests, property-based tests, fuzzing, regression tests,
-  concurrency, time, database or network tests, slow suites, or tests that pass while code is
-  broken. Also use proactively before adding a test mid-task, choosing assertions or test doubles,
-  or deleting, skipping, weakening, or blindly updating a failing test. Provides the purity x extent
-  model, behavior-through-stable-seams guidance, a toolbox, determinism rules, anti-patterns, a
-  review checklist, and agent conduct rules. Skip only for pure runtime/app debugging with no test
-  involved.
+  Guide test design, writing, review, and repair. Use for coverage, TDD, flaky
+  tests, mocks, test layers, snapshots, property tests, regressions,
+  concurrency, or any change that adds, weakens, skips, or deletes tests.
+  Prefer behavior through stable seams and honor a user-specified test layer.
 ---
 
 # Testing Philosophy

@@ -163,7 +163,9 @@ Do not hand-edit these tool-owned paths:
 Use `.agents/skills/agent-skill-management/scripts/reconcile-agent-plugins` to
 print the native tool commands needed to reconcile installed/cache state with
 the local marketplace. The script is preview-only (copy/paste the output);
-chezmoi does not render those records.
+chezmoi does not render those records. Codex cache refresh commands are emitted
+only for default-loaded packages because `codex plugin add` also enables the
+plugin.
 
 ## Validation
 

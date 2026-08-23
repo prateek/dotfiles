@@ -1,6 +1,6 @@
 ---
 name: yojam-config
-description: Maintain Prateek's Yojam browser-router config under chezmoi using the deltas-only `modify_` + desired-fragment pattern. Use when editing the desired-mutations fragment at `home/.chezmoiassets/yojam-config.json`, debugging rules that disappear or stay disabled after `chezmoi apply` (the import-time security pass), bumping the schema `version` field on a Yojam upgrade, adding a new rule (which needs a stable UUID), or onboarding a new Mac. Do not use for installing the Yojam cask itself (that lives in the chezmoi-management skill → packages-and-secrets), for the broader OSS-browser-router research that lives under `docs/`, or for editing the live `~/Library/Application Support/Yojam/config.json` directly (always edit the fragment instead).
+description: Maintain Prateek's chezmoi-managed Yojam browser-router config. Use for desired mutations, disappearing or disabled rules, schema bumps, new rule UUIDs, or Mac onboarding. Edit the desired fragment, never the live config; installation belongs to chezmoi-management.
 ---
 
 # Yojam Config

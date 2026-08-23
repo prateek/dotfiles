@@ -1,18 +1,11 @@
 ---
 name: decomment
 description: >-
-  Prune comments in code you wrote or modified: delete restating, narrating,
-  redundant, and slop comments; trim bloated doc comments down to their
-  contract. Subtractive only — never adds comments or refactors code.
-  Triggers aggressively: run as a final pass at the end of ANY nontrivial
-  code-writing task before reporting done, and before any commit, PR, or
-  handoff. Apply by default unless told to skip. Also use on explicit asks
-  like "decomment", "remove comments", "too many comments", "comment slop",
-  or "clean up comments" on a file, diff, branch, or PR. On automatic runs,
-  scope is only comments added or modified by the current work — never
-  pre-existing comments. Do not use for prose or docs (write-for-humans),
-  for syncing comments that drifted from behavior (code-gardening), or as
-  cover for refactoring (code-simplifier).
+  Prune comments from code changed in the current task. Run after nontrivial
+  code edits and before handoff; delete narration and restatement, trim doc
+  comments to contracts, and preserve directives. Subtractive only. Route
+  factual drift to code-gardening and refactoring to code-simplifier. Skip
+  prose, docs, and pre-existing comments unless explicitly scoped.
 ---
 
 # Decomment

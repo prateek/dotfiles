@@ -1,16 +1,9 @@
 ---
 name: readme-craft
 description: |
-  Write, rewrite, or audit README files that convert scanners into users.
-  Covers greenfield drafts, growth management, and editorial rewrites for
-  bloated READMEs. Use when asked to create a README, improve a README,
-  review a README, trim a README, or when a project ships without one.
-  Also trigger when a README has grown past ~200 lines, when a docs site
-  exists but the README duplicates its content, when a README contains
-  marketing language ("powerful," "seamless," "game-changing"), or when
-  install/quickstart instructions are buried below the fold. README
-  quality directly affects adoption -- treat this as product work, not
-  docs busywork.
+  Write, rewrite, or audit READMEs for fast adoption. Use for new, bloated,
+  stale, or marketing-heavy READMEs, especially when install and quick-start
+  guidance is buried or duplicated by a docs site.
 ---
 
 # README Craft

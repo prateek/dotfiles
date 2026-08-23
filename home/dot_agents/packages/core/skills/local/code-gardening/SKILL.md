@@ -1,6 +1,6 @@
 ---
 name: code-gardening
-description: Continuous codebase-health workflow for existing repositories. Use when code, tests, docs, comments, examples, config, generated files, plans, or agent instructions may be out of sync; when a task touches `AGENTS.md`, `CLAUDE.md`, `README`, `SKILL.md`, plan/progress/spec docs, build/config files, or parser-facing metadata; when a parser, validator, or config error suggests stale state; when a failure may be pre-existing; or when a bugfix or command/config change should sync nearby durable docs, tests, or config. Do not use for ordinary read-only code review, isolated implementation with no state-sync risk, or pure brainstorming unless drift, provenance, or durable-state updates are part of the task.
+description: Keep code, tests, docs, comments, config, and agent instructions synchronized in existing repos. Use when comments drift from behavior, for parser/config drift, pre-existing failures, or edits to `SKILL.md`, `AGENTS.md`, `README`, plans, and generated files. Skip isolated read-only review.
 ---
 
 # Code Gardening
