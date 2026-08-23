@@ -60,8 +60,8 @@ always-on packages (like `core`) as plugins with `default_loaded = true`.
 
 `package.toml` may set `default_loaded = false` to ship a package installed
 but disabled. Default is `true`. Today set to `false` on `design`,
-`experimental`, `ios`, `utils-human`. The plugin tree still renders, so
-the skills are one flip away.
+`experimental`, `ios`, `mattpocock`, `utils-human`. The plugin tree still
+renders, so the skills are one flip away.
 
 To flip a plugin globally, change `default_loaded` and re-render. To flip
 one on for a single project, drop a project-root override:

@@ -1,0 +1,6 @@
+display_name = "Matt Pocock Skills"
+default_loaded = false
+
+[render]
+codex = "plugin"
+claude = "plugin"

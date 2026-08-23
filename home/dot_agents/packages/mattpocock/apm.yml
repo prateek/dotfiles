@@ -1,0 +1,8 @@
+name: mattpocock
+version: 1.0.0
+targets:
+  - agent-skills
+
+dependencies:
+  apm:
+    - mattpocock/skills
