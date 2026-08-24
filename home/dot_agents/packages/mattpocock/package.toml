@@ -1,5 +1,5 @@
 display_name = "Matt Pocock Skills"
-default_loaded = false
+default_loaded = true
 
 [render]
 codex = "plugin"
