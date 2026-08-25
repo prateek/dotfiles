@@ -58,6 +58,7 @@ import re
 import socket
 import subprocess
 import sys
+import time
 import urllib.parse
 import uuid
 
@@ -284,16 +285,40 @@ def vault_session(agent, worktree_path):
 
 
 def agentsview_base_url():
+    """Base URL of the agentsview server, starting its daemon if needed.
+
+    The daemon can be down (reboot, crash — disk-full has killed it before),
+    and `serve status` exits 0 either way, so the URL in its output is the
+    only reliable liveness signal.
+    """
+
+    def status_url():
+        try:
+            proc = subprocess.run(
+                ["agentsview", "serve", "status"], capture_output=True, text=True
+            )
+        except FileNotFoundError:
+            return None
+        match = re.search(r"https?://\S+", proc.stdout)
+        if proc.returncode != 0 or not match:
+            return None
+        return match.group(0).rstrip("/")
+
+    url = status_url()
+    if url:
+        return url
     try:
-        proc = subprocess.run(
-            ["agentsview", "serve", "status"], capture_output=True, text=True
+        subprocess.run(
+            ["agentsview", "serve", "--background"], capture_output=True, timeout=30
         )
-    except FileNotFoundError:
+    except (FileNotFoundError, subprocess.TimeoutExpired):
         return None
-    match = re.search(r"https?://\S+", proc.stdout)
-    if proc.returncode != 0 or not match:
-        return None
-    return match.group(0).rstrip("/")
+    for _ in range(10):
+        url = status_url()
+        if url:
+            return url
+        time.sleep(0.5)
+    return None
 
 
 def reveal_in_agentsview(session_id):
