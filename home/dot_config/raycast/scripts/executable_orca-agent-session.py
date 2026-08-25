@@ -25,8 +25,10 @@
 # plain CLI via the ~/bin symlink:
 #
 #   orca-agent-session                # gate on Orca frontmost, copy + open agentsview
+#   orca-agent-session --fork         # gate, copy, and fork the session into a new split
 #   orca-agent-session --json         # machine output, no gate / copy / open
 #   orca-agent-session --json --copy  # machine output, and copy the session ID
+#   orca-agent-session --fork --dry-run --json   # print the fork plan only
 #   orca-agent-session --worktree ~/code/worktrees/dotfiles/foo --json
 #
 # Resolution pipeline, most of it through Orca itself so agent CLIs never
@@ -55,6 +57,7 @@ import argparse
 import json
 import os
 import re
+import shlex
 import socket
 import subprocess
 import sys
@@ -304,6 +307,27 @@ def agentsview_base_url():
     return match.group(0).rstrip("/")
 
 
+def fork_argv(agent, session):
+    """Command to continue a fork of the session in a fresh pane, or None
+    when the agent has no fork semantics. Verified against installed CLI
+    help: claude --fork-session, `codex fork`, pi --fork, droid --fork.
+    cursor-agent and gemini can only resume the same session — spawning a
+    second writer — so they are deliberately unsupported. The permissive
+    flags mirror the yolo/yoloc aliases; spelled out because zsh functions
+    don't resolve in a spawned pane.
+    """
+    sid = session["sessionId"]
+    if agent == "claude":
+        return ["claude", "--dangerously-skip-permissions", "--resume", sid, "--fork-session"]
+    if agent == "codex":
+        return ["codex", "--dangerously-bypass-approvals-and-sandbox", "fork", sid]
+    if agent == "pi":
+        return ["pi", "--fork", session.get("filePath") or sid]
+    if agent == "droid":
+        return ["droid", "--fork", sid]
+    return None
+
+
 def reveal_in_agentsview(session_id):
     """Open the session, preferring the AgentsView app over a browser.
 
@@ -334,6 +358,8 @@ def main():
     )
     parser.add_argument("--json", action="store_true", help="print JSON; skip gate, copy, and open")
     parser.add_argument("--copy", action="store_true", help="copy the session ID via pbcopy")
+    parser.add_argument("--fork", action="store_true", help="fork the session into a new split instead of revealing it")
+    parser.add_argument("--dry-run", action="store_true", help="with --fork: print the plan without splitting")
     parser.add_argument("--worktree", help="workspace path (default: Orca's focused workspace)")
     args = parser.parse_args()
     JSON_MODE = args.json
@@ -372,6 +398,35 @@ def main():
     copied = False
     if args.copy or hud_mode:
         copied = subprocess.run(["pbcopy"], input=session_id, text=True).returncode == 0
+
+    if args.fork:
+        agent_name = session.get("agent")
+        argv = fork_argv(agent_name, session)
+        if argv is None:
+            fail(
+                f"{agent_name} can't fork a live session safely — "
+                f"ID {'copied' if copied else session_id[:8]} for manual resume"
+            )
+        command = f"cd {shlex.quote(session.get('cwd') or active['path'])} && {shlex.join(argv)}"
+        if args.dry_run:
+            print(json.dumps({"agent": agent_name, "sessionId": session_id, "forkCommand": command})
+                  if args.json else f"would fork {agent_name} {session_id[:8]}: {command}")
+            return
+        split = orca_cli(
+            "terminal", "split", "--terminal", chosen[0]["handle"], "--command", command
+        )
+        new_handle = (split.get("terminal") or split.get("split") or {}).get("handle") if isinstance(split, dict) else None
+        if args.json:
+            print(json.dumps({
+                "agent": agent_name,
+                "sessionId": session_id,
+                "forkCommand": command,
+                "newTerminal": new_handle,
+            }))
+        else:
+            print(f"forked {agent_name} {session_id[:8]} → new split")
+        return
+
     if hud_mode:
         target = reveal_in_agentsview(session_id)
         copy_note = "ID copied" if copied else "copy failed"
