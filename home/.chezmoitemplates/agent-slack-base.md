@@ -68,7 +68,19 @@ render as native Slack rich text; use `--blocks <file>` for Block Kit layouts an
 `--attach <path>` to upload a file. Reserve clipboard / manual paste for when
 agent-slack genuinely cannot reach the target.
 
-### 4) Review requests
+### 4) Attribution
+
+Append the footer exactly once, as the final line of every message you composed,
+separated by a blank line:
+
+```md
+_via Prateek's agent (`<tool-or-skill>`)_
+```
+
+Same convention as GitHub comments in [git.md](git.md). Skip it only when
+Prateek dictates the exact message text verbatim.
+
+### 5) Review requests
 
 There is no fixed `r?` prefix convention here. To ask for a code review, post the
 merge-request / PR link with a one-line description and @mention the reviewer(s) in
@@ -91,3 +103,4 @@ overlay is enabled).
 - Channel/user IDs resolved, not guessed.
 - Correct channel for the audience and sensitivity (private = need-to-know).
 - For sends: explicit user request, confirmed target, drafted and reviewed first.
+- Messages you composed carry the attribution footer, once, as the final line.
