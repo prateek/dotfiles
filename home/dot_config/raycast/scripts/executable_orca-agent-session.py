@@ -58,7 +58,6 @@ import re
 import socket
 import subprocess
 import sys
-import time
 import urllib.parse
 import uuid
 
@@ -285,40 +284,24 @@ def vault_session(agent, worktree_path):
 
 
 def agentsview_base_url():
-    """Base URL of the agentsview server, starting its daemon if needed.
+    """Base URL of the agentsview server, or None when the daemon is down.
 
-    The daemon can be down (reboot, crash — disk-full has killed it before),
-    and `serve status` exits 0 either way, so the URL in its output is the
-    only reliable liveness signal.
+    Deliberately does not start the daemon — its lifecycle belongs to the
+    AgentsView app's sidecar (or an explicit `agentsview serve --background`),
+    not a hotkey. Re-read on every run: `serve status` exits 0 whether or not
+    a server runs, the URL in its output is the liveness signal, and the port
+    changes across daemon restarts.
     """
-
-    def status_url():
-        try:
-            proc = subprocess.run(
-                ["agentsview", "serve", "status"], capture_output=True, text=True
-            )
-        except FileNotFoundError:
-            return None
-        match = re.search(r"https?://\S+", proc.stdout)
-        if proc.returncode != 0 or not match:
-            return None
-        return match.group(0).rstrip("/")
-
-    url = status_url()
-    if url:
-        return url
     try:
-        subprocess.run(
-            ["agentsview", "serve", "--background"], capture_output=True, timeout=30
+        proc = subprocess.run(
+            ["agentsview", "serve", "status"], capture_output=True, text=True
         )
-    except (FileNotFoundError, subprocess.TimeoutExpired):
+    except FileNotFoundError:
         return None
-    for _ in range(10):
-        url = status_url()
-        if url:
-            return url
-        time.sleep(0.5)
-    return None
+    match = re.search(r"https?://\S+", proc.stdout)
+    if proc.returncode != 0 or not match:
+        return None
+    return match.group(0).rstrip("/")
 
 
 def reveal_in_agentsview(session_id):
@@ -395,7 +378,10 @@ def main():
         if target:
             print(f"{session.get('agent')} {session_id[:8]} → {target} ({copy_note})")
         else:
-            print(f"{session.get('agent')} {session_id[:8]} — agentsview not reachable ({copy_note})")
+            print(
+                f"{session.get('agent')} {session_id[:8]} — agentsview not running; "
+                f"launch AgentsView ({copy_note})"
+            )
         return
 
     base_url = agentsview_base_url()
