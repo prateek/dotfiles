@@ -1,13 +1,15 @@
 ---
-status: active
+status: archived
 doc_type: plan
 owner: Prateek
 created: 2026-08-25
 updated: 2026-08-25
+closed: 2026-08-25
+current_guidance: ./crit-integration-plan.md
 related:
   - ../adr/0013-apm-vendored-tool-integrations.md
   - ./crit-integration-plan.md
-status_detail: "Implemented on prateek/plannotator; remaining: land, chezmoi apply, plugin reconcile, live smoke of plan review and code review."
+status_detail: "Landed (5dc1a89) and reverted the same day after a plugin load error surfaced on live reload; the crit review loop is live again. Reland from the reverted commit if retried."
 ---
 
 # Plannotator Experiment Plan

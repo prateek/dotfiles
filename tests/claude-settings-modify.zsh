@@ -71,17 +71,6 @@ cat >"$current" <<'JSON'
         ]
       }
     ],
-    "PreToolUse": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "printf third-party-pretool-hook"
-          }
-        ]
-      }
-    ],
     "PermissionRequest": [
       {
         "matcher": "ExitPlanMode",
@@ -136,17 +125,11 @@ assert local["path"] == os.path.expanduser("~/.agents/plugins")
 # whole events managed doesn't own.
 plan_hooks = data["hooks"]["PermissionRequest"]
 assert plan_hooks[0] == managed["hooks"]["PermissionRequest"][0]
-assert plan_hooks[0]["hooks"][0]["command"] == "plannotator"
+assert plan_hooks[0]["hooks"][0]["command"] == "crit plan-hook"
 assert [b for b in plan_hooks if b["matcher"] == "ExitPlanMode"] == [plan_hooks[0]]
 third_party = [b for b in plan_hooks if b["matcher"] == "*"]
 assert len(third_party) == 1, plan_hooks
 assert third_party[0]["hooks"][0]["command"] == "printf third-party-hook"
-pretool_hooks = data["hooks"]["PreToolUse"]
-assert pretool_hooks[0] == managed["hooks"]["PreToolUse"][0]
-assert pretool_hooks[0]["hooks"][0]["command"] == "plannotator improve-context"
-pretool_third_party = [b for b in pretool_hooks if b["matcher"] == "*"]
-assert len(pretool_third_party) == 1, pretool_hooks
-assert pretool_third_party[0]["hooks"][0]["command"] == "printf third-party-pretool-hook"
 user_hooks = data["hooks"]["UserPromptSubmit"]
 assert user_hooks[0]["hooks"][0]["command"] == "printf user-owned-hook"
 

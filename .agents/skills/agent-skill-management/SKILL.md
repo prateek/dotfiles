@@ -93,14 +93,12 @@ Rules:
 - Record intentional divergence from upstream as a "Local delta" note in
   `SOURCE.md`. Re-vendoring overwrites the skill tree, so re-apply noted
   deltas afterward and drop them once upstreamed.
-- Agent tool integrations (for example plannotator in the review package)
-  vendor like any other dependency; see
-  [ADR 0013](../../../docs/adr/0013-apm-vendored-tool-integrations.md).
-  When the tool's binary moves (a mise bump of
-  `github:backnotprop/plannotator`), re-run `vendor-agent-package` for its
-  package so skills match the installed CLI. Tool hooks (today plannotator's
-  plan-review hook on ExitPlanMode) ship via
-  `claude-settings-managed.json.tmpl`, not the plugin tree.
+- Agent tool integrations (for example crit) vendor like any other dependency;
+  see [ADR 0013](../../../docs/adr/0013-apm-vendored-tool-integrations.md).
+  When the tool's binary moves (`mise run crit:use ...`), re-run
+  `vendor-agent-package` for its package so skills match the installed CLI.
+  crit's plan-review hook ships via `claude-settings-managed.json.tmpl`, not
+  the plugin tree.
 - Reject non-skill APM primitives unless this workflow is explicitly extended
   to support them.
 
