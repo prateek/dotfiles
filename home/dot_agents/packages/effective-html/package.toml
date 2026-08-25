@@ -1,0 +1,6 @@
+display_name = "Effective HTML"
+default_loaded = true
+
+[render]
+codex = "plugin"
+claude = "plugin"

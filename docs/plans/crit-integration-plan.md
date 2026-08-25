@@ -1,13 +1,15 @@
 ---
-status: active
+status: superseded
 doc_type: plan
 owner: Prateek
 created: 2026-07-02
-updated: 2026-07-02
+updated: 2026-08-25
+closed: 2026-08-25
+superseded_by: ./plannotator-experiment-plan.md
 related:
   - ../adr/0013-apm-vendored-tool-integrations.md
   - ../plans/agent-plugin-renderer-plan.md
-status_detail: "Implementation landed on prateek/debug-crit-triggers; remaining: live rollout smoke and the upstream description PR."
+status_detail: "Plan-review hook and vendored skills handed to plannotator (experiment). Crit binary and config stay installed; reverting the plannotator commits restores this setup."
 ---
 
 # Crit Integration Plan

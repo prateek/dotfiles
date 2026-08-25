@@ -5,5 +5,7 @@ targets:
 
 dependencies:
   apm:
-    - tomasz-tomczyk/crit/integrations/claude-code/skills/crit
-    - tomasz-tomczyk/crit/integrations/claude-code/skills/crit-cli
+    - backnotprop/plannotator/apps/skills/core/plannotator
+    - backnotprop/plannotator/apps/skills/core/plannotator-annotate
+    - backnotprop/plannotator/apps/skills/core/plannotator-last
+    - backnotprop/plannotator/apps/skills/core/plannotator-review

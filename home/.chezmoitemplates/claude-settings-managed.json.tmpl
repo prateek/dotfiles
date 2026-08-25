@@ -5,13 +5,25 @@
   },
   "skillListingBudgetFraction": 0.04,
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "EnterPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "plannotator improve-context",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
     "PermissionRequest": [
       {
         "matcher": "ExitPlanMode",
         "hooks": [
           {
             "type": "command",
-            "command": "crit plan-hook",
+            "command": "plannotator",
             "timeout": 345600
           }
         ]

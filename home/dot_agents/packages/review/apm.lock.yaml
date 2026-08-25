@@ -1,22 +1,40 @@
 lockfile_version: '1'
-generated_at: '2026-07-02T20:45:43.217554+00:00'
+generated_at: '2026-08-25T19:21:09.413902+00:00'
 apm_version: 0.13.0
 dependencies:
-- repo_url: tomasz-tomczyk/crit
+- repo_url: backnotprop/plannotator
   host: github.com
-  resolved_commit: ea3e089eaf188be2d4c1c5d25dc42a18072b9560
-  virtual_path: integrations/claude-code/skills/crit
+  resolved_commit: b381ecbe1200b07db8c050715c0f2c035a44b73a
+  virtual_path: apps/skills/core/plannotator
   is_virtual: true
   package_type: claude_skill
   deployed_files:
-  - .agents/skills/crit
-  content_hash: sha256:c8c509342d8222616628a1a398159dd2ab7162cde7681e033b1fb2ed266986f8
-- repo_url: tomasz-tomczyk/crit
+  - .agents/skills/plannotator
+  content_hash: sha256:7b737bd3574abc0a70a7e8cdd4ef6442ab25c32349b04825ce37b24747cbf9fa
+- repo_url: backnotprop/plannotator
   host: github.com
-  resolved_commit: ea3e089eaf188be2d4c1c5d25dc42a18072b9560
-  virtual_path: integrations/claude-code/skills/crit-cli
+  resolved_commit: b381ecbe1200b07db8c050715c0f2c035a44b73a
+  virtual_path: apps/skills/core/plannotator-annotate
   is_virtual: true
   package_type: claude_skill
   deployed_files:
-  - .agents/skills/crit-cli
-  content_hash: sha256:c62c3b4d93667eb2f8046f5ee7f8a51a3a2c5ac574faad108501e05747bf0f7a
+  - .agents/skills/plannotator-annotate
+  content_hash: sha256:b292a7d0e75a545a1b4acdcb6d232f8796e5e20d2cc727aff724d0207e69eed0
+- repo_url: backnotprop/plannotator
+  host: github.com
+  resolved_commit: b381ecbe1200b07db8c050715c0f2c035a44b73a
+  virtual_path: apps/skills/core/plannotator-last
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/plannotator-last
+  content_hash: sha256:2f22274e82dd727474b2fd974c97721cedd05622ffaa5d68eb7fcf9aabb89b0c
+- repo_url: backnotprop/plannotator
+  host: github.com
+  resolved_commit: b381ecbe1200b07db8c050715c0f2c035a44b73a
+  virtual_path: apps/skills/core/plannotator-review
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/plannotator-review
+  content_hash: sha256:d82dcabc57e7d1f324f91501ff62b5246003b393e48bc0086036e0ef0a66db95

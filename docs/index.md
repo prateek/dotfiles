@@ -37,8 +37,8 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | Doc | Status |
 | --- | --- |
 | [Agent Plugin Renderer](plans/agent-plugin-renderer-plan.md) | Active; single plugin-only render mode with APM payload pass-through landed — pack-bundle vendoring stays deferred. |
-| [Crit Integration](plans/crit-integration-plan.md) | Active; claude-code skills re-vendored with plan-hook via managed settings — live rollout smoke and upstream description PR remaining. |
 | [Crit Agent Bridge](plans/crit-agent-bridge-plan.md) | Active; wires crit's `agent_cmd` hook to acpx for reply-only cross-model comment dispatch. Implemented and tested; live smoke pending. |
+| [Plannotator Experiment](plans/plannotator-experiment-plan.md) | Active; plannotator replaces the crit review loop (plan-review hook, review-package skills) plus effective-html skills — land, apply, and live smoke remaining. |
 | [BetterDisplay Display Modes](plans/betterdisplay-display-modes-plan.md) | Proposed only; no `displayctl` implementation exists in this checkout. |
 | [Decomment Skill](plans/decomment-skill-plan.md) | Active; decomment core skill, trigger-channel fixes, and evals under implementation. |
 | [Orcactl](plans/orcactl-plan.md) | Draft for a separate Go repo/tool; dotfiles integration is future install/skill wiring. |
@@ -70,7 +70,7 @@ for day-to-day implementation details.
 | [ADR 0010 - Single machine_type axis for package selection](adr/0010-machine-type-package-selection.md) | [Chezmoi Architecture](references/chezmoi-architecture.md) > Packages And Tools. |
 | [ADR 0011 - Private repo for config overlays](adr/0011-private-repo-config-overlays.md) | `prateek/dotfiles-private` cloned via gated `.chezmoiexternal`, composed by `run_after_37-agent-slack-doc`; first consumer `~/.agents/docs/slack.md`. |
 | [ADR 0012 - Config-gating convention](adr/0012-config-gating-convention.md) | chezmoi toggle convention (render-time vs init-time), implemented as one identity prompt + a layered `machines.toml` resolved by `features.tmpl`. Current guidance: [Chezmoi Architecture](references/chezmoi-architecture.md) > Config Gating. |
-| [ADR 0013 - Agent tool integrations stay APM-vendored](adr/0013-apm-vendored-tool-integrations.md) | [Crit Integration](plans/crit-integration-plan.md) and [Agent Skill Management](../.agents/skills/agent-skill-management/SKILL.md). |
+| [ADR 0013 - Agent tool integrations stay APM-vendored](adr/0013-apm-vendored-tool-integrations.md) | [Plannotator Experiment](plans/plannotator-experiment-plan.md) and [Agent Skill Management](../.agents/skills/agent-skill-management/SKILL.md). |
 | [ADR 0014 - Tartelet self-hosted runners](adr/0014-tartelet-self-hosted-runners.md) | [Tartelet Self-Hosted Runners](plans/tartelet-runner-plan.md). |
 | [ADR 0015 - Downstream forks as thin assembly repos](adr/0015-downstream-fork-daily-driver.md) | [Downstream Fork plan](plans/downstream-fork-plan.md) and the [`fork-lifecycle` skill](../.agents/skills/fork-lifecycle/SKILL.md) (fleet ops live in the `fork-ops` skill in `prateek/forks`). |
 
@@ -91,6 +91,7 @@ or `superseded_by` frontmatter before using them.
 | [Chezmoi Agent Skills Plan](plans/chezmoi-agent-skills-plan.md) | [Agent Skill Management](../.agents/skills/agent-skill-management/SKILL.md) and [ADR 0007](adr/0007-default-loaded-plugin-policy.md). |
 | [Chezmoi Drift Banner Plan](plans/chezmoi-drift-banner-plan.md) | [Chezmoi Drift Banner](../home/dot_config/dotfiles/chezmoi-drift/README.md). |
 | [Chezmoi Migration Plan](plans/chezmoi-migration-plan.md) | [Chezmoi Architecture](references/chezmoi-architecture.md). |
+| [Crit Integration](plans/crit-integration-plan.md) | [Plannotator Experiment](plans/plannotator-experiment-plan.md); crit binary/config remain installed for a possible revert. |
 | [Config-Gating Simplification](plans/config-gating-simplification-plan.md) | [ADR 0012](adr/0012-config-gating-convention.md) and [Chezmoi Architecture](references/chezmoi-architecture.md). |
 | [Machine-Type Package Selection](plans/machine-type-package-selection-plan.md) | [ADR 0010](adr/0010-machine-type-package-selection.md) and [Chezmoi Architecture](references/chezmoi-architecture.md). |
 | [Docs Reorg And Agent-Surface Refresh](plans/docs-reorg-plan.md) | `AGENTS.md`, [Documentation Index](index.md), and [Document Lifecycle](document-lifecycle.md). |

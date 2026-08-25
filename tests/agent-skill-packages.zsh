@@ -14,7 +14,7 @@ cd "$REPO_ROOT"
 [[ ! -e home/dot_claude/skills ]]
 [[ ! -e home/dot_agents/plugins ]]
 [[ -e home/dot_agents/packages/core/skills/vendor/deep-research/SOURCE.md ]]
-[[ -e home/dot_agents/packages/review/skills/vendor/crit/SOURCE.md ]]
+[[ -e home/dot_agents/packages/review/skills/vendor/plannotator/SOURCE.md ]]
 [[ -e home/dot_agents/packages/utils-agent/skills/vendor/cli-creator/SOURCE.md ]]
 [[ ! -e home/dot_agents/packages/core/skills/local/deep-research ]]
 [[ ! -e home/dot_agents/packages/ios/skills/vendor/swift-patterns/swift-patterns/SKILL.md ]]
@@ -364,6 +364,7 @@ expected_commands = [
     "claude plugin marketplace add ~/.agents/plugins --scope user",
     "claude plugin marketplace update prateek-local",
     "codex plugin add core@prateek-local",
+    "codex plugin add effective-html@prateek-local",
     "codex plugin add mattpocock@prateek-local",
     "codex plugin add review@prateek-local",
     "codex plugin add utils-agent@prateek-local",
@@ -371,6 +372,8 @@ expected_commands = [
     "claude plugin enable core@prateek-local --scope user",
     "claude plugin install design@prateek-local --scope user",
     "claude plugin disable design@prateek-local --scope user",
+    "claude plugin install effective-html@prateek-local --scope user",
+    "claude plugin enable effective-html@prateek-local --scope user",
     "claude plugin install experimental@prateek-local --scope user",
     "claude plugin disable experimental@prateek-local --scope user",
     "claude plugin install ios@prateek-local --scope user",
@@ -399,6 +402,7 @@ import json, subprocess, tomllib
 expected = {
     "core@prateek-local": True,
     "design@prateek-local": False,
+    "effective-html@prateek-local": True,
     "experimental@prateek-local": False,
     "ios@prateek-local": False,
     "mattpocock@prateek-local": True,

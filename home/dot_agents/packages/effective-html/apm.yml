@@ -1,0 +1,8 @@
+name: effective-html
+version: 1.0.0
+targets:
+  - agent-skills
+
+dependencies:
+  apm:
+    - plannotator/effective-html
