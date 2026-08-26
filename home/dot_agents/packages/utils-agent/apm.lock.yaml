@@ -1,17 +1,17 @@
 lockfile_version: '1'
-generated_at: '2026-06-27T04:52:31.167998+00:00'
+generated_at: '2026-08-26T00:55:15.520502+00:00'
 apm_version: 0.13.0
 dependencies:
 - repo_url: danshapiro/trycycle
   host: github.com
-  resolved_commit: 229b6764cc7f4ee6b7d9a9ec01c9f69a31407d70
+  resolved_commit: eb25b5141187b667096d948198617075f8e8e55a
   package_type: claude_skill
   deployed_files:
   - .agents/skills/trycycle
-  content_hash: sha256:bc3e3ec7a1dcb0e682089322f66610c96ac14f72a697a7ba0298702c294cbe94
+  content_hash: sha256:8ca12a875bbd30173bc600303cb40a3c6a5e01fe14577652ff55e426e2e49544
 - repo_url: hefgi/skills
   host: github.com
-  resolved_commit: 4169204d176fc10ab42a86658128a3f91d8602e3
+  resolved_commit: d22289fff77cce0b2df1ebbcdb641c9ce0e1881b
   virtual_path: shortcut
   is_virtual: true
   package_type: claude_skill
@@ -20,7 +20,7 @@ dependencies:
   content_hash: sha256:c8e8c62e311d1edffef6ec6aca2fd28fc4241513bfb201f077f3e3336b6d7369
 - repo_url: openai/skills
   host: github.com
-  resolved_commit: 4c4058ebf44f6734e62c70ab4a81246d4d093fc8
+  resolved_commit: 49f948faa9258a0c61caceaf225e179651397431
   virtual_path: skills/.curated/cli-creator
   is_virtual: true
   package_type: claude_skill
@@ -29,37 +29,37 @@ dependencies:
   content_hash: sha256:c8548eec5d64000583c0dc409d4354f2ef119067caa1fedd730287ba650741f1
 - repo_url: openclaw/acpx
   host: github.com
-  resolved_commit: bd85a5ac4e3db340d9967f299d629758d8451fc8
+  resolved_commit: d4c16ab32154f388a3f28645065e797fcd951813
   virtual_path: skills/acpx
   is_virtual: true
   package_type: claude_skill
   deployed_files:
   - .agents/skills/acpx
-  content_hash: sha256:c7bba623522b83899068a3880a060a034a07b3f7cd21b0482d80f968e0e3beb9
+  content_hash: sha256:991f4e37230f484fd8f0c6e281b05df2ed332809414641fe18a1c82b782e31ab
 - repo_url: stablyai/agent-slack
   host: github.com
-  resolved_commit: 6775fa878dfe7d38ca15899c765a2e19c9718a39
+  resolved_commit: 80f0e8df0299f4f03bce1bed6f8ef3d3da1b65f7
   virtual_path: skills/agent-slack
   is_virtual: true
   package_type: claude_skill
   deployed_files:
   - .agents/skills/agent-slack
-  content_hash: sha256:98d04f59417d89162b9e86721981f0db501a7dd886b00b5b3d96c173b1c16c15
+  content_hash: sha256:2999c98adae884ec041b704aec2bfb76425f5c208b2e5e915ec6713ee89b67bc
 - repo_url: stablyai/orca
   host: github.com
-  resolved_commit: cfe2a83145cea3fef41736ae0e1f2ce1de906476
+  resolved_commit: cac538854528fe7648964b6f90dcbe7e0c334bbc
   virtual_path: skills/orca-cli
   is_virtual: true
   package_type: claude_skill
   deployed_files:
   - .agents/skills/orca-cli
-  content_hash: sha256:f088cf38b4bfda635a73f6ec37c38dfca851c15379c5ed9224f964080ae03e23
+  content_hash: sha256:cca6a9098e0dff08ce6fef999da77d98e94255e826b8b9f8132749b5da66dad2
 - repo_url: stablyai/orca
   host: github.com
-  resolved_commit: cfe2a83145cea3fef41736ae0e1f2ce1de906476
+  resolved_commit: cac538854528fe7648964b6f90dcbe7e0c334bbc
   virtual_path: skills/orchestration
   is_virtual: true
   package_type: claude_skill
   deployed_files:
   - .agents/skills/orca-stration
-  content_hash: sha256:63bb760c7805a5a9277f68892c180da0b2bcf2edc46a3ffecd47551a8f44dfd8
+  content_hash: sha256:b5c364878fb07d21a369f091f2e96b823da94308b15b39636f2585d8b5621b51

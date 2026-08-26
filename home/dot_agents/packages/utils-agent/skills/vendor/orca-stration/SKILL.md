@@ -1,210 +1,82 @@
 ---
 name: orchestration
 description: >-
-  Use `orca orchestration` when coordinating multiple AI agents through Orca:
-  pass context, instructions, questions, findings, reviews, handoffs, or
-  structured results between agents; delegate subtasks; dispatch work; track task
-  DAGs; wait for worker_done/escalation; or run coordinator loops and decision
-  gates. This is the right skill for semantic agent-to-agent communication.
-  Boundary with `orca-cli`: do not use orchestration for ordinary terminal
-  control, shell commands, browser automation, worktree management, or
-  reading/waiting on terminals; use `orca-cli` for those. Triggers include "tell
-  the other agent", "ask <agent>", "hand off to", "pass this to <agent>",
-  "delegate to <agent>", "have <agent> do X", "let <agent> know", "share with the
-  other AI", "coordinate agents", "what did <agent> find", "check orchestration
-  inbox", "reply to <agent>", "dispatch task", "orchestrate agents",
-  "multi-agent", "task DAG", "worker_done", "escalation", "decision gate", and
-  "coordinator loop".
+  Use Orca orchestration for structured multi-agent coordination: threaded
+  messages, blocking ask/reply flows, task dispatch, worker_done/escalation
+  waits, task DAGs, decision gates, coordinator loops, or decomposing work
+  across agents. Use `orca-cli` instead for full ownership handoffs, including
+  requests phrased as "hand off", "handoff", "handover", "give this to another
+  agent", or "another worktree" when the user did not explicitly ask to
+  supervise, monitor, wait for results, or coordinate a DAG. Use `orca-cli` for
+  ordinary terminal control, lightweight terminal prompts, shell commands, Orca
+  worktree management, reading or waiting on terminals, and automation of the
+  browser embedded inside Orca. Use Computer Use for browser windows, webviews,
+  Orca app UI, or desktop UI outside Orca's embedded browser.
 ---
 
-# Orca Inter-Agent Orchestration
+# Orca Orchestration
 
-Use this skill when the task involves coordinating multiple coding agents through Orca's orchestration system. For basic terminal and worktree management, use the `orca-cli` skill instead.
+This file is a discovery stub, not the usage guide. The full, version-matched Orca
+orchestration reference is served by the `orca` binary itself — kept out of this file on
+purpose so it can never drift from the binary that will actually run your commands.
 
-## When To Use
+Engage Orca orchestration whenever you need structured multi-agent coordination: threaded
+messages, blocking ask/reply flows, task dispatch, worker_done/escalation waits, task DAGs,
+decision gates, coordinator loops, or decomposing work across agents. Use the orca-cli skill
+instead for full ownership handoffs ("hand off", "handoff", "handover", "give this to
+another agent", "another worktree") when the user did not ask to supervise, monitor, wait
+for results, or coordinate a DAG — and for ordinary terminal control, shell commands,
+worktree management, and the built-in browser. Coordination requires real Orca runtime
+state; never substitute a non-Orca subagent tool.
 
-- You need to send messages between agent terminals
-- You need to decompose a spec into parallel subtasks with dependencies
-- You need to dispatch tasks to worker agents with structured feedback
-- You need to act as a coordinator managing a multi-agent workflow
-- You need to create decision gates for human-in-the-loop checkpoints
+## Resolve the CLI for this session
 
-## Preconditions
+Choose the executable once and reuse it for every later command:
 
-- Orca must be running (`orca status --json` should return `runtime: true`).
-- The `orca` CLI must be on PATH (installed via Settings > Browser > Enable Orca CLI).
-- The orchestration experimental feature must be enabled in Settings > Experimental.
-- All `orca orchestration` commands are RPC calls to the running Orca runtime — they require an active Orca session.
+- If the `ORCA_CLI_COMMAND` environment variable is set, use its value. Orca exports this
+  for managed WSL sessions.
+- Otherwise, in a dev checkout whose session exposes `ORCA_DEV_REPO_ROOT`, use `orca-dev`.
+- Otherwise, on Linux outside an Orca-managed terminal, use `orca-ide`. Never run bare
+  `orca` there — outside Orca's terminals it normally resolves to the
+  GNOME Orca screen reader (`/usr/bin/orca`) and starts speech on the user's machine.
+- Otherwise, use `orca`.
 
-## Command Surface
+Below, `ORCA` is a placeholder for the executable you resolved. Substitute it before
+running anything; do not create a shell variable or run `ORCA` literally. This works the
+same way in POSIX shells, PowerShell, and cmd.exe.
 
-### Messaging
+If the selected executable cannot run, report its exact error and stop. Do not fall through
+to another executable, which could silently target a different Orca build.
 
-Inter-agent messaging via persistent SQLite-backed mail store. Messages are delivered automatically when the recipient agent goes idle (push-on-idle).
+## Load the full guide before running Orca commands
 
-```bash
-orca orchestration send --to <handle|@group> --subject <text> [--from <handle>] [--body <text>] [--type <type>] [--priority <level>] [--thread-id <id>] [--payload <json>] [--json]
-orca orchestration check [--terminal <handle>] [--unread] [--types <type,...>] [--inject] [--wait] [--timeout-ms <n>] [--json]
-orca orchestration reply --id <msg_id> --body <text> [--from <handle>] [--json]
-orca orchestration inbox [--limit <n>] [--json]
+```text
+ORCA skills get orchestration
 ```
 
-Why: `--from` auto-resolves via the `ORCA_TERMINAL_HANDLE` environment variable injected into every Orca-managed terminal. Omit it unless impersonating another terminal.
+That prints the complete, version-matched guide for the exact binary that will handle your
+next commands — task creation and dispatch, injected lifecycle preambles, worker_done
+authority, decision gates, and coordinator loops. Read it first, then run the specific
+command you need.
 
-Why: `--inject` formats messages as readable banners with priority indicators (`[HIGH]`, `[URGENT]`) for agent prompt injection. Use `--json` for machine-readable output.
+Don't guess subcommands or flags from memory or from a cached copy of this stub. They
+change between Orca releases, and this file deliberately no longer lists them. Confirm the
+app is up with `ORCA status --json` (start it with `ORCA open --json` if needed), and
+prefer `--json` for agent-driven calls.
 
-Why: `--wait` blocks until a matching message arrives or the timeout expires (default 2 minutes). This replaces sleep+poll loops. If unread messages already exist, returns immediately. Combine with `--types` to wait for specific message types (e.g. `--wait --types worker_done --timeout-ms 120000`).
+## If an older Orca does not recognize `skills get`
 
-**Message types**: `status` (general), `dispatch` (assign work), `worker_done` (signal completion), `merge_ready` (branch ready for merge), `escalation` (issue requiring attention), `handoff` (pass work to another agent), `decision_gate` (human-in-the-loop).
+Use this fallback only when the selected binary explicitly reports that `skills get` is an
+unknown command. Another failure is not proof of an older binary; report it rather than
+guessing or changing executables. For a confirmed pre-guide binary, use only this bounded,
+read-only bootstrap to orient. Do not dead-end and do not invent commands:
 
-**Priority levels**: `normal`, `high`, `urgent`.
-
-**Group addresses** resolve to terminal handles:
-
-| Group | Resolves To |
-|-------|------------|
-| `@all` | All terminal handles except sender |
-| `@idle` | Handles where the agent is currently idle |
-| `@claude` | Handles running Claude Code |
-| `@codex` | Handles running Codex |
-| `@opencode` | Handles running OpenCode |
-| `@gemini` | Handles running Gemini |
-| `@worktree:<id>` | All handles in a specific worktree |
-
-Group messages fan out: one message per recipient, shared `thread_id`, independent read tracking.
-
-### Tasks
-
-Task tracking with DAG dependencies. A task becomes `ready` when all tasks in its `deps` array are `completed`.
-
-```bash
-orca orchestration task-create --spec <text> [--deps <json_array>] [--parent <task_id>] [--json]
-orca orchestration task-list [--status <status>] [--ready] [--json]
-orca orchestration task-update --id <task_id> --status <status> [--result <json>] [--json]
+```text
+ORCA status --json
+ORCA orchestration task-list --json
+ORCA terminal list --json
 ```
 
-**Task statuses**: `pending` (waiting on deps), `ready` (deps met, dispatchable), `dispatched` (assigned to a terminal), `completed`, `failed`, `blocked` (waiting on a decision gate).
-
-Why: when a task is marked `completed`, the runtime automatically promotes any pending tasks whose deps are now all satisfied to `ready`. This is the DAG resolution step.
-
-### Dispatch
-
-Dispatch assigns a ready task to a terminal. Optionally injects the task spec + preamble into the terminal so the agent knows how to communicate back.
-
-```bash
-orca orchestration dispatch --task <task_id> --to <handle> [--from <handle>] [--inject] [--json]
-orca orchestration dispatch-show --task <task_id> [--json]
-```
-
-Why: `--inject` sends a preamble that teaches the agent how to use `orca orchestration send --type worker_done` to report completion. All agents have `orca` on PATH and can execute shell commands. The preamble maximizes structured feedback but the system works without it (coordinator falls back to idle detection + output reading).
-
-Why: `--inject` requires a recognized agent CLI (e.g. Claude Code) running in the target terminal. If the terminal is a bare shell, omit `--inject` and send the prompt manually with `terminal send`.
-
-Why: dispatch contexts are separate from tasks (sling pattern). A task can be dispatched, fail, and be re-dispatched to a different terminal — the task stays clean while dispatch contexts track retry state.
-
-**Circuit breaker**: After 3 consecutive failures on a task, the dispatch context is marked `circuit_broken`. The task is marked `failed` to prevent infinite retry loops.
-
-### Decision Gates
-
-Human-in-the-loop decision points that block a task until resolved.
-
-```bash
-orca orchestration gate-create --task <task_id> --question <text> [--options <json_array>] [--json]
-orca orchestration gate-resolve --id <gate_id> --resolution <text> [--json]
-orca orchestration gate-list [--task <task_id>] [--status <status>] [--json]
-```
-
-Why: creating a gate blocks the task and completes its active dispatch. Resolving a gate sets the task back to `ready` with the resolution context included in the next dispatch preamble.
-
-**Gate statuses**: `pending`, `resolved`, `timeout`.
-
-### Coordinator
-
-Start an automated coordinator loop that dispatches ready tasks, processes `worker_done`/`escalation` messages, and advances the task DAG.
-
-```bash
-orca orchestration run --spec <text> [--from <handle>] [--poll-interval-ms <n>] [--max-concurrent <n>] [--worktree <selector>] [--json]
-orca orchestration run-stop [--json]
-```
-
-Why: `run` returns immediately with a run ID. The coordinator loop runs in the background inside the Orca runtime. Query progress via `orca orchestration task-list`. Only one coordinator can run at a time.
-
-**Coordinator phases**: `decomposing` → `dispatching` → `monitoring` → `merging` → `done`.
-
-### Lifecycle
-
-```bash
-orca orchestration reset [--all] [--tasks] [--messages] [--json]
-```
-
-Why: `--all` is the default if no flags provided. `--tasks` clears tasks, dispatch contexts, decision gates, and coordinator runs but preserves messages.
-
-### Terminal Commands for Coordinators
-
-Coordinators need these terminal commands to spawn agents, monitor progress, and read output. Full terminal documentation lives in the `orca-cli` skill — this is the subset required for orchestration workflows.
-
-```bash
-orca terminal list [--worktree <selector>] [--json]
-orca terminal create [--worktree <selector>] [--title <text>] [--command <cmd>] [--json]
-orca terminal split --terminal <handle> [--direction horizontal|vertical] [--command <cmd>] [--json]
-orca terminal read [--terminal <handle>] [--json]
-orca terminal send [--terminal <handle>] --text <text> [--enter] [--json]
-orca terminal wait [--terminal <handle>] --for <exit|tui-idle> [--timeout-ms <n>] [--json]
-orca terminal show --terminal <handle> [--json]
-orca terminal stop [--terminal <handle>] [--json]
-orca terminal close [--terminal <handle>] [--json]
-```
-
-Why: `--terminal` is optional for most commands. When omitted, Orca auto-resolves to the active terminal in the current worktree.
-
-Why: `--command "claude"` launches Claude Code in the new terminal. After creating a `--command` terminal, use `terminal wait --for tui-idle` to wait for the agent to boot before dispatching.
-
-Why: `--for tui-idle` detects the working→idle OSC title transition for recognized agent CLIs (Claude Code, Gemini, Codex, etc.). Always pass `--timeout-ms` — real coding tasks routinely take 15-60 minutes.
-
-Why: `--direction horizontal` splits left/right (new pane to the right). `--direction vertical` splits top/bottom (new pane below). Default is horizontal.
-
-Why: terminal handles are runtime-scoped. If Orca restarts, handles go stale. Re-acquire with `terminal list`.
-
-Why: the 120-line terminal output buffer (`terminal read`) is for status monitoring, not result extraction. Prefer structured `worker_done` payloads over parsing terminal output.
-
-## Agent Guidance
-
-- When dispatched with a preamble, **always run the `worker_done` command when done**. This is the primary feedback mechanism — it keeps the coordinator's context window clean.
-- If blocked or unable to complete a task, send an `escalation` message to the coordinator instead of silently stalling.
-- Use `orca orchestration check` to read incoming messages from the coordinator or other agents. Messages are delivered automatically when you go idle, but you can also poll explicitly.
-- Treat `orca orchestration` commands the same way you treat `git` or `npm` — they are CLI tools available in your shell.
-- The coordinator uses `orca orchestration task-list --ready` as its external memory. Prefer querying orchestration state over tracking it in your context window.
-- For multi-agent coordination, prefer the **inter-worktree** pattern (each agent in its own worktree) for parallel implementation tasks. Use **intra-worktree** (split panes, shared files) for complementary tasks where agents don't edit the same files.
-- When acting as coordinator: discover existing agents with `terminal list`, create tasks with `task-create`, dispatch with `dispatch --inject`, and wait for `worker_done` messages via `check --wait --types worker_done,escalation --timeout-ms 300000`.
-- When acting as coordinator: prefer `check --wait` over sleep+poll loops. `--wait` blocks until a message arrives, eliminating wasted time. Always pass `--timeout-ms` as a safety net. If the wait times out with no messages, fall back to `terminal wait --for tui-idle` and then reading terminal output.
-- `check --wait` returns one message at a time. If N workers finish near-simultaneously, call `check --wait` N times in a loop to collect all results. After each return, mark the task complete (which auto-promotes dependents) and dispatch the next wave before looping back to wait.
-- After receiving `worker_done` from a terminal, that terminal is guaranteed idle — skip the `terminal wait --for tui-idle` round-trip and dispatch the next task immediately.
-- Terminal handles are ephemeral and runtime-scoped. If Orca restarts mid-workflow, all handles go stale. Re-acquire them with `terminal list` before continuing.
-- Keep dependency chains to 3-4 steps maximum. Prefer parallel waves of independent tasks over deep sequential chains.
-- Insert decision gates (`gate-create`) between phases for human oversight on risky operations.
-
-## Coordinator Worked Example
-
-Dispatch a task to a fresh Claude Code terminal and wait for completion:
-
-```bash
-# 1. Create a terminal running Claude Code
-orca terminal create --worktree active --title "worker-1" --command "claude" --json
-# → handle: term_abc123
-
-# 2. Wait for Claude Code to boot (tui-idle fires when the prompt appears)
-orca terminal wait --terminal term_abc123 --for tui-idle --timeout-ms 60000 --json
-
-# 3. Create and dispatch a task with preamble injection
-orca orchestration task-create --spec "Fix the login button CSS" --json
-# → id: task_def456
-orca orchestration dispatch --task task_def456 --to term_abc123 --inject --json
-
-# 4. Block until the worker reports back (no sleep loops needed)
-orca orchestration check --wait --types worker_done,escalation --timeout-ms 300000 --json
-# → returns immediately when worker sends worker_done
-
-# 5. If --wait timed out with no messages, fall back to idle detection
-orca terminal wait --terminal term_abc123 --for tui-idle --timeout-ms 60000 --json
-orca terminal read --terminal term_abc123 --json
-```
+Then tell the user that updating Orca restores the full, version-matched guide via
+`ORCA skills get orchestration`. Beyond these commands, ask the user rather than guessing a
+command surface this older binary may not support.
