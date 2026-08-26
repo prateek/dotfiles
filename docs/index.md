@@ -37,7 +37,6 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | Doc | Status |
 | --- | --- |
 | [Agent Plugin Renderer](plans/agent-plugin-renderer-plan.md) | Active; single plugin-only render mode with APM payload pass-through landed — pack-bundle vendoring stays deferred. |
-| [Crit Agent Bridge](plans/crit-agent-bridge-plan.md) | Active; wires crit's `agent_cmd` hook to acpx for reply-only cross-model comment dispatch. Implemented and tested; live smoke pending. |
 | [BetterDisplay Display Modes](plans/betterdisplay-display-modes-plan.md) | Proposed only; no `displayctl` implementation exists in this checkout. |
 | [Decomment Skill](plans/decomment-skill-plan.md) | Active; decomment core skill, trigger-channel fixes, and evals under implementation. |
 | [Orcactl](plans/orcactl-plan.md) | Draft for a separate Go repo/tool; dotfiles integration is future install/skill wiring. |
@@ -90,6 +89,7 @@ or `superseded_by` frontmatter before using them.
 | [Chezmoi Agent Skills Plan](plans/chezmoi-agent-skills-plan.md) | [Agent Skill Management](../.agents/skills/agent-skill-management/SKILL.md) and [ADR 0007](adr/0007-default-loaded-plugin-policy.md). |
 | [Chezmoi Drift Banner Plan](plans/chezmoi-drift-banner-plan.md) | [Chezmoi Drift Banner](../home/dot_config/dotfiles/chezmoi-drift/README.md). |
 | [Chezmoi Migration Plan](plans/chezmoi-migration-plan.md) | [Chezmoi Architecture](references/chezmoi-architecture.md). |
+| [Crit Agent Bridge](plans/crit-agent-bridge-plan.md) | Retired; crit's `agent_cmd` now runs full-access claude directly (`home/modify_private_dot_crit.config.json.tmpl`), and the acpx shortcuts remain for general use. |
 | [Crit Integration](plans/crit-integration-plan.md) | Live repo state ([Agent Skill Management](../.agents/skills/agent-skill-management/SKILL.md)); the superseding plannotator experiment was reverted. |
 | [Plannotator Experiment](plans/plannotator-experiment-plan.md) | [Crit Integration](plans/crit-integration-plan.md) setup restored; reverted 2026-08-25, reland from history if retried. |
 | [Config-Gating Simplification](plans/config-gating-simplification-plan.md) | [ADR 0012](adr/0012-config-gating-convention.md) and [Chezmoi Architecture](references/chezmoi-architecture.md). |

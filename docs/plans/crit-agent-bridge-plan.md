@@ -1,13 +1,15 @@
 ---
-status: active
+status: archived
 doc_type: plan
 owner: Prateek
 created: 2026-07-03
-updated: 2026-07-03
+updated: 2026-08-26
+closed: 2026-08-26
+current_guidance: ./crit-integration-plan.md
 related:
   - ./crit-integration-plan.md
   - ../adr/0013-apm-vendored-tool-integrations.md
-status_detail: "Implemented and tested (tests/crit-config-modify.zsh; ci/personal render clean; crit reply-post + acpx reply-only flags proven live). Bridge and acpx config both derive from the machines.toml agent_clis overlay; wrapper is templated; agpt rides cursor-agent on work and the Codex adapter on personal. Remaining: a successful live generation + apply post-merge."
+status_detail: "Retired 2026-08-26 in favor of upstream's recommended full-access agent: agent_cmd now runs `claude --dangerously-skip-permissions -p` directly (home/modify_private_dot_crit.config.json.tmpl, gated on claude in machines.toml agent_clis). The crit-agent wrapper, contrast-model resolution, and reply-only posture are gone; the acpx shortcuts the bridge introduced remain for general use."
 ---
 
 # Crit Agent Bridge Plan

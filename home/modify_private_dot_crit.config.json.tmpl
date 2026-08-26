@@ -5,9 +5,11 @@
 # ///
 """Set agent_cmd in ~/.crit.config.json.
 
-crit's "send to agent" button runs the configured agent_cmd; pointing it at the
-crit-agent wrapper dispatches review comments to an acpx agent (reply-only). See
-docs/plans/crit-agent-bridge-plan.md.
+crit's "send to agent" button runs the configured agent_cmd. Full-access claude
+(upstream's recommended mode) answers the comment and can make the edit
+directly; crit's file watching picks the change up. Machines whose
+machines.toml agent_clis lacks claude get the key removed instead, so the
+button never points at a missing binary.
 
 Only agent_cmd is touched. crit's own keys (auth_token, share_consented,
 auth_user_*, live_cookie, and anything else crit or the user has written)
@@ -17,7 +19,7 @@ security, not from a project .crit.config.json.
 import json
 import sys
 
-AGENT_CMD = "crit-agent {prompt}"
+AGENT_CMD = {{ if has "claude" ((includeTemplate "features.tmpl" . | fromJson).agent_clis | default (list)) }}"claude --dangerously-skip-permissions -p"{{ else }}None{{ end }}
 
 
 def load_current(text: str) -> dict:
@@ -36,7 +38,14 @@ def semantic_equal(left: str, right: str) -> bool:
 
 current_text = sys.stdin.read()
 current = load_current(current_text)
-current["agent_cmd"] = AGENT_CMD
+if AGENT_CMD is None:
+    current.pop("agent_cmd", None)
+else:
+    current["agent_cmd"] = AGENT_CMD
 
-merged_text = json.dumps(current, indent=2, ensure_ascii=False) + "\n"
-sys.stdout.write(current_text if semantic_equal(current_text, merged_text) else merged_text)
+if not current and not current_text.strip():
+    # A machine that sets nothing should not materialize the file.
+    sys.stdout.write(current_text)
+else:
+    merged_text = json.dumps(current, indent=2, ensure_ascii=False) + "\n"
+    sys.stdout.write(current_text if semantic_equal(current_text, merged_text) else merged_text)

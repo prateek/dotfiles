@@ -22,8 +22,8 @@ secrets_enabled = false          # enable per machine via [data].machines_local
 private_overlay = false
 elevation = "none"
 # ACP-backed agent CLIs present on this machine. The acpx config emits only the
-# shortcuts whose CLI is listed, and the crit review bridge picks its model from
-# the same list. Empty by default so a machine opts in explicitly.
+# shortcuts whose CLI is listed, and crit's agent_cmd is set only when claude is
+# listed. Empty by default so a machine opts in explicitly.
 agent_clis = []
 
 # Minimal/fast tier for CI dry-run, Tart smoke, and shell audits. Keeps the

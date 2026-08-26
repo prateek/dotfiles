@@ -171,33 +171,6 @@ sensitive and prune periodically.
 Mechanics for all three live in the skill (sections Sessions, Compare,
 and Flows).
 
-## Crit review bridge
-
-crit's per-comment "send to agent" button dispatches the comment to whatever
-`agent_cmd` names in `~/.crit.config.json`. It is wired to
-`~/.local/bin/crit-agent`, which runs an acpx agent **reply-only**: reads are
-auto-approved for context, but `--no-terminal --non-interactive-permissions
-deny` refuse writes, so the agent suggests a reply and never edits the tree.
-crit posts the wrapper's stdout back as the reply; the human or the original
-in-session agent applies any change.
-
-crit sends no model choice, so the wrapper picks one (first match wins):
-
-1. `CRIT_AGENT_MODEL`: explicit host-local override (`.envrc` / mise), any acpx
-   shortcut.
-2. Launcher-aware contrast: a model unlike whoever started the crit daemon, read
-   from `AI_AGENT` / `CLAUDECODE`. The GPT target is `agpt` (cursor-agent, or the
-   Codex adapter where absent); the Claude target is `aopus` with `cursor-agent`,
-   else `afable`.
-3. Machine default: the GPT-family target above, baked into the wrapper at apply
-   time from machines.toml `agent_clis`, falling back to the Claude target on a
-   claude-only box. A machine with no agent CLIs can't dispatch, and the
-   wrapper says so.
-
-Both the wrapper and the acpx shortcut list derive from the same `agent_clis`
-overlay, so the bridge stays independent of the acpx config. Full design in the
-dotfiles repo: `docs/plans/crit-agent-bridge-plan.md`.
-
 ## Prerequisites
 
 - `acpx` CLI: installed via mise (`npm:acpx`).

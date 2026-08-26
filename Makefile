@@ -154,7 +154,7 @@ test-pi-statusline:
 test-orca-settings:
 	@zsh ./tests/orca-settings-modify.zsh
 
-## Regression tests for the crit agent bridge: agent_cmd modify, acrit render, wrapper resolution.
+## Regression tests for crit's agent_cmd modify script and the acpx shortcut render.
 test-crit-config:
 	@zsh ./tests/crit-config-modify.zsh
 
