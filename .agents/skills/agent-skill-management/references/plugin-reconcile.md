@@ -36,5 +36,12 @@ local marketplace. To refresh one for project-only use, run `codex plugin add`
 and then `chezmoi apply ~/.codex/config.toml` to restore its user-level
 `enabled = false` policy before relying on the project override.
 
+Package versions stay at 1.0.0, so content-only refreshes never change the
+plugin version. Claude's `plugin install` and `plugin update` both
+short-circuit on an already-installed same-version plugin and leave its cache
+stale. To push refreshed content into Claude's cache, run
+`claude plugin uninstall <pkg>@prateek-local --scope user` and then the
+`install` from the reconcile output; enable state survives the reinstall.
+
 Do not render or edit `~/.claude/plugins/known_marketplaces.json`,
 `~/.claude/plugins/installed_plugins.json`, or either tool's plugin cache.
