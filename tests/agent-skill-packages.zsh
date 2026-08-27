@@ -164,6 +164,42 @@ fi
 grep -q 'description exceeds 1024 chars' "$tmp_root/long-description.out"
 rm -rf "$long_description_package"
 
+chezmoi_prefix_package="$packages_root/chezmoi-prefix"
+mkdir -p "$chezmoi_prefix_package/skills/local/chezmoi-prefix-skill"
+cat >"$chezmoi_prefix_package/package.toml" <<'TOML'
+display_name = "Chezmoi Prefix"
+
+[render]
+codex = "none"
+claude = "none"
+TOML
+cat >"$chezmoi_prefix_package/apm.yml" <<'YAML'
+name: chezmoi-prefix
+version: 1.0.0
+targets:
+  - agent-skills
+
+dependencies:
+  apm: []
+YAML
+cat >"$chezmoi_prefix_package/skills/local/chezmoi-prefix-skill/SKILL.md" <<'SKILL'
+---
+name: chezmoi-prefix-skill
+description: Local skill for chezmoi attribute prefix validation tests.
+---
+
+# Chezmoi Prefix Skill
+SKILL
+echo '{}' >"$chezmoi_prefix_package/skills/local/chezmoi-prefix-skill/run_manifest.json"
+if AGENT_SKILL_PACKAGES_ROOT="$packages_root" \
+  .agents/skills/agent-skill-management/scripts/validate-agent-packages \
+  >"$tmp_root/chezmoi-prefix.out" 2>&1; then
+  echo "expected validate-agent-packages to reject chezmoi attribute-prefixed filenames" >&2
+  exit 1
+fi
+grep -q 'rename with a literal_ prefix' "$tmp_root/chezmoi-prefix.out"
+rm -rf "$chezmoi_prefix_package"
+
 cat >"$fake_bin/apm" <<'SH'
 #!/usr/bin/env zsh
 set -euo pipefail

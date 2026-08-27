@@ -19,6 +19,32 @@ from agent_skill_lib import (
 )
 
 
+# chezmoi source-state attribute prefixes. A vendored file or directory whose
+# name starts with one of these would be reinterpreted by chezmoi when
+# home/dot_agents/packages materializes into ~/.agents/packages (`run_` even
+# executes the file as a script). `literal_` is the escape hatch: chezmoi and
+# the plugin projector both strip it so the target keeps its real name.
+CHEZMOI_ATTRIBUTE_PREFIXES = (
+    "after_",
+    "before_",
+    "create_",
+    "dot_",
+    "empty_",
+    "encrypted_",
+    "exact_",
+    "executable_",
+    "external_",
+    "modify_",
+    "once_",
+    "onchange_",
+    "private_",
+    "readonly_",
+    "remove_",
+    "run_",
+    "symlink_",
+)
+
+
 def apm_dependencies(path):
     """Yield each apm dependency entry as (line, pinned_ref)."""
     in_dependencies = False
@@ -84,6 +110,13 @@ def main() -> int:
         for _kind, child in iter_package_skill_dirs(package.path):
             if not (child / "SKILL.md").exists():
                 errors.append(f"{child}: missing SKILL.md")
+        for path in sorted(package.path.rglob("*")):
+            if path.name.startswith(CHEZMOI_ATTRIBUTE_PREFIXES):
+                errors.append(
+                    f"{path}: chezmoi treats the "
+                    f"{path.name.split('_', 1)[0]}_ filename prefix as a "
+                    f"source-state attribute; rename with a literal_ prefix"
+                )
         for skill in package.skills:
             skill_locations[skill.skill_id].append(str(skill.path))
             if skill.kind == "vendor" and not (skill.path / "SOURCE.md").exists():

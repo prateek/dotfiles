@@ -119,7 +119,9 @@ refresh needs a lockfile update first. For each package with APM dependencies:
 2. Run `vendor-agent-package <package>`.
 3. Re-apply the local deltas noted in each vendored skill's `SOURCE.md`
    (LICENSE copies, the trycycle `literal_run_phase.py` rename), then review
-   the vendor diff before committing.
+   the vendor diff before committing. `validate-agent-packages` fails on any
+   upstream filename that hits a chezmoi attribute prefix (like `run_`);
+   rename such files with a `literal_` prefix.
 
 Refresh gotchas:
 
