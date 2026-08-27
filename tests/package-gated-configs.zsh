@@ -123,6 +123,8 @@ expect_managed "Library/Preferences/com.cmuxterm.app.plist" "$personal_managed"
 expect_managed "Library/Preferences/com.prakashjoshipax.VoiceInk.plist" "$personal_managed"
 expect_managed "Library/Preferences/dev.kdrag0n.MacVirt.plist" "$personal_managed"
 expect_managed "Library/Preferences/net.elasticthreads.nv.plist" "$personal_managed"
+expect_managed ".codex/config.toml" "$personal_managed"
+expect_managed ".codex/skills" "$personal_managed"
 expect_unmanaged "Library/Preferences/io.tailscale.ipn.macsys.plist" "$personal_managed"
 
 # --- ci: core only. All cask-gated app configs are unmanaged. -----------
@@ -147,6 +149,8 @@ expect_unmanaged ".orca/keybindings.json" "$ci_managed"
 expect_unmanaged "Library/Preferences/net.elasticthreads.nv.plist" "$ci_managed"
 expect_unmanaged "Library/Preferences/io.tailscale.ipn.macsys.plist" "$ci_managed"
 expect_unmanaged "Library/Preferences/com.prakashjoshipax.VoiceInk.plist" "$ci_managed"
+expect_unmanaged ".codex/config.toml" "$ci_managed"
+expect_unmanaged ".codex/skills" "$ci_managed"
 
 # --- work: Mac desktop + dev + work apps, no personal/homelab config ---------
 # setapp is shared across daily-driver laptops (mac-desktop group), so its
@@ -163,11 +167,16 @@ expect_unmanaged "Library/Colors/nvALT.clr" "$work_managed"
 expect_unmanaged "Library/Preferences/net.elasticthreads.nv.plist" "$work_managed"
 expect_unmanaged "Library/Preferences/io.tailscale.ipn.macsys.plist" "$work_managed"
 expect_unmanaged "Library/Preferences/com.prakashjoshipax.VoiceInk.plist" "$work_managed"
+expect_unmanaged ".codex/config.toml" "$work_managed"
+expect_unmanaged ".codex/skills" "$work_managed"
 expect_ignored "Library/Preferences/io.tailscale.ipn.macsys.plist" "$work_ignored"
 expect_ignored "Library/Preferences/com.prakashjoshipax.VoiceInk.plist" "$work_ignored"
+expect_ignored ".codex" "$work_ignored"
 
 # --- homelab: dev + Apple + remote/admin + AI agent apps, no Mac desktop/personal apps ---
 expect_managed "Library/Preferences/io.tailscale.ipn.macsys.plist" "$homelab_managed"
+expect_managed ".codex/config.toml" "$homelab_managed"
+expect_managed ".codex/skills" "$homelab_managed"
 expect_managed "Library/Preferences/com.cmuxterm.app.plist" "$homelab_managed"
 expect_managed "Library/Application Support/orca/orca-data.json" "$homelab_managed"
 expect_managed ".orca/keybindings.json" "$homelab_managed"
@@ -208,9 +217,11 @@ expect_ignored "Library/Preferences/net.elasticthreads.nv.plist"
 expect_ignored "Library/Preferences/pro.betterdisplay.BetterDisplay.plist"
 expect_ignored "Library/Preferences/io.tailscale.ipn.macsys.plist"
 expect_ignored "Library/Preferences/com.prakashjoshipax.VoiceInk.plist"
+expect_ignored ".codex"
 
 # --- empty group set ⇒ every gated config ignored ---
 for p in \
+  ".codex" \
   ".config/tuna/config.toml" \
   "Library/Preferences/com.brnbw.Tuna.plist" \
   "Library/Application Support/orca/orca-data.json" \

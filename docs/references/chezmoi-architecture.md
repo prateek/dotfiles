@@ -2,7 +2,7 @@
 status: current
 doc_type: reference
 created: 2026-04-27
-updated: 2026-06-29
+updated: 2026-08-26
 related:
   - ../index.md
   - ../adr/0006-chezmoi-migration-prototype.md
@@ -23,8 +23,9 @@ decision record and git history for implementation archaeology.
 - Chezmoi is the ongoing command surface: use `chezmoi diff`, `chezmoi status`,
   `chezmoi verify`, and `chezmoi apply`.
 - Repo-local agent files stay at the repo root or under `.agents/`.
-- Machine-level agent config lives under `home/dot_agents/`, `home/dot_codex/`,
-  and `home/dot_claude/`.
+- Machine-level agent config lives under `home/dot_agents/`, `home/dot_codex/`
+  (personal/homelab only, gated on the `codex` package group), and
+  `home/dot_claude/`.
 - Local observations, captures, accounts, app runtime state, and machine-only
   overrides stay out of git.
 
@@ -38,7 +39,7 @@ home/
   .chezmoiscripts/            # idempotent apply-time setup
   .chezmoitemplates/          # shared templates and plist merge fragments
   dot_agents/                 # ~/.agents machine-wide agent surface
-  dot_codex/                  # ~/.codex machine-wide Codex config
+  dot_codex/                  # ~/.codex Codex config (personal/homelab only)
   dot_claude/                 # ~/.claude machine-wide Claude config
   dot_config/                 # XDG config targets
   Library/                    # macOS app config targets
@@ -73,7 +74,7 @@ Scripts must be idempotent. A rerun should converge or report a clear blocker.
 ## Packages And Tools
 
 - Reusable package groups (`[packages.groups.*]`: `core`, `mac-desktop`,
-  `ai-agent-apps`, `developer-tools`, `apple-development`, `work-apps`,
+  `ai-agent-apps`, `codex`, `developer-tools`, `apple-development`, `work-apps`,
   `personal-apps`, `homelab-overlay`) live in
   `home/.chezmoidata/packages.toml`.
 - Selection is driven by a single axis, `machine_type`. Each type composes a set
@@ -81,11 +82,12 @@ Scripts must be idempotent. A rerun should converge or report a clear blocker.
   (`[machines.type.*].groups`), resolved by `home/.chezmoitemplates/features.tmpl`:
   `ci=[core]`,
   `work=[core,mac-desktop,ai-agent-apps,developer-tools,work-apps,forks]`,
-  `personal=[core,mac-desktop,ai-agent-apps,developer-tools,personal-apps,forks]`,
-  and `homelab=[core,ai-agent-apps,developer-tools,apple-development,homelab-overlay]`.
-  Work omits personal apps and Apple/iOS tooling; personal omits Apple/iOS
-  tooling for now; homelab keeps Apple tooling, remote/admin tools, and AI agent
-  apps (agentsview + Orca) without the full interactive desktop surface. `ci` is
+  `personal=[core,mac-desktop,ai-agent-apps,codex,developer-tools,personal-apps,forks]`,
+  and `homelab=[core,ai-agent-apps,codex,developer-tools,apple-development,homelab-overlay]`.
+  Work omits personal apps, Apple/iOS tooling, and Codex (cursor-agent covers
+  the GPT tier there); personal omits Apple/iOS tooling for now; homelab keeps
+  Apple tooling, remote/admin tools, and AI agent apps (agentsview + Orca)
+  without the full interactive desktop surface. `ci` is
   the minimal CI/Tart/audit tier and a first-class `machine_type` prompt choice.
   See
   [ADR 0010](../adr/0010-machine-type-package-selection.md) and the config-gating
@@ -159,7 +161,9 @@ but the required reference is empty.
 - Machine-wide guidance and skills materialize from `home/dot_agents/`.
 - Claude's machine-wide `CLAUDE.md` is a symlink adapter to
   `../.agents/AGENTS.md` so shared instructions do not drift.
-- Codex machine config materializes from `home/dot_codex/`.
+- Codex machine config materializes from `home/dot_codex/` on machines whose
+  groups include the `codex` package group (personal/homelab); elsewhere
+  `~/.codex` is ignored.
 
 Live links are reserved for repo-local executable wrappers and tool-adapter
 pointers that prevent duplicated instruction files. Everything else should be

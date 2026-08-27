@@ -33,6 +33,9 @@ Library/Preferences/com.cmuxterm.app.plist
 {{- end }}
 {{/* Generated cmux settings stay local; preferences.json carries our durable choices. */}}
 .config/cmux/settings.json
+{{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "codex")) "true" }}
+.codex
+{{- end }}
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "zed")) "true" }}
 .config/zed
 {{- end }}

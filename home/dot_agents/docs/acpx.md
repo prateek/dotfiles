@@ -177,6 +177,9 @@ and Flows).
 - `cursor-agent` on PATH: backs the `agpt*`/`aopus*`/`agemini` shortcuts.
   Installed via its own installer (`~/.local/bin/cursor-agent`), not
   mise-managed. `cursor-agent login` once.
+- `codex-acp` on PATH: backs the `agpt*` fallback on machines without
+  cursor-agent (personal/homelab). Installed via Homebrew through the `codex`
+  package group; uses the Codex CLI's own auth and model config.
 - `claude-agent-acp` on PATH: backs the `afable*` shortcuts. Installed via
   mise (`npm:@agentclientprotocol/claude-agent-acp`). Uses the `claude` CLI's
   own auth; log in with `claude` once.

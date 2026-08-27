@@ -50,7 +50,6 @@ brews = [
 
   # Desktop app install support and editor integration.
   { name = "mas" },
-  { name = "codex-acp" },
 ]
 casks = [
   # Accounts, browsers, terminals, and editors.
@@ -107,11 +106,21 @@ taps = [
   { name = "stablyai/orca" },
 ]
 casks = [
-  { name = "codex" },
   { name = "claude" },
   { name = "agentsview" },
   { name = "cmux" },
   { name = "stablyai/orca/orca" },
+]
+
+# Applies to: personal, homelab. Work excludes Codex; cursor-agent covers the
+# GPT tier there (see machines.toml agent_clis).
+[packages.groups.codex]
+description = "OpenAI Codex CLI and its ACP adapter"
+brews = [
+  { name = "codex-acp" },
+]
+casks = [
+  { name = "codex" },
 ]
 
 # Applies to: personal, homelab, work.

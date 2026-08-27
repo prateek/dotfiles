@@ -6,11 +6,11 @@ _brew_install_help() {
 Usage:
   brew:install [--yes|-y] [--branch <branch>] [--trunk <ref>] <package-or-request>...
 
-Creates a fresh dotfiles worktree based on latest trunk, then runs Codex there
+Creates a fresh dotfiles worktree based on latest trunk, then runs Claude there
 to install/adopt the requested package into the repo-owned package config.
 
 Options:
-  -y, --yes             Use Codex's dangerous bypass mode.
+  -y, --yes             Run Claude with permissions bypassed (--dangerously-skip-permissions).
       --branch <name>   Override the generated worktree branch. Must not already exist.
       --trunk <ref>     Override trunk ref after fetch (default: origin/HEAD).
   -h, --help            Show this help.
@@ -137,8 +137,8 @@ function brew:install() {
     return 127
   fi
   _brew_install_require_w || return $?
-  if ! command -v codex >/dev/null 2>&1; then
-    print -u2 "brew:install: missing codex"
+  if ! command -v claude >/dev/null 2>&1; then
+    print -u2 "brew:install: missing claude"
     return 127
   fi
 
@@ -187,9 +187,9 @@ function brew:install() {
 
   local agent_cmd
   if (( dangerous )); then
-    agent_cmd="codex --dangerously-bypass-approvals-and-sandbox exec --skip-git-repo-check"
+    agent_cmd="claude --dangerously-skip-permissions -p"
   else
-    agent_cmd="codex exec --skip-git-repo-check"
+    agent_cmd="claude -p"
   fi
 
   local prompt
@@ -197,9 +197,9 @@ function brew:install() {
 
   print -u2 "brew:install: branch $branch from $trunk_ref"
   if (( dangerous )); then
-    print -u2 "brew:install: using Codex dangerous bypass mode"
+    print -u2 "brew:install: using Claude with permissions bypassed"
   else
-    print -u2 "brew:install: using vanilla codex exec"
+    print -u2 "brew:install: using vanilla claude print mode"
   fi
 
   w run "$branch" --repo "$dotfiles_root" --base "$trunk_ref" --agent "$agent_cmd" -- "$prompt"

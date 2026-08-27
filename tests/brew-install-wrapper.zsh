@@ -63,7 +63,7 @@ export DOTFILES_BREW_INSTALL_ROOT="$dotfiles"
 export BREW_INSTALL_BRANCH_STAMP="20260512010203"
 export W_ARGS_FILE="$tmp_root/w-args.bin"
 
-codex() {
+claude() {
   :
 }
 
@@ -97,7 +97,7 @@ print(len(parts))
 PY
 }
 
-echo "• default uses vanilla codex exec in a trunk-based worktree"
+echo "• default uses vanilla claude print mode in a trunk-based worktree"
 brew:install fd >/dev/null
 
 assert_eq "$(read_w_count)" "10"
@@ -108,7 +108,7 @@ assert_eq "$(read_w_arg 3)" "${dotfiles:A}"
 assert_eq "$(read_w_arg 4)" "--base"
 assert_eq "$(read_w_arg 5)" "origin/master"
 assert_eq "$(read_w_arg 6)" "--agent"
-assert_eq "$(read_w_arg 7)" "codex exec --skip-git-repo-check"
+assert_eq "$(read_w_arg 7)" "claude -p"
 assert_eq "$(read_w_arg 8)" "--"
 prompt="$(read_w_arg 9)"
 assert_contains "$prompt" "Install/adopt this package request"
@@ -116,11 +116,11 @@ assert_contains "$prompt" $'\nfd\n'
 assert_contains "$prompt" "You are running in a dedicated dotfiles worktree created from origin/master."
 assert_contains "$prompt" "Dangerous bypass mode requested by wrapper: 0"
 
-echo "• --yes gates dangerous Codex mode"
+echo "• --yes gates Claude's permission bypass"
 brew:install --yes --branch prateek/custom-package jq >/dev/null
 
 assert_eq "$(read_w_arg 1)" "prateek/custom-package"
-assert_eq "$(read_w_arg 7)" "codex --dangerously-bypass-approvals-and-sandbox exec --skip-git-repo-check"
+assert_eq "$(read_w_arg 7)" "claude --dangerously-skip-permissions -p"
 prompt="$(read_w_arg 9)"
 assert_contains "$prompt" "jq"
 assert_contains "$prompt" "Dangerous bypass mode requested by wrapper: 1"

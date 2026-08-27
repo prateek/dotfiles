@@ -62,11 +62,11 @@ assert_json '{"machine_type":"ci"}' \
   "ci composition"
 
 assert_json '{"machine_type":"personal"}' \
-  'f["groups"]==["core","mac-desktop","ai-agent-apps","developer-tools","personal-apps","forks"] and f["run_install_scripts"] is True and f["apply_macos_defaults"] is True and f["secrets_enabled"] is False and f["elevation"]=="none" and f["private_overlay"] is False' \
+  'f["groups"]==["core","mac-desktop","ai-agent-apps","codex","developer-tools","personal-apps","forks"] and f["run_install_scripts"] is True and f["apply_macos_defaults"] is True and f["secrets_enabled"] is False and f["elevation"]=="none" and f["private_overlay"] is False' \
   "personal composition"
 
 assert_json '{"machine_type":"homelab"}' \
-  'f["groups"]==["core","ai-agent-apps","developer-tools","apple-development","homelab-overlay"] and f["runner_vm_name"]=="tartelet-runner" and f["runner_vm_count"]==1 and f["runner_scope"]=="repo" and f["runner_start_on_launch"] is True' \
+  'f["groups"]==["core","ai-agent-apps","codex","developer-tools","apple-development","homelab-overlay"] and f["runner_vm_name"]=="tartelet-runner" and f["runner_vm_count"]==1 and f["runner_scope"]=="repo" and f["runner_start_on_launch"] is True' \
   "homelab composition"
 
 assert_json '{"machine_type":"work"}' \

@@ -104,10 +104,18 @@ d = json.load(sys.stdin)["agents"]
 assert set(d) == {"agpt","agptx","afable","afablex"}, sorted(d)
 assert d["agpt"]["command"] == "codex-acp", d["agpt"]
 '
+# homelab (claude + codex, no cursor-agent): same shape as personal — the
+# codex package group must ship codex-acp there to back these shortcuts.
+render homelab dot_acpx/config.json.tmpl | python3 -c '
+import sys, json
+d = json.load(sys.stdin)["agents"]
+assert set(d) == {"agpt","agptx","afable","afablex"}, sorted(d)
+assert d["agpt"]["command"] == "codex-acp", d["agpt"]
+'
 # ci (no agent_clis): empty agents map.
 render ci dot_acpx/config.json.tmpl | python3 -c '
 import sys, json
 assert json.load(sys.stdin)["agents"] == {}, "ci should emit no shortcuts"
 '
 
-echo "ok: crit config modify (agent_cmd set on claude machines, removed on ci, secrets preserved, idempotent, no-churn); acpx gating by agent_clis (work/personal/ci)"
+echo "ok: crit config modify (agent_cmd set on claude machines, removed on ci, secrets preserved, idempotent, no-churn); acpx gating by agent_clis (work/personal/homelab/ci)"

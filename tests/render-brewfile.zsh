@@ -64,6 +64,7 @@ fi
   || die "personal Brewfile should not install idb-companion before Xcode setup"
 [[ $personal_no_mas != *'brew "swiftlint"'* ]] \
   || die "personal Brewfile should not install swiftlint before Xcode setup"
+[[ $personal_no_mas == *'cask "codex"'* ]] || die "personal: missing codex cask (codex group)"
 
 # -- overlays are scoped by role ---------------------------------------------
 
@@ -92,6 +93,8 @@ work_with_mas="$("$RENDER" --machine-type work --include-mas)"
 for app in tailscale-app arq voiceink; do
   [[ $work_out != *"cask \"$app\""* ]] || die "work should not install non-work overlay cask $app"
 done
+[[ $work_out != *'cask "codex"'* ]] || die "work should not install codex (no codex group)"
+[[ $work_out != *'brew "codex-acp"'* ]] || die "work should not install codex-acp (no codex group)"
 homelab_out="$("$RENDER" --machine-type homelab)"
 [[ $homelab_out == *'brew "homebrew/core/xcodes", args: ["force-bottle"]'* ]] \
   || die "homelab: missing Apple development xcodes"
@@ -106,6 +109,7 @@ homelab_out="$("$RENDER" --machine-type homelab)"
 [[ $homelab_out == *'cask "agentsview"'* ]] || die "homelab: missing agentsview cask"
 [[ $homelab_out == *'cask "stablyai/orca/orca"'* ]] || die "homelab: missing orca cask"
 [[ $homelab_out == *'cask "codex"'* ]] || die "homelab: missing codex cask (needed for orca to launch codex sessions)"
+[[ $homelab_out == *'brew "codex-acp"'* ]] || die "homelab: missing codex-acp (acpx agpt* fallback adapter)"
 [[ $homelab_out == *'cask "claude"'* ]] || die "homelab: missing claude cask"
 [[ $homelab_out == *'cask "cmux"'* ]] || die "homelab: missing cmux cask"
 [[ $homelab_out != *'cask "setapp"'* ]] || die "homelab: should not include personal GUI/licensed app setapp"

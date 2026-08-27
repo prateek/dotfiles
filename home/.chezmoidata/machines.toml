@@ -36,14 +36,14 @@ groups = ["core"]
 
 # Personal daily-driver Mac.
 [machines.type.personal]
-groups = ["core", "mac-desktop", "ai-agent-apps", "developer-tools", "personal-apps", "forks"]
+groups = ["core", "mac-desktop", "ai-agent-apps", "codex", "developer-tools", "personal-apps", "forks"]
 agent_clis = ["claude", "codex"]
 
 # Homelab Mac mini: development plus Apple tooling, remote/admin access, and
 # AI agent apps (agentsview + Orca need each other to be useful), without the
 # full interactive personal desktop surface.
 [machines.type.homelab]
-groups = ["core", "ai-agent-apps", "developer-tools", "apple-development", "homelab-overlay"]
+groups = ["core", "ai-agent-apps", "codex", "developer-tools", "apple-development", "homelab-overlay"]
 # Non-secret Tartelet runner facts consumed by the managed dk.shape.Tartelet.plist
 # fragment (verified key encodings from Tartelet source; see the runner plan). The
 # secret half (org, App ID, private key, SSH login) is keychain-only and GUI-entered.
