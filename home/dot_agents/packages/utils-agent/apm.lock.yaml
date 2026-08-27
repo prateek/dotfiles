@@ -1,5 +1,5 @@
 lockfile_version: '1'
-generated_at: '2026-08-26T00:55:15.520502+00:00'
+generated_at: '2026-08-27T17:21:44.955875+00:00'
 apm_version: 0.13.0
 dependencies:
 - repo_url: danshapiro/trycycle
@@ -47,7 +47,7 @@ dependencies:
   content_hash: sha256:2999c98adae884ec041b704aec2bfb76425f5c208b2e5e915ec6713ee89b67bc
 - repo_url: stablyai/orca
   host: github.com
-  resolved_commit: cac538854528fe7648964b6f90dcbe7e0c334bbc
+  resolved_commit: 642607bfa711d46fe14f3b376583fba54ea9135c
   virtual_path: skills/orca-cli
   is_virtual: true
   package_type: claude_skill
@@ -56,7 +56,7 @@ dependencies:
   content_hash: sha256:cca6a9098e0dff08ce6fef999da77d98e94255e826b8b9f8132749b5da66dad2
 - repo_url: stablyai/orca
   host: github.com
-  resolved_commit: cac538854528fe7648964b6f90dcbe7e0c334bbc
+  resolved_commit: 642607bfa711d46fe14f3b376583fba54ea9135c
   virtual_path: skills/orchestration
   is_virtual: true
   package_type: claude_skill

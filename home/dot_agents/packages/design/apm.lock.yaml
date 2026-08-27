@@ -1,17 +1,23 @@
 lockfile_version: '1'
-generated_at: '2026-05-12T04:50:00.415404+00:00'
+generated_at: '2026-08-27T17:19:38.147324+00:00'
 apm_version: 0.13.0
 dependencies:
 - repo_url: nextlevelbuilder/ui-ux-pro-max-skill
   host: github.com
-  resolved_commit: b7e3af80f6e331f6fb456667b82b12cade7c9d35
+  resolved_commit: 8bd29e775453ebcae52b6e6514fbf134df0c5770
   package_type: marketplace_plugin
   deployed_files:
+  - .agents/skills/banner-design
+  - .agents/skills/brand
+  - .agents/skills/design
+  - .agents/skills/design-system
+  - .agents/skills/slides
+  - .agents/skills/ui-styling
   - .agents/skills/ui-ux-pro-max
-  content_hash: sha256:08432204d056fb901311755380851874591114300ca6e4e20aa094937821faac
+  content_hash: sha256:608c104e9f2e04d05357cfa4c7a366eae84bb0c8bfcb9b8bc4c5a47c68d73f3c
 - repo_url: raintree-technology/apple-hig-skills
   host: github.com
-  resolved_commit: 01f62f35bf34926957a7cff3cedb8ca8afc3ffad
+  resolved_commit: e34030c06b7de19627e73ab30defaa6a2cdcc803
   package_type: marketplace_plugin
   deployed_files:
   - .agents/skills/hig-components-content
@@ -28,4 +34,4 @@ dependencies:
   - .agents/skills/hig-platforms
   - .agents/skills/hig-project-context
   - .agents/skills/hig-technologies
-  content_hash: sha256:b838efb9676e723c2b8bae56eb033ddef88895ce0fe75d5930f93e19bcb15db4
+  content_hash: sha256:db6d793b82f8093a98285fac8ba2aaf227b7a78efabab05568421a0984775dd4

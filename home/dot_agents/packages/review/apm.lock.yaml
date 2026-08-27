@@ -1,22 +1,22 @@
 lockfile_version: '1'
-generated_at: '2026-07-02T20:45:43.217554+00:00'
+generated_at: '2026-08-27T17:20:35.246727+00:00'
 apm_version: 0.13.0
 dependencies:
 - repo_url: tomasz-tomczyk/crit
   host: github.com
-  resolved_commit: ea3e089eaf188be2d4c1c5d25dc42a18072b9560
+  resolved_commit: 68bf5b16611ef6b1bdf04be7fc0a9e26bf3cea6f
   virtual_path: integrations/claude-code/skills/crit
   is_virtual: true
   package_type: claude_skill
   deployed_files:
   - .agents/skills/crit
-  content_hash: sha256:c8c509342d8222616628a1a398159dd2ab7162cde7681e033b1fb2ed266986f8
+  content_hash: sha256:87e2d574596b15e795e395151f8dac09c2f5c72a08adb2184117ee77d691e8b9
 - repo_url: tomasz-tomczyk/crit
   host: github.com
-  resolved_commit: ea3e089eaf188be2d4c1c5d25dc42a18072b9560
+  resolved_commit: 68bf5b16611ef6b1bdf04be7fc0a9e26bf3cea6f
   virtual_path: integrations/claude-code/skills/crit-cli
   is_virtual: true
   package_type: claude_skill
   deployed_files:
   - .agents/skills/crit-cli
-  content_hash: sha256:c62c3b4d93667eb2f8046f5ee7f8a51a3a2c5ac574faad108501e05747bf0f7a
+  content_hash: sha256:7a9756c98a7838e87ac532a5e4d3387f71d61eaf52051be919dfdbe588e1d4fa

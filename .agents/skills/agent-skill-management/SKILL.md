@@ -107,6 +107,33 @@ Use `.agents/skills/agent-skill-management/scripts/vendor-agent-package
 surface, copies accepted skill trees, updates the package lockfile, and runs
 package validation.
 
+### Refreshing to latest upstream
+
+`vendor-agent-package` installs deterministically from `apm.lock.yaml`, so a
+refresh needs a lockfile update first. For each package with APM dependencies:
+
+1. Copy `apm.yml` and `apm.lock.yaml` into a scratch directory and run
+   `apm update -y` there, then copy the refreshed `apm.lock.yaml` back.
+   Running `apm update` in the package root would litter it with
+   `apm_modules/` and deployed skill output.
+2. Run `vendor-agent-package <package>`.
+3. Re-apply the local deltas noted in each vendored skill's `SOURCE.md`
+   (LICENSE copies, the trycycle `literal_run_phase.py` rename), then review
+   the vendor diff before committing.
+
+Refresh gotchas:
+
+- apm-cli is version-pinned in mise (`pipx:apm-cli` in
+  `home/dot_config/mise/conf.d/clis.toml`); newer apm versions must be
+  re-tested against this pipeline before unpinning.
+- SOURCE.md regeneration preserves only the `License` and `Notes` fields.
+  Keep local-delta and rename notes inside `Notes`, never as extra bullets.
+- When a skill pairs with a mise-managed CLI (acpx, crit, agent-slack,
+  shortcut), upgrade the binary first so the vendored skill matches it.
+- On the corp laptop, `openclaw/*` clones 503 over HTTPS; prefix apm and
+  vendor commands with a scoped rewrite:
+  `GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0='url.git@github.com:openclaw/acpx.insteadOf' GIT_CONFIG_VALUE_0='https://github.com/openclaw/acpx'`.
+
 Manual vendoring is only for useful remote skills that cannot be represented as
 APM dependencies yet. Stage downloads outside the repo or in ignored staging,
 add `SOURCE.md`, and keep the package inactive until validation passes.

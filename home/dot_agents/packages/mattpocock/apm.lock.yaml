@@ -1,10 +1,10 @@
 lockfile_version: '1'
-generated_at: '2026-08-23T13:34:40.884555+00:00'
+generated_at: '2026-08-27T17:20:21.356669+00:00'
 apm_version: 0.13.0
 dependencies:
 - repo_url: mattpocock/skills
   host: github.com
-  resolved_commit: 5b15a47f2d7150f545fbcacbfe381787fc0230dc
+  resolved_commit: 6654f6b60cd9d5be8b54c6fafe44346dabeb3b76
   package_type: marketplace_plugin
   deployed_files:
   - .agents/skills/ask-matt
@@ -32,4 +32,4 @@ dependencies:
   - .agents/skills/wayfinder
   - .agents/skills/wizard
   - .agents/skills/writing-for-agents
-  content_hash: sha256:12032e6c82b48f1ac483adbcdfddd963de1e17deae48bdda3d7c39e6bd8ce15e
+  content_hash: sha256:30aaf1538e75a717db8608778e06e1c47ce38578f46fe88e53e599818cf30c9f

@@ -1,23 +1,23 @@
 lockfile_version: '1'
-generated_at: '2026-05-12T04:50:01.704729+00:00'
+generated_at: '2026-08-27T17:20:09.046246+00:00'
 apm_version: 0.13.0
 dependencies:
 - repo_url: AvdLee/SwiftUI-Agent-Skill
   host: github.com
-  resolved_commit: 30c2b01366473ca80daa965fe0afc70fbfb014c7
+  resolved_commit: 4c6a97d15aa5e023538c3cb06b5192f241dd451d
   package_type: marketplace_plugin
   deployed_files:
   - .agents/skills/swiftui-expert-skill
-  content_hash: sha256:10055b828ea1e4977f9e24f95a5725d898e0162920b89e28932dd8982c344a3e
+  content_hash: sha256:022be0aedcf2d363d9aa4851ab0d817c4fffbff6a13e0a3a8b39e0c876fb6083
 - repo_url: conorluddy/ios-simulator-skill
   host: github.com
-  resolved_commit: 3acd0717a1b571b1d051559c01ff230d6da28a05
+  resolved_commit: e0ee87a884b438632238ef8ab42139797f8638a8
   virtual_path: ios-simulator-skill/skills/ios-simulator-skill
   is_virtual: true
   package_type: claude_skill
   deployed_files:
   - .agents/skills/ios-simulator-skill
-  content_hash: sha256:0587098f7785c07948a1a03be8df1e5730417af83cd60827bbdee55d53b126e0
+  content_hash: sha256:4d6c14e18411bbe29620b158c178dbdfd1622ab513857abc8d7578b6aed88f9f
 - repo_url: efremidze/swift-patterns-skill
   host: github.com
   resolved_commit: 2e9b66b0470a324cf3a6898549279e622aa7df71
