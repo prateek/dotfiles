@@ -1,38 +1,1108 @@
 lockfile_version: '1'
-generated_at: '2026-08-27T17:18:23.009814+00:00'
-apm_version: 0.13.0
+generated_at: '2026-08-28T01:06:25.000627+00:00'
+apm_version: 0.28.0
 dependencies:
 - repo_url: 199-biotechnologies/claude-deep-research-skill
+  name: deep-research
   host: github.com
   resolved_commit: f2f2c0fa4e7617ca84c86b63f4bb40f77a746933
+  version: unknown
   package_type: claude_skill
   deployed_files:
   - .agents/skills/claude-deep-research-skill
+  - .agents/skills/claude-deep-research-skill/.gitignore
+  - .agents/skills/claude-deep-research-skill/README.md
+  - .agents/skills/claude-deep-research-skill/SKILL.md
+  - .agents/skills/claude-deep-research-skill/reference/continuation.md
+  - .agents/skills/claude-deep-research-skill/reference/html-generation.md
+  - .agents/skills/claude-deep-research-skill/reference/methodology.md
+  - .agents/skills/claude-deep-research-skill/reference/quality-gates.md
+  - .agents/skills/claude-deep-research-skill/reference/report-assembly.md
+  - .agents/skills/claude-deep-research-skill/reference/weasyprint_guidelines.md
+  - .agents/skills/claude-deep-research-skill/requirements.txt
+  - .agents/skills/claude-deep-research-skill/schemas/claim.schema.json
+  - .agents/skills/claude-deep-research-skill/schemas/evidence.schema.json
+  - .agents/skills/claude-deep-research-skill/schemas/run_manifest.schema.json
+  - .agents/skills/claude-deep-research-skill/schemas/source.schema.json
+  - .agents/skills/claude-deep-research-skill/scripts/citation_manager.py
+  - .agents/skills/claude-deep-research-skill/scripts/evidence_store.py
+  - .agents/skills/claude-deep-research-skill/scripts/extract_claims.py
+  - .agents/skills/claude-deep-research-skill/scripts/md_to_html.py
+  - .agents/skills/claude-deep-research-skill/scripts/research_engine.py
+  - .agents/skills/claude-deep-research-skill/scripts/source_evaluator.py
+  - .agents/skills/claude-deep-research-skill/scripts/validate_report.py
+  - .agents/skills/claude-deep-research-skill/scripts/verify_citations.py
+  - .agents/skills/claude-deep-research-skill/scripts/verify_claim_support.py
+  - .agents/skills/claude-deep-research-skill/scripts/verify_html.py
+  - .agents/skills/claude-deep-research-skill/templates/mckinsey_report_template.html
+  - .agents/skills/claude-deep-research-skill/templates/report_template.md
+  - .agents/skills/claude-deep-research-skill/tests/fixtures/invalid_report.md
+  - .agents/skills/claude-deep-research-skill/tests/fixtures/valid_report.md
+  - .agents/skills/claude-deep-research-skill/tests/test_citation_manager.py
+  - .agents/skills/claude-deep-research-skill/tests/test_evidence_store.py
+  - .agents/skills/claude-deep-research-skill/tests/test_extract_claims.py
+  - .agents/skills/claude-deep-research-skill/tests/test_verify_claim_support.py
+  deployed_file_hashes:
+    .agents/skills/claude-deep-research-skill/.gitignore: sha256:d7298b4ebea3ed98f8e5cd5fa3bed70dc854d513daad892e350ea729fc69ae3f
+    .agents/skills/claude-deep-research-skill/README.md: sha256:27d8c58f22baca259a657713d43eadafd3eb1b981cd88d12df77dfb091b6fddd
+    .agents/skills/claude-deep-research-skill/SKILL.md: sha256:0c8e777eb13d37b4d5130f59c9237a82528224ba31b58b774cd490a742df8620
+    .agents/skills/claude-deep-research-skill/reference/continuation.md: sha256:0ed19331d7c7f5775536dfd39c0ae3ce3466ab5797464fa247efdfeea5f7913d
+    .agents/skills/claude-deep-research-skill/reference/html-generation.md: sha256:a8ebc64d52b7cd9a78fee69f1f274f1ab791106ebd3449f17800735146ef644f
+    .agents/skills/claude-deep-research-skill/reference/methodology.md: sha256:d17cab6a258c2b5fe8514b0eda88395fe0d3dac3711c21480f2229e182666ec5
+    .agents/skills/claude-deep-research-skill/reference/quality-gates.md: sha256:60b969ceee0346d7e219a66b881c554f0fa452ff5a598d858f7a8e30a19fc24d
+    .agents/skills/claude-deep-research-skill/reference/report-assembly.md: sha256:22a41bbd6fe7bf60542ee5b2f5d0db2608371283d273881d2f3758e9a90e6fdf
+    .agents/skills/claude-deep-research-skill/reference/weasyprint_guidelines.md: sha256:d70421ea6985664d9fd1feaae94f36e3c749e74eb8703bc67236df9489165cdb
+    .agents/skills/claude-deep-research-skill/requirements.txt: sha256:de63fe8300f89040ccfb6229aee53b61345fa478946e043587d7f65d46df4ffa
+    .agents/skills/claude-deep-research-skill/schemas/claim.schema.json: sha256:1e0b780f12bdb35bc3bc9cd07becf1d7f5f30de88bd9fb99fe357d3d91f8e9dd
+    .agents/skills/claude-deep-research-skill/schemas/evidence.schema.json: sha256:98939f1fc14006bea38404349818585ca6818a749ddf63aafbf933a19eef3e00
+    .agents/skills/claude-deep-research-skill/schemas/run_manifest.schema.json: sha256:34abe54027d76bec15f716c9ea471baed533a6f4c1a3db2a85ef80831b9274ec
+    .agents/skills/claude-deep-research-skill/schemas/source.schema.json: sha256:2ac2697ec8c2578c4fe550da5ab4c3dcb5e4de4fa0141e726919085a023aff49
+    .agents/skills/claude-deep-research-skill/scripts/citation_manager.py: sha256:02334e5286b2a541fb2a6409959ea43ac7bc8b749d3cbeb427ff7fafb78d1a02
+    .agents/skills/claude-deep-research-skill/scripts/evidence_store.py: sha256:6deba75f5902be0d272f2992f54988b8a316fc4bc44cd3b094b812bb4409d140
+    .agents/skills/claude-deep-research-skill/scripts/extract_claims.py: sha256:21a3cbfe711e466926e47b60a5294a82f3f956310309c469fc8a429203a56eb8
+    .agents/skills/claude-deep-research-skill/scripts/md_to_html.py: sha256:506c38771d32fbccf931a27b7b64cf20c0df5113b2914b051c17e9d178fc1b17
+    .agents/skills/claude-deep-research-skill/scripts/research_engine.py: sha256:5eb7ef01642e8158d7e7d8eb044a71aca3334493f4b2c6d7b4e1299e074cbfd6
+    .agents/skills/claude-deep-research-skill/scripts/source_evaluator.py: sha256:8421efa7b862bb139108e6da40b285706188cb272843bf39082c8b9888d5050e
+    .agents/skills/claude-deep-research-skill/scripts/validate_report.py: sha256:851c1de275c039b8e5858785010181500960b05a9be463cdd6cecd5bbf101aa3
+    .agents/skills/claude-deep-research-skill/scripts/verify_citations.py: sha256:b77a9430aa2c9aec47a88434237879a02db75f87cd35a2429a5d7584f234f6ef
+    .agents/skills/claude-deep-research-skill/scripts/verify_claim_support.py: sha256:b172e88a3844e1ba590a7fc9a9d141ef310f5e628231e77448e9c45a7d881bc8
+    .agents/skills/claude-deep-research-skill/scripts/verify_html.py: sha256:28bbba06906fa2f9bae87ea20b68390ce4f4bc76f00343991a8ad2119e21b36c
+    .agents/skills/claude-deep-research-skill/templates/mckinsey_report_template.html: sha256:6b2d742f5279e78df71543bfb6c4fd88d7ee1c726b54fa945616307b2157c1f1
+    .agents/skills/claude-deep-research-skill/templates/report_template.md: sha256:50788e213c78d42a2fcedbfe153e4c34bbea5b7b978f8646f1b4b5c83ba04115
+    .agents/skills/claude-deep-research-skill/tests/fixtures/invalid_report.md: sha256:9b5177dbd31b80ea1d1e16f159989f232f6b6875dbc7ea7fddf70ba1fd0ad311
+    .agents/skills/claude-deep-research-skill/tests/fixtures/valid_report.md: sha256:e6a24a5deec1ec65279cb446c58f9309a3d6f4e040e37f1bda09c64a73829b5a
+    .agents/skills/claude-deep-research-skill/tests/test_citation_manager.py: sha256:5e882bdd6c32403e95942bab56fb0ef09543468a0a289a336fb01c0453d8fb1e
+    .agents/skills/claude-deep-research-skill/tests/test_evidence_store.py: sha256:2c88f366833808cd7ad89784993eea8ba4c832d560fed6503182e919b339ddfc
+    .agents/skills/claude-deep-research-skill/tests/test_extract_claims.py: sha256:9b6ce7fe815f95b1e238ed3c1ba6e65b22d5bc8abbc4599e50fcf6063692c0d7
+    .agents/skills/claude-deep-research-skill/tests/test_verify_claim_support.py: sha256:5402a8d6ca02fe6cfd3d73b0208191e78e00561ad5932e793ca4bfb88ac4c651
   content_hash: sha256:ea1e3a0f58097c73f41654a9934b92c74c05a866e26a89d1947fb27e7eaab325
 - repo_url: aiskillstore/marketplace
+  name: writing-clearly-and-concisely
   host: github.com
-  resolved_commit: f8cbc3e373d11bc1cd46ad16ac358a3b66c86dc3
+  resolved_commit: 40175672d649fa6482bff53a7acf4ecdd6a04a96
+  version: unknown
   virtual_path: skills/cygnusfear/writing-clearly-and-concisely
   is_virtual: true
   package_type: claude_skill
   deployed_files:
   - .agents/skills/writing-clearly-and-concisely
+  - .agents/skills/writing-clearly-and-concisely/SKILL.md
+  - .agents/skills/writing-clearly-and-concisely/elements-of-style.md
+  - .agents/skills/writing-clearly-and-concisely/skill-report.json
+  deployed_file_hashes:
+    .agents/skills/writing-clearly-and-concisely/SKILL.md: sha256:0b8c9c6f50ae65ca263ef0b7b7103ee8c14268167dcda1a58248fb9d461974e7
+    .agents/skills/writing-clearly-and-concisely/elements-of-style.md: sha256:d0edf854b5d39e22da68793603830e5bbdddb9266d272007993bcb821ba2799d
+    .agents/skills/writing-clearly-and-concisely/skill-report.json: sha256:2fb865ca64db7aa60c1a02f33108c1ae7c3d3b40183961aa9c87302fb969ea78
   content_hash: sha256:469feab7ebcd7b7d5f637cee186d3cd68f83d0c387e248db189000dfe8f687da
 - repo_url: forjd/better-writing
+  name: better-writing
   host: github.com
   resolved_commit: 0f6ea786b644928b2c047cf0407ba6f2f3190c6e
-  virtual_path: skills/better-writing
-  is_virtual: true
+  version: unknown
   package_type: claude_skill
   deployed_files:
   - .agents/skills/better-writing
-  content_hash: sha256:cdfe239c62ce54e1a45ae93cc48574c5c4219fbb2431bdc3348c41251b7a7351
+  - .agents/skills/better-writing/.github/workflows/ci.yml
+  - .agents/skills/better-writing/.gitignore
+  - .agents/skills/better-writing/CHANGELOG.md
+  - .agents/skills/better-writing/LICENSE
+  - .agents/skills/better-writing/README.md
+  - .agents/skills/better-writing/SKILL.md
+  - .agents/skills/better-writing/agents/openai.yaml
+  - .agents/skills/better-writing/evals/README.md
+  - .agents/skills/better-writing/evals/examples/chatbot-artefacts.md
+  - .agents/skills/better-writing/evals/examples/launch-email.md
+  - .agents/skills/better-writing/evals/examples/over-signposting.md
+  - .agents/skills/better-writing/evals/examples/plain-human.md
+  - .agents/skills/better-writing/evals/examples/quarterly-report.md
+  - .agents/skills/better-writing/evals/examples/release-notes.md
+  - .agents/skills/better-writing/evals/examples/voice-preservation.md
+  - .agents/skills/better-writing/evals/fixtures/chatbot-artefacts/checks.json
+  - .agents/skills/better-writing/evals/fixtures/chatbot-artefacts/input.md
+  - .agents/skills/better-writing/evals/fixtures/launch-email/checks.json
+  - .agents/skills/better-writing/evals/fixtures/launch-email/input.md
+  - .agents/skills/better-writing/evals/fixtures/over-signposting/checks.json
+  - .agents/skills/better-writing/evals/fixtures/over-signposting/input.md
+  - .agents/skills/better-writing/evals/fixtures/plain-human/checks.json
+  - .agents/skills/better-writing/evals/fixtures/plain-human/input.md
+  - .agents/skills/better-writing/evals/fixtures/quarterly-report/checks.json
+  - .agents/skills/better-writing/evals/fixtures/quarterly-report/input.md
+  - .agents/skills/better-writing/evals/fixtures/release-notes/checks.json
+  - .agents/skills/better-writing/evals/fixtures/release-notes/input.md
+  - .agents/skills/better-writing/evals/fixtures/voice-preservation/checks.json
+  - .agents/skills/better-writing/evals/fixtures/voice-preservation/input.md
+  - .agents/skills/better-writing/evals/run_evals.py
+  - .agents/skills/better-writing/references/ai-writing-patterns.md
+  - .agents/skills/better-writing/references/genre-tells.md
+  - .agents/skills/better-writing/references/preflight.md
+  - .agents/skills/better-writing/references/sources.md
+  - .agents/skills/better-writing/references/structures-and-phrases.md
+  - .agents/skills/better-writing/references/voice-and-context.md
+  - .agents/skills/better-writing/scripts/validate.py
+  - .agents/skills/better-writing/skills/better-writing/CHANGELOG.md
+  - .agents/skills/better-writing/skills/better-writing/LICENSE
+  - .agents/skills/better-writing/skills/better-writing/README.md
+  - .agents/skills/better-writing/skills/better-writing/SKILL.md
+  - .agents/skills/better-writing/skills/better-writing/agents/openai.yaml
+  - .agents/skills/better-writing/skills/better-writing/references/ai-writing-patterns.md
+  - .agents/skills/better-writing/skills/better-writing/references/genre-tells.md
+  - .agents/skills/better-writing/skills/better-writing/references/preflight.md
+  - .agents/skills/better-writing/skills/better-writing/references/sources.md
+  - .agents/skills/better-writing/skills/better-writing/references/structures-and-phrases.md
+  - .agents/skills/better-writing/skills/better-writing/references/voice-and-context.md
+  deployed_file_hashes:
+    .agents/skills/better-writing/.github/workflows/ci.yml: sha256:27833473426e6ce358991b5a7b983ffaf7ede0a1f126b423297b28c76ff46a89
+    .agents/skills/better-writing/.gitignore: sha256:2916a625e918202f0f74fbad616945ab78c2aed0c74a7fd9fbd56579af94bf06
+    .agents/skills/better-writing/CHANGELOG.md: sha256:5d2046ea283a5c01dd420fa0b8a66a0c66bdc979a530e5926ce6e3dbb2a492fd
+    .agents/skills/better-writing/LICENSE: sha256:9d7ca7e0934e84cd6d5ba3db51e43d5aed04b93a153ef2ba81e84b44c2f554b9
+    .agents/skills/better-writing/README.md: sha256:f3e02b2dc0ba4720fa10eb5aebe4e333b0f9018c11be02370c6cb2979fd38fed
+    .agents/skills/better-writing/SKILL.md: sha256:0010c788ed6ccd5442f3c411a5fbca8b1296d7ae08dfab3576d9a1f823ca1ab2
+    .agents/skills/better-writing/agents/openai.yaml: sha256:1cb74602cb6cbd5382501e2abc7608816902e89228225c4d50a16e931c8ed14b
+    .agents/skills/better-writing/evals/README.md: sha256:8aa5989f130127f140a8402cc872c251ad6fd6ce38be48897103cbd4f0b3fd8c
+    .agents/skills/better-writing/evals/examples/chatbot-artefacts.md: sha256:bfb99cc5f28150a1f54900960bab96306ac225d8de08e1c411918ef8feaba571
+    .agents/skills/better-writing/evals/examples/launch-email.md: sha256:2277988b88e6d11b68244de8fcc1a563a75c2c0b6f6fb28433ab32a7b57434cb
+    .agents/skills/better-writing/evals/examples/over-signposting.md: sha256:19f1c7801914b59a90522a6edf5efe1a6dd97983fd4ad918ddd54b2b22778edd
+    .agents/skills/better-writing/evals/examples/plain-human.md: sha256:66c15df98ef660ff83a0dc6563255c2a9e4a9c368d80ac120914c0931d73fa24
+    .agents/skills/better-writing/evals/examples/quarterly-report.md: sha256:4292812a348221012d6e2142290a8c759b941d7d7f05a0a7776544bafb5c704f
+    .agents/skills/better-writing/evals/examples/release-notes.md: sha256:89917a2ad4a7d5fd1340235e911f70db4a7127773e1f53f547376e298ca2b25c
+    .agents/skills/better-writing/evals/examples/voice-preservation.md: sha256:b4c8e1ba72b115d8b43b42dc59b3526708d0bccf1cb0e842a09018895f86bc18
+    .agents/skills/better-writing/evals/fixtures/chatbot-artefacts/checks.json: sha256:e3828b32fadcf6193018116486efdec9cb53d1643dbb30f57f5f0085fef8ac3b
+    .agents/skills/better-writing/evals/fixtures/chatbot-artefacts/input.md: sha256:d9ad3b4320009b1515c835e4e8984c4f885e9e871720948aaa25966c36880496
+    .agents/skills/better-writing/evals/fixtures/launch-email/checks.json: sha256:1dd4b9e7f6f03fb1b9eee4f9d8f95e7037417a2c3d9af81513844a3fb7ba21b6
+    .agents/skills/better-writing/evals/fixtures/launch-email/input.md: sha256:d2bedbad6dc9ef75d0332e4ff336e99c70d6e4850e459f396dd8bef53eb3eb27
+    .agents/skills/better-writing/evals/fixtures/over-signposting/checks.json: sha256:949dc34c86adbba5fc42ecd77952d862f47593d3487a4d34b2e687c762445d11
+    .agents/skills/better-writing/evals/fixtures/over-signposting/input.md: sha256:aa59fdf60b53bd9a7875ba434f51722050ab035038b1278bc6d6942929d8437e
+    .agents/skills/better-writing/evals/fixtures/plain-human/checks.json: sha256:cc1b95c9f8ebe94a0b5cb3164d298e5d858d88d8656aba0012137f027b36fbbf
+    .agents/skills/better-writing/evals/fixtures/plain-human/input.md: sha256:66c15df98ef660ff83a0dc6563255c2a9e4a9c368d80ac120914c0931d73fa24
+    .agents/skills/better-writing/evals/fixtures/quarterly-report/checks.json: sha256:4eee66617a08e3699879f4a2e9d0f24903106457846681c88c6f66739d0b3caa
+    .agents/skills/better-writing/evals/fixtures/quarterly-report/input.md: sha256:2cd270f951b0896d4c08543920fb39ba8017e527acf77e29c5e2db9b2c6150ef
+    .agents/skills/better-writing/evals/fixtures/release-notes/checks.json: sha256:9568ac114513cb678967054c3241341d8f849eb0a342c1b924cd33bc779854e0
+    .agents/skills/better-writing/evals/fixtures/release-notes/input.md: sha256:dfa068667557fb007d5d7eb8bbab368462ffd97c8d265d5c597c11f9c2510091
+    .agents/skills/better-writing/evals/fixtures/voice-preservation/checks.json: sha256:cebc74cfebfb7748c8685cde926a10127c39ec2a09c0d5060138c3597d08a424
+    .agents/skills/better-writing/evals/fixtures/voice-preservation/input.md: sha256:b4c8e1ba72b115d8b43b42dc59b3526708d0bccf1cb0e842a09018895f86bc18
+    .agents/skills/better-writing/evals/run_evals.py: sha256:4cb2e3ca0e9eac4c771a863ccc55cd8bfc01d5141b52d155ffaaf521e74dec47
+    .agents/skills/better-writing/references/ai-writing-patterns.md: sha256:2a8f80959226de25112365e27b5449582b2d2d5f3b76046c691bdd93ae1daeca
+    .agents/skills/better-writing/references/genre-tells.md: sha256:b9ed9d1341859f2ea54eefbf1301e9f0e865cecf885aa58707032ad1794faab3
+    .agents/skills/better-writing/references/preflight.md: sha256:5bf1e6070077df4d6e1ad5c4744fd6032fc4af35c560642f1971ac995ef47a30
+    .agents/skills/better-writing/references/sources.md: sha256:aab12a35d5277a765de80f73a4f842c261a32c13d99c4352f6a0971dd6acc076
+    .agents/skills/better-writing/references/structures-and-phrases.md: sha256:4772f5fd3a4494cdd250bbd09e03ebdb81a957228eab30ac772273570973ce1c
+    .agents/skills/better-writing/references/voice-and-context.md: sha256:d2ed98db498d8ccb13050c74995edfc1023840cfea8434011607d9c8b4becbee
+    .agents/skills/better-writing/scripts/validate.py: sha256:ad3e9226921eb22ef97bf33e27bb2f4ae4a817949aa500c57f4e5febfd43ca6e
+    .agents/skills/better-writing/skills/better-writing/CHANGELOG.md: sha256:5d2046ea283a5c01dd420fa0b8a66a0c66bdc979a530e5926ce6e3dbb2a492fd
+    .agents/skills/better-writing/skills/better-writing/LICENSE: sha256:9d7ca7e0934e84cd6d5ba3db51e43d5aed04b93a153ef2ba81e84b44c2f554b9
+    .agents/skills/better-writing/skills/better-writing/README.md: sha256:f3e02b2dc0ba4720fa10eb5aebe4e333b0f9018c11be02370c6cb2979fd38fed
+    .agents/skills/better-writing/skills/better-writing/SKILL.md: sha256:0010c788ed6ccd5442f3c411a5fbca8b1296d7ae08dfab3576d9a1f823ca1ab2
+    .agents/skills/better-writing/skills/better-writing/agents/openai.yaml: sha256:1cb74602cb6cbd5382501e2abc7608816902e89228225c4d50a16e931c8ed14b
+    .agents/skills/better-writing/skills/better-writing/references/ai-writing-patterns.md: sha256:2a8f80959226de25112365e27b5449582b2d2d5f3b76046c691bdd93ae1daeca
+    .agents/skills/better-writing/skills/better-writing/references/genre-tells.md: sha256:b9ed9d1341859f2ea54eefbf1301e9f0e865cecf885aa58707032ad1794faab3
+    .agents/skills/better-writing/skills/better-writing/references/preflight.md: sha256:5bf1e6070077df4d6e1ad5c4744fd6032fc4af35c560642f1971ac995ef47a30
+    .agents/skills/better-writing/skills/better-writing/references/sources.md: sha256:aab12a35d5277a765de80f73a4f842c261a32c13d99c4352f6a0971dd6acc076
+    .agents/skills/better-writing/skills/better-writing/references/structures-and-phrases.md: sha256:4772f5fd3a4494cdd250bbd09e03ebdb81a957228eab30ac772273570973ce1c
+    .agents/skills/better-writing/skills/better-writing/references/voice-and-context.md: sha256:d2ed98db498d8ccb13050c74995edfc1023840cfea8434011607d9c8b4becbee
+  content_hash: sha256:b0f17e160571eda4d241782aee7fbe33da552b96cc5f03aae791621e002dc1f6
 - repo_url: wiseiodev/skills
+  name: code-principles
   host: github.com
   resolved_commit: ae79570be5fce303716025fa0a70d18459ae2f97
+  version: unknown
   virtual_path: code-principles
   is_virtual: true
   package_type: claude_skill
   deployed_files:
   - .agents/skills/code-principles
+  - .agents/skills/code-principles/SKILL.md
+  - .agents/skills/code-principles/references/api-design.md
+  - .agents/skills/code-principles/references/architecture.md
+  - .agents/skills/code-principles/references/design.md
+  - .agents/skills/code-principles/references/meta.md
+  - .agents/skills/code-principles/references/react.md
+  - .agents/skills/code-principles/references/resilience.md
+  - .agents/skills/code-principles/references/simplicity.md
+  - .agents/skills/code-principles/references/solid.md
+  - .agents/skills/code-principles/references/testing.md
+  deployed_file_hashes:
+    .agents/skills/code-principles/SKILL.md: sha256:e3cff746aac887713bf75a9ab6bdef186b77dadd8faeb4368a0b905fc6c555ec
+    .agents/skills/code-principles/references/api-design.md: sha256:982aeadc4bbe07761d33a35dd864d7f1f3d4021d896e23f29d984061b2a5ac19
+    .agents/skills/code-principles/references/architecture.md: sha256:2ad309b33220fde99f57409ea52ed3af7883c18705cb4f3f39a41b85d16c017e
+    .agents/skills/code-principles/references/design.md: sha256:a04a429a5aaaa8d8bdbd61d7855ee5703b5d629b6af42f3a7c2fbd8e2047c3ee
+    .agents/skills/code-principles/references/meta.md: sha256:7a7e75c6fc19354b831faf2b36ebf223bc36e3c7d0342c5ad3d2704eca303c15
+    .agents/skills/code-principles/references/react.md: sha256:9ce867db4149dcef6e207d655ebead1228067320ac59468ff6db9fcad1ddb963
+    .agents/skills/code-principles/references/resilience.md: sha256:8ce73ed7e1d24651d47103fe648e0223886ed54a535d9b0293aebbf2f1d860dc
+    .agents/skills/code-principles/references/simplicity.md: sha256:58f736749fa1acf5a6095f71fafd195f30f96cc9c11545bfa30762c38132796f
+    .agents/skills/code-principles/references/solid.md: sha256:0e31bcb8a3b195515692200a776d02cd4eaf639dbaccddcd61098f0f33e9070a
+    .agents/skills/code-principles/references/testing.md: sha256:48df5b09557c3b8cb4d9bfc56ff215f6bfe91222012fa62ba301a6dc80dfa22d
   content_hash: sha256:91e5d974073fe0cf2a2fec514a50700fea0efa4d6fda5613d4d10ee63b52c23f
+deployments:
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/.github/workflows/ci.yml
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:27833473426e6ce358991b5a7b983ffaf7ede0a1f126b423297b28c76ff46a89
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/.gitignore
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:2916a625e918202f0f74fbad616945ab78c2aed0c74a7fd9fbd56579af94bf06
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/CHANGELOG.md
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:5d2046ea283a5c01dd420fa0b8a66a0c66bdc979a530e5926ce6e3dbb2a492fd
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/LICENSE
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:9d7ca7e0934e84cd6d5ba3db51e43d5aed04b93a153ef2ba81e84b44c2f554b9
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/README.md
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:f3e02b2dc0ba4720fa10eb5aebe4e333b0f9018c11be02370c6cb2979fd38fed
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:0010c788ed6ccd5442f3c411a5fbca8b1296d7ae08dfab3576d9a1f823ca1ab2
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/agents/openai.yaml
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:1cb74602cb6cbd5382501e2abc7608816902e89228225c4d50a16e931c8ed14b
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/evals/README.md
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:8aa5989f130127f140a8402cc872c251ad6fd6ce38be48897103cbd4f0b3fd8c
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/evals/examples/chatbot-artefacts.md
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:bfb99cc5f28150a1f54900960bab96306ac225d8de08e1c411918ef8feaba571
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/evals/examples/launch-email.md
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:2277988b88e6d11b68244de8fcc1a563a75c2c0b6f6fb28433ab32a7b57434cb
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/evals/examples/over-signposting.md
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:19f1c7801914b59a90522a6edf5efe1a6dd97983fd4ad918ddd54b2b22778edd
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/evals/examples/plain-human.md
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:66c15df98ef660ff83a0dc6563255c2a9e4a9c368d80ac120914c0931d73fa24
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/evals/examples/quarterly-report.md
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:4292812a348221012d6e2142290a8c759b941d7d7f05a0a7776544bafb5c704f
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/evals/examples/release-notes.md
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:89917a2ad4a7d5fd1340235e911f70db4a7127773e1f53f547376e298ca2b25c
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/evals/examples/voice-preservation.md
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:b4c8e1ba72b115d8b43b42dc59b3526708d0bccf1cb0e842a09018895f86bc18
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/evals/fixtures/chatbot-artefacts/checks.json
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:e3828b32fadcf6193018116486efdec9cb53d1643dbb30f57f5f0085fef8ac3b
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/evals/fixtures/chatbot-artefacts/input.md
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:d9ad3b4320009b1515c835e4e8984c4f885e9e871720948aaa25966c36880496
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/evals/fixtures/launch-email/checks.json
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:1dd4b9e7f6f03fb1b9eee4f9d8f95e7037417a2c3d9af81513844a3fb7ba21b6
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/evals/fixtures/launch-email/input.md
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:d2bedbad6dc9ef75d0332e4ff336e99c70d6e4850e459f396dd8bef53eb3eb27
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/evals/fixtures/over-signposting/checks.json
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:949dc34c86adbba5fc42ecd77952d862f47593d3487a4d34b2e687c762445d11
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/evals/fixtures/over-signposting/input.md
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:aa59fdf60b53bd9a7875ba434f51722050ab035038b1278bc6d6942929d8437e
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/evals/fixtures/plain-human/checks.json
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:cc1b95c9f8ebe94a0b5cb3164d298e5d858d88d8656aba0012137f027b36fbbf
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/evals/fixtures/plain-human/input.md
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:66c15df98ef660ff83a0dc6563255c2a9e4a9c368d80ac120914c0931d73fa24
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/evals/fixtures/quarterly-report/checks.json
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:4eee66617a08e3699879f4a2e9d0f24903106457846681c88c6f66739d0b3caa
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/evals/fixtures/quarterly-report/input.md
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:2cd270f951b0896d4c08543920fb39ba8017e527acf77e29c5e2db9b2c6150ef
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/evals/fixtures/release-notes/checks.json
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:9568ac114513cb678967054c3241341d8f849eb0a342c1b924cd33bc779854e0
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/evals/fixtures/release-notes/input.md
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:dfa068667557fb007d5d7eb8bbab368462ffd97c8d265d5c597c11f9c2510091
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/evals/fixtures/voice-preservation/checks.json
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:cebc74cfebfb7748c8685cde926a10127c39ec2a09c0d5060138c3597d08a424
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/evals/fixtures/voice-preservation/input.md
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:b4c8e1ba72b115d8b43b42dc59b3526708d0bccf1cb0e842a09018895f86bc18
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/evals/run_evals.py
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:4cb2e3ca0e9eac4c771a863ccc55cd8bfc01d5141b52d155ffaaf521e74dec47
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/references/ai-writing-patterns.md
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:2a8f80959226de25112365e27b5449582b2d2d5f3b76046c691bdd93ae1daeca
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/references/genre-tells.md
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:b9ed9d1341859f2ea54eefbf1301e9f0e865cecf885aa58707032ad1794faab3
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/references/preflight.md
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:5bf1e6070077df4d6e1ad5c4744fd6032fc4af35c560642f1971ac995ef47a30
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/references/sources.md
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:aab12a35d5277a765de80f73a4f842c261a32c13d99c4352f6a0971dd6acc076
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/references/structures-and-phrases.md
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:4772f5fd3a4494cdd250bbd09e03ebdb81a957228eab30ac772273570973ce1c
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/references/voice-and-context.md
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:d2ed98db498d8ccb13050c74995edfc1023840cfea8434011607d9c8b4becbee
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/scripts/validate.py
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:ad3e9226921eb22ef97bf33e27bb2f4ae4a817949aa500c57f4e5febfd43ca6e
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/skills/better-writing/CHANGELOG.md
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:5d2046ea283a5c01dd420fa0b8a66a0c66bdc979a530e5926ce6e3dbb2a492fd
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/skills/better-writing/LICENSE
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:9d7ca7e0934e84cd6d5ba3db51e43d5aed04b93a153ef2ba81e84b44c2f554b9
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/skills/better-writing/README.md
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:f3e02b2dc0ba4720fa10eb5aebe4e333b0f9018c11be02370c6cb2979fd38fed
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/skills/better-writing/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:0010c788ed6ccd5442f3c411a5fbca8b1296d7ae08dfab3576d9a1f823ca1ab2
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/skills/better-writing/agents/openai.yaml
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:1cb74602cb6cbd5382501e2abc7608816902e89228225c4d50a16e931c8ed14b
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/skills/better-writing/references/ai-writing-patterns.md
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:2a8f80959226de25112365e27b5449582b2d2d5f3b76046c691bdd93ae1daeca
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/skills/better-writing/references/genre-tells.md
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:b9ed9d1341859f2ea54eefbf1301e9f0e865cecf885aa58707032ad1794faab3
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/skills/better-writing/references/preflight.md
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:5bf1e6070077df4d6e1ad5c4744fd6032fc4af35c560642f1971ac995ef47a30
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/skills/better-writing/references/sources.md
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:aab12a35d5277a765de80f73a4f842c261a32c13d99c4352f6a0971dd6acc076
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/skills/better-writing/references/structures-and-phrases.md
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:4772f5fd3a4494cdd250bbd09e03ebdb81a957228eab30ac772273570973ce1c
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/better-writing/skills/better-writing/references/voice-and-context.md
+  runtime: null
+  scope: project
+  owners:
+  - forjd/better-writing
+  active_owner: forjd/better-writing
+  content_hash: sha256:d2ed98db498d8ccb13050c74995edfc1023840cfea8434011607d9c8b4becbee
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/claude-deep-research-skill
+  runtime: null
+  scope: project
+  owners:
+  - 199-biotechnologies/claude-deep-research-skill
+  active_owner: 199-biotechnologies/claude-deep-research-skill
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/claude-deep-research-skill/.gitignore
+  runtime: null
+  scope: project
+  owners:
+  - 199-biotechnologies/claude-deep-research-skill
+  active_owner: 199-biotechnologies/claude-deep-research-skill
+  content_hash: sha256:d7298b4ebea3ed98f8e5cd5fa3bed70dc854d513daad892e350ea729fc69ae3f
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/claude-deep-research-skill/README.md
+  runtime: null
+  scope: project
+  owners:
+  - 199-biotechnologies/claude-deep-research-skill
+  active_owner: 199-biotechnologies/claude-deep-research-skill
+  content_hash: sha256:27d8c58f22baca259a657713d43eadafd3eb1b981cd88d12df77dfb091b6fddd
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/claude-deep-research-skill/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - 199-biotechnologies/claude-deep-research-skill
+  active_owner: 199-biotechnologies/claude-deep-research-skill
+  content_hash: sha256:0c8e777eb13d37b4d5130f59c9237a82528224ba31b58b774cd490a742df8620
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/claude-deep-research-skill/reference/continuation.md
+  runtime: null
+  scope: project
+  owners:
+  - 199-biotechnologies/claude-deep-research-skill
+  active_owner: 199-biotechnologies/claude-deep-research-skill
+  content_hash: sha256:0ed19331d7c7f5775536dfd39c0ae3ce3466ab5797464fa247efdfeea5f7913d
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/claude-deep-research-skill/reference/html-generation.md
+  runtime: null
+  scope: project
+  owners:
+  - 199-biotechnologies/claude-deep-research-skill
+  active_owner: 199-biotechnologies/claude-deep-research-skill
+  content_hash: sha256:a8ebc64d52b7cd9a78fee69f1f274f1ab791106ebd3449f17800735146ef644f
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/claude-deep-research-skill/reference/methodology.md
+  runtime: null
+  scope: project
+  owners:
+  - 199-biotechnologies/claude-deep-research-skill
+  active_owner: 199-biotechnologies/claude-deep-research-skill
+  content_hash: sha256:d17cab6a258c2b5fe8514b0eda88395fe0d3dac3711c21480f2229e182666ec5
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/claude-deep-research-skill/reference/quality-gates.md
+  runtime: null
+  scope: project
+  owners:
+  - 199-biotechnologies/claude-deep-research-skill
+  active_owner: 199-biotechnologies/claude-deep-research-skill
+  content_hash: sha256:60b969ceee0346d7e219a66b881c554f0fa452ff5a598d858f7a8e30a19fc24d
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/claude-deep-research-skill/reference/report-assembly.md
+  runtime: null
+  scope: project
+  owners:
+  - 199-biotechnologies/claude-deep-research-skill
+  active_owner: 199-biotechnologies/claude-deep-research-skill
+  content_hash: sha256:22a41bbd6fe7bf60542ee5b2f5d0db2608371283d273881d2f3758e9a90e6fdf
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/claude-deep-research-skill/reference/weasyprint_guidelines.md
+  runtime: null
+  scope: project
+  owners:
+  - 199-biotechnologies/claude-deep-research-skill
+  active_owner: 199-biotechnologies/claude-deep-research-skill
+  content_hash: sha256:d70421ea6985664d9fd1feaae94f36e3c749e74eb8703bc67236df9489165cdb
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/claude-deep-research-skill/requirements.txt
+  runtime: null
+  scope: project
+  owners:
+  - 199-biotechnologies/claude-deep-research-skill
+  active_owner: 199-biotechnologies/claude-deep-research-skill
+  content_hash: sha256:de63fe8300f89040ccfb6229aee53b61345fa478946e043587d7f65d46df4ffa
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/claude-deep-research-skill/schemas/claim.schema.json
+  runtime: null
+  scope: project
+  owners:
+  - 199-biotechnologies/claude-deep-research-skill
+  active_owner: 199-biotechnologies/claude-deep-research-skill
+  content_hash: sha256:1e0b780f12bdb35bc3bc9cd07becf1d7f5f30de88bd9fb99fe357d3d91f8e9dd
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/claude-deep-research-skill/schemas/evidence.schema.json
+  runtime: null
+  scope: project
+  owners:
+  - 199-biotechnologies/claude-deep-research-skill
+  active_owner: 199-biotechnologies/claude-deep-research-skill
+  content_hash: sha256:98939f1fc14006bea38404349818585ca6818a749ddf63aafbf933a19eef3e00
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/claude-deep-research-skill/schemas/run_manifest.schema.json
+  runtime: null
+  scope: project
+  owners:
+  - 199-biotechnologies/claude-deep-research-skill
+  active_owner: 199-biotechnologies/claude-deep-research-skill
+  content_hash: sha256:34abe54027d76bec15f716c9ea471baed533a6f4c1a3db2a85ef80831b9274ec
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/claude-deep-research-skill/schemas/source.schema.json
+  runtime: null
+  scope: project
+  owners:
+  - 199-biotechnologies/claude-deep-research-skill
+  active_owner: 199-biotechnologies/claude-deep-research-skill
+  content_hash: sha256:2ac2697ec8c2578c4fe550da5ab4c3dcb5e4de4fa0141e726919085a023aff49
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/claude-deep-research-skill/scripts/citation_manager.py
+  runtime: null
+  scope: project
+  owners:
+  - 199-biotechnologies/claude-deep-research-skill
+  active_owner: 199-biotechnologies/claude-deep-research-skill
+  content_hash: sha256:02334e5286b2a541fb2a6409959ea43ac7bc8b749d3cbeb427ff7fafb78d1a02
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/claude-deep-research-skill/scripts/evidence_store.py
+  runtime: null
+  scope: project
+  owners:
+  - 199-biotechnologies/claude-deep-research-skill
+  active_owner: 199-biotechnologies/claude-deep-research-skill
+  content_hash: sha256:6deba75f5902be0d272f2992f54988b8a316fc4bc44cd3b094b812bb4409d140
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/claude-deep-research-skill/scripts/extract_claims.py
+  runtime: null
+  scope: project
+  owners:
+  - 199-biotechnologies/claude-deep-research-skill
+  active_owner: 199-biotechnologies/claude-deep-research-skill
+  content_hash: sha256:21a3cbfe711e466926e47b60a5294a82f3f956310309c469fc8a429203a56eb8
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/claude-deep-research-skill/scripts/md_to_html.py
+  runtime: null
+  scope: project
+  owners:
+  - 199-biotechnologies/claude-deep-research-skill
+  active_owner: 199-biotechnologies/claude-deep-research-skill
+  content_hash: sha256:506c38771d32fbccf931a27b7b64cf20c0df5113b2914b051c17e9d178fc1b17
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/claude-deep-research-skill/scripts/research_engine.py
+  runtime: null
+  scope: project
+  owners:
+  - 199-biotechnologies/claude-deep-research-skill
+  active_owner: 199-biotechnologies/claude-deep-research-skill
+  content_hash: sha256:5eb7ef01642e8158d7e7d8eb044a71aca3334493f4b2c6d7b4e1299e074cbfd6
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/claude-deep-research-skill/scripts/source_evaluator.py
+  runtime: null
+  scope: project
+  owners:
+  - 199-biotechnologies/claude-deep-research-skill
+  active_owner: 199-biotechnologies/claude-deep-research-skill
+  content_hash: sha256:8421efa7b862bb139108e6da40b285706188cb272843bf39082c8b9888d5050e
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/claude-deep-research-skill/scripts/validate_report.py
+  runtime: null
+  scope: project
+  owners:
+  - 199-biotechnologies/claude-deep-research-skill
+  active_owner: 199-biotechnologies/claude-deep-research-skill
+  content_hash: sha256:851c1de275c039b8e5858785010181500960b05a9be463cdd6cecd5bbf101aa3
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/claude-deep-research-skill/scripts/verify_citations.py
+  runtime: null
+  scope: project
+  owners:
+  - 199-biotechnologies/claude-deep-research-skill
+  active_owner: 199-biotechnologies/claude-deep-research-skill
+  content_hash: sha256:b77a9430aa2c9aec47a88434237879a02db75f87cd35a2429a5d7584f234f6ef
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/claude-deep-research-skill/scripts/verify_claim_support.py
+  runtime: null
+  scope: project
+  owners:
+  - 199-biotechnologies/claude-deep-research-skill
+  active_owner: 199-biotechnologies/claude-deep-research-skill
+  content_hash: sha256:b172e88a3844e1ba590a7fc9a9d141ef310f5e628231e77448e9c45a7d881bc8
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/claude-deep-research-skill/scripts/verify_html.py
+  runtime: null
+  scope: project
+  owners:
+  - 199-biotechnologies/claude-deep-research-skill
+  active_owner: 199-biotechnologies/claude-deep-research-skill
+  content_hash: sha256:28bbba06906fa2f9bae87ea20b68390ce4f4bc76f00343991a8ad2119e21b36c
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/claude-deep-research-skill/templates/mckinsey_report_template.html
+  runtime: null
+  scope: project
+  owners:
+  - 199-biotechnologies/claude-deep-research-skill
+  active_owner: 199-biotechnologies/claude-deep-research-skill
+  content_hash: sha256:6b2d742f5279e78df71543bfb6c4fd88d7ee1c726b54fa945616307b2157c1f1
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/claude-deep-research-skill/templates/report_template.md
+  runtime: null
+  scope: project
+  owners:
+  - 199-biotechnologies/claude-deep-research-skill
+  active_owner: 199-biotechnologies/claude-deep-research-skill
+  content_hash: sha256:50788e213c78d42a2fcedbfe153e4c34bbea5b7b978f8646f1b4b5c83ba04115
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/claude-deep-research-skill/tests/fixtures/invalid_report.md
+  runtime: null
+  scope: project
+  owners:
+  - 199-biotechnologies/claude-deep-research-skill
+  active_owner: 199-biotechnologies/claude-deep-research-skill
+  content_hash: sha256:9b5177dbd31b80ea1d1e16f159989f232f6b6875dbc7ea7fddf70ba1fd0ad311
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/claude-deep-research-skill/tests/fixtures/valid_report.md
+  runtime: null
+  scope: project
+  owners:
+  - 199-biotechnologies/claude-deep-research-skill
+  active_owner: 199-biotechnologies/claude-deep-research-skill
+  content_hash: sha256:e6a24a5deec1ec65279cb446c58f9309a3d6f4e040e37f1bda09c64a73829b5a
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/claude-deep-research-skill/tests/test_citation_manager.py
+  runtime: null
+  scope: project
+  owners:
+  - 199-biotechnologies/claude-deep-research-skill
+  active_owner: 199-biotechnologies/claude-deep-research-skill
+  content_hash: sha256:5e882bdd6c32403e95942bab56fb0ef09543468a0a289a336fb01c0453d8fb1e
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/claude-deep-research-skill/tests/test_evidence_store.py
+  runtime: null
+  scope: project
+  owners:
+  - 199-biotechnologies/claude-deep-research-skill
+  active_owner: 199-biotechnologies/claude-deep-research-skill
+  content_hash: sha256:2c88f366833808cd7ad89784993eea8ba4c832d560fed6503182e919b339ddfc
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/claude-deep-research-skill/tests/test_extract_claims.py
+  runtime: null
+  scope: project
+  owners:
+  - 199-biotechnologies/claude-deep-research-skill
+  active_owner: 199-biotechnologies/claude-deep-research-skill
+  content_hash: sha256:9b6ce7fe815f95b1e238ed3c1ba6e65b22d5bc8abbc4599e50fcf6063692c0d7
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/claude-deep-research-skill/tests/test_verify_claim_support.py
+  runtime: null
+  scope: project
+  owners:
+  - 199-biotechnologies/claude-deep-research-skill
+  active_owner: 199-biotechnologies/claude-deep-research-skill
+  content_hash: sha256:5402a8d6ca02fe6cfd3d73b0208191e78e00561ad5932e793ca4bfb88ac4c651
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/code-principles
+  runtime: null
+  scope: project
+  owners:
+  - wiseiodev/skills/code-principles
+  active_owner: wiseiodev/skills/code-principles
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/code-principles/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - wiseiodev/skills/code-principles
+  active_owner: wiseiodev/skills/code-principles
+  content_hash: sha256:e3cff746aac887713bf75a9ab6bdef186b77dadd8faeb4368a0b905fc6c555ec
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/code-principles/references/api-design.md
+  runtime: null
+  scope: project
+  owners:
+  - wiseiodev/skills/code-principles
+  active_owner: wiseiodev/skills/code-principles
+  content_hash: sha256:982aeadc4bbe07761d33a35dd864d7f1f3d4021d896e23f29d984061b2a5ac19
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/code-principles/references/architecture.md
+  runtime: null
+  scope: project
+  owners:
+  - wiseiodev/skills/code-principles
+  active_owner: wiseiodev/skills/code-principles
+  content_hash: sha256:2ad309b33220fde99f57409ea52ed3af7883c18705cb4f3f39a41b85d16c017e
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/code-principles/references/design.md
+  runtime: null
+  scope: project
+  owners:
+  - wiseiodev/skills/code-principles
+  active_owner: wiseiodev/skills/code-principles
+  content_hash: sha256:a04a429a5aaaa8d8bdbd61d7855ee5703b5d629b6af42f3a7c2fbd8e2047c3ee
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/code-principles/references/meta.md
+  runtime: null
+  scope: project
+  owners:
+  - wiseiodev/skills/code-principles
+  active_owner: wiseiodev/skills/code-principles
+  content_hash: sha256:7a7e75c6fc19354b831faf2b36ebf223bc36e3c7d0342c5ad3d2704eca303c15
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/code-principles/references/react.md
+  runtime: null
+  scope: project
+  owners:
+  - wiseiodev/skills/code-principles
+  active_owner: wiseiodev/skills/code-principles
+  content_hash: sha256:9ce867db4149dcef6e207d655ebead1228067320ac59468ff6db9fcad1ddb963
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/code-principles/references/resilience.md
+  runtime: null
+  scope: project
+  owners:
+  - wiseiodev/skills/code-principles
+  active_owner: wiseiodev/skills/code-principles
+  content_hash: sha256:8ce73ed7e1d24651d47103fe648e0223886ed54a535d9b0293aebbf2f1d860dc
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/code-principles/references/simplicity.md
+  runtime: null
+  scope: project
+  owners:
+  - wiseiodev/skills/code-principles
+  active_owner: wiseiodev/skills/code-principles
+  content_hash: sha256:58f736749fa1acf5a6095f71fafd195f30f96cc9c11545bfa30762c38132796f
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/code-principles/references/solid.md
+  runtime: null
+  scope: project
+  owners:
+  - wiseiodev/skills/code-principles
+  active_owner: wiseiodev/skills/code-principles
+  content_hash: sha256:0e31bcb8a3b195515692200a776d02cd4eaf639dbaccddcd61098f0f33e9070a
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/code-principles/references/testing.md
+  runtime: null
+  scope: project
+  owners:
+  - wiseiodev/skills/code-principles
+  active_owner: wiseiodev/skills/code-principles
+  content_hash: sha256:48df5b09557c3b8cb4d9bfc56ff215f6bfe91222012fa62ba301a6dc80dfa22d
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/writing-clearly-and-concisely
+  runtime: null
+  scope: project
+  owners:
+  - aiskillstore/marketplace/skills/cygnusfear/writing-clearly-and-concisely
+  active_owner: aiskillstore/marketplace/skills/cygnusfear/writing-clearly-and-concisely
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/writing-clearly-and-concisely/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - aiskillstore/marketplace/skills/cygnusfear/writing-clearly-and-concisely
+  active_owner: aiskillstore/marketplace/skills/cygnusfear/writing-clearly-and-concisely
+  content_hash: sha256:0b8c9c6f50ae65ca263ef0b7b7103ee8c14268167dcda1a58248fb9d461974e7
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/writing-clearly-and-concisely/elements-of-style.md
+  runtime: null
+  scope: project
+  owners:
+  - aiskillstore/marketplace/skills/cygnusfear/writing-clearly-and-concisely
+  active_owner: aiskillstore/marketplace/skills/cygnusfear/writing-clearly-and-concisely
+  content_hash: sha256:d0edf854b5d39e22da68793603830e5bbdddb9266d272007993bcb821ba2799d
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/writing-clearly-and-concisely/skill-report.json
+  runtime: null
+  scope: project
+  owners:
+  - aiskillstore/marketplace/skills/cygnusfear/writing-clearly-and-concisely
+  active_owner: aiskillstore/marketplace/skills/cygnusfear/writing-clearly-and-concisely
+  content_hash: sha256:2fb865ca64db7aa60c1a02f33108c1ae7c3d3b40183961aa9c87302fb969ea78

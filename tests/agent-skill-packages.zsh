@@ -49,7 +49,7 @@ targets:
 
 dependencies:
   apm:
-    - example/repo/skills/fake-skill
+    - Example/Repo/skills/fake-skill
 YAML
 mkdir -p "$sample_package/skills/vendor/curated-fake" "$sample_package/skills/vendor/stale-skill"
 cat >"$sample_package/skills/vendor/curated-fake/SKILL.md" <<'SKILL'
@@ -63,8 +63,8 @@ SKILL
 cat >"$sample_package/skills/vendor/curated-fake/SOURCE.md" <<'MD'
 # Source
 
-- Upstream: https://github.com/example/repo/tree/old/skills/fake-skill
-- APM dependency: `example/repo/skills/fake-skill`
+- Upstream: https://github.com/Example/Repo/tree/old/skills/fake-skill
+- APM dependency: `Example/Repo/skills/fake-skill`
 - Ref: `old`
 - License: MIT.
 - Notes: Vendored source is kept under the local skill id `curated-fake`.
@@ -236,24 +236,52 @@ SKILL
   cat >apm.lock.yaml <<'YAML'
 lockfile_version: '1'
 generated_at: '2026-05-12T00:00:00+00:00'
-apm_version: 0.0.0-test
+apm_version: 0.28.0
 dependencies:
 - repo_url: example/repo
+  materialization_repo_url: Example/Repo
+  name: fake-skill
   host: github.com
   resolved_commit: abc123
+  version: unknown
   virtual_path: skills/fake-skill
   is_virtual: true
   package_type: claude_skill
   deployed_files:
   - .agents/skills/fake-skill
+  - .agents/skills/fake-skill/SKILL.md
+  - .agents/skills/fake-skill/agents/openai.yaml
   - .agents/skills/second-skill
+  - .agents/skills/second-skill/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/fake-skill/SKILL.md: sha256:aaa
+    .agents/skills/second-skill/SKILL.md: sha256:bbb
   content_hash: sha256:test
+deployments:
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/fake-skill
+  runtime: null
+  scope: project
+  owners:
+  - Example/Repo/skills/fake-skill
+  active_owner: Example/Repo/skills/fake-skill
+  content_hash: null
 YAML
   exit 0
 fi
 
 if [[ "$1" == "audit" ]]; then
-  exit 0
+  if [[ "${FAKE_APM_AUDIT_FAIL:-}" == "other" ]]; then
+    cat <<'JSON'
+{"checks": [{"name": "hidden-unicode", "passed": false, "message": "hidden character found", "details": ["U+200B in SKILL.md"]}], "summary": {"total": 1, "passed": 0, "failed": 1}}
+JSON
+    exit 1
+  fi
+  cat <<'JSON'
+{"checks": [{"name": "config-consistency", "passed": false, "message": "1 MCP config inconsistenc(ies) -- run 'apm install' to reconcile", "details": ["Example/Repo: package manifest not found at /tmp/x/apm_modules/Example/Repo/apm.yml; re-run 'apm install' to restore it"]}, {"name": "drift", "passed": true, "message": "no drift detected against lockfile", "details": []}], "summary": {"total": 2, "passed": 1, "failed": 1}}
+JSON
+  exit 1
 fi
 
 echo "unexpected fake apm invocation: $*" >&2
@@ -271,11 +299,21 @@ PATH="$fake_bin:$PATH" \
 [[ ! -e "$sample_package/skills/vendor/fake-skill" ]]
 [[ ! -e "$sample_package/skills/vendor/stale-skill" ]]
 grep -q 'Ref: `abc123`' "$sample_package/skills/vendor/curated-fake/SOURCE.md"
-grep -q 'APM dependency: `example/repo/skills/fake-skill`' \
+grep -q 'APM dependency: `Example/Repo/skills/fake-skill`' \
+  "$sample_package/skills/vendor/curated-fake/SOURCE.md"
+grep -q 'Upstream: https://github.com/Example/Repo/tree/abc123/skills/fake-skill' \
   "$sample_package/skills/vendor/curated-fake/SOURCE.md"
 grep -q 'local skill id `curated-fake`' \
   "$sample_package/skills/vendor/curated-fake/SOURCE.md"
 [[ -e "$sample_package/apm.lock.yaml" ]]
+
+if FAKE_APM_AUDIT_FAIL=other PATH="$fake_bin:$PATH" \
+  .agents/skills/agent-skill-management/scripts/vendor-agent-package \
+  sample \
+  --packages-root "$packages_root" >"$tmp_root/audit-fail.out" 2>&1; then
+  echo "expected vendor-agent-package to fail on non-manifest audit findings" >&2
+  exit 1
+fi
 
 empty_package="$packages_root/empty"
 mkdir -p "$empty_package/skills/local/keep-skill" "$empty_package/skills/vendor/old-skill"

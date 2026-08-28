@@ -1,22 +1,69 @@
 lockfile_version: '1'
-generated_at: '2026-08-27T17:20:35.246727+00:00'
-apm_version: 0.13.0
+generated_at: '2026-08-28T01:07:04.552283+00:00'
+apm_version: 0.28.0
 dependencies:
 - repo_url: tomasz-tomczyk/crit
+  name: crit
   host: github.com
   resolved_commit: 68bf5b16611ef6b1bdf04be7fc0a9e26bf3cea6f
+  version: unknown
   virtual_path: integrations/claude-code/skills/crit
   is_virtual: true
   package_type: claude_skill
   deployed_files:
   - .agents/skills/crit
+  - .agents/skills/crit/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/crit/SKILL.md: sha256:b14ecc0ef268c6703e214ca450acb9f8fd4e3c73f1fed5b697731cc959eccf0d
   content_hash: sha256:87e2d574596b15e795e395151f8dac09c2f5c72a08adb2184117ee77d691e8b9
 - repo_url: tomasz-tomczyk/crit
+  name: crit-cli
   host: github.com
   resolved_commit: 68bf5b16611ef6b1bdf04be7fc0a9e26bf3cea6f
+  version: unknown
   virtual_path: integrations/claude-code/skills/crit-cli
   is_virtual: true
   package_type: claude_skill
   deployed_files:
   - .agents/skills/crit-cli
+  - .agents/skills/crit-cli/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/crit-cli/SKILL.md: sha256:01324c568450ca349414b5a46212ab502726ea8f5cb81cc090611a4848dd29d6
   content_hash: sha256:7a9756c98a7838e87ac532a5e4d3387f71d61eaf52051be919dfdbe588e1d4fa
+deployments:
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/crit
+  runtime: null
+  scope: project
+  owners:
+  - tomasz-tomczyk/crit/integrations/claude-code/skills/crit
+  active_owner: tomasz-tomczyk/crit/integrations/claude-code/skills/crit
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/crit-cli
+  runtime: null
+  scope: project
+  owners:
+  - tomasz-tomczyk/crit/integrations/claude-code/skills/crit-cli
+  active_owner: tomasz-tomczyk/crit/integrations/claude-code/skills/crit-cli
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/crit-cli/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - tomasz-tomczyk/crit/integrations/claude-code/skills/crit-cli
+  active_owner: tomasz-tomczyk/crit/integrations/claude-code/skills/crit-cli
+  content_hash: sha256:01324c568450ca349414b5a46212ab502726ea8f5cb81cc090611a4848dd29d6
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/crit/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - tomasz-tomczyk/crit/integrations/claude-code/skills/crit
+  active_owner: tomasz-tomczyk/crit/integrations/claude-code/skills/crit
+  content_hash: sha256:b14ecc0ef268c6703e214ca450acb9f8fd4e3c73f1fed5b697731cc959eccf0d

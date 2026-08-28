@@ -11,6 +11,4 @@ dependencies:
     - openclaw/acpx/skills/acpx
     - stablyai/agent-slack/skills/agent-slack
     - stablyai/orca/skills/orca-cli
-    - git: stablyai/orca
-      path: skills/orchestration
-      alias: orca-stration
+    - stablyai/orca/skills/orchestration

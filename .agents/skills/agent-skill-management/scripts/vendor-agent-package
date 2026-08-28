@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
 import shutil
@@ -27,6 +28,47 @@ def run(cmd: list[str], cwd, env: dict[str, str] | None = None) -> int:
     return subprocess.call(cmd, cwd=cwd, env=env)
 
 
+def audit_failure_acceptable(output: str) -> bool:
+    """Accept an audit failure iff every failed check is the known apm
+    config-consistency false positive: `apm install` strips dependency
+    manifests from apm_modules on agent-skills installs, then
+    `apm audit --ci` demands those manifests back.
+    """
+    try:
+        data = json.loads(output[output.index("{") : output.rindex("}") + 1])
+    except (ValueError, TypeError):
+        return False
+    failed = [c for c in data.get("checks", []) if not c.get("passed", False)]
+    if not failed:
+        return False
+    return all(
+        check.get("name") == "config-consistency"
+        and check.get("details")
+        and all("package manifest not found" in str(d) for d in check["details"])
+        for check in failed
+    )
+
+
+def run_audit(cwd) -> bool:
+    cmd = ["apm", "audit", "--ci", "--no-policy", "--format", "json"]
+    print(" ".join(cmd))
+    result = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True)
+    if result.stdout:
+        print(result.stdout, end="")
+    if result.stderr:
+        print(result.stderr, end="", file=sys.stderr)
+    if result.returncode == 0:
+        return True
+    if audit_failure_acceptable(result.stdout):
+        print(
+            "vendor-agent-package: ignoring apm audit config-consistency "
+            "manifest false positive",
+            file=sys.stderr,
+        )
+        return True
+    return False
+
+
 def yaml_value(line: str) -> str:
     return line.split(":", 1)[1].strip().strip("'\"")
 
@@ -46,6 +88,11 @@ def lock_dependencies(path: Path) -> list[dict[str, object]]:
             continue
         if current is None:
             continue
+        # A new top-level section (e.g. `deployments:` in apm >= 0.28) ends
+        # the dependency list; without this its keys would bleed into the
+        # last dependency entry.
+        if line and not line[0].isspace() and not line.startswith("- "):
+            break
         if stripped == "deployed_files:":
             in_deployed_files = True
             continue
@@ -101,9 +148,15 @@ def source_apm_dependency(source_text: str) -> str | None:
     return value.strip().strip("`") or None
 
 
+def display_repo(dependency: dict[str, object]) -> str:
+    # apm >= 0.28 lowercases repo_url and keeps the original casing in
+    # materialization_repo_url; prefer the cased form for display.
+    return str(dependency.get("materialization_repo_url") or dependency["repo_url"])
+
+
 def upstream_url(dependency: dict[str, object]) -> str:
     host = str(dependency.get("host", "github.com"))
-    repo = str(dependency["repo_url"])
+    repo = display_repo(dependency)
     ref = str(dependency["resolved_commit"])
     virtual_path = str(dependency.get("virtual_path", "")).strip("/")
     suffix = f"/{virtual_path}" if virtual_path else ""
@@ -111,7 +164,7 @@ def upstream_url(dependency: dict[str, object]) -> str:
 
 
 def apm_dependency(dependency: dict[str, object]) -> str:
-    repo = str(dependency["repo_url"])
+    repo = display_repo(dependency)
     virtual_path = str(dependency.get("virtual_path", "")).strip("/")
     name = f"{repo}/{virtual_path}" if virtual_path else repo
     resolved_ref = str(dependency.get("resolved_ref", "")).strip()
@@ -134,6 +187,9 @@ def source_note(dependency: dict[str, object], existing: str | None) -> str:
 
 
 def existing_vendor_dirs_by_dependency(vendor_root: Path) -> dict[str, list[Path]]:
+    # Keys are lowercased: GitHub repo names are case-insensitive and apm's
+    # lock casing has changed across versions, so matching must not depend
+    # on it.
     result: dict[str, list[Path]] = {}
     if not vendor_root.exists():
         return result
@@ -143,7 +199,7 @@ def existing_vendor_dirs_by_dependency(vendor_root: Path) -> dict[str, list[Path
             continue
         dependency = source_apm_dependency(source_md.read_text())
         if dependency:
-            result.setdefault(dependency, []).append(path)
+            result.setdefault(dependency.lower(), []).append(path)
     return result
 
 
@@ -163,7 +219,7 @@ def vendor_target(
 ) -> Path:
     staged_skill_id = staged_skill.name
     dependency_name = apm_dependency(dependency)
-    candidates = existing_dirs.get(dependency_name, [])
+    candidates = existing_dirs.get(dependency_name.lower(), [])
     if not candidates:
         return vendor_root / staged_skill_id
     exact_matches = [path for path in candidates if path.name == staged_skill_id]
@@ -276,10 +332,7 @@ def main() -> int:
             staging_root,
         ) != 0:
             return 1
-        if run(
-            ["apm", "audit", "--ci", "--no-policy", "--format", "json"],
-            staging_root,
-        ) != 0:
+        if not run_audit(staging_root):
             return 1
         try:
             staged_lockfile = staging_root / "apm.lock.yaml"

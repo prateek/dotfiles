@@ -1,27 +1,1200 @@
 lockfile_version: '1'
-generated_at: '2026-08-27T17:20:09.046246+00:00'
-apm_version: 0.13.0
+generated_at: '2026-08-28T01:06:51.544167+00:00'
+apm_version: 0.28.0
 dependencies:
-- repo_url: AvdLee/SwiftUI-Agent-Skill
+- repo_url: avdlee/swiftui-agent-skill
+  materialization_repo_url: AvdLee/SwiftUI-Agent-Skill
+  name: swiftui-expert
   host: github.com
   resolved_commit: 4c6a97d15aa5e023538c3cb06b5192f241dd451d
+  version: 4.2.0
   package_type: marketplace_plugin
   deployed_files:
   - .agents/skills/swiftui-expert-skill
+  - .agents/skills/swiftui-expert-skill/SKILL.md
+  - .agents/skills/swiftui-expert-skill/agents/openai.yaml
+  - .agents/skills/swiftui-expert-skill/assets/logo-small.png
+  - .agents/skills/swiftui-expert-skill/assets/logo.png
+  - .agents/skills/swiftui-expert-skill/assets/logo.svg
+  - .agents/skills/swiftui-expert-skill/references/accessibility-patterns.md
+  - .agents/skills/swiftui-expert-skill/references/animation-advanced.md
+  - .agents/skills/swiftui-expert-skill/references/animation-basics.md
+  - .agents/skills/swiftui-expert-skill/references/animation-transitions.md
+  - .agents/skills/swiftui-expert-skill/references/charts-accessibility.md
+  - .agents/skills/swiftui-expert-skill/references/charts.md
+  - .agents/skills/swiftui-expert-skill/references/focus-patterns.md
+  - .agents/skills/swiftui-expert-skill/references/image-optimization.md
+  - .agents/skills/swiftui-expert-skill/references/latest-apis.md
+  - .agents/skills/swiftui-expert-skill/references/layout-best-practices.md
+  - .agents/skills/swiftui-expert-skill/references/liquid-glass.md
+  - .agents/skills/swiftui-expert-skill/references/list-patterns.md
+  - .agents/skills/swiftui-expert-skill/references/localization.md
+  - .agents/skills/swiftui-expert-skill/references/macos-scenes.md
+  - .agents/skills/swiftui-expert-skill/references/macos-views.md
+  - .agents/skills/swiftui-expert-skill/references/macos-window-styling.md
+  - .agents/skills/swiftui-expert-skill/references/performance-patterns.md
+  - .agents/skills/swiftui-expert-skill/references/previews.md
+  - .agents/skills/swiftui-expert-skill/references/scroll-patterns.md
+  - .agents/skills/swiftui-expert-skill/references/sheet-navigation-patterns.md
+  - .agents/skills/swiftui-expert-skill/references/soft-deprecation.md
+  - .agents/skills/swiftui-expert-skill/references/state-management.md
+  - .agents/skills/swiftui-expert-skill/references/text-patterns.md
+  - .agents/skills/swiftui-expert-skill/references/trace-analysis.md
+  - .agents/skills/swiftui-expert-skill/references/trace-recording.md
+  - .agents/skills/swiftui-expert-skill/references/view-structure.md
+  - .agents/skills/swiftui-expert-skill/scripts/analyze_trace.py
+  - .agents/skills/swiftui-expert-skill/scripts/instruments_parser/__init__.py
+  - .agents/skills/swiftui-expert-skill/scripts/instruments_parser/causes.py
+  - .agents/skills/swiftui-expert-skill/scripts/instruments_parser/correlate.py
+  - .agents/skills/swiftui-expert-skill/scripts/instruments_parser/events.py
+  - .agents/skills/swiftui-expert-skill/scripts/instruments_parser/hangs.py
+  - .agents/skills/swiftui-expert-skill/scripts/instruments_parser/hitches.py
+  - .agents/skills/swiftui-expert-skill/scripts/instruments_parser/summary.py
+  - .agents/skills/swiftui-expert-skill/scripts/instruments_parser/swiftui.py
+  - .agents/skills/swiftui-expert-skill/scripts/instruments_parser/time_profiler.py
+  - .agents/skills/swiftui-expert-skill/scripts/instruments_parser/xctrace.py
+  - .agents/skills/swiftui-expert-skill/scripts/instruments_parser/xml_utils.py
+  - .agents/skills/swiftui-expert-skill/scripts/record_trace.py
+  deployed_file_hashes:
+    .agents/skills/swiftui-expert-skill/SKILL.md: sha256:9fe4bb06a2b17e74acb4ccfdf9044de593c10c1ecf359dc24ef058000d5b447e
+    .agents/skills/swiftui-expert-skill/agents/openai.yaml: sha256:a7c17cfff5c29e32b11296b63edba0da92e612f9de55f2319b59cb64143b2793
+    .agents/skills/swiftui-expert-skill/assets/logo-small.png: sha256:befad5069b4c95bbb3612e41e2b7fde601de7e022d8cc0d07570f0c7ec234d11
+    .agents/skills/swiftui-expert-skill/assets/logo.png: sha256:ab58235e3739a6c83ea8e29f5847ddc65895a6aa3772e17e901dacee101258a6
+    .agents/skills/swiftui-expert-skill/assets/logo.svg: sha256:d51b96d6df3ba250f7a47e7d74f9491ab891363e130cdd3f4e35b3fe132178d4
+    .agents/skills/swiftui-expert-skill/references/accessibility-patterns.md: sha256:bb942dd3b31fa24aa051943a6b7754a2de45a263dda0da3ac9dc2c7ce43b14d2
+    .agents/skills/swiftui-expert-skill/references/animation-advanced.md: sha256:1a9ce32735047f3b4c82bdac15ef34793d2ffb936d96039b1779514f37248cb2
+    .agents/skills/swiftui-expert-skill/references/animation-basics.md: sha256:5c6e8911c4011d772db061d3438ec07491bf1c467ab87af4d56e21720a189c9f
+    .agents/skills/swiftui-expert-skill/references/animation-transitions.md: sha256:d8ebbd5f25de519128151146a989d9b0677f1232c22ada2f99be3f8c361b65dd
+    .agents/skills/swiftui-expert-skill/references/charts-accessibility.md: sha256:772d1c1099a5cc7eef172a206ae60c9269da5d8b6c6a1f885854a1b04f6f619b
+    .agents/skills/swiftui-expert-skill/references/charts.md: sha256:32dd76aae9ccfafa817bb5d6862e509ee3966d40653ab28d715348b3859c3158
+    .agents/skills/swiftui-expert-skill/references/focus-patterns.md: sha256:ae5773a18de2c4b48d43319c7f7a201ce8c996b5274a99fccebb78a17aeb72c6
+    .agents/skills/swiftui-expert-skill/references/image-optimization.md: sha256:879a0fc5b7d99bd0ed445ca295e280dbd8324fe53b1757eb363697301de31b9a
+    .agents/skills/swiftui-expert-skill/references/latest-apis.md: sha256:5beb6d03610bfd9921f166fdb523eedb4c6f9a292643e8d38701c169ba456b46
+    .agents/skills/swiftui-expert-skill/references/layout-best-practices.md: sha256:81a1c2ce0356e2beefbc03801afad91dc087963859b774e517a9b78a0e6973ac
+    .agents/skills/swiftui-expert-skill/references/liquid-glass.md: sha256:c865fef7950cdfcf3cbf9ae28e5f3381a9973c5fe654259d6952dd18660896f3
+    .agents/skills/swiftui-expert-skill/references/list-patterns.md: sha256:dffb66ca2df6403a959e0de2429ca4585925cb21dc6bd28ed889e0c9cce358d2
+    .agents/skills/swiftui-expert-skill/references/localization.md: sha256:f6adcf85da40bd011e9aa585cd45cca96223f2d8f9ec4f55b5bda87c2538d574
+    .agents/skills/swiftui-expert-skill/references/macos-scenes.md: sha256:5449fe886e08c51cbec4f5e6f97040ceed149bee86020acc58151409d9125f84
+    .agents/skills/swiftui-expert-skill/references/macos-views.md: sha256:f2e932cecab66a6a6643111e4f7f5eb7d132bcb140b3e796dd82b0400ca5fde6
+    .agents/skills/swiftui-expert-skill/references/macos-window-styling.md: sha256:0c9fc677599d5488e9c58a05d6a5a4a61001d439db4cf7626c222601493437bf
+    .agents/skills/swiftui-expert-skill/references/performance-patterns.md: sha256:ac61edb9871da7924959816eaf68fc625d900c1e316f3296f84621cfe7e106c8
+    .agents/skills/swiftui-expert-skill/references/previews.md: sha256:fdf50f169607ddb7e9c03218957df2b2d733e211f591ac86c99816ca058ede01
+    .agents/skills/swiftui-expert-skill/references/scroll-patterns.md: sha256:82bc253cccc9f4ff11fe7af49259246dfaf8ad4d06960c90dfdeacaa97ab5bd6
+    .agents/skills/swiftui-expert-skill/references/sheet-navigation-patterns.md: sha256:eda4200c089b0baeb77d29a0ad94ed99062a1c79a78fdd7dfa59b00347d701e8
+    .agents/skills/swiftui-expert-skill/references/soft-deprecation.md: sha256:ac907d3729e75747c6b19e9cc6a911337c05b8ff1c25695495ce7cda9d2f5548
+    .agents/skills/swiftui-expert-skill/references/state-management.md: sha256:0f6d4949e57afeeb77e93378e56af21a0e29a3885f59ae0774a6ebf0681b6469
+    .agents/skills/swiftui-expert-skill/references/text-patterns.md: sha256:0621f15e8112e6ad3ecc2af6c5a9cce4ff5b41b91d1108cb76c22bca104ffebe
+    .agents/skills/swiftui-expert-skill/references/trace-analysis.md: sha256:7b0aba8e633a079bad03597c51657fc9b744035ea064fe4198b55e41e5ec4bc1
+    .agents/skills/swiftui-expert-skill/references/trace-recording.md: sha256:8035631402352b8682ef64155ee7462365de5eea0dd2de7dbcda61bfaa8541a9
+    .agents/skills/swiftui-expert-skill/references/view-structure.md: sha256:be84f1ae78ebd03d921131aa86befc703e69d0ea9ea50739c20b9b659810eb7b
+    .agents/skills/swiftui-expert-skill/scripts/analyze_trace.py: sha256:f40d49cfd4b5afcea717560787c34dcef1574f831a55a7d846303910df539636
+    .agents/skills/swiftui-expert-skill/scripts/instruments_parser/__init__.py: sha256:fdf7c99bed236e0fb71524b155be864a00a71af4997d6848c6c33f49fce62861
+    .agents/skills/swiftui-expert-skill/scripts/instruments_parser/causes.py: sha256:cf6e067e5f47130562522ed27ca4f2551d0b2de669b5063db950e220e19cbd1f
+    .agents/skills/swiftui-expert-skill/scripts/instruments_parser/correlate.py: sha256:c4bd0c6d14cc96e03cf058ae134c661ace6de5d9b95d417e742278a9c86d064b
+    .agents/skills/swiftui-expert-skill/scripts/instruments_parser/events.py: sha256:e389fed14c398732aadb04bddeed399d4856eca24741396e3c845d4a4a95be57
+    .agents/skills/swiftui-expert-skill/scripts/instruments_parser/hangs.py: sha256:af779727b7342186606021acad8f38dfb88778ee068a95d0a9b119f415bc5162
+    .agents/skills/swiftui-expert-skill/scripts/instruments_parser/hitches.py: sha256:39c4a6d96fa4447709eeff98f033a2a6cac1a70b205fd543b7711e1d4759dd2f
+    .agents/skills/swiftui-expert-skill/scripts/instruments_parser/summary.py: sha256:dc856a29008aa2218cf30fc82db133f75efc1f67580b27fb3077f17ccc365296
+    .agents/skills/swiftui-expert-skill/scripts/instruments_parser/swiftui.py: sha256:f499b222b24c2129208284ccc61d6d0ac27bfe67831a5f7db51848f83d20fdd5
+    .agents/skills/swiftui-expert-skill/scripts/instruments_parser/time_profiler.py: sha256:dd3ab3f6e8e41b8ad00bbbd38ac96ada12a945bd82e51c923ac912fc46bff9b6
+    .agents/skills/swiftui-expert-skill/scripts/instruments_parser/xctrace.py: sha256:b680bddb80d7f63ff97b7ba69b1c9ddda57d4080d601e9a1a47f09e81c2870ce
+    .agents/skills/swiftui-expert-skill/scripts/instruments_parser/xml_utils.py: sha256:f0f4476f0f1f0ce9ad5779509b59c2c77b0f7438a57d358aa76e715e7a23b4d6
+    .agents/skills/swiftui-expert-skill/scripts/record_trace.py: sha256:7d9c33de1146a274f6ca45790a25f4421ea697893e18a0a6b2ccfb401e245891
   content_hash: sha256:022be0aedcf2d363d9aa4851ab0d817c4fffbff6a13e0a3a8b39e0c876fb6083
+  declared_license: MIT
 - repo_url: conorluddy/ios-simulator-skill
+  name: ios-simulator-skill
   host: github.com
   resolved_commit: e0ee87a884b438632238ef8ab42139797f8638a8
+  version: unknown
   virtual_path: ios-simulator-skill/skills/ios-simulator-skill
   is_virtual: true
   package_type: claude_skill
   deployed_files:
   - .agents/skills/ios-simulator-skill
+  - .agents/skills/ios-simulator-skill/SKILL.md
+  - .agents/skills/ios-simulator-skill/scripts/accessibility_audit.py
+  - .agents/skills/ios-simulator-skill/scripts/app_launcher.py
+  - .agents/skills/ios-simulator-skill/scripts/app_state_capture.py
+  - .agents/skills/ios-simulator-skill/scripts/appearance.py
+  - .agents/skills/ios-simulator-skill/scripts/build_and_test.py
+  - .agents/skills/ios-simulator-skill/scripts/clipboard.py
+  - .agents/skills/ios-simulator-skill/scripts/common/__init__.py
+  - .agents/skills/ios-simulator-skill/scripts/common/cache_utils.py
+  - .agents/skills/ios-simulator-skill/scripts/common/device_utils.py
+  - .agents/skills/ios-simulator-skill/scripts/common/env_config.py
+  - .agents/skills/ios-simulator-skill/scripts/common/hang_pipeline.py
+  - .agents/skills/ios-simulator-skill/scripts/common/hang_sessions.py
+  - .agents/skills/ios-simulator-skill/scripts/common/idb_utils.py
+  - .agents/skills/ios-simulator-skill/scripts/common/screenshot_utils.py
+  - .agents/skills/ios-simulator-skill/scripts/container.py
+  - .agents/skills/ios-simulator-skill/scripts/gesture.py
+  - .agents/skills/ios-simulator-skill/scripts/hang_watcher.py
+  - .agents/skills/ios-simulator-skill/scripts/keyboard.py
+  - .agents/skills/ios-simulator-skill/scripts/localization_audit.py
+  - .agents/skills/ios-simulator-skill/scripts/location.py
+  - .agents/skills/ios-simulator-skill/scripts/log_monitor.py
+  - .agents/skills/ios-simulator-skill/scripts/model_inspector.py
+  - .agents/skills/ios-simulator-skill/scripts/navigator.py
+  - .agents/skills/ios-simulator-skill/scripts/privacy_manager.py
+  - .agents/skills/ios-simulator-skill/scripts/push_notification.py
+  - .agents/skills/ios-simulator-skill/scripts/screen_mapper.py
+  - .agents/skills/ios-simulator-skill/scripts/sim_health_check.sh
+  - .agents/skills/ios-simulator-skill/scripts/sim_list.py
+  - .agents/skills/ios-simulator-skill/scripts/simctl_boot.py
+  - .agents/skills/ios-simulator-skill/scripts/simctl_create.py
+  - .agents/skills/ios-simulator-skill/scripts/simctl_delete.py
+  - .agents/skills/ios-simulator-skill/scripts/simctl_erase.py
+  - .agents/skills/ios-simulator-skill/scripts/simctl_shutdown.py
+  - .agents/skills/ios-simulator-skill/scripts/simulator_selector.py
+  - .agents/skills/ios-simulator-skill/scripts/status_bar.py
+  - .agents/skills/ios-simulator-skill/scripts/test_recorder.py
+  - .agents/skills/ios-simulator-skill/scripts/visual_diff.py
+  - .agents/skills/ios-simulator-skill/scripts/xcode/__init__.py
+  - .agents/skills/ios-simulator-skill/scripts/xcode/builder.py
+  - .agents/skills/ios-simulator-skill/scripts/xcode/cache.py
+  - .agents/skills/ios-simulator-skill/scripts/xcode/config.py
+  - .agents/skills/ios-simulator-skill/scripts/xcode/reporter.py
+  - .agents/skills/ios-simulator-skill/scripts/xcode/xcresult.py
+  deployed_file_hashes:
+    .agents/skills/ios-simulator-skill/SKILL.md: sha256:ad6bed9ec5ebc450c595047079abb7784e3c4cc8d0f1a790b08e02398d8c344c
+    .agents/skills/ios-simulator-skill/scripts/accessibility_audit.py: sha256:23ea6ed52689fb5b7b109227d9c5b653e972e812a01eb17c13cd7a59bff12ee3
+    .agents/skills/ios-simulator-skill/scripts/app_launcher.py: sha256:f96163167bea4f71fae42905f1cfa7fe62e54a0213092328c86ae2189b757b23
+    .agents/skills/ios-simulator-skill/scripts/app_state_capture.py: sha256:aae5671fee3d7ecce5d77f8901f47c4449c5cde06f524480b47158437b1aaeab
+    .agents/skills/ios-simulator-skill/scripts/appearance.py: sha256:97db9296f957501b0c3780d739c45986ba9c68783329e76cb915688e2bebf139
+    .agents/skills/ios-simulator-skill/scripts/build_and_test.py: sha256:fb4e85618ab0290bfaa1e391fb47ed2de18fa3cbeda3af7f0c1648ab2aa43541
+    .agents/skills/ios-simulator-skill/scripts/clipboard.py: sha256:a322b34e833c4e54e464129a128703f554f2a82a880a8f3f91bc44abec4a92ce
+    .agents/skills/ios-simulator-skill/scripts/common/__init__.py: sha256:b95d91b6d145324a93e03d2232615514780ad81a41934cb4ad373f28b2514143
+    .agents/skills/ios-simulator-skill/scripts/common/cache_utils.py: sha256:b01ef1fd4d7661ca23693524b73f286e811f12f759d12a3c0fdfbcc0c3a2821e
+    .agents/skills/ios-simulator-skill/scripts/common/device_utils.py: sha256:011eb71cd9dfce80366ff7d094796e055c5130a20c7305f352143717993dc518
+    .agents/skills/ios-simulator-skill/scripts/common/env_config.py: sha256:c23f742c74ae65781c893cc74c00ed7e6ffab08b26fb6ac5e5b16dc1cf0ee79a
+    .agents/skills/ios-simulator-skill/scripts/common/hang_pipeline.py: sha256:1d049974996d29ab822087b5eb5c1eb05e8cdb595d46b90e35bf279a77949dc6
+    .agents/skills/ios-simulator-skill/scripts/common/hang_sessions.py: sha256:82edd8aced216eef0220f92c03125d241a353ed6ea92e566ed14758ecdc66190
+    .agents/skills/ios-simulator-skill/scripts/common/idb_utils.py: sha256:2569b55a7ced7d87bdf27924ede95575aac4968860d94dbec6ae499347b5aa6e
+    .agents/skills/ios-simulator-skill/scripts/common/screenshot_utils.py: sha256:4a89e0b54acfbe4802ad3797b05ad6e28cdff52f3e97534de8957b639a39c44f
+    .agents/skills/ios-simulator-skill/scripts/container.py: sha256:7bbe505a9067150a0c0d96282db729cffec2440c5c9c976740356d5ced7bfbe7
+    .agents/skills/ios-simulator-skill/scripts/gesture.py: sha256:fe4b269e3fe100c84454ddd21a1ead60c32fb5dc809343363d2dc335898c8cd5
+    .agents/skills/ios-simulator-skill/scripts/hang_watcher.py: sha256:725717dccbe66814d713748151e4c456de20f1cd6e90c8ac005228b9d5e2358c
+    .agents/skills/ios-simulator-skill/scripts/keyboard.py: sha256:12ae50a87eb3f76925750dfe0d3880bb1cb1534039363ee4110d3bf30bc2311f
+    .agents/skills/ios-simulator-skill/scripts/localization_audit.py: sha256:75652120935beb74589c749740f557a83554c1366e97503973aeab04a02d2393
+    .agents/skills/ios-simulator-skill/scripts/location.py: sha256:c0d1d1dec98c50547a4d19036e12d002be6d84ad6dbf6e1a6ce27061f9616211
+    .agents/skills/ios-simulator-skill/scripts/log_monitor.py: sha256:ab4a060758f54e6384ab93d5a8a3c94aabfaa151046688ddf2388681a2184795
+    .agents/skills/ios-simulator-skill/scripts/model_inspector.py: sha256:4c9338e6f95abfdae825f7354f49b7593238b948dbeaddd8ce462211082774f4
+    .agents/skills/ios-simulator-skill/scripts/navigator.py: sha256:4b3dec8ce63c5b9efa6aa4df4c328ea7529d2a74786e6c7ebc618841f0e11335
+    .agents/skills/ios-simulator-skill/scripts/privacy_manager.py: sha256:67dfd9749da2edbb84186d32022124ac317e8aa0c69b94350caaadc6cd5a2dc4
+    .agents/skills/ios-simulator-skill/scripts/push_notification.py: sha256:b20b0ea3d2acce4c2d8fd0cb0bac07f8ae7ac6ef04d7b5efcfc757fb7f6e7c46
+    .agents/skills/ios-simulator-skill/scripts/screen_mapper.py: sha256:e62b144a4537c2afaa4fb8487e7802a69c884a9485c42a93fc421b376f24c4c3
+    .agents/skills/ios-simulator-skill/scripts/sim_health_check.sh: sha256:5d21688e639fe895c983eb602f4391929480827ebac65e657b68d2f202f8002c
+    .agents/skills/ios-simulator-skill/scripts/sim_list.py: sha256:9040bd3c2fcd015f1b00c808152fca979076d9213e001485b6300fdb65760628
+    .agents/skills/ios-simulator-skill/scripts/simctl_boot.py: sha256:b15f3c0efa5163ed349979b5c6a1a4729812a0af4be8d766398040fe0ab8bf3f
+    .agents/skills/ios-simulator-skill/scripts/simctl_create.py: sha256:e6f21b0250852290a15acdaddeea0eeb63aa9993f71a628e3a82282dc02e91d0
+    .agents/skills/ios-simulator-skill/scripts/simctl_delete.py: sha256:60c2851b7c36a1f705ba79b7d39a18794af033d21535e0281b4ca95f85a6eb85
+    .agents/skills/ios-simulator-skill/scripts/simctl_erase.py: sha256:16edd10418793a0a3b4c0becb9341b1e9c728c261ad777d17a8f2f4240220ecb
+    .agents/skills/ios-simulator-skill/scripts/simctl_shutdown.py: sha256:f8ccf5fd80f92fd538d2eb1daa21361fecd5771a5eed5aeddd8ff8804a8c9c29
+    .agents/skills/ios-simulator-skill/scripts/simulator_selector.py: sha256:6a1a3be345005c535610a588ff776e71fbb393f6c0940552a1c86115e3486df2
+    .agents/skills/ios-simulator-skill/scripts/status_bar.py: sha256:326bb1c36bab3ab53cf69270a69481bbc342f812429027a4a96065be336d22df
+    .agents/skills/ios-simulator-skill/scripts/test_recorder.py: sha256:e87c9fdb60f728f9f3800e9aa7c4091e58f3b624f06c55cbef8d379edde6f326
+    .agents/skills/ios-simulator-skill/scripts/visual_diff.py: sha256:667a64ef1d1e88dc95682350160b9ec730a9764e8dfe87ea0a19d2fd18022dee
+    .agents/skills/ios-simulator-skill/scripts/xcode/__init__.py: sha256:81d54fdf0b25f0d0587e211c39912dc64977b08d07b21f658b4eb7419163708f
+    .agents/skills/ios-simulator-skill/scripts/xcode/builder.py: sha256:efd43013f18f6b11718c2883a5c4aa278f41aef2f24efc9c69556e62cbe89cb4
+    .agents/skills/ios-simulator-skill/scripts/xcode/cache.py: sha256:9fb32b5581743f623ce70edea3a8469af8c33e9a0e65e4b21c9f0b5ba49d34d5
+    .agents/skills/ios-simulator-skill/scripts/xcode/config.py: sha256:9d26bf0db01be44475d981021e038e7afa2b321ca5b162da7d5323b82684b1f7
+    .agents/skills/ios-simulator-skill/scripts/xcode/reporter.py: sha256:ad2943f8ef12e24593659cc660141e1bebdfe81794da9d165ba04f0ce6eb8b31
+    .agents/skills/ios-simulator-skill/scripts/xcode/xcresult.py: sha256:efb0898470e0164cdf4fa6727cfa93a433fe6151fad1ebef6b41fe09d60e54e2
   content_hash: sha256:4d6c14e18411bbe29620b158c178dbdfd1622ab513857abc8d7578b6aed88f9f
 - repo_url: efremidze/swift-patterns-skill
+  name: swift-patterns
   host: github.com
   resolved_commit: 2e9b66b0470a324cf3a6898549279e622aa7df71
+  version: 1.0.0
   package_type: marketplace_plugin
   deployed_files:
   - .agents/skills/swift-patterns
+  - .agents/skills/swift-patterns/SKILL.md
+  - .agents/skills/swift-patterns/references/code-review-refactoring.md
+  - .agents/skills/swift-patterns/references/concurrency.md
+  - .agents/skills/swift-patterns/references/lists-collections.md
+  - .agents/skills/swift-patterns/references/modern-swiftui-apis.md
+  - .agents/skills/swift-patterns/references/navigation.md
+  - .agents/skills/swift-patterns/references/patterns.md
+  - .agents/skills/swift-patterns/references/performance.md
+  - .agents/skills/swift-patterns/references/refactor-playbooks.md
+  - .agents/skills/swift-patterns/references/scrolling.md
+  - .agents/skills/swift-patterns/references/state.md
+  - .agents/skills/swift-patterns/references/testing-di.md
+  - .agents/skills/swift-patterns/references/view-composition.md
+  - .agents/skills/swift-patterns/references/workflows-refactor.md
+  - .agents/skills/swift-patterns/references/workflows-review.md
+  deployed_file_hashes:
+    .agents/skills/swift-patterns/SKILL.md: sha256:5bb473ddf2bae51499032109f0397dd9b05089a1b8b0c70279ed88e3ff104012
+    .agents/skills/swift-patterns/references/code-review-refactoring.md: sha256:a87520e91c831e44ab5783c88db567c15e27889859b39879908bcfc42a844687
+    .agents/skills/swift-patterns/references/concurrency.md: sha256:ede51212f6c20fc2a1544018347ea319797cbf3a8b173f085167f254851e47bf
+    .agents/skills/swift-patterns/references/lists-collections.md: sha256:4bcd6aab8a524dd754a13b8f8768df81dd93e25f1235b3c620d1cab070ded4e0
+    .agents/skills/swift-patterns/references/modern-swiftui-apis.md: sha256:6de868f0ee1fcdae9a3c1586abb1fdf376e4305f27e5399f0591affb307ef953
+    .agents/skills/swift-patterns/references/navigation.md: sha256:31260d60d75a70c8d4c1d067289d9211c419a24cb8cc0de12b4092e034947d8a
+    .agents/skills/swift-patterns/references/patterns.md: sha256:f5c38be5f4a08d1ff280311235f23dc369ba216ecdb8b617916ab6f3423eeaac
+    .agents/skills/swift-patterns/references/performance.md: sha256:260884c86fae48843de4b54189131721cd83abfc2927f180d3f46d3388b2d2ef
+    .agents/skills/swift-patterns/references/refactor-playbooks.md: sha256:01f6dd0e0276132a98183caba933b1d45726b844867c8048051472f7fca28957
+    .agents/skills/swift-patterns/references/scrolling.md: sha256:0d992f6bdece8847cbf43e446d2217655a8e175a77a86dc43ef013601ee32835
+    .agents/skills/swift-patterns/references/state.md: sha256:3d0fba267b87117412ce6e189a79c6f4a7e3c5e88b70ec4c0a863a988f656d58
+    .agents/skills/swift-patterns/references/testing-di.md: sha256:42a6e009f2cd64c3d9b29725bd837485f17a41bf93b2b6e834c4325d2930ac65
+    .agents/skills/swift-patterns/references/view-composition.md: sha256:09676adc610cceb244d79541dd2e0e2db0aece4158875f629cee536343c88046
+    .agents/skills/swift-patterns/references/workflows-refactor.md: sha256:280d59463656600bcaf4f694cf3d77180de1ba54bf3d76bf9bff5008a8235bba
+    .agents/skills/swift-patterns/references/workflows-review.md: sha256:0925a99469d9d20e7a2d5123573115b9c5da8b40c809eeeaf1e95ea1c3c0cc39
   content_hash: sha256:eaa8c25c491eef571c6abd8cb8c1d13eb417721d02e1df1aff2440f9176ae809
+  declared_license: MIT
+deployments:
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:ad6bed9ec5ebc450c595047079abb7784e3c4cc8d0f1a790b08e02398d8c344c
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/accessibility_audit.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:23ea6ed52689fb5b7b109227d9c5b653e972e812a01eb17c13cd7a59bff12ee3
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/app_launcher.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:f96163167bea4f71fae42905f1cfa7fe62e54a0213092328c86ae2189b757b23
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/app_state_capture.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:aae5671fee3d7ecce5d77f8901f47c4449c5cde06f524480b47158437b1aaeab
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/appearance.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:97db9296f957501b0c3780d739c45986ba9c68783329e76cb915688e2bebf139
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/build_and_test.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:fb4e85618ab0290bfaa1e391fb47ed2de18fa3cbeda3af7f0c1648ab2aa43541
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/clipboard.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:a322b34e833c4e54e464129a128703f554f2a82a880a8f3f91bc44abec4a92ce
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/common/__init__.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:b95d91b6d145324a93e03d2232615514780ad81a41934cb4ad373f28b2514143
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/common/cache_utils.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:b01ef1fd4d7661ca23693524b73f286e811f12f759d12a3c0fdfbcc0c3a2821e
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/common/device_utils.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:011eb71cd9dfce80366ff7d094796e055c5130a20c7305f352143717993dc518
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/common/env_config.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:c23f742c74ae65781c893cc74c00ed7e6ffab08b26fb6ac5e5b16dc1cf0ee79a
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/common/hang_pipeline.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:1d049974996d29ab822087b5eb5c1eb05e8cdb595d46b90e35bf279a77949dc6
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/common/hang_sessions.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:82edd8aced216eef0220f92c03125d241a353ed6ea92e566ed14758ecdc66190
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/common/idb_utils.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:2569b55a7ced7d87bdf27924ede95575aac4968860d94dbec6ae499347b5aa6e
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/common/screenshot_utils.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:4a89e0b54acfbe4802ad3797b05ad6e28cdff52f3e97534de8957b639a39c44f
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/container.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:7bbe505a9067150a0c0d96282db729cffec2440c5c9c976740356d5ced7bfbe7
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/gesture.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:fe4b269e3fe100c84454ddd21a1ead60c32fb5dc809343363d2dc335898c8cd5
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/hang_watcher.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:725717dccbe66814d713748151e4c456de20f1cd6e90c8ac005228b9d5e2358c
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/keyboard.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:12ae50a87eb3f76925750dfe0d3880bb1cb1534039363ee4110d3bf30bc2311f
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/localization_audit.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:75652120935beb74589c749740f557a83554c1366e97503973aeab04a02d2393
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/location.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:c0d1d1dec98c50547a4d19036e12d002be6d84ad6dbf6e1a6ce27061f9616211
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/log_monitor.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:ab4a060758f54e6384ab93d5a8a3c94aabfaa151046688ddf2388681a2184795
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/model_inspector.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:4c9338e6f95abfdae825f7354f49b7593238b948dbeaddd8ce462211082774f4
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/navigator.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:4b3dec8ce63c5b9efa6aa4df4c328ea7529d2a74786e6c7ebc618841f0e11335
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/privacy_manager.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:67dfd9749da2edbb84186d32022124ac317e8aa0c69b94350caaadc6cd5a2dc4
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/push_notification.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:b20b0ea3d2acce4c2d8fd0cb0bac07f8ae7ac6ef04d7b5efcfc757fb7f6e7c46
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/screen_mapper.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:e62b144a4537c2afaa4fb8487e7802a69c884a9485c42a93fc421b376f24c4c3
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/sim_health_check.sh
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:5d21688e639fe895c983eb602f4391929480827ebac65e657b68d2f202f8002c
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/sim_list.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:9040bd3c2fcd015f1b00c808152fca979076d9213e001485b6300fdb65760628
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/simctl_boot.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:b15f3c0efa5163ed349979b5c6a1a4729812a0af4be8d766398040fe0ab8bf3f
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/simctl_create.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:e6f21b0250852290a15acdaddeea0eeb63aa9993f71a628e3a82282dc02e91d0
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/simctl_delete.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:60c2851b7c36a1f705ba79b7d39a18794af033d21535e0281b4ca95f85a6eb85
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/simctl_erase.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:16edd10418793a0a3b4c0becb9341b1e9c728c261ad777d17a8f2f4240220ecb
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/simctl_shutdown.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:f8ccf5fd80f92fd538d2eb1daa21361fecd5771a5eed5aeddd8ff8804a8c9c29
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/simulator_selector.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:6a1a3be345005c535610a588ff776e71fbb393f6c0940552a1c86115e3486df2
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/status_bar.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:326bb1c36bab3ab53cf69270a69481bbc342f812429027a4a96065be336d22df
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/test_recorder.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:e87c9fdb60f728f9f3800e9aa7c4091e58f3b624f06c55cbef8d379edde6f326
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/visual_diff.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:667a64ef1d1e88dc95682350160b9ec730a9764e8dfe87ea0a19d2fd18022dee
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/xcode/__init__.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:81d54fdf0b25f0d0587e211c39912dc64977b08d07b21f658b4eb7419163708f
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/xcode/builder.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:efd43013f18f6b11718c2883a5c4aa278f41aef2f24efc9c69556e62cbe89cb4
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/xcode/cache.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:9fb32b5581743f623ce70edea3a8469af8c33e9a0e65e4b21c9f0b5ba49d34d5
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/xcode/config.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:9d26bf0db01be44475d981021e038e7afa2b321ca5b162da7d5323b82684b1f7
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/xcode/reporter.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:ad2943f8ef12e24593659cc660141e1bebdfe81794da9d165ba04f0ce6eb8b31
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/ios-simulator-skill/scripts/xcode/xcresult.py
+  runtime: null
+  scope: project
+  owners:
+  - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  active_owner: conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  content_hash: sha256:efb0898470e0164cdf4fa6727cfa93a433fe6151fad1ebef6b41fe09d60e54e2
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swift-patterns
+  runtime: null
+  scope: project
+  owners:
+  - efremidze/swift-patterns-skill
+  active_owner: efremidze/swift-patterns-skill
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swift-patterns/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - efremidze/swift-patterns-skill
+  active_owner: efremidze/swift-patterns-skill
+  content_hash: sha256:5bb473ddf2bae51499032109f0397dd9b05089a1b8b0c70279ed88e3ff104012
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swift-patterns/references/code-review-refactoring.md
+  runtime: null
+  scope: project
+  owners:
+  - efremidze/swift-patterns-skill
+  active_owner: efremidze/swift-patterns-skill
+  content_hash: sha256:a87520e91c831e44ab5783c88db567c15e27889859b39879908bcfc42a844687
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swift-patterns/references/concurrency.md
+  runtime: null
+  scope: project
+  owners:
+  - efremidze/swift-patterns-skill
+  active_owner: efremidze/swift-patterns-skill
+  content_hash: sha256:ede51212f6c20fc2a1544018347ea319797cbf3a8b173f085167f254851e47bf
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swift-patterns/references/lists-collections.md
+  runtime: null
+  scope: project
+  owners:
+  - efremidze/swift-patterns-skill
+  active_owner: efremidze/swift-patterns-skill
+  content_hash: sha256:4bcd6aab8a524dd754a13b8f8768df81dd93e25f1235b3c620d1cab070ded4e0
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swift-patterns/references/modern-swiftui-apis.md
+  runtime: null
+  scope: project
+  owners:
+  - efremidze/swift-patterns-skill
+  active_owner: efremidze/swift-patterns-skill
+  content_hash: sha256:6de868f0ee1fcdae9a3c1586abb1fdf376e4305f27e5399f0591affb307ef953
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swift-patterns/references/navigation.md
+  runtime: null
+  scope: project
+  owners:
+  - efremidze/swift-patterns-skill
+  active_owner: efremidze/swift-patterns-skill
+  content_hash: sha256:31260d60d75a70c8d4c1d067289d9211c419a24cb8cc0de12b4092e034947d8a
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swift-patterns/references/patterns.md
+  runtime: null
+  scope: project
+  owners:
+  - efremidze/swift-patterns-skill
+  active_owner: efremidze/swift-patterns-skill
+  content_hash: sha256:f5c38be5f4a08d1ff280311235f23dc369ba216ecdb8b617916ab6f3423eeaac
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swift-patterns/references/performance.md
+  runtime: null
+  scope: project
+  owners:
+  - efremidze/swift-patterns-skill
+  active_owner: efremidze/swift-patterns-skill
+  content_hash: sha256:260884c86fae48843de4b54189131721cd83abfc2927f180d3f46d3388b2d2ef
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swift-patterns/references/refactor-playbooks.md
+  runtime: null
+  scope: project
+  owners:
+  - efremidze/swift-patterns-skill
+  active_owner: efremidze/swift-patterns-skill
+  content_hash: sha256:01f6dd0e0276132a98183caba933b1d45726b844867c8048051472f7fca28957
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swift-patterns/references/scrolling.md
+  runtime: null
+  scope: project
+  owners:
+  - efremidze/swift-patterns-skill
+  active_owner: efremidze/swift-patterns-skill
+  content_hash: sha256:0d992f6bdece8847cbf43e446d2217655a8e175a77a86dc43ef013601ee32835
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swift-patterns/references/state.md
+  runtime: null
+  scope: project
+  owners:
+  - efremidze/swift-patterns-skill
+  active_owner: efremidze/swift-patterns-skill
+  content_hash: sha256:3d0fba267b87117412ce6e189a79c6f4a7e3c5e88b70ec4c0a863a988f656d58
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swift-patterns/references/testing-di.md
+  runtime: null
+  scope: project
+  owners:
+  - efremidze/swift-patterns-skill
+  active_owner: efremidze/swift-patterns-skill
+  content_hash: sha256:42a6e009f2cd64c3d9b29725bd837485f17a41bf93b2b6e834c4325d2930ac65
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swift-patterns/references/view-composition.md
+  runtime: null
+  scope: project
+  owners:
+  - efremidze/swift-patterns-skill
+  active_owner: efremidze/swift-patterns-skill
+  content_hash: sha256:09676adc610cceb244d79541dd2e0e2db0aece4158875f629cee536343c88046
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swift-patterns/references/workflows-refactor.md
+  runtime: null
+  scope: project
+  owners:
+  - efremidze/swift-patterns-skill
+  active_owner: efremidze/swift-patterns-skill
+  content_hash: sha256:280d59463656600bcaf4f694cf3d77180de1ba54bf3d76bf9bff5008a8235bba
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swift-patterns/references/workflows-review.md
+  runtime: null
+  scope: project
+  owners:
+  - efremidze/swift-patterns-skill
+  active_owner: efremidze/swift-patterns-skill
+  content_hash: sha256:0925a99469d9d20e7a2d5123573115b9c5da8b40c809eeeaf1e95ea1c3c0cc39
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:9fe4bb06a2b17e74acb4ccfdf9044de593c10c1ecf359dc24ef058000d5b447e
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/agents/openai.yaml
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:a7c17cfff5c29e32b11296b63edba0da92e612f9de55f2319b59cb64143b2793
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/assets/logo-small.png
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:befad5069b4c95bbb3612e41e2b7fde601de7e022d8cc0d07570f0c7ec234d11
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/assets/logo.png
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:ab58235e3739a6c83ea8e29f5847ddc65895a6aa3772e17e901dacee101258a6
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/assets/logo.svg
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:d51b96d6df3ba250f7a47e7d74f9491ab891363e130cdd3f4e35b3fe132178d4
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/references/accessibility-patterns.md
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:bb942dd3b31fa24aa051943a6b7754a2de45a263dda0da3ac9dc2c7ce43b14d2
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/references/animation-advanced.md
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:1a9ce32735047f3b4c82bdac15ef34793d2ffb936d96039b1779514f37248cb2
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/references/animation-basics.md
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:5c6e8911c4011d772db061d3438ec07491bf1c467ab87af4d56e21720a189c9f
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/references/animation-transitions.md
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:d8ebbd5f25de519128151146a989d9b0677f1232c22ada2f99be3f8c361b65dd
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/references/charts-accessibility.md
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:772d1c1099a5cc7eef172a206ae60c9269da5d8b6c6a1f885854a1b04f6f619b
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/references/charts.md
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:32dd76aae9ccfafa817bb5d6862e509ee3966d40653ab28d715348b3859c3158
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/references/focus-patterns.md
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:ae5773a18de2c4b48d43319c7f7a201ce8c996b5274a99fccebb78a17aeb72c6
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/references/image-optimization.md
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:879a0fc5b7d99bd0ed445ca295e280dbd8324fe53b1757eb363697301de31b9a
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/references/latest-apis.md
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:5beb6d03610bfd9921f166fdb523eedb4c6f9a292643e8d38701c169ba456b46
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/references/layout-best-practices.md
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:81a1c2ce0356e2beefbc03801afad91dc087963859b774e517a9b78a0e6973ac
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/references/liquid-glass.md
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:c865fef7950cdfcf3cbf9ae28e5f3381a9973c5fe654259d6952dd18660896f3
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/references/list-patterns.md
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:dffb66ca2df6403a959e0de2429ca4585925cb21dc6bd28ed889e0c9cce358d2
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/references/localization.md
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:f6adcf85da40bd011e9aa585cd45cca96223f2d8f9ec4f55b5bda87c2538d574
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/references/macos-scenes.md
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:5449fe886e08c51cbec4f5e6f97040ceed149bee86020acc58151409d9125f84
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/references/macos-views.md
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:f2e932cecab66a6a6643111e4f7f5eb7d132bcb140b3e796dd82b0400ca5fde6
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/references/macos-window-styling.md
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:0c9fc677599d5488e9c58a05d6a5a4a61001d439db4cf7626c222601493437bf
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/references/performance-patterns.md
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:ac61edb9871da7924959816eaf68fc625d900c1e316f3296f84621cfe7e106c8
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/references/previews.md
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:fdf50f169607ddb7e9c03218957df2b2d733e211f591ac86c99816ca058ede01
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/references/scroll-patterns.md
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:82bc253cccc9f4ff11fe7af49259246dfaf8ad4d06960c90dfdeacaa97ab5bd6
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/references/sheet-navigation-patterns.md
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:eda4200c089b0baeb77d29a0ad94ed99062a1c79a78fdd7dfa59b00347d701e8
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/references/soft-deprecation.md
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:ac907d3729e75747c6b19e9cc6a911337c05b8ff1c25695495ce7cda9d2f5548
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/references/state-management.md
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:0f6d4949e57afeeb77e93378e56af21a0e29a3885f59ae0774a6ebf0681b6469
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/references/text-patterns.md
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:0621f15e8112e6ad3ecc2af6c5a9cce4ff5b41b91d1108cb76c22bca104ffebe
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/references/trace-analysis.md
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:7b0aba8e633a079bad03597c51657fc9b744035ea064fe4198b55e41e5ec4bc1
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/references/trace-recording.md
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:8035631402352b8682ef64155ee7462365de5eea0dd2de7dbcda61bfaa8541a9
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/references/view-structure.md
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:be84f1ae78ebd03d921131aa86befc703e69d0ea9ea50739c20b9b659810eb7b
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/scripts/analyze_trace.py
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:f40d49cfd4b5afcea717560787c34dcef1574f831a55a7d846303910df539636
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/scripts/instruments_parser/__init__.py
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:fdf7c99bed236e0fb71524b155be864a00a71af4997d6848c6c33f49fce62861
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/scripts/instruments_parser/causes.py
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:cf6e067e5f47130562522ed27ca4f2551d0b2de669b5063db950e220e19cbd1f
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/scripts/instruments_parser/correlate.py
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:c4bd0c6d14cc96e03cf058ae134c661ace6de5d9b95d417e742278a9c86d064b
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/scripts/instruments_parser/events.py
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:e389fed14c398732aadb04bddeed399d4856eca24741396e3c845d4a4a95be57
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/scripts/instruments_parser/hangs.py
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:af779727b7342186606021acad8f38dfb88778ee068a95d0a9b119f415bc5162
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/scripts/instruments_parser/hitches.py
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:39c4a6d96fa4447709eeff98f033a2a6cac1a70b205fd543b7711e1d4759dd2f
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/scripts/instruments_parser/summary.py
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:dc856a29008aa2218cf30fc82db133f75efc1f67580b27fb3077f17ccc365296
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/scripts/instruments_parser/swiftui.py
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:f499b222b24c2129208284ccc61d6d0ac27bfe67831a5f7db51848f83d20fdd5
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/scripts/instruments_parser/time_profiler.py
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:dd3ab3f6e8e41b8ad00bbbd38ac96ada12a945bd82e51c923ac912fc46bff9b6
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/scripts/instruments_parser/xctrace.py
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:b680bddb80d7f63ff97b7ba69b1c9ddda57d4080d601e9a1a47f09e81c2870ce
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/scripts/instruments_parser/xml_utils.py
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:f0f4476f0f1f0ce9ad5779509b59c2c77b0f7438a57d358aa76e715e7a23b4d6
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/swiftui-expert-skill/scripts/record_trace.py
+  runtime: null
+  scope: project
+  owners:
+  - avdlee/swiftui-agent-skill
+  active_owner: avdlee/swiftui-agent-skill
+  content_hash: sha256:7d9c33de1146a274f6ca45790a25f4421ea697893e18a0a6b2ccfb401e245891

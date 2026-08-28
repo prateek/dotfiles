@@ -1,7 +1,7 @@
 # Source
 
-- Upstream: https://github.com/aiskillstore/marketplace/tree/f8cbc3e373d11bc1cd46ad16ac358a3b66c86dc3/skills/cygnusfear/writing-clearly-and-concisely
+- Upstream: https://github.com/aiskillstore/marketplace/tree/40175672d649fa6482bff53a7acf4ecdd6a04a96/skills/cygnusfear/writing-clearly-and-concisely
 - APM dependency: `aiskillstore/marketplace/skills/cygnusfear/writing-clearly-and-concisely`
-- Ref: `f8cbc3e373d11bc1cd46ad16ac358a3b66c86dc3`
+- Ref: `40175672d649fa6482bff53a7acf4ecdd6a04a96`
 - License: not declared in the upstream repository metadata.
 - Notes: Moved from local source to vendored package source after public source matching.

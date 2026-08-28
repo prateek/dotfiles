@@ -125,9 +125,10 @@ refresh needs a lockfile update first. For each package with APM dependencies:
 
 Refresh gotchas:
 
-- apm-cli is version-pinned in mise (`pipx:apm-cli` in
-  `home/dot_config/mise/conf.d/clis.toml`); newer apm versions must be
-  re-tested against this pipeline before unpinning.
+- Subdirectory deps must not contain symlinks that point outside the
+  subdirectory: apm materializes subdir deps with a git sparse cone, so such
+  symlinks dangle and the install fails with ENOENT on the symlink targets.
+  Depend on the repo root instead (see `forjd/better-writing` in core).
 - SOURCE.md regeneration preserves only the `License` and `Notes` fields.
   Keep local-delta and rename notes inside `Notes`, never as extra bullets.
 - When a skill pairs with a mise-managed CLI (acpx, crit, agent-slack,

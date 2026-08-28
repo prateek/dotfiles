@@ -17,7 +17,7 @@
 # Required to author / maintain this repo, not to run it. When we have a
 # module system that gates installs by role, mark these as dev-only and
 # skip on machines that just consume the dotfiles.
-"pipx:apm-cli" = "0.13.0"  # drives `vendor-agent-package` for skill packages; pinned: 0.28 sparse checkout drops nested skill subdirs (references/) mid-install, breaking vendoring — re-test before unpinning
+"pipx:apm-cli" = "latest"  # drives `vendor-agent-package` for skill packages; subdir deps must not contain symlinks escaping the subdir (apm's sparse cone leaves them dangling) — depend on the repo root instead
 
 # === AI coding harnesses ===
 # Interactive AI coding tools the human runs directly. The desktop `claude`
