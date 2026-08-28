@@ -710,6 +710,42 @@ assert_failure_matching "missing docs index entry for plans/misdirected-index.md
 rm "$repo/docs/plans/misdirected-index.md" "$repo/docs/plans/misdirected-target.md"
 refresh_index
 
+# A link hidden in index frontmatter must not satisfy the coverage check.
+mkdir -p "$repo/hidden"
+write_doc "$repo/hidden/guide.md" \
+  '---' \
+  'status: current' \
+  'doc_type: reference' \
+  '---' \
+  '' \
+  '# Guide'
+write_doc "$repo/hidden/index.md" \
+  '---' \
+  'status: current' \
+  'doc_type: index' \
+  'status_detail: "See [hidden](guide.md)."' \
+  '---' \
+  '' \
+  '# Hidden Index' \
+  '' \
+  '- [Index](index.md)'
+assert_failure_matching "missing docs index entry for guide.md" "$VALIDATOR" --repo-root "$repo" --docs-root "$repo/hidden"
+
+# Likewise, a dead link in index frontmatter is prose, not an index link.
+write_doc "$repo/hidden/index.md" \
+  '---' \
+  'status: current' \
+  'doc_type: index' \
+  'status_detail: "See [gone](missing.md)."' \
+  '---' \
+  '' \
+  '# Hidden Index' \
+  '' \
+  '- [Index](index.md)' \
+  '- [Guide](guide.md)'
+assert_success "$VALIDATOR" --repo-root "$repo" --docs-root "$repo/hidden"
+rm -rf "$repo/hidden"
+
 write_doc "$repo/docs/plans/broken-body-link.md" \
   '---' \
   'status: proposed' \

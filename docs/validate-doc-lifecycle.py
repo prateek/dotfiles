@@ -1258,16 +1258,18 @@ def validate_current_tree(root: Path, docs_root: Path) -> list[str]:
                 errors.append(f"{rel}: Markdown link target must exist: {target}")
 
     if index_path.is_file():
+        # A link in index frontmatter is not a routing entry.
         index_text = index_path.read_text(encoding="utf-8")
+        _index_frontmatter, index_body = split_frontmatter(index_text)
         index_rel = index_path.relative_to(root)
-        index_targets = set(markdown_link_repo_paths(index_rel.as_posix(), index_text))
+        index_targets = set(markdown_link_repo_paths(index_rel.as_posix(), index_body))
         for path in markdown_files(docs_root):
             rel_to_docs = path.relative_to(docs_root).as_posix()
             rel_to_root = path.relative_to(root).as_posix()
             if rel_to_root not in index_targets:
                 errors.append(f"{index_rel}: missing docs index entry for {rel_to_docs}")
 
-        for target in markdown_link_targets(index_text):
+        for target in markdown_link_targets(index_body):
             if should_validate_repo_link(target) and not target_exists(root, index_path, target):
                 errors.append(f"{index_rel}: index link target must exist: {target}")
 
@@ -1378,7 +1380,7 @@ def main() -> int:
         "--repo-root",
         type=Path,
         default=Path(__file__).resolve().parents[1],
-        help="Repository root. Defaults to this script's parent directory.",
+        help="Repository root. Defaults to the parent of this script's directory.",
     )
     parser.add_argument(
         "--docs-root",
