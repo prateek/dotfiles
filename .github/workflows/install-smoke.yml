@@ -20,7 +20,18 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y shellcheck
       - name: Shellcheck
         run: |
-          shellcheck -x scripts/macos/capture.sh scripts/vm/test-install-tart.sh scripts/vm/build-runner-image.sh scripts/vm/check-install-log.sh scripts/trace/perfetto-trace.bash scripts/chezmoi-hooks/plist-hooks.sh scripts/packages/render-brewfile scripts/packages/reconcile-fork-installs scripts/chezmoi/test-apply-dry-run.sh scripts/audit/orca-settings.sh
+          # Discover scripts by shebang instead of a hand-kept list; zsh and
+          # non-shell files self-exclude. Pathspecs a branch lacks are fine:
+          # git ls-files just returns nothing for them.
+          mapfile -t scripts < <(
+            git ls-files scripts home/dot_agents/bin |
+              while IFS= read -r file; do
+                head -n 1 "$file" | grep -Eq '^#!/(usr/)?bin/(env[[:space:]]+)?(ba)?sh([[:space:]]|$)' && printf '%s\n' "$file"
+              done
+          )
+          [ "${#scripts[@]}" -gt 0 ] || { echo "shellcheck discovery matched no scripts" >&2; exit 1; }
+          printf '%s\n' "${scripts[@]}"
+          shellcheck -x "${scripts[@]}"
 
   macos-dry-run:
     runs-on: macos-latest

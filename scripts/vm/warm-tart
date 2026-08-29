@@ -123,6 +123,7 @@ _sync_repo_into_vm() {
   # repo into ~/dotfiles inside the VM, excluding .git and other host-
   # only metadata. The mount stays read-only; the VM-local copy is what
   # chezmoi reads from.
+  # shellcheck disable=SC2016 # $HOME expands inside the VM, not on the host
   tart exec "$WARM_VM_NAME" sh -lc '
     set -e
     /usr/bin/rsync -a --delete \
@@ -140,6 +141,7 @@ cmd_bootstrap() {
   ensure_running
   _sync_repo_into_vm
   log "Bootstrapping chezmoi inside warm VM (machine_type=$WARM_MACHINE_TYPE)..."
+  # shellcheck disable=SC2016 # variables expand inside the VM, not on the host
   tart exec "$WARM_VM_NAME" env \
     DOTFILES_INIT_MACHINE_TYPE="$WARM_MACHINE_TYPE" \
     sh -lc '
@@ -156,6 +158,7 @@ cmd_apply() {
   ensure_running
   _sync_repo_into_vm
   log "Applying chezmoi inside warm VM..."
+  # shellcheck disable=SC2016 # $HOME/$PATH expand inside the VM, not on the host
   tart exec "$WARM_VM_NAME" sh -lc '
     set -e
     export PATH="$HOME/.local/bin:$PATH"
