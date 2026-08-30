@@ -71,6 +71,7 @@ make test-pi-statusline
 make test-orca-settings
 make test-crit-config
 make test-acpx-model-drift
+make test-acpx-poll-stream
 make test-agent-skill-packages
 make test-agent-skill-packages-native
 make test-selected-app-plists

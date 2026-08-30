@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+# Blocking poll for growth of an append-only log. Prints the unread bytes
+# (capped at max-bytes) and persists the read offset in the state file, so a
+# relay loop can turn "wait for output" into one blocking tool call. Exits 4
+# on timeout with no growth, and also when the log shrank or vanished during
+# the window (nothing to emit; offset unadvanced). Deliberately no
+# writer-liveness tracking: the caller's completion notification is the
+# backstop for a dead writer.
+# One concurrent caller per state file; there is no locking, and a second
+# caller silently steals bytes from the first.
+# Hard I/O failures (unreadable log or state file) exit 1 with a diagnostic
+# on stderr and leave the stored offset unadvanced.
+# darwin-only (`stat -f%z`).
+set -euo pipefail
+
+usage() {
+  echo "usage: poll-stream <log> <state-file> [max-wait-s=240] [max-bytes=8192]" >&2
+  exit 2
+}
+
+if [ "$#" -lt 2 ] || [ "$#" -gt 4 ]; then
+  usage
+fi
+
+log="$1"
+state_file="$2"
+max_wait_s="${3:-240}"
+max_bytes="${4:-8192}"
+
+case "$max_wait_s" in *[!0-9]*) usage ;; esac
+case "$max_bytes" in *[!0-9]*) usage ;; esac
+# 10# forces decimal so leading-zero args cannot be misread as octal.
+max_wait_s=$((10#$max_wait_s))
+max_bytes=$((10#$max_bytes))
+[ "$max_bytes" -gt 0 ] || usage
+
+# A missing log is not an error: acpx may not have created it yet. A log
+# that exists but cannot be stat'd is a hard failure, not a quiet size 0.
+log_size() {
+  if [ -e "$log" ]; then
+    stat -f%z "$log" 2>/dev/null \
+      || { echo "poll-stream: stat failed: $log" >&2; exit 1; }
+  else
+    echo 0
+  fi
+}
+
+offset=0
+if [ -f "$state_file" ]; then
+  offset="$(<"$state_file")" \
+    || { echo "poll-stream: state read failed: $state_file" >&2; exit 1; }
+  case "$offset" in '' | *[!0-9]*) offset=0 ;; esac
+  # 10# forces decimal: a leading-zero offset would otherwise parse as octal.
+  offset=$((10#$offset))
+fi
+
+# Wall-clock deadline, not iteration counting: the quiet wait lands in
+# [max-wait-s, max-wait-s + ~1s]. The +1 exists because SECONDS ticks on
+# wall-clock second boundaries, so the first tick can land arbitrarily
+# soon after start; without the pad a quiet poll could exit early.
+# Callers pair max-wait-s with a comfortably larger tool timeout.
+deadline=$((SECONDS + max_wait_s + 1))
+size="$(log_size)"
+if [ "$size" -lt "$offset" ]; then
+  echo "poll-stream: log shorter than stored offset ($size < $offset): $log" >&2
+fi
+while [ "$size" -le "$offset" ]; do
+  [ "$SECONDS" -lt "$deadline" ] || exit 4
+  sleep 1
+  size="$(log_size)"
+done
+
+count=$((size - offset))
+if [ "$count" -gt "$max_bytes" ]; then
+  count="$max_bytes"
+fi
+
+# Stage the chunk so the offset advances by the bytes actually read, not the
+# earlier stat: a log replaced or shrunk between stat and read must not make
+# the offset skip past bytes that were never emitted.
+chunk="$state_file.chunk.$$"
+tmp="$state_file.tmp.$$"
+trap 'rm -f "$chunk" "$tmp"' EXIT
+# tail|head instead of dd bs=1: BSD dd has no byte-mode seek, and bs=1 costs
+# two syscalls per byte. head closing at the cap SIGPIPEs tail (exit 141),
+# which is a successful capped read, not a failure. tail's stderr is left
+# attached so a real read failure carries its errno alongside the brand.
+tail -c "+$((offset + 1))" "$log" | head -c "$count" >"$chunk" \
+  || [ "$?" -eq 141 ] \
+  || { echo "poll-stream: read failed: $log" >&2; exit 1; }
+emitted="$(stat -f%z "$chunk")"
+[ "$emitted" -gt 0 ] || exit 4
+
+cat "$chunk"
+
+printf '%s\n' "$((offset + emitted))" >"$tmp"
+mv "$tmp" "$state_file"
