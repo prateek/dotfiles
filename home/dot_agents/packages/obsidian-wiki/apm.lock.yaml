@@ -1,0 +1,1796 @@
+lockfile_version: '1'
+generated_at: '2026-08-30T22:40:49.496513+00:00'
+apm_version: 0.28.0
+dependencies:
+- repo_url: ar9av/obsidian-wiki
+  name: claude-history-ingest
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/claude-history-ingest
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/claude-history-ingest
+  - .agents/skills/claude-history-ingest/SKILL.md
+  - .agents/skills/claude-history-ingest/references/claude-data-format.md
+  deployed_file_hashes:
+    .agents/skills/claude-history-ingest/SKILL.md: sha256:6a2e07f0d2c1ba9f97505abb7bb4dd2b8f7b87d25407d1cbc14ba066bc6e5863
+    .agents/skills/claude-history-ingest/references/claude-data-format.md: sha256:1ca5a6014895011e450aee310638b4b4a06bd3f854ad990cc29d988794c5f96d
+  content_hash: sha256:fe68a568fba5b480577e70732beb8083c28205d4dbc2e1a117ef3f1f12a4ca64
+- repo_url: ar9av/obsidian-wiki
+  name: code-understand
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/code-understand
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/code-understand
+  - .agents/skills/code-understand/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/code-understand/SKILL.md: sha256:3d37f30d1ca4c3214461cd8b5799660b072ba40c0672e06f52657be13c79b652
+  content_hash: sha256:96354c265f5799a09f5a87e503b6b9d69b5aceae9106b58b526f53abae53b3c5
+- repo_url: ar9av/obsidian-wiki
+  name: codex-history-ingest
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/codex-history-ingest
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/codex-history-ingest
+  - .agents/skills/codex-history-ingest/SKILL.md
+  - .agents/skills/codex-history-ingest/references/codex-data-format.md
+  deployed_file_hashes:
+    .agents/skills/codex-history-ingest/SKILL.md: sha256:90254fcd1ae73034848e3a6278cde79463bea734d9905bcfd47c00a047dadf6f
+    .agents/skills/codex-history-ingest/references/codex-data-format.md: sha256:e86ecfc5f0bf76fd1b10a18cb358793bb8ccb08eaf12aa127436b1f9ddf461b9
+  content_hash: sha256:99c08d75a1b8297eb05b92a5543c48e1b1b5da8bddee0c84038993e7eb86b0e8
+- repo_url: ar9av/obsidian-wiki
+  name: copilot-history-ingest
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/copilot-history-ingest
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/copilot-history-ingest
+  - .agents/skills/copilot-history-ingest/SKILL.md
+  - .agents/skills/copilot-history-ingest/references/copilot-data-format.md
+  deployed_file_hashes:
+    .agents/skills/copilot-history-ingest/SKILL.md: sha256:5366310fd067c73b8355e7c42e224afe067adc2e83d3291465d17834705051f5
+    .agents/skills/copilot-history-ingest/references/copilot-data-format.md: sha256:8103b77da1d836f068432e76bb40998ebc104534f23fdf2fee7fc73b7904a280
+  content_hash: sha256:c231ed68c347eb917f96b7c28124335a0371849ae2a84483c6b4384f3dc19100
+- repo_url: ar9av/obsidian-wiki
+  name: cross-linker
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/cross-linker
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/cross-linker
+  - .agents/skills/cross-linker/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/cross-linker/SKILL.md: sha256:c7d0872eeb380c429c657c7582a2d8867505cb8de1545591101dd863018f0d58
+  content_hash: sha256:4eedc1c770f9163be17844a006556ef3562d7c999553ffae8c0083e3ed3f4fc7
+- repo_url: ar9av/obsidian-wiki
+  name: daily-update
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/daily-update
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/daily-update
+  - .agents/skills/daily-update/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/daily-update/SKILL.md: sha256:3cce85501196a79aca9a2a466b93f78608dda365998ef67c52acc9285ec67550
+  content_hash: sha256:f73db6ed7d0d2ba87a83a07053fb6353442cb9d1e82ea489f8b6e0f60a332834
+- repo_url: ar9av/obsidian-wiki
+  name: graph-colorize
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/graph-colorize
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/graph-colorize
+  - .agents/skills/graph-colorize/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/graph-colorize/SKILL.md: sha256:ae21761a234d0362771530c0bd6055ea64c5792ec8e17b513645adf49d97d056
+  content_hash: sha256:398c6ebe6bb5f1c0811eb878e909fa0ea0480a3a255270aa0ac6a21dac774f98
+- repo_url: ar9av/obsidian-wiki
+  name: hermes-history-ingest
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/hermes-history-ingest
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/hermes-history-ingest
+  - .agents/skills/hermes-history-ingest/SKILL.md
+  - .agents/skills/hermes-history-ingest/references/hermes-data-format.md
+  deployed_file_hashes:
+    .agents/skills/hermes-history-ingest/SKILL.md: sha256:63169dff38feff4356981ff1b8eedf4fe29811ab796fa6e376a75635f078cba3
+    .agents/skills/hermes-history-ingest/references/hermes-data-format.md: sha256:90a44f768edb18e14d6f3c0a11c3b1f3a55951e17ba638092aa993a16eccba87
+  content_hash: sha256:ff43dc6f40326498de18ba96920dcca8a5c793185ceb4f72b4441e8283423505
+- repo_url: ar9av/obsidian-wiki
+  name: impl-validator
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/impl-validator
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/impl-validator
+  - .agents/skills/impl-validator/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/impl-validator/SKILL.md: sha256:31d2548ec1b144515ebefd30d74c51fb9938709d268750f83b4fd7f260c66ff5
+  content_hash: sha256:383de88490404b4eb7e28ce184702c46bab4ea8bf54928eb296df6cbdb286ce2
+- repo_url: ar9av/obsidian-wiki
+  name: llm-wiki
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/llm-wiki
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/llm-wiki
+  - .agents/skills/llm-wiki/SKILL.md
+  - .agents/skills/llm-wiki/references/WRITING.md
+  - .agents/skills/llm-wiki/references/karpathy-pattern.md
+  deployed_file_hashes:
+    .agents/skills/llm-wiki/SKILL.md: sha256:2debf93651167263fcc7592264524ee45b17222b70dc1aa40cb17aeb9ad8b5ce
+    .agents/skills/llm-wiki/references/WRITING.md: sha256:79c5d1b5b69d62f11cfd749ab1b5dc395e36d19575f4702e5bd391b197951924
+    .agents/skills/llm-wiki/references/karpathy-pattern.md: sha256:2d852653f2ac98da243399fd63f4f60d6dda2a327ae83f1c6c46c1004c5454f8
+  content_hash: sha256:0da90667fbcea71a5ebc5144a0ef1ad0b6d0ccd9ff09af52be4788e4bdd5c727
+- repo_url: ar9av/obsidian-wiki
+  name: memory-bridge
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/memory-bridge
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/memory-bridge
+  - .agents/skills/memory-bridge/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/memory-bridge/SKILL.md: sha256:29b1754376802c37467c9dd7c4c7ef3459e81f11fd5e42d8688bf5edcedabc0b
+  content_hash: sha256:c3c582dc61ed7e239e860b2b1fe5b0ee66aa49b601454128e7a8c467654aabcb
+- repo_url: ar9av/obsidian-wiki
+  name: obsidian-layout-adjustment
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/obsidian-layout-adjustment
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/obsidian-layout-adjustment
+  - .agents/skills/obsidian-layout-adjustment/SKILL.md
+  - .agents/skills/obsidian-layout-adjustment/evals/evals.json
+  - .agents/skills/obsidian-layout-adjustment/references/workflow-reference.md
+  deployed_file_hashes:
+    .agents/skills/obsidian-layout-adjustment/SKILL.md: sha256:2c9232dd39b0ee67d995c298d2d5133b240a2710261459c0972e5a528a97fdec
+    .agents/skills/obsidian-layout-adjustment/evals/evals.json: sha256:4ed508998169cdc6d4ba72288350883b768fa79d486de083495cd8b092d31f95
+    .agents/skills/obsidian-layout-adjustment/references/workflow-reference.md: sha256:cf2b5acdcc21b621a09c5afc7637b2b96f27c08f5e9c8b73de8b5b322ece4cfb
+  content_hash: sha256:5f92e16bc2e3c90197957f1a88bccd54b77c2c2f7a23d0d45cb1e44131e20a27
+- repo_url: ar9av/obsidian-wiki
+  name: openclaw-history-ingest
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/openclaw-history-ingest
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/openclaw-history-ingest
+  - .agents/skills/openclaw-history-ingest/SKILL.md
+  - .agents/skills/openclaw-history-ingest/references/openclaw-data-format.md
+  deployed_file_hashes:
+    .agents/skills/openclaw-history-ingest/SKILL.md: sha256:5f78644deb44d8d56473c97f540df12857db6a90179efcdc7d7c3c2b05a7efbc
+    .agents/skills/openclaw-history-ingest/references/openclaw-data-format.md: sha256:0ff74dad1e8a780fd48968c31708a518989c2a52dd6eca49fc4864aacacdb63b
+  content_hash: sha256:63ffda0c89520d7588d9bb649420500a3eaea47c56e62ff38a3cc3bf784c0a6c
+- repo_url: ar9av/obsidian-wiki
+  name: pi-history-ingest
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/pi-history-ingest
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/pi-history-ingest
+  - .agents/skills/pi-history-ingest/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/pi-history-ingest/SKILL.md: sha256:29d0834496c34bf44baf8cd06b6c70ec1715c7166437d812a2e7ea879ac17c69
+  content_hash: sha256:89a2c1ff99b7676bd96c704faa843ed5bda3d8214d01863e757f4a9e616d193d
+- repo_url: ar9av/obsidian-wiki
+  name: session-brain
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/session-brain
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/session-brain
+  - .agents/skills/session-brain/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/session-brain/SKILL.md: sha256:e72dc2189e2cd6c61520ff5d0cdf2a57e83ed88f3c1694b422b123e82268ea19
+  content_hash: sha256:91dc0b5d6020035fb48448e1b1a3abc43de363e953306302637ec33bae6482a2
+- repo_url: ar9av/obsidian-wiki
+  name: session-search
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/session-search
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/session-search
+  - .agents/skills/session-search/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/session-search/SKILL.md: sha256:4fd1c50437edb5d574d082799409ec5db8e9744d971baffe4d9cfc788fb64967
+  content_hash: sha256:9811c5e5be4d1edbcbd3da15aab9c59c33cae2cd79c01da0b9f337e790777b04
+- repo_url: ar9av/obsidian-wiki
+  name: skill-creator
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/skill-creator
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/skill-creator
+  - .agents/skills/skill-creator/LICENSE.txt
+  - .agents/skills/skill-creator/SKILL.md
+  - .agents/skills/skill-creator/agents/analyzer.md
+  - .agents/skills/skill-creator/agents/comparator.md
+  - .agents/skills/skill-creator/agents/grader.md
+  - .agents/skills/skill-creator/assets/eval_review.html
+  - .agents/skills/skill-creator/eval-viewer/generate_review.py
+  - .agents/skills/skill-creator/eval-viewer/viewer.html
+  - .agents/skills/skill-creator/references/schemas.md
+  - .agents/skills/skill-creator/scripts/__init__.py
+  - .agents/skills/skill-creator/scripts/aggregate_benchmark.py
+  - .agents/skills/skill-creator/scripts/generate_report.py
+  - .agents/skills/skill-creator/scripts/improve_description.py
+  - .agents/skills/skill-creator/scripts/package_skill.py
+  - .agents/skills/skill-creator/scripts/quick_validate.py
+  - .agents/skills/skill-creator/scripts/run_eval.py
+  - .agents/skills/skill-creator/scripts/run_loop.py
+  - .agents/skills/skill-creator/scripts/utils.py
+  deployed_file_hashes:
+    .agents/skills/skill-creator/LICENSE.txt: sha256:58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd
+    .agents/skills/skill-creator/SKILL.md: sha256:dcd4803e61e913e6fc27294184cd3a71f09f5e924ff20c8a9a20173e7b3c2bcf
+    .agents/skills/skill-creator/agents/analyzer.md: sha256:bf68f4cac5a56c673a928c2e6d619586c5b93ea364026ab37547772cb45a663a
+    .agents/skills/skill-creator/agents/comparator.md: sha256:fe1fc9787c495d864c5d6eada47396478572325fde1b33a96d78bf4b849b7a3e
+    .agents/skills/skill-creator/agents/grader.md: sha256:57134da0c1a4eea33fbd74a1c9c44aa814f07d6bc64de303edb586f941e5d21a
+    .agents/skills/skill-creator/assets/eval_review.html: sha256:ce477dcc74dc1c0d1d3352646a79167b5a63634e936b1019160025065974e452
+    .agents/skills/skill-creator/eval-viewer/generate_review.py: sha256:fc9d1b9243fe5ab6012ebd579bd76d0035de1b79fd3b969de114defab26478fb
+    .agents/skills/skill-creator/eval-viewer/viewer.html: sha256:a53213426ee1100441d701a3a0d49cda7a842f992d2c36463f4d3cc0258575fa
+    .agents/skills/skill-creator/references/schemas.md: sha256:8e8876180a8989b406a4d3edddf875b04cdfd5805cc8616686d552b11ce4455f
+    .agents/skills/skill-creator/scripts/__init__.py: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    .agents/skills/skill-creator/scripts/aggregate_benchmark.py: sha256:123ef128ea5ccc01a4b1ac212ef5567f21e9c13d3d240609780beeb3200c49aa
+    .agents/skills/skill-creator/scripts/generate_report.py: sha256:13df7118a3c50c83c4c3250a606d5f2b20b25a3d44cbc392b3d669ec75281453
+    .agents/skills/skill-creator/scripts/improve_description.py: sha256:87d864570220b699fac52da309d2d6efdb060647bfebc74f768128e646accf80
+    .agents/skills/skill-creator/scripts/package_skill.py: sha256:1a33059b0db1ef73375d46d513e5ea81369d2e8838c970597b0d52ddef8d1c0f
+    .agents/skills/skill-creator/scripts/quick_validate.py: sha256:67cf5703402013936c8fb75ad6a1afecd8841d45cc5e606b634eb05825fde365
+    .agents/skills/skill-creator/scripts/run_eval.py: sha256:43e3b8f80dbf69c343967ba77e268fae991d9fa3ed68b32a0ff02532cd48657f
+    .agents/skills/skill-creator/scripts/run_loop.py: sha256:7bd6f674203168520517eec94c55f493c0d154339b061b4d7c0f0dad187d0f21
+    .agents/skills/skill-creator/scripts/utils.py: sha256:3af8ae62c40c73ab712207436a0d9a981e845f25c5a7040229eb189cc8e45bb1
+  content_hash: sha256:ad480cdd4a4b5886cb7d35c2055d4b9005babe15d80ace54d90f4259f3bf3257
+- repo_url: ar9av/obsidian-wiki
+  name: tag-taxonomy
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/tag-taxonomy
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/tag-taxonomy
+  - .agents/skills/tag-taxonomy/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/tag-taxonomy/SKILL.md: sha256:dc0edca78f662cd7485ffba88b5ea0744445126da503b0102a990cf0f21589e9
+  content_hash: sha256:8c8e0a8de83dd7004fa014b5a47d10a1541b428b28b6e81cf4595e97b7eca21b
+- repo_url: ar9av/obsidian-wiki
+  name: vault-skill-factory
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/vault-skill-factory
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/vault-skill-factory
+  - .agents/skills/vault-skill-factory/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/vault-skill-factory/SKILL.md: sha256:3acb031054950f579ed760ee45a6c4f482da68b688088e05e51b2a36d5d669b5
+  content_hash: sha256:56bea5ac6476b3f963ea9b02d5937694d716d60d93b36f3ed70e6f7fbfb220cb
+- repo_url: ar9av/obsidian-wiki
+  name: wiki-agent
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/wiki-agent
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/wiki-agent
+  - .agents/skills/wiki-agent/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/wiki-agent/SKILL.md: sha256:48644fd9dd4884c0ef3b81af40ff400de3c8ca5c32dd9015eb7e51e8247b3117
+  content_hash: sha256:cf55a9000ab33d91fd22e50ba1432e71461f2839b889afc196a16c29fb0bf967
+- repo_url: ar9av/obsidian-wiki
+  name: wiki-capture
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/wiki-capture
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/wiki-capture
+  - .agents/skills/wiki-capture/SKILL.md
+  - .agents/skills/wiki-capture/references/RAW-FORMAT.md
+  deployed_file_hashes:
+    .agents/skills/wiki-capture/SKILL.md: sha256:6894de7fb871b2900cf988465cdbeb2d03a6659c0404b4ca004f3c9f2d0d9959
+    .agents/skills/wiki-capture/references/RAW-FORMAT.md: sha256:4d7cdaf2f293590e2aa26ff5ca4bc3466350662b5edac427adb16d6363dcba41
+  content_hash: sha256:1fe72341c22515101dd24583986adb3a9305b2ae2a33b08d0f3011edda83a98e
+- repo_url: ar9av/obsidian-wiki
+  name: wiki-context-pack
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/wiki-context-pack
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/wiki-context-pack
+  - .agents/skills/wiki-context-pack/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/wiki-context-pack/SKILL.md: sha256:23c7c372f2f39be30c80dc6345c870af72ed182d6f18b874599a57594c3dc832
+  content_hash: sha256:49355e120b6e76c4f1561b033d9ec7b9dff50f038d12cfd45029fee98130f780
+- repo_url: ar9av/obsidian-wiki
+  name: wiki-dashboard
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/wiki-dashboard
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/wiki-dashboard
+  - .agents/skills/wiki-dashboard/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/wiki-dashboard/SKILL.md: sha256:f9689574dbf9353428c737313fc30fe19aa58c5ee32466f65580e800a086c4fa
+  content_hash: sha256:a0f16aed2d9c86f67e65355c6193e75e5ef96ed879afe6230cf97785db3a8022
+- repo_url: ar9av/obsidian-wiki
+  name: wiki-dedup
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/wiki-dedup
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/wiki-dedup
+  - .agents/skills/wiki-dedup/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/wiki-dedup/SKILL.md: sha256:ce166f3bbcf6c5ec9f141a80d662c6da9ac2a90f3322776a8754e1ce45e70bf3
+  content_hash: sha256:944bd08fb847e8d3d67751347689aed743bc1e11cdef941d2280ac8763a3239a
+- repo_url: ar9av/obsidian-wiki
+  name: wiki-digest
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/wiki-digest
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/wiki-digest
+  - .agents/skills/wiki-digest/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/wiki-digest/SKILL.md: sha256:506babc2f46afc16c8a04755bc3ef83bf1dc8ffad63b703da38cdfa9eb7006f0
+  content_hash: sha256:961d575d3ba9f1c066512cd66b6cd559cbc76540482b21b62bdad2d17c2e26dc
+- repo_url: ar9av/obsidian-wiki
+  name: wiki-export
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/wiki-export
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/wiki-export
+  - .agents/skills/wiki-export/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/wiki-export/SKILL.md: sha256:9463638f2c7fa26e8ff729e609a225ded7d527abc8d966548c46657c3aee05b9
+  content_hash: sha256:3d3d13d4463b828cdcc91275121b50522de010446d571f52a98a5dbba76d591e
+- repo_url: ar9av/obsidian-wiki
+  name: wiki-history-ingest
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/wiki-history-ingest
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/wiki-history-ingest
+  - .agents/skills/wiki-history-ingest/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/wiki-history-ingest/SKILL.md: sha256:30a8607ed79c55c9dd2580e7706b5dfe38263515f1b6ae69d0b343bc10c798d3
+  content_hash: sha256:f5fa71e200547f7af2e35e57523330d2eab274a17c727c02de8f73261a390fbe
+- repo_url: ar9av/obsidian-wiki
+  name: wiki-import
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/wiki-import
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/wiki-import
+  - .agents/skills/wiki-import/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/wiki-import/SKILL.md: sha256:def1fa89c943f939850b2696e1bcdc51c7fc4df1a4f5e481ecec64d3555f7867
+  content_hash: sha256:032e1276ec7458e14a02ac99c88ccd6006ad0283c25d823183fb3e3394fc3af1
+- repo_url: ar9av/obsidian-wiki
+  name: wiki-ingest
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/wiki-ingest
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/wiki-ingest
+  - .agents/skills/wiki-ingest/SKILL.md
+  - .agents/skills/wiki-ingest/references/ingest-prompts.md
+  - .agents/skills/wiki-ingest/references/pageindex.md
+  - .agents/skills/wiki-ingest/references/url-sources.md
+  deployed_file_hashes:
+    .agents/skills/wiki-ingest/SKILL.md: sha256:3fa2517133465ec637bba1f68d766a3c7e40952358d78a9e7abbae0e501d8ced
+    .agents/skills/wiki-ingest/references/ingest-prompts.md: sha256:eeb922c37ff1b1c9e5136dcdefb8cee3a398aa1981a0ff292ffbf5388fe09a02
+    .agents/skills/wiki-ingest/references/pageindex.md: sha256:7a37f308ca2541078d3a0fce9ce05a975a477198880238a4d1d71b792873edfe
+    .agents/skills/wiki-ingest/references/url-sources.md: sha256:132098d8e4c950ac2a0ec3c1641d238c7dd7a889e6a24d8a661b2707dcee0276
+  content_hash: sha256:e925b126b3ffc676a9d61257aac9d270ede6dc9d9e95ae0a301fb37682580cf9
+- repo_url: ar9av/obsidian-wiki
+  name: wiki-lint
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/wiki-lint
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/wiki-lint
+  - .agents/skills/wiki-lint/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/wiki-lint/SKILL.md: sha256:ca243e172fcfd52a61f436b45ec8a09f38ae7b12bce9fec03bb60191384cd878
+  content_hash: sha256:2309dee8cc4a905009f4ea8827793376340fde92d76046879507f8c094b2cfcb
+- repo_url: ar9av/obsidian-wiki
+  name: wiki-narrate
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/wiki-narrate
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/wiki-narrate
+  - .agents/skills/wiki-narrate/SKILL.md
+  - .agents/skills/wiki-narrate/references/voices.md
+  deployed_file_hashes:
+    .agents/skills/wiki-narrate/SKILL.md: sha256:980e40497e08234b313414830ffbc3b6ade760b6033557be3ebb5d4217ce44b4
+    .agents/skills/wiki-narrate/references/voices.md: sha256:c60161ef1b27484ae43d56eb3ec39de6affdd2b950b471e2351f2d6306083d6d
+  content_hash: sha256:a503108745872934ab7497602f33083aac12ef96c5923aad355562ff3facbd6a
+- repo_url: ar9av/obsidian-wiki
+  name: wiki-query
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/wiki-query
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/wiki-query
+  - .agents/skills/wiki-query/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/wiki-query/SKILL.md: sha256:c3cc83b906ccd4743c999b88ffeb262e2cddcdee50b12b024a394d0edd3951ca
+  content_hash: sha256:851684f50165a72758abe5cbf7d198422ae28e92b11bdbd2cba8f794dc7237a2
+- repo_url: ar9av/obsidian-wiki
+  name: wiki-rebuild
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/wiki-rebuild
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/wiki-rebuild
+  - .agents/skills/wiki-rebuild/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/wiki-rebuild/SKILL.md: sha256:781afa334e4c895cd6acd79be84eb7f7a1c612c0b7e156407306081b0b6f0565
+  content_hash: sha256:4ff2971f31e5a5587dffa8a97435d52e3ca98f9eeecd0db61eb410ac15ea8639
+- repo_url: ar9av/obsidian-wiki
+  name: wiki-research
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/wiki-research
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/wiki-research
+  - .agents/skills/wiki-research/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/wiki-research/SKILL.md: sha256:8ceeb90de3460a4a441cd0d5b414b2fbddd4756d83299f0fe2bbadf08ac12554
+  content_hash: sha256:f7d0f44df8641201b4448231eea403592b13d99a6af31b025f4117a2506fc14c
+- repo_url: ar9av/obsidian-wiki
+  name: wiki-setup
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/wiki-setup
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/wiki-setup
+  - .agents/skills/wiki-setup/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/wiki-setup/SKILL.md: sha256:c4ba17e190fe2a49dae3b28ac29dcdb4c179b7d65bf8641ad5ed5e33b65ec8c0
+  content_hash: sha256:21ee3564f48725b6ad4bfea145696e5697e97f78f3862e057a558acf4859bb7a
+- repo_url: ar9av/obsidian-wiki
+  name: wiki-stage-commit
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/wiki-stage-commit
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/wiki-stage-commit
+  - .agents/skills/wiki-stage-commit/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/wiki-stage-commit/SKILL.md: sha256:762ecdb0cd7cb7658672d5b39841324a162eeb39e5d3d9ac6cd5d89b8c9bcada
+  content_hash: sha256:3e759bb763162c118e1ffb01237cff65938b67f495d3645d681760f9553009db
+- repo_url: ar9av/obsidian-wiki
+  name: wiki-status
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/wiki-status
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/wiki-status
+  - .agents/skills/wiki-status/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/wiki-status/SKILL.md: sha256:bc02755588455784d36317204580a92c1a488dc9dbb91cad77782a2c00a82eb6
+  content_hash: sha256:8e7e056a5155ae195f4bbf2e77b57cbd75cc376d7b321271cab34ce14a35cee6
+- repo_url: ar9av/obsidian-wiki
+  name: wiki-switch
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/wiki-switch
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/wiki-switch
+  - .agents/skills/wiki-switch/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/wiki-switch/SKILL.md: sha256:0061608e7d97e31faebba042aa8da3f661a237af17268fc0d8dc844e51078dd3
+  content_hash: sha256:060cc649f23e8a07b4897e40664bad80c749d0ece45d6c451e4da32934a29010
+- repo_url: ar9av/obsidian-wiki
+  name: wiki-synthesize
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/wiki-synthesize
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/wiki-synthesize
+  - .agents/skills/wiki-synthesize/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/wiki-synthesize/SKILL.md: sha256:926625ee0a8e608dee533c663936fd4b5acc5f815969daa052a6add3a9711dfc
+  content_hash: sha256:2a307384eaeec6e3e687f7f461f8437b326afe29ab556b91f7d684b6d8883640
+- repo_url: ar9av/obsidian-wiki
+  name: wiki-update
+  host: github.com
+  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  version: unknown
+  virtual_path: .skills/wiki-update
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/wiki-update
+  - .agents/skills/wiki-update/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/wiki-update/SKILL.md: sha256:b357399735211b6d606096c755d966cf34e87f9315e8afbea26859264f12125b
+  content_hash: sha256:b631730c6f947016a1d0757cb2195e59c7ed69ac352acbfb26202279cb26487c
+- repo_url: kepano/obsidian-skills
+  name: obsidian
+  host: github.com
+  resolved_commit: a1dc48e68138490d522c04cbf5822214c6eb1202
+  version: 1.0.1
+  package_type: marketplace_plugin
+  deployed_files:
+  - .agents/skills/defuddle
+  - .agents/skills/defuddle/SKILL.md
+  - .agents/skills/json-canvas
+  - .agents/skills/json-canvas/SKILL.md
+  - .agents/skills/json-canvas/references/EXAMPLES.md
+  - .agents/skills/obsidian-bases
+  - .agents/skills/obsidian-bases/SKILL.md
+  - .agents/skills/obsidian-bases/references/FUNCTIONS_REFERENCE.md
+  - .agents/skills/obsidian-cli
+  - .agents/skills/obsidian-cli/SKILL.md
+  - .agents/skills/obsidian-markdown
+  - .agents/skills/obsidian-markdown/SKILL.md
+  - .agents/skills/obsidian-markdown/references/CALLOUTS.md
+  - .agents/skills/obsidian-markdown/references/EMBEDS.md
+  - .agents/skills/obsidian-markdown/references/PROPERTIES.md
+  deployed_file_hashes:
+    .agents/skills/defuddle/SKILL.md: sha256:10673a4dc70a0a057612d443243ab7a5aa4abdd4a0fadc3f6eec5fd71ad5a971
+    .agents/skills/json-canvas/SKILL.md: sha256:97d1ae0728955c4203922753d5656890e5e4dd371b8306ea11884f9b510f1b85
+    .agents/skills/json-canvas/references/EXAMPLES.md: sha256:f5ce15a4b74643122396265e8c37c828874a4005794de2aee7030662968768eb
+    .agents/skills/obsidian-bases/SKILL.md: sha256:c0037f20926c7d8591cdd040365e4c0e4c0c4146386a506f28f241faee9a27d9
+    .agents/skills/obsidian-bases/references/FUNCTIONS_REFERENCE.md: sha256:208fd63aead9bca1975626fea52605e6ab9434dc0529d923feb36b18b8877d3b
+    .agents/skills/obsidian-cli/SKILL.md: sha256:b54257cdc0e5d04488b35b0c797bfe427b24359f0848d3c73924dcacf8da6358
+    .agents/skills/obsidian-markdown/SKILL.md: sha256:7ad72e1f0a9081ed325e76b6402ad5de50a00e63e2341fd403a92f147234a007
+    .agents/skills/obsidian-markdown/references/CALLOUTS.md: sha256:9912ec2e3f8711f65b8ceb82cc19cbffc5e6f8ccf2ab627e18926c522c383d8b
+    .agents/skills/obsidian-markdown/references/EMBEDS.md: sha256:63b6205507e28fb58cf200bc348a2b139e50ae739743e2e6316732148973cb7a
+    .agents/skills/obsidian-markdown/references/PROPERTIES.md: sha256:392953b5838c3ab3df135b5a914f100ae7b95e4501b6a2e5c8dc63da3ac7558b
+  content_hash: sha256:0a1407dab0df665164eea626a4a64c01772a2519f49ee20d4c2580cc7cadc3d8
+  declared_license: MIT
+deployments:
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/claude-history-ingest
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/claude-history-ingest
+  active_owner: ar9av/obsidian-wiki/.skills/claude-history-ingest
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/claude-history-ingest/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/claude-history-ingest
+  active_owner: ar9av/obsidian-wiki/.skills/claude-history-ingest
+  content_hash: sha256:6a2e07f0d2c1ba9f97505abb7bb4dd2b8f7b87d25407d1cbc14ba066bc6e5863
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/claude-history-ingest/references/claude-data-format.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/claude-history-ingest
+  active_owner: ar9av/obsidian-wiki/.skills/claude-history-ingest
+  content_hash: sha256:1ca5a6014895011e450aee310638b4b4a06bd3f854ad990cc29d988794c5f96d
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/code-understand
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/code-understand
+  active_owner: ar9av/obsidian-wiki/.skills/code-understand
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/code-understand/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/code-understand
+  active_owner: ar9av/obsidian-wiki/.skills/code-understand
+  content_hash: sha256:3d37f30d1ca4c3214461cd8b5799660b072ba40c0672e06f52657be13c79b652
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/codex-history-ingest
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/codex-history-ingest
+  active_owner: ar9av/obsidian-wiki/.skills/codex-history-ingest
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/codex-history-ingest/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/codex-history-ingest
+  active_owner: ar9av/obsidian-wiki/.skills/codex-history-ingest
+  content_hash: sha256:90254fcd1ae73034848e3a6278cde79463bea734d9905bcfd47c00a047dadf6f
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/codex-history-ingest/references/codex-data-format.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/codex-history-ingest
+  active_owner: ar9av/obsidian-wiki/.skills/codex-history-ingest
+  content_hash: sha256:e86ecfc5f0bf76fd1b10a18cb358793bb8ccb08eaf12aa127436b1f9ddf461b9
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/copilot-history-ingest
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/copilot-history-ingest
+  active_owner: ar9av/obsidian-wiki/.skills/copilot-history-ingest
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/copilot-history-ingest/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/copilot-history-ingest
+  active_owner: ar9av/obsidian-wiki/.skills/copilot-history-ingest
+  content_hash: sha256:5366310fd067c73b8355e7c42e224afe067adc2e83d3291465d17834705051f5
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/copilot-history-ingest/references/copilot-data-format.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/copilot-history-ingest
+  active_owner: ar9av/obsidian-wiki/.skills/copilot-history-ingest
+  content_hash: sha256:8103b77da1d836f068432e76bb40998ebc104534f23fdf2fee7fc73b7904a280
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/cross-linker
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/cross-linker
+  active_owner: ar9av/obsidian-wiki/.skills/cross-linker
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/cross-linker/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/cross-linker
+  active_owner: ar9av/obsidian-wiki/.skills/cross-linker
+  content_hash: sha256:c7d0872eeb380c429c657c7582a2d8867505cb8de1545591101dd863018f0d58
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/daily-update
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/daily-update
+  active_owner: ar9av/obsidian-wiki/.skills/daily-update
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/daily-update/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/daily-update
+  active_owner: ar9av/obsidian-wiki/.skills/daily-update
+  content_hash: sha256:3cce85501196a79aca9a2a466b93f78608dda365998ef67c52acc9285ec67550
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/defuddle
+  runtime: null
+  scope: project
+  owners:
+  - kepano/obsidian-skills
+  active_owner: kepano/obsidian-skills
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/defuddle/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - kepano/obsidian-skills
+  active_owner: kepano/obsidian-skills
+  content_hash: sha256:10673a4dc70a0a057612d443243ab7a5aa4abdd4a0fadc3f6eec5fd71ad5a971
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/graph-colorize
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/graph-colorize
+  active_owner: ar9av/obsidian-wiki/.skills/graph-colorize
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/graph-colorize/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/graph-colorize
+  active_owner: ar9av/obsidian-wiki/.skills/graph-colorize
+  content_hash: sha256:ae21761a234d0362771530c0bd6055ea64c5792ec8e17b513645adf49d97d056
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/hermes-history-ingest
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/hermes-history-ingest
+  active_owner: ar9av/obsidian-wiki/.skills/hermes-history-ingest
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/hermes-history-ingest/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/hermes-history-ingest
+  active_owner: ar9av/obsidian-wiki/.skills/hermes-history-ingest
+  content_hash: sha256:63169dff38feff4356981ff1b8eedf4fe29811ab796fa6e376a75635f078cba3
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/hermes-history-ingest/references/hermes-data-format.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/hermes-history-ingest
+  active_owner: ar9av/obsidian-wiki/.skills/hermes-history-ingest
+  content_hash: sha256:90a44f768edb18e14d6f3c0a11c3b1f3a55951e17ba638092aa993a16eccba87
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/impl-validator
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/impl-validator
+  active_owner: ar9av/obsidian-wiki/.skills/impl-validator
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/impl-validator/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/impl-validator
+  active_owner: ar9av/obsidian-wiki/.skills/impl-validator
+  content_hash: sha256:31d2548ec1b144515ebefd30d74c51fb9938709d268750f83b4fd7f260c66ff5
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/json-canvas
+  runtime: null
+  scope: project
+  owners:
+  - kepano/obsidian-skills
+  active_owner: kepano/obsidian-skills
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/json-canvas/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - kepano/obsidian-skills
+  active_owner: kepano/obsidian-skills
+  content_hash: sha256:97d1ae0728955c4203922753d5656890e5e4dd371b8306ea11884f9b510f1b85
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/json-canvas/references/EXAMPLES.md
+  runtime: null
+  scope: project
+  owners:
+  - kepano/obsidian-skills
+  active_owner: kepano/obsidian-skills
+  content_hash: sha256:f5ce15a4b74643122396265e8c37c828874a4005794de2aee7030662968768eb
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/llm-wiki
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/llm-wiki
+  active_owner: ar9av/obsidian-wiki/.skills/llm-wiki
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/llm-wiki/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/llm-wiki
+  active_owner: ar9av/obsidian-wiki/.skills/llm-wiki
+  content_hash: sha256:2debf93651167263fcc7592264524ee45b17222b70dc1aa40cb17aeb9ad8b5ce
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/llm-wiki/references/WRITING.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/llm-wiki
+  active_owner: ar9av/obsidian-wiki/.skills/llm-wiki
+  content_hash: sha256:79c5d1b5b69d62f11cfd749ab1b5dc395e36d19575f4702e5bd391b197951924
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/llm-wiki/references/karpathy-pattern.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/llm-wiki
+  active_owner: ar9av/obsidian-wiki/.skills/llm-wiki
+  content_hash: sha256:2d852653f2ac98da243399fd63f4f60d6dda2a327ae83f1c6c46c1004c5454f8
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/memory-bridge
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/memory-bridge
+  active_owner: ar9av/obsidian-wiki/.skills/memory-bridge
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/memory-bridge/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/memory-bridge
+  active_owner: ar9av/obsidian-wiki/.skills/memory-bridge
+  content_hash: sha256:29b1754376802c37467c9dd7c4c7ef3459e81f11fd5e42d8688bf5edcedabc0b
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/obsidian-bases
+  runtime: null
+  scope: project
+  owners:
+  - kepano/obsidian-skills
+  active_owner: kepano/obsidian-skills
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/obsidian-bases/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - kepano/obsidian-skills
+  active_owner: kepano/obsidian-skills
+  content_hash: sha256:c0037f20926c7d8591cdd040365e4c0e4c0c4146386a506f28f241faee9a27d9
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/obsidian-bases/references/FUNCTIONS_REFERENCE.md
+  runtime: null
+  scope: project
+  owners:
+  - kepano/obsidian-skills
+  active_owner: kepano/obsidian-skills
+  content_hash: sha256:208fd63aead9bca1975626fea52605e6ab9434dc0529d923feb36b18b8877d3b
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/obsidian-cli
+  runtime: null
+  scope: project
+  owners:
+  - kepano/obsidian-skills
+  active_owner: kepano/obsidian-skills
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/obsidian-cli/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - kepano/obsidian-skills
+  active_owner: kepano/obsidian-skills
+  content_hash: sha256:b54257cdc0e5d04488b35b0c797bfe427b24359f0848d3c73924dcacf8da6358
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/obsidian-layout-adjustment
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/obsidian-layout-adjustment
+  active_owner: ar9av/obsidian-wiki/.skills/obsidian-layout-adjustment
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/obsidian-layout-adjustment/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/obsidian-layout-adjustment
+  active_owner: ar9av/obsidian-wiki/.skills/obsidian-layout-adjustment
+  content_hash: sha256:2c9232dd39b0ee67d995c298d2d5133b240a2710261459c0972e5a528a97fdec
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/obsidian-layout-adjustment/evals/evals.json
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/obsidian-layout-adjustment
+  active_owner: ar9av/obsidian-wiki/.skills/obsidian-layout-adjustment
+  content_hash: sha256:4ed508998169cdc6d4ba72288350883b768fa79d486de083495cd8b092d31f95
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/obsidian-layout-adjustment/references/workflow-reference.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/obsidian-layout-adjustment
+  active_owner: ar9av/obsidian-wiki/.skills/obsidian-layout-adjustment
+  content_hash: sha256:cf2b5acdcc21b621a09c5afc7637b2b96f27c08f5e9c8b73de8b5b322ece4cfb
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/obsidian-markdown
+  runtime: null
+  scope: project
+  owners:
+  - kepano/obsidian-skills
+  active_owner: kepano/obsidian-skills
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/obsidian-markdown/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - kepano/obsidian-skills
+  active_owner: kepano/obsidian-skills
+  content_hash: sha256:7ad72e1f0a9081ed325e76b6402ad5de50a00e63e2341fd403a92f147234a007
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/obsidian-markdown/references/CALLOUTS.md
+  runtime: null
+  scope: project
+  owners:
+  - kepano/obsidian-skills
+  active_owner: kepano/obsidian-skills
+  content_hash: sha256:9912ec2e3f8711f65b8ceb82cc19cbffc5e6f8ccf2ab627e18926c522c383d8b
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/obsidian-markdown/references/EMBEDS.md
+  runtime: null
+  scope: project
+  owners:
+  - kepano/obsidian-skills
+  active_owner: kepano/obsidian-skills
+  content_hash: sha256:63b6205507e28fb58cf200bc348a2b139e50ae739743e2e6316732148973cb7a
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/obsidian-markdown/references/PROPERTIES.md
+  runtime: null
+  scope: project
+  owners:
+  - kepano/obsidian-skills
+  active_owner: kepano/obsidian-skills
+  content_hash: sha256:392953b5838c3ab3df135b5a914f100ae7b95e4501b6a2e5c8dc63da3ac7558b
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/openclaw-history-ingest
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/openclaw-history-ingest
+  active_owner: ar9av/obsidian-wiki/.skills/openclaw-history-ingest
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/openclaw-history-ingest/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/openclaw-history-ingest
+  active_owner: ar9av/obsidian-wiki/.skills/openclaw-history-ingest
+  content_hash: sha256:5f78644deb44d8d56473c97f540df12857db6a90179efcdc7d7c3c2b05a7efbc
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/openclaw-history-ingest/references/openclaw-data-format.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/openclaw-history-ingest
+  active_owner: ar9av/obsidian-wiki/.skills/openclaw-history-ingest
+  content_hash: sha256:0ff74dad1e8a780fd48968c31708a518989c2a52dd6eca49fc4864aacacdb63b
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/pi-history-ingest
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/pi-history-ingest
+  active_owner: ar9av/obsidian-wiki/.skills/pi-history-ingest
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/pi-history-ingest/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/pi-history-ingest
+  active_owner: ar9av/obsidian-wiki/.skills/pi-history-ingest
+  content_hash: sha256:29d0834496c34bf44baf8cd06b6c70ec1715c7166437d812a2e7ea879ac17c69
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/session-brain
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/session-brain
+  active_owner: ar9av/obsidian-wiki/.skills/session-brain
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/session-brain/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/session-brain
+  active_owner: ar9av/obsidian-wiki/.skills/session-brain
+  content_hash: sha256:e72dc2189e2cd6c61520ff5d0cdf2a57e83ed88f3c1694b422b123e82268ea19
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/session-search
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/session-search
+  active_owner: ar9av/obsidian-wiki/.skills/session-search
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/session-search/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/session-search
+  active_owner: ar9av/obsidian-wiki/.skills/session-search
+  content_hash: sha256:4fd1c50437edb5d574d082799409ec5db8e9744d971baffe4d9cfc788fb64967
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/skill-creator
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/skill-creator
+  active_owner: ar9av/obsidian-wiki/.skills/skill-creator
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/skill-creator/LICENSE.txt
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/skill-creator
+  active_owner: ar9av/obsidian-wiki/.skills/skill-creator
+  content_hash: sha256:58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/skill-creator/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/skill-creator
+  active_owner: ar9av/obsidian-wiki/.skills/skill-creator
+  content_hash: sha256:dcd4803e61e913e6fc27294184cd3a71f09f5e924ff20c8a9a20173e7b3c2bcf
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/skill-creator/agents/analyzer.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/skill-creator
+  active_owner: ar9av/obsidian-wiki/.skills/skill-creator
+  content_hash: sha256:bf68f4cac5a56c673a928c2e6d619586c5b93ea364026ab37547772cb45a663a
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/skill-creator/agents/comparator.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/skill-creator
+  active_owner: ar9av/obsidian-wiki/.skills/skill-creator
+  content_hash: sha256:fe1fc9787c495d864c5d6eada47396478572325fde1b33a96d78bf4b849b7a3e
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/skill-creator/agents/grader.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/skill-creator
+  active_owner: ar9av/obsidian-wiki/.skills/skill-creator
+  content_hash: sha256:57134da0c1a4eea33fbd74a1c9c44aa814f07d6bc64de303edb586f941e5d21a
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/skill-creator/assets/eval_review.html
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/skill-creator
+  active_owner: ar9av/obsidian-wiki/.skills/skill-creator
+  content_hash: sha256:ce477dcc74dc1c0d1d3352646a79167b5a63634e936b1019160025065974e452
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/skill-creator/eval-viewer/generate_review.py
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/skill-creator
+  active_owner: ar9av/obsidian-wiki/.skills/skill-creator
+  content_hash: sha256:fc9d1b9243fe5ab6012ebd579bd76d0035de1b79fd3b969de114defab26478fb
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/skill-creator/eval-viewer/viewer.html
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/skill-creator
+  active_owner: ar9av/obsidian-wiki/.skills/skill-creator
+  content_hash: sha256:a53213426ee1100441d701a3a0d49cda7a842f992d2c36463f4d3cc0258575fa
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/skill-creator/references/schemas.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/skill-creator
+  active_owner: ar9av/obsidian-wiki/.skills/skill-creator
+  content_hash: sha256:8e8876180a8989b406a4d3edddf875b04cdfd5805cc8616686d552b11ce4455f
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/skill-creator/scripts/__init__.py
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/skill-creator
+  active_owner: ar9av/obsidian-wiki/.skills/skill-creator
+  content_hash: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/skill-creator/scripts/aggregate_benchmark.py
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/skill-creator
+  active_owner: ar9av/obsidian-wiki/.skills/skill-creator
+  content_hash: sha256:123ef128ea5ccc01a4b1ac212ef5567f21e9c13d3d240609780beeb3200c49aa
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/skill-creator/scripts/generate_report.py
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/skill-creator
+  active_owner: ar9av/obsidian-wiki/.skills/skill-creator
+  content_hash: sha256:13df7118a3c50c83c4c3250a606d5f2b20b25a3d44cbc392b3d669ec75281453
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/skill-creator/scripts/improve_description.py
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/skill-creator
+  active_owner: ar9av/obsidian-wiki/.skills/skill-creator
+  content_hash: sha256:87d864570220b699fac52da309d2d6efdb060647bfebc74f768128e646accf80
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/skill-creator/scripts/package_skill.py
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/skill-creator
+  active_owner: ar9av/obsidian-wiki/.skills/skill-creator
+  content_hash: sha256:1a33059b0db1ef73375d46d513e5ea81369d2e8838c970597b0d52ddef8d1c0f
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/skill-creator/scripts/quick_validate.py
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/skill-creator
+  active_owner: ar9av/obsidian-wiki/.skills/skill-creator
+  content_hash: sha256:67cf5703402013936c8fb75ad6a1afecd8841d45cc5e606b634eb05825fde365
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/skill-creator/scripts/run_eval.py
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/skill-creator
+  active_owner: ar9av/obsidian-wiki/.skills/skill-creator
+  content_hash: sha256:43e3b8f80dbf69c343967ba77e268fae991d9fa3ed68b32a0ff02532cd48657f
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/skill-creator/scripts/run_loop.py
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/skill-creator
+  active_owner: ar9av/obsidian-wiki/.skills/skill-creator
+  content_hash: sha256:7bd6f674203168520517eec94c55f493c0d154339b061b4d7c0f0dad187d0f21
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/skill-creator/scripts/utils.py
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/skill-creator
+  active_owner: ar9av/obsidian-wiki/.skills/skill-creator
+  content_hash: sha256:3af8ae62c40c73ab712207436a0d9a981e845f25c5a7040229eb189cc8e45bb1
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/tag-taxonomy
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/tag-taxonomy
+  active_owner: ar9av/obsidian-wiki/.skills/tag-taxonomy
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/tag-taxonomy/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/tag-taxonomy
+  active_owner: ar9av/obsidian-wiki/.skills/tag-taxonomy
+  content_hash: sha256:dc0edca78f662cd7485ffba88b5ea0744445126da503b0102a990cf0f21589e9
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/vault-skill-factory
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/vault-skill-factory
+  active_owner: ar9av/obsidian-wiki/.skills/vault-skill-factory
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/vault-skill-factory/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/vault-skill-factory
+  active_owner: ar9av/obsidian-wiki/.skills/vault-skill-factory
+  content_hash: sha256:3acb031054950f579ed760ee45a6c4f482da68b688088e05e51b2a36d5d669b5
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-agent
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-agent
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-agent
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-agent/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-agent
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-agent
+  content_hash: sha256:48644fd9dd4884c0ef3b81af40ff400de3c8ca5c32dd9015eb7e51e8247b3117
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-capture
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-capture
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-capture
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-capture/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-capture
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-capture
+  content_hash: sha256:6894de7fb871b2900cf988465cdbeb2d03a6659c0404b4ca004f3c9f2d0d9959
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-capture/references/RAW-FORMAT.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-capture
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-capture
+  content_hash: sha256:4d7cdaf2f293590e2aa26ff5ca4bc3466350662b5edac427adb16d6363dcba41
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-context-pack
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-context-pack
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-context-pack
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-context-pack/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-context-pack
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-context-pack
+  content_hash: sha256:23c7c372f2f39be30c80dc6345c870af72ed182d6f18b874599a57594c3dc832
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-dashboard
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-dashboard
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-dashboard
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-dashboard/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-dashboard
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-dashboard
+  content_hash: sha256:f9689574dbf9353428c737313fc30fe19aa58c5ee32466f65580e800a086c4fa
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-dedup
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-dedup
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-dedup
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-dedup/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-dedup
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-dedup
+  content_hash: sha256:ce166f3bbcf6c5ec9f141a80d662c6da9ac2a90f3322776a8754e1ce45e70bf3
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-digest
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-digest
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-digest
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-digest/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-digest
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-digest
+  content_hash: sha256:506babc2f46afc16c8a04755bc3ef83bf1dc8ffad63b703da38cdfa9eb7006f0
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-export
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-export
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-export
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-export/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-export
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-export
+  content_hash: sha256:9463638f2c7fa26e8ff729e609a225ded7d527abc8d966548c46657c3aee05b9
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-history-ingest
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-history-ingest
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-history-ingest
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-history-ingest/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-history-ingest
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-history-ingest
+  content_hash: sha256:30a8607ed79c55c9dd2580e7706b5dfe38263515f1b6ae69d0b343bc10c798d3
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-import
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-import
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-import
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-import/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-import
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-import
+  content_hash: sha256:def1fa89c943f939850b2696e1bcdc51c7fc4df1a4f5e481ecec64d3555f7867
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-ingest
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-ingest
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-ingest
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-ingest/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-ingest
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-ingest
+  content_hash: sha256:3fa2517133465ec637bba1f68d766a3c7e40952358d78a9e7abbae0e501d8ced
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-ingest/references/ingest-prompts.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-ingest
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-ingest
+  content_hash: sha256:eeb922c37ff1b1c9e5136dcdefb8cee3a398aa1981a0ff292ffbf5388fe09a02
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-ingest/references/pageindex.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-ingest
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-ingest
+  content_hash: sha256:7a37f308ca2541078d3a0fce9ce05a975a477198880238a4d1d71b792873edfe
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-ingest/references/url-sources.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-ingest
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-ingest
+  content_hash: sha256:132098d8e4c950ac2a0ec3c1641d238c7dd7a889e6a24d8a661b2707dcee0276
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-lint
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-lint
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-lint
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-lint/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-lint
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-lint
+  content_hash: sha256:ca243e172fcfd52a61f436b45ec8a09f38ae7b12bce9fec03bb60191384cd878
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-narrate
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-narrate
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-narrate
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-narrate/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-narrate
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-narrate
+  content_hash: sha256:980e40497e08234b313414830ffbc3b6ade760b6033557be3ebb5d4217ce44b4
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-narrate/references/voices.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-narrate
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-narrate
+  content_hash: sha256:c60161ef1b27484ae43d56eb3ec39de6affdd2b950b471e2351f2d6306083d6d
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-query
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-query
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-query
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-query/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-query
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-query
+  content_hash: sha256:c3cc83b906ccd4743c999b88ffeb262e2cddcdee50b12b024a394d0edd3951ca
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-rebuild
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-rebuild
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-rebuild
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-rebuild/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-rebuild
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-rebuild
+  content_hash: sha256:781afa334e4c895cd6acd79be84eb7f7a1c612c0b7e156407306081b0b6f0565
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-research
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-research
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-research
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-research/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-research
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-research
+  content_hash: sha256:8ceeb90de3460a4a441cd0d5b414b2fbddd4756d83299f0fe2bbadf08ac12554
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-setup
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-setup
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-setup
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-setup/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-setup
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-setup
+  content_hash: sha256:c4ba17e190fe2a49dae3b28ac29dcdb4c179b7d65bf8641ad5ed5e33b65ec8c0
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-stage-commit
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-stage-commit
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-stage-commit
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-stage-commit/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-stage-commit
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-stage-commit
+  content_hash: sha256:762ecdb0cd7cb7658672d5b39841324a162eeb39e5d3d9ac6cd5d89b8c9bcada
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-status
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-status
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-status
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-status/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-status
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-status
+  content_hash: sha256:bc02755588455784d36317204580a92c1a488dc9dbb91cad77782a2c00a82eb6
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-switch
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-switch
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-switch
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-switch/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-switch
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-switch
+  content_hash: sha256:0061608e7d97e31faebba042aa8da3f661a237af17268fc0d8dc844e51078dd3
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-synthesize
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-synthesize
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-synthesize
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-synthesize/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-synthesize
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-synthesize
+  content_hash: sha256:926625ee0a8e608dee533c663936fd4b5acc5f815969daa052a6add3a9711dfc
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-update
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-update
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-update
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/wiki-update/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - ar9av/obsidian-wiki/.skills/wiki-update
+  active_owner: ar9av/obsidian-wiki/.skills/wiki-update
+  content_hash: sha256:b357399735211b6d606096c755d966cf34e87f9315e8afbea26859264f12125b

@@ -45,12 +45,29 @@ codex_sessions_dirs = [
 ```
 
 This repo keeps that key in sync via
-`home/dot_agentsview/modify_private_config.toml.tmpl`, a chezmoi `modify_`
-script (same pattern as `home/dot_codex/modify_private_config.toml.tmpl`)
-that sets only `codex_sessions_dirs` and never reads or reasons about any
-other key. Everything else in the file, including the `auth_token` and
+`home/private_dot_agentsview/modify_private_config.toml.tmpl`, a chezmoi
+`modify_` script (same pattern as `home/dot_codex/modify_private_config.toml.tmpl`).
+It manages two surfaces: `codex_sessions_dirs`, and the generated
+`[[session_sources]]` entries for the cross-machine session archive (see
+below). Everything else in the file, including the `auth_token` and
 `cursor_secret` that agentsview generates itself, round-trips untouched,
 preserved verbatim by `tomlkit`.
+
+## Cross-machine sessions via the archive
+
+Every participating machine mirrors its raw sessions into
+`~/code/github.com/prateek/wiki-agent-sessions/sessions/<host>/...` (see the
+`agent-session-wiki` skill). The modify script above generates one additive
+`[[session_sources]]` entry per other-host root found in the clone
+(`claude/projects`, `cursor/projects`, `codex/*`), labeled with that host's
+`machine` name and excluding the current host so local sessions are not
+parsed twice. Entries regenerate on every apply, and the archive's sync
+script reconciles them between applies when a pull reveals a new host; both
+implementations are held identical by a fixture test
+(`tests/agentsview-config-modify.zsh`). Hand-written `session_sources`
+entries are preserved. After config changes, restart the daemon:
+`agentsview serve --background --replace` (the restart performs its own
+initial sync — no explicit `agentsview sync` after it).
 
 agentsview has no config-layering or include mechanism to keep those
 secrets in a separate file (checked the source at v0.35.2), and no env var

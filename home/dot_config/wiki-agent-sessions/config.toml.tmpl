@@ -1,0 +1,4 @@
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+# Managed by chezmoi from machines.toml wiki_host_alias. The session-archive
+# sync (wiki-agent-sessions repo) fails closed when host_alias is empty.
+host_alias = "{{ $f.wiki_host_alias | default "" }}"

@@ -82,6 +82,7 @@ jobs:
           make test-chezmoi-drift-banner
           make test-finder-copy-path
           make test-codex-config
+          make test-agentsview-config
           make test-claude-settings
           make test-pi-settings
           make test-claude-statusline

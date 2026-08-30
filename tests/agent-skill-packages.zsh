@@ -451,6 +451,8 @@ expected_commands = [
     "claude plugin disable ios@prateek-local --scope user",
     "claude plugin install mattpocock@prateek-local --scope user",
     "claude plugin enable mattpocock@prateek-local --scope user",
+    "claude plugin install obsidian-wiki@prateek-local --scope user",
+    "claude plugin disable obsidian-wiki@prateek-local --scope user",
     "claude plugin install review@prateek-local --scope user",
     "claude plugin enable review@prateek-local --scope user",
     "claude plugin install utils-agent@prateek-local --scope user",

@@ -1,0 +1,48 @@
+name: obsidian-wiki
+version: 1.0.0
+targets:
+  - agent-skills
+
+dependencies:
+  apm:
+    - ar9av/obsidian-wiki/.skills/claude-history-ingest
+    - ar9av/obsidian-wiki/.skills/code-understand
+    - ar9av/obsidian-wiki/.skills/codex-history-ingest
+    - ar9av/obsidian-wiki/.skills/copilot-history-ingest
+    - ar9av/obsidian-wiki/.skills/cross-linker
+    - ar9av/obsidian-wiki/.skills/daily-update
+    - ar9av/obsidian-wiki/.skills/graph-colorize
+    - ar9av/obsidian-wiki/.skills/hermes-history-ingest
+    - ar9av/obsidian-wiki/.skills/impl-validator
+    - ar9av/obsidian-wiki/.skills/llm-wiki
+    - ar9av/obsidian-wiki/.skills/memory-bridge
+    - ar9av/obsidian-wiki/.skills/obsidian-layout-adjustment
+    - ar9av/obsidian-wiki/.skills/openclaw-history-ingest
+    - ar9av/obsidian-wiki/.skills/pi-history-ingest
+    - ar9av/obsidian-wiki/.skills/session-brain
+    - ar9av/obsidian-wiki/.skills/session-search
+    - ar9av/obsidian-wiki/.skills/skill-creator
+    - ar9av/obsidian-wiki/.skills/tag-taxonomy
+    - ar9av/obsidian-wiki/.skills/vault-skill-factory
+    - ar9av/obsidian-wiki/.skills/wiki-agent
+    - ar9av/obsidian-wiki/.skills/wiki-capture
+    - ar9av/obsidian-wiki/.skills/wiki-context-pack
+    - ar9av/obsidian-wiki/.skills/wiki-dashboard
+    - ar9av/obsidian-wiki/.skills/wiki-dedup
+    - ar9av/obsidian-wiki/.skills/wiki-digest
+    - ar9av/obsidian-wiki/.skills/wiki-export
+    - ar9av/obsidian-wiki/.skills/wiki-history-ingest
+    - ar9av/obsidian-wiki/.skills/wiki-import
+    - ar9av/obsidian-wiki/.skills/wiki-ingest
+    - ar9av/obsidian-wiki/.skills/wiki-lint
+    - ar9av/obsidian-wiki/.skills/wiki-narrate
+    - ar9av/obsidian-wiki/.skills/wiki-query
+    - ar9av/obsidian-wiki/.skills/wiki-rebuild
+    - ar9av/obsidian-wiki/.skills/wiki-research
+    - ar9av/obsidian-wiki/.skills/wiki-setup
+    - ar9av/obsidian-wiki/.skills/wiki-stage-commit
+    - ar9av/obsidian-wiki/.skills/wiki-status
+    - ar9av/obsidian-wiki/.skills/wiki-switch
+    - ar9av/obsidian-wiki/.skills/wiki-synthesize
+    - ar9av/obsidian-wiki/.skills/wiki-update
+    - kepano/obsidian-skills

@@ -26,6 +26,15 @@ granola_mcp = false
 # shortcuts whose CLI is listed, and crit's agent_cmd is set only when claude is
 # listed. Empty by default so a machine opts in explicitly.
 agent_clis = []
+# Cross-machine agent-session archive (prateek/wiki-agent-sessions): hourly raw
+# sync via an Orca automation, agentsview session_sources wiring, obsidian-wiki
+# vault config. Hosts with this on MUST also set wiki_host_alias in their
+# [machines.host.*] layer — the sync fails closed without it (no hostname
+# fallback; two machines named "macbook-pro" must not share an archive dir).
+agent_session_wiki = false
+# Exactly one host runs the daily wiki ingest automation (single writer for
+# wiki/); move it by moving this flag.
+agent_session_wiki_ingest = false
 
 # Minimal/fast tier for CI dry-run, Tart smoke, and shell audits. Keeps the
 # defaults' run_install_scripts/apply_macos_defaults = true so the Tart smoke
@@ -40,6 +49,7 @@ groups = ["core"]
 groups = ["core", "mac-desktop", "ai-agent-apps", "codex", "developer-tools", "personal-apps", "forks"]
 agent_clis = ["claude", "codex"]
 granola_mcp = true
+agent_session_wiki = true
 
 # Homelab Mac mini: development plus Apple tooling, remote/admin access, and
 # AI agent apps (agentsview + Orca need each other to be useful), without the
@@ -56,6 +66,7 @@ runner_scope = "repo"                  # GitHubRunnerScope rawValue: "organizati
 runner_start_on_launch = true
 agent_clis = ["claude", "codex"]
 granola_mcp = true
+agent_session_wiki = true
 
 # Managed work Mac: no personal apps, no Apple/iOS toolchain; Jamf elevation and
 # the private config overlay.
@@ -64,6 +75,7 @@ groups = ["core", "mac-desktop", "ai-agent-apps", "developer-tools", "work-apps"
 private_overlay = true
 elevation = "jamf-self-service"
 agent_clis = ["cursor-agent", "claude"]
+agent_session_wiki = true
 
 # os.<os> and host.<hostname> layers are intentionally absent until needed.
 # The resolver digs them with an empty-dict default, so a missing layer is a
@@ -77,3 +89,10 @@ agent_clis = ["cursor-agent", "claude"]
 # falls back to its ~/.tart default there.
 [machines.host.m4mini]
 tart_home = "/Volumes/TartVMs/tart"
+wiki_host_alias = "m4mini"
+
+# Managed work MacBook (Jamf hostname). Initial designated wiki-ingest host;
+# move the ingest flag to another host's layer to migrate the role.
+[machines.host.M-D2N572TGQN]
+wiki_host_alias = "work-mbp"
+agent_session_wiki_ingest = true

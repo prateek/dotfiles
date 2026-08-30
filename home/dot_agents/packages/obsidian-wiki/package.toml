@@ -1,0 +1,9 @@
+display_name = "Obsidian Wiki"
+# Ships disabled everywhere; repos opt in per-project (ADR 0007), e.g. the
+# wiki-agent-sessions archive enables it via committed .claude/settings.json
+# and .codex/config.toml.
+default_loaded = false
+
+[render]
+codex = "plugin"
+claude = "plugin"

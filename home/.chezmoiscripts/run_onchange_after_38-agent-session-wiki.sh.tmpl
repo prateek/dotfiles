@@ -1,0 +1,60 @@
+{{ template "script_lib.sh" . }}
+
+# machines.toml sha256: {{ include ".chezmoidata/machines.toml" | sha256sum }}
+# register-wiki-sync-automation sha256: {{ include (printf "%s/../scripts/agent-sessions/register-wiki-sync-automation" .chezmoi.sourceDir) | sha256sum }}
+# agentsview modify template sha256: {{ include "private_dot_agentsview/modify_private_config.toml.tmpl" | sha256sum }}
+
+set -euo pipefail
+
+{{- $f := includeTemplate "features.tmpl" . | fromJson }}
+
+helper="{{ .chezmoi.sourceDir }}/../scripts/agent-sessions/register-wiki-sync-automation"
+clone="$HOME/code/github.com/prateek/wiki-agent-sessions"
+remote="git@github.com:prateek/wiki-agent-sessions.git"
+
+{{- if and $f.run_install_scripts $f.agent_session_wiki }}
+
+if [ -d "$clone/.git" ]; then
+  actual="$(git -C "$clone" remote get-url origin 2>/dev/null || true)"
+  case "$actual" in
+    "$remote"|"https://github.com/prateek/wiki-agent-sessions"*) ;;
+    *) die "clone at $clone has unexpected remote '$actual'; refusing to touch it" ;;
+  esac
+else
+  if ! git ls-remote --heads "$remote" >/dev/null 2>&1; then
+    warn "cannot reach $remote (missing SSH credentials?); skipping session-wiki bootstrap."
+    warn "recover with: git clone $remote $clone && $helper --enable"
+    exit 0
+  fi
+  mkdir -p "$(dirname "$clone")"
+  run_timed "clone wiki-agent-sessions" git clone --quiet "$remote" "$clone"
+fi
+
+{{- if $f.agent_session_wiki_ingest }}
+run_timed "reconcile wiki automations (sync + ingest)" "$helper" --enable --ingest || \
+  warn "automation reconcile incomplete; re-run: $helper --enable --ingest"
+{{- else }}
+run_timed "reconcile wiki automations (sync)" "$helper" --enable || \
+  warn "automation reconcile incomplete; re-run: $helper --enable"
+{{- end }}
+
+# The agentsview modify template regenerates [[session_sources]] on every
+# apply; a restart is how the daemon picks the file up.
+if have agentsview; then
+  run_timed "restart agentsview daemon" agentsview serve --background --replace || \
+    warn "agentsview restart failed; restart manually: agentsview serve --background --replace"
+else
+  warn "agentsview not installed; cross-host session browsing is off until it is (then: agentsview serve --background --replace)"
+fi
+
+{{- else }}
+
+# Kill switch: leaving the feature means disabling the scheduled automations,
+# not just skipping registration.
+if command -v orca >/dev/null 2>&1 && [ -x "$helper" ]; then
+  "$helper" --disable || warn "could not disable wiki automations; run: $helper --disable"
+else
+  log "agent_session_wiki disabled; nothing to do."
+fi
+
+{{- end }}

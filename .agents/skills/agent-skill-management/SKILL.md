@@ -129,6 +129,11 @@ Refresh gotchas:
   subdirectory: apm materializes subdir deps with a git sparse cone, so such
   symlinks dangle and the install fails with ENOENT on the symlink targets.
   Depend on the repo root instead (see `forjd/better-writing` in core).
+- A dependency path cannot end in a dot-directory: apm parses the final
+  segment as a file extension and rejects e.g. `ar9av/obsidian-wiki/.skills`,
+  and repo-root deps do not discover skills inside hidden directories either.
+  Enumerate each skill subdir instead (`.../.skills/<skill>`, one dep per
+  skill; see the obsidian-wiki package).
 - SOURCE.md regeneration preserves only the `License` and `Notes` fields.
   Keep local-delta and rename notes inside `Notes`, never as extra bullets.
 - When a skill pairs with a mise-managed CLI (acpx, crit, agent-slack,

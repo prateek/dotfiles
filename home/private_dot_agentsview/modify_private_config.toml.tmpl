@@ -3,19 +3,30 @@
 # requires-python = ">=3.14"
 # dependencies = ["tomlkit>=0.13"]
 # ///
-"""Set codex_sessions_dirs in ~/.agentsview/config.toml.
+"""Manage the dotfiles-owned keys in ~/.agentsview/config.toml.
 
-Orca launches Codex with its own CODEX_HOME under its runtime-home dir
-instead of ~/.codex (see home/dot_agents/docs/agentsview.md), so
-agentsview's default Codex scan misses those sessions. Setting
-codex_sessions_dirs replaces agentsview's defaults rather than extending
-them, so the stock paths are listed alongside both Orca builds' paths.
+Two managed surfaces, everything else round-trips untouched (auth_token,
+cursor_secret, hand-written entries) preserved verbatim by tomlkit:
 
-Only this one key is touched; every other key (auth_token, cursor_secret,
-and anything else agentsview or the user has written) round-trips
-untouched, preserved verbatim by tomlkit.
+- codex_sessions_dirs: Orca launches Codex with its own CODEX_HOME under its
+  runtime-home dir instead of ~/.codex (see home/dot_agents/docs/agentsview.md),
+  so agentsview's default Codex scan misses those sessions. The key replaces
+  agentsview's defaults rather than extending them, so the stock paths are
+  listed alongside both Orca builds' paths.
+
+- [[session_sources]]: cross-host roots from the wiki-agent-sessions clone
+  (agentsview's documented topology for git-transported native layouts, with
+  per-root machine labels). Entries are additive to agentsview defaults.
+  Globbed at script runtime so a host added to the archive lands on the next
+  apply with no source change; only entries whose dir is under the clone are
+  reconciled, and the current host is excluded to avoid parsing local sessions
+  twice. Generation must stay behaviorally identical to repo_session_sources()
+  in the wiki repo's sync-sessions script; a fixture test enforces parity.
 """
+import json
+import os
 import sys
+from pathlib import Path
 
 import tomlkit
 
@@ -26,6 +37,34 @@ DESIRED_DIRS = [
     "{{ .chezmoi.homeDir }}/Library/Application Support/orca-dev/codex-runtime-home/home/sessions",
 ]
 
+CLONE = Path(os.environ.get(
+    "WIKI_SESSIONS_CLONE",
+    "{{ .chezmoi.homeDir }}/code/github.com/prateek/wiki-agent-sessions",
+))
+SELF_HOST = os.environ.get(
+    "WIKI_SESSIONS_HOST",
+    "{{ (includeTemplate "features.tmpl" . | fromJson).wiki_host_alias | default "" }}",
+)
+
+
+def repo_session_sources(clone: Path, self_host: str) -> list[dict]:
+    entries = []
+    sessions = clone / "sessions"
+    if not sessions.is_dir():
+        return entries
+    for host_dir in sorted(sessions.iterdir()):
+        if not host_dir.is_dir() or host_dir.name == self_host:
+            continue
+        roots = [("claude", host_dir / "claude/projects"),
+                 ("cursor", host_dir / "cursor/projects")]
+        codex = host_dir / "codex"
+        if codex.is_dir():
+            roots += [("codex", d) for d in sorted(codex.iterdir()) if d.is_dir()]
+        for agent, root in roots:
+            if root.is_dir():
+                entries.append({"agent": agent, "dir": str(root), "machine": host_dir.name})
+    return entries
+
 
 def semantic_equal(left: str, right: str) -> bool:
     try:
@@ -34,9 +73,40 @@ def semantic_equal(left: str, right: str) -> bool:
         return False
 
 
+def is_repo_entry(entry) -> bool:
+    try:
+        return Path(str(entry.get("dir", ""))).is_relative_to(CLONE)
+    except ValueError:
+        return False
+
+
+if "--print-session-sources" in sys.argv:
+    idx = sys.argv.index("--print-session-sources")
+    print(json.dumps(repo_session_sources(Path(sys.argv[idx + 1]), sys.argv[idx + 2])))
+    sys.exit(0)
+
 current_text = sys.stdin.read()
 doc = tomlkit.loads(current_text) if current_text.strip() else tomlkit.document()
 doc["codex_sessions_dirs"] = DESIRED_DIRS
+
+desired = repo_session_sources(CLONE, SELF_HOST)
+existing = doc.get("session_sources")
+# Hand-written entries are re-appended as their original tomlkit items so
+# comments and formatting survive; only clone-owned entries are regenerated.
+kept = [e for e in existing or [] if not is_repo_entry(e)]
+current_repo = [dict(e) for e in existing or [] if is_repo_entry(e)]
+if kept or desired:
+    aot = tomlkit.aot()
+    for entry in kept:
+        aot.append(entry)
+    for entry in desired:
+        item = tomlkit.table()
+        for key, value in entry.items():
+            item[key] = value
+        aot.append(item)
+    doc["session_sources"] = aot
+elif existing is not None:
+    del doc["session_sources"]
 
 merged_text = tomlkit.dumps(doc)
 sys.stdout.write(current_text if semantic_equal(current_text, merged_text) else merged_text)

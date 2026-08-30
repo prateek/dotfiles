@@ -1,0 +1,29 @@
+#!/usr/bin/env -S uv run --quiet --script
+# /// script
+# requires-python = ">=3.14"
+# ///
+"""Set OBSIDIAN_VAULT_PATH in ~/.config/obsidian-wiki/config.
+
+The file is plain KEY="value" lines. `obsidian-wiki setup` owns
+OBSIDIAN_WIKI_REPO and OBSIDIAN_WIKI_VERSION and preserves unmanaged keys,
+so only the vault path is asserted here; everything else round-trips
+untouched, comments and ordering included.
+"""
+import sys
+
+DESIRED = 'OBSIDIAN_VAULT_PATH="{{ .chezmoi.homeDir }}/code/github.com/prateek/wiki-agent-sessions/wiki"'
+
+lines = sys.stdin.read().splitlines()
+out = []
+seen = False
+for line in lines:
+    stripped = line.strip()
+    if stripped.startswith("OBSIDIAN_VAULT_PATH") and "=" in stripped and not stripped.startswith("#"):
+        if not seen:
+            out.append(DESIRED)
+            seen = True
+        continue
+    out.append(line)
+if not seen:
+    out.append(DESIRED)
+sys.stdout.write("\n".join(out) + "\n")

@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+# Reconcile the wiki-agent-sessions Orca automations on this machine.
+#
+#   register-wiki-sync-automation --enable [--ingest]   # desired state, idempotent
+#   register-wiki-sync-automation --disable             # kill switch: mark both --disabled
+#
+# Chezmoi's run_onchange script calls this at apply time, but it stays manually
+# runnable: a warn-and-exit-0 apply is recorded as successful, so re-running
+# this helper is the recovery path when orca or credentials appear later.
+#
+# Frozen interface: the prompt text and precheck path registered here are
+# stored inside Orca per machine and only refresh on the next apply. Evolving
+# behavior belongs in the wiki repo's scripts, never in new prompt wording.
+set -euo pipefail
+
+CLONE="$HOME/code/github.com/prateek/wiki-agent-sessions"
+PRECHECK="$CLONE/.agents/skills/session-sync/scripts/sync-precheck"
+SYNC_NAME="wiki-sessions-sync"
+INGEST_NAME="wiki-sessions-ingest"
+
+SYNC_PROMPT="Run the session-sync skill at .agents/skills/session-sync/SKILL.md: execute its bundled scripts/sync-sessions and report the result. Follow the skill's bounded failure playbook; never reset, clean, or force-push this repository."
+
+INGEST_PROMPT="Daily wiki ingest for this session archive. Run every step under .agents/skills/session-sync/scripts/with-repo-lock: (1) git pull --rebase. (2) Run .agents/skills/session-sync/scripts/audit-heartbeats; if it exits nonzero, fail this run loudly with its stale-host output. (3) For each sessions/<host>/claude directory, run /wiki-history-ingest on the delta with CLAUDE_HISTORY_PATH set to that directory, newest sessions first, stopping after a bounded page budget (~15 pages). (4) Commit only paths under wiki/, include the ingested archive HEAD SHA in the commit message, and push."
+
+log() { printf 'register-wiki-sync-automation: %s\n' "$*"; }
+warn() { printf 'register-wiki-sync-automation: WARNING: %s\n' "$*" >&2; }
+
+mode=""
+want_ingest=0
+for arg in "$@"; do
+  case "$arg" in
+    --enable) mode="enable" ;;
+    --disable) mode="disable" ;;
+    --ingest) want_ingest=1 ;;
+    *) warn "unknown argument: $arg"; exit 2 ;;
+  esac
+done
+[[ -n "$mode" ]] || { warn "pass --enable or --disable"; exit 2; }
+
+if ! command -v orca >/dev/null 2>&1; then
+  warn "orca CLI not found; skipping automation reconcile (re-run this helper after installing Orca)"
+  exit 0
+fi
+if ! command -v jq >/dev/null 2>&1; then
+  warn "jq not found; skipping automation reconcile"
+  exit 0
+fi
+
+automation_id() {
+  orca automations list --json 2>/dev/null |
+    jq -r --arg name "$1" \
+      '(.result.automations // .automations // .result.items // [])[]
+       | select(.name == $name) | (.id // .automationId // empty)' |
+    head -1
+}
+
+reconcile() {
+  local name="$1" id
+  shift
+  id="$(automation_id "$name")"
+  if [[ "$mode" == "disable" ]]; then
+    if [[ -n "$id" ]]; then
+      orca automations edit "$id" --disabled --json >/dev/null
+      log "disabled: $name ($id)"
+    else
+      log "not registered, nothing to disable: $name"
+    fi
+    return
+  fi
+  if [[ -n "$id" ]]; then
+    orca automations edit "$id" "$@" --enabled --json >/dev/null
+    log "reconciled: $name ($id)"
+  else
+    # The owner clone must be addressable as an Orca workspace; fall back to
+    # repo-selector mode when it is not registered as a worktree.
+    if orca automations create --name "$name" "$@" --workspace "path:$CLONE" \
+         --workspace-mode existing --enabled --json >/dev/null 2>&1; then
+      log "created: $name (workspace $CLONE)"
+    elif orca automations create --name "$name" "$@" --repo "path:$CLONE" \
+           --workspace-mode existing --enabled --json >/dev/null 2>&1; then
+      log "created: $name (repo selector $CLONE)"
+    else
+      warn "could not create $name; register the repo with Orca (ohc prateek/wiki-agent-sessions) and re-run this helper"
+      return 1
+    fi
+  fi
+}
+
+if [[ "$mode" == "enable" && ! -x "$PRECHECK" ]]; then
+  warn "precheck missing at $PRECHECK; clone the repo first (script 38 does this) and re-run"
+  exit 0
+fi
+
+status=0
+reconcile "$SYNC_NAME" \
+  --trigger hourly \
+  --provider claude \
+  --prompt "$SYNC_PROMPT" \
+  --precheck "$PRECHECK" \
+  --missed-run-grace-minutes 55 || status=1
+
+if [[ "$mode" == "disable" || "$want_ingest" == "1" ]]; then
+  reconcile "$INGEST_NAME" \
+    --trigger daily \
+    --time "06:00" \
+    --provider claude \
+    --prompt "$INGEST_PROMPT" || status=1
+elif [[ "$mode" == "enable" ]]; then
+  id="$(automation_id "$INGEST_NAME")"
+  if [[ -n "$id" ]]; then
+    orca automations edit "$id" --disabled --json >/dev/null
+    log "ingest role not assigned to this host; disabled: $INGEST_NAME"
+  fi
+fi
+
+exit "$status"

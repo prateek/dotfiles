@@ -57,6 +57,12 @@ an empty stub for Codex runtime skills); do not commit source copies under
 - Tart local install lane: `docs/runbooks/tart-mini-validation.md`.
 - Worktree workflow: `home/dot_agents/docs/worktrees.md`.
 - Git/commit workflow: `home/dot_agents/docs/git.md`.
+- New-machine bootstrap (agent-assisted): if the machine will run AI agents,
+  also onboard it into the session archive — add `wiki_host_alias` under its
+  `[machines.host.<hostname>]` layer in `home/.chezmoidata/machines.toml`
+  (unique, non-empty), `chezmoi apply`, and after its first successful sync
+  add the alias to `health/expected-hosts` in `prateek/wiki-agent-sessions`.
+  Full steps: the `agent-session-wiki` skill (utils-agent package).
 
 ## Chezmoi And App Config
 

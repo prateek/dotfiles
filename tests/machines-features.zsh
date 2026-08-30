@@ -76,6 +76,37 @@ assert_json '{"machine_type":"work"}' \
 # --- machine_type default: absent resolves to personal ------------------------
 assert_json '{}' 'f["machine_type"]=="personal"' "absent machine_type -> personal"
 
+# --- agent_session_wiki flags and wiki_host_alias invariants -------------------
+# Asserted against the layer data itself, not the resolver: the resolver runs
+# with THIS host's [machines.host.*] layer applied, so host-scoped keys
+# (agent_session_wiki_ingest, wiki_host_alias) would leak into type-override
+# assertions on any participating machine.
+python3 - "$DOTFILES_ROOT/home/.chezmoidata/machines.toml" <<'PY' || exit 1
+import sys, tomllib
+
+machines = tomllib.load(open(sys.argv[1], "rb"))["machines"]
+defaults = machines["defaults"]
+types = machines["type"]
+
+assert defaults["agent_session_wiki"] is False, defaults
+assert defaults["agent_session_wiki_ingest"] is False, defaults
+assert "agent_session_wiki" not in types.get("ci", {}), "ci must inherit session wiki off"
+for mt in ("personal", "homelab", "work"):
+    assert types[mt].get("agent_session_wiki") is True, f"{mt} should sync sessions"
+    assert "agent_session_wiki_ingest" not in types[mt], f"ingest is host-scoped, not type-scoped ({mt})"
+
+hosts = machines.get("host", {})
+aliases = {h: cfg["wiki_host_alias"] for h, cfg in hosts.items() if "wiki_host_alias" in cfg}
+empty = [h for h, a in aliases.items() if not a.strip()]
+assert not empty, f"empty wiki_host_alias on: {empty}"
+dupes = {a for a in aliases.values() if list(aliases.values()).count(a) > 1}
+assert not dupes, f"duplicate wiki_host_alias values: {dupes}"
+ingest_hosts = [h for h, cfg in hosts.items() if cfg.get("agent_session_wiki_ingest")]
+assert len(ingest_hosts) <= 1, f"multiple ingest hosts: {ingest_hosts}"
+for h in ingest_hosts:
+    assert h in aliases, f"ingest host {h} lacks wiki_host_alias"
+PY
+
 # --- machines_local is the highest layer (overrides type + defaults) ----------
 assert_json '{"machine_type":"personal","machines_local":{"secrets_enabled":true}}' \
   'f["secrets_enabled"] is True' "machines_local enables secrets"
