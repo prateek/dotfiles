@@ -49,7 +49,7 @@ label = 'ai'
     [[comboMode.bindings.children]]
     iconPath = 'text.append'
     key = 'q'
-    label = 'queue → claude'
+    label = "queue \u2192 claude"
     url = 'tuna://run/text.%2522%2524HOME%252Fbin%252Fclaude-queue-draft%2522/Run%20Text%20as%20Shell%20Command'
 
 [[comboMode.bindings]]
