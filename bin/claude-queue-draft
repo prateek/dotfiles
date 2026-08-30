@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# claude-queue-draft — convert the Claude Code draft in the frontmost
+# terminal into a deferred /q submission (Codex-style queue).
+#
+# Triggered from Tuna combo mode (tap-⇧, a, q). Tuna shell actions cannot
+# type, so the keystrokes are injected via System Events — Tuna needs a
+# one-time Accessibility grant. Ctrl+X Enter is chat:queueSubmit (pinned
+# in ~/.claude/keybindings.json); it submits the literal draft even with
+# the slash-command popup open. Claude Code holds queued slash commands
+# until the turn truly ends (plain messages absorb mid-turn), so /q
+# (defined in ~/.claude/commands/q.md) lands as its own later turn.
+# Single-line drafts only — Home is line-scoped in the composer, so a
+# multi-line draft would prefix its last line and queue as a plain
+# (absorbed) message. Attended flow; no gating beyond frontmost-app.
+set -euo pipefail
+
+front="$(lsappinfo front)"
+bundle="$(lsappinfo info -only bundleid "$front" | cut -d'"' -f4)"
+case "$bundle" in
+  com.stablyai.orca|com.mitchellh.ghostty) ;;
+  *) exit 0 ;;
+esac
+
+# Let Tuna's combo overlay dismiss and focus settle back on the terminal.
+sleep 0.2
+
+osascript <<'OSA'
+tell application "System Events"
+	key code 115
+	keystroke "/q "
+	key code 119
+	key code 7 using {control down}
+	key code 36
+end tell
+OSA

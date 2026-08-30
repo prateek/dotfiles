@@ -42,6 +42,17 @@ key = '1'
 url = 'tuna://run/path.%252FApplications%252F1Password.app/Open'
 
 [[comboMode.bindings]]
+iconPath = 'sparkles'
+key = 'a'
+label = 'ai'
+
+    [[comboMode.bindings.children]]
+    iconPath = 'text.append'
+    key = 'q'
+    label = 'queue → claude'
+    url = 'tuna://run/text.%2522%2524HOME%252Fbin%252Fclaude-queue-draft%2522/Run%20Text%20as%20Shell%20Command'
+
+[[comboMode.bindings]]
 iconPath = 'wrench.and.screwdriver'
 key = 'z'
 label = 'misc'

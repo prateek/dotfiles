@@ -270,7 +270,17 @@ import tomllib
 
 config = tomllib.loads(pathlib.Path(sys.argv[1]).read_text())
 binds = {b["key"]: b for b in config["comboMode"]["bindings"]}
-assert set(binds) == {"1", "t", "s", "b", "c", "m", "f", "z"}, sorted(binds)
+assert set(binds) == {"1", "a", "t", "s", "b", "c", "m", "f", "z"}, sorted(binds)
+# Tap-⇧, a, q converts the Claude Code draft into a deferred /q: the combo
+# runs ~/bin/claude-queue-draft as a shell action. Decode the double-encoded
+# payload to pin the script identity, not just the key.
+from urllib.parse import unquote
+ai = binds["a"]
+assert ai.get("label") == "ai"
+queue = {c["key"]: c for c in ai["children"]}["q"]
+decoded = unquote(unquote(queue["url"]))
+assert '"$HOME/bin/claude-queue-draft"' in decoded, decoded
+assert decoded.endswith("Run Text as Shell Command"), decoded
 # "z" is the misc group; confirm nesting renders and its utility/GhostPepper binds exist.
 misc = binds["z"]
 assert misc.get("label") == "misc"
@@ -295,5 +305,22 @@ assert config["mcpServers"]["granola"] == {
 tools = tomllib.loads(pathlib.Path(sys.argv[2]).read_text())
 assert tools == {"tools": {"npm:mcporter": "latest"}}
 PY
+
+# The queue combo's contract spans four files: the Tuna action's script must
+# exist and stay executable, its ~/bin symlink must be managed, the Ctrl+X
+# Enter chord it types must stay pinned to chat:queueSubmit, and the /q
+# command it relies on must exist.
+[[ -x "$DOTFILES_ROOT/bin/claude-queue-draft" ]] \
+  || die "bin/claude-queue-draft missing or not executable"
+[[ -f "$DOTFILES_ROOT/home/bin/symlink_claude-queue-draft.tmpl" ]] \
+  || die "missing ~/bin symlink template for claude-queue-draft"
+python3 - "$DOTFILES_ROOT/home/dot_claude/keybindings.json" <<'PY'
+import json, sys
+config = json.load(open(sys.argv[1]))
+chat = next(b for b in config["bindings"] if b["context"] == "Chat")
+assert chat["bindings"]["ctrl+x enter"] == "chat:queueSubmit", chat
+PY
+[[ -f "$DOTFILES_ROOT/home/dot_claude/commands/q.md" ]] \
+  || die "missing /q command: home/dot_claude/commands/q.md"
 
 print -- "OK package-gated-configs"
