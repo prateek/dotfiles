@@ -40,7 +40,7 @@ jq '[.profiles[] | select(.name == "Default").complex_modifications.rules[].mani
   "$work/out.json" > "$work/manips.json"
 
 count="$(jq 'length' "$work/manips.json")"
-[[ "$count" == 33 ]] || die "expected 33 manipulators, got $count"
+[[ "$count" == 34 ]] || die "expected 34 manipulators, got $count"
 
 assert() { jq -e "$1" "$work/manips.json" >/dev/null || die "missing behavior: $2"; }
 
@@ -105,6 +105,27 @@ assert 'any(.[]; .from.key_code=="left_control" and .parameters."basic.to_if_alo
 assert 'any(.[]; .from.key_code=="caps_lock" and .to_if_alone[0].key_code=="escape"
   and any(.conditions[]; .type=="device_if" and any(.identifiers[]; .is_built_in_keyboard==true)))' \
   "Apple caps_lock tap = escape, scoped to the built-in keyboard"
+
+# meh+d in Orca/Ghostty rewrites the Claude Code draft into a deferred /q via
+# Ctrl+X Enter (chat:queueSubmit — submits the literal draft past the slash
+# popup). Mandatory left_* modifiers match what the hold-left_control meh
+# remap emits.
+assert 'any(.[]; .from.key_code=="d"
+  and ((.from.modifiers.mandatory // []) | sort)==["left_control","left_option","left_shift"]
+  and [.to[].key_code]==["home","slash","q","spacebar","end","x","return_or_enter"]
+  and .to[5].modifiers==["left_control"]
+  and any(.conditions[]; .type=="frontmost_application_if"
+    and any(.bundle_identifiers[]; .=="^com\\.stablyai\\.orca$")
+    and any(.bundle_identifiers[]; .=="^com\\.mitchellh\\.ghostty$")))' \
+  "meh+d converts the Claude draft to /q and defers it (Claude host apps only)"
+
+# The macro's contract spans three files: the chord must stay pinned to
+# chat:queueSubmit and the /q command must exist, or meh+d types a dead chord.
+jq -e '.bindings[] | select(.context=="Chat") | .bindings["ctrl+x enter"] == "chat:queueSubmit"' \
+  "$DOTFILES_ROOT/home/dot_claude/keybindings.json" >/dev/null 2>&1 \
+  || die "keybindings.json no longer pins ctrl+x enter to chat:queueSubmit"
+[[ -f "$DOTFILES_ROOT/home/dot_claude/commands/q.md" ]] \
+  || die "missing /q command: home/dot_claude/commands/q.md"
 
 # Tap-⇧-for-Tuna: both shift keys send a REAL (non-lazy) ⇧ when held so app ⇧-click/⇧-drag
 # and ⇧-shortcuts work, and emit F18 on a clean quick tap. Ungated, no device/variable

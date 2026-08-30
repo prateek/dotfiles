@@ -69,8 +69,9 @@
 {:devices {:zero2    [{:vendor_id 11720 :product_id 36888}]
            :internal [{:is_built_in_keyboard true}]}
 
- :applications {:orca ["^com\\.stablyai\\.orca$"]
-                :arc  ["^company\\.thebrowser\\.Browser$"]}
+ :applications {:orca         ["^com\\.stablyai\\.orca$"]
+                :arc          ["^company\\.thebrowser\\.Browser$"]
+                :claude_hosts ["^com\\.stablyai\\.orca$" "^com\\.mitchellh\\.ghostty$"]}
 
  :main
  [{:des "8BitDo: Start toggles the mouse layer (with notification)"
@@ -114,6 +115,18 @@
            [:m :vk_none]
            [:k :vk_none]
            [:n :vk_none]]}
+
+  {:des "Claude hosts: meh+d defers the Claude Code draft as /q (Codex-style queue)"
+   ;; Ctrl+X Enter is chat:queueSubmit (pinned in ~/.claude/keybindings.json) —
+   ;; it submits the literal draft even with the slash-command popup open.
+   ;; Claude Code holds queued slash commands until the turn truly ends (plain
+   ;; messages absorb mid-turn), so /q (defined in ~/.claude/commands/q.md)
+   ;; lands as its own later turn. Single-line drafts only — Home is
+   ;; line-scoped, so a multi-line draft prefixes its last line and queues as
+   ;; a plain (absorbed) message. No other gating; the flow is attended.
+   :rules [[:condi :claude_hosts]
+           [:!TOSd [:home :slash :q :spacebar :end
+                    {:key :x :modi [:left_control]} :return_or_enter]]]}
 
   {:des "Tap either ⇧ opens Tuna combo mode (F18); hold ⇧ + key/click stays ⇧"
    ;; Ungated (every keyboard). ⇧ is sent as a REAL held modifier (deliberately NOT :lazy) so
