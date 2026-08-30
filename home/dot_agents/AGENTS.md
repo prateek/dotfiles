@@ -117,6 +117,8 @@ For Linear conventions (CLI workflows), read: ~/.agents/docs/linear.md
 
 For Google Workspace conventions (gog CLI), read: ~/.agents/docs/google-workspace.md
 
+For Granola meeting-note access through MCPorter (OAuth, tool choice, citation preservation), read: ~/.agents/docs/granola.md
+
 For Browser CDP conventions (profile path), read: ~/.agents/docs/browser-cdp.md
 
 For Twitter/X conventions (bird CLI, read/write boundaries), read: ~/.agents/docs/twitter.md

@@ -1,0 +1,10 @@
+{
+  "$schema": "https://raw.githubusercontent.com/openclaw/mcporter/main/mcporter.schema.json",
+  "mcpServers": {
+    "granola": {
+      "description": "Official Granola meeting notes MCP",
+      "baseUrl": "https://mcp.granola.ai/mcp",
+      "auth": "oauth"
+    }
+  }
+}

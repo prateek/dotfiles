@@ -58,19 +58,19 @@ if not eval(expr, {"f": f}):
 
 # --- per-type composition matches the retired packages.machine_types ----------
 assert_json '{"machine_type":"ci"}' \
-  'f["groups"]==["core"] and f["run_install_scripts"] is True and f["apply_macos_defaults"] is True and f["secrets_enabled"] is False and f["private_overlay"] is False and f["elevation"]=="none" and f["machine_type"]=="ci"' \
+  'f["groups"]==["core"] and f["run_install_scripts"] is True and f["apply_macos_defaults"] is True and f["secrets_enabled"] is False and f["private_overlay"] is False and f["elevation"]=="none" and f["granola_mcp"] is False and f["machine_type"]=="ci"' \
   "ci composition"
 
 assert_json '{"machine_type":"personal"}' \
-  'f["groups"]==["core","mac-desktop","ai-agent-apps","codex","developer-tools","personal-apps","forks"] and f["run_install_scripts"] is True and f["apply_macos_defaults"] is True and f["secrets_enabled"] is False and f["elevation"]=="none" and f["private_overlay"] is False' \
+  'f["groups"]==["core","mac-desktop","ai-agent-apps","codex","developer-tools","personal-apps","forks"] and f["run_install_scripts"] is True and f["apply_macos_defaults"] is True and f["secrets_enabled"] is False and f["elevation"]=="none" and f["private_overlay"] is False and f["granola_mcp"] is True' \
   "personal composition"
 
 assert_json '{"machine_type":"homelab"}' \
-  'f["groups"]==["core","ai-agent-apps","codex","developer-tools","apple-development","homelab-overlay"] and f["runner_vm_name"]=="tartelet-runner" and f["runner_vm_count"]==1 and f["runner_scope"]=="repo" and f["runner_start_on_launch"] is True' \
+  'f["groups"]==["core","ai-agent-apps","codex","developer-tools","apple-development","homelab-overlay"] and f["runner_vm_name"]=="tartelet-runner" and f["runner_vm_count"]==1 and f["runner_scope"]=="repo" and f["runner_start_on_launch"] is True and f["granola_mcp"] is True' \
   "homelab composition"
 
 assert_json '{"machine_type":"work"}' \
-  'f["groups"]==["core","mac-desktop","ai-agent-apps","developer-tools","work-apps","forks"] and f["private_overlay"] is True and f["elevation"]=="jamf-self-service"' \
+  'f["groups"]==["core","mac-desktop","ai-agent-apps","developer-tools","work-apps","forks"] and f["private_overlay"] is True and f["elevation"]=="jamf-self-service" and f["granola_mcp"] is False' \
   "work composition"
 
 # --- machine_type default: absent resolves to personal ------------------------

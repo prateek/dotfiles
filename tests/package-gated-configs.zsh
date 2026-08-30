@@ -25,6 +25,8 @@ homelab_managed="$tmp_root/homelab-managed.txt"
 homelab_ignored="$tmp_root/homelab-ignored.txt"
 empty_ignored="$tmp_root/empty-ignored.txt"
 tuna_config="$tmp_root/tuna-config.toml"
+mcporter_config="$DOTFILES_ROOT/home/dot_config/mcporter/mcporter.json"
+mcporter_tools="$DOTFILES_ROOT/home/dot_config/mise/conf.d/mcporter.toml"
 state_file="$tmp_root/chezmoi-state.boltdb"
 
 # package-cask-enabled.tmpl resolves package groups through the machines.toml
@@ -125,6 +127,8 @@ expect_managed "Library/Preferences/dev.kdrag0n.MacVirt.plist" "$personal_manage
 expect_managed "Library/Preferences/net.elasticthreads.nv.plist" "$personal_managed"
 expect_managed ".codex/config.toml" "$personal_managed"
 expect_managed ".codex/skills" "$personal_managed"
+expect_managed ".config/mcporter/mcporter.json" "$personal_managed"
+expect_managed ".config/mise/conf.d/mcporter.toml" "$personal_managed"
 expect_unmanaged "Library/Preferences/io.tailscale.ipn.macsys.plist" "$personal_managed"
 
 # --- ci: core only. All cask-gated app configs are unmanaged. -----------
@@ -151,6 +155,8 @@ expect_unmanaged "Library/Preferences/io.tailscale.ipn.macsys.plist" "$ci_manage
 expect_unmanaged "Library/Preferences/com.prakashjoshipax.VoiceInk.plist" "$ci_managed"
 expect_unmanaged ".codex/config.toml" "$ci_managed"
 expect_unmanaged ".codex/skills" "$ci_managed"
+expect_unmanaged ".config/mcporter" "$ci_managed"
+expect_unmanaged ".config/mise/conf.d/mcporter.toml" "$ci_managed"
 
 # --- work: Mac desktop + dev + work apps, no personal/homelab config ---------
 # setapp is shared across daily-driver laptops (mac-desktop group), so its
@@ -169,14 +175,20 @@ expect_unmanaged "Library/Preferences/io.tailscale.ipn.macsys.plist" "$work_mana
 expect_unmanaged "Library/Preferences/com.prakashjoshipax.VoiceInk.plist" "$work_managed"
 expect_unmanaged ".codex/config.toml" "$work_managed"
 expect_unmanaged ".codex/skills" "$work_managed"
+expect_unmanaged ".config/mcporter" "$work_managed"
+expect_unmanaged ".config/mise/conf.d/mcporter.toml" "$work_managed"
 expect_ignored "Library/Preferences/io.tailscale.ipn.macsys.plist" "$work_ignored"
 expect_ignored "Library/Preferences/com.prakashjoshipax.VoiceInk.plist" "$work_ignored"
 expect_ignored ".codex" "$work_ignored"
+expect_ignored ".config/mcporter" "$work_ignored"
+expect_ignored ".config/mise/conf.d/mcporter.toml" "$work_ignored"
 
 # --- homelab: dev + Apple + remote/admin + AI agent apps, no Mac desktop/personal apps ---
 expect_managed "Library/Preferences/io.tailscale.ipn.macsys.plist" "$homelab_managed"
 expect_managed ".codex/config.toml" "$homelab_managed"
 expect_managed ".codex/skills" "$homelab_managed"
+expect_managed ".config/mcporter/mcporter.json" "$homelab_managed"
+expect_managed ".config/mise/conf.d/mcporter.toml" "$homelab_managed"
 expect_managed "Library/Preferences/com.cmuxterm.app.plist" "$homelab_managed"
 expect_managed "Library/Application Support/orca/orca-data.json" "$homelab_managed"
 expect_managed ".orca/keybindings.json" "$homelab_managed"
@@ -218,10 +230,14 @@ expect_ignored "Library/Preferences/pro.betterdisplay.BetterDisplay.plist"
 expect_ignored "Library/Preferences/io.tailscale.ipn.macsys.plist"
 expect_ignored "Library/Preferences/com.prakashjoshipax.VoiceInk.plist"
 expect_ignored ".codex"
+expect_ignored ".config/mcporter"
+expect_ignored ".config/mise/conf.d/mcporter.toml"
 
 # --- empty group set ⇒ every gated config ignored ---
 for p in \
   ".codex" \
+  ".config/mcporter" \
+  ".config/mise/conf.d/mcporter.toml" \
   ".config/tuna/config.toml" \
   "Library/Preferences/com.brnbw.Tuna.plist" \
   "Library/Application Support/orca/orca-data.json" \
@@ -261,6 +277,23 @@ assert misc.get("label") == "misc"
 assert {"d", "m", "z", "t", "r", "g"} <= {a["key"] for a in misc["children"]}
 # ⌘-tap emits F18; Tuna opens combo mode on it.
 assert config["hotkeys"]["app"]["comboMode"] == {"carbonKeyCode": 79, "carbonModifiers": 0}
+PY
+
+python3 - "$mcporter_config" "$mcporter_tools" <<'PY'
+import json
+import pathlib
+import sys
+import tomllib
+
+config = json.loads(pathlib.Path(sys.argv[1]).read_text())
+assert config["mcpServers"]["granola"] == {
+    "description": "Official Granola meeting notes MCP",
+    "baseUrl": "https://mcp.granola.ai/mcp",
+    "auth": "oauth",
+}
+
+tools = tomllib.loads(pathlib.Path(sys.argv[2]).read_text())
+assert tools == {"tools": {"npm:mcporter": "latest"}}
 PY
 
 print -- "OK package-gated-configs"

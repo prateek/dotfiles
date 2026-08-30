@@ -21,6 +21,7 @@ apply_macos_defaults = true
 secrets_enabled = false          # enable per machine via [data].machines_local
 private_overlay = false
 elevation = "none"
+granola_mcp = false
 # ACP-backed agent CLIs present on this machine. The acpx config emits only the
 # shortcuts whose CLI is listed, and crit's agent_cmd is set only when claude is
 # listed. Empty by default so a machine opts in explicitly.
@@ -38,6 +39,7 @@ groups = ["core"]
 [machines.type.personal]
 groups = ["core", "mac-desktop", "ai-agent-apps", "codex", "developer-tools", "personal-apps", "forks"]
 agent_clis = ["claude", "codex"]
+granola_mcp = true
 
 # Homelab Mac mini: development plus Apple tooling, remote/admin access, and
 # AI agent apps (agentsview + Orca need each other to be useful), without the
@@ -53,6 +55,7 @@ runner_labels = "tartelet,homelab"
 runner_scope = "repo"                  # GitHubRunnerScope rawValue: "organization" | "repo"; repo = one runner per repo
 runner_start_on_launch = true
 agent_clis = ["claude", "codex"]
+granola_mcp = true
 
 # Managed work Mac: no personal apps, no Apple/iOS toolchain; Jamf elevation and
 # the private config overlay.

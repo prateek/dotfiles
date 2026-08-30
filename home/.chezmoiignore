@@ -27,6 +27,12 @@
 .pi/agent/trust.json
 .ssh
 
+{{/* Granola's personal meeting data and MCP tooling never reach work or CI machines. */}}
+{{- if not (includeTemplate "features.tmpl" . | fromJson).granola_mcp }}
+.config/mcporter
+.config/mise/conf.d/mcporter.toml
+{{- end }}
+
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "cmux")) "true" }}
 .config/cmux
 Library/Preferences/com.cmuxterm.app.plist
