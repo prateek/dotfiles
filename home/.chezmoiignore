@@ -100,11 +100,11 @@ Library/Application Support/Code/User
 Library/Colors/nvALT.clr
 Library/Preferences/net.elasticthreads.nv.plist
 {{- end }}
-{{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "jordanbaird-ice")) "true" }}
-Library/Preferences/com.jordanbaird.Ice.plist
-{{- end }}
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "orbstack")) "true" }}
 Library/Preferences/dev.kdrag0n.MacVirt.plist
+{{- end }}
+{{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "thaw")) "true" }}
+Library/Preferences/com.stonerl.Thaw.plist
 {{- end }}
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "voiceink")) "true" }}
 Library/Preferences/com.prakashjoshipax.VoiceInk.plist

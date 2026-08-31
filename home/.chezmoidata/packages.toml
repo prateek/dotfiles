@@ -83,7 +83,7 @@ casks = [
   # Display, menu bar, diagnostics, and local virtualization.
   { name = "betterdisplay" },
   { name = "caffeine", appdir = "/Applications" },
-  { name = "jordanbaird-ice" },
+  { name = "thaw" },
   { name = "whatcable" },
   { name = "key-codes", appdir = "/Applications" },
   { name = "orbstack" },

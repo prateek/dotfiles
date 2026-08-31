@@ -120,11 +120,11 @@ for domain in \
   com.electron.ollama \
   com.helftone.monodraw \
   com.intelliscapesolutions.caffeine \
-  com.jordanbaird.Ice \
   com.openai.codex \
   com.rescuetime.RescueTime \
   com.soma-zone.LaunchControl \
   com.spotify.client \
+  com.stonerl.Thaw \
   com.tinyspeck.slackmacgap \
   dev.zed.Zed \
   md.obsidian \

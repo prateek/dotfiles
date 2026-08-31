@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+exec '{{ .chezmoi.sourceDir }}/../scripts/macos/plist-merge' \
+  --bundle-id 'com.stonerl.Thaw' \
+  --desired-b64 '{{ includeTemplate "com.stonerl.Thaw.plist.tmpl" . | b64enc }}'

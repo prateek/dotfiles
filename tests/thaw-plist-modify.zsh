@@ -8,7 +8,7 @@ set +v 2>/dev/null || true
 setopt typeset_silent 2>/dev/null || true
 
 die() {
-  print -u2 -- "ice-plist-modify: $*"
+  print -u2 -- "thaw-plist-modify: $*"
   exit 1
 }
 
@@ -16,8 +16,8 @@ DOTFILES_ROOT="${0:A:h:h}"
 tmp_root="$(mktemp -d)"
 trap 'rm -rf "$tmp_root"' EXIT
 
-source_xml="$DOTFILES_ROOT/home/.chezmoitemplates/com.jordanbaird.Ice.plist.tmpl"
-script="$tmp_root/modify_ice.py"
+source_xml="$DOTFILES_ROOT/home/.chezmoitemplates/com.stonerl.Thaw.plist.tmpl"
+script="$tmp_root/modify_thaw.py"
 current_plist="$tmp_root/current.plist"
 merged_plist="$tmp_root/merged.plist"
 empty_merged_plist="$tmp_root/empty-merged.plist"
@@ -28,7 +28,7 @@ chezmoi \
   --source "$DOTFILES_ROOT" \
   --override-data '{}' \
   execute-template \
-  --file "$DOTFILES_ROOT/home/Library/private_Preferences/modify_private_com.jordanbaird.Ice.plist.tmpl" \
+  --file "$DOTFILES_ROOT/home/Library/private_Preferences/modify_private_com.stonerl.Thaw.plist.tmpl" \
   >"$script"
 chmod +x "$script"
 
@@ -41,12 +41,13 @@ import sys
 
 path = pathlib.Path(sys.argv[1])
 payload = {
-    "AutoRehide": False,
-    "HideApplicationMenus": False,
-    "ShowIceIcon": False,
-    "Hotkeys": {"ToggleHiddenSection": b"null"},
-    "MenuBarAppearanceConfigurationV2": b"local-menu-bar-layout",
-    "NSStatusItem Preferred Position HItem": 224,
+    "EnableAlwaysHiddenSection": True,
+    "SUAutomaticallyUpdate": False,
+    "SectionDividerStyle": 0,
+    "DisplayIceBarConfigurations": b"local-per-display-bar-config",
+    "MenuBarAppearanceConfigurationV2": b"local-menu-bar-appearance",
+    "MenuBarItemManager.knownItemIdentifiers": ["com.example.app:Item-0"],
+    "NSStatusItem Preferred Position Thaw.ControlItem.Visible": 316,
     "NSWindow Frame SettingsWindow": "local-window-frame",
     "SULastCheckTime": "local-update-state",
 }
@@ -65,32 +66,20 @@ import sys
 merged = plistlib.loads(pathlib.Path(sys.argv[1]).read_bytes())
 empty_merged = plistlib.loads(pathlib.Path(sys.argv[2]).read_bytes())
 
-assert merged["AutoRehide"] is True
-assert merged["CanToggleAlwaysHiddenSection"] is True
-assert merged["CustomIceIconIsTemplate"] is False
 assert merged["EnableAlwaysHiddenSection"] is False
-assert merged["HideApplicationMenus"] is True
-assert merged["IceBarLocation"] == 0
-assert merged["ItemSpacingOffset"] == 0.0
-assert merged["RehideInterval"] == 15.0
-assert merged["RehideStrategy"] == 0
-assert merged["ShowAllSectionsOnUserDrag"] is True
-assert merged["ShowIceIcon"] is True
-assert merged["ShowOnClick"] is True
-assert merged["ShowOnHover"] is False
-assert merged["ShowOnHoverDelay"] == 0.2
-assert merged["ShowOnScroll"] is True
-assert merged["ShowSectionDividers"] is False
-assert merged["TempShowInterval"] == 15.0
-assert merged["UseIceBar"] is False
-assert merged["Hotkeys"] == {"ToggleHiddenSection": b"null"}
-assert merged["MenuBarAppearanceConfigurationV2"] == b"local-menu-bar-layout"
+assert merged["SUAutomaticallyUpdate"] is True
+assert merged["SUEnableAutomaticChecks"] is True
+assert merged["SectionDividerStyle"] == 1
+assert merged["DisplayIceBarConfigurations"] == b"local-per-display-bar-config"
+assert merged["MenuBarAppearanceConfigurationV2"] == b"local-menu-bar-appearance"
+assert merged["MenuBarItemManager.knownItemIdentifiers"] == ["com.example.app:Item-0"]
+assert merged["NSStatusItem Preferred Position Thaw.ControlItem.Visible"] == 316
 assert merged["NSWindow Frame SettingsWindow"] == "local-window-frame"
 assert merged["SULastCheckTime"] == "local-update-state"
 
-assert empty_merged["AutoRehide"] is True
-assert empty_merged["ShowIceIcon"] is True
-assert "Hotkeys" not in empty_merged
+assert empty_merged["EnableAlwaysHiddenSection"] is False
+assert empty_merged["SectionDividerStyle"] == 1
+assert "MenuBarAppearanceConfigurationV2" not in empty_merged
 PY
 
-print -- "OK ice-plist-modify"
+print -- "OK thaw-plist-modify"

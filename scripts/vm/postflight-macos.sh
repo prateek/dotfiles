@@ -134,8 +134,6 @@ expect_hook_state_clean
 # One asserted key per managed plist app — proves the shared engine
 # wrote the configured value. Keys chosen for high signal (not arbitrary
 # defaults) and stability (not animated state).
-expect_plist_for ice_hide_app_menus       com.jordanbaird.Ice           HideApplicationMenus       1
-expect_plist_for ice_rehide_interval      com.jordanbaird.Ice           RehideInterval             15
 expect_plist_for voiceink_model           com.prakashjoshipax.VoiceInk  CurrentTranscriptionModel  parakeet-tdt-0.6b-v3
 expect_plist_for voiceink_menubar_only    com.prakashjoshipax.VoiceInk  IsMenuBarOnly              1
 expect_plist_for tailscale_hide_dock      io.tailscale.ipn.macsys       HideDockIcon               1
@@ -148,6 +146,8 @@ expect_plist_for raycast_nav_style        com.raycast.macos             navigati
 expect_plist_for setapp_no_launcher       com.setapp.DesktopClient      EnableLauncher             0
 expect_plist_for nvalt_default_editor     net.elasticthreads.nv         DefaultEEIdentifier        com.microsoft.VSCode
 expect_plist_for betterdisplay_su_auto    pro.betterdisplay.BetterDisplay SUAutomaticallyUpdate    1
+expect_plist_for thaw_section_divider     com.stonerl.Thaw              SectionDividerStyle        1
+expect_plist_for thaw_su_auto_check       com.stonerl.Thaw              SUEnableAutomaticChecks    1
 
 
 printf 'SUMMARY|macos|passed=%d|failed=%d\n' "$passes" "$failures"

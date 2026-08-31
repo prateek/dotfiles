@@ -71,8 +71,6 @@ case "$*" in
   # Per-app plist assertions (one key/app for the 11 managed plists).
   # Each returns the value the production script's expect_plist_for asserts
   # for that key. Add a new case here when adding a new expect_plist_for line.
-  "read com.jordanbaird.Ice HideApplicationMenus")           printf '1\n' ;;
-  "read com.jordanbaird.Ice RehideInterval")                 printf '15\n' ;;
   "read com.prakashjoshipax.VoiceInk CurrentTranscriptionModel") printf 'parakeet-tdt-0.6b-v3\n' ;;
   "read com.prakashjoshipax.VoiceInk IsMenuBarOnly")         printf '1\n' ;;
   "read io.tailscale.ipn.macsys HideDockIcon")               printf '1\n' ;;
@@ -85,6 +83,8 @@ case "$*" in
   "read com.setapp.DesktopClient EnableLauncher")            printf '0\n' ;;
   "read net.elasticthreads.nv DefaultEEIdentifier")          printf 'com.microsoft.VSCode\n' ;;
   "read pro.betterdisplay.BetterDisplay SUAutomaticallyUpdate") printf '1\n' ;;
+  "read com.stonerl.Thaw SectionDividerStyle")               printf '1\n' ;;
+  "read com.stonerl.Thaw SUEnableAutomaticChecks")           printf '1\n' ;;
   *)
     printf 'unexpected defaults invocation: %s\n' "$*" >&2
     exit 1
@@ -118,7 +118,7 @@ assert_contains "$REPLY" "RESULT|macos|PASS|finder_show_hidden|"
 assert_contains "$REPLY" "RESULT|macos|PASS|chezmoi_status|empty"
 assert_contains "$REPLY" "RESULT|macos|PASS|hook_state|absent"
 assert_contains "$REPLY" "SUMMARY|macos|passed=22|failed=0"
-assert_contains "$REPLY" "RESULT|macos|PASS|ice_hide_app_menus|"
+assert_contains "$REPLY" "RESULT|macos|PASS|thaw_section_divider|"
 assert_contains "$REPLY" "RESULT|macos|PASS|voiceink_model|"
 assert_contains "$REPLY" "RESULT|macos|PASS|tailscale_hide_dock|"
 
