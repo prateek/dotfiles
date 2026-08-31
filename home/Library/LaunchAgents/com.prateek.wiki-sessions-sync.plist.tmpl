@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Hourly deterministic session-archive sync for prateek/wiki-agent-sessions.
+  sync-sessions is a plain script (it takes the repo lock itself); running it
+  under launchd instead of an Orca automation keeps LLM agents, tokens, and
+  Orca's leaked automation tabs (stablyai/orca#9479) out of the happy path.
+  The daily LLM ingest stays an Orca automation; see
+  scripts/agent-sessions/register-wiki-automations.
+
+  Gated in .chezmoiignore on the agent_session_wiki feature. Bootstrapped and
+  reloaded on change by run_onchange_after_38-agent-session-wiki.sh; to load
+  by hand:
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.prateek.wiki-sessions-sync.plist
+
+  Logs append to ~/.local/state/dotfiles/wiki-sessions-sync/sync.log. Monitor
+  by label (e.g. the Raycast "Launchd Monitor" extension watching
+  com.prateek.wiki-sessions-sync); failures also surface as stale heartbeats
+  caught by the daily ingest's audit.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.prateek.wiki-sessions-sync</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>{{ .chezmoi.homeDir }}/code/github.com/prateek/wiki-agent-sessions/.agents/skills/session-sync/scripts/sync-sessions</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <!-- uv (sync-sessions shebang) and git come from Homebrew:
+         /opt/homebrew on arm64, /usr/local on Intel. -->
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+  <key>WorkingDirectory</key>
+  <string>{{ .chezmoi.homeDir }}/code/github.com/prateek/wiki-agent-sessions</string>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Minute</key>
+    <integer>0</integer>
+  </dict>
+  <key>StandardOutPath</key>
+  <string>{{ .chezmoi.homeDir }}/.local/state/dotfiles/wiki-sessions-sync/sync.log</string>
+  <key>StandardErrorPath</key>
+  <string>{{ .chezmoi.homeDir }}/.local/state/dotfiles/wiki-sessions-sync/sync.log</string>
+  <key>ProcessType</key>
+  <string>Background</string>
+  <key>LimitLoadToSessionType</key>
+  <string>Aqua</string>
+</dict>
+</plist>

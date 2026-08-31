@@ -86,7 +86,6 @@ casks = [
   { name = "jordanbaird-ice" },
   { name = "whatcable" },
   { name = "key-codes", appdir = "/Applications" },
-  { name = "launchcontrol", appdir = "/Applications" },
   { name = "orbstack" },
 
   # Notes, media, and subscription apps shared across daily-driver laptops.

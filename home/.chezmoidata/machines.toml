@@ -27,7 +27,7 @@ granola_mcp = false
 # listed. Empty by default so a machine opts in explicitly.
 agent_clis = []
 # Cross-machine agent-session archive (prateek/wiki-agent-sessions): hourly raw
-# sync via an Orca automation, agentsview session_sources wiring, obsidian-wiki
+# sync via a launchd agent, agentsview session_sources wiring, obsidian-wiki
 # vault config. Hosts with this on MUST also set wiki_host_alias in their
 # [machines.host.*] layer — the sync fails closed without it (no hostname
 # fallback; two machines named "macbook-pro" must not share an archive dir).

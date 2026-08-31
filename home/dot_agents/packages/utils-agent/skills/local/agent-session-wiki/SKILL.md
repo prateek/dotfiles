@@ -1,6 +1,6 @@
 ---
 name: agent-session-wiki
-description: Operate the cross-machine agent-session archive (prateek/wiki-agent-sessions) — find past sessions from any host, run or troubleshoot the hourly sync and daily wiki-ingest Orca automations, check fleet health, and migrate the ingest role. Use when asked to find a session from another machine, check why session sync is failing or stale, review SKIPPED.md quarantines, wire agentsview to the archive, or ingest archived sessions into the wiki.
+description: Operate the cross-machine agent-session archive (prateek/wiki-agent-sessions) — find past sessions from any host, run or troubleshoot the hourly sync launch agent and daily wiki-ingest Orca automation, check fleet health, and migrate the ingest role. Use when asked to find a session from another machine, check why session sync is failing or stale, review SKIPPED.md quarantines, wire agentsview to the archive, or ingest archived sessions into the wiki.
 ---
 
 # Agent Session Wiki
@@ -57,9 +57,13 @@ manifest in `wiki/` dedupes already-ingested sources.
 - Wiki freshness: every sync warns (stdout + `latest.json`) when the newest
   `wiki/` commit is older than 48h — the redundant alarm for a dead ingest
   host.
-- Automation status: `orca automations list --json`, run history via
-  `orca automations runs --id <id> --json`. Hourly runs skipped by the
-  precheck are normal (confirmed-idle hours).
+- Hourly sync status: it runs as the launchd agent
+  `com.prateek.wiki-sessions-sync` — `launchctl print
+  gui/$(id -u)/com.prateek.wiki-sessions-sync` for state/last exit, log at
+  `~/.local/state/dotfiles/wiki-sessions-sync/sync.log` (the Raycast
+  "Launchd Monitor" extension watches the same label).
+- Ingest automation status: `orca automations list --json`, run history via
+  `orca automations runs --id <id> --json`.
 
 ## Troubleshooting
 
@@ -67,13 +71,13 @@ manifest in `wiki/` dedupes already-ingested sources.
 |---|---|
 | Sync exit 3 | Host alias missing: `chezmoi apply` renders `~/.config/wiki-agent-sessions/config.toml` from machines.toml `wiki_host_alias` |
 | Sync exit 4 | Dirty paths outside the host's archive — someone's WIP; never reset, resolve by hand |
-| Sync exit 5 | Push failed 3×; next hourly run retries (unpushed-commits precheck clause). Persistent → check SSH/network in the log |
+| Sync exit 5 | Push failed 3×; the next hourly run retries. Persistent → check SSH/network in the log |
 | Sync exit 6 | Rebase conflict — near-impossible with per-host paths; suspect two machines sharing an alias (machines.toml uniqueness test guards this) |
 | Exit 75 | Repo lock held by live sync/ingest; wait |
-| Hourly runs all "skipped" while sessions pile up | Precheck stamp semantics broke or automation precheck path drifted — run the sync manually and read `latest.json` |
+| Sync not firing (no new log entries at the top of the hour) | `launchctl print gui/$(id -u)/com.prateek.wiki-sessions-sync`; if not loaded, `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.prateek.wiki-sessions-sync.plist` |
 | New host invisible in agentsview | Restart the daemon (`agentsview serve --background --replace`) or wait for the next sync/apply; entries regenerate from the clone glob |
 | `SKIPPED.md` grew | Oversize (>90 MB) or quarantined source files; review whether to split/ignore |
-| Automations unregistered (fresh machine, orca installed later) | `~/dotfiles/scripts/agent-sessions/register-wiki-sync-automation --enable [--ingest]` — the run_onchange script won't refire on its own |
+| Ingest automation unregistered (fresh ingest host, orca installed later) | `~/dotfiles/scripts/agent-sessions/register-wiki-automations --enable --ingest` — the run_onchange script won't refire on its own |
 
 ## Onboard a machine
 
@@ -81,7 +85,7 @@ manifest in `wiki/` dedupes already-ingested sources.
    layer in machines.toml (unique, non-empty; `make test-machines-features`
    enforces both). The machine type must have `agent_session_wiki = true`.
 2. `chezmoi apply` on that machine: clones the repo, renders the alias
-   config, registers the hourly automation, wires agentsview.
+   config, loads the hourly sync launch agent, wires agentsview.
 3. After its first successful sync, add the alias to `health/expected-hosts`
    in the wiki repo so the daily audit covers it.
 

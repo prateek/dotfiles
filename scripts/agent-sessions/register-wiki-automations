@@ -1,0 +1,125 @@
+#!/usr/bin/env bash
+# Reconcile the wiki-agent-sessions Orca automations on this machine.
+#
+#   register-wiki-automations --enable [--ingest]   # desired state, idempotent
+#   register-wiki-automations --disable             # kill switch: mark ingest --disabled
+#
+# The hourly sync runs as a launchd agent (com.prateek.wiki-sessions-sync),
+# not an Orca automation; Orca only hosts the daily LLM ingest on the host
+# that owns that role.
+#
+# Chezmoi's run_onchange script calls this at apply time, but it stays
+# manually runnable: a warn-and-exit-0 apply is recorded as successful, so
+# re-running this helper is the recovery path when orca or credentials
+# appear later.
+#
+# Frozen interface: the prompt text registered here is stored inside Orca per
+# machine and only refreshes on the next apply. Evolving behavior belongs in
+# the wiki repo's scripts, never in new prompt wording.
+set -euo pipefail
+
+SYNC_NAME="wiki-sessions-sync"
+INGEST_NAME="wiki-sessions-ingest"
+
+INGEST_PROMPT="Daily wiki ingest for this session archive. Run every step under .agents/skills/session-sync/scripts/with-repo-lock: (1) git pull --rebase. (2) Run .agents/skills/session-sync/scripts/audit-heartbeats; if it exits nonzero, fail this run loudly with its stale-host output. (3) For each sessions/<host>/claude directory, run /wiki-history-ingest on the delta with CLAUDE_HISTORY_PATH set to that directory, newest sessions first, stopping after a bounded page budget (~15 pages). (4) Commit only paths under wiki/, include the ingested archive HEAD SHA in the commit message, and push."
+
+log() { printf 'register-wiki-automations: %s\n' "$*"; }
+warn() { printf 'register-wiki-automations: WARNING: %s\n' "$*" >&2; }
+
+mode=""
+want_ingest=0
+for arg in "$@"; do
+  case "$arg" in
+    --enable) mode="enable" ;;
+    --disable) mode="disable" ;;
+    --ingest) want_ingest=1 ;;
+    *) warn "unknown argument: $arg"; exit 2 ;;
+  esac
+done
+[[ -n "$mode" ]] || { warn "pass --enable or --disable"; exit 2; }
+
+if ! command -v orca >/dev/null 2>&1; then
+  warn "orca CLI not found; skipping automation reconcile (re-run this helper after installing Orca)"
+  exit 0
+fi
+if ! command -v jq >/dev/null 2>&1; then
+  warn "jq not found; skipping automation reconcile"
+  exit 0
+fi
+
+automation_id() {
+  orca automations list --json 2>/dev/null |
+    jq -r --arg name "$1" \
+      '(.result.automations // .automations // .result.items // [])[]
+       | select(.name == $name) | (.id // .automationId // empty)' |
+    head -1
+}
+
+status=0
+
+id="$(automation_id "$SYNC_NAME")"
+if [[ -n "$id" ]]; then
+  # Never leave the hour ownerless: keep the legacy Orca automation until the
+  # replacement launch agent is confirmed loaded (the 90-verify script surfaces
+  # the leftover as drift). The kill switch tears down unconditionally.
+  if [[ "$mode" == "enable" ]] && \
+     ! launchctl print "gui/$(id -u)/com.prateek.wiki-sessions-sync" >/dev/null 2>&1; then
+    warn "launchd sync agent not loaded; keeping legacy $SYNC_NAME automation ($id) until it is"
+  elif orca automations remove "$id" --json >/dev/null 2>&1; then
+    log "removed legacy Orca automation: $SYNC_NAME ($id); launchd owns the hourly sync now"
+  else
+    warn "could not remove legacy $SYNC_NAME ($id); remove it manually: orca automations remove $id"
+    status=1
+  fi
+fi
+
+reconcile_ingest() {
+  local id
+  id="$(automation_id "$INGEST_NAME")"
+  if [[ "$mode" == "disable" ]]; then
+    if [[ -n "$id" ]]; then
+      orca automations edit "$id" --disabled --json >/dev/null
+      log "disabled: $INGEST_NAME ($id)"
+    else
+      log "not registered, nothing to disable: $INGEST_NAME"
+    fi
+    return
+  fi
+  if [[ "$want_ingest" != "1" ]]; then
+    if [[ -n "$id" ]]; then
+      orca automations edit "$id" --disabled --json >/dev/null
+      log "ingest role not assigned to this host; disabled: $INGEST_NAME"
+    fi
+    return
+  fi
+  # --reuse-session: without it every run leaks a hidden agent tab (stablyai/orca#9479).
+  local flags=(
+    --trigger daily
+    --time "06:00"
+    --provider claude
+    --prompt "$INGEST_PROMPT"
+    --reuse-session
+  )
+  if [[ -n "$id" ]]; then
+    orca automations edit "$id" "${flags[@]}" --enabled --json >/dev/null
+    log "reconciled: $INGEST_NAME ($id)"
+  else
+    # The owner clone must be addressable as an Orca workspace; fall back to
+    # repo-selector mode when it is not registered as a worktree.
+    local clone="$HOME/code/github.com/prateek/wiki-agent-sessions"
+    if orca automations create --name "$INGEST_NAME" "${flags[@]}" --workspace "path:$clone" \
+         --workspace-mode existing --enabled --json >/dev/null 2>&1; then
+      log "created: $INGEST_NAME (workspace $clone)"
+    elif orca automations create --name "$INGEST_NAME" "${flags[@]}" --repo "path:$clone" \
+           --workspace-mode existing --enabled --json >/dev/null 2>&1; then
+      log "created: $INGEST_NAME (repo selector $clone)"
+    else
+      warn "could not create $INGEST_NAME; register the repo with Orca (ohc prateek/wiki-agent-sessions) and re-run this helper"
+      return 1
+    fi
+  fi
+}
+
+reconcile_ingest || status=1
+
+exit "$status"

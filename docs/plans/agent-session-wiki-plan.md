@@ -511,6 +511,17 @@ CI does not currently run this test. Add `make test-agentsview-config` to `.gith
 
 ## Orca automations
 
+> **Amendment (2026-08-31):** the hourly sync no longer runs as an Orca
+> automation. Every Orca run leaks a hidden agent tab
+> ([stablyai/orca#9479](https://github.com/stablyai/orca/issues/9479)), and a
+> deterministic script gains nothing from an LLM wrapper, so the hourly sync
+> is now the launchd agent `com.prateek.wiki-sessions-sync`
+> (`home/Library/LaunchAgents/`, loaded by the run_onchange script). Orca
+> hosts only the daily LLM ingest, reconciled by
+> `scripts/agent-sessions/register-wiki-automations`, which also removes the
+> legacy sync automation. `sync-precheck` (below) is no longer wired into any
+> scheduler; launchd fires `sync-sessions` directly each hour.
+
 Orca creates scheduled prompts through this interface:
 
 ```text
@@ -644,7 +655,7 @@ Absence of Orca or another optional CLI must warn rather than call `die`.
 Add:
 
 ```text
-scripts/agent-sessions/register-wiki-sync-automation
+scripts/agent-sessions/register-wiki-automations
 ```
 
 It must be a standalone, idempotent Bash script:

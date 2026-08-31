@@ -37,6 +37,7 @@
 {{- if not (includeTemplate "features.tmpl" . | fromJson).agent_session_wiki }}
 .config/wiki-agent-sessions
 .config/obsidian-wiki
+Library/LaunchAgents/com.prateek.wiki-sessions-sync.plist
 {{- end }}
 
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "cmux")) "true" }}

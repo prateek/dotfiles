@@ -49,21 +49,39 @@ if [ -d "$HOME/code/github.com/prateek/wiki-agent-sessions/.git" ]; then
 else
   log "wiki-agent-sessions clone missing; recover with: git clone git@github.com:prateek/wiki-agent-sessions.git ~/code/github.com/prateek/wiki-agent-sessions"
 fi
+if launchctl print "gui/$(id -u)/com.prateek.wiki-sessions-sync" >/dev/null 2>&1; then
+  log "ok: hourly sync launch agent loaded (com.prateek.wiki-sessions-sync)"
+else
+  log "hourly sync launch agent not loaded; recover with: launchctl bootstrap gui/\$(id -u) $HOME/Library/LaunchAgents/com.prateek.wiki-sessions-sync.plist"
+fi
 if command -v orca >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
   enabled="$(orca automations list --json 2>/dev/null | jq -r '(.result.automations // .automations // [])[] | select(.name | startswith("wiki-sessions-")) | "\(.name)=\(.enabled)"' | sort | tr '\n' ' ')"
 {{- if $f.agent_session_wiki_ingest }}
-  want="wiki-sessions-ingest=true wiki-sessions-sync=true "
-  recover="{{ .chezmoi.sourceDir }}/../scripts/agent-sessions/register-wiki-sync-automation --enable --ingest"
+  recover="{{ .chezmoi.sourceDir }}/../scripts/agent-sessions/register-wiki-automations --enable --ingest"
 {{- else }}
-  want="wiki-sessions-sync=true "
-  recover="{{ .chezmoi.sourceDir }}/../scripts/agent-sessions/register-wiki-sync-automation --enable"
+  recover="{{ .chezmoi.sourceDir }}/../scripts/agent-sessions/register-wiki-automations --enable"
 {{- end }}
+  drift=""
   case "$enabled" in
-    *"$want"*|"$want") log "ok: wiki automations enabled as expected: $enabled" ;;
-    *) log "wiki automations drifted (have: '${enabled:-none}', want: '$want'); run: $recover" ;;
+    *wiki-sessions-sync=*) drift="legacy sync automation still registered (launchd owns the hourly sync)" ;;
   esac
+{{- if $f.agent_session_wiki_ingest }}
+  case "$enabled" in
+    *wiki-sessions-ingest=true*) ;;
+    *) drift="${drift:+$drift; }ingest automation not enabled" ;;
+  esac
+{{- else }}
+  case "$enabled" in
+    *wiki-sessions-ingest=true*) drift="${drift:+$drift; }ingest automation enabled but this host does not own the ingest role" ;;
+  esac
+{{- end }}
+  if [ -z "$drift" ]; then
+    log "ok: wiki automations as expected (${enabled:-none})"
+  else
+    log "wiki automations drifted ($drift; have: '${enabled:-none}'); run: $recover"
+  fi
 else
-  log "cannot verify wiki automations (orca or jq missing); when installed, run: {{ .chezmoi.sourceDir }}/../scripts/agent-sessions/register-wiki-sync-automation --enable"
+  log "cannot verify wiki automations (orca or jq missing); when installed, run: {{ .chezmoi.sourceDir }}/../scripts/agent-sessions/register-wiki-automations --enable"
 fi
 {{- end }}
 
