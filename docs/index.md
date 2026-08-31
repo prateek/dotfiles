@@ -2,7 +2,7 @@
 status: current
 doc_type: index
 created: 2026-05-12
-updated: 2026-08-28
+updated: 2026-08-31
 related:
   - document-lifecycle.md
   - ../home/dot_agents/packages/core/skills/local/code-gardening/SKILL.md
@@ -46,6 +46,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [Downstream Fork](plans/downstream-fork-plan.md) | Active; thin assembly-repo forks as daily drivers on the `prateek/forks` fleet monorepo — engine, three-job template, harness, security review, monorepo scaffold, and fleet digest done; dotfiles gardening landed bar the retoken; provisioning + ghost-pepper migration pending Prateek. |
 | [Goku Karabiner Migration](plans/goku-karabiner-migration-plan.md) | Active; Karabiner config now compiles from `karabiner.edn` via goku — on-device pad verification pending. |
 | [Leader Key to Tuna Migration](plans/leader-key-to-tuna-migration-plan.md) | Active; full cutover applied on the migrate-tuna branch (config at `~/.config/tuna`, F18→combo). Remaining: grant Tuna Accessibility, verify shell/URL binds. Leader Key kept as fallback. |
+| [Raycast Config Automation](plans/raycast-config-automation-plan.md) | Proposed; deferred backlog of Raycast preference keys worth porting into the managed plist, plus what the encrypted extension store puts out of reach. |
 | [Sudo Askpass 1Password](plans/sudo-askpass-1password-plan.md) | Accepted design; implementation pending, current code still uses sudo keepalive. |
 | [Tartelet Self-Hosted Runners](plans/tartelet-runner-plan.md) | Active; cask, managed plist, LaunchAgent, host data, VM-image builder, and runbook landed. On-mini end-to-end (golden VM build + first-run credential paste) still to be exercised. |
 | [Tartelet Runner Memory-Guard](plans/tartelet-runner-memory-guard-proposal.md) | Proposed; design for a circuit breaker that sheds the runner under host memory pressure after a 2026-07-03 jetsam wedge. Prototyped and validated, then dropped — no code in-tree. |
