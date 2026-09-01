@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+#
+# uninstall-retired-packages — remove Homebrew packages the dotfiles no longer manage.
+#
+# Input: TSV on stdin or --entries-file, one retired package per line:
+#
+#   <name> <TAB> <kind>
+#
+#   name  Homebrew token, e.g. gogcli
+#   kind  formula | cask
+#
+# brew bundle only installs; when a package's Brewfile entry is removed
+# (ownership moved to mise, or dropped outright), machines that already ran
+# the old bundle keep the stale copy. This uninstalls listed packages wherever
+# they are still present. Absent packages are skipped, so the run is
+# idempotent.
+#
+# Brew state is snapshotted once at startup: two brew-list spawns per run
+# regardless of entry count.
+#
+# Usage:
+#   scripts/packages/uninstall-retired-packages [--entries-file <path>]
+#
+set -euo pipefail
+
+entries_file=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --entries-file)
+      [[ $# -ge 2 ]] || { printf 'uninstall-retired-packages: --entries-file requires a path\n' >&2; exit 2; }
+      entries_file="$2"; shift 2 ;;
+    --entries-file=*)
+      entries_file="${1#*=}"; shift ;;
+    -h|--help)
+      sed -n '2,23p' "$0" >&2
+      exit 0 ;;
+    *)
+      printf 'uninstall-retired-packages: unknown argument: %s\n' "$1" >&2
+      exit 2 ;;
+  esac
+done
+
+log() { printf 'uninstall-retired-packages: %s\n' "$*"; }
+
+command -v brew >/dev/null 2>&1 || { log "brew not found; nothing to uninstall"; exit 0; }
+
+installed_formulas="$(brew list --formula 2>/dev/null || true)"
+installed_casks="$(brew list --cask 2>/dev/null || true)"
+
+list_has() {
+  printf '%s\n' "$1" | grep -Fqx -- "$2"
+}
+
+installed() {
+  case "$1" in
+    cask) list_has "$installed_casks" "$2" ;;
+    *) list_has "$installed_formulas" "$2" ;;
+  esac
+}
+
+brew_flag() {
+  case "$1" in
+    cask) printf -- '--cask' ;;
+    *) printf -- '--formula' ;;
+  esac
+}
+
+while IFS=$'\t' read -r name kind; do
+  [[ -n "$name" ]] || continue
+  kind="${kind:-formula}"
+  if installed "$kind" "$name"; then
+    log "uninstalling retired $kind $name"
+    brew uninstall "$(brew_flag "$kind")" "$name"
+  fi
+done < "${entries_file:-/dev/stdin}"
+
+log "done"

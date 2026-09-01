@@ -1,0 +1,40 @@
+{{ template "script_lib.sh" . }}
+
+# uninstall-retired-packages sha256: {{ include (printf "%s/../scripts/packages/uninstall-retired-packages" .chezmoi.sourceDir) | sha256sum }}
+
+{{- $f := includeTemplate "features.tmpl" . | fromJson }}
+{{- $retired := dig "retired" (dict) .packages }}
+{{- $brews := default (list) (dig "brews" (list) $retired) }}
+{{- $casks := default (list) (dig "casks" (list) $retired) }}
+{{- if and $f.run_install_scripts (or $brews $casks) }}
+
+# brew bundle only installs, so packages whose Brewfile entry was removed
+# (ownership moved to mise, or dropped outright) linger on machines that
+# installed them earlier. Uninstall the retired list wherever still present.
+
+cleaner="{{ .chezmoi.sourceDir }}/../scripts/packages/uninstall-retired-packages"
+[ -x "$cleaner" ] || die "Retired-package cleaner is missing or not executable: $cleaner"
+
+brew_shellenv
+have brew || die "Homebrew is required before retired-package cleanup can run."
+
+entries_file="$(mktemp "${TMPDIR:-/tmp}/dotfiles-retired.XXXXXX")"
+trap 'rm -f "$entries_file"' EXIT
+: >"$entries_file"
+{{- range $brews }}
+printf '%s\t%s\n' {{ .name | quote }} "formula" >>"$entries_file"
+{{- end }}
+{{- range $casks }}
+printf '%s\t%s\n' {{ .name | quote }} "cask" >>"$entries_file"
+{{- end }}
+{{- if $casks }}
+
+if [ "$(uname -s)" = "Darwin" ]; then
+  dotfiles_sudo_start "Removing retired apps may need administrator access. Enter your macOS password if prompted."
+fi
+{{- end }}
+
+run_timed "uninstall retired packages" "$cleaner" --entries-file "$entries_file"
+{{- else }}
+log "Retired-package cleanup not applicable on this machine; skipping."
+{{- end }}

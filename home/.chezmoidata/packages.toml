@@ -225,7 +225,6 @@ brews = [
   { name = "kubernetes-cli" },
   { name = "hashicorp/tap/terraform" },
   { name = "gdrive" },
-  { name = "gogcli" },
   { name = "googleworkspace-cli" },
   { name = "ldcli" },
   { name = "sourcegraph/src-cli/src-cli" },
@@ -379,4 +378,17 @@ casks = [
 description = "Active downstream-fork builds installed from the prateek/forks tap"
 entries = [
   { name = "prateek/forks/ghostpepper-fork", kind = "cask", replaces = "ghostpepper" },
+]
+
+# === Retired packages ===
+
+# Applies to: every machine type with package installs. brew bundle only
+# installs, so a package whose Brewfile entry was removed lingers on machines
+# that installed it earlier. run_onchange_after_08-retired-packages uninstalls
+# these wherever still present, and brewfile.tmpl fails the render if a name
+# here is still declared in a selected group. Drop an entry once the fleet no
+# longer carries the package.
+[packages.retired]
+brews = [
+  { name = "gogcli" },  # gog is installed via mise (github:openclaw/gogcli)
 ]

@@ -119,6 +119,17 @@
 {{-   end -}}
 {{- end -}}
 
+{{- /* A retired package still declared in a selected group would flip-flop:
+       the retired-package cleanup uninstalls it, then bundle reinstalls it.
+       Fail the render instead. */ -}}
+{{- $retired := dig "retired" (dict) $root.packages -}}
+{{- range default (list) (dig "brews" (list) $retired) -}}
+{{-   if has .name $brewSeen -}}{{- fail (printf "brewfile.tmpl: retired brew %q is still declared in a selected group" .name) -}}{{- end -}}
+{{- end -}}
+{{- range default (list) (dig "casks" (list) $retired) -}}
+{{-   if has .name $caskSeen -}}{{- fail (printf "brewfile.tmpl: retired cask %q is still declared in a selected group" .name) -}}{{- end -}}
+{{- end -}}
+
 {{- /* Assemble non-empty sections separated by blank lines. */ -}}
 {{- $sections := list -}}
 {{- if $tapLines -}}{{- $sections = mustAppend $sections (join "\n" $tapLines) -}}{{- end -}}

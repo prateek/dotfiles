@@ -34,6 +34,8 @@ ci_out="$("$RENDER" --machine-type ci)"
 [[ $ci_out != *'cask "tailscale-app"'* ]] || die "ci: should not include homelab overlay apps"
 rg -q '"go:github.com/tomasz-tomczyk/crit/cmd/crit" = "latest"' "$DOTFILES_ROOT/home/dot_config/mise/conf.d/clis.toml" \
   || die "crit should be declared as a mise Go CLI"
+rg -q '"github:openclaw/gogcli" = \{ version = "latest", exe = "gog" \}' "$DOTFILES_ROOT/home/dot_config/mise/conf.d/clis.toml" \
+  || die "gog should be declared as a mise github-backend CLI"
 
 # -- personal machine type: core + interactive + dev + personal --
 
@@ -49,6 +51,7 @@ fi
   || die "personal --include-mas: missing shared Okta Verify MAS entry"
 [[ $personal_no_mas == *'brew "aria2"'* ]] || die "personal: missing aria2 (developer-tools group)"
 [[ $personal_no_mas != *'brew "crit"'* ]] || die "personal: crit should be managed by mise, not Homebrew"
+[[ $personal_no_mas != *'brew "gogcli"'* ]] || die "personal: gog should be managed by mise, not Homebrew"
 [[ $personal_no_mas != *'tap "xcodesorg/made"'* ]] || die "personal: should not tap source-building xcodesorg/made"
 [[ $personal_no_mas != *'brew "homebrew/core/xcodes"'* ]] \
   || die "personal should not include xcodes (no apple-development group)"
@@ -84,6 +87,7 @@ work_with_mas="$("$RENDER" --machine-type work --include-mas)"
 [[ $work_out != *'brew "cirruslabs/cli/tart"'* ]] || die "work should not include Tart (no apple-development group)"
 [[ $work_out == *'brew "f/mcptools/mcp", trusted: true'* ]] || die "work: missing MCP CLI (developer-tools group)"
 [[ $work_out != *'brew "steipete/tap/imsg"'* ]] || die "work should not install the personal iMessage CLI"
+[[ $work_out != *'brew "gogcli"'* ]] || die "work: gog should be managed by mise, not Homebrew"
 [[ $work_out != *'cask "ghostpepper"'* ]] || die "work: official ghostpepper should be subtracted (replaced by the reconciler-managed fork)"
 [[ $work_out == *'cask "slack"'* ]] || die "work: missing work app cask slack"
 [[ $work_out == *'cask "google-drive"'* ]] || die "work: missing shared laptop cask google-drive"

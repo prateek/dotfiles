@@ -64,14 +64,19 @@ Use this as the default playbook for Google Workspace interactions on this machi
 
 ## Capability snapshot
 
-- `gog` top-level supports Google Workspace surfaces including:
+- `gog` top-level supports Google surfaces including:
   - Drive, Docs, Slides, Sheets, Calendar, Gmail, Chat, Contacts, Tasks, People
-  - Groups, Classroom, Keep
+  - Groups, Classroom, Keep, Forms, Sites, Meet, Apps Script, Admin (Directory)
+  - Analytics, Search Console, YouTube, Maps, Photos
+- Automation affordances: `--json` / `--plain` stable output, `--dry-run`,
+  `--readonly`, `--gmail-no-send`, `--no-input`, documented exit codes, and
+  `gog schema <command>` for a machine-readable command contract.
 
 ## Local evidence basis
 
 Verified using:
 
-- CLI help output (`gog v0.9.0`)
+- CLI help output (`gog v0.38.1`, mise `github:openclaw/gogcli`)
+- Upstream is github.com/openclaw/gogcli (gogcli.sh), moved from steipete/gogcli
 - `~/.codex/sessions` command patterns
 - `~/.zhistory` command patterns
