@@ -150,6 +150,7 @@ taps = [
 brews = [
   # Dotfiles, agent, and AI tooling.
   { name = "chezmoi" },
+  { name = "crit" },
   { name = "llm" },
   { name = "fabric-ai" },
   { name = "mcpm" },

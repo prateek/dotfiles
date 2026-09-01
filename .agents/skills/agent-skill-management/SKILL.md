@@ -95,7 +95,7 @@ Rules:
   deltas afterward and drop them once upstreamed.
 - Agent tool integrations (for example crit) vendor like any other dependency;
   see [ADR 0013](../../../docs/adr/0013-apm-vendored-tool-integrations.md).
-  When the tool's binary moves (`mise run crit:use ...`), re-run
+  When the tool's binary moves (e.g. `brew upgrade crit`), re-run
   `vendor-agent-package` for its package so skills match the installed CLI.
   crit's plan-review hook ships via `claude-settings-managed.json.tmpl`, not
   the plugin tree.
@@ -136,7 +136,7 @@ Refresh gotchas:
   skill; see the obsidian-wiki package).
 - SOURCE.md regeneration preserves only the `License` and `Notes` fields.
   Keep local-delta and rename notes inside `Notes`, never as extra bullets.
-- When a skill pairs with a mise-managed CLI (acpx, crit, agent-slack,
+- When a skill pairs with a CLI this repo installs (acpx, crit, agent-slack,
   shortcut), upgrade the binary first so the vendored skill matches it.
 - On the corp laptop, `openclaw/*` clones 503 over HTTPS; prefix apm and
   vendor commands with a scoped rewrite:

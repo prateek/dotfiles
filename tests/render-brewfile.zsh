@@ -25,15 +25,15 @@ ci_out="$("$RENDER" --machine-type ci)"
 [[ -n $ci_out ]] || die "ci machine type rendered empty"
 [[ $ci_out == *'tap "1password/tap"'* ]] || die "ci: missing 1password/tap"
 [[ $ci_out == *'brew "git"'* ]] || die "ci: missing git brew"
-[[ $ci_out != *'brew "crit"'* ]] || die "ci: crit should be managed by mise, not Homebrew"
+[[ $ci_out != *'brew "crit"'* ]] || die "ci: crit rides developer-tools; core must not include it"
 [[ $ci_out == *'cask "1password-cli"'* ]] || die "ci: missing 1password CLI cask"
 # ci is the core layer; it must not pull GUI, dev, Apple, or overlay groups.
 [[ $ci_out != *'cask "1password", args: { appdir: "/Applications" }'* ]] \
   || die "ci: should not include the interactive 1Password app"
 [[ $ci_out != *'brew "aria2"'* ]] || die "ci: should not include developer-tools (aria2 leaked)"
 [[ $ci_out != *'cask "tailscale-app"'* ]] || die "ci: should not include homelab overlay apps"
-rg -q '"go:github.com/tomasz-tomczyk/crit/cmd/crit" = "latest"' "$DOTFILES_ROOT/home/dot_config/mise/conf.d/clis.toml" \
-  || die "crit should be declared as a mise Go CLI"
+! rg -q 'tomasz-tomczyk/crit' "$DOTFILES_ROOT/home/dot_config/mise/conf.d/clis.toml" \
+  || die "crit is Homebrew-installed; drop the mise clis.toml entry"
 rg -q '"github:openclaw/gogcli" = \{ version = "latest", exe = "gog" \}' "$DOTFILES_ROOT/home/dot_config/mise/conf.d/clis.toml" \
   || die "gog should be declared as a mise github-backend CLI"
 
@@ -50,7 +50,7 @@ fi
 [[ $personal_with_mas == *'mas "Okta Verify", id: 490179405'* ]] \
   || die "personal --include-mas: missing shared Okta Verify MAS entry"
 [[ $personal_no_mas == *'brew "aria2"'* ]] || die "personal: missing aria2 (developer-tools group)"
-[[ $personal_no_mas != *'brew "crit"'* ]] || die "personal: crit should be managed by mise, not Homebrew"
+[[ $personal_no_mas == *'brew "crit"'* ]] || die "personal: missing crit (developer-tools group)"
 [[ $personal_no_mas != *'brew "gogcli"'* ]] || die "personal: gog should be managed by mise, not Homebrew"
 [[ $personal_no_mas != *'tap "xcodesorg/made"'* ]] || die "personal: should not tap source-building xcodesorg/made"
 [[ $personal_no_mas != *'brew "homebrew/core/xcodes"'* ]] \
