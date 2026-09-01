@@ -7,3 +7,4 @@ dependencies:
   apm:
     - tomasz-tomczyk/crit/integrations/claude-code/skills/crit
     - tomasz-tomczyk/crit/integrations/claude-code/skills/crit-cli
+    - tomasz-tomczyk/crit/integrations/claude-code/skills/crit-story

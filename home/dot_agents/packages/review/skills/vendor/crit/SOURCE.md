@@ -1,7 +1,7 @@
 # Source
 
-- Upstream: https://github.com/tomasz-tomczyk/crit/tree/68bf5b16611ef6b1bdf04be7fc0a9e26bf3cea6f/integrations/claude-code/skills/crit
+- Upstream: https://github.com/tomasz-tomczyk/crit/tree/31d6a6a9195bdda735c1e8f68a75359839f8d3c8/integrations/claude-code/skills/crit
 - APM dependency: `tomasz-tomczyk/crit/integrations/claude-code/skills/crit`
-- Ref: `68bf5b16611ef6b1bdf04be7fc0a9e26bf3cea6f`
+- Ref: `31d6a6a9195bdda735c1e8f68a75359839f8d3c8`
 - License: MIT.
 - Notes: Vendored from Crit's Claude Code integration skills.
