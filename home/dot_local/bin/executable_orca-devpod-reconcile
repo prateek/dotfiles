@@ -8,6 +8,10 @@ readonly ORCA_PORT="6768"
 readonly ORCA_PAIRING_ADDRESS="127.0.0.1:16768"
 readonly ORCA_SESSION="orca-headless"
 
+# Orca 1.4.193 binds the serving endpoint to all interfaces. Cloud
+# Workstations IAM limits who can reach the workstation, Orca authenticates
+# clients, and gcp.sh tunnel supplies the laptop route. Pairing stays on the
+# loopback-only address. See docs/runbooks/linux-work-devpod-orca.md.
 cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/orca/$ORCA_VERSION"
 state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/orca-headless"
 config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/orca"
@@ -39,7 +43,7 @@ stop_server() {
     tmux kill-session -t "$ORCA_SESSION"
   fi
 
-  rm -f "$run_script" "$state_dir"/pairing-offer.*
+  rm -f "$run_script"
 
   for _ in {1..20}; do
     if ! ss -ltn "sport = :$ORCA_PORT" | grep -q LISTEN; then
@@ -53,11 +57,14 @@ stop_server() {
 }
 
 install_orca() {
+  local -a apt_args=(install -y --allow-downgrades)
+  local architecture
   local installed_version=""
   local tmp
 
-  [[ "$(dpkg --print-architecture)" == "amd64" ]] ||
-    die "unsupported architecture: $(dpkg --print-architecture)"
+  architecture="$(dpkg --print-architecture)"
+  [[ "$architecture" == "amd64" ]] ||
+    die "unsupported architecture: $architecture"
 
   if ! checksum_matches "$deb"; then
     rm -f "$deb"
@@ -70,15 +77,16 @@ install_orca() {
     trap - EXIT
   fi
 
-  if dpkg-query -W -f='${Version}' orca-ide >/dev/null 2>&1; then
-    installed_version="$(dpkg-query -W -f='${Version}' orca-ide)"
-  fi
+  installed_version="$(dpkg-query -W -f='${Version}' orca-ide 2>/dev/null || true)"
   if [[ "$installed_version" == "$ORCA_VERSION" && -x /usr/bin/orca-ide ]]; then
     return
   fi
 
   log_info "installing Orca $ORCA_VERSION"
-  sudo -n env DEBIAN_FRONTEND=noninteractive apt-get install -y "$deb"
+  if [[ -n "$installed_version" ]]; then
+    apt_args+=(--reinstall)
+  fi
+  sudo -n env DEBIAN_FRONTEND=noninteractive apt-get "${apt_args[@]}" "$deb"
 
   [[ "$(dpkg-query -W -f='${Version}' orca-ide 2>/dev/null)" == "$ORCA_VERSION" ]] ||
     die "Orca $ORCA_VERSION was not installed"
@@ -191,14 +199,16 @@ require_command tmux
 exec 9>"$state_dir/reconcile.lock"
 flock -w 10 9 || die "another reconcile is still running"
 
-case "${1:-}" in
-  start)
-    require_command curl
-    require_command apt-get
-    require_command dpkg
-    require_command dpkg-query
-    require_command sha256sum
-    require_command sudo
+action="${1:-}"
+case "$action" in
+  start|disable-pairing)
+    for command in curl apt-get dpkg dpkg-query sha256sum sudo; do
+      require_command "$command"
+    done
+    if [[ "$action" == "disable-pairing" ]]; then
+      : >"$pairing_marker"
+      chmod 600 "$pairing_marker"
+    fi
     start_server
     ;;
   stop)
@@ -208,6 +218,6 @@ case "${1:-}" in
     status
     ;;
   *)
-    die "usage: orca-devpod-reconcile start|stop|status"
+    die "usage: orca-devpod-reconcile start|stop|status|disable-pairing"
     ;;
 esac

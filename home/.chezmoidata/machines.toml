@@ -1,7 +1,8 @@
 # Machine behavior, composed in layers by home/.chezmoitemplates/features.tmpl.
 #
 # The resolver merges the applicable layers, low precedence to high:
-#   defaults < os.<os> < type.<machine_type> < host.<hostname>
+#   defaults < os.<os> < type.<machine_type>
+#       < composite.<machine_type>.<os> < host.<hostname>
 #       < host-local [data].machines_local
 # Later layers win. Scalars are last-writer-wins; a list (e.g. groups) is
 # replaced wholesale by the highest layer that sets it (not concatenated).
@@ -12,7 +13,8 @@
 # lives here and resolves at apply time, so a change lands on the next
 # `chezmoi apply` with no re-init. A new role is a [machines.type.*] layer; a
 # richer attribute (OS, host, flavor) is a [machines.os.*] / [machines.host.*]
-# layer — no new enum, no per-file `eq .machine_type` ladders.
+# layer. Intentional type × OS exceptions live in machines-composite.toml — no
+# new enum and no per-file `eq .machine_type` ladders.
 
 [machines.defaults]
 groups = ["core"]

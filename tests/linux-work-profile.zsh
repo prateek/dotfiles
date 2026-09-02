@@ -15,16 +15,20 @@ tmp_home="$tmp_root/home"
 tmp_config="$tmp_root/config/chezmoi.toml"
 tmp_cache="$tmp_root/cache"
 tmp_state="$tmp_root/state/chezmoi.boltdb"
+python_bin_dir="$(python3 -c 'import os,sys; print(os.path.dirname(sys.executable))')"
 mkdir -p "$tmp_home" "${tmp_config:h}" "$tmp_cache" "${tmp_state:h}"
 
 run_chezmoi() {
+  local platform="${CHEZMOI_TEST_OS:-linux}"
+
   DOTFILES_ROOT="$DOTFILES_ROOT" \
   HOME="$tmp_home" \
   XDG_CONFIG_HOME="$tmp_home/.config" \
   XDG_CACHE_HOME="$tmp_home/.cache" \
   XDG_STATE_HOME="$tmp_home/.local/state" \
+  PATH="$python_bin_dir:$PATH" \
     chezmoi --no-pager --no-tty \
-      --override-data '{"chezmoi":{"os":"linux"}}' \
+      --override-data "{\"chezmoi\":{\"os\":\"$platform\"}}" \
       --config "$tmp_config" \
       --cache "$tmp_cache" \
       --persistent-state "$tmp_state" \
@@ -34,26 +38,25 @@ run_chezmoi() {
 if [[ "$(uname -s)" == "Linux" ]]; then
   run_chezmoi init --source "$DOTFILES_ROOT" --promptChoice 'machine_type=work'
 else
-  # Config-template rendering happens before --override-data is available to
-  # `init`, so a non-Linux host would take the Darwin-only Jamf prompt. Build
-  # the equivalent noninteractive config locally; the Ubuntu CI lane exercises
-  # the real init path.
-  cat >"$tmp_config" <<EOF
-sourceDir = "$DOTFILES_ROOT"
-pager = ""
-
+  # `init` uses the host OS before --override-data applies. Render the same
+  # config template explicitly so local macOS runs still exercise Linux config.
+  run_chezmoi execute-template --init \
+    --promptChoice 'machine_type=work' \
+    --file "$DOTFILES_ROOT/home/.chezmoi.toml.tmpl" \
+    >"$tmp_config"
+  cat >>"$tmp_config" <<'EOF'
 [warnings]
 configFileTemplateHasChanged = false
-
-[data]
-dotfiles_dir = "$DOTFILES_ROOT"
-xdg_config_dir = "$tmp_home/.config"
-xdg_cache_dir = "$tmp_home/.cache"
-xdg_state_dir = "$tmp_home/.local/state"
-machine_type = "work"
-jamf_policy_id = ""
 EOF
 fi
+
+config_text="$(<"$tmp_config")"
+[[ "$config_text" == *'[scriptEnv]'* ]] ||
+  die "Linux config does not prepend the user-local tool directory"
+[[ "$config_text" == *"$tmp_home/.local/bin:"* ]] ||
+  die "Linux config does not put the uv install directory on PATH"
+[[ "$config_text" == *"$DOTFILES_ROOT/scripts/chezmoi-hooks/headless-uv.sh"* ]] ||
+  die "Linux config does not install uv before reading source state"
 
 features="$(run_chezmoi execute-template --file "$DOTFILES_ROOT/home/.chezmoitemplates/features.tmpl")"
 FEATURES_JSON="$features" python3 - <<'PY' || die "Linux feature composition is wrong"
@@ -86,6 +89,7 @@ contains ".config/zsh/.zprofile" || die "portable zprofile is not managed"
 contains ".local/bin/orca-cli" || die "orca-cli wrapper is not managed"
 contains ".local/bin/orca-devpod-reconcile" || die "Orca reconciler is not managed"
 contains ".orca/keybindings.json" || die "Orca keybindings are not managed"
+contains ".claude/settings.json" || die "Claude plugin settings are not managed"
 
 excludes_prefix '\.gitconfig' || die ".gitconfig must remain image-owned"
 excludes_prefix '\.inputrc' || die ".inputrc must remain image-owned"
@@ -94,14 +98,55 @@ excludes_prefix '\.zshrc' || die "root .zshrc must remain image/user-owned"
 excludes_prefix '\.config/git' || die "Git config must remain image-owned"
 excludes_prefix '\.config/mise' || die "mise manifests must remain image-owned"
 excludes_prefix '\.config/tmux' || die "tmux config must remain Spacejunk-owned"
+excludes_prefix '\.pi/agent/settings\.json' || die "pi settings must not require uv"
+excludes_prefix '\.crit\.config\.json' || die "crit settings must not require uv"
 for subtree in agents commands rules skills; do
   excludes_prefix "\\.claude/$subtree" ||
     die ".claude/$subtree must remain Spacejunk-owned"
 done
 excludes_prefix 'Library' || die "Library targets must not render on Linux"
-excludes_prefix '\.chezmoiscripts' || die "Chezmoi scripts must not run on Linux"
+managed_scripts="$(grep -E '^\.chezmoiscripts/' <<<"$managed" || true)"
+[[ "$managed_scripts" == ".chezmoiscripts/36-agent-plugins.sh" ]] ||
+  die "only the agent plugin projection script may run during apply"
 
-run_chezmoi apply --dry-run --exclude=externals >/dev/null
+claude_modifier="$tmp_root/claude-settings-modifier"
+run_chezmoi execute-template \
+  --file "$DOTFILES_ROOT/home/dot_claude/modify_private_settings.json.tmpl" \
+  >"$claude_modifier"
+[[ "$(<"$claude_modifier")" == '#!/usr/bin/env -S uv run --quiet --script'* ]] ||
+  die "headless Claude settings must use uv"
+
+mkdir -p "$tmp_home/.claude"
+cat >"$tmp_home/.claude/settings.json" <<'EOF'
+{"spacejunkSetting":"preserved"}
+EOF
+run_chezmoi apply --exclude=externals >/dev/null
+
+[[ -f "$tmp_home/.agents/plugins/.claude-plugin/marketplace.json" ]] ||
+  die "Claude plugin marketplace was not projected"
+[[ -f "$tmp_home/.agents/plugins/plugins/core/.claude-plugin/plugin.json" ]] ||
+  die "core plugin was not projected"
+python3 - "$tmp_home/.claude/settings.json" "$tmp_home/.agents/plugins" <<'PY' || die "Claude plugin settings were not merged"
+import json
+import pathlib
+import sys
+
+settings = json.loads(pathlib.Path(sys.argv[1]).read_text())
+marketplace = settings["extraKnownMarketplaces"]["prateek-local"]["source"]
+assert marketplace == {"source": "directory", "path": sys.argv[2]}, marketplace
+assert settings["enabledPlugins"]["core@prateek-local"] is True
+assert settings["spacejunkSetting"] == "preserved"
+assert "statusLine" not in settings
+assert "skillListingBudgetFraction" not in settings
+assert "hooks" not in settings
+PY
+
+darwin_ignore="$(
+  CHEZMOI_TEST_OS=darwin \
+    run_chezmoi execute-template --file "$DOTFILES_ROOT/home/.chezmoiignore"
+)"
+grep -Fxq ".local/bin/orca-devpod-reconcile" <<<"$darwin_ignore" ||
+  die "Linux-only reconciler must be ignored on Darwin"
 
 zprofile="$tmp_root/zprofile"
 run_chezmoi cat "$tmp_home/.config/zsh/.zprofile" >"$zprofile"

@@ -47,7 +47,10 @@ jobs:
 
       - name: Linux DevPod profile regressions
         run: |
-          PATH="$HOME/.local/bin:$PATH" make test-linux-work-profile
+          export PATH="$HOME/.local/bin:$PATH"
+          make test-machines-features
+          make test-headless-uv-bootstrap
+          make test-linux-work-profile
           make test-orca-devpod-reconcile
 
   macos-dry-run:
