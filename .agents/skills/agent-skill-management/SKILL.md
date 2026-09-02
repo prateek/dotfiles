@@ -60,8 +60,9 @@ always-on packages (like `core`) as plugins with `default_loaded = true`.
 
 `package.toml` may set `default_loaded = false` to ship a package installed
 but disabled. Default is `true`. Today set to `false` on `design`,
-`experimental`, `ios`, `mattpocock`, `utils-human`. The plugin tree still
-renders, so the skills are one flip away.
+`experimental`, `ios`, `obsidian-wiki`, `utils-human`. The plugin tree still
+renders, so the skills are one flip away. `inventory-agent-skills` reports the
+field, so check it there rather than trusting this list.
 
 To flip a plugin globally, change `default_loaded` and re-render. To flip
 one on for a single project, drop a project-root override:
@@ -244,10 +245,25 @@ For context-budget work, use:
 
 ```sh
 .agents/skills/agent-skill-management/scripts/audit-skill-context --agent codex .
+.agents/skills/agent-skill-management/scripts/skill-console render --no-open \
+  --model claude-fable-5-1 --context-window 200000
 ```
 
-The script reports per-skill description size (chars/words) for the given
-root. Budget rollup is not implemented yet.
+`audit-skill-context` reports per-skill description size (chars/words) for
+the given root. `skill-console render` simulates Claude Code's skill-listing
+admission from live inputs (window x bytes/token x fraction = budget), checks
+it against the newest `skill_listing` capture for the cwd, and writes a
+self-contained HTML page for staging edits. Project skills, commands, and the
+capture comparison key off the cwd (the capture falls back to
+`--project-root`'s), so run `render` where Claude runs, normally the project
+root. `--model` and `--context-window` are required until the statusline state
+writer lands. `skill-console apply DECISIONS.json` dry-runs the exported
+decisions; add `--commit` to write them into the source tree. `apply` refuses
+dirty or symlinked targets and template syntax in settings keys, and at commit
+re-checks every path's hash and every deletion's preconditions; the full
+procedure is in
+[the console plan](../../../docs/plans/skill-management-console-plan.md#apply-semantics).
+Tests: `make test-skill-console`.
 
 ## Supporting Docs
 

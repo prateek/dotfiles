@@ -102,7 +102,7 @@ JSON
 
 "$script" <"$current" >"$merged"
 
-python3 - "$merged" "$managed_template" <<'PY'
+python3 - "$merged" "$managed_template" "$REPO_ROOT/home/dot_agents/packages" <<'PY'
 import json
 import sys
 
@@ -134,14 +134,12 @@ user_hooks = data["hooks"]["UserPromptSubmit"]
 assert user_hooks[0]["hooks"][0]["command"] == "printf user-owned-hook"
 
 plugins = data["enabledPlugins"]
-# Reflects default_loaded in each package.toml; flip the source there if rotated.
-assert plugins["core@prateek-local"] is True
-assert plugins["design@prateek-local"] is False
-assert plugins["experimental@prateek-local"] is False
-assert plugins["ios@prateek-local"] is False
-assert plugins["utils-human@prateek-local"] is False
-assert plugins["review@prateek-local"] is True
-assert plugins["utils-agent@prateek-local"] is True
+# Managed enabledPlugins reflect default_loaded in each package.toml.
+import pathlib, tomllib
+for manifest in sorted(pathlib.Path(sys.argv[3]).glob("*/package.toml")):
+    package = tomllib.loads(manifest.read_text())
+    if package.get("render", {}).get("claude") == "plugin":
+        assert plugins[f"{manifest.parent.name}@prateek-local"] is package.get("default_loaded", True), manifest.parent.name
 # Stale @prateek-local entries persist as harmless cruft (no automatic cleanup).
 assert plugins["stale@prateek-local"] is False
 assert plugins["other@other-market"] is True

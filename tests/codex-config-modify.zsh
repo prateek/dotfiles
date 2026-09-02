@@ -62,7 +62,7 @@ TOML
 
 "$script" <"$current" >"$merged"
 
-python3 - "$merged" <<'PY'
+python3 - "$merged" "$REPO_ROOT/home/dot_agents/packages" <<'PY'
 import sys
 import tomllib
 
@@ -101,14 +101,12 @@ assert data["marketplaces"]["last30days-skill"]["last_updated"] == "live"
 import os
 assert data["marketplaces"]["prateek-local"]["source_type"] == "local"
 assert data["marketplaces"]["prateek-local"]["source"] == os.path.expanduser("~/.agents/plugins")
-# Reflects default_loaded in each package.toml; flip the source there if
-# this rotates.
-assert data["plugins"]["design@prateek-local"]["enabled"] is False
-assert data["plugins"]["experimental@prateek-local"]["enabled"] is False
-assert data["plugins"]["ios@prateek-local"]["enabled"] is False
-assert data["plugins"]["utils-human@prateek-local"]["enabled"] is False
-assert data["plugins"]["review@prateek-local"]["enabled"] is True
-assert data["plugins"]["utils-agent@prateek-local"]["enabled"] is True
+# Managed plugin tables reflect default_loaded in each package.toml.
+import pathlib, tomllib
+for manifest in sorted(pathlib.Path(sys.argv[2]).glob("*/package.toml")):
+    package = tomllib.loads(manifest.read_text())
+    if package.get("render", {}).get("codex") == "plugin":
+        assert data["plugins"][f"{manifest.parent.name}@prateek-local"]["enabled"] is package.get("default_loaded", True), manifest.parent.name
 # Stale @prateek-local tables persist as harmless cruft (no automatic cleanup).
 assert data["plugins"]["stale@prateek-local"]["enabled"] is False
 assert data["plugins"]["other@other-market"]["enabled"] is False
@@ -160,20 +158,15 @@ empty_current="$tmp_root/empty-current.toml"
 empty_merged="$tmp_root/empty-merged.toml"
 : >"$empty_current"
 "$script" <"$empty_current" >"$empty_merged"
-python3 - "$empty_merged" <<'PY'
+python3 - "$empty_merged" "$REPO_ROOT/home/dot_agents/packages" <<'PY'
 import sys
 import tomllib
 
 data = tomllib.loads(open(sys.argv[1], "rb").read().decode())
 assert data["marketplaces"]["prateek-local"]["source_type"] == "local"
-expected = {
-    "design": False,
-    "experimental": False,
-    "ios": False,
-    "utils-human": False,
-    "review": True,
-    "utils-agent": True,
-}
-for slug, want in expected.items():
-    assert data["plugins"][f"{slug}@prateek-local"]["enabled"] is want, slug
+import pathlib, tomllib
+for manifest in sorted(pathlib.Path(sys.argv[2]).glob("*/package.toml")):
+    package = tomllib.loads(manifest.read_text())
+    if package.get("render", {}).get("codex") == "plugin":
+        assert data["plugins"][f"{manifest.parent.name}@prateek-local"]["enabled"] is package.get("default_loaded", True), manifest.parent.name
 PY

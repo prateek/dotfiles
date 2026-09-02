@@ -92,6 +92,7 @@ jobs:
           make test-acpx-model-drift
           make test-acpx-poll-stream
           make test-agent-skill-packages
+          make test-skill-console
           make test-gemini-meeting-sync
           make test-brew-install-wrapper
           make test-gh-extensions-script

@@ -36,6 +36,11 @@ MAX_SKILL_DESCRIPTION_CHARS = 1024
 PAYLOAD_DIRS = ("commands", "agents")
 PAYLOAD_FILES = ("hooks.json", ".mcp.json")
 
+# shutil.ignore_patterns globs for files that never reach a rendered skill.
+SKILL_TREE_IGNORE_PATTERNS = (
+    "__pycache__", "*.pyc", ".venv", ".cache", ".data", "forkengine"
+)
+
 
 @dataclass(frozen=True)
 class SkillSource:
@@ -56,11 +61,11 @@ class Package:
     payloads: tuple[str, ...] = ()
 
 
-def load_packages() -> list[Package]:
+def load_packages(packages_root: Path = PACKAGES_ROOT) -> list[Package]:
     packages: list[Package] = []
-    if not PACKAGES_ROOT.exists():
+    if not packages_root.exists():
         return packages
-    for path in sorted(p for p in PACKAGES_ROOT.iterdir() if p.is_dir()):
+    for path in sorted(p for p in packages_root.iterdir() if p.is_dir()):
         manifest = path / "package.toml"
         if not manifest.exists():
             raise ValueError(f"missing package manifest: {manifest}")
@@ -189,9 +194,7 @@ def copy_skill_tree(source: Path, target: Path) -> None:
     shutil.copytree(
         source,
         target,
-        ignore=shutil.ignore_patterns(
-            "__pycache__", "*.pyc", ".venv", ".cache", ".data", "forkengine"
-        ),
+        ignore=shutil.ignore_patterns(*SKILL_TREE_IGNORE_PATTERNS),
         copy_function=_copy_stripping_literal_prefix,
     )
 

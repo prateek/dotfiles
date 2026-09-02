@@ -4,4 +4,6 @@ targets:
   - agent-skills
 
 dependencies:
-  apm: []
+  apm:
+    - danshapiro/trycycle
+    - openai/skills/skills/.curated/cli-creator

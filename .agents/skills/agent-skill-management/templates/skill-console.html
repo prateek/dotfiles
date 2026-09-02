@@ -1,0 +1,2218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Skill Console</title>
+<!--
+Rendered by `skill-console render`. The CLI replaces the EMBEDDED_DATA marker (the
+only double-underscored token in this file, inside the JSON script block near the end)
+with one object, escaping "</" as "<\/" first:
+
+  snapshot        Snapshot
+  admission       Admission, costs in listing order
+  rows            Row[]                          (records as objects, paths as strings)
+  divergences     Divergence[]
+  entries         ListingEntry[]  optional, listing order; supplies forced_name_only and
+                                  the exact listing_text the serializer saw
+  packages        PackageRecord[] optional; supplies marketplace and render_claude
+  repo_root       string          optional; row ops need a record under this path
+  enabled_plugins {"<pkg>@<marketplace>": bool} optional; fallback for the marketplace name
+  apm             {"<qualified name>": {apm_dep, dep_owns_skills}} optional; enables delete_skill
+  warnings        string[]        optional
+
+Row extension fields the page also reads when present: apm_dep, dep_owns_skills, marketplace.
+The page never writes anywhere; exporting the decisions document is its only output.
+-->
+<style>
+:root {
+  color-scheme: light;
+  --canvas: #f6f7f8; --surface: #ffffff; --surface-2: #f1f3f5; --hover: #f6f7f9;
+  --text: #17191c; --text-2: #646a73; --text-3: #8a9099;
+  --border: #dfe2e6; --border-2: #c9ced4;
+  --sel: #2563eb; --sel-ink: #1d4fc0; --sel-wash: rgba(37,99,235,0.09); --sel-wash-2: rgba(37,99,235,0.18);
+  --ok: #16834a; --ok-wash: rgba(22,131,74,0.10);
+  --warn: #b66a00; --warn-wash: rgba(182,106,0,0.11);
+  --bad: #c93636; --bad-wash: rgba(201,54,54,0.10);
+  --prot: #7656c8;
+  --full: #596273; --nameonly: #a8afb9; --track: #eceef1; --rule: #17191c;
+  --status-bg: #1c1f24; --status-fg: #e7e9ec;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --canvas: #121417; --surface: #1a1d21; --surface-2: #22262b; --hover: #1f2327;
+    --text: #e7e9ec; --text-2: #9aa1ab; --text-3: #6f767f;
+    --border: #2b3037; --border-2: #3a4048;
+    --sel: #5b8def; --sel-ink: #8fb0f5; --sel-wash: rgba(91,141,239,0.16); --sel-wash-2: rgba(91,141,239,0.28);
+    --ok: #3fb26f; --ok-wash: rgba(63,178,111,0.14);
+    --warn: #d99a3a; --warn-wash: rgba(217,154,58,0.14);
+    --bad: #e0605f; --bad-wash: rgba(224,96,95,0.14);
+    --prot: #9f88e3;
+    --full: #8d97a6; --nameonly: #4a525c; --track: #2a2f35; --rule: #e7e9ec;
+    --status-bg: #0c0e11; --status-fg: #d8dbe0;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --canvas: #121417; --surface: #1a1d21; --surface-2: #22262b; --hover: #1f2327;
+  --text: #e7e9ec; --text-2: #9aa1ab; --text-3: #6f767f;
+  --border: #2b3037; --border-2: #3a4048;
+  --sel: #5b8def; --sel-ink: #8fb0f5; --sel-wash: rgba(91,141,239,0.16); --sel-wash-2: rgba(91,141,239,0.28);
+  --ok: #3fb26f; --ok-wash: rgba(63,178,111,0.14);
+  --warn: #d99a3a; --warn-wash: rgba(217,154,58,0.14);
+  --bad: #e0605f; --bad-wash: rgba(224,96,95,0.14);
+  --prot: #9f88e3;
+  --full: #8d97a6; --nameonly: #4a525c; --track: #2a2f35; --rule: #e7e9ec;
+  --status-bg: #0c0e11; --status-fg: #d8dbe0;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--canvas); color: var(--text); }
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 13px; line-height: 19px; -webkit-font-smoothing: antialiased;
+  padding-bottom: 64px;
+}
+.mono, code, kbd.cmd, textarea, input.cmd { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; }
+.mono, code { font-size: 12px; }
+h1, h2, h3, p, ul { margin: 0; }
+ul { padding: 0; list-style: none; }
+a { color: var(--sel-ink); }
+.spacer { flex: 1; }
+.num { font-variant-numeric: tabular-nums; }
+.t2 { color: var(--text-2); } .t3 { color: var(--text-3); }
+.meta { font-size: 11.5px; line-height: 16px; }
+.ok { color: var(--ok); } .warn { color: var(--warn); } .bad { color: var(--bad); } .prot { color: var(--prot); } .sel { color: var(--sel-ink); }
+[hidden] { display: none !important; }
+:focus-visible { outline: 2px solid var(--sel); outline-offset: 1px; }
+
+button {
+  font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border-2);
+  border-radius: 6px; padding: 4px 10px; min-height: 28px; cursor: pointer; line-height: 18px;
+}
+button:hover:not(:disabled) { background: var(--hover); }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+button.primary { background: var(--sel); color: #fff; border-color: var(--sel); }
+button.primary:hover:not(:disabled) { filter: brightness(0.94); background: var(--sel); }
+button.ghost { border-color: transparent; background: transparent; color: var(--text-2); }
+button.ghost:hover:not(:disabled) { background: var(--surface-2); color: var(--text); }
+button.small { min-height: 24px; padding: 2px 8px; font-size: 12px; }
+button.danger { color: var(--bad); border-color: var(--bad); }
+button kbd { margin-right: 6px; }
+kbd {
+  font-family: inherit; font-size: 11px; line-height: 16px; padding: 0 5px; border-radius: 4px; background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--border-2); color: var(--text-2); display: inline-block; min-width: 18px; text-align: center; vertical-align: 1px;
+}
+input[type="search"], input[type="text"], input[type="number"], select, textarea {
+  font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border-2); border-radius: 6px;
+  padding: 4px 9px; min-height: 28px;
+}
+select { padding-right: 24px; }
+textarea { width: 100%; min-height: 110px; resize: vertical; line-height: 19px; font-size: 12.5px; padding: 8px 10px; }
+textarea:focus { outline: 2px solid var(--sel); outline-offset: 0; border-color: transparent; }
+
+.app { max-width: 1640px; margin: 0 auto; padding: 18px 20px 0; }
+.top { display: flex; align-items: flex-start; gap: 14px; }
+.top h1 { font-size: 20px; line-height: 28px; font-weight: 650; letter-spacing: -0.01em; }
+.top .sub { color: var(--text-2); }
+.top .right { display: flex; gap: 8px; align-items: center; }
+.health-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-2); padding: 0 10px; min-height: 28px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); }
+.health-chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
+.health-chip .dot.warn { background: var(--warn); } .health-chip .dot.bad { background: var(--bad); }
+
+.banners { display: grid; gap: 8px; margin-top: 12px; }
+.banner { padding: 9px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text-2); }
+.banner.warn { background: var(--warn-wash); border-color: transparent; color: var(--text); }
+.banner.bad { background: var(--bad-wash); border-color: transparent; color: var(--text); }
+.banner b { font-weight: 600; }
+.banner .links a { margin-right: 8px; }
+
+.viewbar { display: flex; align-items: center; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+.tabs { display: inline-flex; gap: 2px; background: var(--surface-2); border-radius: 8px; padding: 3px; }
+.tabs button { border: 0; background: transparent; color: var(--text-2); min-height: 26px; padding: 2px 11px; border-radius: 6px; }
+.tabs button.on { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,0.10); }
+.tabs button .n { color: var(--text-3); margin-left: 6px; font-variant-numeric: tabular-nums; }
+.tabs button.on .n { color: var(--text-2); }
+.lens-label { color: var(--text-3); font-size: 12px; margin-left: 6px; }
+
+.querybar { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.querybar input[type="search"] { width: 320px; }
+.chips { display: inline-flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 0 9px; min-height: 26px; border-radius: 999px; border: 1px solid var(--border-2); background: var(--surface); font-size: 12px; color: var(--text-2); cursor: pointer; }
+.chip.on { background: var(--sel-wash); border-color: var(--sel); color: var(--sel-ink); }
+.chip .x { color: var(--text-3); }
+.querybar select { min-height: 26px; padding: 2px 24px 2px 8px; font-size: 12px; color: var(--text-2); }
+
+.summary { margin-top: 12px; padding: 10px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; display: grid; gap: 4px; }
+.summary .line { display: flex; gap: 22px; align-items: baseline; flex-wrap: wrap; font-variant-numeric: tabular-nums; }
+.summary .line .lbl { color: var(--text-2); min-width: 108px; }
+.summary .line b { font-weight: 600; }
+.summary .line .n { font-size: 18px; line-height: 24px; font-weight: 600; margin-right: 3px; }
+.summary .line .u { color: var(--text-2); }
+.summary .line.staged .lbl { color: var(--sel-ink); }
+.summary .line .delta { color: var(--sel-ink); font-weight: 500; }
+.summary .hint { color: var(--text-3); font-size: 12px; }
+
+.budget-panel { margin-top: 10px; padding: 12px 14px 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.budget-panel .viz { position: relative; }
+.budget-panel svg { display: block; width: 100%; overflow: visible; }
+.budget-panel .seg.lit { filter: brightness(0.85); }
+.budget-panel text { font-family: inherit; font-size: 11px; fill: var(--text-3); }
+.budget-panel text.lbl { fill: var(--text-2); }
+.budget-panel text.cutlbl { fill: var(--text); font-weight: 500; }
+.tip { position: absolute; pointer-events: none; z-index: 3; background: var(--status-bg); color: var(--status-fg); padding: 6px 10px; border-radius: 6px; font-size: 12px; line-height: 17px; white-space: nowrap; box-shadow: 0 4px 14px rgba(0,0,0,0.2); transform: translate(-50%, calc(-100% - 8px)); }
+.tip b { font-size: 13px; }
+.legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px; font-size: 11.5px; color: var(--text-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.legend i.cut { width: 2px; height: 12px; border-radius: 0; background: var(--rule); }
+.consequences { margin-top: 10px; font-size: 12.5px; color: var(--text-2); display: grid; gap: 3px; }
+.consequences .k { color: var(--text-3); margin-right: 6px; }
+.consequences a { margin-right: 8px; }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; margin-top: 12px; align-items: start; }
+.layout.with-inspector { grid-template-columns: minmax(0, 1fr) 400px; }
+@media (max-width: 1100px) { .layout.with-inspector { grid-template-columns: minmax(0, 1fr); } .inspector { position: static !important; max-height: none !important; } }
+.section-title { font-size: 15px; line-height: 22px; font-weight: 650; margin: 18px 0 8px; display: flex; align-items: baseline; gap: 10px; }
+.section-title:first-child { margin-top: 0; }
+.section-title .t3 { font-size: 12px; font-weight: 400; }
+
+table.grid { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+table.grid.fixed { table-layout: fixed; }
+table.grid.fixed td { overflow: hidden; text-overflow: ellipsis; }
+table.grid.fixed tr.pkg td { white-space: normal; }
+.tablewrap { overflow-x: auto; border-radius: 8px; }
+table.grid th { text-align: left; font-weight: 500; color: var(--text-3); font-size: 11.5px; line-height: 16px; padding: 7px 10px; border-bottom: 1px solid var(--border); background: var(--surface); white-space: nowrap; }
+table.grid th.n, table.grid td.n { text-align: right; }
+table.grid td { padding: 6px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; font-size: 12.5px; line-height: 18px; }
+table.grid tr:last-child td { border-bottom: 0; }
+table.grid td.gut, table.grid th.gut { width: 26px; padding-left: 8px; padding-right: 0; }
+table.grid tr.nav { cursor: default; }
+table.grid tr.nav:hover td { background: var(--hover); }
+table.grid tr.nav td.gut { position: relative; }
+table.grid tr.cur td { background: var(--sel-wash); }
+table.grid tr.cur td.gut::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: var(--sel); }
+table.grid tr.nav:focus-visible { outline: none; }
+table.grid tr.nav:focus-visible td { box-shadow: inset 0 0 0 2px var(--sel); }
+table.grid tr.skill td { height: 36px; }
+table.grid tr.pkg td { height: 42px; background: var(--surface-2); font-size: 12.5px; }
+table.grid tr.pkg.cur td { background: var(--sel-wash-2); }
+table.grid tr.pkg .chev { display: inline-block; width: 6px; height: 6px; border-right: 1.5px solid var(--text-3); border-bottom: 1.5px solid var(--text-3); transform: rotate(-45deg); margin: 0 2px 1px 0; transition: transform 100ms; }
+table.grid tr.pkg.open .chev { transform: rotate(45deg); }
+table.grid tr.pkg .pname { font-weight: 650; font-size: 13px; margin-right: 10px; }
+table.grid tr.pkg .pmeta { color: var(--text-2); }
+table.grid tr.pkg .pmeta .sep { color: var(--text-3); margin: 0 7px; }
+table.grid tr.pkg .prow { display: flex; align-items: center; gap: 12px; }
+table.grid tr.pkg .ptext { flex: 1; min-width: 0; white-space: normal; }
+table.grid tr.pkg .pact { flex: none; white-space: nowrap; }
+table.grid tr.pkg .plabel { font-size: 11px; color: var(--text-3); margin-left: 6px; }
+table.grid tr.deleted .nm { text-decoration: line-through; color: var(--text-3); }
+.mark { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 2px; vertical-align: 0; }
+.mark.staged { background: var(--sel); }
+.mark.warn { background: var(--warn); }
+.mark.bad { background: var(--bad); }
+.mark.hollow { background: transparent; box-shadow: inset 0 0 0 1.5px var(--border-2); }
+td.skill .nm { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; font-size: 12px; font-weight: 500; }
+td.skill .nm .pfx { color: var(--text-3); font-weight: 400; }
+td.skill .desc { color: var(--text-2); font-size: 12px; line-height: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+td.skill .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+td.skill .desc.none { color: var(--text-3); font-style: italic; }
+td.skill .flags { color: var(--warn); font-size: 11px; margin-left: 8px; }
+td.skill .flags.prot { color: var(--prot); }
+td.inv, td.harn, td.prov, td.usage, td.health, td.listing, td.decision, td.effect { white-space: nowrap; color: var(--text-2); }
+td.inv .off, td.harn .off { color: var(--text-3); }
+td.inv .st, td.harn .st, td.listing .st { color: var(--sel-ink); }
+td.harn b { font-weight: 600; color: var(--text); margin-right: 7px; }
+td.harn b.off { color: var(--text-3); text-decoration: line-through; text-decoration-color: var(--text-3); }
+td.harn b.unk { color: var(--text-3); font-weight: 400; }
+td.usage .t3 { margin-left: 6px; }
+td.health .ok { color: var(--ok); } td.health .warn { color: var(--warn); }
+td.listing .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; background: var(--full); vertical-align: 0; }
+td.listing .dot.name-only { background: var(--nameonly); }
+td.listing .dot.unlisted { background: transparent; box-shadow: inset 0 0 0 1.5px var(--border-2); }
+td.listing .dot.protected { background: var(--prot); }
+td.listing .was { color: var(--text-3); } td.listing .was::after { content: " \2192 "; }
+td.listing .why { color: var(--text-3); font-size: 11.5px; margin-left: 6px; }
+td.effect .up { color: var(--ok); } td.effect .down { color: var(--warn); }
+.empty { padding: 26px 16px; color: var(--text-2); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.empty b { color: var(--text); }
+.diag { color: var(--text-3); font-size: 11.5px; line-height: 16px; margin-top: 14px; }
+
+.inspector { position: sticky; top: 14px; max-height: calc(100vh - 62px); overflow: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px 16px; }
+.inspector .ihead { display: flex; align-items: flex-start; gap: 10px; }
+.inspector .ihead .title { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; font-size: 13.5px; font-weight: 600; overflow-wrap: anywhere; }
+.inspector .ihead .badges { margin-top: 3px; font-size: 11.5px; color: var(--text-2); display: flex; gap: 8px; flex-wrap: wrap; }
+.inspector .pin { color: var(--text-3); }
+.inspector .pin.on { color: var(--sel-ink); }
+.inspector section { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border); }
+.inspector section h3 { font-size: 11.5px; line-height: 16px; font-weight: 600; color: var(--text-3); letter-spacing: 0; margin-bottom: 7px; }
+.inspector .kv { display: grid; grid-template-columns: 116px minmax(0, 1fr); gap: 3px 10px; font-size: 12.5px; }
+.inspector .kv .k { color: var(--text-2); }
+.inspector .kv .v { color: var(--text); word-break: break-word; }
+.inspector .kv .v .src { color: var(--text-3); margin-left: 6px; font-size: 11.5px; }
+.inspector .desc-ro { font-size: 12.5px; color: var(--text); white-space: pre-wrap; word-break: break-word; }
+.inspector .why { color: var(--text-3); font-size: 12px; margin-top: 5px; }
+.inspector .counters { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--text-2); margin-top: 6px; font-variant-numeric: tabular-nums; }
+.inspector .counters .delta { color: var(--text); }
+.inspector .counters .bad { color: var(--bad); }
+.inspector .draft-actions { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
+.inspector .actions { display: grid; gap: 6px; }
+.inspector .actions button { text-align: left; justify-content: flex-start; }
+.inspector .actions .na { color: var(--text-3); font-size: 12px; padding: 2px 0; }
+.inspector .actions .na b { color: var(--text-2); font-weight: 500; }
+.inspector .tree { display: grid; grid-template-columns: 84px minmax(0, 1fr) 68px; gap: 2px 8px; font-size: 12px; }
+.inspector .tree .path { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; font-size: 11px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; }
+.inspector .tree .hash { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; font-size: 11px; }
+.inspector .divs { margin-top: 6px; color: var(--warn); font-size: 12px; }
+.inspector .note { font-size: 12px; color: var(--text-2); margin-top: 6px; }
+
+.status { position: fixed; left: 0; right: 0; bottom: 0; height: 28px; background: var(--status-bg); color: var(--status-fg); display: flex; align-items: center; gap: 18px; padding: 0 14px; font-size: 12px; z-index: 15; font-variant-numeric: tabular-nums; }
+.status .mode { font-weight: 700; letter-spacing: 0.04em; padding: 2px 8px; border-radius: 4px; background: var(--sel); color: #fff; font-size: 11px; }
+.status .mode.insert { background: var(--ok); } .status .mode.command { background: var(--warn); color: #111; } .status .mode.confirm { background: var(--bad); }
+.status .mono { font-size: 12px; }
+.status .dim { opacity: 0.6; }
+.status .err { color: #ff9b9b; }
+.status input.cmd { flex: 1; background: transparent; border: 0; color: var(--status-fg); font-size: 12px; padding: 0; min-height: 0; outline: none; }
+.prompt { position: fixed; left: 0; right: 0; bottom: 28px; background: var(--surface); border-top: 1px solid var(--border); padding: 10px 16px; z-index: 14; display: flex; gap: 16px; align-items: center; box-shadow: 0 -6px 20px rgba(0,0,0,0.08); font-size: 13px; }
+.prompt .msg { flex: 1; }
+.prompt.danger { border-top-color: var(--bad); }
+.prompt .keys { color: var(--text-2); white-space: nowrap; }
+
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.38); display: flex; align-items: center; justify-content: center; z-index: 20; }
+.sheet { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px 24px; width: 720px; }
+.sheet.wide { width: 960px; max-width: calc(100vw - 40px); max-height: calc(100vh - 80px); overflow: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+.sheet h2 { font-size: 15px; line-height: 22px; font-weight: 650; margin-bottom: 12px; }
+.sheet .foot { margin-top: 16px; display: flex; gap: 10px; align-items: center; color: var(--text-2); font-size: 12px; }
+.help-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px 24px; font-size: 12.5px; }
+.help-cols h4 { margin: 0 0 6px; font-size: 11.5px; color: var(--text-3); font-weight: 600; }
+.help-cols .row { display: flex; gap: 8px; padding: 2px 0; align-items: baseline; }
+.help-cols .row .k { min-width: 118px; display: inline-flex; gap: 3px; flex-wrap: wrap; }
+.help-cols .row .d { color: var(--text-2); }
+.sheet .kv { display: grid; grid-template-columns: 170px 1fr; gap: 4px 12px; font-size: 12.5px; }
+.sheet .kv .k { color: var(--text-2); }
+.sheet .warns { margin-top: 10px; color: var(--warn); font-size: 12.5px; display: grid; gap: 3px; }
+.sheet .callout { margin-top: 12px; padding: 9px 12px; background: var(--surface-2); border-radius: 6px; font-size: 12.5px; color: var(--text-2); }
+.sheet .callout code { font-size: 11.5px; }
+
+.changes .grp { margin-bottom: 14px; }
+.changes .grp h3 { font-size: 12px; color: var(--text-3); font-weight: 600; margin: 0 0 6px; }
+.changes td.op { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; font-size: 12px; }
+.changes td.op .key { color: var(--text-2); }
+.changes td .arrow { color: var(--text-3); margin: 0 5px; }
+.changes td.path { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; font-size: 11px; color: var(--text-3); max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; }
+.changes td.warns { color: var(--warn); font-size: 12px; white-space: normal; }
+.changes tr.destructive td.op { color: var(--bad); }
+
+.toast { position: fixed; left: 50%; bottom: 44px; transform: translateX(-50%); background: var(--status-bg); color: var(--status-fg); padding: 7px 14px; border-radius: 8px; font-size: 12.5px; z-index: 30; box-shadow: 0 6px 20px rgba(0,0,0,0.25); animation: toast 3s ease forwards; pointer-events: none; max-width: 80vw; }
+@keyframes toast { 0% { opacity: 0; transform: translate(-50%, 6px); } 6% { opacity: 1; transform: translate(-50%, 0); } 82% { opacity: 1; } 100% { opacity: 0; } }
+.fatal { max-width: 760px; margin: 60px auto; padding: 22px 26px; background: var(--surface); border: 1px solid var(--bad); border-radius: 10px; }
+.fatal h2 { font-size: 16px; margin-bottom: 8px; }
+.fatal pre { white-space: pre-wrap; font-size: 11.5px; color: var(--text-2); background: var(--surface-2); padding: 10px; border-radius: 6px; max-height: 300px; overflow: auto; }
+#loading { color: var(--text-2); padding: 40px 0; }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="top">
+    <div>
+      <h1>Skill Console</h1>
+      <p class="sub">Inventory, package policy, provenance, and Claude listing admission</p>
+    </div>
+    <span class="spacer"></span>
+    <div class="right" id="top-right"></div>
+  </header>
+  <div class="banners" id="banners"></div>
+  <div class="viewbar" id="viewbar"></div>
+  <div class="querybar" id="querybar"></div>
+  <div class="summary" id="summary"></div>
+  <div class="budget-panel" id="budget-panel" hidden></div>
+  <div class="layout" id="layout">
+    <div id="main"><div id="loading">Loading skill snapshot…</div></div>
+    <aside class="inspector" id="inspector" hidden></aside>
+  </div>
+  <div class="diag" id="diag"></div>
+</div>
+<div class="prompt" id="prompt" hidden></div>
+<div class="status" id="status"></div>
+<div class="overlay" id="overlay" hidden></div>
+
+<script type="application/json" id="embedded-data">__EMBEDDED_DATA__</script>
+<script>
+"use strict";
+
+let APP_READY = false;
+addEventListener("error", (ev) => {
+  if (document.querySelector(".fatal")) return;
+  if (APP_READY) {
+    console.error(ev.error || ev.message);
+    const st = document.getElementById("status");
+    if (st) { const err = document.createElement("span"); err.className = "err"; err.textContent = `error: ${ev.message}`; st.append(err); }
+    return;
+  }
+  const box = document.createElement("div");
+  box.className = "fatal";
+  const title = document.createElement("h2");
+  title.textContent = "Could not open this skill snapshot";
+  const msg = document.createElement("p");
+  msg.textContent = String(ev.message || ev.error || "unknown error");
+  const hint = document.createElement("p");
+  hint.textContent = "Regenerate the page with skill-console render …";
+  const pre = document.createElement("pre");
+  pre.textContent = ev.error && ev.error.stack ? ev.error.stack : String(ev.message);
+  box.append(title, msg, hint, pre);
+  document.body.replaceChildren(box);
+});
+
+// skill-console:admit-begin
+// Port of Claude Code's per(): greedy admission over integer costs Python already measured.
+// entries: [{name, name_only_cost, full_cost, upgrade_cost, protected, forced_name_only, rank}] in listing order.
+function admit(entries, budget) {
+  const n = entries.length;
+  if (n === 0) {
+    return { mode: "fits", budget, demand_chars: 0, rendered_chars: 0, headroom_chars: budget,
+             all_pinned: false, full: [], name_only: [], rendered: {} };
+  }
+  const separators = n - 1;
+  // A forced name-only row's "full" line is already its name-only line, so it is charged as such everywhere.
+  const shown = (i) => (entries[i].forced_name_only ? entries[i].name_only_cost : entries[i].full_cost);
+  const pinned = new Set();
+  let demand = separators;
+  for (let i = 0; i < n; i++) {
+    if (entries[i].forced_name_only) pinned.add(i);
+    demand += shown(i);
+  }
+  const result = (mode, renderedChars, allPinned, isFull) => {
+    const full = [], name_only = [], rendered = {};
+    for (let i = 0; i < n; i++) {
+      const state = isFull(i) ? "full" : "name-only";
+      (state === "full" ? full : name_only).push(entries[i].name);
+      rendered[entries[i].name] = state;
+    }
+    return { mode, budget, demand_chars: demand, rendered_chars: renderedChars,
+             headroom_chars: budget - renderedChars, all_pinned: allPinned, full, name_only, rendered };
+  };
+  if (demand <= budget) return result("fits", demand, false, (i) => !pinned.has(i));
+  for (let i = 0; i < n; i++) if (entries[i].protected) pinned.add(i);
+  const candidates = [];
+  for (let i = 0; i < n; i++) if (!pinned.has(i)) candidates.push(i);
+  let baseline = separators;
+  for (let i = 0; i < n; i++) baseline += pinned.has(i) ? shown(i) : entries[i].name_only_cost;
+  if (candidates.length === 0) return result("priority", baseline, true, (i) => !entries[i].forced_name_only);
+  // Stable sort over ascending indices: equal ranks keep listing order.
+  candidates.sort((a, b) => entries[b].rank - entries[a].rank);
+  let headroom = budget - baseline;
+  const admitted = new Set();
+  for (const i of candidates) {
+    const cost = entries[i].upgrade_cost;
+    if (cost <= headroom) { admitted.add(i); headroom -= cost; }
+  }
+  return result("priority", budget - headroom, false,
+                (i) => (pinned.has(i) && !entries[i].forced_name_only) || admitted.has(i));
+}
+// skill-console:admit-end
+
+const DATA = JSON.parse(document.getElementById("embedded-data").textContent);
+const SNAP = DATA.snapshot;
+const ADM = DATA.admission;
+// An infinite env budget arrives as the string "Infinity" because JSON has no literal for it.
+for (const [obj, key] of [[SNAP, "budget_chars"], [SNAP, "budget_env_override"], [ADM, "budget"], [ADM, "headroom_chars"]]) {
+  if (typeof obj[key] === "string") obj[key] = Number(obj[key]);
+}
+const ROWS = DATA.rows || [];
+const DIVERGENCES = DATA.divergences || [];
+const ENTRIES = DATA.entries || null;
+const PACKAGES = DATA.packages || [];
+const ENABLED_PLUGINS = DATA.enabled_plugins || {};
+const MAX_DESC_CHARS = SNAP.max_desc_chars;
+const ELLIPSIS = "…";
+const CAPTURE = DATA.capture || null;
+const ROW_OPS = ["set_description", "set_frontmatter", "delete_skill"];
+// The capability matrix is owned by skill_console/__init__.py; this literal only covers a payload without it.
+const CAPABILITIES = Object.fromEntries(Object.entries(DATA.capabilities || {
+  "repo-local": ["set_description", "set_frontmatter", "set_default_loaded", "set_package_enabled"],
+  "repo-vendor": ["set_description", "set_frontmatter", "delete_skill", "set_default_loaded", "set_package_enabled"],
+  "repo-project": ["set_description", "set_frontmatter"],
+  "user-skill": [],
+  "user-command": [],
+  "third-party-plugin": ["set_package_enabled"],
+  "builtin": [],
+}).map(([origin, allowed]) => [origin, new Set(allowed)]));
+const REGISTRY_ORIGINS = new Set(["builtin", "user-skill", "user-command", "repo-project"]);
+
+// ---- Measurement, restricted to text write_safe() accepts ------------------------------------
+// Under write_safe every code point is a newline or a lone BMP character Bun draws at width one:
+// no astral, Mn/Me/Cf, control, wide, or zero-width code points, so none of Bun.stringWidth's
+// grapheme rules can fire and the width is "one per UTF-16 unit, zero for newlines". Anything
+// outside that class is refused here rather than measured approximately; Python's write_safe is
+// the authority. WIDE_RE is the BMP portion of East_Asian_Width W and F (Unicode 16); ZERO_RE is
+// the BMP part of budget.py's zero-width table beyond Mn/Me/Cf (Hangul jungseong/jongseong and the
+// Indic spacing signs Bun's table zeroes); astral is refused separately.
+const WIDE_RE = /[\u1100-\u115F\u231A-\u231B\u2329-\u232A\u23E9-\u23EC\u23F0\u23F3\u25FD-\u25FE\u2614-\u2615\u2630-\u2637\u2648-\u2653\u267F\u268A-\u268F\u2693\u26A1\u26AA-\u26AB\u26BD-\u26BE\u26C4-\u26C5\u26CE\u26D4\u26EA\u26F2-\u26F3\u26F5\u26FA\u26FD\u2705\u270A-\u270B\u2728\u274C\u274E\u2753-\u2755\u2757\u2795-\u2797\u27B0\u27BF\u2B1B-\u2B1C\u2B50\u2B55\u2E80-\u2E99\u2E9B-\u2EF3\u2F00-\u2FD5\u2FF0-\u303E\u3041-\u3096\u3099-\u30FF\u3105-\u312F\u3131-\u318E\u3190-\u31E5\u31EF-\u321E\u3220-\u3247\u3250-\uA48C\uA490-\uA4C6\uA960-\uA97C\uAC00-\uD7A3\uF900-\uFAFF\uFE10-\uFE19\uFE30-\uFE52\uFE54-\uFE66\uFE68-\uFE6B\uFF01-\uFF60\uFFE0-\uFFE6]/;
+const ZERO_WIDTH_RE = /[\p{Mn}\p{Me}\p{Cf}]/u;
+const ZERO_RE = /[\u093B\u093E-\u0940\u0949-\u094C\u0980\u0982\u09BA-\u09BB\u09BE-\u09C0\u09C5-\u09CC\u09D1-\u09D7\u0A00\u0A3A-\u0A3B\u0A3E-\u0A40\u0A43-\u0A46\u0A49-\u0A4A\u0A52-\u0A57\u0A62-\u0A63\u0A80\u0ABA-\u0ABB\u0ABE-\u0AC0\u0AC6\u0AC9-\u0ACC\u0AD1-\u0AD7\u0B00\u0B02\u0B3A-\u0B3B\u0B3E\u0B40\u0B45-\u0B4C\u0B51-\u0B54\u0B57\u0B80-\u0B81\u0BBA-\u0BBC\u0BBE-\u0BBF\u0BC1-\u0BCC\u0BD1-\u0BD7\u0BE2-\u0BE3\u0C01-\u0C02\u0C3A-\u0C3B\u0C41-\u0C45\u0C49\u0C51-\u0C54\u0C57\u0C80\u0C82\u0CBA-\u0CBB\u0CBE\u0CC0-\u0CC5\u0CC7-\u0CCB\u0CD1-\u0CD7\u0D02\u0D3A\u0D3E-\u0D40\u0D45-\u0D4C\u1160-\u11FF\u1ACF-\u1AFF\u2065\u20F1-\u20FF\uD7B0-\uD7FF]/u;
+const ASTRAL_RE = /[\u{10000}-\u{10FFFF}]|\p{Cs}/u;
+const CONTROL_RE = /\p{Cc}/gu;
+const OTHER_CONTROL_RE = /[^\P{Cc}\n]/u;
+
+function writeSafe(text) {
+  if (ASTRAL_RE.test(text)) return [false, "astral code point (emoji, supplementary plane)"];
+  if (OTHER_CONTROL_RE.test(text)) return [false, "control character (only newline is allowed)"];
+  if (ZERO_WIDTH_RE.test(text)) return [false, "combining mark, ZWJ, or variation selector"];
+  if (WIDE_RE.test(text)) return [false, "East Asian wide or fullwidth character"];
+  if (ZERO_RE.test(text)) return [false, "zero-width character"];
+  return [true, ""];
+}
+function safeWidth(text) { return text.length - (text.match(CONTROL_RE) || []).length; }
+function listingText(description, whenToUse) { return whenToUse ? `${description} - ${whenToUse}` : description; }
+function capText(text) {
+  return text.length > MAX_DESC_CHARS ? [text.slice(0, MAX_DESC_CHARS - 1) + ELLIPSIS, true] : [text, false];
+}
+function fullCostFor(nameOnlyCost, text) {
+  const [capped, wasCapped] = capText(text);
+  return { full_cost: nameOnlyCost + 2 + safeWidth(capped), capped: wasCapped };
+}
+function computedBudget(fraction) {
+  return Math.max(1, Math.floor(SNAP.context_window * SNAP.bytes_per_token * fraction));
+}
+const envBudgetActive = SNAP.budget_env_override !== null && SNAP.budget_env_override !== undefined && SNAP.budget_env_override !== 0;
+
+// ---- Models ----------------------------------------------------------------------------------
+const costByName = new Map();
+(ADM.costs || []).forEach((c) => costByName.set(c.name, c));
+const entryByName = new Map();
+if (ENTRIES) ENTRIES.forEach((e, i) => entryByName.set(e.name, { ...e, index: i }));
+const packageInfo = new Map();
+PACKAGES.forEach((p) => packageInfo.set(p.name, p));
+const apmByName = new Map(Object.entries(DATA.apm || {}));
+
+function liveRecord(row) { return row.cache_record || row.marketplace_record || row.source_record || null; }
+function editRecord(row) { return row.source_record || row.marketplace_record || row.cache_record || null; }
+function inRepo(record) { return Boolean(record && DATA.repo_root && String(record.path).startsWith(DATA.repo_root + "/")); }
+
+function marketplaceFor(pkg, row) {
+  const info = packageInfo.get(pkg);
+  if (info && info.marketplace) return info.marketplace;
+  const key = Object.keys(ENABLED_PLUGINS).find((k) => k.startsWith(pkg + "@"));
+  if (key) return key.slice(pkg.length + 1);
+  if (row && row.marketplace) return row.marketplace;
+  return null;
+}
+
+const models = ROWS.map((row) => {
+  const cost = costByName.get(row.name) || null;
+  const entry = entryByName.get(row.name) || null;
+  const live = liveRecord(row);
+  const edit = editRecord(row);
+  const text = entry ? entry.listing_text : (live ? listingText(live.description, live.when_to_use) : null);
+  const claudeEnabled = row.live_enabled && typeof row.live_enabled.claude === "boolean" ? row.live_enabled.claude : null;
+  const liveDmi = row.listed ? false : Boolean(live && live.disable_model_invocation);
+  const apm = apmByName.get(row.name) || (row.apm_dep ? { apm_dep: row.apm_dep, dep_owns_skills: row.dep_owns_skills } : null);
+  let unlistedReason = null;
+  if (!row.listed) {
+    if (claudeEnabled === false) unlistedReason = "package";
+    else if (liveDmi) unlistedReason = "disable-model-invocation";
+    else unlistedReason = "not loaded by Claude (cache drift, scope, or override)";
+  }
+  const [safe, safeReason] = text === null ? [false, "no description text in payload"] : writeSafe(text);
+  return {
+    row, name: row.name, pkg: row.package || "", origin: row.origin, protected: Boolean(row.protected),
+    listed: Boolean(row.listed), index: cost ? cost.index : (entry ? entry.index : null),
+    cost, entry, text, edit, live, liveDmi, claudeEnabled, apm, unlistedReason,
+    measurable: safe, measureReason: safeReason,
+    rank: Number(row.rank) || 0,
+    forced: Boolean(entry && entry.forced_name_only),
+    renderedBefore: row.listed ? (ADM.rendered && ADM.rendered[row.name]) || row.rendered || null : null,
+    costAfter: null, changed: false, pkgModel: null, el: {},
+  };
+});
+const modelByName = new Map(models.map((m) => [m.name, m]));
+
+const listedModels = models.filter((m) => m.listed && m.cost).sort((a, b) => a.index - b.index);
+
+const packages = new Map();
+models.forEach((m) => {
+  const key = m.pkg || m.origin;
+  if (!packages.has(key)) {
+    packages.set(key, {
+      key, name: m.pkg, isPackage: Boolean(m.pkg), rows: [], origins: new Set(),
+      marketplace: m.pkg ? marketplaceFor(m.pkg, m.row) : null,
+      defaultLoaded: null, liveEnabled: null, info: packageInfo.get(m.pkg) || null,
+      firstIndex: Infinity, el: {},
+    });
+  }
+  const p = packages.get(key);
+  p.rows.push(m);
+  p.origins.add(m.origin);
+  if (typeof m.row.repo_default === "boolean") p.defaultLoaded = m.row.repo_default;
+  if (m.claudeEnabled !== null) p.liveEnabled = m.claudeEnabled;
+  if (m.index !== null && m.index < p.firstIndex) p.firstIndex = m.index;
+  m.pkgModel = p;
+});
+packages.forEach((p) => {
+  if (p.info && typeof p.info.default_loaded === "boolean") p.defaultLoaded = p.info.default_loaded;
+  if (p.liveEnabled === null && p.isPackage) {
+    const key = p.marketplace ? `${p.name}@${p.marketplace}` : null;
+    p.liveEnabled = key && key in ENABLED_PLUGINS ? Boolean(ENABLED_PLUGINS[key]) : p.rows.some((m) => m.listed);
+  }
+  p.rows.sort((a, b) => {
+    if (a.index !== null && b.index !== null) return a.index - b.index;
+    if (a.index !== null) return -1;
+    if (b.index !== null) return 1;
+    return a.name.localeCompare(b.name);
+  });
+});
+const packageOrder = [...packages.values()].sort((a, b) => {
+  if (a.firstIndex !== b.firstIndex) return a.firstIndex - b.firstIndex;
+  return a.key.localeCompare(b.key);
+});
+
+function entryFromModel(m, override) {
+  const c = override || m.cost;
+  return { name: m.name, name_only_cost: c.name_only_cost, full_cost: c.full_cost, upgrade_cost: c.upgrade_cost,
+           protected: m.protected, forced_name_only: m.forced, rank: m.rank };
+}
+const BEFORE = admit(listedModels.map((m) => entryFromModel(m)), ADM.budget);
+
+// ---- Staged operations -----------------------------------------------------------------------
+const ops = new Map();
+const opKey = (op, key) => `${op} ${key}`;
+// PREVIEW overlays a hypothetical op (an unsaved draft) so the simulation can answer "what if" without staging.
+let PREVIEW = null;
+function getOp(op, key) {
+  const k = opKey(op, key);
+  if (PREVIEW && PREVIEW.has(k)) return PREVIEW.get(k);
+  return ops.get(k) || null;
+}
+const HISTORY = [], REDO = [];
+function record(key, before, after) { HISTORY.push({ key, before, after }); REDO.length = 0; }
+function setOp(o) { const k = opKey(o.op, o.key); record(k, ops.get(k) || null, o); ops.set(k, o); recompute(); }
+function delOp(op, key) { const k = opKey(op, key); if (!ops.has(k)) return; record(k, ops.get(k), null); ops.delete(k); recompute(); }
+function undo() {
+  const e = HISTORY.pop();
+  if (!e) return null;
+  REDO.push(e);
+  if (e.before) ops.set(e.key, e.before); else ops.delete(e.key);
+  recompute();
+  return e;
+}
+function redo() {
+  const e = REDO.pop();
+  if (!e) return null;
+  HISTORY.push(e);
+  if (e.after) ops.set(e.key, e.after); else ops.delete(e.key);
+  recompute();
+  return e;
+}
+
+function packageEnabledOp(p) {
+  return p.marketplace ? getOp("set_package_enabled", `${p.name}@${p.marketplace}`) : null;
+}
+// enabledPlugins is merged after the generated default_loaded fragment, so it wins when both are staged.
+function packageEnabledAfter(p) {
+  if (!p || !p.isPackage) return true;
+  const en = packageEnabledOp(p);
+  if (en) return en.value;
+  const dl = getOp("set_default_loaded", p.name);
+  if (dl) return dl.value;
+  return p.liveEnabled !== false;
+}
+function packageDisabledInBatch(p) {
+  if (!p || !p.isPackage) return false;
+  const en = packageEnabledOp(p);
+  const dl = getOp("set_default_loaded", p.name);
+  return Boolean((en && en.value === false) || (dl && dl.value === false));
+}
+function rowEditsInPackage(p) {
+  return p.rows.filter((m) => getOp("set_description", m.name) || getOp("set_frontmatter", m.name));
+}
+
+function refusal(m, op) {
+  if (!CAPABILITIES[m.origin] || !CAPABILITIES[m.origin].has(op)) return `${m.origin} rows do not permit ${op}`;
+  if (ROW_OPS.includes(op) && !m.listed) return "not in the live listing (V13)";
+  if (ROW_OPS.includes(op) && !inRepo(m.edit)) return "not in this checkout's source tree; edit it where it lives (V13)";
+  if (op === "set_description" || op === "set_frontmatter") {
+    if (getOp("delete_skill", m.name)) return "delete_skill staged for this skill (V15)";
+    if (packageDisabledInBatch(m.pkgModel)) return "package disabled in this batch (V15)";
+  }
+  if (op === "set_description") {
+    if (!m.edit) return "no source record to edit";
+    if (m.text === null) return "live listing text unknown, cannot compute from_chars";
+  }
+  if (op === "delete_skill") {
+    if (getOp("set_description", m.name)) return "set_description staged for this skill (V15)";
+    if (!m.apm) return "no APM dependency recorded in its SOURCE.md";
+    if (m.apm.dep_owns_skills !== 1) return `APM dependency owns ${m.apm.dep_owns_skills} skills; needs the exclusion mechanism`;
+  }
+  return null;
+}
+function packageRefusal(p, op) {
+  if (!p.isPackage) return `${p.key} rows have no package`;
+  const permitted = [...p.origins].every((o) => CAPABILITIES[o] && CAPABILITIES[o].has(op));
+  if (!permitted) return `${[...p.origins].join(", ")} rows do not permit ${op}`;
+  if (op === "set_package_enabled") {
+    if (!p.marketplace) return "marketplace unknown; payload lacks packages[] or enabled_plugins";
+    if (p.info && p.info.render_claude && p.info.render_claude !== "plugin") return `render.claude is "${p.info.render_claude}", not a Claude plugin`;
+  }
+  if (op === "set_default_loaded" && p.defaultLoaded === null) return "package.toml default_loaded unknown";
+  const target = op === "set_default_loaded" ? !p.defaultLoaded : !(p.liveEnabled !== false);
+  if (target) {
+    const unmeasurable = p.rows.filter((m) => !m.listed && m.unlistedReason === "package" && !m.measurable);
+    if (unmeasurable.length) return `cannot simulate: ${unmeasurable.map((m) => m.name).join(", ")} has ${unmeasurable[0].measureReason}`;
+  } else {
+    const edits = rowEditsInPackage(p);
+    if (edits.length) return `${edits.length} staged skill edit(s) in this package would conflict (V15); clear them first`;
+  }
+  return null;
+}
+
+// ---- Simulation ------------------------------------------------------------------------------
+function listedAfter(m) {
+  if (getOp("delete_skill", m.name)) return false;
+  const fm = getOp("set_frontmatter", m.name);
+  let dmi = m.liveDmi;
+  if (fm && fm.field === "disable-model-invocation") dmi = fm.value;
+  if (dmi) return false;
+  if (!packageEnabledAfter(m.pkgModel)) return false;
+  if (m.listed) return true;
+  return m.unlistedReason === "package";
+}
+
+function afterCost(m) {
+  const desc = getOp("set_description", m.name);
+  if (!desc && m.cost) return m.cost;
+  const description = desc ? desc.text : m.edit.description;
+  const whenToUse = m.edit ? m.edit.when_to_use : null;
+  const nameOnly = m.cost ? m.cost.name_only_cost : safeWidth(m.name) + 2;
+  const { full_cost, capped } = fullCostFor(nameOnly, listingText(description, whenToUse));
+  return { name: m.name, name_only_cost: nameOnly, full_cost, upgrade_cost: full_cost - nameOnly, capped, estimated: true };
+}
+
+function afterEntries() {
+  const kept = listedModels.filter((m) => listedAfter(m));
+  const entering = models.filter((m) => !m.listed && listedAfter(m));
+  // Entering rows have no observed position; the end of the plugin block is the estimate, and only
+  // equal-rank tie-breaks depend on it.
+  entering.sort((a, b) => (a.pkg + a.name).localeCompare(b.pkg + b.name));
+  const firstRegistry = kept.findIndex((m) => REGISTRY_ORIGINS.has(m.origin));
+  const ordered = firstRegistry === -1 ? kept.concat(entering)
+    : kept.slice(0, firstRegistry).concat(entering, kept.slice(firstRegistry));
+  return ordered.map((m) => {
+    m.costAfter = afterCost(m);
+    return entryFromModel(m, m.costAfter);
+  });
+}
+
+function budgetAfter() {
+  const fr = getOp("set_budget_fraction", "");
+  if (!fr || envBudgetActive) return ADM.budget;
+  return computedBudget(fr.to_value);
+}
+
+function predict(before, after) {
+  const bSet = new Set(before.full.concat(before.name_only));
+  const aSet = new Set(after.full.concat(after.name_only));
+  const newly_admitted = after.full.filter((n) => bSet.has(n) && before.rendered[n] === "name-only");
+  const newly_dropped = after.name_only.filter((n) => bSet.has(n) && before.rendered[n] === "full");
+  const removed_name_only = before.name_only.filter((n) => !aSet.has(n)).length;
+  const added_name_only = after.name_only.filter((n) => !bSet.has(n)).length;
+  return {
+    cap_chars: after.budget,
+    mode_before: before.mode, mode_after: after.mode,
+    demand_before: before.demand_chars, demand_after: after.demand_chars,
+    rendered_before: before.rendered_chars, rendered_after: after.rendered_chars,
+    full_before: before.full.length, full_after: after.full.length,
+    name_only_before: before.name_only.length, name_only_after: after.name_only.length,
+    newly_admitted, newly_dropped, added_name_only, removed_name_only,
+  };
+}
+
+let AFTER = BEFORE;
+let PREDICTED = predict(BEFORE, BEFORE);
+
+function parityProblems() {
+  const problems = [];
+  const same = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
+  if (!same(BEFORE.full, ADM.full || []) || !same(BEFORE.name_only, ADM.name_only || [])) {
+    const diff = listedModels.filter((m) => BEFORE.rendered[m.name] !== (ADM.rendered || {})[m.name]).map((m) => m.name);
+    problems.push(`browser admission disagrees with Python on ${diff.length} row(s): ${diff.slice(0, 6).join(", ")}${diff.length > 6 ? ", …" : ""}`);
+  }
+  if (BEFORE.rendered_chars !== ADM.rendered_chars || BEFORE.demand_chars !== ADM.demand_chars) {
+    problems.push(`browser totals differ from Python: rendered ${BEFORE.rendered_chars} vs ${ADM.rendered_chars}, demand ${BEFORE.demand_chars} vs ${ADM.demand_chars}`);
+  }
+  return problems;
+}
+const PARITY_PROBLEMS = parityProblems();
+
+// The skill_listing attachment is ground truth; Python's simulation is checked against it, not the reverse.
+function captureParity() {
+  if (!CAPTURE) return null;
+  const truth = {};
+  (CAPTURE.full || []).forEach((n) => { truth[n] = "full"; });
+  (CAPTURE.name_only || []).forEach((n) => { truth[n] = "name-only"; });
+  const names = Object.keys(truth);
+  const rendered = ADM.rendered || {};
+  return {
+    at: CAPTURE.captured_at, rows: names.length, full: (CAPTURE.full || []).length, nameOnly: (CAPTURE.name_only || []).length,
+    mismatches: names.filter((n) => rendered[n] !== truth[n]),
+    notCaptured: listedModels.filter((m) => !(m.name in truth)).map((m) => m.name),
+  };
+}
+
+function measureParity() {
+  let checked = 0, agreed = 0;
+  listedModels.forEach((m) => {
+    if (!m.measurable || m.text === null) return;
+    checked += 1;
+    if (fullCostFor(m.cost.name_only_cost, m.text).full_cost === m.cost.full_cost) agreed += 1;
+  });
+  return { checked, agreed };
+}
+
+
+// ---- Simulation helpers ----------------------------------------------------------------------
+let BEFORE_ENTRIES = listedModels.map((m) => entryFromModel(m));
+let AFTER_ENTRIES = BEFORE_ENTRIES;
+function recompute() {
+  models.forEach((m) => { m.costAfter = null; });
+  AFTER_ENTRIES = afterEntries();
+  AFTER = admit(AFTER_ENTRIES, budgetAfter());
+  PREDICTED = predict(BEFORE, AFTER);
+  render();
+}
+function simulate(overlay) {
+  PREVIEW = overlay;
+  try {
+    models.forEach((m) => { m.costAfter = null; });
+    const entries = afterEntries();
+    const after = admit(entries, budgetAfter());
+    return { after, entries, predicted: predict(BEFORE, after), costAfter: new Map(models.map((m) => [m.name, m.costAfter])) };
+  } finally {
+    PREVIEW = null;
+    models.forEach((m) => { m.costAfter = null; });
+    afterEntries();
+  }
+}
+
+// ---- Derived facts ---------------------------------------------------------------------------
+const PROVENANCE = { "repo-local": "local", "repo-vendor": "vendor", "third-party-plugin": "third-party", "repo-project": "project", "user-skill": "user", "user-command": "command", builtin: "builtin" };
+const OUTSIDE = { "repo-project": ["Project skills", 0], "user-skill": ["User skills", 1], "user-command": ["Commands", 2], builtin: ["Built-ins", 3] };
+const divergencesByName = new Map();
+DIVERGENCES.forEach((d) => { if (!divergencesByName.has(d.name)) divergencesByName.set(d.name, []); divergencesByName.get(d.name).push(d); });
+
+function treeHealth(m) {
+  if (m.divs.length) {
+    return { level: "warn", label: `${m.divs.length} drift`, detail: m.divs.map((d) => `${d.kind}: ${d.detail}`).join("\n") };
+  }
+  if (m.origin !== "repo-local" && m.origin !== "repo-vendor") return { level: "na", label: "—", detail: "one tree only; nothing to reconcile" };
+  const missing = m.trees.filter(([, r]) => !r).map(([t]) => t);
+  if (missing.length) return { level: "warn", label: "missing", detail: `${missing.join(", ")} missing` };
+  const [s, mk, c] = m.trees.map(([, r]) => r.content_sha256);
+  if (s === mk && mk === c) return { level: "ok", label: "in sync", detail: "source, marketplace, and cache agree" };
+  return { level: "warn", label: s !== mk ? "source≠rendered" : "cache stale", detail: "content hashes differ between trees" };
+}
+
+models.forEach((m) => {
+  m.id = `skill:${m.name}|${m.origin}`;
+  m.short = m.pkg && m.name.startsWith(m.pkg + ":") ? m.name.slice(m.pkg.length + 1) : m.name;
+  m.prov = PROVENANCE[m.origin] || m.origin;
+  const rec = m.edit || m.live;
+  m.desc = rec && rec.description ? rec.description : (m.text || "");
+  m.trees = [["source", m.row.source_record || null], ["marketplace", m.row.marketplace_record || null], ["cache", m.row.cache_record || null]];
+  m.divs = divergencesByName.get(m.name) || [];
+  m.health = treeHealth(m);
+  m.usage = m.row.usage || null;
+});
+const modelById = new Map(models.map((m) => [m.id, m]));
+packages.forEach((p) => {
+  p.id = `pkg:${p.key}`;
+  p.kind = p.isPackage ? (p.origins.has("third-party-plugin") ? "third-party" : "repo") : "outside";
+  p.label = p.isPackage ? p.name : (OUTSIDE[p.key] ? OUTSIDE[p.key][0] : p.key);
+  p.outsideOrder = OUTSIDE[p.key] ? OUTSIDE[p.key][1] : 9;
+});
+const pkgById = new Map([...packages.values()].map((p) => [p.id, p]));
+
+const relPath = (path) => (path && DATA.repo_root && String(path).startsWith(DATA.repo_root + "/") ? String(path).slice(DATA.repo_root.length + 1) : path);
+const daysAgo = (ms) => (SNAP.now_ms - ms) / 86400000;
+const relAge = (ms) => { const d = daysAgo(ms); return d < 1 ? "today" : d < 30 ? `${Math.round(d)}d` : d < 365 ? `${Math.round(d / 30)}mo` : `${(d / 365).toFixed(1)}y`; };
+const fmt = (n) => Number(n).toLocaleString("en-US");
+const signed = (n) => (n > 0 ? "+" : "") + fmt(n);
+const usageText = (m) => (m.usage ? `${fmt(m.usage.usage_count)}× · ${relAge(m.usage.last_used_at_ms)}` : "never observed");
+const listingBefore = (m) => m.renderedBefore || "unlisted";
+const listingAfter = (m) => (listedAfter(m) ? AFTER.rendered[m.name] || "unlisted" : "unlisted");
+const isChanged = (m) => listingBefore(m) !== listingAfter(m) || ROW_OPS.some((op) => getOp(op, m.name));
+const pkgStaged = (p) => Boolean(p && p.isPackage && (packageEnabledOp(p) || getOp("set_default_loaded", p.name)));
+const skillPath = (m) => relPath((m.edit || m.live || {}).path || null);
+
+function unlistedWhy(m) {
+  if (getOp("delete_skill", m.name)) return "delete staged";
+  const fm = getOp("set_frontmatter", m.name);
+  const dmiStaged = Boolean(fm && fm.field === "disable-model-invocation");
+  if (dmiStaged ? fm.value : m.liveDmi) return dmiStaged ? "disable-model-invocation (staged)" : "disable-model-invocation";
+  if (!packageEnabledAfter(m.pkgModel)) return pkgStaged(m.pkgModel) ? "package disabled (staged)" : "package disabled";
+  if (m.listed) return null;
+  if (m.unlistedReason === "package") return "package disabled";
+  if (!m.row.cache_record) return "missing from cache";
+  if (!m.text) return "no usable description";
+  return "scope or override";
+}
+
+function invocation(m) {
+  const rec = m.edit || m.live;
+  const fm = getOp("set_frontmatter", m.name);
+  const modelLive = rec ? !rec.disable_model_invocation : null;
+  const userLive = rec ? Boolean(rec.user_invocable) : null;
+  const modelStaged = Boolean(fm && fm.field === "disable-model-invocation");
+  const userStaged = Boolean(fm && fm.field === "user-invocable");
+  return { model: modelStaged ? !fm.value : modelLive, user: userStaged ? fm.value : userLive, modelStaged, userStaged, modelLive, userLive };
+}
+
+function claudeSource(p) {
+  if (packageEnabledOp(p)) return "staged enabledPlugins";
+  if (getOp("set_default_loaded", p.name)) return "staged default_loaded";
+  if (p.marketplace && `${p.name}@${p.marketplace}` in ENABLED_PLUGINS) return "enabledPlugins override";
+  if (p.info && typeof p.info.default_loaded === "boolean") return "generated from default_loaded";
+  return "live plugin config";
+}
+// Codex and pi enablement is not in the snapshot; the shipped default_loaded policy is the best available proxy.
+function harnessStates(p) {
+  if (!p || !p.isPackage) return [{ h: "C", on: true, src: "Claude registry" }, { h: "X", on: null, src: "not in snapshot" }, { h: "π", on: null, src: "not in snapshot" }];
+  const c = { h: "C", on: packageEnabledAfter(p), src: claudeSource(p) };
+  if (p.kind === "third-party") return [c, { h: "X", on: null, src: "third-party Claude plugin; no Codex state" }, { h: "π", on: null, src: "third-party Claude plugin; no pi state" }];
+  const dl = getOp("set_default_loaded", p.name);
+  const shipped = dl ? dl.value : p.defaultLoaded;
+  const src = shipped === null ? "package.toml default_loaded unknown" : `${dl ? "staged " : ""}package.toml default_loaded; per-harness overrides are not in this snapshot`;
+  return [c, { h: "X", on: shipped, src }, { h: "π", on: shipped, src }];
+}
+
+function pkgCounts(p) {
+  const rows = p.rows;
+  const n = (pred) => rows.filter(pred).length;
+  return {
+    total: rows.length,
+    local: n((m) => m.origin === "repo-local"), vendor: n((m) => m.origin === "repo-vendor"),
+    listedB: n((m) => m.listed), listedA: n((m) => listedAfter(m)),
+    fullB: n((m) => m.renderedBefore === "full"), fullA: n((m) => listingAfter(m) === "full"),
+    nameOnlyB: n((m) => m.renderedBefore === "name-only"), nameOnlyA: n((m) => listingAfter(m) === "name-only"),
+    modelOn: n((m) => invocation(m).model === true), userOn: n((m) => invocation(m).user === true),
+    trees: { source: n((m) => m.row.source_record), marketplace: n((m) => m.row.marketplace_record), cache: n((m) => m.row.cache_record) },
+    drift: n((m) => m.health.level === "warn"),
+    staged: n((m) => ROW_OPS.some((op) => getOp(op, m.name))) + (pkgStaged(p) ? 1 : 0),
+    charsA: rows.reduce((sum, m) => {
+      if (!listedAfter(m)) return sum;
+      const c = m.costAfter || m.cost;
+      return c ? sum + (AFTER.rendered[m.name] === "full" ? c.full_cost : c.name_only_cost) : sum;
+    }, 0),
+  };
+}
+function pkgHealth(p) {
+  const drift = p.rows.filter((m) => m.health.level === "warn").length;
+  if (drift) return { level: "warn", label: `${drift} drift` };
+  if (p.rows.some((m) => m.health.level === "ok")) return { level: "ok", label: "in sync" };
+  return { level: "na", label: "—" };
+}
+
+function decision(m) {
+  if (!listedAfter(m)) return unlistedWhy(m) || "unlisted";
+  if (m.forced) return "forced name-only";
+  if (m.protected) return "protected";
+  return listingAfter(m) === "full" ? "admitted" : "skipped";
+}
+function effect(m) {
+  const b = listingBefore(m), a = listingAfter(m);
+  if (b === a) return null;
+  if (b === "unlisted") return { label: "added", cls: "up" };
+  if (a === "unlisted") return { label: "removed", cls: "down" };
+  return a === "full" ? { label: "newly full", cls: "up" } : { label: "dropped to name-only", cls: "down" };
+}
+
+// ---- View state, filters, ordering -----------------------------------------------------------
+const S = {
+  view: "skills", lens: "management", sort: "name", search: "",
+  filters: { state: "any", origin: "any", staged: false, drift: false },
+  expanded: new Map(), searchExpanded: new Set(),
+  pinnedId: null, inspectorOpen: true,
+  cursorId: null, hiddenCursorId: null, cursorTouched: false, lastIndex: 0,
+  mode: "NORMAL", draft: null, prompt: null, modal: null, count: "", pending: "", cmdError: "", cmdText: "",
+};
+const FILTER_STATES = ["any", "listed", "unlisted", "name-only", "full"];
+const FILTER_ORIGINS = ["any", "local", "vendor", "third-party", "project", "user", "command", "builtin"];
+const isExpanded = (p) => S.searchExpanded.has(p.key) || (S.expanded.has(p.key) ? S.expanded.get(p.key) : (!p.isPackage || packageEnabledAfter(p)));
+const activeFilterCount = () => (S.filters.state !== "any") + (S.filters.origin !== "any") + S.filters.staged + S.filters.drift;
+
+function rowMatches(m, q) {
+  if (!q) return true;
+  const hay = [m.name, m.row.directory, m.desc, m.pkg, m.origin, m.prov, m.apm && m.apm.apm_dep, skillPath(m)].filter(Boolean).join("\n").toLowerCase();
+  return hay.includes(q);
+}
+function rowPasses(m) {
+  const f = S.filters, a = listingAfter(m);
+  if (f.state === "listed" && a === "unlisted") return false;
+  if (f.state === "unlisted" && a !== "unlisted") return false;
+  if (f.state === "name-only" && a !== "name-only") return false;
+  if (f.state === "full" && a !== "full") return false;
+  if (f.origin !== "any" && m.prov !== f.origin) return false;
+  if (f.staged && !isChanged(m)) return false;
+  if (f.drift && m.health.level !== "warn") return false;
+  return rowMatches(m, S.search.trim().toLowerCase());
+}
+function pkgRank(p) {
+  if (!p.isPackage) return 10 + p.outsideOrder;
+  if (pkgStaged(p)) return 0;
+  const on = packageEnabledAfter(p);
+  return p.kind === "repo" ? (on ? 1 : 2) : (on ? 3 : 4);
+}
+const orderedPackages = () => [...packages.values()].sort((a, b) => pkgRank(a) - pkgRank(b) || a.label.localeCompare(b.label));
+function sortedRows(p) {
+  const rows = [...p.rows];
+  const byName = (a, b) => a.short.localeCompare(b.short);
+  const idx = (m) => (m.index === null ? Infinity : m.index);
+  const uses = (m) => (m.usage ? m.usage.usage_count : 0);
+  const cost = (m) => ((m.costAfter || m.cost) ? (m.costAfter || m.cost).full_cost : -1);
+  if (S.sort === "listing") rows.sort((a, b) => idx(a) - idx(b) || byName(a, b));
+  else if (S.sort === "usage") rows.sort((a, b) => uses(b) - uses(a) || byName(a, b));
+  else if (S.sort === "rank") rows.sort((a, b) => b.rank - a.rank || byName(a, b));
+  else if (S.sort === "cost") rows.sort((a, b) => cost(b) - cost(a) || byName(a, b));
+  else rows.sort(byName);
+  return rows;
+}
+
+// ---- Cursor ----------------------------------------------------------------------------------
+let NAV = [];
+const navIndex = (id) => NAV.findIndex((n) => n.id === id);
+const cursorNode = () => { const i = navIndex(S.cursorId); return i >= 0 ? NAV[i] : null; };
+function resolveCursor() {
+  if (!NAV.length) { S.cursorId = null; return; }
+  if (S.hiddenCursorId && !S.cursorTouched && navIndex(S.hiddenCursorId) >= 0) { S.cursorId = S.hiddenCursorId; S.hiddenCursorId = null; }
+  let i = navIndex(S.cursorId);
+  if (i < 0) {
+    if (S.cursorId) { S.hiddenCursorId = S.cursorId; S.cursorTouched = false; }
+    i = Math.max(0, Math.min(S.lastIndex, NAV.length - 1));
+    S.cursorId = NAV[i].id;
+  }
+  S.lastIndex = i;
+}
+function setCursor(id, { touched = true, scroll = true } = {}) {
+  if (touched) { S.cursorTouched = true; S.hiddenCursorId = null; }
+  S.cursorId = id;
+  paintCursor(scroll);
+}
+function moveCursor(delta) {
+  if (!NAV.length) return;
+  const i = navIndex(S.cursorId);
+  const j = i < 0 ? (delta > 0 ? 0 : NAV.length - 1) : Math.max(0, Math.min(NAV.length - 1, i + delta));
+  setCursor(NAV[j].id);
+}
+function jumpCursor(toEnd) { if (NAV.length) setCursor(NAV[toEnd ? NAV.length - 1 : 0].id); }
+function nextPackage(dir) {
+  const i = navIndex(S.cursorId);
+  for (let j = i + dir; j >= 0 && j < NAV.length; j += dir) if (NAV[j].kind === "pkg") { setCursor(NAV[j].id); return; }
+  jumpCursor(dir > 0);
+}
+function halfPage(dir) { moveCursor(dir * Math.max(1, Math.floor(innerHeight / 36 / 2))); }
+function paintCursor(scroll = true) {
+  document.querySelectorAll("tr.cur").forEach((tr) => tr.classList.remove("cur"));
+  const n = cursorNode();
+  if (n) {
+    S.lastIndex = NAV.indexOf(n);
+    if (n.tr) { n.tr.classList.add("cur"); if (scroll) n.tr.scrollIntoView({ block: "nearest" }); }
+  }
+  renderInspector();
+  renderStatus();
+}
+
+// ---- DOM helpers -----------------------------------------------------------------------------
+const $ = (id) => document.getElementById(id);
+const SVG_NS = "http://www.w3.org/2000/svg";
+function h(tag, attrs, ...children) {
+  const el = document.createElement(tag);
+  if (attrs) for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") el.className = v;
+    else if (k === "text") el.textContent = v;
+    else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+    else if (v !== null && v !== undefined && v !== false) el.setAttribute(k, v === true ? "" : v);
+  }
+  for (const c of children) if (c !== null && c !== undefined && c !== false) el.append(c);
+  return el;
+}
+function s(tag, attrs, ...children) {
+  const el = document.createElementNS(SVG_NS, tag);
+  if (attrs) for (const [k, v] of Object.entries(attrs)) {
+    if (k === "text") el.textContent = v;
+    else if (v !== null && v !== undefined && v !== false) el.setAttribute(k, v);
+  }
+  for (const c of children) if (c !== null && c !== undefined && c !== false) el.append(c);
+  return el;
+}
+const put = (el, ...nodes) => el.replaceChildren(...nodes.filter((n) => n !== null && n !== undefined && n !== false));
+const kbd = (k) => h("kbd", { text: k });
+let toastEl = null;
+function toast(text) {
+  if (toastEl) toastEl.remove();
+  const el = h("div", { class: "toast", text });
+  toastEl = el;
+  document.body.append(el);
+  setTimeout(() => { if (toastEl === el) { el.remove(); toastEl = null; } }, 3000);
+}
+
+const AGE_MS = Date.now() - Date.parse(SNAP.captured_at);
+const ageText = () => { const m = AGE_MS / 60000; return m < 60 ? `${Math.max(0, Math.round(m))}m` : m < 48 * 60 ? `${Math.round(m / 60)}h` : `${Math.round(m / 1440)}d`; };
+const stagingBlocked = () => (!SNAP.binary_hash_matched ? "binary hash mismatch (V10): staging and export are disabled for this snapshot" : null);
+const exportBlocked = () => stagingBlocked() || (PARITY_PROBLEMS.length ? "browser and Python disagree on admission; export is disabled until they agree" : null) || (ops.size === 0 ? "nothing staged" : null);
+const CAPTURE_PARITY = captureParity();
+const captureDrift = () => (CAPTURE_PARITY ? CAPTURE_PARITY.mismatches.length + CAPTURE_PARITY.notCaptured.length : 0);
+
+// ---- Render orchestration --------------------------------------------------------------------
+function render() {
+  renderTopRight();
+  renderBanners();
+  renderViewBar();
+  renderQueryBar();
+  renderSummary();
+  renderBudgetPanel();
+  renderMain();
+  resolveCursor();
+  paintCursor(false);
+  renderDiag();
+}
+
+function renderTopRight() {
+  const level = !SNAP.binary_hash_matched || PARITY_PROBLEMS.length ? "bad" : (AGE_MS > 12 * 3600000 || captureDrift() ? "warn" : "ok");
+  const chip = h("span", { class: "health-chip", title: `captured ${SNAP.captured_at} · git ${String(SNAP.git_rev).slice(0, 8)}${SNAP.git_dirty ? " dirty" : ""} · ${SNAP.model}` },
+    h("span", { class: `dot ${level}` }), `snapshot ${ageText()}`, h("span", { class: "t3", text: "·" }),
+    `Claude ${SNAP.binary_version} ${SNAP.binary_hash_matched ? "✓" : "✗"}`, SNAP.git_dirty ? h("span", { class: "t3", text: "· git dirty" }) : null);
+  const theme = document.documentElement.getAttribute("data-theme") || "system";
+  put($("top-right"), chip,
+    h("button", { type: "button", class: "ghost", title: "t cycles light, dark, system", onclick: cycleTheme }, kbd("t"), ` ${theme} theme`),
+    h("button", { type: "button", class: "ghost", title: "keyboard help", onclick: () => openModal("help") }, kbd("?"), " help"));
+}
+function cycleTheme() {
+  const root = document.documentElement;
+  const cur = root.getAttribute("data-theme") || "system";
+  const next = cur === "system" ? "light" : cur === "light" ? "dark" : "system";
+  setTheme(next);
+}
+function setTheme(mode) {
+  if (mode === "system") document.documentElement.removeAttribute("data-theme");
+  else document.documentElement.setAttribute("data-theme", mode);
+  renderTopRight();
+  if (S.view === "skills" && S.lens === "budget") renderBudgetPanel();
+}
+
+function renderBanners() {
+  const out = [];
+  const add = (cls, ...nodes) => out.push(h("div", { class: `banner ${cls}` }, ...nodes));
+  if (!SNAP.binary_hash_matched) add("bad", h("b", { text: "Claude Code binary hash differs" }), ` from the constants used for this simulation (recorded for ${SNAP.binary_version}). Admission numbers are untrusted and apply will reject this snapshot under V10. Regenerate with a supported binary before exporting decisions. Inventory and provenance browsing still work; staging and export are disabled.`);
+  const hours = AGE_MS / 3600000;
+  if (hours >= 24) add("warn", h("b", { text: `Snapshot is ${Math.round(hours)}h old.` }), " skill-console apply will refuse it unless run with --allow-stale. Regenerate before making decisions when possible.");
+  else if (hours >= 12) add("warn", h("b", { text: `Snapshot captured ${Math.round(hours)}h ago.` }), " Usage rank, plugin state, settings, and source trees may have changed.");
+  if (envBudgetActive) add("info", `SLASH_COMMAND_TOOL_CHAR_BUDGET=${SNAP.budget_env_override} overrides the computed budget${SNAP.budget_env_override < 0 ? " (negative, mirrored as the binary does)" : ""}; changing the fraction has no runtime effect.`);
+  if (CAPTURE_PARITY && captureDrift()) {
+    const links = h("span", { class: "links" }, ...CAPTURE_PARITY.mismatches.slice(0, 8).map((n) => {
+      const m = modelByName.get(n);
+      return h("a", { href: "#", class: "mono", text: n, onclick: (ev) => { ev.preventDefault(); if (m) revealSkill(m); } });
+    }));
+    add("warn", h("b", { text: `Simulation differs from the captured listing on ${CAPTURE_PARITY.mismatches.length} row(s)` }),
+      `${CAPTURE_PARITY.notCaptured.length ? `, and ${CAPTURE_PARITY.notCaptured.length} listed row(s) are absent from the capture` : ""}. The inventory may have moved since the capture (${CAPTURE_PARITY.at}). `, links);
+  }
+  (DATA.warnings || []).forEach((w) => add("warn", w));
+  PARITY_PROBLEMS.forEach((p) => add("bad", h("b", { text: "Admission parity failure. " }), `${p}. Export is disabled until the two agree.`));
+  put($("banners"), ...out);
+  $("banners").hidden = out.length === 0;
+}
+
+function renderViewBar() {
+  const tab = (view, label, n) => h("button", { type: "button", class: S.view === view ? "on" : "", onclick: () => setView(view) }, label, h("span", { class: "n", text: String(n) }));
+  const lens = (name, label, key) => h("button", { type: "button", class: S.lens === name ? "on" : "", onclick: () => setLens(name), title: `${key} toggles the lens` }, label);
+  put($("viewbar"),
+    h("div", { class: "tabs" }, tab("skills", "Skills", models.length), tab("packages", "Packages", [...packages.values()].filter((p) => p.isPackage).length), tab("changes", "Changes", ops.size)),
+    S.view === "skills" ? h("span", { class: "lens-label", text: "Lens" }) : null,
+    S.view === "skills" ? h("div", { class: "tabs" }, lens("management", "Management", "b"), lens("budget", "Claude budget", "b")) : null,
+    h("span", { class: "spacer" }),
+    h("span", { class: "t3 meta" }, "Export only downloads a decisions JSON; ", h("code", { text: "skill-console apply FILE" }), " changes files."));
+}
+function setView(view) { S.view = view; S.pinnedId = null; render(); }
+function setLens(lens) { S.lens = lens; render(); }
+
+let searchInput = null;
+function renderQueryBar() {
+  if (!searchInput) {
+    searchInput = h("input", { type: "search", id: "search", placeholder: "Search names, descriptions, packages, paths  ( / )", autocomplete: "off", spellcheck: "false" });
+    searchInput.addEventListener("input", () => { S.search = searchInput.value; onSearchChanged(); });
+    searchInput.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter") { ev.preventDefault(); searchInput.blur(); const first = NAV.find((n) => n.kind === "skill"); if (first) setCursor(first.id); setMode("NORMAL"); }
+    });
+    searchInput.addEventListener("focus", () => setMode("SEARCH"));
+    searchInput.addEventListener("blur", () => { if (S.mode === "SEARCH") setMode("NORMAL"); });
+  }
+  if (S.view === "changes") { put($("querybar")); $("querybar").hidden = true; return; }
+  $("querybar").hidden = false;
+  const f = S.filters;
+  const chip = (label, on, onclick, title) => h("button", { type: "button", class: `chip${on ? " on" : ""}`, onclick, title }, label, on ? h("span", { class: "x", text: "×" }) : null);
+  const stateChip = (state, label) => chip(label, f.state === state, () => { f.state = f.state === state ? "any" : state; render(); });
+  const originSel = h("select", { title: "origin" }, ...FILTER_ORIGINS.map((o) => h("option", { value: o, text: o === "any" ? "origin: any" : `origin: ${o}`, selected: f.origin === o })));
+  originSel.addEventListener("change", () => { f.origin = originSel.value; render(); });
+  const sorts = [["name", "sort: name"], ["listing", "sort: Claude listing order"], ["usage", "sort: usage"], ["rank", "sort: rank"], ["cost", "sort: full cost"]];
+  const sortSel = h("select", { title: "sort (presentation only; never changes admission)" }, ...sorts.map(([v, t]) => h("option", { value: v, text: t, selected: S.sort === v })));
+  sortSel.addEventListener("change", () => { S.sort = sortSel.value; render(); });
+  put($("querybar"), searchInput,
+    h("div", { class: "chips" },
+      stateChip("listed", "Listed only"), stateChip("unlisted", "Unlisted"), stateChip("name-only", "Name-only"),
+      chip("Staged", f.staged, () => { f.staged = !f.staged; render(); }),
+      chip("Drift", f.drift, () => { f.drift = !f.drift; render(); }),
+      originSel,
+      activeFilterCount() || S.search ? h("button", { type: "button", class: "ghost small", text: "Clear", onclick: clearFilters }) : null),
+    h("span", { class: "spacer" }),
+    S.view === "packages" ? null : sortSel);
+}
+function clearFilters() {
+  S.filters = { state: "any", origin: "any", staged: false, drift: false };
+  S.search = "";
+  if (searchInput) searchInput.value = "";
+  S.searchExpanded.clear();
+  render();
+}
+function onSearchChanged() {
+  S.searchExpanded.clear();
+  const q = S.search.trim().toLowerCase();
+  if (q) packages.forEach((p) => { if (p.rows.some((m) => rowPasses(m))) S.searchExpanded.add(p.key); });
+  render();
+}
+
+function renderSummary() {
+  const line = (cls, lbl, adm, tail) => h("div", { class: `line ${cls}` }, h("span", { class: "lbl", text: lbl }),
+    h("span", null, h("b", { class: "n", text: fmt(adm.full.length + adm.name_only.length) }), h("span", { class: "u", text: "listed" })),
+    h("span", null, h("b", { class: "n", text: fmt(adm.full.length) }), h("span", { class: "u", text: "full" })),
+    h("span", null, h("b", { class: "n", text: fmt(adm.name_only.length) }), h("span", { class: "u", text: "name-only" })),
+    h("span", null, h("b", { class: "n", text: fmt(adm.rendered_chars) }), h("span", { class: "u", text: `/ ${fmt(adm.budget)} chars` })),
+    tail);
+  const rows = [line("", "Claude listing", BEFORE, h("span", { class: "u", text: BEFORE.all_pinned ? "priority, every row pinned" : BEFORE.mode }))];
+  if (ops.size) {
+    const d = AFTER.full.length - BEFORE.full.length;
+    const parts = [];
+    if (d) parts.push(`${signed(d)} full`);
+    if (AFTER.mode !== BEFORE.mode) parts.push(`now ${AFTER.mode}`);
+    if (!parts.length) parts.push(`${signed(AFTER.headroom_chars - BEFORE.headroom_chars)} headroom, no listing state changes`);
+    rows.push(line("staged", "Staged result", AFTER, h("span", { class: "delta", text: parts.join(" · ") })));
+  }
+  if (S.view === "skills" && S.lens === "management") rows.push(h("div", { class: "hint" }, kbd("b"), " opens the Claude budget lens: admission strips, costs, and the effect of staged changes."));
+  put($("summary"), ...rows);
+}
+
+// ---- Budget lens panel -----------------------------------------------------------------------
+// Segments follow the greedy loop, not the listing: pinned rows first, then candidates by rank with
+// the admitted ones before the ones that fell off. Every rendered row is a solid segment (a name-only
+// row is its name-only stub) so the solid run ends exactly at rendered_chars; the hatched ghosts that
+// follow are the unadmitted description costs, so the run of ghosts ends at demand.
+function barSegments(entries, adm) {
+  const rendered = adm.rendered || {};
+  const pinned = [], candidates = [];
+  entries.forEach((e, i) => ((e.forced_name_only || e.protected) ? pinned : candidates).push({ e, i }));
+  candidates.sort((a, b) => (b.e.rank - a.e.rank) || (a.i - b.i));
+  const admitted = candidates.filter((c) => rendered[c.e.name] === "full");
+  const skipped = candidates.filter((c) => rendered[c.e.name] !== "full");
+  const solid = [
+    ...pinned.map((c) => ({ ...c, kind: c.e.forced_name_only ? "forced" : "protected", cost: c.e.forced_name_only ? c.e.name_only_cost : c.e.full_cost })),
+    ...admitted.map((c) => ({ ...c, kind: "full", cost: c.e.full_cost })),
+    ...skipped.map((c) => ({ ...c, kind: "name-only", cost: c.e.name_only_cost })),
+  ];
+  const segs = [];
+  let x = 0;
+  solid.forEach((c, k) => {
+    const span = c.cost + (k < solid.length - 1 ? 1 : 0);
+    segs.push({ name: c.e.name, kind: c.kind, cost: c.cost, start: x, end: x + span, ghost: false, entry: c.e });
+    x += span;
+  });
+  skipped.forEach((c) => { segs.push({ name: c.e.name, kind: "name-only", cost: c.e.full_cost, start: x, end: x + c.e.upgrade_cost, ghost: true, entry: c.e }); x += c.e.upgrade_cost; });
+  return segs;
+}
+function niceStep(span) {
+  const raw = span / 6, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  return [1, 2, 2.5, 5, 10].map((k) => k * mag).find((st) => st >= raw) || 10 * mag;
+}
+
+function renderBudgetPanel() {
+  const panel = $("budget-panel");
+  const show = S.view === "skills" && S.lens === "budget";
+  panel.hidden = !show;
+  if (!show) return;
+  put(panel, h("div", { class: "viz", id: "viz" }), h("div", { class: "legend", id: "legend" }), h("div", { class: "consequences", id: "consequences" }));
+  drawStrips();
+  renderConsequences();
+}
+
+let stripIndex = [];
+function drawStrips() {
+  const viz = $("viz");
+  if (!viz) return;
+  const width = viz.clientWidth;
+  if (!width) return;
+  put(viz);
+  stripIndex = [];
+  const bars = ops.size ? [["current", BEFORE_ENTRIES, BEFORE], ["staged", AFTER_ENTRIES, AFTER]] : [["current", BEFORE_ENTRIES, BEFORE]];
+  const layouts = bars.map(([label, entries, adm]) => ({ label, adm, segs: barSegments(entries, adm) }));
+  const domain = Math.max(1, ...layouts.map((l) => Math.max(l.adm.budget, l.adm.demand_chars, l.adm.rendered_chars))) * 1.02;
+  const left = 60, right = 6, plotW = Math.max(50, width - left - right);
+  const px = (chars) => left + (chars / domain) * plotW;
+  const barH = 16, gap = 10, top = 20, axisH = 24;
+  const H = top + layouts.length * barH + (layouts.length - 1) * gap + axisH;
+  const svg = s("svg", { width, height: H, viewBox: `0 0 ${width} ${H}` });
+  svg.append(s("defs", null, s("pattern", { id: "hatch", width: 6, height: 6, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" },
+    s("rect", { width: 6, height: 6, fill: "var(--track)" }), s("line", { x1: 0, y1: 0, x2: 0, y2: 6, stroke: "var(--nameonly)", "stroke-width": 2 }))));
+  const fillFor = (seg) => (seg.ghost ? "url(#hatch)" : seg.kind === "name-only" ? "var(--nameonly)" : seg.kind === "protected" ? "var(--prot)" : seg.kind === "forced" ? "var(--text-3)" : "var(--full)");
+  const last = layouts[layouts.length - 1].adm;
+  const demandX = last.demand_chars > last.budget ? px(last.demand_chars) : null;
+  const step = niceStep(domain);
+  for (let v = 0; v <= domain; v += step) {
+    const x = px(v);
+    svg.append(s("line", { x1: x, x2: x, y1: H - axisH + 3, y2: H - axisH + 7, stroke: "var(--border-2)" }));
+    if (demandX !== null && Math.abs(x - demandX) < 64) continue;
+    svg.append(s("text", { x, y: H - 6, "text-anchor": v === 0 ? "start" : "middle", text: v >= 1000 ? `${Math.round(v / 1000)}k` : String(v) }));
+  }
+  layouts.forEach((l, bi) => {
+    const y = top + bi * (barH + gap);
+    const budgetX = px(l.adm.budget);
+    svg.append(s("text", { class: "lbl", x: left - 10, y: y + barH / 2 + 4, "text-anchor": "end", text: l.label }));
+    svg.append(s("rect", { x: px(0), y, width: Math.max(0, budgetX - px(0)), height: barH, rx: 3, fill: "var(--track)" }));
+    const clipId = `clip-${bi}`;
+    svg.append(s("defs", null, s("clipPath", { id: clipId }, s("rect", { x: px(0), y: y - 1, width: plotW + 2, height: barH + 2, rx: 3 }))));
+    const g = s("g", { "clip-path": `url(#${clipId})` });
+    l.segs.forEach((seg) => {
+      const x0 = px(seg.start), w = px(seg.end) - x0, sg = Math.min(2, w * 0.4);
+      const rect = s("rect", { x: x0 + sg / 2, y, width: Math.max(0.3, w - sg), height: barH, fill: fillFor(seg), class: `seg${seg.ghost ? " ghost" : ""}`, "data-name": seg.name });
+      g.append(rect);
+    });
+    svg.append(g);
+    if (l.adm.demand_chars > l.adm.budget) svg.append(s("line", { x1: px(l.adm.demand_chars), x2: px(l.adm.demand_chars), y1: y - 2, y2: y + barH + 2, stroke: "var(--text-3)", "stroke-width": 1 }));
+    svg.append(s("line", { x1: budgetX, x2: budgetX, y1: y - 4, y2: y + barH + 4, stroke: "var(--rule)", "stroke-width": 2 }));
+    if (bi === 0 || l.adm.budget !== layouts[0].adm.budget) {
+      const flip = budgetX > width - 150;
+      svg.append(s("text", { class: "cutlbl", x: budgetX + (flip ? -6 : 6), y: y - 8, "text-anchor": flip ? "end" : "start", text: `budget character boundary ${fmt(l.adm.budget)}` }));
+    }
+    if (bi === layouts.length - 1 && demandX !== null) svg.append(s("text", { x: demandX, y: H - 6, "text-anchor": demandX > width - 90 ? "end" : "middle", text: `demand ${fmt(l.adm.demand_chars)}` }));
+    const hit = s("rect", { x: 0, y: y - 4, width, height: barH + 8, fill: "transparent", style: "cursor: pointer" });
+    svg.append(hit);
+    const idx = { y, segs: l.segs, starts: l.segs.map((seg) => seg.start), hit, px, toChars: (x) => ((x - left) / plotW) * domain };
+    stripIndex.push(idx);
+    hit.addEventListener("pointermove", (ev) => hoverStrip(idx, ev));
+    hit.addEventListener("pointerleave", () => hoverStrip(null));
+    hit.addEventListener("click", (ev) => { const seg = segmentAt(idx, ev); const m = seg && modelByName.get(seg.name); if (m) revealSkill(m); });
+  });
+  viz.append(svg);
+  const kinds = new Set();
+  layouts.forEach((l) => l.segs.forEach((seg) => kinds.add(seg.ghost ? "ghost" : seg.kind)));
+  const item = (bg, label) => h("span", null, h("i", { style: `background:${bg}` }), label);
+  put($("legend"), item("var(--full)", "full"), kinds.has("name-only") ? item("var(--nameonly)", "name-only stub") : null,
+    kinds.has("ghost") ? item("repeating-linear-gradient(45deg, var(--nameonly) 0 1.5px, var(--track) 1.5px 5px)", "description demand not admitted") : null,
+    kinds.has("protected") ? item("var(--prot)", "protected") : null, kinds.has("forced") ? item("var(--text-3)", "forced name-only") : null,
+    h("span", null, h("i", { class: "cut" }), "budget character boundary"), h("span", { class: "t3", text: "thin marker: total demand · a candidate can be skipped and a later, cheaper one admitted" }));
+}
+function segmentAt(idx, ev) {
+  const rect = idx.hit.getBoundingClientRect();
+  const chars = idx.toChars(ev.clientX - rect.left);
+  let lo = 0, hi = idx.starts.length - 1, at = -1;
+  while (lo <= hi) { const mid = (lo + hi) >> 1; if (idx.starts[mid] <= chars) { at = mid; lo = mid + 1; } else hi = mid - 1; }
+  const seg = at >= 0 ? idx.segs[at] : null;
+  return seg && chars < seg.end ? seg : null;
+}
+let tipEl = null;
+function hoverStrip(idx, ev) {
+  const viz = $("viz");
+  if (!viz) return;
+  viz.querySelectorAll(".seg.lit").forEach((r) => r.classList.remove("lit"));
+  const seg = idx ? segmentAt(idx, ev) : null;
+  if (!seg) { if (tipEl) { tipEl.remove(); tipEl = null; } return; }
+  viz.querySelectorAll(`.seg[data-name="${CSS.escape(seg.name)}"]`).forEach((r) => r.classList.add("lit"));
+  const m = modelByName.get(seg.name), e = seg.entry;
+  const state = seg.ghost || seg.kind === "name-only" ? "name-only" : seg.kind === "forced" ? "forced name-only" : "full";
+  const l2 = [state, seg.kind === "protected" ? "protected" : (seg.ghost || seg.kind === "name-only" ? "skipped" : "admitted"), `rank ${Number(e.rank).toFixed(2)}`, m && m.index !== null ? `#${m.index + 1} in listing` : null].filter(Boolean);
+  if (!tipEl) { tipEl = h("div", { class: "tip" }); viz.append(tipEl); }
+  put(tipEl, h("div", null, h("b", { text: `${fmt(seg.cost)} chars` }), "  ", h("span", { class: "mono", text: seg.name })), h("div", { class: "dim", text: l2.join(" · ") }),
+    seg.ghost || seg.kind === "name-only" ? h("div", { class: "dim", text: `${fmt(e.name_only_cost)} rendered · description would add ${fmt(e.upgrade_cost)}` }) : null);
+  tipEl.style.left = `${Math.max(120, Math.min(viz.clientWidth - 120, (idx.px(seg.start) + idx.px(seg.end)) / 2))}px`;
+  tipEl.style.top = `${idx.y}px`;
+}
+function renderConsequences() {
+  const box = $("consequences");
+  if (!box) return;
+  if (!ops.size) { put(box, h("div", { class: "t3", text: "Nothing staged. The strip shows the current listing; stage a change to compare current and staged admission." })); return; }
+  const p = PREDICTED;
+  const bSet = new Set(BEFORE.full.concat(BEFORE.name_only)), aSet = new Set(AFTER.full.concat(AFTER.name_only));
+  const groups = [["newly full", p.newly_admitted], ["dropped to name-only", p.newly_dropped],
+    ["added to listing", AFTER.full.concat(AFTER.name_only).filter((n) => !bSet.has(n))], ["removed from listing", BEFORE.full.concat(BEFORE.name_only).filter((n) => !aSet.has(n))]].filter(([, names]) => names.length);
+  if (!groups.length) {
+    const d = BEFORE.rendered_chars - AFTER.rendered_chars;
+    put(box, h("div", { text: d > 0 ? `${fmt(d)} characters reclaimed; no listing state changes.` : d < 0 ? `${fmt(-d)} more characters used; no listing state changes.` : "No listing state changes." }));
+    return;
+  }
+  put(box, ...groups.map(([k, names]) => h("div", null, h("span", { class: "k", text: `${k} (${names.length})` }),
+    ...names.map((n) => h("a", { href: "#", class: "mono", text: n, onclick: (ev) => { ev.preventDefault(); const m = modelByName.get(n); if (m) revealSkill(m); } })))));
+}
+
+// ---- Main views ------------------------------------------------------------------------------
+function renderMain() {
+  NAV = [];
+  const main = $("main");
+  if (S.view === "skills") renderSkillsView(main);
+  else if (S.view === "packages") renderPackagesView(main);
+  else renderChangesView(main);
+  const inspector = S.inspectorOpen && S.view !== "changes";
+  $("layout").classList.toggle("with-inspector", inspector);
+  $("inspector").hidden = !inspector;
+}
+const MGMT_COLS = ["", "Skill", "Invocation", "Harnesses", "Usage", "Provenance", "Health"];
+const BUDGET_COLS = ["", "Skill", "Listing", "Usage · rank", "Rendered", "Full cost", "Decision", "Effect"];
+const MGMT_WIDTHS = [26, null, 150, 84, 118, 168, 100];
+const BUDGET_WIDTHS = [26, null, 156, 160, 76, 76, 126, 110];
+function headerRow(cols, widths) {
+  const thead = h("thead", null, h("tr", null, ...cols.map((c, i) => h("th", { class: i === 0 ? "gut" : (["Rendered", "Full cost"].includes(c) ? "n" : ""), text: c }))));
+  if (!widths) return thead;
+  return [h("colgroup", null, ...widths.map((w) => h("col", { style: w ? `width:${w}px` : null }))), thead];
+}
+
+function renderSkillsView(main) {
+  const q = S.search.trim().toLowerCase();
+  const cols = S.lens === "budget" ? BUDGET_COLS : MGMT_COLS;
+  const out = [];
+  [["Packages", (p) => p.isPackage, "repo packages and third-party plugins"], ["Outside packages", (p) => !p.isPackage, "project skills, user skills, commands, built-ins"]].forEach(([title, pred, sub]) => {
+    const bodies = [];
+    orderedPackages().filter(pred).forEach((p) => {
+      const rows = sortedRows(p).filter(rowPasses);
+      if (!rows.length && (q || activeFilterCount()) && !(q && p.label.toLowerCase().includes(q))) return;
+      const tbody = h("tbody");
+      const open = isExpanded(p);
+      const ptr = pkgRow(p, rows, open, cols.length);
+      tbody.append(ptr);
+      NAV.push({ id: p.id, kind: "pkg", p, tr: ptr });
+      if (open) rows.forEach((m) => { const tr = skillRow(m, p, q); tbody.append(tr); NAV.push({ id: m.id, kind: "skill", m, p, tr }); });
+      bodies.push(tbody);
+    });
+    if (bodies.length) out.push(h("h2", { class: "section-title" }, title, h("span", { class: "t3", text: sub })), h("table", { class: "grid fixed" }, ...headerRow(cols, S.lens === "budget" ? BUDGET_WIDTHS : MGMT_WIDTHS), ...bodies));
+  });
+  if (!out.length) out.push(emptyState());
+  put(main, ...out);
+}
+
+function pkgRow(p, rows, open, span) {
+  const c = pkgCounts(p);
+  const hs = harnessStates(p);
+  const hz = (x) => `${x.h === "C" ? "Claude" : x.h === "X" ? "Codex" : "pi"} ${x.on === null ? "?" : x.on ? "on" : "off"}`;
+  const health = pkgHealth(p);
+  const kind = p.kind === "repo" ? "repo package" : p.kind === "third-party" ? "third-party plugin" : "outside packages";
+  const parts = [kind, `${c.total} skill${c.total === 1 ? "" : "s"}${c.local || c.vendor ? `: ${c.local} local, ${c.vendor} vendor` : ""}`];
+  parts.push(`${c.listedA} listed${c.nameOnlyA ? ` (${c.nameOnlyA} name-only)` : ""}`, `model-visible ${c.modelOn}`);
+  if (p.isPackage) parts.push(hs.map(hz).join(" · "));
+  if (p.kind === "repo") parts.push(`trees ${c.trees.source}/${c.trees.marketplace}/${c.trees.cache}`);
+  const meta = h("span", { class: "pmeta" });
+  parts.forEach((t, i) => { if (i) meta.append(h("span", { class: "sep", text: "·" })); meta.append(t); });
+  meta.append(h("span", { class: "sep", text: "·" }), h("span", { class: health.level, text: health.level === "warn" ? `${health.label} ⚠` : health.label }));
+  if (c.staged) meta.append(h("span", { class: "sep", text: "·" }), h("span", { class: "sel" }, h("i", { class: "mark staged" }), ` ${c.staged} staged`));
+  if (rows.length < c.total && (S.search || activeFilterCount())) meta.append(h("span", { class: "plabel", text: `showing ${rows.length} of ${c.total}` }));
+  const prow = h("div", { class: "prow" }, h("div", { class: "ptext" }, h("span", { class: "pname" }, h("span", { class: "mono", text: p.label })), meta));
+  const td = h("td", { colspan: span - 1, title: p.kind === "repo" ? "trees = source / rendered marketplace / loaded cache" : null }, prow);
+  if (p.isPackage && !packageRefusal(p, "set_package_enabled")) {
+    const on = packageEnabledAfter(p);
+    prow.append(h("button", { type: "button", class: "small pact", text: on ? "Disable Claude" : "Enable Claude", onclick: (ev) => { ev.stopPropagation(); setCursor(p.id); stagePackage(p, "set_package_enabled"); } }));
+  } else if (!p.isPackage && p.key === "builtin") prow.append(h("span", { class: "pact prot meta", text: "protected · read-only" }));
+  const tr = h("tr", { class: `nav pkg${open ? " open" : ""}`, "data-id": p.id, tabindex: "-1" }, h("td", { class: "gut" }, h("span", { class: "chev" })), td);
+  tr.addEventListener("click", (ev) => { if (ev.target.closest("button")) return; setCursor(p.id, { scroll: false }); togglePackage(p); });
+  return tr;
+}
+
+function skillRow(m, p, q) {
+  const tr = h("tr", { class: `nav skill${getOp("delete_skill", m.name) ? " deleted" : ""}`, "data-id": m.id, tabindex: "-1" });
+  const marks = [];
+  if (isChanged(m)) marks.push(h("i", { class: "mark staged", title: "staged or affected by a staged change" }));
+  if (m.health.level === "warn") marks.push(h("i", { class: "mark warn", title: m.health.detail }));
+  tr.append(h("td", { class: "gut" }, ...marks));
+  const flags = [];
+  if (m.protected) flags.push("protected");
+  if (m.forced) flags.push("forced name-only");
+  if (m.row.capped || (m.cost && m.cost.capped)) flags.push(`capped at ${fmt(MAX_DESC_CHARS)}`);
+  if (m.row.width_divergent) flags.push("width≠length");
+  if (m.row.derived_description) flags.push("derived");
+  if (!m.measurable && m.text !== null) flags.push("unmeasurable");
+  const excerpt = (m.desc || "").split("\n")[0];
+  tr.append(h("td", { class: "skill" },
+    h("div", { class: "nm" }, q && m.pkg ? h("span", { class: "pfx", text: `${m.pkg}:` }) : null, m.short,
+      flags.length ? h("span", { class: `flags${m.protected ? " prot" : ""}`, text: flags.join(" · ") }) : null),
+    h("div", { class: `desc${excerpt ? "" : " none"}`, text: excerpt || "no description", title: excerpt })));
+  if (S.lens === "budget") {
+    const b = listingBefore(m), a = listingAfter(m);
+    const dot = a === "full" ? (m.protected ? "protected" : "") : a === "name-only" ? "name-only" : "unlisted";
+    const why = a === "unlisted" ? unlistedWhy(m) : null;
+    tr.append(h("td", { class: "listing" }, h("span", { class: `dot ${dot}` }), b !== a ? h("span", { class: "was", text: b }) : null, h("span", { class: b !== a ? "st" : "", text: a }), why ? h("span", { class: "why", text: why }) : null));
+    tr.append(h("td", { class: "usage", title: `rank ${m.rank.toFixed(2)} (usage-weighted routing evidence)` }, usageText(m), h("span", { class: "t3 mono", text: m.rank.toFixed(2) })));
+    const c = listedAfter(m) ? (m.costAfter || m.cost) : null;
+    const rendered = c ? (a === "full" ? c.full_cost : c.name_only_cost) : null;
+    tr.append(h("td", { class: "n num", text: rendered === null ? "—" : fmt(rendered) }));
+    const full = c ? c.full_cost : (m.cost ? m.cost.full_cost : (m.measurable && m.text ? fullCostFor(safeWidth(m.name) + 2, m.text).full_cost : null));
+    tr.append(h("td", { class: "n num", title: c ? `${fmt(c.name_only_cost)} name + ${fmt(c.upgrade_cost)} description` : "estimated" }, full === null ? "—" : (c || m.cost ? fmt(full) : `~${fmt(full)}`)));
+    tr.append(h("td", { class: "decision", text: decision(m) }));
+    const e = effect(m);
+    tr.append(h("td", { class: "effect" }, e ? h("span", { class: e.cls, text: e.label }) : h("span", { class: "t3", text: "—" })));
+  } else {
+    const inv = invocation(m);
+    const invSpan = (label, v, staged) => h("span", { class: staged ? "st" : (v === false ? "off" : ""), title: staged ? "staged" : "" }, staged ? "● " : "", `${label} ${v === null ? "?" : v ? "on" : "off"}`);
+    tr.append(h("td", { class: "inv" }, invSpan("model", inv.model, inv.modelStaged), " · ", invSpan("user", inv.user, inv.userStaged)));
+    tr.append(h("td", { class: "harn" }, ...harnessStates(p).map((x) => h("b", { class: x.on === null ? "unk" : x.on ? "" : "off", title: `${x.h === "C" ? "Claude" : x.h === "X" ? "Codex" : "pi"} ${x.on === null ? "unknown" : x.on ? "on" : "off"} · ${x.src}`, text: x.on === null ? `${x.h}?` : x.h }))));
+    tr.append(h("td", { class: "usage", text: usageText(m) }));
+    tr.append(h("td", { class: "prov", title: m.apm ? `APM dependency ${m.apm.apm_dep} owns ${m.apm.dep_owns_skills} skill(s)` : "" }, m.prov, m.apm ? h("span", { class: "t3", text: ` · dep owns ${m.apm.dep_owns_skills}` }) : null));
+    tr.append(h("td", { class: "health" }, h("span", { class: m.health.level, title: m.health.detail, text: m.health.label })));
+  }
+  tr.addEventListener("click", () => { S.inspectorOpen = true; if (!$("layout").classList.contains("with-inspector")) renderMain(); setCursor(m.id, { scroll: false }); });
+  return tr;
+}
+
+function emptyState() {
+  if (!models.length) return h("div", { class: "empty" }, h("b", { text: "No skills were found in this snapshot." }), h("div", { text: "Check the render command's project root and plugin discovery output." }));
+  const what = [S.search ? `“${S.search}”` : null, S.filters.state !== "any" ? S.filters.state : null, S.filters.origin !== "any" ? `origin ${S.filters.origin}` : null, S.filters.staged ? "staged" : null, S.filters.drift ? "drift" : null].filter(Boolean).join(", ");
+  return h("div", { class: "empty" }, h("b", { text: `No skills match ${what}.` }), " ", h("button", { type: "button", class: "small", text: "Clear filters", onclick: clearFilters }));
+}
+
+function togglePackage(p) { const open = isExpanded(p); S.expanded.set(p.key, !open); if (open) S.searchExpanded.delete(p.key); render(); }
+function setAllExpanded(v) { packages.forEach((p) => S.expanded.set(p.key, v)); if (!v) S.searchExpanded.clear(); render(); }
+function revealSkill(m) {
+  if (!rowPasses(m)) { S.filters = { state: "any", origin: "any", staged: false, drift: false }; S.search = ""; if (searchInput) searchInput.value = ""; S.searchExpanded.clear(); }
+  S.expanded.set(m.pkgModel.key, true);
+  S.view = "skills";
+  S.inspectorOpen = true;
+  render();
+  setCursor(m.id);
+  const n = cursorNode();
+  if (n && n.tr) n.tr.scrollIntoView({ block: "center" });
+}
+
+function renderPackagesView(main) {
+  const cols = ["", "Package", "Marketplace", "Skills", "Claude listed", "Model-visible", "Ship enabled by default", "Harnesses", "Claude chars", "Health", "Staged"];
+  const tbody = h("tbody");
+  const list = orderedPackages().filter((p) => p.isPackage && (!S.search || p.label.toLowerCase().includes(S.search.trim().toLowerCase()) || p.rows.some(rowPasses)));
+  list.forEach((p) => {
+    const c = pkgCounts(p), hs = harnessStates(p), health = pkgHealth(p);
+    const dl = getOp("set_default_loaded", p.name);
+    const shipped = dl ? dl.value : p.defaultLoaded;
+    const on = (x) => h("span", { class: x.on === null ? "t3" : x.on ? "" : "t3", title: x.src, text: x.on === null ? "unknown" : x.on ? "on" : "off" });
+    const tr = h("tr", { class: "nav skill", "data-id": p.id, tabindex: "-1" },
+      h("td", { class: "gut" }, c.staged ? h("i", { class: "mark staged" }) : null, health.level === "warn" ? h("i", { class: "mark warn" }) : null),
+      h("td", { class: "skill" }, h("div", { class: "nm", text: p.name }), h("div", { class: "desc", text: p.kind === "repo" ? "repo package" : "third-party plugin" })),
+      h("td", { class: "prov mono", text: p.marketplace || "unknown" }),
+      h("td", { class: "usage" }, `${c.total}`, c.local || c.vendor ? h("span", { class: "t3", text: `  ${c.local} local · ${c.vendor} vendor` }) : null),
+      h("td", { class: "usage" }, `${c.listedA}`, h("span", { class: "t3", text: `  ${c.fullA} full · ${c.nameOnlyA} name-only` })),
+      h("td", { class: "usage", text: `${c.modelOn} / ${c.total}` }),
+      h("td", { class: "inv" }, h("span", { class: dl ? "st" : (shipped === false ? "off" : ""), text: shipped === null ? "unknown" : `${dl ? "● " : ""}${shipped ? "on" : "off"}` }), h("span", { class: "t3", text: p.kind === "repo" ? "  package.toml" : "  n/a" })),
+      h("td", { class: "harn" }, ...hs.map((x) => h("b", { class: x.on === null ? "unk" : x.on ? "" : "off", title: `${x.h === "C" ? "Claude" : x.h === "X" ? "Codex" : "pi"} ${x.on === null ? "unknown" : x.on ? "on" : "off"} · ${x.src}`, text: x.on === null ? `${x.h}?` : x.h })),
+        packageEnabledOp(p) ? h("span", { class: "st", text: "● staged" }) : h("span", { class: "t3", text: hs[0].src === "enabledPlugins override" ? "override" : "" })),
+      h("td", { class: "n num", text: fmt(c.charsA) }),
+      h("td", { class: "health" }, h("span", { class: health.level, text: health.label })),
+      h("td", { class: "usage", text: c.staged ? String(c.staged) : "" }));
+    tr.addEventListener("click", () => { S.inspectorOpen = true; if (!$("layout").classList.contains("with-inspector")) renderMain(); setCursor(p.id, { scroll: false }); });
+    tbody.append(tr);
+    NAV.push({ id: p.id, kind: "pkg", p, tr });
+  });
+  put(main, h("h2", { class: "section-title" }, "Packages", h("span", { class: "t3", text: "E toggles Claude enablement, L toggles ship-by-default; Codex and pi state is derived from default_loaded because the snapshot has no per-harness record" })),
+    list.length ? h("div", { class: "tablewrap" }, h("table", { class: "grid" }, headerRow(cols), tbody)) : emptyState());
+}
+
+const SETTINGS_PATH = "home/.chezmoitemplates/claude-settings-managed.json.tmpl";
+function pkgTomlPath(p) {
+  const rec = p.rows.map((m) => m.row.source_record).find((r) => r && String(r.path).includes("/skills/"));
+  if (!rec) return "package.toml (path unknown)";
+  const path = String(rec.path);
+  return relPath(path.slice(0, path.indexOf("/skills/")) + "/package.toml");
+}
+function pkgForOp(o) {
+  const name = o.op === "set_package_enabled" ? o.key.split("@")[0] : o.key;
+  return [...packages.values()].find((p) => p.isPackage && p.name === name) || null;
+}
+function changeDetails(o) {
+  const d = { label: o.op, before: "", after: "", path: "", effect: "", warnings: [], destructive: false, target: null };
+  const listedArrow = (p) => { const c = pkgCounts(p); return `Claude listed ${c.listedB} → ${c.listedA}, full ${c.fullB} → ${c.fullA}`; };
+  if (o.op === "set_budget_fraction") {
+    Object.assign(d, { label: "skillListingBudgetFraction", before: String(o.from_value), after: String(o.to_value), path: SETTINGS_PATH, effect: `budget ${fmt(BEFORE.budget)} → ${fmt(AFTER.budget)} chars` });
+    if (envBudgetActive) d.warnings.push("SLASH_COMMAND_TOOL_CHAR_BUDGET overrides the fraction at runtime; this change has no effect until it is unset");
+  } else if (o.op === "set_package_enabled" || o.op === "set_default_loaded") {
+    const p = pkgForOp(o);
+    d.target = p;
+    d.label = o.op === "set_package_enabled" ? `enabledPlugins ${o.key}` : `package ${o.key} default_loaded`;
+    d.before = p ? String(o.op === "set_package_enabled" ? p.liveEnabled !== false : p.defaultLoaded) : "unknown";
+    d.after = String(o.value);
+    d.path = o.op === "set_package_enabled" ? SETTINGS_PATH : (p ? pkgTomlPath(p) : "");
+    d.effect = p ? `${p.rows.length} skills · ${listedArrow(p)}` : "";
+    if (o.op === "set_default_loaded") d.warnings.push("regenerates Claude, Codex, and pi policy; may also activate this package's commands, agents, hooks, and MCP servers");
+    if (p) {
+      const en = packageEnabledOp(p), dl = getOp("set_default_loaded", p.name);
+      if (en && dl && en.value !== dl.value) d.warnings.push(`enabledPlugins (${en.value}) is merged last and wins over default_loaded (${dl.value})`);
+      if (o.value === false) { const edits = rowEditsInPackage(p); if (edits.length) d.warnings.push(`${edits.length} staged skill edit(s) in this package conflict (V15): ${edits.map((m) => m.short).join(", ")}`); }
+    }
+  } else {
+    const m = modelByName.get(o.key);
+    d.target = m || null;
+    const dir = m ? skillPath(m) : "";
+    if (o.op === "set_description") {
+      Object.assign(d, { label: `${o.key} description`, before: `${fmt(o.from_chars)} chars`, after: `${fmt(o.to_chars)} chars`, path: dir ? `${dir}/SKILL.md` : "" });
+      if (m) d.effect = `${listingBefore(m)} → ${listingAfter(m)}${m.cost && m.costAfter ? ` · full cost ${fmt(m.cost.full_cost)} → ${fmt(m.costAfter.full_cost)}` : ""}`;
+    } else if (o.op === "set_frontmatter") {
+      const rec = m && (m.edit || m.live);
+      const live = rec ? (o.field === "disable-model-invocation" ? Boolean(rec.disable_model_invocation) : Boolean(rec.user_invocable)) : null;
+      Object.assign(d, { label: `${o.key} ${o.field}`, before: live === null ? "unknown" : String(live), after: String(o.value), path: dir ? `${dir}/SKILL.md` : "" });
+      if (m) d.effect = o.field === "user-invocable" ? "slash command only; listing and budget unchanged" : `${listingBefore(m)} → ${listingAfter(m)}`;
+    } else if (o.op === "delete_skill") {
+      Object.assign(d, { label: `delete ${o.key}`, before: "present", after: "removed", path: dir, destructive: true, effect: m ? `${listingBefore(m)} → removed` : "" });
+      d.warnings.push(`removes the skill directory, the apm.yml dependency ${o.apm_dep}, and its lockfile entry; apply reruns reference checks`);
+    }
+    if (m && m.origin === "repo-vendor" && o.op !== "delete_skill") d.warnings.push("temporary vendor edit: the next vendor-agent-package refresh restores upstream content");
+    if (m && (o.op === "set_description" || o.op === "set_frontmatter") && packageDisabledInBatch(m.pkgModel)) d.warnings.push("conflicts with disabling its package in this batch (V15)");
+  }
+  return d;
+}
+function describeOp(o) {
+  switch (o.op) {
+    case "set_description": return `${o.key}: description ${o.from_chars} → ${o.to_chars} chars`;
+    case "set_frontmatter": return `${o.key}: ${o.field} → ${o.value}`;
+    case "delete_skill": return `${o.key}: delete${o.remove_apm_dep ? ` and remove APM dep ${o.apm_dep}` : ""}`;
+    case "set_default_loaded": return `package ${o.key}: default_loaded → ${o.value}`;
+    case "set_package_enabled": return `enabledPlugins ${o.key} → ${o.value}`;
+    case "set_budget_fraction": return `skillListingBudgetFraction ${o.from_value} → ${o.to_value}`;
+    default: return JSON.stringify(o);
+  }
+}
+function allWarnings() {
+  const out = [];
+  ops.forEach((o) => changeDetails(o).warnings.forEach((w) => out.push(`${o.key || "settings"}: ${w}`)));
+  return out;
+}
+
+function renderChangesView(main) {
+  const list = [...ops.values()];
+  const head = h("h2", { class: "section-title" }, "Changes", h("span", { class: "t3", text: "u undo · Ctrl-R redo · d remove the selected operation · X review and export" }));
+  if (!list.length) {
+    put(main, head, h("div", { class: "empty" }, h("b", { text: "No decisions staged." }), h("div", { text: "Select a skill or package and use its management actions: e description, m model invocation, v user invocation, E Claude enablement, L ship-by-default, x delete, F budget fraction." })));
+    return;
+  }
+  const wrap = h("div", { class: "changes" });
+  [["Settings", (o) => o.op === "set_budget_fraction"], ["Packages", (o) => o.op === "set_default_loaded" || o.op === "set_package_enabled"], ["Skills", (o) => ROW_OPS.includes(o.op)]].forEach(([title, pred]) => {
+    const items = list.filter(pred);
+    if (!items.length) return;
+    const tbody = h("tbody");
+    items.forEach((o) => {
+      const d = changeDetails(o);
+      const id = `op:${opKey(o.op, o.key)}`;
+      const tr = h("tr", { class: `nav skill${d.destructive ? " destructive" : ""}`, "data-id": id, tabindex: "-1" },
+        h("td", { class: "gut" }, h("i", { class: "mark staged" })),
+        h("td", { class: "op" }, o.op, " ", h("span", { class: "key", text: o.key || "" })),
+        h("td", { class: "num" }, d.before, h("span", { class: "arrow", text: "→" }), d.after),
+        h("td", { class: "path", title: d.path, text: d.path }),
+        h("td", { class: "usage", text: d.effect }),
+        h("td", { class: "warns", text: d.warnings.join("; ") }),
+        h("td", null, h("button", { type: "button", class: "ghost small", text: "Remove", onclick: (ev) => { ev.stopPropagation(); delOp(o.op, o.key); } })));
+      tr.addEventListener("click", () => setCursor(id, { scroll: false }));
+      tbody.append(tr);
+      NAV.push({ id, kind: "op", o, tr });
+    });
+    wrap.append(h("div", { class: "grp" }, h("h3", { text: title }), h("div", { class: "tablewrap" }, h("table", { class: "grid" }, headerRow(["", "Operation", "Before → after", "Expected target path (apply is authoritative)", "Claude listing effect", "Warnings", ""]), tbody))));
+  });
+  wrap.append(h("div", { class: "draft-actions", style: "display:flex;gap:8px;align-items:center;margin-top:6px" },
+    h("button", { type: "button", class: "primary", onclick: () => openModal("export") }, kbd("X"), " Review and export"),
+    h("button", { type: "button", onclick: doUndo }, kbd("u"), " Undo"), h("button", { type: "button", onclick: doRedo }, "Ctrl-R Redo"),
+    h("span", { class: "t3 meta", text: "Export downloads a decisions document only. Run skill-console apply FILE separately; apply is a dry run unless --commit is supplied." })));
+  put(main, head, wrap);
+}
+
+function renderDiag() {
+  const mp = measureParity();
+  const cap = CAPTURE_PARITY;
+  const capture = cap && !captureDrift() ? `simulation matches the ${cap.at} capture (${cap.rows} rows)` : (!cap && SNAP.listing_capture_at ? `listing capture from ${SNAP.listing_capture_at}` : null);
+  $("diag").textContent = [`${models.length} skills`, `${listedModels.length} listed`, `${packages.size} groups`, capture,
+    `browser measure agrees with Python on ${mp.agreed}/${mp.checked} measurable listed rows`, `captured ${SNAP.captured_at}`, `console v${SNAP.console_version}`].filter(Boolean).join("  ·  ");
+}
+
+// ---- Inspector -------------------------------------------------------------------------------
+function renderInspector() {
+  const box = $("inspector");
+  if (box.hidden) return;
+  const id = S.pinnedId || S.cursorId;
+  const target = id ? (modelById.get(id) || pkgById.get(id) || null) : null;
+  if (!target) { put(box, h("div", { class: "t3", text: "Select a skill or package. j/k move, Enter opens, p pins this panel." })); return; }
+  put(box, ...(modelById.has(id) ? skillInspector(target) : packageInspector(target)));
+}
+const kv = (rows) => h("div", { class: "kv" }, ...rows.flatMap(([k, v, src]) => [h("span", { class: "k", text: k }), h("span", { class: "v" }, v, src ? h("span", { class: "src", text: src }) : null)]));
+const section = (title, ...body) => h("section", null, h("h3", { text: title }), ...body);
+const pinBtn = () => h("button", { type: "button", class: `ghost small pin${S.pinnedId ? " on" : ""}`, title: "p pins the inspector to this item", onclick: togglePin }, kbd("p"), S.pinnedId ? " pinned" : " pin");
+const stagedMark = (on) => (on ? h("span", { class: "sel", text: "● staged " }) : null);
+const onOff = (v) => (v === null ? "unknown" : v ? "on" : "off");
+
+function skillInspector(m) {
+  const inv = invocation(m);
+  const descWhy = refusal(m, "set_description");
+  const editability = descWhy ? "read-only" : (m.origin === "repo-vendor" ? "editable (temporary; re-vendoring overwrites)" : "editable");
+  const out = [h("div", { class: "ihead" }, h("div", null, h("div", { class: "title", text: m.name }),
+    h("div", { class: "badges" }, h("span", { text: m.prov }), h("span", { text: editability }), m.protected ? h("span", { class: "prot", text: "protected" }) : null,
+      m.health.level === "warn" ? h("span", { class: "warn", text: `⚠ ${m.health.label}` }) : null, getOp("delete_skill", m.name) ? h("span", { class: "bad", text: "will delete" }) : null)),
+    h("span", { class: "spacer" }), pinBtn())];
+
+  const desc = [];
+  const staged = getOp("set_description", m.name);
+  if (S.draft && S.draft.id === m.id) {
+    const d = S.draft;
+    d.previewEl = d.previewEl || h("div", { class: "counters" });
+    desc.push(d.textarea, d.previewEl, h("div", { class: "draft-actions" },
+      h("button", { type: "button", class: "primary small", onclick: () => stageDraft({}) }, "Stage  ", kbd("Ctrl-S"), kbd(":w")),
+      h("button", { type: "button", class: "ghost small", onclick: discardDraft }, "Discard  ", kbd("Esc"))));
+  } else {
+    const text = staged ? staged.text : (m.edit ? m.edit.description : m.desc);
+    desc.push(h("div", { class: "desc-ro", text: text || "(no description)" }));
+    const cost = m.costAfter || m.cost;
+    const counters = [`${fmt((text || "").length)} chars`];
+    if (m.text !== null && m.text !== text) counters.push(`live listing ${fmt(m.text.length)} chars`);
+    if (cost) counters.push(`full cost ${fmt(cost.full_cost)}`);
+    if (staged) counters.push(`staged: ${fmt(staged.from_chars)} → ${fmt(staged.to_chars)} chars`);
+    desc.push(h("div", { class: "counters" }, ...counters.map((t) => h("span", { text: t }))));
+    if (descWhy) desc.push(h("div", { class: "why", text: `Read-only here: ${descWhy}.` }));
+  }
+  const notes = [];
+  if (m.edit && m.edit.when_to_use) notes.push(`when_to_use is appended to the listing text: “${m.edit.when_to_use}”`);
+  if (m.row.derived_description) notes.push("description derived from the command body and cut at 100 chars");
+  if (m.row.capped || (m.cost && m.cost.capped)) notes.push(`listing text exceeds the ${fmt(MAX_DESC_CHARS)} cap; the model sees a truncated description`);
+  if (m.row.width_divergent) notes.push("display width differs from UTF-16 length (embedded newlines or wide characters)");
+  if (!m.measurable && m.text !== null) notes.push(`browser cannot measure this text: ${m.measureReason}`);
+  notes.forEach((t) => desc.push(h("div", { class: "note", text: t })));
+  out.push(section("Description", ...desc));
+
+  out.push(section("Invocation", kv([
+    ["Model invocation", h("span", null, stagedMark(inv.modelStaged), onOff(inv.model)), inv.modelStaged ? `live ${onOff(inv.modelLive)}` : "disable-model-invocation"],
+    ["User invocation", h("span", null, stagedMark(inv.userStaged), onOff(inv.user)), inv.userStaged ? `live ${onOff(inv.userLive)}` : "user-invocable"],
+  ]), h("div", { class: "note", text: "disable-model-invocation hides the skill from Claude, pi, and Cursor; Codex depends on an OpenAI sidecar. user-invocable only affects the Claude slash command and never reclaims budget." })));
+
+  out.push(section("Availability", kv(harnessStates(m.pkgModel).map((x) => [x.h === "C" ? "Claude" : x.h === "X" ? "Codex" : "pi", onOff(x.on), x.src]))));
+
+  const c = listedAfter(m) ? (m.costAfter || m.cost) : m.cost;
+  const budgetRows = [["Listing", h("span", null, listingBefore(m) !== listingAfter(m) ? h("span", { class: "t3", text: `${listingBefore(m)} → ` }) : null, listingAfter(m)), listingAfter(m) === "unlisted" ? unlistedWhy(m) : decision(m)]];
+  if (c) budgetRows.push(["Costs", `name-only ${fmt(c.name_only_cost)} · full ${fmt(c.full_cost)} · upgrade ${fmt(c.upgrade_cost)}`, c.estimated ? "re-estimated" : null]);
+  else if (m.measurable && m.text) budgetRows.push(["Cost if listed", `~${fmt(fullCostFor(safeWidth(m.name) + 2, m.text).full_cost)}`, "estimate"]);
+  budgetRows.push(["Usage", usageText(m), `rank ${m.rank.toFixed(2)} (routing evidence, not a verdict)`]);
+  if (listingAfter(m) === "name-only" && c && !m.forced) budgetRows.push(["Headroom", `${fmt(AFTER.headroom_chars)} left; this description needs ${fmt(c.upgrade_cost)} at its turn in rank order`, "greedy continues past misses"]);
+  out.push(section("Budget", kv(budgetRows)));
+
+  const tree = h("div", { class: "tree" });
+  m.trees.forEach(([t, r]) => tree.append(h("span", { class: "t2", text: t }), h("span", { class: "path", title: r ? r.path : "", text: r ? relPath(r.path) : "missing" }),
+    h("span", { class: `hash ${r ? "" : "warn"}`, text: r ? String(r.content_sha256 || "").slice(0, 8) : "missing" })));
+  const prov = [tree];
+  if (m.divs.length) prov.push(h("div", { class: "divs" }, ...m.divs.map((d) => h("div", { text: `${d.kind}: ${d.detail}` }))));
+  else if (m.health.level === "ok") prov.push(h("div", { class: "note ok", text: "source, marketplace, and cache agree" }));
+  if (m.apm) prov.push(h("div", { class: "note" }, `APM dependency `, h("span", { class: "mono", text: m.apm.apm_dep }), ` owns ${m.apm.dep_owns_skills} skill${m.apm.dep_owns_skills === 1 ? "" : "s"}. `,
+    m.apm.dep_owns_skills === 1 ? "Deleting this skill may remove the dependency." : "Deletion is unavailable without a durable exclusion mechanism.", " Edits are overwritten by the next vendor refresh."));
+  if (m.row.frontmatter_name && m.row.directory && m.row.frontmatter_name !== m.row.directory) prov.push(h("div", { class: "note", text: `frontmatter name ${m.row.frontmatter_name}, directory ${m.row.directory}` }));
+  out.push(section("Provenance", ...prov));
+
+  const actions = [];
+  const act = (key, label, onclick, cls) => actions.push(h("button", { type: "button", class: `small ${cls || ""}`, onclick }, kbd(key), ` ${label}`));
+  const na = (label, why) => actions.push(h("div", { class: "na" }, h("b", { text: `${label} unavailable` }), ` — ${why}`));
+  if (descWhy) na("Edit description", descWhy); else act("e", getOp("set_description", m.name) ? "Edit staged description" : "Edit description", () => startDraft(m));
+  const fmWhy = refusal(m, "set_frontmatter");
+  if (fmWhy) na("Invocation flags", fmWhy);
+  else {
+    act("m", inv.model ? "Hide from model" : "Show to model", () => toggleFlag(m, "disable-model-invocation"));
+    act("v", inv.user ? "Hide from user" : "Show to user", () => toggleFlag(m, "user-invocable"));
+  }
+  const delStaged = getOp("delete_skill", m.name);
+  const delWhy = delStaged ? null : refusal(m, "delete_skill");
+  if (delStaged) act("x", "Undo staged delete", () => deleteSkill(m));
+  else if (delWhy) na("Delete", delWhy);
+  else act("x", "Delete skill and APM dependency", () => deleteSkill(m), "danger");
+  out.push(section("Actions", h("div", { class: "actions" }, ...actions)));
+  return out;
+}
+
+function packageInspector(p) {
+  const c = pkgCounts(p), hs = harnessStates(p), health = pkgHealth(p);
+  const out = [h("div", { class: "ihead" }, h("div", null, h("div", { class: "title", text: p.label }),
+    h("div", { class: "badges" }, h("span", { text: p.kind === "repo" ? "repo package" : p.kind === "third-party" ? "third-party plugin" : "outside packages" }), p.marketplace ? h("span", { class: "mono", text: `@${p.marketplace}` }) : null,
+      health.level === "warn" ? h("span", { class: "warn", text: `⚠ ${health.label}` }) : null)), h("span", { class: "spacer" }), pinBtn())];
+  out.push(section("Identity", kv([["Origins", [...p.origins].join(", ")], ["Skills", `${c.total}${c.local || c.vendor ? ` · ${c.local} local, ${c.vendor} vendor` : ""}`],
+    p.kind === "repo" ? ["Trees", `source ${c.trees.source} · rendered ${c.trees.marketplace} · cache ${c.trees.cache}`] : null,
+    ["Model-visible", `${c.modelOn} / ${c.total}`], ["User-visible", `${c.userOn} / ${c.total}`]].filter(Boolean))));
+  if (!p.isPackage) {
+    out.push(section("Policy", h("div", { class: "note", text: p.key === "builtin" ? "Built-ins are protected and read-only: they are pinned under admission pressure and no operation applies to them." : "These skills live outside any package; enablement and shipping policy do not apply. Description and flag edits follow the capability matrix per row." })));
+    return out;
+  }
+  const dl = getOp("set_default_loaded", p.name);
+  const shipped = dl ? dl.value : p.defaultLoaded;
+  const lWhy = dl ? null : packageRefusal(p, "set_default_loaded");
+  out.push(section("Shipping policy", kv([["Ship enabled by default", h("span", null, stagedMark(Boolean(dl)), onOff(shipped)), "package.toml default_loaded"]]),
+    h("div", { class: "note", text: "Changes package.toml and the regenerated Claude, Codex, and pi policy. It may also activate this package's commands, agents, hooks, and MCP servers." }),
+    h("div", { class: "actions", style: "margin-top:8px" }, lWhy ? h("div", { class: "na" }, h("b", { text: "Toggle unavailable" }), ` — ${lWhy}`)
+      : h("button", { type: "button", class: "small", onclick: () => stagePackage(p, "set_default_loaded") }, kbd("L"), ` ${dl ? "Undo staged default_loaded" : `Ship enabled by default → ${!shipped}`}`))));
+  const en = packageEnabledOp(p);
+  const eWhy = en ? null : packageRefusal(p, "set_package_enabled");
+  out.push(section("Availability", kv(hs.map((x) => [x.h === "C" ? "Claude" : x.h === "X" ? "Codex" : "pi", h("span", null, x.h === "C" ? stagedMark(Boolean(en)) : null, onOff(x.on)), x.src])),
+    h("div", { class: "actions", style: "margin-top:8px" }, eWhy ? h("div", { class: "na" }, h("b", { text: "Claude toggle unavailable" }), ` — ${eWhy}`)
+      : h("button", { type: "button", class: "small", onclick: () => stagePackage(p, "set_package_enabled") }, kbd("E"), ` ${en ? "Undo staged Claude enablement" : `Claude enabled → ${!(p.liveEnabled !== false)}`}`)),
+    p.kind === "third-party" ? h("div", { class: "note", text: "Third-party plugins expose only Claude state; there are no Codex or pi controls to fake." }) : null));
+  out.push(section("Claude listing", kv([["Listed", `${c.listedB} → ${c.listedA}`], ["Full / name-only", `${c.fullB} / ${c.nameOnlyB} → ${c.fullA} / ${c.nameOnlyA}`], ["Characters", fmt(c.charsA)]])));
+  const drifted = p.rows.filter((m) => m.health.level === "warn");
+  out.push(section("Health", drifted.length ? h("div", { class: "note" }, `${drifted.length} skill(s) with drift: `, ...drifted.slice(0, 12).map((m) => h("a", { href: "#", class: "mono", text: m.short + " ", onclick: (ev) => { ev.preventDefault(); revealSkill(m); } })))
+    : h("div", { class: "note ok", text: health.level === "ok" ? "source, marketplace, and cache agree for every skill" : "no tree data to reconcile" })));
+  const stagedOps = [...ops.values()].filter((o) => (o.op === "set_default_loaded" && o.key === p.name) || (o.op === "set_package_enabled" && o.key.startsWith(p.name + "@")) || p.rows.some((m) => m.name === o.key));
+  if (stagedOps.length) out.push(section("Staged", h("ul", null, ...stagedOps.map((o) => h("li", { class: "note", text: describeOp(o) })))));
+  return out;
+}
+function togglePin() { S.pinnedId = S.pinnedId ? null : S.cursorId; renderInspector(); renderStatus(); }
+
+// ---- Draft editing ---------------------------------------------------------------------------
+function startDraft(m) {
+  const blocked = stagingBlocked();
+  if (blocked) { toast(blocked); return; }
+  const why = refusal(m, "set_description");
+  if (why) { toast(`Description is read-only here: ${why}`); return; }
+  const staged = getOp("set_description", m.name);
+  const ta = h("textarea", { spellcheck: "false" });
+  ta.value = staged ? staged.text : m.edit.description;
+  S.draft = { id: m.id, name: m.name, m, textarea: ta, previewEl: null, summary: "" };
+  ta.addEventListener("input", draftPreview);
+  ta.addEventListener("keydown", (ev) => {
+    if (ev.key === "Escape") { ev.preventDefault(); ev.stopPropagation(); discardDraft(); }
+    else if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "s") { ev.preventDefault(); ev.stopPropagation(); stageDraft({}); }
+  });
+  S.inspectorOpen = true;
+  if (S.pinnedId && S.pinnedId !== m.id) S.pinnedId = null;
+  setCursor(m.id, { scroll: false });
+  renderMain();
+  renderInspector();
+  setMode("INSERT");
+  ta.focus();
+  ta.setSelectionRange(ta.value.length, ta.value.length);
+  draftPreview();
+}
+function draftOverlay(text) {
+  const d = S.draft;
+  const k = opKey("set_description", d.name);
+  if (text === d.m.edit.description) return new Map([[k, null]]);
+  return new Map([[k, { op: "set_description", target: "skill", key: d.name, from_chars: d.m.text.length, to_chars: text.length, text }]]);
+}
+function draftPreview() {
+  const d = S.draft;
+  if (!d) return;
+  const text = d.textarea.value;
+  const [ok, why] = writeSafe(text);
+  const lt = listingText(text, d.m.edit.when_to_use);
+  const [, capped] = capText(lt);
+  const parts = [h("span", { text: `${fmt(text.length)} chars` })];
+  if (lt !== text) parts.push(h("span", { text: `listing text ${fmt(lt.length)}` }));
+  let summary = `${fmt(d.m.text.length)} → ${fmt(text.length)} chars`;
+  if (!ok) { parts.push(h("span", { class: "bad", text: `not write-safe: ${why}; cannot be staged (V16)` })); summary += " · not write-safe"; }
+  else {
+    const sim = simulate(draftOverlay(text));
+    const costNow = d.m.cost ? d.m.cost.full_cost : null;
+    const costDraft = (sim.costAfter.get(d.name) || d.m.cost || {}).full_cost;
+    const stateNow = listingBefore(d.m);
+    const stateDraft = sim.after.rendered[d.name] || "unlisted";
+    if (costNow !== null && costDraft !== undefined) parts.push(h("span", { class: "delta", text: `full cost ${fmt(costNow)} → ${fmt(costDraft)}` }));
+    parts.push(h("span", { class: "delta", text: `listing ${stateNow} → ${stateDraft}` }));
+    const dHead = sim.after.headroom_chars - AFTER.headroom_chars;
+    const changes = [sim.predicted.newly_admitted.length ? `${sim.predicted.newly_admitted.length} newly full` : null, sim.predicted.newly_dropped.length ? `${sim.predicted.newly_dropped.length} dropped` : null].filter(Boolean);
+    parts.push(h("span", { text: `${signed(dHead)} headroom vs staged · ${changes.length ? changes.join(", ") : "no admission changes"}` }));
+    summary += ` · ${stateNow} → ${stateDraft}`;
+    if (capped) parts.push(h("span", { class: "bad", text: `capped at ${fmt(MAX_DESC_CHARS)}` }));
+  }
+  d.summary = summary;
+  if (d.previewEl) put(d.previewEl, ...parts);
+  renderStatus();
+}
+function discardDraft() {
+  S.draft = null;
+  setMode("NORMAL");
+  renderInspector();
+  document.activeElement && document.activeElement.blur();
+}
+function stageDraft({ close = false } = {}) {
+  const d = S.draft;
+  if (!d) { toast("no draft to write"); return; }
+  const text = d.textarea.value;
+  const [ok, why] = writeSafe(text);
+  if (!ok) { toast(`not staged: ${why} (V16)`); return; }
+  const m = d.m;
+  S.draft = null;
+  setMode("NORMAL");
+  if (text === m.edit.description) {
+    if (getOp("set_description", m.name)) { delOp("set_description", m.name); toast("description restored to the source value; staged edit removed"); } else { toast("no change to stage"); renderInspector(); }
+  } else {
+    setOp({ op: "set_description", target: "skill", key: m.name, from_chars: m.text.length, to_chars: text.length, text });
+    toast(m.origin === "repo-vendor" ? "Staged. Temporary vendor edit: the next vendor-agent-package refresh restores upstream content." : "description staged");
+  }
+  if (close) { S.inspectorOpen = false; renderMain(); paintCursor(false); }
+}
+
+// ---- Status line, prompt, modals -------------------------------------------------------------
+function setMode(mode) { S.mode = mode; renderStatus(); }
+let cmdInput = null;
+function renderStatus() {
+  const st = $("status");
+  const modeEl = h("span", { class: `mode ${S.mode.toLowerCase()}`, text: S.mode });
+  if (S.mode === "COMMAND") { put(st, modeEl, h("span", { class: "mono", text: ":" }), cmdInput, S.cmdError ? h("span", { class: "err", text: S.cmdError }) : null); return; }
+  const n = cursorNode();
+  const center = [];
+  if (S.mode === "INSERT" && S.draft) {
+    center.push(h("span", { class: "mono", text: `${S.draft.name} description` }), h("span", { text: S.draft.summary }), h("span", { class: "dim", text: "Ctrl-S/:w stage · Esc cancel" }));
+  } else {
+    const view = S.view === "skills" ? `Skills · ${S.lens === "budget" ? "Claude budget" : "Management"}` : S.view === "packages" ? "Packages" : "Changes";
+    center.push(h("span", { text: view }));
+    if (n) center.push(h("span", { class: "mono", text: n.kind === "skill" ? n.m.name : n.kind === "pkg" ? n.p.label : describeOp(n.o) }));
+    if (NAV.length) center.push(h("span", { text: `${navIndex(S.cursorId) + 1}/${NAV.length}` }));
+    const fc = activeFilterCount() + (S.search ? 1 : 0);
+    if (fc) center.push(h("span", { text: `${fc} filter${fc === 1 ? "" : "s"}` }));
+    center.push(h("span", { class: ops.size ? "" : "dim", text: `${ops.size} staged` }), h("span", { class: "dim", text: `snapshot ${ageText()}` }));
+    if (S.pinnedId) center.push(h("span", { class: "dim", text: "pinned" }));
+    if (S.count || S.pending) center.push(h("span", { class: "mono", text: S.count + S.pending }));
+    if (S.cmdError) center.push(h("span", { class: "err", text: S.cmdError }));
+  }
+  put(st, modeEl, ...center, h("span", { class: "spacer" }), h("span", { class: "dim", text: "? help" }));
+}
+function showPrompt({ text, danger = false, onConfirm = null, confirmKeys = ["Enter"], keysText }) {
+  S.prompt = { onConfirm, confirmKeys };
+  const el = $("prompt");
+  el.className = `prompt${danger ? " danger" : ""}`;
+  el.hidden = false;
+  put(el, h("span", { class: "msg", text }), h("span", { class: "keys", text: keysText || (onConfirm ? "Enter confirm · Esc cancel" : "Esc dismiss") }),
+    onConfirm ? h("button", { type: "button", class: `small ${danger ? "danger" : "primary"}`, text: "Confirm", onclick: confirmPrompt }) : null,
+    h("button", { type: "button", class: "ghost small", text: onConfirm ? "Cancel" : "Dismiss", onclick: hidePrompt }));
+  setMode("CONFIRM");
+}
+function confirmPrompt() { const p = S.prompt; hidePrompt(); if (p && p.onConfirm) p.onConfirm(); }
+function hidePrompt() { S.prompt = null; $("prompt").hidden = true; if (S.mode === "CONFIRM") setMode("NORMAL"); }
+
+let exportStamp = null;
+function openModal(kind) {
+  S.modal = kind;
+  const ov = $("overlay");
+  ov.hidden = false;
+  ov.onclick = (ev) => { if (ev.target === ov) closeModal(); };
+  put(ov, kind === "help" ? helpSheet() : kind === "fraction" ? fractionSheet() : exportSheet());
+  const focus = ov.querySelector("input, button.primary, button");
+  if (focus) focus.focus();
+  renderStatus();
+}
+function closeModal() { S.modal = null; $("overlay").hidden = true; put($("overlay")); renderStatus(); }
+const HELP = [
+  ["Navigation", [["j / k · 5j", "move (with count)"], ["gg / G", "first / last"], ["Ctrl-D / Ctrl-U", "half page"], ["} / {", "next / previous package"], ["Enter / l", "open package or inspector"], ["h", "close inspector, then collapse package"], ["za / zo / zc", "toggle / open / close package"], ["zR / zM", "expand / collapse all"], ["p", "pin / unpin inspector"]]],
+  ["Search and views", [["/", "search (Enter jumps to the first match)"], ["n / N", "next / previous match, revealing collapsed rows"], ["Esc", "clear search, close inspector, dismiss"], ["c", "Changes view"], ["b", "Claude budget lens"], [":skills :packages", "switch view"], ["t", "theme light / dark / system"], ["?", "this help"]]],
+  ["Management", [["e", "edit description (draft)"], ["m", "toggle disable-model-invocation"], ["v", "toggle user-invocable"], ["E", "Claude enablement of the package"], ["L", "ship enabled by default (default_loaded)"], ["F", "Claude budget fraction"], ["x", "delete vendored skill, or explain refusal"], ["u / Ctrl-R", "undo / redo staged action"], ["d", "remove the selected staged operation (Changes)"]]],
+  ["Edit mode", [["typing", "changes the draft only"], ["Ctrl-S / :w", "validate and stage"], ["Esc / :q", "discard the draft"], [":wq", "stage and close the inspector"]]],
+  ["Commands", [[":w :q :wq", "draft"], [":export", "review and export"], [":changes :skills :packages :budget", "views and lens"], [":theme light|dark|system", "theme"], [":filter clear", "clear search and filters"]]],
+  ["Export", [["X / :export", "review and export decisions JSON"]]],
+];
+function helpSheet() {
+  return h("div", { class: "sheet wide", role: "dialog", "aria-label": "Skill Console keys" }, h("h2", { text: "Skill Console keys" }),
+    h("div", { class: "help-cols" }, ...HELP.map(([title, rows]) => h("div", null, h("h4", { text: title }), ...rows.map(([k, d]) => h("div", { class: "row" }, h("span", { class: "k" }, ...k.split(" ").map((x) => (x === "/" || x === "·" ? h("span", { class: "t3", text: x }) : kbd(x)))), h("span", { class: "d", text: d })))))),
+    h("div", { class: "foot" }, "Export only downloads decisions JSON. It never edits files or runs chezmoi.", h("span", { class: "spacer" }), kbd("Esc"), " close"));
+}
+function fractionSheet() {
+  const input = h("input", { type: "number", step: "0.005", min: "0.0001", max: "1", value: String(getOp("set_budget_fraction", "") ? getOp("set_budget_fraction", "").to_value : SNAP.fraction) });
+  const preview = h("div", { class: "kv" });
+  const stageBtn = h("button", { type: "button", class: "primary", text: "Stage  (Enter / :w)", onclick: stageFraction });
+  const update = () => {
+    const v = Number(input.value);
+    const valid = input.value && v > 0 && v <= 1;
+    const sim = valid && !envBudgetActive ? simulate(new Map([[opKey("set_budget_fraction", ""), v === SNAP.fraction ? null : { op: "set_budget_fraction", target: "settings", key: "", from_value: SNAP.fraction, to_value: v }]])) : null;
+    put(preview, ...[["Current value", String(SNAP.fraction)], ["Accepted range", "(0, 1]  (V9)"], ["Model", SNAP.model], ["Context window", fmt(SNAP.context_window)], ["Bytes per token", String(SNAP.bytes_per_token)],
+      ["Resulting budget", valid ? `${fmt(computedBudget(v))} chars` : "invalid"], sim ? ["Staged result", `${sim.after.full.length} full · ${sim.after.name_only.length} name-only · ${fmt(sim.after.rendered_chars)} / ${fmt(sim.after.budget)} chars · ${sim.after.mode}`] : null]
+      .filter(Boolean).flatMap(([k, val]) => [h("span", { class: "k", text: k }), h("span", { text: val })]));
+    stageBtn.disabled = !valid || envBudgetActive;
+  };
+  input.addEventListener("input", update);
+  update();
+  return h("div", { class: "sheet", role: "dialog", "aria-label": "Claude budget fraction" }, h("h2", { text: "skillListingBudgetFraction" }),
+    h("div", { style: "display:flex;gap:10px;align-items:center;margin-bottom:12px" }, h("span", { class: "t2", text: "fraction" }), input, h("span", { class: "t3 meta", text: "managed Claude policy, not a skill change" })),
+    preview,
+    envBudgetActive ? h("div", { class: "warns", text: `SLASH_COMMAND_TOOL_CHAR_BUDGET=${SNAP.budget_env_override} overrides the computed budget; changing the fraction has no runtime effect, so it cannot be staged here.` }) : null,
+    h("div", { class: "foot" }, stageBtn, h("button", { type: "button", class: "ghost", text: "Cancel (Esc)", onclick: closeModal })));
+}
+function stageFraction() {
+  const input = $("overlay").querySelector("input");
+  if (!input) return;
+  const v = Number(input.value);
+  if (envBudgetActive) { toast("the env override makes the fraction inert; not staged"); return; }
+  if (!(input.value && v > 0 && v <= 1)) { toast("to_value must be in (0, 1] (V9); not staged"); return; }
+  closeModal();
+  if (v === SNAP.fraction) { if (getOp("set_budget_fraction", "")) delOp("set_budget_fraction", ""); else toast("fraction unchanged"); return; }
+  setOp({ op: "set_budget_fraction", target: "settings", key: "", from_value: SNAP.fraction, to_value: v });
+}
+function exportSheet() {
+  const blocked = exportBlocked();
+  exportStamp = new Date().toISOString().replace(/\.\d{3}Z$/, "Z").replace(/:/g, "-");
+  const destructive = [...ops.values()].filter((o) => o.op === "delete_skill").length;
+  const warns = allWarnings();
+  if (AGE_MS > 12 * 3600000) warns.unshift(`snapshot is ${ageText()} old; apply refuses snapshots older than 24h without --allow-stale`);
+  if (captureDrift()) warns.unshift(`simulation differs from the captured listing on ${CAPTURE_PARITY.mismatches.length} row(s)`);
+  return h("div", { class: "sheet", role: "dialog", "aria-label": "Review and export" }, h("h2", { text: "Review and export decisions" }),
+    h("div", { class: "kv" }, ...[["Operations", String(ops.size)], ["Destructive", String(destructive)], ["Snapshot age", ageText()], ["Predicted listing", `${BEFORE.full.length} full / ${BEFORE.name_only.length} name-only → ${AFTER.full.length} full / ${AFTER.name_only.length} name-only`],
+      ["File", `skill-console-decisions-${exportStamp}.json`]].flatMap(([k, v]) => [h("span", { class: "k", text: k }), h("span", { class: k === "File" ? "mono" : "", text: v })])),
+    warns.length ? h("div", { class: "warns" }, ...warns.map((w) => h("div", { text: `⚠ ${w}` }))) : null,
+    blocked ? h("div", { class: "warns bad", text: `Export is disabled: ${blocked}.` }) : null,
+    h("div", { class: "callout" }, "Export downloads a decisions document only. Run ", h("code", { text: "skill-console apply FILE" }), " separately; apply is a dry run unless ", h("code", { text: "--commit" }), " is supplied."),
+    h("div", { class: "foot" }, blocked ? null : h("button", { type: "button", class: "primary", text: "Download JSON  (Enter)", onclick: confirmExport }), h("button", { type: "button", class: "ghost", text: "Cancel (Esc)", onclick: closeModal })));
+}
+function confirmExport() {
+  if (exportBlocked()) { toast(exportBlocked()); return; }
+  const doc = { schema_version: 1, harness: "claude", snapshot: SNAP, predicted: PREDICTED, operations: [...ops.values()] };
+  const blob = new Blob([JSON.stringify(doc, null, 2) + "\n"], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = h("a", { href: url, download: `skill-console-decisions-${exportStamp}.json` });
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  closeModal();
+  toast("decisions JSON downloaded; nothing on disk changed");
+}
+
+// ---- Actions ---------------------------------------------------------------------------------
+const cursorSkill = () => { const n = cursorNode(); return n && n.kind === "skill" ? n.m : null; };
+const cursorPackage = () => { const n = cursorNode(); return n ? (n.kind === "pkg" ? n.p : n.kind === "skill" ? n.p : null) : null; };
+function stagePackage(p, op) {
+  if (!p || !p.isPackage) { toast(p ? `${p.label} is not a package; nothing to toggle` : "select a package or a skill inside one"); return; }
+  const blocked = stagingBlocked();
+  if (blocked) { toast(blocked); return; }
+  const key = op === "set_default_loaded" ? p.name : `${p.name}@${p.marketplace}`;
+  if (getOp(op, key)) { delOp(op, key); toast(`undone: ${op} on ${key}`); return; }
+  const why = packageRefusal(p, op);
+  if (why) { showPrompt({ text: `Cannot stage ${op} on ${p.name}: ${why}.` }); return; }
+  const live = op === "set_default_loaded" ? p.defaultLoaded : p.liveEnabled !== false;
+  const o = { op, target: "package", key, value: !live };
+  const sim = simulate(new Map([[opKey(op, key), o]]));
+  const listedNow = p.rows.filter((m) => listedAfter(m)).length;
+  const listedThen = p.rows.filter((m) => sim.after.rendered[m.name]).length;
+  const fx = [`${p.rows.length} skills`, `Claude listed ${listedNow} → ${listedThen}`, `full ${AFTER.full.length} → ${sim.after.full.length}`, `name-only ${AFTER.name_only.length} → ${sim.after.name_only.length}`];
+  const en = packageEnabledOp(p);
+  const text = op === "set_default_loaded"
+    ? `Stage default_loaded → ${!live} for ${p.name}? Changes package.toml and the regenerated Claude, Codex, and pi policy; it may also activate this package's commands, agents, hooks, and MCP servers. ${en ? `A staged enabledPlugins override (${en.value}) wins over this default. ` : (p.marketplace && `${p.name}@${p.marketplace}` in ENABLED_PLUGINS ? `The managed enabledPlugins override (${ENABLED_PLUGINS[`${p.name}@${p.marketplace}`]}) wins over this default. ` : "")}${fx.join(" · ")}.`
+    : `Stage enabledPlugins ${key} → ${!live}? Managed Claude override; Codex and pi are unaffected. ${fx.join(" · ")}.`;
+  showPrompt({ text, onConfirm: () => setOp(o) });
+}
+function toggleFlag(m, field) {
+  if (!m) { toast("select a skill first"); return; }
+  const blocked = stagingBlocked();
+  if (blocked) { toast(blocked); return; }
+  const staged = getOp("set_frontmatter", m.name);
+  if (staged && staged.field === field) { delOp("set_frontmatter", m.name); toast(`undone: ${field} on ${m.name}`); return; }
+  if (staged) { showPrompt({ text: `One set_frontmatter per skill per document (V7): ${staged.field} → ${staged.value} is already staged for ${m.name}. Undo it (u) or remove it in Changes (c, then d) before staging ${field}.` }); return; }
+  const why = refusal(m, "set_frontmatter");
+  if (why) { showPrompt({ text: `Cannot change ${field} on ${m.name}: ${why}.` }); return; }
+  const inv = invocation(m);
+  const value = field === "disable-model-invocation" ? Boolean(inv.model) : !inv.user;
+  const o = { op: "set_frontmatter", target: "skill", key: m.name, field, value };
+  let text;
+  if (field === "disable-model-invocation") {
+    const sim = simulate(new Map([[opKey("set_frontmatter", m.name), o]]));
+    text = `Stage disable-model-invocation: ${value}? Claude, pi, and Cursor ${value ? "stop listing it to" : "list it to"} the model; Codex behavior depends on an OpenAI sidecar; user invocation is unchanged. Claude: ${listingAfter(m)} → ${sim.after.rendered[m.name] || "unlisted"}, full ${AFTER.full.length} → ${sim.after.full.length}, name-only ${AFTER.name_only.length} → ${sim.after.name_only.length}.`;
+  } else {
+    text = `Stage user-invocable: ${value}? ${value ? "Shows" : "Hides"} the Claude slash command; it does not change the model listing or reclaim budget. pi and Codex ignore this field.`;
+  }
+  showPrompt({ text, onConfirm: () => setOp(o) });
+}
+function deleteSkill(m) {
+  if (!m) { toast("select a skill first"); return; }
+  const blocked = stagingBlocked();
+  if (blocked) { toast(blocked); return; }
+  if (getOp("delete_skill", m.name)) { showPrompt({ text: `Undo the staged delete of ${m.name}?`, onConfirm: () => delOp("delete_skill", m.name) }); return; }
+  const why = refusal(m, "delete_skill");
+  if (why) {
+    const apm = m.apm && m.apm.dep_owns_skills !== 1 ? ` APM dependency ${m.apm.apm_dep} owns ${m.apm.dep_owns_skills} skills; re-vendoring would restore this directory. A durable exclusion mechanism is required.` : "";
+    showPrompt({ text: `Cannot delete ${m.name}: ${why}.${apm}` });
+    return;
+  }
+  showPrompt({ danger: true, confirmKeys: ["Enter", "x"], keysText: "Enter or x confirm · Esc cancel",
+    text: `Delete ${m.name} and its APM dependency ${m.apm.apm_dep}? Removes the skill directory, the apm.yml dependency, and its lockfile entry; apply reruns reference checks; export still writes nothing.`,
+    onConfirm: () => setOp({ op: "delete_skill", target: "skill", key: m.name, apm_dep: m.apm.apm_dep, dep_owns_skills: m.apm.dep_owns_skills, remove_apm_dep: true }) });
+}
+function doUndo() { const e = undo(); toast(e ? `undone: ${describeOp(e.after || e.before)}` : "nothing to undo"); }
+function doRedo() { const e = redo(); toast(e ? `redone: ${describeOp(e.after || e.before)}` : "nothing to redo"); }
+function removeCurrentOp() { const n = cursorNode(); if (n && n.kind === "op") delOp(n.o.op, n.o.key); else toast("move the cursor onto a staged operation"); }
+function openCurrent() {
+  const n = cursorNode();
+  if (!n) return;
+  if (n.kind === "pkg") { if (S.view === "skills") { S.inspectorOpen = true; togglePackage(n.p); } else { S.inspectorOpen = true; renderMain(); paintCursor(false); } return; }
+  if (n.kind === "skill") { S.inspectorOpen = true; renderMain(); paintCursor(false); }
+}
+function collapseCurrent() {
+  const p = cursorPackage();
+  if (!p || S.view !== "skills") return;
+  S.expanded.set(p.key, false);
+  S.searchExpanded.delete(p.key);
+  S.cursorId = p.id;
+  render();
+}
+function zCommand(key) {
+  const p = cursorPackage();
+  if (key === "R") { setAllExpanded(true); return; }
+  if (key === "M") { setAllExpanded(false); return; }
+  if (!p) return;
+  if (key === "a") { togglePackage(p); if (!isExpanded(p)) { S.cursorId = p.id; paintCursor(false); } }
+  else if (key === "o") { S.expanded.set(p.key, true); render(); }
+  else if (key === "c") collapseCurrent();
+}
+function escapeNormal() {
+  if (S.search) { S.search = ""; if (searchInput) searchInput.value = ""; onSearchChanged(); return; }
+  if (S.cmdError) { S.cmdError = ""; renderStatus(); return; }
+  if (S.inspectorOpen && S.view !== "changes") { S.inspectorOpen = false; renderMain(); paintCursor(false); }
+}
+function focusSearch() { if (!searchInput || $("querybar").hidden) { setView("skills"); } searchInput.focus(); searchInput.select(); }
+function allMatches() {
+  if (!S.search.trim()) return [];
+  const out = [];
+  orderedPackages().forEach((p) => sortedRows(p).forEach((m) => { if (rowPasses(m)) out.push(m); }));
+  return out;
+}
+function nextMatch(dir) {
+  const matches = allMatches();
+  if (!matches.length) { toast(S.search ? "no matches" : "no search; press / first"); return; }
+  const cur = cursorSkill();
+  let i = cur ? matches.indexOf(cur) : -1;
+  i = i < 0 ? (dir > 0 ? 0 : matches.length - 1) : (i + dir + matches.length) % matches.length;
+  const m = matches[i];
+  if (!isExpanded(m.pkgModel)) { S.searchExpanded.add(m.pkgModel.key); render(); }
+  setCursor(m.id);
+}
+
+// ---- Command line ----------------------------------------------------------------------------
+function openCommandLine() {
+  if (!cmdInput) {
+    cmdInput = h("input", { type: "text", class: "cmd", autocomplete: "off", spellcheck: "false", "aria-label": "command" });
+    cmdInput.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter") { ev.preventDefault(); runCommand(cmdInput.value.trim()); }
+      else if (ev.key === "Escape") { ev.preventDefault(); closeCommandLine(); }
+      ev.stopPropagation();
+    });
+  }
+  cmdInput.value = "";
+  S.cmdError = "";
+  setMode("COMMAND");
+  cmdInput.focus();
+}
+function closeCommandLine() { S.cmdError = ""; setMode("NORMAL"); if (document.activeElement === cmdInput) cmdInput.blur(); }
+function runCommand(text) {
+  const [cmd, ...rest] = text.split(/\s+/);
+  const arg = rest.join(" ");
+  const ok = () => closeCommandLine();
+  switch (cmd) {
+    case "w": if (!S.draft) { S.cmdError = "no draft to write"; renderStatus(); return; } ok(); stageDraft({}); return;
+    case "q": ok(); if (S.draft) discardDraft(); else { S.inspectorOpen = false; renderMain(); paintCursor(false); } return;
+    case "wq": if (!S.draft) { S.cmdError = "no draft to write"; renderStatus(); return; } ok(); stageDraft({ close: true }); return;
+    case "export": ok(); openModal("export"); return;
+    case "changes": ok(); setView("changes"); return;
+    case "skills": ok(); setView("skills"); return;
+    case "packages": ok(); setView("packages"); return;
+    case "budget": ok(); if (S.view !== "skills") S.view = "skills"; setLens(S.lens === "budget" ? "management" : "budget"); return;
+    case "theme":
+      if (!["light", "dark", "system"].includes(arg)) { S.cmdError = "theme takes light, dark, or system"; renderStatus(); return; }
+      ok(); setTheme(arg); return;
+    case "filter": if (arg !== "clear") { S.cmdError = "only :filter clear is supported"; renderStatus(); return; } ok(); clearFilters(); return;
+    case "": ok(); return;
+    default: S.cmdError = `not a console command: ${text}`; renderStatus();
+  }
+}
+
+// ---- Keyboard --------------------------------------------------------------------------------
+const isField = (el) => Boolean(el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable));
+function onKey(ev) {
+  const t = isField(ev.target) ? ev.target : (isField(document.activeElement) ? document.activeElement : null);
+  const inField = Boolean(t);
+  if (S.modal) {
+    if (ev.key === "Escape") { ev.preventDefault(); closeModal(); }
+    else if (ev.key === "?" && S.modal === "help") { ev.preventDefault(); closeModal(); }
+    else if (ev.key === "Enter" && S.modal === "export") { ev.preventDefault(); confirmExport(); }
+    else if (ev.key === "Enter" && S.modal === "fraction") { ev.preventDefault(); stageFraction(); }
+    return;
+  }
+  if (S.prompt) {
+    if (ev.key === "Escape") { ev.preventDefault(); hidePrompt(); }
+    else if (S.prompt.confirmKeys.includes(ev.key)) { ev.preventDefault(); confirmPrompt(); }
+    else if (!inField) ev.preventDefault();
+    return;
+  }
+  if (S.mode === "COMMAND") return;
+  if (inField) {
+    if (ev.key === "Escape" && !(S.draft && t === S.draft.textarea)) {
+      ev.preventDefault();
+      if (t === searchInput && S.search) { S.search = ""; searchInput.value = ""; onSearchChanged(); }
+      t.blur();
+      setMode("NORMAL");
+    }
+    return;
+  }
+  if (ev.metaKey || ev.altKey) return;
+  if (ev.ctrlKey) {
+    if (ev.key === "d") halfPage(1); else if (ev.key === "u") halfPage(-1); else if (ev.key === "r") doRedo(); else if (ev.key === "s" && S.draft) stageDraft({}); else return;
+    ev.preventDefault();
+    return;
+  }
+  const key = ev.key;
+  if (/^[0-9]$/.test(key) && (S.count || key !== "0")) { S.count += key; S.pending = ""; renderStatus(); ev.preventDefault(); return; }
+  const count = Math.max(1, parseInt(S.count || "1", 10));
+  const pending = S.pending;
+  S.pending = "";
+  S.cmdError = "";
+  if (pending === "g" && key === "g") { jumpCursor(false); S.count = ""; ev.preventDefault(); renderStatus(); return; }
+  if (pending === "z") { if ("aocRM".includes(key)) zCommand(key); S.count = ""; ev.preventDefault(); renderStatus(); return; }
+  switch (key) {
+    case "j": case "ArrowDown": moveCursor(count); break;
+    case "k": case "ArrowUp": moveCursor(-count); break;
+    case "g": case "z": S.pending = key; renderStatus(); ev.preventDefault(); return;
+    case "G": jumpCursor(true); break;
+    case "}": for (let i = 0; i < count; i++) nextPackage(1); break;
+    case "{": for (let i = 0; i < count; i++) nextPackage(-1); break;
+    case "Enter": case "l": openCurrent(); break;
+    case "h": if (S.inspectorOpen && S.view !== "changes") { S.inspectorOpen = false; renderMain(); paintCursor(false); } else collapseCurrent(); break;
+    case "/": focusSearch(); break;
+    case "n": nextMatch(1); break;
+    case "N": nextMatch(-1); break;
+    case "Escape": escapeNormal(); break;
+    case "e": { const m = cursorSkill(); if (m) startDraft(m); else toast("select a skill first"); break; }
+    case "m": toggleFlag(cursorSkill(), "disable-model-invocation"); break;
+    case "v": toggleFlag(cursorSkill(), "user-invocable"); break;
+    case "E": stagePackage(cursorPackage(), "set_package_enabled"); break;
+    case "L": stagePackage(cursorPackage(), "set_default_loaded"); break;
+    case "F": openModal("fraction"); break;
+    case "x": deleteSkill(cursorSkill()); break;
+    case "u": doUndo(); break;
+    case "d": if (S.view === "changes") removeCurrentOp(); else toast("d removes a staged operation in the Changes view (c)"); break;
+    case "c": setView("changes"); break;
+    case "b": if (S.view !== "skills") S.view = "skills"; setLens(S.lens === "budget" ? "management" : "budget"); break;
+    case "p": togglePin(); break;
+    case "X": openModal("export"); break;
+    case ":": openCommandLine(); break;
+    case "?": openModal("help"); break;
+    case "t": cycleTheme(); break;
+    default: S.count = ""; renderStatus(); return;
+  }
+  S.count = "";
+  ev.preventDefault();
+  renderStatus();
+}
+
+// ---- Init ------------------------------------------------------------------------------------
+function fatal(err) {
+  const detail = `${err && err.stack ? err.stack : String(err)}\n\nconsole ${typeof SNAP !== "undefined" && SNAP ? `v${SNAP.console_version}, captured ${SNAP.captured_at}` : "(snapshot unreadable)"}`;
+  const pre = h("pre", { text: detail });
+  document.body.replaceChildren(h("div", { class: "fatal" }, h("h2", { text: "Could not open this skill snapshot" }),
+    h("p", { text: (err && err.message) || String(err) }), h("p", { class: "t2" }, "Regenerate the page with ", h("code", { text: "skill-console render …" }), "."),
+    h("details", { style: "margin-top:10px" }, h("summary", { text: "Technical detail" }), pre),
+    h("div", { style: "margin-top:10px" }, h("button", { type: "button", text: "Copy error", onclick: () => navigator.clipboard && navigator.clipboard.writeText(detail) }))));
+}
+function init() {
+  render();
+  const first = NAV.find((n) => n.kind === "skill") || NAV[0];
+  if (first) setCursor(first.id, { touched: false, scroll: false });
+  document.addEventListener("keydown", onKey);
+  document.addEventListener("focusin", (ev) => {
+    const tr = ev.target.closest && ev.target.closest("tr.nav");
+    if (tr && tr.dataset.id && tr.dataset.id !== S.cursorId) setCursor(tr.dataset.id, { scroll: false });
+  });
+  addEventListener("resize", () => { if (!$("budget-panel").hidden) drawStrips(); });
+  const loading = $("loading");
+  if (loading) loading.remove();
+  APP_READY = true;
+}
+try { init(); } catch (err) { fatal(err); }
+</script>
+</body>
+</html>

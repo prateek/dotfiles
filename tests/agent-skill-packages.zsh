@@ -15,7 +15,7 @@ cd "$REPO_ROOT"
 [[ ! -e home/dot_agents/plugins ]]
 [[ -e home/dot_agents/packages/core/skills/vendor/deep-research/SOURCE.md ]]
 [[ -e home/dot_agents/packages/review/skills/vendor/crit/SOURCE.md ]]
-[[ -e home/dot_agents/packages/utils-agent/skills/vendor/cli-creator/SOURCE.md ]]
+[[ -e home/dot_agents/packages/experimental/skills/vendor/cli-creator/SOURCE.md ]]
 [[ ! -e home/dot_agents/packages/core/skills/local/deep-research ]]
 [[ ! -e home/dot_agents/packages/ios/skills/vendor/swift-patterns/swift-patterns/SKILL.md ]]
 [[ ! -e home/dot_agents/packages/ios/skills/vendor/swiftui-expert/swiftui-expert-skill/SKILL.md ]]
@@ -430,36 +430,42 @@ grep -q 'not a generated skill root' "$roots_home/maintain.err"
 reconcile_output="$(
   .agents/skills/agent-skill-management/scripts/reconcile-agent-plugins
 )"
+# The reconciler derives every line from package.toml: Codex cache refreshes
+# only for default-loaded Codex plugins (codex plugin add also enables), and a
+# Claude install plus enable/disable per render policy. Expected commands come
+# from the same manifests so the test pins the emission rules, not today's set
+# of default-loaded packages.
 python3 - "$reconcile_output" <<'PY'
-import sys
+import pathlib, sys, tomllib
 
 commands = sys.argv[1].splitlines()
+packages = {
+    path.parent.name: tomllib.loads(path.read_text())
+    for path in sorted(pathlib.Path("home/dot_agents/packages").glob("*/package.toml"))
+}
+
+
+def loaded(data):
+    return data.get("default_loaded", True)
+
+
+def renders(data, agent):
+    return data.get("render", {}).get(agent) == "plugin"
+
+
 expected_commands = [
     "claude plugin marketplace add ~/.agents/plugins --scope user",
     "claude plugin marketplace update prateek-local",
-    "codex plugin add core@prateek-local",
-    "codex plugin add mattpocock@prateek-local",
-    "codex plugin add review@prateek-local",
-    "codex plugin add utils-agent@prateek-local",
-    "claude plugin install core@prateek-local --scope user",
-    "claude plugin enable core@prateek-local --scope user",
-    "claude plugin install design@prateek-local --scope user",
-    "claude plugin disable design@prateek-local --scope user",
-    "claude plugin install experimental@prateek-local --scope user",
-    "claude plugin disable experimental@prateek-local --scope user",
-    "claude plugin install ios@prateek-local --scope user",
-    "claude plugin disable ios@prateek-local --scope user",
-    "claude plugin install mattpocock@prateek-local --scope user",
-    "claude plugin enable mattpocock@prateek-local --scope user",
-    "claude plugin install obsidian-wiki@prateek-local --scope user",
-    "claude plugin disable obsidian-wiki@prateek-local --scope user",
-    "claude plugin install review@prateek-local --scope user",
-    "claude plugin enable review@prateek-local --scope user",
-    "claude plugin install utils-agent@prateek-local --scope user",
-    "claude plugin enable utils-agent@prateek-local --scope user",
-    "claude plugin install utils-human@prateek-local --scope user",
-    "claude plugin disable utils-human@prateek-local --scope user",
+    *[f"codex plugin add {name}@prateek-local" for name, data in packages.items() if renders(data, "codex") and loaded(data)],
 ]
+for name, data in packages.items():
+    if renders(data, "claude"):
+        toggle = "enable" if loaded(data) else "disable"
+        expected_commands += [
+            f"claude plugin install {name}@prateek-local --scope user",
+            f"claude plugin {toggle} {name}@prateek-local --scope user",
+        ]
+assert len(expected_commands) > 2 and any(" disable " in c for c in expected_commands), expected_commands
 assert commands == expected_commands, commands
 PY
 
@@ -467,21 +473,18 @@ chezmoi --source home execute-template \
   --file home/.chezmoitemplates/agent-claude-plugin-settings.json.tmpl \
   | python3 -m json.tool >/dev/null
 
-# default_loaded = false in package.toml must propagate to both rendered
-# settings templates as `false` / `enabled = false`. This catches a regression
-# in either renderer emitter independently of the --check baseline.
+# default_loaded in package.toml must propagate to every rendered settings
+# template as `false` / `enabled = false`. Expected values come from the
+# package manifests themselves, so this catches a regression in any renderer
+# emitter independently of the --check baseline without pinning which
+# packages are default-loaded.
 python3 - <<'PY'
-import json, subprocess, tomllib
+import json, pathlib, subprocess, tomllib
 expected = {
-    "core@prateek-local": True,
-    "design@prateek-local": False,
-    "experimental@prateek-local": False,
-    "ios@prateek-local": False,
-    "mattpocock@prateek-local": True,
-    "utils-human@prateek-local": False,
-    "review@prateek-local": True,
-    "utils-agent@prateek-local": True,
+    f"{path.parent.name}@prateek-local": tomllib.loads(path.read_text()).get("default_loaded", True)
+    for path in sorted(pathlib.Path("home/dot_agents/packages").glob("*/package.toml"))
 }
+assert expected and any(expected.values()) and not all(expected.values()), expected
 claude_json = subprocess.check_output([
     "chezmoi", "--source", "home", "execute-template",
     "--file", "home/.chezmoitemplates/agent-claude-plugin-settings.json.tmpl",

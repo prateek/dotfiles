@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "binaries": {
+    "b63136194160791c27cfa7b0403060d85eb0752991625fde8c09f9acacb17c78": {
+      "version": "2.1.258",
+      "captured_from": {
+        "skill_listing_session": "beb1ec49-5dba-4df7-9949-6bfeb0284479",
+        "captured_at": "2026-09-02T13:57:11.218Z",
+        "claude_version": "2.1.258"
+      },
+      "notes": [
+        "Rows are the exact listing text of the skill_listing attachment for this binary, in listing order.",
+        "protected mirrors per(): type == \"prompt\" and source == \"bundled\". init and security-review are source \"builtin\" and unprotected.",
+        "init and security-review were name-only in every 2.1.258 capture on this machine; their text comes from a 2.1.232 capture (2026-09-02T01:47:15Z) and is verified byte-for-byte as a literal in the 2.1.258 executable."
+      ],
+      "entries": [
+        {
+          "name": "dataviz",
+          "description": "Use this skill whenever you are about to create ANY chart, graph, plot, dashboard, or data visualization, in ANY output medium — an HTML or React artifact, inline SVG, plotting code in any library (matplotlib, plotly, d3, Recharts, …), an image/PNG you will render and upload, or a chart shared into Slack. Read it BEFORE writing the first line of chart code, choosing chart colors, building a stat tile / meter / KPI row, or laying out a dashboard. When the destination is a first-party document connector (host-designated, never self-described) that renders live charts, hand it the rows (inline, or as an uploaded data file the chart cites) rather than a rendered PNG/SVG — a picture of a chart loses hover, data inspection and per-value comments. Produces visualizations that read as one system — elegant, accessible, consistent in light and dark — using a brand-neutral placeholder palette you swap for your own. Teaches a design-system-agnostic method: a form heuristic, a color formula with a runnable validator, mark specs, and interaction rules. A validated default palette is documented in `references/palette.md` — swap that file's values for your brand's. Triggers on: \"chart\", \"graph\", \"plot\", \"data viz\", \"visualization\", \"dashboard\", \"analytics\", \"visualize data\", \"categorical colors\", \"sequential / diverging palette\", \"stat tile\", \"sparkline\", \"heatmap\", \"legend\", \"axis\", \"tooltip\", \"chart colors\", \"color by series\".",
+          "type": "prompt",
+          "source": "bundled",
+          "protected": true
+        },
+        {
+          "name": "update-config",
+          "description": "Use this skill to configure the Claude Code harness via settings.json. Automated behaviors (\"from now on when X\", \"each time X\", \"whenever X\", \"before/after X\") require hooks configured in settings.json - the harness executes these, not Claude, so memory/preferences cannot fulfill them. Also use for: permissions (\"allow X\", \"add permission\", \"move permission to\"), env vars (\"set X=Y\"), hook troubleshooting, or any changes to settings.json/settings.local.json files. Examples: \"allow npm commands\", \"add bq permission to global settings\", \"move permission to user settings\", \"set DEBUG=true\", \"when claude stops show X\". For simple settings like theme/model, suggest the /config command.",
+          "type": "prompt",
+          "source": "bundled",
+          "protected": true
+        },
+        {
+          "name": "keybindings-help",
+          "description": "Use when the user wants to customize keyboard shortcuts, rebind keys, add chord bindings, or modify ~/.claude/keybindings.json. Examples: \"rebind ctrl+s\", \"add a chord shortcut\", \"change the submit key\", \"customize keybindings\".",
+          "type": "prompt",
+          "source": "bundled",
+          "protected": true
+        },
+        {
+          "name": "code-review",
+          "description": "Review the current diff, or a PR number/branch/path target, for correctness bugs and reuse/simplification/efficiency cleanups at the given effort level (low/medium: fewer, high-confidence findings; high→max: broader coverage, may include uncertain findings); with no level given, it reuses the level you typed last. Pass --comment to post findings as inline PR comments, or --fix to apply the findings to the working tree after the review.",
+          "type": "prompt",
+          "source": "bundled",
+          "protected": true
+        },
+        {
+          "name": "simplify",
+          "description": "Review the changed code for reuse, simplification, efficiency, and altitude cleanups, then apply the fixes. Quality only — it does not hunt for bugs; use /code-review for that.",
+          "type": "prompt",
+          "source": "bundled",
+          "protected": true
+        },
+        {
+          "name": "fewer-permission-prompts",
+          "description": "Scan your transcripts for common read-only Bash and MCP tool calls, then add a prioritized allowlist to project .claude/settings.json to reduce permission prompts.",
+          "type": "prompt",
+          "source": "bundled",
+          "protected": true
+        },
+        {
+          "name": "loop",
+          "description": "Run a prompt or slash command on a recurring interval (e.g. /loop 5m /foo). Omit the interval to let the model self-pace. - When the user wants to set up a recurring task, poll for status, or run something repeatedly on an interval (e.g. \"check the deploy every 5 minutes\", \"keep running /babysit-prs\"). Do NOT invoke for one-off tasks.",
+          "type": "prompt",
+          "source": "bundled",
+          "protected": true
+        },
+        {
+          "name": "claude-api",
+          "description": "Reference for the Claude API / Anthropic SDK — model ids, pricing, params, streaming, tool use, MCP, agents, caching, token counting, model migration.\nTRIGGER — read BEFORE opening the target file; don't skip because it \"looks like a one-liner\" — whenever: the prompt names Claude/Anthropic in any form (Claude, Anthropic, Fable, Opus, Sonnet, Haiku, `anthropic`, `@anthropic-ai`, `claude-*`, `us.anthropic.*`, `[1m]`); the user asks about an LLM (pricing/model choice/limits/caching) — never answer from memory; OR the task is LLM-shaped with provider unstated (agent/MCP/tool-definition/multi-agent/RAG/LLM-judge/computer-use; generate/summarize/extract/classify/rewrite/converse over NL; debugging refusals/cutoffs/streaming/tool-calls/tokens).\nSKIP only when another provider is being worked on (overrides all triggers): OpenAI/GPT/Gemini/Llama/Mistral/Cohere/Ollama named in the query; OR `grep -rE 'openai|langchain_openai|google.generativeai|genai|mistralai|cohere|ollama'` over the project hits (run this grep FIRST if no provider named — don't Read the file).",
+          "type": "prompt",
+          "source": "bundled",
+          "protected": true
+        },
+        {
+          "name": "workflow-authoring",
+          "description": "Reference for writing a Workflow tool script (script API and gotchas, resume, quality patterns, worked examples). Load before authoring a script for a workflow the user already opted into; it does not itself authorize running one.",
+          "type": "prompt",
+          "source": "bundled",
+          "protected": true
+        },
+        {
+          "name": "run",
+          "description": "Launch and drive this project's app to see a change working. Use when asked to run, start, or screenshot the app, or to confirm a change works in the real app (not just tests). First looks for a project skill that already covers launching the app; otherwise falls back to built-in patterns per project type (CLI, server, TUI, Electron, browser-driven, library).",
+          "type": "prompt",
+          "source": "bundled",
+          "protected": true
+        },
+        {
+          "name": "init",
+          "description": "Initialize a new CLAUDE.md file with codebase documentation",
+          "type": "prompt",
+          "source": "builtin",
+          "protected": false
+        },
+        {
+          "name": "security-review",
+          "description": "Complete a security review of the pending changes on the current branch",
+          "type": "prompt",
+          "source": "builtin",
+          "protected": false
+        }
+      ]
+    }
+  }
+}

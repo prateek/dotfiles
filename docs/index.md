@@ -47,6 +47,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [Goku Karabiner Migration](plans/goku-karabiner-migration-plan.md) | Active; Karabiner config now compiles from `karabiner.edn` via goku — on-device pad verification pending. |
 | [Leader Key to Tuna Migration](plans/leader-key-to-tuna-migration-plan.md) | Active; full cutover applied on the migrate-tuna branch (config at `~/.config/tuna`, F18→combo). Remaining: grant Tuna Accessibility, verify shell/URL binds. Leader Key kept as fallback. |
 | [Raycast Config Automation](plans/raycast-config-automation-plan.md) | Proposed; deferred backlog of Raycast preference keys worth porting into the managed plist, plus what the encrypted extension store puts out of reach. |
+| [Skill Management Console](plans/skill-management-console-plan.md) | Active; `skill-console` reproduces Claude Code's character-budgeted skill listing from live inputs, renders an HTML console over the repo's 142 skills plus third-party, user, and built-in rows, and applies exported decisions (description edits, frontmatter flags, vendored-skill deletion, package toggles, budget fraction) to the chezmoi source tree through a staged, validated, path-by-path commit. Phases 1-3 built; pi and Codex budget projection remains. |
 | [Sudo Askpass 1Password](plans/sudo-askpass-1password-plan.md) | Accepted design; implementation pending, current code still uses sudo keepalive. |
 | [Tartelet Self-Hosted Runners](plans/tartelet-runner-plan.md) | Active; cask, managed plist, LaunchAgent, host data, VM-image builder, and runbook landed. On-mini end-to-end (golden VM build + first-run credential paste) still to be exercised. |
 | [Tartelet Runner Memory-Guard](plans/tartelet-runner-memory-guard-proposal.md) | Proposed; design for a circuit breaker that sheds the runner under host memory pressure after a 2026-07-03 jetsam wedge. Prototyped and validated, then dropped — no code in-tree. |
@@ -83,6 +84,7 @@ for day-to-day implementation details.
 | Doc | Use it for |
 | --- | --- |
 | [Agent Skill Management Research](research/agent-skill-management-research.md) | Background on skill context pressure, package layout, and plugin defaults. |
+| [Skill Invocation-Control Frontmatter](research/skill-invocation-frontmatter-research.md) | Which harnesses honor `disable-model-invocation` and `user-invocable`, with per-harness evidence and citations. |
 | [Self-Improving Agents](research/self-improving-agents.md) | Pattern reference for durable agent feedback loops. |
 
 ## Historical Records

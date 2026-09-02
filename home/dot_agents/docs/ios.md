@@ -19,7 +19,7 @@ Reach for these in order.
 - **`~/.agents/skills/ios-flow-audit/`** — scripted end-to-end flows in the simulator with screenshot and accessibility-tree capture per step, plus an HTML flow report. Use for ship-gate regressions and agent-reviewable visual audits.
 - **`~/.agents/skills/ios-simulator-skill/`** — low-level Python primitives (taps, typing, gestures, accessibility dumps, app launching). `ios-flow-audit` delegates into it; reach for it directly when you need one of its primitives.
 - **`~/.agents/skills/ios-sim-lease/`** — simulator leasing for concurrent agents. **Design ready, helper not yet built**; see the skill's `TODO.md`. Until it lands, projects use a sentinel file at `.ios-sim-udid` (the `ios-project-scaffold` Makefile already reads from it).
-- **`~/.agents/skills/trycycle/`** — multi-phase orchestration for large changes. Invoke only when asked by name.
+- **`trycycle`** — multi-phase orchestration for large changes. Invoke only when asked by name. Ships in the `experimental` package, which is disabled by default, so enable `experimental@prateek-local` before reaching for it.
 
 Do not reinstall these dormant skills — each overlaps something above and went unused in real work:
 
