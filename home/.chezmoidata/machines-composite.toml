@@ -1,0 +1,18 @@
+# Defaults and intentional machine_type × OS exceptions layered by
+# home/.chezmoitemplates/features.tmpl. Keep the existing one-axis profiles in
+# machines.toml unchanged.
+
+[machines.defaults]
+orca_mode = "none"
+
+# Personal work DevPods use the work identity without inheriting the managed
+# Mac's desktop apps, Jamf elevation, private overlay, or install scripts.
+[machines.composite.work.linux]
+groups = ["core"]
+run_install_scripts = false
+apply_macos_defaults = false
+private_overlay = false
+elevation = "none"
+agent_clis = ["cursor-agent", "claude"]
+agent_session_wiki = false
+orca_mode = "headless"

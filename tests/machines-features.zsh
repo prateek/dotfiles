@@ -58,20 +58,26 @@ if not eval(expr, {"f": f}):
 
 # --- per-type composition matches the retired packages.machine_types ----------
 assert_json '{"machine_type":"ci"}' \
-  'f["groups"]==["core"] and f["run_install_scripts"] is True and f["apply_macos_defaults"] is True and f["secrets_enabled"] is False and f["private_overlay"] is False and f["elevation"]=="none" and f["granola_mcp"] is False and f["machine_type"]=="ci"' \
+  'f["groups"]==["core"] and f["run_install_scripts"] is True and f["apply_macos_defaults"] is True and f["secrets_enabled"] is False and f["private_overlay"] is False and f["elevation"]=="none" and f["granola_mcp"] is False and f["orca_mode"]=="none" and f["machine_type"]=="ci"' \
   "ci composition"
 
 assert_json '{"machine_type":"personal"}' \
-  'f["groups"]==["core","mac-desktop","ai-agent-apps","codex","developer-tools","personal-apps","forks"] and f["run_install_scripts"] is True and f["apply_macos_defaults"] is True and f["secrets_enabled"] is False and f["elevation"]=="none" and f["private_overlay"] is False and f["granola_mcp"] is True' \
+  'f["groups"]==["core","mac-desktop","ai-agent-apps","codex","developer-tools","personal-apps","forks"] and f["run_install_scripts"] is True and f["apply_macos_defaults"] is True and f["secrets_enabled"] is False and f["elevation"]=="none" and f["private_overlay"] is False and f["granola_mcp"] is True and f["orca_mode"]=="none"' \
   "personal composition"
 
 assert_json '{"machine_type":"homelab"}' \
   'f["groups"]==["core","ai-agent-apps","codex","developer-tools","apple-development","homelab-overlay"] and f["runner_vm_name"]=="tartelet-runner" and f["runner_vm_count"]==1 and f["runner_scope"]=="repo" and f["runner_start_on_launch"] is True and f["granola_mcp"] is True' \
   "homelab composition"
 
-assert_json '{"machine_type":"work"}' \
-  'f["groups"]==["core","mac-desktop","ai-agent-apps","developer-tools","work-apps","forks"] and f["private_overlay"] is True and f["elevation"]=="jamf-self-service" and f["granola_mcp"] is False' \
-  "work composition"
+if [[ "$(uname -s)" == "Linux" ]]; then
+  assert_json '{"machine_type":"work"}' \
+    'f["groups"]==["core"] and f["run_install_scripts"] is False and f["apply_macos_defaults"] is False and f["private_overlay"] is False and f["elevation"]=="none" and f["granola_mcp"] is False and f["orca_mode"]=="headless"' \
+    "work x Linux composition"
+else
+  assert_json '{"machine_type":"work"}' \
+    'f["groups"]==["core","mac-desktop","ai-agent-apps","developer-tools","work-apps","forks"] and f["private_overlay"] is True and f["elevation"]=="jamf-self-service" and f["granola_mcp"] is False and f["orca_mode"]=="none"' \
+    "work x Darwin composition"
+fi
 
 # --- machine_type default: absent resolves to personal ------------------------
 assert_json '{}' 'f["machine_type"]=="personal"' "absent machine_type -> personal"
@@ -136,10 +142,40 @@ assert_json '{"machine_type":"work","machines_local":{"elevation":"none"}}' \
 assert_json '{"machine_type":"work","machines_local":{"groups":["core"]}}' \
   'f["groups"]==["core"]' "machines_local replaces groups (no concat)"
 
-# --- os layer composes for a matching .chezmoi.os (darwin on this host) -------
-assert_json '{"machine_type":"personal","machines":{"os":{"darwin":{"apply_macos_defaults":false}}}}' \
+# --- os layer composes for the host's matching .chezmoi.os --------------------
+platform="${$(uname -s):l}"
+synthetic_os="$(printf '{"machine_type":"personal","machines":{"os":{"%s":{"apply_macos_defaults":false}}}}' "$platform")"
+assert_json "$synthetic_os" \
   'f["apply_macos_defaults"] is False and f["run_install_scripts"] is True' \
-  "os.darwin layer composes above defaults, below machines_local"
+  "os.$platform layer composes above defaults, below machines_local"
+
+# --- composite layer composes after type, before host-local ------------------
+synthetic_composite="$(printf '{"machine_type":"work","machines":{"composite":{"work":{"%s":{"groups":["core"],"private_overlay":false,"elevation":"none","orca_mode":"headless"}}}}}' "$platform")"
+assert_json "$synthetic_composite" \
+  'f["groups"]==["core"] and f["private_overlay"] is False and f["elevation"]=="none" and f["orca_mode"]=="headless"' \
+  "work.$platform synthetic composite overrides type.work"
+synthetic_local="$(printf '{"machine_type":"work","machines":{"composite":{"work":{"%s":{"elevation":"none"}}}},"machines_local":{"elevation":"test-override"}}' "$platform")"
+assert_json "$synthetic_local" \
+  'f["elevation"]=="test-override"' \
+  "machines_local overrides composite"
+
+# The real Linux exception is data-driven, so verify it independent of the host
+# OS running this test.
+python3 - "$DOTFILES_ROOT/home/.chezmoidata/machines-composite.toml" <<'PY' || exit 1
+import sys, tomllib
+
+features = tomllib.load(open(sys.argv[1], "rb"))["machines"]["composite"]["work"]["linux"]
+assert features == {
+    "groups": ["core"],
+    "run_install_scripts": False,
+    "apply_macos_defaults": False,
+    "private_overlay": False,
+    "elevation": "none",
+    "agent_clis": ["cursor-agent", "claude"],
+    "agent_session_wiki": False,
+    "orca_mode": "headless",
+}, features
+PY
 
 # --- unknown machine_type fails loud (the typo guard) -------------------------
 set +e

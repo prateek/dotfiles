@@ -1,6 +1,7 @@
 .PHONY: test test-chezmoi-apply hammerspoon hammerspoon-check hammerspoon-reload
 .PHONY: test-gemini-meeting-sync test-ghc test-gh-extensions-script test-mise-install-script test-xcode-install-script test-secret-backed-files test-kanata-config test-karabiner-goku test-chezmoi-config test-chezmoi-local-ignores test-chezmoi-script-status test-chezmoi-drift-banner test-finder-copy-path test-codex-config test-agentsview-config test-reconcile-wiki-clone test-claude-settings test-claude-statusline test-pi-settings test-pi-statusline test-orca-settings test-crit-config test-agent-skill-packages test-agent-skill-packages-native test-cmux-plist test-orbstack-plist test-selected-app-plists test-thaw-plist test-package-gated-configs test-machines-features test-elevation-render test-moom-plist test-nvalt-colors test-nvalt-plist test-voiceink-plist test-tartelet-settings test-tartelet-softnet-wrapper test-plist-hooks test-sudo-keepalive test-macos-defaults-script test-acpx-model-drift test-acpx-poll-stream test-brew-inventory test-brew-install-wrapper test-brew-bundle-script test-fork-reconcile test-retired-packages test-render-brewfile test-docs-lifecycle test-repo-index test-raycast-orca-worktree
 .PHONY: test-zed-settings test-zsh-prompt-host test-zsh-fresh-shells verify-zsh-fresh-shells bench-zsh-startup
+.PHONY: test-linux-work-profile test-orca-devpod-reconcile
 .PHONY: test-tart-install-helper test-trace-perfetto test-vm-install-log-scan test-vm-postflight-macos test-install-tart-dry-run test-install-tart-smoke test-install-tart-full test-install-tart-warm test-install-tart-warm-bootstrap test-install-tart-warm-refresh test-install-tart-warm-destroy
 
 HAMMERSPOON_SRC := home/dot_hammerspoon/init.fnl
@@ -202,6 +203,15 @@ test-package-gated-configs:
 test-machines-features:
 	@command -v chezmoi >/dev/null 2>&1 || { echo "Skipping machines-features test (chezmoi not installed)"; exit 0; }
 	@zsh ./tests/machines-features.zsh
+
+## Validate the minimal work × Linux profile (full coverage requires Linux).
+test-linux-work-profile:
+	@command -v chezmoi >/dev/null 2>&1 || { echo "Skipping Linux work profile test (chezmoi not installed)"; exit 0; }
+	@zsh ./tests/linux-work-profile.zsh
+
+## Verify corrupt Orca packages cannot reach the installer.
+test-orca-devpod-reconcile:
+	@zsh ./tests/orca-devpod-reconcile.zsh
 
 ## Regression tests for the elevation.sh template (method + jamf_policy_id).
 test-elevation-render:

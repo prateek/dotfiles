@@ -27,7 +27,7 @@
        migrates it to the top level instead of dropping it (dig is nil-safe on a
        fresh machine). */ -}}
 {{- $jamfPolicyId := or (dig "jamf_policy_id" "" .) (dig "elevation" "jamf_policy_id" "" .) -}}
-{{- if and (not $jamfPolicyId) (eq $machineType "work") -}}
+{{- if and (eq .chezmoi.os "darwin") (not $jamfPolicyId) (eq $machineType "work") -}}
 {{-   $jamfPolicyId = promptStringOnce . "jamf_policy_id" "Jamf Self Service policy ID for temp admin (see docs/references/jamf-self-service-elevation.md)" "" -}}
 {{- end -}}
 
@@ -44,6 +44,7 @@ xdg_state_dir = {{ (env "XDG_STATE_HOME" | default (joinPath .chezmoi.homeDir ".
 machine_type = {{ $machineType | quote }}
 jamf_policy_id = {{ $jamfPolicyId | quote }}
 
+{{ if eq .chezmoi.os "darwin" -}}
 # Render binary plists as XML for `chezmoi diff`. This only changes diff output.
 # Apply still writes binary plists. See docs/references/chezmoi-architecture.md > Plist Management.
 [[textconv]]
@@ -73,3 +74,4 @@ args = ["pre"]
 [hooks.apply.post]
 command = "{{ $dotfilesDir }}/scripts/chezmoi-hooks/plist-hooks.sh"
 args = ["post"]
+{{ end -}}
