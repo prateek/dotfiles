@@ -21,3 +21,12 @@ bin/grmrepo-refresh
 
 # crit-agent acpx bridge (crit's agent_cmd now runs claude directly)
 .local/bin/crit-agent
+
+# skills moved from utils-agent into the experimental package; the mirror under
+# ~/.agents/packages keeps the old directories until they are listed here
+.agents/packages/utils-agent/skills/local/experiment-scaffold
+.agents/packages/utils-agent/skills/local/image-gen-nano-banana
+.agents/packages/utils-agent/skills/local/readme-craft
+.agents/packages/utils-agent/skills/local/repo-guideline-site
+.agents/packages/utils-agent/skills/vendor/cli-creator
+.agents/packages/utils-agent/skills/vendor/trycycle
