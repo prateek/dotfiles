@@ -39,11 +39,15 @@ Expected package files:
 - `skills/vendor/<skill-id>/`: reviewed remote skill source.
 - `skills/vendor/<skill-id>/SOURCE.md`: upstream URL, resolved ref, license
   note, scanner commands, and reviewer notes.
-- Optional plugin-shaped payloads at the package root, mirroring what APM
-  projects: `commands/`, `agents/`, `hooks.json`, `.mcp.json`. The renderer
-  passes them through to the plugin tree's conventional locations. Claude
-  consumes all of them; Codex consumes skills and hooks, and the renderer
-  warns (and continues) for payload kinds Codex cannot map.
+- Optional plugin-shaped payloads at the package root, in the layout the
+  plugin tree uses: `commands/`, `agents/`, `hooks/` (its `hooks.json` plus
+  the scripts it runs), `.mcp.json`. The renderer passes them through
+  verbatim. Claude consumes all of them. Codex consumes skills only: the
+  rendered Codex manifest declares `hooks: {}` to switch off its
+  `hooks/hooks.json` auto-discovery, and the renderer warns (and continues)
+  for every payload kind Codex does not map.
+- `hooks/SOURCE.md`: provenance for an APM-vendored hooks payload, in the
+  same format as a vendored skill's `SOURCE.md`.
 
 There is no global package manifest. The renderers walk
 `home/dot_agents/packages/*/package.toml`; the package id is the directory name.
@@ -60,8 +64,9 @@ always-on packages (like `core`) as plugins with `default_loaded = true`.
 
 `package.toml` may set `default_loaded = false` to ship a package installed
 but disabled. Default is `true`. Today set to `false` on `design`,
-`experimental`, `ios`, `obsidian-wiki`, `utils-human`. The plugin tree still
-renders, so the skills are one flip away. `inventory-agent-skills` reports the
+`experimental`, `ios`, `obsidian-wiki`, `superpowers`, `utils-human`. The
+plugin tree still renders and apply keeps Claude's install record, so on
+Claude the skills are one flip away. `inventory-agent-skills` reports the
 field, so check it there rather than trusting this list.
 
 To flip a plugin globally, change `default_loaded` and re-render. To flip
@@ -71,7 +76,11 @@ one on for a single project, drop a project-root override:
   `"enabledPlugins": { "design@prateek-local": true }`.
 - Codex: `.codex/config.toml` with
   `[plugins."design@prateek-local"] enabled = true`. The project must be
-  trusted on first use (`codex trust`).
+  trusted on first use (`codex trust`). Apply does not give Codex a cache
+  copy of a disabled package (`codex plugin add` also enables, and Codex has
+  no disable verb), so first run `codex plugin add design@prateek-local` and
+  then `chezmoi apply ~/.codex/config.toml` to restore the user-level
+  `enabled = false`.
 
 Per-machine override of managed keys is not supported via the agent
 settings files; the chezmoi modify scripts deep-merge desired into each
@@ -98,15 +107,19 @@ Rules:
   see [ADR 0013](../../../docs/adr/0013-apm-vendored-tool-integrations.md).
   When the tool's binary moves (e.g. `brew upgrade crit`), re-run
   `vendor-agent-package` for its package so skills match the installed CLI.
-  crit's plan-review hook ships via `claude-settings-managed.json.tmpl`, not
-  the plugin tree.
-- Reject non-skill APM primitives unless this workflow is explicitly extended
-  to support them.
+  crit's plan-review hook is part of that vendored payload (the review
+  package's `hooks/`), so it moves with the skills.
+- The vendor flow carries skills and hooks. `audit-apm-source-surface`
+  rejects every other primitive a dependency ships (`mcp`, `commands`,
+  `prompts`, ...); extend the workflow before accepting one.
+- A package carries at most one `hooks/` payload. If two dependencies ship
+  hooks, split them across packages.
 
 Use `.agents/skills/agent-skill-management/scripts/vendor-agent-package
 <package>` for APM-backed vendoring. It stages APM output, audits the source
-surface, copies accepted skill trees, updates the package lockfile, and runs
-package validation.
+surface, copies accepted skill trees, copies a marketplace-plugin dependency's
+hooks (from apm's `.apm/hooks` normalization) into `hooks/`, updates the
+package lockfile, and runs package validation.
 
 ### Refreshing to latest upstream
 
@@ -118,7 +131,8 @@ refresh needs a lockfile update first. For each package with APM dependencies:
    Running `apm update` in the package root would litter it with
    `apm_modules/` and deployed skill output.
 2. Run `vendor-agent-package <package>`.
-3. Re-apply the local deltas noted in each vendored skill's `SOURCE.md`
+3. Re-apply the local deltas noted in each vendored skill's (and `hooks/`)
+   `SOURCE.md`
    (LICENSE copies, the trycycle `literal_run_phase.py` rename), then review
    the vendor diff before committing. `validate-agent-packages` fails on any
    upstream filename that hits a chezmoi attribute prefix (like `run_`);
@@ -135,6 +149,11 @@ Refresh gotchas:
   and repo-root deps do not discover skills inside hidden directories either.
   Enumerate each skill subdir instead (`.../.skills/<skill>`, one dep per
   skill; see the obsidian-wiki package).
+- A repo-root marketplace-plugin dependency (for example `obra/superpowers`)
+  vendors its skills and its `hooks/`; any other primitive it ships fails
+  `audit-apm-source-surface` until the workflow carries it. A bare `skills/`
+  directory is not a valid apm dependency, so falling back to skills-only
+  means one dep per `skills/<skill>` subdirectory.
 - SOURCE.md regeneration preserves only the `License` and `Notes` fields.
   Keep local-delta and rename notes inside `Notes`, never as extra bullets.
 - When a skill pairs with a CLI this repo installs (acpx, crit, agent-slack,
@@ -196,12 +215,18 @@ Do not hand-edit these tool-owned paths:
 - `~/.claude/plugins/cache/`
 - `~/.codex/plugins/cache/`
 
-Use `.agents/skills/agent-skill-management/scripts/reconcile-agent-plugins` to
-print the native tool commands needed to reconcile installed/cache state with
-the local marketplace. The script is preview-only (copy/paste the output);
-chezmoi does not render those records. Codex cache refresh commands are emitted
-only for default-loaded packages because `codex plugin add` also enables the
-plugin.
+`chezmoi apply` reconciles those records through the CLIs themselves:
+`run_onchange_after_36-agent-plugins.sh.tmpl` runs
+`.agents/skills/agent-skill-management/scripts/reconcile-agent-plugins --apply`
+for each CLI in the machine's `agent_clis` right after rendering the
+marketplace. Claude gets the marketplace registered, missing packages
+installed, enable state matched to `default_loaded`, and orphaned
+`@prateek-local` records uninstalled. Codex gets `plugin add` for
+default-loaded packages (its cache refresh) and `plugin remove` for orphans;
+disabled packages are skipped because `add` also enables. Run the script
+without flags to print the equivalent command list for a manual pass. Details
+in [plugin-reconcile.md](references/plugin-reconcile.md) and
+[ADR 0020](../../../docs/adr/0020-apply-reconciles-plugin-installs.md).
 
 ## Validation
 

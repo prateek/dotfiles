@@ -7,7 +7,8 @@ related:
   - ../plans/crit-integration-plan.md
   - ../plans/agent-plugin-renderer-plan.md
   - 0007-default-loaded-plugin-policy.md
-status_detail: "Accepted with the crit re-vendor; applies to future agent tool integrations."
+  - 0019-plugin-hooks-in-vendored-payload.md
+status_detail: "Accepted with the crit re-vendor; applies to future agent tool integrations. The plan-review hook delivery path changed on 2026-09-02: see ADR 0019, which moves it from managed settings into the review plugin's vendored hooks/."
 ---
 
 # ADR 0013 — Agent tool integrations stay APM-vendored

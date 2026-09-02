@@ -3,13 +3,14 @@ status: active
 doc_type: plan
 owner: Prateek
 created: 2026-07-02
-updated: 2026-07-02
+updated: 2026-09-02
 related:
   - ../adr/0007-default-loaded-plugin-policy.md
   - ../adr/0013-apm-vendored-tool-integrations.md
+  - ../adr/0019-plugin-hooks-in-vendored-payload.md
   - ../research/agent-skill-management-research.md
   - ../../.agents/skills/agent-skill-management/SKILL.md
-status_detail: "Implementation landed on prateek/debug-crit-triggers 2026-07-02; pack-bundle vendoring remains deferred."
+status_detail: "Implementation landed on prateek/debug-crit-triggers 2026-07-02; hooks payload vendoring landed with the superpowers package 2026-09-02; pack-bundle vendoring remains deferred."
 ---
 
 # Agent Plugin Renderer Plan
@@ -48,15 +49,21 @@ Three inputs drove this design:
    runtime `.system/` skills through that path
    (`maintain-agent-skill-roots`, chezmoi script 35).
 2. **Payload contract is the plugin layout.** A package payload is the same
-   five-part tree APM projects: `skills/`, `commands/`, `agents/`,
-   `hooks.json`, `.mcp.json`. Local and vendored payloads share one shape;
-   the renderer passes payload directories through verbatim and stamps the
-   `.claude-plugin` / `.codex-plugin` manifests and marketplace entries.
+   five-part tree APM projects: `skills/`, `commands/`, `agents/`, `hooks/`,
+   `.mcp.json`. `hooks/` is a directory (`hooks.json` plus the scripts it
+   runs), matching the plugin tree and apm's `.apm/hooks` normalization; the
+   merged `hooks.json` file first sketched here cannot carry scripts. Local
+   and vendored payloads share one shape; the renderer passes payload
+   directories through verbatim and stamps the `.claude-plugin` /
+   `.codex-plugin` manifests and marketplace entries.
 3. **Per-agent mapping with warn-and-continue.** Claude maps all five payload
-   kinds. Codex maps skills and hooks (`features.plugin_hooks`). A payload
-   kind with no mapping for an enabled agent produces a rendered warning and
-   is skipped; it must never be dropped silently, and it does not fail the
-   render.
+   kinds. Codex maps skills only. Vendored hooks are Claude-shaped and their
+   upstream authors suppress them on Codex (superpowers dropped its Codex
+   session-start hook because Codex triggers skills natively), so the Codex
+   manifest declares `hooks: {}`, the one value that disables Codex's
+   `hooks/hooks.json` auto-discovery. A payload kind with no mapping for an
+   enabled agent produces a rendered warning and is skipped; it must never
+   be dropped silently, and it does not fail the render.
 4. **Hooks ship through the same review gate as skills.** Hooks are
    executable config, so the vendor-time diff review is the gate; no extra
    machinery.

@@ -3,34 +3,173 @@
 # requires-python = ">=3.14"
 # dependencies = []
 # ///
-"""Print native CLI commands needed to reconcile the local plugin marketplace.
+"""Reconcile Claude and Codex plugin install records with the local marketplace.
 
-This is a preview-only helper: copy/paste the printed commands. There is no
-apply path here; native Codex and Claude CLIs own the installed/cache state.
+Without flags, print the native CLI commands a full reconcile would run, for a
+human to copy. With `--apply`, converge each requested agent through its own
+CLI: register the marketplace, install rendered packages that are missing,
+match Claude's enable state to `default_loaded`, refresh Codex's cache copies,
+and remove `@prateek-local` records for packages that no longer render.
+`chezmoi apply` runs the apply mode after rendering the marketplace tree.
+
+The CLIs stay the only writers of their install records and caches; this
+script never edits `installed_plugins.json`, `config.toml`, or a cache.
 """
 from __future__ import annotations
+
+import argparse
+import json
+import subprocess
+import sys
+from pathlib import Path
 
 from agent_skill_lib import load_packages
 
 
-def main() -> int:
-    packages = load_packages()
+MARKETPLACE = "prateek-local"
+DEFAULT_PLUGINS_ROOT = Path.home() / ".agents/plugins"
+DRY_RUN = False
+
+
+def slug(package_id: str) -> str:
+    return f"{package_id}@{MARKETPLACE}"
+
+
+def preview(packages) -> list[str]:
     commands = [
         "claude plugin marketplace add ~/.agents/plugins --scope user",
-        "claude plugin marketplace update prateek-local",
+        f"claude plugin marketplace update {MARKETPLACE}",
     ]
     for package in packages:
         if package.render.get("codex") == "plugin" and package.default_loaded:
-            commands.append(f"codex plugin add {package.package_id}@prateek-local")
+            commands.append(f"codex plugin add {slug(package.package_id)}")
     for package in packages:
         if package.render.get("claude") != "plugin":
             continue
-        slug = f"{package.package_id}@prateek-local"
         toggle = "enable" if package.default_loaded else "disable"
-        commands.append(f"claude plugin install {slug} --scope user")
-        commands.append(f"claude plugin {toggle} {slug} --scope user")
-    for command in commands:
-        print(command)
+        commands.append(f"claude plugin install {slug(package.package_id)} --scope user")
+        commands.append(f"claude plugin {toggle} {slug(package.package_id)} --scope user")
+    return commands
+
+
+def run(cmd: list[str]) -> None:
+    if DRY_RUN:
+        print("[dry-run] " + " ".join(cmd), flush=True)
+        return
+    print(" ".join(cmd), flush=True)
+    # Home as cwd keeps project-scoped plugin settings out of the picture.
+    result = subprocess.run(cmd, cwd=Path.home(), text=True, capture_output=True)
+    if result.returncode != 0:
+        detail = (result.stdout + result.stderr).strip()
+        raise RuntimeError(f"{' '.join(cmd)} failed ({result.returncode}): {detail}")
+
+
+def read_json(cmd: list[str]):
+    result = subprocess.run(cmd, cwd=Path.home(), text=True, capture_output=True)
+    if result.returncode != 0:
+        detail = (result.stdout + result.stderr).strip()
+        raise RuntimeError(f"{' '.join(cmd)} failed ({result.returncode}): {detail}")
+    try:
+        return json.loads(result.stdout)
+    except ValueError as exc:
+        raise RuntimeError(f"{' '.join(cmd)} did not return JSON: {exc}") from exc
+
+
+def reconcile_claude(packages, plugins_root: Path) -> None:
+    desired = {
+        slug(package.package_id): package.default_loaded
+        for package in packages
+        if package.render.get("claude") == "plugin"
+    }
+    registered = {
+        entry.get("name"): Path(entry.get("installLocation") or entry.get("path") or "")
+        for entry in read_json(["claude", "plugin", "marketplace", "list", "--json"])
+    }
+    if registered.get(MARKETPLACE, Path()).resolve() != plugins_root.resolve():
+        # Declaring the marketplace in settings.json is not enough for the CLI
+        # to install from it. `add` registers the directory and, for a name
+        # already registered elsewhere, moves it in place; `remove` would also
+        # drop every plugin installed from it.
+        run(["claude", "plugin", "marketplace", "add", str(plugins_root), "--scope", "user"])
+
+    installed = {
+        entry["id"]: bool(entry.get("enabled"))
+        for entry in read_json(["claude", "plugin", "list", "--json"])
+        if entry.get("scope") == "user"
+    }
+    for plugin, default_loaded in desired.items():
+        if plugin not in installed:
+            run(["claude", "plugin", "install", plugin, "--scope", "user"])
+            installed[plugin] = True  # install enables at the same scope
+        if installed[plugin] != default_loaded:
+            toggle = "enable" if default_loaded else "disable"
+            run(["claude", "plugin", toggle, plugin, "--scope", "user"])
+    for plugin in sorted(installed):
+        if plugin.endswith(f"@{MARKETPLACE}") and plugin not in desired:
+            run(["claude", "plugin", "uninstall", plugin, "--scope", "user"])
+
+
+def reconcile_codex(packages) -> None:
+    rendered = {
+        slug(package.package_id): package.default_loaded
+        for package in packages
+        if package.render.get("codex") == "plugin"
+    }
+    listing = read_json(["codex", "plugin", "list", "--json"])
+    installed = {
+        entry.get("pluginId")
+        for entry in listing.get("installed", [])
+        if entry.get("pluginId")
+    }
+    # Codex loads from cache copies, so `add` is also the content refresh; it
+    # writes `enabled = true`, which only matches policy for default-loaded
+    # packages. Disabled packages stay renderable for `codex plugin add` by
+    # hand when a project needs one.
+    for plugin, default_loaded in rendered.items():
+        if default_loaded:
+            run(["codex", "plugin", "add", plugin])
+    for plugin in sorted(installed):
+        if plugin.endswith(f"@{MARKETPLACE}") and plugin not in rendered:
+            run(["codex", "plugin", "remove", plugin])
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--apply", action="store_true", help="run the reconcile instead of printing it")
+    parser.add_argument(
+        "--agent",
+        action="append",
+        choices=["claude", "codex"],
+        default=[],
+        help="agent CLI to reconcile in --apply mode (repeatable)",
+    )
+    parser.add_argument("--plugins-root", type=Path, default=DEFAULT_PLUGINS_ROOT)
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="with --apply: read CLI state but print the mutating commands instead of running them",
+    )
+    args = parser.parse_args()
+    packages = load_packages()
+
+    if not args.apply:
+        if args.agent:
+            parser.error("--agent only applies with --apply")
+        for command in preview(packages):
+            print(command)
+        return 0
+    if not args.agent:
+        parser.error("--apply needs at least one --agent")
+    global DRY_RUN
+    DRY_RUN = args.dry_run
+    try:
+        if "claude" in args.agent:
+            reconcile_claude(packages, args.plugins_root.expanduser())
+        if "codex" in args.agent:
+            reconcile_codex(packages)
+    except RuntimeError as error:
+        print(f"reconcile-agent-plugins: {error}", file=sys.stderr)
+        return 1
     return 0
 
 

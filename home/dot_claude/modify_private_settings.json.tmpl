@@ -6,7 +6,8 @@
 """Deep-merge chezmoi's desired Claude settings into ~/.claude/settings.json.
 
 Desired wins on conflicts; unrelated keys pass through untouched. Hook events
-union by matcher so runtime injections from other tools survive. Malformed
+union by matcher so runtime injections from other tools survive; a desired
+matcher with an empty hooks list retires that matcher instead. Malformed
 input propagates from `json.loads` to chezmoi. See SKILL.md and ADR 0007 for
 the override model and the stale-key trade-off.
 
@@ -50,12 +51,18 @@ def merge_hooks(base, overlay):
     """Union hook events by matcher; desired wins on the matchers it names.
 
     Orca and Superset inject their own blocks into these lists at runtime, and
-    overwriting the list would drop them on every apply.
+    overwriting the list would drop them on every apply. A desired block with
+    an empty hooks list claims its matcher without contributing anything, so
+    it removes a block chezmoi used to own (hooks that moved into a plugin).
     """
     for event, blocks in overlay.items():
         claimed = {block.get("matcher") for block in blocks}
+        desired = [b for b in blocks if b.get("hooks")]
         foreign = [b for b in base.get(event, []) if b.get("matcher") not in claimed]
-        base[event] = blocks + foreign
+        if desired or foreign:
+            base[event] = desired + foreign
+        else:
+            base.pop(event, None)
     return base
 
 
@@ -64,6 +71,8 @@ def merge_settings(base, overlay):
     deep_merge(base, {k: v for k, v in overlay.items() if k != "hooks"})
     if "hooks" in overlay:
         merge_hooks(base.setdefault("hooks", {}), overlay["hooks"])
+        if not base["hooks"]:
+            del base["hooks"]
     return base
 
 

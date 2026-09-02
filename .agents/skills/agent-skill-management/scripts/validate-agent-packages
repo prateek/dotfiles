@@ -5,6 +5,7 @@
 # ///
 from __future__ import annotations
 
+import json
 import sys
 from collections import defaultdict
 from re import fullmatch
@@ -70,6 +71,19 @@ def apm_dependencies(path):
             yield entry, pinned_ref
 
 
+def hooks_payload_errors(hooks_dir) -> list[str]:
+    hooks_json = hooks_dir / "hooks.json"
+    if not hooks_json.is_file():
+        return [f"{hooks_dir}: hooks payload is missing hooks.json"]
+    try:
+        data = json.loads(hooks_json.read_text())
+    except ValueError as exc:
+        return [f"{hooks_json}: invalid JSON: {exc}"]
+    if not isinstance(data, dict) or not isinstance(data.get("hooks"), dict):
+        return [f"{hooks_json}: expected a top-level \"hooks\" object"]
+    return []
+
+
 def main() -> int:
     errors: list[str] = []
     skill_locations: dict[str, list[str]] = defaultdict(list)
@@ -117,6 +131,9 @@ def main() -> int:
                     f"{path.name.split('_', 1)[0]}_ filename prefix as a "
                     f"source-state attribute; rename with a literal_ prefix"
                 )
+        hooks_dir = package.path / "hooks"
+        if hooks_dir.is_dir():
+            errors.extend(hooks_payload_errors(hooks_dir))
         for skill in package.skills:
             skill_locations[skill.skill_id].append(str(skill.path))
             if skill.kind == "vendor" and not (skill.path / "SOURCE.md").exists():

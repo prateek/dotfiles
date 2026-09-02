@@ -10,8 +10,9 @@ import sys
 from pathlib import Path
 
 
+# Primitives apm can project that vendor-agent-package does not carry. Hooks
+# are vendored as a package payload, so they are not listed.
 UNSUPPORTED = {
-    "hooks",
     "mcp",
     "mcpServers",
     "servers",

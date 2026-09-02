@@ -30,20 +30,28 @@ from agent_skill_lib import (
 GENERATOR = ".agents/skills/agent-skill-management/scripts/render-agent-plugin-marketplace"
 CODEX_PLUGIN_SOURCE_ROOT = "./.agents/plugins/plugins"
 
-# Codex plugins consume skills and hooks; the remaining payload kinds are
-# Claude-only until Codex grows an equivalent surface.
-CODEX_UNMAPPED_PAYLOADS = {"commands", "agents", ".mcp.json"}
+# Codex plugins consume skills only. Vendored hooks come from Claude-shaped
+# plugins whose authors suppress them on Codex (superpowers: Codex triggers
+# skills natively and the bootstrap hook made it worse), and Codex gates
+# plugin hooks behind a feature flag plus a trust review anyway. The remaining
+# payload kinds are Claude-only until Codex grows an equivalent surface.
+CODEX_UNMAPPED_PAYLOADS = {"hooks", "commands", "agents", ".mcp.json"}
 
 
 def codex_plugin_manifest(package) -> dict:
-    return {
+    manifest = {
         "name": package.package_id,
         "version": "1.0.0",
         "description": f"{package.display_name} skills from Prateek's dotfiles.",
         "author": {"name": "Prateek"},
         "license": "UNLICENSED",
         "skills": "./skills/",
-        "interface": {
+    }
+    if "hooks" in package.payloads:
+        # Exactly {} reads as "no hooks"; an absent field falls back to
+        # auto-discovering hooks/hooks.json.
+        manifest["hooks"] = {}
+    manifest["interface"] = {
             "displayName": package.display_name,
             "shortDescription": f"{package.display_name} skills",
             "longDescription": f"Generated local plugin for {package.display_name}.",
@@ -51,33 +59,32 @@ def codex_plugin_manifest(package) -> dict:
             "category": "Coding",
             "capabilities": ["Interactive", "Write"],
             "defaultPrompt": [f"Use the {package.display_name} plugin."],
-        },
     }
+    return manifest
 
 
 def claude_plugin_manifest(package) -> dict:
-    return {
+    manifest = {
         "name": package.package_id,
         "version": "1.0.0",
         "description": f"{package.display_name} skills from Prateek's dotfiles.",
         "author": {"name": "Prateek"},
         "skills": ["./skills"],
     }
+    return manifest
 
 
 def copy_payloads(package, plugin_root: Path) -> None:
-    # Payloads land at the plugin-spec conventional locations both agents
-    # auto-discover; manifests only need the explicit skills key.
+    # Payloads land at the plugin-spec conventional locations Claude
+    # auto-discovers. Claude rejects a manifest entry that repeats the default
+    # hooks/hooks.json path as a duplicate, so only Codex's manifest names
+    # hooks, and only to switch them off.
     for payload in package.payloads:
         source = package.path / payload
-        if payload == "hooks.json":
-            target = plugin_root / "hooks/hooks.json"
-            target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(source, target)
-        elif payload == ".mcp.json":
-            shutil.copy2(source, plugin_root / ".mcp.json")
+        if source.is_dir():
+            copy_skill_tree(source, plugin_root / payload)
         else:
-            shutil.copytree(source, plugin_root / payload)
+            shutil.copy2(source, plugin_root / payload)
     if package.render.get("codex") == "plugin":
         for payload in package.payloads:
             if payload in CODEX_UNMAPPED_PAYLOADS:

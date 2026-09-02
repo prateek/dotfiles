@@ -9,7 +9,8 @@ Preferred path:
    `.agents/skills/agent-skill-management/scripts/vendor-agent-package
    <package>` once the APM dependency path is ready.
 3. Review the resulting `skills/vendor/<skill-id>/` diff, including
-   `SOURCE.md`.
+   `SOURCE.md`, and any `hooks/` payload the dependency shipped (its own
+   `SOURCE.md` records the same provenance).
 4. Regenerate and validate generated projections.
 
 Manual vendoring is allowed only when a useful remote skill cannot be expressed

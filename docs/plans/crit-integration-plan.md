@@ -9,7 +9,7 @@ superseded_by: ./plannotator-experiment-plan.md
 related:
   - ../adr/0013-apm-vendored-tool-integrations.md
   - ../plans/agent-plugin-renderer-plan.md
-status_detail: "The superseding plannotator experiment was reverted on 2026-08-25, so the setup this plan built is live again. The doc stays closed; the repo state (managed settings hook, review package) is authoritative."
+status_detail: "The superseding plannotator experiment was reverted on 2026-08-25, so the setup this plan built is live again. The doc stays closed; the repo state is authoritative. Since 2026-09-02 the plan-review hook ships in the review plugin's vendored hooks/, not managed settings (ADR 0019)."
 ---
 
 # Crit Integration Plan

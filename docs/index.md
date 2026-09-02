@@ -38,7 +38,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | --- | --- |
 | [acpx Claude Code Streaming PoC](plans/acpx-claude-streaming-poc-plan.md) | Active; PoC executed with a go recommendation — `poll-stream` helper landed at `home/dot_agents/bin/` (target `~/.agents/bin/poll-stream`), review-hardened, and the acpx conventions doc teaches per-harness watching lanes. Remaining: live steering demo, the ADR 0016 packaging move, land. |
 | [ADR 0016 - Vendored dependency content may land inside a local skill](adr/0016-vendor-into-skill-references.md) | Proposed; per-skill vendor destinations so a local skill can carry upstream content as references. First customer: acpx ([plan](plans/acpx-claude-streaming-poc-plan.md)). |
-| [Agent Plugin Renderer](plans/agent-plugin-renderer-plan.md) | Active; single plugin-only render mode with APM payload pass-through landed — pack-bundle vendoring stays deferred. |
+| [Agent Plugin Renderer](plans/agent-plugin-renderer-plan.md) | Active; plugin-only render mode, APM payload pass-through, and hooks vendoring landed. Pack-bundle vendoring stays deferred. |
 | [Agent Session Wiki](plans/agent-session-wiki-plan.md) | Active; cross-machine session archive (prateek/wiki-agent-sessions), hourly Orca sync, agentsview session_sources wiring, obsidian-wiki plugin package — landing on av-history. See [ADR 0017](adr/0017-agent-session-archive.md). |
 | [BetterDisplay Display Modes](plans/betterdisplay-display-modes-plan.md) | Proposed only; no `displayctl` implementation exists in this checkout. |
 | [Decomment Skill](plans/decomment-skill-plan.md) | Active; decomment core skill, trigger-channel fixes, and evals under implementation. |
@@ -78,6 +78,8 @@ for day-to-day implementation details.
 | [ADR 0015 - Downstream forks as thin assembly repos](adr/0015-downstream-fork-daily-driver.md) | [Downstream Fork plan](plans/downstream-fork-plan.md) and the [`fork-lifecycle` skill](../.agents/skills/fork-lifecycle/SKILL.md) (fleet ops live in the `fork-ops` skill in `prateek/forks`). |
 | [ADR 0017 - Cross-machine agent-session archive](adr/0017-agent-session-archive.md) | [Agent Session Wiki plan](plans/agent-session-wiki-plan.md) and the `agent-session-wiki` operator skill (utils-agent package). |
 | [ADR 0018 - Sparse, blobless archive clones on work machines](adr/0018-sparse-work-archive-clones.md) | `agent_session_wiki_sparse` in `machines.toml`, reconciled by `scripts/agent-sessions/reconcile-wiki-clone`; the ingest host stays a full clone. |
+| [ADR 0019 - Plugin hooks ship in the vendored plugin payload](adr/0019-plugin-hooks-in-vendored-payload.md) | [Agent Skill Management](../.agents/skills/agent-skill-management/SKILL.md); first consumers are the superpowers package and crit's plan-review hook. |
+| [ADR 0020 - chezmoi apply reconciles plugin install records](adr/0020-apply-reconciles-plugin-installs.md) | `reconcile-agent-plugins --apply`, run by `run_onchange_after_36-agent-plugins`; see [Plugin Reconcile](../.agents/skills/agent-skill-management/references/plugin-reconcile.md). |
 
 ## Research
 

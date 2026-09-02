@@ -1,0 +1,9 @@
+display_name = "Superpowers"
+# Ships disabled everywhere; enable per project (ADR 0007). Its
+# using-superpowers skill tells the agent to route every task through the
+# package's process skills, which is not the default posture here.
+default_loaded = false
+
+[render]
+codex = "plugin"
+claude = "plugin"

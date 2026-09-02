@@ -37,6 +37,7 @@ def main() -> int:
                 "display_name": package.display_name,
                 "render": package.render,
                 "default_loaded": package.default_loaded,
+                "payloads": list(package.payloads),
                 "skills": skills,
             }
         )

@@ -31,10 +31,11 @@ VALID_RENDER_VALUES = {"plugin", "none"}
 AGENTS = ("codex", "claude")
 MAX_SKILL_DESCRIPTION_CHARS = 1024
 
-# Plugin-shaped payload surface a package may carry beyond skills/, mirroring
-# what APM projects (and what `apm pack` bundles emit).
-PAYLOAD_DIRS = ("commands", "agents")
-PAYLOAD_FILES = ("hooks.json", ".mcp.json")
+# Plugin-shaped payload surface a package may carry beyond skills/: the plugin
+# layout both agents auto-discover, and the shape apm normalizes a marketplace
+# plugin into under .apm/. hooks/ holds hooks.json plus the scripts it runs.
+PAYLOAD_DIRS = ("agents", "commands", "hooks")
+PAYLOAD_FILES = (".mcp.json",)
 
 # shutil.ignore_patterns globs for files that never reach a rendered skill.
 SKILL_TREE_IGNORE_PATTERNS = (
@@ -266,7 +267,10 @@ def relative_files(root: Path) -> dict[str, str]:
         if path.is_symlink():
             result[rel] = f"symlink:{os.readlink(path)}"
         else:
-            result[rel] = hashlib.sha256(path.read_bytes()).hexdigest()
+            # Hook scripts run from the rendered tree, so a mode-only change
+            # is real drift.
+            mode = "x" if path.stat().st_mode & 0o111 else "-"
+            result[rel] = f"{hashlib.sha256(path.read_bytes()).hexdigest()}:{mode}"
     return result
 
 

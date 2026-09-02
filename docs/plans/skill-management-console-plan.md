@@ -331,8 +331,9 @@ cell   = "< 20" if tokens < 20 else "~" + str(round_half_up(tokens / 10) * 10)
 
 Rounding is half-up, not Python's banker's `round()`. The `< 20` bucket is a
 cost boundary at 58 characters (3 bytes per token), not a rendering boundary:
-`plan-detail` and `do-new-prompt-plan` are full rows that print `< 20`. Do not
-infer name-only from `< 20`.
+in the reference capture, the `plan-detail` and `do-new-prompt-plan` user
+commands (since removed) are full rows that print `< 20`. Do not infer
+name-only from `< 20`.
 
 Ground truth is the `skill_listing` attachment in
 `~/.claude/projects/<slug>/*.jsonl` (`isInitial: true`, matching `cwd`), which

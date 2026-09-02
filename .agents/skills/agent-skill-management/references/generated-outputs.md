@@ -25,8 +25,11 @@ not from the `marketplace.json` directory. For the live
 
 `home/.chezmoiscripts/run_onchange_after_35-agent-skill-roots.sh.tmpl` and
 `home/.chezmoiscripts/run_onchange_after_36-agent-plugins.sh.tmpl` maintain
-that state during `chezmoi apply`. Their template comments include hashes for
-the renderer code (and, for the plugin renderer, `home/dot_agents/packages/**`),
-so chezmoi reruns them only when inputs change.
+that state during `chezmoi apply`. Script 36 also runs
+`reconcile-agent-plugins --apply` so each agent CLI's install records follow
+the rendered marketplace (see [plugin-reconcile.md](plugin-reconcile.md)).
+Their template comments include hashes for the renderer and reconciler code
+(and, for the plugin renderer, `home/dot_agents/packages/**` including file
+modes), so chezmoi reruns them only when inputs change.
 
 Run renderers with explicit temp output paths and `--check` before handoff.

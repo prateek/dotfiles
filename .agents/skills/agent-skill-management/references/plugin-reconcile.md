@@ -1,14 +1,45 @@
 # Plugin Reconcile
 
-Chezmoi owns desired plugin source and config. Codex and Claude Code own cache
-and install records.
+Chezmoi owns desired plugin source and config. Codex and Claude Code own their
+install records and caches, and only their CLIs write them.
 
-Run `.agents/skills/agent-skill-management/scripts/reconcile-agent-plugins` to
-print the native commands for the current package render policy. The script is
-preview-only — copy/paste the output; it has no apply path. It refreshes the
-Codex cache for default-loaded packages with `codex plugin add`, then emits a
-`claude plugin install` per package plus an `enable` or `disable` matching the
-package's `default_loaded` value. Output is sorted alphabetically by package id:
+`chezmoi apply` converges those records. After rendering `~/.agents/plugins`,
+`run_onchange_after_36-agent-plugins.sh.tmpl` runs
+
+```sh
+.agents/skills/agent-skill-management/scripts/reconcile-agent-plugins \
+  --apply --plugins-root ~/.agents/plugins --agent claude [--agent codex]
+```
+
+for each CLI in the machine's `agent_clis`
+([ADR 0020](../../../../docs/adr/0020-apply-reconciles-plugin-installs.md)).
+Per agent:
+
+- Claude: `claude plugin marketplace add ~/.agents/plugins --scope user` when
+  `marketplace list --json` lacks `prateek-local` (declaring it in
+  `settings.json` is not enough for the CLI to install from it);
+  `plugin install` for every rendered package missing from
+  `plugin list --json`; `enable` or `disable` only when the listed state
+  differs from `default_loaded` (install enables, and both toggles fail when
+  the plugin is already in the target state); `uninstall` for `@prateek-local`
+  records whose package no longer renders. Commands run from `$HOME` so
+  project-scoped settings do not colour the state it reads.
+- Codex: `codex plugin add` for every default-loaded package on each run (Codex
+  copies plugins into its cache, so `add` is the content refresh), and
+  `codex plugin remove` for orphaned `@prateek-local` records. `add` also
+  writes `enabled = true`, so disabled packages are left alone. To use one in
+  a single project, run `codex plugin add <pkg>@prateek-local` by hand and then
+  `chezmoi apply ~/.codex/config.toml` to restore its user-level
+  `enabled = false` before relying on the project override.
+
+Any failing command fails the script and chezmoi retries it on the next apply.
+The script reruns only when its inputs change (renderer, reconciler, package
+tree); to force a pass, run the command above by hand or
+`chezmoi state delete-bucket --bucket=scriptState`.
+
+Without flags the script prints the full command list for a manual pass. It
+emits the Codex refresh for default-loaded Codex plugins, then a Claude install
+plus `enable` or `disable` per render policy, sorted by package id:
 
 ```sh
 claude plugin marketplace add ~/.agents/plugins --scope user
@@ -29,19 +60,18 @@ claude plugin install utils-human@prateek-local --scope user
 claude plugin disable utils-human@prateek-local --scope user
 ```
 
-`codex plugin add` refreshes the installed cache but also writes
-`enabled = true`. The helper therefore emits it only for packages whose
-`default_loaded` policy is true. Disabled package source still renders into the
-local marketplace. To refresh one for project-only use, run `codex plugin add`
-and then `chezmoi apply ~/.codex/config.toml` to restore its user-level
-`enabled = false` policy before relying on the project override.
-
-Package versions stay at 1.0.0, so content-only refreshes never change the
-plugin version. Claude's `plugin install` and `plugin update` both
-short-circuit on an already-installed same-version plugin and leave its cache
-stale. To push refreshed content into Claude's cache, run
-`claude plugin uninstall <pkg>@prateek-local --scope user` and then the
-`install` from the reconcile output; enable state survives the reinstall.
+Content refreshes need no reinstall on Claude. Claude loads plugins from a
+`directory`-source marketplace in place: with `claude -p ... --debug-file`,
+the skill and hook paths for every `@prateek-local` plugin resolve under
+`~/.agents/plugins/plugins/<pkg>/`, not under the copy `plugin install` left
+in `~/.claude/plugins/cache/` (verified on Claude Code 2.1.258; GitHub-sourced
+plugins do load from the cache). The docs describe cache copies for all
+marketplace plugins, so re-check the debug paths after a Claude upgrade
+before relying on this. `chezmoi apply` re-rendering the marketplace tree is
+therefore the refresh, and the next session sees it. What the install record
+still gates is loading at all: plugins are enumerated from
+`installed_plugins.json`, which is why the apply step creates the record for a
+new package before any project can enable it.
 
 Do not render or edit `~/.claude/plugins/known_marketplaces.json`,
 `~/.claude/plugins/installed_plugins.json`, or either tool's plugin cache.

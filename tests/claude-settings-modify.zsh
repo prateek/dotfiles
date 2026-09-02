@@ -120,15 +120,18 @@ assert local["source"] == "directory"
 import os
 assert local["path"] == os.path.expanduser("~/.agents/plugins")
 
-# Managed owns only the matchers it names. The stale ExitPlanMode entry loses;
-# blocks other tools inject (Orca, Superset) under other matchers survive, as do
-# whole events managed doesn't own.
+# Managed owns only the matchers it names. Its ExitPlanMode entry is a retire
+# marker (empty hooks list) now that the crit plan-hook ships in the review
+# plugin, so the stale settings copy disappears; blocks other tools inject
+# (Orca, Superset) under other matchers survive, as do whole events managed
+# doesn't own.
+retired = [b for b in managed["hooks"]["PermissionRequest"] if b["matcher"] == "ExitPlanMode"]
+assert retired and retired[0]["hooks"] == [], managed["hooks"]
 plan_hooks = data["hooks"]["PermissionRequest"]
-assert plan_hooks[0] == managed["hooks"]["PermissionRequest"][0]
-assert plan_hooks[0]["hooks"][0]["command"] == "crit plan-hook"
-assert [b for b in plan_hooks if b["matcher"] == "ExitPlanMode"] == [plan_hooks[0]]
+assert [b for b in plan_hooks if b["matcher"] == "ExitPlanMode"] == [], plan_hooks
+assert "crit plan-hook" not in json.dumps(data)
 third_party = [b for b in plan_hooks if b["matcher"] == "*"]
-assert len(third_party) == 1, plan_hooks
+assert plan_hooks == third_party and len(third_party) == 1, plan_hooks
 assert third_party[0]["hooks"][0]["command"] == "printf third-party-hook"
 user_hooks = data["hooks"]["UserPromptSubmit"]
 assert user_hooks[0]["hooks"][0]["command"] == "printf user-owned-hook"
@@ -169,4 +172,68 @@ import json, sys, os
 local = json.load(open(sys.argv[1]))["extraKnownMarketplaces"]["prateek-local"]
 assert local["userTag"] == "keep-me", local
 assert local["source"]["path"] == os.path.expanduser("~/.agents/plugins"), local
+PY
+
+# Hook merge semantics against a synthetic managed fragment, so the replace
+# path (desired wins on a named matcher) and the retire path (empty hooks
+# list drops the matcher, and an emptied event or hooks map disappears) stay
+# covered whatever today's fragment happens to contain.
+synthetic_source="$tmp_root/synthetic-source"
+mkdir -p "$synthetic_source/.chezmoitemplates"
+cp "$REPO_ROOT/home/.chezmoitemplates/agent-claude-plugin-settings.json.tmpl" \
+  "$synthetic_source/.chezmoitemplates/"
+cat >"$synthetic_source/.chezmoitemplates/claude-settings-managed.json.tmpl" <<'JSON'
+{
+  "hooks": {
+    "PermissionRequest": [
+      {
+        "matcher": "ExitPlanMode",
+        "hooks": [{"type": "command", "command": "printf managed-plan-hook"}]
+      }
+    ],
+    "Stop": [
+      {"matcher": "retired", "hooks": []}
+    ]
+  }
+}
+JSON
+synthetic_script="$tmp_root/synthetic-modify.py"
+chezmoi --source "$synthetic_source" execute-template \
+  --file "$REPO_ROOT/home/dot_claude/modify_private_settings.json.tmpl" >"$synthetic_script"
+chmod +x "$synthetic_script"
+synthetic_output="$tmp_root/synthetic-output.json"
+"$synthetic_script" <"$current" >"$synthetic_output"
+python3 - "$synthetic_output" <<'PY'
+import json, sys
+hooks = json.load(open(sys.argv[1]))["hooks"]
+plan = hooks["PermissionRequest"]
+assert plan[0]["matcher"] == "ExitPlanMode", plan
+assert plan[0]["hooks"][0]["command"] == "printf managed-plan-hook", plan
+assert [b["matcher"] for b in plan] == ["ExitPlanMode", "*"], plan
+assert "Stop" not in hooks, hooks
+assert hooks["UserPromptSubmit"][0]["hooks"][0]["command"] == "printf user-owned-hook"
+PY
+retire_only_input="$tmp_root/retire-only-input.json"
+retire_only_output="$tmp_root/retire-only-output.json"
+echo '{"hooks": {"Stop": [{"matcher": "retired", "hooks": [{"type": "command", "command": "printf old"}]}]}}' >"$retire_only_input"
+"$synthetic_script" <"$retire_only_input" >"$retire_only_output"
+python3 - "$retire_only_output" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1]))
+assert "Stop" not in data["hooks"], data
+assert data["hooks"]["PermissionRequest"][0]["hooks"][0]["command"] == "printf managed-plan-hook", data
+PY
+
+# A retire marker claims its whole matcher, exactly as the managed block it
+# replaces did: a foreign block under the same matcher goes too. The real
+# fragment's ExitPlanMode marker therefore also removes any third-party
+# ExitPlanMode hook; that is the documented trade-off (ADR 0019).
+foreign_input="$tmp_root/foreign-matcher-input.json"
+foreign_output="$tmp_root/foreign-matcher-output.json"
+echo '{"hooks": {"PermissionRequest": [{"matcher": "ExitPlanMode", "hooks": [{"type": "command", "command": "printf third-party-plan-hook"}]}, {"matcher": "Bash", "hooks": [{"type": "command", "command": "printf keep"}]}]}}' >"$foreign_input"
+"$script" <"$foreign_input" >"$foreign_output"
+python3 - "$foreign_output" <<'PY'
+import json, sys
+plan = json.load(open(sys.argv[1]))["hooks"]["PermissionRequest"]
+assert [b["matcher"] for b in plan] == ["Bash"], plan
 PY

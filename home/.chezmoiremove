@@ -30,3 +30,13 @@ bin/grmrepo-refresh
 .agents/packages/utils-agent/skills/local/repo-guideline-site
 .agents/packages/utils-agent/skills/vendor/cli-creator
 .agents/packages/utils-agent/skills/vendor/trycycle
+
+# Claude slash commands retired in favor of the superpowers package
+# (~/.agents/plugins/plugins/superpowers, disabled by default)
+.claude/commands/brainstorm.md
+.claude/commands/do-new-prompt-plan.md
+.claude/commands/do-prompt-plan.md
+.claude/commands/plan-detail.md
+.claude/commands/plan-tdd.md
+.claude/commands/session-summary.md
+.claude/commands/setup.md

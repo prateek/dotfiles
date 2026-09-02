@@ -22,6 +22,11 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 AUDIT_SCRIPT = SCRIPT_DIR / "audit-apm-source-surface"
 VALIDATE_SCRIPT = SCRIPT_DIR / "validate-agent-packages"
 
+# Plugin primitives vendored beyond skills. apm normalizes a marketplace
+# plugin's primitives under apm_modules/<repo>/.apm/<primitive>; each one
+# lands as the same-named payload directory at the package root.
+VENDORED_PRIMITIVES = ("hooks",)
+
 
 def run(cmd: list[str], cwd, env: dict[str, str] | None = None) -> int:
     print(" ".join(cmd))
@@ -297,6 +302,82 @@ def copy_vendored_skills(
     remove_stale_apm_vendor_dirs(vendor_root, expected_targets)
 
 
+def dependency_content_root(staging_root: Path, dependency: dict[str, object]) -> Path | None:
+    modules = staging_root / "apm_modules"
+    virtual_path = str(dependency.get("virtual_path", "")).strip("/")
+    for repo in (dependency.get("materialization_repo_url"), dependency.get("repo_url")):
+        if not repo:
+            continue
+        candidate = modules / str(repo)
+        if virtual_path:
+            candidate = candidate / virtual_path
+        if candidate.is_dir():
+            return candidate
+    return None
+
+
+def staged_primitives(
+    staging_root: Path,
+    dependencies: list[dict[str, object]],
+) -> dict[str, list[tuple[dict[str, object], Path]]]:
+    found: dict[str, list[tuple[dict[str, object], Path]]] = {
+        primitive: [] for primitive in VENDORED_PRIMITIVES
+    }
+    for dependency in dependencies:
+        content_root = dependency_content_root(staging_root, dependency)
+        if content_root is None:
+            continue
+        for primitive in VENDORED_PRIMITIVES:
+            source = content_root / ".apm" / primitive
+            if source.is_dir():
+                found[primitive].append((dependency, source))
+    return found
+
+
+def plan_vendored_primitives(
+    staging_root: Path,
+    package_root: Path,
+    dependencies: list[dict[str, object]],
+) -> list[tuple[Path, Path | None, dict[str, object] | None, str | None]]:
+    """Resolve each primitive to (target, staged source, dependency, prior
+    SOURCE.md). Raises before anything in the package is touched, so a refused
+    vendor run leaves the skill trees as they were."""
+    plan = []
+    for primitive, sources in staged_primitives(staging_root, dependencies).items():
+        target = package_root / primitive
+        source_md = target / "SOURCE.md"
+        existing_source = source_md.read_text() if source_md.exists() else None
+        apm_vendored = bool(existing_source and source_apm_dependency(existing_source))
+        if len(sources) > 1:
+            names = ", ".join(apm_dependency(dependency) for dependency, _ in sources)
+            raise RuntimeError(
+                f"multiple dependencies ship {primitive}/ ({names}); a package "
+                f"carries one {primitive}/ payload, so split them across packages"
+            )
+        if not sources:
+            if apm_vendored:
+                plan.append((target, None, None, None))
+            continue
+        if target.exists() and not apm_vendored:
+            raise RuntimeError(
+                f"{target} is not APM-vendored (no SOURCE.md naming an APM "
+                f"dependency); refusing to overwrite it"
+            )
+        dependency, source = sources[0]
+        plan.append((target, source, dependency, existing_source))
+    return plan
+
+
+def apply_vendored_primitives(plan) -> None:
+    for target, source, dependency, existing_source in plan:
+        if target.exists():
+            shutil.rmtree(target)
+        if source is None:
+            continue
+        shutil.copytree(source, target)
+        (target / "SOURCE.md").write_text(source_note(dependency, existing_source))
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("package")
@@ -336,12 +417,13 @@ def main() -> int:
             return 1
         try:
             staged_lockfile = staging_root / "apm.lock.yaml"
-            metadata = (
-                deployed_skill_metadata(staged_lockfile)
-                if staged_lockfile.exists()
-                else {}
+            dependencies = (
+                lock_dependencies(staged_lockfile) if staged_lockfile.exists() else []
             )
+            metadata = deployed_skill_metadata(staged_lockfile) if dependencies else {}
+            primitives = plan_vendored_primitives(staging_root, package_root, dependencies)
             copy_vendored_skills(staging_root, package_root, metadata)
+            apply_vendored_primitives(primitives)
         except RuntimeError as error:
             print(f"vendor-agent-package: {error}", file=sys.stderr)
             return 1
