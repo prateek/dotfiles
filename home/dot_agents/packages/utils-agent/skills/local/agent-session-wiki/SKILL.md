@@ -8,10 +8,15 @@ description: Operate the cross-machine agent-session archive (prateek/wiki-agent
 Every machine mirrors its raw agent sessions hourly into
 `~/code/github.com/prateek/wiki-agent-sessions` (`sessions/<host>/...`, native
 layouts) and pushes; one designated host ingests the archive into `wiki/`
-daily. The repo's `AGENTS.md` is the contract: layout, ownership, consumer
-matrix, automation definitions, expected hosts. This skill is the operator
-playbook; the in-repo `session-sync` skill is the automation's own failure
-playbook.
+daily. Personal and homelab machines hold the full archive. Work machines
+keep a sparse, blobless clone that checks out only their own
+`sessions/<alias>/` plus `health/` and the agent config dirs; neither other
+hosts' transcripts nor the distilled `wiki/` land there
+(`agent_session_wiki_sparse` in machines.toml, ADR 0018). They still push
+their own sessions in full. The repo's `AGENTS.md` is the contract: layout,
+ownership, clone shapes, consumer matrix, automation definitions, expected
+hosts. This skill is the operator playbook; the in-repo `session-sync` skill
+is the automation's own failure playbook.
 
 ## Find a past session (any host)
 
@@ -20,7 +25,9 @@ playbook.
   for every other host in the clone, labeled by machine. Browse/search in the
   UI or `agentsview session list --format json`; filter by `machine`.
   A brand-new host appears after the next sync run or `chezmoi apply` (both
-  regenerate entries and restart the daemon).
+  regenerate entries and restart the daemon). Only full-clone hosts get
+  these entries: a work machine's clone holds just its own sessions and no
+  `wiki/`, so cross-host lookups happen on a full-clone host.
 - **obsidian-wiki session brain (topic search, per host dir)**:
 
   ```sh
@@ -64,6 +71,11 @@ manifest in `wiki/` dedupes already-ingested sources.
   "Launchd Monitor" extension watches the same label).
 - Ingest automation status: `orca automations list --json`, run history via
   `orca automations runs --id <id> --json`.
+- Clone shape: `scripts/agent-sessions/reconcile-wiki-clone --check ...`
+  (dotfiles) reports drift read-only: cone, `blob:none` filter, stray paths
+  outside the cone. The apply-time verify step runs the same check. Without
+  `--check` it repairs the drift; the bootstrap script does that only when
+  it refires (machines.toml, helper, plist, or agentsview template change).
 
 ## Troubleshooting
 
@@ -78,14 +90,21 @@ manifest in `wiki/` dedupes already-ingested sources.
 | New host invisible in agentsview | Restart the daemon (`agentsview serve --background --replace`) or wait for the next sync/apply; entries regenerate from the clone glob |
 | `SKIPPED.md` grew | Oversize (>90 MB) or quarantined source files; review whether to split/ignore |
 | Ingest automation unregistered (fresh ingest host, orca installed later) | `~/dotfiles/scripts/agent-sessions/register-wiki-automations --enable --ingest` — the run_onchange script won't refire on its own |
+| `sessions/` shows only this host | Expected on a sparse host (work type); other hosts live on GitHub and on full-clone machines |
+| Apply dies: "owns the wiki ingest role but resolves agent_session_wiki_sparse" | The ingest reads every host; move `agent_session_wiki_ingest` to a full-clone host's layer |
+| Ingest audit says "this clone is sparse" | The ingest host's clone is sparse; fix the flags, then `chezmoi apply` (or `reconcile-wiki-clone ... --full`) widens it |
+| Apply dies: reconcile-wiki-clone exit 5 | The helper refused to change the clone: local changes outside the cone, a git operation in progress, or a remote without partial-clone support. Read its output, resolve by hand, re-run the printed command |
+| Apply warns: repo locked (exit 75) | A sync or ingest held the repo lock; the clone shape was left alone. Re-run the printed command later |
+| agentsview on a work machine still shows other hosts' sessions | Indexed before the clone went sparse; `agentsview prune` cannot target a machine. Stop the daemon, then in `~/.agentsview/sessions.db` run `PRAGMA foreign_keys=ON; DELETE FROM sessions WHERE machine='<alias>'; DELETE FROM project_identity_observations WHERE machine='<alias>'; DELETE FROM worktree_project_mappings WHERE machine='<alias>';` (cascades and FTS triggers do the rest), `VACUUM`, restart with `agentsview serve --background --replace` |
 
 ## Onboard a machine
 
 1. Add `wiki_host_alias = "<alias>"` under its `[machines.host.<hostname>]`
    layer in machines.toml (unique, non-empty; `make test-machines-features`
    enforces both). The machine type must have `agent_session_wiki = true`.
-2. `chezmoi apply` on that machine: clones the repo, renders the alias
-   config, loads the hourly sync launch agent, wires agentsview.
+2. `chezmoi apply` on that machine: clones the repo in the type's shape
+   (sparse for work), renders the alias config, loads the hourly sync launch
+   agent, wires agentsview.
 3. After its first successful sync, add the alias to `health/expected-hosts`
    in the wiki repo so the daily audit covers it.
 
@@ -93,7 +112,8 @@ manifest in `wiki/` dedupes already-ingested sources.
 
 1. Move `agent_session_wiki_ingest = true` to the new host's
    `[machines.host.*]` layer in machines.toml (exactly one host, enforced by
-   `make test-machines-features`).
+   `make test-machines-features`). The new host must hold the full archive
+   (not `agent_session_wiki_sparse`); the bootstrap script refuses otherwise.
 2. `chezmoi apply` on both hosts (old one disables its ingest automation, new
    one registers it).
 3. Expect some delta re-ingest: the obsidian-wiki manifest keys sources by

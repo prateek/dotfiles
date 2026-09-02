@@ -83,6 +83,7 @@ jobs:
           make test-finder-copy-path
           make test-codex-config
           make test-agentsview-config
+          make test-reconcile-wiki-clone
           make test-claude-settings
           make test-pi-settings
           make test-claude-statusline

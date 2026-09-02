@@ -90,22 +90,41 @@ types = machines["type"]
 
 assert defaults["agent_session_wiki"] is False, defaults
 assert defaults["agent_session_wiki_ingest"] is False, defaults
+assert defaults["agent_session_wiki_sparse"] is False, defaults
 assert "agent_session_wiki" not in types.get("ci", {}), "ci must inherit session wiki off"
 for mt in ("personal", "homelab", "work"):
     assert types[mt].get("agent_session_wiki") is True, f"{mt} should sync sessions"
     assert "agent_session_wiki_ingest" not in types[mt], f"ingest is host-scoped, not type-scoped ({mt})"
+assert types["work"].get("agent_session_wiki_sparse") is True, "work machines keep a sparse archive clone"
+for mt in ("personal", "homelab"):
+    assert not types[mt].get("agent_session_wiki_sparse"), f"{mt} machines hold the full archive"
 
 hosts = machines.get("host", {})
 aliases = {h: cfg["wiki_host_alias"] for h, cfg in hosts.items() if "wiki_host_alias" in cfg}
 empty = [h for h, a in aliases.items() if not a.strip()]
 assert not empty, f"empty wiki_host_alias on: {empty}"
+# The alias becomes one path component (sessions/<alias>, health/<alias>.json,
+# a sparse-checkout cone entry), so it must not carry separators or spaces.
+import re
+bad = [h for h, a in aliases.items() if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", a)]
+assert not bad, f"wiki_host_alias must match [A-Za-z0-9][A-Za-z0-9._-]*: {bad}"
 dupes = {a for a in aliases.values() if list(aliases.values()).count(a) > 1}
 assert not dupes, f"duplicate wiki_host_alias values: {dupes}"
 ingest_hosts = [h for h, cfg in hosts.items() if cfg.get("agent_session_wiki_ingest")]
 assert len(ingest_hosts) <= 1, f"multiple ingest hosts: {ingest_hosts}"
 for h in ingest_hosts:
     assert h in aliases, f"ingest host {h} lacks wiki_host_alias"
+    assert not hosts[h].get("agent_session_wiki_sparse"), f"ingest host {h} cannot be sparse (the ingest reads every host)"
 PY
+
+# --- archive clone shape: work resolves sparse; the ingest host resolves full --
+# Hostname overrides pick the host layer, so these hold on any machine.
+assert_json '{"machine_type":"work","chezmoi":{"hostname":"no-such-host"}}' \
+  'f["agent_session_wiki_sparse"] is True and f["agent_session_wiki_ingest"] is False' \
+  "work resolves to a sparse archive clone"
+assert_json '{"machine_type":"homelab","chezmoi":{"hostname":"m4mini"}}' \
+  'f["agent_session_wiki_ingest"] is True and f["agent_session_wiki_sparse"] is False and f["wiki_host_alias"]=="m4mini"' \
+  "m4mini owns the ingest role on a full clone"
 
 # --- machines_local is the highest layer (overrides type + defaults) ----------
 assert_json '{"machine_type":"personal","machines_local":{"secrets_enabled":true}}' \

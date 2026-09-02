@@ -1,0 +1,256 @@
+#!/usr/bin/env bash
+# Reconcile this machine's wiki-agent-sessions clone to its desired shape.
+#
+#   reconcile-wiki-clone --clone <dir> --remote <url> --sparse --alias <host> [--check]
+#   reconcile-wiki-clone --clone <dir> --remote <url> --full [--check]
+#
+# full    Every host's sessions/ is checked out. The ingest host needs this.
+# sparse  Blobless partial clone (--filter=blob:none) with a cone-mode sparse
+#         checkout of this host's own sessions/<alias>/ plus SHARED_DIRS.
+#         Nothing from other machines reaches this disk, neither raw
+#         transcripts (not even as git objects) nor the distilled wiki/;
+#         the sync still pushes this host's sessions in full.
+# --check Read-only: exit 0 when the clone is already in shape, 1 with the
+#         drift described on stdout otherwise.
+#
+# Idempotent: a clone already in the desired shape is left alone, without
+# taking the repo lock. Mutations of an existing clone run under the repo's
+# own with-repo-lock (exit 75 when a sync or ingest holds it). An existing
+# full clone is narrowed in place only when nothing outside the cone is
+# dirty or untracked; its other-host blobs already in .git stay until the
+# clone is recreated, and the script says so.
+#
+# Exit codes: 0 reconciled or in shape, 1 --check found drift, 2 usage,
+# 3 the path is not a clone of the expected repo, 4 remote unreachable
+# (nothing cloned), 5 the shape cannot be established safely (server ignores
+# the blob filter, local changes outside the cone, git operation in
+# progress), 75 repo lock held by a live sync or ingest.
+set -euo pipefail
+
+SHARED_DIRS=(.agents .claude .codex health)
+# One path component: the alias becomes sessions/<alias> in cone patterns,
+# mirror destinations, and heartbeat filenames.
+ALIAS_RE='^[A-Za-z0-9][A-Za-z0-9._-]*$'
+ORIG_ARGS=("$@")
+
+log() { printf 'reconcile-wiki-clone: %s\n' "$*"; }
+warn() { printf 'reconcile-wiki-clone: WARNING: %s\n' "$*" >&2; }
+usage() {
+  printf 'usage: %s --clone <dir> --remote <url> (--sparse --alias <host> | --full) [--check]\n' "${0##*/}" >&2
+  exit 2
+}
+
+clone="" remote="" alias="" shape="" check=0
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --clone|--remote|--alias)
+      [[ $# -ge 2 ]] || usage
+      case "$1" in
+        --clone) clone="$2" ;;
+        --remote) remote="$2" ;;
+        --alias) alias="$2" ;;
+      esac
+      shift 2 ;;
+    --sparse) shape="sparse"; shift ;;
+    --full) shape="full"; shift ;;
+    --check) check=1; shift ;;
+    *) warn "unknown argument: $1"; usage ;;
+  esac
+done
+[[ -n "$clone" && -n "$remote" && -n "$shape" ]] || usage
+if [[ "$shape" == "sparse" ]]; then
+  if [[ -z "$alias" ]]; then
+    warn "--sparse needs --alias (wiki_host_alias); without it the cone would omit this host's own sessions"
+    exit 2
+  fi
+  if [[ ! "$alias" =~ $ALIAS_RE ]]; then
+    warn "invalid alias '$alias' (want $ALIAS_RE)"
+    exit 2
+  fi
+fi
+
+g() { git -C "$clone" "$@"; }
+is_sparse() { [[ "$(g config --type=bool --get core.sparseCheckout 2>/dev/null || true)" == "true" ]]; }
+is_blobless() {
+  [[ "$(g config --type=bool --get remote.origin.promisor 2>/dev/null || true)" == "true" ]] &&
+    [[ "$(g config --get remote.origin.partialclonefilter 2>/dev/null || true)" == "blob:none" ]]
+}
+# host/owner/repo for every URL form git accepts for the same repository
+# (scp-like, ssh://, https://); the host is part of the identity.
+repo_key() {
+  printf '%s' "$1" | sed -E 's#^[a-z+]+://##; s#^[^@/]+@##; s#^([^/:]+):#\1/#; s#\.git/?$##; s#/+$##'
+}
+cone=("${SHARED_DIRS[@]}" "sessions/$alias")
+cone_sorted() { printf '%s\n' "${cone[@]}" | sort; }
+
+# Dirty or untracked paths that the desired cone would not cover. Root-level
+# files are always checked out in cone mode.
+paths_outside_cone() {
+  local path dir inside
+  g status --porcelain --untracked-files=all | while IFS= read -r line; do
+    path="${line:3}"
+    [[ "$path" == */* ]] || continue
+    inside=0
+    for dir in "${cone[@]}"; do
+      if [[ "$path" == "$dir/"* ]]; then inside=1; break; fi
+    done
+    if [[ $inside -eq 0 ]]; then printf '%s\n' "$path"; fi
+  done
+  return 0
+}
+
+# Prints each deviation from the desired shape; returns 1 when any.
+describe_drift() {
+  local drift=0 actual outside
+  if [[ "$shape" == "full" ]]; then
+    if is_sparse; then echo "clone is sparse but this host needs the full archive"; drift=1; fi
+    return $drift
+  fi
+  if ! is_sparse; then
+    echo "clone is full but this host should be sparse"; drift=1
+  else
+    actual="$(g sparse-checkout list | sort)"
+    if [[ "$actual" != "$(cone_sorted)" ]]; then
+      echo "cone is [$(tr '\n' ' ' <<<"$actual")] but should be [$(cone_sorted | tr '\n' ' ')]"; drift=1
+    fi
+    outside="$(paths_outside_cone)"
+    if [[ -n "$outside" ]]; then
+      echo "paths outside the cone: $(tr '\n' ' ' <<<"$outside")"; drift=1
+    fi
+  fi
+  if ! is_blobless; then
+    echo "not a blobless partial clone (promisor=$(g config --get remote.origin.promisor || echo unset), filter=$(g config --get remote.origin.partialclonefilter || echo unset))"; drift=1
+  fi
+  return $drift
+}
+
+# A server that does not advertise the protocol-v2 "filter" capability
+# ignores --filter with only a warning, and a fetch with nothing new to
+# transfer prints no warning at all; the capability advertisement is the
+# reliable signal. Sets PROBE_RC to ls-remote's exit status (reachability).
+remote_supports_filter() {
+  local trace
+  PROBE_RC=0
+  trace="$(GIT_TRACE_PACKET=1 git -c protocol.version=2 ls-remote --heads "$remote" 2>&1 >/dev/null)" || PROBE_RC=$?
+  [[ $PROBE_RC -eq 0 ]] || return 1
+  grep -Eq 'ls-remote< fetch=.*( |=)filter( |$)' <<<"$trace"
+}
+
+# Runs a git command, echoing its stderr, and fails when git reports the
+# partial-clone filter was ignored: that would silently produce a full clone.
+git_filtered() {
+  local err
+  err="$("$@" 2>&1 >/dev/null)" || { printf '%s\n' "$err" >&2; return 1; }
+  if [[ -n "$err" ]]; then printf '%s\n' "$err" >&2; fi
+  if grep -qi 'filter.*ignor' <<<"$err"; then
+    warn "the remote does not support partial-clone filters; a full clone would leak other hosts' blobs"
+    return 5
+  fi
+}
+
+if [[ -e "$clone/.git" ]]; then
+  actual="$(g remote get-url origin 2>/dev/null || true)"
+  if [[ "$(repo_key "$actual")" != "$(repo_key "$remote")" ]]; then
+    warn "clone at $clone has unexpected remote '$actual'; refusing to touch it"
+    exit 3
+  fi
+elif [[ -e "$clone" ]]; then
+  warn "$clone exists but is not a git clone; move it aside"
+  exit 3
+elif [[ $check -eq 1 ]]; then
+  echo "clone missing"
+  exit 1
+else
+  if ! remote_supports_filter; then
+    if [[ $PROBE_RC -ne 0 ]]; then
+      warn "cannot reach $remote"
+      exit 4
+    fi
+    if [[ "$shape" == "sparse" ]]; then
+      warn "$remote does not support partial-clone filters; a sparse clone there would still hold every host's blobs"
+      exit 5
+    fi
+  fi
+  mkdir -p "$(dirname "$clone")"
+  if [[ "$shape" == "sparse" ]]; then
+    # --sparse checks out only top-level files; the cone set below then
+    # fetches just the blobs it needs.
+    rc=0
+    git_filtered git clone --quiet --filter=blob:none --sparse "$remote" "$clone" || rc=$?
+    if [[ $rc -ne 0 ]]; then
+      rm -rf "$clone"
+      exit "$rc"
+    fi
+    g sparse-checkout set --cone "${cone[@]}"
+  else
+    git clone --quiet "$remote" "$clone"
+  fi
+  log "cloned $remote"
+fi
+
+if [[ $check -eq 1 ]]; then
+  if describe_drift; then exit 0; else exit 1; fi
+fi
+
+if describe_drift >/dev/null; then
+  log "clone shape: $shape$(is_sparse && echo " (cone: $(g sparse-checkout list | tr '\n' ' '))")"
+  exit 0
+fi
+
+# Everything below mutates an existing clone; serialize with the sync and
+# the ingest through the repo's own lock.
+lock="$clone/.agents/skills/session-sync/scripts/with-repo-lock"
+if [[ "${WIKI_REPO_LOCK_HELD:-}" != "1" && -x "$lock" ]]; then
+  exec "$lock" "$0" "${ORIG_ARGS[@]}"
+fi
+
+git_dir="$(g rev-parse --absolute-git-dir)"
+for marker in rebase-merge rebase-apply MERGE_HEAD CHERRY_PICK_HEAD; do
+  if [[ -e "$git_dir/$marker" ]]; then
+    warn "a git operation is in progress in $clone ($marker); resolve it first"
+    exit 5
+  fi
+done
+
+if [[ "$shape" == "full" ]]; then
+  log "widening sparse clone to the full archive (fetches every host's blobs; this can take a while)"
+  g sparse-checkout disable
+  log "clone shape: full"
+  exit 0
+fi
+
+outside="$(paths_outside_cone)"
+if [[ -n "$outside" ]]; then
+  warn "local changes outside the cone would survive narrowing; commit, remove, or move them first:"
+  printf '%s\n' "$outside" | awk '{ print "  " $0 }' >&2
+  exit 5
+fi
+
+if ! is_blobless; then
+  # Convert before narrowing so a refused conversion leaves the clone as it
+  # was. A filtered fetch registers origin as a promisor remote, but the
+  # filter config is only written on first registration, so pin it explicitly.
+  if ! remote_supports_filter; then
+    warn "$remote does not support partial-clone filters (or is unreachable); cannot convert this clone"
+    exit 5
+  fi
+  rc=0
+  git_filtered g fetch --quiet --filter=blob:none origin || rc=$?
+  [[ $rc -eq 0 ]] || exit "$rc"
+  g config remote.origin.partialclonefilter blob:none
+  warn "future fetches are blobless, but other hosts' blobs already in .git remain;"
+  warn "to drop them, move $clone aside, re-run this script, then delete the old copy"
+fi
+
+if ! is_sparse; then
+  log "narrowing full clone to sessions/$alias"
+else
+  log "updating the sparse-checkout cone to sessions/$alias"
+fi
+err="$(g sparse-checkout set --cone "${cone[@]}" 2>&1 >/dev/null)" || { printf '%s\n' "$err" >&2; exit 1; }
+if [[ -n "$err" ]]; then printf '%s\n' "$err" >&2; fi
+if grep -q 'left despite sparse patterns' <<<"$err"; then
+  warn "git left paths outside the cone checked out; resolve them and re-run"
+  exit 5
+fi
+log "clone shape: sparse (cone: $(g sparse-checkout list | tr '\n' ' '))"

@@ -44,10 +44,16 @@ log "reminder: enter Tartelet's GitHub App credentials once in the UI; see docs/
 {{- if $f.agent_session_wiki }}
 # Session-archive status. Registration failures never fail the apply (script 38
 # warns and exits 0); surface them here so an incomplete bootstrap is visible.
-if [ -d "$HOME/code/github.com/prateek/wiki-agent-sessions/.git" ]; then
-  log "ok: wiki-agent-sessions clone present"
+# --check is read-only and compares the exact cone, filter, and stray paths,
+# so the same helper both reports drift and repairs it.
+wiki_reconcile=("{{ .chezmoi.sourceDir }}/../scripts/agent-sessions/reconcile-wiki-clone"
+  --clone "$HOME/code/github.com/prateek/wiki-agent-sessions"
+  --remote git@github.com:prateek/wiki-agent-sessions.git
+  {{ if $f.agent_session_wiki_sparse }}--sparse --alias "{{ $f.wiki_host_alias | default "" }}"{{ else }}--full{{ end }})
+if wiki_drift="$("${wiki_reconcile[@]}" --check 2>&1)"; then
+  log "ok: wiki-agent-sessions clone in shape ({{ if $f.agent_session_wiki_sparse }}sparse{{ else }}full{{ end }})"
 else
-  log "wiki-agent-sessions clone missing; recover with: git clone git@github.com:prateek/wiki-agent-sessions.git ~/code/github.com/prateek/wiki-agent-sessions"
+  log "wiki-agent-sessions clone drifted: ${wiki_drift:-unknown}; run: ${wiki_reconcile[*]}"
 fi
 if launchctl print "gui/$(id -u)/com.prateek.wiki-sessions-sync" >/dev/null 2>&1; then
   log "ok: hourly sync launch agent loaded (com.prateek.wiki-sessions-sync)"

@@ -3,10 +3,11 @@ status: active
 doc_type: plan
 owner: Prateek
 created: 2026-08-30
-updated: 2026-08-30
+updated: 2026-09-01
 status_detail: "Accepted; implementation landing on the av-history branch. See ADR 0017."
 related:
   - ../adr/0017-agent-session-archive.md
+  - ../adr/0018-sparse-work-archive-clones.md
 ---
 
 # Agent session wiki: Obsidian vault, raw archive, and cross-machine sync
@@ -592,9 +593,10 @@ Add these flat scalar settings:
 ```toml
 agent_session_wiki = false
 agent_session_wiki_ingest = false
+agent_session_wiki_sparse = false
 ```
 
-Set `agent_session_wiki = true` for personal, homelab, and work machines. Keep it false for CI.
+Set `agent_session_wiki = true` for personal, homelab, and work machines. Keep it false for CI. Set `agent_session_wiki_sparse = true` for work machines: they keep a sparse, blobless clone of their own host only ([ADR 0018](../adr/0018-sparse-work-archive-clones.md)). The ingest host must not be sparse; the bootstrap script refuses that combination.
 
 Set `agent_session_wiki_ingest = true` only under the designated host:
 
@@ -649,6 +651,16 @@ have orca || warn
 ```
 
 Absence of Orca or another optional CLI must warn rather than call `die`.
+
+### Clone shape helper
+
+Add:
+
+```text
+scripts/agent-sessions/reconcile-wiki-clone
+```
+
+The bootstrap script delegates step 1 above to this helper, which owns the clone's shape: a full clone for personal and homelab machines, and for sparse hosts a `--filter=blob:none` partial clone with a cone-mode sparse checkout of `sessions/<alias>/`, `health/`, `.agents/`, `.claude/`, and `.codex/` (no `wiki/`: nothing derived from other hosts lands on a work machine). It is idempotent, takes the wiki repo's lock before mutating an existing clone, narrows a full clone in place only when nothing outside the cone is dirty (future fetches become blobless; old blobs stay until the clone is recreated), widens a sparse clone when the flag flips, refuses remotes without partial-clone support, and exits 4 when the remote is unreachable so the apply can warn instead of fail. `--check` is the read-only drift report the verify script uses. `tests/reconcile-wiki-clone.zsh` covers it against a local bare origin.
 
 ### Automation reconciliation helper
 
@@ -971,6 +983,10 @@ git diff --check
 - agentsview reads raw Git mirrors through `[[session_sources]]`, its documented configuration for native layouts transported out of band. `agentsview sync --target` produces normalized, content-addressed artifacts with incremental cursors and machine identity, shipped in 0.40.0 on 2026-08-02, but its folder transport is unsafe for this Git multi-writer topology. It uses one global `head.json` and globally sequenced `event-<seq>.json` records (`internal/artifact/transport_folder_journal.go:16,40`), so publishers can collide between pulls. It also omits raw provider files. Reconsider it if upstream adopts per-origin journals.
 - The measured backfill pilot is the acceptance gate for the wiki layer. There is no separate staging gate.
 - Failure procedures have two homes: the machine-wide operator skill for fleet operation and the repository-local synchronization skill for automation recovery.
+
+## Amendments
+
+- 2026-09-01, [ADR 0018](../adr/0018-sparse-work-archive-clones.md): work machines keep a sparse, blobless clone of their own host (the work laptop had accumulated 13 GB of personal transcripts). `sync-sessions` grows the cone to its own paths before mirroring; `audit-heartbeats` fails when an expected host is not checked out. The ingest role moved from the work laptop to `m4mini`; agentsview cross-host browsing and the wiki are full-clone-host features.
 
 ## Deferred work
 

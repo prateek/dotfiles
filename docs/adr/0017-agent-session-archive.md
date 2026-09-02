@@ -5,6 +5,7 @@ created: 2026-08-30
 owner: Prateek
 related:
   - ../plans/agent-session-wiki-plan.md
+  - 0018-sparse-work-archive-clones.md
 ---
 
 # ADR 0017: Cross-machine agent-session archive in git with a designated wiki writer

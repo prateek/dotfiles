@@ -34,10 +34,14 @@
 {{- end }}
 
 {{/* Session-archive wiring (prateek/wiki-agent-sessions) only on participating machines. */}}
-{{- if not (includeTemplate "features.tmpl" . | fromJson).agent_session_wiki }}
+{{- $sessionWiki := includeTemplate "features.tmpl" . | fromJson }}
+{{- if not $sessionWiki.agent_session_wiki }}
 .config/wiki-agent-sessions
 .config/obsidian-wiki
 Library/LaunchAgents/com.prateek.wiki-sessions-sync.plist
+{{- else if $sessionWiki.agent_session_wiki_sparse }}
+{{/* A sparse clone does not check out wiki/, so there is no vault to point obsidian-wiki at. */}}
+.config/obsidian-wiki
 {{- end }}
 
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "cmux")) "true" }}

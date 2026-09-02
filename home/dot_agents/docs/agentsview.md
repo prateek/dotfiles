@@ -61,7 +61,9 @@ Every participating machine mirrors its raw sessions into
 `[[session_sources]]` entry per other-host root found in the clone
 (`claude/projects`, `cursor/projects`, `codex/*`), labeled with that host's
 `machine` name and excluding the current host so local sessions are not
-parsed twice. Entries regenerate on every apply, and the archive's sync
+parsed twice. Sparse-clone hosts (work machines, ADR 0018 in dotfiles) check
+out only their own host, so no repo entries are generated there. Entries
+regenerate on every apply, and the archive's sync
 script reconciles them between applies when a pull reveals a new host; both
 implementations are held identical by a fixture test
 (`tests/agentsview-config-modify.zsh`). Hand-written `session_sources`

@@ -76,6 +76,7 @@ for day-to-day implementation details.
 | [ADR 0014 - Tartelet self-hosted runners](adr/0014-tartelet-self-hosted-runners.md) | [Tartelet Self-Hosted Runners](plans/tartelet-runner-plan.md). |
 | [ADR 0015 - Downstream forks as thin assembly repos](adr/0015-downstream-fork-daily-driver.md) | [Downstream Fork plan](plans/downstream-fork-plan.md) and the [`fork-lifecycle` skill](../.agents/skills/fork-lifecycle/SKILL.md) (fleet ops live in the `fork-ops` skill in `prateek/forks`). |
 | [ADR 0017 - Cross-machine agent-session archive](adr/0017-agent-session-archive.md) | [Agent Session Wiki plan](plans/agent-session-wiki-plan.md) and the `agent-session-wiki` operator skill (utils-agent package). |
+| [ADR 0018 - Sparse, blobless archive clones on work machines](adr/0018-sparse-work-archive-clones.md) | `agent_session_wiki_sparse` in `machines.toml`, reconciled by `scripts/agent-sessions/reconcile-wiki-clone`; the ingest host stays a full clone. |
 
 ## Research
 

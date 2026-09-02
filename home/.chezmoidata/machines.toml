@@ -35,6 +35,14 @@ agent_session_wiki = false
 # Exactly one host runs the daily wiki ingest automation (single writer for
 # wiki/); move it by moving this flag.
 agent_session_wiki_ingest = false
+# Archive clone shape. A sparse host keeps a blobless partial clone with only
+# its own sessions/<alias>/ (plus health/ and the agent config dirs) checked
+# out, so nothing from other machines reaches that disk, neither transcripts
+# nor the distilled wiki/; it still pushes its own sessions in full. The
+# ingest host reads every host and must stay full: the bootstrap script
+# refuses a host that resolves both flags.
+# See docs/adr/0018-sparse-work-archive-clones.md.
+agent_session_wiki_sparse = false
 
 # Minimal/fast tier for CI dry-run, Tart smoke, and shell audits. Keeps the
 # defaults' run_install_scripts/apply_macos_defaults = true so the Tart smoke
@@ -76,6 +84,7 @@ private_overlay = true
 elevation = "jamf-self-service"
 agent_clis = ["cursor-agent", "claude"]
 agent_session_wiki = true
+agent_session_wiki_sparse = true
 
 # os.<os> and host.<hostname> layers are intentionally absent until needed.
 # The resolver digs them with an empty-dict default, so a missing layer is a
@@ -90,9 +99,11 @@ agent_session_wiki = true
 [machines.host.m4mini]
 tart_home = "/Volumes/TartVMs/tart"
 wiki_host_alias = "m4mini"
+# Designated wiki-ingest host: always on, full archive clone. Move the flag to
+# another full-clone host's layer to migrate the role.
+agent_session_wiki_ingest = true
 
-# Managed work MacBook (Jamf hostname). Initial designated wiki-ingest host;
-# move the ingest flag to another host's layer to migrate the role.
+# Managed work MacBook (Jamf hostname). Sparse archive clone via the work
+# type, so it cannot own the ingest role.
 [machines.host.M-D2N572TGQN]
 wiki_host_alias = "work-mbp"
-agent_session_wiki_ingest = true

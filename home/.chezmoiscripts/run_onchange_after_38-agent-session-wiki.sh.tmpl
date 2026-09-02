@@ -2,6 +2,7 @@
 
 # machines.toml sha256: {{ include ".chezmoidata/machines.toml" | sha256sum }}
 # register-wiki-automations sha256: {{ include (printf "%s/../scripts/agent-sessions/register-wiki-automations" .chezmoi.sourceDir) | sha256sum }}
+# reconcile-wiki-clone sha256: {{ include (printf "%s/../scripts/agent-sessions/reconcile-wiki-clone" .chezmoi.sourceDir) | sha256sum }}
 # sync launch agent sha256: {{ include "Library/LaunchAgents/com.prateek.wiki-sessions-sync.plist.tmpl" | sha256sum }}
 # agentsview modify template sha256: {{ include "private_dot_agentsview/modify_private_config.toml.tmpl" | sha256sum }}
 
@@ -10,6 +11,7 @@ set -euo pipefail
 {{- $f := includeTemplate "features.tmpl" . | fromJson }}
 
 helper="{{ .chezmoi.sourceDir }}/../scripts/agent-sessions/register-wiki-automations"
+clone_helper="{{ .chezmoi.sourceDir }}/../scripts/agent-sessions/reconcile-wiki-clone"
 sync_label="com.prateek.wiki-sessions-sync"
 sync_plist="$HOME/Library/LaunchAgents/$sync_label.plist"
 clone="$HOME/code/github.com/prateek/wiki-agent-sessions"
@@ -36,34 +38,59 @@ log "install scripts disabled; skipping session-wiki bootstrap."
 
 {{- else }}
 
-if [ -d "$clone/.git" ]; then
-  actual="$(git -C "$clone" remote get-url origin 2>/dev/null || true)"
-  case "$actual" in
-    "$remote"|"https://github.com/prateek/wiki-agent-sessions"*) ;;
-    *) die "clone at $clone has unexpected remote '$actual'; refusing to touch it" ;;
-  esac
-else
-  if ! git ls-remote --heads "$remote" >/dev/null 2>&1; then
-    warn "cannot reach $remote (missing SSH credentials?); skipping session-wiki bootstrap."
-    warn "recover with: git clone $remote $clone && $helper --enable"
-    exit 0
-  fi
-  mkdir -p "$(dirname "$clone")"
-  run_timed "clone wiki-agent-sessions" git clone --quiet "$remote" "$clone"
-fi
+{{- if and $f.agent_session_wiki_sparse $f.agent_session_wiki_ingest }}
+die "this host owns the wiki ingest role but resolves agent_session_wiki_sparse; the ingest reads every host, so move one of the flags in machines.toml"
+{{- end }}
 
-# The plist sha comment above makes plist edits refire this script; launchd
-# creates the log file but not its directory.
-mkdir -p "$HOME/.local/state/dotfiles/wiki-sessions-sync"
-chmod 700 "$HOME/.local/state/dotfiles/wiki-sessions-sync"
-# bootout SIGTERMs a live instance mid-commit/push; runs take ~15s, so wait
-# out an in-flight sync before reloading.
+reconcile_automations() {
+{{- if $f.agent_session_wiki_ingest }}
+  run_timed "reconcile wiki automations (ingest)" "$helper" --enable --ingest || \
+    warn "automation reconcile incomplete; re-run: $helper --enable --ingest"
+{{- else }}
+  run_timed "reconcile wiki automations" "$helper" --enable || \
+    warn "automation reconcile incomplete; re-run: $helper --enable"
+{{- end }}
+}
+
+# bootout SIGTERMs a live instance mid-commit/push, and the clone-shape helper
+# below mutates the checkout; runs take ~15s, so wait out an in-flight sync.
 tries=0
 while launchctl print "gui/$(id -u)/$sync_label" 2>/dev/null | grep -q 'state = running' \
     && [ "$tries" -lt 18 ]; do
   sleep 5
   tries=$((tries + 1))
 done
+
+# The helper owns the clone's shape (full vs sparse) and is idempotent. Only
+# a missing clone (4: remote unreachable) or a shape it refuses to touch (5)
+# stops the bootstrap; a held repo lock (75) leaves the clone for the next
+# refire since the launch agent and automations do not depend on its shape.
+shape_args=({{ if $f.agent_session_wiki_sparse }}--sparse --alias "{{ $f.wiki_host_alias | default "" }}"{{ else }}--full{{ end }})
+recover="$clone_helper --clone $clone --remote $remote ${shape_args[*]}"
+rc=0
+run_timed "reconcile wiki-agent-sessions clone" \
+  "$clone_helper" --clone "$clone" --remote "$remote" "${shape_args[@]}" || rc=$?
+case "$rc" in
+  0) ;;
+  4)
+    # Automation ownership must still follow the role even without a clone,
+    # or a host that lost the ingest role keeps running it.
+    warn "cannot reach $remote (missing SSH credentials?); skipping session-wiki bootstrap."
+    warn "recover with: $recover && $helper --enable"
+    reconcile_automations
+    exit 0
+    ;;
+  75)
+    warn "wiki-agent-sessions repo is locked by a running sync or ingest; clone shape not reconciled."
+    warn "re-run later: $recover"
+    ;;
+  *) die "could not reconcile the wiki-agent-sessions clone (exit $rc); see the helper's output, then: $recover" ;;
+esac
+
+# The plist sha comment above makes plist edits refire this script; launchd
+# creates the log file but not its directory.
+mkdir -p "$HOME/.local/state/dotfiles/wiki-sessions-sync"
+chmod 700 "$HOME/.local/state/dotfiles/wiki-sessions-sync"
 launchctl bootout "gui/$(id -u)/$sync_label" 2>/dev/null || true
 launchctl bootstrap "gui/$(id -u)" "$sync_plist" 2>/dev/null || true
 if launchctl print "gui/$(id -u)/$sync_label" >/dev/null 2>&1; then
@@ -77,13 +104,7 @@ else
   warn "could not load $sync_label (no GUI session?); load manually: launchctl bootstrap gui/\$(id -u) $sync_plist"
 fi
 
-{{- if $f.agent_session_wiki_ingest }}
-run_timed "reconcile wiki automations (ingest)" "$helper" --enable --ingest || \
-  warn "automation reconcile incomplete; re-run: $helper --enable --ingest"
-{{- else }}
-run_timed "reconcile wiki automations" "$helper" --enable || \
-  warn "automation reconcile incomplete; re-run: $helper --enable"
-{{- end }}
+reconcile_automations
 
 # The agentsview modify template regenerates [[session_sources]] on every
 # apply; a restart is how the daemon picks the file up.
