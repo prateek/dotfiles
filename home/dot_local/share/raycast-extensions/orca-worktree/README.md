@@ -13,7 +13,7 @@ installed extensions, and Raycast refuses to import development sources from it
 ## Install
 
 `chezmoi apply` materializes the source, installs dependencies, and builds the
-command bundle (see `run_onchange_after_21-raycast-extensions.sh.tmpl`). That
+command bundle (see `run_after_21-raycast-extensions.sh.tmpl`). That
 part is automatic.
 
 Registration is **not** automatable — Raycast only loads a development

@@ -1,0 +1,74 @@
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- if and $f.run_install_scripts (eq (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "raycast")) "true") -}}
+{{ template "script_lib.sh" . }}
+
+if ! have npm; then
+  warn "npm is not installed; skipping Raycast extension dependency install."
+  exit 0
+fi
+
+extensions_root="$HOME/.local/share/raycast-extensions"
+stamp_dir="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/raycast-extensions"
+
+# Raycast runs the built bundle, not the sources chezmoi lays down, so the
+# rebuild trigger has to cover every input `ray build` reads.
+extension_digest() {
+  local dir="$1" entry
+  local -a inputs
+  inputs=()
+  for entry in package.json package-lock.json tsconfig.json src assets; do
+    if [ -e "$dir/$entry" ]; then
+      inputs+=("$entry")
+    fi
+  done
+  (
+    cd "$dir" &&
+      find "${inputs[@]}" -type f -print0 |
+      LC_ALL=C sort -z |
+      xargs -0 shasum -a 256 |
+      shasum -a 256 |
+      cut -d' ' -f1
+  )
+}
+
+shopt -s nullglob
+for extension_dir in "$extensions_root"/*/; do
+  extension_dir="${extension_dir%/}"
+  name="${extension_dir##*/}"
+
+  if [ ! -f "$extension_dir/package-lock.json" ]; then
+    warn "Raycast $name extension lockfile missing: $extension_dir/package-lock.json"
+    continue
+  fi
+
+  if ! digest="$(extension_digest "$extension_dir")"; then
+    warn "Raycast $name extension digest failed; skipping its build."
+    continue
+  fi
+  stamp="$stamp_dir/$name.digest"
+  previous="$(cat "$stamp" 2>/dev/null || true)"
+  if [ "$digest" = "$previous" ] && [ -d "$extension_dir/node_modules" ]; then
+    continue
+  fi
+
+  if ! run_timed "raycast $name npm ci" npm ci --omit=dev --prefix "$extension_dir"; then
+    warn "Raycast $name extension dependency install failed; retry with: npm ci --omit=dev --prefix $extension_dir"
+    continue
+  fi
+  if ! (cd "$extension_dir" && run_timed "raycast $name ray build" npm exec -- ray build --non-interactive); then
+    warn "Raycast $name extension build failed; retry with: cd $extension_dir && npm exec -- ray build --non-interactive"
+    continue
+  fi
+
+  mkdir -p "$stamp_dir"
+  printf '%s\n' "$digest" >"$stamp"
+  if [ -n "$previous" ]; then
+    log "Raycast $name extension rebuilt."
+  else
+    # Raycast only loads a development extension after a one-time import.
+    # chezmoi cannot do that import (it writes to Raycast's own store), so
+    # register it once per machine.
+    log "Raycast $name extension built. First-time setup: register it with Raycast by running 'cd $extension_dir && npm run dev' once, then stop it with Ctrl-C. Its commands then stay available."
+  fi
+done
+{{- end -}}

@@ -132,7 +132,7 @@ Library/Preferences/com.raycast.macos.plist
 .config/raycast/scripts/temp-admin.sh
 .local/share/raycast-extensions
 {{- end }}
-{{/* Raycast extension dependencies are installed by run_onchange_after_21-raycast-extensions.sh.tmpl. */}}
+{{/* Raycast extension dependencies are installed by run_after_21-raycast-extensions.sh.tmpl. */}}
 .local/share/raycast-extensions/*/node_modules
 {{/* Raycast builds root-level command bundles from src/*.tsx. */}}
 .local/share/raycast-extensions/*/*.js

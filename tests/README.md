@@ -18,6 +18,12 @@ Run Raycast Orca worktree extension core tests:
 make test-raycast-orca-worktree
 ```
 
+Run the Raycast extension build-hook contract tests:
+
+```sh
+make test-raycast-extensions-script
+```
+
 Run the full fresh-shell selftest:
 
 ```sh
