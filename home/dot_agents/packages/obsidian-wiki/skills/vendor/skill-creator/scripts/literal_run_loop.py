@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Run the eval + improve loop until all pass or max iterations reached.
 
-Combines literal_run_eval.py and improve_description.py in a loop, tracking history
+Combines run_eval.py and improve_description.py in a loop, tracking history
 and returning the best description found. Supports train/test split to prevent
 overfitting.
 """

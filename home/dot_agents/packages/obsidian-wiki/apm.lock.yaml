@@ -1,11 +1,11 @@
 lockfile_version: '1'
-generated_at: '2026-08-30T22:40:49.496513+00:00'
+generated_at: '2026-09-03T01:45:38.562856+00:00'
 apm_version: 0.28.0
 dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: claude-history-ingest
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/claude-history-ingest
   is_virtual: true
@@ -21,7 +21,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: code-understand
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/code-understand
   is_virtual: true
@@ -30,12 +30,12 @@ dependencies:
   - .agents/skills/code-understand
   - .agents/skills/code-understand/SKILL.md
   deployed_file_hashes:
-    .agents/skills/code-understand/SKILL.md: sha256:3d37f30d1ca4c3214461cd8b5799660b072ba40c0672e06f52657be13c79b652
-  content_hash: sha256:96354c265f5799a09f5a87e503b6b9d69b5aceae9106b58b526f53abae53b3c5
+    .agents/skills/code-understand/SKILL.md: sha256:28fff0aaa0277f0b4d4c26a71b8916623196264ca1c1c48fbb8d76178199df6f
+  content_hash: sha256:ebcb0449b7f2a2dc8b4eedb7ace66cb1c9100339400ab9dff9e371e9c73364e2
 - repo_url: ar9av/obsidian-wiki
   name: codex-history-ingest
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/codex-history-ingest
   is_virtual: true
@@ -51,7 +51,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: copilot-history-ingest
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/copilot-history-ingest
   is_virtual: true
@@ -67,7 +67,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: cross-linker
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/cross-linker
   is_virtual: true
@@ -81,7 +81,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: daily-update
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/daily-update
   is_virtual: true
@@ -95,7 +95,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: graph-colorize
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/graph-colorize
   is_virtual: true
@@ -109,7 +109,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: hermes-history-ingest
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/hermes-history-ingest
   is_virtual: true
@@ -125,7 +125,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: impl-validator
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/impl-validator
   is_virtual: true
@@ -139,7 +139,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: llm-wiki
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/llm-wiki
   is_virtual: true
@@ -150,14 +150,14 @@ dependencies:
   - .agents/skills/llm-wiki/references/WRITING.md
   - .agents/skills/llm-wiki/references/karpathy-pattern.md
   deployed_file_hashes:
-    .agents/skills/llm-wiki/SKILL.md: sha256:2debf93651167263fcc7592264524ee45b17222b70dc1aa40cb17aeb9ad8b5ce
+    .agents/skills/llm-wiki/SKILL.md: sha256:e0e01f88e1a6e8f9e8591d862ba34d75abb88b073010551141066ffb56311b76
     .agents/skills/llm-wiki/references/WRITING.md: sha256:79c5d1b5b69d62f11cfd749ab1b5dc395e36d19575f4702e5bd391b197951924
     .agents/skills/llm-wiki/references/karpathy-pattern.md: sha256:2d852653f2ac98da243399fd63f4f60d6dda2a327ae83f1c6c46c1004c5454f8
-  content_hash: sha256:0da90667fbcea71a5ebc5144a0ef1ad0b6d0ccd9ff09af52be4788e4bdd5c727
+  content_hash: sha256:d383c1b40ffb3400241af81b75dbaf9ea7c0219a948dfa1a62d8b45fab280d69
 - repo_url: ar9av/obsidian-wiki
   name: memory-bridge
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/memory-bridge
   is_virtual: true
@@ -171,7 +171,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: obsidian-layout-adjustment
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/obsidian-layout-adjustment
   is_virtual: true
@@ -189,7 +189,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: openclaw-history-ingest
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/openclaw-history-ingest
   is_virtual: true
@@ -205,7 +205,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: pi-history-ingest
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/pi-history-ingest
   is_virtual: true
@@ -219,7 +219,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: session-brain
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/session-brain
   is_virtual: true
@@ -233,7 +233,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: session-search
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/session-search
   is_virtual: true
@@ -247,7 +247,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: skill-creator
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/skill-creator
   is_virtual: true
@@ -295,7 +295,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: tag-taxonomy
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/tag-taxonomy
   is_virtual: true
@@ -309,7 +309,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: vault-skill-factory
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/vault-skill-factory
   is_virtual: true
@@ -323,7 +323,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: wiki-agent
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/wiki-agent
   is_virtual: true
@@ -337,7 +337,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: wiki-capture
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/wiki-capture
   is_virtual: true
@@ -353,7 +353,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: wiki-context-pack
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/wiki-context-pack
   is_virtual: true
@@ -367,7 +367,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: wiki-dashboard
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/wiki-dashboard
   is_virtual: true
@@ -381,7 +381,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: wiki-dedup
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/wiki-dedup
   is_virtual: true
@@ -395,7 +395,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: wiki-digest
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/wiki-digest
   is_virtual: true
@@ -409,7 +409,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: wiki-export
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/wiki-export
   is_virtual: true
@@ -423,7 +423,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: wiki-history-ingest
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/wiki-history-ingest
   is_virtual: true
@@ -437,7 +437,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: wiki-import
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/wiki-import
   is_virtual: true
@@ -451,7 +451,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: wiki-ingest
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/wiki-ingest
   is_virtual: true
@@ -471,7 +471,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: wiki-lint
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/wiki-lint
   is_virtual: true
@@ -485,7 +485,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: wiki-narrate
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/wiki-narrate
   is_virtual: true
@@ -501,7 +501,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: wiki-query
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/wiki-query
   is_virtual: true
@@ -515,7 +515,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: wiki-rebuild
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/wiki-rebuild
   is_virtual: true
@@ -529,7 +529,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: wiki-research
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/wiki-research
   is_virtual: true
@@ -543,7 +543,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: wiki-setup
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/wiki-setup
   is_virtual: true
@@ -557,7 +557,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: wiki-stage-commit
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/wiki-stage-commit
   is_virtual: true
@@ -571,7 +571,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: wiki-status
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/wiki-status
   is_virtual: true
@@ -585,7 +585,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: wiki-switch
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/wiki-switch
   is_virtual: true
@@ -599,7 +599,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: wiki-synthesize
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/wiki-synthesize
   is_virtual: true
@@ -613,7 +613,7 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: wiki-update
   host: github.com
-  resolved_commit: 37596cffeef43faecd9b61246b0b119b11a87bc4
+  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
   version: unknown
   virtual_path: .skills/wiki-update
   is_virtual: true
@@ -704,7 +704,7 @@ deployments:
   owners:
   - ar9av/obsidian-wiki/.skills/code-understand
   active_owner: ar9av/obsidian-wiki/.skills/code-understand
-  content_hash: sha256:3d37f30d1ca4c3214461cd8b5799660b072ba40c0672e06f52657be13c79b652
+  content_hash: sha256:28fff0aaa0277f0b4d4c26a71b8916623196264ca1c1c48fbb8d76178199df6f
 - kind: project-relative
   target: agent-skills
   value: .agents/skills/codex-history-ingest
@@ -920,7 +920,7 @@ deployments:
   owners:
   - ar9av/obsidian-wiki/.skills/llm-wiki
   active_owner: ar9av/obsidian-wiki/.skills/llm-wiki
-  content_hash: sha256:2debf93651167263fcc7592264524ee45b17222b70dc1aa40cb17aeb9ad8b5ce
+  content_hash: sha256:e0e01f88e1a6e8f9e8591d862ba34d75abb88b073010551141066ffb56311b76
 - kind: project-relative
   target: agent-skills
   value: .agents/skills/llm-wiki/references/WRITING.md

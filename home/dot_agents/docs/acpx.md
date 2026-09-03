@@ -275,6 +275,6 @@ Backing CLIs per shortcut family, each on PATH and logged in once:
 - `~/.agents/bin/poll-stream` materializes from `home/dot_agents/bin/`
   (source covered by `make test-acpx-poll-stream`; materialization by the
   CI chezmoi dry-run smoke).
-- Version-verified claims: acpx 0.13.1 (mise installs `npm:acpx` at
+- Version-verified claims: acpx 0.13.2 (mise installs `npm:acpx` at
   `latest`), codex rust-v0.149.1, cursor-agent 2026.07.01, pi 0.80.3.
   Re-verify the matching sections when any of these move.

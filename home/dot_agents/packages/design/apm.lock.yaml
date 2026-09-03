@@ -1,11 +1,11 @@
 lockfile_version: '1'
-generated_at: '2026-08-28T01:06:35.428035+00:00'
+generated_at: '2026-09-03T01:39:36.697208+00:00'
 apm_version: 0.28.0
 dependencies:
 - repo_url: nextlevelbuilder/ui-ux-pro-max-skill
   name: ui-ux-pro-max
   host: github.com
-  resolved_commit: 8bd29e775453ebcae52b6e6514fbf134df0c5770
+  resolved_commit: 58c220ff9d02be80523b06c03471925c52e8ab5d
   version: 2.13.0
   package_type: marketplace_plugin
   deployed_files:
@@ -263,6 +263,7 @@ dependencies:
   - .agents/skills/ui-ux-pro-max/scripts/tests/fixtures/relevance-cases.json
   - .agents/skills/ui-ux-pro-max/scripts/tests/fixtures/relevance-thresholds.json
   - .agents/skills/ui-ux-pro-max/scripts/tests/test_catalog_refresh.py
+  - .agents/skills/ui-ux-pro-max/scripts/tests/test_catalog_summary_line_endings.py
   - .agents/skills/ui-ux-pro-max/scripts/tests/test_core.py
   - .agents/skills/ui-ux-pro-max/scripts/tests/test_core_data_quality.py
   - .agents/skills/ui-ux-pro-max/scripts/tests/test_data_contracts.py
@@ -274,7 +275,7 @@ dependencies:
   - .agents/skills/ui-ux-pro-max/scripts/tests/test_web_stack_freshness.py
   - .agents/skills/ui-ux-pro-max/scripts/validate_data.py
   deployed_file_hashes:
-    .agents/skills/banner-design/SKILL.md: sha256:913d9c4b2a3b405d638d50131e0dd3fe2787c839423d79287b7858ac29255acc
+    .agents/skills/banner-design/SKILL.md: sha256:ccb89ddc848f60bfe630cb19dfe3e062df94a029467a9b15259f2761019ac5c4
     .agents/skills/banner-design/references/banner-sizes-and-styles.md: sha256:c8906fb1073a576ee8c680d9bc8586249cbc4ed36690da960d65a1c9c37143b7
     .agents/skills/brand/SKILL.md: sha256:6a450ee1a83a403d47cec2ede9030feb60a67a81fc425d2406e975339313bd44
     .agents/skills/brand/references/approval-checklist.md: sha256:4bf8549687f53a7b9684005b4b87de93c26f018e00609b4c506a5812abd13d20
@@ -310,18 +311,18 @@ dependencies:
     .agents/skills/design-system/references/states-and-variants.md: sha256:8dacb95d57d4bb37d8a99cc55515ff26da272056f837d29abc74aedcaa3ba104
     .agents/skills/design-system/references/tailwind-integration.md: sha256:6d01092db1479dbd2060567b4232bb2b4bc16e89730ab07e1f87a3e7f5c406b9
     .agents/skills/design-system/references/token-architecture.md: sha256:925f4049c4c4313d9fd5df98cdfd52004112aca49fba1664ad85e76bc9dce4d3
-    .agents/skills/design-system/scripts/embed-tokens.cjs: sha256:23a9ce214e3c0d2fb4c5442b3bf1222c66721f7988a181ab29dcb549a5e5f511
-    .agents/skills/design-system/scripts/fetch-background.py: sha256:cecedad0a9054e6e65f31ab7ba7d07eb6af2179e237c5632bc962dad69fd6d66
+    .agents/skills/design-system/scripts/embed-tokens.cjs: sha256:8c8ad04c1f948402b80693b400047e716235654147a797e11f3ac0283e143486
+    .agents/skills/design-system/scripts/fetch-background.py: sha256:020d4e54bc26595472dc4b5a421830e0e83ffea3f44225fac8ac5f832430e691
     .agents/skills/design-system/scripts/generate-slide.py: sha256:0463c98efea54870816925015fe5819e42a29aaba57408c2c38bacb33e2605b9
     .agents/skills/design-system/scripts/generate-tokens.cjs: sha256:aac8a0f4ec4dccf0d371f9ee5a9111e44977bb0cad7e40a3754aba5571aa1231
-    .agents/skills/design-system/scripts/html-token-validator.py: sha256:9556a65e7aacda23388478294ee9a5cb84b315d964fbbf754aa0dcdbcfee58e6
-    .agents/skills/design-system/scripts/search-slides.py: sha256:fded9548bc1bbe1303da67fabe34006c6a7c57934c9d171ea3dc3eb5f6eee010
+    .agents/skills/design-system/scripts/html-token-validator.py: sha256:1242a778493a8fd646da50623d654b783ed8d1b6d4234b3271789eae9f5a4bed
+    .agents/skills/design-system/scripts/search-slides.py: sha256:3d3d842d1c1daa26084a89aa7a41eb89d8c62b777f45cb4923b42aa10bb0b041
     .agents/skills/design-system/scripts/slide-token-validator.py: sha256:66da5da5e8e659d405a89b342e13dd1e469e79726c46002d9d2368c3c7aaf945
     .agents/skills/design-system/scripts/slide_search_core.py: sha256:2464050ae338eb50728086046b644845fa7ae943f32efead3908fdbe1473edbe
-    .agents/skills/design-system/scripts/tests/test_validate_tokens.py: sha256:a32f34a9e89542a341b6ff3ee4392494b48dea622b22b99652d3cf0c1a1ee966
+    .agents/skills/design-system/scripts/tests/test_validate_tokens.py: sha256:43c56f6ecb89d4dd4010ccabcf047d2f3824d39bbbd5a1f6f697333ff27c59e6
     .agents/skills/design-system/scripts/validate-tokens.cjs: sha256:65f03a29290b9029d8cc27537701f226de7bcffc303b3bc361648fadfa09b77d
     .agents/skills/design-system/templates/design-tokens-starter.json: sha256:5444f477b06bab9c72e2cc289d4a9104efef653391c9639972bcb712d5f2d81e
-    .agents/skills/design/SKILL.md: sha256:f2525f455c101b54c386d075bc208b5d44200599766e46289b991321925c1f99
+    .agents/skills/design/SKILL.md: sha256:0dfc381a005ccc3d0dcb1e569cdc684546fcfdcfa94f793697a74eb640c3c31c
     .agents/skills/design/data/cip/deliverables.csv: sha256:229912f35c2f5a790508ddd62270cc7a92a84694027025ea5a30f1fb5ba84b70
     .agents/skills/design/data/cip/industries.csv: sha256:729b1dea6d6f39b0bc22a1e659584e7ca5cead75841146d599c9f8dc00d4da46
     .agents/skills/design/data/cip/mockup-contexts.csv: sha256:15d61cef16e6746d5aa665976f4de8074fedb64bfc5c7313a40eec1112a1d499
@@ -463,7 +464,7 @@ dependencies:
     .agents/skills/ui-styling/scripts/tests/test_tailwind_config_gen.py: sha256:4efa59fdbe318d55e6a452d85401db5d1aa4504f93739878bb40d8bb504af585
     .agents/skills/ui-ux-pro-max/SKILL.md: sha256:ea087c341bfb5b23195c7302027268ede86da802554c18a5c4896a6017b439f9
     .agents/skills/ui-ux-pro-max/data/app-interface.csv: sha256:331e7cf2c0b222d80c566c5f255c63cb339f65bfd02e471a720f28e4864a9f08
-    .agents/skills/ui-ux-pro-max/data/catalog-summary.json: sha256:65fe0b64480a8a827738297d0a64ca55c627d4afcb774fe4555c59cea8dd6905
+    .agents/skills/ui-ux-pro-max/data/catalog-summary.json: sha256:a257ccd1f85ff5e59f566a069d4c8ba91c90db3f88fc6bc7323a1cb4e9e37421
     .agents/skills/ui-ux-pro-max/data/charts.csv: sha256:4115cf1120680f2cedef0676cb648f30c7ef4699e2a947535d4113e71ed3b12a
     .agents/skills/ui-ux-pro-max/data/colors.csv: sha256:8162429222bce22df62b564085946a30d07cc9722c58d0a3a494bd0d1d00841c
     .agents/skills/ui-ux-pro-max/data/data-provenance.json: sha256:e82fb33ed49375a300e93d9c11ccd1c1493c999e84ee7ee295e527634786e2e0
@@ -521,6 +522,7 @@ dependencies:
     .agents/skills/ui-ux-pro-max/scripts/tests/fixtures/relevance-cases.json: sha256:e77d36eebbf6ddc2860946a02cdb659351da6c09f2688f1ed30939a418099646
     .agents/skills/ui-ux-pro-max/scripts/tests/fixtures/relevance-thresholds.json: sha256:9d738e11c6b82fecc8d0946e7b38515518ded5ed3294a7eb19a021c4edb5b57d
     .agents/skills/ui-ux-pro-max/scripts/tests/test_catalog_refresh.py: sha256:3e2ca5d12702318f641ae62d0c14f22a3bcc84d84e79b863c0e947d475604adb
+    .agents/skills/ui-ux-pro-max/scripts/tests/test_catalog_summary_line_endings.py: sha256:fa6ff09f0ec2c99013588c77397f5082dddebe8f467e94c5f8378ec9595f4989
     .agents/skills/ui-ux-pro-max/scripts/tests/test_core.py: sha256:3527fe2f4b852f69f07c17ddc0d615d9a6e025c924e45a33985579a94a8d2118
     .agents/skills/ui-ux-pro-max/scripts/tests/test_core_data_quality.py: sha256:3ffc6b4905c9ea26d7ac4527ab154d153584231aee71b2ae4bd017977fa09cc5
     .agents/skills/ui-ux-pro-max/scripts/tests/test_data_contracts.py: sha256:0360d6e10080c0bca214f2b0bbad582ba50702a542ce21013351aca54938df3a
@@ -530,14 +532,14 @@ dependencies:
     .agents/skills/ui-ux-pro-max/scripts/tests/test_style_taxonomy.py: sha256:cd14d0092e8a454d213aa104b53e4e70ba698491fa00fde9fdec5ca8a3d70011
     .agents/skills/ui-ux-pro-max/scripts/tests/test_text_layout_resilience.py: sha256:b51d32ee8a15505b87cb81957fb2d1b385e041e8beb4463c311d236bfd29ebd4
     .agents/skills/ui-ux-pro-max/scripts/tests/test_web_stack_freshness.py: sha256:becc5fa40e7516613d4e9930f226aa483e3796090c17cb16542c93d1927e680d
-    .agents/skills/ui-ux-pro-max/scripts/validate_data.py: sha256:718ad4cbb227436015c9c2bc80fc583d6ed738b01c1a940ef85e350780d99f58
-  content_hash: sha256:608c104e9f2e04d05357cfa4c7a366eae84bb0c8bfcb9b8bc4c5a47c68d73f3c
+    .agents/skills/ui-ux-pro-max/scripts/validate_data.py: sha256:a599aa256049cf30954d1f164721b99e453eb7e4cb8241bcab2d5573e6cf58b8
+  content_hash: sha256:726c821a9798378a0bf6512e72742b3a776d69ec9082357246f46069720abfe6
   declared_license: MIT
 - repo_url: raintree-technology/apple-hig-skills
   name: apple-hig-skills
   host: github.com
-  resolved_commit: e34030c06b7de19627e73ab30defaa6a2cdcc803
-  version: e34030c
+  resolved_commit: 307eafc70736f27664bcdca3d55ed9ed6c1210ab
+  version: 307eafc
   package_type: marketplace_plugin
   deployed_files:
   - .agents/skills/hig-components-content
@@ -895,7 +897,7 @@ dependencies:
     .agents/skills/hig-technologies/references/tap-to-pay-on-iphone.md: sha256:e9a0a4be53aeef9e6801fbdc134ff0ce9b3fa18fe1fb40b37102fcad04738e89
     .agents/skills/hig-technologies/references/voiceover.md: sha256:54fa34da1b05eded813f7755c012413665529b96a0e2af00539657b90a350d10
     .agents/skills/hig-technologies/references/wallet.md: sha256:28e94ae042e225a95d810032431b44de4388f0b08716674687884387760cad6c
-  content_hash: sha256:db6d793b82f8093a98285fac8ba2aaf227b7a78efabab05568421a0984775dd4
+  content_hash: sha256:d7a369cdd640e84d7ca7979ddfcd46b9598f24836221050bfac9004e4d4b0ab8
 deployments:
 - kind: project-relative
   target: agent-skills
@@ -914,7 +916,7 @@ deployments:
   owners:
   - nextlevelbuilder/ui-ux-pro-max-skill
   active_owner: nextlevelbuilder/ui-ux-pro-max-skill
-  content_hash: sha256:913d9c4b2a3b405d638d50131e0dd3fe2787c839423d79287b7858ac29255acc
+  content_hash: sha256:ccb89ddc848f60bfe630cb19dfe3e062df94a029467a9b15259f2761019ac5c4
 - kind: project-relative
   target: agent-skills
   value: .agents/skills/banner-design/references/banner-sizes-and-styles.md
@@ -1265,7 +1267,7 @@ deployments:
   owners:
   - nextlevelbuilder/ui-ux-pro-max-skill
   active_owner: nextlevelbuilder/ui-ux-pro-max-skill
-  content_hash: sha256:23a9ce214e3c0d2fb4c5442b3bf1222c66721f7988a181ab29dcb549a5e5f511
+  content_hash: sha256:8c8ad04c1f948402b80693b400047e716235654147a797e11f3ac0283e143486
 - kind: project-relative
   target: agent-skills
   value: .agents/skills/design-system/scripts/fetch-background.py
@@ -1274,7 +1276,7 @@ deployments:
   owners:
   - nextlevelbuilder/ui-ux-pro-max-skill
   active_owner: nextlevelbuilder/ui-ux-pro-max-skill
-  content_hash: sha256:cecedad0a9054e6e65f31ab7ba7d07eb6af2179e237c5632bc962dad69fd6d66
+  content_hash: sha256:020d4e54bc26595472dc4b5a421830e0e83ffea3f44225fac8ac5f832430e691
 - kind: project-relative
   target: agent-skills
   value: .agents/skills/design-system/scripts/generate-slide.py
@@ -1301,7 +1303,7 @@ deployments:
   owners:
   - nextlevelbuilder/ui-ux-pro-max-skill
   active_owner: nextlevelbuilder/ui-ux-pro-max-skill
-  content_hash: sha256:9556a65e7aacda23388478294ee9a5cb84b315d964fbbf754aa0dcdbcfee58e6
+  content_hash: sha256:1242a778493a8fd646da50623d654b783ed8d1b6d4234b3271789eae9f5a4bed
 - kind: project-relative
   target: agent-skills
   value: .agents/skills/design-system/scripts/search-slides.py
@@ -1310,7 +1312,7 @@ deployments:
   owners:
   - nextlevelbuilder/ui-ux-pro-max-skill
   active_owner: nextlevelbuilder/ui-ux-pro-max-skill
-  content_hash: sha256:fded9548bc1bbe1303da67fabe34006c6a7c57934c9d171ea3dc3eb5f6eee010
+  content_hash: sha256:3d3d842d1c1daa26084a89aa7a41eb89d8c62b777f45cb4923b42aa10bb0b041
 - kind: project-relative
   target: agent-skills
   value: .agents/skills/design-system/scripts/slide-token-validator.py
@@ -1337,7 +1339,7 @@ deployments:
   owners:
   - nextlevelbuilder/ui-ux-pro-max-skill
   active_owner: nextlevelbuilder/ui-ux-pro-max-skill
-  content_hash: sha256:a32f34a9e89542a341b6ff3ee4392494b48dea622b22b99652d3cf0c1a1ee966
+  content_hash: sha256:43c56f6ecb89d4dd4010ccabcf047d2f3824d39bbbd5a1f6f697333ff27c59e6
 - kind: project-relative
   target: agent-skills
   value: .agents/skills/design-system/scripts/validate-tokens.cjs
@@ -1364,7 +1366,7 @@ deployments:
   owners:
   - nextlevelbuilder/ui-ux-pro-max-skill
   active_owner: nextlevelbuilder/ui-ux-pro-max-skill
-  content_hash: sha256:f2525f455c101b54c386d075bc208b5d44200599766e46289b991321925c1f99
+  content_hash: sha256:0dfc381a005ccc3d0dcb1e569cdc684546fcfdcfa94f793697a74eb640c3c31c
 - kind: project-relative
   target: agent-skills
   value: .agents/skills/design/data/cip/deliverables.csv
@@ -4325,7 +4327,7 @@ deployments:
   owners:
   - nextlevelbuilder/ui-ux-pro-max-skill
   active_owner: nextlevelbuilder/ui-ux-pro-max-skill
-  content_hash: sha256:65fe0b64480a8a827738297d0a64ca55c627d4afcb774fe4555c59cea8dd6905
+  content_hash: sha256:a257ccd1f85ff5e59f566a069d4c8ba91c90db3f88fc6bc7323a1cb4e9e37421
 - kind: project-relative
   target: agent-skills
   value: .agents/skills/ui-ux-pro-max/data/charts.csv
@@ -4841,6 +4843,15 @@ deployments:
   content_hash: sha256:3e2ca5d12702318f641ae62d0c14f22a3bcc84d84e79b863c0e947d475604adb
 - kind: project-relative
   target: agent-skills
+  value: .agents/skills/ui-ux-pro-max/scripts/tests/test_catalog_summary_line_endings.py
+  runtime: null
+  scope: project
+  owners:
+  - nextlevelbuilder/ui-ux-pro-max-skill
+  active_owner: nextlevelbuilder/ui-ux-pro-max-skill
+  content_hash: sha256:fa6ff09f0ec2c99013588c77397f5082dddebe8f467e94c5f8378ec9595f4989
+- kind: project-relative
+  target: agent-skills
   value: .agents/skills/ui-ux-pro-max/scripts/tests/test_core.py
   runtime: null
   scope: project
@@ -4928,4 +4939,4 @@ deployments:
   owners:
   - nextlevelbuilder/ui-ux-pro-max-skill
   active_owner: nextlevelbuilder/ui-ux-pro-max-skill
-  content_hash: sha256:718ad4cbb227436015c9c2bc80fc583d6ed738b01c1a940ef85e350780d99f58
+  content_hash: sha256:a599aa256049cf30954d1f164721b99e453eb7e4cb8241bcab2d5573e6cf58b8
