@@ -1,0 +1,42 @@
+diff --git a/integrations/claude-code/skills/crit-cli/SKILL.md b/integrations/claude-code/skills/crit-cli/SKILL.md
+index ea6bb56..09fff9a 100644
+--- a/integrations/claude-code/skills/crit-cli/SKILL.md
++++ b/integrations/claude-code/skills/crit-cli/SKILL.md
+@@ -179,6 +179,37 @@ crit comment --plan my-plan-2026-03-23 --reply-to c_a1b2c3 --author 'Claude Code
+ ```
+ </important>
+ 
++<important if="a daemon is running and you need to edit, delete, or re-anchor an existing comment">
++
++While `crit` is running, the daemon holds the comments in memory and is the
++source of truth. It merges only structural changes from the review file, so
++editing a body directly in `review.json` never reaches the daemon or the
++reviewer's browser, and the daemon can overwrite your edit when it next writes.
++There is no CLI verb for editing a comment body — use the HTTP API.
++
++Get the port from `crit status --json` (`.daemon.port`), and poll
++`GET /api/session` until it stops returning 503 before calling anything else.
++
++```
++GET|POST   /api/file/comments?path=<repo-rel>   list / add line and file comments
++PUT|DELETE /api/comment/<id>?path=<repo-rel>    update body / delete
++POST|DELETE /api/comment/<id>/replies[/<rid>]?path=<repo-rel>   reply CRUD
++PUT        /api/comment/<id>/resolve?path=<repo-rel>            set resolved
++GET|POST   /api/comments                        list / add review-level comments
++PUT|DELETE /api/review-comment/<id>             review-level update / delete
++GET        /api/health                          liveness, plus browser_clients
++```
++
++- `POST /api/file/comments` takes `{start_line, end_line, body, author}` and
++  stamps the session's focus onto the new comment, which is why it is the
++  reliable authoring path inside a `--pr` or `--range` session.
++- `PUT` updates a body in place but cannot move a comment. To re-anchor, POST a
++  copy at the new lines and DELETE the old id.
++- Review-scope ids (`r_…`) use `/api/review-comment/<id>` and take no `path`.
++- Comment ids are regenerated on round transitions and on client relaunch.
++  Re-read ids from `GET /api/file/comments` immediately before editing.
++</important>
++
+ <important if="you are syncing with a GitHub PR or GitLab MR (pull or push)">
+ 
+ ```bash

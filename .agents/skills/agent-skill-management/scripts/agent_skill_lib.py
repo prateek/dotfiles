@@ -34,7 +34,9 @@ MAX_SKILL_DESCRIPTION_CHARS = 1024
 # Plugin-shaped payload surface a package may carry beyond skills/: the plugin
 # layout both agents auto-discover, and the shape apm normalizes a marketplace
 # plugin into under .apm/. hooks/ holds hooks.json plus the scripts it runs.
-PAYLOAD_DIRS = ("agents", "commands", "hooks")
+# evals/ holds `claude plugin eval` cases, which have to sit inside the rendered
+# plugin for a plugin@marketplace target to find them.
+PAYLOAD_DIRS = ("agents", "commands", "evals", "hooks")
 PAYLOAD_FILES = (".mcp.json",)
 
 # shutil.ignore_patterns globs for files that never reach a rendered skill.

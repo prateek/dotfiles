@@ -35,7 +35,7 @@ CODEX_PLUGIN_SOURCE_ROOT = "./.agents/plugins/plugins"
 # skills natively and the bootstrap hook made it worse), and Codex gates
 # plugin hooks behind a feature flag plus a trust review anyway. The remaining
 # payload kinds are Claude-only until Codex grows an equivalent surface.
-CODEX_UNMAPPED_PAYLOADS = {"hooks", "commands", "agents", ".mcp.json"}
+CODEX_UNMAPPED_PAYLOADS = {"hooks", "commands", "agents", "evals", ".mcp.json"}
 
 
 def codex_plugin_manifest(package) -> dict:

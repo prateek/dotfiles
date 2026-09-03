@@ -3,7 +3,7 @@
 # requires-python = ">=3.14"
 # dependencies = []
 # ///
-"""Set agent_cmd in ~/.crit.config.json.
+"""Set agent_cmd, open_cmd, and notify_on_round_ready in ~/.crit.config.json.
 
 crit's "send to agent" button runs the configured agent_cmd. Full-access claude
 (upstream's recommended mode) answers the comment and can make the edit
@@ -11,15 +11,25 @@ directly; crit's file watching picks the change up. Machines whose
 machines.toml agent_clis lacks claude get the key removed instead, so the
 button never points at a missing binary.
 
-Only agent_cmd is touched. crit's own keys (auth_token, share_consented,
-auth_user_*, live_cookie, and anything else crit or the user has written)
-round-trip untouched. crit honors agent_cmd only from this global file for
-security, not from a project .crit.config.json.
+open_cmd redirects the review URL away from the OS default browser (a managed
+enterprise browser on the work Mac) into a tab in the current Orca worktree, and
+notify_on_round_ready replaces the stolen window focus with a notification. Both
+are set only where Orca actually runs; the opener itself exits non-zero if Orca
+is unreachable, which makes crit fall back to the default browser.
+
+These three keys are the only ones touched. crit's own keys (auth_token,
+share_consented, auth_user_*, live_cookie, and anything else crit or the user
+has written) round-trip untouched. crit honors agent_cmd and open_cmd only from
+this global file for security, not from a project .crit.config.json.
 """
 import json
 import sys
 
-AGENT_CMD = {{ if has "claude" ((includeTemplate "features.tmpl" . | fromJson).agent_clis | default (list)) }}"claude --dangerously-skip-permissions -p"{{ else }}None{{ end }}
+{{ $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{ $orca := and (ne $f.orca_mode "headless") (eq (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "stablyai/orca/orca")) "true") -}}
+AGENT_CMD = {{ if has "claude" ($f.agent_clis | default (list)) }}"claude --dangerously-skip-permissions -p"{{ else }}None{{ end }}
+OPEN_CMD = {{ if $orca }}"{{ .chezmoi.homeDir }}/.local/bin/crit-open"{{ else }}None{{ end }}
+NOTIFY_ON_ROUND_READY = {{ if $orca }}True{{ else }}None{{ end }}
 
 
 def load_current(text: str) -> dict:
@@ -38,10 +48,15 @@ def semantic_equal(left: str, right: str) -> bool:
 
 current_text = sys.stdin.read()
 current = load_current(current_text)
-if AGENT_CMD is None:
-    current.pop("agent_cmd", None)
-else:
-    current["agent_cmd"] = AGENT_CMD
+for key, value in (
+    ("agent_cmd", AGENT_CMD),
+    ("open_cmd", OPEN_CMD),
+    ("notify_on_round_ready", NOTIFY_ON_ROUND_READY),
+):
+    if value is None:
+        current.pop(key, None)
+    else:
+        current[key] = value
 
 if not current and not current_text.strip():
     # A machine that sets nothing should not materialize the file.

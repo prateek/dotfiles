@@ -1,0 +1,39 @@
+diff --git a/integrations/claude-code/skills/crit-cli/SKILL.md b/integrations/claude-code/skills/crit-cli/SKILL.md
+index ea6bb56..5836d4e 100644
+--- a/integrations/claude-code/skills/crit-cli/SKILL.md
++++ b/integrations/claude-code/skills/crit-cli/SKILL.md
+@@ -120,6 +120,34 @@ Hard rules:
+ - **Only pass `--resolve` when the user explicitly asks.** Never resolve proactively.
+ </important>
+ 
++<important if="you authored comments and are about to tell the user to look at the review">
++
++`crit comments` and the review file are the **store**. The browser renders the
++running daemon's **filtered projection** of that store, scoped to the session's
++current focus. A comment can be present in both and still render nowhere, so
++reading it back with `crit comments` does not prove the reviewer can see it.
++
++Check what the daemon actually serves before handing the review back:
++
++```bash
++PORT=$(crit status --json | jq -r .daemon.port)
++curl -s --get --data-urlencode "path=<repo-relative-path>" \
++  "http://127.0.0.1:$PORT/api/file/comments"
++curl -s "http://127.0.0.1:$PORT/api/health"
++```
++
++- `/api/file/comments` must list the ids you just created. If `crit comments`
++  shows them and this does not, they were authored under a scope the active
++  focus filters out — re-author them against the running daemon instead of
++  editing the review file.
++- `/api/health` reports `browser_clients`. When it is `false`, nobody has the
++  review open; say so rather than assuming the reviewer is looking.
++
++Relaunching changes focus too. `crit --session <id>` reopens in branch-diff
++focus, which hides comments created under a `--pr` or `--range` session; reopen
++with the same invocation that created the review.
++</important>
++
+ <important if="you are leaving 3+ comments in one operation">
+ 
+ Use `--json` for atomicity (single write, no partial state) and speed (one process). Two ways to feed the JSON:

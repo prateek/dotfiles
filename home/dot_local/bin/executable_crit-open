@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# crit's open_cmd hook: put the review in an Orca worktree tab instead of the
+# OS default browser (a managed enterprise browser on the work Mac), and
+# announce it rather than stealing focus.
+#
+# crit calls this with the review URL as the only argument and falls back to the
+# platform opener when it exits non-zero, so every Orca failure path here must
+# exit 1 rather than swallow the error — otherwise a dead Orca runtime means no
+# review opens at all.
+set -uo pipefail
+
+url="${1:-}"
+[[ -n "$url" ]] || exit 1
+
+# orca-cli resolves the platform binary and honours ORCA_CLI_COMMAND.
+orca="$(command -v orca-cli)" || exit 1
+
+notify() {
+  # Best effort: a missing notification must never fail the open.
+  osascript -e "display notification \"$1\" with title \"Crit\"" >/dev/null 2>&1 || true
+}
+
+# Reuse this worktree's Crit tab so repeated rounds don't stack tabs. Keyed on
+# the title crit sets ("Crit — <branch>"); an upstream rename just means we
+# create a tab instead, which is the unoptimised path rather than a failure.
+page="$(
+  "$orca" tab list --worktree current --json 2>/dev/null | python3 -c '
+import json, sys
+try:
+    payload = json.load(sys.stdin)
+except Exception:
+    sys.exit(0)
+if not payload.get("ok"):
+    sys.exit(0)
+hits = [t["browserPageId"] for t in payload.get("result", {}).get("tabs", [])
+        if str(t.get("title", "")).startswith("Crit") and t.get("browserPageId")]
+# Only reuse when the choice is unambiguous. crit supports concurrent reviews on
+# separate ports, and hijacking one of several would clobber a live review.
+if len(hits) == 1:
+    print(hits[0])
+' 2>/dev/null
+)"
+
+ok() {  # ok <json> — Orca reports failure in the body, not always the exit code.
+  printf '%s' "$1" | python3 -c '
+import json, sys
+try:
+    sys.exit(0 if json.load(sys.stdin).get("ok") else 1)
+except Exception:
+    sys.exit(1)
+' 2>/dev/null
+}
+
+if [[ -n "$page" ]]; then
+  out="$("$orca" goto --url "$url" --page "$page" --json 2>/dev/null)" && ok "$out" || exit 1
+  notify "Review reloaded in Orca"
+else
+  out="$("$orca" tab create --url "$url" --worktree current --json 2>/dev/null)" && ok "$out" || exit 1
+  notify "Review open in Orca"
+fi

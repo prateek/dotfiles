@@ -64,3 +64,6 @@ ask.json
 
 # Go build artifact of the downstream-fork engine.
 home/dot_agents/packages/review/skills/local/downstream-fork/engine/forkengine
+
+# Eval run output (transcripts, verdicts); regenerated per run.
+.crit-evals/

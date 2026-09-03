@@ -1,0 +1,202 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.14"
+# dependencies = []
+# ///
+"""Run the crit behavioural eval cases through acpx.
+
+`claude plugin eval` is the natural home for these cases but is gated behind
+early access, so this drives the same case files (prompt.md + graders/*.md)
+through acpx instead.
+
+Each case runs against every agent under test, then a *different* agent grades
+the transcript against the case's criteria. Cross-grading avoids a model marking
+its own homework; a run is only as trustworthy as that separation.
+
+Agent choice is the ablation. On this machine `agpt` and `aopus` are both
+cursor-agent, and Cursor receives no skill projection from this repo, so they
+measure behaviour with no crit guidance at all. `afable` is claude-agent-acp and
+does load the review plugin. Comparing the two groups is what shows whether the
+skill text is doing any work.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+EVALS_ROOT = REPO_ROOT / "home/dot_agents/packages/review/evals"
+DONE_RE = re.compile(r"^\[done\] (\S+)", re.MULTILINE)
+
+JUDGE_TEMPLATE = """You are grading one transcript from an agent-behaviour eval. Judge only what
+the transcript shows. Do not run anything, and do not be generous: a missing
+step is a fail even when the final answer looks reasonable.
+
+## Criteria
+
+{criteria}
+
+## Task the agent was given
+
+{prompt}
+
+## Transcript
+
+{transcript}
+
+## Output
+
+Reply with a single JSON object and nothing else:
+{{"pass": true or false, "reason": "<one sentence, under 30 words>"}}
+"""
+
+
+def acpx(agent: str, prompt_file: Path, log: Path, timeout: int, approve: bool,
+         cwd: Path | None = None) -> str:
+    cmd = [
+        "acpx", "--format", "text", "--suppress-reads", "--no-terminal",
+        "--timeout", str(timeout), "--prompt-retries", "3",
+    ]
+    cmd += ["--approve-all"] if approve else ["--non-interactive-permissions", "deny"]
+    cmd += [agent, "exec", "-f", str(prompt_file)]
+    with log.open("w") as fh:
+        subprocess.run(cmd, stdout=fh, stderr=subprocess.STDOUT,
+                       timeout=timeout + 120, cwd=cwd)
+    return log.read_text(errors="replace")
+
+
+def final_text(transcript: str) -> str:
+    # acpx marks the end of a run with [done] <stopReason>; the answer is the
+    # assistant text before it, and status lines are noise for a grader.
+    body = transcript.split("[done]")[0]
+    keep = [
+        ln for ln in body.splitlines()
+        if not ln.startswith(("[client]", "[thinking]", "[plan]"))
+    ]
+    return "\n".join(keep).strip()
+
+
+def verdict_from(text: str) -> dict:
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+    if not match:
+        return {"pass": False, "reason": "grader returned no JSON object"}
+    try:
+        parsed = json.loads(match.group(0))
+    except json.JSONDecodeError:
+        return {"pass": False, "reason": "grader returned malformed JSON"}
+    return {"pass": bool(parsed.get("pass")), "reason": str(parsed.get("reason", ""))[:200]}
+
+
+def review_dirs() -> set[str]:
+    root = Path.home() / ".crit/reviews"
+    return {p.name for p in root.iterdir()} if root.is_dir() else set()
+
+
+def run_one(case: Path, agent: str, judge: str, out: Path, timeout: int) -> dict:
+    prompt = (case / "prompt.md").read_text()
+    criteria = "\n\n".join(
+        p.read_text() for p in sorted((case / "graders").glob("*.md"))
+    )
+
+    # The executing cases build a scratch repo and start a daemon, so give them
+    # their own cwd and let them write. Non-executing cases stay locked down.
+    executes = "crit" in prompt and "commands you would run" not in prompt
+    workdir = Path(tempfile.mkdtemp(prefix=f"crit-eval-{case.name}-"))
+    prompt_file = workdir / "prompt.md"
+    prompt_file.write_text(prompt)
+    # Isolation is the harness's job, not a hidden grading requirement: crit's
+    # `output` key is project-overridable, so any daemon the agent starts here
+    # writes into the sandbox rather than the real ~/.crit.
+    (workdir / ".crit.config.json").write_text(
+        json.dumps({"output": str(workdir / "crit-data")}) + "\n"
+    )
+
+    log = out / f"{case.name}.{agent}.log"
+    transcript = acpx(agent, prompt_file, log, timeout, approve=executes, cwd=workdir)
+
+    stop = DONE_RE.search(transcript)
+    if not stop:
+        return {"case": case.name, "agent": agent, "pass": False,
+                "reason": "run produced no [done] marker", "log": str(log)}
+
+    judge_file = out / f"{case.name}.{agent}.judge.md"
+    judge_file.write_text(JUDGE_TEMPLATE.format(
+        criteria=criteria, prompt=prompt, transcript=final_text(transcript)[:20000]
+    ))
+    judge_log = out / f"{case.name}.{agent}.judge.log"
+    judged = acpx(judge, judge_file, judge_log, timeout, approve=False, cwd=workdir)
+    result = verdict_from(final_text(judged))
+    result.update({"case": case.name, "agent": agent, "judge": judge,
+                   "log": str(log), "stop": stop.group(1)})
+    shutil.rmtree(workdir, ignore_errors=True)
+    return result
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--agents", default="agpt,aopus,afable",
+                        help="comma-separated acpx shortcuts; include one that "
+                             "loads the review plugin (afable) and one that does "
+                             "not (agpt/aopus) to get an ablation")
+    parser.add_argument("--case", default="*", help="glob over case directory names")
+    parser.add_argument("--timeout", type=int, default=600)
+    parser.add_argument("--out", type=Path, default=None)
+    parser.add_argument("--jobs", type=int, default=4)
+    args = parser.parse_args()
+
+    if not shutil.which("acpx"):
+        print("crit-evals: acpx not installed; skipping", file=sys.stderr)
+        return 0
+
+    cases = sorted(p for p in EVALS_ROOT.glob(args.case) if (p / "prompt.md").exists())
+    if not cases:
+        print(f"crit-evals: no cases matched {args.case!r} under {EVALS_ROOT}", file=sys.stderr)
+        return 1
+
+    agents = [a.strip() for a in args.agents.split(",") if a.strip()]
+    if len(agents) < 2 or len(set(agents)) != len(agents):
+        print("crit-evals: need at least two DISTINCT agents so grading is never "
+              "self-grading", file=sys.stderr)
+        return 1
+
+    out = args.out or REPO_ROOT / f".crit-evals/{time.strftime('%Y%m%dT%H%M%S')}"
+    out.mkdir(parents=True, exist_ok=True)
+    print(f"crit-evals: {len(cases)} case(s) x {len(agents)} agent(s) -> {out}")
+
+    before = review_dirs()
+    work = [(c, a, agents[(i + 1) % len(agents)])
+            for c in cases for i, a in enumerate(agents)]
+    with ThreadPoolExecutor(max_workers=args.jobs) as pool:
+        results = list(pool.map(
+            lambda t: run_one(t[0], t[1], t[2], out, args.timeout), work
+        ))
+
+    leaked = review_dirs() - before
+    (out / "results.json").write_text(json.dumps(results, indent=2) + "\n")
+
+    width = max(len(r["case"]) for r in results)
+    print()
+    for r in sorted(results, key=lambda r: (r["case"], r["agent"])):
+        mark = "PASS" if r["pass"] else "FAIL"
+        print(f"  {mark}  {r['case']:<{width}}  {r['agent']:<7} {r.get('reason','')}")
+
+    failed = [r for r in results if not r["pass"]]
+    print(f"\n{len(results) - len(failed)}/{len(results)} passed; detail in {out}")
+    if leaked:
+        # A case that forgets -o writes into the real crit state; that is itself
+        # a finding, and silently tolerating it would corrupt later runs.
+        print(f"crit-evals: cases wrote to ~/.crit/reviews: {sorted(leaked)}", file=sys.stderr)
+        return 1
+    return 1 if failed else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

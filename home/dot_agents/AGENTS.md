@@ -129,6 +129,8 @@ For iOS and Apple-platform work (Xcode toolchain, Tuist, simulator leasing, vers
 
 For debugging agent sessions and behavior (agentsview), read: ~/.agents/docs/agentsview.md
 
+For crit (where reviews open, stacked-branch base selection, local skill patches), read: ~/.agents/docs/crit.md
+
 For acpx (delegating a task to a second agent or model) and its shortcut families (agpt*/aopus*/afable*/agemini), read: ~/.agents/docs/acpx.md
 
 ## Secret-backed env vars

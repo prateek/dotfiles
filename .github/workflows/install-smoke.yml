@@ -25,7 +25,8 @@ jobs:
           # git ls-files just returns nothing for them.
           mapfile -t scripts < <(
             git ls-files scripts home/dot_agents/bin \
-              home/dot_local/bin/executable_orca-devpod-reconcile |
+              home/dot_local/bin/executable_orca-devpod-reconcile \
+              home/dot_local/bin/executable_crit-open |
               while IFS= read -r file; do
                 head -n 1 "$file" | grep -Eq '^#!/(usr/)?bin/(env[[:space:]]+)?(ba)?sh([[:space:]]|$)' && printf '%s\n' "$file"
               done
@@ -109,6 +110,7 @@ jobs:
           make test-claude-statusline
           make test-orca-settings
           make test-crit-config
+          make test-vendor-skill-patches
           make test-acpx-model-drift
           make test-acpx-poll-stream
           make test-agent-skill-packages

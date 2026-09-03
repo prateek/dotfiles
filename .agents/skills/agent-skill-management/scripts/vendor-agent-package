@@ -21,6 +21,7 @@ from agent_skill_lib import PACKAGES_ROOT, skill_frontmatter
 SCRIPT_DIR = Path(__file__).resolve().parent
 AUDIT_SCRIPT = SCRIPT_DIR / "audit-apm-source-surface"
 VALIDATE_SCRIPT = SCRIPT_DIR / "validate-agent-packages"
+PATCH_SCRIPT = SCRIPT_DIR / "apply-vendor-patches"
 
 # Plugin primitives vendored beyond skills. apm normalizes a marketplace
 # plugin's primitives under apm_modules/<repo>/.apm/<primitive>; each one
@@ -433,6 +434,15 @@ def main() -> int:
             lockfile.unlink()
         validate_env = os.environ.copy()
         validate_env["AGENT_SKILL_PACKAGES_ROOT"] = str(args.packages_root)
+        # Re-vendoring replaces the skill tree, so local deltas have to go back on
+        # before validation sees the package. A patch that no longer applies fails
+        # here rather than vanishing silently.
+        if run(
+            [str(PATCH_SCRIPT), "--packages-root", str(args.packages_root)],
+            package_root,
+            env=validate_env,
+        ) != 0:
+            return 1
         if run([str(VALIDATE_SCRIPT)], package_root, env=validate_env) != 0:
             return 1
     return 0

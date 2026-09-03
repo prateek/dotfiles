@@ -39,6 +39,8 @@ python3 - "$merged" <<'PY'
 import json, sys
 d = json.load(open(sys.argv[1]))
 assert d["agent_cmd"] == "claude --dangerously-skip-permissions -p", d
+assert d["open_cmd"].endswith("/.local/bin/crit-open"), d
+assert d["notify_on_round_ready"] is True, d
 assert d["auth_token"] == "secret-abc", d
 assert d["share_consented"] is True, d
 assert d["auth_user_name"] == "Prätéek", d
@@ -52,10 +54,10 @@ again="$tmp_root/again.json"
 "$modify" <"$merged" >"$again"
 cmp -s "$merged" "$again" || { echo "FAIL: modify is not idempotent" >&2; exit 1; }
 crit_style="$tmp_root/crit-style.json"
-printf '{"auth_token":"x","agent_cmd":"claude --dangerously-skip-permissions -p"}' >"$crit_style"
+printf '{"auth_token":"x"}' | "$modify" >"$crit_style"
 crit_out="$tmp_root/crit-style-out.json"
 "$modify" <"$crit_style" >"$crit_out"
-cmp -s "$crit_style" "$crit_out" || { echo "FAIL: correct-agent_cmd file not preserved byte-for-byte" >&2; exit 1; }
+cmp -s "$crit_style" "$crit_out" || { echo "FAIL: already-correct file not preserved byte-for-byte" >&2; exit 1; }
 
 # A stale agent_cmd (e.g. the retired crit-agent bridge) is rewritten in place.
 printf '{"auth_token":"x","agent_cmd":"crit-agent {prompt}"}' | "$modify" | python3 -c '
@@ -72,7 +74,7 @@ scratch="$tmp_root/scratch.json"
 python3 - "$scratch" <<'PY'
 import json, sys
 d = json.load(open(sys.argv[1]))
-assert list(d.keys()) == ["agent_cmd"], d
+assert sorted(d) == ["agent_cmd", "notify_on_round_ready", "open_cmd"], d
 assert d["agent_cmd"] == "claude --dangerously-skip-permissions -p", d
 PY
 
@@ -81,10 +83,12 @@ PY
 modify_ci="$tmp_root/modify_crit_ci.py"
 render ci modify_private_dot_crit.config.json.tmpl >"$modify_ci"
 chmod +x "$modify_ci"
-printf '{"auth_token":"x","agent_cmd":"crit-agent {prompt}"}' | "$modify_ci" | python3 -c '
+printf '{"auth_token":"x","agent_cmd":"crit-agent {prompt}","open_cmd":"/stale","notify_on_round_ready":true}' | "$modify_ci" | python3 -c '
 import json, sys
 d = json.load(sys.stdin)
 assert "agent_cmd" not in d, d
+assert "open_cmd" not in d, d
+assert "notify_on_round_ready" not in d, d
 assert d["auth_token"] == "x", d
 '
 [[ -z "$("$modify_ci" <"$empty_in")" ]] || { echo "FAIL: ci modify materialized a stub config" >&2; exit 1; }
@@ -119,4 +123,4 @@ import sys, json
 assert json.load(sys.stdin)["agents"] == {}, "ci should emit no shortcuts"
 '
 
-echo "ok: crit config modify (agent_cmd set on claude machines, removed on ci, secrets preserved, idempotent, no-churn); acpx gating by agent_clis (work/personal/homelab/ci)"
+echo "ok: crit config modify (agent_cmd/open_cmd/notify_on_round_ready set on Orca+claude machines, removed on ci, secrets preserved, idempotent, no-churn); acpx gating by agent_clis (work/personal/homelab/ci)"
