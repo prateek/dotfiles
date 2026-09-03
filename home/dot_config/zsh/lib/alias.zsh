@@ -144,6 +144,9 @@ alias yo='open -a Yoink'
 yolo() {
   codex --dangerously-bypass-approvals-and-sandbox "$@"
 }
+yoloa() {
+  cursor-agent --yolo --model gpt-5.6-sol-xhigh-fast "$@"
+}
 yoloc() {
   claude --dangerously-skip-permissions "$@"
 }
