@@ -83,7 +83,7 @@ write_universal_access_defaults() {
 	defaults write com.apple.universalaccess closeViewScrollWheelToggle -bool true || rc=1
 	defaults write com.apple.universalaccess HIDScrollZoomModifierMask -int 262144 || rc=1
 	defaults write com.apple.universalaccess closeViewZoomFollowsFocus -bool true || rc=1
-	defaults write com.apple.universalaccess reduceTransparency -bool true || rc=1
+	defaults write com.apple.universalaccess reduceTransparency -bool false || rc=1
 
 	return "$rc"
 }
@@ -129,9 +129,13 @@ write_safari_defaults() {
 # Boot, power, sleep                                                          #
 ###############################################################################
 
-sudo nvram SystemAudioVolume=" "
-sudo pmset -a standbydelay 86400
-sudo pmset -a hibernatemode 0
+# Apple Silicon reads StartupMute for the boot chime; SystemAudioVolume was the
+# Intel key and is ignored here.
+sudo nvram StartupMute=%01
+# Apple's defaults already fit: hibernatemode is 0 on desktops and 3 (safe
+# sleep) on portables, and Apple Silicon exposes no standbydelay knob. Forcing
+# hibernatemode 0 on a laptop only drops the sleep image, at the cost of losing
+# open work if the battery empties during sleep.
 systemsetup_set -setrestartfreeze on
 
 if ! pmset -g batt 2>/dev/null | grep -q "InternalBattery"; then
@@ -441,9 +445,7 @@ defaults write com.apple.messageshelper.MessageController SOInputLineSettings -d
 
 # ----- Activity Monitor -----
 
-defaults write com.apple.ActivityMonitor OpenMainWindow -bool true
-defaults write com.apple.ActivityMonitor IconType -int 5
-defaults write com.apple.ActivityMonitor ShowCategory -int 0
+defaults write com.apple.ActivityMonitor ShowCategory -int 100
 defaults write com.apple.ActivityMonitor SortColumn -string "CPUUsage"
 defaults write com.apple.ActivityMonitor SortDirection -int 0
 

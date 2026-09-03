@@ -92,6 +92,7 @@ for day-to-day implementation details.
 | [Agent Skill Management Research](research/agent-skill-management-research.md) | Background on skill context pressure, package layout, and plugin defaults. |
 | [Skill Invocation-Control Frontmatter](research/skill-invocation-frontmatter-research.md) | Which harnesses honor `disable-model-invocation` and `user-invocable`, with per-harness evidence and citations. |
 | [Self-Improving Agents](research/self-improving-agents.md) | Pattern reference for durable agent feedback loops. |
+| [macOS Defaults: Sources And Verified Facts](research/macos-defaults-sources.md) | Sources to mine for the next rework of the macOS defaults layer, plus key encodings and Apple Silicon power facts verified on hardware. |
 
 ## Historical Records
 
