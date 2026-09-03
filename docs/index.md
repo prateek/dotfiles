@@ -93,6 +93,7 @@ for day-to-day implementation details.
 | [Skill Invocation-Control Frontmatter](research/skill-invocation-frontmatter-research.md) | Which harnesses honor `disable-model-invocation` and `user-invocable`, with per-harness evidence and citations. |
 | [Self-Improving Agents](research/self-improving-agents.md) | Pattern reference for durable agent feedback loops. |
 | [macOS Defaults: Sources And Verified Facts](research/macos-defaults-sources.md) | Sources to mine for the next rework of the macOS defaults layer, plus key encodings and Apple Silicon power facts verified on hardware. |
+| [acpx Rewrite Model Bake-Off](research/acpx-rewrite-model-bakeoff.md) | Why `agptw` pins `gpt-5.6-luna-high`, with the scoring method and repro steps for re-picking the prose-rewrite model. |
 
 ## Historical Records
 

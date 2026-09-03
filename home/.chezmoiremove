@@ -46,8 +46,3 @@ bin/grmrepo-refresh
 .agents/packages/review/skills/local/github-pr-review-setup
 .agents/packages/utils-agent/skills/local/managed-chrome-cdp
 .agents/packages/utils-agent/skills/vendor/shortcut
-
-# writing skills folded into core/skills/local/writing-for-humans/references
-.agents/packages/core/skills/local/write-for-humans
-.agents/packages/core/skills/vendor/better-writing
-.agents/packages/core/skills/vendor/writing-clearly-and-concisely

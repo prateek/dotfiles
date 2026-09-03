@@ -5,17 +5,23 @@ description: Write or rewrite prose that people will read (replies, docs, README
 
 # Writing for Humans
 
-One entry point for prose. Three bodies of guidance live under `references/`
-and this file says which to load, in what order, and when a short pass is
-enough.
+One entry point for prose. Three sibling skills hold the guidance; this file
+says which to load, in what order, and when a short pass is enough. They are
+user-invoked only, so they cost no listing budget. Read them as files. Do not
+try to invoke them through the Skill tool; that route is closed and only the
+human typing a name reopens it.
 
-- `references/writing-clearly-and-concisely/`: Strunk's *Elements of Style*.
-  Sentence and paragraph structure. The full text is about 12,000 tokens.
-- `references/write-for-humans/`: the seven anti-slop rules in order, voice
+Paths starting `../` are relative to this file's directory: the three sit
+beside it in the same plugin. A bare filename inside a step is relative to the
+skill that step just sent you to, not to this file.
+
+- `../writing-clearly-and-concisely/`: Strunk's *Elements of Style*. Sentence
+  and paragraph structure. The full text is about 12,000 tokens.
+- `../write-for-humans/`: the seven anti-slop rules in order, voice
   preservation, an exhaustive pattern catalog (`REFERENCE.md`), and a
   `prose-humanizer` subagent for long rewrites.
-- `references/better-writing/`: audience and genre fit. Voice dials, genre
-  tells and exemptions, an anti-slop audit, and a delivery preflight.
+- `../better-writing/`: audience and genre fit. Voice dials, genre tells and
+  exemptions, an anti-slop audit, and a delivery preflight.
 
 ## Scope
 
@@ -48,21 +54,21 @@ Then run the self-edit checklist below and return the text with no preamble.
 Work in this order. Earlier passes remove material later passes would have
 to rewrite.
 
-1. **Structure first.** Read `references/writing-clearly-and-concisely/SKILL.md`
-   for the rule list; load `elements-of-style.md` only for a long document
-   or when a structural problem needs the source. Active voice, one topic
-   per paragraph, topic sentence first, omit needless words, emphatic words
-   at the end.
-2. **Register second.** Read `references/write-for-humans/SKILL.md` and apply
-   the seven rules in order. For heavy slop or a long draft, load
-   `REFERENCE.md` for the full catalog, or dispatch
-   `references/write-for-humans/agents/prose-humanizer.md` with the draft
-   when context is tight.
+1. **Structure first.** Read `../writing-clearly-and-concisely/SKILL.md` for
+   the rule list; load `elements-of-style.md` only for a long document or
+   when a structural problem needs the source. Active voice, one topic per
+   paragraph, topic sentence first, omit needless words, emphatic words at
+   the end.
+2. **Register second.** Read `../write-for-humans/SKILL.md` and apply the
+   seven rules in order. For heavy slop or a long draft, load `REFERENCE.md`
+   for the full catalog, or dispatch
+   `../write-for-humans/agents/prose-humanizer.md` with the draft when
+   context is tight.
 3. **Fit last.** When audience, channel, or genre matters, or the user says
    "humanize", "de-AI", or "make this sound less like a bot", read
-   `references/better-writing/SKILL.md`. Set the read (genre, audience,
-   tone, outcome) with `references/better-writing/references/voice-and-context.md`,
-   check genre exemptions in `genre-tells.md`, and finish with `preflight.md`.
+   `../better-writing/SKILL.md`. Set the read (genre, audience, tone,
+   outcome) with `../better-writing/references/voice-and-context.md`, check
+   genre exemptions in `genre-tells.md`, and finish with `preflight.md`.
 
 Rewrite mode: read the whole draft, judge light versus heavy slop, cut
 first and rewrite second, then diff against the original and revert any

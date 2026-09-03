@@ -1,19 +1,16 @@
 # acpx Conventions
 
-## Purpose
+`acpx` is a headless ACP (Agent Client Protocol) CLI for running another
+coding agent from inside a session: a second opinion from a different model, a
+delegated one-shot task, a scripted multi-agent step. It spawns a separate
+process with its own context; your own model and session carry on untouched.
 
-Run another coding agent from inside a session via `acpx`, a headless ACP
-(Agent Client Protocol) CLI: a second opinion from a different model, a
-delegated one-shot task, or a scripted multi-agent step. The spawned
-agent is a separate process with its own context — not a way to switch
-your own model. The full command surface lives in the vendored `acpx`
-skill (utils-agent); this doc covers local conventions only.
+The full command surface lives in the vendored `acpx` skill (utils-agent).
+This doc is the local conventions layer on top of it.
 
-## Canonical invocations
+## Launch
 
-Default — watchable run. Write the prompt to a file and pick the launch
-shape for your harness — see Watching a run. The redirected shape shown
-here is Claude Code's:
+Write the prompt to a file, then background the run and redirect it to a log:
 
 ```bash
 slug=review-auth   # short task label
@@ -27,26 +24,19 @@ acpx --format text --suppress-reads --no-terminal \
   agpt exec -f "/tmp/acpx-$slug.prompt.md" > "$log" 2>&1
 ```
 
-The shortcut (`agpt` here) selects the model — never pass `--model`; the
-shortcut's config entry pins it. Keep `--format text` explicit (a project
-`.acpxrc.json` could otherwise change it) and `--prompt-retries` for
-transient adapter errors.
+That is the redirected **shape**, which Claude Code relays from. Codex,
+cursor-agent, and pi run acpx directly and drop the `log=`, `echo`, and
+redirect lines, because their own surfaces are the feed and a redirect would
+leave them watching a silent command — see
+[acpx-harness-lanes.md](acpx-harness-lanes.md). What the redirect buys either
+way is a **trail**: a direct-shape run leaves no log behind.
 
-The run is finished when the log ends with `[done] <stopReason>`; the
-final answer is the assistant text just before it. Branch on the marker:
-`[done] end_turn` is a natural finish; `[done] cancelled` means cancelled
-or killed (acpx sends ACP `session/cancel` on SIGTERM). An `[error]` line
-is terminal only when the log ends with it (e.g. `RUNTIME: Authentication
-required` at startup); mid-stream `[error]` lines are recoverable adapter
-noise — narrate them and keep polling. A log that freezes with no marker
-at all (SIGKILL, crash) ends only via the harness completion
-notification. The log is also the forensic trail — a quiet `exec` leaves
-none.
+The shortcut name pins the model, so `agpt` is the whole model selection.
+`--format text` stays explicit because a project `.acpxrc.json` can otherwise
+change it. `--prompt-retries` absorbs transient adapter errors.
 
-Fall back to a quiet foreground run only for quick, low-stakes prompts
-where nobody needs progress (distinct from the direct-shape foreground
-runs in Watching a run). Keep the safety flags; foreground runs race the
-harness's own command timeout, often 2 minutes:
+For a quick, low-stakes prompt nobody needs to watch, run it quiet in the
+foreground and keep the safety flags:
 
 ```bash
 acpx --format quiet --no-terminal --non-interactive-permissions deny \
@@ -56,225 +46,175 @@ acpx --format json --json-strict --no-terminal \
   --non-interactive-permissions deny --timeout 300 agpt exec -f prompt.md
 ```
 
-Rules that trip agents up:
+What trips agents up:
 
-- Shortcut names (`agpt`, `aopus`, ...) are acpx agent names, not
-  binaries. Always `acpx <name>`; `which agpt` finds nothing.
-- Global flags go before `<name>`; only `-f/--file` goes after `exec`
-  (`-f -` reads stdin, e.g. a heredoc).
-- Pair acpx `--timeout` with the harness's own command timeout. The
-  default 2-minute tool-shell timeout kills acpx mid-run; background
-  long runs instead.
-- The permission flags above fail closed in tool shells: writes are
-  denied instead of prompting. For a hard read-only guarantee use
-  `--permission-policy` (skill: Permission modes). `--approve-all` is
-  for trusted automation only.
+- Shortcut names (`agpt`, `aopus`, ...) are acpx agent names, not binaries.
+  Reach them as `acpx <name>`; `which agpt` finds nothing.
+- Global flags go before `<name>`. Only `-f/--file` goes after `exec`, where
+  `-f -` reads stdin, so a heredoc works.
+- Set acpx `--timeout` against the harness's own command timeout, which is
+  often 2 minutes. A tool shell that short kills a longer run mid-flight, so
+  background anything that will outlast it.
+- The permission flags above fail closed in tool shells: writes are denied
+  rather than prompted. For a hard read-only guarantee use
+  `--permission-policy` (skill: Permission modes). Keep `--approve-all` for
+  trusted automation.
 
-## Model shortcuts
+## Finish
 
-Defined in `~/.acpx/config.json` (`agents` map). Each pins a model + reasoning
-tier. The `agpt*`/`aopus*`/`agemini` shortcuts run through `cursor-agent` as
-the ACP adapter, with the reasoning tier encoded in the model id itself; where
-`cursor-agent` is absent, `agpt*` fall back to the Codex adapter (`codex-acp`,
-GPT model from `~/.codex/config.toml`). The `afable*` shortcuts run Claude Code
-through `claude-agent-acp`, with the model and effort pinned via
-`ANTHROPIC_MODEL` and `CLAUDE_CODE_EFFORT_LEVEL` env vars in the entry (the
-adapter takes no model/effort CLI args).
+A run is over when the log ends with a `[done] <stopReason>` **marker**, and
+the final answer is the assistant text just before it. Branch on which marker:
 
-| Shortcut  | Model                                 | Use for                            |
-| --------- | ------------------------------------- | ---------------------------------- |
-| `agpt`    | `gpt-5.6-sol-high-fast`               | Best general GPT, high reasoning   |
-| `agptx`   | `gpt-5.6-sol-xhigh-fast`              | GPT for the hardest problems       |
-| `aopus`   | `claude-opus-5-thinking-xhigh-fast`   | Best Claude, xhigh thinking, 1M ctx |
-| `aopusx`  | `claude-opus-5-thinking-max-fast`     | Claude at max thinking, 1M ctx     |
-| `afable`  | `fable` at `xhigh` effort             | Claude Code on Fable, xhigh effort |
-| `afablex` | `fable` at `max` effort               | Claude Code on Fable, max effort   |
-| `agemini` | `gemini-3.1-pro`                      | Best Gemini                        |
+- `[done] end_turn` — a natural finish.
+- `[done] cancelled` — cancelled or killed; acpx sends ACP `session/cancel` on
+  SIGTERM.
+- `[error]` as the **last** line — terminal, typically a startup failure like
+  `RUNTIME: Authentication required`. Mid-stream `[error]` lines are
+  recoverable adapter noise: narrate them and keep going.
+- No marker at all — the run died hard (SIGKILL, crash). Only the harness
+  completion notification ends this one.
 
-The `cursor-agent` ids pin the current latest of each family and go stale
-as the catalog moves; the bare aliases (`opus`, `gpt`, ...) resolve to
-*older* generations, so they are no escape hatch. The drift audit
-(`scripts/audit/acpx-model-drift.sh` in the dotfiles repo) flags dropped
-or superseded pins; refresh `home/dot_acpx/config.json.tmpl` and this
-table together.
+## Relay (Claude Code)
 
-The config is templated per machine (machines.toml `agent_clis`), so the
-rendered shortcut set varies by box; run `acpx config show` to see what
-this machine actually has.
+`--format text` streams as it goes: assistant text, plus `[thinking]` and
+`[tool]`/`[plan]` status lines. Thinking is truncated in text mode, so switch
+to `--format json` when full reasoning matters.
 
-## Watching a run
-
-`--format text` already streams: assistant text as it arrives plus
-`[thinking]` and `[tool]`/`[plan]` status lines. Thinking is truncated in
-text mode; use `--format json` when full reasoning matters.
-
-Two launch shapes, chosen by which surface needs the stream: Claude Code
-redirects to `$log` and relays from it; Codex, cursor-agent, and pi drop
-the `log=`, `echo`, and redirect lines — the prompt file plus the acpx
-command is their whole launch — because their native surfaces are the
-feed, and with the redirect they would watch a silent command.
-Direct-shape runs leave no log file; when the forensic trail matters,
-redirect and tail.
-
-| Who runs it        | Launch with                   | Follow progress via                 |
-| ------------------ | ----------------------------- | ----------------------------------- |
-| Claude Code        | `run_in_background`, redirect | blocking-poll relay (below)         |
-| Codex              | direct foreground, no redirect | auto-backgrounded terminal (below) |
-| cursor-agent       | background job, no redirect   | jobs pager + `Await` (below)        |
-| pi                 | direct foreground, no redirect | native live tail (below)           |
-| Human (spectating) | —                             | `tail -f` `$log` (redirected shape) |
-
-For the redirected shape outside Claude Code, use `nohup … &` (bare `&`
-is reaped by cursor-agent's tool shell). The invoking agent relays
-progress by default; spectating is opt-in.
-
-### Claude Code: blocking-poll relay
-
-Turn each wait into one blocking call with `~/.agents/bin/poll-stream`
-(source: `home/dot_agents/bin/` in the dotfiles repo):
+Turn each wait into one blocking call with `~/.agents/bin/poll-stream`. Its
+header is the contract for arguments, exit codes, and defaults; read it there
+rather than guessing.
 
 ```bash
-~/.agents/bin/poll-stream "$log" "$log.offset" 240 8192 > /tmp/chunk  # blocks; exit 4 = quiet window
+~/.agents/bin/poll-stream "$log" "$log.offset" 240 8192 > /tmp/chunk
 ```
 
-```bash
-tail -c 64 "$log"   # separate call: ends with "[done] <stopReason>" once over
-```
+1. Launch with the block above, then read the `log:` line out of the
+   background task's output before polling.
+2. Poll in the foreground with the tool timeout set above max-wait-s — 270s
+   over the default 240s, since the helper holds max-wait-s plus up to a
+   second of clock-tick granularity.
+3. Redirect each chunk to a file, as above. The file capture is load-bearing:
+   through a pipe, an early-exiting reader like `head` gives a silent exit
+   141, and a partial reader can exit 0 having dropped bytes while the offset
+   advanced anyway.
+4. Narrate each chunk as it arrives.
+5. Check the tail as its own call, never chained after a poll — chaining masks
+   the quiet-window exit and re-prints bytes you already consumed.
 
-1. Launch with the canonical backgrounded block above, then read the
-   `log:` line from the background task's output before the first poll.
-2. Poll in the foreground with the tool timeout above max-wait-s — 270s
-   over the default 240s (the helper holds max-wait-s plus up to 1s of
-   clock-tick granularity). Each call blocks until the log grows, prints
-   the new bytes (8 KB cap), and advances the offset; exit 4 is a quiet
-   window — just call again.
-3. Redirect the chunk to a file (as in the block above), never through a
-   pipe: an early-exiting reader like `head` yields a silent exit 141 at
-   best, and a partial reader can exit 0 with bytes dropped and the
-   offset advanced. The file capture is load-bearing.
-4. Narrate each chunk. Run the `tail` check as its own call, not chained
-   after the poll (chaining masks exit 4 and re-prints consumed bytes).
-5. Stop only when the final log line starts with `[done] ` AND a
-   short-wait drain (`poll-stream "$log" "$log.offset" 5`) returns
-   empty. Both halves matter: the 8 KB cap can split the marker across
-   chunks, quoted marker text can appear mid-stream, and the tail can
-   show a marker whose preceding bytes you have not consumed yet.
-6. The harness completion notification is the backstop for a dead,
-   markerless, or forgotten run: when it arrives, drain with short waits
-   and report whatever the tail shows.
-7. Cancelling: stop the background task, or kill scoped to this run only
-   (`pkill -f "acpx-$slug"`) — never a broad pattern (see the
-   worker-server warning in Prerequisites). A cancelled run ends
-   `[done] cancelled`. `exec` one-shots cannot be steered mid-flight;
-   when follow-ups are likely, use a named session instead.
+   ```bash
+   tail -c 64 "$log"
+   ```
 
-A four-minute silence costs one round trip and stays inside the
-five-minute prompt-cache window; polls scale with output, not elapsed
-time.
+6. Stop when the final log line starts with `[done] ` **and** a short-wait
+   **drain** (`poll-stream "$log" "$log.offset" 5`) comes back empty. Both
+   halves matter: the byte cap can split a marker across chunks, quoted marker
+   text can appear mid-stream, and the tail can show a marker whose preceding
+   bytes you have not read yet.
+7. Treat the harness completion notification as the backstop for a dead,
+   markerless, or forgotten run: drain with short waits and report what the
+   tail shows.
 
-On first-party API machines, prefer the native Monitor tool when present
-(per-line event wakeups); it is provider-gated off Bedrock/Vertex/Foundry,
-so probe ToolSearch for `Monitor`. This loop is the fallback.
+A four-minute silence costs one round trip and stays inside the five-minute
+prompt-cache window. Polls scale with output, not with elapsed time.
 
-### Codex: auto-backgrounded terminal
+To cancel, stop the background task, or kill scoped to this run alone with
+`pkill -f "acpx-$slug"` — the slug is what keeps the pattern narrow, and
+Prerequisites explains what a broad one destroys. A cancelled run ends
+`[done] cancelled`. An `exec` one-shot cannot be steered mid-flight, so when
+follow-ups look likely, open a named session instead.
 
-Run acpx directly as a plain foreground command. Unified exec yields
-after at most ~30s and converts the run into a background terminal
-instead of killing it. Hold liveness with long empty `write_stdin` polls
-— they block up to `background_terminal_max_timeout` (default 300s) and
-early-return on output or exit. The human follows via the footer terminal
-counter and `/ps` (command plus last 3 output lines); mirror acpx phases
-into `update_plan` for a visible task row. Nothing wakes the model
-between calls, so keep a poll outstanding until `[done]`.
+On first-party API machines the native Monitor tool is better than this loop,
+since it wakes per line. It is provider-gated off Bedrock, Vertex, and
+Foundry, so probe ToolSearch for `Monitor` first and fall back to the relay.
 
-### cursor-agent: background job + Await
+## Shortcuts
 
-Run acpx as a background shell command (or let the timeout
-auto-background it). The human gets the Tasks pager (`/jobs` slash
-entry): a live log view per job and `k` to abort. The agent is woken with
-a new turn when the job completes, and the `Await` tool's `regex`
-argument blocks on stream milestones such as `\[done\]` or `\[error\]`;
-output-notification patterns give mid-run wakeups without polling.
+Which model each shortcut resolves to lives in the config; run
+`acpx config show` to read the pins this machine actually has. What the config
+cannot hold is why you would pick one, so that is what this table is:
 
-### pi: native live tail
+| Shortcut  | Reach for it when                                     |
+| --------- | ----------------------------------------------------- |
+| `agpt`    | Default GPT. A second opinion, a delegated task        |
+| `agptx`   | The problem beat `agpt`                                |
+| `agptw`   | Editing prose (see below)                              |
+| `aopus`   | Default Claude. Long context, deep reasoning           |
+| `aopusx`  | Claude at max thinking, when `aopus` came back thin    |
+| `afable`  | Claude Code itself, with its harness and skills loaded |
+| `afablex` | Same, at max effort                                    |
+| `agemini` | A third opinion from outside both families             |
 
-pi's bash tool already streams live — a rolling tail with an elapsed
-counter, expandable in the TUI, no default timeout, and full output saved
-to a temp file on truncation — so a plain foreground run is watchable
-as-is. A custom extension tool with `onUpdate` streaming is the richer
-lane if pi becomes a daily acpx driver.
+Adapters differ by family. `agpt*`, `aopus*`, and `agemini` run through
+`cursor-agent`, with the reasoning tier encoded in the model id. Where
+cursor-agent is absent, `agpt` and `agptx` fall back to `codex-acp`, taking
+their GPT model from `~/.codex/config.toml`; `agptw` has no fallback, because
+Codex pins one model and exposes only reasoning effort. `afable*` run Claude
+Code through `claude-agent-acp`, with model and effort set by the entry's
+`ANTHROPIC_MODEL` and `CLAUDE_CODE_EFFORT_LEVEL` env vars, since that adapter
+takes no model or effort CLI arguments.
 
-The Codex, cursor-agent, and pi lanes are built from version-pinned
-capability research (see the validation checklist) but have not yet been
-driven end to end; the redirected `nohup` shape is the proven fallback in
-all three.
+`agptw` is the rewrite lane: hand it a draft plus the `writing-for-humans`
+rules and take back edited prose. It runs the cheapest GPT-5.6 tier and skips
+the `-fast` suffix that doubles the rate, because a background rewrite needs
+no priority scheduling. Prefer it over `agpt` for any prose-editing
+delegation. Two settings to stay away from: a low-reasoning Sol invents code
+spans the source never had, and a high-reasoning Terra deletes filenames out
+of the draft. The measurements, and the method for re-picking this pin, are in
+`docs/research/acpx-rewrite-model-bakeoff.md` in the dotfiles repo.
 
-Persistent sessions (not `exec`) also append the raw ACP wire log to
-`~/.acpx/sessions/<recordId>.stream.ndjson` regardless of `--format`, so
-you can spectate a session another process started. Find the record id
-with `acpx <agent> sessions show` (or `sessions list --local`), then:
+The `cursor-agent` ids pin the current latest of each family and go stale as
+the catalog moves. The bare aliases (`opus`, `gpt`, ...) are no escape hatch —
+they resolve to *older* generations. The drift audit
+(`scripts/audit/acpx-model-drift.sh` in the dotfiles repo) reads the pins
+straight out of `home/dot_acpx/config.json.tmpl` and flags dropped or
+superseded ones, so refreshing a pin is a one-file edit.
 
-```bash
-tail -f ~/.acpx/sessions/<recordId>.stream.ndjson | jq -j '
-  select(.method=="session/update") | .params.update |
-  if .sessionUpdate=="agent_thought_chunk" then "\u001b[2m"+(.content.text//empty)+"\u001b[0m"
-  elif .sessionUpdate=="agent_message_chunk" then (.content.text//empty)
-  elif .sessionUpdate=="tool_call" then "\n[tool] "+(.title//"")+"\n"
-  else empty end'
-```
+The config is templated per machine from machines.toml `agent_clis`, so a
+shortcut in the table is absent wherever its backing CLI is.
 
-Wire logs keep full prompts, reasoning, and tool output — treat them as
-sensitive; `sessions close` then `sessions prune --include-history`
-removes them. `exec` one-shots write no wire log; their log file is the
-only feed.
+## Past exec
 
-## Sessions, compare, flows
+`exec` covers most of our use. Escalate with a reason:
 
-`exec` covers most of our use. Reach further only with a reason:
+- **Named session** (`-s <name>`, bootstrapped with `sessions ensure`) when
+  follow-up prompts need the subagent to keep context. A `NO_SESSION` error
+  means none exists yet.
+- **`acpx compare <agent-a> <agent-b> ... '<prompt>'`** for same-prompt
+  cross-model bake-offs. Its rows carry status and wall time, and truncate the
+  reply, so run `exec` per agent when you need the full text.
+- **Flows** for durable multi-step orchestration.
 
-- Named session (`-s <name>`, bootstrapped with `sessions ensure`) when
-  follow-up prompts need the subagent to keep context. A `NO_SESSION`
-  error means no session exists yet — `sessions ensure` (or the CLI's
-  suggested `sessions new`) creates it.
-- `acpx compare <agent-a> <agent-b> ... '<prompt>'` for same-prompt
-  cross-model bake-offs.
-- Flows for durable multi-step orchestration.
-
-Mechanics for all three live in the skill (sections Sessions, Compare,
-and Flows).
+Mechanics for all three live in the skill, under Sessions, Compare, and Flows.
 
 ## Prerequisites
 
-- `acpx` itself: mise-managed (`npm:acpx`).
+`acpx` installs through mise (`npm:acpx`). Each shortcut family needs its
+backing CLI on PATH and logged in once:
 
-Backing CLIs per shortcut family, each on PATH and logged in once:
+- `agpt*`, `aopus*`, `agemini` → `cursor-agent` (`cursor-agent login`), with
+  `agpt*` falling back to `codex-acp` on boxes without it.
+- `afable*` → `claude-agent-acp`, authenticated through the `claude` CLI.
 
-- `agpt*`/`aopus*`/`agemini` → `cursor-agent` (`cursor-agent login`);
-  `agpt*` fall back to `codex-acp` where cursor-agent is absent
-  (personal/homelab). Never kill cursor-agent's background
-  `worker-server` process: it is a persistent auth broker, and killing
-  it fails every later run with `RUNTIME: Authentication required` until
-  a fresh login, while `cursor-agent status` still claims logged in.
-  Scope cleanup kills to the acpx process, e.g. by the run's prompt-file
-  slug.
-- `afable*` → `claude-agent-acp`, authenticated via the `claude` CLI.
-- State lives under `~/.acpx/` (sessions, queues, flows); acpx has no
-  XDG relocation env var.
+Scope every cleanup kill to one run, by its prompt-file slug. cursor-agent
+keeps a background `worker-server` that brokers auth for every later run: kill
+it and each one fails with `RUNTIME: Authentication required` until a fresh
+interactive login, while `cursor-agent status` still reports you as logged in.
 
-## Validation checklist
+State lives under `~/.acpx/` — sessions, queues, flows. acpx has no XDG
+relocation env var.
 
-- The canonical invocation returns a reply, and `acpx config show`
-  matches machines.toml `agent_clis` for this box (every rendered
-  shortcut's backing CLI on PATH).
-- The model pins pass the drift audit; `afable*` uses the `fable` alias,
-  which tracks the latest release on its own.
-- Spot-check that a run landed on the pinned model (ask it, or check
-  session metadata).
-- No write action was taken by a spawned agent without an appropriate
-  permission mode.
-- `~/.agents/bin/poll-stream` materializes from `home/dot_agents/bin/`
-  (source covered by `make test-acpx-poll-stream`; materialization by the
-  CI chezmoi dry-run smoke).
-- Version-verified claims: acpx 0.13.2 (mise installs `npm:acpx` at
-  `latest`), codex rust-v0.149.1, cursor-agent 2026.07.01, pi 0.80.3.
-  Re-verify the matching sections when any of these move.
+## Validation
+
+- The canonical launch returns a reply, and `acpx config show` matches
+  machines.toml `agent_clis` for this box, with every rendered shortcut's
+  backing CLI on PATH.
+- The pins pass the drift audit. `afable*` tracks the latest release on its
+  own through the `fable` alias.
+- A run landed on the pinned model: ask it, or read the session metadata.
+- No spawned agent wrote anything outside its permission mode.
+- `~/.agents/bin/poll-stream` materialized from `home/dot_agents/bin/`. Its
+  source is covered by `make test-acpx-poll-stream`, its materialization by
+  the CI chezmoi dry-run smoke.
+- Version-verified against acpx 0.13.2 (mise installs `npm:acpx` at `latest`),
+  codex rust-v0.149.1, cursor-agent 2026.07.01, pi 0.80.3. Re-verify the
+  matching sections when any of these moves.

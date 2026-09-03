@@ -90,14 +90,15 @@ assert d["auth_token"] == "x", d
 [[ -z "$("$modify_ci" <"$empty_in")" ]] || { echo "FAIL: ci modify materialized a stub config" >&2; exit 1; }
 
 # --- 2. acpx config.json.tmpl: shortcuts gated by machine agent_clis ---
-# work (cursor-agent + claude): all seven shortcuts; agpt rides cursor-agent.
+# work (cursor-agent + claude): all eight shortcuts; agpt rides cursor-agent.
 render work dot_acpx/config.json.tmpl | python3 -c '
 import sys, json
 d = json.load(sys.stdin)["agents"]
-assert set(d) == {"agpt","agptx","aopus","aopusx","agemini","afable","afablex"}, sorted(d)
+assert set(d) == {"agpt","agptw","agptx","aopus","aopusx","agemini","afable","afablex"}, sorted(d)
 assert d["agpt"]["command"] == "cursor-agent", d["agpt"]
 '
-# personal (claude + codex): GPT tiers ride the Codex adapter; afable* via claude.
+# personal (claude + codex): the two Sol tiers ride the Codex adapter; afable*
+# via claude. agptw is absent — Codex pins one model, so it has no cheap lane.
 render personal dot_acpx/config.json.tmpl | python3 -c '
 import sys, json
 d = json.load(sys.stdin)["agents"]

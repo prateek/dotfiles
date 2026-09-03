@@ -1,0 +1,5 @@
+interface:
+  display_name: "Write For Humans"
+  short_description: "The seven anti-slop rules, in order"
+policy:
+  allow_implicit_invocation: false

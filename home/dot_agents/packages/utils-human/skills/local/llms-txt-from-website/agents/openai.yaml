@@ -1,0 +1,5 @@
+interface:
+  display_name: "llms.txt From Website"
+  short_description: "Generate llms.txt and llms-full.txt from a URL"
+policy:
+  allow_implicit_invocation: false

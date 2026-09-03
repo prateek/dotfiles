@@ -1,0 +1,5 @@
+interface:
+  display_name: "Markdown Converter"
+  short_description: "Convert PDF, Office, and other files to Markdown"
+policy:
+  allow_implicit_invocation: false

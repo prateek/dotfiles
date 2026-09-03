@@ -60,6 +60,30 @@ Allowed render policy values:
 Every rendered package is a plugin; there is no root-skill projection. Keep
 always-on packages (like `core`) as plugins with `default_loaded = true`.
 
+### User-invoked skills
+
+A skill the human types but the model never fires on its own takes two
+frontmatter-and-sidecar halves, because no single key reaches all four
+harnesses:
+
+- `disable-model-invocation: true` in `SKILL.md`, honored by Claude Code, pi,
+  and cursor-agent.
+- `policy.allow_implicit_invocation: false` in the skill's
+  `agents/openai.yaml`, for Codex, which ignores the frontmatter key. Create
+  the sidecar if the skill has none, and override the value if a vendored
+  upstream ships `true`.
+
+`validate-agent-packages` fails on either half without the other, so the pair
+cannot drift apart — which matters most when a re-vendor restores upstream
+frontmatter and strips the flag, leaving a sidecar that suppresses the skill
+on Codex alone. Evidence for the per-harness split is in
+[skill-invocation-frontmatter-research.md](../../../docs/research/skill-invocation-frontmatter-research.md).
+
+Flagging a skill removes its listing row and its whole description budget.
+The model can still read its files by path, so a listed router skill can
+route to user-invoked bodies beside it; what it loses is the ability to
+invoke them through the Skill tool.
+
 ### Default-loaded policy
 
 `package.toml` may set `default_loaded = false` to ship a package installed
@@ -152,8 +176,7 @@ Refresh gotchas:
 - Subdirectory deps must not contain symlinks that point outside the
   subdirectory: apm materializes subdir deps with a git sparse cone, so such
   symlinks dangle and the install fails with ENOENT on the symlink targets.
-  Depend on the repo root instead (`forjd/better-writing` hit this while it
-  was a core dependency).
+  Depend on the repo root instead (`forjd/better-writing` in core hit this).
 - A dependency path cannot end in a dot-directory: apm parses the final
   segment as a file extension and rejects e.g. `ar9av/obsidian-wiki/.skills`,
   and repo-root deps do not discover skills inside hidden directories either.

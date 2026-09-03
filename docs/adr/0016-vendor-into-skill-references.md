@@ -2,12 +2,12 @@
 status: proposed
 doc_type: adr
 created: 2026-08-28
-updated: 2026-08-30
+updated: 2026-09-03
 owner: Prateek
 related:
   - ../plans/acpx-claude-streaming-poc-plan.md
   - 0013-apm-vendored-tool-integrations.md
-status_detail: "Sketch for review before implementation; acpx is the first customer. On 2026-09-03 core/skills/local/writing-for-humans consolidated three writing skills by copying two upstream bodies into its references by hand; it converts to the vendor mapping when this lands."
+status_detail: "Sketch for review before implementation; acpx is the first customer. Scope note: a router skill whose reference bodies are skills in their own right does not need this mapping — mark them disable-model-invocation and point at the sibling paths, as core/skills/local/writing-for-humans does. The mapping is for reference material that is not itself a skill."
 ---
 
 # ADR 0016 — Vendored dependency content may land inside a local skill
@@ -115,8 +115,11 @@ First customer, acpx:
   `skills/vendor/acpx/` is removed. The local `SKILL.md` links to
   `references/upstream/SKILL.md` wherever it hands off to the command
   surface.
-- `home/dot_agents/docs/acpx.md` is deleted. The machine AGENTS.md pointer
-  changes to the rendered path
+- `home/dot_agents/docs/acpx.md` is deleted, and its sibling
+  `acpx-harness-lanes.md` moves to `skills/local/acpx/harness-lanes.md` —
+  hand-authored reference outside any mapped destination, which the
+  destination rule above requires. The `SKILL.md` pointer to it becomes
+  same-directory. The machine AGENTS.md pointer changes to the rendered path
   `~/.agents/plugins/plugins/utils-agent/skills/acpx/SKILL.md`, and the
   migration greps the repo for `docs/acpx.md` and updates every live hit
   (mise config comments and the vendored `SOURCE.md` Notes point at the

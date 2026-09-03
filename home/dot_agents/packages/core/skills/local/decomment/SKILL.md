@@ -420,7 +420,7 @@ repo rule wins over this skill.
 
 Pass order when several skills apply to the same change: the
 code-simplifier skill first (behavior-preserving refactors), then this
-skill (comment pruning on the result), then the write-for-humans skill
+skill (comment pruning on the result), then the writing-for-humans skill
 (PR descriptions, commit messages, and other prose).
 
 A comment that is *wrong about behavior* is drift, not slop — the

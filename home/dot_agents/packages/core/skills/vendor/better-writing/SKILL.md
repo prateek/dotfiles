@@ -1,6 +1,7 @@
 ---
 name: better-writing
 description: Rewrite, draft, and review prose so it is clear, specific, human, and fits its context. Use when improving emails, reports, documentation, marketing copy, UI text, or posts that sound generic, AI-written, verbose, salesy, or formulaic. Covers voice calibration, anti-slop audits, and pre-flight checks.
+disable-model-invocation: true
 license: MIT
 ---
 

@@ -125,7 +125,7 @@ State includes:
 
 If you change durable vocabulary, workflow, invariants, or operating assumptions, update the nearest durable state in the same task.
 
-When editing prose humans will read, apply the `writing-clearly-and-concisely` guidance.
+When editing prose humans will read, apply the `writing-for-humans` skill; it routes to the Strunk rules for structure.
 
 #### Durable docs are steady-state artifacts
 

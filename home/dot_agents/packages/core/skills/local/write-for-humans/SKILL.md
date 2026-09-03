@@ -1,6 +1,7 @@
 ---
 name: write-for-humans
-description: Rewrite prose to remove AI tells while preserving meaning and voice. Use for drafts, docs, READMEs, messages, reviews, and long user-facing replies; apply by default unless told to skip. Pair with writing-clearly-and-concisely for structural edits.
+description: The seven anti-slop rules in order, voice preservation, and a prose-humanizer subagent for long rewrites.
+disable-model-invocation: true
 ---
 
 # Write for Humans

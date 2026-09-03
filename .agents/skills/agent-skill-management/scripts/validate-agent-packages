@@ -71,6 +71,34 @@ def apm_dependencies(path):
             yield entry, pinned_ref
 
 
+def user_invoked_errors(skill_dir, meta) -> list[str]:
+    """Codex ignores disable-model-invocation, so the frontmatter flag alone
+    still costs listing budget there; its equivalent is a sidecar policy key.
+    Neither half is meaningful without the other, so the check runs both ways
+    — a re-vendor that restores upstream frontmatter would otherwise strip the
+    flag and leave the orphaned sidecar passing. See
+    docs/research/skill-invocation-frontmatter-research.md."""
+    flagged = meta.get("disable-model-invocation", "").lower() == "true"
+    sidecar = skill_dir / "agents" / "openai.yaml"
+    denied = (
+        sidecar.is_file()
+        and "allow_implicit_invocation: false" in sidecar.read_text()
+    )
+    if flagged == denied:
+        return []
+    if flagged:
+        return [
+            f"{skill_dir}: disable-model-invocation needs "
+            f"agents/openai.yaml to set policy.allow_implicit_invocation: "
+            f"false, so the skill is user-invoked on Codex too"
+        ]
+    return [
+        f"{sidecar}: allow_implicit_invocation: false needs "
+        f"disable-model-invocation: true in SKILL.md, so the skill is "
+        f"user-invoked on Claude Code, pi, and cursor-agent too"
+    ]
+
+
 def hooks_payload_errors(hooks_dir) -> list[str]:
     hooks_json = hooks_dir / "hooks.json"
     if not hooks_json.is_file():
@@ -141,6 +169,7 @@ def main() -> int:
         try:
             for skill_dir, meta in iter_skill_metadata(package.path / "skills"):
                 skill_name_locations[meta["name"]].append(str(skill_dir))
+                errors.extend(user_invoked_errors(skill_dir, meta))
                 description = meta["description"]
                 if len(description) > MAX_SKILL_DESCRIPTION_CHARS:
                     errors.append(
