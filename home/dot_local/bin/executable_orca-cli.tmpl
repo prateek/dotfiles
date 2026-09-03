@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ -n "${ORCA_CLI_COMMAND:-}" ]]; then
+  exec "$ORCA_CLI_COMMAND" "$@"
+fi
+
+{{ if eq .chezmoi.os "linux" -}}
+if [[ -x /usr/bin/orca-ide ]]; then
+  exec /usr/bin/orca-ide "$@"
+fi
+
+if command -v orca-ide >/dev/null 2>&1; then
+  exec "$(command -v orca-ide)" "$@"
+fi
+
+echo "orca-cli: orca-ide is not installed" >&2
+exit 127
+{{ else -}}
+if command -v orca >/dev/null 2>&1; then
+  exec "$(command -v orca)" "$@"
+fi
+
+echo "orca-cli: Orca CLI is not installed" >&2
+exit 127
+{{ end -}}

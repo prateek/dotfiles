@@ -2,10 +2,11 @@
 status: current
 doc_type: reference
 created: 2026-04-27
-updated: 2026-08-26
+updated: 2026-09-02
 related:
   - ../index.md
   - ../adr/0006-chezmoi-migration-prototype.md
+  - chezmoi-hook-lifecycle.md
 status_detail: "Current architecture reference. Historical migration detail lives in ADRs and git history."
 ---
 
@@ -69,6 +70,13 @@ post-apply verification. Use `run_once_before_` for prerequisites and
 `run_onchange_after_` for work that should rerun when the rendered script
 changes.
 
+Chezmoi computes modify targets before running `run_before_` scripts. The
+`work × linux` config therefore installs uv with
+`hooks.read-source-state.pre`, before its uv-backed Claude modifier is
+evaluated. The later plugin-rendering script uses the same installation. See
+[Chezmoi Hook Lifecycle](chezmoi-hook-lifecycle.md) for the complete init,
+config-hook, target-computation, and source-script order.
+
 Scripts must be idempotent. A rerun should converge or report a clear blocker.
 
 ## Packages And Tools
@@ -77,9 +85,10 @@ Scripts must be idempotent. A rerun should converge or report a clear blocker.
   `ai-agent-apps`, `codex`, `developer-tools`, `apple-development`, `work-apps`,
   `personal-apps`, `homelab-overlay`) live in
   `home/.chezmoidata/packages.toml`.
-- Selection is driven by a single axis, `machine_type`. Each type composes a set
-  of groups via the layered `home/.chezmoidata/machines.toml` table
-  (`[machines.type.*].groups`), resolved by `home/.chezmoitemplates/features.tmpl`:
+- Base selection is driven by one identity axis, `machine_type`. Each type
+  composes a set of groups via the layered
+  `home/.chezmoidata/machines.toml` table (`[machines.type.*].groups`), resolved
+  by `home/.chezmoitemplates/features.tmpl`:
   `ci=[core]`,
   `work=[core,mac-desktop,ai-agent-apps,developer-tools,work-apps,forks]`,
   `personal=[core,mac-desktop,ai-agent-apps,codex,developer-tools,personal-apps,forks]`,
@@ -87,8 +96,11 @@ Scripts must be idempotent. A rerun should converge or report a clear blocker.
   Work omits personal apps, Apple/iOS tooling, and Codex (cursor-agent covers
   the GPT tier there); personal omits Apple/iOS tooling for now; homelab keeps
   Apple tooling, remote/admin tools, and AI agent apps (agentsview + Orca)
-  without the full interactive desktop surface. `ci` is
-  the minimal CI/Tart/audit tier and a first-class `machine_type` prompt choice.
+  without the full interactive desktop surface. `ci` is the minimal
+  CI/Tart/audit tier and a first-class `machine_type` prompt choice. Intentional
+  type × OS exceptions live in `home/.chezmoidata/machines-composite.toml`; the
+  `work × linux` exception is the minimal DevPod profile described by the
+  [Linux work DevPod and Orca runbook](../runbooks/linux-work-devpod-orca.md).
   See
   [ADR 0010](../adr/0010-machine-type-package-selection.md) and the config-gating
   convention in [ADR 0012](../adr/0012-config-gating-convention.md).
@@ -115,10 +127,11 @@ sole first-run prompt, also selectable with `chezmoi init --promptChoice
 'machine_type=<type>'`), the `xdg_*`/`dotfiles_dir` paths, and `jamf_policy_id`. All
 machine behavior — package groups, install scripts, macOS defaults, secrets, the
 private overlay, the elevation method — is composed at apply time from the layered
-`home/.chezmoidata/machines.toml` table, resolved by
+`home/.chezmoidata/machines*.toml` tables, resolved by
 `home/.chezmoitemplates/features.tmpl`. Layers merge low→high:
-`defaults < os.<os> < type.<machine_type> < host.<hostname>` < host-local
-`[data].machines_local`; consumers read it with one
+`defaults < os.<os> < type.<machine_type> <
+composite.<machine_type>.<os> < host.<hostname>` < host-local
+`[data].machines_local`; consumers read the result with one
 `{{- $f := includeTemplate "features.tmpl" . | fromJson -}}`. Per-machine
 exceptions go in a host-local `[data].machines_local` block; apply-time runtime
 switches (`DOTFILES_SKIP_*`, etc.) stay separate and are never managed desired

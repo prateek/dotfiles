@@ -1,8 +1,9 @@
 {{- /*
   features.tmpl — resolve this machine's behavior from the layered
-  home/.chezmoidata/machines.toml table. Merges the applicable layers, low→high:
+  home/.chezmoidata/machines*.toml tables. Merges applicable layers, low→high:
 
-    defaults < os.<os> < type.<machine_type> < host.<hostname>
+    defaults < os.<os> < type.<machine_type>
+        < composite.<machine_type>.<os> < host.<hostname>
         < host-local [data].machines_local
 
   Later layers win; a list (e.g. groups) is replaced wholesale by the highest
@@ -31,6 +32,7 @@
 {{- $f := deepCopy (dig "defaults" dict $M) -}}
 {{- $f = mergeOverwrite $f (deepCopy (dig "os"   .chezmoi.os       dict $M)) -}}
 {{- $f = mergeOverwrite $f (deepCopy (dig "type" $mt               dict $M)) -}}
+{{- $f = mergeOverwrite $f (deepCopy (dig "composite" $mt .chezmoi.os dict $M)) -}}
 {{- $f = mergeOverwrite $f (deepCopy (dig "host" .chezmoi.hostname dict $M)) -}}
 {{- $f = mergeOverwrite $f (deepCopy (dig "machines_local" dict .)) -}}
 {{- $f = mergeOverwrite $f (dict "machine_type" $mt) -}}

@@ -87,6 +87,15 @@ settings files; the chezmoi modify scripts deep-merge desired into each
 file on every apply. See [ADR 0007](../../../docs/adr/0007-default-loaded-plugin-policy.md)
 for the merge mechanism and the stale-key trade-off.
 
+The `work × linux` headless profile is intentionally narrower: it merges the
+generated Claude plugin fragment but omits
+`claude-settings-managed.json.tmpl`, leaving DAYJOB's non-plugin settings
+keys outside dotfiles ownership. A headless-only
+`hooks.read-source-state.pre` command installs uv before target-state
+computation; both the Claude modifier and later `run_after_` plugin renderer
+use it. See the
+[Linux DevPod runbook](../../../docs/runbooks/linux-work-devpod-orca.md).
+
 ## APM And Vendoring
 
 Use one APM project per package.

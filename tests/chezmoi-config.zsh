@@ -54,6 +54,9 @@ dump="$(
 assert_contains "$dump" '"pager": ""'
 assert_contains "$dump" '"machine_type": "ci"'
 
+[[ "$config_text" != *'[hooks.read-source-state.pre]'* ]] ||
+  die "CI config unexpectedly includes the Linux work uv hook"
+
 # Re-init migration: a config that still nests jamf_policy_id under the legacy
 # [data.elevation] must have that value carried up to the top-level [data] key on
 # re-init (work), not dropped. Guards the `or (dig ...) (dig "elevation" ...)`

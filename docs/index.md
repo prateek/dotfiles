@@ -2,7 +2,7 @@
 status: current
 doc_type: index
 created: 2026-05-12
-updated: 2026-08-31
+updated: 2026-09-02
 related:
   - document-lifecycle.md
   - ../home/dot_agents/packages/core/skills/local/code-gardening/SKILL.md
@@ -26,7 +26,9 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [Document Lifecycle](document-lifecycle.md) | Frontmatter, status transitions, and index rules for `docs/`. |
 | [Chezmoi Architecture](references/chezmoi-architecture.md) | Dotfiles source-state architecture and validation entrypoints. |
 | [Chezmoi Drift Banner](../home/dot_config/dotfiles/chezmoi-drift/README.md) | Cached shell banner for managed chezmoi drift. |
+| [Chezmoi Hook Lifecycle](references/chezmoi-hook-lifecycle.md) | Ordering and design rules for config hooks, apply scripts, init, and modify targets. |
 | [Jamf Self Service Elevation](references/jamf-self-service-elevation.md) | Temporary admin elevation on Jamf-managed work Macs. |
+| [Linux Work DevPod And Orca](runbooks/linux-work-devpod-orca.md) | Enabling, pairing, securing, validating, and recovering the default-off Linux work DevPod pilot. |
 | [Mise Tool Management](references/mise-tool-management.md) | Mise-native CLI and tool selection. |
 | [Tart Install Validation](runbooks/tart-mini-validation.md) | Local disposable-VM install validation on a Mac mini. |
 | [Tartelet Runner Setup](runbooks/tartelet-runner-setup.md) | Standing up a homelab mini as an ephemeral iOS/macOS GitHub Actions runner host. |
@@ -46,6 +48,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [Downstream Fork](plans/downstream-fork-plan.md) | Active; thin assembly-repo forks as daily drivers on the `prateek/forks` fleet monorepo — engine, three-job template, harness, security review, monorepo scaffold, and fleet digest done; dotfiles gardening landed bar the retoken; provisioning + ghost-pepper migration pending Prateek. |
 | [Goku Karabiner Migration](plans/goku-karabiner-migration-plan.md) | Active; Karabiner config now compiles from `karabiner.edn` via goku — on-device pad verification pending. |
 | [Leader Key to Tuna Migration](plans/leader-key-to-tuna-migration-plan.md) | Active; full cutover applied on the migrate-tuna branch (config at `~/.config/tuna`, F18→combo). Remaining: grant Tuna Accessibility, verify shell/URL binds. Leader Key kept as fallback. |
+| [Linux Work DevPod Orca Pilot](plans/linux-work-devpod-orca-pilot-plan.md) | Active; DAYJOB layers landed, local dotfiles validation and final cold-start acceptance remain. |
 | [Raycast Config Automation](plans/raycast-config-automation-plan.md) | Proposed; deferred backlog of Raycast preference keys worth porting into the managed plist, plus what the encrypted extension store puts out of reach. |
 | [Skill Management Console](plans/skill-management-console-plan.md) | Active; `skill-console` reproduces Claude Code's character-budgeted skill listing from live inputs, renders an HTML console over the repo's 142 skills plus third-party, user, and built-in rows, and applies exported decisions (description edits, frontmatter flags, vendored-skill deletion, package toggles, budget fraction) to the chezmoi source tree through a staged, validated, path-by-path commit. Phases 1-3 built; pi and Codex budget projection remains. |
 | [Sudo Askpass 1Password](plans/sudo-askpass-1password-plan.md) | Accepted design; implementation pending, current code still uses sudo keepalive. |

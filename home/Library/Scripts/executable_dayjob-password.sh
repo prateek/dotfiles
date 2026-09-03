@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# @tuna.name PANW password
+# @tuna.name DAYJOB password
 # @tuna.subtitle Read from 1Password and paste
 # @tuna.icon symbol:key.fill
 # @tuna.mode inline

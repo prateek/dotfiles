@@ -24,7 +24,8 @@ jobs:
           # non-shell files self-exclude. Pathspecs a branch lacks are fine:
           # git ls-files just returns nothing for them.
           mapfile -t scripts < <(
-            git ls-files scripts home/dot_agents/bin |
+            git ls-files scripts home/dot_agents/bin \
+              home/dot_local/bin/executable_orca-devpod-reconcile |
               while IFS= read -r file; do
                 head -n 1 "$file" | grep -Eq '^#!/(usr/)?bin/(env[[:space:]]+)?(ba)?sh([[:space:]]|$)' && printf '%s\n' "$file"
               done
@@ -32,6 +33,25 @@ jobs:
           [ "${#scripts[@]}" -gt 0 ] || { echo "shellcheck discovery matched no scripts" >&2; exit 1; }
           printf '%s\n' "${scripts[@]}"
           shellcheck -x "${scripts[@]}"
+
+  linux-work-profile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install zsh
+        run: sudo apt-get update && sudo apt-get install -y zsh
+
+      - name: Install chezmoi
+        run: sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
+
+      - name: Linux DevPod profile regressions
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          make test-machines-features
+          make test-headless-uv-bootstrap
+          make test-linux-work-profile
+          make test-orca-devpod-reconcile
 
   macos-dry-run:
     runs-on: macos-latest

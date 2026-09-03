@@ -91,7 +91,7 @@ _via Prateek's agent (`<tool-or-skill>`)_
   `pr-lifecycle`). Leave model names out unless Prateek asks for them.
 - The HTML marker is what other agents grep to tell agent comments from human
   ones. Keep it even when the visible line feels redundant.
-- Skip the footer if the host already injects one — Chronosphere devboxes
+- Skip the footer if the host already injects one — DAYJOB dev environments
   install their own self-identification rule, and two footers is worse than one.
 
 ## Templates and idioms

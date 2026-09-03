@@ -63,7 +63,7 @@ exact URL strings come from the export.
 | `z` | group "misc" | `[[comboMode.bindings.children]]` under `key = 'z'`, `label = 'misc'` |
 | `z d` | `command` `"$HOME/bin/g95nc" set` | `tuna://run/text.<enc-cmd>/Run Text as Shell Command` |
 | `z m` | `url` `vnc://m4mini…` | `tuna://run/url.<enc-url>/…Open URL` |
-| `z z` | `command` PANW password (`op read` + paste; op:// ref) | `tuna://run/text.<enc-cmd>/Run Text as Shell Command` |
+| `z z` | `command` DAYJOB password (`op read` + paste; op:// ref) | `tuna://run/text.<enc-cmd>/Run Text as Shell Command` |
 | `z t` | `command` `~/.config/raycast/scripts/temp-admin.sh` | `tuna://run/text.<enc-cmd>/Run Text as Shell Command` |
 | `z r` | `command` `open "hammerspoon://gp-record"` | `tuna://run/url.hammerspoon:%252F%252Fgp-record/…Open URL` |
 | `z g` | `command` `open "hammerspoon://gp-copy"` | `tuna://run/url.hammerspoon:%252F%252Fgp-copy/…Open URL` |
@@ -72,7 +72,7 @@ Notes:
 - The two GhostPepper binds become direct URL actions instead of `open "…"`
   shell wrappers. The Hammerspoon `gp-record` / `gp-copy` handlers
   (`home/dot_hammerspoon/init.fnl:1803-1854`) are unchanged.
-- The PANW bind keeps the `op://` reference inline, exactly as the committed
+- The DAYJOB bind keeps the `op://` reference inline, exactly as the committed
   Leader Key JSON does today (an `op://` ref is a pointer, not a secret).
 - `$HOME` expands because "Run Text as Shell Command" runs through a shell.
 
@@ -136,7 +136,7 @@ file for durable changes.
 
 ## One-time per machine (not chezmoi-automatable)
 
-- Grant Tuna **Accessibility + Input Monitoring** (F18 capture; the PANW paste
+- Grant Tuna **Accessibility + Input Monitoring** (F18 capture; the DAYJOB paste
   uses `keystroke … using command down`). Same class as existing Karabiner
   grants. This is the only unavoidable manual step.
 - Initial `tuna config reload` to seed the sync folder (the reload hook does this
@@ -180,7 +180,7 @@ The CLI is enabled via the plist (`CLIEnabled`); Tuna self-installs
 
 - Native Shelf scripts for the shell binds live in `home/Library/Scripts/`
   (`g95-sharp`, `temp-admin` are `@tuna.mode background` → run in Tuna's Shelf with
-  streamed output; `panw-password` is `inline` because its paste keystroke targets the
+  streamed output; `dayjob-password` is `inline` because its paste keystroke targets the
   focused field and must not run behind the Shelf). They index automatically from the
   free default `~/Library/Scripts`. Remaining: bind the z-group keys (d/z/t) to these
   script commands in the Tuna GUI, then re-capture `config.toml` — the combo→script

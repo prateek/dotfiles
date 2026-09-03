@@ -49,6 +49,9 @@ Run focused repo regression tests without booting a VM:
 make test-tart-install-helper
 make test-render-brewfile
 make test-machines-features
+make test-headless-uv-bootstrap
+make test-linux-work-profile
+make test-orca-devpod-reconcile
 make test-elevation-render
 make test-zsh-prompt-host
 make test-mise-install-script
@@ -122,6 +125,8 @@ Run focused-helper tests for the package renderer:
 ```sh
 make test-render-brewfile
 make test-machines-features
+make test-linux-work-profile
+make test-orca-devpod-reconcile
 make test-elevation-render
 ```
 
