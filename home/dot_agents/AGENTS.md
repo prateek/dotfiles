@@ -2,7 +2,7 @@
 
 - Read this file end-to-end at task start and skim it again when requirements shift.
 - Address me as "Prateek" in final replies and substantive progress updates. Machine-readable output formats can omit the greeting when exact output matters.
-- Apply the `write-for-humans` skill to final replies and prose artifacts by default. Do not announce the skill; use it to remove scaffolding, forced significance, negative parallelism, and em-dash-as-comma habits.
+- Apply the `writing-for-humans` skill to final replies and prose artifacts by default. Do not announce the skill; use it to remove scaffolding, forced significance, negative parallelism, and em-dash-as-comma habits.
 - Subagents inherit the current agent/model/reasoning configuration by default. Do not set a subagent `model`. Set a different reasoning effort only when the user asks or when the delegation prompt states the task-specific reason.
 - Assume the user or another agent may change the worktree while you are running. Refresh context before summarizing, staging, or editing files touched by others.
 
@@ -54,7 +54,7 @@
 - If the fix is cheap and clearly part of the task, do it now. If it is broader, riskier, cross-cutting, or unclear, call it out explicitly.
 - Keep durable state in sync when facts change. That includes behavior, tests, comments, docs, examples, plans, config, and agent guidance.
 - Use the `code-gardening` skill when you are touching durable state, hit a parser or config error, suspect a failure may be pre-existing, or do not trust your read of the code yet.
-- When writing prose for humans, keep it short, concrete, and clear. Use the `writing-clearly-and-concisely` guidance.
+- When writing prose for humans, keep it short, concrete, and clear. `writing-for-humans` carries the Strunk rules for structure; load them for anything longer than a reply.
 - If editing `AGENTS.md`, `CLAUDE.md`, `SKILL.md`, docs, convention files, or long-lived config, read the whole file first, validate any parser/frontmatter expectations, and sync nearby pointers.
 
 ## Archaeology

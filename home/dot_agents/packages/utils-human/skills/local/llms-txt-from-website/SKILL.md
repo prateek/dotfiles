@@ -1,6 +1,7 @@
 ---
 name: llms-txt-from-website
 description: Generate `llms.txt` and `llms-full.txt` for a docs/product website from just a URL. Detect and reuse an existing `/llms.txt`, discover the docs source repo via “Edit this page”/GitHub links, fall back to `sitemap.xml` or an internal crawl when needed, and optionally use Context7 when the target is a known library.
+disable-model-invocation: true
 ---
 
 # llms.txt from Website

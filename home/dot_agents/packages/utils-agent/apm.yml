@@ -5,7 +5,6 @@ targets:
 
 dependencies:
   apm:
-    - hefgi/skills/shortcut
     - openclaw/acpx/skills/acpx
     - stablyai/agent-slack/skills/agent-slack
     - stablyai/orca/skills/orca-cli

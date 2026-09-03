@@ -152,7 +152,8 @@ Refresh gotchas:
 - Subdirectory deps must not contain symlinks that point outside the
   subdirectory: apm materializes subdir deps with a git sparse cone, so such
   symlinks dangle and the install fails with ENOENT on the symlink targets.
-  Depend on the repo root instead (see `forjd/better-writing` in core).
+  Depend on the repo root instead (`forjd/better-writing` hit this while it
+  was a core dependency).
 - A dependency path cannot end in a dot-directory: apm parses the final
   segment as a file extension and rejects e.g. `ar9av/obsidian-wiki/.skills`,
   and repo-root deps do not discover skills inside hidden directories either.

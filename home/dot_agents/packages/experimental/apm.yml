@@ -6,4 +6,5 @@ targets:
 dependencies:
   apm:
     - danshapiro/trycycle
+    - hefgi/skills/shortcut
     - openai/skills/skills/.curated/cli-creator

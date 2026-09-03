@@ -1,6 +1,7 @@
 ---
 name: gog-gemini-meeting-import
 description: 'Import Gemini meeting Google Doc URLs using `gog` to export the doc, extract the Transcript section, write a transcript Markdown file, and generate structured meeting notes (summary/decisions/action items) using the bundled meeting-notes prompt. Use when given a "Notes by Gemini" Google Doc link and asked to save the transcript and produce meeting notes.'
+disable-model-invocation: true
 ---
 
 # Gemini Meeting Import (gog)

@@ -198,6 +198,46 @@ dependencies:
     .agents/skills/trycycle/trycycle_explorer/simulate.py: sha256:4b5524625e48b3943370ee9b3b6b311906208aed96e6154420d820c315902277
     .agents/skills/trycycle/trycycle_explorer/site.py: sha256:bc00c07ce455d9bbb9323373b53bcbb4df5ba73f2686c0c94475b6f6215dae3c
   content_hash: sha256:8ca12a875bbd30173bc600303cb40a3c6a5e01fe14577652ff55e426e2e49544
+- repo_url: hefgi/skills
+  name: shortcut
+  host: github.com
+  resolved_commit: d22289fff77cce0b2df1ebbcdb641c9ce0e1881b
+  version: unknown
+  virtual_path: shortcut
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/shortcut
+  - .agents/skills/shortcut/SKILL.md
+  - .agents/skills/shortcut/evals/prerequisite-checking-and-error-handling/criteria.json
+  - .agents/skills/shortcut/evals/prerequisite-checking-and-error-handling/task.md
+  - .agents/skills/shortcut/evals/raw-api-fallback-for-unsupported-operati/criteria.json
+  - .agents/skills/shortcut/evals/raw-api-fallback-for-unsupported-operati/task.md
+  - .agents/skills/shortcut/evals/search-filtering-and-result-presentation/criteria.json
+  - .agents/skills/shortcut/evals/search-filtering-and-result-presentation/task.md
+  - .agents/skills/shortcut/evals/story-creation-and-output-formatting/criteria.json
+  - .agents/skills/shortcut/evals/story-creation-and-output-formatting/task.md
+  - .agents/skills/shortcut/evals/url-routing-and-argument-parsing/criteria.json
+  - .agents/skills/shortcut/evals/url-routing-and-argument-parsing/task.md
+  - .agents/skills/shortcut/references/commands.md
+  - .agents/skills/shortcut/references/shortcut.swagger.json
+  - .agents/skills/shortcut/tile.json
+  deployed_file_hashes:
+    .agents/skills/shortcut/SKILL.md: sha256:329b4088c5d5a2366a12be3007a8cc2a589b24ac1a3c73d6beee9d3cda71faf6
+    .agents/skills/shortcut/evals/prerequisite-checking-and-error-handling/criteria.json: sha256:b81ae09e26028cbb2efb851cf23a0b72b1afdb38b79bb25f9823ac0be4bd4d03
+    .agents/skills/shortcut/evals/prerequisite-checking-and-error-handling/task.md: sha256:dcc5256c427d792e132c0752db7ffa46c4195e0d254f7d86ee14c45c85a5ee39
+    .agents/skills/shortcut/evals/raw-api-fallback-for-unsupported-operati/criteria.json: sha256:54e36d41f08330d6e9b6ade515a814a0d6a71f553879acd8f79f97e9d9ff6ba8
+    .agents/skills/shortcut/evals/raw-api-fallback-for-unsupported-operati/task.md: sha256:4c654fc3001d06bab37239b0131904a623b47aae38a16ef2ef9fd870db84fac1
+    .agents/skills/shortcut/evals/search-filtering-and-result-presentation/criteria.json: sha256:9bb063e04f494e3a961c4cf0222bb7a955286778d695d1371f8a16a2ca2a9e19
+    .agents/skills/shortcut/evals/search-filtering-and-result-presentation/task.md: sha256:fb55c550d057c4823028d631bebd8b9da01cbc1d330ce3c4abba68875b33b789
+    .agents/skills/shortcut/evals/story-creation-and-output-formatting/criteria.json: sha256:d04ca74d35ade1661fae025d4e6b9cbde08debfceaf8315de9e49e10ea3e2783
+    .agents/skills/shortcut/evals/story-creation-and-output-formatting/task.md: sha256:df1c7b6688cc6c22bb40f9fbbbd6597eb4dcabc69cb6c26e9b7f04ae9dad0ce5
+    .agents/skills/shortcut/evals/url-routing-and-argument-parsing/criteria.json: sha256:257077990411053a6d381fdad5a4759365cbce9ce991c43049e8584e3ead3599
+    .agents/skills/shortcut/evals/url-routing-and-argument-parsing/task.md: sha256:fc79787febe40346b3f1b42652d10d427246e3cfa103fa347edacba62258b2ff
+    .agents/skills/shortcut/references/commands.md: sha256:47e141cfa38a9e09a443b4f110cf371faf3f48cbcba71f6a3360cf4146fa1bbd
+    .agents/skills/shortcut/references/shortcut.swagger.json: sha256:ad657b2fe03879da44b1feaa4ef95f644b4c561d2ee71c8309a497b0d1d053a3
+    .agents/skills/shortcut/tile.json: sha256:e6db34e8e62f4317a95bc9825ce973a5ebe8801a127eb1850951ea587a3e5a06
+  content_hash: sha256:c8e8c62e311d1edffef6ec6aca2fd28fc4241513bfb201f077f3e3336b6d7369
 - repo_url: openai/skills
   name: cli-creator
   host: github.com
@@ -1110,3 +1150,138 @@ deployments:
   - danshapiro/trycycle
   active_owner: danshapiro/trycycle
   content_hash: sha256:bc00c07ce455d9bbb9323373b53bcbb4df5ba73f2686c0c94475b6f6215dae3c
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/shortcut
+  runtime: null
+  scope: project
+  owners:
+  - hefgi/skills/shortcut
+  active_owner: hefgi/skills/shortcut
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/shortcut/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - hefgi/skills/shortcut
+  active_owner: hefgi/skills/shortcut
+  content_hash: sha256:329b4088c5d5a2366a12be3007a8cc2a589b24ac1a3c73d6beee9d3cda71faf6
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/shortcut/evals/prerequisite-checking-and-error-handling/criteria.json
+  runtime: null
+  scope: project
+  owners:
+  - hefgi/skills/shortcut
+  active_owner: hefgi/skills/shortcut
+  content_hash: sha256:b81ae09e26028cbb2efb851cf23a0b72b1afdb38b79bb25f9823ac0be4bd4d03
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/shortcut/evals/prerequisite-checking-and-error-handling/task.md
+  runtime: null
+  scope: project
+  owners:
+  - hefgi/skills/shortcut
+  active_owner: hefgi/skills/shortcut
+  content_hash: sha256:dcc5256c427d792e132c0752db7ffa46c4195e0d254f7d86ee14c45c85a5ee39
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/shortcut/evals/raw-api-fallback-for-unsupported-operati/criteria.json
+  runtime: null
+  scope: project
+  owners:
+  - hefgi/skills/shortcut
+  active_owner: hefgi/skills/shortcut
+  content_hash: sha256:54e36d41f08330d6e9b6ade515a814a0d6a71f553879acd8f79f97e9d9ff6ba8
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/shortcut/evals/raw-api-fallback-for-unsupported-operati/task.md
+  runtime: null
+  scope: project
+  owners:
+  - hefgi/skills/shortcut
+  active_owner: hefgi/skills/shortcut
+  content_hash: sha256:4c654fc3001d06bab37239b0131904a623b47aae38a16ef2ef9fd870db84fac1
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/shortcut/evals/search-filtering-and-result-presentation/criteria.json
+  runtime: null
+  scope: project
+  owners:
+  - hefgi/skills/shortcut
+  active_owner: hefgi/skills/shortcut
+  content_hash: sha256:9bb063e04f494e3a961c4cf0222bb7a955286778d695d1371f8a16a2ca2a9e19
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/shortcut/evals/search-filtering-and-result-presentation/task.md
+  runtime: null
+  scope: project
+  owners:
+  - hefgi/skills/shortcut
+  active_owner: hefgi/skills/shortcut
+  content_hash: sha256:fb55c550d057c4823028d631bebd8b9da01cbc1d330ce3c4abba68875b33b789
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/shortcut/evals/story-creation-and-output-formatting/criteria.json
+  runtime: null
+  scope: project
+  owners:
+  - hefgi/skills/shortcut
+  active_owner: hefgi/skills/shortcut
+  content_hash: sha256:d04ca74d35ade1661fae025d4e6b9cbde08debfceaf8315de9e49e10ea3e2783
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/shortcut/evals/story-creation-and-output-formatting/task.md
+  runtime: null
+  scope: project
+  owners:
+  - hefgi/skills/shortcut
+  active_owner: hefgi/skills/shortcut
+  content_hash: sha256:df1c7b6688cc6c22bb40f9fbbbd6597eb4dcabc69cb6c26e9b7f04ae9dad0ce5
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/shortcut/evals/url-routing-and-argument-parsing/criteria.json
+  runtime: null
+  scope: project
+  owners:
+  - hefgi/skills/shortcut
+  active_owner: hefgi/skills/shortcut
+  content_hash: sha256:257077990411053a6d381fdad5a4759365cbce9ce991c43049e8584e3ead3599
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/shortcut/evals/url-routing-and-argument-parsing/task.md
+  runtime: null
+  scope: project
+  owners:
+  - hefgi/skills/shortcut
+  active_owner: hefgi/skills/shortcut
+  content_hash: sha256:fc79787febe40346b3f1b42652d10d427246e3cfa103fa347edacba62258b2ff
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/shortcut/references/commands.md
+  runtime: null
+  scope: project
+  owners:
+  - hefgi/skills/shortcut
+  active_owner: hefgi/skills/shortcut
+  content_hash: sha256:47e141cfa38a9e09a443b4f110cf371faf3f48cbcba71f6a3360cf4146fa1bbd
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/shortcut/references/shortcut.swagger.json
+  runtime: null
+  scope: project
+  owners:
+  - hefgi/skills/shortcut
+  active_owner: hefgi/skills/shortcut
+  content_hash: sha256:ad657b2fe03879da44b1feaa4ef95f644b4c561d2ee71c8309a497b0d1d053a3
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/shortcut/tile.json
+  runtime: null
+  scope: project
+  owners:
+  - hefgi/skills/shortcut
+  active_owner: hefgi/skills/shortcut
+  content_hash: sha256:e6db34e8e62f4317a95bc9825ce973a5ebe8801a127eb1850951ea587a3e5a06

@@ -1,51 +1,11 @@
 lockfile_version: '1'
-generated_at: '2026-08-28T01:14:23.527392+00:00'
+generated_at: '2026-09-03T01:42:05.926727+00:00'
 apm_version: 0.28.0
 dependencies:
-- repo_url: hefgi/skills
-  name: shortcut
-  host: github.com
-  resolved_commit: d22289fff77cce0b2df1ebbcdb641c9ce0e1881b
-  version: unknown
-  virtual_path: shortcut
-  is_virtual: true
-  package_type: claude_skill
-  deployed_files:
-  - .agents/skills/shortcut
-  - .agents/skills/shortcut/SKILL.md
-  - .agents/skills/shortcut/evals/prerequisite-checking-and-error-handling/criteria.json
-  - .agents/skills/shortcut/evals/prerequisite-checking-and-error-handling/task.md
-  - .agents/skills/shortcut/evals/raw-api-fallback-for-unsupported-operati/criteria.json
-  - .agents/skills/shortcut/evals/raw-api-fallback-for-unsupported-operati/task.md
-  - .agents/skills/shortcut/evals/search-filtering-and-result-presentation/criteria.json
-  - .agents/skills/shortcut/evals/search-filtering-and-result-presentation/task.md
-  - .agents/skills/shortcut/evals/story-creation-and-output-formatting/criteria.json
-  - .agents/skills/shortcut/evals/story-creation-and-output-formatting/task.md
-  - .agents/skills/shortcut/evals/url-routing-and-argument-parsing/criteria.json
-  - .agents/skills/shortcut/evals/url-routing-and-argument-parsing/task.md
-  - .agents/skills/shortcut/references/commands.md
-  - .agents/skills/shortcut/references/shortcut.swagger.json
-  - .agents/skills/shortcut/tile.json
-  deployed_file_hashes:
-    .agents/skills/shortcut/SKILL.md: sha256:329b4088c5d5a2366a12be3007a8cc2a589b24ac1a3c73d6beee9d3cda71faf6
-    .agents/skills/shortcut/evals/prerequisite-checking-and-error-handling/criteria.json: sha256:b81ae09e26028cbb2efb851cf23a0b72b1afdb38b79bb25f9823ac0be4bd4d03
-    .agents/skills/shortcut/evals/prerequisite-checking-and-error-handling/task.md: sha256:dcc5256c427d792e132c0752db7ffa46c4195e0d254f7d86ee14c45c85a5ee39
-    .agents/skills/shortcut/evals/raw-api-fallback-for-unsupported-operati/criteria.json: sha256:54e36d41f08330d6e9b6ade515a814a0d6a71f553879acd8f79f97e9d9ff6ba8
-    .agents/skills/shortcut/evals/raw-api-fallback-for-unsupported-operati/task.md: sha256:4c654fc3001d06bab37239b0131904a623b47aae38a16ef2ef9fd870db84fac1
-    .agents/skills/shortcut/evals/search-filtering-and-result-presentation/criteria.json: sha256:9bb063e04f494e3a961c4cf0222bb7a955286778d695d1371f8a16a2ca2a9e19
-    .agents/skills/shortcut/evals/search-filtering-and-result-presentation/task.md: sha256:fb55c550d057c4823028d631bebd8b9da01cbc1d330ce3c4abba68875b33b789
-    .agents/skills/shortcut/evals/story-creation-and-output-formatting/criteria.json: sha256:d04ca74d35ade1661fae025d4e6b9cbde08debfceaf8315de9e49e10ea3e2783
-    .agents/skills/shortcut/evals/story-creation-and-output-formatting/task.md: sha256:df1c7b6688cc6c22bb40f9fbbbd6597eb4dcabc69cb6c26e9b7f04ae9dad0ce5
-    .agents/skills/shortcut/evals/url-routing-and-argument-parsing/criteria.json: sha256:257077990411053a6d381fdad5a4759365cbce9ce991c43049e8584e3ead3599
-    .agents/skills/shortcut/evals/url-routing-and-argument-parsing/task.md: sha256:fc79787febe40346b3f1b42652d10d427246e3cfa103fa347edacba62258b2ff
-    .agents/skills/shortcut/references/commands.md: sha256:47e141cfa38a9e09a443b4f110cf371faf3f48cbcba71f6a3360cf4146fa1bbd
-    .agents/skills/shortcut/references/shortcut.swagger.json: sha256:ad657b2fe03879da44b1feaa4ef95f644b4c561d2ee71c8309a497b0d1d053a3
-    .agents/skills/shortcut/tile.json: sha256:e6db34e8e62f4317a95bc9825ce973a5ebe8801a127eb1850951ea587a3e5a06
-  content_hash: sha256:c8e8c62e311d1edffef6ec6aca2fd28fc4241513bfb201f077f3e3336b6d7369
 - repo_url: openclaw/acpx
   name: acpx
   host: github.com
-  resolved_commit: d4c16ab32154f388a3f28645065e797fcd951813
+  resolved_commit: 95a9466b9b80603198cd448c62c80c08bb0c5558
   version: unknown
   virtual_path: skills/acpx
   is_virtual: true
@@ -54,12 +14,12 @@ dependencies:
   - .agents/skills/acpx
   - .agents/skills/acpx/SKILL.md
   deployed_file_hashes:
-    .agents/skills/acpx/SKILL.md: sha256:052a6edce37074b41a3998df4094d7e43cea1e5125d515668d1ccb73036984e9
-  content_hash: sha256:991f4e37230f484fd8f0c6e281b05df2ed332809414641fe18a1c82b782e31ab
+    .agents/skills/acpx/SKILL.md: sha256:39785579db048ed27ca67d6fd085bef8589b66162060f36a6e921a682601dbf0
+  content_hash: sha256:b264a4358e5fa79a994439cc10feeffdd70e8c833999117fc88186acaaf6a889
 - repo_url: stablyai/agent-slack
   name: agent-slack
   host: github.com
-  resolved_commit: 80f0e8df0299f4f03bce1bed6f8ef3d3da1b65f7
+  resolved_commit: dba40572624ef0b81a325fe8b876c7649aa7895f
   version: unknown
   virtual_path: skills/agent-slack
   is_virtual: true
@@ -70,14 +30,14 @@ dependencies:
   - .agents/skills/agent-slack/references/output.md
   - .agents/skills/agent-slack/references/targets.md
   deployed_file_hashes:
-    .agents/skills/agent-slack/SKILL.md: sha256:c4a0a6b05a7bce4efcae8d1ad0e95fc7e0ebd031f9a57bd15cf30813c3cc9839
+    .agents/skills/agent-slack/SKILL.md: sha256:9d2c82189e33a967259ff7eacea2f43aa810c291ca5fead682bde78f08923226
     .agents/skills/agent-slack/references/output.md: sha256:40e5e439759131a50c96f257b70969e28c1ecf5c7fe5857f8d5db0d044943845
     .agents/skills/agent-slack/references/targets.md: sha256:7f6dcc1f96811910237379d39d7f025d5bc1f5f41ee3ba21870e6557d4c6292e
-  content_hash: sha256:2999c98adae884ec041b704aec2bfb76425f5c208b2e5e915ec6713ee89b67bc
+  content_hash: sha256:200245b9c3a868a39999a85de7c0b05a4dd7c33498552b745b3b01b4a8da2e47
 - repo_url: stablyai/orca
   name: orca-cli
   host: github.com
-  resolved_commit: c90d9c4780b7323b3c413b2b3a18fcdcccb42d26
+  resolved_commit: 9cda5a9dc01fedeb5aaa90ea68f572f1a9db3606
   version: unknown
   virtual_path: skills/orca-cli
   is_virtual: true
@@ -86,12 +46,12 @@ dependencies:
   - .agents/skills/orca-cli
   - .agents/skills/orca-cli/SKILL.md
   deployed_file_hashes:
-    .agents/skills/orca-cli/SKILL.md: sha256:cdd5d9c8a95837a6cc24d68b150a117684afe9bbb2d763de2cc7fba1da1ed163
-  content_hash: sha256:cca6a9098e0dff08ce6fef999da77d98e94255e826b8b9f8132749b5da66dad2
+    .agents/skills/orca-cli/SKILL.md: sha256:6dcbd69045c74787be3385198750c67223709c5fa63a2ba3cfbbe0403e1219f5
+  content_hash: sha256:83ece910d035d0684195095bb9df5911a028002b2efba1ebbeb4ae66de5e0903
 - repo_url: stablyai/orca
   name: orchestration
   host: github.com
-  resolved_commit: c90d9c4780b7323b3c413b2b3a18fcdcccb42d26
+  resolved_commit: 9cda5a9dc01fedeb5aaa90ea68f572f1a9db3606
   version: unknown
   virtual_path: skills/orchestration
   is_virtual: true
@@ -100,8 +60,8 @@ dependencies:
   - .agents/skills/orchestration
   - .agents/skills/orchestration/SKILL.md
   deployed_file_hashes:
-    .agents/skills/orchestration/SKILL.md: sha256:9ca228137b9a442b98c761aa07adecc2265708132ab175ad7e22b163fdc0bd7f
-  content_hash: sha256:b5c364878fb07d21a369f091f2e96b823da94308b15b39636f2585d8b5621b51
+    .agents/skills/orchestration/SKILL.md: sha256:a7e3350f037698ebbce36b2818d8383ec6e96c2a4825537caab39a83b4fb4b7f
+  content_hash: sha256:e611e8065f08f308823d063bb3cd8d4e283242202456b8a3e80058b2f59f0c3a
 deployments:
 - kind: project-relative
   target: agent-skills
@@ -120,7 +80,7 @@ deployments:
   owners:
   - openclaw/acpx/skills/acpx
   active_owner: openclaw/acpx/skills/acpx
-  content_hash: sha256:052a6edce37074b41a3998df4094d7e43cea1e5125d515668d1ccb73036984e9
+  content_hash: sha256:39785579db048ed27ca67d6fd085bef8589b66162060f36a6e921a682601dbf0
 - kind: project-relative
   target: agent-skills
   value: .agents/skills/agent-slack
@@ -138,7 +98,7 @@ deployments:
   owners:
   - stablyai/agent-slack/skills/agent-slack
   active_owner: stablyai/agent-slack/skills/agent-slack
-  content_hash: sha256:c4a0a6b05a7bce4efcae8d1ad0e95fc7e0ebd031f9a57bd15cf30813c3cc9839
+  content_hash: sha256:9d2c82189e33a967259ff7eacea2f43aa810c291ca5fead682bde78f08923226
 - kind: project-relative
   target: agent-skills
   value: .agents/skills/agent-slack/references/output.md
@@ -174,7 +134,7 @@ deployments:
   owners:
   - stablyai/orca/skills/orca-cli
   active_owner: stablyai/orca/skills/orca-cli
-  content_hash: sha256:cdd5d9c8a95837a6cc24d68b150a117684afe9bbb2d763de2cc7fba1da1ed163
+  content_hash: sha256:6dcbd69045c74787be3385198750c67223709c5fa63a2ba3cfbbe0403e1219f5
 - kind: project-relative
   target: agent-skills
   value: .agents/skills/orchestration
@@ -192,139 +152,4 @@ deployments:
   owners:
   - stablyai/orca/skills/orchestration
   active_owner: stablyai/orca/skills/orchestration
-  content_hash: sha256:9ca228137b9a442b98c761aa07adecc2265708132ab175ad7e22b163fdc0bd7f
-- kind: project-relative
-  target: agent-skills
-  value: .agents/skills/shortcut
-  runtime: null
-  scope: project
-  owners:
-  - hefgi/skills/shortcut
-  active_owner: hefgi/skills/shortcut
-  content_hash: null
-- kind: project-relative
-  target: agent-skills
-  value: .agents/skills/shortcut/SKILL.md
-  runtime: null
-  scope: project
-  owners:
-  - hefgi/skills/shortcut
-  active_owner: hefgi/skills/shortcut
-  content_hash: sha256:329b4088c5d5a2366a12be3007a8cc2a589b24ac1a3c73d6beee9d3cda71faf6
-- kind: project-relative
-  target: agent-skills
-  value: .agents/skills/shortcut/evals/prerequisite-checking-and-error-handling/criteria.json
-  runtime: null
-  scope: project
-  owners:
-  - hefgi/skills/shortcut
-  active_owner: hefgi/skills/shortcut
-  content_hash: sha256:b81ae09e26028cbb2efb851cf23a0b72b1afdb38b79bb25f9823ac0be4bd4d03
-- kind: project-relative
-  target: agent-skills
-  value: .agents/skills/shortcut/evals/prerequisite-checking-and-error-handling/task.md
-  runtime: null
-  scope: project
-  owners:
-  - hefgi/skills/shortcut
-  active_owner: hefgi/skills/shortcut
-  content_hash: sha256:dcc5256c427d792e132c0752db7ffa46c4195e0d254f7d86ee14c45c85a5ee39
-- kind: project-relative
-  target: agent-skills
-  value: .agents/skills/shortcut/evals/raw-api-fallback-for-unsupported-operati/criteria.json
-  runtime: null
-  scope: project
-  owners:
-  - hefgi/skills/shortcut
-  active_owner: hefgi/skills/shortcut
-  content_hash: sha256:54e36d41f08330d6e9b6ade515a814a0d6a71f553879acd8f79f97e9d9ff6ba8
-- kind: project-relative
-  target: agent-skills
-  value: .agents/skills/shortcut/evals/raw-api-fallback-for-unsupported-operati/task.md
-  runtime: null
-  scope: project
-  owners:
-  - hefgi/skills/shortcut
-  active_owner: hefgi/skills/shortcut
-  content_hash: sha256:4c654fc3001d06bab37239b0131904a623b47aae38a16ef2ef9fd870db84fac1
-- kind: project-relative
-  target: agent-skills
-  value: .agents/skills/shortcut/evals/search-filtering-and-result-presentation/criteria.json
-  runtime: null
-  scope: project
-  owners:
-  - hefgi/skills/shortcut
-  active_owner: hefgi/skills/shortcut
-  content_hash: sha256:9bb063e04f494e3a961c4cf0222bb7a955286778d695d1371f8a16a2ca2a9e19
-- kind: project-relative
-  target: agent-skills
-  value: .agents/skills/shortcut/evals/search-filtering-and-result-presentation/task.md
-  runtime: null
-  scope: project
-  owners:
-  - hefgi/skills/shortcut
-  active_owner: hefgi/skills/shortcut
-  content_hash: sha256:fb55c550d057c4823028d631bebd8b9da01cbc1d330ce3c4abba68875b33b789
-- kind: project-relative
-  target: agent-skills
-  value: .agents/skills/shortcut/evals/story-creation-and-output-formatting/criteria.json
-  runtime: null
-  scope: project
-  owners:
-  - hefgi/skills/shortcut
-  active_owner: hefgi/skills/shortcut
-  content_hash: sha256:d04ca74d35ade1661fae025d4e6b9cbde08debfceaf8315de9e49e10ea3e2783
-- kind: project-relative
-  target: agent-skills
-  value: .agents/skills/shortcut/evals/story-creation-and-output-formatting/task.md
-  runtime: null
-  scope: project
-  owners:
-  - hefgi/skills/shortcut
-  active_owner: hefgi/skills/shortcut
-  content_hash: sha256:df1c7b6688cc6c22bb40f9fbbbd6597eb4dcabc69cb6c26e9b7f04ae9dad0ce5
-- kind: project-relative
-  target: agent-skills
-  value: .agents/skills/shortcut/evals/url-routing-and-argument-parsing/criteria.json
-  runtime: null
-  scope: project
-  owners:
-  - hefgi/skills/shortcut
-  active_owner: hefgi/skills/shortcut
-  content_hash: sha256:257077990411053a6d381fdad5a4759365cbce9ce991c43049e8584e3ead3599
-- kind: project-relative
-  target: agent-skills
-  value: .agents/skills/shortcut/evals/url-routing-and-argument-parsing/task.md
-  runtime: null
-  scope: project
-  owners:
-  - hefgi/skills/shortcut
-  active_owner: hefgi/skills/shortcut
-  content_hash: sha256:fc79787febe40346b3f1b42652d10d427246e3cfa103fa347edacba62258b2ff
-- kind: project-relative
-  target: agent-skills
-  value: .agents/skills/shortcut/references/commands.md
-  runtime: null
-  scope: project
-  owners:
-  - hefgi/skills/shortcut
-  active_owner: hefgi/skills/shortcut
-  content_hash: sha256:47e141cfa38a9e09a443b4f110cf371faf3f48cbcba71f6a3360cf4146fa1bbd
-- kind: project-relative
-  target: agent-skills
-  value: .agents/skills/shortcut/references/shortcut.swagger.json
-  runtime: null
-  scope: project
-  owners:
-  - hefgi/skills/shortcut
-  active_owner: hefgi/skills/shortcut
-  content_hash: sha256:ad657b2fe03879da44b1feaa4ef95f644b4c561d2ee71c8309a497b0d1d053a3
-- kind: project-relative
-  target: agent-skills
-  value: .agents/skills/shortcut/tile.json
-  runtime: null
-  scope: project
-  owners:
-  - hefgi/skills/shortcut
-  active_owner: hefgi/skills/shortcut
-  content_hash: sha256:e6db34e8e62f4317a95bc9825ce973a5ebe8801a127eb1850951ea587a3e5a06
+  content_hash: sha256:a7e3350f037698ebbce36b2818d8383ec6e96c2a4825537caab39a83b4fb4b7f

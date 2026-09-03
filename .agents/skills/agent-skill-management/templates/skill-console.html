@@ -1108,9 +1108,10 @@ function renderBanners() {
   else if (hours >= 12) add("warn", h("b", { text: `Snapshot captured ${Math.round(hours)}h ago.` }), " Usage rank, plugin state, settings, and source trees may have changed.");
   if (envBudgetActive) add("info", `SLASH_COMMAND_TOOL_CHAR_BUDGET=${SNAP.budget_env_override} overrides the computed budget${SNAP.budget_env_override < 0 ? " (negative, mirrored as the binary does)" : ""}; changing the fraction has no runtime effect.`);
   if (CAPTURE_PARITY && captureDrift()) {
-    const links = h("span", { class: "links" }, ...CAPTURE_PARITY.mismatches.slice(0, 8).map((n) => {
+    const links = h("span", { class: "links" }, ...CAPTURE_PARITY.mismatches.slice(0, 8).flatMap((n, i) => {
       const m = modelByName.get(n);
-      return h("a", { href: "#", class: "mono", text: n, onclick: (ev) => { ev.preventDefault(); if (m) revealSkill(m); } });
+      const link = h("a", { href: "#", class: "mono", text: n, onclick: (ev) => { ev.preventDefault(); if (m) revealSkill(m); } });
+      return i ? [", ", link] : [link];
     }));
     add("warn", h("b", { text: `Simulation differs from the captured listing on ${CAPTURE_PARITY.mismatches.length} row(s)` }),
       `${CAPTURE_PARITY.notCaptured.length ? `, and ${CAPTURE_PARITY.notCaptured.length} listed row(s) are absent from the capture` : ""}. The inventory may have moved since the capture (${CAPTURE_PARITY.at}). `, links);

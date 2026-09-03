@@ -1,6 +1,7 @@
 ---
 name: organize-important-documents
 description: Design, review, and incrementally build a personal or family filing system for important documents and official records. Use when a user wants to organize or audit life-admin records, consolidate material from folders, scans, email, or cloud drives, choose a durable storage home and backup model, or set up a recurring maintenance routine. Also use when the user asks how to organize taxes, identity, immigration, health, insurance, housing, employment, education, legal, finance, travel, estate, or family records for themselves or someone else.
+disable-model-invocation: true
 ---
 
 # Organize Important Documents

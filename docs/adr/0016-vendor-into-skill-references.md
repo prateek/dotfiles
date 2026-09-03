@@ -7,7 +7,7 @@ owner: Prateek
 related:
   - ../plans/acpx-claude-streaming-poc-plan.md
   - 0013-apm-vendored-tool-integrations.md
-status_detail: "Sketch for review before implementation; acpx is the first customer."
+status_detail: "Sketch for review before implementation; acpx is the first customer. On 2026-09-03 core/skills/local/writing-for-humans consolidated three writing skills by copying two upstream bodies into its references by hand; it converts to the vendor mapping when this lands."
 ---
 
 # ADR 0016 — Vendored dependency content may land inside a local skill
