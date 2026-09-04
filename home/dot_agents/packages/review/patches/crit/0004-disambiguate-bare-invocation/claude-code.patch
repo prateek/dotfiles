@@ -1,14 +1,15 @@
 diff --git a/integrations/claude-code/skills/crit/SKILL.md b/integrations/claude-code/skills/crit/SKILL.md
-index 2bf32a7..5f62edf 100644
+index 2bf32a7..a2b93da 100644
 --- a/integrations/claude-code/skills/crit/SKILL.md
 +++ b/integrations/claude-code/skills/crit/SKILL.md
-@@ -24,10 +24,25 @@ crit --mr <iid|url>            # GitLab MR (range mode)
+@@ -24,10 +24,26 @@ crit --mr <iid|url>            # GitLab MR (range mode)
  crit --range <base>..<head>    # commit range (range mode)
  crit                           # no args → branch diff
  ```
 -If no arguments, check conversation context:
-+When there is no argument, or the argument names no file on disk (`/crit`,
-+`crit this`), check conversation context, in order:
++When there is no argument, or the argument is a bare word that names no file
++(`/crit`, `crit this`) and is not a flag or a subcommand the CLI understands
++(`live`, `preview`, `plan`, `story`), check conversation context, in order:
  
  1. A plan file was written earlier in this conversation → `crit <plan-file>`
 -2. Otherwise → bare `crit` (branch diff)

@@ -24,8 +24,9 @@ crit --mr <iid|url>            # GitLab MR (range mode)
 crit --range <base>..<head>    # commit range (range mode)
 crit                           # no args → branch diff
 ```
-When there is no argument, or the argument names no file on disk (`/crit`,
-`crit this`), check conversation context, in order:
+When there is no argument, or the argument is a bare word that names no file
+(`/crit`, `crit this`) and is not a flag or a subcommand the CLI understands
+(`live`, `preview`, `plan`, `story`), check conversation context, in order:
 
 1. A plan file was written earlier in this conversation → `crit <plan-file>`
 2. The user named the artifact ("the table", "that write-up", "the plan") →
@@ -48,16 +49,28 @@ outside a repository.
 
 Range mode is what makes crit stack-aware. Bare `crit` and `--base-branch` both
 review in working-tree focus, where the picker offers no stack switcher.
-`--range` puts the session in range focus, where the picker lists every branch
-in the stack and the reviewer hops between layers.
+`--range` puts the session in range focus, where the picker offers the layers it
+can see and the reviewer hops between them.
 
 ```bash
-crit --range <parent-branch>..HEAD   # this layer alone, what one pull request holds
+crit --pr <num>                      # one layer, exactly what that pull request holds
+crit --mr <iid>                      # the same, on GitLab
+crit --range <parent-branch>..HEAD   # one layer, while the parent is an ancestor of HEAD
 crit --range <trunk>..HEAD           # every layer, the stack as one diff
 ```
 
-`crit story` follows the same focus, so a story built in working-tree focus
-narrates the tree instead of the commits.
+Prefer `--pr`, or `--mr` on GitLab, for a single layer that has one. `--range`
+is a two-dot diff between the two tips, so once the parent branch advances it
+pulls in commits that belong to the parent; both forge modes diff from the
+merge-base and do not.
+
+The picker walks at most twenty ancestor commits and, on git, keeps only the
+topic chain, so a deep stack or a branch that is not an ancestor of HEAD will be
+missing from the switcher.
+
+`crit story` resolves its own session from its own arguments rather than
+inheriting an open review's focus. Repeat the `--range` or `--pr` there too, or
+the story narrates the working tree instead of the commits.
 </important>
 
 <important if="the user wants to open the review from another device — e.g. a phone over Tailscale">

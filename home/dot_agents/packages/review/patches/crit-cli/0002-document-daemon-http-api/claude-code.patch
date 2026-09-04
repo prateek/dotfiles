@@ -1,21 +1,25 @@
 diff --git a/integrations/claude-code/skills/crit-cli/SKILL.md b/integrations/claude-code/skills/crit-cli/SKILL.md
-index 52bc77a..1e250fd 100644
+index 69e1fe8..e82b77a 100644
 --- a/integrations/claude-code/skills/crit-cli/SKILL.md
 +++ b/integrations/claude-code/skills/crit-cli/SKILL.md
-@@ -207,6 +207,43 @@ crit comment --plan my-plan-2026-03-23 --reply-to c_a1b2c3 --author 'Claude Code
+@@ -218,6 +218,51 @@ crit comment --plan my-plan-2026-03-23 --reply-to c_a1b2c3 --author 'Claude Code
  ```
  </important>
  
 +<important if="a daemon is running and you need to edit, delete, or re-anchor an existing comment">
 +
 +While `crit` is running, the daemon holds the comments in memory and is the
-+source of truth. It merges only structural changes from the review file, so
-+editing a body directly in `review.json` never reaches the daemon or the
-+reviewer's browser, and the daemon can overwrite your edit when it next writes.
-+There is no CLI verb for editing a comment body — use the HTTP API.
++source of truth. Within a round it merges only structural changes from the
++review file, so a body you edit directly in `review.json` reaches neither the
++daemon nor the browser, and the daemon can overwrite it on its next write. The
++next round transition reloads file comments from disk and would carry that body
++forward, which makes the outcome depend on timing you do not control. There is
++no CLI verb for editing a comment body — use the HTTP API.
 +
 +Get the port from `crit status --json` (`.daemon.port`), and poll
-+`GET /api/session` until it stops returning 503 before calling anything else.
++`GET /api/session` until it answers 200 before calling anything else. 503 means
++the session is still initialising; 500 means initialisation failed, and no
++amount of waiting fixes it.
 +
 +```
 +GET|POST   /api/file/comments?path=<repo-rel>              list / add line and file comments
@@ -25,6 +29,9 @@ index 52bc77a..1e250fd 100644
 +PUT        /api/comment/<id>/resolve?path=<repo-rel>       set resolved
 +GET|POST   /api/comments                                   list / add review-level comments
 +PUT|DELETE /api/review-comment/<id>                        review-level update / delete
++POST       /api/review-comment/<id>/replies                add a review-level reply
++PUT|DELETE /api/review-comment/<id>/replies/<rid>          edit / delete one
++PUT        /api/review-comment/<id>/resolve                set resolved
 +GET        /api/health                                     liveness, plus browser_clients
 +```
 +
@@ -33,8 +40,9 @@ index 52bc77a..1e250fd 100644
 +  authoring path inside a `--pr` or `--range` session. A file-level comment
 +  needs `"scope": "file"`; without it the omitted lines fail the line-range
 +  check.
-+- `PUT` replaces the body and leaves the line range alone. To re-anchor, POST a
-+  copy at the new lines and DELETE the old id.
++- `PUT` replaces the body and leaves a line comment's range alone; to move one,
++  POST a copy at the new lines and DELETE the old id. It does carry
++  `dom_anchor`, so a live-mode pin can be re-anchored in place.
 +- Review-scope ids (`r_…`) live under `/api/review-comment/<id>`, take no
 +  `path`, and are listed by `GET /api/comments`.
 +- A round transition mints fresh ids for every carried-forward comment on a

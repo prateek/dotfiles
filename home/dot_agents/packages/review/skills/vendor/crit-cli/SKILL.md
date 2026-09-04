@@ -127,24 +127,35 @@ running daemon's **filtered projection** of that store, scoped to the session's
 current focus. A comment can be present in both and still render nowhere, so
 reading it back with `crit comments` does not prove the reviewer can see it.
 
-Check what the daemon actually serves before handing the review back:
+Check what the daemon actually serves before handing the review back. Wait for
+readiness first, and give `crit comment` a second to land: it writes to disk and
+the daemon picks it up on a one-second watcher tick, so an id missing
+immediately after the CLI returns proves nothing.
 
 ```bash
 PORT=$(crit status --json | jq -r .daemon.port)
+until [ "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$PORT/api/session")" = 200 ]; do sleep 1; done
 curl -s --get --data-urlencode "path=<repo-relative-path>" \
   "http://127.0.0.1:$PORT/api/file/comments"
 curl -s "http://127.0.0.1:$PORT/api/health"
 ```
 
 - `/api/file/comments` must list the ids you just created. When `crit comments`
-  shows them and this does not, the active focus filters them out; re-author
-  them through the daemon.
+  shows them and this still does not after the tick, the active focus filters
+  them out; re-author them through the daemon.
 - `crit status --json` omits `.daemon.port` while several sessions match the
   branch. Read the port out of `.sessions[]` instead, picking the id you want:
   `crit status` takes no `--session`.
 - `/api/health` reports `browser_clients`, which counts live `/api/events`
   connections. Read it as a hint: a tab that is loading or reconnecting reads
   as `false`.
+- A line or file comment you POST does not reach an open tab on its own; that
+  path emits no `comments-changed`. The daemon serving your comment and the
+  reviewer seeing it stay two different facts, so ask them to reload.
+- Reconnecting to a live daemon keeps its focus. Restarting a dead one loses it:
+  a `--pr` or `--range` session persists no `cli_args`, so `crit --session <id>`
+  comes back in working-tree focus and hides every comment scoped to the old
+  focus. Relaunch with the invocation that created the review.
 
 </important>
 
@@ -210,13 +221,17 @@ crit comment --plan my-plan-2026-03-23 --reply-to c_a1b2c3 --author 'Claude Code
 <important if="a daemon is running and you need to edit, delete, or re-anchor an existing comment">
 
 While `crit` is running, the daemon holds the comments in memory and is the
-source of truth. It merges only structural changes from the review file, so
-editing a body directly in `review.json` never reaches the daemon or the
-reviewer's browser, and the daemon can overwrite your edit when it next writes.
-There is no CLI verb for editing a comment body — use the HTTP API.
+source of truth. Within a round it merges only structural changes from the
+review file, so a body you edit directly in `review.json` reaches neither the
+daemon nor the browser, and the daemon can overwrite it on its next write. The
+next round transition reloads file comments from disk and would carry that body
+forward, which makes the outcome depend on timing you do not control. There is
+no CLI verb for editing a comment body — use the HTTP API.
 
 Get the port from `crit status --json` (`.daemon.port`), and poll
-`GET /api/session` until it stops returning 503 before calling anything else.
+`GET /api/session` until it answers 200 before calling anything else. 503 means
+the session is still initialising; 500 means initialisation failed, and no
+amount of waiting fixes it.
 
 ```
 GET|POST   /api/file/comments?path=<repo-rel>              list / add line and file comments
@@ -226,6 +241,9 @@ PUT|DELETE /api/comment/<id>/replies/<rid>?path=<repo-rel> edit / delete a reply
 PUT        /api/comment/<id>/resolve?path=<repo-rel>       set resolved
 GET|POST   /api/comments                                   list / add review-level comments
 PUT|DELETE /api/review-comment/<id>                        review-level update / delete
+POST       /api/review-comment/<id>/replies                add a review-level reply
+PUT|DELETE /api/review-comment/<id>/replies/<rid>          edit / delete one
+PUT        /api/review-comment/<id>/resolve                set resolved
 GET        /api/health                                     liveness, plus browser_clients
 ```
 
@@ -234,8 +252,9 @@ GET        /api/health                                     liveness, plus browse
   authoring path inside a `--pr` or `--range` session. A file-level comment
   needs `"scope": "file"`; without it the omitted lines fail the line-range
   check.
-- `PUT` replaces the body and leaves the line range alone. To re-anchor, POST a
-  copy at the new lines and DELETE the old id.
+- `PUT` replaces the body and leaves a line comment's range alone; to move one,
+  POST a copy at the new lines and DELETE the old id. It does carry
+  `dom_anchor`, so a live-mode pin can be re-anchored in place.
 - Review-scope ids (`r_…`) live under `/api/review-comment/<id>`, take no
   `path`, and are listed by `GET /api/comments`.
 - A round transition mints fresh ids for every carried-forward comment on a

@@ -39,11 +39,15 @@ crit --range "$base"..HEAD          # this layer alone
 crit --range main..HEAD             # every layer, one diff
 ```
 
-Reach for `--range`, not `--base-branch`. Range mode is what makes crit
+Reach for a range, not `--base-branch`. Range mode is what makes crit
 stack-aware: the UI renders its stack switcher only in range focus, and
 `--base-branch` fixes the base while leaving the session in working-tree focus,
-so the switcher stays hidden and you get one flattened diff. `crit story`
-inherits the same focus and narrates the working tree instead of the commits.
+so the switcher stays hidden and you get one flattened diff.
+
+For a layer that has a pull request, prefer `--pr`: it diffs from the
+merge-base, where `--range parent..HEAD` is a two-dot diff between tips and
+sweeps in the parent's own new commits once the parent advances. `crit story`
+resolves its own session from its own arguments, so repeat the range there too.
 
 Branches git-spice does not track have no `refs/spice/data:branches/<name>`
 entry, and the command fails; fall back to bare `crit` there.
