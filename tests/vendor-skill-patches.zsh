@@ -67,6 +67,21 @@ AGENT_SKILL_PACKAGES_ROOT="$work_packages" "$apply" --check \
   --packages-root "$work_packages" >/dev/null 2>&1 \
   && fail "--check passed on a fully reverted tree; the gate does not work"
 
+# --- 3b. the reverted tree really is pristine upstream ---
+# Reverting only undoes what the patches describe, so a hand edit outside every
+# hunk would survive both the revert and the reapply and slip past the byte
+# comparison below. The recorded hash is the independent witness.
+for hashfile in "$PACKAGES"/*/patches/*/pristine.sha256(N); do
+  skill="$(basename "$(dirname "$hashfile")")"
+  pkg="${${hashfile#$PACKAGES/}%%/*}"
+  reverted="$work_packages/$pkg/skills/vendor/$skill/SKILL.md"
+  [[ -f "$reverted" ]] || fail "no vendored SKILL.md for $skill"
+  want="$(cut -d' ' -f1 <"$hashfile")"
+  got="$(shasum -a 256 "$reverted" | cut -d' ' -f1)"
+  [[ "$want" == "$got" ]] \
+    || fail "$skill reverts to $got, not the recorded pristine $want; the tree carries an edit no patch describes"
+done
+
 AGENT_SKILL_PACKAGES_ROOT="$work_packages" "$apply" \
   --packages-root "$work_packages" >/dev/null \
   || fail "patches do not reapply cleanly onto pristine upstream content"
@@ -79,4 +94,4 @@ AGENT_SKILL_PACKAGES_ROOT="$work_packages" "$apply" --check \
 diff -r "$REPO_ROOT/home/dot_agents/packages" "$work_packages" >/dev/null \
   || fail "reapplied tree differs from the committed tree"
 
-echo "ok: vendor skill patches (applied in tree, upstream-shaped, full revert+reapply is clean and byte-identical)"
+echo "ok: vendor skill patches (applied, upstream-shaped, revert reaches recorded pristine, reapply byte-identical)"

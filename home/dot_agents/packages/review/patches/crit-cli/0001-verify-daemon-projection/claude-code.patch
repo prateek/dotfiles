@@ -1,8 +1,8 @@
 diff --git a/integrations/claude-code/skills/crit-cli/SKILL.md b/integrations/claude-code/skills/crit-cli/SKILL.md
-index ea6bb56..759f8fe 100644
+index ea6bb56..52bc77a 100644
 --- a/integrations/claude-code/skills/crit-cli/SKILL.md
 +++ b/integrations/claude-code/skills/crit-cli/SKILL.md
-@@ -120,6 +120,33 @@ Hard rules:
+@@ -120,6 +120,34 @@ Hard rules:
  - **Only pass `--resolve` when the user explicitly asks.** Never resolve proactively.
  </important>
  
@@ -26,7 +26,8 @@ index ea6bb56..759f8fe 100644
 +  shows them and this does not, the active focus filters them out; re-author
 +  them through the daemon.
 +- `crit status --json` omits `.daemon.port` while several sessions match the
-+  branch. Pass `--session <id>` to name one.
++  branch. Read the port out of `.sessions[]` instead, picking the id you want:
++  `crit status` takes no `--session`.
 +- `/api/health` reports `browser_clients`, which counts live `/api/events`
 +  connections. Read it as a hint: a tab that is loading or reconnecting reads
 +  as `false`.

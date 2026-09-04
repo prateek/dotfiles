@@ -140,7 +140,8 @@ curl -s "http://127.0.0.1:$PORT/api/health"
   shows them and this does not, the active focus filters them out; re-author
   them through the daemon.
 - `crit status --json` omits `.daemon.port` while several sessions match the
-  branch. Pass `--session <id>` to name one.
+  branch. Read the port out of `.sessions[]` instead, picking the id you want:
+  `crit status` takes no `--session`.
 - `/api/health` reports `browser_clients`, which counts live `/api/events`
   connections. Read it as a hint: a tab that is loading or reconnecting reads
   as `false`.
@@ -237,9 +238,9 @@ GET        /api/health                                     liveness, plus browse
   copy at the new lines and DELETE the old id.
 - Review-scope ids (`r_…`) live under `/api/review-comment/<id>`, take no
   `path`, and are listed by `GET /api/comments`.
-- A round transition mints fresh ids for carried-forward line comments while
-  review-level ids stay put. Re-read ids from `GET /api/file/comments` before
-  editing one.
+- A round transition mints fresh ids for every carried-forward comment on a
+  file, line scope and file scope alike, while review-level ids stay put.
+  Re-read ids from `GET /api/file/comments` before editing one.
 
 </important>
 

@@ -7,8 +7,6 @@ PASS requires all of:
 - The push command passes the pull request number POSITIONALLY, for example
   `crit push 1234`, not `--pr 1234`.
 - The reply uses `crit comment --reply-to c_a1b2c3` with an explicit `--author`.
-- Any claim that a flag exists is either backed by `crit --help` output or
-  hedged as worth checking.
 
 FAIL if any of:
 
@@ -20,6 +18,5 @@ practice.
 
 Do not grade `--session` on `crit push` or `crit pull`. It was rejected by the
 forge parser through v0.19.1 and accepted upstream from 4a4e9423, so the right
-answer depends on which build is installed. An agent that checks `crit --help`
-instead of asserting either way is behaving correctly, which the last PASS
-condition already covers.
+answer depends on which build is installed. Credit an agent that checks
+`crit --help` or names the version boundary; do not require it.

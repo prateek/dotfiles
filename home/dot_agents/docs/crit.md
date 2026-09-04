@@ -88,3 +88,10 @@ it opens up.
 The binary tracks Homebrew stable; the skills track upstream `main` through apm.
 They can disagree. Trust the binary's `--help` over the skill text, and fix the
 skill with a patch when they diverge.
+
+Live example: the vendored skill documents `--session` on `crit push` and
+`crit pull`, which upstream accepted in `4a4e9423`. Homebrew still ships
+v0.19.1, whose forge parser rejects the flag and swallows the value as the
+change number. Until a release lands, resolve those two commands from the
+worktree that owns the review instead. `crit comment`, `crit comments` and
+`crit share` take `--session` on every version.

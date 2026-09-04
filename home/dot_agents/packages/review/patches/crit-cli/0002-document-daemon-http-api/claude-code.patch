@@ -1,8 +1,8 @@
 diff --git a/integrations/claude-code/skills/crit-cli/SKILL.md b/integrations/claude-code/skills/crit-cli/SKILL.md
-index 759f8fe..92a70e5 100644
+index 52bc77a..1e250fd 100644
 --- a/integrations/claude-code/skills/crit-cli/SKILL.md
 +++ b/integrations/claude-code/skills/crit-cli/SKILL.md
-@@ -206,6 +206,43 @@ crit comment --plan my-plan-2026-03-23 --reply-to c_a1b2c3 --author 'Claude Code
+@@ -207,6 +207,43 @@ crit comment --plan my-plan-2026-03-23 --reply-to c_a1b2c3 --author 'Claude Code
  ```
  </important>
  
@@ -37,9 +37,9 @@ index 759f8fe..92a70e5 100644
 +  copy at the new lines and DELETE the old id.
 +- Review-scope ids (`r_…`) live under `/api/review-comment/<id>`, take no
 +  `path`, and are listed by `GET /api/comments`.
-+- A round transition mints fresh ids for carried-forward line comments while
-+  review-level ids stay put. Re-read ids from `GET /api/file/comments` before
-+  editing one.
++- A round transition mints fresh ids for every carried-forward comment on a
++  file, line scope and file scope alike, while review-level ids stay put.
++  Re-read ids from `GET /api/file/comments` before editing one.
 +
 +</important>
 +

@@ -208,6 +208,13 @@ def main() -> int:
             if git_apply(root, depth, target, [patch]):
                 applied += 1
                 continue
+            # A half-patched tree is the normal state after an interrupted run,
+            # so skip what is already there rather than stalling on it. At this
+            # point nothing later in the group is applied, which makes a
+            # single-patch reverse check meaningful again.
+            if git_apply(root, depth, target, [patch], "--reverse", "--check"):
+                skipped += 1
+                continue
             failures.append(
                 f"{rel}: does not apply to {target}. Upstream moved: rebase the "
                 f"patch, or delete it if the change landed upstream."
