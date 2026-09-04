@@ -20,6 +20,25 @@
 # [diff]
 # 	colorMoved = default
 
+[rerere]
+	enabled = true
+
+[spice "branchCreate"]
+	prefix = prateek/
+
+[spice "submit"]
+	draft = true
+
+[spice "repoSync"]
+	restack = upstack
+
+[spice "rebaseContinue"]
+	edit = false
+
+[spice "experiment"]
+	commitFixup = true
+	commitPick = true
+
 # Host-local overrides (machine- and work-specific). This file is created per
 # machine and is NOT managed by chezmoi, so nothing host-specific is synced.
 [include]

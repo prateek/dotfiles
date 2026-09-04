@@ -1,0 +1,74 @@
+{
+  "skill_name": "using-git-spice",
+  "evals": [
+    {
+      "id": 3,
+      "name": "submit-fresh-draft-stack",
+      "mode": "rewrite",
+      "prompt": "Open draft change requests for this fresh stack. Use the configured forge and do not add reviewers.",
+      "expected_output": "The agent checks auth, previews the stack submission, then creates bottom-up draft change requests with commit-derived metadata.",
+      "expectations": [
+        "Runs `git-spice auth status --no-prompt` before the first remote operation",
+        "Previews with the smallest git-spice submit scope covering every branch in the fresh stack, plus `--fill --dry-run --no-prompt`",
+        "Runs the same submit scope and options without `--dry-run` after a correct preview",
+        "Every branch receives a draft change request and no reviewer",
+        "Does not use `gh pr create` or invoke an interactive prompt"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "restack-before-updating-change-requests",
+      "mode": "rewrite",
+      "prompt": "The base moved since the last update. Update the affected change requests.",
+      "expected_output": "The agent detects the stale branch, restacks the narrowest affected scope, verifies it is aligned, and submits updates without bypassing safety checks.",
+      "expectations": [
+        "Inspects the stack and identifies the `(needs restack)` branch",
+        "Uses a git-spice restack command before submit",
+        "Verifies the stale marker is gone",
+        "Previews and then submits with `--update-only --no-prompt`",
+        "Does not use `--force`, raw rebase, or raw push"
+      ]
+    },
+    {
+      "id": 6,
+      "name": "submit-unsubmitted-base-first",
+      "mode": "rewrite",
+      "prompt": "Submit the current middle branch. Its base branch does not have a change request yet.",
+      "expected_output": "The agent submits the base and current branch bottom-up instead of attempting the middle branch alone.",
+      "expectations": [
+        "Uses `git-spice downstack submit --fill --dry-run --no-prompt` for the preview",
+        "Runs the matching real downstack submit after the preview",
+        "The base change request exists before the current branch is submitted",
+        "No `base branch has not been submitted yet` failure occurs"
+      ]
+    },
+    {
+      "id": 7,
+      "name": "sync-after-squash-merged-base",
+      "mode": "rewrite",
+      "prompt": "The bottom change request was squash-merged. Rebase the surviving stack onto the latest master and update every remaining change request.",
+      "expected_output": "The agent syncs forge state, removes or confirms the merged layer, explicitly restacks if sync leaves stale branches, then updates the surviving stack.",
+      "expectations": [
+        "Runs `git-spice repo sync --no-prompt` before any restack or submit operation",
+        "Inspects for `(needs restack)` and explicitly restacks when one remains",
+        "No stale marker remains before submission",
+        "Previews, then submits with `--update-only --no-prompt` using the smallest scope covering every surviving branch",
+        "Does not use per-branch raw rebase or assume sync always restacks"
+      ]
+    },
+    {
+      "id": 8,
+      "name": "logged-out-forge-stops-cleanly",
+      "mode": "review",
+      "prompt": "Submit the current stack.",
+      "expected_output": "The agent detects that the isolated forge session is logged out, stops before submission, and asks for one-time interactive login.",
+      "expectations": [
+        "Runs `git-spice auth status --no-prompt`",
+        "Stops after the non-zero auth result",
+        "Asks the user to run `git-spice auth login` once",
+        "Does not invoke login itself, hang on a prompt, submit, or invent credentials",
+        "Uses a gh-token prefix only if the user explicitly selects that fallback"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,153 @@
+{
+  "skill_name": "using-git-spice",
+  "evals": [
+    {
+      "id": 0,
+      "name": "binary-and-stack-inspection",
+      "mode": "review",
+      "prompt": "Familiarize yourself with this git-spice stack and report its current shape. Do not modify anything.",
+      "expected_output": "The agent inspects with git-spice, uses the installed binary name rather than Ghostscript, accurately reports the current branch and base, and leaves the repository unchanged.",
+      "files": ["evals/files"],
+      "expectations": [
+        "Runs `git-spice log short` or `git-spice log short --all`",
+        "No shell command invokes `gs`; it is Ghostscript, not a git-spice candidate",
+        "No command fails because a shell-local binary variable was assumed to persist across tool calls",
+        "Does not change refs, commits, the index, or working-tree files",
+        "Reports that `prateek/inspect` is based on `master`"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "explicit-initialization-with-ambiguous-trunk",
+      "mode": "rewrite",
+      "prompt": "Use git-spice to initialize this repository with trunk `master` and remote `origin`, adopt the current branch on master, then create an empty `next-layer` above it. Do not create a commit.",
+      "expected_output": "The agent initializes with explicit headless values, tracks the current branch, and creates an empty tracked child with the configured branch prefix.",
+      "files": ["evals/files"],
+      "expectations": [
+        "Runs `git-spice repo init --trunk=master --remote=origin --no-prompt` before any other git-spice command",
+        "Tracks `prateek/work` with base `master`",
+        "Creates the child with bare name `next-layer` and `--no-commit`, yielding `prateek/next-layer`",
+        "No `not allowed to prompt` failure occurs",
+        "No empty commit is created"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "untracked-worktree-empty-child",
+      "mode": "rewrite",
+      "prompt": "Start an empty stacked branch named `next-layer` on top of the current worktree branch. There are no code changes to commit.",
+      "expected_output": "The agent adopts the untracked worktree branch against master and creates a tracked child without manufacturing an empty commit.",
+      "files": ["evals/files"],
+      "expectations": [
+        "Runs `git-spice branch track --base=master --no-prompt` for the current branch",
+        "Runs `git-spice branch create next-layer --no-commit --no-prompt` or an equivalent command with explicit target",
+        "The resulting branch is `prateek/next-layer` and its base is `prateek/untracked`",
+        "Does not run `git checkout -b`",
+        "Does not open an editor or create an empty commit"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "continue-seeded-restack-conflict",
+      "mode": "rewrite",
+      "prompt": "The git-spice restack stopped on a conflict in `shared.txt`. Preserve both intents by making the file contain `parent-v2` followed by `child-v1`, then finish the interrupted operation.",
+      "expected_output": "The agent resolves and stages the file, continues through git-spice without an editor, and leaves no rebase in progress.",
+      "files": ["evals/files"],
+      "expectations": [
+        "Writes exactly the two requested lines to `shared.txt` and stages that file",
+        "Runs `git-spice rebase continue --no-edit --no-prompt`",
+        "Does not run raw `git rebase --continue` or `git rebase --abort`",
+        "No rebase remains in progress and `git-spice log short` has no `(needs restack)` marker"
+      ]
+    },
+    {
+      "id": 9,
+      "name": "advance-held-trunk-from-worktree",
+      "mode": "rewrite",
+      "prompt": "Create an empty bottom branch named `latest-work` directly from the latest `master`. The main clone currently holds master; do not disturb another worktree's branch.",
+      "expected_output": "The agent advances trunk through git-spice repo sync and creates the branch with an explicit master target, without attempting an impossible checkout or direct fetch refspec.",
+      "files": ["evals/files"],
+      "expectations": [
+        "Runs `git-spice repo sync --no-prompt` to advance local trunk",
+        "Creates bare name `latest-work` with `-t master`, `--no-commit`, and `--no-prompt`",
+        "The resulting branch is `prateek/latest-work` based on the updated `master`",
+        "Does not run `git-spice trunk` or check out master",
+        "Does not run `git fetch origin master:master`"
+      ]
+    },
+    {
+      "id": 10,
+      "name": "machine-readable-inspection",
+      "mode": "review",
+      "prompt": "Report the current tracked branches and relationships in machine-readable form. Do not change the repository.",
+      "expected_output": "The agent uses git-spice's JSON log rather than inventing a state command, parses records without assuming order, and leaves the repository unchanged.",
+      "files": ["evals/files"],
+      "expectations": [
+        "Runs `git-spice log short --json` or `git-spice log short --all --json`",
+        "No command returns `unexpected argument` or `unknown command`",
+        "Does not invoke `gs`",
+        "Does not change refs, commits, the index, or working-tree files"
+      ]
+    },
+    {
+      "id": 11,
+      "name": "commit-does-not-submit",
+      "mode": "rewrite",
+      "prompt": "Commit `change.txt` with message `record change`. Do not push or update any change request.",
+      "expected_output": "The agent stages only the requested file and creates a stack-aware local commit without any remote operation.",
+      "files": ["evals/files"],
+      "expectations": [
+        "Stages `change.txt` specifically",
+        "Runs `git-spice commit create -m \"record change\" --no-prompt`",
+        "Creates exactly one local commit on `prateek/commit-only`",
+        "Does not run any submit, merge, push, or `gh pr` command"
+      ]
+    },
+    {
+      "id": 12,
+      "name": "fix-owning-layer-held-elsewhere",
+      "mode": "rewrite",
+      "prompt": "Change `models.txt` from `model v1` to `model v2` in the models layer. This worktree is on the API layer and another worktree holds the models branch. Put the fix in its owning commit, update the API layer, and leave this worktree on the API layer.",
+      "expected_output": "The agent locates the owning worktree, amends the models commit there through git-spice, then returns to the API worktree and restacks the skipped descendant.",
+      "files": ["evals/files"],
+      "expectations": [
+        "Uses `git worktree list` or equivalent repository state to locate the worktree holding `prateek/models`",
+        "Changes and stages only `models.txt` in the models worktree",
+        "Runs `git-spice commit amend --no-edit --no-prompt` in the models worktree",
+        "Restacks `prateek/api` from the worktree that holds it after the amend skips that branch",
+        "Both branch tips contain `model v2` and the API branch remains checked out in the eval worktree",
+        "No commit containing the fix lands only on the API layer",
+        "Does not attempt `commit fixup` or check out the held models branch in the API worktree"
+      ]
+    },
+    {
+      "id": 13,
+      "name": "ambiguous-stack-cleanup",
+      "mode": "review",
+      "prompt": "Clean up this stack.",
+      "expected_output": "The agent inspects the stack and asks which branches or outcome the request means before deleting or rewriting anything.",
+      "files": ["evals/files"],
+      "expectations": [
+        "Inspects the current stack before responding",
+        "Asks a focused question that identifies the possible cleanup scopes or outcomes",
+        "Does not run branch, upstack, or stack delete",
+        "Does not rewrite commits, move branches, or submit changes"
+      ]
+    },
+    {
+      "id": 14,
+      "name": "tests-then-restack-separate-calls",
+      "mode": "rewrite",
+      "prompt": "Run `./run-tests.sh`, then restack this stack and verify it is clean.",
+      "expected_output": "The agent runs tests first, performs the git-spice restack in a separate shell call, and verifies that the tracked stack is aligned.",
+      "files": ["evals/files"],
+      "expectations": [
+        "Runs `./run-tests.sh` successfully",
+        "Runs the applicable git-spice restack command in a later, separate tool call",
+        "Does not chain the restack after tests with `&&`, `;`, or a compound shell command",
+        "Does not use raw `git rebase`",
+        "Finishes with `git-spice log short` showing no `(needs restack)` marker"
+      ]
+    }
+  ]
+}

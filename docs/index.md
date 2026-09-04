@@ -2,7 +2,7 @@
 status: current
 doc_type: index
 created: 2026-05-12
-updated: 2026-09-02
+updated: 2026-09-03
 related:
   - document-lifecycle.md
   - ../home/dot_agents/packages/core/skills/local/code-gardening/SKILL.md
@@ -54,7 +54,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [Sudo Askpass 1Password](plans/sudo-askpass-1password-plan.md) | Accepted design; implementation pending, current code still uses sudo keepalive. |
 | [Tartelet Self-Hosted Runners](plans/tartelet-runner-plan.md) | Active; cask, managed plist, LaunchAgent, host data, VM-image builder, and runbook landed. On-mini end-to-end (golden VM build + first-run credential paste) still to be exercised. |
 | [Tartelet Runner Memory-Guard](plans/tartelet-runner-memory-guard-proposal.md) | Proposed; design for a circuit breaker that sheds the runner under host memory pressure after a 2026-07-03 jetsam wedge. Prototyped and validated, then dropped — no code in-tree. |
-| [Using-git-spice Skill](plans/using-git-spice-skill-plan.md) | Proposed; replace the two overlapping git-spice skills with one evidence-driven `using-git-spice` in the review package, move prefix/draft/sync-restack rules into git config, and add transcript evals from the agentsview usage audit. Awaiting go on open decisions. |
+| [Using-git-spice Skill](plans/using-git-spice-skill-plan.md) | Active; the replacement skill and config are applied, the duplicate is disabled, and the Orca smoke passed. Only the disruptive manual logged-out auth check remains. |
 | [Zsh Fresh-Shell Validator](plans/zsh-fresh-shell-validator-plan.md) | Active plan for shell correctness and startup checks. |
 | [Test-Suite Rebuild](plans/test-suite-rebuild-plan.md) | Proposed; rebuild the `tests/*.zsh` suite from scratch on two primitives — assertions derived from source-of-truth, and self-enforcing coverage — with a five-tier pyramid and a shared harness. Not started. |
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Using git-spice"
+  short_description: "Manage stacked branches and change requests"
+  default_prompt: "Use git-spice to make the requested stack-aware branch, commit, restack, sync, submit, or merge change at the narrowest correct scope."

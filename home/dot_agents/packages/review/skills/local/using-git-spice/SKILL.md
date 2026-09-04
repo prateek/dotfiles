@@ -1,253 +1,141 @@
 ---
 name: using-git-spice
-description: Use when working with stacked branches, managing dependent PRs/CRs, or uncertain about git-spice commands (stack vs upstack vs downstack) - provides command reference, workflow patterns, and common pitfalls for the git-spice CLI tool.
+description: Stack-aware Git workflows. Use when creating or adopting stacked branches, changing stack commits or dependencies, rebasing onto trunk, updating dependent PRs, splitting work into a stack, or choosing git-spice scope.
 ---
 
-# Using git-spice (gs/git-spice)
+# Using git-spice
 
-## Pick the CLI name (`gs` vs `git-spice`)
+Use `git-spice`; `gs` is Ghostscript.
 
-Prefer `git-spice` if it exists (some setups rename git-spice to avoid clashing with Ghostscript’s `gs`):
+## Model
 
-```bash
-command -v git-spice >/dev/null && SPICE=git-spice || SPICE=gs
-$SPICE --version
-```
+A tracked branch records its base; trunk is integration. Scopes: `branch` one,
+`upstack` current and descendants, `downstack` current and ancestors, `stack`
+all connected, and `repo` all tracked branches.
 
-Use `$SPICE` in all commands below.
+Choose the smallest scope. `(needs restack)` marks a stale branch.
 
-## Key concepts (quick refresher)
+## Workflow
 
-- **Trunk**: main integration branch (usually `main` or `master`).
-- **Stack**: branches connected to your current branch (parents + children).
-- **Downstack**: branches between current branch and trunk (ancestors).
-- **Upstack**: branches above current branch (descendants).
-- **Restack**: rebase tracked branches onto updated bases to keep stack relationships intact.
+1. Inspect the tree and current branch; preserve unrelated work, stage intended
+   files, and use a checked-out branch.
 
-Example:
+   Check `git show-ref --verify --quiet refs/spice/data`; if absent, run step 2
+   before any other git-spice command. Then inspect with
+   `git-spice log short` or `git-spice log short --all`.
 
-```
-main (trunk)
-└── feature-a
-    └── feature-b
-        └── feature-c
-```
+   Adopt an untracked Orca worktree branch against its known base:
 
-When on `feature-b`:
-- Upstack: `feature-c`
-- Downstack: `feature-a`, `main`
+   ```bash
+   git-spice branch track --base=<base> --no-prompt
+   ```
 
-## Safety checklist
+2. If uninitialized:
 
-- Require a clean working tree before `restack`, `submit`, `sync`, `edit`, or any delete.
-- Avoid manual history surgery on tracked branches (`git rebase`, `git push --force`). Prefer git-spice `restack` + `submit`.
-- Never run destructive commands (`stack delete`, `upstack delete`, `repo init --reset`) unless the user explicitly asked.
+   ```bash
+   git-spice repo init --trunk=<trunk> --remote=<remote> --no-prompt
+   ```
 
-## Quick reference
+   Resolve trunk and remote from Git state or ask. `--reset` is destructive.
 
-| Task | Command | Notes |
-|------|---------|-------|
-| Init repo | `$SPICE repo init` | One-time per repo; set trunk/remote. |
-| Track current branch | `$SPICE branch track` | Useful for the first branch in a stack. |
-| Create stacked branch | `$SPICE branch create <name>` | Creates on top of current; commits staged changes; tracks it. |
-| View stack | `$SPICE log short` | Add `--all` to show all tracked stacks. |
-| Navigate | `$SPICE up` / `$SPICE down` | Also: `$SPICE top`, `$SPICE bottom`, `$SPICE trunk`. |
-| Restack after mid-stack edit | `$SPICE upstack restack` | Rebase current + descendants on updated bases. |
-| Restack entire current stack | `$SPICE stack restack` | Useful after squash merges or drift. |
-| Restack all tracked branches | `$SPICE repo restack` | Full alignment for the whole repo. |
-| Submit/update CRs (whole stack) | `$SPICE stack submit` | Add `--fill`, `--draft`, `--update-only`, `--web`. |
-| Submit/update CRs (upstack only) | `$SPICE upstack submit` | Current + descendants. |
-| Submit/update CRs (downstack only) | `$SPICE downstack submit` | Current + ancestors to trunk. |
-| Sync trunk + prune merged | `$SPICE repo sync` | Add `--restack` to sync + restack. |
-| Adopt existing stack | `$SPICE downstack track` | Run from the topmost branch. |
-| Reorder stack | `$SPICE stack edit` | Interactive stack surgery. |
+3. Create a tracked branch. Config prepends `prateek/`; remove that prefix from
+   user input and pass a bare name:
 
-## Core workflows
+   ```bash
+   git add <specific-files>
+   git-spice branch create <bare-name> -m "<message>" --no-prompt
+   ```
 
-### 1) Initialize repo (once per repo)
+   With nothing staged, use `--no-commit`; use `-t <base>` when another branch
+   is the intended base. Split and rename require full `prateek/...` names.
 
-```bash
-$SPICE repo init
-# or explicit:
-$SPICE repo init --trunk=main --remote=origin
-```
+4. Commit on the layer that owns the change so descendants stay aligned:
 
-Optional forge auth:
+   ```bash
+   git add <specific-files>
+   git-spice commit create -m "<message>" --no-prompt
+   ```
 
-```bash
-$SPICE auth status || $SPICE auth login
-```
+   Before amending, verify the checked-out branch owns its top commit:
 
-### 2) Start or extend a stack
+   ```bash
+   git add <specific-files>
+   git-spice commit amend --no-edit --no-prompt
+   ```
 
-Track the current branch (useful for the first branch in a stack):
+   For a lower branch held elsewhere, amend there, then restack skipped
+   descendants from their worktrees. Use `commit fixup` only when no worktree
+   holds the owner.
 
-```bash
-git add -A
-$SPICE branch track
-```
+5. Submit only on explicit request. Submit an unsubmitted base first; from a
+   higher layer, submit bottom-up:
 
-Create a new branch on top of the current one (commits staged changes + tracks it):
+   ```bash
+   git-spice downstack submit --fill --no-prompt
+   ```
 
-```bash
-git add -A
-$SPICE branch create feat/foo-ui
-```
+   Use `--update-only` for existing change requests. Config creates drafts; use
+   `--no-draft` when ready-for-review was
+   requested. Preview with `--dry-run`; run the same command without it only
+   after the preview is correct.
 
-Inspect stacks:
+   On `Branch X needs to be restacked` or `refusing to submit outdated branch`,
+   restack and retry. `--force` force-pushes and bypasses safety; require
+   explicit intent, a verified remote, and a pinned base.
 
-```bash
-$SPICE log short
-$SPICE log long
-$SPICE log short --all
-```
+6. After trunk changes or a parent merges, sync forge state and inspect again:
 
-### 3) Navigate
+   ```bash
+   git-spice repo sync --no-prompt
+   git-spice log short
+   ```
 
-```bash
-$SPICE up
-$SPICE down
-$SPICE top
-$SPICE bottom
-$SPICE trunk
-```
+   Sync advances trunk even when another worktree holds it; direct
+   `git fetch origin master:master` cannot. Config restacks descendants of
+   branches sync merges or deletes. A trunk-only advance still needs one:
 
-### 4) Edit in the middle of a stack (restack)
+   ```bash
+   git-spice upstack restack --no-prompt
+   git-spice stack restack --no-prompt
+   ```
 
-After modifying a lower branch, restack everything above it:
+   Sync skips branches held by another worktree. For a squash-merge SHA
+   mismatch, confirm and delete the merged branch, then restack descendants.
 
-```bash
-git add -A
-git commit -m "…"
-$SPICE upstack restack
-```
-
-Or do commit + restack in one step:
-
-```bash
-git add -A
-$SPICE commit create -m "…"
-# shorthand: $SPICE cc -m "…"
-```
-
-If conflicts happen, use the rebase helpers:
-
-```bash
-$SPICE rebase continue
-$SPICE rebase abort
-```
-
-### 5) Submit PRs/MRs (“Change Requests”)
-
-Submit/update:
-
-```bash
-$SPICE branch submit        # current only
-$SPICE upstack submit       # current + descendants
-$SPICE downstack submit     # current + ancestors to trunk
-$SPICE stack submit         # whole stack
-$SPICE stack submit --fill  # derive title/body from commits
-$SPICE stack submit --update-only --fill
-$SPICE stack submit --fill --draft --web
-```
-
-### 6) Sync with trunk + prune merged branches
-
-```bash
-$SPICE repo sync
-$SPICE repo sync --restack
-```
-
-If the repo has many tracked branches and needs full alignment:
-
-```bash
-$SPICE repo restack
-```
-
-### 7) Adopt existing branches into a stack
-
-Track a single existing branch:
-
-```bash
-git checkout feature/big
-$SPICE branch track --base main
-```
-
-Track an existing chain of branches (run from the topmost branch):
-
-```bash
-git checkout <top-branch>
-$SPICE downstack track
-```
-
-### 8) Stack surgery (reorder / delete)
-
-Reorder branches:
-
-```bash
-$SPICE stack edit
-```
-
-Destructive (require explicit user confirmation):
-
-```bash
-$SPICE stack delete --force
-$SPICE upstack delete --force
-```
-
-## When to use git vs git-spice
-
-Use git-spice for:
-- Creating/tracking stacked branches: `$SPICE branch create`, `$SPICE branch track`, `$SPICE downstack track`
-- Keeping stacks aligned: `$SPICE upstack restack`, `$SPICE stack restack`, `$SPICE repo restack`
-- PR/MR workflows: `$SPICE branch submit`, `$SPICE stack submit`, `$SPICE repo sync`
-- Navigation & inspection: `$SPICE up`, `$SPICE down`, `$SPICE log short`
-
-Use git for:
-- Editing and committing: `git add`, `git commit`, `git status`, `git diff`
-- One-off investigation: `git log`, `git blame`
-
-## Common mistakes / red flags
-
-| Mistake | Why it’s wrong | Correct approach |
-|---------|----------------|------------------|
-| Rebasing children onto trunk after a parent merges | Breaks tracked stack relationships and causes avoidable conflicts | `$SPICE repo sync --restack` (or `$SPICE repo sync` then `$SPICE repo restack`) |
-| Using `git rebase` on tracked branches | git-spice won’t track the relationships the way you expect | Use `$SPICE upstack restack` / `$SPICE stack restack` |
-| Force-pushing stacked branches | Bypasses git-spice’s submit/update workflow | Use `$SPICE upstack submit` / `$SPICE stack submit` |
-| Using `stack submit` when you meant “just children” | Submits ancestors too (sometimes surprising) | Use `$SPICE upstack submit` |
-| Forgetting to initialize the repo | Many commands fail with unclear “not initialized / trunk” errors | Run `$SPICE repo init` once per repo |
-| Assuming restack happens automatically | Stacks can drift after edits to lower branches | Explicitly run `$SPICE upstack restack` after mid-stack edits |
-
-Red flags:
-
-- You’re about to run `git rebase` or `git push --force` on a tracked branch.
-- You’re not sure whether you want `upstack` vs `stack` vs `downstack` scope.
-
-When in doubt:
-
-```bash
-$SPICE log short
-$SPICE <command> --help
-```
-
-## Handling conflicts (during restack)
-
-If `restack` hits conflicts:
-1. Resolve conflicts using normal git tools (`git status`, edit files, `git add …`).
-2. Continue with either `$SPICE rebase continue` (preferred) or `git rebase --continue`.
-3. After it finishes, update remotes with `$SPICE upstack submit` or `$SPICE stack submit`.
-
-## Config knobs (`git config`)
-
-```bash
-git config spice.submit.draft true
-git config spice.submit.label "stacked,foo"
-git config spice.submit.navigationComment multiple
-git config spice.repoSync.closedChanges ignore
-```
-
-## References
-
-- Deep-dive guide and examples: `references/using-git-spice.md`
-- Test prompts / scenarios: `test-scenarios.md`
-- For a specific subtopic, search the deep-dive for: “Adopting”, “Stack surgery”, “Agent-friendly snippets”, “repo sync”.
+7. When an operation stops on conflicts, resolve them, stage only the resolved
+   files, and continue through git-spice:
+
+   ```bash
+   git add <resolved-files>
+   git-spice rebase continue --no-edit --no-prompt
+   ```
+
+   Use `git-spice rebase abort` when resolution should be abandoned.
+
+Run git-spice separately from long tests. Done means the requested operation
+succeeded with only intended work and no unexplained stale branches.
+
+## Guardrails
+
+- Headless: supply required values and `--no-prompt`; suppress editors with
+  `-m`, `--no-edit`, or `--fill`.
+- Stack-aware: use git-spice commit, restack, onto, and submit on tracked
+  branches so relationships and descendants stay aligned.
+- Scoped: operate on the smallest branch set that satisfies the request.
+- Keep local commits separate from remote submission; submit and merge only on
+  request.
+- Keep hooks and safety checks unless the user requests a bypass.
+- For ambiguous outcomes such as "clean up this stack," inspect and ask before
+  any restack, deletion, submission, or other rewrite.
+- Run delete scopes or `repo init --reset` only after the user requests that
+  destructive result and the targets are verified.
+
+Before designing layers for work that should become a stack, read
+[references/stack-design.md](references/stack-design.md).
+
+For adoption chains, dependency moves, insertion, fixups, splitting,
+squashing, folding, renaming, deletion, or editor-driven operations, read
+[references/stack-surgery.md](references/stack-surgery.md).
+
+For auth, submit metadata and previews, merging, or remote failure recovery,
+read [references/change-requests.md](references/change-requests.md).
