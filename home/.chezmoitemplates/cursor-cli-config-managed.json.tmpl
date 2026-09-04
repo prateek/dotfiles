@@ -1,0 +1,14 @@
+{{- /* Desired keys for ~/.cursor/cli-config.json, deep-merged by
+       home/dot_cursor/modify_private_cli-config.json.tmpl. Cursor writes auth,
+       model, approval, and sandbox state into the same file, so name only what
+       dotfiles owns. Registering the marketplace is the whole activation;
+       Cursor exposes no verified per-plugin enable key, so `default_loaded`
+       never reaches it. See the agent-skill-management skill. */ -}}
+{
+  "marketplaces": {
+    "prateek-local": {
+      "source": "directory",
+      "path": "{{ .chezmoi.homeDir }}/.agents/plugins"
+    }
+  }
+}

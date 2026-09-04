@@ -5,19 +5,32 @@
        cursor-agent has no latest-tracking model aliases (the bare ones like
        "opus"/"gpt" resolve to stale generations), so ids are pinned here;
        scripts/audit/acpx-model-drift.sh checks them against the live catalog.
+       cursor-agent's ACP mode ignores the plugin marketplaces its print mode
+       loads, so its shortcuts reach skills only as files, through --add-dir.
+       Each root must exist: cursor-agent refuses to start when --add-dir names
+       a missing directory. run_onchange_after_36-agent-plugins.sh guarantees
+       the prateek-local root, so it is unconditional; the Claude one holds
+       git-marketplace checkouts a machine may never install, so it is probed.
+       A root that appears later lands on the next apply.
        See docs/plans/crit-agent-bridge-plan.md. */ -}}
 
 {{- $clis := (includeTemplate "features.tmpl" . | fromJson).agent_clis | default (list) -}}
 
+{{- $roots := list (printf "%s/.agents/plugins" .chezmoi.homeDir) -}}
+{{- $claudeMarketplaces := printf "%s/.claude/plugins/marketplaces" .chezmoi.homeDir -}}
+{{- if stat $claudeMarketplaces -}}{{ $roots = append $roots $claudeMarketplaces }}{{- end -}}
+{{- $addDirs := list -}}
+{{- range $roots -}}{{ $addDirs = concat $addDirs (list "--add-dir" .) }}{{- end -}}
+
 {{- /* Shortcuts each backend provides. */ -}}
 {{- $byCli := dict
     "cursor-agent" (dict
-        "agpt"    (dict "command" "cursor-agent" "args" (list "--model" "gpt-5.6-sol-high-fast" "acp"))
-        "agptx"   (dict "command" "cursor-agent" "args" (list "--model" "gpt-5.6-sol-xhigh-fast" "acp"))
-        "agptw"   (dict "command" "cursor-agent" "args" (list "--model" "gpt-5.6-luna-high" "acp"))
-        "aopus"   (dict "command" "cursor-agent" "args" (list "--model" "claude-opus-5-thinking-xhigh-fast" "acp"))
-        "aopusx"  (dict "command" "cursor-agent" "args" (list "--model" "claude-opus-5-thinking-max-fast" "acp"))
-        "agemini" (dict "command" "cursor-agent" "args" (list "--model" "gemini-3.1-pro" "acp")))
+        "agpt"    (dict "command" "cursor-agent" "args" (concat (list "--model" "gpt-5.6-sol-high-fast") $addDirs (list "acp")))
+        "agptx"   (dict "command" "cursor-agent" "args" (concat (list "--model" "gpt-5.6-sol-xhigh-fast") $addDirs (list "acp")))
+        "agptw"   (dict "command" "cursor-agent" "args" (concat (list "--model" "gpt-5.6-luna-high") $addDirs (list "acp")))
+        "aopus"   (dict "command" "cursor-agent" "args" (concat (list "--model" "claude-opus-5-thinking-xhigh-fast") $addDirs (list "acp")))
+        "aopusx"  (dict "command" "cursor-agent" "args" (concat (list "--model" "claude-opus-5-thinking-max-fast") $addDirs (list "acp")))
+        "agemini" (dict "command" "cursor-agent" "args" (concat (list "--model" "gemini-3.1-pro") $addDirs (list "acp"))))
     "codex" (dict
         "agpt"    (dict "command" "codex-acp" "args" (list "-c" "model_reasoning_effort=high"))
         "agptx"   (dict "command" "codex-acp" "args" (list "-c" "model_reasoning_effort=xhigh")))

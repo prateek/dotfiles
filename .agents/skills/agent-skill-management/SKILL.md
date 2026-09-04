@@ -1,14 +1,14 @@
 ---
 name: agent-skill-management
-description: Manage this repo's dotfiles-backed agent skill packages, apply-time skill and plugin projections, and Codex, Claude, or pi rendered plugin activation. Use when editing home/dot_agents package sources, generated live skill or plugin output scripts, agent plugin config, or the related docs in docs/plans, docs/research, and docs/adr.
+description: Manage this repo's dotfiles-backed agent skill packages, apply-time skill and plugin projections, and Codex, Claude, Cursor, or pi rendered plugin activation. Use when editing home/dot_agents package sources, generated live skill or plugin output scripts, agent plugin config, or the related docs in docs/plans, docs/research, and docs/adr.
 ---
 
 # Agent Skill Management
 
 Use this skill for machine-wide agent skill package work in this dotfiles repo:
 package source under `home/dot_agents/packages/`, apply-time projections into
-`~/.agents/skills`, `~/.claude/skills`, and `~/.agents/plugins`, and the Codex
-Claude, or pi config that activates rendered plugins.
+`~/.agents/skills`, `~/.claude/skills`, and `~/.agents/plugins`, and the Codex,
+Claude, Cursor, or pi config that activates rendered plugins.
 
 ## Operating Model
 
@@ -230,6 +230,20 @@ Committed generated config fragments:
 They are projections of `package.toml` render policy, not separate desired
 state.
 
+Cursor is activated differently. Its CLI reads the marketplace straight out of
+`~/.cursor/cli-config.json`, so the desired fragment is hand-maintained at
+`home/.chezmoitemplates/cursor-cli-config-managed.json.tmpl` and merged by
+`home/dot_cursor/modify_private_cli-config.json.tmpl`. Registering the
+marketplace is the whole activation: Cursor installs the plugins by default and
+exposes no verified per-plugin enable key, so `default_loaded` does not reach
+it and it lists every package. Only cursor-agent's print mode and TUI read
+this; its ACP mode ignores plugin marketplaces, which is why the acpx shortcuts
+pass `--add-dir` at `home/dot_acpx/config.json.tmpl` instead. The target is
+gated twice in `home/.chezmoiignore`, so the modify script cannot conjure the
+file where Cursor is unused: on `cursor-agent` appearing in `agent_clis`, and
+again inside the headless Linux block, because the work machine type lists
+cursor-agent but that profile runs Claude only.
+
 ## Plugin Boundaries
 
 `~/.agents/plugins` is generated source for the local marketplace. The generated
@@ -272,10 +286,11 @@ disjoint behavior:
 make test-agent-skill-packages   # validators, renderers, --check, inventory
 make test-claude-settings        # ~/.claude/settings.json modify-script merge
 make test-codex-config           # ~/.codex/config.toml modify-script merge
+make test-cursor-config          # ~/.cursor/cli-config.json modify-script merge
 make test-pi-settings            # ~/.pi/agent settings and Claude marketplace config
 ```
 
-Skipping any of the four lets a schema flip silently rot a sibling test.
+Skipping any of the five lets a schema flip silently rot a sibling test.
 
 After editing package source, run validation against explicit temp roots:
 

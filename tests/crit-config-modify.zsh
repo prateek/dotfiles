@@ -100,6 +100,39 @@ import sys, json
 d = json.load(sys.stdin)["agents"]
 assert set(d) == {"agpt","agptw","agptx","aopus","aopusx","agemini","afable","afablex"}, sorted(d)
 assert d["agpt"]["command"] == "cursor-agent", d["agpt"]
+# cursor-agent takes global flags before the acp subcommand, so argv order is
+# load-bearing, and a shortcut that loses --model silently falls back to
+# Cursor default.
+for name in ("agpt", "agptx", "agptw", "aopus", "aopusx", "agemini"):
+    args = d[name]["args"]
+    assert args[0] == "--model" and args[1], (name, args)
+    assert args[args.index("--add-dir") + 1].endswith("/.agents/plugins"), (name, args)
+    assert args[-1] == "acp", (name, args)
+'
+
+# The Claude marketplaces root is stat-probed against the apply-time
+# filesystem, so drive both branches from a synthetic home. Against this host's
+# home only one branch would ever render.
+probe_home="$tmp_root/probe-home"
+mkdir -p "$probe_home"
+render_probe() {  # render_probe -> dot_acpx/config.json.tmpl under $probe_home
+  chezmoi --source "$REPO_ROOT/home" --config "$empty_config" \
+    --override-data "{\"machine_type\":\"work\",\"chezmoi\":{\"homeDir\":\"$probe_home\"}}" \
+    execute-template --file "$REPO_ROOT/home/dot_acpx/config.json.tmpl"
+}
+render_probe | python3 -c '
+import sys, json
+args = json.load(sys.stdin)["agents"]["agptw"]["args"]
+assert args.count("--add-dir") == 1, args
+'
+mkdir -p "$probe_home/.claude/plugins/marketplaces"
+render_probe | python3 -c '
+import sys, json
+args = json.load(sys.stdin)["agents"]["agptw"]["args"]
+assert args.count("--add-dir") == 2, args
+second = args.index("--add-dir", args.index("--add-dir") + 1)
+assert args[second + 1].endswith("/.claude/plugins/marketplaces"), args
+assert args[-1] == "acp", args
 '
 # personal (claude + codex): the two Sol tiers ride the Codex adapter; afable*
 # via claude. agptw is absent — Codex pins one model, so it has no cheap lane.

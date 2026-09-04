@@ -28,6 +28,13 @@ if [[ -z "${TART_HOME:-}" ]]; then
 fi
 {{- end }}
 
+# acpx withholds Claude user settings from the claude-agent-acp sessions it
+# spawns, which drops extraKnownMarketplaces and enabledPlugins and leaves
+# afable* seeing only Claude Code's built-in skills. That guard is for plugins
+# claiming singleton external resources; nothing in the enabled set does, so
+# opt those sessions back into the full skill listing.
+export ACPX_CLAUDE_INCLUDE_USER_SETTINGS=1
+
 # Ensure that a non-login, non-interactive shell has a defined environment.
 if [[ ( "$SHLVL" -eq 1 && ! -o LOGIN ) && -s "$ZDOTDIR/.zprofile" ]]; then
   source "$ZDOTDIR/.zprofile"
