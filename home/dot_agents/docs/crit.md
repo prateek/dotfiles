@@ -31,12 +31,19 @@ browser, so an unredirected review lands in the wrong app.
 a merge-base, so on a stacked branch it diffs against trunk and shows the whole
 stack instead of the layer under review. Nothing in crit reads git-spice state.
 
-Resolve the parent yourself and pass it:
+Resolve the parent yourself and pass it as a range:
 
 ```bash
 base=$(git cat-file -p "refs/spice/data:branches/$(git branch --show-current)" | jq -r .base.name)
-crit --base-branch "$base"
+crit --range "$base"..HEAD          # this layer alone
+crit --range main..HEAD             # every layer, one diff
 ```
+
+Reach for `--range`, not `--base-branch`. Range mode is what makes crit
+stack-aware: the UI renders its stack switcher only in range focus, and
+`--base-branch` fixes the base while leaving the session in working-tree focus,
+so the switcher stays hidden and you get one flattened diff. `crit story`
+inherits the same focus and narrates the working tree instead of the commits.
 
 Branches git-spice does not track have no `refs/spice/data:branches/<name>`
 entry, and the command fails; fall back to bare `crit` there.

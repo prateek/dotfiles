@@ -34,21 +34,18 @@ Review-level comments are listed first — easy to miss in raw `review.json`. Us
 
 ## Multiple active sessions
 
-When more than one review session matches the current directory and branch, headless commands (`crit comment`, `crit comments`, `crit share`) refuse to guess. Run `crit status` (or `crit status --json`) to list every active session, then target the intended review with `--session <id>`:
+When more than one review session matches the current directory and branch, headless commands (`crit comment`, `crit comments`, `crit share`, `crit push`, `crit pull`) refuse to guess. Run `crit status` (or `crit status --json`) to list every active session, then target the intended review with `--session <id>`:
 
 ```bash
 crit comment --session <id> --author <name> <path>:<line> <body>
 crit comment --session <id> --json --file comments.json --author <name>
 crit comments --session <id>
 crit share --session <id> <file>
+crit push --session <id>
+crit pull --session <id>
 ```
 
 The JSON status output exposes the candidates in `sessions`.
-
-**`crit push` and `crit pull` do not accept `--session`.** The forge CLI parser
-has no such flag, so it swallows the value as the change number and the command
-fails with a usage error. Both resolve the review from the current working
-directory — run them from the worktree that owns the review.
 
 
 
@@ -139,16 +136,15 @@ curl -s --get --data-urlencode "path=<repo-relative-path>" \
 curl -s "http://127.0.0.1:$PORT/api/health"
 ```
 
-- `/api/file/comments` must list the ids you just created. If `crit comments`
-  shows them and this does not, they were authored under a scope the active
-  focus filters out — re-author them against the running daemon instead of
-  editing the review file.
-- `/api/health` reports `browser_clients`. When it is `false`, nobody has the
-  review open; say so rather than assuming the reviewer is looking.
+- `/api/file/comments` must list the ids you just created. When `crit comments`
+  shows them and this does not, the active focus filters them out; re-author
+  them through the daemon.
+- `crit status --json` omits `.daemon.port` while several sessions match the
+  branch. Pass `--session <id>` to name one.
+- `/api/health` reports `browser_clients`, which counts live `/api/events`
+  connections. Read it as a hint: a tab that is loading or reconnecting reads
+  as `false`.
 
-Relaunching changes focus too. `crit --session <id>` reopens in branch-diff
-focus, which hides comments created under a `--pr` or `--range` session; reopen
-with the same invocation that created the review.
 </important>
 
 <important if="you are leaving 3+ comments in one operation">
@@ -222,23 +218,29 @@ Get the port from `crit status --json` (`.daemon.port`), and poll
 `GET /api/session` until it stops returning 503 before calling anything else.
 
 ```
-GET|POST   /api/file/comments?path=<repo-rel>   list / add line and file comments
-PUT|DELETE /api/comment/<id>?path=<repo-rel>    update body / delete
-POST|DELETE /api/comment/<id>/replies[/<rid>]?path=<repo-rel>   reply CRUD
-PUT        /api/comment/<id>/resolve?path=<repo-rel>            set resolved
-GET|POST   /api/comments                        list / add review-level comments
-PUT|DELETE /api/review-comment/<id>             review-level update / delete
-GET        /api/health                          liveness, plus browser_clients
+GET|POST   /api/file/comments?path=<repo-rel>              list / add line and file comments
+PUT|DELETE /api/comment/<id>?path=<repo-rel>               update body / delete
+POST       /api/comment/<id>/replies?path=<repo-rel>       add a reply
+PUT|DELETE /api/comment/<id>/replies/<rid>?path=<repo-rel> edit / delete a reply
+PUT        /api/comment/<id>/resolve?path=<repo-rel>       set resolved
+GET|POST   /api/comments                                   list / add review-level comments
+PUT|DELETE /api/review-comment/<id>                        review-level update / delete
+GET        /api/health                                     liveness, plus browser_clients
 ```
 
 - `POST /api/file/comments` takes `{start_line, end_line, body, author}` and
-  stamps the session's focus onto the new comment, which is why it is the
-  reliable authoring path inside a `--pr` or `--range` session.
-- `PUT` updates a body in place but cannot move a comment. To re-anchor, POST a
+  stamps the session's focus onto the new comment, which makes it the reliable
+  authoring path inside a `--pr` or `--range` session. A file-level comment
+  needs `"scope": "file"`; without it the omitted lines fail the line-range
+  check.
+- `PUT` replaces the body and leaves the line range alone. To re-anchor, POST a
   copy at the new lines and DELETE the old id.
-- Review-scope ids (`r_…`) use `/api/review-comment/<id>` and take no `path`.
-- Comment ids are regenerated on round transitions and on client relaunch.
-  Re-read ids from `GET /api/file/comments` immediately before editing.
+- Review-scope ids (`r_…`) live under `/api/review-comment/<id>`, take no
+  `path`, and are listed by `GET /api/comments`.
+- A round transition mints fresh ids for carried-forward line comments while
+  review-level ids stay put. Re-read ids from `GET /api/file/comments` before
+  editing one.
+
 </important>
 
 <important if="you are syncing with a GitHub PR or GitLab MR (pull or push)">

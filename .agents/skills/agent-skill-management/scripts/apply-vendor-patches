@@ -19,8 +19,10 @@ from __future__ import annotations
 import argparse
 import os
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -74,7 +76,7 @@ def strip_depth(patch_text: str, skill_id: str, patch: Path) -> int:
     return depths.pop()
 
 
-def git_apply(root: Path, patch: Path, depth: int, directory: Path, *extra: str) -> bool:
+def git_apply(root: Path, depth: int, directory: Path, patches: list[Path], *extra: str) -> bool:
     result = subprocess.run(
         [
             "git",
@@ -83,13 +85,37 @@ def git_apply(root: Path, patch: Path, depth: int, directory: Path, *extra: str)
             "--directory",
             str(directory),
             *extra,
-            str(patch),
+            *[str(p) for p in patches],
         ],
         cwd=root,
         capture_output=True,
         text=True,
     )
     return result.returncode == 0
+
+
+def all_applied(root: Path, target: Path, depth: int, patches: list[Path]) -> bool:
+    """True when every patch is present, checked newest-first on a scratch copy.
+
+    Sequential rather than one git-apply call: two patches on the same file build
+    on each other, and git validates every patch against the tree as it stands
+    rather than against the result of the previous one.
+    """
+    with tempfile.TemporaryDirectory() as tmp:
+        scratch = Path(tmp)
+        dest = scratch / target
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copytree(root / target, dest)
+        subprocess.run(["git", "init", "-q", "."], cwd=scratch, capture_output=True)
+        for patch in reversed(patches):
+            done = subprocess.run(
+                ["git", "apply", f"-p{depth}", "--directory", str(target),
+                 "--reverse", str(patch)],
+                cwd=scratch, capture_output=True, text=True,
+            )
+            if done.returncode != 0:
+                return False
+    return True
 
 
 def discover(packages_root: Path, only: str | None) -> list[tuple[Path, Path, Path]]:
@@ -143,39 +169,50 @@ def main() -> int:
     failures: list[str] = []
     applied = skipped = 0
 
+    # Group by vendored skill and treat each group as one ordered set. Two
+    # patches on the same file are sequential, not independent: the later one's
+    # context can include text the earlier one added, so checking either alone
+    # gives a false answer. git apply takes the whole group in one call.
+    groups: dict[Path, list[tuple[Path, Path, int]]] = {}
     for patch, skill_dir, vendor_dir in work:
         rel = patch.relative_to(packages_root)
         if not vendor_dir.is_dir():
             failures.append(f"{rel}: no vendored skill is present at {vendor_dir}")
             continue
-
-        text = patch.read_text()
         try:
-            depth = strip_depth(text, skill_dir.name, rel)
+            depth = strip_depth(patch.read_text(), skill_dir.name, rel)
         except RuntimeError as error:
             failures.append(str(error))
             continue
+        groups.setdefault(vendor_dir, []).append((patch, rel, depth))
 
+    for vendor_dir, entries in groups.items():
         target = vendor_dir.resolve().relative_to(root)
-        if git_apply(root, patch, depth, target, "--reverse", "--check"):
-            skipped += 1
+        depths = {d for _, _, d in entries}
+        if len(depths) > 1:
+            failures.append(f"{target}: patches disagree on strip depth {sorted(depths)}")
             continue
+        depth = depths.pop()
+        forward = [p for p, _, _ in entries]
+        names = ", ".join(str(r) for _, r, _ in entries)
 
+        if all_applied(root, target, depth, forward):
+            skipped += len(entries)
+            continue
         if args.check:
-            failures.append(f"{rel}: not applied to {target}")
+            failures.append(f"{names}: not applied to {target}")
             continue
-
-        if not git_apply(root, patch, depth, target, "--check"):
+        # Apply one at a time, in order, for the same reason the check is
+        # sequential: a later patch's context can include an earlier one's lines.
+        for patch, rel, _ in entries:
+            if git_apply(root, depth, target, [patch]):
+                applied += 1
+                continue
             failures.append(
-                f"{rel}: neither applied nor applicable to {target}. Upstream moved: "
-                f"rebase the patch, or delete it if the change landed upstream."
+                f"{rel}: does not apply to {target}. Upstream moved: rebase the "
+                f"patch, or delete it if the change landed upstream."
             )
-            continue
-
-        if git_apply(root, patch, depth, target):
-            applied += 1
-        else:
-            failures.append(f"{rel}: apply failed against {target}")
+            break
 
     for failure in failures:
         print(f"apply-vendor-patches: {failure}", file=sys.stderr)

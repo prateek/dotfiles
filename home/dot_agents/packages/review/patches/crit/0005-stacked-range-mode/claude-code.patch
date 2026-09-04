@@ -1,0 +1,27 @@
+diff --git a/integrations/claude-code/skills/crit/SKILL.md b/integrations/claude-code/skills/crit/SKILL.md
+index 5f62edf..85d7ba2 100644
+--- a/integrations/claude-code/skills/crit/SKILL.md
++++ b/integrations/claude-code/skills/crit/SKILL.md
+@@ -44,6 +44,22 @@ To review something that exists only in the conversation, write it to a
+ markdown file and pass that path. `crit` reviews any file, including one
+ outside a repository.
+ 
++<important if="the branch sits in a stack of dependent branches">
++
++Range mode is what makes crit stack-aware. Bare `crit` and `--base-branch` both
++review in working-tree focus, where the picker offers no stack switcher.
++`--range` puts the session in range focus, where the picker lists every branch
++in the stack and the reviewer hops between layers.
++
++```bash
++crit --range <parent-branch>..HEAD   # this layer alone, what one pull request holds
++crit --range <trunk>..HEAD           # every layer, the stack as one diff
++```
++
++`crit story` follows the same focus, so a story built in working-tree focus
++narrates the tree instead of the commits.
++</important>
++
+ <important if="the user wants to open the review from another device — e.g. a phone over Tailscale">
+ Keep crit on loopback and reverse-proxy in. Same Step 1 args still apply (file, bare `crit`, etc.):
+ 

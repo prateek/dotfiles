@@ -1,8 +1,8 @@
 diff --git a/integrations/claude-code/skills/crit-cli/SKILL.md b/integrations/claude-code/skills/crit-cli/SKILL.md
-index ea6bb56..5836d4e 100644
+index ea6bb56..759f8fe 100644
 --- a/integrations/claude-code/skills/crit-cli/SKILL.md
 +++ b/integrations/claude-code/skills/crit-cli/SKILL.md
-@@ -120,6 +120,34 @@ Hard rules:
+@@ -120,6 +120,33 @@ Hard rules:
  - **Only pass `--resolve` when the user explicitly asks.** Never resolve proactively.
  </important>
  
@@ -22,16 +22,15 @@ index ea6bb56..5836d4e 100644
 +curl -s "http://127.0.0.1:$PORT/api/health"
 +```
 +
-+- `/api/file/comments` must list the ids you just created. If `crit comments`
-+  shows them and this does not, they were authored under a scope the active
-+  focus filters out — re-author them against the running daemon instead of
-+  editing the review file.
-+- `/api/health` reports `browser_clients`. When it is `false`, nobody has the
-+  review open; say so rather than assuming the reviewer is looking.
++- `/api/file/comments` must list the ids you just created. When `crit comments`
++  shows them and this does not, the active focus filters them out; re-author
++  them through the daemon.
++- `crit status --json` omits `.daemon.port` while several sessions match the
++  branch. Pass `--session <id>` to name one.
++- `/api/health` reports `browser_clients`, which counts live `/api/events`
++  connections. Read it as a hint: a tab that is loading or reconnecting reads
++  as `false`.
 +
-+Relaunching changes focus too. `crit --session <id>` reopens in branch-diff
-+focus, which hides comments created under a `--pr` or `--range` session; reopen
-+with the same invocation that created the review.
 +</important>
 +
  <important if="you are leaving 3+ comments in one operation">

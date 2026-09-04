@@ -1,8 +1,8 @@
 diff --git a/integrations/claude-code/skills/crit-cli/SKILL.md b/integrations/claude-code/skills/crit-cli/SKILL.md
-index ea6bb56..09fff9a 100644
+index 759f8fe..92a70e5 100644
 --- a/integrations/claude-code/skills/crit-cli/SKILL.md
 +++ b/integrations/claude-code/skills/crit-cli/SKILL.md
-@@ -179,6 +179,37 @@ crit comment --plan my-plan-2026-03-23 --reply-to c_a1b2c3 --author 'Claude Code
+@@ -206,6 +206,43 @@ crit comment --plan my-plan-2026-03-23 --reply-to c_a1b2c3 --author 'Claude Code
  ```
  </important>
  
@@ -18,23 +18,29 @@ index ea6bb56..09fff9a 100644
 +`GET /api/session` until it stops returning 503 before calling anything else.
 +
 +```
-+GET|POST   /api/file/comments?path=<repo-rel>   list / add line and file comments
-+PUT|DELETE /api/comment/<id>?path=<repo-rel>    update body / delete
-+POST|DELETE /api/comment/<id>/replies[/<rid>]?path=<repo-rel>   reply CRUD
-+PUT        /api/comment/<id>/resolve?path=<repo-rel>            set resolved
-+GET|POST   /api/comments                        list / add review-level comments
-+PUT|DELETE /api/review-comment/<id>             review-level update / delete
-+GET        /api/health                          liveness, plus browser_clients
++GET|POST   /api/file/comments?path=<repo-rel>              list / add line and file comments
++PUT|DELETE /api/comment/<id>?path=<repo-rel>               update body / delete
++POST       /api/comment/<id>/replies?path=<repo-rel>       add a reply
++PUT|DELETE /api/comment/<id>/replies/<rid>?path=<repo-rel> edit / delete a reply
++PUT        /api/comment/<id>/resolve?path=<repo-rel>       set resolved
++GET|POST   /api/comments                                   list / add review-level comments
++PUT|DELETE /api/review-comment/<id>                        review-level update / delete
++GET        /api/health                                     liveness, plus browser_clients
 +```
 +
 +- `POST /api/file/comments` takes `{start_line, end_line, body, author}` and
-+  stamps the session's focus onto the new comment, which is why it is the
-+  reliable authoring path inside a `--pr` or `--range` session.
-+- `PUT` updates a body in place but cannot move a comment. To re-anchor, POST a
++  stamps the session's focus onto the new comment, which makes it the reliable
++  authoring path inside a `--pr` or `--range` session. A file-level comment
++  needs `"scope": "file"`; without it the omitted lines fail the line-range
++  check.
++- `PUT` replaces the body and leaves the line range alone. To re-anchor, POST a
 +  copy at the new lines and DELETE the old id.
-+- Review-scope ids (`r_…`) use `/api/review-comment/<id>` and take no `path`.
-+- Comment ids are regenerated on round transitions and on client relaunch.
-+  Re-read ids from `GET /api/file/comments` immediately before editing.
++- Review-scope ids (`r_…`) live under `/api/review-comment/<id>`, take no
++  `path`, and are listed by `GET /api/comments`.
++- A round transition mints fresh ids for carried-forward line comments while
++  review-level ids stay put. Re-read ids from `GET /api/file/comments` before
++  editing one.
++
 +</important>
 +
  <important if="you are syncing with a GitHub PR or GitLab MR (pull or push)">

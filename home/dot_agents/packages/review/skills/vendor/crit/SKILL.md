@@ -24,25 +24,41 @@ crit --mr <iid|url>            # GitLab MR (range mode)
 crit --range <base>..<head>    # commit range (range mode)
 crit                           # no args → branch diff
 ```
-If no arguments, check conversation context, in order:
+When there is no argument, or the argument names no file on disk (`/crit`,
+`crit this`), check conversation context, in order:
 
 1. A plan file was written earlier in this conversation → `crit <plan-file>`
 2. The user named the artifact ("the table", "that write-up", "the plan") →
    review that artifact
 3. The previous assistant message is substantial prose the user is plausibly
-   reacting to — a plan, an analysis, a comparison, a set of options — and the
-   request is bare (`/crit`, `crit this`) → ask which they meant, in one
-   line: the code changes, or that message
+   reacting to, a plan or an analysis or a set of options → ask which they
+   meant, in one line: the code changes, or that message
 4. Otherwise → bare `crit` (branch diff)
 
 Asking which **target** to review is correct when it is genuinely ambiguous.
-That is different from asking which **mode** to use, which the CLI detects on
-its own. Launching blocks on a browser round trip, so a wrong target costs the
+That differs from asking which **mode** to use, which the CLI reads off the
+argument. Launching blocks on a browser round trip, so a wrong target costs the
 user more than one short question.
 
 To review something that exists only in the conversation, write it to a
 markdown file and pass that path. `crit` reviews any file, including one
 outside a repository.
+
+<important if="the branch sits in a stack of dependent branches">
+
+Range mode is what makes crit stack-aware. Bare `crit` and `--base-branch` both
+review in working-tree focus, where the picker offers no stack switcher.
+`--range` puts the session in range focus, where the picker lists every branch
+in the stack and the reviewer hops between layers.
+
+```bash
+crit --range <parent-branch>..HEAD   # this layer alone, what one pull request holds
+crit --range <trunk>..HEAD           # every layer, the stack as one diff
+```
+
+`crit story` follows the same focus, so a story built in working-tree focus
+narrates the tree instead of the commits.
+</important>
 
 <important if="the user wants to open the review from another device — e.g. a phone over Tailscale">
 Keep crit on loopback and reverse-proxy in. Same Step 1 args still apply (file, bare `crit`, etc.):
