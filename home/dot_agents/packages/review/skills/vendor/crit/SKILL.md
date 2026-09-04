@@ -69,8 +69,9 @@ topic chain, so a deep stack or a branch that is not an ancestor of HEAD will be
 missing from the switcher.
 
 `crit story` resolves its own session from its own arguments rather than
-inheriting an open review's focus. Repeat the `--range` or `--pr` there too, or
-the story narrates the working tree instead of the commits.
+inheriting an open review's focus. Repeat whichever of `--pr`, `--mr` or
+`--range` you used, or the story narrates the working tree instead of the
+commits.
 </important>
 
 <important if="the user wants to open the review from another device — e.g. a phone over Tailscale">

@@ -133,10 +133,19 @@ the daemon picks it up on a one-second watcher tick, so an id missing
 immediately after the CLI returns proves nothing.
 
 ```bash
-PORT=$(crit status --json | jq -r .daemon.port)
-until [ "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$PORT/api/session")" = 200 ]; do sleep 1; done
-curl -s --get --data-urlencode "path=<repo-relative-path>" \
-  "http://127.0.0.1:$PORT/api/file/comments"
+PORT=$(crit status --json | jq -r '.daemon.port // empty')   # empty: several sessions match
+for _ in $(seq 20); do
+  code=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$PORT/api/session")
+  [ "$code" = 503 ] || break                                  # 200 ready, anything else terminal
+  sleep 1
+done
+for _ in $(seq 5); do                                         # the watcher tick has arbitrary phase
+  out=$(curl -s --get --data-urlencode "path=<repo-relative-path>" \
+    "http://127.0.0.1:$PORT/api/file/comments")
+  case "$out" in *"<one id you just created>"*) break;; esac
+  sleep 1
+done
+printf '%s\n' "$out"
 curl -s "http://127.0.0.1:$PORT/api/health"
 ```
 
@@ -153,9 +162,9 @@ curl -s "http://127.0.0.1:$PORT/api/health"
   path emits no `comments-changed`. The daemon serving your comment and the
   reviewer seeing it stay two different facts, so ask them to reload.
 - Reconnecting to a live daemon keeps its focus. Restarting a dead one loses it:
-  a `--pr` or `--range` session persists no `cli_args`, so `crit --session <id>`
-  comes back in working-tree focus and hides every comment scoped to the old
-  focus. Relaunch with the invocation that created the review.
+  a `--pr`, `--mr` or `--range` session persists no `cli_args`, so
+  `crit --session <id>` comes back in working-tree focus and hides every comment
+  scoped to the old focus. Relaunch with the invocation that created the review.
 
 </important>
 

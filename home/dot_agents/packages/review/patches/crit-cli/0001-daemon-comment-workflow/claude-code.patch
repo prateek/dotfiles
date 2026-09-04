@@ -1,8 +1,63 @@
 diff --git a/integrations/claude-code/skills/crit-cli/SKILL.md b/integrations/claude-code/skills/crit-cli/SKILL.md
-index 69e1fe8..e82b77a 100644
+index ea6bb56..4032ba9 100644
 --- a/integrations/claude-code/skills/crit-cli/SKILL.md
 +++ b/integrations/claude-code/skills/crit-cli/SKILL.md
-@@ -218,6 +218,51 @@ crit comment --plan my-plan-2026-03-23 --reply-to c_a1b2c3 --author 'Claude Code
+@@ -120,6 +120,54 @@ Hard rules:
+ - **Only pass `--resolve` when the user explicitly asks.** Never resolve proactively.
+ </important>
+ 
++<important if="you authored comments and are about to tell the user to look at the review">
++
++`crit comments` and the review file are the **store**. The browser renders the
++running daemon's **filtered projection** of that store, scoped to the session's
++current focus. A comment can be present in both and still render nowhere, so
++reading it back with `crit comments` does not prove the reviewer can see it.
++
++Check what the daemon actually serves before handing the review back. Wait for
++readiness first, and give `crit comment` a second to land: it writes to disk and
++the daemon picks it up on a one-second watcher tick, so an id missing
++immediately after the CLI returns proves nothing.
++
++```bash
++PORT=$(crit status --json | jq -r '.daemon.port // empty')   # empty: several sessions match
++for _ in $(seq 20); do
++  code=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$PORT/api/session")
++  [ "$code" = 503 ] || break                                  # 200 ready, anything else terminal
++  sleep 1
++done
++for _ in $(seq 5); do                                         # the watcher tick has arbitrary phase
++  out=$(curl -s --get --data-urlencode "path=<repo-relative-path>" \
++    "http://127.0.0.1:$PORT/api/file/comments")
++  case "$out" in *"<one id you just created>"*) break;; esac
++  sleep 1
++done
++printf '%s\n' "$out"
++curl -s "http://127.0.0.1:$PORT/api/health"
++```
++
++- `/api/file/comments` must list the ids you just created. When `crit comments`
++  shows them and this still does not after the tick, the active focus filters
++  them out; re-author them through the daemon.
++- `crit status --json` omits `.daemon.port` while several sessions match the
++  branch. Read the port out of `.sessions[]` instead, picking the id you want:
++  `crit status` takes no `--session`.
++- `/api/health` reports `browser_clients`, which counts live `/api/events`
++  connections. Read it as a hint: a tab that is loading or reconnecting reads
++  as `false`.
++- A line or file comment you POST does not reach an open tab on its own; that
++  path emits no `comments-changed`. The daemon serving your comment and the
++  reviewer seeing it stay two different facts, so ask them to reload.
++- Reconnecting to a live daemon keeps its focus. Restarting a dead one loses it:
++  a `--pr`, `--mr` or `--range` session persists no `cli_args`, so
++  `crit --session <id>` comes back in working-tree focus and hides every comment
++  scoped to the old focus. Relaunch with the invocation that created the review.
++
++</important>
++
+ <important if="you are leaving 3+ comments in one operation">
+ 
+ Use `--json` for atomicity (single write, no partial state) and speed (one process). Two ways to feed the JSON:
+@@ -179,6 +227,51 @@ crit comment --plan my-plan-2026-03-23 --reply-to c_a1b2c3 --author 'Claude Code
  ```
  </important>
  

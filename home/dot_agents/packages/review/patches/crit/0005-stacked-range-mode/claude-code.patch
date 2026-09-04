@@ -1,8 +1,8 @@
 diff --git a/integrations/claude-code/skills/crit/SKILL.md b/integrations/claude-code/skills/crit/SKILL.md
-index a2b93da..de33ff9 100644
+index a2b93da..8d9d72f 100644
 --- a/integrations/claude-code/skills/crit/SKILL.md
 +++ b/integrations/claude-code/skills/crit/SKILL.md
-@@ -45,6 +45,34 @@ To review something that exists only in the conversation, write it to a
+@@ -45,6 +45,35 @@ To review something that exists only in the conversation, write it to a
  markdown file and pass that path. `crit` reviews any file, including one
  outside a repository.
  
@@ -30,8 +30,9 @@ index a2b93da..de33ff9 100644
 +missing from the switcher.
 +
 +`crit story` resolves its own session from its own arguments rather than
-+inheriting an open review's focus. Repeat the `--range` or `--pr` there too, or
-+the story narrates the working tree instead of the commits.
++inheriting an open review's focus. Repeat whichever of `--pr`, `--mr` or
++`--range` you used, or the story narrates the working tree instead of the
++commits.
 +</important>
 +
  <important if="the user wants to open the review from another device — e.g. a phone over Tailscale">
