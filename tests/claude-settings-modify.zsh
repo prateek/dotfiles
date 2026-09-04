@@ -190,9 +190,6 @@ PY
 # covered whatever today's fragment happens to contain.
 synthetic_source="$tmp_root/synthetic-source"
 mkdir -p "$synthetic_source/.chezmoitemplates"
-cat >"$synthetic_source/.chezmoitemplates/features.tmpl" <<'JSON'
-{"orca_mode":"desktop"}
-JSON
 cp "$REPO_ROOT/home/.chezmoitemplates/agent-claude-plugin-settings.json.tmpl" \
   "$synthetic_source/.chezmoitemplates/"
 cat >"$synthetic_source/.chezmoitemplates/claude-settings-managed.json.tmpl" <<'JSON'

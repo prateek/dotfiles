@@ -72,7 +72,7 @@ exit 1
 EOF
 chmod +x "$stub_bin/git"
 
-cat >"$stub_bin/orca-cli" <<'EOF'
+cat >"$stub_bin/orca" <<'EOF'
 #!/bin/sh
 set -eu
 
@@ -110,10 +110,10 @@ if [ "${1:-}" = "worktree" ] && [ "${2:-}" = "create" ]; then
   exit 0
 fi
 
-printf 'unexpected orca-cli invocation: %s\n' "$*" >&2
+printf 'unexpected orca invocation: %s\n' "$*" >&2
 exit 1
 EOF
-chmod +x "$stub_bin/orca-cli"
+chmod +x "$stub_bin/orca"
 
 echo "• ghc clones explicit GitHub URLs over SSH"
 : >"$GHC_TEST_LOG"

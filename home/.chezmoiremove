@@ -22,6 +22,10 @@ bin/grmrepo-refresh
 # crit-agent acpx bridge (crit's agent_cmd now runs claude directly)
 .local/bin/crit-agent
 
+# reverted Linux DevPod Orca pilot
+.local/bin/orca-cli
+.local/bin/orca-devpod-reconcile
+
 # skills moved from utils-agent into the experimental package; the mirror under
 # ~/.agents/packages keeps the old directories until they are listed here
 .agents/packages/utils-agent/skills/local/experiment-scaffold

@@ -1,15 +1,17 @@
 ---
-status: current
+status: archived
 doc_type: runbook
 owner: Prateek
 created: 2026-09-02
-updated: 2026-09-02
+updated: 2026-09-04
+closed: 2026-09-04
+current_guidance: ../references/chezmoi-architecture.md
 related:
   - ../plans/linux-work-devpod-orca-pilot-plan.md
   - ../references/chezmoi-architecture.md
   - ../references/chezmoi-hook-lifecycle.md
   - ../adr/0012-config-gating-convention.md
-status_detail: "Bootstrap, pairing, recovery, and ownership procedure for the default-off work × Linux Orca pilot."
+status_detail: "Historical procedure for the reverted work × Linux Orca pilot."
 ---
 
 # Linux work DevPod and Orca

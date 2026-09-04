@@ -1,4 +1,3 @@
-{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
 #!/usr/bin/env -S uv run --quiet --script
 # /// script
 # requires-python = ">=3.14"
@@ -12,10 +11,9 @@ matcher with an empty hooks list retires that matcher instead. Malformed
 input propagates from `json.loads` to chezmoi. See SKILL.md and ADR 0007 for
 the override model and the stale-key trade-off.
 
-Two desired fragments: the generated plugin-marketplace fragment and, outside
-the headless Linux profile, the hand-maintained managed settings
-(claude-settings-managed.json.tmpl). The managed fragment merges last and wins
-where the two overlap.
+Two desired fragments: the generated plugin-marketplace fragment and the
+hand-maintained managed settings (claude-settings-managed.json.tmpl). The
+managed fragment merges last and wins where the two overlap.
 """
 import base64
 import json
@@ -28,14 +26,11 @@ plugins = json.loads(
 )
 plugins.pop("_generated", None)  # template-file marker, not a settings value
 
-managed = {}
-{{ if ne $f.orca_mode "headless" -}}
 managed = json.loads(
     base64.b64decode(
         "{{ includeTemplate "claude-settings-managed.json.tmpl" . | b64enc }}"
     ).decode()
 )
-{{ end }}
 
 
 def deep_merge(base, overlay):

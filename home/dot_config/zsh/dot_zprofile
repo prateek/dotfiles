@@ -1,7 +1,6 @@
 #!/usr/bin/env zsh
 # vim:syntax=zsh
 # vim:filetype=zsh
-{{- $f := includeTemplate "features.tmpl" . | fromJson }}
 
 # Locale Settings
 export LC_ALL=en_US.UTF-8
@@ -34,14 +33,6 @@ export ZSHCONFIG="${ZSHCONFIG:-${ZDOTDIR:-${XDG_CONFIG_HOME:-$HOME/.config}/zsh}
 # Enable XDG for `ghcup`, via https://www.haskell.org/ghcup/guide/
 export GHCUP_USE_XDG_DIRS=1
 
-{{ if eq $f.orca_mode "headless" -}}
-# The DevPod image owns system and toolchain paths. Only prepend user-owned bins.
-path=(
-  $HOME/bin
-  $HOME/.local/bin
-  $path
-)
-{{ else -}}
 # PATH(s), relies on zsh magic (path == $PATH but in array form and sync'd)
 path=(
   $HOME/bin
@@ -60,7 +51,6 @@ path=(
   /usr/local/{sbin,bin}
   $path
 )
-{{ end -}}
 path=($^path(N-/))
 
 # Set the list of directories that man searches for manuals.
@@ -71,13 +61,11 @@ manpath=(
 )
 manpath=($^manpath(N-/))
 
-{{ if ne $f.orca_mode "headless" -}}
 if [[ -d "$HOME/.orbstack" ]]; then
   path+=("$HOME/.orbstack/bin")
   fpath+=("$HOME/.orbstack/shell/completions/zsh")
   export DOCKER_HOST="unix://$HOME/.orbstack/run/docker.sock"
 fi
-{{- end }}
 
 if [ -f "$HOME/.zprofile.local" ]; then
   source "$HOME/.zprofile.local"

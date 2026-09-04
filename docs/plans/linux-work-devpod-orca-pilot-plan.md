@@ -1,15 +1,17 @@
 ---
-status: active
+status: archived
 doc_type: plan
 owner: Prateek
 created: 2026-09-01
-updated: 2026-09-02
+updated: 2026-09-04
+closed: 2026-09-04
+current_guidance: ../references/chezmoi-architecture.md
 related:
   - ../runbooks/linux-work-devpod-orca.md
   - ../references/chezmoi-architecture.md
   - ../references/chezmoi-hook-lifecycle.md
   - ../adr/0012-config-gating-convention.md
-status_detail: "DAYJOB layers have landed; dotfiles hardening and the final cold-start acceptance pass remain."
+status_detail: "The pilot implementation was reverted before final cold-start acceptance."
 ---
 
 # Linux work DevPod Orca pilot

@@ -26,7 +26,7 @@ import json
 import sys
 
 {{ $f := includeTemplate "features.tmpl" . | fromJson -}}
-{{ $orca := and (ne $f.orca_mode "headless") (eq (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "stablyai/orca/orca")) "true") -}}
+{{ $orca := eq (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "stablyai/orca/orca")) "true" -}}
 AGENT_CMD = {{ if has "claude" ($f.agent_clis | default (list)) }}"claude --dangerously-skip-permissions -p"{{ else }}None{{ end }}
 OPEN_CMD = {{ if $orca }}"{{ .chezmoi.homeDir }}/.local/bin/crit-open"{{ else }}None{{ end }}
 NOTIFY_ON_ROUND_READY = {{ if $orca }}True{{ else }}None{{ end }}

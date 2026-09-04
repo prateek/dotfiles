@@ -47,8 +47,8 @@ function ohc() {
     return 0
   fi
 
-  if ! command -v orca-cli >/dev/null 2>&1; then
-    echo "ohc: orca-cli wrapper not found on PATH" >&2
+  if ! command -v orca >/dev/null 2>&1; then
+    echo "ohc: orca CLI not found on PATH" >&2
     return 127
   fi
 
@@ -81,16 +81,12 @@ function ohc() {
   local repo_path="${PWD:A}"
   local default_name="${repo_path:t}"
 
-  if ! orca-cli status --json >/dev/null 2>&1; then
-    if [[ "$OSTYPE" == linux* ]]; then
-      echo "ohc: headless Orca is not ready; rerun orca-devpod-reconcile start" >&2
-      return 1
-    fi
-    orca-cli open --json >/dev/null || return $?
-    orca-cli status --json >/dev/null || return $?
+  if ! orca status --json >/dev/null 2>&1; then
+    orca open --json >/dev/null || return $?
+    orca status --json >/dev/null || return $?
   fi
 
-  orca-cli repo add --path "$repo_path" --json >/dev/null || return $?
+  orca repo add --path "$repo_path" --json >/dev/null || return $?
 
   local has_name=0
   for arg in "$@"; do
@@ -107,7 +103,7 @@ function ohc() {
   fi
   create_args+=("$@" --json)
 
-  orca-cli "${create_args[@]}"
+  orca "${create_args[@]}"
 }
 
 ohc "$@"

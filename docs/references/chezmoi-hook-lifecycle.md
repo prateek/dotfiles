@@ -3,11 +3,9 @@ status: current
 doc_type: reference
 owner: Prateek
 created: 2026-09-02
-updated: 2026-09-02
+updated: 2026-09-04
 related:
   - chezmoi-architecture.md
-  - ../runbooks/linux-work-devpod-orca.md
-  - ../plans/linux-work-devpod-orca-pilot-plan.md
 status_detail: "Execution order and design rules for chezmoi config hooks, source scripts, init, apply, and modify targets."
 ---
 
@@ -54,9 +52,8 @@ for reading source state in the generated `read-source-state.pre` hook instead.
 
 For `init --apply`, chezmoi reloads the generated config before entering apply,
 so a newly configured `read-source-state.pre` hook is available to that apply.
-The DAYJOB bootstrap currently invokes plain `init`, then `chezmoi data`, then
-`apply`; `data` is the first source-reading command and therefore invokes the
-same hook before apply.
+In a workflow that invokes plain `init` before `data` or `apply`, the later
+command is the first source-state reader.
 
 ## Apply
 
@@ -92,32 +89,10 @@ so embedding another file's checksum makes its changes retrigger a script.
 
 ## Repository wiring
 
-The generated config for `work × linux` declares:
-
-- `hooks.read-source-state.pre` pointing to
-  `scripts/chezmoi-hooks/headless-uv.sh`.
-- `scriptEnv.PATH` with `~/.local/bin` first, so uv installed by the hook is
-  visible to modifiers and source scripts.
-
-The hook is a direct repository script, not a template or managed target. It
-installs checksum-verified uv when missing and otherwise exits immediately.
-Because source-reading commands include `data`, `status`, `diff`, and
-`managed`, the hook must:
-
-- be fast and idempotent;
-- never invoke chezmoi recursively;
-- write diagnostics only to stderr, so machine-readable stdout stays valid;
-- tolerate running during `--dry-run`, which still executes config hooks.
-
-After source state is readable, the headless profile executes its uv-backed
-Claude settings modifier during target computation. Its only enabled apply
-script is `run_onchange_after_36-agent-plugins.sh.tmpl`, which renders
-`~/.agents/plugins` after destination updates. Other apply scripts remain
-ignored for this profile.
-
-On Darwin, the generated config instead declares `hooks.apply.pre` and
+On Darwin, the generated config declares `hooks.apply.pre` and
 `hooks.apply.post` for plist safety. Those hooks guard running applications
-around preference writes and are unrelated to the Linux uv bootstrap.
+around preference writes. The repository does not currently configure a
+`read-source-state` hook.
 
 ## Inspection
 
