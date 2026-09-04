@@ -1,4 +1,4 @@
-# Crit Conventions (Skill-like)
+# Crit Conventions
 
 ## Purpose
 

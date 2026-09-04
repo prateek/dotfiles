@@ -1,4 +1,4 @@
-# Google Workspace Conventions (Skill-like)
+# Google Workspace Conventions
 
 ## Purpose
 

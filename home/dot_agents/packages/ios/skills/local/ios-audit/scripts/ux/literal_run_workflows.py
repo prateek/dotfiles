@@ -20,19 +20,25 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from workflow_matrix import normalize_device_matrix, validate_workflow_devices, workflow_lane_ids
+from workflow_matrix import (
+    normalize_device_matrix,
+    validate_workflow_devices,
+    workflow_lane_ids,
+)
 
-# Canonical ios-simulator-skill location (shared ~/.agents/skills source of truth).
-# Falls back to the legacy ~/.claude/skills path if the canonical one is missing.
-_CANONICAL_SIM_SKILL_DIR = os.path.expanduser("~/.agents/skills/ios-simulator-skill")
-_LEGACY_SIM_SKILL_DIR = os.path.expanduser(
-    "~/.claude/skills/ios-simulator/ios-simulator-skill"
-)
-DEFAULT_SIM_SKILL_DIR = (
-    _CANONICAL_SIM_SKILL_DIR
-    if os.path.isdir(_CANONICAL_SIM_SKILL_DIR)
-    else _LEGACY_SIM_SKILL_DIR
-)
+
+def resolve_default_sim_skill_dir(audit_skill_dir: Path) -> Path:
+    candidates = (
+        audit_skill_dir.parent / "ios-simulator-skill",
+        audit_skill_dir.parents[1] / "vendor" / "ios-simulator-skill",
+    )
+    return next(
+        (candidate for candidate in candidates if candidate.is_dir()), candidates[0]
+    )
+
+
+_AUDIT_SKILL_DIR = Path(__file__).resolve().parents[2]
+DEFAULT_SIM_SKILL_DIR = str(resolve_default_sim_skill_dir(_AUDIT_SKILL_DIR))
 
 
 ENV_RE = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}|\$([A-Za-z_][A-Za-z0-9_]*)")

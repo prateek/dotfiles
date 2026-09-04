@@ -45,7 +45,7 @@ The collector at `scripts/collect/ux.py` captures:
 ## Required tools
 
 - **Python 3.10+** with `pyyaml` and `pillow` for flow execution
-- **ios-simulator-skill** at `~/.agents/skills/ios-simulator-skill/`
+- **ios-simulator-skill** beside this skill in the rendered `ios` plugin
 - **A booted iOS simulator** with the target app installed
 
 You can skip the UX pillar entirely with `--no-ux` if you don't have a

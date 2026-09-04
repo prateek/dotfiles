@@ -6,10 +6,9 @@
 
 ## Purpose
 
-Playbook for all Slack read/search/send tasks, driven by the `agent-slack` **CLI**
-— a command-line tool on `$PATH`, not a subagent. Installed via mise
-(`npm:agent-slack`); the bundled skill lives at `~/.agents/skills/agent-slack/`,
-with the full command map and flags under its `references/`.
+Playbook for all Slack read/search/send tasks, driven by the `agent-slack` CLI
+on `PATH`, not a subagent. It installs through mise as `npm:agent-slack`; the
+bundled `agent-slack` skill owns the full command map and flags.
 
 ## When to use
 

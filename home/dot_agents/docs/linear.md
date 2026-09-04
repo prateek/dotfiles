@@ -1,4 +1,4 @@
-# Linear Conventions (Skill-like)
+# Linear Conventions
 
 ## Purpose
 

@@ -101,6 +101,7 @@ jobs:
           make test-chezmoi-config
           make test-chezmoi-script-status
           make test-chezmoi-drift-banner
+          make test-agents-doc-pointers
           make test-finder-copy-path
           make test-codex-config
           make test-cursor-config
@@ -115,6 +116,7 @@ jobs:
           make test-acpx-model-drift
           make test-acpx-poll-stream
           make test-agent-skill-packages
+          make test-ios-audit
           make test-skill-console
           make test-gemini-meeting-sync
           make test-brew-install-wrapper

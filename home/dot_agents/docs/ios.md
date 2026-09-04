@@ -1,93 +1,110 @@
 # iOS Conventions
 
-## Purpose
+Use this document for iOS and Apple-platform work on this machine. It records
+local policy; the skills in the `ios` package own executable workflows and
+tool details. The package is disabled by default for Claude and Codex; Cursor
+exposes rendered packages independently of that setting. If a required skill
+is unavailable, report it. Change project plugin activation only when the task
+authorizes configuration changes. Use
+`.agents/skills/agent-skill-management/SKILL.md` from the active dotfiles
+checkout, or resolve the configured chezmoi source when outside one.
 
-Personal conventions for iOS and Apple-platform work on this machine. The executable details — scaffolding, Tuist patterns, Fastlane, CI workflows, simulator pooling — live in skills. This file is the policy layer on top.
+## Skill routing
 
-## When to read this
+- `ios-project-scaffold`: create a Tuist-based project or audit an existing
+  project's scaffold, build targets, CI, and release setup.
+- `ios-audit`: run a broader code-health, UX, runtime, and release-readiness
+  audit, including scripted simulator workflows. For UX collection, pass a
+  simulator UDID owned by the current worktree helper.
+- `ios-simulator-skill`: use low-level simulator build, launch, input,
+  screenshot, and accessibility primitives.
+- `ios-sim-lease`: reference for planned cross-agent simulator coordination.
+  Its helper is not built. Scaffolded projects use their repository-owned
+  worktree helper; report missing coordination instead of introducing
+  `.ios-sim-udid`.
+- `swiftui-expert-skill` and `swift-patterns`: use for implementation and
+  design-time SwiftUI guidance.
+- `hig-*`: use the skills in `design@prateek-local` for design-time Apple HIG
+  guidance when that package is available. They inform design; runtime ship
+  gates remain `ios-audit` workflows or XCUITest.
+- `trycycle`: use only when Prateek invokes it by name and the `experimental`
+  package is enabled.
 
-- Starting or auditing an iOS project on this machine.
-- Deciding which iOS skill to reach for.
-- Checking what Xcode / iOS runtime / device versions are canonical right now.
-- Choosing between two ways of doing the same thing when the skill offers both.
+Use skill names rather than hardcoded generated-plugin paths.
 
-## Shared skills
+## Rejected tooling
 
-Reach for these in order.
+Do not reinstall `XcodeBuildMCP`; its MCP overhead did not earn its cost. Do not
+reintroduce `ios-ux-scorecard`, `ios-ux-reviewer`, or
+`ios-engineering-reviewer`; use `ios-audit` for runtime evidence and the HIG
+skills for design-time guidance.
 
-- **`~/.agents/skills/ios-project-scaffold/`** — bootstrap a new iOS project with every convention baked in (Tuist, pinned toolchain, Makefile, Fastlane, GitHub Actions), or audit an existing project against the same conventions. Two modes, one source of truth. Handles Tuist patterns, CI cost control, and TestFlight/App Store releases.
-- **`~/.agents/skills/ios-flow-audit/`** — scripted end-to-end flows in the simulator with screenshot and accessibility-tree capture per step, plus an HTML flow report. Use for ship-gate regressions and agent-reviewable visual audits.
-- **`~/.agents/skills/ios-simulator-skill/`** — low-level Python primitives (taps, typing, gestures, accessibility dumps, app launching). `ios-flow-audit` delegates into it; reach for it directly when you need one of its primitives.
-- **`~/.agents/skills/ios-sim-lease/`** — simulator leasing for concurrent agents. **Design ready, helper not yet built**; see the skill's `TODO.md`. Until it lands, projects use a sentinel file at `.ios-sim-udid` (the `ios-project-scaffold` Makefile already reads from it).
-- **`trycycle`** — multi-phase orchestration for large changes. Invoke only when asked by name. Ships in the `experimental` package, which is disabled by default, so enable `experimental@prateek-local` before reaching for it.
+## Canonical toolchain
 
-Do not reinstall these dormant skills — each overlaps something above and went unused in real work:
+Read the current Xcode, iOS runtime, phone, and tablet choices from
+`~/.agents/state/ios-triple.json`:
 
-- `XcodeBuildMCP` — MCP overhead wasted tokens without getting called.
-- `ios-ux-scorecard`, `ios-ux-reviewer`, `ios-engineering-reviewer` — documentation-grade audits that never caught runtime bugs. Use `ios-flow-audit` for runtime verification and the `hig-*` skill family for design-time guidance.
-
-## Canonical triple
-
-The current canonical Xcode / iOS runtime / device triple lives in `~/.agents/state/ios-triple.json`. Read from it; do not hardcode values in templates:
-
-```bash
-jq -r .xcode_version          ~/.agents/state/ios-triple.json
-jq -r .ios_runtime_primary    ~/.agents/state/ios-triple.json
-jq -r .phone_device_type      ~/.agents/state/ios-triple.json
-jq -r .tablet_device_type     ~/.agents/state/ios-triple.json
+```sh
+jq -r .xcode_version       ~/.agents/state/ios-triple.json
+jq -r .ios_runtime_primary ~/.agents/state/ios-triple.json
+jq -r .phone_device_type   ~/.agents/state/ios-triple.json
+jq -r .tablet_device_type  ~/.agents/state/ios-triple.json
 ```
 
-Review the file once per quarter. Bumping Xcode or the runtime mid-project costs more than it saves.
-
-The runtime is pinned to whatever the current GitHub Actions `macos-15` / `macos-26` runner images bundle out of the box, so local dev and CI match without a download step. Local machines that need the latest runtime can still install it alongside the canonical one; projects that need backwards compatibility can pin `.ios-runtime` to an older runtime.
+Review the triple quarterly rather than upgrading in the middle of a project.
+Prefer the runtime bundled by the matching GitHub Actions macOS image so local
+and CI builds do not require different downloads.
 
 ## Defaults
 
-The iron rules. Every skill above is built on one of these.
+- Drive project mutations through repository `make` targets. Read-only probes
+  may call `xcodebuild`, `xcrun simctl`, `tuist`, or Git directly.
+- Generate projects with Tuist. Keep its version pinned and run generation
+  without opening Xcode.
+- Keep Xcode and Simulator closed unless Prateek asks for GUI interaction.
+- Provision every automated simulator through the repository-owned worktree
+  helper. Pass its resolved UDID to tools that run outside the helper.
+- Pipe `xcodebuild` output through `xcbeautify` in repository targets.
+- Generate `.xcodeproj` and `.xcworkspace` artifacts from Tuist; keep them out
+  of version control.
+- Put test environment settings in `Project.swift`, where Tuist owns the
+  generated schemes.
+- Pin Xcode, runtime, and device policy in the project and match it in CI.
+- Verify runtime behavior through `ios-audit` workflows or XCUITest rather than
+  SwiftUI previews.
 
-- **Drive iOS projects through `make`.** Agents call Makefile targets; targets wrap `xcodebuild`, `xcrun simctl`, `tuist`, Fastlane, and Python helpers. Never raw tools from an agent session. Read-only probes (`xcodebuild -version`, `xcrun simctl list`, `tuist version`, `git status`) are exempt because they cannot mutate state.
-- **Tuist always, nothing else.** No XcodeGen, no hand-edited `.xcodeproj`, no "I'll just open Xcode once". Tuist reads `.tuist-version` and refuses version drift.
-- **Run `tuist generate` only with `--no-open`** (or `TUIST_GENERATE_OPEN=0` in the environment). Never let it open Xcode.
-- **Never open `Xcode.app` or `Simulator.app` from an agent session** unless the human asks. No `open`, no `xed`, no `flowdeck simulator open`, no GUI launches.
-- **Pin the simulator for every automated call by UDID.** Resolve the UDID from a lease (or the sentinel file until `ios-sim-lease` ships), not by name.
-- **Pipe `xcodebuild` output through `xcbeautify`** in Makefile targets. Raw walls of output waste tokens and hide errors.
-- **Never commit `*.xcworkspace/` or `*.xcodeproj/`.** Tuist regenerates them from `Project.swift`; committing them is perpetual regen noise.
-- **Put test env vars in `Project.swift`, not in scheme files.** Tuist regenerates schemes on every `generate` and wipes manual edits. The `ios-project-scaffold` skill encodes the correct Tuist 4 API shape.
-- **Pin Xcode, iOS runtime, and devices at the project level.** Match them in CI. See the canonical triple above.
-- **SwiftUI previews are a human tool.** Agents never rely on previews for verification. Runtime verification goes through `ios-flow-audit` or XCUITest.
-- **HIG skills are design-time guidance, not ship gates.** Ship gates live in `ios-flow-audit` (scripted flows, screenshots, accessibility trees) or XCUITest (hard assertions in CI).
+## New projects and scaffold audits
 
-## Starting a new iOS project
+Invoke `ios-project-scaffold` in `init` mode for a new project and follow the
+generated `README.bootstrap.md` for App Store Connect and secret provisioning.
 
-Run the scaffold skill:
+Invoke the same skill in `audit` mode for a deterministic check of an existing
+project's files, ignores, Makefile targets, Tuist configuration, and CI shape.
+Use `ios-audit` when the task asks for broader engineering or UX evidence.
 
-```bash
-bash ~/.agents/skills/ios-project-scaffold/scripts/scaffold.sh \
-  --target /path/to/new/app \
-  --name MyApp \
-  --bundle-id com.example.MyApp \
-  --team-id ABCD123456
-```
+## Runtime verification
 
-Then follow `README.bootstrap.md` in the generated project for the one-time manual steps (create the App Store Connect app record, generate the ASC API key, wire secrets into GitHub Actions). After those, every subsequent build, test, and TestFlight push is automated.
+Choose the strongest lane the task supports:
 
-## Auditing an existing iOS project
+1. `ios-audit` scripted workflows for screenshots, accessibility evidence, and
+   an agent-reviewable report.
+2. XCUITest for assertions that must gate CI.
+3. A manual simulator walkthrough for active exploration, not a ship gate.
 
-Run the audit mode of the same skill:
+Keep project-specific workflow definitions in the repository and expose them
+through a repository command.
 
-```bash
-bash ~/.agents/skills/ios-project-scaffold/scripts/audit.sh \
-  --target /path/to/existing/app
-```
+For an `ios-audit` UX run in a scaffolded project, provision the simulator
+through the repository helper, read its UDID from
+`build/simulators/<family>.json`, and pass that value with `--udid`. Do not run
+another helper-managed simulator task in the same worktree concurrently. In an
+unscaffolded project, use an explicitly assigned UDID and verify that no other
+agent owns it; never select an arbitrary booted device.
 
-The script checks deterministic items (file existence, gitignore entries, Makefile target names, CI workflow shape) and reports pass/fail with a concrete fix command for each failure. After the script, an agent can run a judgment pass using the rubric in the skill's `SKILL.md` to catch the issues a grep cannot (Tuist API shape, Fastlane lane structure, scheme correctness).
+## Completion
 
-## UI verification
-
-Ranked by rigor:
-
-1. **`ios-flow-audit`** — YAML flows, screenshots + accessibility trees per step, HTML report. Best for regression suites and agent-reviewable visual audits.
-2. **XCUITest** — hard assertions inside the Xcode test runner. Best when CI needs a pass/fail gate.
-3. **Manual simulator walkthrough** — exploratory, one-off. Useful during active debugging; never a ship gate.
-
-If you adopt a flow-audit harness, keep the YAML under `.audit/` and wire it into a repo-specific command instead of relying on a scaffold default.
+- The project and CI use the same pinned toolchain and runtime policy.
+- Every automated simulator command targets a resolved UDID.
+- Generated Xcode artifacts remain untracked.
+- Build and test output is filtered but preserves failures.
+- Runtime claims are backed by an audit workflow or XCUITest evidence.

@@ -33,7 +33,7 @@ with no edits.
 
 ## How to update an existing caller
 
-Old call:
+Retired call shape, shown only to identify old callers:
 
 ```bash
 python3 ~/.agents/skills/ios-flow-audit/scripts/run_workflows.py \
@@ -47,7 +47,7 @@ python3 ~/.agents/skills/ios-flow-audit/scripts/generate_report.py \
 New equivalent (UX-only, no other pillars):
 
 ```bash
-~/.agents/skills/ios-audit/scripts/audit.py collect \
+~/.agents/plugins/plugins/ios/skills/ios-audit/scripts/audit.py collect \
   --repo ~/code/my-app \
   --workflows .audit/flows.yaml \
   --output /tmp/audit \
@@ -57,7 +57,7 @@ New equivalent (UX-only, no other pillars):
 Or the legacy scripts still work directly from `scripts/ux/`:
 
 ```bash
-~/.agents/skills/ios-audit/scripts/ux/run_workflows.py \
+~/.agents/plugins/plugins/ios/skills/ios-audit/scripts/ux/run_workflows.py \
   --workflows .audit/flows.yaml \
   --output-dir /tmp/audit
 ```
@@ -65,7 +65,7 @@ Or the legacy scripts still work directly from `scripts/ux/`:
 For a full 4-pillar run (recommended):
 
 ```bash
-~/.agents/skills/ios-audit/scripts/audit.py all \
+~/.agents/plugins/plugins/ios/skills/ios-audit/scripts/audit.py all \
   --repo ~/code/my-app \
   --workflows .audit/flows.yaml \
   --output /tmp/audit \
@@ -74,13 +74,6 @@ For a full 4-pillar run (recommended):
 
 ## Removing the old skill
 
-After verifying `ios-audit` works for your project, delete the old skill:
-
-```bash
-rm -rf ~/.agents/skills/ios-flow-audit
-```
-
-(Or `rm -rf ~/.claude/skills/ios-flow-audit` if installed there.)
-
-There is no backward-compat symlink. The name change is intentional and
-final.
+The generated plugin renderer owns installed skill roots and removes stale
+entries during `chezmoi apply`. Do not delete generated skill paths by hand.
+There is no backward-compatibility alias; `ios-audit` is the final name.

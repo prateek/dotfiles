@@ -117,44 +117,55 @@ If there is no prior baseline, this phase prints "First audit — no baseline" a
 brew install uv
 brew install swiftlint       # optional, recommended
 brew install peripheryapp/periphery/periphery  # optional, recommended
-xcrun simctl boot "iPhone 16 Pro"
 
-# 2. Write a workflow YAML for UX flows (see examples/movies-do.yaml)
-cp ~/.agents/skills/ios-audit/examples/movies-do.yaml \
+# 2. In a scaffolded project, provision the worktree-owned simulator
+make run-iphone run-ipad
+export IOS_AUDIT_IPHONE_UDID="$(jq -er .udid build/simulators/iphone.json)"
+export IOS_AUDIT_IPAD_UDID="$(jq -er .udid build/simulators/ipad.json)"
+# In an unscaffolded project, set these to explicitly assigned simulators
+# that no other agent is using.
+
+# 3. Write a workflow YAML for UX flows (see examples/movies-do.yaml)
+cp ~/.agents/plugins/plugins/ios/skills/ios-audit/examples/movies-do.yaml \
    ~/code/my-app/.audit/workflows.yaml
-# Edit bundle_id, credentials (use env vars), flows, and `device_matrix`
-# when the app adapts across iPhone/iPad or compact/regular layouts.
+# Edit bundle_id, credentials (use env vars), and flows. Set each
+# `device_matrix` lane's `udid` to `${IOS_AUDIT_IPHONE_UDID}` or
+# `${IOS_AUDIT_IPAD_UDID}` so the executor uses helper-owned devices.
 
-# 3. Run COLLECT
-~/.agents/skills/ios-audit/scripts/audit.py collect \
+# 4. Run COLLECT
+~/.agents/plugins/plugins/ios/skills/ios-audit/scripts/audit.py collect \
   --repo ~/code/my-app \
   --workflows ~/code/my-app/.audit/workflows.yaml \
   --output ~/code/my-app/.audit
 
-# 4. ANALYZE — as the invoking agent, read each prompt and write docs + findings
+# 5. ANALYZE — as the invoking agent, read each prompt and write docs + findings
 #    (see scripts/analyze/prompts/*.md)
 
-# 5. RENDER
-~/.agents/skills/ios-audit/scripts/audit.py render \
+# 6. RENDER
+~/.agents/plugins/plugins/ios/skills/ios-audit/scripts/audit.py render \
   --audit ~/code/my-app/.audit \
   --docs-dir ~/code/my-app/docs
 
-# 6. DIFF (no-op on first run)
-~/.agents/skills/ios-audit/scripts/audit.py diff \
+# 7. DIFF (no-op on first run)
+~/.agents/plugins/plugins/ios/skills/ios-audit/scripts/audit.py diff \
   --current ~/code/my-app/.audit/audit.json
 
-# 7. Open the report
+# 8. Open the report
 open ~/code/my-app/.audit/audit.html
 ```
 
 Or run everything in one shot:
 
 ```bash
-~/.agents/skills/ios-audit/scripts/audit.py all \
+~/.agents/plugins/plugins/ios/skills/ios-audit/scripts/audit.py all \
   --repo ~/code/my-app \
   --workflows ~/code/my-app/.audit/workflows.yaml \
   --docs-dir ~/code/my-app/docs
 ```
+
+For a single-lane workflow without `device_matrix`, pass
+`--udid "$IOS_AUDIT_IPHONE_UDID"` instead. Never rely on whichever simulator
+happens to be booted.
 
 `all` will pause between COLLECT and RENDER so the invoking agent can do the ANALYZE step. The script prints the exact paths to the prompts and raw inputs and waits on STDIN.
 

@@ -1,4 +1,4 @@
-# Twitter/X Conventions (Skill-like)
+# Twitter/X Conventions
 
 ## Purpose
 

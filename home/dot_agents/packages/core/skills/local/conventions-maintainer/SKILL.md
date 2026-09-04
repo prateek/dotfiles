@@ -1,109 +1,101 @@
 ---
 name: conventions-maintainer
-description: Maintain local convention docs in ~/.agents/docs as skill-like operational playbooks (for example Slack/Git/Go/Linear/Google Workspace) and keep ~/.agents/AGENTS.md as a short pointer file to those docs.
+description: Maintain machine-wide agent conventions in ~/.agents/AGENTS.md and ~/.agents/docs. Use when adding, pruning, restructuring, or validating convention guidance; keep AGENTS as a small kernel and router, and keep topic docs focused on local policy rather than tool manuals.
 ---
 
 # Conventions Maintainer
 
-## When to use
+Use `writing-for-agents` as the design reference. The maintenance target is a
+predictable information hierarchy, not a uniform document template.
 
-Use this skill when asked to add, update, or clean up local convention guidance such as:
+## Boundaries
 
-- Slack interaction conventions
-- Git/GitHub/worktree conventions
-- Go conventions (`go.md`)
-- Linear conventions (`linear.md`)
-- Google Workspace conventions (`google-workspace.md`)
-- Browser/CDP conventions (`browser-cdp.md`)
-- Twitter/X conventions (`twitter.md`)
-- Other team workflow conventions stored under `~/.agents/docs`
-- `~/.agents/AGENTS.md` cleanup so it points to docs instead of duplicating long instructions
-
-## Design principle connection (required)
-
-Apply the same principles used by `skill-creator`:
-
-- Concise, high-signal wording.
-- Workflow-first instructions.
-- Progressive disclosure (quick defaults in main doc; detailed references only when needed).
-- Operational checklists so users can execute and validate quickly.
-
-Convention docs should read like lightweight skills/playbooks.
-
-## Source of truth
-
-- Conventions live in `~/.agents/docs/*.md`.
-- `~/.agents/AGENTS.md` should stay brief and mostly point to those docs.
-- Avoid duplicating full guidance in `AGENTS.md`.
+- `~/.agents/AGENTS.md` is the always-loaded kernel and router. Keep only
+  preferences and guardrails needed across most tasks, plus short pointers.
+- `~/.agents/docs/*.md` holds reference needed by a distinct task branch.
+- A model-invoked skill owns an executable workflow that must be discovered
+  autonomously. Convention docs may add machine-specific policy, but should not
+  copy the skill's command reference.
+- The environment, repository configuration, tool `--help`, and upstream docs
+  are sources of truth. Cache their contents only when lookup is expensive and
+  the local copy has a clear refresh owner.
+- Repo-specific guidance belongs in that repository, not in these machine-wide
+  files.
 
 ## Workflow
 
-### 1) Locate or create the target convention doc
+### 1. Locate the human-edited source
 
-- Prefer one focused file per topic (for example `slack.md`, `git.md`, `go.md`, `linear.md`, `google-workspace.md`, `browser-cdp.md`, `twitter.md`).
+- Edit chezmoi source under `home/dot_agents/`, not rendered files under
+  `~/.agents/`.
+- Update an existing focused topic file instead of creating a synonym.
 - Keep filenames stable and obvious.
-- If a topic already has a convention file, update in place instead of creating duplicates.
+- `slack.md` is generated at apply time from
+  `home/.chezmoitemplates/agent-slack-base.md` plus a private overlay. Edit the
+  base or overlay source, never the rendered file.
 
-### 2) Use the skill-like convention structure (required)
+### 2. Place each instruction on the right tier
 
-Every convention doc should use this core shape:
+For every instruction, decide:
 
-1. `Purpose`
-2. `When to use`
-3. `Defaults`
-4. `Workflow` (step-based, operational)
-5. `Validation checklist`
+1. Does nearly every task need it before acting? Keep it in `AGENTS.md`.
+2. Does one identifiable branch need it? Put it in a focused doc and add a
+   pointer.
+3. Is it an executable workflow with an independent trigger? Put the workflow
+   in a skill and leave only local policy in the doc.
+4. Can the agent obtain it cheaply from the environment or upstream source?
+   Leave it there.
 
-Optional sections when useful:
+When a must-follow rule moves behind a pointer, make the pointer strong enough
+to recover the lost reliability.
 
-- `Security and safety`
-- `Channel/command snapshot`
-- `Capability snapshot`
-- `Evidence basis`
+### 3. Write the pointer
 
-### 3) Write concise, operational guidance
+- Front-load the task condition: `Git or GitHub work: ...`.
+- Name each distinct trigger branch once. Avoid lists of synonyms.
+- Point to the exact rendered path under `~/.agents/docs/`.
+- Keep identity and explanation in the target doc.
+- Place related pointers together so the router is scannable.
 
-- Optimize for quick scanning and direct execution.
-- Include exact text formats when required (for example review request message format).
-- Keep language concrete and actionable.
-- Prefer copy-pastable command examples.
+### 4. Write the topic doc
 
-### 4) Topic-specific rules (Slack)
+- Open with the condition under which the doc applies.
+- Let the content determine the sections. Use `Defaults`, `Workflow`,
+  `Safety`, and `Completion` only when they carry real material.
+- Co-locate a concept's rule, rationale, caveats, and exact formats.
+- End ordered work on a checkable, exhaustive completion criterion.
+- Include commands only when the exact local shape matters. Otherwise point to
+  version-matched `--help`, upstream docs, or the owning skill.
+- Record the local delta: preferences, authorization boundaries, private
+  topology, generated-file ownership, and gotchas the environment does not
+  reveal.
 
-- Prefer the `agent-slack` CLI for channel discovery and message operations; pass `--workspace` explicitly. See `~/.agents/docs/slack.md`.
-- `slack.md` is generated at chezmoi apply (public base `home/.chezmoitemplates/agent-slack-base.md` plus a private overlay); edit the base template and the overlay source, never the rendered `~/.agents/docs/slack.md`.
-- Do not guess channel IDs. Resolve IDs from Slack tools.
-- If an ID cannot be resolved, mark it as `UNKNOWN` and add a short verification note.
-- Include channel usage guidance ("what it is for" and "when to use it").
+### 5. Prune
 
-### 5) Topic-specific rules (Twitter/X)
+- Delete no-ops that do not change model behavior.
+- Keep each meaning in one authoritative place.
+- Replace repeated prohibitions with a positive target; retain a prohibition
+  only for a hard guardrail.
+- Remove stale field manuals, generic motivation, discoverable command lists,
+  and duplicated skill content.
+- Split only when a real branch or sequence boundary earns another pointer.
 
-- Prefer the local `bird` CLI for Twitter/X read, search, timeline, and posting workflows.
-- Use `~/.agents/docs/twitter.md` as the convention doc.
-- Keep credentials and cookies out of docs, logs, and chat output.
-- Require explicit user instruction before write actions such as tweet, reply, follow, unfollow, bookmark, or unbookmark.
+### 6. Validate the boundary
 
-### 6) Keep AGENTS pointers aligned
+- Reread every changed instruction file end-to-end.
+- Confirm each pointer target exists in source or has an explicit generation
+  path, as `slack.md` does.
+- Search touched topics for duplicated or contradictory guidance.
+- Confirm steps have observable completion criteria.
+- Run `make test-agents-doc-pointers` after changing `AGENTS.md` or a convention
+  doc.
+- Run the relevant chezmoi preview and package validator after changing
+  generated paths or a packaged skill.
 
-When you add or rename a convention doc, update `~/.agents/AGENTS.md` to reference it.
+The work is complete when every changed convention has one authoritative home,
+every disclosed branch has a reliable pointer, and validation passes.
 
-Expected AGENTS style:
+## Handoff
 
-- short
-- pointer-oriented
-- minimal hardcoded workflow detail
-
-### 7) Validate before finishing
-
-- Confirm all referenced paths exist.
-- Check for stale or duplicated guidance between docs and `AGENTS.md`.
-- Ensure wording is consistent across related docs.
-- Ensure required sections (`Purpose`, `When to use`, `Defaults`, `Workflow`, `Validation checklist`) are present.
-
-## Output expectations
-
-When reporting completion, include:
-
-- files created/updated
-- any unresolved items (for example channel IDs still `UNKNOWN`)
-- whether `AGENTS.md` pointer updates were applied
+Report the files and boundaries changed, the validation run, and any unresolved
+pointer, generation, or source-of-truth question.

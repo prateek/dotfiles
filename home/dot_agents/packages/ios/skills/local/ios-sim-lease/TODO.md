@@ -7,7 +7,8 @@
 - [x] `~/.agents/bin/` directory exists (empty).
 - [x] Lease entry shape finalized (see `SKILL.md` → Lease file).
 - [x] Subcommand surface finalized: `acquire`, `release`, `heartbeat`, `list`, `reap`.
-- [x] Makefile skeleton in `ios-project-scaffold` reads `.ios-sim-udid` sentinel, so the eventual helper swap-in is a one-target change.
+- [x] `ios-project-scaffold` generates a repository-owned worktree helper that
+  owns simulator identities, locks, and mutable state under `build/`.
 - [ ] Bash helper script (`~/.agents/bin/ios-sim-lease`) — **NOT BUILT**.
 - [ ] Pool creation (4 `xcrun simctl create` calls for phone A/B + tablet A/B) — **NOT RUN** on this machine.
 - [ ] Lease file (`~/.agents/state/ios-sim-leases.json`) — does not exist yet.
@@ -16,22 +17,17 @@
 
 ## Why deferred
 
-Current iOS work is low-concurrency (one active project at a time), so the helper is forward-looking infrastructure rather than an urgent fix. Better to ship the doc and scaffold first, then build the helper once real contention appears. Until then, projects use the `.ios-sim-udid` sentinel file that the `ios-project-scaffold` Makefile generates.
+Current iOS work is low-concurrency across projects, so the helper remains
+forward-looking infrastructure. Inside a project, the generated worktree
+helper already isolates simulator state. Build the global lease layer when
+contention appears between unrelated projects.
 
-## Interim flow (what projects do today)
+## Current flow
 
-```bash
-# 1. Boot a real device once per worktree.
-xcrun simctl boot "iPhone 17 Pro"
-
-# 2. Grab the UDID and drop it in the sentinel file at the project root.
-xcrun simctl list devices booted -j \
-  | jq -r '.devices | to_entries[] | .value[] | select(.state=="Booted") | .udid' \
-  > .ios-sim-udid
-
-# 3. Now `make run`, `make test`, etc. all read IOS_SIM_UDID from the sentinel file.
-make run
-```
+Use each project's `make` targets, which delegate simulator ownership to its
+repository worktree helper. For concurrent work across projects, configure
+separate devices through those helpers and report contention. Do not recreate
+the retired `.ios-sim-udid` sentinel.
 
 ## When to build the helper
 
@@ -106,20 +102,16 @@ trap 'ios-sim-lease release "$IOS_SIM_UDID"' EXIT
 5. Makefile `boot-lease` target swapped to call `ios-sim-lease acquire` → `make build` works unchanged.
 6. Two real projects running `make test` in parallel worktrees → no state collision.
 
-### Migration from sentinel file
+### Integration with repository worktree helpers
 
-Once the helper ships, update the `ios-project-scaffold` Makefile template so `boot-lease` becomes:
-
-```make
-boot-lease:
-	@UDID=$$(ios-sim-lease acquire --kind $(LEASE_KIND) --agent $${AGENT:-claude} --ttl 60) && \
-	  echo $$UDID > $(LEASE_FILE) && \
-	  echo "leased: $$UDID"
-```
-
-Existing projects with a committed Makefile regenerate by re-running `ios-project-scaffold audit --apply` (or the equivalent).
+Once the global helper ships, update the `ios-project-scaffold` worktree-helper
+template to acquire a global lease before creating or booting a simulator,
+persist lease metadata under `build/state/`, and release it through the
+helper's existing cleanup path. Re-run the scaffold audit against existing
+projects before migration.
 
 ## Related
 
 - `~/.agents/docs/ios.md` — points at this skill for the simulator-leasing section.
-- `~/.agents/skills/ios-project-scaffold/` — owns the Makefile template this helper integrates with.
+- `ios-project-scaffold` — owns the worktree-helper template this service must
+  integrate with.

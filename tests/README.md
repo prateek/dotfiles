@@ -71,6 +71,7 @@ make test-karabiner-goku
 make test-chezmoi-local-ignores
 make test-chezmoi-script-status
 make test-chezmoi-drift-banner
+make test-agents-doc-pointers
 make test-codex-config
 make test-agentsview-config
 make test-reconcile-wiki-clone
@@ -84,6 +85,7 @@ make test-acpx-model-drift
 make test-acpx-poll-stream
 make test-agent-skill-packages
 make test-agent-skill-packages-native
+make test-ios-audit
 make test-selected-app-plists
 make test-tartelet-settings
 make test-tartelet-softnet-wrapper
@@ -140,6 +142,12 @@ Run agent skill package projection checks:
 
 ```sh
 make test-agent-skill-packages
+```
+
+Run the `ios-audit` skill's source-tree unit tests:
+
+```sh
+make test-ios-audit
 ```
 
 Run native Claude Code plugin validation for generated local plugins:

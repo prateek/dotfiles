@@ -1,4 +1,4 @@
-# Browser CDP Conventions (Skill-like)
+# Browser CDP Conventions
 
 ## Purpose
 

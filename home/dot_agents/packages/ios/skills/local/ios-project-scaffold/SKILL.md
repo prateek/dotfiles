@@ -40,7 +40,7 @@ Optional:
 Run:
 
 ```bash
-bash ~/.agents/skills/ios-project-scaffold/scripts/scaffold.sh \
+bash ~/.agents/plugins/plugins/ios/skills/ios-project-scaffold/scripts/scaffold.sh \
   --target /path/to/new/app \
   --name MyApp \
   --bundle-id com.example.MyApp \
@@ -54,8 +54,8 @@ Runs the deterministic convention pass from `scripts/audit.sh`, then read the fl
 Run:
 
 ```bash
-bash ~/.agents/skills/ios-project-scaffold/scripts/audit.sh --target /path/to/app
-bash ~/.agents/skills/ios-project-scaffold/scripts/audit.sh --target /path/to/app --json
+bash ~/.agents/plugins/plugins/ios/skills/ios-project-scaffold/scripts/audit.sh --target /path/to/app
+bash ~/.agents/plugins/plugins/ios/skills/ios-project-scaffold/scripts/audit.sh --target /path/to/app --json
 ```
 
 Exit code is 0 on clean audit, 1 if any check failed.

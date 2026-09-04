@@ -62,8 +62,14 @@ Pass credentials to the audit run via your shell:
 ```bash
 export MYAPP_TEST_USERNAME="..."
 export MYAPP_TEST_PASSWORD="..."
-~/.agents/skills/ios-audit/scripts/audit.py collect --workflows .audit/workflows.yaml ...
+export IOS_AUDIT_IPHONE_UDID="$(jq -er .udid build/simulators/iphone.json)"
+~/.agents/plugins/plugins/ios/skills/ios-audit/scripts/audit.py collect \
+  --workflows .audit/workflows.yaml \
+  --udid "$IOS_AUDIT_IPHONE_UDID" ...
 ```
+
+For a multi-lane `device_matrix`, set each lane's `udid` to a helper-owned,
+environment-backed value instead of using the single `--udid` override.
 
 For Xcode UI tests that run alongside the audit, use the Xcode 15.3+
 `TEST_RUNNER_` prefix pattern:
