@@ -19,6 +19,7 @@ chmod +x "$script"
 
 cat >"$current" <<'TOML'
 model = "old-model"
+model_reasoning_effort = "max"
 service_tier = "fast"
 custom_top_level = "keep"
 
@@ -28,6 +29,7 @@ max_depth = 1
 
 [tui]
 status_line = ["old"]
+status_line_use_colors = false
 
 [tui.keymap.pager]
 page_down = "old"
@@ -69,21 +71,20 @@ import tomllib
 path = sys.argv[1]
 data = tomllib.loads(open(path, "rb").read().decode())
 
-assert data["model"] == "gpt-5.6-sol"
+assert data["model"] == "gpt-6-astra"
 assert data["model_reasoning_effort"] == "xhigh"
-assert data["service_tier"] == "fast"
+assert data["service_tier"] == "default"
 assert data["custom_top_level"] == "keep"
 assert data["agents"]["max_threads"] == 16
 assert data["agents"]["max_depth"] == 3
 assert data["tui"]["status_line"] == [
-    "thread-title",
     "model-with-reasoning",
     "context-used",
+    "context-window-size",
     "five-hour-limit",
     "weekly-limit",
-    "context-window-size",
-    "current-dir",
 ]
+assert data["tui"]["status_line_use_colors"] is True
 assert data["tui"]["keymap"]["pager"] == {
     "scroll_up": ["up", "k"],
     "scroll_down": ["down", "j"],

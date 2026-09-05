@@ -1,7 +1,7 @@
-model = "gpt-5.6-sol"
+model = "gpt-6-astra"
 model_reasoning_effort = "xhigh"
 plan_mode_reasoning_effort = "xhigh"
-service_tier = "fast"
+service_tier = "default"
 
 [agents]
 max_threads = 16
@@ -23,7 +23,14 @@ enabled = true
 {{ includeTemplate "agent-codex-plugin-config.toml.tmpl" . }}
 
 [tui]
-status_line = ["thread-title", "model-with-reasoning", "context-used", "five-hour-limit", "weekly-limit", "context-window-size", "current-dir"]
+status_line = [
+  "model-with-reasoning",
+  "context-used",
+  "context-window-size",
+  "five-hour-limit",
+  "weekly-limit",
+]
+status_line_use_colors = true
 
 [tui.keymap.pager]
 scroll_up = ["up", "k"]
