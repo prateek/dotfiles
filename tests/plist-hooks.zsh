@@ -26,6 +26,7 @@ bash -n "$hooks_src" || die "plist-hooks script syntax error"
 
 tmp_root="$(mktemp -d)"
 trap 'rm -rf "$tmp_root"' EXIT
+cp "$DOTFILES_ROOT/scripts/chezmoi-hooks/render-host-mount" "$tmp_root/render-host-mount"
 
 # -- Stub helpers ------------------------------------------------------------
 
@@ -319,6 +320,10 @@ run_pre_dryrun_case short_nv   "chezmoi apply -nv"            yes
 run_pre_dryrun_case short_vn   "chezmoi apply -vn"            yes
 run_pre_dryrun_case dryrun_no  "chezmoi apply --dry-run=false" no
 run_pre_dryrun_case verbose    "chezmoi apply -v"             no
+run_pre_dryrun_case data       'chezmoi apply --override-data {"note":"words -n words"}' no
+run_pre_dryrun_case last_no    "chezmoi apply -n --dry-run=false" no
+run_pre_dryrun_case last_yes   "chezmoi apply --dry-run=false -n" yes
+run_pre_dryrun_case short_no   "chezmoi apply -n=false" no
 
 run_post_dryrun_case() {
   local label="$1" args="$2" expect="$3"
@@ -341,6 +346,8 @@ run_post_dryrun_case dryrun    "chezmoi apply --dry-run"       yes
 run_post_dryrun_case dryrun_eq "chezmoi apply --dry-run=true"  yes
 run_post_dryrun_case short_nv  "chezmoi apply -nv"             yes
 run_post_dryrun_case dryrun_no "chezmoi apply --dry-run=false" no
+run_post_dryrun_case data      'chezmoi apply --override-data {"note":"words --dry-run words"}' no
+run_post_dryrun_case last_no   "chezmoi apply -n --dry-run=false" no
 
 # Case K: DOTFILES_SKIP_PLIST_HOOKS=1 short-circuits both hooks. The
 # sandboxed-apply path in scripts/audit/zsh-fresh-shells.zsh sets this

@@ -91,17 +91,16 @@ agent_session_wiki_sparse = true
 # no-op. Add e.g. [machines.os.windows] or [machines.host.gaming-rig] when a
 # Linux homelab flavor or a Windows box needs to compose extra behavior.
 
-# Homelab mini with a dedicated external SSD for Tart. tart_home points TART_HOME
-# at the volume so VM images and disks never fill the boot drive. It is honored
-# only when the SSD is actually mounted; see home/dot_zshenv.tmpl (shell startup)
-# and scripts/vm/lib.sh (the multi-GB lane guard). Absent on other hosts, so tart
-# falls back to its ~/.tart default there.
+# The code volume is reconciled before apply reads destination state.
+# See docs/runbooks/host-storage.md. Tart's separate storage path is exported by
+# home/dot_config/zsh/dot_zshenv.tmpl and checked by scripts/vm/lib.sh.
 [machines.host.m4mini]
-tart_home = "/Volumes/TartVMs/tart"
+code_volume_uuid = "8C16DA8F-1B9B-4ADC-9C7D-EFA8FF8B15D7"
+tart_home = "/Users/prateek/code/.storage/vms/tart"
+winmux_e2e_artifact_root = "/Users/prateek/code/.storage/artifacts/winmux"
 wiki_host_alias = "m4mini"
-# Designated wiki-ingest host: always on, full archive clone. Move the flag to
-# another full-clone host's layer to migrate the role.
-agent_session_wiki_ingest = true
+# Ingest is paused; see docs/plans/wiki-ingest-revisit-plan.md.
+agent_session_wiki_ingest = false
 
 # Managed work MacBook (Jamf hostname). Sparse archive clone via the work
 # type, so it cannot own the ingest role.

@@ -3,7 +3,7 @@ status: active
 doc_type: runbook
 owner: Prateek
 created: 2026-07-03
-updated: 2026-07-03
+updated: 2026-09-05
 related:
   - ../plans/tartelet-runner-plan.md
   - ../adr/0014-tartelet-self-hosted-runners.md
@@ -18,6 +18,25 @@ verify checks; this runbook covers the parts that cannot be automated: the GitHu
 App, the golden VM build, and the one-time credential entry. Design and rationale
 are in [ADR 0014](../adr/0014-tartelet-self-hosted-runners.md) and the
 [runner plan](../plans/tartelet-runner-plan.md).
+
+## m4mini recovery status, September 5
+
+The golden `tartelet-runner` VM was rebuilt at
+`~/code/.storage/vms/tart` from
+`ghcr.io/cirruslabs/macos-tahoe-xcode:26.3` (manifest
+`sha256:39980f3a654be50fab35d8ead868b25b7b5c52adb59ec2fca23073c714cac9c6`).
+It boots with Xcode 26.3, build 17C529. A guest HTTPS request to GitHub passed;
+a temporary HTTP service reachable on the host's LAN address timed out from
+the guest under softnet. The test VM was stopped afterward.
+
+Tartelet's native store setting, start-on-launch setting, and launch agent
+are restored. Its first background clone is waiting in a filesystem `utimes`
+call while opening the golden VM. The same VM opens from the terminal. No
+Tartelet removable-volume grant was present in the inspected TCC records;
+Prateek was asked to check the app for an SSD-access prompt. This remains a
+suspected privacy boundary, not a confirmed diagnosis. GitHub registration
+and a disposable CI job are still unverified. Continue at step 7 after the
+app can clone its VM; avoid rebuilding the downloaded image again.
 
 ## What apply already did
 

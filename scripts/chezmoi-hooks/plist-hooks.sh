@@ -2,8 +2,8 @@
 #
 # chezmoi hooks.apply.pre and hooks.apply.post, dispatched by mode ($1):
 #
-#   pre   Warn if any managed plist would change this apply while its app is
-#         currently running. At a terminal, offers to quit those apps (a
+#   pre   Reconcile required host mounts, then warn if a managed plist would
+#         change this apply while its app is running. At a terminal, offers to quit those apps (a
 #         real Apple Event quit, so unsaved-changes dialogs still fire) and
 #         relaunch them after apply; declining or running non-interactively
 #         leaves them running and refuses the apply, since a running app can
@@ -16,8 +16,7 @@
 #         DOTFILES_RELAUNCH_AFTER_APPLY=1, off by default) every app in the
 #         pending list.
 #
-# Set DOTFILES_SKIP_PLIST_HOOKS=1 to short-circuit both modes entirely
-# (sandboxed applies, force-apply over running apps, etc.).
+# DOTFILES_SKIP_PLIST_HOOKS=1 skips plist handling; required host mounts still run.
 #
 set -euo pipefail
 
@@ -36,20 +35,23 @@ contains() {
   return 1
 }
 
-# chezmoi runs hooks unconditionally, including under `chezmoi apply
-# --dry-run`. Detect dry-run via CHEZMOI_ARGS (chezmoi <2.70 has no
-# dedicated DRY_RUN var). Handle bare `--dry-run`, `--dry-run=true`,
-# and short-flag bundles like `-n`, `-nv`, `-vn`. Skip on dry-run to
-# keep `chezmoi apply --dry-run` side-effect-free.
-for arg in ${CHEZMOI_ARGS:-}; do
-  case "$arg" in
-    --dry-run|--dry-run=true) exit 0 ;;
-    --*) ;;
-    -*n*) exit 0 ;;
-  esac
-done
+# Hooks run during previews too. Parse flags outside JSON override data.
+mount_renderer="$(dirname "${BASH_SOURCE[0]}")/render-host-mount"
+dry_run="$(/usr/bin/perl "$mount_renderer" --print-dry-run)"
+[[ "$dry_run" != true ]] || exit 0
 
-# Explicit opt-out short-circuits both modes. Use cases: zsh-fresh-shells.zsh's
+if [[ "$mode" == pre && -n "${CHEZMOI_SOURCE_DIR:-}" ]]; then
+  mount_template="$CHEZMOI_SOURCE_DIR/.chezmoitemplates/host-mounts.sh.tmpl"
+  if [[ -f "$mount_template" ]]; then
+    mount_args=(--source "$CHEZMOI_SOURCE_DIR")
+    [[ -z "${CHEZMOI_CONFIG_FILE:-}" ]] || mount_args+=(--config "$CHEZMOI_CONFIG_FILE")
+    [[ -z "${CHEZMOI_DEST_DIR:-}" ]] || mount_args+=(--destination "$CHEZMOI_DEST_DIR")
+    mount_script="$(/usr/bin/perl "$mount_renderer" "${mount_args[@]}" execute-template --file "$mount_template")"
+    [[ -z "$mount_script" ]] || /bin/bash -c "$mount_script" dotfiles-host-mount
+  fi
+fi
+
+# Explicit opt-out skips plist handling. Use cases: zsh-fresh-shells.zsh's
 # sandboxed verify (running apps don't read from temp HOME, no race possible),
 # or any operator who wants to force-apply over running apps without the
 # cfprefsd kill side-effect.

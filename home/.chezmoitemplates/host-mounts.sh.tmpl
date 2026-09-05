@@ -1,0 +1,8 @@
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- if and $f.run_install_scripts (eq .chezmoi.os "darwin") (hasKey $f "code_volume_uuid") -}}
+#!/bin/bash
+set -euo pipefail
+/bin/bash {{ joinPath .dotfiles_dir "scripts/storage/ensure-code-volume" | replace "'" "'\\''" | printf "'%s'" }} --ensure \
+  {{ $f.code_volume_uuid | replace "'" "'\\''" | printf "'%s'" }} \
+  {{ joinPath .chezmoi.homeDir "code" | replace "'" "'\\''" | printf "'%s'" }}
+{{- end }}

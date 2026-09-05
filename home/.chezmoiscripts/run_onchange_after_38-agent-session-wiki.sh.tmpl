@@ -4,6 +4,9 @@
 # register-wiki-automations sha256: {{ include (printf "%s/../scripts/agent-sessions/register-wiki-automations" .chezmoi.sourceDir) | sha256sum }}
 # reconcile-wiki-clone sha256: {{ include (printf "%s/../scripts/agent-sessions/reconcile-wiki-clone" .chezmoi.sourceDir) | sha256sum }}
 # sync launch agent sha256: {{ include "Library/LaunchAgents/com.prateek.wiki-sessions-sync.plist.tmpl" | sha256sum }}
+# sync app installer sha256: {{ include (printf "%s/../scripts/agent-sessions/install-sync-app" .chezmoi.sourceDir) | sha256sum }}
+# sync app source sha256: {{ include (printf "%s/../scripts/agent-sessions/sync-app/SessionArchiveSync.swift" .chezmoi.sourceDir) | sha256sum }}
+# sync app metadata sha256: {{ include (printf "%s/../scripts/agent-sessions/sync-app/Info.plist" .chezmoi.sourceDir) | sha256sum }}
 # agentsview modify template sha256: {{ include "private_dot_agentsview/modify_private_config.toml.tmpl" | sha256sum }}
 
 set -euo pipefail
@@ -89,6 +92,7 @@ esac
 
 # The plist sha comment above makes plist edits refire this script; launchd
 # creates the log file but not its directory.
+run_timed "install Session Archive Sync" "{{ .chezmoi.sourceDir }}/../scripts/agent-sessions/install-sync-app"
 mkdir -p "$HOME/.local/state/dotfiles/wiki-sessions-sync"
 chmod 700 "$HOME/.local/state/dotfiles/wiki-sessions-sync"
 launchctl bootout "gui/$(id -u)/$sync_label" 2>/dev/null || true

@@ -55,6 +55,7 @@ Run focused repo regression tests without booting a VM:
 make test-tart-install-helper
 make test-render-brewfile
 make test-machines-features
+make test-host-mounts
 make test-elevation-render
 make test-zsh-prompt-host
 make test-mise-install-script
@@ -98,6 +99,17 @@ make test-trace-perfetto
 make test-vm-install-log-scan
 make test-vm-postflight-macos
 ```
+
+`make test-host-mounts` uses simulated macOS disk commands and fstab probes,
+plus real isolated chezmoi applies, to verify mount recovery, data preservation,
+and failure before modifiers or package setup. It also covers attached option
+values, preview flags outside JSON data, and both zsh startup paths with an
+absent configured SSD directory. It does
+not mount or unmount a physical disk.
+
+`make test-chezmoi-script-status` applies into a temporary home and uses test
+executables for `launchctl` and Orca. A temporary home alone does not isolate
+the caller's launchd services or app runtime.
 
 `make test-trace-perfetto` covers the zsh xtrace converter, function-derived span layout, trace merge behavior, private artifact permissions, conversion failure handling, and the local Perfetto viewer URL helper.
 

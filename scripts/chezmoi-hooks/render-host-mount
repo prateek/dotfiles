@@ -1,0 +1,76 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Cwd qw(abs_path);
+use JSON::PP;
+
+my $arguments = $ENV{CHEZMOI_ARGS} // '';
+my @overrides;
+my @flag_text;
+my $cursor = 0;
+chdir($ENV{CHEZMOI_COMMAND_DIR}) or die "Cannot use chezmoi's command directory: $!\n"
+    if $ENV{CHEZMOI_COMMAND_DIR};
+
+# CHEZMOI_ARGS joins argv without shell quoting. Decode JSON as data; never eval it.
+while ($arguments =~ /(?:^|\s)--override-data(-file)?(?:=|\s+)/g) {
+    my $is_file = $1;
+    push @flag_text, substr($arguments, $cursor, $-[0] - $cursor);
+    my $start = pos($arguments);
+    my $rest = substr($arguments, $start);
+    if ($is_file) {
+        my @ends = (length($rest));
+        push @ends, $-[0] while $rest =~ /\s+/g;
+        my @matches;
+        for my $end (@ends) {
+            my $candidate = substr($rest, 0, $end);
+            push @matches, [$candidate, $end] if -f $candidate;
+        }
+        die "Cannot identify an unambiguous --override-data-file path in the apply hook.\n"
+            unless @matches == 1;
+        push @overrides, '--override-data-file', abs_path($matches[0][0]);
+        pos($arguments) = $start + $matches[0][1];
+    } else {
+        my ($value, $length) = JSON::PP->new->utf8->decode_prefix($rest);
+        die "--override-data must contain a JSON object.\n" unless ref($value) eq 'HASH';
+        push @overrides, '--override-data', JSON::PP->new->utf8->encode($value);
+        pos($arguments) = $start + $length;
+    }
+    $cursor = pos($arguments);
+}
+push @flag_text, substr($arguments, $cursor);
+
+if (@ARGV && $ARGV[0] eq '--print-dry-run') {
+    my $dry_run = 0;
+    my $skip_value = 0;
+    for my $arg (split /\s+/, join(' ', @flag_text)) {
+        if ($skip_value) {
+            $skip_value = 0;
+            next;
+        }
+        last if $arg eq '--';
+        if ($arg =~ /^--dry-run(?:=(.*))?$/) {
+            $dry_run = !defined($1) || $1 =~ /^(?:1|t|T|true|TRUE|True)$/;
+        } elsif ($arg =~ /^--(?:config|config-path|source|destination|working-tree|output|include|exclude)$/) {
+            $skip_value = 1;
+        } elsif ($arg =~ /^-([^-\s=]+)(?:=(.*))?$/) {
+            my ($bundle, $value) = ($1, $2);
+            while (length($bundle)) {
+                my $flag = substr($bundle, 0, 1, '');
+                if ($flag =~ /^[cCDdioxSW]$/) {
+                    $skip_value = !length($bundle) && !defined($value);
+                    last;
+                }
+                if ($flag eq 'n') {
+                    $dry_run = length($bundle) || !defined($value)
+                        || $value =~ /^(?:1|t|T|true|TRUE|True)$/;
+                }
+            }
+        }
+    }
+    print $dry_run ? "true\n" : "false\n";
+    exit 0;
+}
+
+my $chezmoi = $ENV{CHEZMOI_EXECUTABLE} // 'chezmoi';
+exec {$chezmoi} $chezmoi, @overrides, @ARGV;
+die "Cannot render host mounts: $!\n";

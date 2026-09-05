@@ -3,7 +3,7 @@ status: current
 doc_type: reference
 owner: Prateek
 created: 2026-09-02
-updated: 2026-09-04
+updated: 2026-09-05
 related:
   - chezmoi-architecture.md
 status_detail: "Execution order and design rules for chezmoi config hooks, source scripts, init, apply, and modify targets."
@@ -89,10 +89,21 @@ so embedding another file's checksum makes its changes retrigger a script.
 
 ## Repository wiring
 
-On Darwin, the generated config declares `hooks.apply.pre` and
-`hooks.apply.post` for plist safety. Those hooks guard running applications
-around preference writes. The repository does not currently configure a
-`read-source-state` hook.
+The generated config declares `hooks.apply.pre` and `hooks.apply.post` through
+`scripts/chezmoi-hooks/plist-hooks.sh`. Before plist handling, the pre hook
+renders only the host-mount script and reconciles any required code volume.
+That template reads the layered machine facts without computing file targets
+or running modifiers. The mount is ready before the plist guard's recursive
+`chezmoi status` and the parent apply's target computation.
+
+The mount template lives in `.chezmoitemplates/host-mounts.sh.tmpl`; it is
+not a source script. The pre-hook runs on every apply without leaving a
+pending script in `chezmoi status`. Dry runs skip mount reconciliation, and
+`DOTFILES_SKIP_PLIST_HOOKS=1` only skips plist handling. See
+[Host storage](../runbooks/host-storage.md) for host selection and recovery.
+
+The repository does not configure a `read-source-state` hook. Read-only
+commands such as `status` and `diff` do not mount drives.
 
 ## Inspection
 

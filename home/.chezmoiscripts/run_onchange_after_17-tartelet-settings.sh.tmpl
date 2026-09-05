@@ -31,7 +31,7 @@ start_read=1; start_write=true
 start_read=0; start_write=false
 {{- end }}
 # tartHomeFolderURL points Tartelet at the same store as the host TART_HOME, so it
-# finds the golden VM. Sourced from the machines.host layer (same as zprofile),
+# finds the golden VM. Sourced from the machines.host layer (same as zshenv),
 # not the ambient env, which a chezmoi script does not inherit. Empty on hosts
 # without a dedicated store, where Tartelet's ~/.tart default already matches.
 tart_home={{ $f.tart_home | default "" | quote }}

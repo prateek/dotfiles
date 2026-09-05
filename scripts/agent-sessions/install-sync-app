@@ -1,0 +1,33 @@
+#!/bin/bash
+set -euo pipefail
+
+source_dir="$(cd "$(dirname "$0")/sync-app" && pwd)"
+app="$HOME/Applications/Session Archive Sync.app"
+digest=$(cat "$source_dir/SessionArchiveSync.swift" "$source_dir/Info.plist" "$0" | shasum -a 256 | awk '{print $1}')
+if [ -f "$app/Contents/Resources/source.sha256" ] &&
+   [ "$(cat "$app/Contents/Resources/source.sha256")" = "$digest" ] &&
+   codesign --verify --strict "$app" 2>/dev/null; then
+  printf 'Session Archive Sync is current: %s\n' "$app"
+  exit 0
+fi
+
+mkdir -p "$HOME/Applications"
+stage=$(mktemp -d "$HOME/Applications/.session-archive-sync.XXXXXX")
+trap 'rm -r -- "$stage"' EXIT
+bundle="$stage/Session Archive Sync.app"
+mkdir -p "$bundle/Contents/MacOS" "$bundle/Contents/Resources"
+xcrun swiftc -O -warnings-as-errors -framework AppKit \
+  "$source_dir/SessionArchiveSync.swift" -o "$bundle/Contents/MacOS/SessionArchiveSync"
+cp "$source_dir/Info.plist" "$bundle/Contents/Info.plist"
+printf '%s\n' "$digest" > "$bundle/Contents/Resources/source.sha256"
+codesign --force --sign - --identifier com.prateek.SessionArchiveSync "$bundle"
+codesign --verify --strict "$bundle"
+
+if [ -e "$app" ]; then
+  mv "$app" "$stage/previous.app"
+fi
+if ! mv "$bundle" "$app"; then
+  if [ -d "$stage/previous.app" ]; then mv "$stage/previous.app" "$app"; fi
+  exit 1
+fi
+printf 'Installed %s\n' "$app"

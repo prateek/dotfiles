@@ -2,7 +2,7 @@
 status: current
 doc_type: index
 created: 2026-05-12
-updated: 2026-09-04
+updated: 2026-09-05
 related:
   - document-lifecycle.md
   - ../home/dot_agents/packages/core/skills/local/code-gardening/SKILL.md
@@ -27,10 +27,12 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [Chezmoi Architecture](references/chezmoi-architecture.md) | Dotfiles source-state architecture and validation entrypoints. |
 | [Chezmoi Drift Banner](../home/dot_config/dotfiles/chezmoi-drift/README.md) | Cached shell banner for managed chezmoi drift. |
 | [Chezmoi Hook Lifecycle](references/chezmoi-hook-lifecycle.md) | Ordering and design rules for config hooks, apply scripts, init, and modify targets. |
+| [Host Storage](runbooks/host-storage.md) | Required SSD mounts before apply computes targets or installs packages. |
 | [Jamf Self Service Elevation](references/jamf-self-service-elevation.md) | Temporary admin elevation on Jamf-managed work Macs. |
 | [Mise Tool Management](references/mise-tool-management.md) | Mise-native CLI and tool selection. |
 | [Tart Install Validation](runbooks/tart-mini-validation.md) | Local disposable-VM install validation on a Mac mini. |
 | [Tartelet Runner Setup](runbooks/tartelet-runner-setup.md) | Standing up a homelab mini as an ephemeral iOS/macOS GitHub Actions runner host. |
+| [Session Archive Sync Permissions](runbooks/session-sync-permissions.md) | Building the dedicated sync app and validating its removable-volume access. |
 | [USB-C Cable Audit](runbooks/usb-c-cable-audit.md) | Auditing unlabeled USB-C cables for speed, power, generation, and TB5 capability. |
 
 ## Open And Proposed Work
@@ -40,7 +42,9 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [acpx Claude Code Streaming PoC](plans/acpx-claude-streaming-poc-plan.md) | Active; PoC executed with a go recommendation — `poll-stream` helper landed at `home/dot_agents/bin/` (target `~/.agents/bin/poll-stream`), review-hardened, and the acpx conventions doc teaches per-harness watching lanes. Remaining: live steering demo, the ADR 0016 packaging move, land. |
 | [ADR 0016 - Vendored dependency content may land inside a local skill](adr/0016-vendor-into-skill-references.md) | Proposed; per-skill vendor destinations so a local skill can carry upstream content as references. First customer: acpx ([plan](plans/acpx-claude-streaming-poc-plan.md)). |
 | [Agent Plugin Renderer](plans/agent-plugin-renderer-plan.md) | Active; plugin-only render mode, APM payload pass-through, and hooks vendoring landed. Pack-bundle vendoring stays deferred. |
-| [Agent Session Wiki](plans/agent-session-wiki-plan.md) | Active; cross-machine session archive (prateek/wiki-agent-sessions), hourly Orca sync, agentsview session_sources wiring, obsidian-wiki plugin package — landing on av-history. See [ADR 0017](adr/0017-agent-session-archive.md). |
+| [Agent Session Wiki](plans/agent-session-wiki-plan.md) | Active; hourly launchd archive sync and AgentsView wiring. Scheduled wiki ingest is paused. See [ADR 0017](adr/0017-agent-session-archive.md). |
+| [Revisit Wiki Ingestion](plans/wiki-ingest-revisit-plan.md) | TODO; decide whether and how to resume wiki ingestion. |
+| [SSD Layout And Arq Coverage](plans/ssd-arq-layout-plan.md) | Active; Code, Tart, and WinMux storage migrated. Both SSD volumes retained for Code and GhostPepper; Arq selection and restore checks deferred. |
 | [BetterDisplay Display Modes](plans/betterdisplay-display-modes-plan.md) | Proposed only; no `displayctl` implementation exists in this checkout. |
 | [Decomment Skill](plans/decomment-skill-plan.md) | Active; decomment core skill, trigger-channel fixes, and evals under implementation. |
 | [Orcactl](plans/orcactl-plan.md) | Draft for a separate Go repo/tool; dotfiles integration is future install/skill wiring. |

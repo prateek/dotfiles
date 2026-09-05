@@ -1,0 +1,130 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+dotfiles_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+# shellcheck source=home/.chezmoitemplates/script_lib.sh
+. "$dotfiles_root/home/.chezmoitemplates/script_lib.sh"
+
+check_only=false
+case "${1:-}" in
+  --check) check_only=true; shift ;;
+  --ensure) shift ;;
+esac
+[[ $# -eq 2 ]] || die "Usage: ensure-code-volume [--check] VOLUME_UUID MOUNT_POINT"
+uuid="$(printf '%s' "$1" | tr '[:lower:]' '[:upper:]')"
+mount_point="$2"
+[[ "$uuid" =~ ^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$ ]] || die "Invalid APFS volume UUID."
+[[ "$mount_point" =~ ^/[A-Za-z0-9._/-]+$ && "$mount_point" != / && "$mount_point" != */ ]] || die "Mount point must be an absolute path without whitespace or special characters."
+[[ "$(uname -s)" == Darwin ]] || die "Host APFS mounts require macOS."
+[[ ! -L "$mount_point" ]] || die "$mount_point is a symlink; migrate it before applying the native mount."
+parent="$(dirname "$mount_point")"
+[[ -d "$parent" && "$(cd "$parent" && pwd -P)" == "$parent" ]] || die "Mount parent must exist and use its native path: $parent"
+
+work_dir="$(mktemp -d /private/tmp/dotfiles-host-mount.XXXXXX)"
+trap 'rm -r -- "$work_dir"' EXIT
+
+plist_value() {
+  plutil -extract "$2" raw -o - "$1" 2>/dev/null || true
+}
+
+read_volume() {
+  diskutil info -plist "$uuid" >"$work_dir/volume.plist" 2>/dev/null || die "Required SSD volume $uuid is unavailable. Connect or unlock it, then rerun chezmoi apply."
+  [[ "$(plist_value "$work_dir/volume.plist" VolumeUUID)" == "$uuid" ]] || die "SSD volume identity does not match $uuid."
+  [[ "$(plist_value "$work_dir/volume.plist" FilesystemType)" == apfs ]] || die "Required SSD volume must use APFS."
+  [[ "$(plist_value "$work_dir/volume.plist" Internal)" == false ]] || die "Refusing an internal disk for code storage."
+  [[ "$(plist_value "$work_dir/volume.plist" Locked)" != true ]] || die "Required SSD volume is locked. Unlock it and rerun chezmoi apply."
+  [[ "$(plist_value "$work_dir/volume.plist" WritableVolume)" == true ]] || die "Required SSD volume is not writable."
+  mounted_at="$(plist_value "$work_dir/volume.plist" MountPoint)"
+  ownership="$(plist_value "$work_dir/volume.plist" GlobalPermissionsEnabled)"
+}
+
+check_target() {
+  [[ ! -L "$mount_point" ]] || die "$mount_point is a symlink."
+  [[ -e "$mount_point" ]] || return 0
+  [[ -d "$mount_point" && -r "$mount_point" && -x "$mount_point" ]] || die "Cannot inspect mount directory $mount_point."
+  diskutil info -plist "$mount_point" >"$work_dir/target.plist" 2>/dev/null || die "Cannot identify the filesystem at $mount_point."
+  if [[ "$(plist_value "$work_dir/target.plist" MountPoint)" == "$mount_point" ]]; then
+    [[ "$(plist_value "$work_dir/target.plist" VolumeUUID)" == "$uuid" ]] || die "Another volume occupies $mount_point."
+  else
+    [[ "$mounted_at" != "$mount_point" ]] || die "Mount path and volume identity disagree."
+    shopt -s dotglob nullglob
+    local entries=("$mount_point"/*)
+    shopt -u dotglob nullglob
+    [[ ${#entries[@]} -eq 0 ]] || die "$mount_point contains local files; migrate them before mounting the SSD."
+  fi
+}
+
+fstab_state() {
+  MOUNT_UUID="$uuid" MOUNT_POINT="$mount_point" awk '
+    /^[[:space:]]*#/ || NF == 0 { next }
+    toupper($1) == "UUID=" ENVIRON["MOUNT_UUID"] || $2 == ENVIRON["MOUNT_POINT"] {
+      count++
+      if (toupper($1) != "UUID=" ENVIRON["MOUNT_UUID"] || $2 != ENVIRON["MOUNT_POINT"] ||
+          $3 != "apfs" || $4 !~ /(^|,)rw(,|$)/ || $4 ~ /(^|,)(ro|noauto|noowners)(,|$)/)
+        conflict = 1
+    }
+    END {
+      if (conflict || count > 1) {
+        print "Conflicting or duplicate /etc/fstab entry for the code volume; resolve it with sudo vifs." > "/dev/stderr"
+        exit 1
+      }
+      print (count == 1 ? "present" : "missing")
+    }
+  '
+}
+
+read_volume
+check_target
+if stat /etc/fstab >/dev/null 2>&1; then
+  cat /etc/fstab >"$work_dir/fstab" || die "Cannot read /etc/fstab."
+else
+  : >"$work_dir/fstab"
+fi
+fstab="$(fstab_state <"$work_dir/fstab")"
+
+if [[ "$fstab" == missing || "$mounted_at" != "$mount_point" || "$ownership" != true ]]; then
+  [[ "$check_only" == false ]] || die "Required SSD mount needs setup. Rerun chezmoi apply with its apply.pre hook enabled."
+  dotfiles_sudo_start "The host's SSD mount needs administrator access to update fstab or protect its empty mount point."
+fi
+
+if [[ "$fstab" == missing ]]; then
+  editor="$work_dir/fstab-editor"
+  {
+    printf '#!/bin/bash\nset -euo pipefail\n'
+    printf 'uuid=%q\nmount_point=%q\n' "$uuid" "$mount_point"
+    declare -f fstab_state
+    cat <<'EDITOR'
+state="$(fstab_state <"$1")"
+if [[ "$state" == missing ]]; then
+  printf '\nUUID=%s %s apfs rw 0 0\n' "$uuid" "$mount_point" >>"$1"
+fi
+EDITOR
+  } >"$editor"
+  chmod 0700 "$editor"
+  sudo env "EDITOR=$editor" "VISUAL=$editor" vifs
+  [[ "$(cat /etc/fstab | fstab_state)" == present ]] || die "Persistent SSD mount was not installed."
+fi
+
+if [[ "$mounted_at" != "$mount_point" ]]; then
+  if [[ -n "$mounted_at" ]]; then
+    diskutil unmount "$uuid" || die "SSD is busy at $mounted_at. Stop its consumers and rerun chezmoi apply."
+  fi
+  read_volume
+  check_target
+  [[ -z "$mounted_at" ]] || die "SSD mounted elsewhere during setup; rerun chezmoi apply."
+  sudo mkdir -p "$mount_point"
+  sudo chown root:wheel "$mount_point"
+  sudo chmod 0555 "$mount_point"
+  diskutil mount -mountPoint "$mount_point" "$uuid" || die "Could not mount the SSD at $mount_point."
+  read_volume
+fi
+
+if [[ "$ownership" != true ]]; then
+  sudo diskutil enableOwnership "$uuid"
+  read_volume
+fi
+[[ "$mounted_at" == "$mount_point" ]] || die "SSD is not mounted at $mount_point."
+[[ "$ownership" == true ]] || die "SSD file ownership is disabled."
+check_target
+[[ -w "$mount_point" ]] || die "$mount_point is not writable by this user; check ownership and removable-volume permission."
+log "Required SSD verified: $uuid mounted at $mount_point."
