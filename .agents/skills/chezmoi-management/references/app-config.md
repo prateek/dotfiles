@@ -73,7 +73,7 @@ The merge engine parses these directives before parsing the rest as plist XML an
 
 ## Plist Fragment Templating
 
-The `.plist.tmpl` fragment is rendered through `includeTemplate` inside the stub before being base64-decoded by the postlude, so anything that looks like a Go template directive will be evaluated. **Escape literal `{{` and `}}` in plist string values.** Real example: Moom geometry strings are literal `{{width}}x{{height}}+0+0` and must be escaped, otherwise the template engine tries to resolve `width` as a variable.
+The `.plist.tmpl` fragment is rendered through `includeTemplate` inside the stub before being base64-decoded by `scripts/macos/plist-merge`, so anything that looks like a Go template directive will be evaluated. **Escape literal `{{` and `}}` in plist string values.** Real example: Moom geometry strings are literal `{{width}}x{{height}}+0+0` and must be escaped, otherwise the template engine tries to resolve `width` as a variable.
 
 Two patterns work:
 
@@ -146,7 +146,7 @@ The `modify_` mechanism works for any config where chezmoi owns some keys and th
 
 Use the `chezmoi-delete`-style directive only inside plist fragments; for TOML/JSON the merge logic is inlined in the stub script itself.
 
-When you need a similar pattern for a new format (YAML, INI, etc.), copy the standalone-Python-script shape from the Codex (TOML) or Claude (JSON) stub. (The plist case is special: 11 stubs share the same merge logic, so they delegate to a single `scripts/macos/plist-merge` tool via a bash shim. For one-off formats, an inline modify_ script keeps things simpler.)
+When you need a similar pattern for a new format (YAML, INI, etc.), copy the standalone-Python-script shape from the Codex (TOML) or Claude (JSON) stub. (The plist case is special: the app stubs share the same merge logic, so they delegate to a single `scripts/macos/plist-merge` tool via a bash shim. For one-off formats, an inline modify_ script keeps things simpler.)
 
 ## Retired Mechanisms (Do Not Reintroduce)
 
@@ -160,7 +160,8 @@ Chrome extension settings are NOT snapshotted from user profiles. Use Chrome Syn
 ## Validation
 
 ```text
-make test-plist-hooks                                                # plist modify_ stubs round-trip
+make test-config-merge                                               # real plist modifiers, ownership, unchanged bytes, discovery
+make test-plist-hooks                                                # apply-time app and cfprefsd hooks
 make test-codex-config                                               # non-plist modify_ pattern (Codex TOML)
 make test-claude-settings                                            # non-plist modify_ pattern (Claude JSON)
 make test-macos-defaults-script                                      # 30-macos-defaults side-effect guards

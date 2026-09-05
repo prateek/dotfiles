@@ -2,10 +2,11 @@
 status: current
 doc_type: reference
 created: 2026-04-27
-updated: 2026-09-04
+updated: 2026-09-05
 related:
   - ../index.md
   - ../adr/0006-chezmoi-migration-prototype.md
+  - ../adr/0021-shared-plist-verification.md
   - chezmoi-hook-lifecycle.md
 status_detail: "Current architecture reference. Historical migration detail lives in ADRs and git history."
 ---
@@ -135,10 +136,16 @@ preference plists use the shared plist merge pattern:
 
 - desired plist fragment:
   `home/.chezmoitemplates/<bundle-id>.plist.tmpl`
-- 3-line modify stub:
+- small bash modify stub:
   `home/Library/private_Preferences/modify_private_<bundle-id>.plist.tmpl`
 - shared engine:
-  `home/.chezmoitemplates/plist-merge-{prelude,postlude}.py`
+  [`scripts/macos/plist-merge`](../../scripts/macos/plist-merge)
+
+The rendered stub passes a bundle ID and base64-encoded desired XML to the engine. Current plist bytes arrive on stdin and merged bytes leave on stdout. Each desired top-level value replaces the whole current value, including nested dictionaries; unrelated top-level keys survive. `<!-- chezmoi-delete: key1, obsolete-key -->` removes named top-level keys before applying desired values. Changed output is binary; unchanged input retains its original bytes, including XML formatting or binary key order. Empty input seeds desired values. Malformed input fails without replacement output; a non-dictionary desired root is rejected.
+
+Equality preserves native types throughout nested values: integer `1`, boolean `true` and real `1.0` are distinct. Dictionaries and lists are compared by contents so binary container sharing does not cause a rewrite. Unchanged NaN values retain their original bytes.
+
+Shared verification runs through these real stdin/stdout interfaces. [ADR 0021](../adr/0021-shared-plist-verification.md) records the design. Add app scenarios with independent known values and ownership rules as described in the [tests index](../../tests/README.md#plist-merge-verification). No live preferences are read or written by this suite.
 
 Optional app config is gated in `home/.chezmoiignore`. Do not render empty
 placeholder config for absent apps.
@@ -179,8 +186,7 @@ Use the smallest check that proves the changed surface:
 - File-only apply preview:
   `chezmoi apply --dry-run --verbose --exclude=scripts`
 - Full managed-state preview: `chezmoi diff` and `chezmoi status`
-- App plist changes: the focused plist test for that app plus the shared
-  plist hook tests
+- App plist changes: `make test-config-merge test-plist-hooks`; existing per-app targets remain available for focused iteration
 - Shell startup: `scripts/audit/zsh-fresh-shells.zsh verify`
 
 Tart lanes are local end-to-end install validation. CI does not boot a full

@@ -3,10 +3,12 @@ status: proposed
 doc_type: plan
 owner: Prateek
 created: 2026-07-04
+updated: 2026-09-05
 related:
   - ../references/chezmoi-architecture.md
   - chezmoi-migration-plan.md
-status_detail: "Proposal to rebuild the test suite from scratch: modular by subsystem, polyglot by fit, on two primitives — assertions derived from source-of-truth, and discovery-based self-enforcing coverage. Not started."
+  - config-merge-verification-plan.md
+status_detail: "Broader suite rebuild remains proposed and unstarted. Shared plist verification was implemented separately under the approved config-merge plan."
 ---
 
 # Test-Suite Rebuild Plan
@@ -18,20 +20,18 @@ An audit of the `tests/*.zsh` suite (dispatched one-per-target from a single roo
 behavior, in three recurring shapes: config-value snapshots (`zed-settings`, the
 per-app plist tests), exact call/line transcripts (`mise-install-script`, the
 tartelet greps), and count/roster snapshots (`vm-postflight` `passed=22`, `karabiner`
-`33 manipulators`). These break on every honest config edit while catching nothing a
-behavior test wouldn't.
+`33 manipulators`). Some checks duplicate incidental config; others encode useful
+behavior or ownership. Consolidation must preserve that distinction.
 
-Two structural problems compound it. `make` defines 60 `test-*` targets but CI runs
-32; excluding the VM/external-CLI lanes, ~17 plain zsh tests never run — including
-strong ones (`secret-backed-files`, `sudo-keepalive`) — so coverage rots silently.
-The central Makefile is the registry, the runner, and the CI entrypoint all at once,
-and its hand-maintained target list is exactly what tests fall out of (the `.PHONY`
-list is already stale). This exact fix was also done once — branch
-`update-tests-phil` (2026-06-23) consolidated the brittle clones, added a `test-fast`
-aggregate, and wrote the `testing-philosophy` skill — but only the skill reached
-`master`; the suite fixes stranded. Nothing routes an agent to the good pattern, and
-the invariant keeps getting re-violated: the just-landed Tuna launcher migration added
-`com.brnbw.Tuna` with a plist stub and no test.
+At the reviewed base `dd8b29f` on 2026-09-05, the Makefile declares 75 `test-*`
+targets and CI explicitly names 43. These counts include aliases and special
+validation lanes; they do not establish how many ordinary tests are omitted.
+Test-selection changes need a classified inventory before migration.
+
+The separately approved [shared plist verification](config-merge-verification-plan.md)
+now covers every shipped plist modifier, including Tuna. It keeps the existing
+Make/CI structure and independent app ownership assertions. That bounded work does
+not implement the runner, general fixture isolation or other domains proposed here.
 
 Patching file-by-file failed because the incentives were never changed. This plan
 rebuilds the suite so the *correct* test is the *cheap* test, coverage polices
@@ -42,14 +42,13 @@ Makefile forcing every test into zsh.
 
 Three primitives carry the design:
 
-1. **Assert behavior derived from the rendered source-of-truth, never config-value
-   snapshots.** A merge/render test loads the rendered fragment and asserts the
-   *transform* — managed keys land, unmanaged/local keys survive, empty input seeds
-   only the managed set, re-merge is byte-stable — without naming a value. These
-   prove the engine lands the config it is given, not that the values are *correct*.
-   The config is its own spec; there is no unit oracle for "is this value right," so
-   we do not fake one with a literal. Correctness is validated at apply time and by
-   the app (Tiers 3–4).
+1. **Combine transform checks with independent intent checks.** A merge/render
+   test loads the rendered fragment to verify that managed keys land and local
+   keys survive. Empty input seeds the managed set; unchanged input preserves
+   bytes. These prove that the engine applies its input. Independently specified
+   known values, security defaults and app ownership assertions protect the input's
+   intent. Preserve them when consolidating tests, including VoiceInk's app-owned
+   recorder shortcut. App adoption still requires apply-time and native validation.
 2. **Coverage is self-enforcing through discovery, not a list.** A runner discovers
    tests by convention and cross-checks them against a per-subsystem manifest; a test
    file with no manifest entry fails the build, and an entry with no file fails too.
@@ -116,7 +115,7 @@ since the assertions live in different languages:
 - **Python package** (the natural home for the config-merge assertions many current
   tests already reach for via `uv run python`): `assert_merge_invariants(fragment,
   current, local)` derives expectations from the rendered fragment (managed-lands /
-  local-preserved / empty-seeds / idempotent); plist/JSON/TOML load helpers.
+  local-preserved / empty-seeds / idempotent); format-specific load helpers. Plist verification now exists under `tests/config_merge/`; JSON/TOML policies must be considered separately.
 - **Shell lib**: `render` (`chezmoi execute-template` with isolated config + pinned
   `machine_type`), `assert_gated`, `assert_fails_loud`, `assert_secret_never_leaks`,
   and one PATH-stub harness for `brew`/`mise`/`defaults` instead of each test rolling
@@ -130,7 +129,7 @@ Same contract across languages; a test picks the lib in its own language.
   plist fragment, `chezmoi execute-template` compiles every template, TOML/JSON parse
   of `.chezmoidata`, doc-lifecycle. Exhaustive, not a hand-picked subset.
 - **Tier 1 — Engine/property (fast, hermetic).** Generic, app-independent logic: one
-  property test for `scripts/macos/plist-merge` (deep-merge, managed-overrides,
+  property test for `scripts/macos/plist-merge` (whole top-level value replacement, managed-overrides,
   local-preserved, empty-seeds, delete directives incl. hyphenated keys,
   array/non-dict root, byte-stable idempotence); one merge-contract test per `modify_`
   engine; behavior/edge tests for the real programs.
@@ -161,9 +160,8 @@ Same contract across languages; a test picks the lib in its own language.
 
 ## Non-goals
 
-Deliberately not unit-tested: config *values* (no oracle), presentation/glyphs, exact
-call transcripts, magic counts. Those are Tier 3–4 questions. Literals that *are* the
-behavior stay literal: input→output parser mappings (`ghc-url`, `vm-install-log-scan`),
+Avoid snapshots of incidental presentation, call transcripts or counts. Retain
+independent literals when they specify behavior, intended config or ownership: input→output parser mappings (`ghc-url`, `vm-install-log-scan`),
 routing/contract strings (the `op://` ref, the Jamf deep-link), security invariants,
 and ordering that reflects a real dependency.
 
@@ -185,15 +183,16 @@ Staged so coverage never dips below what exists:
 3. **Tighten guards.** Shrink the exclusion/allowlist per port so the guard ratchets.
 4. **Cut over.** Remove the old curated CI list; land the routing/doc fixes.
 
-## Disposition of the current suite
+## Proposed disposition
 
-Roughly 48 files collapse to ~15–20, redistributed by domain and language:
+The original estimate was roughly 48 files collapsing to 15–20. Re-inventory the
+remaining domains before executing this broader proposal:
 
 | Disposition | Members |
 | --- | --- |
 | Survive ~intact (already behavioral) | `sudo-keepalive`, `plist-hooks`, `chezmoi-script-status`, `chezmoi-local-ignores`, `secret-backed-files`, `kanata-config`, `elevation-render`, `gh-extensions-script`, `chezmoi-config`, `repo-index`, `brew-inventory`, `vm-install-log-scan`, `ghc-url`, `crit-config`, `fork-reconcile`, `xcode-install-script` |
-| Fold into engine test + table (→ Python) | `selected-app` (becomes the table), `cmux`, `ice`, `nvalt`, `orbstack`, `moom` |
-| Strip snapshot, keep the invariant | `voiceink`, `nvalt-colors`, `vm-postflight`, `karabiner`, `claude-statusline`, `mise-install-script`, `orca-settings`, `codex-config`, `agentsview-config`, `claude-settings`, `tartelet-settings`, `tartelet-softnet-wrapper`, `macos-defaults`, `brew-install-wrapper`, `render-brewfile`, `trace-perfetto`, `machines-features`, `package-gated-configs`, `brew-bundle-script` |
+| Plist suites consolidated separately | `selected-app`, `cmux`, `thaw`, `nvalt`, `orbstack`, `moom`, `voiceink`; Tuna now has a scenario. See the [scoped plan](config-merge-verification-plan.md). |
+| Strip snapshot, keep the invariant | `nvalt-colors`, `vm-postflight`, `karabiner`, `claude-statusline`, `mise-install-script`, `orca-settings`, `codex-config`, `agentsview-config`, `claude-settings`, `tartelet-settings`, `tartelet-softnet-wrapper`, `macos-defaults`, `brew-install-wrapper`, `render-brewfile`, `trace-perfetto`, `machines-features`, `package-gated-configs`, `brew-bundle-script` |
 | Delete (pure snapshot, no unique coverage) | `zed-settings` |
 
 ## Open questions
@@ -206,16 +205,12 @@ Roughly 48 files collapse to ~15–20, redistributed by domain and language:
   reason). Recommend the manifest for the wiring-guard property.
 - **Task-runner shim.** Keep a thin `make test` for muscle memory, switch to `just`,
   or drop it and call `tests/run` directly.
-- **Verify the alleged engine bug.** GPT's review claimed `scripts/macos/plist-merge`
-  uses `([^-]+?)` for the `chezmoi-delete` directive, truncating hyphenated keys. The
-  Tier 1 delete test should confirm and fix it.
+- **Deletion regression resolved separately.** The scoped plist work observed a failing CLI regression for `obsolete-key` and fixed directive parsing. Evidence is in the [scoped plan](config-merge-verification-plan.md).
 
 ## Validation
 
 - `tests/run --ci-safe` is green and is the only CI test invocation.
 - The wiring guard fails on a deliberately-unmanifested test; the coverage guard fails
   on a deliberately-untested plist stub (the guards actually bite).
-- A representative config edit (add a Moom control, add a machine-type group) leaves
-  the suite green — the derive-from-source primitive holds.
-- No test asserts a config value that also lives verbatim in a source template, and no
-  test is forced into zsh where another language fits its subject better.
+- A representative config edit leaves generic transform checks green; changes to independently specified app intent update the relevant scenario deliberately.
+- Transform checks reuse rendered inputs while independent intent and ownership checks remain. Tests use the language that fits their subject.

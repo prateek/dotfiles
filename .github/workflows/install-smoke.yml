@@ -102,10 +102,9 @@ jobs:
           make test-gemini-meeting-sync
           make test-brew-install-wrapper
           make test-gh-extensions-script
-          make test-selected-app-plists
+          make test-config-merge
           make test-zed-settings
           make test-zsh-prompt-host
-          make test-moom-plist
           make test-tartelet-settings
           make test-tartelet-softnet-wrapper
           make test-plist-hooks

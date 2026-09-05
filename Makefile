@@ -1,4 +1,4 @@
-.PHONY: test test-chezmoi-apply hammerspoon hammerspoon-check hammerspoon-reload
+.PHONY: test-config-merge test-tuna-plist test test-chezmoi-apply hammerspoon hammerspoon-check hammerspoon-reload
 .PHONY: test-gemini-meeting-sync test-ghc test-gh-extensions-script test-mise-install-script test-xcode-install-script test-secret-backed-files test-kanata-config test-karabiner-goku test-chezmoi-config test-chezmoi-local-ignores test-chezmoi-script-status test-chezmoi-drift-banner test-agents-doc-pointers test-finder-copy-path test-codex-config test-cursor-cli-alias test-cursor-config test-agentsview-config test-reconcile-wiki-clone test-claude-settings test-claude-statusline test-pi-settings test-pi-statusline test-orca-settings test-crit-config test-vendor-skill-patches test-crit-evals test-agent-skill-packages test-agent-skill-packages-native test-ios-audit test-cmux-plist test-orbstack-plist test-selected-app-plists test-thaw-plist test-package-gated-configs test-machines-features test-elevation-render test-moom-plist test-nvalt-colors test-nvalt-plist test-voiceink-plist test-tartelet-settings test-tartelet-softnet-wrapper test-plist-hooks test-sudo-keepalive test-macos-defaults-script test-acpx-model-drift test-acpx-poll-stream test-brew-inventory test-brew-install-wrapper test-brew-bundle-script test-fork-reconcile test-retired-packages test-render-brewfile test-docs-lifecycle test-repo-index test-raycast-orca-worktree test-skill-console test-raycast-extensions-script
 .PHONY: test-zed-settings test-zsh-prompt-host test-zsh-fresh-shells verify-zsh-fresh-shells bench-zsh-startup
 .PHONY: test-host-mounts
@@ -219,6 +219,14 @@ test-agent-skill-packages-native:
 ## Regression tests for the skill management console.
 test-skill-console:
 	@zsh ./tests/skill-console.zsh
+
+## Shared plist merge contracts, all app scenarios, and modifier discovery.
+test-config-merge:
+	@DOTFILES_SKIP_LAUNCHCTL_SYNC=1 uv run --quiet --python '>=3.14' python -B tests/config_merge/run.py
+
+## Regression tests for selected-key Tuna plist merging.
+test-tuna-plist:
+	@DOTFILES_SKIP_LAUNCHCTL_SYNC=1 uv run --quiet --python '>=3.14' python -B tests/config_merge/run.py --app tuna
 
 ## Regression tests for selected-key cmux plist merging.
 test-cmux-plist:

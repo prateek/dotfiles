@@ -58,7 +58,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [Tartelet Runner Memory-Guard](plans/tartelet-runner-memory-guard-proposal.md) | Proposed; design for a circuit breaker that sheds the runner under host memory pressure after a 2026-07-03 jetsam wedge. Prototyped and validated, then dropped — no code in-tree. |
 | [Using-git-spice Skill](plans/using-git-spice-skill-plan.md) | Active; the replacement skill and config are applied, the duplicate is disabled, and the Orca smoke passed. Only the disruptive manual logged-out auth check remains. |
 | [Zsh Fresh-Shell Validator](plans/zsh-fresh-shell-validator-plan.md) | Active plan for shell correctness and startup checks. |
-| [Test-Suite Rebuild](plans/test-suite-rebuild-plan.md) | Proposed; rebuild the `tests/*.zsh` suite from scratch on two primitives — assertions derived from source-of-truth, and self-enforcing coverage — with a five-tier pyramid and a shared harness. Not started. |
+| [Test-Suite Rebuild](plans/test-suite-rebuild-plan.md) | Proposed and unstarted; broader runner and suite changes. Shared plist verification was implemented separately. |
 
 ## Decision Records
 
@@ -86,6 +86,7 @@ for day-to-day implementation details.
 | [ADR 0018 - Sparse, blobless archive clones on work machines](adr/0018-sparse-work-archive-clones.md) | `agent_session_wiki_sparse` in `machines.toml`, reconciled by `scripts/agent-sessions/reconcile-wiki-clone`; the ingest host stays a full clone. |
 | [ADR 0019 - Plugin hooks ship in the vendored plugin payload](adr/0019-plugin-hooks-in-vendored-payload.md) | [Agent Skill Management](../.agents/skills/agent-skill-management/SKILL.md); first consumers are the superpowers package and crit's plan-review hook. |
 | [ADR 0020 - chezmoi apply reconciles plugin install records](adr/0020-apply-reconciles-plugin-installs.md) | `reconcile-agent-plugins --apply`, run by `run_onchange_after_36-agent-plugins`; see [Plugin Reconcile](../.agents/skills/agent-skill-management/references/plugin-reconcile.md). |
+| [ADR 0021 - Shared plist verification](adr/0021-shared-plist-verification.md) | [Tests index](../tests/README.md#plist-merge-verification) and [Chezmoi Architecture](references/chezmoi-architecture.md). |
 
 ## Research
 
@@ -105,6 +106,7 @@ or `superseded_by` frontmatter before using them.
 
 | Doc | Current guidance |
 | --- | --- |
+| [Shared Config-Merge Verification](plans/config-merge-verification-plan.md) | Completed local implementation and validation; [tests index](../tests/README.md#plist-merge-verification) and [ADR 0021](adr/0021-shared-plist-verification.md). |
 | [Chezmoi Agent Skills Plan](plans/chezmoi-agent-skills-plan.md) | [Agent Skill Management](../.agents/skills/agent-skill-management/SKILL.md) and [ADR 0007](adr/0007-default-loaded-plugin-policy.md). |
 | [Chezmoi Drift Banner Plan](plans/chezmoi-drift-banner-plan.md) | [Chezmoi Drift Banner](../home/dot_config/dotfiles/chezmoi-drift/README.md). |
 | [Chezmoi Migration Plan](plans/chezmoi-migration-plan.md) | [Chezmoi Architecture](references/chezmoi-architecture.md). |

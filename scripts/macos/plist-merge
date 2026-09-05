@@ -43,7 +43,7 @@ def main() -> int:
     )
 
     deletes: list[str] = []
-    for match in re.finditer(rb"<!--\s*chezmoi-delete:\s*([^-]+?)\s*-->", desired_xml):
+    for match in re.finditer(rb"<!--\s*chezmoi-delete:\s*(.*?)-->", desired_xml, re.DOTALL):
         deletes.extend(k.strip() for k in match.group(1).decode().split(",") if k.strip())
 
     desired = plistlib.loads(desired_xml)
@@ -55,10 +55,16 @@ def main() -> int:
     if not isinstance(current, dict):
         current = {}
 
-    def byte_equal(a, b) -> bool:
-        return (
-            plistlib.dumps(a, fmt=plistlib.FMT_BINARY, sort_keys=False)
-            == plistlib.dumps(b, fmt=plistlib.FMT_BINARY, sort_keys=False)
+    def plist_equal(a, b) -> bool:
+        if type(a) is not type(b):
+            return False
+        if isinstance(a, dict):
+            return a.keys() == b.keys() and all(plist_equal(a[key], b[key]) for key in a)
+        if isinstance(a, list):
+            return len(a) == len(b) and all(plist_equal(x, y) for x, y in zip(a, b))
+        return a == b or (
+            plistlib.dumps(a, fmt=plistlib.FMT_BINARY)
+            == plistlib.dumps(b, fmt=plistlib.FMT_BINARY)
         )
 
     # plistlib re-encodes the same logical content with different integer
@@ -75,7 +81,7 @@ def main() -> int:
             mutated = True
 
     for key, value in desired.items():
-        if key in current and (current[key] == value or byte_equal(current[key], value)):
+        if key in current and plist_equal(current[key], value):
             continue
         if verbose:
             state = "absent" if key not in current else "changed"

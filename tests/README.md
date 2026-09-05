@@ -84,7 +84,7 @@ make test-acpx-poll-stream
 make test-agent-skill-packages
 make test-agent-skill-packages-native
 make test-ios-audit
-make test-selected-app-plists
+make test-config-merge
 make test-tartelet-settings
 make test-tartelet-softnet-wrapper
 make test-plist-hooks
@@ -112,6 +112,28 @@ executables for `launchctl` and Orca. A temporary home alone does not isolate
 the caller's launchd services or app runtime.
 
 `make test-trace-perfetto` covers the zsh xtrace converter, function-derived span layout, trace merge behavior, private artifact permissions, conversion failure handling, and the local Perfetto viewer URL helper.
+
+## Plist merge verification
+
+`make test-config-merge` checks the real merge executable, all rendered plist modifiers and scenario coverage. It requires uv, chezmoi and macOS `plutil`. The suite uses Python's standard library and temporary files; it does not read or write live preferences or invoke apply hooks.
+
+Each entry in [config_merge/scenarios.py](config_merge/scenarios.py) supplies a bundle ID, managed input `overrides`, app-owned `local` values and independently `expected` values. A `check` callback can inspect structured app payloads or a rendered path. To add an app, add a scenario there and run the shared target. Use deliberately different current values to exercise replacement. Put local keys only in `local`: the shared check verifies they survive existing input and are absent when starting from empty input. VoiceInk's `KeyboardShortcuts_toggleEnhancement` is one such app-owned key.
+
+The common checks render the actual adapter and desired fragment, execute the adapter with empty/XML/binary input, and verify desired values plus local state. They also assert exact bytes on a second merge and on equivalent, reordered binary input. Independent expected values and callbacks protect app intent; desired-derived checks alone cannot detect an incorrect managed preference.
+
+Use `test.assert_typed_equal(actual, expected)` for structured app assertions. It compares types throughout dictionaries and lists, so booleans, integers and reals remain distinct; failures name the nested value. cmux shortcuts and VoiceInk prompts also independently require plist data blobs before decoding their JSON. The engine cases protect numeric type replacement, shared binary container references and unchanged NaN values. Finder's separate workflow test checks native plist types with `plutil -expect` before comparing extracted values.
+
+[config_merge/test_discovery.py](config_merge/test_discovery.py) discovers plist modifiers under `home/`. Missing scenarios, stale entries and duplicate bundle IDs fail the suite. An exceptional modifier needs a repository-relative path and a non-empty ownership reason in `EXCEPTIONS`; there are currently no exceptions. A new app requires no Make or CI roster edit.
+
+Existing `test-moom-plist`, `test-thaw-plist`, `test-cmux-plist`, `test-orbstack-plist`, `test-nvalt-plist`, `test-voiceink-plist` and `test-selected-app-plists` targets delegate to the same checks. `make test-tuna-plist` runs Tuna alone. For any scenario selection:
+
+```sh
+uv run --quiet --python '>=3.14' python -B tests/config_merge/run.py --app voiceink tuna
+```
+
+Run `make test-plist-hooks test-package-gated-configs` when hook or package ownership is also in scope. The separate `make test-nvalt-colors` suite protects nvALT's color archive format.
+
+## Other validation lanes
 
 `make test-agent-skill-packages-native` requires Claude Code's `claude`
 command because it validates the generated local plugin marketplace with

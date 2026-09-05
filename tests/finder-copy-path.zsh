@@ -18,9 +18,9 @@ info="$workflow/Contents/Info.plist"
 document="$workflow/Contents/Resources/document.wflow"
 
 assert_plist_value() {
-  local plist="$1" key="$2" expected="$3" actual
-  actual="$(plutil -extract "$key" raw -o - "$plist")" \
-    || die "cannot read $key from ${plist#$DOTFILES_ROOT/}"
+  local plist="$1" key="$2" expected="$3" expected_type="${4:-string}" actual
+  actual="$(plutil -extract "$key" raw -expect "$expected_type" -o - "$plist")" \
+    || die "cannot read $key as $expected_type from ${plist#$DOTFILES_ROOT/}"
   [[ "$actual" == "$expected" ]] \
     || die "$key: expected '$expected', got '$actual'"
 }
@@ -42,10 +42,10 @@ assert_plist_value "$document" workflowMetaData.serviceApplicationBundleID com.a
 assert_plist_value "$document" workflowMetaData.serviceInputTypeIdentifier com.apple.Automator.fileSystemObject
 assert_plist_value "$document" workflowMetaData.serviceOutputTypeIdentifier com.apple.Automator.nothing
 assert_plist_value "$document" actions.0.action.ActionBundlePath "/System/Library/Automator/Run Shell Script.action"
-assert_plist_value "$document" actions.0.action.ActionParameters.inputMethod 1
+assert_plist_value "$document" actions.0.action.ActionParameters.inputMethod 1 integer
 assert_plist_value "$document" actions.0.action.ActionParameters.shell /bin/zsh
 
-command_text="$(plutil -extract actions.0.action.ActionParameters.COMMAND_STRING raw -o - "$document")"
+command_text="$(plutil -extract actions.0.action.ActionParameters.COMMAND_STRING raw -expect string -o - "$document")"
 expected_command=$'printf \'%s\\n\' "$@" | /usr/bin/pbcopy'
 [[ "$command_text" == "$expected_command" ]] || die "unexpected shell command"
 
