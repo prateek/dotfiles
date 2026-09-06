@@ -1,9 +1,10 @@
 ---
-status: active
+status: archived
 doc_type: plan
 owner: Prateek
 created: 2026-07-04
 updated: 2026-09-06
+closed: 2026-09-06
 related:
   - config-merge-verification-plan.md
   - ../adr/0021-shared-plist-verification.md
@@ -12,7 +13,8 @@ related:
   - ../adr/0002-zsh-fresh-shell-validator.md
   - ../adr/0005-mise-tool-management.md
   - ../research/shell-testing-framework-comparison.md
-status_detail: "All migrations and local integration checks passed, and selection accounting is complete. Remote CI evidence and metadata-only plan closure remain pending."
+current_guidance: ../../tests/README.md
+status_detail: "Completed and landed. Local validation and remote Linux Shellcheck, macOS behavior/dry-run, and formula-install checks passed on 2026-09-06 for ec9fa8e. Remote receipt: https://github.com/prateek/dotfiles/actions/runs/34018476135. The scoped chezmoi apply and generated-plugin verification passed; optional exact-Claude and VM lanes remain separate."
 ---
 
 # Test refactoring plan

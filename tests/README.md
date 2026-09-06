@@ -4,8 +4,8 @@ Shell commands and hooks use Bats; structured checks use native Python
 discovery, and the Raycast extension retains Node's native runner. `make test`
 and `make test-ci` compose the same local macOS lane.
 
-Read the [test refactoring plan](../docs/plans/test-suite-rebuild-plan.md)
-for migration evidence and the remaining remote CI gate.
+Read the [archived test refactoring plan](../docs/plans/test-suite-rebuild-plan.md)
+for migration evidence and the completed CI receipt.
 For alternatives and decision history, read the [framework comparison](../docs/research/shell-testing-framework-comparison.md).
 
 ## Choosing useful checks

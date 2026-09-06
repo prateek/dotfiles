@@ -8,7 +8,8 @@ related:
   - ../research/shell-testing-framework-comparison.md
   - 0002-zsh-fresh-shell-validator.md
   - 0005-mise-tool-management.md
-status_detail: "Implemented through Bats, native Python, and Node discovery with shared local/CI commands. The complete local macOS lane passed; the execution plan retains the required remote CI gate."
+current_guidance: ../../tests/README.md
+status_detail: "Implemented through Bats, native Python, and Node discovery with shared local/CI commands. Local macOS validation and remote Linux Shellcheck, macOS behavior/dry-run, and formula-install checks passed; the execution plan is archived with the CI receipt."
 ---
 
 # ADR 0022: Bats with repo-owned zsh test support
