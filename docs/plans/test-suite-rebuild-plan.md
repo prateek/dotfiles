@@ -1064,3 +1064,10 @@ consolidated, 12 shared plist, 16 iOS), six Node tests, and all three chezmoi
 dry-runs. Commit-hook validation also exposed a standalone dry-run target using
 caller runtime shims after home isolation. That focused target now selects the
 same pinned environment as the aggregate before creating temporary homes.
+
+The first post-landing remote run passed Linux Shellcheck and reached all 167
+Bats cases. Its sole failure exposed a host-dependent Goku diagnostic in the
+CI apply fixture: a local Goku install produced the expected missing-input
+warning, while the hosted runner reported the missing executable first. The
+fixture now supplies Goku explicitly and rejects any invocation, preserving
+the missing-configuration skip assertion without depending on host tools.

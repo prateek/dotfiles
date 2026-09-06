@@ -23,7 +23,12 @@ fi
 printf 'orca %s\n' "$*" >> "$FIXTURE/unexpected.calls"
 exit 64
 STUB
-  chmod +x "$FIXTURE/bin/launchctl" "$FIXTURE/bin/orca"
+  cat > "$FIXTURE/bin/goku" <<'STUB'
+#!/bin/sh
+printf 'goku %s\n' "$*" >> "$FIXTURE/unexpected.calls"
+exit 64
+STUB
+  chmod +x "$FIXTURE/bin/launchctl" "$FIXTURE/bin/orca" "$FIXTURE/bin/goku"
   chezmoi_args=(--no-pager --no-tty --config "$FIXTURE/chezmoi.toml"
     --cache "$XDG_CACHE_HOME" --persistent-state "$FIXTURE/chezmoi-state.boltdb"
     --override-data '{"chezmoi":{"hostname":"dotfiles-test-host"},"machines_local":{"run_install_scripts":false}}')
