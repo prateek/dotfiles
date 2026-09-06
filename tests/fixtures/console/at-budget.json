@@ -1,0 +1,22 @@
+{
+  "inputs": {
+    "context_window": 61,
+    "bytes_per_token": 1,
+    "fraction": 1.0,
+    "max_desc_chars": 1536
+  },
+  "entries": [
+    {
+      "name": "a:one",
+      "description": "0123456789"
+    },
+    {
+      "name": "a:two",
+      "description": "0123456789"
+    },
+    {
+      "name": "a:three",
+      "description": "0123456789"
+    }
+  ]
+}

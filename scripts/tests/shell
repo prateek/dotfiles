@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if (( BASH_VERSINFO[0] < 5 )); then
+  printf 'Shell tests require Bash 5 or newer; select TEST_BASH or a mise path override.\n' >&2
+  exit 1
+fi
+PATH="$(dirname "$BASH"):$PATH"
+export PATH
+bats="$(command -v bats)" || {
+  printf 'Missing Bats; run mise run test-tools.\n' >&2
+  exit 1
+}
+[[ "$("$BASH" "$bats" --version)" == 'Bats 1.14.0' ]] || {
+  printf 'Shell tests require Bats 1.14.0; run mise run test-tools.\n' >&2
+  exit 1
+}
+tags="${BATS_TAGS-!host,!network,!vm}"
+selection=(--recursive --filter-tags "$tags" "$@")
+count="$("$BASH" "$bats" --count "${selection[@]}")"
+[[ "$count" != 0 ]] || {
+  printf 'No shell tests selected. Check BATS_PATH, BATS_ARGS and BATS_TAGS.\n' >&2
+  exit 1
+}
+report="$(mktemp)"
+trap 'rm -f "$report"' EXIT
+"$BASH" "$bats" --formatter tap --timing "${selection[@]}" | tee "$report"
+awk '/^(not )?ok [0-9]+/ && $0 !~ /# [Ss][Kk][Ii][Pp]/ {ran++} END {exit ran == 0}' "$report" || {
+  printf 'All selected shell tests were skipped; no behavior was verified.\n' >&2
+  exit 1
+}

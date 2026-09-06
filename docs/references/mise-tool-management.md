@@ -91,7 +91,7 @@ The task does this:
 
 - ADR 0005 records the decision.
 - Codex selection lives in the repo-owned mise task under `home/dot_config/mise/tasks/`.
-- Homebrew installs crit through the `developer-tools` package group; crit is not mise-managed, and `tests/render-brewfile.zsh` fails if a crit entry returns to `clis.toml`.
+- Homebrew installs crit through the `developer-tools` package group; crit is not mise-managed, and `make test-render-brewfile` fails if a crit entry returns to `clis.toml`.
 - `bin/devtool`, `bin/devtool-shim`, `.config/devtools/config.toml`, and `docs/devtools.md` are removed.
 - `devtool` is no longer linked into `~/bin`.
 - Mise config and tasks are chezmoi-managed source state under `home/dot_config/mise/`.

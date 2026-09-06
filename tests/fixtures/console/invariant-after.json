@@ -1,0 +1,30 @@
+{
+  "inputs": {
+    "context_window": 59,
+    "bytes_per_token": 1,
+    "fraction": 1.0,
+    "max_desc_chars": 1536
+  },
+  "entries": [
+    {
+      "name": "x:A",
+      "description": "0123456789",
+      "rank": 2.0
+    },
+    {
+      "name": "x:B",
+      "description": "0123456789",
+      "rank": 1.0
+    },
+    {
+      "name": "x:E",
+      "description": "0123456789",
+      "rank": 0.0
+    },
+    {
+      "name": "x:F",
+      "description": "0123456789",
+      "rank": 3.0
+    }
+  ]
+}

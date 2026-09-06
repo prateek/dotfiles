@@ -1,3 +1,10 @@
+.PHONY: test-shell test-tools
+BATS_PATH ?= tests/bats
+BATS_ARGS ?=
+TEST_BASH ?= bash
+# Staged validation reuses the parent runtime instead of loading copied mise config.
+TEST_ENV = $(if $(filter 1,$(DOTFILES_TEST_RUNTIME_READY)),,mise exec -- env DOTFILES_TEST_RUNTIME_READY=1)
+
 .PHONY: test-config-merge test-tuna-plist test test-chezmoi-apply hammerspoon hammerspoon-check hammerspoon-reload
 .PHONY: test-gemini-meeting-sync test-ghc test-gh-extensions-script test-mise-install-script test-xcode-install-script test-secret-backed-files test-kanata-config test-karabiner-goku test-chezmoi-config test-chezmoi-local-ignores test-chezmoi-script-status test-chezmoi-drift-banner test-agents-doc-pointers test-finder-copy-path test-codex-config test-cursor-cli-alias test-cursor-config test-agentsview-config test-reconcile-wiki-clone test-claude-settings test-claude-statusline test-pi-settings test-pi-statusline test-orca-settings test-crit-config test-vendor-skill-patches test-crit-evals test-agent-skill-packages test-agent-skill-packages-native test-ios-audit test-cmux-plist test-orbstack-plist test-selected-app-plists test-thaw-plist test-package-gated-configs test-machines-features test-elevation-render test-moom-plist test-nvalt-colors test-nvalt-plist test-voiceink-plist test-tartelet-settings test-tartelet-softnet-wrapper test-plist-hooks test-sudo-keepalive test-macos-defaults-script test-acpx-model-drift test-acpx-poll-stream test-brew-inventory test-brew-install-wrapper test-brew-bundle-script test-fork-reconcile test-retired-packages test-render-brewfile test-docs-lifecycle test-repo-index test-raycast-orca-worktree test-skill-console test-raycast-extensions-script
 .PHONY: test-zed-settings test-zsh-prompt-host test-zsh-fresh-shells verify-zsh-fresh-shells bench-zsh-startup
@@ -37,122 +44,125 @@ hammerspoon-reload: hammerspoon
 	@command -v hs >/dev/null 2>&1 || { echo "Missing 'hs' CLI"; exit 1; }
 	@hs -c 'hs.reload(); "ok"' -q
 
-## Default validation: chezmoi template syntax and apply dry-run.
-test: test-chezmoi-apply
+## Default validation follows the macOS CI lane.
+test: test-ci
 
 ## Validate chezmoi apply --dry-run to catch template errors before commit.
 test-chezmoi-apply:
-	@command -v chezmoi >/dev/null 2>&1 || { echo "Skipping chezmoi validation (chezmoi not installed)"; exit 0; }
-	@./scripts/chezmoi/test-apply-dry-run.sh ci "$(CURDIR)"
-	@./scripts/chezmoi/test-apply-dry-run.sh personal "$(CURDIR)"
+	@command -v chezmoi >/dev/null 2>&1 || { echo "Missing chezmoi for apply validation" >&2; exit 1; }
+	@$(TEST_ENV) ./scripts/chezmoi/test-apply-dry-run.sh ci "$(CURDIR)"
+	@$(TEST_ENV) ./scripts/chezmoi/test-apply-dry-run.sh personal "$(CURDIR)"
+	@$(TEST_ENV) ./scripts/chezmoi/test-apply-dry-run.sh work "$(CURDIR)"
 
 ## Validate convention pointers and convention-doc reachability.
 test-agents-doc-pointers:
-	@zsh ./tests/agents-doc-pointers.zsh
+	@$(TEST_ENV) python3 -B scripts/tests/python discover -s tests/python -p test_convention_pointers.py
 
 ## Validate the Finder Copy Paths Quick Action.
 test-finder-copy-path:
-	@zsh ./tests/finder-copy-path.zsh
+	@$(TEST_ENV) python3 -B scripts/tests/python discover -s tests/python -p test_finder.py
 
 ## Regression tests for the focused Brewfile renderer.
 test-render-brewfile:
-	@zsh ./tests/render-brewfile.zsh
+	@$(TEST_ENV) python3 -B scripts/tests/python discover -s tests/python -p test_brewfile.py
 
 ## Validate the Pure hostname prefix: machine_type -> color and hook behavior.
 test-zsh-prompt-host:
-	@command -v chezmoi >/dev/null 2>&1 || { echo "Skipping zsh-prompt-host test (chezmoi not installed)"; exit 0; }
-	@zsh ./tests/zsh-prompt-host.zsh
+	@$(MAKE) --no-print-directory test-shell BATS_PATH=tests/bats/programs/prompt-host.bats
 
 ## Validate docs lifecycle frontmatter, routing, and historical doc edits.
 test-docs-lifecycle:
-	@command -v uv >/dev/null 2>&1 || { echo "Missing 'uv' for docs lifecycle validation. Install uv or run chezmoi bootstrap first."; exit 1; }
-	@zsh ./tests/docs-lifecycle.zsh
+	@$(TEST_ENV) python3 -B scripts/tests/python discover -s tests/python/docs -t tests/python -p 'test_*.py'
+	@$(MAKE) --no-print-directory check-docs-lifecycle
+
+.PHONY: check-docs-lifecycle
+check-docs-lifecycle:
 	@base="$(DOCS_LIFECYCLE_BASE)"; \
 	if [ "$$base" = "none" ]; then \
-		./docs/validate-doc-lifecycle.py; \
+		$(TEST_ENV) python3 -B docs/validate-doc-lifecycle.py; \
 	else \
 		if ! git rev-parse --verify "$$base^{commit}" >/dev/null 2>&1; then \
 			echo "Missing docs lifecycle base '$$base'. Fetch it or set DOCS_LIFECYCLE_BASE=<ref>; use DOCS_LIFECYCLE_BASE=none only for current-tree checks." >&2; \
 			exit 1; \
 		fi; \
-		./docs/validate-doc-lifecycle.py --base "$$base"; \
+		$(TEST_ENV) python3 -B docs/validate-doc-lifecycle.py --base "$$base"; \
 	fi
 
 ## Regression tests for Gemini meeting sync wrapper config.
 test-gemini-meeting-sync:
-	@zsh ./tests/gemini-meeting-sync.zsh
+	@$(MAKE) --no-print-directory test-shell BATS_PATH=tests/bats/programs/gemini-meeting-sync.bats
 
 ## E2E tests for ghc/ohc URL handling.
 test-ghc:
-	@zsh ./tests/ghc-url.zsh
+	@$(MAKE) --no-print-directory test-shell BATS_PATH=tests/bats/programs/github-checkout.bats
 
 ## Unit tests for the Raycast Orca worktree extension core.
 test-raycast-orca-worktree:
-	@npm test --prefix ./home/dot_local/share/raycast-extensions/orca-worktree
+	@$(TEST_ENV) bash scripts/tests/node ./home/dot_local/share/raycast-extensions/orca-worktree/tests/*.test.mjs
 
 ## Contract tests for the Raycast extension build hook (digest-gated rebuilds).
 test-raycast-extensions-script:
-	@zsh ./tests/raycast-extensions-script.zsh
+	@$(MAKE) --no-print-directory test-shell BATS_PATH=tests/bats/packages/raycast-extensions.bats
 
 ## Regression tests for mise runtime install script ordering.
 test-mise-install-script:
-	@zsh ./tests/mise-install-script.zsh
+	@$(MAKE) --no-print-directory test-shell BATS_PATH=tests/bats/packages/mise-install.bats
 
 ## Regression tests for gh extensions install script.
 test-gh-extensions-script:
-	@zsh ./tests/gh-extensions-script.zsh
+	@$(MAKE) --no-print-directory test-shell BATS_PATH=tests/bats/packages/gh-extensions.bats
 
 ## Regression tests for Xcode install script ordering.
 test-xcode-install-script:
-	@zsh ./tests/xcode-install-script.zsh
+	@$(MAKE) --no-print-directory test-shell BATS_PATH=tests/bats/packages/xcode-install.bats
 
 ## Regression tests for secret-backed private files.
 test-secret-backed-files:
-	@zsh ./tests/secret-backed-files.zsh
+	@$(MAKE) --no-print-directory test-shell BATS_PATH=tests/bats/config/secrets.bats
 
 ## Validate Kanata keyboard remap config with kanata's parser.
 test-kanata-config:
-	@zsh ./tests/kanata-config.zsh
+	@BATS_TAGS=host $(MAKE) --no-print-directory test-shell BATS_PATH=tests/bats/config/kanata.bats
 
 ## Validate the Goku EDN compiles to the expected karabiner.json rules.
 test-karabiner-goku:
-	@zsh ./tests/karabiner-goku.zsh
+	@$(MAKE) --no-print-directory test-shell BATS_PATH=tests/bats/config/karabiner.bats BATS_TAGS=host
 
 ## Regression tests for generated chezmoi config defaults.
 test-chezmoi-config:
-	@zsh ./tests/chezmoi-config.zsh
+	@$(TEST_ENV) python3 -B scripts/tests/python discover -s tests/python -p test_chezmoi.py -k initialization
 
 ## Regression tests for ignored machine-local chezmoi state.
 test-chezmoi-local-ignores:
-	@zsh ./tests/chezmoi-local-ignores.zsh
+	@$(TEST_ENV) python3 -B scripts/tests/python discover -s tests/python -p test_chezmoi.py -k unmanaged
 
 ## Regression tests for steady-state chezmoi script status.
 test-chezmoi-script-status:
-	@zsh ./tests/chezmoi-script-status.zsh
+	@$(MAKE) --no-print-directory test-shell BATS_PATH=tests/bats/hooks/chezmoi-status.bats
 
 ## Regression tests for the cached chezmoi drift shell banner.
 test-chezmoi-drift-banner:
-	@zsh ./tests/chezmoi-drift-banner.zsh
+	@$(MAKE) --no-print-directory test-shell BATS_PATH=tests/bats/hooks/drift-banner.bats
 
 ## Regression tests for Codex config merging.
 test-codex-config:
-	@zsh ./tests/codex-config-modify.zsh
+	@$(TEST_ENV) python3 -B scripts/tests/python discover -s tests/python -p test_codex.py
 
 ## Regression test for the Cursor CLI shell launcher.
 test-cursor-cli-alias:
-	@zsh ./tests/cursor-cli-alias.zsh
+	@$(MAKE) --no-print-directory test-shell BATS_PATH=tests/bats/programs/cursor-launcher.bats
 
 ## Regression tests for the ~/.cursor/cli-config.json modify-script merge.
 test-cursor-config:
-	@zsh ./tests/cursor-config-modify.zsh
+	@$(TEST_ENV) python3 -B scripts/tests/python discover -s tests/python -p test_cursor.py
 
 ## Regression tests for agentsview config merging (codex_sessions_dirs).
 test-agentsview-config:
-	@zsh ./tests/agentsview-config-modify.zsh
+	@$(TEST_ENV) python3 -B scripts/tests/python discover -s tests/python -p test_agentsview.py
 
 ## Regression tests for the wiki-agent-sessions clone-shape helper (full vs sparse).
 test-reconcile-wiki-clone:
-	@zsh ./tests/reconcile-wiki-clone.zsh
+	@$(MAKE) --no-print-directory test-shell BATS_PATH=tests/bats/agents/wiki-clone.bats
 
 .PHONY: install-session-sync-app
 install-session-sync-app:
@@ -160,32 +170,32 @@ install-session-sync-app:
 
 ## Regression tests for Claude Code settings merging.
 test-claude-settings:
-	@zsh ./tests/claude-settings-modify.zsh
+	@$(TEST_ENV) python3 -B scripts/tests/python discover -s tests/python -p test_claude.py
 
 ## Regression tests for the Claude Code status line script.
 test-claude-statusline:
-	@zsh ./tests/claude-statusline.zsh
+	@$(TEST_ENV) python3 -B scripts/tests/python discover -s tests/python -p test_statuslines.py -k ClaudeStatuslineTests
 
 ## Regression tests for Pi settings, plugin marketplace, and isolated launcher.
 test-pi-settings:
-	@zsh ./tests/pi-settings-modify.zsh
-	@zsh ./tests/pi-isolated-run.zsh
+	@$(TEST_ENV) python3 -B scripts/tests/python discover -s tests/python -p test_pi.py
+	@$(MAKE) --no-print-directory test-shell BATS_PATH=tests/bats/programs/pi-isolated-run.bats
 
 ## Regression tests for the Pi status line script.
 test-pi-statusline:
-	@zsh ./tests/pi-statusline.zsh
+	@$(TEST_ENV) python3 -B scripts/tests/python discover -s tests/python -p test_statuslines.py -k PiStatuslineTests
 
 ## Regression tests for Orca settings merging.
 test-orca-settings:
-	@zsh ./tests/orca-settings-modify.zsh
+	@$(TEST_ENV) python3 -B scripts/tests/python discover -s tests/python -p test_orca.py
 
 ## Regression tests for crit's agent_cmd modify script and the acpx shortcut render.
 test-crit-config:
-	@zsh ./tests/crit-config-modify.zsh
+	@$(TEST_ENV) python3 -B scripts/tests/python discover -s tests/python -p test_crit.py
 
 ## Regression tests for the vendored-skill patch layer (local deltas stay applied).
 test-vendor-skill-patches:
-	@zsh ./tests/vendor-skill-patches.zsh
+	@$(TEST_ENV) python3 -B scripts/tests/python discover -s tests/python -p test_vendor_patches.py
 
 ## Behavioural evals for the crit failure modes (F1-F4), driven through acpx.
 ## Costs tokens and needs network, so it is on-demand: run it after re-vendoring
@@ -196,29 +206,29 @@ test-crit-evals:
 
 ## Regression tests for acpx pinned-model drift reporting.
 test-acpx-model-drift:
-	@zsh ./tests/acpx-model-drift.zsh
+	@$(MAKE) --no-print-directory test-shell BATS_PATH=tests/bats/agents/model-drift.bats
 
 ## Regression tests for the acpx poll-stream blocking log-growth helper.
 test-acpx-poll-stream:
-	@zsh ./tests/acpx-poll-stream.zsh
+	@$(MAKE) --no-print-directory test-shell BATS_PATH=tests/bats/programs/poll-stream.bats
 
 ## Regression tests for agent skill package rendering.
 test-agent-skill-packages:
-	@zsh ./tests/agent-skill-packages.zsh
+	@$(TEST_ENV) python3 -B scripts/tests/python discover -s tests/python -p test_packages.py
 
 ## Unit tests for the ios-audit skill source.
 test-ios-audit:
-	@PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover \
+	@$(TEST_ENV) python3 -B scripts/tests/python discover \
 		-s ./home/dot_agents/packages/ios/skills/local/ios-audit/tests \
 		-p 'test_*.py'
 
-## Native Claude Code validation for generated local plugin marketplace.
+## Installed Claude and Codex validation for the generated plugin marketplace.
 test-agent-skill-packages-native:
-	@zsh ./tests/agent-skill-packages-native.zsh
+	@$(MAKE) --no-print-directory test-shell BATS_PATH=tests/bats/agents/native-plugins.bats BATS_TAGS=host
 
 ## Regression tests for the skill management console.
 test-skill-console:
-	@zsh ./tests/skill-console.zsh
+	@$(TEST_ENV) python3 -B scripts/tests/python discover -s tests/python -p 'test_console_*.py'
 
 ## Shared plist merge contracts, all app scenarios, and modifier discovery.
 test-config-merge:
@@ -230,106 +240,102 @@ test-tuna-plist:
 
 ## Regression tests for selected-key cmux plist merging.
 test-cmux-plist:
-	@zsh ./tests/cmux-plist-modify.zsh
+	@DOTFILES_SKIP_LAUNCHCTL_SYNC=1 $(TEST_ENV) python3 -B tests/config_merge/run.py --app cmux
 
 ## Regression tests for selected-key OrbStack plist merging.
 test-orbstack-plist:
-	@zsh ./tests/orbstack-plist-modify.zsh
+	@DOTFILES_SKIP_LAUNCHCTL_SYNC=1 $(TEST_ENV) python3 -B tests/config_merge/run.py --app orbstack
 
 ## Regression tests for selected-key Thaw plist merging.
 test-thaw-plist:
-	@zsh ./tests/thaw-plist-modify.zsh
+	@DOTFILES_SKIP_LAUNCHCTL_SYNC=1 $(TEST_ENV) python3 -B tests/config_merge/run.py --app thaw
 
 ## Regression tests for selected-key app plist merging.
 test-selected-app-plists:
-	@zsh ./tests/selected-app-plist-modify.zsh
+	@DOTFILES_SKIP_LAUNCHCTL_SYNC=1 $(TEST_ENV) python3 -B tests/config_merge/run.py --app bettertouchtool raycast tailscale setapp betterdisplay
 
 ## Regression tests for machine-type gated app config targets.
 test-package-gated-configs:
-	@zsh ./tests/package-gated-configs.zsh
+	@$(TEST_ENV) python3 -B scripts/tests/python discover -s tests/python -p test_config_gates.py
 
 ## Regression tests for the machines.toml layered resolver (features.tmpl).
 test-machines-features:
-	@command -v chezmoi >/dev/null 2>&1 || { echo "Skipping machines-features test (chezmoi not installed)"; exit 0; }
-	@zsh ./tests/machines-features.zsh
+	@$(TEST_ENV) python3 -B scripts/tests/python discover -s tests/python -p test_machines.py
 
 test-host-mounts:
-	@uv run --script ./tests/host-mounts.py
+	@$(TEST_ENV) python3 -B scripts/tests/python discover -s tests/python -p test_host_mounts.py
 
 ## Regression tests for the elevation.sh template (method + jamf_policy_id).
 test-elevation-render:
-	@command -v chezmoi >/dev/null 2>&1 || { echo "Skipping elevation-render test (chezmoi not installed)"; exit 0; }
-	@zsh ./tests/elevation-render.zsh
+	@$(TEST_ENV) python3 -B scripts/tests/python discover -s tests/python -p test_elevation.py
 
 ## Regression tests for Zed settings JSON.
 test-zed-settings:
-	@zsh ./tests/zed-settings.zsh
+	@$(TEST_ENV) python3 -B scripts/tests/python discover -s tests/python -p test_zed.py
 
 ## Regression tests for selected-key Moom plist merging.
 test-moom-plist:
-	@zsh ./tests/moom-plist-modify.zsh
+	@DOTFILES_SKIP_LAUNCHCTL_SYNC=1 $(TEST_ENV) python3 -B tests/config_merge/run.py --app moom
 
 ## Regression tests for selected-key nvALT plist merging.
 test-nvalt-plist:
-	@zsh ./tests/nvalt-plist-modify.zsh
+	@DOTFILES_SKIP_LAUNCHCTL_SYNC=1 $(TEST_ENV) python3 -B tests/config_merge/run.py --app nvalt
 
 ## Regression tests for nvALT color-list generation.
 test-nvalt-colors:
-	@zsh ./tests/nvalt-colors.zsh
+	@$(TEST_ENV) python3 -B scripts/tests/python discover -s tests/python -p test_nvalt_colors.py
 
 ## Regression tests for selected-key VoiceInk plist merging.
 test-voiceink-plist:
-	@zsh ./tests/voiceink-plist-modify.zsh
+	@DOTFILES_SKIP_LAUNCHCTL_SYNC=1 $(TEST_ENV) python3 -B tests/config_merge/run.py --app voiceink
 
 ## Regression tests for the defaults-based Tartelet settings script.
 test-tartelet-settings:
-	@command -v chezmoi >/dev/null 2>&1 || { echo "Skipping tartelet-settings test (chezmoi not installed)"; exit 0; }
-	@zsh ./tests/tartelet-settings.zsh
+	@$(MAKE) --no-print-directory test-shell BATS_PATH=tests/bats/hooks/tartelet-settings.bats
 
 ## Regression tests for the tart softnet wrapper installer: render + machine-type gating.
 test-tartelet-softnet-wrapper:
-	@command -v chezmoi >/dev/null 2>&1 || { echo "Skipping tartelet-softnet-wrapper test (chezmoi not installed)"; exit 0; }
-	@zsh ./tests/tartelet-softnet-wrapper.zsh
+	@$(MAKE) --no-print-directory test-shell BATS_PATH=tests/bats/hooks/tartelet-softnet.bats
 
 ## Regression tests for chezmoi apply hooks: running-app guard + cfprefsd nudge + optional relaunch.
 test-plist-hooks:
-	@zsh ./tests/plist-hooks.zsh
+	@$(MAKE) --no-print-directory test-shell BATS_PATH=tests/bats/hooks/plist-hooks.bats
 
 ## Regression tests for shared sudo keepalive behavior.
 test-sudo-keepalive:
-	@zsh ./tests/sudo-keepalive.zsh
+	@$(MAKE) --no-print-directory test-shell BATS_PATH=tests/bats/hooks/sudo-keepalive.bats
 
 ## Regression tests for macOS defaults script side-effect guards.
 test-macos-defaults-script:
-	@zsh ./tests/macos-defaults-script.zsh
+	@$(MAKE) --no-print-directory test-shell BATS_PATH=tests/bats/hooks/macos-defaults.bats
 
 ## Regression tests for Homebrew inventory drift reporting.
 test-brew-inventory:
-	@zsh ./tests/brew-inventory.zsh
+	@$(MAKE) --no-print-directory test-shell BATS_PATH=tests/bats/packages/brew-inventory.bats
 
 ## Regression tests for the agent-assisted brew:install wrapper.
 test-brew-install-wrapper:
-	@zsh ./tests/brew-install-wrapper.zsh
+	@$(MAKE) --no-print-directory test-shell BATS_PATH=tests/bats/programs/brew-install.bats
 
 ## Regression tests for brew bundle script concurrency flags.
 test-brew-bundle-script:
-	@zsh ./tests/brew-bundle-script.zsh
+	@$(MAKE) --no-print-directory test-shell BATS_PATH=tests/bats/packages/brew-bundle.bats
 
 ## Regression tests for the downstream-fork install swap (reconciler + hook + Brewfile subtraction).
 test-fork-reconcile:
-	@zsh ./tests/fork-reconcile.zsh
+	@$(MAKE) --no-print-directory test-shell BATS_PATH=tests/bats/packages/fork-reconcile.bats
 
 ## Regression tests for retired-package cleanup (cleaner + hook + Brewfile guard).
 test-retired-packages:
-	@zsh ./tests/retired-packages.zsh
+	@$(MAKE) --no-print-directory test-shell BATS_PATH=tests/bats/packages/retired-packages.bats
 
 ## Regression tests for the fork-lifecycle packages.toml editor.
 test-fork-lifecycle-entry:
-	@zsh ./tests/fork-lifecycle-entry.zsh
+	@$(TEST_ENV) python3 -B scripts/tests/python discover -s tests/python -p test_fork_entry.py
 
 ## Regression tests for repo-index canonical clone discovery.
 test-repo-index:
-	@zsh ./tests/repo-index.zsh
+	@$(MAKE) --no-print-directory test-shell BATS_PATH=tests/bats/programs/repo-index.bats
 
 ## End-to-end fresh-shell validator selftest (verify + bench + negative-path checks).
 test-zsh-fresh-shells:
@@ -351,19 +357,19 @@ audit-orca-settings:
 
 ## Regression tests for the Tart install helper (does not boot a VM).
 test-tart-install-helper:
-	@zsh ./tests/tart-install-helper-contract.zsh
+	@$(MAKE) --no-print-directory test-shell BATS_PATH=tests/bats/vm/install-helper.bats
 
 ## Regression tests for zsh xtrace to Perfetto conversion.
 test-trace-perfetto:
-	@zsh ./tests/trace-perfetto.zsh
+	@$(TEST_ENV) python3 -B scripts/tests/python discover -s tests/python -p test_perfetto.py
 
 ## Regression tests for VM install-log failure scanning.
 test-vm-install-log-scan:
-	@zsh ./tests/vm-install-log-scan.zsh
+	@$(MAKE) --no-print-directory test-shell BATS_PATH=tests/bats/vm/install-log.bats
 
 ## Regression tests for VM macOS postflight assertions.
 test-vm-postflight-macos:
-	@zsh ./tests/vm-postflight-macos.zsh
+	@$(MAKE) --no-print-directory test-shell BATS_PATH=tests/bats/vm/postflight.bats
 
 ## Tart smoke lane, dry-run only. Pulls/boots a VM but skips actual installs.
 test-install-tart-dry-run:
@@ -392,3 +398,31 @@ test-install-tart-warm-refresh:
 
 test-install-tart-warm-destroy:
 	@./scripts/vm/warm-tart destroy
+
+## Install the pinned shell-test runner and assertion libraries.
+test-tools:
+	@mise run test-tools
+
+## Discover shell cases; use BATS_PATH or BATS_ARGS='--filter <pattern>' to focus.
+test-shell:
+	@$(TEST_ENV) "$(TEST_BASH)" scripts/tests/shell "$(BATS_PATH)" $(BATS_ARGS)
+
+.PHONY: test-ci test-ci-suites test-static test-python test-node
+
+## Run the same static and behavior checks as the macOS CI lane.
+test-ci:
+	@DOTFILES_SKIP_LAUNCHCTL_SYNC=1 GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null $(TEST_ENV) $(MAKE) --no-print-directory test-ci-suites
+
+test-ci-suites: test-static test-shell test-python test-node test-chezmoi-apply
+
+test-static: check-docs-lifecycle
+	@zsh -n scripts/trace/run-zsh
+	@python3 -c 'import ast, pathlib; [ast.parse(pathlib.Path(p).read_text(), filename=p) for p in ("scripts/trace/xtrace-to-perfetto", "scripts/trace/merge-perfetto", "scripts/trace/open-perfetto")]'
+
+## Native Python discovery for the consolidated structured-data suite.
+test-python: test-ios-audit
+	@DOTFILES_SKIP_LAUNCHCTL_SYNC=1 $(TEST_ENV) python3 -B scripts/tests/python discover -s tests/config_merge -p 'test_*.py'
+	@DOTFILES_SKIP_LAUNCHCTL_SYNC=1 $(TEST_ENV) python3 -B scripts/tests/python discover -s tests/python -p 'test_*.py'
+
+## Native Node discovery stays with the owning extension.
+test-node: test-raycast-orca-worktree

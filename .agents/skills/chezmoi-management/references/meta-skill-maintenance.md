@@ -11,7 +11,7 @@ Trigger an update if any of the following land in the dotfiles repo:
 - A mechanism is retired (e.g., `home/.chezmoidata/apps/*.toml`) — add the rule to "Do Not" lists.
 - The numeric ordering scheme under `home/.chezmoiscripts/` changes (e.g., 2-digit → 3-digit).
 - A new password manager replaces or augments 1Password.
-- A new validation lane is added to the Makefile (e.g., `make test-foo`).
+- A validation lane changes the task-specific routing in the tests index.
 - A chezmoi command is renamed, removed, or its behavior changes (e.g., `chezmoi apply` flag semantics).
 - A new app config pattern is adopted (e.g., a new `modify_` stub style).
 - A repo-specific convention from `CLAUDE.md` or `AGENTS.md` is added or removed.
@@ -30,7 +30,7 @@ Use this table to find the right file. If a change touches more than one file, u
 | Retired mechanism | `SKILL.md` Do Not; the relevant `references/<mode>.md` Common Pitfalls; remove obsolete instructions |
 | Script ordering change | `references/workflow.md` ("Numeric ordering in this repo"); `SKILL.md` Repo-Specific Gotchas |
 | New password manager | `references/packages-and-secrets.md`; `references/chezmoi-cheatsheet.md` (template functions list) |
-| New Makefile lane | `SKILL.md` Validation Lanes table; relevant `references/<mode>.md` Validation section |
+| New or changed validation lane | `tests/README.md` owns the command/area map; update relevant skill pointers only when their task routing changes. Do not copy the command roster into each reference. |
 | Chezmoi command added/renamed/removed | `references/chezmoi-cheatsheet.md` (commands table + recipes); workflow.md if it changes the apply lifecycle |
 | New app config pattern | `references/app-config.md` |
 | New template helper | `references/chezmoi-cheatsheet.md` (functions list); `references/app-config.md` if it affects plist work |

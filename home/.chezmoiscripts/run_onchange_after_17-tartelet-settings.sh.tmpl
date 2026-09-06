@@ -34,7 +34,7 @@ start_read=0; start_write=false
 # finds the golden VM. Sourced from the machines.host layer (same as zshenv),
 # not the ambient env, which a chezmoi script does not inherit. Empty on hosts
 # without a dedicated store, where Tartelet's ~/.tart default already matches.
-tart_home={{ $f.tart_home | default "" | quote }}
+tart_home={{ dig "tart_home" "" $f | quote }}
 
 differs() { [ "$(defaults read "$domain" "$1" 2>/dev/null)" != "$2" ]; }
 

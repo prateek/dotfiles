@@ -247,6 +247,10 @@ Caveats:
 
 ## Validation Before Declaring Done
 
+Use [chezmoi workflow checks in the tests index](../../../../tests/README.md#chezmoi-workflow-checks)
+for apply/status, hook PTYs, and script lifecycle behavior. Keep these structural
+previews alongside the relevant behavior checks:
+
 ```text
 chezmoi diff                                            # always
 chezmoi verify                                          # when claiming "applied"

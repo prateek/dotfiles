@@ -2,29 +2,20 @@
 
 import base64
 import math
-import os
 import plistlib
 import subprocess
-import tempfile
-import unittest
-from pathlib import Path
 from xml.parsers.expat import ExpatError
 
-ROOT = Path(__file__).resolve().parents[2]
+from tests.support.python import ROOT, RepoTestCase
 
 
-class PlistTestCase(unittest.TestCase):
+class PlistTestCase(RepoTestCase):
     def setUp(self):
-        self.work = Path(self.enterContext(tempfile.TemporaryDirectory()))
-        self.home = self.work / "home"
-        self.home.mkdir()
-        self.config = self.work / "chezmoi.toml"
-        self.config.write_text('[data]\nmachine_type = "personal"\n')
-        self.env = dict(os.environ, DOTFILES_SKIP_LAUNCHCTL_SYNC="1")
+        super().setUp()
         for key in ("CHEZMOI_VERBOSE", "DOTFILES_PLIST_VERBOSE"):
             self.env.pop(key, None)
 
-    def command(self, argv, raw=b"", *, error=None, env=None):
+    def plist_command(self, argv, raw=b"", *, error=None, env=None):
         result = subprocess.run(
             argv,
             input=raw,
@@ -47,7 +38,7 @@ class PlistTestCase(unittest.TestCase):
         return result.stdout
 
     def merge(self, desired_xml, raw, **kwargs):
-        return self.command(
+        return self.plist_command(
             [
                 str(ROOT / "scripts/macos/plist-merge"),
                 "--bundle-id",
@@ -59,29 +50,6 @@ class PlistTestCase(unittest.TestCase):
             **kwargs,
         )
 
-    def render(self, relative_path):
-        return self.command(
-            [
-                "chezmoi",
-                "--source",
-                str(ROOT),
-                "--config",
-                str(self.config),
-                "--destination",
-                str(self.home),
-                "--cache",
-                str(self.work / "cache"),
-                "--persistent-state",
-                str(self.work / "state.boltdb"),
-                "--override-data",
-                "{}",
-                "execute-template",
-                "--file",
-                str(ROOT / relative_path),
-            ],
-            env={"HOME": str(self.home)},
-        )
-
     def modifier(self, bundle_id):
         script = self.work / f"{bundle_id}.sh"
         script.write_bytes(
@@ -90,7 +58,7 @@ class PlistTestCase(unittest.TestCase):
             )
         )
         script.chmod(0o700)
-        self.command(["bash", "-n", str(script)])
+        self.plist_command(["bash", "-n", str(script)])
         return [str(script)]
 
     def assert_plist(self, raw, expected):

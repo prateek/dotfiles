@@ -1,7 +1,7 @@
 import plistlib
 
 from scenarios import SCENARIOS
-from support import PlistTestCase
+from tests.config_merge.support import PlistTestCase
 
 
 class AppPlistTests(PlistTestCase):
@@ -17,7 +17,7 @@ class AppPlistTests(PlistTestCase):
         desired_xml = self.render(
             f"home/.chezmoitemplates/{scenario.bundle_id}.plist.tmpl"
         )
-        self.command(["/usr/bin/plutil", "-lint", "-s", "-"], desired_xml)
+        self.plist_command(["/usr/bin/plutil", "-lint", "-s", "-"], desired_xml)
         desired = plistlib.loads(desired_xml)
         self.assertIsInstance(desired, dict)
 
@@ -43,19 +43,19 @@ class AppPlistTests(PlistTestCase):
             if scenario.check is not None:
                 scenario.check(self, merged)
             self.assertEqual(
-                self.command(modifier, raw), raw, "second merge changed bytes"
+                self.plist_command(modifier, raw), raw, "second merge changed bytes"
             )
             reordered = plistlib.dumps(merged, fmt=plistlib.FMT_BINARY, sort_keys=True)
             self.assertEqual(
-                self.command(modifier, reordered),
+                self.plist_command(modifier, reordered),
                 reordered,
                 "equivalent input changed bytes",
             )
 
         with self.subTest(input="empty"):
-            check(self.command(modifier), {})
+            check(self.plist_command(modifier), {})
         for fmt in (plistlib.FMT_BINARY, plistlib.FMT_XML):
             with self.subTest(input=fmt):
                 current = scenario.overrides | scenario.local
                 raw = plistlib.dumps(current, fmt=fmt, sort_keys=False)
-                check(self.command(modifier, raw), scenario.local)
+                check(self.plist_command(modifier, raw), scenario.local)

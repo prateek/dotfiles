@@ -58,7 +58,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [Tartelet Runner Memory-Guard](plans/tartelet-runner-memory-guard-proposal.md) | Proposed; design for a circuit breaker that sheds the runner under host memory pressure after a 2026-07-03 jetsam wedge. Prototyped and validated, then dropped — no code in-tree. |
 | [Using-git-spice Skill](plans/using-git-spice-skill-plan.md) | Active; the replacement skill and config are applied, the duplicate is disabled, and the Orca smoke passed. Only the disruptive manual logged-out auth check remains. |
 | [Zsh Fresh-Shell Validator](plans/zsh-fresh-shell-validator-plan.md) | Active plan for shell correctness and startup checks. |
-| [Test-Suite Rebuild](plans/test-suite-rebuild-plan.md) | Proposed and unstarted; broader runner and suite changes. Shared plist verification was implemented separately. |
+| [Test Refactoring](plans/test-suite-rebuild-plan.md) | Bats, native Python, and Node discovery share the local/CI entrypoint. All legacy harnesses are retired and the complete local lane passed. Remote CI evidence and plan closure remain open. |
 
 ## Decision Records
 
@@ -87,11 +87,13 @@ for day-to-day implementation details.
 | [ADR 0019 - Plugin hooks ship in the vendored plugin payload](adr/0019-plugin-hooks-in-vendored-payload.md) | [Agent Skill Management](../.agents/skills/agent-skill-management/SKILL.md); first consumers are the superpowers package and crit's plan-review hook. |
 | [ADR 0020 - chezmoi apply reconciles plugin install records](adr/0020-apply-reconciles-plugin-installs.md) | `reconcile-agent-plugins --apply`, run by `run_onchange_after_36-agent-plugins`; see [Plugin Reconcile](../.agents/skills/agent-skill-management/references/plugin-reconcile.md). |
 | [ADR 0021 - Shared plist verification](adr/0021-shared-plist-verification.md) | [Tests index](../tests/README.md#plist-merge-verification) and [Chezmoi Architecture](references/chezmoi-architecture.md). |
+| [ADR 0022 - Bats with repo-owned zsh test support](adr/0022-bats-and-zsh-test-support.md) | [Test Refactoring](plans/test-suite-rebuild-plan.md); accepted direction; local compatibility gate passed and production migration is active. |
 
 ## Research
 
 | Doc | Use it for |
 | --- | --- |
+| [Shell Testing Framework Comparison](research/shell-testing-framework-comparison.md) | Alternatives, decision history, and experiment/upstream evidence supporting the [Test Refactoring plan](plans/test-suite-rebuild-plan.md). |
 | [Agent Skill Management Research](research/agent-skill-management-research.md) | Background on skill context pressure, package layout, and plugin defaults. |
 | [Skill Invocation-Control Frontmatter](research/skill-invocation-frontmatter-research.md) | Which harnesses honor `disable-model-invocation` and `user-invocable`, with per-harness evidence and citations. |
 | [Self-Improving Agents](research/self-improving-agents.md) | Pattern reference for durable agent feedback loops. |

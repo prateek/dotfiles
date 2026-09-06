@@ -15,8 +15,8 @@ The lane runs locally on a Mac mini with a dedicated external SSD. Tart storage 
 ## Current implementation
 
 - VM runner: `scripts/vm/test-install-tart.sh`
-- Contract test: `tests/tart-install-helper-contract.zsh`
-- Trace tests: `tests/trace-perfetto.zsh`
+- Contract test: `make test-tart-install-helper`
+- Trace tests: `make test-trace-perfetto`
 - Make targets: `test-tart-install-helper`, `test-trace-perfetto`, `test-install-tart-dry-run`, `test-install-tart-smoke`, `test-install-tart-full`
 - Guest shell oracle: `scripts/audit/zsh-fresh-shells.zsh verify`
 

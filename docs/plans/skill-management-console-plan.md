@@ -3,7 +3,7 @@ status: active
 doc_type: plan
 owner: Prateek
 created: 2026-09-01
-updated: 2026-09-02
+updated: 2026-09-06
 related:
   - ../adr/0007-default-loaded-plugin-policy.md
   - ../research/skill-invocation-frontmatter-research.md
@@ -88,8 +88,9 @@ The constants below were read out of the Claude Code 2.1.258 executable and
 live in one table in `skill_console/__init__.py`, keyed to that binary's
 SHA-256. `render` warns when the live binary's hash differs; `apply` refuses
 the snapshot (V10) so a proposal computed with stale constants is never
-committed. `tests/skill-console.zsh` re-checks every constant against the
-binary whenever the hash still matches.
+committed. The explicit host lane in `tests/bats/agents/console-native.bats`
+requires the matching binary before re-checking every constant. Ordinary
+`make test-skill-console` verifies the simulation and unknown-build refusal.
 
 ### Budget formula and inputs
 
@@ -558,7 +559,8 @@ shows it as context, not as a recommendation.
   scripts/skill_console/decisions.py     schema validation, planning, staging, staged validation, commit
   scripts/skill_console/builtins.json    hash-keyed built-in listing fixture
   templates/skill-console.html           the page; embeds its data in one JSON slot
-tests/skill-console.zsh                  make test-skill-console
+tests/python/agents/test_console_*.py    make test-skill-console
+tests/bats/agents/console-native.bats     explicit matching-binary host lane
 ```
 
 `scripts/skill-console` is a PEP 723 uv script with the same shebang pattern as
@@ -885,8 +887,8 @@ dependencies own one each. Deletion follows these rules:
 
 ## Tests
 
-`tests/skill-console.zsh`, run by `make test-skill-console`, generates its
-fixtures into a temp directory in the exact `{inputs, entries}` shape
+`tests/python/agents/test_console_*.py`, run by `make test-skill-console`, uses
+isolated fixtures in the exact `{inputs, entries}` shape
 `skill-console budget --fixture` reads, and never touches the real `~/.claude`,
 `~/.agents`, or `~/.claude.json`. It covers:
 

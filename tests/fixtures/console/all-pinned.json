@@ -1,0 +1,25 @@
+{
+  "inputs": {
+    "context_window": 1,
+    "bytes_per_token": 1,
+    "fraction": 1.0,
+    "max_desc_chars": 1536
+  },
+  "entries": [
+    {
+      "name": "commit",
+      "description": "Create a git commit",
+      "protected": true
+    },
+    {
+      "name": "review",
+      "description": "Review a pull request",
+      "protected": true
+    },
+    {
+      "name": "compact",
+      "description": "Compact the conversation",
+      "protected": true
+    }
+  ]
+}

@@ -1,10 +1,233 @@
 # Tests
 
+Shell commands and hooks use Bats; structured checks use native Python
+discovery, and the Raycast extension retains Node's native runner. `make test`
+and `make test-ci` compose the same local macOS lane.
+
+Read the [test refactoring plan](../docs/plans/test-suite-rebuild-plan.md)
+for migration evidence and the remaining remote CI gate.
+For alternatives and decision history, read the [framework comparison](../docs/research/shell-testing-framework-comparison.md).
+
+## Choosing useful checks
+
+Use independently worked examples or documented literals for expected behavior.
+Desired configuration can prove that a merge applies its input; it cannot decide
+which keys the repo should own. Pair idempotence with a concrete transformation,
+and retain independent ownership, preservation, native-type, and security checks.
+
+External call counts and ordering belong in tests when they express a contract,
+such as avoiding an unnecessary rebuild or installing a dependency before its
+consumer. Preference rosters, arbitrary counts, private helpers, and repeated
+snapshots should use a cheaper render/parse check when they protect no distinct
+behavior. Explain that tradeoff when removing an existing assertion.
+
+For each migration, inventory the old assertions and map retained guarantees to
+observable seams and independent expectations before replacing their entrypoint.
+Record baseline failures separately. For a regression fix, take one intended
+failing behavior to green at a time. Match `.github/workflows` locally where
+practical and report host, CI, Linux, and VM evidence separately.
+
+## Shell test authoring
+
+Trust the checkout with `mise trust`, then run `make test-tools` once to install Bats 1.14.0 through mise and checksum-verified
+bats-support 0.3.0 / bats-assert 2.1.0 under ignored `build/test-libraries/`.
+Mise also selects Node 24.12.0, Python 3.14.6, and uv 0.11.26, so temporary homes do not depend
+on a caller's runtime shims. Shellcheck 0.11.0 is shared with the Linux CI job.
+The macOS lane requires chezmoi, ripgrep, and jq alongside its system tools.
+Bats requires Bash 5 or newer and zsh. Select Bash explicitly with
+`TEST_BASH=/path/to/bash` or an ignored `mise.local.toml` path override. The
+compatibility gate used Bash 5.3.15 and macOS `/bin/zsh` 5.9.
+
+`make test-shell` selects the pinned tools and discovers
+`tests/bats/**/*.bats`. `make test-ci` selects that environment once for all
+suites; focused recipes reuse it, including validation inside temporary copies. Use `make test-ghc` for the
+checkout commands, `BATS_PATH=tests/bats/<subsystem>` for a group, or
+`BATS_ARGS='--filter <pattern>'` to select cases. No selection, missing tools,
+an entirely skipped suite, and any failing case return a failure status.
+Use scenario-owned deadlines for process and PTY waits. The tested Bats/Bash
+combination leaves its optional global timeout watchdog alive after an assertion
+failure, so the suite does not enable `BATS_TEST_TIMEOUT` by default.
+Tags `host`, `network`, and `vm` are excluded by default. A manual lane requires
+an explicit selection such as `BATS_TAGS=host make test-shell` and documented
+prerequisites beside its cases.
+
+Load [support/common.bash](support/common.bash), call `setup_fixture`, and execute
+real repo entrypoints. The fixture supplies temporary home/XDG directories and
+isolates Git configuration and routing variables. Substitute external commands
+in its `bin/` directory. Tool interpreters are resolved before changing home so
+mise shims do not consult an empty fixture's configuration.
+
+For example, the [checkout suite](bats/programs/github-checkout.bats) asserts the
+SSH URL independently and observes the resulting directory in the same zsh
+process through [its scenario](scenarios/programs/github-checkout.zsh):
+
+```bash
+load '../../support/common'
+
+setup() { setup_fixture; }
+
+@test "ohc explains a missing repository" {
+  run_zsh 2 "$DOTFILES_ROOT/tests/scenarios/programs/github-checkout.zsh" ohc
+  assert_failure 2
+  assert_output ''
+  assert_regex "$stderr" 'usage: ohc'
+}
+```
+
+`run_zsh <expected-status> <scenario> [args...]` uses an explicit noninteractive
+zsh, forwards arguments literally, separates stdout/stderr, and closes inherited
+reporting descriptors before exec. Assert status and the behavior that matters.
+`run_bash <expected-status> <scenario> [args...]` uses the selected Bash with
+the same process and capture boundary.
+Use files plus `cmp` when trailing newlines or binary bytes are part of the
+contract. Startup tests must explicitly choose their startup mode and exercise
+both inherited and unset `ZDOTDIR` with the target variable cleared.
+
+[pty-dialogue.zsh](support/pty-dialogue.zsh) owns one terminal for a one-prompt
+interaction: `<transcript> <prompt> <response> <command> [args...]`. It waits for
+the prompt before sending a response, records command status separately, applies
+bounded waits, and retains the transcript on failure. The owning process closes
+the PTY on exit, interruption, or termination. It leaves the authoritative
+fresh-shell validator and its host/benchmark lanes in place.
+
+Load [support/chezmoi.bash](support/chezmoi.bash) for
+`render_template <repo-relative-path> <machine-type> [override-json]`. It renders
+to stdout using the temporary fixture's empty config, destination, cache, state,
+and neutral hostname. State host facts explicitly when a case needs them.
+
+## Current subsystem commands
+
+`make test` delegates to `make test-ci`, the macOS CI entrypoint. It composes
+static/docs checks, Bats discovery, native Python and Node discovery, and chezmoi
+dry-runs for `ci`, `personal`, and `work`.
+`make test-python` discovers the shared plist suite under `tests/config_merge/`,
+migrated config, package, docs, storage, trace, and agent checks under `tests/python/`,
+and the iOS audit's source-owned test root. Empty or entirely skipped Python
+selections fail.
+Every migrated shell harness has been retired. Raycast build hooks, macOS
+defaults, secret-backed files, and retired-package cleanup participate in
+ordinary Bats discovery. `make test-node` discovers the Raycast extension's
+source-owned `tests/*.test.mjs` with Node 24.12.0. Its TAP reporter requires a
+passing registered test: Node's automatic success for an empty file does not
+count. Empty, skipped-only, missing-file, and failing selections are checked
+through Bats.
+Existing host, benchmark, installation, and Tart commands remain explicit lanes.
+The Linux shellcheck job and macOS package-install checks remain separate.
+
+## Checks by changed area
+
+Use `mise exec -- make <focused-target>` for the pinned runtime environment used
+by `test-ci`. Make and CI define the executable lanes; this index maps a change
+to the distinct guarantees it can affect.
+
+### App-config checks
+
+| Changed surface | Check |
+| --- | --- |
+| Plist merge engine or ownership | `make test-config-merge`; [plist guidance](#plist-merge-verification) describes app selection, ownership, native types, preservation, and unchanged bytes. |
+| Apply-time plist guard and relaunch | `make test-plist-hooks`; Bats drives actual hook code and terminal prompts with external app commands substituted. |
+| Codex TOML / Claude JSON / Cursor JSON | `make test-codex-config`, `make test-claude-settings`, or `make test-cursor-config`; preserve credentials, approvals, and unrelated application state. |
+| Agentsview TOML / Pi JSON / Orca JSON / crit JSON | `make test-agentsview-config`, `make test-pi-settings`, `make test-orca-settings`, or `make test-crit-config`; format-specific merging and launch contracts. |
+| macOS defaults and app/package gates | `make test-macos-defaults-script test-package-gated-configs` for the affected behavior. |
+
+An ordinary preference edit needs the lightest meaningful render/parse check and
+a target diff preview. Render the changed template with an explicit worktree
+source; parse its native format. Add merge checks when ownership, deletion,
+preservation, or security changes. Apply-time hooks have their own PTY lane.
+
+`make test-tartelet-settings test-tartelet-softnet-wrapper` uses fake external
+app commands and a temporary Homebrew tree to check settings convergence,
+credential exclusion, and network flag forwarding. `make test-finder-copy-path`
+also requires macOS's native plist and service tools. `make test-kanata-config`
+selects an explicit host case and requires an installed Kanata parser.
+`make test-karabiner-goku` likewise selects the installed Goku compiler, using
+a temporary Default profile and checking its mapping semantics without writing
+the live Karabiner config.
+
+Agentsview's comparison with the separate wiki producer is explicit:
+`BATS_TAGS=host make test-shell BATS_PATH=tests/bats/agents/agentsview-parity.bats`.
+It requires the local wiki checkout's `sync-sessions` script, or an explicit
+`WIKI_SESSION_SYNC_SCRIPT` path. Ordinary discovery covers the modifier's own
+ownership and archive reconciliation behavior.
+
+### Chezmoi workflow checks
+
+`make test-chezmoi-config test-chezmoi-local-ignores` covers initialization and
+source exclusions. `make test-chezmoi-script-status` applies to a temporary home,
+substitutes service commands, and verifies clean status. Use
+`make test-plist-hooks test-sudo-keepalive` for app prompts and privileged-phase
+lifecycle; these substitute external app and sudo commands. For drift reporting,
+use `make test-chezmoi-drift-banner`. Its real PTY cases cover startup gating and
+cached output; a controlled external-status handshake verifies that background
+refresh does not block the prompt. The refresh CLI cases cover cache privacy,
+locking, invalidation, and failure cooldown.
+
+Keep script-aware diff/dry-run and rendered shellcheck checks for changed apply
+scripts. `make test-chezmoi-apply` previews `ci`, `personal`, and `work`; Tart
+installation and live-machine apply remain explicit operator lanes.
+
+### Package and secret checks
+
+| Change | Focused checks |
+| --- | --- |
+| Package data / Brewfile / install trust | `make test-render-brewfile test-brew-bundle-script test-brew-inventory test-package-gated-configs` |
+| Machine layers / elevation | `make test-machines-features test-elevation-render test-chezmoi-config` |
+| Secret references / licenses | `make test-secret-backed-files` |
+| Fork reconciliation / adoption | `make test-fork-reconcile test-fork-lifecycle-entry test-retired-packages` |
+| mise / GitHub extensions / Xcode scripts | `make test-mise-install-script test-gh-extensions-script test-xcode-install-script` for the changed installer. |
+
+Inspect `scripts/packages/render-brewfile --machine-type <type>` for affected
+types and the `--include-mas` opt-in. Tests use fake install commands; the macOS
+CI formula installation step and Tart lanes validate actual installation.
+
+### Agent-package checks
+
+Package schema, render policy, or activation changes can affect independent
+consumers. Run `make test-agent-skill-packages` for native Python checks of validators, rendering,
+inventory, and generated-state checks, plus `make test-claude-settings
+test-codex-config test-cursor-config test-pi-settings` for all consumer merges.
+Use `make test-vendor-skill-patches` for local vendor deltas and
+`make test-skill-console` for native Python console tests, including budget and
+frontmatter examples, inventory, validation, planning, staging, guarded writes,
+CLI behavior, and Node execution of the shipped browser functions. Missing Node
+or console modules fail the lane. Temporary Git repositories disable automatic
+maintenance and carry the pinned assertion libraries for staged validation.
+
+After package-source edits, follow the explicit temporary-root render and
+`--check` procedure in the [agent-skill-management skill](../.agents/skills/agent-skill-management/SKILL.md#validation).
+That validates generated output without writing the live plugin tree. Native
+CLI validation is a separate host lane: `make test-agent-skill-packages-native`
+selects installed Claude marketplace validation and Codex app-server plugin
+reading as separate cases. Console producer verification and its accepted
+render/apply cycle use `BATS_TAGS=host make test-shell
+BATS_PATH=tests/bats/agents/console-native.bats` and require the exact Claude
+2.1.258 build recorded by the console. An unrecognized build fails this check;
+ordinary fixture success does not certify it. `make test-crit-evals` needs authenticated
+agents and network and consumes tokens. Neither is implied by fixture success.
+
+Claude and Pi footer payloads use `make test-claude-statusline` and
+`make test-pi-statusline`. The additional installed-Dash check is explicit:
+`BATS_TAGS=host make test-shell BATS_PATH=tests/bats/agents/statusline-posix.bats`.
+
+### Zsh behavior checks
+
+Use Bats command cases and same-process scenarios for functions and wrappers.
+For startup correctness, read [shell authoring](#shell-test-authoring) and run
+`make verify-zsh-fresh-shells`; `make test-zsh-fresh-shells` adds the validator's
+selftests and benchmark leg. `make bench-zsh-startup` remains the explicit
+benchmark lane. The native host `/bin/zsh` PTY implementation in
+`scripts/audit/zsh-fresh-shells.zsh` retains authority for those checks.
+
 Run docs lifecycle checks:
 
 ```sh
 make test-docs-lifecycle
 ```
+
+That command runs the validator's native fixture suite and validates this
+checkout. `make check-docs-lifecycle` validates only the checkout. CI discovers
+the fixture cases with the other Python tests and runs the checkout check in
+its static lane, so the fixtures execute once.
 
 Run `ghc`/`ohc` URL handling tests:
 
@@ -135,9 +358,10 @@ Run `make test-plist-hooks test-package-gated-configs` when hook or package owne
 
 ## Other validation lanes
 
-`make test-agent-skill-packages-native` requires Claude Code's `claude`
-command because it validates the generated local plugin marketplace with
-`claude plugin validate`.
+`make test-agent-skill-packages-native` selects host cases for Claude's
+`plugin validate` and Codex's app-server `plugin/read`. Each case reports a
+missing CLI explicitly; a skipped producer is not validated. Use a Bats filter
+to focus on either producer.
 
 Audit tracked Orca settings against the installed app's current defaults (run
 after upgrading Orca or a settings spree; refreshes the committed defaults

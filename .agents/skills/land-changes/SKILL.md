@@ -70,7 +70,7 @@ List the changed paths (`git -C "$WT" diff --name-only origin/master..HEAD`) and
 - `git -C "$WT" diff --check` always.
 - `shellcheck -x` on changed shell scripts.
 - For changed `home/` files, dry-run chezmoi against the worktree source: `make test-chezmoi-apply` (run from `$WT`).
-- The `make test-*` target that names the changed area. The `Makefile` and `.github/workflows/install-smoke.yml` are the source of truth for which checks apply.
+- Read [the tests index](../../../tests/README.md#checks-by-changed-area) for the changed-area checks and execution lanes. The `Makefile` and `.github/workflows/install-smoke.yml` are executable truth for those commands.
 
 Fix failures on the branch and re-run. Never land red.
 

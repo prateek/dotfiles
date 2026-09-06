@@ -1,0 +1,24 @@
+{
+  "inputs": {
+    "context_window": 40,
+    "bytes_per_token": 1,
+    "fraction": 1.0,
+    "max_desc_chars": 1536
+  },
+  "entries": [
+    {
+      "name": "f:forced",
+      "description": "0123456789",
+      "forced_name_only": true,
+      "rank": 9.0
+    },
+    {
+      "name": "f:free",
+      "description": "0123456789"
+    },
+    {
+      "name": "f:other",
+      "description": "0123456789"
+    }
+  ]
+}

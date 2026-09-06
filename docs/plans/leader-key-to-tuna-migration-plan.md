@@ -111,7 +111,7 @@ Notes:
   description (F18 now opens Tuna).
 - `scripts/macos/capture.sh:66,112` — swap the captured defaults domain to
   `com.brnbw.Tuna`.
-- `tests/package-gated-configs.zsh`, `tests/karabiner-goku.zsh` — retarget path
+- `make test-package-gated-configs`, `make test-karabiner-goku` — retarget path
   and domain assertions.
 - `docs/index.md` — add this plan under Open And Proposed Work.
 - `docs/plans/chezmoi-migration-plan.md:240` — the stale Leader Key row (already
@@ -170,8 +170,8 @@ The CLI is enabled via the plist (`CLIEnabled`); Tuna self-installs
 - `chezmoi apply --dry-run` clean for `personal` and `work`.
 - `scripts/packages/render-brewfile --machine-type personal|work` shows `tuna`,
   not `leader-key`.
-- Tests retargeted and green (`tests/package-gated-configs.zsh`,
-  `tests/karabiner-goku.zsh`).
+- Tests retargeted and green (`make test-package-gated-configs`,
+  `make test-karabiner-goku`).
 - On-device: ⌘-tap opens Tuna combo mode on F18; cheatsheet shows after 1s;
   every ported bind fires (apps, shell, `vnc://`, `hammerspoon://`); cutover
   leaves no Leader Key process or hotkey.

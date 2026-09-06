@@ -1,0 +1,22 @@
+{
+  "inputs": {
+    "context_window": 50,
+    "bytes_per_token": 1,
+    "fraction": 1.0,
+    "max_desc_chars": 1536
+  },
+  "entries": [
+    {
+      "name": "m:one",
+      "description": "01234\n5678"
+    },
+    {
+      "name": "m:two",
+      "description": "0123456789"
+    },
+    {
+      "name": "m:three",
+      "description": "0123456789"
+    }
+  ]
+}

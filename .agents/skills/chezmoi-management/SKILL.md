@@ -90,9 +90,9 @@ Pick the matching lane for the work. All lanes are existing repo conventions; do
 
 | Mode | Run before declaring done |
 |---|---|
-| workflow | `chezmoi diff`, `chezmoi verify`, `chezmoi apply --dry-run --verbose --exclude=scripts` (file-only) or `... --include=scripts` (when scripts changed), `shellcheck` on rendered scripts. `make test-chezmoi-script-status` after touching scripts. |
-| app-config | `make test-config-merge test-plist-hooks`, `make test-codex-config` (if you touched the codex modify_ stub), `make test-claude-settings` (if you touched the claude modify_ stub or managed fragment), `make test-macos-defaults-script` (if you touched macOS defaults), `chezmoi diff <target>`, `chezmoi execute-template < home/.chezmoitemplates/<bundle>.plist.tmpl` |
-| packages-and-secrets | `make test-render-brewfile`, `make test-brew-bundle-script`, `make test-secret-backed-files`, `make test-chezmoi-config` (init defaults), `make test-brew-inventory` (if you touched packages.toml), `scripts/packages/render-brewfile --machine-type ci`, `... --machine-type personal`, `... --machine-type personal --include-mas` |
+| workflow | Keep the diff/verify and script-aware dry-run checks in [workflow](references/workflow.md#validation-before-declaring-done); use the [tests index](../../../tests/README.md#chezmoi-workflow-checks) for apply/status and hook behavior. |
+| app-config | Render and parse the changed format, preview its target diff, and select ownership/preservation/security checks through the [app-config tests index](../../../tests/README.md#app-config-checks). Real plist modifiers and apply-time hook PTYs are distinct checks. |
+| packages-and-secrets | Use the [package and secret checks](../../../tests/README.md#package-and-secret-checks) for rendering, feature gates, install ordering/trust, and secret failures; preview Brewfiles for affected machine types and MAS opt-in. |
 | any | `git diff --check` before handoff |
 
 After editing this skill itself: see `references/meta-skill-maintenance.md` for the parser/frontmatter check.

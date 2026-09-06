@@ -1,7 +1,7 @@
 import plistlib
 import unittest
 
-from support import PlistTestCase
+from tests.config_merge.support import PlistTestCase
 
 
 class PlistMergeTests(PlistTestCase):

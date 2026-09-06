@@ -159,17 +159,18 @@ Chrome extension settings are NOT snapshotted from user profiles. Use Chrome Syn
 
 ## Validation
 
-```text
-make test-config-merge                                               # real plist modifiers, ownership, unchanged bytes, discovery
-make test-plist-hooks                                                # apply-time app and cfprefsd hooks
-make test-codex-config                                               # non-plist modify_ pattern (Codex TOML)
-make test-claude-settings                                            # non-plist modify_ pattern (Claude JSON)
-make test-macos-defaults-script                                      # 30-macos-defaults side-effect guards
-chezmoi diff <target>
-chezmoi execute-template < home/.chezmoitemplates/com.<vendor>.<app>.plist.tmpl
-```
+Read [app-config checks in the tests index](../../../../tests/README.md#app-config-checks)
+for the changed format and app. `test-config-merge` exercises real plist
+modifiers and their independent ownership, preservation, native-type, and
+unchanged-byte contracts. `test-plist-hooks` exercises apply-time app and
+cfprefsd hooks, including real PTY prompt acceptance and refusal. Use the hook
+lane when lifecycle behavior is in scope.
 
-The `execute-template` smoke catches template syntax errors before `chezmoi apply` runs the merge. Use `test-codex-config` when you touch the codex-config-managed template; use `test-claude-settings` when you touch claude-settings-managed or the Claude modify_ stub; use `test-macos-defaults-script` when you touch `home/.chezmoitemplates/macos-defaults.sh.tmpl`.
+For an ordinary preference edit, render and parse its template, then preview
+`chezmoi diff <target>`. Choose behavioral checks for the actual ownership,
+security, or merge risk. The index routes Codex TOML, Claude JSON, other app
+merges, and macOS defaults side-effect guards without duplicating their commands
+here. Template rendering catches syntax errors before apply runs a modifier.
 
 ## Common Pitfalls
 

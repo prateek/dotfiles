@@ -1,7 +1,7 @@
 import unittest
 
 from scenarios import SCENARIOS
-from support import ROOT
+from tests.support.python import ROOT
 
 # Paths are relative to the repository root; each exception needs an ownership reason.
 EXCEPTIONS: dict[str, str] = {}

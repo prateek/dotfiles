@@ -43,7 +43,7 @@ CLONE = Path(os.environ.get(
 ))
 SELF_HOST = os.environ.get(
     "WIKI_SESSIONS_HOST",
-    "{{ (includeTemplate "features.tmpl" . | fromJson).wiki_host_alias | default "" }}",
+    "{{ dig "wiki_host_alias" "" (includeTemplate "features.tmpl" . | fromJson) }}",
 )
 
 

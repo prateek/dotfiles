@@ -45,6 +45,7 @@ an empty stub for Codex runtime skills); do not commit source copies under
 - Small one-off fixes do not need a plan or ADR.
 - `README.md` is user-facing and intentionally tiny. Move coding-agent or maintenance details here or into focused docs instead.
 - `AGENTS.md` should contain durable conventions only. Do not add one-off session notes.
+- Keep disposable experiments in ignored scratch directories. Retain findings in research docs, promote only useful production code/tests, and remove experiment scaffolding when its question is resolved.
 
 ## Common Commands
 
@@ -67,7 +68,7 @@ an empty stub for Codex runtime skills); do not commit source copies under
 ## Chezmoi And App Config
 
 - Keep app config readable at the native target path under `home/` when possible.
-- Simple file-backed apps should use focused tests.
+- Choose app-config checks using the [useful-test criteria](#validation).
 - Apply-time hooks that consult expensive external state (brew, mise, launchctl) snapshot it once at startup and reconcile against the snapshot, tracking their own mutations in-memory; never re-query per item. See `scripts/packages/reconcile-fork-installs`.
 - Nested preference plists use a desired-plist fragment at `home/.chezmoitemplates/<bundle-id>.plist.tmpl` driven by a 3-line `modify_` stub through the shared merge engine.
 - Plist fragments are Go templates. If a plist value contains literal `{{` or `}}`, escape it, as with Moom geometry strings.
@@ -105,12 +106,17 @@ zshenv -> zprofile -> zshrc -> init.sh -> zinit-init.zsh -> lib/*.zsh -> extra/*
 
 ## Validation
 
-- For code behavior changes, add or update the smallest meaningful tests and run the relevant local checks.
-- For docs/config-only changes, run the lightest checks that prove links, parsers, or generated output still make sense.
-- Mirror CI locally when practical by inspecting `.github/workflows`.
-- Current CI includes shellcheck, chezmoi dry-run smoke for the `ci`, `personal`, and `work` machine types, Tart helper contract tests, trace conversion tests, package rendering, and `ci` formula install checks.
-- CI does not boot a full macOS VM; that is local via Tart.
-- Never ignore test output. If expected errors are part of behavior, assert them.
+When adding, migrating, replacing, or removing tests, read [tests/README.md](tests/README.md)
+for framework/seam selection, fixture isolation, execution lanes, and focused checks.
+Use `testing-philosophy` for test design and omission decisions, and `mattpocock:tdd`
+for test-first work.
+
+- A useful test protects a named caller-visible guarantee, catches a plausible regression, and survives a behavior-preserving rewrite. Agree its public seam before adding coverage; reuse existing agreement.
+- Exercise real repo behavior with independent expected examples. Preserve transformation, ownership, security, and meaningful failure assertions when consolidating tests.
+- Account for every removed or replaced assertion with retained coverage or an explicit cost tradeoff. Never weaken a test to make it pass.
+- For regressions, observe the intended failure before fixing it. Run the smallest relevant checks, inspect their output, and assert expected errors.
+- Docs/config-only changes use render, parse, or link checks appropriate to their risk. The tests index and `.github/workflows` describe current execution lanes.
+- CI does not boot a full macOS VM. Tart and native app adoption are separate local validation lanes.
 
 ## Dependency And Tooling Gotchas
 

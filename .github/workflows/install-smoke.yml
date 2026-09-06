@@ -16,8 +16,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Install shellcheck
-        run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - uses: jdx/mise-action@v3
+        with:
+          install_args: shellcheck
       - name: Shellcheck
         run: |
           # Discover scripts by shebang instead of a hand-kept list; zsh and
@@ -43,74 +44,30 @@ jobs:
 
       - uses: astral-sh/setup-uv@v5
 
-      - name: Install chezmoi
-        run: brew install chezmoi
+      - name: Install test prerequisites
+        run: brew install chezmoi bash mise ripgrep jq
 
-      - name: Zsh syntax check
+      - name: Install pinned test tools
         run: |
-          zsh -n scripts/trace/run-zsh
-
-      - name: Python syntax check
-        run: python3 -m py_compile scripts/trace/xtrace-to-perfetto scripts/trace/merge-perfetto scripts/trace/open-perfetto
+          mise trust
+          make test-tools
 
       - name: Docs lifecycle
         if: github.event_name == 'pull_request'
-        run: DOCS_LIFECYCLE_BASE=origin/master make test-docs-lifecycle
+        run: echo "DOCS_LIFECYCLE_BASE=origin/master" >> "$GITHUB_ENV"
 
       - name: Docs lifecycle
         if: github.event_name == 'push'
         run: |
           base="${{ github.event.before }}"
           if git rev-parse --verify "$base^{commit}" >/dev/null 2>&1; then
-            DOCS_LIFECYCLE_BASE="$base" make test-docs-lifecycle
+            echo "DOCS_LIFECYCLE_BASE=$base" >> "$GITHUB_ENV"
           else
-            DOCS_LIFECYCLE_BASE=none make test-docs-lifecycle
+            echo "DOCS_LIFECYCLE_BASE=none" >> "$GITHUB_ENV"
           fi
 
-      - name: Tart helper contract
-        run: |
-          make test-tart-install-helper
-          make test-render-brewfile
-          make test-package-gated-configs
-          make test-machines-features
-          make test-host-mounts
-          make test-elevation-render
-          make test-brew-bundle-script
-          make test-fork-reconcile
-          make test-fork-lifecycle-entry
-          make test-xcode-install-script
-          make test-chezmoi-config
-          make test-chezmoi-script-status
-          make test-chezmoi-drift-banner
-          make test-agents-doc-pointers
-          make test-finder-copy-path
-          make test-codex-config
-          make test-cursor-config
-          make test-agentsview-config
-          make test-reconcile-wiki-clone
-          make test-claude-settings
-          make test-pi-settings
-          make test-claude-statusline
-          make test-orca-settings
-          make test-crit-config
-          make test-vendor-skill-patches
-          make test-acpx-model-drift
-          make test-acpx-poll-stream
-          make test-agent-skill-packages
-          make test-ios-audit
-          make test-skill-console
-          make test-gemini-meeting-sync
-          make test-brew-install-wrapper
-          make test-gh-extensions-script
-          make test-config-merge
-          make test-zed-settings
-          make test-zsh-prompt-host
-          make test-tartelet-settings
-          make test-tartelet-softnet-wrapper
-          make test-plist-hooks
-          make test-trace-perfetto
-          make test-vm-install-log-scan
-          make test-vm-postflight-macos
+      - name: Static and behavior suites
+        run: make test-ci
 
       - name: Bootstrap app list regression
         run: |
@@ -125,13 +82,6 @@ jobs:
             echo "work machine type leaked a personal app cask" >&2
             exit 1
           fi
-
-      - name: Bootstrap smoke — chezmoi init + apply --dry-run, key machine types
-        run: |
-          set -euo pipefail
-          for machine_type in ci personal work; do
-            ./scripts/chezmoi/test-apply-dry-run.sh "$machine_type" "${{ github.workspace }}"
-          done
 
       - name: Brewfile parse
         run: |

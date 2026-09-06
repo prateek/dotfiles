@@ -1,0 +1,20 @@
+{
+  "inputs": {
+    "context_window": 39,
+    "bytes_per_token": 1,
+    "fraction": 1.0,
+    "max_desc_chars": 1536
+  },
+  "entries": [
+    {
+      "name": "w:wide",
+      "description": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "rank": 1.0
+    },
+    {
+      "name": "w:narrow",
+      "description": "short",
+      "rank": 0.5
+    }
+  ]
+}

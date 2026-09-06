@@ -1,0 +1,18 @@
+{
+  "inputs": {
+    "context_window": 1000,
+    "bytes_per_token": 1,
+    "fraction": 1.0,
+    "max_desc_chars": 1536
+  },
+  "entries": [
+    {
+      "name": "d:same",
+      "description": "first occurrence"
+    },
+    {
+      "name": "d:same",
+      "description": "second occurrence, longer"
+    }
+  ]
+}

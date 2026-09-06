@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "$0")/../.." && pwd)"
+destination="$repo_root/build/test-libraries"
+mkdir -p "$destination"
+staging="$(mktemp -d "$destination/.install.XXXXXX")"
+trap 'rm -rf "$staging"' EXIT
+
+while read -r name version checksum; do
+  target="$destination/$name-$version"
+  [[ ! -f "$target/load.bash" ]] || continue
+  archive="$staging/$name.tar.gz"
+  curl --fail --location --silent --show-error \
+    "https://github.com/bats-core/$name/archive/refs/tags/v$version.tar.gz" \
+    --output "$archive"
+  actual="$(shasum -a 256 "$archive")"
+  [[ "${actual%% *}" == "$checksum" ]] || {
+    printf 'Checksum mismatch for %s %s\n' "$name" "$version" >&2
+    exit 1
+  }
+  tar -xzf "$archive" -C "$staging"
+  mv "$staging/$name-$version" "$target"
+done <<'LIBRARIES'
+bats-support 0.3.0 7815237aafeb42ddcc1b8c698fc5808026d33317d8701d5ec2396e9634e2918f
+bats-assert 2.1.0 98ca3b685f8b8993e48ec057565e6e2abcc541034ed5b0e81f191505682037fd
+LIBRARIES

@@ -3,7 +3,7 @@ status: active
 doc_type: research
 owner: Prateek
 created: 2026-09-03
-updated: 2026-09-03
+updated: 2026-09-05
 related:
   - ../references/chezmoi-architecture.md
   - ../adr/0006-chezmoi-migration-prototype.md
@@ -102,7 +102,7 @@ The hard parts are:
 | zsh startup with custom `ZDOTDIR` | `programs.zsh.dotDir` plus ordered `initContent`, or `home.file` verbatim | Fine either way. |
 | `chezmoi diff` and `status` | `nix build` plus `nvd`; activation repairs managed links | Narrower drift surface, not none. |
 | Tart lane and CI dry-run | `nix build .#darwinConfigurations.<host>.system` on an arm64 `macos-latest` runner | Better for evaluation and closure failures. Does not exercise defaults, app writes, or activation. |
-| Tests, two repo skills, ADRs 0006/0010/0012 | Rewrite the harness calls; keep the behavioral assertions | Moderate. The [test-suite-rebuild plan](../plans/test-suite-rebuild-plan.md) already says 16 tests survive intact and most others keep an invariant. |
+| Tests, two repo skills, ADRs 0006/0010/0012 | Rewrite the harness calls; keep the behavioral assertions | Moderate. The [test refactoring plan](../plans/test-suite-rebuild-plan.md) requires preserving useful behavioral guarantees; it does not prescribe a surviving test count. |
 
 ## What Nix Would Fix Here
 

@@ -1,5 +1,9 @@
 import argparse
 import unittest
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from scenarios import SCENARIOS
 from test_apps import AppPlistTests

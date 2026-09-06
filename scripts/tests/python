@@ -1,0 +1,24 @@
+#!/usr/bin/env python3
+import sys
+import unittest
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
+
+class RequiredResult(unittest.TextTestResult):
+    def wasSuccessful(self):
+        return super().wasSuccessful() and self.testsRun > len(self.skipped)
+
+
+class RequiredRunner(unittest.TextTestRunner):
+    resultclass = RequiredResult
+
+    def run(self, test):
+        result = super().run(test)
+        if result.testsRun == len(result.skipped):
+            print("No Python tests executed; empty or entirely skipped selection.", file=sys.stderr)
+        return result
+
+
+unittest.main(module=None, testRunner=RequiredRunner(verbosity=2))

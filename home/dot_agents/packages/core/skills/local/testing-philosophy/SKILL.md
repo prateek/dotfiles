@@ -18,8 +18,9 @@ class, this private method) instead of the *behavior* it delivers for a caller.
 
 A test suite has one job: let people change the code with confidence. This skill keeps you on the
 behavior side of that line and gives you precise vocabulary for the trade-offs. Treat the guidance
-as defaults with reasons, not laws; when you break one, say why. The default question is almost
-never *whether* to test, but *what* behavior, *at which seam*, and *with how much impurity*.
+as defaults with reasons, not laws; when you break one, say why. Ask *what* behavior needs
+protection, *at which seam*, and *with how much impurity*. When a cheaper check covers the risk,
+state why an additional test would not help (see "Process: how much, when, and when not").
 
 ## The model: purity and extent, not "unit vs integration"
 

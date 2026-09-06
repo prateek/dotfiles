@@ -1,0 +1,30 @@
+{
+  "inputs": {
+    "context_window": 58,
+    "bytes_per_token": 1,
+    "fraction": 1.0,
+    "max_desc_chars": 1536
+  },
+  "entries": [
+    {
+      "name": "t:r5",
+      "description": "0123456789"
+    },
+    {
+      "name": "t:r4",
+      "description": "0123456789"
+    },
+    {
+      "name": "t:r3",
+      "description": "0123456789"
+    },
+    {
+      "name": "t:r2",
+      "description": "0123456789"
+    },
+    {
+      "name": "t:r1",
+      "description": "0123456789"
+    }
+  ]
+}

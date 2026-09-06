@@ -83,7 +83,6 @@ Machine type resolves from `[data].machine_type` (default `personal`), set by th
 The same logic lives in `home/.chezmoitemplates/brewfile.tmpl` and runs during `chezmoi apply` via `home/.chezmoiscripts/run_onchange_after_10-brew-bundle.sh.tmpl`. To verify your edit before apply:
 
 ```text
-make test-render-brewfile                              # validates rendering
 scripts/packages/render-brewfile --machine-type ci        # eyeball (core only)
 scripts/packages/render-brewfile --machine-type personal  # eyeball (full set)
 ```
@@ -200,16 +199,14 @@ A `op signin` is still required before any apply that resolves secret refs, sinc
 
 ## Validation
 
-```text
-make test-render-brewfile           # for any packages.toml or brewfile.tmpl change
-make test-machines-features         # for machines.toml / features.tmpl / machine-behavior changes
-make test-brew-bundle-script        # for package apply script or Homebrew trust behavior
-make test-secret-backed-files       # for any secrets/licenses change
-chezmoi data                        # dump computed data tree to verify load
-chezmoi data --format=yaml | grep -i <key>
-```
+Use [package and secret checks in the tests index](../../../../tests/README.md#package-and-secret-checks)
+for the affected renderer, machine resolver, install script, trust boundary,
+or secret/license behavior. Preview rendered Brewfiles for the affected machine
+types, including `--include-mas` when the opt-in path changes.
 
-`chezmoi data` is the source of truth for "what does the template see?" Use it before debugging a template by hand.
+`chezmoi data` is the source of truth for the computed template inputs. Inspect
+the relevant key before debugging a template; keep raw secret values out of
+retained output.
 
 ## Bootstrap Flow
 

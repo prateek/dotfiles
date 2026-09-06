@@ -1,0 +1,29 @@
+{
+  "inputs": {
+    "context_window": 10000,
+    "bytes_per_token": 1,
+    "fraction": 1.0,
+    "max_desc_chars": 1536
+  },
+  "entries": [
+    {
+      "name": "u:joined",
+      "description": "Do the thing",
+      "when_to_use": "when asked"
+    },
+    {
+      "name": "u:null",
+      "description": "Do the thing",
+      "when_to_use": null
+    },
+    {
+      "name": "u:absent",
+      "description": "Do the thing"
+    },
+    {
+      "name": "u:empty",
+      "description": "Do the thing",
+      "when_to_use": ""
+    }
+  ]
+}

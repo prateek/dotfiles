@@ -1,0 +1,20 @@
+{
+  "inputs": {
+    "context_window": 1000,
+    "bytes_per_token": 1,
+    "fraction": 1.0,
+    "max_desc_chars": 1536,
+    "env_budget": Infinity
+  },
+  "entries": [
+    {
+      "name": "e:a",
+      "description": "0123456789"
+    },
+    {
+      "name": "e:b",
+      "description": "0123456789",
+      "protected": true
+    }
+  ]
+}

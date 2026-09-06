@@ -186,7 +186,7 @@ Use the smallest check that proves the changed surface:
 - File-only apply preview:
   `chezmoi apply --dry-run --verbose --exclude=scripts`
 - Full managed-state preview: `chezmoi diff` and `chezmoi status`
-- App plist changes: `make test-config-merge test-plist-hooks`; existing per-app targets remain available for focused iteration
+- App configuration: use [the app-config checks](../../tests/README.md#app-config-checks) for the changed format. Shared plist modifier verification and apply-time hook PTYs protect different contracts; ordinary preference edits can use focused render/parse checks.
 - Shell startup: `scripts/audit/zsh-fresh-shells.zsh verify`
 
 Tart lanes are local end-to-end install validation. CI does not boot a full

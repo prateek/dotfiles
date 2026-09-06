@@ -126,7 +126,7 @@ Archive filters must recurse into subdirectories to retain subagent logs.
 - macOS provides the `flock(2)` syscall but omits the util-linux `flock(1)` command. `command -v flock` returns nothing, so repository locking must use portable atomic `mkdir`.
 - The new chezmoi script is number 38, after agent-related scripts 35 through 37.
 - The agentsview source directory is `home/private_dot_agentsview/`, renamed in commit `e7dc3d5`.
-- `tests/agentsview-config-modify.zsh:16` still uses the previous path and must be corrected.
+- The native Agentsview fixtures use `home/private_dot_agentsview/`; run `make test-agentsview-config`.
 - CI discovers shellcheck targets from their shebangs.
 
 ## Archive contents
@@ -212,7 +212,7 @@ Each `sessions/<host>/` directory contains:
 
 The directory name comes from `wiki_host_alias` in `machines.toml`, rendered into machine configuration by chezmoi. Every participating host requires an alias. `sync-sessions` must fail closed with a clear message and named exit code when the alias is absent.
 
-The script must not fall back to `hostname -s`; two machines named `macbook-pro` could write to the same archive directory. `tests/machines-features.zsh` will enforce alias uniqueness. `$WIKI_SESSIONS_HOST` remains an undocumented test seam.
+The script must not fall back to `hostname -s`; two machines named `macbook-pro` could write to the same archive directory. `make test-machines-features` enforces alias uniqueness. `$WIKI_SESSIONS_HOST` remains an undocumented test seam.
 
 ## Vault and plugin integration
 
@@ -495,13 +495,13 @@ Resolve globs in the Python script at runtime. Go-template rendering must never 
 
 ### agentsview tests
 
-Update:
+Run the native fixture suite:
 
-```text
-tests/agentsview-config-modify.zsh
+```sh
+make test-agentsview-config
 ```
 
-Correct the stale pre-rename path at line 16. Add an environment override that redirects runtime globbing to fixtures, then assert:
+Use the current private source path and environment overrides that redirect runtime globbing to fixtures, then assert:
 
 - Every other-host root produces an entry with the correct `agent` and `machine`.
 - Entries are sorted, and the current host is absent.
@@ -606,7 +606,7 @@ Set `agent_session_wiki_ingest = true` only under the designated host:
 
 Every host with `agent_session_wiki = true` must define `wiki_host_alias`.
 
-Update `tests/machines-features.zsh` to check the flags, required aliases, and alias uniqueness.
+Use `make test-machines-features` to check the flags, required aliases, and alias uniqueness.
 
 ### Chezmoi bootstrap
 
@@ -660,7 +660,7 @@ Add:
 scripts/agent-sessions/reconcile-wiki-clone
 ```
 
-The bootstrap script delegates step 1 above to this helper, which owns the clone's shape: a full clone for personal and homelab machines, and for sparse hosts a `--filter=blob:none` partial clone with a cone-mode sparse checkout of `sessions/<alias>/`, `health/`, `.agents/`, `.claude/`, and `.codex/` (no `wiki/`: nothing derived from other hosts lands on a work machine). It is idempotent, takes the wiki repo's lock before mutating an existing clone, narrows a full clone in place only when nothing outside the cone is dirty (future fetches become blobless; old blobs stay until the clone is recreated), widens a sparse clone when the flag flips, refuses remotes without partial-clone support, and exits 4 when the remote is unreachable so the apply can warn instead of fail. `--check` is the read-only drift report the verify script uses. `tests/reconcile-wiki-clone.zsh` covers it against a local bare origin.
+The bootstrap script delegates step 1 above to this helper, which owns the clone's shape: a full clone for personal and homelab machines, and for sparse hosts a `--filter=blob:none` partial clone with a cone-mode sparse checkout of `sessions/<alias>/`, `health/`, `.agents/`, `.claude/`, and `.codex/` (no `wiki/`: nothing derived from other hosts lands on a work machine). It is idempotent, takes the wiki repo's lock before mutating an existing clone, narrows a full clone in place only when nothing outside the cone is dirty (future fetches become blobless; old blobs stay until the clone is recreated), widens a sparse clone when the flag flips, refuses remotes without partial-clone support, and exits 4 when the remote is unreachable so the apply can warn instead of fail. `--check` is the read-only drift report the verify script uses. `make test-reconcile-wiki-clone` covers it against a local bare origin.
 
 ### Automation reconciliation helper
 
@@ -749,9 +749,9 @@ Use the repository scripts at their actual paths because they are not on `PATH`:
 The package changes generated Claude, Codex, and pi projections. Update expectations in:
 
 ```text
-tests/agent-skill-packages.zsh
-tests/claude-settings-modify.zsh
-tests/codex-config-modify.zsh
+tests/python/agents/test_packages.py
+tests/python/config/test_claude.py
+tests/python/config/test_codex.py
 ```
 
 Run:
@@ -920,7 +920,7 @@ All three machine types must render without errors or template-time filesystem a
 Run:
 
 ```sh
-tests/agentsview-config-modify.zsh
+make test-agentsview-config
 ```
 
 Verify separately that agentsview accepts the generated `[[session_sources]]` entries:
