@@ -68,7 +68,7 @@ done
 # a missing clone (4: remote unreachable) or a shape it refuses to touch (5)
 # stops the bootstrap; a held repo lock (75) leaves the clone for the next
 # refire since the launch agent and automations do not depend on its shape.
-shape_args=({{ if $f.agent_session_wiki_sparse }}--sparse --alias "{{ $f.wiki_host_alias | default "" }}"{{ else }}--full{{ end }})
+shape_args=({{ if $f.agent_session_wiki_sparse }}--sparse --alias "{{ dig "wiki_host_alias" "" $f }}"{{ else }}--full{{ end }})
 recover="$clone_helper --clone $clone --remote $remote ${shape_args[*]}"
 rc=0
 run_timed "reconcile wiki-agent-sessions clone" \

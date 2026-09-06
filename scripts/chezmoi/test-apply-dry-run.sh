@@ -38,6 +38,7 @@ run_chezmoi() {
       --config "$tmp_home/.config/chezmoi/chezmoi.toml" \
       --cache "$tmp_home/.cache/chezmoi" \
       --persistent-state "$tmp_home/.local/state/chezmoi/state.boltdb" \
+      --override-data '{"chezmoi":{"hostname":"dotfiles-test-host"}}' \
       "$@"
 }
 

@@ -5,6 +5,15 @@ from tests.support.python import ROOT, RepoTestCase
 
 
 class ChezmoiConfigTests(RepoTestCase):
+    def test_session_archive_alias_requires_explicit_host_registration(self):
+        source = "home/dot_config/wiki-agent-sessions/config.toml.tmpl"
+        missing = tomllib.loads(self.render(source).decode())
+        self.assertEqual(missing, {"host_alias": ""})
+        configured = tomllib.loads(self.render(source, data={
+            "machines_local": {"wiki_host_alias": "buildbox"},
+        }).decode())
+        self.assertEqual(configured, {"host_alias": "buildbox"})
+
     def chezmoi(self, *args):
         return self.command([
             "chezmoi", "--source", str(ROOT), "--config", str(self.config),

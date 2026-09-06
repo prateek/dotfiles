@@ -1071,3 +1071,11 @@ CI apply fixture: a local Goku install produced the expected missing-input
 warning, while the hosted runner reported the missing executable first. The
 fixture now supplies Goku explicitly and rejects any invocation, preserving
 the missing-configuration skip assertion without depending on host tools.
+
+The next remote run passed all Bats, Python, and Node cases, then its final
+dry-run exposed an optional `wiki_host_alias` lookup in the session-archive
+config. The remaining config and sparse-script lookups now use an empty default
+when the host is unregistered; the sync producer still refuses an empty alias.
+The config regression was observed failing before the fix. Shared dry-runs now
+override the hostname to a neutral fixture value, preventing the developer's
+registered host layer from masking missing optional data.
