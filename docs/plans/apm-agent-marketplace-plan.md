@@ -7,6 +7,7 @@ updated: 2026-09-07
 related:
   - ../adr/0023-apm-agent-marketplace-packaging.md
   - ../adr/0025-shared-apm-acquisition.md
+  - ../adr/0026-just-task-runner.md
   - ../research/apm-marketplace-migration-verification.md
   - ../references/agent-marketplace.md
   - ../research/apm-modules-vendoring-research.md
@@ -15,13 +16,13 @@ related:
   - ../research/nix-agent-skills-packaging-research.md
   - agent-plugin-renderer-plan.md
   - ../../.agents/skills/agent-skill-management/SKILL.md
-status_detail: "Migration landed and scoped live apply verified. Local checks and remote CI passed. Fresh authenticated Claude and both Codex profiles passed catalog discovery and the console edit/apply/revert round trip. Skill invocation checks remain a rollout step."
+status_detail: "Implementation and rollout verification are complete: changed-source plain apply, versioned refresh, fresh skill invocation, and the shared-root maintenance round trip passed. Ready for landing and metadata-only closure. Authenticated Crit evals and a registry remain separate optional work."
 ---
 
 # APM Agent Marketplace Plan
 
 Create a self-contained `agent-marketplace/` project at the dotfiles repository
-root, with its own Makefile and pinned tools. Maintain one root `apm.yml`, native
+root, with its own justfile and pinned tools. Maintain one root `apm.yml`, native
 lock, and committed `apm_modules/` tree for every plugin. Keep authored skills
 and reviewed local changes separately, then build ten native plugins and both
 marketplace catalogs from those inputs.
@@ -39,6 +40,7 @@ upstream payload beside `apm_modules`.
 [ADR 0023](../adr/0023-apm-agent-marketplace-packaging.md) records the boundary.
 [ADR 0025](../adr/0025-shared-apm-acquisition.md) consolidates acquisition at the
 root and removes authored per-plugin APM manifests.
+[ADR 0026](../adr/0026-just-task-runner.md) replaces both task runners with `just`.
 The [module-source research](../research/apm-modules-vendoring-research.md)
 supports the acquisition proposal; the
 [executed spike](../research/apm-skill-marketplace-spike.md) establishes native
@@ -64,26 +66,36 @@ installation/update/rollback, and local Git distribution. Source inspection used
 `ask src github:microsoft/apm@v0.29.1`, resolving to
 `1b3d80ad2bfcb7ab3ce24bdac0538855aaddf3bc`.
 
-The portable source/build project and consumer adapters are implemented in this
-checkout. Current operations are documented in the
-[marketplace reference](../references/agent-marketplace.md). All required local
-checks passed. Commit `f085615` landed, and the authorized scoped live apply
-verified version 1.1.0 payloads, native inventories, and enabled states in Claude
-and both canonical and Orca Codex profiles. Fresh native Codex processes found
-all 162 skills. Fresh authenticated Claude and Codex model sessions also saw the
-expected repo-local and enabled plugin skills. An authored and imported console
-edit reached fresh sessions after normal apply, and restoration passed the same
-path in Claude and both Codex profiles. See the
-[maintenance round trip](../research/apm-marketplace-migration-verification.md#live-maintenance-round-trip).
-Fresh skill invocation checks remain; the
-[rollout record](../research/apm-marketplace-migration-verification.md#live-cutover)
-distinguishes live evidence from the isolated implementation tests.
+The source/build project and consumer adapters are implemented. Shared acquisition
+landed at `d4e7541`, followed by the `just` migration at `7fecff6`. The
+[rollout completion record](../research/apm-marketplace-migration-verification.md#rollout-completion)
+contains the final regression, live apply, native cache, and model-session evidence.
+Current operations are in the [marketplace reference](../references/agent-marketplace.md).
+
+## Rollout verification
+
+The remaining gates passed on the shared-root, just-based layout:
+
+| Gate | Result |
+| --- | --- |
+| Repository tool resolution | A public materializer regression failed before `cwd=REPO_ROOT` and passed after it. Changed-source scoped apply and restoration both built successfully with the mise shim on `PATH`, without outer `mise exec` or resetting chezmoi state. |
+| Versioned payload refresh | `core` and `utils-agent` moved to 1.2.1; ordinary apply refreshed their native installations automatically. |
+| Fresh skill invocation | Authored `core:writing-for-humans` and imported, human-only `mattpocock:wait-what` ran in Claude and both Codex profiles. All twelve accepted sessions matched skill-body excerpts and expected behavior. |
+| Maintenance round trip | The guarded console edited authored source and an imported patch, bumping both affected plugins. Six fresh sessions saw both markers; six subsequent sessions saw the restored descriptions. All 2,624 APM cache files stayed unchanged. |
+| Native state and checks | All ten plugin caches match in three profiles; four defaults remain enabled and both Codex profiles discover 162 skills without hooks. Passed 23 packaging tests, 70 consumer/console tests, 17 config tests, and the native host scenario. |
+
+The [backup review](../research/apm-marketplace-migration-verification.md#legacy-backup-review)
+records Git recovery sources for both removable legacy directories. They remain
+retained, and the original rollback artifact was restored after the sample
+rotations. Authenticated Crit evaluations test Crit's own behavior and remain an
+optional separate lane. The registry or mirror is future work. The phases below
+retain the implementation requirements that these checks close.
 
 ## Folder and ownership
 
 Keep everything required to build and test the marketplace inside
-`agent-marketplace/`. Its Makefile must work after that folder is copied
-outside dotfiles. Root-level Make targets may delegate into it. Host policy,
+`agent-marketplace/`. Its justfile must work after that folder is copied
+outside dotfiles with tools provisioned. Root-level recipes may delegate into it. Host policy,
 chezmoi hooks, and native install reconciliation remain consumer adapters
 outside the packaging project.
 
@@ -95,8 +107,8 @@ without `literal_` escapes.
 
 ```text
 agent-marketplace/
-  Makefile
-  mise.toml                       pinned build/test tools
+  justfile
+  mise.toml                       pinned Python and uv
   README.md                       authoring, review, build, export
   apm.yml                         shared dependencies + marketplace recipe
   apm.lock.yaml                   APM-owned accepted resolution
@@ -139,7 +151,7 @@ directory. Preserve upstream files, including license and notice files.
 A small assembly step remains necessary: combine local skills with selected
 APM module content and copy complete hook/helper/eval trees into native plugin
 directories. It owns no downloads, dependency resolution, lock updates, or
-second curated source store. Start with Make recipes and simple file copies;
+second curated source store. Use just recipes and simple file copies;
 add a helper only where repeated copying, path checks, or patch application
 needs one.
 
@@ -159,19 +171,21 @@ interface metadata survives. Every Claude hook-bearing package retains
 names and generated versions against the authored Codex metadata. APM has no Codex manifest generator;
 the earlier two minimal overrides established hook suppression only.
 
-## Makefile contract
+## Project task contract
 
-These are the project-local target contracts. Verify exact APM command
-behavior in phase 1 before production use.
+Run these recipes from `agent-marketplace/`. The root `mise.toml` pins `just`;
+the project pins Python and uv and retains its locked APM environment.
+Use `just --list` in either directory for its recipe index.
 
 | Command | Contract |
 | --- | --- |
-| `make -C agent-marketplace fetch` | Run native root `apm lock` to acquire declared/locked inputs. Require a clean accepted shared cache and lock; acquisition may replace content and need network. |
-| `make -C agent-marketplace update` | Run native root `apm lock --update` for the shared graph; leave cache/lock changes visible for Git review. Require a clean accepted cache and lock before replacement. |
-| `make -C agent-marketplace build` | Validate committed inputs, assemble and scan native plugin trees, and run offline APM manifest/catalog generation. Never fetch missing inputs. |
-| `make -C agent-marketplace check` | Check source/cache/patch contracts and a fresh build, including content scanning, versions, and repeatability. Wire this into required local/CI checks. |
-| `make -C agent-marketplace export` | Archive the complete validated marketplace for native consumers. Refuse unchecked or stale build output. |
-| `make -C agent-marketplace clean` | Remove only disposable output. Keep committed modules, locks, source, and local deltas. |
+| `just tools` | Provision the project's pinned Python/uv and locked APM dependencies. Requires an available `just` executable. |
+| `just fetch` | Run native root `apm lock` to acquire declared/locked inputs. Require a clean accepted shared cache and lock; acquisition may replace content and need network. |
+| `just update` | Run native root `apm lock --update` for the shared graph; leave cache/lock changes visible for Git review. Require a clean accepted cache and lock before replacement. |
+| `just build` | Validate committed inputs, assemble and scan native plugin trees, and run offline APM manifest/catalog generation. Never fetch missing inputs. |
+| `just check` | Check source/cache/patch contracts and a fresh build, including content scanning, versions, and repeatability. Runs in required local/CI checks. |
+| `just export` | Archive the complete validated marketplace for native consumers. Refuse unchecked or stale build output. |
+| `just clean` | Remove only disposable output. Keep committed modules, locks, source, and local deltas. |
 
 Build each assembled plugin with `apm pack --offline --force`, then run
 `apm pack --offline` at the assembled marketplace root. The root command does
@@ -201,10 +215,10 @@ Exercise `apm lock` and `apm lock --update` in a disposable project containing
 a virtual skill dependency and a whole plugin with hooks. Verify module
 content, locks, receipts, unchanged agent targets, and repeat invocation.
 Confirm that development dependencies are acquired and that missing or failed
-downloads produce a failure the Make target propagates.
+downloads produce a failure the recipe propagates.
 Both fetch and update must refuse a dirty cache/lock before APM runs, including
 pending acquisition changes. Plain lock generation can replace a modified
-cache entry too. Exercise that refusal through the public Make targets.
+cache entry too. Exercise that refusal through the public recipes.
 
 Check Git's view of the cache, including hidden normalized files, upstream
 ignore rules, and intentionally tracked dependencies. APM's normal install
@@ -280,7 +294,7 @@ and the content scan that rejects hidden control characters. `apm lock`
 does not run these checks. Validate the dependency source surface, then scan
 the selected build payload after applying patches/overlays. Run both checks
 offline without deploying agent files. Build must reject findings before
-output is ready for export or materialization; `make check` covers this through
+output is ready for export or materialization; `just check` covers this through
 its fresh build. Preserve the negative public-workflow tests for unsupported
 components and hidden Unicode, including a finding introduced by a local patch.
 
@@ -301,7 +315,7 @@ only that file restores the offline build, with unrelated edits preserved.
 
 ### 4. Replace the maintenance workflow and policy readers
 
-Replace `vendor-agent-package` with the project's native acquisition targets.
+Replace `vendor-agent-package` with the project's native acquisition recipes.
 Git review accepts the changed lock and complete module diff together. Use
 native lock generation after editing dependency declarations. Require that
 removed dependency keys are absent from the resulting lock before considering
@@ -362,7 +376,7 @@ its remaining guarantees have replacements.
 ### 5. Integrate materialization and native release updates
 
 Keep the adapter small: obtain `build/marketplace` through the project's
-Makefile or receive a prebuilt artifact, validate it, then copy it to
+justfile or receive a prebuilt artifact, validate it, then copy it to
 `~/.agents/plugins`. Stage a complete sibling tree before replacing the
 owned live root. Failed build/copy/validation leaves the live tree usable.
 Keep the previous artifact for recovery; native CLI operations remain
@@ -374,9 +388,8 @@ build/adapter code. Retain script 35 and the Codex runtime
 ownership/content checks that preserve unrecognized local changes.
 
 Adapt the native reconciler to the artifact and consumer policy. Snapshot CLI
-state once and reconcile only `prateek-local`. Claude needs explicit updates
-of changed installed versions; the current implementation installs missing
-plugins but never updates existing ones. Restore desired enabled state after
+state once and reconcile only `prateek-local`. Claude reinstalls changed
+installed versions through its native CLI. Restore desired enabled state after
 installation/update and remove owned orphans.
 
 Prove Codex's configured-root lookup of
@@ -422,11 +435,11 @@ After isolated parity and recovery pass, remove the custom manifest/catalog
 renderer, the separate vendored source store, obsolete `package.toml` files,
 and recurring chezmoi filename transforms. Keep the small publication
 assembly and consumer adapters. Move packaging-specific helpers/tests inside
-the isolated project; root Make targets delegate to its own Makefile.
+the isolated project; root just recipes delegate to its own justfile.
 
 Update the management skill/references, AGENTS source-location contract,
 tests index, and active source-path consumers. Include the skill-search
-symlink, crit eval runner, iOS Make targets, ignore rules, and apply tree hash.
+symlink, crit eval runner, iOS test selection, ignore rules, and apply tree hash.
 Account for every removed assertion with equivalent coverage or an explicit
 tradeoff. [ADR 0016](../adr/0016-vendor-into-skill-references.md) remains a
 separate proposal; retain existing behavior and correct its nested-discovery
@@ -445,23 +458,23 @@ after rollout. Remove disposable probes while retaining the findings.
 ## Required checks
 
 Use the [test index](../../tests/README.md#agent-package-checks) for public
-seams and environment isolation. The project's `check` target belongs in a
-required CI lane with pinned tools provisioned first. Keep native agent tests
-as a separate host lane; expand the current Codex first-plugin read to cover
-all packages and install/update behavior.
+seams and environment isolation. The project's `check` recipe belongs in a
+required CI lane with pinned tools provisioned first. Native agent tests form
+a separate host lane covering all packages and install/update behavior.
+Run these commands from the repository root:
 
 ```sh
-make -C agent-marketplace check
-make test-agent-skill-packages test-vendor-skill-patches test-skill-console
-make test-claude-settings test-codex-config test-cursor-config test-pi-settings
-make test-agent-skill-packages-native
-make test-docs-lifecycle
+just test-agent-marketplace
+just test-python -p test_packages.py -p 'test_console_*.py'
+just test-python -p test_claude.py -p test_codex.py -p test_cursor.py -p test_pi.py
+just test-agent-skill-packages-native
+just test-docs-lifecycle
 git diff --check
 ```
 
-When old target names retire, preserve their guarantees through delegation
-and update the test index. Run each required check once through the canonical
-lane. Console producer checks and authenticated crit evals remain separate;
+Select test files through the runners; new tests need no per-file recipe.
+Run each required check once through the canonical lane.
+Console producer checks and authenticated Crit evals remain separate;
 ordinary packaging checks do not establish their runtime behavior.
 
 The acceptance record must cover:
@@ -487,7 +500,7 @@ immutable artifacts by resolved revision/content hash, and prove cold-cache
 restoration while GitHub is unavailable. Verify that any strict mirror mode
 really prevents fallback to GitHub. Migration to that service should replace
 the acquisition source without changing package grouping, local patches,
-the Makefile's build contract, or consumer materialization.
+the project's build contract, or consumer materialization.
 
 For now, Git contains the accepted dependency bytes and exported artifacts
 can be retained locally. An APM lockfile by itself is insufficient for outage

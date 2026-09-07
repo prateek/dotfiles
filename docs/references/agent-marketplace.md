@@ -17,8 +17,9 @@ related:
 [The isolated project](../../agent-marketplace/README.md) owns authored skills,
 reviewed APM inputs, patches, native plugin metadata, build checks, and export.
 It can build outside dotfiles after tool provisioning. The
-[implementation plan](../plans/apm-agent-marketplace-plan.md) tracks rollout;
-a changed checkout does not by itself change the live marketplace.
+[verification record](../research/apm-marketplace-migration-verification.md#rollout-completion)
+records the completed rollout. A changed checkout does not by itself change the
+live marketplace.
 
 The consumer boundary is:
 
@@ -46,7 +47,7 @@ Claude metadata and both catalogs, then removes them. Materialized plugins conta
 selected payloads and native manifests, with no acquisition cache or APM project.
 
 Use [materialization](../../.agents/skills/agent-skill-management/references/generated-outputs.md)
-for build-on-apply or prebuilt copy, and
+for build-on-apply, repository tool selection, or prebuilt copy, and
 [native reconciliation](../../.agents/skills/agent-skill-management/references/plugin-reconcile.md)
 for cache updates, disabled project plugins, and rollback. Script 35 preserves
 Codex's runtime skill stub; script 36 owns the build/copy/reconcile sequence.

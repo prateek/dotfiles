@@ -194,11 +194,12 @@ repeatability, and export.
 environment, and the project check runs in the required macOS CI lane.
 
 Consumer changes use `just test-python -p test_packages.py`, covering explicit policy,
-artifact materialization/rollback, legacy-source ownership, and native CLI
+artifact materialization/rollback, repository tool resolution when called from
+outside the checkout, legacy-source ownership, and native CLI
 reconciliation through subprocess fixtures. Its combined isolated chezmoi apply
 covers scripts 35/36, managed symlinks, all four client configs, runtime skill
-preservation, and an unchanged repeat apply. Run `just test-python -p test_claude.py
-test-codex-config test-cursor-config test-pi-settings` for the four independent
+preservation, and an unchanged repeat apply. Run
+`just test-python -p test_claude.py -p test_codex.py -p test_cursor.py -p test_pi.py` for the four independent
 config merges. `just test-python -p 'test_console_*.py'` covers budget/frontmatter examples,
 inventory, validation, staging, guarded edits, imported patch/overlay ownership,
 paired policy/version changes, deletion, CLI behavior, and Node execution of the
@@ -214,7 +215,7 @@ accounts for retired renderer and vendoring tests. SOURCE metadata generation,
 chezmoi filename escaping, upstream-shaped patch paths, and catalog filtering by
 local eligibility changed deliberately; their old assertions do not apply.
 
-`just test-python -p test_packages.py-native` is a separate host lane requiring both
+`just test-agent-skill-packages-native` is a separate host lane requiring both
 installed clients. It builds first, then exercises all ten plugins through real
 materialization/native CLI installation, versioned updates, stale-file removal,
 relocation, disabled-state restoration, rollback, and artifact-root Git
@@ -224,8 +225,9 @@ model calls. Verified versions: Claude 2.1.261 and Codex 0.153.4.
 
 Console producer verification uses `BATS_TAGS=host just test-shell tests/bats/agents/console-native.bats` and requires the exact Claude
 2.1.258 build recorded by the console. A different build fails that check;
-packaging success does not certify it. `just test-crit-evals` needs authenticated
-agents and network and consumes tokens. Neither is implied by fixture success.
+packaging success does not certify it. `just test-crit-evals` is an optional skill-behavior
+lane that needs authenticated agents and network and consumes tokens. Neither is
+implied by fixture success.
 
 Claude and Pi footer payloads use `just test-python -p test_statuslines.py -k ClaudeStatuslineTests` and
 `just test-python -p test_statuslines.py -k PiStatuslineTests`. The additional installed-Dash check is explicit:
@@ -340,7 +342,7 @@ The common checks render the actual adapter and desired fragment, execute the ad
 
 Use `test.assert_typed_equal(actual, expected)` for structured app assertions. It compares types throughout dictionaries and lists, so booleans, integers and reals remain distinct; failures name the nested value. cmux shortcuts and VoiceInk prompts also independently require plist data blobs before decoding their JSON. The engine cases protect numeric type replacement, shared binary container references and unchanged NaN values. Finder's separate workflow test checks native plist types with `plutil -expect` before comparing extracted values.
 
-[config_merge/test_discovery.py](config_merge/test_discovery.py) discovers plist modifiers under `home/`. Missing scenarios, stale entries and duplicate bundle IDs fail the suite. An exceptional modifier needs a repository-relative path and a non-empty ownership reason in `EXCEPTIONS`; there are currently no exceptions. A new app requires no Make or CI roster edit.
+[config_merge/test_discovery.py](config_merge/test_discovery.py) discovers plist modifiers under `home/`. Missing scenarios, stale entries and duplicate bundle IDs fail the suite. An exceptional modifier needs a repository-relative path and a non-empty ownership reason in `EXCEPTIONS`; there are currently no exceptions. A new app requires no task or CI roster edit.
 
 Every app is its own test method, so `-k` selects one or several:
 
@@ -353,10 +355,9 @@ Run `just test-shell tests/bats/hooks/plist-hooks.bats` and `just test-python -p
 
 ## Other validation lanes
 
-`just test-python -p test_packages.py-native` selects host cases for Claude's
-`plugin validate` and Codex's app-server `plugin/read`. Each case reports a
-missing CLI explicitly; a skipped producer is not validated. Use a Bats filter
-to focus on either producer.
+`just test-agent-skill-packages-native` runs the combined native client scenario,
+including Claude's `plugin validate` and Codex's app-server `plugin/read`.
+Both installed clients are required; a missing client fails the lane.
 
 Audit tracked Orca settings against the installed app's current defaults (run
 after upgrading Orca or a settings spree; refreshes the committed defaults
@@ -399,10 +400,10 @@ Run the `ios-audit` skill's source-tree unit tests:
 just test-python -k IosAudit
 ```
 
-Run native Claude Code plugin validation for generated local plugins:
+Run native Claude and Codex plugin installation and recovery checks:
 
 ```sh
-just test-python -p test_packages.py-native
+just test-agent-skill-packages-native
 ```
 
 Run `repo-index` canonical clone discovery tests:

@@ -80,6 +80,24 @@ class PackageTestCase(RepoTestCase):
 
 class PackageValidationTests(PackageTestCase):
 
+    def test_build_on_materialization_resolves_repo_tools_from_outside_the_repo(self):
+        self.package()
+        shims = self.work / "shims"
+        shims.mkdir()
+        (shims / "just").write_text("#!/bin/sh\necho 'No version is set for shim: just' >&2\nexit 1\n")
+        (shims / "mise").write_text(
+            "#!/bin/sh\n"
+            '[ "$1" = which ] && [ "$2" = just ] && [ -f mise.toml ] || exit 1\n'
+            f"printf '%s\\n' {shlex.quote(JUST)}\n"
+        )
+        for path in shims.iterdir():
+            path.chmod(0o700)
+        self.tool("materialize-agent-plugins", "--project-root", self.project,
+                  "--plugins-root", self.plugins, cwd=self.home,
+                  env={"PATH": str(shims) + os.pathsep + self.env["PATH"]})
+        self.assertEqual((self.plugins / "plugins/sample/skills/sample-skill/SKILL.md").read_text(),
+                         "---\nname: sample-skill\ndescription: Fixture skill.\n---\n\nHello.\n")
+
     def test_legacy_retirement_checks_chezmoi_target_bytes_and_preserves_unknown_changes(self):
         source = self.repo / "home/dot_agents/packages/sample/skills/local/old/literal_run.py"
         source.parent.mkdir(parents=True)

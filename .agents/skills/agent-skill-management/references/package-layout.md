@@ -1,7 +1,7 @@
 # Package layout
 
 The [isolated project README](../../../../agent-marketplace/README.md#edit-a-package)
-owns the source layout and Make contracts. One root APM project acquires inputs
+owns the source layout and just recipes. One root APM project acquires inputs
 for every plugin: one manifest, one lock, and one committed cache. Each directory
 under `packages/` defines a native plugin without a separate APM project.
 

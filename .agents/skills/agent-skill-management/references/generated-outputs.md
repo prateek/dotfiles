@@ -10,8 +10,31 @@ From the dotfiles repository root, a prebuilt artifact can be copied with:
 ```
 
 This needs only Python's standard library. Omitting
-`--artifact-root` runs the project's offline Make build first, which needs the
+`--artifact-root` runs the project's offline `just build` first, which needs the
 provisioned APM environment.
+
+## Tool lookup during chezmoi apply
+
+When `just` resolves to a mise shim, the adapter runs `mise which just` from the
+repository root to select its pinned version. This works when chezmoi runs its
+scripts from the home directory and when the build uses a temporary project copy.
+Provision the repo's tools first; the apply does not need an outer `mise exec`.
+Run the scoped commands from the canonical checkout:
+
+```sh
+cd ~/dotfiles
+marketplace_script="$PWD/home/.chezmoiscripts/run_onchange_after_36-agent-plugins.sh.tmpl"
+chezmoi diff --include=scripts --source-path "$marketplace_script"
+chezmoi apply --dry-run --verbose --include=scripts --source-path "$marketplace_script"
+chezmoi apply --include=scripts --source-path "$marketplace_script"
+```
+
+A successful unchanged repeat apply skips script 36. When checking tool lookup,
+use a changed source input and confirm materialization ran successfully. Native
+cache verification and the maintenance round trip are recorded in the
+[rollout verification](../../../../docs/research/apm-marketplace-migration-verification.md).
+
+## Replacement and verification
 
 The adapter validates and copies a complete sibling tree before replacing the
 owned destination. Failed build, validation, or copy preserves the live tree. It

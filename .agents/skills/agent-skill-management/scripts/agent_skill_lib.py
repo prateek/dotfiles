@@ -92,7 +92,7 @@ def just_binary() -> str:
     resolved = shutil.which("just")
     if resolved and f"{os.sep}shims{os.sep}" in resolved:
         try:
-            real = subprocess.run(["mise", "which", "just"], capture_output=True, text=True)
+            real = subprocess.run(["mise", "which", "just"], cwd=REPO_ROOT, capture_output=True, text=True)
         except OSError:
             return resolved
         if real.returncode == 0 and real.stdout.strip():

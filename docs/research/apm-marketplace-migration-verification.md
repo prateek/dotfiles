@@ -8,9 +8,10 @@ related:
   - ../plans/apm-agent-marketplace-plan.md
   - ../adr/0023-apm-agent-marketplace-packaging.md
   - ../adr/0025-shared-apm-acquisition.md
+  - ../adr/0026-just-task-runner.md
   - ../references/agent-marketplace.md
   - ../../agent-marketplace/README.md
-status_detail: "Migration landed and scoped live cutover verified. Fresh authenticated Claude and Codex sessions discovered the expected skills and followed a console edit/apply/revert round trip. Skill invocation behavior and authenticated Crit evals remain untested."
+status_detail: "Shared-root rollout gates passed: repository tool lookup, changed-source plain apply, versioned refresh, fresh skill invocation, and the authored/imported maintenance round trip. Native caches and unrelated state were verified. Both legacy backups remain retained and reconstructible from Git. Authenticated Crit evals are optional and unrun."
 ---
 
 # APM Marketplace Migration Verification
@@ -20,9 +21,11 @@ with the isolated `agent-marketplace/` project. APM 0.29.1 owns acquisition, nat
 locks, Claude manifests, and both catalogs. The project assembles reviewed inputs;
 consumer adapters materialize artifacts and reconcile native installations.
 
-This record distinguishes implementation checks in disposable state, the
-authorized [live cutover](#live-cutover), and
-[fresh model-session discovery](#live-maintenance-round-trip).
+The latest results are the [rollout completion](#rollout-completion) and
+[legacy backup review](#legacy-backup-review). Earlier sections record the original
+migration and [model-session discovery](#live-maintenance-round-trip) before the
+shared acquisition root and just migration. Their Make commands are historical
+execution evidence; use the [test index](../../tests/README.md) for current commands.
 Catalog visibility does not establish skill invocation or authenticated Crit
 eval behavior.
 
@@ -182,7 +185,7 @@ archive of the pinned old Git source. Matching content moves to
 an existing backup preserve the old directory and report why. No source backup
 is deleted by this migration helper.
 
-## Final local checks
+## Original migration checks
 
 All checks below passed through the repository's public command surfaces:
 
@@ -310,7 +313,7 @@ unchanged; all committed APM cache hashes still matched. A separately landed
 `utils-agent` 1.1.1 update was preserved. The original legacy artifact was
 restored at `~/.agents/plugins.previous` after the test's artifact rotations.
 
-The console requires the root `make test-tools` prerequisites as documented in
+The console requires the root `just test-tools` prerequisites as documented in
 the [test index](../../tests/README.md), in addition to the portable project's
 tools. Its staged Pi checks need the provisioned Bats libraries. The guarded
 console run used the exact recorded Claude 2.1.258 producer through mise; the
@@ -376,6 +379,228 @@ expected versions through public builds, including a console edit. All earlier
 path, corruption, stale-patch, invocation-policy, source-change, partial-write,
 and cache-preservation assertions remain.
 
+## Just-based live apply
+
+Shared acquisition landed at `d4e7541`; the
+[just migration](../adr/0026-just-task-runner.md) landed at `7fecff6`.
+The worktree was rebased onto that trunk without changing its separate dependency
+range WIP. On the rebased worktree, `mise exec -- just test-agent-marketplace`
+passed 23 tests and repeatable builds, and
+`mise exec -- just test-python -p test_packages.py -p 'test_console_*.py'`
+passed all 69 consumer and console tests. The consolidation's
+[remote CI run](https://github.com/prateek/dotfiles/actions/runs/34145668625)
+also passed.
+
+The clean canonical checkout at `~/dotfiles` was fast-forwarded to
+`7fecff6cc46ab7198d3bf268204c3661c7c3bf50`, and `chezmoi source-path` resolved to
+its `home/` directory. After the scoped diff and dry-run, the first plain
+script-36 apply failed before materialization with
+`mise ERROR No version is set for shim: just`.
+
+`just` was in `PATH` as `~/.local/share/mise/shims/just`, and version 1.58.0 was
+installed. The root `mise.toml` selected it only inside the repository.
+The adapter's `mise which just` lookup inherited chezmoi's home-directory working
+directory, where that pin was unavailable. The same lookup from the canonical
+root returned the installed executable. At this point, the proposed
+`cwd=REPO_ROOT` fix was unimplemented. The following scoped apply succeeded
+from the canonical root:
+
+```sh
+marketplace_script="$PWD/home/.chezmoiscripts/run_onchange_after_36-agent-plugins.sh.tmpl"
+mise exec -- env -u CODEX_HOME chezmoi apply --include=scripts --source-path "$marketplace_script"
+```
+
+The build used the frozen, offline APM environment. Its 1,374 artifact files and
+release receipt matched the canonical source digest
+`242ced383c348fedee35f2d5c53dafb0b54ac4402011f8c352d68783ef63eb9e`.
+The receipt records `dirty: false` and `checked: false`: apply performed a build,
+not the full check/export workflow.
+
+Payload comparisons exposed two stale Claude cache files: `core`'s
+`conventions-maintainer/SKILL.md` and `utils-agent`'s
+`agent-session-wiki/SKILL.md`. Trunk changed their Make instructions to just
+without changing either plugin's 1.2.0 version, so Claude's version-based
+reconciler retained those installed payloads. Native uninstall/install refreshed
+both plugins. Enabled Codex plugins were reconciled in both profiles; disabled
+`obsidian-wiki` was explicitly refreshed and restored to disabled state. Future
+publication still needed the missed version bumps at this point.
+
+Final verification covered Claude, canonical `~/.codex`, and the active Orca
+account's separate Codex home:
+
+- All ten plugins' cached files matched the artifact bytes and full modes in
+  every profile. `obsidian-wiki` was 1.3.0; the other nine were 1.2.0. Only `core`,
+  `mattpocock`, `review`, and `utils-agent` were enabled.
+- Fresh Codex app-server processes read all ten plugins and the expected 162
+  skill names, with no hooks exposed, in both profiles. Claude's native
+  marketplace validation passed. These checks made no model calls.
+- Both Codex config files retained their exact baseline bytes. Claude settings
+  retained the same JSON values; its native CLI reordered keys. Unrelated plugin
+  records were unchanged.
+- The scoped diff was empty. Directly managed Codex/Claude links and Pi settings
+  passed chezmoi verification. Unrelated Claude settings mode drift and the
+  canonical Codex reasoning preference remained outside the apply scope.
+- A plain unchanged repeat apply succeeded by skipping script 36. It does not
+  prove that a changed-source plain apply can resolve `just`.
+
+The original `~/.agents/plugins.previous` was restored byte-for-byte after the
+artifact rotations; temporary snapshots and probe state were removed. At this
+point, fresh skill invocation and the authored/imported edit → apply → verify →
+restore exercise had not been repeated on the shared-root, just-based layout.
+
+## Rollout completion
+
+The final verification used the shared acquisition root and just-based layout on
+2026-09-07. The adapter now resolves `mise which just` with `cwd=REPO_ROOT`.
+`core` and `utils-agent` moved from 1.2.0 to 1.2.1 so the native reconciler can
+refresh their changed instructions automatically.
+
+### Regression and validation
+
+The new consumer test invokes the public `materialize-agent-plugins` command from
+a fixture home, with a failing just shim and an external mise fixture that selects
+the real installed just only from the repository. It exercises the actual build
+and asserts the installed skill content. It failed with the original shim error
+before the fix and passed after the working-directory change.
+
+| Check | Result |
+| --- | --- |
+| `just test-agent-marketplace` | 23 tests and repeatable builds passed |
+| `just test-python -p test_packages.py -p 'test_console_*.py'` | 70 tests passed, including the new regression |
+| Four independent client config merge suites | 17 tests passed |
+| Native host scenario | Passed install, versioned update, stale removal, relocation, rollback, and local Git marketplace consumption in 32.602 seconds |
+| Documentation and syntax | 37 lifecycle fixtures and validation of all 88 docs passed; changed Python, repo skill frontmatter, and edited skill-reference paths validated |
+
+These test commands used the repository's mise environment. The native host lane
+used Claude 2.1.263 and Codex 0.153.4; its already-passed packaging prerequisite
+was not run twice. The live apply proof below deliberately used a different
+environment to expose the original failure.
+
+### Changed-source plain apply and restoration
+
+The reviewed adapter fix and two version changes were copied into the initially
+clean canonical checkout for the live trial, with exact original bytes and modes
+saved first. The initial scoped apply automatically refreshed `core` and
+`utils-agent`, including Claude's version-based reinstall. No manual cache refresh
+was needed for these releases.
+
+For the maintenance sample, the public console used its pinned Claude 2.1.258
+producer with the recorded binary hash verified. Normal render, dry-run apply,
+and guarded `apply --commit` accepted four writes without a dirty-target override:
+
+- An independent random description marker in authored `review:github-attachments`.
+- Another description marker in imported `mattpocock:wait-what`, stored in a new
+  reviewed patch rather than in `apm_modules/`.
+- Matching review and mattpocock version bumps from 1.2.0 to 1.2.1.
+
+The probe inherited `PATH` from a shell started in `$HOME`. It confirmed that
+`just` resolved to `~/.local/share/mise/shims/just` and that `mise which just`
+failed from `$HOME`. This matters: a tool shell started inside the checkout had
+already selected the real executable and could mask the regression. The actual
+chezmoi subprocess ran from the canonical checkout:
+
+```sh
+cd ~/dotfiles
+marketplace_script="$PWD/home/.chezmoiscripts/run_onchange_after_36-agent-plugins.sh.tmpl"
+env -u CODEX_HOME chezmoi diff --include=scripts --source-path "$marketplace_script"
+env -u CODEX_HOME chezmoi apply --dry-run --verbose --include=scripts --source-path "$marketplace_script"
+env -u CODEX_HOME chezmoi apply --include=scripts --source-path "$marketplace_script"
+```
+
+The changed-source apply built successfully and automatically refreshed both
+sample plugins. After the fresh-session checks, every sample path was checked
+against its recorded post-edit hash, restored to its exact original bytes and
+modes, or removed if newly created. The restoration apply also built successfully
+and restored both plugin versions. Neither apply used outer `mise exec`, a state
+reset, or forced execution. An unchanged repeat apply then skipped script 36.
+
+The inherited Orca `CODEX_HOME` was reconciled separately after each canonical
+apply. The native and artifact checks passed after the initial release, sample,
+and restoration: all ten plugin caches matched bytes and full modes in Claude,
+canonical `~/.codex`, and the active Orca account. The four enabled defaults stayed
+unchanged; both Codex profiles read all 162 expected skills with no hooks.
+Both Codex configs retained exact bytes, Claude settings retained the same JSON
+values, and unrelated plugin records, Pi settings, and host policy were preserved.
+All 2,624 committed APM cache files retained their bytes and modes. Managed
+Codex/Claude symlinks and Pi settings passed scoped chezmoi verification.
+
+The restored artifact's source digest is
+`bc02ed1b6477d78856f31137803c47d1dc20bcf620d73d56b85cddc31ea2d664`;
+the sample digest was
+`008a7c5f8425192a05078eb9f508e755031c34995224c92f65220e2b6f6ab19b`.
+The trial receipt records base revision `7fecff6cc46ab7198d3bf268204c3661c7c3bf50`,
+`dirty: true`, and `checked: false`. It describes the deliberate pre-landing trial
+build, not a clean release export. Tests passed separately. Identical payload
+materialization retains the existing receipt, so its revision fields must not be
+treated as proof that the current Git HEAD was freshly built.
+
+### Fresh skill invocation
+
+Two cases ran in separate fresh Claude and Codex processes for each of the three
+profiles, first with sample edits installed and then after restoration:
+
+| Named skill | Expected behavior |
+| --- | --- |
+| Authored `core:writing-for-humans` | Simplify an operator instruction while retaining service unavailability, cached dependencies, and build order |
+| Imported, human-only `mattpocock:wait-what` | Re-pitch acquisition versus materialization with context in at most 70 words |
+
+Claude used explicit slash invocation with `--no-session-persistence`; its startup
+events listed both commands. Codex used explicit dollar invocation with
+`exec --ephemeral`. Read-only probes allowed skill/reference reads and excluded
+authoring/build directories, writes, network tools, and delegation. Each answer
+included a short verbatim excerpt from the named skill body, checked against the
+installed file, and the expected behavior was inspected. These checks establish
+selected skill invocation, not behavior for every skill or every implicit policy.
+
+All twelve accepted sessions passed. Every session also reported the exact live
+descriptions of both sample skills. The six sample sessions saw both independent
+markers, whose values were never supplied in their prompts. The six restoration
+sessions reported the exact original descriptions with both markers absent.
+Preliminary Codex prompts that prohibited shell reads did not establish body
+access; they were replaced by these read-only probes and were not counted.
+
+The original `~/.agents/plugins.previous` was restored exactly after artifact
+rotation. Both audited legacy directories remain retained. Authenticated Crit
+evals remain unrun and optional; an APM registry or mirror remains future work.
+
+## Legacy backup review
+
+A separate review reconstructed both retained directories from Git and compared
+every file's bytes and full permission modes, plus directory paths and modes.
+Neither directory contains unique content outside retained Git history.
+
+| Live directory | Reconstruction result | Cleanup decision |
+| --- | --- | --- |
+| `~/.agents/plugins.previous` | Exact renderer output at `9a24d70664e52f119f00907929c2587305d54bc7`: 1,504 files, 501 directories including root, 17,377,788 bytes | Removable after the native verification above |
+| `~/.agents/packages` | All 1,492 baseline target files unchanged, plus 55 historical files and 20 directories; complete reconstructed tree matches all 1,547 files and 519 directories including root | Removable after the native verification above; extras explain the automated retirement refusal |
+
+The baseline source is under `home/dot_agents/packages/` at `9a24d70664e5`.
+The 55 extras total 627,483 bytes and correspond to recorded Git deletions.
+These commits contain their exact source bytes; paths below are relative to
+the saved `packages/` tree:
+
+| Extra paths | Files | Restore commit |
+| --- | ---: | --- |
+| `design/skills/vendor/ui-ux-pro-max/data/{_sync_all.py,design.csv,draft.csv}` | 3 | `5085f1a6fd3d` |
+| `ios/skills/vendor/ios-simulator-skill/tests/test_idb_utils.py` | 1 | `5085f1a6fd3d` |
+| `ios/skills/vendor/swift-patterns/{AGENTS.md,CONTRIBUTING.md,README.md}` | 3 | `5085f1a6fd3d` |
+| `ios/skills/vendor/swiftui-expert/{AGENTS.md,CONTRIBUTING.md,README.md,package.json}` | 4 | `5085f1a6fd3d` |
+| `experimental/skills/local/code-review/SKILL.md` | 1 | `3b992106d373` |
+| `review/skills/local/setup-downstream-fork/**` | 40 | `3ab0671a56ca` |
+| `review/skills/local/using-git-spice/{references/using-git-spice.md,test-scenarios.md}` | 2 | `8a3c67fbb9a2` |
+| `utils-agent/skills/vendor/agent-slack/references/commands.md` | 1 | `4ec4306e5582` |
+
+Only the three Swift Patterns repository documents retain identical bytes in the
+current `apm_modules/`; the other 52 files require ancestor Git sources. Restoring
+those deleted source files onto the baseline and producing a fresh chezmoi target
+archive reconstructed the saved package tree exactly. No symlinks or special files
+were present. Plugin files were 1,430 at mode 0644 and 74 at 0755; package files
+were all 0644, and directories were all 0755.
+
+This was a read-only backup review. Both live directories remain in place; the
+temporary reconstruction was removed. Committed `apm_modules/` and current native
+client caches are active inputs/state and are outside this legacy cleanup decision.
+
 ## Replaced assertions
 
 | Previous guarantee or assertion | Replacement or explicit contract change |
@@ -398,7 +623,7 @@ and cache-preservation assertions remain.
 | Console validation, stale snapshots, staging, guarded writes and partial deletion | Existing tests migrated to durable ownership; imported description/paired-policy edits build as patches/overlays with matching version bumps and untouched caches |
 
 Console producer parity remains pinned to Claude 2.1.258 and its recorded binary
-hash. Passing the packaging host lane on 2.1.261 does not certify that producer.
-Authenticated Crit evals and fresh skill invocation checks remain untested.
-The live checks above verify native state and model-session catalog visibility,
-including maintenance updates and restoration; they do not certify skill behavior.
+hash; the successful maintenance round trip used that producer. Native host
+coverage on other Claude versions is separate. The selected skill invocation
+checks above passed on the current layout. Authenticated Crit evals remain a
+separate optional behavior lane and have not run.

@@ -7,6 +7,12 @@ plugin_tools=.agents/skills/agent-skill-management/scripts
 "$plugin_tools/reconcile-agent-plugins" --apply --agent claude --agent codex
 ```
 
+`CODEX_HOME` selects the Codex profile for both this helper and chezmoi script 36.
+An Orca account can use a separate home from canonical `~/.codex`. To refresh the
+canonical profile as well, run `env -u CODEX_HOME "$plugin_tools/reconcile-agent-plugins" --apply --agent codex`.
+Verify each profile that should receive the update; refreshing one does not
+refresh the other's native cache.
+
 The reconciler reads a validated artifact and explicit host policy, then changes
 only `prateek-local`. Use `--plugins-root` and `--policy` for isolated state;
 `--dry-run` reads native state and prints planned mutations. Invalid input fails
