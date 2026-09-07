@@ -125,5 +125,6 @@ for test-first work.
 - When testing, evaluating, or selecting a specific CLI version, prefer mise (`mise use`, `mise link`, or a repo-owned `mise run <tool>:use` task) over swapping Homebrew/npm/cargo/pipx installs. Use ignored `mise.local.toml` for per-worktree experiments; commit durable machine-wide selections under `home/dot_config/mise/`.
 - For skill-creator eval review (the human-review HTML over an iteration directory), default to `scripts/eval-review.py`. Use the canonical skill viewer (`generate_review.py`) only if the user explicitly asks for it.
 - After editing a skill, validate it. Frontmatter/parser drift has bitten this repo before.
+- A cask marked `auto_updates` never moves through `brew bundle`, which only installs, so its bundle stays at whatever version the machine was set up with while the app self-updates its own internals. The app's version string reports the newer layer and hides the split; check `brew list --cask --versions` and reach for `brew upgrade --cask --greedy <name>` when a feature lives in the bundle. Obsidian's CLI is the worked example (`run_after_13-obsidian-cli.sh.tmpl`).
 - If CI says to run the build file generator and provides a diff, apply that diff exactly when local generation is blocked by auth/network/private module issues.
 - Use `git diff --check` before handoff on non-trivial docs or code changes.

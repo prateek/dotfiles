@@ -1,0 +1,48 @@
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- $obsidian := includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "obsidian") -}}
+{{- if and $f.run_install_scripts (eq $obsidian "true") -}}
+{{ template "script_lib.sh" . }}
+
+if [ "$(uname -s)" != "Darwin" ]; then
+  log "Obsidian CLI check skipped on non-macOS host."
+  exit 0
+fi
+
+# The CLI ships inside the app bundle. That bundle is frozen at whatever version
+# this machine was set up with — the cask is marked auto_updates, so `brew
+# upgrade` skips it and `brew bundle` only ever installs — while Obsidian
+# self-updates its own app layer into ~/Library/Application Support. The app's
+# version string reports the newer layer, so the split is invisible, and hosts
+# set up before Obsidian 1.12.7 have no CLI. Only --greedy closes it.
+#
+# Test the binary rather than a version number: it stays correct if upstream
+# moves the CLI again.
+brew_shellenv
+have brew || { warn "Homebrew not found; skipping Obsidian CLI check."; exit 0; }
+
+cli_binary="/Applications/Obsidian.app/Contents/MacOS/obsidian-cli"
+
+if [ -x "$cli_binary" ]; then
+  log "ok: Obsidian ships the CLI binary."
+  exit 0
+fi
+
+if [ ! -d "/Applications/Obsidian.app" ]; then
+  log "Obsidian not installed yet; brew bundle will fetch a version that ships the CLI."
+  exit 0
+fi
+
+# Upgrading swaps the whole .app, so leave a running instance alone rather than
+# pulling the bundle out from under an open vault. The next apply retries.
+if pgrep -f "/Applications/Obsidian.app/Contents/MacOS/" >/dev/null 2>&1; then
+  warn "Obsidian is running and too old to ship the CLI; quit it and re-apply, or run: brew upgrade --cask --greedy obsidian"
+  exit 0
+fi
+
+log "Obsidian predates the CLI; upgrading the cask."
+if run_timed "brew upgrade --cask --greedy obsidian" brew upgrade --cask --greedy obsidian; then
+  [ -x "$cli_binary" ] || warn "Obsidian upgraded but $cli_binary is still absent."
+else
+  warn "Could not upgrade Obsidian; the obsidian CLI stays unavailable on this host."
+fi
+{{- end -}}

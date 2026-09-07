@@ -67,6 +67,9 @@ Library/Scripts/g95-sharp.sh
 Library/Scripts/dayjob-password.sh
 Library/Scripts/temp-admin.sh
 {{- end }}
+{{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "obsidian")) "true" }}
+Library/Application Support/obsidian/obsidian.json
+{{- end }}
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "yojam")) "true" }}
 Library/Application Support/Yojam/config.json
 {{- end }}

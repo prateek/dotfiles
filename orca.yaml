@@ -6,7 +6,11 @@ scripts:
   # Runs after a worktree is created. Env: $ORCA_WORKTREE_PATH, $ORCA_ROOT_PATH.
   # This repo's tool versions are managed by mise (~/.config/mise); trust the
   # new worktree so mise will honor any repo-local config without a prompt.
+  # mise trusts one config file per call and `-a` reaches parents, not children,
+  # so every repo-owned config needs its own line. The vendored configs under
+  # apm_modules are third-party and stay untrusted.
   setup: |
     mise trust "$ORCA_WORKTREE_PATH" >/dev/null 2>&1 || true
+    mise trust "$ORCA_WORKTREE_PATH/agent-marketplace" >/dev/null 2>&1 || true
 defaultTabs:
   - title: shell

@@ -1,0 +1,30 @@
+#!/usr/bin/env -S uv run --quiet --script
+# /// script
+# requires-python = ">=3.14"
+# dependencies = []
+# ///
+"""Turn on Obsidian's command line interface in obsidian.json.
+
+The `cli` key gates every `obsidian` subcommand; without it the binary Homebrew
+links answers "Command line interface is not enabled" and the whole CLI is
+inert. Obsidian owns the rest of this file — the vault registry and its
+open/close timestamps churn on every launch — so only that one key is asserted
+and everything else passes through.
+
+An already-correct file is echoed byte-for-byte and a rewrite keeps Obsidian's
+compact, newline-free shape, so apply never churns the app's own formatting.
+Pass-through covers only the snapshot chezmoi puts on stdin: Obsidian rewrites
+this file on quit, so applying mid-session can drop a vault it registered in
+between.
+"""
+import json
+import sys
+
+current = sys.stdin.read()
+config = json.loads(current) if current.strip() else {}
+
+if config.get("cli") is True:
+    sys.stdout.write(current)
+else:
+    config["cli"] = True
+    sys.stdout.write(json.dumps(config, separators=(",", ":")))

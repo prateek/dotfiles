@@ -1,0 +1,59 @@
+diff --git a/skills/obsidian-layout-adjustment/SKILL.md b/skills/obsidian-layout-adjustment/SKILL.md
+index c2ae846..c01c8a3 100644
+--- a/skills/obsidian-layout-adjustment/SKILL.md
++++ b/skills/obsidian-layout-adjustment/SKILL.md
+@@ -58,6 +58,22 @@ Read `references/workflow-reference.md` when:
+ 
+ The reference is Obsidian-specific. Use it before treating the UI as an unknown web page.
+ 
++## Live Instrument
++
++When Obsidian is running, the `obsidian` CLI drives this loop against the live app, so each step reads the rendered result instead of the CSS you hoped for:
++
++```bash
++obsidian dev:screenshot path=<file>                                 # capture the window
++obsidian dev:css selector=".workspace-leaf" prop=background-color   # winning rules, with source lines
++obsidian dev:dom selector=".workspace-tab-header" total             # confirm the object exists
++obsidian reload                                                     # reload the vault after a snippet edit
++obsidian dev:console level=error                                    # snippet parse errors
++```
++
++Two of these change how the loop behaves. `dev:screenshot` captures Obsidian's own window whether or not it is frontmost, which removes occlusion and the need to verify the verifier. `dev:css` reports which rule actually won and where it came from, which turns "nothing changed" from a guess into a lookup.
++
++The CLI needs Obsidian running with `cli` enabled in Settings > General > Advanced. Without it, fall back to reading `.obsidian/` files and `screencapture`. The loop is the same; only the instrument changes.
++
+ ## Operating Loop
+ 
+ 1. Start from the live vault.
+@@ -69,7 +85,7 @@ The reference is Obsidian-specific. Use it before treating the UI as an unknown
+ 7. Save a named checkpoint before subjective edits: copy the active snippets to `.obsidian/snippet-archive/`, never into `.obsidian/snippets`, so the snippet picker stays clean.
+ 8. Re-read the exact current block, then edit one owning layer: stage, shell, header, wrapper, or child. Formatting reshapes the file; a patch written from a remembered shape misses mechanically.
+ 9. Format CSS.
+-10. Reload/focus Obsidian and screenshot the exact affected area.
++10. Reload Obsidian (`obsidian reload`) and screenshot the exact affected area.
+ 11. Use the screenshot and the user's correction as evidence.
+ 12. If it fails, inspect ownership or restore; do not keep piling CSS onto the same wrong target.
+ 13. Refactor only after the user accepts the visual state.
+@@ -124,7 +140,7 @@ Use this compact map first, then verify exact selectors in the live vault:
+ | graph | graph plugin leaf/canvas |
+ | bottom stats | status bar |
+ 
+-The visible object and backend layer should be treated as stable across Obsidian work. Exact class names can vary by theme/plugin/app version, so verify in the live vault before patching.
++The visible object and backend layer should be treated as stable across Obsidian work. Exact class names can vary by theme/plugin/app version, so verify in the live vault before patching: `obsidian dev:dom` confirms the object exists and `obsidian dev:css` names the rule that owns it.
+ 
+ ## Change-Type Split
+ 
+@@ -176,11 +192,11 @@ For every meaningful visual pass:
+ 1. Save checkpoint.
+ 2. Patch.
+ 3. Format CSS.
+-4. Reload or focus Obsidian.
++4. Reload Obsidian.
+ 5. Screenshot the affected area.
+ 6. Compare the screenshot to the complaint.
+ 
+-If another window covers Obsidian, retake the screenshot. Verify the verifier: confirm Obsidian is actually frontmost before trusting a capture (AppleScript can check the frontmost process). If the issue is tiny, capture just that region — `screencapture -R<x,y,w,h> out.png` — around the edge, icon, tab, row, or pane.
++Prefer `obsidian dev:screenshot path=<file>`. It captures Obsidian's own window, so occlusion and frontmost state stop mattering. `screencapture` reintroduces both: with it you must verify the verifier, confirming Obsidian is actually frontmost before trusting a capture (AppleScript can check the frontmost process) and retaking the shot if another window covers it. If the issue is tiny, capture just that region — `screencapture -R<x,y,w,h> out.png` — around the edge, icon, tab, row, or pane.
+ 
+ If the screenshot disproves the fix, keep working, restore, or say it failed. Do not close as if formatting proved success.
+ 
