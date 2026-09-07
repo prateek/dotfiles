@@ -9,7 +9,7 @@ related:
   - ../adr/0023-apm-agent-marketplace-packaging.md
   - ../references/agent-marketplace.md
   - ../../agent-marketplace/README.md
-status_detail: "Implementation and required local checks passed, including offline source transport and isolated native recovery. Landing, live apply, and fresh live-session verification remain separate rollout steps."
+status_detail: "Implementation and required local checks passed, including offline source transport and isolated native recovery. Migration landed and scoped live cutover verified; fresh interactive invocation and authenticated evals remain untested."
 ---
 
 # APM Marketplace Migration Verification
@@ -19,8 +19,9 @@ with the isolated `agent-marketplace/` project. APM 0.29.1 owns acquisition, nat
 locks, Claude manifests, and both catalogs. The project assembles reviewed inputs;
 consumer adapters materialize artifacts and reconcile native installations.
 
-This record describes executed checks in disposable state. It does not establish
-live rollout, model invocation behavior, authenticated eval behavior, or remote CI.
+This record distinguishes implementation checks in disposable state from the
+authorized [live cutover](#live-cutover). Neither establishes model invocation
+behavior or authenticated eval behavior.
 
 ## Baseline and acquisition
 
@@ -232,6 +233,37 @@ from the working-checkout checks. Temporary baseline checkouts, acquisition prob
 native profiles, and source-export fixtures were removed after recording results.
 The checked marketplace and its export remain ignored build output.
 
+## Live cutover
+
+Commit `f0856157b8ed980e2e1395df07009a9ea9ecf284` was fast-forwarded into
+`~/dotfiles` and pushed to `master`. The scoped chezmoi apply ran from that
+canonical checkout after provisioning the project's locked tool environment.
+It applied scripts 35/36, the affected directly managed files, and the managed
+symlinks. Cursor config was gated off on this machine. Codex's managed plugin
+fragment already matched; its unrelated live reasoning setting was preserved.
+
+The materialized artifact's 1,384 files matched the checked release and committed
+source digest above. Claude, canonical Codex, and this Orca account's separate
+Codex profile each installed all ten plugins at version 1.1.0. Every cached
+payload file matched its artifact bytes and modes. Only `core`, `mattpocock`,
+`review`, and `utils-agent` were enabled. Installed disabled Codex plugins were
+explicitly refreshed and restored to disabled state.
+
+Fresh native Codex app-server processes discovered all 162 skills in both
+profiles. Unrelated native plugins and Codex settings remained unchanged.
+The applied direct targets passed `chezmoi verify`, and the scoped diff, including
+scripts 35/36, was empty. The old artifact remained byte-for-byte at
+`~/.agents/plugins.previous`. Legacy source at `~/.agents/packages` differed from
+the migration baseline, so retirement preserved it. Codex runtime skills and
+modes were preserved; their generated README now points to the isolated project.
+
+The first remote CI run caught two stale warning assertions in the broad CI
+apply scenario. The native publisher no longer emits the retired renderer's
+component-mapping warnings. The replacement checks inspect the materialized
+Codex manifests for omitted eval registration and explicit hook suppression;
+the existing convergence and disabled-wiki cleanup checks remain intact.
+The corrected scenario and complete `make test-ci` lane passed locally.
+
 ## Replaced assertions
 
 | Previous guarantee or assertion | Replacement or explicit contract change |
@@ -243,6 +275,7 @@ The checked marketplace and its export remain ignored build output.
 | Curated aliases, stale skills removed, local source preserved | Explicit selections, collision checks, clean artifact replacement, and cache-unchanged patch tests |
 | Hand-authored hooks survive imports; ambiguous hook sources fail | Authored/selected output collisions fail before replacing the artifact; there is no destructive import-copy step |
 | Hooks manifest/helper execution and Codex suppression | Project hook fixtures plus native all-plugin discovery/cache checks |
+| Broad CI apply warns that evals and hooks are Claude-only | Native publication emits no custom mapping warnings; the same apply scenario checks omitted Codex eval registration and explicit empty hook objects in the materialized manifests |
 | Source-surface and hidden Unicode audit, special audit false-positive exemption | Unsupported source components and post-patch critical scan are retained; the old audit exemption disappears with that audit path |
 | Reverse patches reproduce SOURCE-recorded pristine bytes | Pristine APM hash validation plus applying patches to temporary copies; damaged cache and stale patches fail before publication |
 | Patch paths can be submitted upstream unchanged | Deliberately changed to native published paths; aliases require path remapping for upstream submission |
@@ -254,5 +287,5 @@ The checked marketplace and its export remain ignored build output.
 
 Console producer parity remains pinned to Claude 2.1.258 and its recorded binary
 hash. Passing the packaging host lane on 2.1.261 does not certify that producer.
-Authenticated Crit evals, actual live apply, and fresh live-session verification
-remain outside this implementation evidence.
+Authenticated Crit evals and fresh interactive invocation checks remain untested.
+The live cutover above verifies native discovery and cache state, not model behavior.

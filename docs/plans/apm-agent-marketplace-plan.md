@@ -14,7 +14,7 @@ related:
   - ../research/nix-agent-skills-packaging-research.md
   - agent-plugin-renderer-plan.md
   - ../../.agents/skills/agent-skill-management/SKILL.md
-status_detail: "Source and consumer migration implemented; required local checks, offline source transport, and isolated native acceptance and recovery passed. Landing, scoped live apply, and fresh live-session checks remain rollout steps."
+status_detail: "Migration landed and scoped live apply verified in Claude and both canonical and Orca Codex profiles. Required local checks, offline source transport, and isolated native recovery passed. Fresh interactive invocation checks remain a rollout step."
 ---
 
 # APM Agent Marketplace Plan
@@ -64,8 +64,12 @@ installation/update/rollback, and local Git distribution. Source inspection used
 The portable source/build project and consumer adapters are implemented in this
 checkout. Current operations are documented in the
 [marketplace reference](../references/agent-marketplace.md). All required local
-checks passed. Landing, live cutover, and fresh live-session verification
-remain; no real client state has been modified by the implementation tests.
+checks passed. Commit `f085615` landed, and the authorized scoped live apply
+verified version 1.1.0 payloads, native inventories, and enabled states in Claude
+and both canonical and Orca Codex profiles. Fresh native Codex processes found
+all 162 skills. Fresh interactive invocation checks remain; the
+[rollout record](../research/apm-marketplace-migration-verification.md#live-cutover)
+distinguishes live evidence from the isolated implementation tests.
 
 ## Folder and ownership
 

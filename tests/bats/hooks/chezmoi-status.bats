@@ -40,8 +40,13 @@ STUB
   run_without_reporting_fds 0 chezmoi "${chezmoi_args[@]}" apply --exclude=externals
   assert_success
   [[ "$stderr" == *'karabiner-goku:'*'missing; skipping'* ]]
-  [[ "$stderr" == *'codex has no mapping for evals; that payload is claude-only'* ]]
-  [[ "$stderr" == *'codex has no mapping for hooks; that payload is claude-only'* ]]
+  run_without_reporting_fds 0 jq -e 'has("evals") | not' \
+    "$HOME/.agents/plugins/plugins/review/.codex-plugin/plugin.json"
+  assert_success
+  run_without_reporting_fds 0 jq -s -e 'all(.[]; .hooks == {})' \
+    "$HOME/.agents/plugins/plugins/review/.codex-plugin/plugin.json" \
+    "$HOME/.agents/plugins/plugins/superpowers/.codex-plugin/plugin.json"
+  assert_success
   run_without_reporting_fds 0 chezmoi "${chezmoi_args[@]}" status --exclude=externals
   assert_success
   assert_output ''
