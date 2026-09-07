@@ -134,12 +134,14 @@ Files under `home/.chezmoiscripts/` are scripts. Naming controls when they run.
 ```text
 run_once_before_00-homebrew.sh.tmpl
 run_once_before_05-core-tools.sh.tmpl
+run_after_07-codex-standalone.sh.tmpl
 run_onchange_after_08-retired-packages.sh.tmpl
 run_onchange_after_09-fork-reconcile.sh.tmpl
 run_onchange_after_10-brew-bundle.sh.tmpl
 run_onchange_after_10-zinit-compat.sh.tmpl
 run_onchange_after_11-zinit-update.sh.tmpl
 run_onchange_after_12-gh-extensions.sh.tmpl
+run_after_13-obsidian-cli.sh.tmpl
 run_onchange_after_15-xcode.sh.tmpl
 run_onchange_after_16-tartelet-runner.sh.tmpl
 run_onchange_after_17-tartelet-settings.sh.tmpl

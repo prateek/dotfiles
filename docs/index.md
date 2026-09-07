@@ -71,7 +71,7 @@ for day-to-day implementation details.
 | [ADR 0002 - Fresh-shell validator architecture](adr/0002-zsh-fresh-shell-validator.md) | `scripts/audit/zsh-fresh-shells.zsh` and [tests index](../tests/README.md). |
 | [ADR 0003 - git-subrepo-managed `src/`](adr/0003-downstream-fork-subrepo.md) | Superseded by [ADR 0001](adr/0001-downstream-fork-architecture.md). |
 | [ADR 0004 - Tart install validation and tracing](adr/0004-tart-install-validation-and-tracing.md) | [Tart Install Validation](runbooks/tart-mini-validation.md). |
-| [ADR 0005 - Mise-managed tool selection](adr/0005-mise-tool-management.md) | [Mise Tool Management](references/mise-tool-management.md). |
+| [ADR 0005 - Mise-managed tool selection](adr/0005-mise-tool-management.md) | [Mise Tool Management](references/mise-tool-management.md); its Codex Homebrew channel is superseded by [ADR 0027](adr/0027-codex-standalone-installer.md). |
 | [ADR 0006 - Chezmoi migration target architecture](adr/0006-chezmoi-migration-prototype.md) | [Chezmoi Architecture](references/chezmoi-architecture.md). |
 | [ADR 0007 - Default-loaded plugin policy](adr/0007-default-loaded-plugin-policy.md) | [Agent Skill Management](../.agents/skills/agent-skill-management/SKILL.md). |
 | [ADR 0008 - Sudo askpass via 1Password](adr/0008-sudo-askpass-1password.md) | Current behavior remains [Jamf Self Service Elevation](references/jamf-self-service-elevation.md); accepted askpass design is tracked in [Sudo Askpass 1Password](plans/sudo-askpass-1password-plan.md). |
@@ -92,6 +92,7 @@ for day-to-day implementation details.
 | [ADR 0024 - Setapp subscription apps install from packages.toml](adr/0024-setapp-subscription-app-installs.md) | `setapp_apps` groups in `packages.toml`, rendered by `scripts/packages/render-setapp-applist` and installed by `run_after_22-setapp-apps` via Setapp's store API. |
 | [ADR 0025 - Share APM acquisition across native plugins](adr/0025-shared-apm-acquisition.md) | One root manifest, lock, and committed cache; per-plugin native metadata remains. See the [marketplace reference](references/agent-marketplace.md). |
 | [ADR 0026 - just as the task runner](adr/0026-just-task-runner.md) | Accepted; [justfile migration plan](plans/justfile-migration-plan.md). Both Makefiles replaced and per-file test targets deleted; selection moves to the runners. See the [tests index](../tests/README.md). |
+| [ADR 0027 - Codex CLI installs standalone](adr/0027-codex-standalone-installer.md) | Accepted; `run_after_07-codex-standalone.sh` installs the CLI through OpenAI's installer and `[packages.retired]` drops the cask, because `/agents` and the app-server daemon need the standalone layout. See [Mise Tool Management](references/mise-tool-management.md) > Codex workflow. |
 
 ## Research
 

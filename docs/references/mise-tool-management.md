@@ -3,6 +3,7 @@ status: current
 doc_type: reference
 related:
   - ../adr/0005-mise-tool-management.md
+  - ../adr/0027-codex-standalone-installer.md
 ---
 
 # Mise Tool Management Reference
@@ -28,7 +29,7 @@ Mise already owns shims and per-directory version selection. The repo should use
 - Use mise for active tool selection and shims.
 - Use upstream packaging systems when they can install the tool.
 - Keep local code limited to small mise tasks for workflows that need glue.
-- Support official releases, Homebrew installs, source builds from `main`, and PR builds for Codex.
+- Support official releases, source builds from `main`, and PR builds for Codex.
 - Remove the custom `devtool` scripts, config, and docs.
 
 ## Non-goals
@@ -61,16 +62,23 @@ The only prefix contract is: after install, executable commands live under `<pre
 
 ## Codex workflow
 
-Codex currently ships through npm, Homebrew cask, and GitHub releases. The mise registry maps `codex` to `aqua:openai/codex` and `npm:@openai/codex`.
+The Codex CLI is not mise-managed. `run_after_07-codex-standalone.sh` installs
+it with OpenAI's standalone installer, because `/agents` and the app-server
+daemon exec a fixed path that only that installer creates
+([ADR 0027](../adr/0027-codex-standalone-installer.md)). It links
+`~/.local/bin/codex`, and zprofile puts `~/.local/bin` ahead of the mise shims,
+so the standalone install is what `codex` resolves to.
 
-Use:
+The task still owns Codex source experiments, and adds a channel for the
+standalone default:
 
 ```sh
+mise run codex:use standalone
+mise run codex:use standalone 0.153.4
 mise run codex:use latest
 mise run codex:use release 0.125.0
 mise run codex:use --local main
 mise run codex:use --local pr 19776
-mise run codex:use brew
 ```
 
 For per-repo experiments, avoid changing the tracked global mise config:
@@ -81,16 +89,25 @@ mise run codex:use --local pr 19776
 
 The task does this:
 
+- `standalone [version]` re-runs the official installer, which repoints
+  `~/.codex/packages/standalone/current` and `~/.local/bin/codex`. This is the
+  chezmoi-owned default and the only channel that changes the `codex` on `PATH`.
 - `latest` selects `codex@latest`
 - `release <version>` selects a pinned release
 - `main` builds `codex-cli` from `openai/codex` `main` with Cargo, links it as `codex@main`, and selects it
 - `pr <number>` resolves the PR head with `gh`, builds that exact SHA with Cargo, links it as `codex@pr-<number>`, and selects it
-- `brew` links the Homebrew-managed binary through a small prefix and selects `codex@brew`
+
+The four mise channels record a selection that `~/.local/bin/codex` shadows, the
+same way it shadows the `claude` pin in `clis.toml`. Run those builds explicitly:
+
+```sh
+mise exec codex@main -- codex --version
+```
 
 ## Implemented State
 
 - ADR 0005 records the decision.
-- Codex selection lives in the repo-owned mise task under `home/dot_config/mise/tasks/`.
+- Codex source experiments live in the repo-owned mise task under `home/dot_config/mise/tasks/`; the CLI itself installs standalone ([ADR 0027](../adr/0027-codex-standalone-installer.md)).
 - Homebrew installs crit through the `developer-tools` package group; crit is not mise-managed, and `just test-python -p test_brewfile.py` fails if a crit entry returns to `clis.toml`.
 - `bin/devtool`, `bin/devtool-shim`, `.config/devtools/config.toml`, and `docs/devtools.md` are removed.
 - `devtool` is no longer linked into `~/bin`.

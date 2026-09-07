@@ -32,11 +32,11 @@ class BrewfileTests(RepoTestCase):
     def test_personal_selects_development_and_personal_apps_without_apple_or_work_groups(self):
         self.assert_entries(self.brewfile("personal"), present=(
             'brew "aria2"', 'brew "crit"', 'brew "f/mcptools/mcp", trusted: true',
-            'brew "steipete/tap/imsg", trusted: true', 'cask "codex"',
+            'brew "steipete/tap/imsg", trusted: true', 'brew "codex-acp"',
             'cask "arq"', 'cask "voiceink"', 'cask "google-drive"',
             'cask "setapp"', 'cask "jump-desktop"',
         ), absent=(
-            'mas "', 'brew "gogcli"', 'tap "xcodesorg/made"',
+            'mas "', 'brew "gogcli"', 'tap "xcodesorg/made"', 'cask "codex"',
             'brew "homebrew/core/xcodes"', 'brew "fastlane"', 'brew "cirruslabs/cli/tart"',
             'facebook/fb/idb-companion', 'brew "swiftlint"',
             'cask "ghostpepper"', 'cask "tailscale-app"',
@@ -50,7 +50,7 @@ class BrewfileTests(RepoTestCase):
             'brew "homebrew/core/xcodes"', 'brew "fastlane"', 'brew "cirruslabs/cli/tart"',
             'brew "steipete/tap/imsg"', 'brew "gogcli"', 'cask "ghostpepper"',
             'cask "tailscale-app"', 'cask "arq"', 'cask "voiceink"',
-            'cask "codex"', 'brew "codex-acp"',
+            'brew "codex-acp"',
         ))
 
     def test_homelab_selects_apple_vm_and_agent_tools_without_desktop_subscriptions(self):
@@ -58,10 +58,10 @@ class BrewfileTests(RepoTestCase):
             'brew "homebrew/core/xcodes", args: ["force-bottle"]',
             'brew "cirruslabs/cli/tart", trusted: true', 'brew "f/mcptools/mcp", trusted: true',
             'cask "tailscale-app"', 'cask "jump-desktop"', 'cask "agentsview"',
-            'cask "stablyai/orca/orca"', 'cask "codex"', 'brew "codex-acp"',
+            'cask "stablyai/orca/orca"', 'brew "codex-acp"',
             'cask "claude"', 'cask "cmux"',
         ), absent=(
-            'brew "steipete/tap/imsg"', 'brew "mas"', 'cask "setapp"',
+            'brew "steipete/tap/imsg"', 'brew "mas"', 'cask "setapp"', 'cask "codex"',
             'cask "ghostpepper"', 'cask "ghostty"', 'cask "google-drive"',
         ))
 

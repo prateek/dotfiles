@@ -18,6 +18,9 @@ checkout being changed.
 - Prefer mise selection with `mise use`, `mise link`, or a repo-owned
   `mise run <tool>:use` task over replacing an installation through Homebrew,
   npm, cargo, or pipx.
+- A vendor's own installer wins when the tool's features depend on the layout
+  it creates. The Codex CLI installs that way, and `~/.local/bin` precedes the
+  mise shims, so a mise selection for it is an explicit `mise exec` build.
 - For a worktree-local experiment, select or link the version with mise and
   keep the choice in ignored `mise.local.toml`.
 - When a repo-owned `mise run <tool>:use` task provides a global lane, use it

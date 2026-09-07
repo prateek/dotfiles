@@ -1,0 +1,64 @@
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- if and $f.run_install_scripts (has "codex" $f.groups) -}}
+{{ template "script_lib.sh" . }}
+
+# The Codex CLI installs through OpenAI's standalone installer instead of the
+# Homebrew cask it replaced. `/agents` and the background app-server daemon
+# exec the release at the fixed path
+# $CODEX_HOME/packages/standalone/current/codex; only the standalone layout
+# creates that path, so under the cask both features fail at runtime. codex-acp
+# is a separate ACP adapter and stays a Homebrew formula.
+#
+# This hook is numbered ahead of 08-retired-packages, which uninstalls the
+# cask, so the replacement is installed and proven before the old executable
+# goes away.
+
+# Orca terminals can export a per-account CODEX_HOME. chezmoi manages this
+# machine's own Codex home, so pin it rather than inherit whichever one
+# launched chezmoi.
+export CODEX_HOME="$HOME/.codex"
+
+standalone_codex="$CODEX_HOME/packages/standalone/current/codex"
+visible_codex="$HOME/.local/bin/codex"
+
+if [ -x "$standalone_codex" ] && [ -x "$visible_codex" ]; then
+  log "ok: Codex CLI standalone package is installed."
+  exit 0
+fi
+
+# The installer writes a PATH block into a shell startup file whenever its
+# install directory is off PATH or another Codex is on it, and it offers to
+# uninstall that other Codex. Neither is wanted: zprofile already puts
+# ~/.local/bin ahead of Homebrew, and the cask belongs to 08-retired-packages.
+# Handing the installer exactly its own directory plus the system paths — no
+# Homebrew — satisfies both checks, so managed shell config stays untouched.
+installer_path="$HOME/.local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+
+installer="$(mktemp "${TMPDIR:-/tmp}/dotfiles-codex-install.XXXXXX")"
+trap 'rm -f "$installer"' EXIT
+
+log "Installing the Codex CLI standalone package."
+installed=0
+if curl -fsSL https://chatgpt.com/codex/install.sh -o "$installer"; then
+  if run_timed "codex standalone install" \
+    env PATH="$installer_path" CODEX_HOME="$CODEX_HOME" CODEX_NON_INTERACTIVE=1 \
+      sh "$installer"; then
+    installed=1
+  fi
+else
+  warn "Could not download https://chatgpt.com/codex/install.sh."
+fi
+
+if [ "$installed" = 1 ] && [ -x "$standalone_codex" ] && [ -x "$visible_codex" ] \
+  && "$standalone_codex" --version >/dev/null 2>&1; then
+  log "ok: Codex CLI standalone package is installed."
+  exit 0
+fi
+
+brew_shellenv
+if have brew && brew list --cask 2>/dev/null | grep -qx codex; then
+  die "Codex standalone install failed; leaving the Homebrew cask installed. Re-run chezmoi apply, or install by hand: curl -fsSL https://chatgpt.com/codex/install.sh | sh"
+fi
+
+warn "Codex CLI standalone install failed; the next chezmoi apply retries."
+{{- end -}}

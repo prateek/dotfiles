@@ -179,6 +179,7 @@ Claude ingest automation registration.
 | Secret references / licenses | `just test-shell tests/bats/config/secrets.bats` |
 | Fork reconciliation / adoption | `just test-shell tests/bats/packages/fork-reconcile.bats tests/bats/packages/retired-packages.bats` and `just test-python -p test_fork_entry.py` |
 | mise / GitHub extensions / Xcode scripts | `just test-shell tests/bats/packages/mise-install.bats tests/bats/packages/gh-extensions.bats tests/bats/packages/xcode-install.bats` for the changed installer. |
+| Codex CLI standalone installer | `just test-shell tests/bats/packages/codex-standalone.bats`; role gate, normal-home targeting under an inherited `CODEX_HOME`, the sanitized installer environment that keeps managed shell startup files unedited, and the failure path that leaves the Homebrew cask for `08-retired-packages` to keep. |
 
 Inspect `scripts/packages/render-brewfile --machine-type <type>` for affected
 types and the `--include-mas` opt-in. Tests use fake install commands; the macOS
