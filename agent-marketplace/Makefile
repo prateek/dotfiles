@@ -15,7 +15,8 @@ check: test
 endif
 
 fetch update:
-	$(RUN) $(PYTHON) -B "$(SCRIPT)" $@ --package "$(PACKAGE)"
+	$(if $(strip $(PACKAGE)),$(error PACKAGE is no longer supported; $@ uses the root manifest and shared cache))
+	$(RUN) $(PYTHON) -B "$(SCRIPT)" $@
 
 test:
 	$(RUN) $(PYTHON) -B -m unittest discover -s tests -p 'test_*.py'

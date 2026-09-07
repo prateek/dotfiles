@@ -8,6 +8,7 @@ related:
   - ../../agent-marketplace/README.md
   - ../../.agents/skills/agent-skill-management/SKILL.md
   - ../adr/0023-apm-agent-marketplace-packaging.md
+  - ../adr/0025-shared-apm-acquisition.md
   - ../plans/apm-agent-marketplace-plan.md
 ---
 
@@ -23,7 +24,8 @@ The consumer boundary is:
 
 | Surface | Owner |
 | --- | --- |
-| `agent-marketplace/packages/` | Authored content, native locks/caches, reviewed patches |
+| `agent-marketplace/apm.yml`, `apm.lock.yaml`, `apm_modules/` | One shared acquisition project and committed accepted inputs |
+| `agent-marketplace/packages/` | Authored content, selections, reviewed patches, and native plugin metadata |
 | `agent-marketplace/build/marketplace` | Validated disposable native artifact |
 | `home/.chezmoidata/agent_plugins.toml` | Explicit host eligibility and default enablement |
 | `~/.agents/plugins` | Materialized shared marketplace |
@@ -37,6 +39,11 @@ The default enabled set is `core`, `mattpocock`, `review`, and `utils-agent`. Al
 packages remain available in both catalogs. Codex's hook-bearing plugins suppress
 hook discovery with an explicit empty `hooks` object. The 22 paired human-only
 controls remain file contracts; these checks do not prove model invocation behavior.
+
+Only the root APM manifest is maintained. Each plugin's Codex manifest owns its
+version and shared metadata; the build derives temporary APM manifests to generate
+Claude metadata and both catalogs, then removes them. Materialized plugins contain
+selected payloads and native manifests, with no acquisition cache or APM project.
 
 Use [materialization](../../.agents/skills/agent-skill-management/references/generated-outputs.md)
 for build-on-apply or prebuilt copy, and

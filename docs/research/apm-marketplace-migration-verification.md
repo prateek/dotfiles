@@ -7,9 +7,10 @@ updated: 2026-09-07
 related:
   - ../plans/apm-agent-marketplace-plan.md
   - ../adr/0023-apm-agent-marketplace-packaging.md
+  - ../adr/0025-shared-apm-acquisition.md
   - ../references/agent-marketplace.md
   - ../../agent-marketplace/README.md
-status_detail: "Implementation and required local checks passed, including offline source transport and isolated native recovery. Migration landed and scoped live cutover verified; fresh interactive invocation and authenticated evals remain untested."
+status_detail: "Migration landed and scoped live cutover verified. Fresh authenticated Claude and Codex sessions discovered the expected skills and followed a console edit/apply/revert round trip. Skill invocation behavior and authenticated Crit evals remain untested."
 ---
 
 # APM Marketplace Migration Verification
@@ -19,9 +20,11 @@ with the isolated `agent-marketplace/` project. APM 0.29.1 owns acquisition, nat
 locks, Claude manifests, and both catalogs. The project assembles reviewed inputs;
 consumer adapters materialize artifacts and reconcile native installations.
 
-This record distinguishes implementation checks in disposable state from the
-authorized [live cutover](#live-cutover). Neither establishes model invocation
-behavior or authenticated eval behavior.
+This record distinguishes implementation checks in disposable state, the
+authorized [live cutover](#live-cutover), and
+[fresh model-session discovery](#live-maintenance-round-trip).
+Catalog visibility does not establish skill invocation or authenticated Crit
+eval behavior.
 
 ## Baseline and acquisition
 
@@ -263,6 +266,115 @@ component-mapping warnings. The replacement checks inspect the materialized
 Codex manifests for omitted eval registration and explicit hook suppression;
 the existing convergence and disabled-wiki cleanup checks remain intact.
 The corrected scenario and complete `make test-ci` lane passed locally.
+Correction commit `2c76d98655a2c391a27608fd8819ecbf3e4a0cb7` also passed the
+[remote CI run](https://github.com/prateek/dotfiles/actions/runs/34133873665),
+including the macOS and shellcheck jobs.
+
+## Live maintenance round trip
+
+Fresh authenticated Claude 2.1.261 and Codex 0.153.4 sessions ran from the
+canonical checkout. A catalog-only prompt asked about three repo-local skills
+(`agent-skill-management`, `chezmoi-management`, and `land-changes`) and one skill
+from each enabled plugin (`core:code-gardening`, `mattpocock:domain-modeling`,
+`review:crit-cli`, and `utils-agent:ask`). Both clients reported all seven names
+and their descriptions. Their event streams contained no tool calls.
+
+The public `skill-console render` and `skill-console apply --commit` commands
+then staged and wrote two temporary description edits: one authored skill and
+one imported skill. Each description received a different random marker. The
+console changed the authored source directly, created an imported patch, and
+bumped both packages' APM and Codex native versions from 1.1.0 to 1.1.1. All staged
+checks passed before its six guarded writes. The 2,624 committed APM cache files
+remained unchanged.
+
+The normal script-36 chezmoi diff became nonempty. After its dry-run, scoped
+apply rebuilt the artifact and refreshed native installations. No script-state
+reset or forced refresh was needed for the enabled plugins. Chezmoi inherited
+the active Orca `CODEX_HOME`; the normal reconciler was also run with that
+variable unset to refresh canonical `~/.codex`.
+
+| Stage | Claude | Orca Codex | Canonical Codex |
+| --- | --- | --- | --- |
+| Sample edits applied | All seven skills visible; both exact markers present | Same | Same |
+| Source restored and applied again | All seven descriptions exactly match baseline; no markers | Same | Same |
+
+Every run used the same prompt, which contained no marker values, and made no
+tool calls. This establishes fresh-session catalog propagation independently of
+reading source files in those sessions. All enabled native cache payloads matched
+the corresponding artifact bytes and modes after both applies.
+
+Cleanup restored exactly the six sample paths after checking their recorded
+before/after hashes. The canonical checkout was clean and script 36 had no
+remaining diff. Native settings and unrelated Claude plugin records were
+unchanged; all committed APM cache hashes still matched. A separately landed
+`utils-agent` 1.1.1 update was preserved. The original legacy artifact was
+restored at `~/.agents/plugins.previous` after the test's artifact rotations.
+
+The console requires the root `make test-tools` prerequisites as documented in
+the [test index](../../tests/README.md), in addition to the portable project's
+tools. Its staged Pi checks need the provisioned Bats libraries. The guarded
+console run used the exact recorded Claude 2.1.258 producer through mise; the
+model-session probes used the ordinary 2.1.261 client. No producer guard was
+bypassed. These results cover description edits and refresh behavior, not skill
+body execution, human-only policy behavior, or authenticated Crit evals.
+
+## Shared acquisition follow-up
+
+[ADR 0025](../adr/0025-shared-apm-acquisition.md) replaces the initial per-plugin
+APM projects with one root manifest, lock, and committed cache. The ten plugin
+directories retain their selections and local content; each native Codex manifest
+now owns its plugin's version and common metadata. Temporary APM manifests are
+derived during packing and removed before export or materialization.
+
+All **2,624 cached files** moved without byte or permission-mode changes. The
+combined lock retained all **60 accepted dependency records**. Native APM 0.29.1
+replayed that root lock with macOS network access denied, produced the same parsed
+records, and left the complete cache unchanged. It wrote no agent deployment
+state. The committed root lock uses native serialization and regular-file mode
+0644. No dependency revision was updated during consolidation.
+
+Against the pre-consolidation artifact at `2c76d98`, all **1,351 non-metadata
+payload files** matched by bytes and full modes. All ten Claude/Codex manifest
+pairs matched after excluding only version; plugins now use 1.2.0. The artifact
+removed eleven APM manifests: one marketplace recipe and ten temporary plugin
+recipes. Catalog membership, Codex interface metadata, hooks policy, and skill
+content were preserved.
+
+Public Make tests prove two plugins can select one shared input while a patch
+changes only one plugin's output. The shared cache remains pristine, each plugin
+gets its own native version, and no APM publication manifest remains in the
+artifact. Root fetch/update retain dirty-input and native-failure checks; the old
+`PACKAGE` selector fails before touching inputs. The portable suite passed all
+23 tests and repeatable builds.
+
+The console writes authored content or imported patches/overlays, bumps only the
+plugin's native Codex version, and builds matching Claude metadata. Deletion uses
+the root manifest and native lock generation without modifying cache content.
+Ownership checks cover all plugin selections. Tests also introduce a skill or
+supporting-payload selection in a different plugin after planning and assert
+refusal before any write. All 57 console tests and 12 consumer tests passed,
+including the combined isolated chezmoi apply and unchanged repeat apply.
+
+The isolated native host lane passed with the new artifact: all ten plugins
+installed, updated, relocated, rolled back, and installed from an artifact-root
+Git marketplace. These native CLI checks use no model calls; the historical live
+model-session results above belong to the earlier layout.
+
+A complete source copy containing 3,014 files was force-added to a disposable Git
+repository and exported through `git archive`. Every byte and full permission mode
+survived the round trip, including the 2,624 cached files. The public root `make
+fetch` replayed unchanged with networking denied. The archive then passed `make
+check export` outside Git under the same network denial using the provisioned tool
+environment. All four config merge suites, docs lifecycle checks, repo-local skill
+frontmatter parsing, and `git diff --check` passed. A fresh no-context adversarial
+review reported no actionable findings. The comment pass found no new comments to
+prune.
+
+The redundant authored APM/Codex version-equality assertion is retired. Its
+replacement checks actual generated Claude and Codex metadata against independent
+expected versions through public builds, including a console edit. All earlier
+path, corruption, stale-patch, invocation-policy, source-change, partial-write,
+and cache-preservation assertions remain.
 
 ## Replaced assertions
 
@@ -287,5 +399,6 @@ The corrected scenario and complete `make test-ci` lane passed locally.
 
 Console producer parity remains pinned to Claude 2.1.258 and its recorded binary
 hash. Passing the packaging host lane on 2.1.261 does not certify that producer.
-Authenticated Crit evals and fresh interactive invocation checks remain untested.
-The live cutover above verifies native discovery and cache state, not model behavior.
+Authenticated Crit evals and fresh skill invocation checks remain untested.
+The live checks above verify native state and model-session catalog visibility,
+including maintenance updates and restoration; they do not certify skill behavior.

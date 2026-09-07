@@ -5,7 +5,9 @@ description: Manage agent-marketplace packages, reviewed APM caches and patches,
 
 # Agent Skill Management
 
-Use `agent-marketplace/` for the portable source/build project. Host activation
+Use `agent-marketplace/` for the portable source/build project. Its root owns the
+single `apm.yml`, lock, and committed `apm_modules/`; `packages/` defines separate
+plugins with their own selections, authored content, and native metadata. Host activation
 policy lives in `home/.chezmoidata/agent_plugins.toml`. Native clients own their
 install records and caches; `~/.agents/plugins` is the shared materialized
 artifact.
@@ -17,12 +19,16 @@ artifact.
    copy changes, and [reconciliation](references/plugin-reconcile.md) for native
    installation, enablement, or rollback.
 2. Change durable inputs. Edit authored `skills/` directly and imported content
-   through patches or overlays. Keep `apm_modules/` pristine. The console plans
+   through patches or overlays. Keep the shared cache pristine. Bump only the
+   affected plugin's `.codex-plugin/plugin.json` version; the build derives its
+   APM publication manifest and removes it after generating native metadata. The console plans
    imported edits as patches, stages paired invocation controls and native
    version bumps, then builds the staged result before guarded writes. Imported
    description/frontmatter edits fingerprint the whole marketplace source before
    planning and recheck it before writing any file. If those inputs change,
    re-plan and revalidate; `--allow-dirty-targets` does not bypass that check.
+   Deleting a root dependency requires checking every plugin's skill and
+   supporting-payload selections, including disabled plugins.
 3. Validate the changed boundary. Run `make -C agent-marketplace check` for
    package changes; run `make test-agent-skill-packages test-skill-console` for
    consumer or console changes. Activation changes also need the Claude, Codex,
@@ -52,7 +58,7 @@ Keep all Codex interface metadata; hook-bearing packages retain `hooks: {}` unde
 the current skills-only Codex policy.
 
 Runtime inventory comes from native catalogs and selected built payloads. Treat
-`apm.lock.yaml` as the upstream identity/revision source. Preserve upstream license
+`agent-marketplace/apm.lock.yaml` as the upstream identity/revision source. Preserve upstream license
 and notice files in the published plugin as well as the cache. Subdirectory
 imports need explicit root-notice payload selections when those texts are absent
 from the selected tree; see the project workflow. Generate no `SOURCE.md` or

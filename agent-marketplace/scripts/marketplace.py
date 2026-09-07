@@ -4,7 +4,6 @@ import argparse
 import json
 import os
 from pathlib import Path
-import re
 import signal
 import shutil
 import subprocess
@@ -48,7 +47,7 @@ def git_env() -> dict[str, str]:
 
 
 def validate_cache_modes(root: Path) -> None:
-    tracked = subprocess.run(["git", "ls-files", "--stage", "-z", "--", "packages"],
+    tracked = subprocess.run(["git", "ls-files", "--stage", "-z", "--", "apm_modules"],
                              cwd=root, env=git_env(), capture_output=True, timeout=30)
     if tracked.returncode:
         return  # A standalone source export carries the modes from its trusted archive.
@@ -57,8 +56,6 @@ def validate_cache_modes(root: Path) -> None:
             continue
         metadata, name = entry.split(b"\t", 1)
         relative = os.fsdecode(name)
-        if "/apm_modules/" not in relative:
-            continue
         mode, _, stage = metadata.split()
         path = contained(root, relative)
         if mode not in (b"100644", b"100755") or stage != b"0":
@@ -67,10 +64,10 @@ def validate_cache_modes(root: Path) -> None:
             raise ValueError(f"cache executable mode differs from Git: {path}; restore from Git or review and stage the mode change")
 
 
-def package_inputs(package: Path) -> dict[str, Path]:
-    manifest = APMPackage.from_apm_yml(package / "apm.yml", create_config=False)
+def project_inputs(root: Path) -> dict[str, Path]:
+    manifest = APMPackage.from_apm_yml(root / "apm.yml", create_config=False)
     declared = {dep.get_unique_key() for dep in manifest.get_all_apm_dependencies()}
-    lock_path = package / "apm.lock.yaml"
+    lock_path = root / "apm.lock.yaml"
     if not lock_path.exists():
         if declared:
             raise ValueError(f"missing cache lock: {lock_path}; restore committed files from Git or a complete source export; use fetch only for new, unacquired declarations")
@@ -81,14 +78,14 @@ def package_inputs(package: Path) -> dict[str, Path]:
     locked = {dep.get_unique_key(): dep for dep in lock.get_all_dependencies()}
     direct = {key for key, dep in locked.items() if dep.depth == 1}
     if declared != direct:
-        raise ValueError(f"declarations and lock differ in {package}; run fetch after reviewing acquisition inputs")
+        raise ValueError(f"declarations and lock differ in {root}; run fetch after reviewing acquisition inputs")
     data = yaml.safe_load(lock_path.read_text())
     if data.get("deployments") or any(dep.get("deployed_files") for dep in data.get("dependencies", [])):
         raise ValueError(f"acquisition lock contains deployment claims: {lock_path}")
     modules = {}
     for key, dependency in locked.items():
-        module = build_materialization_path(dependency.to_dependency_ref(), package / "apm_modules")
-        contained(package, str(module.relative_to(package)))
+        module = build_materialization_path(dependency.to_dependency_ref(), root / "apm_modules")
+        contained(root, str(module.relative_to(root)))
         if not module.is_dir():
             raise ValueError(f"missing cache: {module}; restore committed files from Git or a complete source export")
         tree_files(module, skip={"**/__pycache__"})
@@ -121,8 +118,7 @@ def validate_source_surface(module: Path) -> None:
             raise ValueError(f"unsupported APM component: {path}")
 
 
-def selected_inputs(package: Path):
-    modules = package_inputs(package)
+def selected_inputs(package: Path, modules: dict[str, Path]):
     selection = package / "publish.toml"
     if not selection.exists():
         return
@@ -188,14 +184,11 @@ def scan_content(plugin: Path) -> None:
 
 
 def validate_plugin(plugin: Path, expected_skills: set[str]) -> None:
-    manifest = yaml.safe_load((plugin / "apm.yml").read_text())
     codex = json.loads((plugin / ".codex-plugin/plugin.json").read_text())
-    if manifest.get("name") != plugin.name or codex.get("name") != plugin.name:
+    if codex.get("name") != plugin.name:
         raise ValueError(f"native names must match package id: {plugin}")
-    if not manifest.get("version") or codex.get("version") != manifest["version"]:
-        raise ValueError(f"native version mismatch: {plugin}")
-    if "dependencies" in manifest or manifest.get("targets") != ["claude"]:
-        raise ValueError(f"native source publication requires targets [claude] and no dependencies field: {plugin}")
+    if not isinstance(codex.get("version"), str) or not codex["version"].strip():
+        raise ValueError(f"native plugin requires a version: {plugin}")
     hooks = plugin / "hooks"
     if hooks.exists():
         if not (hooks / "hooks.json").is_file():
@@ -245,9 +238,19 @@ def apply_overlays(package: Path, plugin: Path) -> None:
         shutil.copy2(overlay / relative, target)
 
 
+def write_publication_manifest(plugin: Path) -> None:
+    native = json.loads((plugin / ".codex-plugin/plugin.json").read_text())
+    manifest = {key: native[key] for key in
+                ("name", "version", "description", "author", "license", "homepage", "repository", "keywords")
+                if key in native}
+    manifest["targets"] = ["claude"]
+    (plugin / "apm.yml").write_text(yaml.safe_dump(manifest, sort_keys=False))
+
+
 def build(root: Path) -> Path:
     before = source_files(root)
     validate_cache_modes(root)
+    modules = project_inputs(root)
     build_root = root / "build"
     if build_root.is_symlink():
         raise ValueError(f"symlink build directory: {build_root}")
@@ -259,14 +262,14 @@ def build(root: Path) -> Path:
         for package in sorted((root / "packages").iterdir()):
             plugin = output / "plugins" / package.name
             plugin.mkdir(parents=True)
-            for name in ("apm.yml", "skills", ".codex-plugin", "hooks", "evals", "agents", "commands", "licenses", ".mcp.json"):
+            for name in ("skills", ".codex-plugin", "hooks", "evals", "agents", "commands", "licenses", ".mcp.json"):
                 source = package / name
                 if source.is_dir():
                     shutil.copytree(source, plugin / name, symlinks=True,
                                     ignore=shutil.ignore_patterns("__pycache__"))
                 elif source.is_file():
                     shutil.copy2(source, plugin / name)
-            for target, source, excluded in selected_inputs(package):
+            for target, source, excluded in selected_inputs(package, modules):
                 copy_selection(source, plugin / target, excluded)
             skills = plugin / "skills"
             expected_skills = {skill.name for skill in skills.iterdir()} if skills.is_dir() else set()
@@ -274,9 +277,13 @@ def build(root: Path) -> Path:
             apply_overlays(package, plugin)
             tree_files(plugin)
             validate_plugin(plugin, expected_skills)
+            write_publication_manifest(plugin)
             scan_content(plugin)
             run_apm(["pack", "--offline", "--force"], plugin)
         run_apm(["pack", "--offline"], output)
+        (output / "apm.yml").unlink()
+        for plugin in (output / "plugins").iterdir():
+            (plugin / "apm.yml").unlink()
         if before != source_files(root):
             raise ValueError("source changed during build; retry with stable inputs")
         revision = subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, env=git_env(), text=True, capture_output=True, timeout=30)
@@ -301,24 +308,19 @@ def build(root: Path) -> Path:
     return target
 
 
-def acquire(root: Path, package_id: str | None, update: bool) -> None:
-    if not package_id or not re.fullmatch(r"[a-z0-9][a-z0-9_-]*", package_id):
-        raise ValueError("PACKAGE must name one package")
-    package = contained(root, f"packages/{package_id}")
-    if not (package / "apm.yml").is_file():
-        raise ValueError(f"unknown package: {package_id}")
+def acquire(root: Path, update: bool) -> None:
     environment = git_env()
-    tree_files(package)
+    source_files(root)
     status = subprocess.run(
         ["git", "status", "--porcelain", "--untracked-files=all", "--ignored=matching",
-         "--", str(package / "apm.lock.yaml"), str(package / "apm_modules")],
+         "--", str(root / "apm.lock.yaml"), str(root / "apm_modules")],
         cwd=root, env=environment, capture_output=True, text=True, timeout=30,
     )
     if status.returncode:
         raise ValueError("fetch/update require a Git checkout for acquisition review")
     if status.stdout:
-        raise ValueError(f"{package_id}: unaccepted cache or lock changes; review or restore them before acquisition")
-    run_apm(["lock"] + (["--update"] if update else []), package, timeout=300)
+        raise ValueError("unaccepted cache or lock changes; review or restore them before acquisition")
+    run_apm(["lock"] + (["--update"] if update else []), root, timeout=300)
 
 
 def check(root: Path) -> None:
@@ -347,7 +349,6 @@ def export(root: Path) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("command", choices=["build", "check", "export", "clean", "fetch", "update"])
-    parser.add_argument("--package")
     args = parser.parse_args()
     try:
         if args.command == "build":
@@ -361,7 +362,7 @@ def main() -> None:
             if output.exists():
                 shutil.rmtree(output)
         else:
-            acquire(Path.cwd(), args.package, args.command == "update")
+            acquire(Path.cwd(), args.command == "update")
     except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError) as error:
         print(f"marketplace: {error}", file=sys.stderr)
         raise SystemExit(1) from error

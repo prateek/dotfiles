@@ -544,19 +544,20 @@ def _predict(decisions: Decisions, live: _Live) -> Predicted:
 
 
 def _apm_ownership(rows: Sequence[Row]) -> dict[str, dict[str, object]]:
-    dependency_of: dict[str, tuple[str, str]] = {}
+    dependency_of: dict[str, str] = {}
     for row in rows:
         record = row.source_record
         if record is None or record.origin is not Origin.REPO_VENDOR:
             continue
         if record.dependency:
-            dependency_of[row.name] = (record.package, record.dependency)
-    owned: dict[tuple[str, str], int] = {}
-    for key in dependency_of.values():
+            dependency_of[row.name] = record.dependency
+    owned: dict[str, int] = {}
+    for dependency in dependency_of.values():
+        key = decisions_api.dependency_key(dependency)
         owned[key] = owned.get(key, 0) + 1
     return {
-        name: {"apm_dep": dependency, "dep_owns_skills": owned[(package, dependency)]}
-        for name, (package, dependency) in dependency_of.items()
+        name: {"apm_dep": dependency, "dep_owns_skills": owned[decisions_api.dependency_key(dependency)]}
+        for name, dependency in dependency_of.items()
     }
 
 

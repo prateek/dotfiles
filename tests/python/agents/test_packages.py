@@ -40,9 +40,8 @@ class PackageTestCase(RepoTestCase):
         skill = path / "skills" / (name + "-skill")
         skill.mkdir(parents=True)
         (skill / "SKILL.md").write_text(f"---\nname: {name}-skill\ndescription: Fixture skill.\n---\n\nHello.\n")
-        (path / "apm.yml").write_text(f"name: {json.dumps(name)}\nversion: 1.0.0\ndescription: Example skills\nlicense: UNLICENSED\ntargets: [claude]\n")
         (path / ".codex-plugin").mkdir()
-        (path / ".codex-plugin/plugin.json").write_text(json.dumps({"name": name, "version": "1.0.0", "skills": "./skills/"}))
+        (path / ".codex-plugin/plugin.json").write_text(json.dumps({"name": name, "version": "1.0.0", "skills": "./skills/", "description": "Example skills", "license": "UNLICENSED"}))
         with self.policy.open("a") as policy:
             policy.write(f"[agent_plugins.{name}]\ndefault_loaded = {str(loaded).lower()}\nclaude = {str(claude).lower()}\ncodex = {str(codex).lower()}\n\n")
         self.entries.append({"name": name, "source": f"./plugins/{name}", "category": "Productivity"})

@@ -9,13 +9,13 @@ $ git log --oneline origin/master..HEAD
 a1b2c3d fix(skills): clarify gardening source ownership
 $ git diff --name-only origin/master..HEAD
 agent-marketplace/packages/core/skills/code-gardening/SKILL.md
-agent-marketplace/packages/core/apm.yml
 agent-marketplace/packages/core/.codex-plugin/plugin.json
 $ chezmoi source-path
 /Users/prateek/dotfiles/home
 ```
 
-Both native package versions were bumped with the payload edit. Script 36's
+The package version was bumped in its Codex manifest; the build derives the
+matching Claude version. Script 36's
 rendered marketplace input hash changes, although its template was not edited.
 Host activation policy, native config templates, and script 35 are unchanged.
 

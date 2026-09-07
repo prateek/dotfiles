@@ -6,6 +6,7 @@ created: 2026-09-06
 updated: 2026-09-07
 related:
   - ../adr/0023-apm-agent-marketplace-packaging.md
+  - ../adr/0025-shared-apm-acquisition.md
   - ../research/apm-marketplace-migration-verification.md
   - ../references/agent-marketplace.md
   - ../research/apm-modules-vendoring-research.md
@@ -14,14 +15,14 @@ related:
   - ../research/nix-agent-skills-packaging-research.md
   - agent-plugin-renderer-plan.md
   - ../../.agents/skills/agent-skill-management/SKILL.md
-status_detail: "Migration landed and scoped live apply verified in Claude and both canonical and Orca Codex profiles. Required local checks, offline source transport, and isolated native recovery passed. Fresh interactive invocation checks remain a rollout step."
+status_detail: "Migration landed and scoped live apply verified. Local checks and remote CI passed. Fresh authenticated Claude and both Codex profiles passed catalog discovery and the console edit/apply/revert round trip. Skill invocation checks remain a rollout step."
 ---
 
 # APM Agent Marketplace Plan
 
 Create a self-contained `agent-marketplace/` project at the dotfiles repository
-root, with its own Makefile and pinned tools. Commit APM's fetched
-`apm_modules/` trees alongside their manifests and locks. Keep authored skills
+root, with its own Makefile and pinned tools. Maintain one root `apm.yml`, native
+lock, and committed `apm_modules/` tree for every plugin. Keep authored skills
 and reviewed local changes separately, then build ten native plugins and both
 marketplace catalogs from those inputs.
 
@@ -36,6 +37,8 @@ plugins are ignored build output, avoiding a second committed copy of the
 upstream payload beside `apm_modules`.
 
 [ADR 0023](../adr/0023-apm-agent-marketplace-packaging.md) records the boundary.
+[ADR 0025](../adr/0025-shared-apm-acquisition.md) consolidates acquisition at the
+root and removes authored per-plugin APM manifests.
 The [module-source research](../research/apm-modules-vendoring-research.md)
 supports the acquisition proposal; the
 [executed spike](../research/apm-skill-marketplace-spike.md) establishes native
@@ -67,7 +70,12 @@ checkout. Current operations are documented in the
 checks passed. Commit `f085615` landed, and the authorized scoped live apply
 verified version 1.1.0 payloads, native inventories, and enabled states in Claude
 and both canonical and Orca Codex profiles. Fresh native Codex processes found
-all 162 skills. Fresh interactive invocation checks remain; the
+all 162 skills. Fresh authenticated Claude and Codex model sessions also saw the
+expected repo-local and enabled plugin skills. An authored and imported console
+edit reached fresh sessions after normal apply, and restoration passed the same
+path in Claude and both Codex profiles. See the
+[maintenance round trip](../research/apm-marketplace-migration-verification.md#live-maintenance-round-trip).
+Fresh skill invocation checks remain; the
 [rollout record](../research/apm-marketplace-migration-verification.md#live-cutover)
 distinguishes live evidence from the isolated implementation tests.
 
@@ -90,16 +98,15 @@ agent-marketplace/
   Makefile
   mise.toml                       pinned build/test tools
   README.md                       authoring, review, build, export
-  apm.yml                         marketplace publication recipe
+  apm.yml                         shared dependencies + marketplace recipe
+  apm.lock.yaml                   APM-owned accepted resolution
+  apm_modules/                    committed APM-fetched content and receipts
   scripts/                        small build/check helpers
   tests/                          packaging and cache-contract checks
   packages/
     core/
-      apm.yml                     plugin metadata + devDependencies.apm
-      apm.lock.yaml               APM-owned accepted resolution
-      apm_modules/                committed APM-fetched content and receipts
       skills/<skill-id>/...       authored skill source only
-      .codex-plugin/plugin.json   authored compatibility/UI metadata
+      .codex-plugin/plugin.json   plugin identity, version, common/UI metadata
       publish.toml                only needed selections, aliases, extra files
       patches/                    reviewed edits at published native paths
       overlays/                   local additions to published payload
@@ -114,8 +121,8 @@ agent-marketplace/
 home/.chezmoidata/agent_plugins.toml   consumer policy
 ```
 
-Use one APM project per existing package. Preserve APM's module paths and
-normalization receipts, including `.apm-pin`. These committed trees are the
+Use one root APM project for all native plugins. Preserve APM's module paths and
+normalization receipts, including `.apm-pin`. The committed shared tree holds the
 accepted dependency inputs. Local edits are patches or overlays applied to
 temporary build copies, so an APM refresh cannot erase them.
 
@@ -137,16 +144,19 @@ add a helper only where repeated copying, path checks, or patch application
 needs one.
 
 APM generates Claude manifests and both catalogs inside the assembled output.
-Keep `targets: [claude]` on package manifests and acquisition refs under
-`devDependencies.apm`. Omit `dependencies` entirely in publication manifests;
+Derive temporary package manifests from the authored Codex metadata with
+`targets: [claude]`. Keep acquisition refs in root `devDependencies.apm`.
+Omit `dependencies` entirely in publication manifests;
 `dependencies: {}` selects the unsuitable bundle path. Copy the root
 publication recipe into the output before packing; its relative
-`./plugins/<package>` paths describe that output.
+`./plugins/<package>` paths describe that output. Remove all generated publication
+manifests, including the root recipe copy, after packing. They are build inputs
+and do not belong in the materialized native artifact.
 
 Preserve authored Codex manifests for all existing packages so their current
 interface metadata survives. Every Claude hook-bearing package retains
 `hooks: {}` under the current skills-only Codex policy. Validate shared
-names and versions against APM metadata. APM has no Codex manifest generator;
+names and generated versions against the authored Codex metadata. APM has no Codex manifest generator;
 the earlier two minimal overrides established hook suppression only.
 
 ## Makefile contract
@@ -156,8 +166,8 @@ behavior in phase 1 before production use.
 
 | Command | Contract |
 | --- | --- |
-| `make -C agent-marketplace fetch PACKAGE=core` | Run native `apm lock` for the selected package to acquire declared/locked inputs. Require a clean accepted cache and lock; acquisition may replace content and need network. |
-| `make -C agent-marketplace update PACKAGE=core` | Run native `apm lock --update`; leave cache/lock changes visible for Git review. Require a clean accepted cache and lock before replacement. |
+| `make -C agent-marketplace fetch` | Run native root `apm lock` to acquire declared/locked inputs. Require a clean accepted shared cache and lock; acquisition may replace content and need network. |
+| `make -C agent-marketplace update` | Run native root `apm lock --update` for the shared graph; leave cache/lock changes visible for Git review. Require a clean accepted cache and lock before replacement. |
 | `make -C agent-marketplace build` | Validate committed inputs, assemble and scan native plugin trees, and run offline APM manifest/catalog generation. Never fetch missing inputs. |
 | `make -C agent-marketplace check` | Check source/cache/patch contracts and a fresh build, including content scanning, versions, and repeatability. Wire this into required local/CI checks. |
 | `make -C agent-marketplace export` | Archive the complete validated marketplace for native consumers. Refuse unchecked or stale build output. |
@@ -217,14 +227,14 @@ and a full payload/path/mode baseline from the existing renderer. Record the
 source revision and actual Claude/Codex versions. Treat the earlier counts as
 a historical cross-check.
 
-Create the isolated project and acquire each package's accepted upstream
+Create the isolated project and acquire all accepted upstream
 revisions through APM. Preserve resolved revisions during migration; a move
 must not silently become an upstream upgrade. If a historical input cannot
 be fetched, retain its existing accepted source and report that package as
 unmigrated. Do not delete the only surviving reviewed bytes.
 
 Keep old deployment-bearing locks with the baseline. Establish new acquisition
-projects without legacy agent-target claims, using the recorded exact refs
+state without legacy agent-target claims, using the recorded exact refs
 and comparing the complete resulting dependency graph before acceptance.
 Do not assume a lock-only invocation clears an old deployment ledger. Any
 producer/schema-induced hash change needs an explained source comparison.
@@ -311,7 +321,8 @@ An upstream update follows: require clean acquisition inputs, refresh through
 APM, review the cache/lock diff, adjust patches, rebuild, and inspect the
 published diff. A local change edits authored source or a patch/overlay.
 Published payload or native metadata changes require a package version bump,
-with matching authored Codex version; catalogs derive versions from metadata.
+in its authored Codex manifest; native publication derives matching versions.
+A shared dependency update requires reviewing every plugin selecting it.
 
 Migrate the validator, inventory, context audit, patch checks, and skill
 console to this model. Resolve imported skill identity through publication
@@ -321,7 +332,9 @@ skills put accepted edits in patches/overlays.
 The console's guarded plan stages all affected source, version, and delta
 changes and previews the resulting build. It must not edit an APM cache entry
 as if that were durable local skill source. Source-removal operations use APM
-manifest/lock ownership and keep unrelated packages intact.
+root manifest/lock ownership and keep unrelated plugins intact. Before removing
+a dependency, check all plugins' skill and supporting-payload selections at both
+planning and commit time.
 Imported text edits also fingerprint marketplace inputs before planning and
 recheck them before the first write, including when dirty targets are permitted.
 New console patches follow all existing filename-ordered patches and preserve

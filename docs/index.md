@@ -42,7 +42,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | --- | --- |
 | [acpx Claude Code Streaming PoC](plans/acpx-claude-streaming-poc-plan.md) | Active; PoC executed with a go recommendation — `poll-stream` helper landed at `home/dot_agents/bin/` (target `~/.agents/bin/poll-stream`), review-hardened, and the acpx conventions doc teaches per-harness watching lanes. Remaining: live steering demo, the ADR 0016 packaging move, land. |
 | [ADR 0016 - Vendored dependency content may land inside a local skill](adr/0016-vendor-into-skill-references.md) | Proposed; per-skill vendor destinations so a local skill can carry upstream content as references. First customer: acpx ([plan](plans/acpx-claude-streaming-poc-plan.md)). |
-| [APM Agent Marketplace](plans/apm-agent-marketplace-plan.md) | Active; source migration and isolated acceptance passed. Landing, scoped live apply, and fresh-session verification remain. Includes migration/recovery gates and a future registry TODO. See [ADR 0023](adr/0023-apm-agent-marketplace-packaging.md). |
+| [APM Agent Marketplace](plans/apm-agent-marketplace-plan.md) | Active; migration landed, live apply and fresh-session catalog edit/apply/revert checks passed. Skill invocation checks and rollout closure remain; an offline registry is a future TODO. See [ADR 0023](adr/0023-apm-agent-marketplace-packaging.md). |
 | [Agent Session Wiki](plans/agent-session-wiki-plan.md) | Active; hourly launchd archive sync, QMD history index, and AgentsView wiring. Scheduled wiki ingest is paused. See [ADR 0017](adr/0017-agent-session-archive.md). |
 | [Revisit Wiki Ingestion](plans/wiki-ingest-revisit-plan.md) | TODO; decide whether and how to resume wiki ingestion. |
 | [SSD Layout And Arq Coverage](plans/ssd-arq-layout-plan.md) | Active; Code, Tart, and WinMux storage migrated. Both SSD volumes retained for Code and GhostPepper; Arq selection and restore checks deferred. |
@@ -90,6 +90,7 @@ for day-to-day implementation details.
 | [ADR 0022 - Bats with repo-owned zsh test support](adr/0022-bats-and-zsh-test-support.md) | [Test Refactoring](plans/test-suite-rebuild-plan.md); implemented and validated locally and in remote CI. |
 | [ADR 0023 - Isolate marketplace packaging and commit APM module inputs](adr/0023-apm-agent-marketplace-packaging.md) | Accepted; [APM Agent Marketplace plan](plans/apm-agent-marketplace-plan.md). Current operations are in the [marketplace reference](references/agent-marketplace.md) and [management skill](../.agents/skills/agent-skill-management/SKILL.md). |
 | [ADR 0024 - Setapp subscription apps install from packages.toml](adr/0024-setapp-subscription-app-installs.md) | `setapp_apps` groups in `packages.toml`, rendered by `scripts/packages/render-setapp-applist` and installed by `run_after_22-setapp-apps` through setapp-cli. |
+| [ADR 0025 - Share APM acquisition across native plugins](adr/0025-shared-apm-acquisition.md) | One root manifest, lock, and committed cache; per-plugin native metadata remains. See the [marketplace reference](references/agent-marketplace.md). |
 
 ## Research
 

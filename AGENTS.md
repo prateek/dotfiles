@@ -10,7 +10,7 @@ This is the repo-specific contract for coding agents working in Prateek's dotfil
 - `home/.chezmoitemplates/`: shared templates, including Brewfile, macOS defaults, and plist merge helpers.
 - `.agents/`: repo-local agent surface for this checkout. Keep repo-specific `AGENTS.md` and `CLAUDE.md` at the repo root; keep repo-local skills and tool adapters under `.agents/`.
 - `home/dot_agents/`: chezmoi-managed machine agent surface. Machine-wide `AGENTS.md`, docs, and workflow conventions materialize under `~/.agents`.
-- `agent-marketplace/`: portable machine-wide skill publishing project with its own Makefile. Authored skills, committed APM inputs, patches, and native metadata live here, outside the chezmoi source root.
+- `agent-marketplace/`: portable machine-wide skill publishing project with its own Makefile. One root APM manifest, lock, and committed cache serve all plugins; `packages/` holds authored skills, selections, patches, and native metadata, outside the chezmoi source root.
 - `home/dot_claude/`: chezmoi-managed Claude config for this machine. Its `CLAUDE.md` target should symlink to `../.agents/AGENTS.md`.
 - `home/dot_codex/`: chezmoi-managed Codex config for this machine.
 - `scripts/`: focused helpers for packages, macOS/app config, Tart, traces, audits, and hooks.
@@ -29,7 +29,7 @@ Keep repo-local and machine-level agent state separate. Files that define how ag
 Use the `agent-skill-management` skill for changes to `agent-marketplace/`,
 apply-time skill/plugin render scripts, Codex or Claude rendered plugin
 activation, and the related docs (`docs/references/agent-marketplace.md`,
-`docs/plans/apm-agent-marketplace-plan.md`, `docs/adr/0023-apm-agent-marketplace-packaging.md`). Packages build as plugins and materialize into
+`docs/plans/apm-agent-marketplace-plan.md`, `docs/adr/0023-apm-agent-marketplace-packaging.md`, `docs/adr/0025-shared-apm-acquisition.md`). Packages build as plugins and materialize into
 `~/.agents/plugins` (the only skill projection; `~/.agents/skills` survives as
 an empty stub for Codex runtime skills); do not commit source copies under
 `home/dot_agents/skills`, `home/dot_claude/skills`, or
@@ -79,7 +79,7 @@ an empty stub for Codex runtime skills); do not commit source copies under
 - Secret-backed configs and licenses are private templates under `home/`, driven by `home/.chezmoidata/secrets.toml` and `licenses.toml`; store only obfuscated `op://` refs.
 - Raw app captures live under `${XDG_STATE_HOME:-~/.local/state}/dotfiles/captures/`, not in the repo.
 - Mac App Store entries are opt-in with `DOTFILES_INSTALL_MAS_APPS=true`.
-- Setapp-managed apps install from `setapp_apps` in `packages.toml`, via setapp-cli in `run_after_22-setapp-apps` (see [ADR 0024](docs/adr/0024-setapp-subscription-app-installs.md)). Names must match the Setapp catalogue exactly. The hook installs and never uninstalls; it skips with a warning until Setapp is installed and signed in. Do not add config for a Setapp app that is not in `setapp_apps`.
+- Setapp-managed apps install from `setapp_apps` in `packages.toml`, via setapp-cli in `run_after_22-setapp-apps` (see [ADR 0025](docs/adr/0024-setapp-subscription-app-installs.md)). Names must match the Setapp catalogue exactly. The hook installs and never uninstalls; it skips with a warning until Setapp is installed and signed in. Do not add config for a Setapp app that is not in `setapp_apps`.
 - Chrome extension settings are not snapshotted from user profiles. Prefer Chrome Sync or extension-native export.
 
 ## Shell Startup

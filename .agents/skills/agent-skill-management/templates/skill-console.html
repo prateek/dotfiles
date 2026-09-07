@@ -2022,7 +2022,7 @@ function deleteSkill(m) {
     return;
   }
   showPrompt({ danger: true, confirmKeys: ["Enter", "x"], keysText: "Enter or x confirm · Esc cancel",
-    text: `Delete ${m.name} and its APM dependency ${m.apm.apm_dep}? Removes the skill directory, the apm.yml dependency, and its lockfile entry; apply reruns reference checks; export still writes nothing.`,
+    text: `Delete ${m.name} and its APM dependency ${m.apm.apm_dep}? Removes its publication selection and local additions, then updates the root dependency manifest and shared lockfile. Apply rechecks all plugins for remaining uses. The reviewed cache stays intact. Export still writes nothing.`,
     onConfirm: () => setOp({ op: "delete_skill", target: "skill", key: m.name, apm_dep: m.apm.apm_dep, dep_owns_skills: m.apm.dep_owns_skills, remove_apm_dep: true }) });
 }
 function doUndo() { const e = undo(); toast(e ? `undone: ${describeOp(e.after || e.before)}` : "nothing to undo"); }

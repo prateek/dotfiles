@@ -45,26 +45,36 @@ intentional mode change before building it. A standalone source export trusts
 the modes preserved by its archive. Copy tools that drop executable bits do not
 provide an equivalent source export.
 
-## Edit a package
+## Source layout
 
-Each directory under `packages/` is an APM project:
+The project root owns one dependency graph shared by all plugins:
 
 | Input | Ownership |
 | --- | --- |
-| `apm.yml` | Plugin metadata and `devDependencies.apm` declarations |
+| `apm.yml` | Marketplace membership and all `devDependencies.apm` declarations |
 | `apm.lock.yaml` | APM's accepted resolution; acquire it through APM |
 | `apm_modules/` | Pristine fetched content and normalization receipts |
+
+## Edit a package
+
+Each directory under `packages/` defines a separate native plugin. It has no APM
+manifest, lock, or cache:
+
+| Input | Ownership |
+| --- | --- |
 | `skills/<name>/` | Authored skills, edited directly |
 | `publish.toml` | Selected cached paths, curated directory aliases, extra payloads |
 | `patches/*.patch` | Reviewed edits applied in filename order to temporary plugin trees |
 | `overlays/` | Local additions at their published relative paths |
-| `.codex-plugin/plugin.json` | Authored Codex metadata and interface fields |
+| `.codex-plugin/plugin.json` | Plugin identity, version, shared metadata, and Codex interface fields |
 | `hooks/`, `evals/`, other native payloads | Authored supporting files |
 
 Use native filenames throughout this project. Chezmoi does not traverse this
 source directory, so no `literal_` conversion is needed.
 
-Selections refer to APM dependency identities and paths within their cache roots:
+Selections refer to dependency identities in the root lock and paths within their
+shared cache roots. Several plugins can select the same input; each plugin's
+patches and overlays apply to its own build copy:
 
 ```toml
 [[skills]]
@@ -106,12 +116,15 @@ For a human-only skill, pair `disable-model-invocation: true` in `SKILL.md` with
 checks both directions. Hook-bearing packages keep `hooks: {}` in their Codex
 manifest under the current Codex skills-only policy.
 
-Bump the package's version in **both** `apm.yml` and its Codex manifest when
-published content or metadata changes. Keep `targets: [claude]` and omit
-`dependencies` entirely: even an empty mapping selects APM's bundle path, which
-does not preserve this library's complete native payload. The root `apm.yml`
-lists each package's relative output path; catalogs describe availability,
-independently of a machine's activation policy.
+Bump the version in `.codex-plugin/plugin.json` when published content or metadata
+changes. The build derives a temporary APM publication manifest from that file,
+with `targets: [claude]` and no `dependencies` key, then calls native APM to generate
+the Claude manifest and both catalogs. The temporary manifests are removed after
+packing; consumers receive native plugin files and the release receipt.
+
+The root `apm.yml` lists each plugin's relative output path. Catalogs describe
+availability independently of a machine's activation policy. Do not add
+per-plugin APM projects or duplicate dependency declarations in `publish.toml`.
 
 ## Acquire or update upstream inputs
 
@@ -119,14 +132,15 @@ Start with an accepted, clean cache and lock. Both commands refuse tracked,
 staged, untracked, and ignored pending cache/lock changes before calling APM:
 
 ```sh
-make fetch PACKAGE=core       # native apm lock
-make update PACKAGE=core      # native apm lock --update
+make fetch                   # native apm lock at the project root
+make update                  # native apm lock --update for all root dependencies
 ```
 
-Edit declarations before `fetch` when adding or removing dependencies. An update
-leaves the complete cache and lock diff for review. Adjust patches if necessary,
-bump the native versions, rebuild, and inspect the published diff. Local patches
-and authored skills are outside APM's cache and survive acquisition.
+Edit root declarations before `fetch` when adding or removing dependencies.
+`PACKAGE=...` is rejected. An update leaves the complete shared cache and lock
+diff for review. Adjust patches if necessary, bump each affected plugin's version,
+rebuild, and inspect the published diff. Local patches and authored skills are
+outside APM's cache and survive acquisition.
 
 APM locks do not deploy skills or configure agents. Keep lockfiles free of old
 agent deployment claims. APM Git inputs have content hashes and `.apm-pin`
@@ -138,11 +152,11 @@ Upstream `.gitignore` files can hide new fetched files. Include the **complete**
 cache in review and acceptance:
 
 ```sh
-git add --intent-to-add --force -- packages/core/apm_modules
-git diff -- packages/core
+git add --intent-to-add --force -- apm_modules
+git diff -- .
 # After review, stage the lock, complete cache, metadata, and local changes together.
-git add --force -- packages/core/apm_modules
-git add -- packages/core/apm.lock.yaml packages/core/apm.yml packages/core/.codex-plugin
+git add --force -- apm_modules
+git add -- apm.lock.yaml apm.yml packages/core
 ```
 
 The project attributes preserve raw cache line endings. Native Git commits retain
@@ -150,8 +164,11 @@ executable bits; APM's hashes alone do not. Inspect mode changes alongside bytes
 Our initial native lock files were normalized from APM's mode 0600 to Git's
 regular-file mode 0644; published payload modes were unchanged.
 
-After removing a declaration, run `fetch` and confirm the resulting lock no
-longer contains that dependency. Only then, from the selected package directory,
+Before removing a declaration, check every plugin's skill and supporting-payload
+selections for remaining uses. The console checks ownership across plugins both
+when planning a deletion and immediately before writing it. After removing a
+declaration, run `fetch` and confirm the resulting lock no longer contains that
+dependency. Only then, from the project root,
 consider `apm prune --dry-run` followed by `apm prune` using APM 0.29.1. This order
 has been exercised with a surviving hooks dependency. A prune that removes keys
 from the lock itself may deploy surviving hooks. Leaving unused cache directories

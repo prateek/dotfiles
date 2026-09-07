@@ -11,8 +11,6 @@ class ConsoleWriteTests(ConsoleRepoCase):
 
         self.add_synthetic_vendor()
         project = self.repo / "agent-marketplace"
-        with (project / "apm.yml").open("a") as manifest:
-            manifest.write("  - name: synth\n    source: ./plugins/synth\n    category: Productivity\n")
         package = project / "packages/synth"
         patches = package / "patches"
         patches.mkdir()
@@ -49,10 +47,8 @@ class ConsoleWriteTests(ConsoleRepoCase):
 
         self.add_synthetic_vendor()
         project = self.repo / "agent-marketplace"
-        with (project / "apm.yml").open("a") as manifest:
-            manifest.write("  - name: synth\n    source: ./plugins/synth\n    category: Productivity\n")
         package = project / "packages/synth"
-        source = package / "apm_modules/example/repo/skills" / self.synth_skill / "skills" / self.synth_skill / "SKILL.md"
+        source = project / "apm_modules/example/repo/skills" / self.synth_skill / "skills" / self.synth_skill / "SKILL.md"
         original = source.read_text()
         patch = package / "patches/001-reviewed.patch"
         patch.parent.mkdir()
@@ -113,15 +109,13 @@ class ConsoleWriteTests(ConsoleRepoCase):
 
         self.add_synthetic_vendor()
         project = self.repo / "agent-marketplace"
-        with (project / "apm.yml").open("a") as manifest:
-            manifest.write("  - name: synth\n    source: ./plugins/synth\n    category: Productivity\n")
         package = project / "packages/synth"
         sidecar = package / "overlays/skills" / self.synth_skill / "agents/openai.yaml"
         sidecar.parent.mkdir()
         sidecar.write_text("interface:\n  display_name: Preserve me\npolicy:\n  allow_implicit_invocation: true\n")
         self.command(["make", "-C", str(project), "build"])
         published = project / "build/marketplace/plugins/synth/skills" / self.synth_skill
-        source = package / "apm_modules/example/repo/skills" / self.synth_skill / "skills" / self.synth_skill / "SKILL.md"
+        source = project / "apm_modules/example/repo/skills" / self.synth_skill / "skills" / self.synth_skill / "SKILL.md"
         original = source.read_bytes()
         identity = f"synth:{self.synth_skill}"
         document = decisions(describe(identity, "Reviewed imported description."),
@@ -351,12 +345,12 @@ class ConsoleWriteTests(ConsoleRepoCase):
         from artifact import tree_files
         repo, skill = self.repo, self.synth_skill
         package = "agent-marketplace/packages/synth"
-        manifest, lock = f"{package}/apm.yml", f"{package}/apm.lock.yaml"
+        manifest, lock = "agent-marketplace/apm.yml", "agent-marketplace/apm.lock.yaml"
         selection = f"{package}/publish.toml"
         overlay = f"{package}/overlays/skills/{skill}"
         codex = f"{package}/.codex-plugin/plugin.json"
         target = row(f"synth:{skill}", "synth", skill, Origin.REPO_VENDOR, str(repo / package / "skills" / skill))
-        before = tree_files(repo / package / "apm_modules")
+        before = tree_files(repo / "agent-marketplace/apm_modules")
         def delete(remove):
             return decisions(op(Op.DELETE_SKILL, f"synth:{skill}", apm_dep=f"example/repo/skills/{skill}", dep_owns_skills=1, remove_apm_dep=remove))
         edits = {edit.relpath: edit for edit in plan(delete(True), [target], repo).edits}
@@ -371,9 +365,9 @@ class ConsoleWriteTests(ConsoleRepoCase):
         self.assertIn("deployments: []", edits[lock].content)
         self.assertIn('"version": "1.0.1"', edits[codex].content)
         kept = {edit.relpath: edit for edit in plan(delete(False), [target], repo).edits}
-        self.assertEqual(set(kept), {selection, overlay, manifest, codex})
-        self.assertIn(f"example/repo/skills/{skill}", kept[manifest].content)
-        self.assertEqual(tree_files(repo / package / "apm_modules"), before)
+        self.assertEqual(set(kept), {selection, overlay, codex})
+        self.assertIn(f"example/repo/skills/{skill}", (repo / manifest).read_text())
+        self.assertEqual(tree_files(repo / "agent-marketplace/apm_modules"), before)
         self.assertEqual(git_status(repo), "")
 
     def test_a_failed_tree_removal_leaves_the_skill_at_its_own_path(self):
@@ -442,13 +436,23 @@ class ConsoleWriteTests(ConsoleRepoCase):
 
         failure = commit_after(staged("reference"), "tests/uses-synth.zsh", f"source {skill_rel}/scripts/tool.py\n")
         self.assertTrue("tests/uses-synth.zsh" in failure and "re-plan" in failure, f"a new tracked reference must refuse the commit: {failure!r}")
-        # A sibling that starts sharing the APM dependency after planning, spelled in
-        # another case so the reference scan cannot see it and only the count can.
-        sibling = f"{package}/publish.toml"
-        text = (repo / sibling).read_text() + f'\n[[skills]]\nname = "new-sibling"\ndependency = "example/repo/skills/{skill.upper()}"\npath = "."\n'
-        failure = commit_after(staged("sibling"), sibling, text)
-        self.assertTrue("owns 2" in failure and "re-plan" in failure, f"a new sibling on the dependency must refuse the commit: {failure!r}")
+        for sibling in (f"{package}/publish.toml", "agent-marketplace/packages/core/publish.toml"):
+            with self.subTest(sibling=sibling):
+                text = (repo / sibling).read_text() + f'\n[[skills]]\nname = "new-sibling"\ndependency = "example/repo/skills/{skill.upper()}"\npath = "."\n'
+                failure = commit_after(staged(sibling), sibling, text)
+                self.assertIn("owns 2", failure)
+                self.assertIn("re-plan", failure)
+        payload = "agent-marketplace/packages/core/publish.toml"
+        text = (repo / payload).read_text() + f'\n[[payloads]]\ndependency = "example/repo/skills/{skill.upper()}"\npath = "scripts"\ntarget = "shared-tools"\n'
+        failure = commit_after(staged("payload"), payload, text)
+        self.assertIn("supporting payload", failure)
+        self.assertIn("re-plan", failure)
+        from skill_console.decisions import ApplyError
+        (repo / payload).write_text(text)
+        with self.assertRaisesRegex(ApplyError, "supporting payload"):
+            plan(doc, [target], repo)
+        git(repo, "restore", "--", payload)
         report = commit(staged("clean"), repo, allow_dirty=False)
-        self.assertTrue(report.failure is None and f"{package}/publish.toml" in report.applied and f"{package}/apm.lock.yaml" in report.applied, f"an unchanged tree commits: {report}")
+        self.assertTrue(report.failure is None and f"{package}/publish.toml" in report.applied and "agent-marketplace/apm.lock.yaml" in report.applied, f"an unchanged tree commits: {report}")
         git(repo, "reset", "-q", "--hard", "synth")
         self.assertTrue(git_status(repo) == "", "clean again")

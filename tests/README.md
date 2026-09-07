@@ -187,7 +187,8 @@ CI formula installation step and Tart lanes validate actual installation.
 
 The portable project owns packaging tests: `make -C agent-marketplace check`
 validates cached inputs, patches/overlays, skill entrypoints, cache exclusion, paths, critical content scanning,
-versions, invocation pairs, native publication, repeatability, and export.
+versions, invocation pairs, shared root acquisition, independent plugin publication,
+repeatability, and export.
 `make test-agent-marketplace` delegates to it; `make test-vendor-skill-patches`
 remains a compatibility alias. `make test-tools` provisions its frozen APM 0.29.1
 environment, and the project check runs in the required macOS CI lane.
@@ -203,6 +204,8 @@ inventory, validation, staging, guarded edits, imported patch/overlay ownership,
 paired policy/version changes, deletion, CLI behavior, and Node execution of the
 shipped browser functions. Imported description/frontmatter edits refuse changed
 marketplace inputs before any write, including with the dirty-write override.
+Dependency deletion checks skill and supporting-payload uses across all plugins
+again before writes; accepted cache content stays unchanged.
 Temporary Git repositories disable automatic
 maintenance and carry the pinned assertion libraries for staged validation.
 

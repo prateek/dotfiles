@@ -150,6 +150,7 @@ class DeletionGuard:
     package: str
     skill_relpath: str
     dependency: str
+    remove_dependency: bool
     excluded: tuple[str, ...]
 
 
@@ -410,7 +411,7 @@ def _source_record(row: Row) -> SkillRecord | None:
     return row.source_record or row.marketplace_record or row.cache_record
 
 
-def _dep_key(dependency: str) -> str:
+def dependency_key(dependency: str) -> str:
     """The APM dependency identity, ignoring case and a `#ref` pin."""
     return dependency.strip().strip("`").split("#", 1)[0].split("@", 1)[0].strip("/").lower()
 
@@ -431,12 +432,13 @@ def _apm_dependency_of(skill_dir: Path) -> str | None:
                  if entry["name"] == skill_dir.name), None)
 
 
-def _dependency_skill_count(skill_dir: Path, dependency: str) -> int:
-    wanted = _dep_key(dependency)
+def _dependency_uses(skill_dir: Path, dependency: str, surface: str) -> int:
+    wanted = dependency_key(dependency)
     return sum(
         1
-        for entry in tomllib.loads(_selection_of(skill_dir).read_text()).get("skills", [])
-        if _dep_key(entry["dependency"]) == wanted
+        for selection in _selection_of(skill_dir).parent.parent.glob("*/publish.toml")
+        for entry in tomllib.loads(selection.read_text()).get(surface, [])
+        if dependency_key(entry["dependency"]) == wanted
     )
 
 
@@ -490,12 +492,12 @@ def _validate_skill_operation(
         if own_dependency is None:
             violations.append(Violation("V17", f"{skill_dir} has no APM publication selection", f"{pointer}/apm_dep"))
             return
-        if _dep_key(str(op.fields["apm_dep"])) != _dep_key(own_dependency):
+        if dependency_key(str(op.fields["apm_dep"])) != dependency_key(own_dependency):
             violations.append(
                 Violation("V17", f"apm_dep {op.fields['apm_dep']!r} != publication dependency {own_dependency!r}", f"{pointer}/apm_dep")
             )
             return
-        count = _dependency_skill_count(skill_dir, own_dependency)
+        count = _dependency_uses(skill_dir, own_dependency, "skills")
         if op.fields["dep_owns_skills"] != count:
             violations.append(
                 Violation("V17", f"dep_owns_skills {op.fields['dep_owns_skills']} != recomputed {count}", f"{pointer}/dep_owns_skills")
@@ -677,7 +679,7 @@ def _set_setting(text: str, key: str, subkey: str | None, value: object) -> str:
 
 def _remove_apm_manifest_dependency(text: str, dependency: str, relpath: str) -> str:
     """Drop one `- <dep>` item from apm.yml's `devDependencies.apm` list."""
-    wanted = _dep_key(dependency)
+    wanted = dependency_key(dependency)
     lines = text.splitlines(keepends=True)
     in_dependencies = in_apm = False
     apm_line: int | None = None
@@ -696,7 +698,7 @@ def _remove_apm_manifest_dependency(text: str, dependency: str, relpath: str) ->
             in_apm, apm_line = True, i
             continue
         if in_apm and stripped.startswith("- "):
-            if _dep_key(stripped.removeprefix("- ")) == wanted and matched is None:
+            if dependency_key(stripped.removeprefix("- ")) == wanted and matched is None:
                 matched = i
             else:
                 remaining += 1
@@ -935,19 +937,13 @@ def _plan_patches_and_versions(ws: _Workspace) -> None:
                 raise ApplyError(f"rename the last patch to leave room for a following console patch: {last}")
         ws.write(f"{PACKAGES_DIR}/{package}/patches/{filename}", patch)
     for package in sorted(ws.changed_packages):
-        manifest_rel = f"{PACKAGES_DIR}/{package}/apm.yml"
         codex_rel = f"{PACKAGES_DIR}/{package}/.codex-plugin/plugin.json"
-        manifest = ws.read(manifest_rel)
         codex = json.loads(ws.read(codex_rel))
         match = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)", codex["version"])
         if not match:
             raise ApplyError(f"cannot bump non-numeric plugin version: {codex['version']}")
         version = f"{match[1]}.{match[2]}.{int(match[3]) + 1}"
-        manifest, count = re.subn(r"(?m)^version:.*$", f"version: {version}", manifest)
-        if count != 1:
-            raise ApplyError(f"cannot find one version field in {manifest_rel}")
         codex["version"] = version
-        ws.write(manifest_rel, manifest)
         ws.write(codex_rel, json.dumps(codex, indent=2) + "\n")
 
 
@@ -966,12 +962,13 @@ def _remove_selection(text: str, name: str) -> str:
     return "".join(result)
 
 
-def _plan_native_lock(ws: _Workspace, package: str, manifest_rel: str, lock_rel: str) -> None:
+def _plan_native_lock(ws: _Workspace, manifest_rel: str, lock_rel: str) -> None:
     from artifact import tree_files
     with tempfile.TemporaryDirectory(prefix="skill-console-lock-") as temporary:
-        project = Path(temporary) / "package"
-        shutil.copytree(ws.repo_root / PACKAGES_DIR / package, project)
-        (project / "apm.yml").write_text(ws.texts[manifest_rel])
+        project = Path(temporary)
+        shutil.copytree(ws.repo_root / "agent-marketplace/apm_modules", project / "apm_modules")
+        (project / "apm.yml").write_text(ws.read(manifest_rel))
+        (project / "apm.lock.yaml").write_text(ws.read(lock_rel))
         before = tree_files(project / "apm_modules")
         command = ["uv", "run", "--project", str(ws.repo_root / "agent-marketplace"),
                    "--offline", "--frozen", "apm", "lock"]
@@ -988,13 +985,14 @@ def _plan_native_lock(ws: _Workspace, package: str, manifest_rel: str, lock_rel:
 def _plan_deletion(ws: _Workspace, row: Row, op: Operation) -> None:
     package_rel = f"{PACKAGES_DIR}/{row.package}"
     selection_rel = f"{package_rel}/publish.toml"
-    manifest_rel, lock_rel = f"{package_rel}/apm.yml", f"{package_rel}/apm.lock.yaml"
+    manifest_rel, lock_rel = "agent-marketplace/apm.yml", "agent-marketplace/apm.lock.yaml"
     skill_rel = f"{package_rel}/skills/{row.directory}"
     dependency = str(op.fields["apm_dep"])
     excluded = (selection_rel, manifest_rel, lock_rel, f"{package_rel}/patches",
                 f"{package_rel}/overlays/skills/{row.directory}", "agent-marketplace/build",
-                *(f"{PACKAGES_DIR}/{p.name}/apm_modules" for p in (ws.repo_root / PACKAGES_DIR).iterdir()))
-    guard = DeletionGuard(row.name, row.directory, row.package, skill_rel, dependency, excluded)
+                "agent-marketplace/apm_modules")
+    guard = DeletionGuard(row.name, row.directory, row.package, skill_rel, dependency,
+                          bool(op.fields["remove_apm_dep"]), excluded)
     blocking, mentions = _blocking_references(ws.repo_root, guard)
     if blocking:
         raise ApplyError(f"{row.name} is still referenced by tracked files; remove the references first: {', '.join(blocking)}")
@@ -1002,8 +1000,10 @@ def _plan_deletion(ws: _Workspace, row: Row, op: Operation) -> None:
         ws.warn(f"{path} still mentions {row.directory}; update it after the deletion")
     _refuse_symlink(ws.repo_root / selection_rel, selection_rel)
     selection = ws.texts.get(selection_rel, (ws.repo_root / selection_rel).read_text())
-    if op.fields["remove_apm_dep"] and any(_dep_key(item["dependency"]) == _dep_key(dependency)
-                                           for item in tomllib.loads(selection).get("payloads", [])):
+    skill_dir = ws.repo_root / skill_rel
+    if (count := _dependency_uses(skill_dir, dependency, "skills")) != 1:
+        raise ApplyError(f"{dependency} owns {count} vendored skills across plugins; review its selections first")
+    if guard.remove_dependency and _dependency_uses(skill_dir, dependency, "payloads"):
         raise ApplyError(f"{dependency} still owns a supporting payload")
     ws.guards.append(guard)
     overlay_rel = f"{package_rel}/overlays/skills/{row.directory}"
@@ -1027,7 +1027,7 @@ def _plan_deletion(ws: _Workspace, row: Row, op: Operation) -> None:
         ws.write(relative, "".join(kept))
     if op.fields["remove_apm_dep"]:
         ws.write(manifest_rel, _remove_apm_manifest_dependency(ws.read(manifest_rel), dependency, manifest_rel))
-        _plan_native_lock(ws, row.package, manifest_rel, lock_rel)
+        _plan_native_lock(ws, manifest_rel, lock_rel)
     ws.changed_packages.add(row.package)
 
 
@@ -1273,6 +1273,8 @@ def _guard_failure(repo_root: Path, guard: DeletionGuard) -> str | None:
     if blocking:
         return f"{guard.name} is referenced by tracked files since planning; re-plan after removing them: {', '.join(blocking)}"
     skill_dir = repo_root / guard.skill_relpath
-    if (count := _dependency_skill_count(skill_dir, guard.dependency)) != 1:
+    if (count := _dependency_uses(skill_dir, guard.dependency, "skills")) != 1:
         return f"{guard.dependency} owns {count} vendored skills since planning, not 1; re-plan"
+    if guard.remove_dependency and _dependency_uses(skill_dir, guard.dependency, "payloads"):
+        return f"{guard.dependency} still owns a supporting payload; re-plan"
     return None

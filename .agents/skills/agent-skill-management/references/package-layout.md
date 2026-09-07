@@ -1,11 +1,16 @@
 # Package layout
 
 The [isolated project README](../../../../agent-marketplace/README.md#edit-a-package)
-owns the source layout and Make contracts. One APM project represents each native
-plugin; the root APM manifest lists published availability.
+owns the source layout and Make contracts. One root APM project acquires inputs
+for every plugin: one manifest, one lock, and one committed cache. Each directory
+under `packages/` defines a native plugin without a separate APM project.
+
+The plugin's `.codex-plugin/plugin.json` owns its identity, version, and common
+metadata. The builder derives temporary APM publication manifests from it,
+generates native metadata and catalogs, then removes those temporary manifests.
 
 `publish.toml` maps a curated directory to an APM lock identity and a path inside
-its native cache root. It also selects complete hooks and supporting trees. It
+its shared native cache root. It also selects complete hooks and supporting trees. It
 contains no repository URLs or revision pins beyond the producer's dependency
 identity. Authored skills live directly under `skills/<directory>/`.
 For a subdirectory selection, explicitly include omitted upstream root licenses
