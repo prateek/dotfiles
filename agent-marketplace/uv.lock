@@ -604,8 +604,8 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "apm-cli", specifier = "==0.29.1" },
-    { name = "pyyaml", specifier = "==6.0.3" },
+    { name = "apm-cli", specifier = ">=0.29" },
+    { name = "pyyaml", specifier = ">=6" },
 ]
 
 [[package]]
