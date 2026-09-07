@@ -30,7 +30,10 @@ test-tools:
 test-ci:
     DOTFILES_SKIP_LAUNCHCTL_SYNC=1 GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null \
       mise exec -- env DOTFILES_TEST_RUNTIME_READY=1 \
-      just test-agent-marketplace test-static test-shell test-python test-node test-chezmoi-apply
+      just _test-ci-suites
+
+[private]
+_test-ci-suites: test-agent-marketplace test-static test-shell test-python test-node test-chezmoi-apply
 
 # Bats cases. Focus with a path and/or flags, and BATS_TAGS= to select tagged lanes.
 [group('suite')]

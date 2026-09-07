@@ -560,8 +560,31 @@ Preliminary Codex prompts that prohibited shell reads did not establish body
 access; they were replaced by these read-only probes and were not counted.
 
 The original `~/.agents/plugins.previous` was restored exactly after artifact
-rotation. Both audited legacy directories remain retained. Authenticated Crit
-evals remain unrun and optional; an APM registry or mirror remains future work.
+rotation. Claude retained two unreferenced sample-version cache directories after
+downgrade. Their complete payloads matched the sample artifact, with only Claude's
+`.orphaned_at` marker added; those copies were removed without changing the native
+installation database. Both audited legacy directories remain retained.
+Authenticated Crit evals remain unrun and optional; an APM registry or mirror
+remains future work.
+
+### Landing and CI
+
+The adapter fix, version bumps, and documentation cleanup landed at `e08de50`.
+After the push, the clean canonical source matched the verified artifact digest
+above. Plain scoped apply passed, its diff was empty, and artifact/native checks
+passed again. The unchanged apply retained the trial receipt. A full chezmoi
+preview still showed unrelated agent docs, client preferences, package/shell
+configuration, and setup scripts; those were outside the marketplace apply.
+
+The [first remote run](https://github.com/prateek/dotfiles/actions/runs/34162549013)
+passed packaging and docs validation but exposed a separate just migration bug:
+`test-ci` passed several recipe names in one CLI call, and variadic `test-shell`
+treated `test-python` and the following names as Bats file arguments. The fix
+composes the six suites as recipe dependencies under the same isolated mise
+environment. The full public `just test-ci` entrypoint is the regression check;
+no individual suite or assertion is removed. Its local run passed all 23 packaging
+tests, 181 shell cases, 248 Python tests, six Node tests, static validation, and
+chezmoi dry-runs for ci, personal, and work machines.
 
 ## Legacy backup review
 
