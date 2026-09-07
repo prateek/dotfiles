@@ -1,9 +1,13 @@
 collections:
   agent-session-history:
-    path: "{{ .chezmoi.homeDir }}/code/github.com/prateek/wiki-agent-sessions"
-    pattern: "sessions/*/claude/history.jsonl,sessions/*/claude/projects/**/*.jsonl,sessions/*/claude/projects/**/memory/*.md,sessions/*/pi/sessions/**/*.jsonl,sessions/*/cursor/projects/**/*.jsonl,sessions/*/cursor/projects/**/*.txt,wiki/**/*.md"
+    path: {{ .chezmoi.homeDir }}/code/github.com/prateek/wiki-agent-sessions
+    pattern: sessions/*/claude/history.jsonl,sessions/*/claude/projects/**/*.jsonl,sessions/*/claude/projects/**/memory/*.md,sessions/*/pi/sessions/**/*.jsonl,sessions/*/cursor/projects/**/*.jsonl,sessions/*/cursor/projects/**/*.txt,wiki/**/*.md
     ignore:
-      - "sessions/**/subagents/**"
+      - sessions/**/subagents/**
     context:
       /sessions: Raw cross-machine agent transcripts in their native layouts. Search exact phrases, project names, commands, and prior user requests here.
       /wiki: Distilled knowledge derived from archived agent sessions.
+models:
+  embed: hf:ggml-org/embeddinggemma-300M-GGUF/embeddinggemma-300M-Q8_0.gguf
+  generate: hf:tobil/qmd-query-expansion-1.7B-gguf/qmd-query-expansion-1.7B-q4_k_m.gguf
+  rerank: hf:ggml-org/Qwen3-Reranker-0.6B-Q8_0-GGUF/qwen3-reranker-0.6b-q8_0.gguf

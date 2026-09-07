@@ -87,3 +87,13 @@ run_wrapper() {
     "$DOTFILES_ROOT/scripts/agent-sessions/sync-app/SessionArchiveSync.swift"
   assert_success
 }
+
+@test "Managed QMD config includes the model identities persisted by the CLI" {
+  run chezmoi --source "$DOTFILES_ROOT" execute-template \
+    --file "$DOTFILES_ROOT/home/dot_config/qmd/wiki-agent-sessions.yml.tmpl"
+  assert_success
+  [[ "$output" = *"path: $HOME/code/github.com/prateek/wiki-agent-sessions"* ]]
+  [[ "$output" = *"embed: hf:ggml-org/embeddinggemma-300M-GGUF/embeddinggemma-300M-Q8_0.gguf"* ]]
+  [[ "$output" = *"generate: hf:tobil/qmd-query-expansion-1.7B-gguf/qmd-query-expansion-1.7B-q4_k_m.gguf"* ]]
+  [[ "$output" = *"rerank: hf:ggml-org/Qwen3-Reranker-0.6B-Q8_0-GGUF/qwen3-reranker-0.6b-q8_0.gguf"* ]]
+}
