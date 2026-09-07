@@ -103,8 +103,8 @@ code_volume_uuid = "8C16DA8F-1B9B-4ADC-9C7D-EFA8FF8B15D7"
 tart_home = "/Users/prateek/code/.storage/vms/tart"
 winmux_e2e_artifact_root = "/Users/prateek/code/.storage/artifacts/winmux"
 wiki_host_alias = "m4mini"
-# Ingest is paused; see docs/plans/wiki-ingest-revisit-plan.md.
-agent_session_wiki_ingest = false
+# The always-on mini is the single writer for the distilled wiki.
+agent_session_wiki_ingest = true
 
 # Managed work MacBook (Jamf hostname). Sparse archive clone via the work
 # type, so it cannot own the ingest role.

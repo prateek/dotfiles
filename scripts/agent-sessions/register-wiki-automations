@@ -20,8 +20,11 @@ set -euo pipefail
 
 SYNC_NAME="wiki-sessions-sync"
 INGEST_NAME="wiki-sessions-ingest"
+INGEST_MODEL="claude-sonnet-5"
+INGEST_EFFORT="high"
+CLONE="${WIKI_SESSIONS_CLONE:-$HOME/code/github.com/prateek/wiki-agent-sessions}"
 
-INGEST_PROMPT="Daily wiki ingest for this session archive. Run every step under .agents/skills/session-sync/scripts/with-repo-lock: (1) git pull --rebase. (2) Run .agents/skills/session-sync/scripts/audit-heartbeats; if it exits nonzero, fail this run loudly with its stale-host output. (3) For each sessions/<host>/claude directory, run /wiki-history-ingest on the delta with CLAUDE_HISTORY_PATH set to that directory, newest sessions first, stopping after a bounded page budget (~15 pages). (4) Commit only paths under wiki/, include the ingested archive HEAD SHA in the commit message, and push."
+INGEST_PROMPT="Daily wiki ingest for this session archive. Run every step under .agents/skills/session-sync/scripts/with-repo-lock: (1) git pull --rebase. (2) Run .agents/skills/session-sync/scripts/audit-heartbeats; if it exits nonzero, fail this run loudly with its stale-host output. (3) For each sessions/<host>/claude directory, run /wiki-history-ingest on the delta with CLAUDE_HISTORY_PATH set to that directory, newest sessions first. Stop after a bounded budget of roughly 15 pages total across all hosts, not 15 pages per host. (4) Commit only paths under wiki/, include the ingested archive HEAD SHA in the commit message, and push."
 
 log() { printf 'register-wiki-automations: %s\n' "$*"; }
 warn() { printf 'register-wiki-automations: WARNING: %s\n' "$*" >&2; }
@@ -53,6 +56,65 @@ automation_id() {
       '(.result.automations // .automations // .result.items // [])[]
        | select(.name == $name) | (.id // .automationId // empty)' |
     head -1
+}
+
+configure_ingest_claude() {
+  local settings="$CLONE/.claude/settings.local.json" tmp exclude
+  if ! git -C "$CLONE" rev-parse --git-dir >/dev/null 2>&1; then
+    warn "archive clone missing at $CLONE; cannot configure the ingest agent"
+    return 1
+  fi
+  if git -C "$CLONE" ls-files --error-unmatch -- .claude/settings.local.json >/dev/null 2>&1; then
+    warn "$settings is tracked; refusing to replace repository-owned Claude settings"
+    return 1
+  fi
+  if [[ -L "$settings" || ( -e "$settings" && ! -f "$settings" ) ]]; then
+    warn "$settings is not a regular file; refusing to replace it"
+    return 1
+  fi
+  if [[ -f "$settings" ]] && ! jq -e 'type == "object"' "$settings" >/dev/null 2>&1; then
+    warn "$settings is not a valid JSON object; fix it before enabling ingest"
+    return 1
+  fi
+
+  mkdir -p "${settings%/*}"
+  tmp="$(mktemp "$settings.tmp.XXXXXX")"
+  if [[ -f "$settings" ]]; then
+    jq --arg model "$INGEST_MODEL" --arg effort "$INGEST_EFFORT" \
+      '.model = $model | .effortLevel = $effort' "$settings" > "$tmp"
+  else
+    jq -n --arg model "$INGEST_MODEL" --arg effort "$INGEST_EFFORT" \
+      '{model: $model, effortLevel: $effort}' > "$tmp"
+  fi
+  chmod 600 "$tmp"
+  if [[ -f "$settings" ]] && cmp -s "$tmp" "$settings"; then
+    rm -f "$tmp"
+  else
+    mv "$tmp" "$settings"
+  fi
+
+  exclude="$(git -C "$CLONE" rev-parse --absolute-git-dir)/info/exclude"
+  mkdir -p "${exclude%/*}"
+  if ! grep -Fxq '.claude/settings.local.json' "$exclude" 2>/dev/null; then
+    printf '%s\n' '.claude/settings.local.json' >> "$exclude"
+  fi
+  log "configured ingest agent: $INGEST_MODEL (effort $INGEST_EFFORT)"
+}
+
+ensure_archive_repo_registered() {
+  local id
+  id="$(orca repo list --json 2>/dev/null |
+    jq -r --arg path "$CLONE" \
+      '(.result.repos // .repos // .result.items // [])[]
+       | select(.path == $path) | (.id // empty)' |
+    head -1)"
+  [[ -n "$id" ]] && return 0
+  if orca repo add --path "$CLONE" --json >/dev/null 2>&1; then
+    log "registered archive repo with Orca: $CLONE"
+    return 0
+  fi
+  warn "could not register $CLONE with Orca; run: orca repo add --path $CLONE --json"
+  return 1
 }
 
 status=0
@@ -92,6 +154,7 @@ reconcile_ingest() {
     fi
     return
   fi
+  configure_ingest_claude || return 1
   # --reuse-session: without it every run leaks a hidden agent tab (stablyai/orca#9479).
   local flags=(
     --trigger daily
@@ -104,17 +167,12 @@ reconcile_ingest() {
     orca automations edit "$id" "${flags[@]}" --enabled --json >/dev/null
     log "reconciled: $INGEST_NAME ($id)"
   else
-    # The owner clone must be addressable as an Orca workspace; fall back to
-    # repo-selector mode when it is not registered as a worktree.
-    local clone="$HOME/code/github.com/prateek/wiki-agent-sessions"
-    if orca automations create --name "$INGEST_NAME" "${flags[@]}" --workspace "path:$clone" \
+    ensure_archive_repo_registered || return 1
+    if orca automations create --name "$INGEST_NAME" "${flags[@]}" --workspace "path:$CLONE" \
          --workspace-mode existing --enabled --json >/dev/null 2>&1; then
-      log "created: $INGEST_NAME (workspace $clone)"
-    elif orca automations create --name "$INGEST_NAME" "${flags[@]}" --repo "path:$clone" \
-           --workspace-mode existing --enabled --json >/dev/null 2>&1; then
-      log "created: $INGEST_NAME (repo selector $clone)"
+      log "created: $INGEST_NAME (workspace $CLONE)"
     else
-      warn "could not create $INGEST_NAME; register the repo with Orca (ohc prateek/wiki-agent-sessions) and re-run this helper"
+      warn "could not create $INGEST_NAME for workspace $CLONE; re-run this helper after checking Orca"
       return 1
     fi
   fi

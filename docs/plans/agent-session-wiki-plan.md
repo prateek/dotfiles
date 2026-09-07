@@ -570,12 +570,21 @@ Its prompt instructs the agent to run the `session-sync` skill and report the re
 
 ### `wiki-sessions-ingest`
 
-Register this automation only on the designated ingest host, initially the current machine:
+Register this automation only on the designated ingest host, currently `m4mini`:
 
 ```text
 --trigger daily
 --time 06:00
+--provider claude
 ```
+
+The reconciliation helper writes the untracked repo-local Claude setting
+`.claude/settings.local.json` with model `claude-sonnet-5` and effort `high`.
+This keeps the bounded daily ingest independent of the host's global Claude
+defaults while preserving unrelated keys in that settings file.
+Claude's workspace-trust decision remains user state: after moving the ingest
+role to a new host, accept the archive folder's trust prompt on the first run,
+then rerun the automation. The current `m4mini` clone has completed that step.
 
 Its prompt performs these steps under `with-repo-lock`:
 
@@ -583,7 +592,7 @@ Its prompt performs these steps under `with-repo-lock`:
 2. Run the committed `audit-heartbeats` script, which reads the machine-readable `health/expected-hosts` roster.
 3. Fail loudly with the audit's output when any heartbeat is missing, malformed, or older than 26 hours. Orca run history plus `latest.json` carry the alarm (an Orca run row can close before the agent finishes, so the deterministic audit is the trustworthy signal).
 4. Run `/wiki-history-ingest` on the delta for every `sessions/<host>/claude` directory. Set `CLAUDE_HISTORY_PATH` for each host and process the newest sessions first.
-5. Enforce a bounded page budget. The manifest records coverage; raw search remains available while backfill ingestion catches up.
+5. Enforce a bounded budget of about 15 pages total across all hosts. The manifest records coverage; raw search remains available while backfill ingestion catches up.
 6. Commit only paths under `wiki/`. Include the ingested archive HEAD SHA in the commit message.
 7. Push the result.
 

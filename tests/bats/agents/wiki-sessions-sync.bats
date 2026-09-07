@@ -3,11 +3,26 @@ load '../../support/common'
 setup() {
   setup_fixture
   wrapper="$DOTFILES_ROOT/home/dot_local/bin/executable_wiki-sessions-sync"
+  automation_helper="$DOTFILES_ROOT/scripts/agent-sessions/register-wiki-automations"
   archive="$FIXTURE/archive"
   sync_stub="$FIXTURE/sync-sessions"
   qmd_stub="$FIXTURE/qmd"
   calls="$FIXTURE/calls"
   mkdir -p "$archive"
+}
+
+write_orca_stub() {
+  cat > "$FIXTURE/bin/orca" <<'STUB'
+#!/bin/sh
+printf '%s\n' "$*" >> "$ORCA_CALLS"
+case "$1 $2" in
+  "automations list") printf '%s\n' '{"result":{"automations":[]}}' ;;
+  "repo list") printf '%s\n' '{"result":{"repos":[]}}' ;;
+  "repo add"|"automations create") printf '%s\n' '{"ok":true}' ;;
+  *) exit 2 ;;
+esac
+STUB
+  chmod +x "$FIXTURE/bin/orca"
 }
 
 write_stubs() {
@@ -96,4 +111,33 @@ run_wrapper() {
   [[ "$output" = *"embed: hf:ggml-org/embeddinggemma-300M-GGUF/embeddinggemma-300M-Q8_0.gguf"* ]]
   [[ "$output" = *"generate: hf:tobil/qmd-query-expansion-1.7B-gguf/qmd-query-expansion-1.7B-q4_k_m.gguf"* ]]
   [[ "$output" = *"rerank: hf:ggml-org/Qwen3-Reranker-0.6B-Q8_0-GGUF/qwen3-reranker-0.6b-q8_0.gguf"* ]]
+}
+
+@test "Ingest registration pins Claude Sonnet 5 at high effort and registers the archive workspace" {
+  local clone="$HOME/code/github.com/prateek/wiki-agent-sessions"
+  git init -q "$clone"
+  mkdir -p "$clone/.claude"
+  printf '%s\n' '{"enabledPlugins":{"obsidian-wiki@prateek-local":true}}' > "$clone/.claude/settings.local.json"
+  : > "$calls"
+  export ORCA_CALLS="$calls"
+  write_orca_stub
+
+  run_bash 0 "$automation_helper" --enable --ingest
+  assert_success
+
+  run jq -e '
+    .model == "claude-sonnet-5" and
+    .effortLevel == "high" and
+    .enabledPlugins["obsidian-wiki@prateek-local"] == true
+  ' "$clone/.claude/settings.local.json"
+  assert_success
+  run grep -Fx '.claude/settings.local.json' "$clone/.git/info/exclude"
+  assert_success
+  run grep -F "repo add --path $clone --json" "$calls"
+  assert_success
+  run grep -F "automations create --name wiki-sessions-ingest" "$calls"
+  assert_success
+  [[ "$output" = *"--provider claude"* ]]
+  [[ "$output" = *"roughly 15 pages total across all hosts, not 15 pages per host"* ]]
+  [[ "$output" = *"--workspace path:$clone --workspace-mode existing --enabled --json"* ]]
 }

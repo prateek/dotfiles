@@ -166,7 +166,7 @@ Keep script-aware diff/dry-run and rendered shellcheck checks for changed apply
 scripts. `make test-chezmoi-apply` previews `ci`, `personal`, and `work`; Tart
 installation and live-machine apply remain explicit operator lanes.
 `make test-wiki-sessions-sync` checks the raw-sync-before-QMD boundary, exit 7,
-and the permission-owning app handoff.
+the permission-owning app handoff, and Claude ingest automation registration.
 
 ### Package and secret checks
 

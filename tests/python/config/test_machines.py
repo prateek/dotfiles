@@ -66,7 +66,7 @@ class MachineFeaturesTests(RepoTestCase):
             self.assertIn(host, aliases)
             self.assertFalse(hosts[host].get("agent_session_wiki_sparse"), host)
 
-    def test_work_uses_sparse_archive_and_m4mini_keeps_full_archive_with_ingest_paused(self):
+    def test_work_uses_sparse_archive_and_m4mini_owns_ingest_with_a_full_clone(self):
         personal = self.resolve("personal", chezmoi={"hostname": "prateek-personal-mbp"})
         self.assertEqual(personal["wiki_host_alias"], "personal-mbp")
         work = self.resolve("work")
@@ -74,7 +74,7 @@ class MachineFeaturesTests(RepoTestCase):
         self.assertIs(work["agent_session_wiki_ingest"], False)
         mini = self.resolve("homelab", chezmoi={"hostname": "m4mini"})
         self.assertIs(mini["agent_session_wiki"], True)
-        self.assertIs(mini["agent_session_wiki_ingest"], False)
+        self.assertIs(mini["agent_session_wiki_ingest"], True)
         self.assertIs(mini["agent_session_wiki_sparse"], False)
         self.assertEqual(mini["wiki_host_alias"], "m4mini")
 
