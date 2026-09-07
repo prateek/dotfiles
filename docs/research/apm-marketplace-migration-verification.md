@@ -586,6 +586,12 @@ no individual suite or assertion is removed. Its local run passed all 23 packagi
 tests, 181 shell cases, 248 Python tests, six Node tests, static validation, and
 chezmoi dry-runs for ci, personal, and work machines.
 
+The CI dispatch fix landed at `b75134d`. The
+[follow-up CI run](https://github.com/prateek/dotfiles/actions/runs/34163447508)
+passed both shellcheck and the complete macOS job before the plan was archived.
+Disposable probes, sample edits, and temporary recovery copies were removed after
+verification; the two original legacy directories remain retained.
+
 ## Legacy backup review
 
 A separate review reconstructed both retained directories from Git and compared

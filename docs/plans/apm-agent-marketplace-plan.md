@@ -1,9 +1,14 @@
 ---
-status: active
+status: archived
 doc_type: plan
 owner: Prateek
 created: 2026-09-06
 updated: 2026-09-07
+closed: 2026-09-07
+current_guidance:
+  - ../references/agent-marketplace.md
+  - ../../agent-marketplace/README.md
+  - ../../.agents/skills/agent-skill-management/SKILL.md
 related:
   - ../adr/0023-apm-agent-marketplace-packaging.md
   - ../adr/0025-shared-apm-acquisition.md
@@ -16,7 +21,7 @@ related:
   - ../research/nix-agent-skills-packaging-research.md
   - agent-plugin-renderer-plan.md
   - ../../.agents/skills/agent-skill-management/SKILL.md
-status_detail: "Implementation and rollout verification are complete: changed-source plain apply, versioned refresh, fresh skill invocation, and the shared-root maintenance round trip passed. Ready for landing and metadata-only closure. Authenticated Crit evals and a registry remain separate optional work."
+status_detail: "Completed and landed. Changed-source plain apply, versioned refresh, fresh skill invocation, the shared-root maintenance round trip, and the full local and remote CI lanes passed. Authenticated Crit evals and a registry remain separate optional work."
 ---
 
 # APM Agent Marketplace Plan

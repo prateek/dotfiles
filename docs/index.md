@@ -42,7 +42,6 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | --- | --- |
 | [acpx Claude Code Streaming PoC](plans/acpx-claude-streaming-poc-plan.md) | Active; PoC executed with a go recommendation — `poll-stream` helper landed at `home/dot_agents/bin/` (target `~/.agents/bin/poll-stream`), review-hardened, and the acpx conventions doc teaches per-harness watching lanes. Remaining: live steering demo, the ADR 0016 packaging move, land. |
 | [ADR 0016 - Vendored dependency content may land inside a local skill](adr/0016-vendor-into-skill-references.md) | Proposed; per-skill vendor destinations so a local skill can carry upstream content as references. First customer: acpx ([plan](plans/acpx-claude-streaming-poc-plan.md)). |
-| [APM Agent Marketplace](plans/apm-agent-marketplace-plan.md) | Rollout verification complete; ready for landing and metadata-only closure. See the [plain-apply, invocation, and maintenance results](research/apm-marketplace-migration-verification.md#rollout-completion). |
 | [Agent Session Wiki](plans/agent-session-wiki-plan.md) | Active; hourly launchd archive sync, QMD history index, AgentsView wiring, and daily Claude wiki ingest on m4mini. See [ADR 0017](adr/0017-agent-session-archive.md). |
 | [Restore Wiki Ingestion](plans/wiki-ingest-revisit-plan.md) | Active; the m4mini schedule and Claude Sonnet 5/high configuration are live and passed an end-to-end ingest. |
 | [SSD Layout And Arq Coverage](plans/ssd-arq-layout-plan.md) | Active; Code, Tart, and WinMux storage migrated. Both SSD volumes retained for Code and GhostPepper; Arq selection and restore checks deferred. |
@@ -119,6 +118,7 @@ or `superseded_by` frontmatter before using them.
 
 | Doc | Current guidance |
 | --- | --- |
+| [APM Agent Marketplace](plans/apm-agent-marketplace-plan.md) | Completed shared acquisition, just-based apply, native skill invocation, maintenance round trip, and CI verification. Use the [marketplace reference](references/agent-marketplace.md); see the [rollout evidence](research/apm-marketplace-migration-verification.md#rollout-completion). |
 | [Agent Plugin Renderer](plans/agent-plugin-renderer-plan.md) | Replaced by [APM Agent Marketplace](plans/apm-agent-marketplace-plan.md); [current guidance](references/agent-marketplace.md). |
 | [Test Refactoring](plans/test-suite-rebuild-plan.md) | Completed Bats/native runner migration, local and remote CI validation, and scoped apply; [tests index](../tests/README.md) and [ADR 0022](adr/0022-bats-and-zsh-test-support.md). |
 | [Shared Config-Merge Verification](plans/config-merge-verification-plan.md) | Completed local implementation and validation; [tests index](../tests/README.md#plist-merge-verification) and [ADR 0021](adr/0021-shared-plist-verification.md). |
