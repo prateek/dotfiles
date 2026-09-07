@@ -87,6 +87,7 @@ casks = [
   { name = "whatcable" },
   { name = "key-codes", appdir = "/Applications" },
   { name = "orbstack" },
+  { name = "radix" },
 
   # Notes, media, and subscription apps shared across daily-driver laptops.
   { name = "obsidian" },
@@ -369,6 +370,7 @@ casks = [
   { name = "jump-desktop-connect" },
   { name = "jump-desktop" },
   { name = "tartelet" },  # ephemeral GitHub Actions runner host on Tart; see docs/plans/tartelet-runner-plan.md
+  { name = "radix" },
 ]
 
 # Applies to: personal, work. Entries are written only by fork-lifecycle
