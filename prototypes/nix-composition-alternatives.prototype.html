@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PROTOTYPE: How modules compose</title>
+<style>
+:root {
+  --bg-primary:#f5f6f8; --bg-surface:#ffffff; --bg-surface-hover:#eef0f4; --bg-inset:#eceef2;
+  --border-default:#d9dce3; --border-muted:#e8eaef;
+  --text-primary:#181b24; --text-secondary:#4b5160; --text-muted:#7b8190;
+  --accent-blue:#2563eb; --accent-green:#059669; --accent-amber:#d97706; --accent-rose:#e11d48; --accent-purple:#7c3aed;
+  --shadow-md:0 2px 8px rgba(0,0,0,.08); --shadow-lg:0 4px 16px rgba(0,0,0,.12);
+  --radius-sm:4px; --radius-md:6px; --radius-lg:8px;
+  --header-height:40px; --metrics-height:44px; --status-bar-height:24px; --sidebar-w:296px; --log-w:340px;
+  --font-sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif;
+  --font-mono:"JetBrains Mono","SF Mono","Fira Code",Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+:root.dark {
+  --bg-primary:#0d0d12; --bg-surface:#16161e; --bg-surface-hover:#1f1f2a; --bg-inset:#111118;
+  --border-default:#2a2a38; --border-muted:#20202b;
+  --text-primary:#e4e6eb; --text-secondary:#a8adbb; --text-muted:#6f7586;
+  --accent-blue:#60a5fa; --accent-green:#34d399; --accent-amber:#fbbf24; --accent-rose:#fb7185; --accent-purple:#a78bfa;
+  --shadow-md:0 2px 8px rgba(0,0,0,.35); --shadow-lg:0 4px 16px rgba(0,0,0,.45);
+  color-scheme:dark;
+}
+* { box-sizing:border-box; }
+html, body { height:100%; margin:0; }
+body { font-family:var(--font-sans); font-size:13px; line-height:1.4; color:var(--text-primary); background:var(--bg-primary); -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; text-rendering:optimizeLegibility; font-feature-settings:"cv11","ss01"; overflow:hidden; }
+::-webkit-scrollbar { width:6px; height:6px; } ::-webkit-scrollbar-track { background:transparent; } ::-webkit-scrollbar-thumb { background:var(--border-default); border-radius:3px; } ::-webkit-scrollbar-thumb:hover { background:var(--text-muted); }
+:focus-visible { outline:2px solid var(--accent-blue); outline-offset:1px; }
+button, select { font:inherit; color:inherit; }
+button { background:var(--bg-surface); border:1px solid var(--border-default); border-radius:var(--radius-md); padding:3px 8px; cursor:pointer; transition:background 80ms ease, border-color 80ms ease; }
+button:hover { background:var(--bg-surface-hover); }
+button.active { background:color-mix(in srgb, var(--accent-blue) 12%, transparent); border-color:color-mix(in srgb, var(--accent-blue) 45%, transparent); color:var(--accent-blue); }
+select { background:var(--bg-surface); border:1px solid var(--border-default); border-radius:var(--radius-md); padding:3px 6px; width:100%; }
+code, .mono { font-family:var(--font-mono); font-size:12px; }
+.muted { color:var(--text-muted); } .sec { color:var(--text-secondary); } .meta { font-size:11px; color:var(--text-muted); }
+.app { display:grid; grid-template-rows: var(--header-height) var(--metrics-height) 1fr var(--status-bar-height); height:100vh; }
+.hdr { display:flex; align-items:center; gap:12px; padding:0 12px; border-bottom:1px solid var(--border-default); background:var(--bg-surface); }
+.brand { font-weight:600; font-size:13px; white-space:nowrap; }
+.badge { display:inline-block; font-size:10px; letter-spacing:.08em; text-transform:uppercase; padding:1px 6px; border-radius:var(--radius-sm); background:color-mix(in srgb, var(--accent-amber) 18%, transparent); color:var(--accent-amber); font-weight:600; margin-left:6px; vertical-align:1px; }
+.hdr .spacer { flex:1; } .hdr .sub { font-size:11px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.hdr .ctl { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text-muted); white-space:nowrap; } .hdr .ctl select { width:auto; min-width:220px; }
+.hdr button { height:26px; }
+kbd { font-family:var(--font-mono); font-size:10px; padding:1px 5px; border:1px solid var(--border-default); border-bottom-width:2px; border-radius:var(--radius-sm); background:var(--bg-inset); color:var(--text-secondary); }
+.metrics { display:grid; grid-template-columns:repeat(8, 1fr); gap:6px; padding:6px 12px; border-bottom:1px solid var(--border-default); background:var(--bg-primary); }
+.metric { border:1px solid var(--border-muted); background:var(--bg-surface); border-radius:var(--radius-md); padding:3px 8px; min-width:0; }
+.metric .k { font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.metric .v { font-family:var(--font-mono); font-size:12px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.metric.changed { border-color:color-mix(in srgb, var(--accent-amber) 60%, transparent); background:color-mix(in srgb, var(--accent-amber) 8%, transparent); }
+.frame { display:grid; grid-template-columns: var(--sidebar-w) 1fr var(--log-w); min-height:0; }
+.side { border-right:1px solid var(--border-default); background:var(--bg-surface); overflow:auto; padding:8px 10px; }
+.side h3, .logpane h3, .panel h3 { font-size:10px; text-transform:uppercase; letter-spacing:.08em; color:var(--text-muted); margin:10px 0 4px; font-weight:600; }
+.axis { margin-bottom:8px; }
+.axis .t { font-size:12px; font-weight:500; margin-bottom:2px; }
+.axis .who { font-size:11px; color:var(--text-muted); margin-top:2px; line-height:1.3; }
+.content { display:flex; flex-direction:column; min-width:0; min-height:0; }
+.tabs { display:flex; gap:2px; padding:6px 10px 0; border-bottom:1px solid var(--border-default); background:var(--bg-surface); }
+.tabs button { border:1px solid transparent; border-bottom:none; border-radius:var(--radius-md) var(--radius-md) 0 0; background:transparent; padding:5px 10px; color:var(--text-secondary); }
+.tabs button.active { background:var(--bg-primary); border-color:var(--border-default); color:var(--text-primary); margin-bottom:-1px; }
+.tabs button kbd { margin-left:6px; }
+.panel { overflow:auto; padding:10px 12px; min-height:0; }
+.card { background:var(--bg-surface); border:1px solid var(--border-muted); border-radius:var(--radius-md); padding:8px 10px; }
+.two { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+table { width:100%; border-collapse:collapse; font-size:12px; }
+th, td { text-align:left; vertical-align:top; padding:4px 8px; border-bottom:1px solid var(--border-muted); }
+th { font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); font-weight:600; position:sticky; top:0; background:var(--bg-primary); }
+tr:hover td { background:color-mix(in srgb, var(--accent-blue) 4%, transparent); }
+.pill { display:inline-block; font-size:10px; padding:1px 6px; border-radius:var(--radius-sm); font-weight:600; letter-spacing:.03em; white-space:nowrap; }
+.pill.ok { background:color-mix(in srgb, var(--accent-green) 16%, transparent); color:var(--accent-green); }
+.pill.warn { background:color-mix(in srgb, var(--accent-amber) 18%, transparent); color:var(--accent-amber); }
+.pill.bad { background:color-mix(in srgb, var(--accent-rose) 16%, transparent); color:var(--accent-rose); }
+.pill.info { background:color-mix(in srgb, var(--accent-blue) 14%, transparent); color:var(--accent-blue); }
+.conf { border:1px solid color-mix(in srgb, var(--accent-rose) 40%, transparent); background:color-mix(in srgb, var(--accent-rose) 6%, transparent); border-radius:var(--radius-md); padding:8px 10px; margin-bottom:10px; }
+.conf.none { border-color:color-mix(in srgb, var(--accent-green) 40%, transparent); background:color-mix(in srgb, var(--accent-green) 6%, transparent); }
+.conf ul { margin:4px 0 0 16px; padding:0; } .conf li { margin:2px 0; }
+pre.tree { font-family:var(--font-mono); font-size:11px; background:var(--bg-inset); padding:8px 10px; border-radius:var(--radius-md); margin:0; overflow:auto; }
+ul.notes { margin:6px 0 0 16px; padding:0; font-size:12px; color:var(--text-secondary); } ul.notes li { margin:2px 0; }
+.logpane { border-left:1px solid var(--border-default); background:var(--bg-surface); display:flex; flex-direction:column; min-height:0; }
+.actions { display:grid; grid-template-columns:1fr 1fr; gap:4px; padding:0 10px 8px; }
+.actions button { font-size:11px; padding:3px 6px; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.actions button.primary { background:color-mix(in srgb, var(--accent-blue) 12%, transparent); border-color:color-mix(in srgb, var(--accent-blue) 45%, transparent); color:var(--accent-blue); }
+.logpane h3 { padding:0 10px; }
+.log { overflow:auto; padding:0 10px 10px; flex:1; min-height:0; }
+.entry { border-left:3px solid var(--border-default); padding:5px 8px; margin-bottom:6px; background:var(--bg-primary); border-radius:0 var(--radius-md) var(--radius-md) 0; font-size:12px; }
+.entry.ok { border-left-color:var(--accent-green); } .entry.warn { border-left-color:var(--accent-amber); } .entry.bad { border-left-color:var(--accent-rose); } .entry.info { border-left-color:var(--accent-blue); }
+.entry .t { font-weight:600; font-size:12px; } .entry .n { font-family:var(--font-mono); font-size:10px; color:var(--text-muted); margin-right:6px; }
+.entry .d { margin-top:2px; font-size:11px; color:var(--text-muted); }
+.status { display:flex; align-items:center; gap:14px; padding:0 12px; border-top:1px solid var(--border-default); background:var(--bg-surface); font-size:11px; color:var(--text-muted); white-space:nowrap; overflow:hidden; }
+.status .grow { flex:1; overflow:hidden; text-overflow:ellipsis; }
+.scen { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px; }
+.step { display:block; width:100%; text-align:left; margin-bottom:4px; padding:6px 10px; }
+.step.done { opacity:.55; } .step.next { border-color:var(--accent-blue); box-shadow:inset 3px 0 0 var(--accent-blue); }
+.watch { font-size:12px; color:var(--text-secondary); margin-bottom:8px; }
+.overlay { position:fixed; inset:0; background:rgba(10,10,20,.35); display:flex; align-items:flex-start; justify-content:center; padding-top:12vh; z-index:20; }
+.overlay[hidden] { display:none; }
+.dialog { width:min(640px, 92vw); background:var(--bg-surface); border:1px solid var(--border-default); border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); overflow:hidden; }
+.dialog input { width:100%; border:none; border-bottom:1px solid var(--border-default); background:transparent; padding:10px 12px; font:inherit; font-size:14px; color:inherit; outline:none; }
+.pal { max-height:52vh; overflow:auto; }
+.pal .it { padding:6px 12px; display:flex; gap:8px; align-items:baseline; cursor:pointer; transition:background 50ms ease; }
+.pal .it.sel, .pal .it:hover { background:color-mix(in srgb, var(--accent-blue) 12%, transparent); }
+.pal .it .kind { font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); width:56px; flex:none; }
+.help { padding:12px 14px; } .help table td { padding:3px 6px; border:none; }
+.dialog h2 { font-size:13px; margin:0 0 8px; }
+@media (max-width:1100px) { .frame { grid-template-columns: var(--sidebar-w) 1fr; } .logpane { display:none; } .metrics { grid-template-columns:repeat(4,1fr); } }
+
+.models button.model { display:block; width:100%; text-align:left; margin-bottom:4px; padding:6px 8px; white-space:normal; }
+.models button.model .who { display:block; font-size:10px; color:var(--text-muted); margin-top:1px; }
+.matrix { border-collapse:separate; border-spacing:0; font-size:11px; width:auto; }
+.matrix th.rot { height:104px; white-space:nowrap; vertical-align:bottom; padding:0 2px; position:static; background:transparent; }
+.matrix th.rot > div { transform:rotate(-60deg); transform-origin:left bottom; width:18px; font-size:10px; font-weight:500; text-transform:none; letter-spacing:0; color:var(--text-secondary); }
+.matrix td { padding:2px 3px; text-align:center; border-bottom:1px solid var(--border-muted); }
+.matrix td.hostname { text-align:left; white-space:nowrap; font-weight:500; padding-right:8px; }
+.matrix td .dot { display:inline-block; width:14px; height:14px; line-height:14px; border-radius:var(--radius-sm); cursor:pointer; font-size:10px; }
+.matrix td .dot.on { background:color-mix(in srgb, var(--accent-green) 22%, transparent); color:var(--accent-green); }
+.matrix td .dot.off { background:var(--bg-inset); color:var(--text-muted); }
+.matrix td .dot.two { background:color-mix(in srgb, var(--accent-amber) 28%, transparent); color:var(--accent-amber); }
+.matrix td .dot.sel { outline:2px solid var(--accent-blue); }
+.chain { font-family:var(--font-mono); font-size:11px; background:var(--bg-inset); border-radius:var(--radius-md); padding:8px 10px; margin-top:8px; white-space:pre-wrap; }
+.cmp td.cur { background:color-mix(in srgb, var(--accent-blue) 10%, transparent); font-weight:600; }
+.cmp td.n { text-align:center; font-family:var(--font-mono); }
+.cmp td.n.hi { color:var(--accent-rose); } .cmp td.n.lo { color:var(--accent-green); }
+pre.code { font-family:var(--font-mono); font-size:11px; background:var(--bg-inset); padding:8px 10px; border-radius:var(--radius-md); margin:0 0 8px; overflow:auto; white-space:pre; }
+.filelist { font-family:var(--font-mono); font-size:11px; columns:2; column-gap:18px; }
+.filelist div { break-inside:avoid; padding:1px 0; }
+.filelist .k { color:var(--text-muted); font-size:10px; margin-left:6px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="hdr">
+    <div class="brand">How modules compose<span class="badge">prototype</span></div>
+    <div class="sub">eight ways to say which host gets what, pushed through the same repo state</div>
+    <div class="spacer"></div>
+    <label class="ctl">model <select id="modelSel" aria-label="Composition model"></select></label>
+    <button id="paletteBtn" aria-label="Command palette" title="Command palette"><kbd>⌘K</kbd></button>
+    <button id="themeBtn" aria-label="Toggle theme" title="Toggle theme (t)">◐</button>
+    <button id="helpBtn" aria-label="Keyboard help" title="Keyboard help (?)">?</button>
+  </header>
+  <div class="metrics" id="metrics" aria-live="polite"></div>
+  <div class="frame">
+    <aside class="side" id="side"></aside>
+    <main class="content">
+      <nav class="tabs" id="tabs"></nav>
+      <div class="panel" id="panel"></div>
+    </main>
+    <aside class="logpane">
+      <h3>Operations on the desired state</h3>
+      <div class="actions" id="actions"></div>
+      <h3>Event log, newest first <span class="muted" id="logCount"></span></h3>
+      <div class="log" id="log"></div>
+    </aside>
+  </div>
+  <footer class="status" id="status"></footer>
+</div>
+<div class="overlay" id="palette" hidden><div class="dialog"><input id="palInput" placeholder="Type a tab, model, operation, or walkthrough" aria-label="Command palette" /><div class="pal" id="palList"></div></div></div>
+<div class="overlay" id="help" hidden><div class="dialog help" id="helpBody"></div></div>
+<script id="logic">
+const Compose = (() => {
+
+// ---------- Canonical desired state: what every model must represent ----------
+const APPS = [
+  { id:'zsh', label:'zsh startup', platform:'both', kind:'config' },
+  { id:'git', label:'git', platform:'both', kind:'cli' },
+  { id:'mise', label:'mise', platform:'both', kind:'cli' },
+  { id:'ghostty', label:'Ghostty', platform:'mac', kind:'cask' },
+  { id:'raycast', label:'Raycast', platform:'mac', kind:'cask' },
+  { id:'hammerspoon', label:'Hammerspoon', platform:'mac', kind:'cask' },
+  { id:'moom', label:'Moom', platform:'mac', kind:'cask' },
+  { id:'thaw', label:'Thaw', platform:'mac', kind:'cask' },
+  { id:'tuna', label:'Tuna', platform:'mac', kind:'cask' },
+  { id:'karabiner', label:'Karabiner', platform:'mac', kind:'cask' },
+  { id:'zed', label:'Zed', platform:'mac', kind:'cask' },
+  { id:'claude-code', label:'Claude Code', platform:'both', kind:'cli' },
+  { id:'cursor-agent', label:'Cursor agent', platform:'both', kind:'cli' },
+  { id:'pi', label:'pi', platform:'both', kind:'cli' },
+  { id:'orca', label:'Orca', platform:'mac', kind:'cask' },
+  { id:'agentsview', label:'agentsview', platform:'both', kind:'cli' },
+  { id:'codex', label:'Codex', platform:'both', kind:'cli' },
+  { id:'orbstack', label:'OrbStack', platform:'mac', kind:'cask' },
+  { id:'gh', label:'gh', platform:'both', kind:'cli' },
+  { id:'xcode', label:'Xcode tooling', platform:'mac', kind:'cask' },
+  { id:'gcloud', label:'gcloud', platform:'both', kind:'cli' },
+  { id:'work-vpn', label:'work VPN', platform:'mac', kind:'cask' },
+  { id:'tailscale', label:'Tailscale', platform:'mac', kind:'cask' },
+  { id:'voiceink', label:'VoiceInk', platform:'mac', kind:'cask' },
+  { id:'nvalt', label:'nvALT', platform:'mac', kind:'cask' },
+  { id:'granola-mcp', label:'Granola MCP', platform:'mac', kind:'config' },
+  { id:'tartelet', label:'Tartelet runner', platform:'mac', kind:'cask' },
+  { id:'wiki-sync', label:'wiki sessions sync', platform:'both', kind:'config' },
+  { id:'fork-swaps', label:'downstream fork swaps', platform:'mac', kind:'cask' },
+];
+const GROUPS = {
+  'core': ['zsh','git','mise'],
+  'mac-desktop': ['ghostty','raycast','hammerspoon','moom','thaw','tuna','karabiner','zed'],
+  'ai-agent-apps': ['claude-code','cursor-agent','pi','orca','agentsview'],
+  'codex': ['codex'],
+  'developer-tools': ['orbstack','gh'],
+  'apple-development': ['xcode'],
+  'work-apps': ['gcloud','work-vpn'],
+  'personal-apps': ['tailscale','voiceink','nvalt','granola-mcp'],
+  'homelab-overlay': ['tailscale','tartelet','wiki-sync'],
+  'forks': ['fork-swaps'],
+};
+const TYPES = {
+  ci: ['core'],
+  work: ['core','mac-desktop','ai-agent-apps','developer-tools','work-apps','forks'],
+  personal: ['core','mac-desktop','ai-agent-apps','codex','developer-tools','personal-apps','forks'],
+  homelab: ['core','ai-agent-apps','codex','developer-tools','apple-development','homelab-overlay'],
+};
+const COMPOSITES = { 'work|linux': ['core','ai-agent-apps'] };
+const HOSTS = [
+  { id:'personal-mbp', label:'Personal MacBook', os:'darwin', type:'personal' },
+  { id:'work-mbp', label:'Work MacBook (Jamf)', os:'darwin', type:'work' },
+  { id:'m4mini', label:'Homelab Mac mini', os:'darwin', type:'homelab' },
+  { id:'devpod', label:'Linux DevPod', os:'linux', type:'work' },
+  { id:'ci', label:'CI runner', os:'darwin', type:'ci' },
+];
+const FACTS = { 'm4mini': ['wiki_host_alias'], 'work-mbp': ['jamf_policy_id'] };
+
+function clone(x){ return JSON.parse(JSON.stringify(x)); }
+function initialDesired(){ return { apps:clone(APPS), groups:clone(GROUPS), types:clone(TYPES), composites:clone(COMPOSITES), hosts:clone(HOSTS), hostApps:{}, facts:clone(FACTS), retired:[] }; }
+
+function groupsFor(d, h){ return d.composites[h.type + '|' + h.os] || d.types[h.type] || []; }
+function compositeFor(d, h){ return d.composites[h.type + '|' + h.os] ? (h.type + '|' + h.os) : null; }
+function appById(d, id){ return d.apps.find(a => a.id === id); }
+function compatible(app, h){ return app.platform === 'both' || (app.platform === 'mac' && h.os === 'darwin'); }
+// Canonical resolution: which apps a host gets and why. Model-independent by construction.
+function resolve(d, h){
+  const out = {};
+  for (const g of groupsFor(d, h)) for (const id of (d.groups[g] || [])) { const a = appById(d, id); if (!a || !compatible(a, h)) continue; (out[id] = out[id] || { app:a, via:[] }).via.push({ kind:'group', group:g, through: compositeFor(d, h) ? 'composite' : 'type' }); }
+  for (const id of (d.hostApps[h.id] || [])) { const a = appById(d, id); if (!a || !compatible(a, h)) continue; (out[id] = out[id] || { app:a, via:[] }).via.push({ kind:'host' }); }
+  return out;
+}
+function hostsWithApp(d, id){ return d.hosts.filter(h => resolve(d, h)[id]); }
+function hostsOfGroup(d, g){ return d.hosts.filter(h => groupsFor(d, h).includes(g)); }
+function hostsOfType(d, t){ return d.hosts.filter(h => h.type === t); }
+function groupsContaining(d, id){ return Object.keys(d.groups).filter(g => d.groups[g].includes(id)); }
+function liveApps(d){ return d.apps.filter(a => !d.retired.includes(a.id)); }
+function dormantApps(d){ return liveApps(d).filter(a => hostsWithApp(d, a.id).length === 0); }
+function diamonds(d){ const out = []; for (const h of d.hosts) { const r = resolve(d, h); for (const id of Object.keys(r)) { const gs = r[id].via.filter(v => v.kind === 'group').map(v => v.group); if (gs.length > 1) out.push({ host:h.id, app:id, groups:gs }); } } return out; }
+function typesWithGroup(d, g){ return Object.keys(d.types).filter(t => d.types[t].includes(g)); }
+function hostRefs(d, hostId){ return (d.hostApps[hostId] || []).length + (d.facts[hostId] || []).length; }
+function concernTests(d){ let n = 0; for (const a of liveApps(d)) { const hs = hostsWithApp(d, a.id).length; if (hs > 0 && hs < d.hosts.length) n++; } return n; }
+function withDiamond(d, op){ const c = clone(d); if (!c.groups[op.group].includes(op.app)) c.groups[op.group].push(op.app); return c; }
+function gainers(d, op){ return hostsOfGroup(d, op.to).filter(h => !hostsOfGroup(d, op.from).includes(h)); }
+
+function file(path, kind, forId){ return { path, kind, forId: forId || null }; }
+function cost(){ return { created:[], edited:[], deleted:[], risks:[], broken:0, warn:false }; }
+function sites(C){ return C.created.length + C.edited.length + C.deleted.length; }
+
+// ---------- The eight models ----------
+const USER = 'prateek';
+const dirFor = (a) => a.kind === 'cask' ? 'gui' : (a.kind === 'cli' ? 'programs' : 'services');
+const platformOf = (a) => a.kind === 'cask' ? 'nix-darwin' : 'home-manager';
+const sysOf = (h) => h.os === 'linux' ? 'x86_64-linux' : 'aarch64-darwin';
+
+const MODELS = [
+  { id:'data-resolver', label:'Data files plus a resolver', short:'Data + resolver', who:'this repo today (machines.toml + features.tmpl); wimpysworld keeps TOML registries merged in plain Nix',
+    blurb:'Layered data files declare groups and types; a resolver merges them and modules read the result.',
+    identity:'machine_type in machines.toml, resolved on every evaluation',
+    risks:['Dead data rots unnoticed: Nix cannot tell you a TOML file is unread (thexyno had two).','List-replace and union semantics are hand-written, which is the bug class the module system removes.','Host layers are keyed by hostname, so an MDM rename silently stops a layer matching.'],
+    snippet:'# data/packages.toml\n[groups.mac-desktop]\ncasks = [ { name = "thaw" }, ... ]\n\n# data/machines.toml\n[machines.type.work]\ngroups = ["core", "mac-desktop", "ai-agent-apps", ...]\n[machines.host."work-mbp"]\njamf_policy_id = "42"\n\n# modules/apps/thaw.nix\n{ config, lib, ... }:\nlib.mkIf (lib.elem "thaw" config.machine.casks) {\n  homebrew.casks = [ "thaw" ];\n  system.defaults.CustomUserPreferences."com.stonerl.Thaw" = { ... };\n}',
+    project(d){ const f = [ file('data/packages.toml','data'), file('data/machines.toml','data'), file('data/machines-composite.toml','data'), file('modules/machine/resolver.nix','lib') ]; for (const a of liveApps(d)) f.push(file('modules/apps/' + a.id + '.nix','module', a.id)); for (const h of d.hosts) f.push(file('hosts/' + h.id + '.nix','host', h.id)); return f; },
+    chain(d, h, app, via){ if (via.kind === 'host') return ['hosts/' + h.id + '.nix (flake attribute)', 'data/machines.toml [machines.host."' + h.id + '"].extra_apps', 'modules/apps/' + app + '.nix']; const layer = via.through === 'composite' ? '[machines.composite.' + h.type + '.' + h.os + ']' : '[machines.type.' + h.type + ']'; return ['hosts/' + h.id + '.nix (flake attribute)', 'data/machines.toml ' + layer + '.groups includes "' + via.group + '"', 'modules/machine/resolver.nix merges layers, unions groups', 'data/packages.toml [groups.' + via.group + '] lists ' + app, 'modules/apps/' + app + '.nix gated on membership']; },
+    cost(op, d){ const C = cost(); switch (op.type) {
+      case 'add-app-group': C.created.push('modules/apps/' + op.app + '.nix'); C.edited.push('data/packages.toml [groups.' + op.group + ']'); break;
+      case 'add-app-host': C.created.push('modules/apps/' + op.app + '.nix'); C.edited.push('data/machines.toml [machines.host."' + op.host + '"]'); break;
+      case 'add-host': C.created.push('hosts/' + op.host + '.nix'); C.edited.push('data/machines.toml [machines.host."' + op.host + '"] (only if it needs facts)'); break;
+      case 'add-type': C.created.push('hosts/' + op.host + '.nix'); C.edited.push('data/machines.toml [machines.type.' + op.typeId + ']'); break;
+      case 'move-app': C.edited.push('data/packages.toml (two groups)'); break;
+      case 'retire-app': C.edited.push('data/packages.toml (remove, plus the retired ledger)'); C.deleted.push('modules/apps/' + op.app + '.nix'); C.risks.push('If the module is not deleted it lingers unread; nothing flags it.'); break;
+      case 'drop-group': C.edited.push('data/machines.toml [machines.type.' + op.typeId + '].groups'); break;
+      case 'rename-host': C.edited.push('data/machines.toml [machines.host."' + op.from + '"] key'); C.edited.push('hosts/' + op.from + '.nix rename'); C.broken = hostRefs(d, op.from); if (C.broken) C.risks.push('Until the key is edited, the host layer stops matching: ' + C.broken + ' host-specific fact(s) and app(s) silently vanish.'); break;
+      case 'diamond': C.edited.push('data/packages.toml [groups.' + op.group + ']'); C.risks.push('Benign: the resolver unions groups and dedupes by name.'); break;
+    } return C; } },
+
+  { id:'apps-roles', label:'App modules, role modules, host imports', short:'Apps + roles', who:'doc v2 native target; isabelroses is the closest running example',
+    blurb:'One module owns everything one app needs. A role imports apps. A host imports roles plus its exceptions.',
+    identity:'role presets imported by hosts; no runtime type value',
+    risks:['No surveyed repo maintains a role layer; it is an investment, and thexyno shows the cost of skipping it.','If app modules are exposed through flake-parts (flake.modules.*), a diamond in roles-import-apps is an evaluation error because _file wrapping defeats import dedup (kclejeune). Plain path imports dedupe fine.'],
+    snippet:'# modules/apps/thaw.nix\n{ ... }: {\n  homebrew.casks = [ "thaw" ];\n  system.defaults.CustomUserPreferences."com.stonerl.Thaw" = { ... };\n  home-manager.users.prateek.xdg.configFile."thaw/config" = { ... };\n}\n\n# modules/roles/mac-desktop.nix\n{ imports = [ ../apps/ghostty.nix ../apps/raycast.nix ../apps/thaw.nix ... ]; }\n\n# modules/roles/work.nix\n{ imports = [ ./core.nix ./mac-desktop.nix ./ai-agent-apps.nix ./developer-tools.nix ./work-apps.nix ./forks.nix ]; }\n\n# hosts/work-mbp.nix\n{ imports = [ ../modules/roles/work.nix ]; work.jamfPolicyId = "42"; }',
+    project(d){ const f = []; for (const a of liveApps(d)) f.push(file('modules/apps/' + a.id + '.nix','module', a.id)); for (const g of Object.keys(d.groups)) f.push(file('modules/roles/' + g + '.nix','role', g)); for (const t of Object.keys(d.types)) f.push(file('modules/roles/' + t + '.nix','role', t)); for (const k of Object.keys(d.composites)) f.push(file('modules/roles/' + k.replace('|','-') + '.nix','role', k)); for (const h of d.hosts) f.push(file('hosts/' + h.id + '.nix','host', h.id)); return f; },
+    chain(d, h, app, via){ if (via.kind === 'host') return ['hosts/' + h.id + '.nix imports ../modules/apps/' + app + '.nix directly', 'modules/apps/' + app + '.nix']; const preset = via.through === 'composite' ? (h.type + '-' + h.os) : h.type; return ['hosts/' + h.id + '.nix imports roles/' + preset + '.nix', 'modules/roles/' + preset + '.nix imports roles/' + via.group + '.nix', 'modules/roles/' + via.group + '.nix imports apps/' + app + '.nix', 'modules/apps/' + app + '.nix']; },
+    cost(op, d){ const C = cost(); switch (op.type) {
+      case 'add-app-group': C.created.push('modules/apps/' + op.app + '.nix'); C.edited.push('modules/roles/' + op.group + '.nix'); break;
+      case 'add-app-host': C.created.push('modules/apps/' + op.app + '.nix'); C.edited.push('hosts/' + op.host + '.nix'); break;
+      case 'add-host': C.created.push('hosts/' + op.host + '.nix'); break;
+      case 'add-type': C.created.push('modules/roles/' + op.typeId + '.nix'); C.created.push('hosts/' + op.host + '.nix'); break;
+      case 'move-app': C.edited.push('modules/roles/' + op.from + '.nix'); C.edited.push('modules/roles/' + op.to + '.nix'); break;
+      case 'retire-app': C.deleted.push('modules/apps/' + op.app + '.nix'); for (const g of groupsContaining(d, op.app)) C.edited.push('modules/roles/' + g + '.nix'); break;
+      case 'drop-group': C.edited.push('modules/roles/' + op.typeId + '.nix'); break;
+      case 'rename-host': C.edited.push('hosts/' + op.from + '.nix rename'); C.risks.push('Robust: nothing else references the host name.'); break;
+      case 'diamond': { C.edited.push('modules/roles/' + op.group + '.nix'); const dm = diamonds(withDiamond(d, op)); if (dm.length) { C.warn = true; C.risks.push(dm.length + ' host(s) now import ' + op.app + ' through two roles. Fine with path imports; an evaluation error if apps are exposed as flake-parts modules.'); } break; }
+    } return C; } },
+
+  { id:'broadcast-gate', label:'Import everything, self-gate on typed host metadata', short:'Broadcast + gate', who:'wimpysworld, khanelinix, nmasur, billimek, kclejeune',
+    blurb:'Every module is imported into every host and decides for itself from a typed host record. No import lists anywhere.',
+    identity:'a typed host metadata record (tags, type, hostname) read by every module',
+    risks:['Every module\'s options are evaluated on every host; turning something off is an explicit negative.','Module bodies behind a false gate are never evaluated, so unreachable code is invisible to CI (colemickens: 29 files; EmergentMind: a dormant type error).','Tags sprawl: every new distinction becomes a new tag.'],
+    snippet:'# lib/host-metadata.nix\n{ options.host = {\n    type = lib.mkOption { type = lib.types.enum [ "personal" "work" "homelab" "ci" ]; };\n    tags = lib.mkOption { type = lib.types.listOf lib.types.str; };\n  }; }\n\n# modules/darwin/thaw.nix   (imported on every host)\n{ config, lib, ... }:\nlib.mkIf (lib.elem "mac-desktop" config.host.tags) {\n  homebrew.casks = [ "thaw" ];\n  system.defaults.CustomUserPreferences."com.stonerl.Thaw" = { ... };\n}\n\n# hosts/work-mbp.nix\n{ host = { type = "work"; tags = [ "core" "mac-desktop" "ai-agent-apps" ... ]; }; }',
+    project(d){ const f = [ file('lib/host-metadata.nix','lib') ]; for (const a of liveApps(d)) f.push(file('modules/' + (a.kind === 'cask' ? 'darwin' : 'home') + '/' + a.id + '.nix','module', a.id)); for (const h of d.hosts) f.push(file('hosts/' + h.id + '.nix','host', h.id)); return f; },
+    chain(d, h, app, via){ const a = appById(d, app); const mod = 'modules/' + (a.kind === 'cask' ? 'darwin' : 'home') + '/' + app + '.nix'; if (via.kind === 'host') return ['hosts/' + h.id + '.nix sets host.flags.' + app + ' = true', mod + ' (imported everywhere) gates on config.host.flags.' + app]; return ['hosts/' + h.id + '.nix sets host.tags (copied from the ' + (via.through === 'composite' ? 'composite' : 'type') + ' preset)', mod + ' (imported everywhere) gates on lib.elem "' + via.group + '" config.host.tags']; },
+    cost(op, d){ const C = cost(); switch (op.type) {
+      case 'add-app-group': C.created.push('modules/darwin/' + op.app + '.nix (gated on tag "' + op.group + '")'); break;
+      case 'add-app-host': C.created.push('modules/home/' + op.app + '.nix (gated on a host flag)'); C.edited.push('hosts/' + op.host + '.nix (set the flag)'); break;
+      case 'add-host': C.created.push('hosts/' + op.host + '.nix (metadata record)'); break;
+      case 'add-type': C.edited.push('lib/host-metadata.nix (type enum)'); C.created.push('hosts/' + op.host + '.nix'); C.risks.push('Modules that gate on type must be audited for the new value; nothing lists them.'); break;
+      case 'move-app': C.edited.push('modules/home/' + op.app + '.nix (gate predicate)'); break;
+      case 'retire-app': C.deleted.push('modules/darwin/' + op.app + '.nix'); C.risks.push('If left in place its option declarations still evaluate everywhere and its body never does.'); break;
+      case 'drop-group': for (const h of hostsOfType(d, op.typeId)) C.edited.push('hosts/' + h.id + '.nix (remove the tag)'); C.risks.push('Type presets are copied into each host record, so the change is per host.'); break;
+      case 'rename-host': C.edited.push('hosts/' + op.from + '.nix rename'); C.broken = (d.hostApps[op.from] || []).length; if (C.broken) C.risks.push(C.broken + ' module(s) gate on a host flag keyed by this name; they stop matching.'); else C.risks.push('Robust as long as no module gates on the hostname.'); break;
+      case 'diamond': C.edited.push('modules/darwin/' + op.app + '.nix (gate now matches two tags)'); C.risks.push('No diamond exists: one module, one gate.'); break;
+    } return C; } },
+
+  { id:'hostspec', label:'Typed host-facts record plus explicit import lists', short:'hostSpec + lists', who:'EmergentMind',
+    blurb:'Facts are typed and asserted in a record; selection is a literal import list per host, and a second list per user.',
+    identity:'a typed hostSpec record (facts) separate from the import lists (selection)',
+    risks:['Two import lists per host, host-side and home-side, and nothing asserts they agree (EmergentMind).','Verbose: adding an app to a type touches every host of that type twice.','Facts and selection are cleanly separate, which our doc collapsed; worth keeping even with roles.'],
+    snippet:'# modules/hosts/common/host-spec.nix\n{ options.hostSpec = { hostName = ...; isWork = lib.mkOption { type = lib.types.bool; }; ... };\n  config.assertions = [ { assertion = !(cfg.isWork && cfg.isServer); message = "..."; } ]; }\n\n# hosts/work-mbp/default.nix\n{ imports = [ ../common/core ../common/optional/thaw.nix ../common/optional/gcloud.nix ... ]; }\n\n# home/prateek/work-mbp.nix\n{ imports = [ common/core common/optional/thaw.nix ... ]; }',
+    project(d){ const f = [ file('modules/hosts/common/host-spec.nix','lib') ]; for (const a of liveApps(d)) { const core = d.groups.core && d.groups.core.includes(a.id); f.push(file('hosts/common/' + (core ? 'core' : 'optional') + '/' + a.id + '.nix','module', a.id)); f.push(file('home/' + USER + '/common/' + (core ? 'core' : 'optional') + '/' + a.id + '.nix','module', a.id)); } for (const h of d.hosts) { f.push(file('hosts/' + h.id + '/default.nix','host', h.id)); f.push(file('hosts/' + h.id + '/host-spec.nix','host', h.id)); f.push(file('home/' + USER + '/' + h.id + '.nix','host', h.id)); } return f; },
+    chain(d, h, app, via){ const core = d.groups.core && d.groups.core.includes(app); const dir = core ? 'core' : 'optional'; return ['hosts/' + h.id + '/default.nix imports hosts/common/' + dir + '/' + app + '.nix', 'home/' + USER + '/' + h.id + '.nix imports home/' + USER + '/common/' + dir + '/' + app + '.nix', 'hosts/' + h.id + '/host-spec.nix carries the facts (isWork, hostName, ...)', via.kind === 'group' ? '(the "' + via.group + '" group is a convention in your head; the lists do not name it)' : '(host-only: it appears in this host\'s two lists only)']; },
+    cost(op, d){ const C = cost(); switch (op.type) {
+      case 'add-app-group': { const hs = hostsOfGroup(d, op.group); C.created.push('hosts/common/optional/' + op.app + '.nix'); C.created.push('home/' + USER + '/common/optional/' + op.app + '.nix'); for (const h of hs) { C.edited.push('hosts/' + h.id + '/default.nix'); C.edited.push('home/' + USER + '/' + h.id + '.nix'); } C.risks.push('Forget one of the ' + (hs.length * 2) + ' list edits and that host silently lacks half the app.'); break; }
+      case 'add-app-host': C.created.push('hosts/common/optional/' + op.app + '.nix'); C.created.push('home/' + USER + '/common/optional/' + op.app + '.nix'); C.edited.push('hosts/' + op.host + '/default.nix'); C.edited.push('home/' + USER + '/' + op.host + '.nix'); break;
+      case 'add-host': C.created.push('hosts/' + op.host + '/default.nix'); C.created.push('hosts/' + op.host + '/host-spec.nix'); C.created.push('home/' + USER + '/' + op.host + '.nix'); C.risks.push('Both import lists are copied from a sibling host; the pair must be kept in step by hand.'); break;
+      case 'add-type': C.edited.push('modules/hosts/common/host-spec.nix (new fact + assertion)'); C.created.push('hosts/' + op.host + '/default.nix'); C.created.push('hosts/' + op.host + '/host-spec.nix'); C.created.push('home/' + USER + '/' + op.host + '.nix'); break;
+      case 'move-app': for (const h of gainers(d, op)) { C.edited.push('hosts/' + h.id + '/default.nix'); C.edited.push('home/' + USER + '/' + h.id + '.nix'); } break;
+      case 'retire-app': C.deleted.push('hosts/common/optional/' + op.app + '.nix'); C.deleted.push('home/' + USER + '/common/optional/' + op.app + '.nix'); for (const h of hostsWithApp(d, op.app)) { C.edited.push('hosts/' + h.id + '/default.nix'); C.edited.push('home/' + USER + '/' + h.id + '.nix'); } break;
+      case 'drop-group': for (const h of hostsOfType(d, op.typeId)) { C.edited.push('hosts/' + h.id + '/default.nix'); C.edited.push('home/' + USER + '/' + h.id + '.nix'); } break;
+      case 'rename-host': C.edited.push('hosts/' + op.from + '/ (directory rename)'); C.edited.push('hosts/' + op.from + '/host-spec.nix hostName'); C.edited.push('home/' + USER + '/' + op.from + '.nix rename'); C.risks.push('Three edits, nothing silent.'); break;
+      case 'diamond': C.risks.push('No change: the hosts already import the app; path imports dedupe.'); break;
+    } return C; } },
+
+  { id:'dendritic', label:'Dendritic: one file per feature, both fragments', short:'Dendritic', who:'mightyiam; budimanjojo advertises it',
+    blurb:'flake-parts plus import-tree. Each feature file exports its darwin and home-manager fragments under one name; bundles and hosts import by name.',
+    identity:'flake attribute per host; bundles are named module sets',
+    risks:['The two halves drift without enforcement: budimanjojo has zero files spanning both classes and a hand-written warning for the one place it matters.','Named modules are wrapped, so importing one through two bundles is an evaluation error (kclejeune\'s _file finding).','mkEnableOption is called an anti-pattern by the pattern\'s author; expect a style fight.'],
+    snippet:'# flake.nix\n{ imports = [ (inputs.import-tree ./modules) ]; }\n\n# modules/thaw.nix   (one file, two fragments)\n{ flake.modules.darwin.thaw = { homebrew.casks = [ "thaw" ]; system.defaults.CustomUserPreferences."com.stonerl.Thaw" = { ... }; };\n  flake.modules.homeManager.thaw = { xdg.configFile."thaw/config" = { ... }; }; }\n\n# modules/bundles/mac-desktop.nix\n{ config, ... }: { flake.modules.darwin.mac-desktop.imports = with config.flake.modules.darwin; [ ghostty raycast thaw ... ]; }\n\n# modules/hosts/work-mbp.nix\n{ config, ... }: { flake.modules.darwin.work-mbp.imports = with config.flake.modules.darwin; [ work ]; }',
+    project(d){ const f = [ file('flake.nix (import-tree)','lib') ]; for (const a of liveApps(d)) f.push(file('modules/' + a.id + '.nix','module', a.id)); for (const g of Object.keys(d.groups)) f.push(file('modules/bundles/' + g + '.nix','bundle', g)); for (const t of Object.keys(d.types)) f.push(file('modules/bundles/' + t + '.nix','bundle', t)); for (const h of d.hosts) f.push(file('modules/hosts/' + h.id + '.nix','host', h.id)); return f; },
+    chain(d, h, app, via){ if (via.kind === 'host') return ['modules/hosts/' + h.id + '.nix imports flake.modules.darwin.' + app, 'modules/' + app + '.nix (darwin and homeManager fragments)']; return ['modules/hosts/' + h.id + '.nix imports flake.modules.darwin.' + h.type, 'modules/bundles/' + h.type + '.nix imports flake.modules.darwin.' + via.group, 'modules/bundles/' + via.group + '.nix imports flake.modules.darwin.' + app, 'modules/' + app + '.nix (both fragments)']; },
+    cost(op, d){ const C = cost(); switch (op.type) {
+      case 'add-app-group': C.created.push('modules/' + op.app + '.nix (darwin + homeManager fragments)'); C.edited.push('modules/bundles/' + op.group + '.nix'); C.risks.push('Nothing checks that both fragments were written.'); break;
+      case 'add-app-host': C.created.push('modules/' + op.app + '.nix'); C.edited.push('modules/hosts/' + op.host + '.nix'); break;
+      case 'add-host': C.created.push('modules/hosts/' + op.host + '.nix'); break;
+      case 'add-type': C.created.push('modules/bundles/' + op.typeId + '.nix'); C.created.push('modules/hosts/' + op.host + '.nix'); break;
+      case 'move-app': C.edited.push('modules/bundles/' + op.from + '.nix'); C.edited.push('modules/bundles/' + op.to + '.nix'); break;
+      case 'retire-app': C.deleted.push('modules/' + op.app + '.nix'); for (const g of groupsContaining(d, op.app)) C.edited.push('modules/bundles/' + g + '.nix'); break;
+      case 'drop-group': C.edited.push('modules/bundles/' + op.typeId + '.nix'); break;
+      case 'rename-host': C.edited.push('modules/hosts/' + op.from + '.nix rename'); C.risks.push('Robust: the flake attribute is the identity.'); break;
+      case 'diamond': { C.edited.push('modules/bundles/' + op.group + '.nix'); const dm = diamonds(withDiamond(d, op)); if (dm.length) { C.broken = dm.length; C.risks.push('Evaluation error: ' + dm.length + ' host(s) import flake.modules.darwin.' + op.app + ' through two bundles, and wrapped modules do not dedupe.'); } break; }
+    } return C; } },
+
+  { id:'by-concern', label:'Colocate by concern, no role layer', short:'By concern', who:'MatthiasBenaets, malob, ahmedelgabri, colemickens',
+    blurb:'Each concern file carries its cask, package and home fragment side by side. Variation between hosts is a host-name or type test inside the file.',
+    identity:'host.name and host.type string tests inside concern files',
+    risks:['Without a shared role, per-host defaults get duplicated: the two Macs in MatthiasBenaets carry 66 identical lines.','Host-name tests inside modules reinvent the resolver one file at a time, and an MDM hostname reset breaks every one of them.','Colocation gives adjacency, not sharing: kitty is configured twice in one file and the two disagree.'],
+    snippet:'# modules/gui/thaw.nix   (imported by every host)\n{ config, lib, host, ... }:\nlib.mkIf (lib.elem host.type [ "personal" "work" ]) {\n  homebrew.casks = [ "thaw" ];\n  system.defaults.CustomUserPreferences."com.stonerl.Thaw" = { ... };\n  home-manager.users.${host.user}.xdg.configFile."thaw/config" = { ... };\n}\n\n# modules/services/wiki-ingest.nix\nlib.mkIf (host.name == "m4mini") { launchd.user.agents.wiki-ingest = { ... }; }\n\n# modules/hosts/work-mbp.nix\n{ system.defaults = { ...66 lines also present in personal-mbp.nix... }; }',
+    project(d){ const f = []; for (const a of liveApps(d)) f.push(file('modules/' + dirFor(a) + '/' + a.id + '.nix','module', a.id)); for (const h of d.hosts) f.push(file('modules/hosts/' + h.id + '.nix','host', h.id)); return f; },
+    chain(d, h, app, via){ const a = appById(d, app); const mod = 'modules/' + dirFor(a) + '/' + app + '.nix'; if (via.kind === 'host') return ['modules/hosts/' + h.id + '.nix imports every concern', mod + ' tests host.name == "' + h.id + '"']; const ts = typesWithGroup(d, via.group); return ['modules/hosts/' + h.id + '.nix imports every concern', mod + ' tests lib.elem host.type [ ' + ts.map(t => '"' + t + '"').join(' ') + ' ] (a hand-copied echo of the "' + via.group + '" group)']; },
+    cost(op, d){ const C = cost(); switch (op.type) {
+      case 'add-app-group': C.created.push('modules/gui/' + op.app + '.nix (with a hand-written type test)'); break;
+      case 'add-app-host': C.created.push('modules/services/' + op.app + '.nix (host.name == "' + op.host + '")'); C.risks.push('Knowledge about ' + op.host + ' now lives outside its host file.'); break;
+      case 'add-host': C.created.push('modules/hosts/' + op.host + '.nix (copied from a sibling: defaults duplicated)'); C.risks.push('Every concern file with a type or host test must be read to know what the new host gets; ' + concernTests(d) + ' such files today.'); break;
+      case 'add-type': { const n = new Set(op.groups.flatMap(g => d.groups[g] || [])).size; C.created.push('modules/hosts/' + op.host + '.nix'); C.edited.push(n + ' concern files whose type test must now include "' + op.typeId + '"'); break; }
+      case 'move-app': C.edited.push('modules/programs/' + op.app + '.nix (type test)'); break;
+      case 'retire-app': C.deleted.push('modules/gui/' + op.app + '.nix'); break;
+      case 'drop-group': { const n = (d.types[op.typeId] || []).includes(op.group) ? (d.groups[op.group] || []).length : 0; C.edited.push(n + ' concern file(s) whose type test must drop "' + op.typeId + '"'); break; }
+      case 'rename-host': C.edited.push('modules/hosts/' + op.from + '.nix rename'); C.broken = hostRefs(d, op.from); C.risks.push(C.broken ? C.broken + ' host.name test(s) referencing "' + op.from + '" stop matching silently.' : 'No host.name tests reference this host yet; the next per-host exception will create one.'); break;
+      case 'diamond': C.edited.push('modules/gui/' + op.app + '.nix (type test)'); C.risks.push('No diamond: one file, one test.'); break;
+    } return C; } },
+
+  { id:'platform-adapters', label:'Feature modules plus platform adapter directories', short:'Platform adapters', who:'nmasur',
+    blurb:'A feature declares options once; each platform directory holds an adapter, and every adapter in a platform is imported into every config of that platform. Hosts flip enable options.',
+    identity:'a host directory under its system, flipping enable options; no type construct',
+    risks:['Our dominant axis is the app, and three of our four machine types share a platform, so the adapter layer buys little (nmasur survey).','Type knowledge is copied into each host as a set of enables; there is nothing to name "work".'],
+    snippet:'# features/thaw.nix\n{ options.thaw.enable = lib.mkEnableOption "Thaw"; }\n\n# platforms/nix-darwin/thaw.nix   (imported by every darwin config)\n{ config, lib, ... }: lib.mkIf config.thaw.enable {\n  homebrew.casks = [ "thaw" ];\n  system.defaults.CustomUserPreferences."com.stonerl.Thaw" = { ... };\n}\n\n# platforms/home-manager/thaw.nix\n{ config, lib, ... }: lib.mkIf config.thaw.enable { xdg.configFile."thaw/config" = { ... }; }\n\n# hosts/aarch64-darwin/work-mbp/default.nix\n{ thaw.enable = true; ghostty.enable = true; gcloud.enable = true; ... }',
+    project(d){ const f = []; for (const a of liveApps(d)) { f.push(file('features/' + a.id + '.nix','module', a.id)); f.push(file('platforms/' + platformOf(a) + '/' + a.id + '.nix','adapter', a.id)); if (a.kind === 'cask') f.push(file('platforms/home-manager/' + a.id + '.nix','adapter', a.id)); } for (const h of d.hosts) f.push(file('hosts/' + sysOf(h) + '/' + h.id + '/default.nix','host', h.id)); return f; },
+    chain(d, h, app, via){ const a = appById(d, app); return ['hosts/' + sysOf(h) + '/' + h.id + '/default.nix sets ' + app + '.enable = true' + (via.kind === 'group' ? ' (copied from the "' + via.group + '" convention)' : ''), 'platforms/' + platformOf(a) + '/' + app + '.nix (imported into every ' + platformOf(a) + ' config) reads the option', 'features/' + app + '.nix declares the option']; },
+    cost(op, d){ const C = cost(); switch (op.type) {
+      case 'add-app-group': C.created.push('features/' + op.app + '.nix'); C.created.push('platforms/nix-darwin/' + op.app + '.nix'); C.created.push('platforms/home-manager/' + op.app + '.nix'); for (const h of hostsOfGroup(d, op.group)) C.edited.push('hosts/*/' + h.id + '/default.nix (enable)'); break;
+      case 'add-app-host': C.created.push('features/' + op.app + '.nix'); C.created.push('platforms/home-manager/' + op.app + '.nix'); C.edited.push('hosts/*/' + op.host + '/default.nix'); break;
+      case 'add-host': C.created.push('hosts/aarch64-darwin/' + op.host + '/default.nix (enables copied from a sibling)'); break;
+      case 'add-type': C.created.push('hosts/aarch64-darwin/' + op.host + '/default.nix'); C.risks.push('There is no "' + op.typeId + '" anywhere; it is whatever this host enables.'); break;
+      case 'move-app': for (const h of gainers(d, op)) C.edited.push('hosts/*/' + h.id + '/default.nix (enable)'); break;
+      case 'retire-app': C.deleted.push('features/' + op.app + '.nix'); C.deleted.push('platforms/nix-darwin/' + op.app + '.nix'); for (const h of hostsWithApp(d, op.app)) C.edited.push('hosts/*/' + h.id + '/default.nix'); break;
+      case 'drop-group': for (const h of hostsOfType(d, op.typeId)) C.edited.push('hosts/*/' + h.id + '/default.nix (disable ' + (d.groups[op.group] || []).length + ' option(s))'); break;
+      case 'rename-host': C.edited.push('hosts/*/' + op.from + '/ (directory rename)'); C.risks.push('Robust.'); break;
+      case 'diamond': C.risks.push('No change: the option is already enabled where it matters.'); break;
+    } return C; } },
+
+  { id:'hosts-only', label:'Fat host files, no module layer', short:'Hosts only', who:'thexyno, mitchellh, clo4',
+    blurb:'Everything a host needs is written in its own file. Sharing is copy and paste.',
+    identity:'the flake attribute only',
+    risks:['Fat host files and comment-driven toggling: 61% of thexyno\'s lines live under hosts/ and four hosts repeat the same imports.','Every shared decision exists once per host; drift is the steady state.'],
+    snippet:'# hosts/work-mbp.nix\n{ homebrew.casks = [ "ghostty" "raycast" "hammerspoon" "moom" "thaw" "tuna" ... ];\n  system.defaults.CustomUserPreferences."com.stonerl.Thaw" = { ... };\n  home-manager.users.prateek = { xdg.configFile."thaw/config" = { ... }; ... };\n  # personal-mbp.nix has the same 300 lines with two differences\n}',
+    project(d){ const f = [ file('users/' + USER + '.nix','lib') ]; for (const h of d.hosts) f.push(file('hosts/' + h.id + '.nix','host', h.id)); return f; },
+    chain(d, h, app, via){ return ['hosts/' + h.id + '.nix declares ' + app + ' inline' + (via.kind === 'group' ? ' (the "' + via.group + '" group is a comment at best)' : '')]; },
+    cost(op, d){ const C = cost(); switch (op.type) {
+      case 'add-app-group': for (const h of hostsOfGroup(d, op.group)) C.edited.push('hosts/' + h.id + '.nix'); break;
+      case 'add-app-host': C.edited.push('hosts/' + op.host + '.nix'); break;
+      case 'add-host': C.created.push('hosts/' + op.host + '.nix (copy of a sibling)'); C.risks.push('A full copy: ' + Object.keys(resolve(d, d.hosts[0])).length + ' declarations now exist one more time.'); break;
+      case 'add-type': C.created.push('hosts/' + op.host + '.nix (copy, then prune)'); break;
+      case 'move-app': for (const h of gainers(d, op)) C.edited.push('hosts/' + h.id + '.nix'); break;
+      case 'retire-app': for (const h of hostsWithApp(d, op.app)) C.edited.push('hosts/' + h.id + '.nix'); break;
+      case 'drop-group': for (const h of hostsOfType(d, op.typeId)) C.edited.push('hosts/' + h.id + '.nix (delete ' + (d.groups[op.group] || []).length + ' block(s))'); break;
+      case 'rename-host': C.edited.push('hosts/' + op.from + '.nix rename'); break;
+      case 'diamond': C.risks.push('No change; there are no groups to be in twice.'); break;
+    } return C; } },
+];
+
+// ---------- Operations on the canonical state ----------
+const OPS = [
+  { id:'add-app-group', label:'Add a new menu-bar app to every desktop', op:{ type:'add-app-group', app:'newbar', appLabel:'a new menu-bar app', group:'mac-desktop' } },
+  { id:'add-app-host', label:'Give the homelab mini a wiki-ingest job nobody else runs', op:{ type:'add-app-host', app:'wiki-ingest', appLabel:'wiki ingest', host:'m4mini' } },
+  { id:'add-host', label:'Onboard a second personal MacBook', op:{ type:'add-host', host:'personal-mbp-2', os:'darwin', typeId:'personal' } },
+  { id:'add-type', label:'Add a "lab" machine type with its first host', op:{ type:'add-type', typeId:'lab', groups:['core','developer-tools'], host:'lab-mini' } },
+  { id:'move-app', label:'Let work machines have Codex (move it out of the personal-only group)', op:{ type:'move-app', app:'codex', from:'codex', to:'ai-agent-apps' } },
+  { id:'retire-app', label:'Retire nvALT', op:{ type:'retire-app', app:'nvalt' } },
+  { id:'drop-group', label:'Drop apple-development from the homelab type', op:{ type:'drop-group', typeId:'homelab', group:'apple-development' } },
+  { id:'rename-host', label:'Jamf renames the work Mac to its serial', op:{ type:'rename-host', from:'work-mbp', to:'M-D2N572TGQN' } },
+  { id:'diamond', label:'Put Tailscale in developer-tools too (a second path to one app)', op:{ type:'diamond', app:'tailscale', group:'developer-tools' } },
+];
+
+function applyOp(d0, op){
+  const d = clone(d0);
+  switch (op.type) {
+    case 'add-app-group': if (!appById(d, op.app)) d.apps.push({ id:op.app, label:op.appLabel, platform:'mac', kind:'cask' }); if (!d.groups[op.group].includes(op.app)) d.groups[op.group].push(op.app); break;
+    case 'add-app-host': if (!appById(d, op.app)) d.apps.push({ id:op.app, label:op.appLabel, platform:'both', kind:'config' }); d.hostApps[op.host] = d.hostApps[op.host] || []; if (!d.hostApps[op.host].includes(op.app)) d.hostApps[op.host].push(op.app); break;
+    case 'add-host': if (!d.hosts.find(h => h.id === op.host)) d.hosts.push({ id:op.host, label:op.host, os:op.os, type:op.typeId }); break;
+    case 'add-type': d.types[op.typeId] = op.groups.slice(); if (!d.hosts.find(h => h.id === op.host)) d.hosts.push({ id:op.host, label:op.host, os:'darwin', type:op.typeId }); break;
+    case 'move-app': d.groups[op.from] = d.groups[op.from].filter(x => x !== op.app); if (!d.groups[op.to].includes(op.app)) d.groups[op.to].push(op.app); break;
+    case 'retire-app': for (const g of Object.keys(d.groups)) d.groups[g] = d.groups[g].filter(x => x !== op.app); for (const h of Object.keys(d.hostApps)) d.hostApps[h] = d.hostApps[h].filter(x => x !== op.app); if (!d.retired.includes(op.app)) d.retired.push(op.app); break;
+    case 'drop-group': d.types[op.typeId] = (d.types[op.typeId] || []).filter(g => g !== op.group); break;
+    case 'rename-host': { const h = d.hosts.find(x => x.id === op.from); if (h) { h.id = op.to; h.label = op.to; } if (d.hostApps[op.from]) { d.hostApps[op.to] = d.hostApps[op.from]; delete d.hostApps[op.from]; } if (d.facts[op.from]) { d.facts[op.to] = d.facts[op.from]; delete d.facts[op.from]; } break; }
+    case 'diamond': if (!d.groups[op.group].includes(op.app)) d.groups[op.group].push(op.app); break;
+  }
+  return d;
+}
+
+// ---------- Evaluate one model against the canonical state ----------
+const IMPORT_ALL = ['broadcast-gate','platform-adapters','by-concern'];
+function evaluate(d, modelId, brokenRefs){
+  const M = MODELS.find(m => m.id === modelId);
+  const files = M.project(d);
+  const matrix = d.hosts.map(h => ({ host:h, apps: resolve(d, h) }));
+  const dormant = dormantApps(d);
+  const dm = diamonds(d);
+  // Duplicated declarations: the same app declared in more than one place.
+  let dup = 0;
+  if (modelId === 'hosts-only') for (const a of liveApps(d)) dup += Math.max(0, hostsWithApp(d, a.id).length - 1);
+  if (modelId === 'platform-adapters') for (const a of liveApps(d)) dup += Math.max(0, hostsWithApp(d, a.id).length - 1);
+  if (modelId === 'hostspec') for (const a of liveApps(d)) dup += hostsWithApp(d, a.id).length;
+  if (modelId === 'by-concern') { const byType = {}; for (const h of d.hosts) if (h.os === 'darwin') byType[h.type] = (byType[h.type] || 0) + 1; for (const t of Object.keys(byType)) dup += Math.max(0, byType[t] - 1) * 66; }
+  const hostOnly = Object.values(d.hostApps).reduce((n, xs) => n + xs.length, 0);
+  const factCount = Object.values(d.facts).reduce((n, xs) => n + xs.length, 0);
+  let scattered = 0;
+  if (modelId === 'by-concern') scattered = hostOnly + factCount;
+  if (modelId === 'broadcast-gate') scattered = hostOnly;
+  if (modelId === 'data-resolver') scattered = Object.keys(d.facts).length + Object.keys(d.hostApps).length;
+  const renameSafety = { 'data-resolver':'fragile (host layer keyed by hostname)', 'by-concern':'fragile (host.name tests)', 'broadcast-gate': hostOnly ? 'fragile for host-only gates' : 'robust', 'hostspec':'three edits, nothing silent', 'apps-roles':'robust (flake attribute)', 'dendritic':'robust (flake attribute)', 'platform-adapters':'robust (directory)', 'hosts-only':'robust (file)' }[modelId];
+  const diamondRisk = dm.length === 0 ? 'none today' : ({ 'dendritic':'evaluation error', 'apps-roles':'error if apps are flake-parts modules', 'hostspec':'benign (paths dedupe)', 'hosts-only':'n/a', 'data-resolver':'benign (union)', 'broadcast-gate':'n/a (one gate)', 'by-concern':'n/a (one test)', 'platform-adapters':'n/a (one option)' }[modelId]);
+  const importAll = IMPORT_ALL.includes(modelId);
+  const metrics = {
+    files: files.length,
+    dormant: dormant.length,
+    dormantNote: dormant.length ? (importAll ? 'declarations evaluate, bodies never' : 'never imported, never evaluated') : '',
+    dup, scattered, renameSafety, diamondRisk, identity: M.identity,
+    broken: brokenRefs || 0,
+  };
+  return { model:M, files, matrix, dormant, diamonds:dm, metrics };
+}
+
+// Cost of every operation under every model, against the current state. Pure.
+function compare(d){ return OPS.map(o => ({ op:o, byModel: MODELS.map(m => { const C = m.cost(o.op, d); return { model:m.id, sites:sites(C), C }; }) })); }
+
+// ---------- Reducer ----------
+function initialState(modelId){ const id = modelId || 'apps-roles'; const d = initialDesired(); return { model:id, desired:d, derived: evaluate(d, id, 0), log:[], seq:0, sel:null, lastSites:null, broken:0 }; }
+function entry(state, title, text, level, delta){ const e = { id: state.seq + 1, title, text, level: level || 'info', delta: delta || null }; return Object.assign({}, state, { seq: state.seq + 1, log: [e].concat(state.log) }); }
+
+function reduce(state, action){
+  switch (action.type) {
+    case 'model': { const ns = Object.assign({}, state, { model: action.id, derived: evaluate(state.desired, action.id, state.broken) }); return entry(ns, 'Model changed', MODELS.find(m => m.id === action.id).label + '. The desired state is unchanged; only its representation moved.', 'info'); }
+    case 'reset': { const ns = initialState(state.model); ns.log = state.log; ns.seq = state.seq; return entry(ns, 'Reset', 'Desired state back to today\'s hosts, types, groups and apps.', 'info'); }
+    case 'op': {
+      const o = OPS.find(x => x.id === action.id); const M = MODELS.find(m => m.id === state.model);
+      const C = M.cost(o.op, state.desired);
+      const d = applyOp(state.desired, o.op);
+      const broken = state.broken + (C.broken || 0);
+      const derived = evaluate(d, state.model, broken);
+      const n = sites(C);
+      const parts = [];
+      if (C.created.length) parts.push('create ' + C.created.join(', '));
+      if (C.edited.length) parts.push('edit ' + C.edited.join(', '));
+      if (C.deleted.length) parts.push('delete ' + C.deleted.join(', '));
+      const level = C.broken ? 'bad' : (C.warn || n >= 4 || C.risks.some(r => /silent|forget|copied|audited/i.test(r)) ? 'warn' : 'ok');
+      const others = MODELS.filter(m => m.id !== state.model).map(m => m.short + ' ' + sites(m.cost(o.op, state.desired))).join(' | ');
+      const ns = Object.assign({}, state, { desired:d, derived, lastSites:n, broken });
+      return entry(ns, o.label, n + ' edit site' + (n === 1 ? '' : 's') + ' under ' + M.short + ': ' + (parts.join('; ') || 'nothing to change') + '.' + (C.risks.length ? ' ' + C.risks.join(' ') : ''), level, 'Same operation elsewhere: ' + others);
+    }
+    case 'audit': {
+      const dv = state.derived; const M = dv.model;
+      const bits = [];
+      bits.push(dv.dormant.length ? dv.dormant.length + ' dormant module(s): ' + dv.dormant.map(a => a.id).join(', ') + ' (' + dv.metrics.dormantNote + ').' : 'No dormant modules.');
+      bits.push(dv.diamonds.length ? dv.diamonds.length + ' diamond(s): ' + dv.diamonds.map(x => x.host + ' gets ' + x.app + ' via ' + x.groups.join(' and ')).join('; ') + '. Under ' + M.short + ': ' + dv.metrics.diamondRisk + '.' : 'No diamonds.');
+      bits.push(dv.metrics.scattered ? dv.metrics.scattered + ' host-specific reference(s) live outside their host file.' : 'No host names outside host files.');
+      if (state.broken) bits.push(state.broken + ' reference(s) silently broken by the rename.');
+      return entry(state, 'Audit under ' + M.short, bits.join(' '), (dv.dormant.length || (dv.diamonds.length && /error/.test(dv.metrics.diamondRisk)) || state.broken) ? 'warn' : 'ok');
+    }
+    case 'explain': {
+      const h = state.desired.hosts.find(x => x.id === action.host);
+      const M = state.derived.model;
+      const ns = Object.assign({}, state, { sel: h ? { host:h.id, app:action.app } : null });
+      if (!h) return entry(ns, 'Explain', 'No host called ' + action.host + ' any more (it was renamed or never existed).', 'warn');
+      const r = resolve(state.desired, h)[action.app];
+      if (!r) return entry(ns, 'Why does ' + h.label + ' get ' + action.app + '?', 'It does not. No group in its ' + (compositeFor(state.desired, h) ? 'composite' : 'type') + ' preset carries it and it is not a host-only app.', 'info');
+      const chains = r.via.map(v => M.chain(state.desired, h, action.app, v).join('  ->  '));
+      return entry(ns, 'Why does ' + h.label + ' get ' + action.app + '?', chains.join('   |   '), r.via.length > 1 ? 'warn' : 'ok', r.via.length > 1 ? 'Two paths reach the same app; see the diamond column.' : null);
+    }
+    case 'select': return Object.assign({}, state, { sel: action.sel });
+    default: return state;
+  }
+}
+
+const SCENARIOS = [
+  { id:'app', title:'Add an app', watch:'How many files one app touches, and which of them are shared files that other people\'s changes also land in.', steps:[ { label:'Add a new menu-bar app to every desktop', action:{type:'op', id:'add-app-group'} }, { label:'Why does the work Mac get it?', action:{type:'explain', host:'work-mbp', app:'newbar'} }, { label:'Audit', action:{type:'audit'} } ] },
+  { id:'exception', title:'Per-host exception', watch:'Where knowledge about one host ends up when the app is not part of any group.', steps:[ { label:'Give the mini a wiki-ingest job', action:{type:'op', id:'add-app-host'} }, { label:'Why does the mini get it?', action:{type:'explain', host:'m4mini', app:'wiki-ingest'} }, { label:'Audit', action:{type:'audit'} } ] },
+  { id:'host', title:'Second personal MacBook', watch:'Whether onboarding a host is one file or a copy, and what gets duplicated.', steps:[ { label:'Onboard a second personal MacBook', action:{type:'op', id:'add-host'} }, { label:'Audit', action:{type:'audit'} } ] },
+  { id:'type', title:'New machine type', watch:'Which models have a place to say "lab" at all.', steps:[ { label:'Add a lab type with its first host', action:{type:'op', id:'add-type'} }, { label:'Audit', action:{type:'audit'} } ] },
+  { id:'rename', title:'Jamf renames the work Mac', watch:'Which models key anything on the hostname. MDM resets it (ahmedelgabri saw Kandji do this on every check-in).', steps:[ { label:'Give the work Mac a host-only reference first: it already carries jamf_policy_id, so just rename', action:{type:'op', id:'rename-host'} }, { label:'Why does the renamed Mac get gcloud?', action:{type:'explain', host:'M-D2N572TGQN', app:'gcloud'} }, { label:'Audit', action:{type:'audit'} } ] },
+  { id:'diamond', title:'Two paths to one app', watch:'A second group carrying an app a host already gets. Harmless in some models, an evaluation error in others.', steps:[ { label:'Put Tailscale in developer-tools too', action:{type:'op', id:'diamond'} }, { label:'Why does the personal Mac get Tailscale?', action:{type:'explain', host:'personal-mbp', app:'tailscale'} }, { label:'Audit', action:{type:'audit'} } ] },
+  { id:'dormant', title:'Dormant module', watch:'A module nobody enables any more. Whether CI would ever evaluate it again.', steps:[ { label:'Drop apple-development from the homelab type', action:{type:'op', id:'drop-group'} }, { label:'Audit', action:{type:'audit'} } ] },
+];
+
+return { MODELS, OPS, SCENARIOS, initialState, reduce, evaluate, compare, resolve, sites };
+})();
+if (typeof module !== 'undefined') module.exports = Compose;
+</script>
+<script id="shell">
+(() => {
+  const TABS = [ { id:'overview', label:'Compare' }, { id:'repo', label:'Repo' }, { id:'matrix', label:'Resolution' }, { id:'code', label:'Code' }, { id:'walk', label:'Walkthroughs' }, { id:'catalog', label:'Catalog' } ];
+  const ui = { tab:'overview', scenario:Compose.SCENARIOS[0].id, step:0, palette:false, query:'', selIdx:0, help:false, prevMetrics:null };
+  let state = Compose.initialState('apps-roles');
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const isMac = (navigator.platform || '').toUpperCase().includes('MAC'); const mod = isMac ? '⌘' : 'Ctrl';
+  const M = () => state.derived.model;
+  let BTNS = [];
+  function dispatch(action){ ui.prevMetrics = state.derived.metrics; state = Compose.reduce(state, action); render(); }
+  function isInputFocused(){ const el = document.activeElement; if (!el) return false; const t = el.tagName; return t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || el.isContentEditable; }
+
+  function renderHeader(){
+    const sel = $('modelSel'); sel.innerHTML = Compose.MODELS.map(m => '<option value="' + m.id + '"' + (state.model === m.id ? ' selected' : '') + '>' + esc(m.label) + '</option>').join('');
+    sel.onchange = () => dispatch({type:'model', id:sel.value});
+    $('themeBtn').onclick = toggleTheme; $('helpBtn').onclick = () => { ui.help = !ui.help; renderOverlays(); }; $('paletteBtn').onclick = () => togglePalette();
+  }
+  function renderMetrics(){
+    const m = state.derived.metrics; const prev = ui.prevMetrics || {};
+    const rows = [['Files in repo model', m.files, 'files'],['Last op: edit sites', state.lastSites === null ? 'none yet' : state.lastSites, 'last'],['Dormant modules', m.dormant + (m.dormant ? ' (' + m.dormantNote + ')' : ''), 'dormant'],['Duplicated declarations', m.dup, 'dup'],['Host names outside host files', m.scattered, 'scattered'],['Rename safety', m.renameSafety, 'renameSafety'],['Diamond risk', m.diamondRisk, 'diamondRisk'],['Broken by renames', m.broken, 'broken']];
+    $('metrics').innerHTML = rows.map(([k, v, key]) => '<div class="metric' + (prev[key] !== undefined && prev[key] !== m[key] ? ' changed' : '') + '" title="' + esc(v) + '"><div class="k">' + esc(k) + '</div><div class="v">' + esc(v) + '</div></div>').join('');
+  }
+  function renderSidebar(){
+    const d = state.desired; const live = d.apps.filter(a => !d.retired.includes(a.id)).length;
+    $('side').innerHTML = '<h3>Composition model</h3><div class="models">' + Compose.MODELS.map(m => '<button class="model' + (m.id === state.model ? ' active' : '') + '" data-m="' + m.id + '">' + esc(m.label) + '<span class="who">' + esc(m.who) + '</span></button>').join('') + '</div>' +
+      '<h3>Desired state (same under every model)</h3><div class="meta">' + d.hosts.length + ' hosts: ' + esc(d.hosts.map(h => h.id).join(', ')) + '<br>' + Object.keys(d.types).length + ' types: ' + esc(Object.keys(d.types).map(t => t + ' [' + d.types[t].length + ' groups]').join(', ')) + '<br>' + Object.keys(d.groups).length + ' groups, ' + live + ' apps' + (Object.keys(d.hostApps).length ? '<br>host-only: ' + esc(Object.entries(d.hostApps).map(([h, xs]) => h + ': ' + xs.join(', ')).join('; ')) : '') + (d.retired.length ? '<br>retired: ' + esc(d.retired.join(', ')) : '') + '</div>';
+    $('side').querySelectorAll('button.model').forEach(b => b.onclick = () => dispatch({type:'model', id:b.dataset.m}));
+  }
+  function renderTabs(){ $('tabs').innerHTML = TABS.map((t, i) => '<button data-tab="' + t.id + '"' + (ui.tab === t.id ? ' class="active"' : '') + '>' + esc(t.label) + '<kbd>' + (i + 1) + '</kbd></button>').join(''); $('tabs').querySelectorAll('button').forEach(b => b.onclick = () => { ui.tab = b.dataset.tab; render(); }); }
+
+  const V = {};
+  V.overview = () => {
+    const cmp = Compose.compare(state.desired); const m = M();
+    const head = '<tr><th>Operation, against the current desired state</th>' + Compose.MODELS.map(x => '<th' + (x.id === state.model ? ' style="color:var(--accent-blue)"' : '') + '>' + esc(x.short) + '</th>').join('') + '</tr>';
+    const rows = cmp.map(r => { const vals = r.byModel.map(x => x.sites); const lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
+      return '<tr><td>' + esc(r.op.label) + '</td>' + r.byModel.map(x => '<td class="n' + (x.model === state.model ? ' cur' : '') + (x.sites === hi && hi !== lo ? ' hi' : '') + (x.sites === lo && hi !== lo ? ' lo' : '') + '" title="' + esc([].concat(x.C.created.map(p => 'create ' + p), x.C.edited.map(p => 'edit ' + p), x.C.deleted.map(p => 'delete ' + p), x.C.risks).join('\n')) + '">' + x.sites + (x.C.broken ? ' !' : (x.C.warn ? ' ?' : '')) + '</td>').join('') + '</tr>'; }).join('');
+    return '<p class="meta" style="margin:0 0 8px">Question: which composition model should the Nix target use? Every model must represent the same desired state (left). The table is the cost, in files created, edited or deleted, of each operation under each model, computed against the current state. <b>!</b> marks a silent breakage or evaluation error, <b>?</b> a conditional one. Hover a cell for the file list. Press an operation on the right to apply it and watch the state change.</p>' +
+      '<table class="cmp">' + head + rows + '</table>' +
+      '<div class="two" style="margin-top:10px"><div class="card"><h3 style="margin-top:0">' + esc(m.label) + '</h3><p class="sec" style="margin:0 0 6px">' + esc(m.blurb) + '</p><p class="meta" style="margin:0">Identity: ' + esc(m.identity) + '</p></div><div class="card"><h3 style="margin-top:0">Known costs (from the surveys)</h3><ul class="notes" style="margin-top:0">' + m.risks.map(r => '<li>' + esc(r) + '</li>').join('') + '</ul></div></div>';
+  };
+  V.repo = () => { const f = state.derived.files; const byKind = {}; for (const x of f) byKind[x.kind] = (byKind[x.kind] || 0) + 1;
+    return '<p class="meta" style="margin:0 0 8px">' + f.length + ' files under ' + esc(M().short) + ': ' + esc(Object.entries(byKind).map(([k, n]) => n + ' ' + k).join(', ')) + '. Retired apps are removed; dormant ones are not.</p><div class="filelist">' + f.map(x => '<div>' + esc(x.path) + '<span class="k">' + esc(x.kind) + (state.derived.dormant.find(a => a.id === x.forId) ? ' dormant' : '') + '</span></div>').join('') + '</div>'; };
+  V.matrix = () => { const d = state.desired; const apps = d.apps.filter(a => !d.retired.includes(a.id)); const rows = state.derived.matrix;
+    let html = '<p class="meta" style="margin:0 0 6px">Which host gets which app is the same under every model. Click a cell to see the path this model takes to it. Amber means two paths reach the same app.</p><div style="overflow:auto"><table class="matrix"><tr><th></th>' + apps.map(a => '<th class="rot"><div>' + esc(a.label) + '</div></th>').join('') + '</tr>';
+    for (const r of rows) html += '<tr><td class="hostname">' + esc(r.host.label) + '</td>' + apps.map(a => { const hit = r.apps[a.id]; const two = hit && hit.via.length > 1; const sel = state.sel && state.sel.host === r.host.id && state.sel.app === a.id; return '<td><span class="dot ' + (hit ? (two ? 'two' : 'on') : 'off') + (sel ? ' sel' : '') + '" data-h="' + r.host.id + '" data-a="' + a.id + '" title="' + esc(r.host.label + ' / ' + a.label) + '">' + (hit ? (two ? '2' : '·') : '') + '</span></td>'; }).join('') + '</tr>';
+    html += '</table></div>';
+    if (state.sel) { const h = d.hosts.find(x => x.id === state.sel.host); const hit = h && Compose.resolve(d, h)[state.sel.app]; html += '<div class="chain"><b>' + esc((h ? h.label : state.sel.host) + ' / ' + state.sel.app) + '</b>\n' + (hit ? hit.via.map(v => M().chain(d, h, state.sel.app, v).map((s, i) => '  '.repeat(i) + (i ? '-> ' : '') + esc(s)).join('\n')).join('\n\n') : 'not resolved on this host') + '</div>'; }
+    return html; };
+  V.code = () => '<p class="meta" style="margin:0 0 8px">Illustrative shape of the same app under ' + esc(M().short) + '. Not runnable; the point is which files exist and what a host file has to say.</p><pre class="code">' + esc(M().snippet) + '</pre>';
+  V.walk = () => { const s = Compose.SCENARIOS.find(x => x.id === ui.scenario);
+    return '<div class="scen">' + Compose.SCENARIOS.map(x => '<button data-s="' + x.id + '"' + (x.id === ui.scenario ? ' class="active"' : '') + '>' + esc(x.title) + '</button>').join('') + '</div><div class="watch"><b>What to watch:</b> ' + esc(s.watch) + ' <span class="meta">Starting a walkthrough resets the desired state. <kbd>n</kbd> presses the next step; switch models mid-way with <kbd>[</kbd> <kbd>]</kbd> to compare.</span></div>' +
+      s.steps.map((st, i) => '<button class="step ' + (i < ui.step ? 'done' : (i === ui.step ? 'next' : '')) + '" data-i="' + i + '">' + (i + 1) + '. ' + esc(st.label) + '</button>').join('') + (ui.step >= s.steps.length ? '<p class="meta" style="color:var(--accent-green)"><b>Complete.</b> Pick another model and run it again.</p>' : ''); };
+  V.catalog = () => '<table><tr><th style="width:18%">Model</th><th style="width:18%">Practised by</th><th>What it means</th><th style="width:32%">Known costs</th></tr>' + Compose.MODELS.map(m => '<tr' + (m.id === state.model ? ' style="background:color-mix(in srgb, var(--accent-blue) 8%, transparent)"' : '') + '><td><b>' + esc(m.label) + '</b><div class="meta">identity: ' + esc(m.identity) + '</div></td><td class="sec">' + esc(m.who) + '</td><td class="sec">' + esc(m.blurb) + '</td><td class="meta">' + m.risks.map(esc).join('<br>') + '</td></tr>').join('') + '</table>';
+  function renderPanel(){ $('panel').innerHTML = V[ui.tab]();
+    if (ui.tab === 'matrix') $('panel').querySelectorAll('.dot').forEach(el => el.onclick = () => dispatch({type:'explain', host:el.dataset.h, app:el.dataset.a}));
+    if (ui.tab === 'walk') { $('panel').querySelectorAll('.scen button').forEach(b => b.onclick = () => { ui.scenario = b.dataset.s; ui.step = 0; dispatch({type:'reset'}); }); $('panel').querySelectorAll('button.step').forEach(b => b.onclick = () => runStep(+b.dataset.i)); } }
+  function runStep(i){ const s = Compose.SCENARIOS.find(x => x.id === ui.scenario); if (i >= s.steps.length) return; if (i === 0 && ui.step === 0) state = Compose.reduce(state, {type:'reset'}); ui.step = Math.max(ui.step, i + 1); dispatch(s.steps[i].action); }
+
+  function renderActions(){
+    BTNS = Compose.OPS.map(o => ({ label:o.label, action:{type:'op', id:o.id} })).concat([ { label:'Audit: dormant, diamonds, scattered names', action:{type:'audit'} }, { label:'Why does the work Mac get Tailscale?', action:{type:'explain', host:'work-mbp', app:'tailscale'} }, { label:'Reset desired state', action:{type:'reset'}, primary:true } ]);
+    $('actions').innerHTML = BTNS.map((b, i) => '<button data-i="' + i + '"' + (b.primary ? ' class="primary"' : '') + ' title="' + esc(b.label) + '">' + esc(b.label) + '</button>').join('');
+    $('actions').querySelectorAll('button').forEach(el => el.onclick = () => dispatch(BTNS[+el.dataset.i].action));
+  }
+  function renderLog(){ $('logCount').textContent = state.log.length ? state.log.length + ' events' : ''; $('log').innerHTML = state.log.length ? state.log.map(e => '<div class="entry ' + esc(e.level) + '"><div class="t"><span class="n">' + e.id + '</span>' + esc(e.title) + '</div><div>' + esc(e.text) + '</div>' + (e.delta ? '<div class="d">' + esc(e.delta) + '</div>' : '') + '</div>').join('') : '<p class="meta">Nothing yet. Press an operation above or start a walkthrough.</p>'; }
+  function renderStatus(){ const last = state.log[0]; $('status').innerHTML = '<span>' + esc(M().label) + '</span><span class="grow">' + (last ? 'last: ' + esc(last.title) : '') + '</span><span><kbd>1</kbd> to <kbd>6</kbd> tabs <kbd>' + mod + 'K</kbd> palette <kbd>n</kbd> next step <kbd>[</kbd><kbd>]</kbd> models <kbd>r</kbd> reset <kbd>t</kbd> theme <kbd>?</kbd> help</span>'; }
+
+  function commands(){ const out = []; TABS.forEach(t => out.push({ kind:'go to', label:t.label, run:() => { ui.tab = t.id; } })); Compose.MODELS.forEach(m => out.push({ kind:'model', label:m.label, run:() => dispatch({type:'model', id:m.id}) })); BTNS.forEach(b => out.push({ kind:'do', label:b.label, run:() => dispatch(b.action) })); Compose.SCENARIOS.forEach(s => out.push({ kind:'walk', label:s.title, run:() => { ui.tab = 'walk'; ui.scenario = s.id; ui.step = 0; dispatch({type:'reset'}); } })); return out; }
+  function fuzzy(q, s){ q = q.toLowerCase(); s = s.toLowerCase(); if (!q) return 1; if (s.includes(q)) return 3; let i = 0; for (const ch of s) { if (ch === q[i]) i++; if (i === q.length) return 1; } return 0; }
+  function paletteItems(){ return commands().map(c => ({ c, score: fuzzy(ui.query, c.kind + ' ' + c.label) })).filter(x => x.score > 0).sort((a, b) => b.score - a.score).slice(0, 14).map(x => x.c); }
+  function togglePalette(open){ ui.palette = open === undefined ? !ui.palette : open; ui.query = ''; ui.selIdx = 0; renderOverlays(); if (ui.palette) { const inp = $('palInput'); if (inp) { inp.value = ''; inp.focus(); } } }
+  function renderOverlays(){
+    const pal = $('palette'); pal.hidden = !ui.palette;
+    if (ui.palette) { const items = paletteItems(); ui.selIdx = Math.min(ui.selIdx, Math.max(0, items.length - 1));
+      $('palList').innerHTML = items.map((c, i) => '<div class="it' + (i === ui.selIdx ? ' sel' : '') + '" data-i="' + i + '"><span class="kind">' + esc(c.kind) + '</span><span>' + esc(c.label) + '</span></div>').join('') || '<div class="it"><span class="kind"></span><span class="muted">no match</span></div>';
+      $('palList').querySelectorAll('.it').forEach(el => el.onclick = () => { const it = items[+el.dataset.i]; if (it) { togglePalette(false); it.run(); render(); } });
+      const inp = $('palInput'); inp.oninput = () => { ui.query = inp.value; ui.selIdx = 0; renderOverlays(); };
+      inp.onkeydown = (e) => { const its = paletteItems(); if (e.key === 'ArrowDown') { e.preventDefault(); ui.selIdx = Math.min(its.length - 1, ui.selIdx + 1); renderOverlays(); } else if (e.key === 'ArrowUp') { e.preventDefault(); ui.selIdx = Math.max(0, ui.selIdx - 1); renderOverlays(); } else if (e.key === 'Enter') { e.preventDefault(); const it = its[ui.selIdx]; if (it) { togglePalette(false); it.run(); render(); } } }; }
+    const help = $('help'); help.hidden = !ui.help;
+    if (ui.help) $('helpBody').innerHTML = '<h2>Keyboard</h2><table>' + [[mod + '+K','Palette: tabs, models, operations, walkthroughs'],['1 to 6','Switch tab'],['[ and ]','Previous or next model (the desired state stays)'],['n','Press the next walkthrough step'],['r','Reset the desired state'],['t','Light or dark'],['?','This help'],['Escape','Close palette or help']].map(([k, v]) => '<tr><td><kbd>' + esc(k) + '</kbd></td><td>' + esc(v) + '</td></tr>').join('') + '</table><p class="meta">Prototype, throwaway. The Compose module in this file is the logic; the page is a shell over it.</p>';
+    pal.onclick = (e) => { if (e.target === pal) togglePalette(false); }; help.onclick = (e) => { if (e.target === help) { ui.help = false; renderOverlays(); } };
+  }
+  function toggleTheme(){ document.documentElement.classList.toggle('dark'); }
+  function cycleModel(delta){ const ids = Compose.MODELS.map(m => m.id); const i = ids.indexOf(state.model); dispatch({type:'model', id: ids[(i + delta + ids.length) % ids.length]}); }
+  document.addEventListener('keydown', (e) => {
+    const meta = e.metaKey || e.ctrlKey;
+    if (meta && e.key.toLowerCase() === 'k') { e.preventDefault(); togglePalette(); return; }
+    if (e.key === 'Escape') { if (ui.palette) { togglePalette(false); return; } if (ui.help) { ui.help = false; renderOverlays(); return; } return; }
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (ui.palette || ui.help || isInputFocused()) return;
+    const n = parseInt(e.key, 10);
+    if (n >= 1 && n <= TABS.length) { ui.tab = TABS[n - 1].id; render(); return; }
+    const map = { 'n': () => { if (ui.tab !== 'walk') { ui.tab = 'walk'; render(); } runStep(ui.step); }, 'r': () => dispatch({type:'reset'}), 't': toggleTheme, '?': () => { ui.help = true; renderOverlays(); }, '[': () => cycleModel(-1), ']': () => cycleModel(1) };
+    if (map[e.key]) { e.preventDefault(); map[e.key](); }
+  });
+  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.classList.add('dark');
+  function render(){ renderHeader(); renderMetrics(); renderSidebar(); renderTabs(); renderPanel(); renderLog(); renderStatus(); renderOverlays(); }
+  renderActions(); render();
+})();
+</script>
+</body>
+</html>

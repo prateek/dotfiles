@@ -3,7 +3,7 @@ status: active
 doc_type: research
 owner: Prateek
 created: 2026-09-03
-updated: 2026-09-05
+updated: 2026-09-06
 related:
   - ../references/chezmoi-architecture.md
   - ../adr/0006-chezmoi-migration-prototype.md
@@ -11,7 +11,9 @@ related:
   - ../adr/0012-config-gating-convention.md
   - ../plans/chezmoi-migration-plan.md
   - ../plans/test-suite-rebuild-plan.md
-status_detail: "Survey plus adversarial cross-model review. Conclusion: no wholesale migration. A package-only nix spike is the open option; nix-darwin waits on a work-Mac MDM test."
+  - ../research/nix-target-state-research.md
+  - ../research/work-mac-nix-readiness.md
+status_detail: "Survey plus adversarial cross-model review. Conclusion: no wholesale migration. A package-only nix spike is the open option; nix-darwin waits on a work-Mac MDM test. Update 2026-09-04: the work-Mac check was measured on the box (work-mac-nix-readiness.md); no MDM blocker short of a real install, and off an admin grant sudo is absent, so per-switch root is a manual ritual."
 ---
 
 # Migrating From chezmoi To Nix Flakes: What It Would Take
@@ -145,6 +147,15 @@ is real. It does not require handing nix the 21 co-owned files.
 
 Nothing in the repo answers either question. Both need a test on the box.
 
+Update 2026-09-04: the work-Mac half was measured read-only
+([Work Mac Nix Readiness](work-mac-nix-readiness.md)). No media-restrictions
+profile, so the installer's MDM hard-fail does not apply; the installer's
+plan step runs inside an admin window; the corporate CA bundle verifies the
+intercepted TLS chain; every Nix host is reachable through the filter.
+Endpoint-agent tolerance of `/nix` still needs a real install. Off an admin
+grant, `sudo` is absent rather than password-gated, which settles per-switch
+root: nix-darwin switches can never be unattended there.
+
 1. **Work Mac.** Does the Jamf tenant allow the installer's volume, mount,
    daemon, and build users, and does the endpoint agent tolerate `/nix`? If
    not, the work profile stays chezmoi and any nix adoption means two systems
@@ -168,6 +179,13 @@ have earned its keep.
    rollback and closure builds matter. Still no sudo per switch.
 4. **nix-darwin**, only after the work-Mac check passes and only if
    declarative system defaults are worth root activation on every switch.
+
+A third path for the work Mac surfaced on 2026-09-05 and sits beside the
+list rather than in it: NixOS in an OrbStack VM for the CLI and agent
+surface, with the corporate CA baked into the VM and chezmoi keeping the Mac
+host. Root inside the VM is the user's own, so it needs no MDM admin to
+rebuild; the untested step is whether the VM's egress clears the corporate
+tunnel ([readiness doc](work-mac-nix-readiness.md), "The Third Shape").
 
 ## Sizing
 

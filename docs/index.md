@@ -2,7 +2,7 @@
 status: current
 doc_type: index
 created: 2026-05-12
-updated: 2026-09-05
+updated: 2026-09-06
 related:
   - document-lifecycle.md
   - ../home/dot_agents/packages/core/skills/local/code-gardening/SKILL.md
@@ -99,6 +99,27 @@ for day-to-day implementation details.
 | [macOS Defaults: Sources And Verified Facts](research/macos-defaults-sources.md) | Sources to mine for the next rework of the macOS defaults layer, plus key encodings and Apple Silicon power facts verified on hardware. |
 | [acpx Rewrite Model Bake-Off](research/acpx-rewrite-model-bakeoff.md) | Why `agptw` pins `gpt-5.6-luna-high`, with the scoring method and repro steps for re-picking the prose-rewrite model. |
 | [Nix Migration Research](research/nix-migration-research.md) | Why the repo stays on chezmoi, what a package-only nix spike would look like, and the work-Mac MDM check that gates nix-darwin. |
+| [Nix Target-State Research](research/nix-target-state-research.md) | Draft, adversarially reviewed, composition revised 2026-09-05: one `hosts.toml`, no machine types, dendritic feature files with keyed group aggregates; the five composition seams; the migration scaffold as an appendix; per-app config seams; the three hard problems; a "where this stands" section pointing at the nineteen surveys and the two logic prototypes under `prototypes/`. |
+| [Work Mac Nix Readiness](research/work-mac-nix-readiness.md) | Draft. What the Jamf-managed laptop reports, measured 2026-09-04 without installing: no media-restrictions profile, corporate CA bundle usable as `ssl-cert-file`, sudo absent outside an admin grant, endpoint tolerance of `/nix` still untested; three work-host shapes including NixOS in an OrbStack VM. |
+| [Survey: dustinlyons/nixos-config](research/nix-repo-surveys/dustinlyons-nixos-config.md) | Draft, relevance 2/5. Most-forked starter; no Problem A solution, CI builds a template not the author's hosts, weekly auto-update has never landed; private-secrets-repo pattern is a fifth Problem C option. |
+| [Survey: mitchellh/nixos-config](research/nix-repo-surveys/mitchellh-nixos-config.md) | Draft, relevance 3/5. Minimal VM-on-Mac shape; eval-only `make check` covers Darwin cheaply, op:// refs passed as env values, Cachix and rosetta builder gaps in our tree. |
+| [Survey: ryan4yin/nix-config](research/nix-repo-surveys/ryan4yin-nix-config.md) | Draft, relevance 3/5. Directory-convention composition, `force`/out-of-store symlinks instead of mergers, one flat macOS apps file, CI is one eval job with `checks` commented out. |
+| [Survey: MatthiasBenaets/nix-config](research/nix-repo-surveys/matthiasbenaets-nix-config.md) | Draft, relevance 4/5. Closest public build of our by-concern app-module target; colocation without a role layer duplicates defaults and reinvents host-name tests; Claude configured by env vars. |
+| [Survey: wimpysworld/nix-config](research/nix-repo-surveys/wimpysworld-nix-config.md) | Draft, relevance 4/5. Largest agent-CLI surface (Claude, Codex, pi, MCP) under `_mixins`; sops templates feed pi and agentsview; activation-time reconcilers for editor MCP lists. |
+| [Survey: EmergentMind/nix-config](research/nix-repo-surveys/emergentmind-nix-config.md) | Draft, relevance 2/5. NixOS-only; `hostSpec` typed host-facts record, sops ciphertext in a private flake input with host-key-derived age identities, a dormant type error that green `nix flake check` never evaluates. |
+| [Survey: srid/nixos-config](research/nix-repo-surveys/srid-nixos-config.md) | Draft, relevance 3/5. Both daily Macs are standalone home-manager with zero sudo; Claude settings owned whole-file with `force`; no Homebrew, no defaults, no CI. |
+| [Survey: kclejeune/system](research/nix-repo-surveys/kclejeune-system.md) | Draft, relevance 3/5. `flake.cacheable` plus nix-fast-build instead of `checks`; clobber-and-dump and include-layer tiers for Problem A; flake-parts `_file` defeats import dedup. |
+| [Survey: colemickens/nixcfg](research/nix-repo-surveys/colemickens-nixcfg.md) | Draft, relevance 2/5. Mixins own system and user layers together; `checks` built from both host tables on a macos-26 runner; 29 unreachable modules survive CI. |
+| [Survey: malob/nix-config](research/nix-repo-surveys/malob-nix-config.md) | Draft, relevance 4/5. Reference nix-darwin config: typed defaults only, out-of-store symlinks for eight Claude paths, narrow managed-settings split, CI that actually activates, `op run` wrappers. |
+| [Survey: isabelroses/dotfiles](research/nix-repo-surveys/isabelroses-dotfiles.md) | Draft, relevance 3/5. Eleven-line macOS host of profile booleans; `ray build` inside `buildNpmPackage` answers open question 8; daily auto-merged lock bump plus a 396-line pin updater. |
+| [Survey: khaneliman/khanelinix](research/nix-repo-surveys/khaneliman-khanelinix.md) | Draft, relevance 4/5. Record-before-overwrite ledger for `defaults` writes, four defaults mechanisms split by domain ownership, `darwin-doctor` drift checker, import-everything with option selection. |
+| [Survey: ahmedelgabri/dotfiles](research/nix-repo-surveys/ahmedelgabri-dotfiles.md) | Draft, relevance 4/5. Per-file out-of-store tree helper, app-side include layers instead of mergers, Kandji-managed Mac keyed by logical host name, `pass` at app runtime, 23-line eval-only CI. |
+| [Survey: budimanjojo/nix-config](research/nix-repo-surveys/budimanjojo-nix-config.md) | Draft, relevance 3/5. Nix on top, chezmoi underneath as one activation block; advertises dendritic but no file spans both classes; generic checks.nix exposes home configurations explicitly. |
+| [Survey: nmasur/dotfiles](research/nix-repo-surveys/nmasur-dotfiles.md) | Draft, relevance 3/5. home-manager deliberately stripped from nix-darwin after a dual-activation break; unmanaged Firefox `installs.ini` after Problem A; corporate CA module with `types.str` for purity. |
+| [Survey: thexyno/nixos-config](research/nix-repo-surveys/thexyno-nixos-config.md) | Draft, relevance 2/5. `data/` is Nix constants not a data layer, two dead TOML files; no role layer after 544 commits; agenix NixOS-only; recipient-policy file worth copying. |
+| [Survey: clo4/nix-dotfiles](research/nix-repo-surveys/clo4-nix-dotfiles.md) | Draft, relevance 3/5. nix-darwin and standalone home-manager Macs from one tree, one-file switch; four standalone-HM costs; working-tree symlinks with `force` as tier zero; blueprint skips home configs in checks. |
+| [Survey: billimek/dotfiles](research/nix-repo-surveys/billimek-dotfiles.md) | Draft, relevance 4/5. Only opnix user, headless Linux only; `~/.claude/settings.json` refuses symlinks (`O_NOFOLLOW`); secretspec keyring cache; corporate Mac on full nix-darwin; `import-tree`; IFD arch-matrix eval CI. |
+| [Survey: signalridge/dotfiles](research/nix-repo-surveys/signalridge-dotfiles.md) | Draft, relevance 4/5. chezmoi on top, nix-darwin plus a `flakey-profile` closure underneath, no home-manager; five modify_ mergers incl. a 323-line Codex one; renders `.nix.tmpl` then `nix flake check --no-build` in CI. |
 
 ## Historical Records
 

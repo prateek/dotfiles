@@ -1,0 +1,863 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PROTOTYPE: Nix target-state alternatives</title>
+<style>
+:root {
+  --bg-primary:#f5f6f8; --bg-surface:#ffffff; --bg-surface-hover:#eef0f4; --bg-inset:#eceef2;
+  --border-default:#d9dce3; --border-muted:#e8eaef;
+  --text-primary:#181b24; --text-secondary:#4b5160; --text-muted:#7b8190;
+  --accent-blue:#2563eb; --accent-green:#059669; --accent-amber:#d97706; --accent-rose:#e11d48; --accent-purple:#7c3aed;
+  --shadow-md:0 2px 8px rgba(0,0,0,.08); --shadow-lg:0 4px 16px rgba(0,0,0,.12);
+  --radius-sm:4px; --radius-md:6px; --radius-lg:8px;
+  --header-height:40px; --metrics-height:44px; --status-bar-height:24px; --sidebar-w:296px; --log-w:340px;
+  --font-sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif;
+  --font-mono:"JetBrains Mono","SF Mono","Fira Code",Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+:root.dark {
+  --bg-primary:#0d0d12; --bg-surface:#16161e; --bg-surface-hover:#1f1f2a; --bg-inset:#111118;
+  --border-default:#2a2a38; --border-muted:#20202b;
+  --text-primary:#e4e6eb; --text-secondary:#a8adbb; --text-muted:#6f7586;
+  --accent-blue:#60a5fa; --accent-green:#34d399; --accent-amber:#fbbf24; --accent-rose:#fb7185; --accent-purple:#a78bfa;
+  --shadow-md:0 2px 8px rgba(0,0,0,.35); --shadow-lg:0 4px 16px rgba(0,0,0,.45);
+  color-scheme:dark;
+}
+* { box-sizing:border-box; }
+html, body { height:100%; margin:0; }
+body { font-family:var(--font-sans); font-size:13px; line-height:1.4; color:var(--text-primary); background:var(--bg-primary); -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; text-rendering:optimizeLegibility; font-feature-settings:"cv11","ss01"; overflow:hidden; }
+::-webkit-scrollbar { width:6px; height:6px; } ::-webkit-scrollbar-track { background:transparent; } ::-webkit-scrollbar-thumb { background:var(--border-default); border-radius:3px; } ::-webkit-scrollbar-thumb:hover { background:var(--text-muted); }
+:focus-visible { outline:2px solid var(--accent-blue); outline-offset:1px; }
+button, select { font:inherit; color:inherit; }
+button { background:var(--bg-surface); border:1px solid var(--border-default); border-radius:var(--radius-md); padding:3px 8px; cursor:pointer; transition:background 80ms ease, border-color 80ms ease; }
+button:hover { background:var(--bg-surface-hover); }
+button.active { background:color-mix(in srgb, var(--accent-blue) 12%, transparent); border-color:color-mix(in srgb, var(--accent-blue) 45%, transparent); color:var(--accent-blue); }
+select { background:var(--bg-surface); border:1px solid var(--border-default); border-radius:var(--radius-md); padding:3px 6px; width:100%; }
+code, .mono { font-family:var(--font-mono); font-size:12px; }
+.muted { color:var(--text-muted); } .sec { color:var(--text-secondary); } .meta { font-size:11px; color:var(--text-muted); }
+.app { display:grid; grid-template-rows: var(--header-height) var(--metrics-height) 1fr var(--status-bar-height); height:100vh; }
+.hdr { display:flex; align-items:center; gap:12px; padding:0 12px; border-bottom:1px solid var(--border-default); background:var(--bg-surface); }
+.brand { font-weight:600; font-size:13px; white-space:nowrap; }
+.badge { display:inline-block; font-size:10px; letter-spacing:.08em; text-transform:uppercase; padding:1px 6px; border-radius:var(--radius-sm); background:color-mix(in srgb, var(--accent-amber) 18%, transparent); color:var(--accent-amber); font-weight:600; margin-left:6px; vertical-align:1px; }
+.hdr .spacer { flex:1; } .hdr .sub { font-size:11px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.hdr .ctl { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text-muted); white-space:nowrap; } .hdr .ctl select { width:auto; min-width:220px; }
+.hdr button { height:26px; }
+kbd { font-family:var(--font-mono); font-size:10px; padding:1px 5px; border:1px solid var(--border-default); border-bottom-width:2px; border-radius:var(--radius-sm); background:var(--bg-inset); color:var(--text-secondary); }
+.metrics { display:grid; grid-template-columns:repeat(8, 1fr); gap:6px; padding:6px 12px; border-bottom:1px solid var(--border-default); background:var(--bg-primary); }
+.metric { border:1px solid var(--border-muted); background:var(--bg-surface); border-radius:var(--radius-md); padding:3px 8px; min-width:0; }
+.metric .k { font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.metric .v { font-family:var(--font-mono); font-size:12px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.metric.changed { border-color:color-mix(in srgb, var(--accent-amber) 60%, transparent); background:color-mix(in srgb, var(--accent-amber) 8%, transparent); }
+.frame { display:grid; grid-template-columns: var(--sidebar-w) 1fr var(--log-w); min-height:0; }
+.side { border-right:1px solid var(--border-default); background:var(--bg-surface); overflow:auto; padding:8px 10px; }
+.side h3, .logpane h3, .panel h3 { font-size:10px; text-transform:uppercase; letter-spacing:.08em; color:var(--text-muted); margin:10px 0 4px; font-weight:600; }
+.axis { margin-bottom:8px; }
+.axis .t { font-size:12px; font-weight:500; margin-bottom:2px; }
+.axis .who { font-size:11px; color:var(--text-muted); margin-top:2px; line-height:1.3; }
+.content { display:flex; flex-direction:column; min-width:0; min-height:0; }
+.tabs { display:flex; gap:2px; padding:6px 10px 0; border-bottom:1px solid var(--border-default); background:var(--bg-surface); }
+.tabs button { border:1px solid transparent; border-bottom:none; border-radius:var(--radius-md) var(--radius-md) 0 0; background:transparent; padding:5px 10px; color:var(--text-secondary); }
+.tabs button.active { background:var(--bg-primary); border-color:var(--border-default); color:var(--text-primary); margin-bottom:-1px; }
+.tabs button kbd { margin-left:6px; }
+.panel { overflow:auto; padding:10px 12px; min-height:0; }
+.card { background:var(--bg-surface); border:1px solid var(--border-muted); border-radius:var(--radius-md); padding:8px 10px; }
+.two { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+table { width:100%; border-collapse:collapse; font-size:12px; }
+th, td { text-align:left; vertical-align:top; padding:4px 8px; border-bottom:1px solid var(--border-muted); }
+th { font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); font-weight:600; position:sticky; top:0; background:var(--bg-primary); }
+tr:hover td { background:color-mix(in srgb, var(--accent-blue) 4%, transparent); }
+.pill { display:inline-block; font-size:10px; padding:1px 6px; border-radius:var(--radius-sm); font-weight:600; letter-spacing:.03em; white-space:nowrap; }
+.pill.ok { background:color-mix(in srgb, var(--accent-green) 16%, transparent); color:var(--accent-green); }
+.pill.warn { background:color-mix(in srgb, var(--accent-amber) 18%, transparent); color:var(--accent-amber); }
+.pill.bad { background:color-mix(in srgb, var(--accent-rose) 16%, transparent); color:var(--accent-rose); }
+.pill.info { background:color-mix(in srgb, var(--accent-blue) 14%, transparent); color:var(--accent-blue); }
+.conf { border:1px solid color-mix(in srgb, var(--accent-rose) 40%, transparent); background:color-mix(in srgb, var(--accent-rose) 6%, transparent); border-radius:var(--radius-md); padding:8px 10px; margin-bottom:10px; }
+.conf.none { border-color:color-mix(in srgb, var(--accent-green) 40%, transparent); background:color-mix(in srgb, var(--accent-green) 6%, transparent); }
+.conf ul { margin:4px 0 0 16px; padding:0; } .conf li { margin:2px 0; }
+pre.tree { font-family:var(--font-mono); font-size:11px; background:var(--bg-inset); padding:8px 10px; border-radius:var(--radius-md); margin:0; overflow:auto; }
+ul.notes { margin:6px 0 0 16px; padding:0; font-size:12px; color:var(--text-secondary); } ul.notes li { margin:2px 0; }
+.logpane { border-left:1px solid var(--border-default); background:var(--bg-surface); display:flex; flex-direction:column; min-height:0; }
+.actions { display:grid; grid-template-columns:1fr 1fr; gap:4px; padding:0 10px 8px; }
+.actions button { font-size:11px; padding:3px 6px; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.actions button.primary { background:color-mix(in srgb, var(--accent-blue) 12%, transparent); border-color:color-mix(in srgb, var(--accent-blue) 45%, transparent); color:var(--accent-blue); }
+.logpane h3 { padding:0 10px; }
+.log { overflow:auto; padding:0 10px 10px; flex:1; min-height:0; }
+.entry { border-left:3px solid var(--border-default); padding:5px 8px; margin-bottom:6px; background:var(--bg-primary); border-radius:0 var(--radius-md) var(--radius-md) 0; font-size:12px; }
+.entry.ok { border-left-color:var(--accent-green); } .entry.warn { border-left-color:var(--accent-amber); } .entry.bad { border-left-color:var(--accent-rose); } .entry.info { border-left-color:var(--accent-blue); }
+.entry .t { font-weight:600; font-size:12px; } .entry .n { font-family:var(--font-mono); font-size:10px; color:var(--text-muted); margin-right:6px; }
+.entry .d { margin-top:2px; font-size:11px; color:var(--text-muted); }
+.status { display:flex; align-items:center; gap:14px; padding:0 12px; border-top:1px solid var(--border-default); background:var(--bg-surface); font-size:11px; color:var(--text-muted); white-space:nowrap; overflow:hidden; }
+.status .grow { flex:1; overflow:hidden; text-overflow:ellipsis; }
+.scen { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px; }
+.step { display:block; width:100%; text-align:left; margin-bottom:4px; padding:6px 10px; }
+.step.done { opacity:.55; } .step.next { border-color:var(--accent-blue); box-shadow:inset 3px 0 0 var(--accent-blue); }
+.watch { font-size:12px; color:var(--text-secondary); margin-bottom:8px; }
+.overlay { position:fixed; inset:0; background:rgba(10,10,20,.35); display:flex; align-items:flex-start; justify-content:center; padding-top:12vh; z-index:20; }
+.overlay[hidden] { display:none; }
+.dialog { width:min(640px, 92vw); background:var(--bg-surface); border:1px solid var(--border-default); border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); overflow:hidden; }
+.dialog input { width:100%; border:none; border-bottom:1px solid var(--border-default); background:transparent; padding:10px 12px; font:inherit; font-size:14px; color:inherit; outline:none; }
+.pal { max-height:52vh; overflow:auto; }
+.pal .it { padding:6px 12px; display:flex; gap:8px; align-items:baseline; cursor:pointer; transition:background 50ms ease; }
+.pal .it.sel, .pal .it:hover { background:color-mix(in srgb, var(--accent-blue) 12%, transparent); }
+.pal .it .kind { font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); width:56px; flex:none; }
+.help { padding:12px 14px; } .help table td { padding:3px 6px; border:none; }
+.dialog h2 { font-size:13px; margin:0 0 8px; }
+@media (max-width:1100px) { .frame { grid-template-columns: var(--sidebar-w) 1fr; } .logpane { display:none; } .metrics { grid-template-columns:repeat(4,1fr); } }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="hdr">
+    <div class="brand">Nix target-state alternatives<span class="badge">prototype</span></div>
+    <div class="sub">pick a design, then push it through our real cases</div>
+    <div class="spacer"></div>
+    <label class="ctl">preset <select id="presetSel" aria-label="Preset"></select></label>
+    <button id="paletteBtn" aria-label="Command palette" title="Command palette"><kbd>⌘K</kbd></button>
+    <button id="themeBtn" aria-label="Toggle theme" title="Toggle theme (t)">◐</button>
+    <button id="helpBtn" aria-label="Keyboard help" title="Keyboard help (?)">?</button>
+  </header>
+  <div class="metrics" id="metrics" aria-live="polite"></div>
+  <div class="frame">
+    <aside class="side" id="side"></aside>
+    <main class="content">
+      <nav class="tabs" id="tabs"></nav>
+      <div class="panel" id="panel"></div>
+    </main>
+    <aside class="logpane">
+      <h3>Poke the design</h3>
+      <div class="actions" id="actions"></div>
+      <h3>Event log, newest first <span class="muted" id="logCount"></span></h3>
+      <div class="log" id="log"></div>
+    </aside>
+  </div>
+  <footer class="status" id="status"></footer>
+</div>
+<div class="overlay" id="palette" hidden><div class="dialog"><input id="palInput" placeholder="Type a tab, preset, action, or alternative" aria-label="Command palette" /><div class="pal" id="palList"></div></div></div>
+<div class="overlay" id="help" hidden><div class="dialog help" id="helpBody"></div></div>
+<script id="logic">
+const Design = (() => {
+
+// ---------- The eight decisions and their alternatives ----------
+const AXES = [
+  { id:'substrate', title:'What owns the personal Mac and the homelab mini',
+    question:'Which tool applies configuration, and does root ever get involved?',
+    options:[
+      { id:'chezmoi', label:'chezmoi only (today)', who:'this repo', blurb:'No Nix anywhere.' },
+      { id:'chezmoi-nix-cli', label:'chezmoi on top, one Nix CLI closure underneath', who:'prior doc option 2; signalridge uses flakey-profile', blurb:'nixpkgs-covered formulae come from a nix profile with rollback; chezmoi keeps files, merges, scripts.' },
+      { id:'chezmoi-nixdarwin', label:'chezmoi on top, nix-darwin underneath', who:'signalridge', blurb:'A chezmoi script runs sudo darwin-rebuild switch for system state. No home-manager.' },
+      { id:'hm-standalone', label:'Standalone home-manager', who:'srid (both daily Macs), clo4 (secondary Mac)', blurb:'User-level Nix with no sudo. Gives up system defaults, LaunchDaemons and the Homebrew module.' },
+      { id:'nixdarwin-hm', label:'nix-darwin with home-manager as a module', who:'dustinlyons, ryan4yin, malob, wimpysworld, khanelinix, isabelroses, MatthiasBenaets, thexyno', blurb:'One sudo darwin-rebuild switch does the system and user halves as root.' },
+      { id:'split', label:'nix-darwin for the rare root half, standalone home-manager for the daily user half', who:'billimek, nmasur', blurb:'Two commands. Most days need no sudo. home-manager must be stripped from the darwin config or you get dual activation.' },
+      { id:'nix-top-chezmoi', label:'Nix on top, chezmoi as one activation block', who:'budimanjojo', blurb:'home-manager runs chezmoi apply from an immutable store path; chezmoi stops being a human command.' },
+    ]},
+  { id:'work', title:'The work Mac (Jamf-managed, no standing admin)',
+    question:'Does it follow the same shape or get an exception?',
+    options:[
+      { id:'follow', label:'Same shape as the other Macs', who:'billimek, ahmedelgabri (both have standing admin)', blurb:'Whatever the first decision says, under Jamf temp-admin.' },
+      { id:'hm-only', label:'Standalone home-manager only on this host', who:'doc v2 ranking; srid', blurb:'No root activation ever on the work Mac.' },
+      { id:'chezmoi', label:'Stays on chezmoi', who:'prior doc option 1', blurb:'The work Mac keeps today\'s setup whatever the others do.' },
+    ]},
+  { id:'composition', title:'How modules compose (Nix shapes only)',
+    question:'Where does "which machine gets what" live?',
+    options:[
+      { id:'data-resolver', label:'Data files plus a resolver', who:'this repo today (machines.toml + features.tmpl); wimpysworld keeps TOML registries merged in plain Nix', blurb:'Layered data, merged with hand-written semantics, feeding modules.' },
+      { id:'apps-roles', label:'App modules, imported by role modules, imported by hosts', who:'doc v2 native target; isabelroses is closest', blurb:'One module owns everything one app needs. Roles are presets.' },
+      { id:'broadcast-gate', label:'Import every module everywhere, self-gate on typed host metadata', who:'wimpysworld, khanelinix, nmasur, billimek, kclejeune', blurb:'No import lists. Selection is an option flip.' },
+      { id:'hostspec', label:'Typed host-facts record plus explicit import lists', who:'EmergentMind', blurb:'Facts are typed and asserted; selection is a literal list per host and per user.' },
+      { id:'dendritic', label:'Dendritic: one file per feature exporting darwin and home fragments', who:'mightyiam; budimanjojo advertises it', blurb:'flake-parts plus import-tree; adding a file wires it.' },
+      { id:'by-concern', label:'Colocate by concern, no role layer', who:'MatthiasBenaets, malob, ahmedelgabri, colemickens', blurb:'Each concern file carries its cask, package and home fragment side by side.' },
+      { id:'platform-adapters', label:'Feature modules plus platform adapter directories', who:'nmasur', blurb:'Every module for a platform is imported into every config of that platform; enable options select.' },
+      { id:'hosts-only', label:'Fat host files, no module layer', who:'thexyno, mitchellh, clo4', blurb:'Everything a host needs is written in its own file.' },
+    ]},
+  { id:'coowned', title:'Files the app also writes (default policy)',
+    question:'Claude settings, Codex config, Cursor auth, Orca, agentsview, crit, pi, Yojam: who wins?',
+    options:[
+      { id:'unmanaged', label:'Do not manage them; capture or back up instead', who:'nmasur, thexyno, dustinlyons', blurb:'The app owns the file. Our keys are set by hand once.' },
+      { id:'worktree-symlink', label:'Out-of-store symlink into the git checkout, gitignore what the app writes', who:'clo4, malob (eight Claude paths), ahmedelgabri (per file), ryan4yin', blurb:'Live edit loop; app writes land in the repo.' },
+      { id:'own-force', label:'Own the whole file with a store symlink and force', who:'srid, MatthiasBenaets', blurb:'The app\'s writes are replaced on the next switch or refused.' },
+      { id:'clobber-stash', label:'Copy the file in at activation, stash any drift, reconcile later', who:'billimek, kclejeune', blurb:'Writable regular file; runtime changes are overwritten and saved aside.' },
+      { id:'app-layer', label:'Use the app\'s own layer where one exists', who:'doc v2 tier 1; ahmedelgabri includes; wimpysworld wrapper env for agentsview', blurb:'Managed drop-ins, system layers, include files, env vars, wrapped binaries.' },
+      { id:'merger', label:'Activation-time merger (our Python programs) with a dry-run wrapper', who:'doc v2 tier 3; wimpysworld jq and Python mergers', blurb:'Desired keys land, everything else round-trips.' },
+      { id:'chezmoi-modify', label:'chezmoi modify_ scripts (today)', who:'this repo (22), signalridge (5)', blurb:'Same merge semantics, run by chezmoi with a diff preview.' },
+    ]},
+  { id:'plists', title:'Preference plists (twelve of them)',
+    question:'How do managed keys reach the app\'s preference domain?',
+    options:[
+      { id:'plist-merge', label:'plist-merge engine (today): key-level merge, delete directive, byte-stable, quit guard', who:'this repo', blurb:'Works under chezmoi or as an activation block.' },
+      { id:'defaults-typed-custom', label:'Typed system.defaults plus CustomUserPreferences per key', who:'malob (typed only), isabelroses, billimek, thexyno', blurb:'Root writes per key. No delete. Every switch writes.' },
+      { id:'defaults-domain-import', label:'home-manager targets.darwin.defaults (defaults import per domain)', who:'clo4 (with an unfixed FIXME), khanelinix for one app-private domain', blurb:'Merges keys, no delete, no root. The only user-level lever.' },
+      { id:'defaults-with-ledger', label:'defaults writes with a record-before-overwrite ledger and restore', who:'khanelinix', blurb:'Prior values saved as base64 plists under XDG state; restore command ships.' },
+    ]},
+  { id:'secrets', title:'Secrets (three license files, plus MCP tokens)',
+    question:'Where do values live, and can a headless host apply unattended?',
+    options:[
+      { id:'chezmoi-keep', label:'Leave the license files to chezmoi (onepasswordRead at apply)', who:'this repo; review verdict N5; signalridge keeps secrets out of Nix', blurb:'op:// refs committed, biometric session at apply.' },
+      { id:'op-activation', label:'op read in a home-manager activation block', who:'doc v2 pick for interactive Macs; billimek on both Macs', blurb:'Same refs, same session, nothing in the store.' },
+      { id:'opnix', label:'opnix with a 1Password service-account token on disk', who:'billimek (headless Linux only)', blurb:'Unattended. Token bootstrap is manual and undocumented; macOS unverified.' },
+      { id:'sops-public', label:'sops-nix or agenix with ciphertext in this public repo', who:'wimpysworld, isabelroses, kclejeune, MatthiasBenaets, clo4, colemickens, ryan4yin', blurb:'Age key on every machine; normal in the community.' },
+      { id:'sops-private-input', label:'Ciphertext in a private flake input, age identity from the SSH host key', who:'dustinlyons, EmergentMind', blurb:'Public repo stays refs-only; CI needs a stub input.' },
+      { id:'op-env-ref', label:'op:// reference as the environment value, resolved by the consumer', who:'mitchellh', blurb:'Zero machinery; only for env-shaped secrets.' },
+      { id:'op-run-wrapper', label:'Binaries wrapped in op run', who:'malob', blurb:'Resolved per invocation; biometric prompt per launch.' },
+      { id:'secretspec-cache', label:'secretspec with a keyring cache and op fallback', who:'billimek', blurb:'Solves the prompt-per-MCP-launch problem; env-shaped only.' },
+      { id:'app-runtime', label:'App decrypts at runtime (pass, keychain, or an app-side hook)', who:'ahmedelgabri (pass), thexyno (keychain), nmasur (age in store, app decrypts)', blurb:'Nothing at activation. Only where the app has a hook.' },
+    ]},
+  { id:'ci', title:'What CI proves',
+    question:'Which hosts get evaluated, built, or activated before you apply?',
+    options:[
+      { id:'chezmoi-dryrun', label:'chezmoi init plus apply --dry-run per machine type (today)', who:'this repo', blurb:'Renders every template on a macOS runner; no activation.' },
+      { id:'none', label:'Nothing', who:'srid, thexyno, EmergentMind, MatthiasBenaets, malob (checks), nmasur', blurb:'Hand-run builds. Very common in the survey.' },
+      { id:'flake-check-only', label:'nix flake check as shipped', who:'khanelinix (never on macOS), dustinlyons (on a template), clo4 (blueprint)', blurb:'Evaluates nixosConfigurations; darwin and home coverage disputed.' },
+      { id:'eval-drvpath', label:'nix eval of each host\'s derivation path on an arch-matched runner', who:'mitchellh, ahmedelgabri, billimek, ryan4yin', blurb:'Cheap. Proves evaluation and dependency resolution, not builds.' },
+      { id:'checks-explicit', label:'Every host exposed under checks, including darwin and home activation packages', who:'doc v2; colemickens (macos-26 runner), budimanjojo, isabelroses', blurb:'Closure builds per host. Needs a macOS runner for the Macs.' },
+      { id:'cacheable-fastbuild', label:'A cacheable attribute built by nix-fast-build, kept out of checks', who:'kclejeune, wimpysworld', blurb:'Same coverage, scales with a binary cache.' },
+      { id:'activate-in-ci', label:'Closure builds plus a real darwin-rebuild switch on a CI host', who:'malob', blurb:'Proves activation scripts run; not GUI or MDM behaviour.' },
+      { id:'template-then-check', label:'Render .nix.tmpl with chezmoi, then nix flake check --no-build on a matrix', who:'signalridge', blurb:'Only meaningful when chezmoi templates the Nix sources.' },
+    ]},
+  { id:'brew', title:'Homebrew casks',
+    question:'Who installs Homebrew, who declares casks, and what happens to undeclared ones?',
+    options:[
+      { id:'brewfile-chezmoi', label:'Rendered Brewfile, retired ledger, fork reconciler (today)', who:'this repo', blurb:'Groups unioned per machine type; manual installs drift.' },
+      { id:'nixdarwin-additive', label:'nix-darwin Homebrew module, no cleanup', who:'kclejeune, thexyno, mitchellh, malob', blurb:'Declared casks install; nothing is ever removed.' },
+      { id:'nixdarwin-uninstall', label:'nix-darwin Homebrew module with cleanup uninstall or zap', who:'billimek (uninstall --force, work Mac too), isabelroses (zap), ryan4yin (zap)', blurb:'Anything undeclared is removed on switch.' },
+      { id:'nix-homebrew-pinned', label:'nix-homebrew installs Homebrew, taps pinned as flake inputs', who:'dustinlyons, wimpysworld, isabelroses, ahmedelgabri', blurb:'Reproducible taps; tap updates are lock bumps.' },
+      { id:'declare-nothing', label:'nix-homebrew installs Homebrew, contents stay imperative', who:'clo4', blurb:'No drift control at all.' },
+    ]},
+];
+
+// ---------- Presets: real repos and our own drafts mapped onto the axes ----------
+const PRESETS = {
+  'Status quo (chezmoi)':        { substrate:'chezmoi', work:'follow', composition:'data-resolver', coowned:'chezmoi-modify', plists:'plist-merge', secrets:'chezmoi-keep', ci:'chezmoi-dryrun', brew:'brewfile-chezmoi' },
+  'Doc v2 native target':        { substrate:'nixdarwin-hm', work:'hm-only', composition:'apps-roles', coowned:'app-layer', plists:'defaults-typed-custom', secrets:'op-activation', ci:'checks-explicit', brew:'nix-homebrew-pinned' },
+  'Prior doc option 2 (CLI closure)': { substrate:'chezmoi-nix-cli', work:'follow', composition:'data-resolver', coowned:'chezmoi-modify', plists:'plist-merge', secrets:'chezmoi-keep', ci:'chezmoi-dryrun', brew:'brewfile-chezmoi' },
+  'signalridge':                 { substrate:'chezmoi-nixdarwin', work:'follow', composition:'data-resolver', coowned:'chezmoi-modify', plists:'defaults-typed-custom', secrets:'chezmoi-keep', ci:'template-then-check', brew:'nixdarwin-additive' },
+  'billimek':                    { substrate:'split', work:'follow', composition:'broadcast-gate', coowned:'clobber-stash', plists:'defaults-typed-custom', secrets:'op-activation', ci:'eval-drvpath', brew:'nixdarwin-uninstall' },
+  'malob':                       { substrate:'nixdarwin-hm', work:'follow', composition:'by-concern', coowned:'worktree-symlink', plists:'defaults-typed-custom', secrets:'op-run-wrapper', ci:'activate-in-ci', brew:'nixdarwin-additive' },
+  'wimpysworld':                 { substrate:'nixdarwin-hm', work:'follow', composition:'broadcast-gate', coowned:'merger', plists:'defaults-typed-custom', secrets:'sops-public', ci:'cacheable-fastbuild', brew:'nix-homebrew-pinned' },
+  'khanelinix':                  { substrate:'nixdarwin-hm', work:'follow', composition:'broadcast-gate', coowned:'own-force', plists:'defaults-with-ledger', secrets:'sops-public', ci:'flake-check-only', brew:'nixdarwin-additive' },
+  'ahmedelgabri':                { substrate:'nixdarwin-hm', work:'follow', composition:'by-concern', coowned:'worktree-symlink', plists:'defaults-typed-custom', secrets:'app-runtime', ci:'eval-drvpath', brew:'nix-homebrew-pinned' },
+  'MatthiasBenaets':             { substrate:'nixdarwin-hm', work:'follow', composition:'by-concern', coowned:'own-force', plists:'defaults-typed-custom', secrets:'sops-public', ci:'none', brew:'nixdarwin-additive' },
+  'srid':                        { substrate:'hm-standalone', work:'follow', composition:'by-concern', coowned:'own-force', plists:'defaults-domain-import', secrets:'sops-public', ci:'none', brew:'declare-nothing' },
+  'clo4':                        { substrate:'nixdarwin-hm', work:'hm-only', composition:'hosts-only', coowned:'worktree-symlink', plists:'defaults-domain-import', secrets:'sops-public', ci:'flake-check-only', brew:'declare-nothing' },
+  'kclejeune':                   { substrate:'nixdarwin-hm', work:'follow', composition:'broadcast-gate', coowned:'clobber-stash', plists:'defaults-typed-custom', secrets:'app-runtime', ci:'cacheable-fastbuild', brew:'nixdarwin-additive' },
+  'nmasur':                      { substrate:'split', work:'follow', composition:'platform-adapters', coowned:'unmanaged', plists:'defaults-typed-custom', secrets:'app-runtime', ci:'none', brew:'nixdarwin-additive' },
+  'mitchellh':                   { substrate:'nixdarwin-hm', work:'follow', composition:'hosts-only', coowned:'unmanaged', plists:'defaults-typed-custom', secrets:'op-env-ref', ci:'eval-drvpath', brew:'nixdarwin-additive' },
+  'isabelroses':                 { substrate:'nixdarwin-hm', work:'follow', composition:'apps-roles', coowned:'own-force', plists:'defaults-typed-custom', secrets:'sops-public', ci:'checks-explicit', brew:'nixdarwin-uninstall' },
+  'ryan4yin':                    { substrate:'nixdarwin-hm', work:'follow', composition:'by-concern', coowned:'worktree-symlink', plists:'defaults-typed-custom', secrets:'sops-public', ci:'eval-drvpath', brew:'nixdarwin-uninstall' },
+  'colemickens':                 { substrate:'nixdarwin-hm', work:'follow', composition:'by-concern', coowned:'unmanaged', plists:'defaults-typed-custom', secrets:'sops-public', ci:'checks-explicit', brew:'declare-nothing' },
+  'dustinlyons':                 { substrate:'nixdarwin-hm', work:'follow', composition:'by-concern', coowned:'unmanaged', plists:'defaults-typed-custom', secrets:'sops-private-input', ci:'flake-check-only', brew:'nix-homebrew-pinned' },
+  'EmergentMind (NixOS only)':   { substrate:'nixdarwin-hm', work:'follow', composition:'hostspec', coowned:'unmanaged', plists:'defaults-typed-custom', secrets:'sops-private-input', ci:'none', brew:'nixdarwin-additive' },
+  'thexyno':                     { substrate:'nixdarwin-hm', work:'follow', composition:'hosts-only', coowned:'unmanaged', plists:'defaults-typed-custom', secrets:'app-runtime', ci:'none', brew:'nixdarwin-additive' },
+  'budimanjojo':                 { substrate:'nix-top-chezmoi', work:'follow', composition:'dendritic', coowned:'chezmoi-modify', plists:'plist-merge', secrets:'sops-public', ci:'checks-explicit', brew:'declare-nothing' },
+};
+
+const HOSTS = [
+  { id:'personal', label:'Personal MacBook', kind:'mac', mdm:false, headless:false },
+  { id:'work',     label:'Work MacBook (Jamf, no standing admin)', kind:'mac', mdm:true, headless:false },
+  { id:'m4mini',   label:'Homelab Mac mini (applies unattended)', kind:'mac', mdm:false, headless:true },
+  { id:'devpod',   label:'Linux DevPod (headless, image owns the OS)', kind:'linux', mdm:false, headless:true },
+];
+
+// Shape facts. "shape" is what a host actually runs after the two host axes are combined.
+const SHAPES = {
+  'chezmoi':            { label:'chezmoi', apply:'chezmoi apply', sudo:'only when a root step runs (sudo keepalive)', root:false, envScrubbed:false, sshAgent:true, preview:true, rollback:'none', sysDefaults:'defaults write in an apply script', brewModule:false, nix:false, userSession:true },
+  'chezmoi+nixprofile': { label:'chezmoi + nix profile', apply:'chezmoi apply (a script runs nix profile upgrade)', sudo:'only when a root step runs', root:false, envScrubbed:false, sshAgent:true, preview:true, rollback:'CLI closure only (nix profile rollback)', sysDefaults:'defaults write in an apply script', brewModule:false, nix:true, userSession:true },
+  'chezmoi+nixdarwin':  { label:'chezmoi + nix-darwin', apply:'chezmoi apply, then sudo darwin-rebuild switch from a chezmoi script', sudo:'one per apply', root:true, envScrubbed:true, sshAgent:false, preview:true, rollback:'system generations for the nix-darwin half', sysDefaults:'typed system.defaults', brewModule:true, nix:true, userSession:true },
+  'hm':                 { label:'standalone home-manager', apply:'home-manager switch', sudo:'none', root:false, envScrubbed:false, sshAgent:true, preview:false, rollback:'home generations', sysDefaults:'user domains only, via targets.darwin.defaults', brewModule:false, nix:true, userSession:true },
+  'nixdarwin+hm':       { label:'nix-darwin + home-manager module', apply:'sudo darwin-rebuild switch', sudo:'one per apply', root:true, envScrubbed:true, sshAgent:false, preview:false, rollback:'system generations', sysDefaults:'typed system.defaults + CustomUserPreferences', brewModule:true, nix:true, userSession:false },
+  'split':              { label:'nix-darwin (rare) + standalone home-manager (daily)', apply:'sudo darwin-rebuild switch when system state changes; home-manager switch otherwise', sudo:'rare', root:'rare', envScrubbed:'root half only', sshAgent:true, preview:false, rollback:'both kinds of generations', sysDefaults:'typed system.defaults + CustomUserPreferences (root half)', brewModule:true, nix:true, userSession:true },
+  'nixtop':             { label:'home-manager running chezmoi', apply:'home-manager switch (chezmoi apply -S <store path> inside activation)', sudo:'none', root:false, envScrubbed:false, sshAgent:true, preview:false, rollback:'home generations; chezmoi source immutable', sysDefaults:'chezmoi script inside activation', brewModule:false, nix:true, userSession:true },
+};
+
+function macShape(substrate){
+  return { 'chezmoi':'chezmoi', 'chezmoi-nix-cli':'chezmoi+nixprofile', 'chezmoi-nixdarwin':'chezmoi+nixdarwin', 'hm-standalone':'hm', 'nixdarwin-hm':'nixdarwin+hm', 'split':'split', 'nix-top-chezmoi':'nixtop' }[substrate];
+}
+function linuxShape(substrate){
+  return { 'chezmoi':'chezmoi', 'chezmoi-nix-cli':'chezmoi+nixprofile', 'chezmoi-nixdarwin':'chezmoi', 'hm-standalone':'hm', 'nixdarwin-hm':'hm', 'split':'hm', 'nix-top-chezmoi':'nixtop' }[substrate];
+}
+function shapeFor(hostId, c){
+  if (hostId === 'devpod') return linuxShape(c.substrate);
+  if (hostId === 'work') {
+    if (c.work === 'hm-only') return 'hm';
+    if (c.work === 'chezmoi') return 'chezmoi';
+  }
+  return macShape(c.substrate);
+}
+function anyNix(c){ return HOSTS.some(h => SHAPES[shapeFor(h.id, c)].nix); }
+function anyNixDarwin(c){ return HOSTS.some(h => ['chezmoi+nixdarwin','nixdarwin+hm','split'].includes(shapeFor(h.id, c))); }
+function anyChezmoi(c){ return HOSTS.some(h => ['chezmoi','chezmoi+nixprofile','chezmoi+nixdarwin','nixtop'].includes(shapeFor(h.id, c))); }
+
+// ---------- Composition consequences ----------
+const COMPOSITION = {
+  'data-resolver':    { addApp:(nix)=> nix ? { count:'3 to 4', files:['registry row in a TOML file','the app module','a host or type layer entry'] } : { count:'11 to 13', files:['packages.toml','.chezmoiignore gate','plist fragment','modify_ stub','focused test','Makefile target','tests/README.md','install-smoke.yml','package-gated-configs rows','capture.sh list','postflight rows'] }, identity:'machine_type in a data file, resolved every render', risks:['Dead data files rot unnoticed; Nix cannot tell you a TOML is unread (thexyno).','List-merge semantics are hand-written, which is the bug class the module system exists to remove.'], tree:'data/*.toml\nmodules/machine/resolver.nix\nmodules/{darwin,home}/...\nhosts/<host>.nix' },
+  'apps-roles':       { addApp:()=>({ count:'2', files:['modules/apps/thaw.nix','one line in roles/desktop.nix'] }), identity:'role presets; hosts import roles', risks:['No surveyed repo maintains a role layer; it is an investment, not a default (thexyno shows the cost of skipping it).','A diamond in roles-import-apps is an evaluation error under flake-parts because _file wrapping defeats import dedup (kclejeune).'], tree:'modules/apps/<app>.nix\nmodules/roles/{base,desktop,development,work,personal,homelab,ci,devpod}.nix\nhosts/<host>.nix imports roles + exceptions\nchecks/' },
+  'broadcast-gate':   { addApp:()=>({ count:'1 to 2', files:['modules/darwin/thaw.nix (self-gated on host metadata)','a metadata flag if not defaulted'] }), identity:'a typed host metadata record every module reads', risks:['Every module\'s options are evaluated on every host; turning something off is an explicit negative.','Unreachable modules are invisible to CI: 29 files in colemickens, a dormant type error in EmergentMind.'], tree:'modules/<platform>/<feature>.nix  (imported everywhere)\nlib/host-metadata.nix (typed)\nhosts/<host>.nix sets flags' },
+  'hostspec':         { addApp:()=>({ count:'1 + 2 per host', files:['modules/thaw.nix','hosts/<host>/default.nix import','home/<user>/<host>.nix import'] }), identity:'typed hostSpec record with assertions; imports listed per host and per user', risks:['Host-side and home-side import lists can disagree and nothing asserts they match (EmergentMind).','Facts and selection are cleanly separate, which our doc collapsed; worth keeping the record even if roles arrive.'], tree:'modules/hosts/common/host-spec.nix\nhosts/common/{core,optional}/\nhome/<user>/common/{core,optional}/\nhosts/<host>/{default,host-spec}.nix' },
+  'dendritic':        { addApp:()=>({ count:'1', files:['modules/thaw.nix exporting flake.modules.darwin.thaw and flake.modules.homeManager.thaw'] }), identity:'flake attribute per host; import-tree wires files', risks:['The two halves drift without enforcement; budimanjojo advertises dendritic and has zero files spanning both classes, plus a hand-written QMK warning for exactly this.','mkEnableOption is called an anti-pattern by the pattern\'s author; expect a style fight.'], tree:'flake.nix (import-tree ./modules)\nmodules/<feature>.nix  (darwin + home in one file)\nmodules/hosts/<host>.nix' },
+  'by-concern':       { addApp:()=>({ count:'1', files:['modules/programs/thaw.nix'] }), identity:'host.name string tests inside modules', risks:['Without a shared role, per-host defaults get duplicated: the two Macs in MatthiasBenaets carry 66 identical lines.','Colocation gives adjacency, not sharing; kitty is configured twice in one file and the two disagree.'], tree:'modules/{editors,gui,programs,services,theme}/<concern>.nix\nmodules/hosts/<host>.nix' },
+  'platform-adapters':{ addApp:()=>({ count:'1 + adapters', files:['features/thaw.nix','platforms/nix-darwin adapter entry','platforms/home-manager adapter entry'] }), identity:'platform directory plus an enable option', risks:['Our dominant axis is the app, and three of our four machine types share a platform, so the adapter layer buys little here (nmasur survey).'], tree:'hosts/<system>/<host>/\nplatforms/{nixos,nix-darwin,home-manager,windows}/\nfeatures/...' },
+  'hosts-only':       { addApp:()=>({ count:'one edit per host', files:['hosts/personal.nix','hosts/m4mini.nix','hosts/work.nix'] }), identity:'the flake attribute only', risks:['Fat host files and comment-driven toggling: 61% of thexyno\'s lines live under hosts/ and four hosts repeat the same imports.'], tree:'hosts/<host>.nix  (everything)\nusers/<user>.nix' },
+};
+
+// ---------- Files the app also writes ----------
+// Each rule: policy -> { status, mechanism, note }. Status: ok | warn | bad.
+const FILES = [
+  { id:'claudeSettings', label:'~/.claude/settings.json', facts:'Claude Code opens it with O_NOFOLLOW and silently refuses to write through a symlink (billimek). Orca and Superset inject hooks at runtime. enabledPlugins must stay overridable per project (ADR 0007). Managed drop-ins exist under /Library (root path).',
+    rules:{
+      'unmanaged':        { status:'warn', mechanism:'hand-set once', note:'Hooks, permissions and plugin enablement are not reproducible; reconcile-agent-plugins still has to run.' },
+      'worktree-symlink': { status:'bad',  mechanism:'symlink into the checkout', note:'Claude refuses the symlink silently: runtime hook injection and /config changes never land, and you get no error.' },
+      'own-force':        { status:'bad',  mechanism:'store symlink, force', note:'Same silent refusal. srid works around it by pushing mutable state to a project-level settings.local.json, which breaks ADR 0019 hook semantics.' },
+      'clobber-stash':    { status:'warn', mechanism:'copy at activation, jq -S drift stash', note:'Writable file, so runtime injections land, then get overwritten and stashed on the next switch unless folded back in.' },
+      'app-layer':        { status:'warn', mechanism:'managed-settings.d drop-in for hooks and permissions; a small merger for enabledPlugins', note:'Scopes concatenate, so the hook-union merger goes away. enabledPlugins still needs a user-file mechanism. The drop-in path is root-owned.' },
+      'merger':           { status:'ok',   mechanism:'activation merger writes a regular file', note:'Hook union by matcher, enabledPlugins, byte-preserve. Put the dry-run wrapper inside the option, not at each call site (wimpysworld skipped it 13 of 15 times).' },
+      'chezmoi-modify':   { status:'ok',   mechanism:'modify_ script', note:'Today\'s behaviour, with chezmoi diff as the preview.' },
+    }},
+  { id:'codexConfig', label:'~/.codex/config.toml', facts:'Codex follows a symlink into the read-only store and its writes fail (wimpysworld). Codex records plugin installs and hook state in this file (ADR 0020). /etc/codex/config.toml is a lower-precedence system layer for defaults.',
+    rules:{
+      'unmanaged':        { status:'warn', mechanism:'Codex-owned', note:'Our managed keys are not enforced.' },
+      'worktree-symlink': { status:'warn', mechanism:'symlink into the checkout', note:'Writes go through to the repo; plugin records and hook state land in git and need ignoring.' },
+      'own-force':        { status:'bad',  mechanism:'store symlink, force', note:'Codex follows the link into the store and fails to write; plugin installs break.' },
+      'clobber-stash':    { status:'bad',  mechanism:'copy at activation', note:'Each switch overwrites the install records Codex owns; the CLI reconcile of ADR 0020 fights it.' },
+      'app-layer':        { status:'warn', mechanism:'/etc/codex/config.toml for defaults; user file left to Codex', note:'Content solved, file shape not: signalridge still kept a 323-line merger for hooks and project state. Root path on the work Mac.' },
+      'merger':           { status:'ok',   mechanism:'activation tomlkit merger', note:'Desired keys land; Codex-written tables round-trip.' },
+      'chezmoi-modify':   { status:'ok',   mechanism:'modify_ script', note:'Today\'s behaviour.' },
+    }},
+  { id:'codexSkills', label:'~/.codex/skills/*/SKILL.md', facts:'Codex discovers skills with an is-file check that a symlinked file fails, so per-file store symlinks are invisible with no error (wimpysworld). A directory-level link is fine.',
+    rules:{
+      'unmanaged':        { status:'warn', mechanism:'not projected', note:'Skills are not installed for Codex.' },
+      'worktree-symlink': { status:'warn', mechanism:'depends on link granularity', note:'Per-file links (ahmedelgabri style) are invisible to Codex; a directory-level link works.' },
+      'own-force':        { status:'bad',  mechanism:'home.file recursive: per-leaf store symlinks', note:'Every SKILL.md is a symlink, so Codex finds none and says nothing.' },
+      'clobber-stash':    { status:'ok',   mechanism:'copied files', note:'Regular files, discovered normally.' },
+      'app-layer':        { status:'ok',   mechanism:'directory-level link or copy from the marketplace derivation', note:'Fine as long as the leaves are real files or reached through a directory link.' },
+      'merger':           { status:'ok',   mechanism:'copy or directory link', note:'Not a merge target; copy the rendered tree.' },
+      'chezmoi-modify':   { status:'ok',   mechanism:'symlink_ directory link (today)', note:'A directory-level live link; leaves are real files.' },
+    }},
+  { id:'cursorConfig', label:'~/.cursor/cli-config.json', facts:'Cursor writes auth, model and team state here; a full rewrite logs the CLI out. No managed or project layer exists (open question 13, answered no).',
+    rules:{
+      'unmanaged':        { status:'warn', mechanism:'Cursor-owned', note:'Our one managed key is not set.' },
+      'worktree-symlink': { status:'bad',  mechanism:'symlink into the checkout', note:'The auth token lands in your git working tree.' },
+      'own-force':        { status:'bad',  mechanism:'store symlink, force', note:'Cursor\'s rewrite replaces the link; the next switch clobbers it and logs you out.' },
+      'clobber-stash':    { status:'bad',  mechanism:'copy at activation', note:'Every switch overwrites the auth token; logged out each time.' },
+      'app-layer':        { status:'warn', mechanism:'none exists; falls back to a merger', note:'The app-layer policy has nothing to use here.' },
+      'merger':           { status:'ok',   mechanism:'activation JSON merger', note:'One key set, everything else preserved.' },
+      'chezmoi-modify':   { status:'ok',   mechanism:'modify_ script', note:'Today\'s behaviour.' },
+    }},
+  { id:'sixOthers', label:'Orca, agentsview, crit, pi, Yojam, obsidian-wiki', facts:'Six more co-owned files with no app-provided layer, except agentsview (env vars and a wrapper) and obsidian-wiki (setup writes the whole file).',
+    rules:{
+      'unmanaged':        { status:'warn', mechanism:'app-owned', note:'Managed keys drift.' },
+      'worktree-symlink': { status:'warn', mechanism:'symlinks into the checkout', note:'Orca rewrites its state file atomically; app state ends up in the repo.' },
+      'own-force':        { status:'bad',  mechanism:'store symlinks, force', note:'Orca\'s atomic rewrite replaces the link; agentsview credentials lost on switch.' },
+      'clobber-stash':    { status:'warn', mechanism:'copies with drift stash', note:'Works for low-churn files; Orca state is high-churn.' },
+      'app-layer':        { status:'warn', mechanism:'wrapper env for agentsview, generated file for obsidian-wiki, mergers for the rest', note:'Two of six get a native seam.' },
+      'merger':           { status:'ok',   mechanism:'activation mergers', note:'Six programs, one contract.' },
+      'chezmoi-modify':   { status:'ok',   mechanism:'modify_ scripts', note:'Today\'s behaviour.' },
+    }},
+];
+
+const PLISTS = {
+  'plist-merge':            { status:'ok',   mechanism:'plist-merge engine', preserve:true, del:true, everySwitch:false, quitGuard:true, note:'Key-level merge, delete directive, byte-stable no-op, quit guard.' },
+  'defaults-typed-custom':  { status:'warn', mechanism:'defaults write per key as the primary user (root activation)', preserve:true, del:false, everySwitch:true, quitGuard:false, note:'Unmanaged keys survive; removed managed keys linger; a running app may overwrite (open question 2). Needs nix-darwin.' },
+  'defaults-domain-import': { status:'warn', mechanism:'defaults import per domain (home-manager)', preserve:true, del:false, everySwitch:true, quitGuard:false, note:'Merges keys (re-tested). The only lever without root, and clo4 never got it working.' },
+  'defaults-with-ledger':   { status:'ok',   mechanism:'defaults write with a prior-value ledger and restore', preserve:true, del:false, everySwitch:true, quitGuard:false, note:'You can undo what you overwrote. Still no delete directive.' },
+};
+
+// Secrets: shapes a secret can have. license = a file the app reads; env = a token a process needs at launch.
+const SECRETS = {
+  'chezmoi-keep':      { license:{status:'ok', where:'1Password, read at apply in the user session', unattended:false}, env:{status:'warn', where:'not covered; set per process', unattended:false}, publicRepo:'refs only', note:'Biometric session at apply; the mini needs a session to apply.' },
+  'op-activation':     { license:{status:'ok', where:'1Password, op read after writeBoundary, installed 0600', unattended:false}, env:{status:'warn', where:'baked into a config file at switch; stale until the next switch', unattended:false}, publicRepo:'refs only', note:'Needs the activation to run in the user\'s session; verify under nix-darwin\'s home-manager module.' },
+  'opnix':             { license:{status:'warn', where:'resolved by a service-account token on disk', unattended:true}, env:{status:'warn', where:'file on disk, mode 0400', unattended:true}, publicRepo:'refs only', note:'Token bootstrap is manual and undocumented in the one repo that uses it; macOS unverified; vault access is open question 5.' },
+  'sops-public':       { license:{status:'warn', where:'ciphertext committed here, decrypted by an age key on disk', unattended:true}, env:{status:'ok', where:'decrypted file, mode 0400, shell reads it', unattended:true}, publicRepo:'ciphertext published', note:'Normal in the community; a policy shift for this repo.' },
+  'sops-private-input':{ license:{status:'ok', where:'ciphertext in dotfiles-private, age identity from the SSH host key', unattended:true}, env:{status:'ok', where:'decrypted file, mode 0400', unattended:true}, publicRepo:'refs only', note:'CI must stub the private input or it stops running (EmergentMind turned CI off).' },
+  'op-env-ref':        { license:{status:'bad', where:'not applicable to a file', unattended:false}, env:{status:'ok', where:'the op:// reference itself, resolved by the consumer', unattended:false}, publicRepo:'refs only', note:'Zero machinery, env-shaped only; license files fall back to chezmoi or op read.' },
+  'op-run-wrapper':    { license:{status:'bad', where:'not applicable to a file', unattended:false}, env:{status:'warn', where:'resolved per invocation by op run', unattended:false}, publicRepo:'refs only', note:'Biometric prompt per launch; usable in the chezmoi repo today.' },
+  'secretspec-cache':  { license:{status:'bad', where:'not applicable to a file', unattended:false}, env:{status:'ok', where:'keyring cache with op fallback, 12h max age', unattended:false}, publicRepo:'refs only', note:'Solves prompt-per-MCP-launch; env-shaped only.' },
+  'app-runtime':       { license:{status:'warn', where:'only if the app has a credential hook; BetterTouchTool does not', unattended:true}, env:{status:'ok', where:'pass or keychain at process start', unattended:false}, publicRepo:'refs only', note:'Nothing at activation. Coverage depends on each app.' },
+};
+
+const CI = {
+  'chezmoi-dryrun':      { evaluates:['personal','work'], builds:[], activates:[], darwin:true, home:true, needsMacRunner:true, note:'Renders every template for the ci, personal and work types; scripts never run.' },
+  'none':                { evaluates:[], builds:[], activates:[], darwin:false, home:false, needsMacRunner:false, note:'Hand-run builds only. Lock drift and dormant errors go unnoticed (thexyno: inputs 13 months apart).' },
+  'flake-check-only':    { evaluates:['?'], builds:[], activates:[], darwin:'disputed', home:false, needsMacRunner:false, note:'The manual says nixosConfigurations only; wimpysworld says it deep-evaluates every *Configurations attrset. Untested here. Blueprint puts home configs under legacyPackages, so they are skipped either way.' },
+  'eval-drvpath':        { evaluates:['personal','work','m4mini','devpod'], builds:[], activates:[], darwin:true, home:true, needsMacRunner:'per arch when import-from-derivation is used', note:'Proves evaluation and dependency resolution per host; cheap; catches the class of failure a lock bump produces.' },
+  'checks-explicit':     { evaluates:['personal','work','m4mini','devpod'], builds:['personal','work','m4mini','devpod'], activates:[], darwin:true, home:true, needsMacRunner:true, note:'Closure builds per host, including home activation packages. Still only evaluates what a host enables.' },
+  'cacheable-fastbuild': { evaluates:['personal','work','m4mini','devpod'], builds:['personal','work','m4mini','devpod'], activates:[], darwin:true, home:true, needsMacRunner:true, note:'Same coverage as explicit checks, kept out of nix flake check, built by nix-fast-build against a cache.' },
+  'activate-in-ci':      { evaluates:['personal','work','m4mini','devpod'], builds:['personal','work','m4mini','devpod'], activates:['ci host'], darwin:true, home:true, needsMacRunner:true, note:'Adds a real darwin-rebuild switch on macos-latest for a CI host and ./result/activate on Linux. Proves activation scripts run.' },
+  'template-then-check': { evaluates:['personal','work','m4mini','devpod'], builds:[], activates:[], darwin:true, home:true, needsMacRunner:true, note:'Renders .nix.tmpl with chezmoi into a temp dir, then nix flake check --no-build on a macOS and Linux matrix.' },
+};
+
+const BREW = {
+  'brewfile-chezmoi':   { install:'Homebrew installed by a run_once script', declare:'groups unioned per machine type', undeclared:'stays (manual installs drift; the known pain)', retired:'explicit retired ledger uninstalls', workRisk:'none', note:'Fork reconciler and retired ledger keep working.' },
+  'nixdarwin-additive': { install:'by hand', declare:'homebrew.casks per host or module', undeclared:'stays', retired:'nothing is ever removed', workRisk:'none', note:'Additive only; drift returns for removals.' },
+  'nixdarwin-uninstall':{ install:'by hand', declare:'homebrew.casks per host or module', undeclared:'removed on switch', retired:'automatic', workRisk:'IT-installed casks on the work Mac are removed unless declared', note:'billimek runs this with --force on a work Mac; livable, not free.' },
+  'nix-homebrew-pinned':{ install:'nix-homebrew (can adopt an existing install)', declare:'homebrew.casks; taps as flake inputs', undeclared:'per cleanup policy', retired:'per cleanup policy', workRisk:'autoMigrate deletes tap git repos', note:'Tap updates become lock bumps; isabelroses needed a 396-line updater for the hashes.' },
+  'declare-nothing':    { install:'nix-homebrew', declare:'nothing', undeclared:'stays', retired:'manual', workRisk:'none', note:'No drift control at all.' },
+};
+
+// ---------- Derive the design's consequences ----------
+function opt(axisId, id){ return AXES.find(a => a.id === axisId).options.find(o => o.id === id); }
+
+function evaluate(c){
+  const conflicts = [];
+  const nix = anyNix(c);
+  const nixDarwin = anyNixDarwin(c);
+  const chez = anyChezmoi(c);
+
+  // Hosts
+  const hosts = HOSTS.map(h => {
+    const sid = shapeFor(h.id, c); const s = SHAPES[sid];
+    const notes = [];
+    let jamf = 'never';
+    if (h.mdm) {
+      if (s.root === true) jamf = 'before every apply (trigger the policy, wait for admin, then sudo)';
+      else if (s.root === 'rare') jamf = 'only when the system half changes';
+      else if (sid.startsWith('chezmoi')) jamf = 'only when an apply step needs root (sudo keepalive triggers it)';
+      if (s.nix) notes.push('MDM gate open: the installer refuses if a Restrictions - Media profile is present (open question 3).');
+      if (s.nix) notes.push('Corporate CA plumbing required: security.pki, NIX_SSL_CERT_FILE, NODE_EXTRA_CA_CERTS (billimek, nmasur).');
+      if (s.nix) notes.push('Key the host by a logical name, not the Jamf hostname, which MDM can reset (ahmedelgabri).');
+      if (s.root === true) notes.push('Root activation runs under env -i: DOTFILES_* switches never reach it, and the private overlay loses the SSH agent.');
+    }
+    if (sid === 'hm') notes.push('Standalone costs: targets.darwin defaults unproven (clo4 FIXME), PATH ordering needs a shell fix, Nix init lands in .zshrc, no nix.buildMachines.');
+    if (sid === 'split') notes.push('Strip home-manager out of the darwin config or every darwin-rebuild breaks the prompt until the next home switch (nmasur).');
+    if (sid === 'nixtop') notes.push('chezmoi diff and the modifier preview stop being human commands; the merge engine survives.');
+    if (h.headless && !s.nix) notes.push('Unattended apply needs a 1Password session for secret-backed files.');
+    if (h.id === 'devpod' && s.nix) notes.push('Needs /nix on the image; --init none limits Nix to root (open question 4).');
+    return { host:h, shape:sid, facts:s, jamf, notes };
+  });
+
+  // Composition
+  const compActive = nix;
+  const comp = COMPOSITION[c.composition];
+  const addApp = compActive ? comp.addApp(true) : COMPOSITION['data-resolver'].addApp(false);
+  const compNotes = compActive ? comp.risks.slice() : ['Composition axis is inert: chezmoi keeps machines.toml and the features resolver.'];
+  if (compActive && c.composition === 'data-resolver' && c.substrate.startsWith('chezmoi')) compNotes.unshift('Under a chezmoi-on-top hybrid the data files are still chezmoi\'s; Nix reads the rendered result.');
+  const tree = compActive ? comp.tree : 'home/            chezmoi source state\nhome/.chezmoidata/{packages,machines}.toml\nhome/.chezmoitemplates/features.tmpl\nhome/.chezmoiscripts/  (24)\nscripts/macos/plist-merge';
+
+  // Files
+  const filesOut = FILES.map(f => {
+    let policy = c.coowned;
+    let r = f.rules[policy];
+    let fallback = null;
+    if (!chez && policy === 'chezmoi-modify') { policy = 'merger'; r = f.rules[policy]; fallback = 'no chezmoi on this design, so the modify_ script becomes an activation merger with the same program'; }
+    if (c.substrate === 'nix-top-chezmoi' && policy === 'chezmoi-modify') { fallback = 'chezmoi runs inside home-manager activation, so the merge works but there is no preview'; }
+    return { file:f, policy, rule:r, fallback };
+  });
+  const mergersRemaining = filesOut.filter(x => ['merger','chezmoi-modify'].includes(x.policy) || (x.policy === 'app-layer' && x.file.id !== 'codexSkills')).length;
+  const silent = filesOut.filter(x => x.rule.status === 'bad').length;
+
+  // Plists
+  let plistId = c.plists; let plistNote = null;
+  if (['defaults-typed-custom','defaults-with-ledger'].includes(plistId) && !nixDarwin) {
+    plistNote = 'Root per-key writes need nix-darwin; on this design only home-manager\'s domain import exists.'; plistId = nix ? 'defaults-domain-import' : 'plist-merge';
+  }
+  if (!nix && plistId !== 'plist-merge') { plistNote = 'Without Nix the defaults options are just defaults(1) calls; chezmoi keeps plist-merge.'; plistId = 'plist-merge'; }
+  const plist = PLISTS[plistId];
+
+  // Secrets
+  const sec = SECRETS[c.secrets];
+  const secNotes = [];
+  if (c.secrets === 'op-activation' && !nix) secNotes.push('No home-manager on this design; falls back to chezmoi\'s onepasswordRead.');
+  if (['op-activation','chezmoi-keep'].includes(c.secrets)) { const m = hosts.find(x => x.host.id === 'm4mini'); if (m.host.headless) secNotes.push('The mini cannot apply unattended: op needs an interactive session (the doc says opnix or a private-input backend there).'); }
+  if (c.secrets === 'op-activation') { const rootHosts = hosts.filter(x => x.facts.userSession === false); if (rootHosts.length) secNotes.push('Under nix-darwin the home-manager activation must run in the user\'s session for op to see the biometric token; verify before relying on it.'); }
+  if (sec.license.status === 'bad') secNotes.push('License files fall back to ' + (chez ? 'chezmoi\'s onepasswordRead' : 'op read in activation') + '.');
+  if (c.secrets === 'sops-private-input') secNotes.push('We already carry a private input (ADR 0011). CI needs --override-input with a stub.');
+  if (c.secrets === 'opnix') secNotes.push('Provision /etc/opnix-token by hand on each host; nothing declarative can place it.');
+
+  // CI
+  const ci = CI[c.ci];
+  const ciNotes = [];
+  if (c.ci === 'chezmoi-dryrun' && nix) ciNotes.push('The dry run covers only the chezmoi half; the Nix half is unevaluated.');
+  if (c.ci === 'template-then-check' && !c.substrate.startsWith('chezmoi')) ciNotes.push('Nothing is templated on this design; this collapses to nix flake check --no-build.');
+  if (c.ci !== 'none' && c.ci !== 'chezmoi-dryrun' && !nix) ciNotes.push('There is no flake on this design; this option has nothing to check.');
+  if (['sops-private-input'].includes(c.secrets) && c.ci !== 'none' && nix) ciNotes.push('Private input in play: stub it or CI cannot evaluate the hosts that import it.');
+  if (nix && c.ci !== 'none') ciNotes.push('Closure builds evaluate only what some host enables; add an enumeration check or an enable-everything host (EmergentMind, colemickens).');
+  if (nix) ciNotes.push('Tart still owns defaults landing, GUI behaviour, launchd bootstrap, MDM and app persistence.');
+  const covered = nix ? ci.evaluates.filter(h => h !== '?').length : (c.ci === 'chezmoi-dryrun' ? 2 : 0);
+
+  // Homebrew
+  let brewId = c.brew; const brewNotes = [];
+  if (['nixdarwin-additive','nixdarwin-uninstall','nix-homebrew-pinned'].includes(brewId) && !nixDarwin) { brewNotes.push('The Homebrew module and nix-homebrew are nix-darwin modules; on this design Homebrew stays with chezmoi\'s Brewfile.'); brewId = chez ? 'brewfile-chezmoi' : 'declare-nothing'; }
+  const brew = BREW[brewId];
+  if (brewId === 'nixdarwin-uninstall') { const w = hosts.find(x => x.host.id === 'work'); if (['nixdarwin+hm','split','chezmoi+nixdarwin'].includes(w.shape)) brewNotes.push('On the work Mac this removes anything IT installed that you did not declare.'); }
+  if (nix && brewId === 'brewfile-chezmoi' && !chez) brewNotes.push('No chezmoi to render the Brewfile; you would be writing a Brewfile by hand.');
+
+  // Conflicts (incoherent combinations)
+  if (!nix && c.composition !== 'data-resolver') conflicts.push('Composition "' + opt('composition', c.composition).label + '" needs a Nix module system; with chezmoi everywhere it does nothing.');
+  if (c.substrate === 'chezmoi' && c.work === 'hm-only') conflicts.push('The work Mac would be the only Nix host, with the hardest install gate and no shared modules to reuse.');
+  if (c.coowned === 'worktree-symlink' && filesOut.find(x => x.file.id === 'claudeSettings').rule.status === 'bad') conflicts.push('Working-tree symlinks silently break Claude Code settings; that file needs a per-file exception (copy or merger).');
+  if (['own-force','clobber-stash'].includes(c.coowned)) conflicts.push('Owning Codex and Cursor files whole breaks their install records or auth; ADR 0020 and the Cursor merger exist for this reason.');
+  if (c.secrets === 'opnix' && !hosts.some(x => x.host.headless && x.facts.nix)) conflicts.push('opnix only pays off on a headless Nix host; none exists on this design.');
+  if (c.ci === 'template-then-check' && !c.substrate.startsWith('chezmoi')) conflicts.push('Template-then-check assumes chezmoi renders the Nix sources; this design has no templates.');
+  if (c.brew === 'nix-homebrew-pinned' && !nixDarwin) conflicts.push('nix-homebrew is a nix-darwin module; no host runs nix-darwin here.');
+  if (c.plists !== 'plist-merge' && !nix) conflicts.push('defaults-based plist options assume Nix activation; chezmoi keeps plist-merge.');
+  if (c.substrate === 'nix-top-chezmoi' && c.coowned !== 'chezmoi-modify') conflicts.push('With chezmoi underneath Nix, the merge engine is already there; a second merging mechanism on top is redundant.');
+  if (c.work === 'follow' && ['nixdarwin+hm','chezmoi+nixdarwin'].includes(shapeFor('work', c))) conflicts.push('Every apply on the work Mac is a Jamf temp-admin ritual plus sudo. No surveyed repo runs this without standing admin.');
+
+  const metrics = {
+    filesToAddApp: addApp.count,
+    sudoWork: hosts.find(x => x.host.id === 'work').facts.sudo,
+    mergers: mergersRemaining + ' of 5 groups' ,
+    silent: silent,
+    ciCovered: covered + ' of 4 hosts',
+    unattendedMini: (sec.license.unattended && hosts.find(x=>x.host.id==='m4mini').facts.nix) ? 'yes' : (c.secrets === 'chezmoi-keep' || c.secrets === 'op-activation' ? 'no (needs a session)' : (sec.license.unattended ? 'yes' : 'no')),
+    preview: hosts.some(x => x.facts.preview) ? 'yes (chezmoi diff)' : 'no (closure diff only)',
+    rollback: hosts.find(x => x.host.id === 'personal').facts.rollback,
+  };
+
+  return { choices:c, nix, nixDarwin, chez, conflicts, hosts, comp:{ active:compActive, addApp, notes:compNotes, tree, identity: compActive ? comp.identity : 'machine_type in data' }, files:filesOut, plist:{ id:plistId, facts:plist, note:plistNote }, secrets:{ id:c.secrets, facts:sec, notes:secNotes }, ci:{ id:c.ci, facts:ci, notes:ciNotes, covered }, brew:{ id:brewId, facts:brew, notes:brewNotes }, metrics };
+}
+
+// ---------- The world and the reducer ----------
+function initialWorld(){
+  return {
+    claude:{ orcaHook:'absent', projectPlugin:'default', userConfig:'clean' },
+    codex:{ pluginRecord:'absent', skillsVisible:'unknown' },
+    moom:{ appKey:'absent', managedRemoved:false },
+    license:{ rotated:false, minisApplied:false, published:false },
+    ci:{ broken:false, result:'not run' },
+    brew:{ retired:false },
+    applies:{ personal:0, work:0, m4mini:0, devpod:0 },
+    jamfPrompts:0,
+  };
+}
+
+function initialState(choices){
+  const c = Object.assign({}, choices);
+  return { choices:c, derived:evaluate(c), world:initialWorld(), log:[], seq:0 };
+}
+
+function entry(state, title, text, level, delta){
+  const e = { id: state.seq + 1, title, text, level: level || 'info', delta: delta || null };
+  return Object.assign({}, state, { seq: state.seq + 1, log: [e].concat(state.log) });
+}
+
+function hostOf(state, id){ return state.derived.hosts.find(h => h.host.id === id); }
+function fileOf(state, id){ return state.derived.files.find(f => f.file.id === id); }
+
+function reduce(state, action){
+  const c = state.choices; const d = state.derived; const w = JSON.parse(JSON.stringify(state.world));
+  switch (action.type) {
+    case 'pick': {
+      const nc = Object.assign({}, c, { [action.axis]: action.option });
+      const ns = initialState(nc); ns.log = state.log; ns.seq = state.seq;
+      return entry(ns, 'Design changed', opt(action.axis, action.option).label + ' selected for "' + AXES.find(a=>a.id===action.axis).title + '". Free-play state reset.', 'info');
+    }
+    case 'preset': {
+      const ns = initialState(PRESETS[action.name]); ns.log = state.log; ns.seq = state.seq;
+      return entry(ns, 'Preset loaded', action.name + '. Free-play state reset.', 'info');
+    }
+    case 'reset': {
+      const ns = initialState(c); return entry(ns, 'Reset', 'World reset for the current design.', 'info');
+    }
+    case 'addApp': {
+      const a = d.comp.addApp;
+      const s = Object.assign({}, state, { world:w });
+      return entry(s, 'Add a new app (Thaw)', 'Files touched: ' + a.count + '. ' + a.files.join(' · ') + '.', a.files.length > 4 ? 'warn' : 'ok', d.comp.notes[0] || null);
+    }
+    case 'apply': {
+      const h = hostOf(state, action.host); w.applies[action.host] += 1;
+      let lvl = 'ok'; let text = h.facts.apply + '. Sudo: ' + h.facts.sudo + '.';
+      if (h.host.mdm && h.jamf !== 'never') { w.jamfPrompts += 1; text += ' Jamf: ' + h.jamf + '.'; lvl = h.facts.root === true ? 'warn' : 'ok'; }
+      if (h.facts.envScrubbed === true) text += ' Activation runs as root under env -i.';
+      if (h.facts.sshAgent === false) text += ' The private overlay fetch has no SSH agent.';
+      if (h.host.headless && !d.secrets.facts.license.unattended) { text += ' Secret-backed files need an interactive 1Password session, so an unattended run skips or fails them.'; lvl = 'warn'; }
+      // Claude runtime hook fate
+      const cf = fileOf(state, 'claudeSettings');
+      if (w.claude.orcaHook === 'present') {
+        if (['own-force','worktree-symlink'].includes(cf.policy)) { /* never landed */ }
+        else if (cf.policy === 'clobber-stash') { w.claude.orcaHook = 'stashed'; text += ' Orca\'s injected hook was overwritten and saved to the drift stash.'; lvl = 'warn'; }
+        else if (cf.policy === 'unmanaged') { text += ' Orca\'s hook is untouched (nothing manages the file).'; }
+        else { text += ' Orca\'s injected hook survived the merge.'; }
+      }
+      if (w.codex.pluginRecord === 'present') {
+        const cx = fileOf(state, 'codexConfig');
+        if (['own-force','clobber-stash'].includes(cx.policy)) { w.codex.pluginRecord = 'lost'; text += ' Codex\'s plugin install record was overwritten.'; lvl = 'bad'; }
+        else text += ' Codex\'s plugin record round-tripped.';
+      }
+      if (w.moom.appKey === 'present') {
+        text += d.plist.facts.preserve ? ' Moom\'s own key survived.' : ' Moom\'s own key was lost.';
+        if (d.plist.facts.everySwitch) text += ' The managed Moom keys were written again' + (w.moom.managedRemoved ? ', and the key you removed from source is still in the domain (no delete directive).' : '.');
+        if (w.moom.managedRemoved && d.plist.facts.del) text += ' The removed key was deleted from the domain.';
+      }
+      if (action.host === 'm4mini' && w.license.rotated) { w.license.minisApplied = true; text += d.secrets.facts.license.unattended ? ' The rotated license landed unattended.' : ' The rotated license did not land: no session.'; if (!d.secrets.facts.license.unattended) lvl = 'warn'; }
+      return entry(Object.assign({}, state, { world:w }), 'Apply on ' + h.host.label, text, lvl);
+    }
+    case 'orcaHook': {
+      const cf = fileOf(state, 'claudeSettings'); let lvl = 'ok'; let text;
+      if (['own-force','worktree-symlink'].includes(cf.policy)) { w.claude.orcaHook = 'refused'; text = 'Claude Code opened settings.json with O_NOFOLLOW, found a symlink, and silently did not write. Orca thinks the hook is installed; it is not.'; lvl = 'bad'; }
+      else { w.claude.orcaHook = 'present'; text = 'Orca appended a hook block to ~/.claude/settings.json at runtime. Apply next to see whether it survives.'; }
+      return entry(Object.assign({}, state, { world:w }), 'Orca injects a hook into Claude settings', text, lvl);
+    }
+    case 'projectPlugin': {
+      const cf = fileOf(state, 'claudeSettings'); let lvl = 'ok'; let text;
+      if (cf.policy === 'app-layer') text = 'The project\'s .claude/settings.json flips design@prateek-local on. Because enabledPlugins stayed in the user file (not the managed drop-in), the project override works. Had it gone managed, nothing could override it (ADR 0007).';
+      else if (['own-force','worktree-symlink','clobber-stash','merger','chezmoi-modify'].includes(cf.policy)) text = 'The project override works: user-level enabledPlugins is lower precedence than project settings.';
+      else text = 'Works, but the user-level default was never set by anything.';
+      w.claude.projectPlugin = 'overridden';
+      return entry(Object.assign({}, state, { world:w }), 'A project enables a disabled plugin', text, lvl);
+    }
+    case 'claudeConfig': {
+      const cf = fileOf(state, 'claudeSettings'); let lvl = 'ok'; let text;
+      if (['own-force','worktree-symlink'].includes(cf.policy)) { text = 'Silent refusal again: the /config change is not persisted and Claude gives no error.'; lvl = 'bad'; }
+      else if (cf.policy === 'clobber-stash') { text = 'Persisted now; reverted and stashed on the next switch unless you fold it into source.'; lvl = 'warn'; w.claude.userConfig = 'dirty'; }
+      else { text = 'Persisted, and the merger leaves unmanaged keys alone on the next apply.'; w.claude.userConfig = 'dirty'; }
+      return entry(Object.assign({}, state, { world:w }), 'You change a setting inside Claude Code', text, lvl);
+    }
+    case 'codexRecord': {
+      const cx = fileOf(state, 'codexConfig'); let lvl = 'ok'; let text;
+      if (cx.policy === 'own-force') { text = 'Codex follows the symlink into /nix/store and the write fails. The plugin is not recorded.'; lvl = 'bad'; w.codex.pluginRecord = 'failed'; }
+      else { text = 'Codex wrote the install record into config.toml. Apply next to see whether it survives.'; w.codex.pluginRecord = 'present'; }
+      return entry(Object.assign({}, state, { world:w }), 'Codex records a plugin install', text, lvl);
+    }
+    case 'codexSkills': {
+      const sk = fileOf(state, 'codexSkills'); let lvl = sk.rule.status === 'bad' ? 'bad' : (sk.rule.status === 'warn' ? 'warn' : 'ok');
+      w.codex.skillsVisible = sk.rule.status === 'bad' ? 'none' : 'all';
+      return entry(Object.assign({}, state, { world:w }), 'Codex discovers skills', sk.rule.note + (sk.rule.status === 'bad' ? ' No error is raised.' : ''), lvl);
+    }
+    case 'rotateLicense': {
+      w.license.rotated = true;
+      const s = d.secrets.facts.license;
+      let text = 'New value lives: ' + s.where + '. Public repo exposure: ' + d.secrets.facts.publicRepo + '.';
+      let lvl = s.status;
+      if (s.status === 'bad') text = 'This option does not cover files. ' + (d.secrets.notes.find(n => n.startsWith('License files fall back')) || 'A file-shaped mechanism is still needed.');
+      return entry(Object.assign({}, state, { world:w }), 'Rotate the BetterTouchTool license in 1Password', text, lvl);
+    }
+    case 'publish': {
+      w.license.published = true;
+      const exp = d.secrets.facts.publicRepo;
+      return entry(Object.assign({}, state, { world:w }), 'Push the repo to GitHub', exp === 'refs only' ? 'Only op:// references or nothing leave the machine.' : 'Age ciphertext is now public. Fine cryptographically; a policy change for this repo.', exp === 'refs only' ? 'ok' : 'warn');
+    }
+    case 'breakModule': {
+      w.ci.broken = true;
+      return entry(Object.assign({}, state, { world:w }), 'Introduce a typo in the work-only module', 'A misspelled option name in a module only the work Mac enables.', 'info');
+    }
+    case 'runCI': {
+      const ci = d.ci.facts; let text; let lvl;
+      if (!state.derived.nix) { text = c.ci === 'chezmoi-dryrun' ? 'Templates render for the ci, personal and work types on a macOS runner; scripts never execute. A template typo is caught, a script bug is not.' : 'No CI on this design.'; lvl = c.ci === 'chezmoi-dryrun' ? 'warn' : 'bad'; }
+      else if (c.ci === 'none') { text = 'Nothing runs. You find out on the work Mac, after the Jamf ritual.'; lvl = 'bad'; }
+      else if (c.ci === 'flake-check-only') { text = 'Disputed. Per the manual, darwinConfigurations are skipped and the typo is missed; per wimpysworld, every *Configurations attrset is deep-evaluated and it is caught. Blueprint-style home configs under legacyPackages are missed either way. Test this before building on it.'; lvl = 'warn'; }
+      else { const covers = ci.evaluates.includes('work'); text = covers ? 'The work host is evaluated on an arch-matched runner and the typo fails the job' + (ci.builds.length ? ', before the closure build.' : '.') : 'The work host is not in the evaluated set.'; lvl = covers ? 'ok' : 'bad'; if (covers && w.ci.broken === false) text = 'Green.'; if (ci.activates.length) text += ' A real darwin-rebuild switch also ran on the CI host.'; text += ' Not covered: whether the setting reaches the app, GUI behaviour, MDM. That is Tart.'; }
+      w.ci.result = lvl;
+      return entry(Object.assign({}, state, { world:w }), 'Push and let CI run', text, lvl);
+    }
+    case 'moomWrites': {
+      w.moom.appKey = 'present';
+      return entry(Object.assign({}, state, { world:w }), 'Moom writes its own key while running', 'Moom saved a layout under a key we do not manage. Apply next to see whether it survives' + (d.plist.facts.quitGuard ? '; the quit guard will ask before writing while Moom runs.' : '; nothing checks whether Moom is running.'), 'info');
+    }
+    case 'removeManagedKey': {
+      w.moom.managedRemoved = true;
+      return entry(Object.assign({}, state, { world:w }), 'You remove a managed Moom key from source', d.plist.facts.del ? 'The delete directive will remove it from the domain on the next apply.' : 'Nothing removes it: null values are filtered, not deleted. It lingers until you run defaults delete by hand.', d.plist.facts.del ? 'ok' : 'warn');
+    }
+    case 'retireCask': {
+      w.brew.retired = true; const b = d.brew.facts; const wshape = hostOf(state, 'work').shape;
+      let text = 'Undeclared casks: ' + b.undeclared + '. Retired entries: ' + b.retired + '.';
+      let lvl = 'ok';
+      if (d.brew.id === 'nixdarwin-uninstall' && ['nixdarwin+hm','split','chezmoi+nixdarwin'].includes(wshape)) { text += ' On the work Mac, the IT-installed VPN client is also undeclared and goes with it.'; lvl = 'bad'; }
+      if (d.brew.id === 'nixdarwin-additive' || d.brew.id === 'declare-nothing') { text += ' The retired cask stays installed.'; lvl = 'warn'; }
+      return entry(Object.assign({}, state, { world:w }), 'Retire a cask and apply on the work Mac', text, lvl);
+    }
+    default: return state;
+  }
+}
+
+// ---------- Guided walkthroughs ----------
+const SCENARIOS = [
+  { id:'addapp', title:'Add a new app', watch:'How many files a single app touches under this composition, and where machine identity lives.', steps:[
+    { label:'Declare Thaw with its cask, preference fragment and gating', action:{type:'addApp'} },
+    { label:'Apply on the personal Mac', action:{type:'apply', host:'personal'} },
+    { label:'Apply on the work Mac', action:{type:'apply', host:'work'} },
+  ]},
+  { id:'work', title:'Apply on the work Mac', watch:'Privilege per apply, what the root environment loses, and the two gates no design removes: the MDM installer check and corporate TLS.', steps:[
+    { label:'Apply once', action:{type:'apply', host:'work'} },
+    { label:'Apply again the same day', action:{type:'apply', host:'work'} },
+    { label:'Retire a cask and apply', action:{type:'retireCask'} },
+  ]},
+  { id:'claude', title:'Claude Code hooks and plugins', watch:'Whether a runtime hook injection survives, whether a project can still override a plugin, and where the design fails without an error.', steps:[
+    { label:'Orca injects a hook at runtime', action:{type:'orcaHook'} },
+    { label:'A project enables a disabled plugin', action:{type:'projectPlugin'} },
+    { label:'Apply on the personal Mac', action:{type:'apply', host:'personal'} },
+    { label:'Change a setting inside Claude Code', action:{type:'claudeConfig'} },
+  ]},
+  { id:'codex', title:'Codex config and skills', watch:'A store symlink is not just unwritable for Codex, it is harmful, and skill files can be invisible with no error.', steps:[
+    { label:'Codex records a plugin install', action:{type:'codexRecord'} },
+    { label:'Apply on the personal Mac', action:{type:'apply', host:'personal'} },
+    { label:'Codex discovers skills', action:{type:'codexSkills'} },
+  ]},
+  { id:'license', title:'Rotate a license secret', watch:'Where the value lives, whether the headless mini can pick it up unattended, and what leaves the machine when you push.', steps:[
+    { label:'Rotate the BetterTouchTool license in 1Password', action:{type:'rotateLicense'} },
+    { label:'Apply on the personal Mac', action:{type:'apply', host:'personal'} },
+    { label:'Apply on the homelab mini, unattended', action:{type:'apply', host:'m4mini'} },
+    { label:'Push the repo to GitHub', action:{type:'publish'} },
+  ]},
+  { id:'ci', title:'CI catches a broken host', watch:'Which hosts the chosen CI evaluates or builds, and the one claim about nix flake check that is disputed between the manual and a surveyed author.', steps:[
+    { label:'Introduce a typo in the work-only module', action:{type:'breakModule'} },
+    { label:'Push and let CI run', action:{type:'runCI'} },
+  ]},
+  { id:'moom', title:'Moom changes its own preference', watch:'Whether keys we do not manage survive, whether a key removed from source is actually deleted, and whether anything checks that the app is running.', steps:[
+    { label:'Moom writes its own key while running', action:{type:'moomWrites'} },
+    { label:'Remove a managed key from source', action:{type:'removeManagedKey'} },
+    { label:'Apply on the personal Mac', action:{type:'apply', host:'personal'} },
+  ]},
+];
+
+const ACTIONS = [
+  { label:'Add a new app (Thaw)', action:{type:'addApp'} },
+  { label:'Apply on personal Mac', action:{type:'apply', host:'personal'} },
+  { label:'Apply on work Mac', action:{type:'apply', host:'work'} },
+  { label:'Apply on homelab mini', action:{type:'apply', host:'m4mini'} },
+  { label:'Apply on DevPod', action:{type:'apply', host:'devpod'} },
+  { label:'Orca injects a Claude hook', action:{type:'orcaHook'} },
+  { label:'Project enables a plugin', action:{type:'projectPlugin'} },
+  { label:'Change a Claude setting in-app', action:{type:'claudeConfig'} },
+  { label:'Codex records a plugin', action:{type:'codexRecord'} },
+  { label:'Codex discovers skills', action:{type:'codexSkills'} },
+  { label:'Rotate a license in 1Password', action:{type:'rotateLicense'} },
+  { label:'Push to GitHub', action:{type:'publish'} },
+  { label:'Break the work-only module', action:{type:'breakModule'} },
+  { label:'Run CI', action:{type:'runCI'} },
+  { label:'Moom writes its own key', action:{type:'moomWrites'} },
+  { label:'Remove a managed Moom key', action:{type:'removeManagedKey'} },
+  { label:'Retire a cask (work Mac)', action:{type:'retireCask'} },
+  { label:'Reset world', action:{type:'reset'} },
+];
+
+return { AXES, PRESETS, HOSTS, SHAPES, FILES, SCENARIOS, ACTIONS, evaluate, initialState, reduce, opt };
+})();
+if (typeof module !== 'undefined') module.exports = Design;
+</script>
+<script id="shell">
+(() => {
+  const TABS = [
+    { id:'overview', label:'Overview' }, { id:'hosts', label:'Hosts' }, { id:'files', label:'Files' }, { id:'secrets', label:'Secrets' },
+    { id:'ci', label:'CI' }, { id:'brew', label:'Homebrew' }, { id:'walk', label:'Walkthroughs' }, { id:'catalog', label:'Catalog' },
+  ];
+  const ui = { tab:'overview', scenario:Design.SCENARIOS[0].id, step:0, palette:false, query:'', sel:0, help:false, prevMetrics:null, preset:'Doc v2 native target' };
+  let state = Design.initialState(Design.PRESETS[ui.preset]);
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const pill = (st) => '<span class="pill ' + st + '">' + ({ok:'works', warn:'costs', bad:'breaks or silent', info:'note'}[st] || st) + '</span>';
+  const isMac = (navigator.platform || '').toUpperCase().includes('MAC'); const mod = isMac ? '⌘' : 'Ctrl';
+
+  function dispatch(action){ ui.prevMetrics = state.derived.metrics; state = Design.reduce(state, action); if (action.type === 'preset') ui.preset = action.name; if (action.type === 'pick') ui.preset = null; render(); }
+  function isInputFocused(){ const el = document.activeElement; if (!el) return false; const t = el.tagName; return t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || el.isContentEditable; }
+
+  // ---------- header, metrics, sidebar ----------
+  function renderHeader(){
+    const sel = $('presetSel'); const names = Object.keys(Design.PRESETS);
+    sel.innerHTML = '<option value="">custom design</option>' + names.map(n => '<option value="' + esc(n) + '"' + (ui.preset === n ? ' selected' : '') + '>' + esc(n) + '</option>').join('');
+    sel.onchange = () => { if (sel.value) { ui.step = 0; dispatch({type:'preset', name:sel.value}); } };
+    $('themeBtn').onclick = toggleTheme; $('helpBtn').onclick = () => { ui.help = !ui.help; renderOverlays(); }; $('paletteBtn').onclick = () => togglePalette();
+  }
+  function renderMetrics(){
+    const m = state.derived.metrics; const prev = ui.prevMetrics || {};
+    const rows = [['Files per new app', m.filesToAddApp],['Sudo on work Mac', m.sudoWork],['Mergers left', m.mergers],['Silent failures', m.silent],['CI evaluates', m.ciCovered],['Mini unattended', m.unattendedMini],['Preview before apply', m.preview],['Rollback', m.rollback]];
+    const keys = ['filesToAddApp','sudoWork','mergers','silent','ciCovered','unattendedMini','preview','rollback'];
+    $('metrics').innerHTML = rows.map(([k,v], i) => '<div class="metric' + (prev[keys[i]] !== undefined && prev[keys[i]] !== v ? ' changed' : '') + '" title="' + esc(v) + '"><div class="k">' + esc(k) + '</div><div class="v">' + esc(v) + '</div></div>').join('');
+  }
+  function renderSidebar(){
+    $('side').innerHTML = '<h3>Design (one alternative per decision)</h3>' + Design.AXES.map(a => {
+      const cur = Design.opt(a.id, state.choices[a.id]);
+      return '<div class="axis"><div class="t">' + esc(a.title) + '</div><select data-axis="' + a.id + '">' + a.options.map(o => '<option value="' + o.id + '"' + (o.id === cur.id ? ' selected' : '') + '>' + esc(o.label) + '</option>').join('') + '</select><div class="who">' + esc(cur.who) + '</div></div>';
+    }).join('');
+    $('side').querySelectorAll('select').forEach(s => s.onchange = () => { ui.step = 0; dispatch({type:'pick', axis:s.dataset.axis, option:s.value}); });
+  }
+
+  // ---------- content tabs ----------
+  function renderTabs(){
+    $('tabs').innerHTML = TABS.map((t, i) => '<button data-tab="' + t.id + '"' + (ui.tab === t.id ? ' class="active"' : '') + '>' + esc(t.label) + '<kbd>' + (i + 1) + '</kbd></button>').join('');
+    $('tabs').querySelectorAll('button').forEach(b => b.onclick = () => { ui.tab = b.dataset.tab; render(); });
+  }
+  const V = {};
+  V.overview = (d) => {
+    const conf = d.conflicts.length ? '<div class="conf"><b>Incoherent or expensive combinations</b><ul>' + d.conflicts.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul></div>' : '<div class="conf none"><b>No incoherent combinations.</b> Every choice is compatible with the others.</div>';
+    return '<p class="meta" style="margin:0 0 8px">Question: if this repo moved toward Nix, each of eight decisions has several live alternatives that nineteen surveyed repos practise. Pick one per decision, then press the actions on the right or run a walkthrough, and watch what the design does to our real cases. Nothing here persists.</p>' + conf +
+      '<div class="two"><div class="card"><h3 style="margin-top:0">Repo shape</h3><pre class="tree">' + esc(d.comp.tree) + '</pre><p class="meta" style="margin:6px 0 0">Machine identity: ' + esc(d.comp.identity) + '</p></div>' +
+      '<div class="card"><h3 style="margin-top:0">Adding one app touches ' + esc(d.comp.addApp.count) + ' files</h3><div class="mono" style="font-size:11px">' + d.comp.addApp.files.map(esc).join('<br>') + '</div><ul class="notes">' + d.comp.notes.map(n => '<li>' + esc(n) + '</li>').join('') + '</ul></div></div>';
+  };
+  V.hosts = (d) => '<table><tr><th>Host</th><th>Shape</th><th>Apply</th><th>Jamf</th><th>Notes</th></tr>' + d.hosts.map(h => '<tr><td><b>' + esc(h.host.label) + '</b></td><td>' + esc(h.facts.label) + '</td><td><span class="mono">' + esc(h.facts.apply) + '</span><div class="meta">sudo: ' + esc(h.facts.sudo) + '</div></td><td>' + esc(h.jamf) + '</td><td class="sec">' + h.notes.map(esc).join('<br>') + '</td></tr>').join('') + '</table>';
+  V.files = (d) => '<table><tr><th>File</th><th>Mechanism</th><th>Verdict</th><th>Why</th></tr>' + d.files.map(f => '<tr><td><span class="mono">' + esc(f.file.label) + '</span><div class="meta">' + esc(f.file.facts) + '</div></td><td>' + esc(f.rule.mechanism) + (f.fallback ? '<div class="meta">' + esc(f.fallback) + '</div>' : '') + '</td><td>' + pill(f.rule.status) + '</td><td class="sec">' + esc(f.rule.note) + '</td></tr>').join('') +
+    '<tr><td><span class="mono">Library/Preferences/*.plist</span><div class="meta">Twelve domains: Moom, cmux, Raycast, BTT, VoiceInk, Thaw, Tuna, ...</div></td><td>' + esc(d.plist.facts.mechanism) + (d.plist.note ? '<div class="meta">' + esc(d.plist.note) + '</div>' : '') + '</td><td>' + pill(d.plist.facts.status) + '</td><td class="sec">' + esc(d.plist.facts.note) + '</td></tr></table>';
+  V.secrets = (d) => { const s = d.secrets; return '<table><tr><th>Secret shape</th><th>Where the value lives</th><th>Unattended</th><th>Verdict</th></tr>' +
+    '<tr><td>Three license files (BTT and two more)</td><td>' + esc(s.facts.license.where) + '</td><td>' + (s.facts.license.unattended ? 'yes' : 'no') + '</td><td>' + pill(s.facts.license.status) + '</td></tr>' +
+    '<tr><td>MCP server tokens (env at launch)</td><td>' + esc(s.facts.env.where) + '</td><td>' + (s.facts.env.unattended ? 'yes' : 'no') + '</td><td>' + pill(s.facts.env.status) + '</td></tr>' +
+    '<tr><td>Public repo carries</td><td colspan="3">' + esc(s.facts.publicRepo) + '</td></tr></table><p class="sec" style="margin:8px 0 0">' + esc(s.facts.note) + '</p><ul class="notes">' + s.notes.map(n => '<li>' + esc(n) + '</li>').join('') + '</ul>'; };
+  V.ci = (d) => { const c = d.ci; return '<table><tr><th>Evaluated</th><th>Built</th><th>Activated</th><th>macOS runner</th></tr><tr><td>' + esc(c.facts.evaluates.join(', ') || 'none') + '</td><td>' + esc(c.facts.builds.join(', ') || 'none') + '</td><td>' + esc(c.facts.activates.join(', ') || 'none') + '</td><td>' + esc(String(c.facts.needsMacRunner)) + '</td></tr></table><p class="sec" style="margin:8px 0 0">' + esc(c.facts.note) + '</p><ul class="notes">' + c.notes.map(n => '<li>' + esc(n) + '</li>').join('') + '</ul>'; };
+  V.brew = (d) => { const b = d.brew; return '<table><tr><th>Installed by</th><th>Casks declared</th><th>Undeclared casks</th><th>Retired casks</th><th>Work Mac risk</th></tr><tr><td>' + esc(b.facts.install) + '</td><td>' + esc(b.facts.declare) + '</td><td>' + esc(b.facts.undeclared) + '</td><td>' + esc(b.facts.retired) + '</td><td>' + esc(b.facts.workRisk) + '</td></tr></table><p class="sec" style="margin:8px 0 0">' + esc(b.facts.note) + '</p><ul class="notes">' + b.notes.map(n => '<li>' + esc(n) + '</li>').join('') + '</ul>'; };
+  V.walk = () => { const s = Design.SCENARIOS.find(x => x.id === ui.scenario);
+    return '<div class="scen">' + Design.SCENARIOS.map(x => '<button data-s="' + x.id + '"' + (x.id === ui.scenario ? ' class="active"' : '') + '>' + esc(x.title) + '</button>').join('') + '</div>' +
+      '<div class="watch"><b>What to watch:</b> ' + esc(s.watch) + ' <span class="meta">Starting a walkthrough resets the world. <kbd>n</kbd> presses the next step.</span></div>' +
+      s.steps.map((st, i) => '<button class="step ' + (i < ui.step ? 'done' : (i === ui.step ? 'next' : '')) + '" data-i="' + i + '">' + (i + 1) + '. ' + esc(st.label) + '</button>').join('') +
+      (ui.step >= s.steps.length ? '<p class="meta" style="color:var(--accent-green)"><b>Walkthrough complete.</b> Change a decision on the left and run it again to compare.</p>' : ''); };
+  V.catalog = () => { const usedBy = (axisId, optId) => Object.entries(Design.PRESETS).filter(([n, c]) => c[axisId] === optId).map(([n]) => n);
+    return Design.AXES.map(a => '<h3>' + esc(a.title) + ' <span class="muted" style="text-transform:none;letter-spacing:0">' + esc(a.question) + '</span></h3><table><tr><th style="width:26%">Alternative</th><th style="width:22%">Practised by</th><th>What it means</th><th style="width:20%">Presets</th></tr>' + a.options.map(o => '<tr' + (state.choices[a.id] === o.id ? ' style="background:color-mix(in srgb, var(--accent-blue) 8%, transparent)"' : '') + '><td><b>' + esc(o.label) + '</b></td><td class="sec">' + esc(o.who) + '</td><td class="sec">' + esc(o.blurb) + '</td><td class="meta">' + esc(usedBy(a.id, o.id).join(', ') || 'none') + '</td></tr>').join('') + '</table>').join(''); };
+  function renderPanel(){
+    $('panel').innerHTML = V[ui.tab](state.derived);
+    if (ui.tab === 'walk') {
+      const s = Design.SCENARIOS.find(x => x.id === ui.scenario);
+      $('panel').querySelectorAll('.scen button').forEach(b => b.onclick = () => { ui.scenario = b.dataset.s; ui.step = 0; dispatch({type:'reset'}); });
+      $('panel').querySelectorAll('button.step').forEach(b => b.onclick = () => runStep(+b.dataset.i));
+    }
+  }
+  function runStep(i){ const s = Design.SCENARIOS.find(x => x.id === ui.scenario); if (i >= s.steps.length) return; if (i === 0 && ui.step === 0) state = Design.reduce(state, {type:'reset'}); ui.step = Math.max(ui.step, i + 1); dispatch(s.steps[i].action); }
+
+  // ---------- actions and log ----------
+  function renderActions(){
+    $('actions').innerHTML = Design.ACTIONS.map((a, i) => '<button data-i="' + i + '"' + (a.action.type === 'reset' ? ' class="primary"' : '') + ' title="' + esc(a.label) + '">' + esc(a.label) + '</button>').join('');
+    $('actions').querySelectorAll('button').forEach(b => b.onclick = () => dispatch(Design.ACTIONS[+b.dataset.i].action));
+  }
+  function renderLog(){
+    $('logCount').textContent = state.log.length ? state.log.length + ' events' : '';
+    $('log').innerHTML = state.log.length ? state.log.map(e => '<div class="entry ' + esc(e.level) + '"><div class="t"><span class="n">' + e.id + '</span>' + esc(e.title) + '</div><div>' + esc(e.text) + '</div>' + (e.delta ? '<div class="d">' + esc(e.delta) + '</div>' : '') + '</div>').join('') : '<p class="meta">Nothing yet. Press an action above or start a walkthrough.</p>';
+  }
+  function renderStatus(){
+    const last = state.log[0]; const d = state.derived;
+    $('status').innerHTML = '<span>' + esc(ui.preset || 'custom design') + '</span><span>' + (d.conflicts.length ? '<span class="pill bad">' + d.conflicts.length + ' conflict' + (d.conflicts.length > 1 ? 's' : '') + '</span>' : '<span class="pill ok">coherent</span>') + '</span><span class="grow">' + (last ? 'last: ' + esc(last.title) : '') + '</span><span><kbd>1</kbd> to <kbd>8</kbd> tabs <kbd>' + mod + 'K</kbd> palette <kbd>n</kbd> next step <kbd>r</kbd> reset <kbd>t</kbd> theme <kbd>[</kbd><kbd>]</kbd> presets <kbd>?</kbd> help</span>';
+  }
+
+  // ---------- palette, help, theme, keys ----------
+  function commands(){
+    const out = [];
+    TABS.forEach(t => out.push({ kind:'go to', label:t.label, run:() => { ui.tab = t.id; } }));
+    Object.keys(Design.PRESETS).forEach(n => out.push({ kind:'preset', label:n, run:() => { ui.step = 0; dispatch({type:'preset', name:n}); } }));
+    Design.ACTIONS.forEach(a => out.push({ kind:'do', label:a.label, run:() => dispatch(a.action) }));
+    Design.AXES.forEach(a => a.options.forEach(o => out.push({ kind:'set', label:a.title + ' → ' + o.label, run:() => { ui.step = 0; dispatch({type:'pick', axis:a.id, option:o.id}); } })));
+    return out;
+  }
+  function fuzzy(q, s){ q = q.toLowerCase(); s = s.toLowerCase(); if (!q) return 1; if (s.includes(q)) return 3; let i = 0; for (const ch of s) { if (ch === q[i]) i++; if (i === q.length) return 1; } return 0; }
+  function paletteItems(){ return commands().map(c => ({ c, score: fuzzy(ui.query, c.kind + ' ' + c.label) })).filter(x => x.score > 0).sort((a, b) => b.score - a.score).slice(0, 14).map(x => x.c); }
+  function togglePalette(open){ ui.palette = open === undefined ? !ui.palette : open; ui.query = ''; ui.sel = 0; renderOverlays(); if (ui.palette) { const inp = $('palInput'); if (inp) { inp.value = ''; inp.focus(); } } }
+  function renderOverlays(){
+    const pal = $('palette'); pal.hidden = !ui.palette;
+    if (ui.palette) {
+      const items = paletteItems(); ui.sel = Math.min(ui.sel, Math.max(0, items.length - 1));
+      $('palList').innerHTML = items.map((c, i) => '<div class="it' + (i === ui.sel ? ' sel' : '') + '" data-i="' + i + '"><span class="kind">' + esc(c.kind) + '</span><span>' + esc(c.label) + '</span></div>').join('') || '<div class="it"><span class="kind"></span><span class="muted">no match</span></div>';
+      $('palList').querySelectorAll('.it').forEach(el => el.onclick = () => { const it = items[+el.dataset.i]; if (it) { togglePalette(false); it.run(); render(); } });
+      const inp = $('palInput');
+      inp.oninput = () => { ui.query = inp.value; ui.sel = 0; renderOverlays(); };
+      inp.onkeydown = (e) => { const its = paletteItems(); if (e.key === 'ArrowDown') { e.preventDefault(); ui.sel = Math.min(its.length - 1, ui.sel + 1); renderOverlays(); } else if (e.key === 'ArrowUp') { e.preventDefault(); ui.sel = Math.max(0, ui.sel - 1); renderOverlays(); } else if (e.key === 'Enter') { e.preventDefault(); const it = its[ui.sel]; if (it) { togglePalette(false); it.run(); render(); } } };
+    }
+    const help = $('help'); help.hidden = !ui.help;
+    if (ui.help) $('helpBody').innerHTML = '<h2>Keyboard</h2><table>' + [[mod + '+K','Command palette: tabs, presets, actions, and every alternative'],['1 to 8','Switch tab'],['n','Press the next walkthrough step'],['r','Reset the world (keeps the design)'],['[ and ]','Previous or next preset'],['t','Toggle light and dark'],['?','This help'],['Escape','Close palette or help']].map(([k, v]) => '<tr><td><kbd>' + esc(k) + '</kbd></td><td>' + esc(v) + '</td></tr>').join('') + '</table><p class="meta">Prototype, throwaway. Logic lives in the Design module in this file; the page is a shell over it.</p>';
+    pal.onclick = (e) => { if (e.target === pal) togglePalette(false); }; help.onclick = (e) => { if (e.target === help) { ui.help = false; renderOverlays(); } };
+  }
+  function toggleTheme(){ document.documentElement.classList.toggle('dark'); }
+  function cyclePreset(delta){ const names = Object.keys(Design.PRESETS); const i = Math.max(0, names.indexOf(ui.preset)); const n = names[(i + delta + names.length) % names.length]; ui.step = 0; dispatch({type:'preset', name:n}); }
+  document.addEventListener('keydown', (e) => {
+    const meta = e.metaKey || e.ctrlKey;
+    if (meta && e.key.toLowerCase() === 'k') { e.preventDefault(); togglePalette(); return; }
+    if (e.key === 'Escape') { if (ui.palette) { togglePalette(false); return; } if (ui.help) { ui.help = false; renderOverlays(); return; } return; }
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (ui.palette || ui.help || isInputFocused()) return;
+    const n = parseInt(e.key, 10);
+    if (n >= 1 && n <= TABS.length) { ui.tab = TABS[n - 1].id; render(); return; }
+    const map = { 'n': () => { if (ui.tab !== 'walk') { ui.tab = 'walk'; render(); } runStep(ui.step); }, 'r': () => dispatch({type:'reset'}), 't': toggleTheme, '?': () => { ui.help = true; renderOverlays(); }, '[': () => cyclePreset(-1), ']': () => cyclePreset(1) };
+    if (map[e.key]) { e.preventDefault(); map[e.key](); }
+  });
+  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.classList.add('dark');
+
+  function render(){ renderHeader(); renderMetrics(); renderSidebar(); renderTabs(); renderPanel(); renderLog(); renderStatus(); renderOverlays(); }
+  renderActions(); render();
+})();
+</script>
+</body>
+</html>
