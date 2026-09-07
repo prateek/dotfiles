@@ -96,9 +96,9 @@ casks = [
 ]
 # Apps installed from the Setapp subscription rather than Homebrew. Names must
 # match the Setapp catalogue exactly (case- and version-sensitive: "Bartender 5",
-# not "bartender"); setapp-cli resolves them against Setapp's own database.
-# Declaring these requires the `setapp` cask in the same selection — see
-# home/.chezmoitemplates/setapp-applist.tmpl.
+# not "bartender"); run_after_22-setapp-apps resolves them against Setapp's store
+# API. Declaring these requires the `setapp` cask in the same selection — see
+# home/.chezmoitemplates/setapp-applist.tmpl and ADR 0024.
 setapp_apps = [
   { name = "CleanShot X" },
   { name = "iStat Menus" },

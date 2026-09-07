@@ -6,28 +6,64 @@ setup() {
   template=home/.chezmoiscripts/run_after_22-setapp-apps.sh.tmpl
   render_template "$template" personal '{"machines_local":{"run_install_scripts":true}}' > "$FIXTURE/install.sh"
 
-  shims="$HOME/.local/share/mise/shims"
-  mkdir -p "$shims"
-  cat > "$shims/setapp-cli" <<'STUB'
+  # Point the hook's Setapp root at the fixture and mark Setapp "installed".
+  root="$FIXTURE/Applications"
+  mkdir -p "$root/Setapp.app" "$root/Setapp"
+  export DOTFILES_SETAPP_ROOT="$root"
+  export DOTFILES_SETAPP_STORE_API="https://example.test/store"
+
+  # A real notarization-free .app inside a real zip, so the hook's actual
+  # ditto-extract / find-.app / place logic runs (only the network is stubbed).
+  build_fixture_zip
+
+  # Stub curl: the store API returns our catalogue; any archive URL returns the
+  # fixture zip. Records requested URLs for assertions.
+  cat > "$FIXTURE/bin/curl" <<STUB
 #!/bin/sh
-set -eu
-printf '%s\n' "$*" >> "$FIXTURE/setapp-cli.calls"
-case "$1 ${2:-}" in
-  # Default the fixture to a fully-installed machine so the happy path converges.
-  "list ") cat "${TEST_SETAPP_INSTALLED:-$FIXTURE/applist.seen}" ;;
-  "bundle install") cp "$4" "$FIXTURE/applist.seen"; exit "${TEST_SETAPP_CLI_RC:-0}" ;;
-  *) printf 'unexpected setapp-cli call: %s\n' "$*" >&2; exit 1 ;;
+out=""; url=""
+while [ \$# -gt 0 ]; do
+  case "\$1" in
+    -o) out="\$2"; shift 2 ;;
+    -*) shift ;;
+    http*) url="\$1"; shift ;;
+    *) shift ;;
+  esac
+done
+printf '%s\n' "\$url" >> "$FIXTURE/curl.urls"
+case "\$url" in
+  *example.test/store*) cp "$FIXTURE/catalog.json" "\$out" ;;
+  *TEST_ARCHIVE_FAIL*) exit 22 ;;
+  *) cp "$FIXTURE/fixture.zip" "\$out" ;;
 esac
 STUB
-  chmod +x "$shims/setapp-cli"
-  : > "$FIXTURE/setapp-cli.calls"
+  chmod +x "$FIXTURE/bin/curl"
+  : > "$FIXTURE/curl.urls"
+}
 
-  cat > "$FIXTURE/bin/launchctl" <<'STUB'
-#!/bin/sh
-set -eu
-[ "${TEST_SETAPP_AGENT_LOADED:-1}" = 1 ]
-STUB
-  chmod +x "$FIXTURE/bin/launchctl"
+build_fixture_zip() {
+  local staging="$FIXTURE/staging"
+  mkdir -p "$staging/iStat Menus.app/Contents/MacOS"
+  printf 'bin\n' > "$staging/iStat Menus.app/Contents/MacOS/iStat Menus"
+  chmod +x "$staging/iStat Menus.app/Contents/MacOS/iStat Menus"
+  printf '<plist/>\n' > "$staging/iStat Menus.app/Contents/Info.plist"
+  ( cd "$staging" && zip -qr "$FIXTURE/fixture.zip" "iStat Menus.app" )
+  rm -rf "$staging"
+}
+
+# Catalogue naming CleanShot X, iStat Menus, Maestri, Soulver, Yoink (the
+# personal set) so name resolution is exercised for the real declared apps.
+write_catalog() {
+  "$TEST_PYTHON" - "$FIXTURE/catalog.json" <<'PY'
+import json, sys
+apps = ["CleanShot X", "iStat Menus", "Maestri", "Soulver", "Yoink"]
+def app(i, name):
+    return {"id": i, "attributes": {"name": name},
+            "relationships": {"versions": {"data": [
+                {"attributes": {"archive_url": f"https://example.test/app/{i}.zip"}}]}}}
+doc = {"data": {"relationships": {"vendors": {"data": [
+    {"relationships": {"applications": {"data": [app(i, n) for i, n in enumerate(apps)]}}}]}}}}
+json.dump(doc, open(sys.argv[1], "w"))
+PY
 }
 
 @test "Setapp install hook is empty when the machine does not select Setapp" {
@@ -35,62 +71,71 @@ STUB
   [ ! -s "$FIXTURE/ci.sh" ]
 }
 
-@test "Setapp install hook installs the rendered AppList and never uninstalls" {
+@test "Setapp install hook downloads and unpacks every declared app that is missing" {
+  write_catalog
   run_bash 0 "$FIXTURE/install.sh"
   assert_success
-  [ -z "$stderr" ]
-
-  run -0 cut -d' ' -f1-3 "$FIXTURE/setapp-cli.calls"
-  assert_line --index 0 'bundle install --file'
-  refute_output --partial cleanup
-  refute_output --partial remove
-
-  run -0 cat "$FIXTURE/applist.seen"
-  assert_output - <<'APPLIST'
-CleanShot X
-iStat Menus
-Maestri
-Soulver
-Yoink
-APPLIST
+  [ -d "$root/Setapp/iStat Menus.app" ]
+  [ -x "$root/Setapp/iStat Menus.app/Contents/MacOS/iStat Menus" ]
+  # The store catalogue is fetched once, then one archive per declared app (5).
+  run -0 grep -c "example.test/store" "$FIXTURE/curl.urls"; assert_output 1
+  run -0 grep -c "example.test/app/" "$FIXTURE/curl.urls"; assert_output 5
 }
 
-@test "Setapp install hook warns when an app is still missing after the install" {
-  # setapp-cli logs an unknown catalogue name to stderr and still exits 0.
-  printf '%s\n' 'CleanShot X' 'Maestri' 'Soulver' 'Yoink' > "$FIXTURE/installed"
-  TEST_SETAPP_INSTALLED="$FIXTURE/installed" run_without_reporting_fds 0 "$BASH" "$FIXTURE/install.sh"
+@test "Setapp install hook skips apps that are already installed and never uninstalls" {
+  write_catalog
+  mkdir -p "$root/Setapp/Yoink.app" "$root/Setapp/Soulver.app" \
+           "$root/Setapp/Maestri.app" "$root/Setapp/CleanShot X.app"
+  run_bash 0 "$FIXTURE/install.sh"
   assert_success
-  [[ "$stderr" == *'Setapp apps declared in packages.toml but still not installed:'* ]]
-  [[ "$stderr" == *'iStat Menus'* ]]
-  [[ "$stderr" != *'CleanShot X'* ]]
+  # Only iStat Menus was missing, so only its archive is fetched.
+  run -0 grep -c "example.test/app/" "$FIXTURE/curl.urls"; assert_output 1
+  # Pre-existing apps are left in place.
+  [ -d "$root/Setapp/Yoink.app" ]
 }
 
-@test "Setapp install hook matches installed apps case-insensitively" {
-  printf '%s\n' 'cleanshot x' 'istat menus' 'Maestri' 'Soulver' 'Yoink' > "$FIXTURE/installed"
-  TEST_SETAPP_INSTALLED="$FIXTURE/installed" run_without_reporting_fds 0 "$BASH" "$FIXTURE/install.sh"
+@test "Setapp install hook is a no-op when everything is already installed" {
+  write_catalog
+  for a in "CleanShot X" "iStat Menus" Maestri Soulver Yoink; do mkdir -p "$root/Setapp/$a.app"; done
+  run_bash 0 "$FIXTURE/install.sh"
   assert_success
-  [ -z "$stderr" ]
+  assert_output --partial "already installed"
+  # No catalogue fetch, no downloads.
+  [ ! -s "$FIXTURE/curl.urls" ]
 }
 
-@test "Setapp install hook warns and installs nothing when setapp-cli is missing" {
-  rm "$shims/setapp-cli"
+@test "Setapp install hook warns and skips when Setapp itself is not installed" {
+  write_catalog
+  rm -rf "$root/Setapp.app"
   run_without_reporting_fds 0 "$BASH" "$FIXTURE/install.sh"
   assert_success
-  [[ "$stderr" == *'setapp-cli is not installed; skipping Setapp app installs.'* ]]
-  [ ! -s "$FIXTURE/setapp-cli.calls" ]
+  [[ "$stderr" == *"Setapp is not installed yet"* ]]
+  [ ! -s "$FIXTURE/curl.urls" ]
 }
 
-@test "Setapp install hook warns and installs nothing when the Setapp agent is not loaded" {
-  TEST_SETAPP_AGENT_LOADED=0 run_without_reporting_fds 0 "$BASH" "$FIXTURE/install.sh"
+@test "Setapp install hook does not fail the apply when the catalogue fetch fails" {
+  # No catalog.json written and store URL redirected to a failing path.
+  export DOTFILES_SETAPP_STORE_API="https://example.test/TEST_ARCHIVE_FAIL/store"
+  render_template "$template" personal '{"machines_local":{"run_install_scripts":true}}' > "$FIXTURE/install.sh"
+  run_without_reporting_fds 0 "$BASH" "$FIXTURE/install.sh"
   assert_success
-  [[ "$stderr" == *'the Setapp launch agent is not loaded; skipping Setapp app installs.'* ]]
-  [ ! -s "$FIXTURE/setapp-cli.calls" ]
+  [[ "$stderr" == *"could not fetch the Setapp store catalog"* ]]
 }
 
-@test "Setapp install hook warns but does not fail the apply when the install fails" {
-  TEST_SETAPP_CLI_RC=1 run_without_reporting_fds 0 "$BASH" "$FIXTURE/install.sh"
+@test "Setapp install hook reports a declared app missing from the catalogue" {
+  # Catalogue without iStat Menus; the declared name cannot resolve.
+  "$TEST_PYTHON" - "$FIXTURE/catalog.json" <<'PY'
+import json, sys
+doc = {"data": {"relationships": {"vendors": {"data": [
+    {"relationships": {"applications": {"data": [
+        {"id": 1, "attributes": {"name": "Yoink"},
+         "relationships": {"versions": {"data": [
+             {"attributes": {"archive_url": "https://example.test/app/1.zip"}}]}}}]}}}]}}}}
+json.dump(doc, open(sys.argv[1], "w"))
+PY
+  mkdir -p "$root/Setapp/Yoink.app"  # only Yoink resolvable+installed
+  run_without_reporting_fds 0 "$BASH" "$FIXTURE/install.sh"
   assert_success
-  [[ "$stderr" == *'Setapp app install failed; check that Setapp is signed in'* ]]
-  run -0 cut -d' ' -f1-2 "$FIXTURE/setapp-cli.calls"
-  refute_output --partial list
+  [[ "$stderr" == *"not found in the Setapp catalogue"* ]]
+  [[ "$stderr" == *"iStat Menus"* ]]
 }

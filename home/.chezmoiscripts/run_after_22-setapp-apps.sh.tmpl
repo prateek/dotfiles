@@ -2,51 +2,145 @@
 {{- if and $f.run_install_scripts (eq (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "setapp")) "true") -}}
 {{ template "script_lib.sh" . }}
 
-# Setapp has to be installed, loaded, and signed in before its XPC service will
-# answer, and none of that holds on a fresh Mac, so every prerequisite below
-# warns and exits 0 rather than failing the apply. That tolerance is why this is
-# run_after_: chezmoi records a run_onchange_ script's state whenever it exits 0,
-# so a skipped run would never retry until packages.toml changed again. See
-# docs/adr/0024-setapp-subscription-app-installs.md.
-setapp_cli="$HOME/.local/share/mise/shims/setapp-cli"
+# Setapp subscription apps cannot come from Homebrew, and Setapp's own XPC
+# install service rejects third-party callers (its listener pins the caller to
+# Setapp's Team ID). So this installs the way the Setapp client itself does:
+# fetch the vendor-signed, notarized app archive from Setapp's store API and
+# unpack it into the Setapp apps directory. Each app licenses itself against the
+# signed-in Setapp agent on first launch — no privileged handoff needed here.
+# See docs/adr/0024-setapp-subscription-app-installs.md.
+#
+# run_after_ (not run_onchange_): the preconditions below exit 0 when Setapp is
+# absent, and chezmoi records a run_onchange_ script's state on any zero exit,
+# so a skipped run would never retry. Already-installed apps are skipped, so
+# re-running every apply is cheap.
 
-if [ ! -x "$setapp_cli" ]; then
-  warn "setapp-cli is not installed; skipping Setapp app installs."
-  warn "it installs via mise; retry with: mise install -y"
-  exit 0
-fi
+store_api="${DOTFILES_SETAPP_STORE_API:-https://store.setapp.com/store/api/v8/en}"
 
-# The agent is only loaded once Setapp is installed, so one probe covers both
-# "the cask has not landed yet" and "Setapp is not running".
-if ! launchctl list com.setapp.DesktopClient.SetappAgent >/dev/null 2>&1; then
-  warn "the Setapp launch agent is not loaded; skipping Setapp app installs."
+# Setapp's install root. Defaults to the system location; DOTFILES_SETAPP_ROOT
+# overrides it for a nonstandard install (e.g. a Home Manager path) and for tests.
+setapp_root="${DOTFILES_SETAPP_ROOT:-/Applications}"
+
+for tool in curl ditto python3; do
+  have "$tool" || { warn "$tool not found; skipping Setapp app installs."; exit 0; }
+done
+
+# Setapp must be present so the apps can license on first launch.
+if [ ! -d "$setapp_root/Setapp.app" ]; then
+  warn "Setapp is not installed yet; skipping Setapp app installs."
   warn "install Setapp.app and sign in, then re-run: chezmoi apply"
   exit 0
 fi
 
+# Mirror the Setapp client's layout: <root>/Setapp for admin accounts,
+# ~/Applications/Setapp otherwise. Prefer an existing writable dir; else create
+# the per-user one.
+install_dir=""
+for cand in "$setapp_root/Setapp" "$HOME/Applications/Setapp"; do
+  [ -d "$cand" ] && [ -w "$cand" ] && { install_dir="$cand"; break; }
+done
+if [ -z "$install_dir" ]; then
+  install_dir="$HOME/Applications/Setapp"
+  mkdir -p "$install_dir" || { warn "cannot create $install_dir; skipping Setapp app installs."; exit 0; }
+fi
+
 scratch="$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-setapp.XXXXXX")"
 trap 'rm -rf "$scratch"' EXIT
-applist="$scratch/AppList"
-cat <<'APPLIST' >"$applist"
+
+# An app is installed if <name>.app sits in either Setapp dir (the Setapp client
+# keys on the bundle's display name too).
+is_installed() {
+  [ -d "$setapp_root/Setapp/$1.app" ] || [ -d "$HOME/Applications/Setapp/$1.app" ]
+}
+
+# Desired names, rendered from packages.toml (one per line, may be empty).
+needed="$scratch/needed"
+: >"$needed"
+while IFS= read -r name; do
+  [ -n "$name" ] || continue
+  is_installed "$name" || printf '%s\n' "$name" >>"$needed"
+done <<'APPLIST'
 {{ template "setapp-applist.tmpl" . -}}
 APPLIST
 
-# Install only, never `bundle cleanup`: an app installed by hand from the Setapp
-# GUI has to survive an apply.
-if ! run_timed "setapp-cli bundle install" "$setapp_cli" bundle install --file "$applist"; then
-  warn "Setapp app install failed; check that Setapp is signed in, then re-run: chezmoi apply"
+if [ ! -s "$needed" ]; then
+  log "Setapp apps already installed; nothing to do."
   exit 0
 fi
 
-# `bundle install` reports a per-app failure — an unknown catalogue name, a
-# refused download — on stderr and still exits 0, so without this the apply would
-# look clean while an app never landed. `bundle check` searches /Applications
-# rather than the Setapp app directories, so it cannot answer this; `list` can.
-"$setapp_cli" list >"$scratch/installed"
-missing="$(grep -vixF -f "$scratch/installed" "$applist" || true)"
-if [ -n "$missing" ]; then
-  warn "Setapp apps declared in packages.toml but still not installed:"
-  printf '%s\n' "$missing" | while IFS= read -r app; do warn "  $app"; done
-  warn "names must match the Setapp catalogue exactly; check them in Setapp.app"
+catalog="$scratch/catalog.json"
+if ! curl -fsSL --max-time 60 "$store_api" -o "$catalog"; then
+  warn "could not fetch the Setapp store catalog; skipping Setapp app installs."
+  exit 0
 fi
+
+# Resolve each needed name to its latest archive URL. Emits "name<TAB>url" for
+# matches; names absent from the catalogue are reported and skipped.
+resolve="$scratch/resolved.tsv"
+python3 - "$catalog" "$needed" >"$resolve" <<'PY'
+import json, sys
+catalog, needed = sys.argv[1], sys.argv[2]
+data = json.load(open(catalog))
+index = {}
+for vendor in data["data"]["relationships"]["vendors"]["data"]:
+    for app in vendor.get("relationships", {}).get("applications", {}).get("data", []):
+        name = app.get("attributes", {}).get("name")
+        versions = app.get("relationships", {}).get("versions", {}).get("data", [])
+        if not name or not versions:
+            continue
+        url = versions[0].get("attributes", {}).get("archive_url")
+        if url:
+            index[name.lower()] = (name, url)
+for line in open(needed):
+    want = line.strip()
+    if not want:
+        continue
+    hit = index.get(want.lower())
+    if hit:
+        print(f"{want}\t{hit[1]}")
+    else:
+        sys.stderr.write(f"NOTFOUND\t{want}\n")
+PY
+
+installed=0 failed=0
+install_one() {
+  local name="$1" url="$2" tmp zip appdir dest
+  tmp="$(mktemp -d "$scratch/app.XXXXXX")"
+  zip="$tmp/archive.zip"
+  if ! curl -fsSL --max-time 300 "$url" -o "$zip"; then
+    warn "download failed: $name"; return 1
+  fi
+  if [ "$(head -c 2 "$zip" 2>/dev/null)" != "PK" ]; then
+    warn "downloaded archive is not a zip: $name"; return 1
+  fi
+  if ! ditto -x -k "$zip" "$tmp/x" 2>/dev/null; then
+    warn "extract failed: $name"; return 1
+  fi
+  appdir="$(find "$tmp/x" -maxdepth 3 -name '*.app' -not -path '*/__MACOSX/*' -print -quit)"
+  [ -n "$appdir" ] || { warn "no .app inside archive: $name"; return 1; }
+  dest="$install_dir/$(basename "$appdir")"
+  if ! ditto "$appdir" "$dest"; then
+    warn "install (copy) failed: $name"; return 1
+  fi
+  return 0
+}
+
+while IFS="$(printf '\t')" read -r name url; do
+  [ -n "$name" ] && [ -n "$url" ] || continue
+  if run_timed "install Setapp app: $name" install_one "$name" "$url"; then
+    log "installed Setapp app: $name"
+    installed=$((installed + 1))
+  else
+    failed=$((failed + 1))
+  fi
+done <"$resolve"
+
+# Names the catalogue did not contain (exact display name required).
+missing="$(comm -23 <(sort -u "$needed") <(cut -f1 "$resolve" | sort -u) 2>/dev/null || true)"
+if [ -n "$missing" ]; then
+  warn "these names were not found in the Setapp catalogue (names must match exactly):"
+  printf '%s\n' "$missing" | while IFS= read -r m; do [ -n "$m" ] && warn "  $m"; done
+fi
+
+log "Setapp apps: installed=$installed failed=$failed. Newly installed apps license on first launch."
 {{- end -}}

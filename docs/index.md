@@ -89,7 +89,7 @@ for day-to-day implementation details.
 | [ADR 0021 - Shared plist verification](adr/0021-shared-plist-verification.md) | [Tests index](../tests/README.md#plist-merge-verification) and [Chezmoi Architecture](references/chezmoi-architecture.md). |
 | [ADR 0022 - Bats with repo-owned zsh test support](adr/0022-bats-and-zsh-test-support.md) | [Test Refactoring](plans/test-suite-rebuild-plan.md); implemented and validated locally and in remote CI. |
 | [ADR 0023 - Isolate marketplace packaging and commit APM module inputs](adr/0023-apm-agent-marketplace-packaging.md) | Accepted; [APM Agent Marketplace plan](plans/apm-agent-marketplace-plan.md). Current operations are in the [marketplace reference](references/agent-marketplace.md) and [management skill](../.agents/skills/agent-skill-management/SKILL.md). |
-| [ADR 0024 - Setapp subscription apps install from packages.toml](adr/0024-setapp-subscription-app-installs.md) | `setapp_apps` groups in `packages.toml`, rendered by `scripts/packages/render-setapp-applist` and installed by `run_after_22-setapp-apps` through setapp-cli. |
+| [ADR 0024 - Setapp subscription apps install from packages.toml](adr/0024-setapp-subscription-app-installs.md) | `setapp_apps` groups in `packages.toml`, rendered by `scripts/packages/render-setapp-applist` and installed by `run_after_22-setapp-apps` via Setapp's store API. |
 | [ADR 0025 - Share APM acquisition across native plugins](adr/0025-shared-apm-acquisition.md) | One root manifest, lock, and committed cache; per-plugin native metadata remains. See the [marketplace reference](references/agent-marketplace.md). |
 
 ## Research

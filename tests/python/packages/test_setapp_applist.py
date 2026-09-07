@@ -35,8 +35,8 @@ class SetappAppListTests(RepoTestCase):
             if not group.get("setapp_apps"):
                 continue
             with self.subTest(group=name):
-                # setapp-cli drives the Setapp desktop client, so a group that
-                # names Setapp apps has no install path without the cask.
+                # The install hook needs Setapp present to license the apps, so a
+                # group naming Setapp apps has no install path without the cask.
                 self.assertIn("setapp", [cask["name"] for cask in group.get("casks", [])])
 
     def test_a_group_naming_setapp_apps_without_the_cask_fails_the_render(self):

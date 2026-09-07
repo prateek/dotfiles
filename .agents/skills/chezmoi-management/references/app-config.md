@@ -25,9 +25,10 @@ New app config request
 │       Load via `include` (NOT `includeTemplate`)
 │
 └── Setapp-installed app?
-        Add it to `setapp_apps` in packages.toml first (ADR 0024), then
-        treat it like any other app. Without that entry there is no
-        install path, so do not add chezmoi config for it.
+        Add it to `setapp_apps` in packages.toml first (ADR 0024); the
+        apply hook downloads it from Setapp's store API. Then treat it
+        like any other app. Without that entry there is no install path,
+        so do not add chezmoi config for it.
 ```
 
 ## Plist Fragment Anatomy

@@ -1,5 +1,5 @@
 {{- /*
-  setapp-applist.tmpl — setapp-cli AppList input rendered from .packages data.
+  setapp-applist.tmpl — Setapp app list rendered from .packages data.
 
   Same selection model as brewfile.tmpl: package groups come from the
   machines.toml resolver (features.tmpl), and the AppList is the UNION of
@@ -7,7 +7,8 @@
   item order, first occurrence wins).
 
   Output shape: one Setapp catalogue name per line, with exactly one trailing
-  newline, which is what `setapp-cli bundle install` parses.
+  newline. run_after_22-setapp-apps resolves each name against Setapp's store
+  API and installs it.
 
   Setapp apps install through the Setapp desktop client, so a selection naming
   them without the `setapp` cask has no install path at all. Fail the render

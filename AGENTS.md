@@ -79,7 +79,7 @@ an empty stub for Codex runtime skills); do not commit source copies under
 - Secret-backed configs and licenses are private templates under `home/`, driven by `home/.chezmoidata/secrets.toml` and `licenses.toml`; store only obfuscated `op://` refs.
 - Raw app captures live under `${XDG_STATE_HOME:-~/.local/state}/dotfiles/captures/`, not in the repo.
 - Mac App Store entries are opt-in with `DOTFILES_INSTALL_MAS_APPS=true`.
-- Setapp-managed apps install from `setapp_apps` in `packages.toml`, via setapp-cli in `run_after_22-setapp-apps` (see [ADR 0025](docs/adr/0024-setapp-subscription-app-installs.md)). Names must match the Setapp catalogue exactly. The hook installs and never uninstalls; it skips with a warning until Setapp is installed and signed in. Do not add config for a Setapp app that is not in `setapp_apps`.
+- Setapp-managed apps install from `setapp_apps` in `packages.toml`: `run_after_22-setapp-apps` downloads each app's vendor archive from Setapp's store API and unpacks it (Setapp's XPC install service rejects third-party callers; see [ADR 0024](docs/adr/0024-setapp-subscription-app-installs.md)). Names must match the Setapp catalogue exactly. The hook installs and never uninstalls, and skips with a warning until Setapp is installed; apps license on first launch. Do not add config for a Setapp app that is not in `setapp_apps`.
 - Chrome extension settings are not snapshotted from user profiles. Prefer Chrome Sync or extension-native export.
 
 ## Shell Startup
