@@ -80,7 +80,7 @@ These are short, high-stakes, and easy to violate. Keep them in working memory r
 - **Store only obfuscated `op://vault-id/item-id/field-id` refs in committed files.** Human-readable `op://Personal/...` refs are forbidden in `home/.chezmoidata/secrets.toml` and `licenses.toml`. Per-machine overrides go in `~/.config/chezmoi/chezmoi.toml.local`.
 - **Do not reintroduce `home/.chezmoidata/apps/*.toml`.** That mechanism was retired with `bin/dotfiles`. App config now lives at the native target path or as a `modify_` plist stub.
 - **MAS entries opt-in via `DOTFILES_INSTALL_MAS_APPS=true`.** Do not unconditionally include MAS apps in `packages.toml`.
-- **Setapp-installed apps need an install path before config.** Do not add chezmoi-managed config for a Setapp app unless the repo has an install path for it.
+- **Setapp apps are declared in `setapp_apps`, not `casks`.** Homebrew cannot install them; `run_after_22-setapp-apps` does, through setapp-cli (ADR 0024). Add the app there before adding chezmoi-managed config for it.
 - **`home/.chezmoiscripts/` numeric ordering is load-bearing.** Insert new scripts at unused gap numbers; do not renumber existing ones. Current ordering listed in `references/workflow.md`.
 - **Raw app captures live under `${XDG_STATE_HOME:-~/.local/state}/dotfiles/captures/`, not in the repo.**
 - **Yojam's `~/Library/Application Support/Yojam/config.json` has a focused skill.** See the `yojam-config` skill for the deltas-only desired-fragment + JSON deep-merge flow, schema, and import-time security pass.
@@ -103,6 +103,6 @@ After editing this skill itself: see `references/meta-skill-maintenance.md` for 
 - Edit a target under `~/` and assume `chezmoi apply` will reconcile silently — it prompts or overwrites.
 - Embed secrets, license keys, or human-readable `op://` paths in committed source.
 - Renumber `home/.chezmoiscripts/` prefixes, or reintroduce `home/.chezmoidata/apps/*.toml`.
-- Add MAS or Setapp app config without confirming the install path is in scope.
+- Add MAS app config without confirming the install path is in scope, or Setapp app config for an app missing from `setapp_apps`.
 - Paraphrase chezmoi attribute grammar from memory; consult `references/source-target-translation.md`.
 - Add long inline command transcripts to this SKILL.md. Push depth into `references/`.

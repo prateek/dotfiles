@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+#
+# render-setapp-applist — emit a setapp-cli AppList for a given machine type,
+# sourced from the `setapp_apps` entries in home/.chezmoidata/packages.toml.
+#
+# Implementation: renders home/.chezmoitemplates/setapp-applist.tmpl. The
+# template is the single source of truth for AppList shape; this wrapper just
+# normalizes the CLI for tests and for inspecting a machine type other than
+# the one the local chezmoi config selects.
+#
+# Usage:
+#   scripts/packages/render-setapp-applist [--machine-type <name>] [--output <file>]
+#
+# Exit non-zero on rendering failure.
+#
+set -euo pipefail
+
+# shellcheck source-path=SCRIPTDIR
+source "$(dirname -- "${BASH_SOURCE[0]}")/lib.sh"
+
+machine_type=""
+output=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --machine-type)
+      [[ $# -ge 2 ]] || { printf 'render-setapp-applist: --machine-type requires a value\n' >&2; exit 2; }
+      machine_type="$2"; shift 2 ;;
+    --machine-type=*)
+      machine_type="${1#*=}"; shift ;;
+    --output)
+      [[ $# -ge 2 ]] || { printf 'render-setapp-applist: --output requires a path\n' >&2; exit 2; }
+      output="$2"; shift 2 ;;
+    --output=*)
+      output="${1#*=}"; shift ;;
+    -h|--help)
+      sed -n '2,16p' "$0" >&2
+      exit 0 ;;
+    *)
+      printf 'render-setapp-applist: unknown argument: %s\n' "$1" >&2
+      exit 2 ;;
+  esac
+done
+
+repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
+
+args=(--template "$repo_root/home/.chezmoitemplates/setapp-applist.tmpl")
+if [[ -n $machine_type ]]; then args+=(--machine-type "$machine_type"); fi
+if [[ -n $output ]]; then args+=(--output "$output"); fi
+
+render_chezmoi_template "${args[@]}"

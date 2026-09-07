@@ -41,6 +41,12 @@
 "pipx:absurdctl" = "latest"                                # durable-workflow CLI for agent use
 "pipx:obsidian-wiki" = "latest"                            # obsidian-wiki plugin pkg + wiki-agent-sessions repo (sessions-build/query, lint)
 
+# === Desktop app management ===
+# Installs Setapp-subscription apps from home/.chezmoidata/packages.toml, which
+# Homebrew cannot reach. Unofficial, but it drives Setapp's own XPC service
+# rather than automating the UI. Consumed by run_after_22-setapp-apps.
+"github:maximlevey/setapp-cli" = "latest"
+
 # === Secrets & encryption ===
 sops = "latest"                                            # aqua:getsops/sops; SOPS secrets editor
 

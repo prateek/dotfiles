@@ -173,6 +173,7 @@ and the permission-owning app handoff.
 | Change | Focused checks |
 | --- | --- |
 | Package data / Brewfile / install trust | `make test-render-brewfile test-brew-bundle-script test-brew-inventory test-package-gated-configs` |
+| Setapp subscription apps | `make test-render-setapp-applist test-setapp-apps-script` |
 | Machine layers / elevation | `make test-machines-features test-elevation-render test-chezmoi-config` |
 | Secret references / licenses | `make test-secret-backed-files` |
 | Fork reconciliation / adoption | `make test-fork-reconcile test-fork-lifecycle-entry test-retired-packages` |
@@ -264,6 +265,12 @@ Run the Raycast extension build-hook contract tests:
 
 ```sh
 make test-raycast-extensions-script
+```
+
+Run the Setapp app install-hook contract tests:
+
+```sh
+make test-setapp-apps-script
 ```
 
 Run the full fresh-shell selftest:
@@ -407,6 +414,7 @@ Run focused-helper tests for the package renderer:
 
 ```sh
 make test-render-brewfile
+make test-render-setapp-applist
 make test-machines-features
 make test-elevation-render
 ```

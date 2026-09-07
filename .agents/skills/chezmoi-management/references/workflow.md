@@ -134,20 +134,32 @@ Files under `home/.chezmoiscripts/` are scripts. Naming controls when they run.
 ```text
 run_once_before_00-homebrew.sh.tmpl
 run_once_before_05-core-tools.sh.tmpl
+run_onchange_after_08-retired-packages.sh.tmpl
+run_onchange_after_09-fork-reconcile.sh.tmpl
 run_onchange_after_10-brew-bundle.sh.tmpl
 run_onchange_after_10-zinit-compat.sh.tmpl
+run_onchange_after_11-zinit-update.sh.tmpl
 run_onchange_after_12-gh-extensions.sh.tmpl
 run_onchange_after_15-xcode.sh.tmpl
+run_onchange_after_16-tartelet-runner.sh.tmpl
+run_onchange_after_17-tartelet-settings.sh.tmpl
+run_after_18-tartelet-tart-softnet-wrapper.sh.tmpl
 run_onchange_after_20-mise-install.sh.tmpl
+run_after_21-raycast-extensions.sh.tmpl
+run_after_22-setapp-apps.sh.tmpl
 run_onchange_after_25-hammerspoon.sh.tmpl
 run_onchange_after_30-macos-defaults.sh.tmpl
 run_onchange_after_35-agent-skill-roots.sh.tmpl
 run_onchange_after_36-agent-plugins.sh.tmpl
+run_onchange_after_37-agent-slack-doc.sh.tmpl
+run_onchange_after_38-agent-session-wiki.sh.tmpl
 run_onchange_after_40-build-mic.sh.tmpl
+run_onchange_after_45-karabiner-goku.sh.tmpl
+run_onchange_after_46-tuna-reload.sh.tmpl
 run_onchange_after_90-verify.sh.tmpl
 ```
 
-Insert new scripts at unused numbers (e.g., `12-`, `35-`). Do not renumber.
+Insert new scripts at unused numbers. Do not renumber.
 
 Sudo keepalive is no longer a separate `99-sudo` script. Privileged phases call the shared helper in `home/.chezmoitemplates/script_lib.sh`; it prompts once, keeps sudo warm while the parent `chezmoi apply` is alive, and cleans itself up shortly after the parent process exits. If a script needs sudo, source the helper rather than reintroducing a tail script.
 

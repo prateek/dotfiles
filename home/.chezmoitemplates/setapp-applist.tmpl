@@ -1,0 +1,34 @@
+{{- /*
+  setapp-applist.tmpl — setapp-cli AppList input rendered from .packages data.
+
+  Same selection model as brewfile.tmpl: package groups come from the
+  machines.toml resolver (features.tmpl), and the AppList is the UNION of
+  `setapp_apps` across the selected groups, deduped by name (group order, then
+  item order, first occurrence wins).
+
+  Output shape: one Setapp catalogue name per line, with exactly one trailing
+  newline, which is what `setapp-cli bundle install` parses.
+
+  Setapp apps install through the Setapp desktop client, so a selection naming
+  them without the `setapp` cask has no install path at all. Fail the render
+  rather than emit a list nothing can act on.
+*/ -}}
+{{- $root := . -}}
+{{- $groups := (includeTemplate "features.tmpl" . | fromJson).groups -}}
+
+{{- $apps := list -}}{{- $seen := list -}}
+{{- range $gname := $groups -}}
+{{-   if not (hasKey $root.packages.groups $gname) -}}{{- fail (printf "setapp-applist.tmpl: machine type references undefined group %q" $gname) -}}{{- end -}}
+{{-   $g := index $root.packages.groups $gname -}}
+{{-   range default (list) (dig "setapp_apps" (list) $g) -}}
+{{-     if not (has .name $seen) -}}{{- $apps = mustAppend $apps .name -}}{{- $seen = mustAppend $seen .name -}}{{- end -}}
+{{-   end -}}
+{{- end -}}
+
+{{- if and $apps (ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" $root "name" "setapp")) "true") -}}
+{{-   fail (printf "setapp-applist.tmpl: %d Setapp app(s) are declared but the \"setapp\" cask is not in the selected groups" (len $apps)) -}}
+{{- end -}}
+
+{{- if $apps -}}
+{{ join "\n" $apps }}
+{{ end -}}

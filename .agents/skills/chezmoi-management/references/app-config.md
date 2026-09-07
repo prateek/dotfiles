@@ -25,8 +25,9 @@ New app config request
 │       Load via `include` (NOT `includeTemplate`)
 │
 └── Setapp-installed app?
-        STOP. Do not add chezmoi config until the repo has an install path
-        for the app. Setapp-managed apps install after Setapp login.
+        Add it to `setapp_apps` in packages.toml first (ADR 0024), then
+        treat it like any other app. Without that entry there is no
+        install path, so do not add chezmoi config for it.
 ```
 
 ## Plist Fragment Anatomy

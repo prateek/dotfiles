@@ -94,6 +94,18 @@ casks = [
   { name = "spotify", appdir = "/Applications" },
   { name = "setapp" },
 ]
+# Apps installed from the Setapp subscription rather than Homebrew. Names must
+# match the Setapp catalogue exactly (case- and version-sensitive: "Bartender 5",
+# not "bartender"); setapp-cli resolves them against Setapp's own database.
+# Declaring these requires the `setapp` cask in the same selection — see
+# home/.chezmoitemplates/setapp-applist.tmpl.
+setapp_apps = [
+  { name = "CleanShot X" },
+  { name = "iStat Menus" },
+  { name = "Maestri" },
+  { name = "Soulver" },
+  { name = "Yoink" },
+]
 mas = [
   { name = "Okta Verify", id = 490179405 },
 ]

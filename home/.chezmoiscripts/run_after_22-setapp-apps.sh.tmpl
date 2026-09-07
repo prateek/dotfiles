@@ -1,0 +1,52 @@
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- if and $f.run_install_scripts (eq (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "setapp")) "true") -}}
+{{ template "script_lib.sh" . }}
+
+# Setapp has to be installed, loaded, and signed in before its XPC service will
+# answer, and none of that holds on a fresh Mac, so every prerequisite below
+# warns and exits 0 rather than failing the apply. That tolerance is why this is
+# run_after_: chezmoi records a run_onchange_ script's state whenever it exits 0,
+# so a skipped run would never retry until packages.toml changed again. See
+# docs/adr/0024-setapp-subscription-app-installs.md.
+setapp_cli="$HOME/.local/share/mise/shims/setapp-cli"
+
+if [ ! -x "$setapp_cli" ]; then
+  warn "setapp-cli is not installed; skipping Setapp app installs."
+  warn "it installs via mise; retry with: mise install -y"
+  exit 0
+fi
+
+# The agent is only loaded once Setapp is installed, so one probe covers both
+# "the cask has not landed yet" and "Setapp is not running".
+if ! launchctl list com.setapp.DesktopClient.SetappAgent >/dev/null 2>&1; then
+  warn "the Setapp launch agent is not loaded; skipping Setapp app installs."
+  warn "install Setapp.app and sign in, then re-run: chezmoi apply"
+  exit 0
+fi
+
+scratch="$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-setapp.XXXXXX")"
+trap 'rm -rf "$scratch"' EXIT
+applist="$scratch/AppList"
+cat <<'APPLIST' >"$applist"
+{{ template "setapp-applist.tmpl" . -}}
+APPLIST
+
+# Install only, never `bundle cleanup`: an app installed by hand from the Setapp
+# GUI has to survive an apply.
+if ! run_timed "setapp-cli bundle install" "$setapp_cli" bundle install --file "$applist"; then
+  warn "Setapp app install failed; check that Setapp is signed in, then re-run: chezmoi apply"
+  exit 0
+fi
+
+# `bundle install` reports a per-app failure — an unknown catalogue name, a
+# refused download — on stderr and still exits 0, so without this the apply would
+# look clean while an app never landed. `bundle check` searches /Applications
+# rather than the Setapp app directories, so it cannot answer this; `list` can.
+"$setapp_cli" list >"$scratch/installed"
+missing="$(grep -vixF -f "$scratch/installed" "$applist" || true)"
+if [ -n "$missing" ]; then
+  warn "Setapp apps declared in packages.toml but still not installed:"
+  printf '%s\n' "$missing" | while IFS= read -r app; do warn "  $app"; done
+  warn "names must match the Setapp catalogue exactly; check them in Setapp.app"
+fi
+{{- end -}}
