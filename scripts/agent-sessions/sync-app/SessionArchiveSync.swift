@@ -16,23 +16,29 @@ func runSync() -> Never {
     let home = files.homeDirectoryForCurrentUser
     let repo = home.appendingPathComponent("code/github.com/prateek/wiki-agent-sessions")
     let script = repo.appendingPathComponent(".agents/skills/session-sync/scripts/sync-sessions")
+    let wrapper = home.appendingPathComponent(".local/bin/wiki-sessions-sync")
     let checking = arguments == ["--check-access"]
 
     do {
         _ = try files.contentsOfDirectory(atPath: repo.path)
-        guard let uv = ["/opt/homebrew/bin/uv", "/usr/local/bin/uv"].first(where: files.isExecutableFile) else {
-            fail("uv is not installed in Homebrew's bin directory.", code: 69)
-        }
         let process = Process()
-        process.executableURL = URL(fileURLWithPath: uv)
-        process.arguments = ["run", "--script", script.path]
         if checking {
-            process.arguments! += ["--print-session-sources", repo.path, ""]
+            guard let uv = ["/opt/homebrew/bin/uv", "/usr/local/bin/uv"].first(where: files.isExecutableFile) else {
+                fail("uv is not installed in Homebrew's bin directory.", code: 69)
+            }
+            process.executableURL = URL(fileURLWithPath: uv)
+            process.arguments = ["run", "--script", script.path, "--print-session-sources", repo.path, ""]
+        } else {
+            guard files.isExecutableFile(atPath: wrapper.path) else {
+                fail("managed sync wrapper is missing or not executable; run chezmoi apply.", code: 127)
+            }
+            process.executableURL = wrapper
+            process.arguments = []
         }
         process.currentDirectoryURL = home
         var environment = [
             "HOME": home.path,
-            "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+            "PATH": "/Applications/AgentsView.app/Contents/MacOS:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
             "USER": NSUserName(),
             "LOGNAME": NSUserName(),
         ]

@@ -91,6 +91,10 @@ agent_session_wiki_sparse = true
 # no-op. Add e.g. [machines.os.windows] or [machines.host.gaming-rig] when a
 # Linux homelab flavor or a Windows box needs to compose extra behavior.
 
+# Personal daily-driver MacBook.
+[machines.host.prateek-personal-mbp]
+wiki_host_alias = "personal-mbp"
+
 # The code volume is reconciled before apply reads destination state.
 # See docs/runbooks/host-storage.md. Tart's separate storage path is exported by
 # home/dot_config/zsh/dot_zshenv.tmpl and checked by scripts/vm/lib.sh.

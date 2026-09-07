@@ -3,7 +3,7 @@ status: active
 doc_type: plan
 owner: Prateek
 created: 2026-08-30
-updated: 2026-09-01
+updated: 2026-09-07
 status_detail: "Accepted; implementation landing on the av-history branch. See ADR 0017."
 related:
   - ../adr/0017-agent-session-archive.md
@@ -512,6 +512,17 @@ CI does not currently run this test. Add `make test-agentsview-config` to `.gith
 
 ## Orca automations
 
+> **Amendment (2026-09-07):** each participating machine now maintains a
+> separate named QMD lexical index for transcript-history lookup. Chezmoi
+> installs QMD, renders `~/.config/qmd/wiki-agent-sessions.yml`, and builds the
+> index during bootstrap. Launchd retains the permission-owning Session Archive
+> Sync app. For normal runs, the app calls a dotfiles-managed wrapper that runs
+> the repository sync first and `qmd --index wiki-agent-sessions update` second.
+> Exit 7 means raw mirroring and push succeeded but search is stale. The corpus
+> includes main Claude, pi, and cursor transcripts plus `wiki/`. It excludes
+> subagents, cursor databases, and raw Codex rollouts to avoid multi-gigabyte
+> tool and image payloads. agentsview remains the Codex consumer.
+>
 > **Amendment (2026-08-31):** the hourly sync no longer runs as an Orca
 > automation. Every Orca run leaks a hidden agent tab
 > ([stablyai/orca#9479](https://github.com/stablyai/orca/issues/9479)), and a
@@ -979,7 +990,7 @@ git diff --check
 - agentsview watches the live clone while `git pull --rebase` rewrites files in place. Upstream recommends staged publication (pull into a staging checkout, atomically switch) to avoid transient parse errors on partially written files. Accepted: the watcher retries changed files and the 15-minute periodic sync re-reads them, so torn reads self-heal. Adopt a published-worktree flip only if transient errors prove noisy in practice.
 - Unique aliases in the central `machines.toml` registry identify hosts. The uniqueness test supplies the collision guarantee needed for this single-operator fleet, so machine UUIDs are unnecessary.
 - The archive has no protocol version or canary rollout. Re-executing newly pulled scripts limits version skew, and the fleet has one operator.
-- Cross-host search uses agentsview and the machine-wide operator skill. No global MCP search tool is included.
+- Cross-host search uses the named QMD lexical index, agentsview, and the machine-wide operator skill. No global MCP search tool is included.
 - agentsview reads raw Git mirrors through `[[session_sources]]`, its documented configuration for native layouts transported out of band. `agentsview sync --target` produces normalized, content-addressed artifacts with incremental cursors and machine identity, shipped in 0.40.0 on 2026-08-02, but its folder transport is unsafe for this Git multi-writer topology. It uses one global `head.json` and globally sequenced `event-<seq>.json` records (`internal/artifact/transport_folder_journal.go:16,40`), so publishers can collide between pulls. It also omits raw provider files. Reconsider it if upstream adopts per-origin journals.
 - The measured backfill pilot is the acceptance gate for the wiki layer. There is no separate staging gate.
 - Failure procedures have two homes: the machine-wide operator skill for fleet operation and the repository-local synchronization skill for automation recovery.

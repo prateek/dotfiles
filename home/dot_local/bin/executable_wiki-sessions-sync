@@ -1,0 +1,47 @@
+#!/bin/sh
+
+set -u
+
+archive="${WIKI_SESSIONS_CLONE:-$HOME/code/github.com/prateek/wiki-agent-sessions}"
+sync_script="${WIKI_SESSIONS_SYNC:-$archive/.agents/skills/session-sync/scripts/sync-sessions}"
+qmd_index="${QMD_INDEX:-wiki-agent-sessions}"
+qmd_cli="${QMD_CLI:-}"
+
+warn() {
+  printf 'wiki-sessions-sync: WARNING: %s\n' "$*" >&2
+}
+
+if [ ! -x "$sync_script" ]; then
+  warn "session sync is not executable: $sync_script"
+  exit 127
+fi
+
+"$sync_script"
+sync_status=$?
+if [ "$sync_status" -ne 0 ]; then
+  exit "$sync_status"
+fi
+
+if [ -z "$qmd_cli" ]; then
+  if [ -x "$HOME/.local/share/mise/shims/qmd" ]; then
+    qmd_cli="$HOME/.local/share/mise/shims/qmd"
+  else
+    qmd_cli="$(command -v qmd 2>/dev/null || true)"
+  fi
+fi
+
+if [ -z "$qmd_cli" ] || [ ! -x "$qmd_cli" ]; then
+  warn "archive synchronized, but qmd is unavailable; run chezmoi apply"
+  exit 7
+fi
+
+if ! "$qmd_cli" --index "$qmd_index" update; then
+  warn "archive synchronized, but QMD index '$qmd_index' did not refresh"
+  exit 7
+fi
+
+qmd_status="$("$qmd_cli" --index "$qmd_index" status 2>/dev/null || true)"
+if ! printf '%s\n' "$qmd_status" | grep -Eq 'Files:[[:space:]]+[1-9][0-9]*'; then
+  warn "archive synchronized, but QMD index '$qmd_index' is empty"
+  exit 7
+fi

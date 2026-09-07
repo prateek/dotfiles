@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  Hourly deterministic session-archive sync for prateek/wiki-agent-sessions.
-  sync-sessions is a plain script (it takes the repo lock itself); running it
-  under launchd instead of an Orca automation keeps LLM agents, tokens, and
-  Orca's leaked automation tabs (stablyai/orca#9479) out of the happy path.
+  Hourly deterministic session-archive sync and derived QMD refresh for
+  prateek/wiki-agent-sessions. The app executes the managed sync wrapper,
+  which runs raw sync first and QMD update second; exit 7 means the archive
+  synchronized and its search index is stale. Running it under launchd instead
+  of an Orca automation keeps LLM agents, tokens, and Orca's leaked automation
+  tabs (stablyai/orca#9479) out of the happy path.
   The dedicated app owns removable-volume permission. Setup and access checks:
   docs/runbooks/session-sync-permissions.md.
 
@@ -27,10 +29,10 @@
   </array>
   <key>EnvironmentVariables</key>
   <dict>
-    <!-- uv and git come from Homebrew:
-         /opt/homebrew on arm64, /usr/local on Intel. -->
+    <!-- uv and git come from Homebrew. The app-launched wrapper resolves qmd
+         through its mise shim before consulting PATH. -->
     <key>PATH</key>
-    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    <string>/Applications/AgentsView.app/Contents/MacOS:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
   </dict>
   <key>WorkingDirectory</key>
   <string>{{ .chezmoi.homeDir }}</string>

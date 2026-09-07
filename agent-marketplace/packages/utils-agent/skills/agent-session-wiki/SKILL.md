@@ -20,6 +20,20 @@ is the automation's own failure playbook.
 
 ## Find a past session (any host)
 
+- **QMD (fast exact-text search across the archive)**: setup creates the
+  named lexical index `wiki-agent-sessions`, and every successful hourly sync
+  refreshes it. Search it without invoking embedding or model downloads:
+
+  ```sh
+  qmd --index wiki-agent-sessions search '"Roux Home"' -c agent-session-history -n 10
+  qmd --index wiki-agent-sessions get '#<docid>:<line>:<count>'
+  ```
+
+  The index covers main Claude transcripts and history, Claude memories, pi
+  sessions, cursor agent transcripts, and the distilled wiki. It deliberately
+  excludes subagent transcripts, cursor databases, and raw Codex rollouts;
+  use agentsview for Codex. This keeps the index lexical, useful, and bounded
+  instead of duplicating multi-gigabyte tool and image payloads.
 - **agentsview (Claude, Codex, cursor `projects/`)**: the dotfiles-managed
   `~/.agentsview/config.toml` carries generated `[[session_sources]]` entries
   for every other host in the clone, labeled by machine. Browse/search in the
@@ -75,7 +89,7 @@ manifest in `wiki/` dedupes already-ingested sources.
   (dotfiles) reports drift read-only: cone, `blob:none` filter, stray paths
   outside the cone. The apply-time verify step runs the same check. Without
   `--check` it repairs the drift; the bootstrap script does that only when
-  it refires (machines.toml, helper, plist, or agentsview template change).
+  its machine, clone, app, wrapper, QMD, launchd, or agentsview inputs change.
 
 ## Troubleshooting
 
@@ -85,6 +99,7 @@ manifest in `wiki/` dedupes already-ingested sources.
 | Sync exit 4 | Dirty paths outside the host's archive — someone's WIP; never reset, resolve by hand |
 | Sync exit 5 | Push failed 3×; the next hourly run retries. Persistent → check SSH/network in the log |
 | Sync exit 6 | Rebase conflict — near-impossible with per-host paths; suspect two machines sharing an alias (machines.toml uniqueness test guards this) |
+| Sync exit 7 | Raw synchronization and push succeeded, but the derived QMD index is stale — inspect the launchd log, verify `qmd --version`, then run `qmd --index wiki-agent-sessions update` |
 | Exit 75 | Repo lock held by live sync/ingest; wait |
 | Sync not firing (no new log entries at the top of the hour) | `launchctl print gui/$(id -u)/com.prateek.wiki-sessions-sync`; if not loaded, `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.prateek.wiki-sessions-sync.plist` |
 | New host invisible in agentsview | Restart the daemon (`agentsview serve --background --replace`) or wait for the next sync/apply; entries regenerate from the clone glob |
@@ -103,8 +118,8 @@ manifest in `wiki/` dedupes already-ingested sources.
    layer in machines.toml (unique, non-empty; `make test-machines-features`
    enforces both). The machine type must have `agent_session_wiki = true`.
 2. `chezmoi apply` on that machine: clones the repo in the type's shape
-   (sparse for work), renders the alias config, loads the hourly sync launch
-   agent, wires agentsview.
+   (sparse for work), renders the alias and named QMD configs, builds the
+   lexical index, loads the hourly sync launch agent, and wires agentsview.
 3. After its first successful sync, add the alias to `health/expected-hosts`
    in the wiki repo so the daily audit covers it.
 
@@ -125,6 +140,8 @@ manifest in `wiki/` dedupes already-ingested sources.
 - Never write to another host's `sessions/<host>/` or `health/<host>.json`.
 - Never edit `~/.agentsview/config.toml` repo entries by hand — the modify
   template and sync script own them.
+- Do not run `qmd embed` for `wiki-agent-sessions`; the managed index is a
+  lexical history lookup and the hourly wrapper runs only `qmd update`.
 - The wiki plugin (`obsidian-wiki@prateek-local`) ships disabled; repos opt in
   via `.claude/settings.json` / `.codex/config.toml`. Never run global
   `obsidian-wiki setup` — it sprays skills into `~/.claude/skills` and

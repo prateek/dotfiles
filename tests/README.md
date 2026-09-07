@@ -165,6 +165,8 @@ locking, invalidation, and failure cooldown.
 Keep script-aware diff/dry-run and rendered shellcheck checks for changed apply
 scripts. `make test-chezmoi-apply` previews `ci`, `personal`, and `work`; Tart
 installation and live-machine apply remain explicit operator lanes.
+`make test-wiki-sessions-sync` checks the raw-sync-before-QMD boundary, exit 7,
+and the permission-owning app handoff.
 
 ### Package and secret checks
 
@@ -313,6 +315,7 @@ make test-agents-doc-pointers
 make test-codex-config
 make test-agentsview-config
 make test-reconcile-wiki-clone
+make test-wiki-sessions-sync
 make test-claude-settings
 make test-claude-statusline
 make test-pi-settings

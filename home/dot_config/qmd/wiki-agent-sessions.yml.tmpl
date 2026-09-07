@@ -1,0 +1,9 @@
+collections:
+  agent-session-history:
+    path: "{{ .chezmoi.homeDir }}/code/github.com/prateek/wiki-agent-sessions"
+    pattern: "sessions/*/claude/history.jsonl,sessions/*/claude/projects/**/*.jsonl,sessions/*/claude/projects/**/memory/*.md,sessions/*/pi/sessions/**/*.jsonl,sessions/*/cursor/projects/**/*.jsonl,sessions/*/cursor/projects/**/*.txt,wiki/**/*.md"
+    ignore:
+      - "sessions/**/subagents/**"
+    context:
+      /sessions: Raw cross-machine agent transcripts in their native layouts. Search exact phrases, project names, commands, and prior user requests here.
+      /wiki: Distilled knowledge derived from archived agent sessions.

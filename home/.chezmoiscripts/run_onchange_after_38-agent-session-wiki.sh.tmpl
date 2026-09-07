@@ -7,6 +7,8 @@
 # sync app installer sha256: {{ include (printf "%s/../scripts/agent-sessions/install-sync-app" .chezmoi.sourceDir) | sha256sum }}
 # sync app source sha256: {{ include (printf "%s/../scripts/agent-sessions/sync-app/SessionArchiveSync.swift" .chezmoi.sourceDir) | sha256sum }}
 # sync app metadata sha256: {{ include (printf "%s/../scripts/agent-sessions/sync-app/Info.plist" .chezmoi.sourceDir) | sha256sum }}
+# sync wrapper sha256: {{ include "dot_local/bin/executable_wiki-sessions-sync" | sha256sum }}
+# qmd index config sha256: {{ include "dot_config/qmd/wiki-agent-sessions.yml.tmpl" | sha256sum }}
 # agentsview modify template sha256: {{ include "private_dot_agentsview/modify_private_config.toml.tmpl" | sha256sum }}
 
 set -euo pipefail
@@ -90,6 +92,23 @@ case "$rc" in
   *) die "could not reconcile the wiki-agent-sessions clone (exit $rc); see the helper's output, then: $recover" ;;
 esac
 
+# The immediate launchd run repeats this after synchronization, covering
+# commits pulled after this point.
+qmd_cli="$HOME/.local/share/mise/shims/qmd"
+if [ -x "$qmd_cli" ]; then
+  if run_timed "refresh wiki-agent-sessions QMD index" \
+      "$qmd_cli" --index wiki-agent-sessions update; then
+    qmd_status="$("$qmd_cli" --index wiki-agent-sessions status 2>/dev/null || true)"
+    if ! printf '%s\n' "$qmd_status" | grep -Eq 'Files:[[:space:]]+[1-9][0-9]*'; then
+      warn "QMD index is empty; raw sync remains enabled and the hourly job will retry"
+    fi
+  else
+    warn "QMD index refresh failed; raw sync remains enabled and the hourly job will retry"
+  fi
+else
+  warn "qmd is not installed; session search will stay stale until chezmoi apply installs it"
+fi
+
 # The plist sha comment above makes plist edits refire this script; launchd
 # creates the log file but not its directory.
 run_timed "install Session Archive Sync" "{{ .chezmoi.sourceDir }}/../scripts/agent-sessions/install-sync-app"
@@ -112,8 +131,12 @@ reconcile_automations
 
 # The agentsview modify template regenerates [[session_sources]] on every
 # apply; a restart is how the daemon picks the file up.
-if have agentsview; then
-  run_timed "restart agentsview daemon" agentsview serve --background --replace || \
+agentsview_cli="$(command -v agentsview 2>/dev/null || true)"
+if [ -x /Applications/AgentsView.app/Contents/MacOS/agentsview ]; then
+  agentsview_cli=/Applications/AgentsView.app/Contents/MacOS/agentsview
+fi
+if [ -n "$agentsview_cli" ]; then
+  run_timed "restart agentsview daemon" "$agentsview_cli" serve --background --replace || \
     warn "agentsview restart failed; restart manually: agentsview serve --background --replace"
 else
   warn "agentsview not installed; cross-host session browsing is off until it is (then: agentsview serve --background --replace)"

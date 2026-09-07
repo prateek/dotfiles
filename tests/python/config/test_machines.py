@@ -67,6 +67,8 @@ class MachineFeaturesTests(RepoTestCase):
             self.assertFalse(hosts[host].get("agent_session_wiki_sparse"), host)
 
     def test_work_uses_sparse_archive_and_m4mini_keeps_full_archive_with_ingest_paused(self):
+        personal = self.resolve("personal", chezmoi={"hostname": "prateek-personal-mbp"})
+        self.assertEqual(personal["wiki_host_alias"], "personal-mbp")
         work = self.resolve("work")
         self.assertIs(work["agent_session_wiki_sparse"], True)
         self.assertIs(work["agent_session_wiki_ingest"], False)

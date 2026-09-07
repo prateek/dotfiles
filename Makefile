@@ -6,7 +6,7 @@ TEST_BASH ?= bash
 TEST_ENV = $(if $(filter 1,$(DOTFILES_TEST_RUNTIME_READY)),,mise exec -- env DOTFILES_TEST_RUNTIME_READY=1)
 
 .PHONY: test-config-merge test-tuna-plist test test-chezmoi-apply hammerspoon hammerspoon-check hammerspoon-reload
-.PHONY: test-gemini-meeting-sync test-ghc test-gh-extensions-script test-mise-install-script test-xcode-install-script test-secret-backed-files test-kanata-config test-karabiner-goku test-chezmoi-config test-chezmoi-local-ignores test-chezmoi-script-status test-chezmoi-drift-banner test-agents-doc-pointers test-finder-copy-path test-codex-config test-cursor-cli-alias test-cursor-config test-agentsview-config test-reconcile-wiki-clone test-claude-settings test-claude-statusline test-pi-settings test-pi-statusline test-orca-settings test-crit-config test-vendor-skill-patches test-crit-evals test-agent-skill-packages test-agent-skill-packages-native test-ios-audit test-cmux-plist test-orbstack-plist test-selected-app-plists test-thaw-plist test-package-gated-configs test-machines-features test-elevation-render test-moom-plist test-nvalt-colors test-nvalt-plist test-voiceink-plist test-tartelet-settings test-tartelet-softnet-wrapper test-plist-hooks test-sudo-keepalive test-macos-defaults-script test-acpx-model-drift test-acpx-poll-stream test-brew-inventory test-brew-install-wrapper test-brew-bundle-script test-fork-reconcile test-retired-packages test-render-brewfile test-docs-lifecycle test-repo-index test-raycast-orca-worktree test-skill-console test-raycast-extensions-script
+.PHONY: test-gemini-meeting-sync test-ghc test-gh-extensions-script test-mise-install-script test-xcode-install-script test-secret-backed-files test-kanata-config test-karabiner-goku test-chezmoi-config test-chezmoi-local-ignores test-chezmoi-script-status test-chezmoi-drift-banner test-agents-doc-pointers test-finder-copy-path test-codex-config test-cursor-cli-alias test-cursor-config test-agentsview-config test-reconcile-wiki-clone test-wiki-sessions-sync test-claude-settings test-claude-statusline test-pi-settings test-pi-statusline test-orca-settings test-crit-config test-vendor-skill-patches test-crit-evals test-agent-skill-packages test-agent-skill-packages-native test-ios-audit test-cmux-plist test-orbstack-plist test-selected-app-plists test-thaw-plist test-package-gated-configs test-machines-features test-elevation-render test-moom-plist test-nvalt-colors test-nvalt-plist test-voiceink-plist test-tartelet-settings test-tartelet-softnet-wrapper test-plist-hooks test-sudo-keepalive test-macos-defaults-script test-acpx-model-drift test-acpx-poll-stream test-brew-inventory test-brew-install-wrapper test-brew-bundle-script test-fork-reconcile test-retired-packages test-render-brewfile test-docs-lifecycle test-repo-index test-raycast-orca-worktree test-skill-console test-raycast-extensions-script
 .PHONY: test-zed-settings test-zsh-prompt-host test-zsh-fresh-shells verify-zsh-fresh-shells bench-zsh-startup
 .PHONY: test-host-mounts
 .PHONY: test-tart-install-helper test-trace-perfetto test-vm-install-log-scan test-vm-postflight-macos test-install-tart-dry-run test-install-tart-smoke test-install-tart-full test-install-tart-warm test-install-tart-warm-bootstrap test-install-tart-warm-refresh test-install-tart-warm-destroy
@@ -163,6 +163,10 @@ test-agentsview-config:
 ## Regression tests for the wiki-agent-sessions clone-shape helper (full vs sparse).
 test-reconcile-wiki-clone:
 	@$(MAKE) --no-print-directory test-shell BATS_PATH=tests/bats/agents/wiki-clone.bats
+
+## Regression tests for raw session sync followed by the derived QMD refresh.
+test-wiki-sessions-sync:
+	@$(MAKE) --no-print-directory test-shell BATS_PATH=tests/bats/agents/wiki-sessions-sync.bats
 
 .PHONY: install-session-sync-app
 install-session-sync-app:

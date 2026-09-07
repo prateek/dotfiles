@@ -3,8 +3,8 @@ status: active
 doc_type: runbook
 owner: Prateek
 created: 2026-09-05
-updated: 2026-09-05
-status_detail: "Removable-volume access and bounded uploads verified through launchd; hourly job restored."
+updated: 2026-09-07
+status_detail: "Removable-volume access, bounded uploads, and post-sync QMD refresh verified through launchd."
 related:
   - ../plans/agent-session-wiki-plan.md
 ---
@@ -24,13 +24,13 @@ not read the SSD-hosted script, reporting `Operation not permitted`. Merely
 changing the working directory therefore does not fix access. The temporary
 test job was unloaded afterward.
 
-`Session Archive Sync.app` runs the existing archive script at
-`~/code/github.com/prateek/wiki-agent-sessions/.agents/skills/session-sync/scripts/sync-sessions`.
-It accepts no alternate command or script path and passes a small environment
-to `uv`. The archive script retains its own lock and free-space guard.
-Launchd still supplies the hourly schedule; the app supplies a distinct
-identity for the removable-volume permission. It does not require root or
-Full Disk Access for this setup.
+For a scheduled run, `Session Archive Sync.app` executes the managed
+`~/.local/bin/wiki-sessions-sync` wrapper. The wrapper runs the fixed archive
+script under `~/code/github.com/prateek/wiki-agent-sessions` and refreshes the
+named QMD index after a successful sync. The archive script retains its lock
+and free-space guard. Launchd supplies the hourly schedule; the app supplies a
+distinct identity for the removable-volume permission. This setup requires
+neither root nor Full Disk Access.
 
 Build or update the local app from the dotfiles checkout:
 
@@ -62,10 +62,11 @@ The unpublished import was recovered as ten batches capped at 500 MiB each. Git 
 
 Archive commit `8454284` bounds future commits to 500 MiB, measures each outgoing pack, and stops above 1 GiB. It pushes each commit separately and clears pending uploads before mirroring more data. Server size rejections stop immediately rather than retrying, and the 75 GiB free-space guard runs before sync and again before each upload. Sixteen regression tests cover batching, retries, concurrent pushes, archive preservation, and free-space failures.
 
-The launch-agent template points directly to the executable inside the app
-bundle and starts from the home directory. The apply hook builds the app
-before loading the job. An unchanged source digest preserves the installed
-app and its signature.
+The launch-agent template points to the executable inside the app bundle and
+starts from the home directory. The apply hook installs the wrapper and builds
+the app before loading the job. An unchanged source digest preserves the
+installed app and its signature. Exit 7 means the archive sync and push
+succeeded, but QMD failed or produced an empty index.
 
 Validate the scheduled context with the app's `--check-access` argument before
 starting a full sync. Read the launchd log at
