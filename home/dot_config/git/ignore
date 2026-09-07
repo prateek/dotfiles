@@ -3,3 +3,11 @@
 # `ask` project-local state: cache, vendored producer skills, skills-lock.json.
 # Always machine state, never committed in any repo.
 .ask/
+
+# macOS Finder droppings — machine noise in every repo.
+.DS_Store
+
+# Obsidian rewrites workspace state on every interaction; vault repos commit
+# .obsidian config but never this churn.
+**/.obsidian/workspace.json
+**/.obsidian/workspace-mobile.json
