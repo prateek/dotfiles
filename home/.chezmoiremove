@@ -17,7 +17,6 @@ bin/grmrepo
 bin/grmrepo-refresh
 .config/grm
 .config/zsh/lib/grmrepo.zsh
-.agents/packages/utils-agent/skills/local/grmrepo
 
 # crit-agent acpx bridge (crit's agent_cmd now runs claude directly)
 .local/bin/crit-agent
@@ -25,15 +24,6 @@ bin/grmrepo-refresh
 # reverted Linux DevPod Orca pilot
 .local/bin/orca-cli
 .local/bin/orca-devpod-reconcile
-
-# skills moved from utils-agent into the experimental package; the mirror under
-# ~/.agents/packages keeps the old directories until they are listed here
-.agents/packages/utils-agent/skills/local/experiment-scaffold
-.agents/packages/utils-agent/skills/local/image-gen-nano-banana
-.agents/packages/utils-agent/skills/local/readme-craft
-.agents/packages/utils-agent/skills/local/repo-guideline-site
-.agents/packages/utils-agent/skills/vendor/cli-creator
-.agents/packages/utils-agent/skills/vendor/trycycle
 
 # Claude slash commands retired in favor of the superpowers package
 # (~/.agents/plugins/plugins/superpowers, disabled by default)
@@ -44,9 +34,3 @@ bin/grmrepo-refresh
 .claude/commands/plan-tdd.md
 .claude/commands/session-summary.md
 .claude/commands/setup.md
-
-# skills moved into the experimental package (review and utils-agent mirrors keep
-# the old directories until they are listed here)
-.agents/packages/review/skills/local/github-pr-review-setup
-.agents/packages/utils-agent/skills/local/managed-chrome-cdp
-.agents/packages/utils-agent/skills/vendor/shortcut

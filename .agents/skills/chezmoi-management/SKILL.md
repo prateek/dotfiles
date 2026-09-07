@@ -40,7 +40,7 @@ Should not trigger by itself:
 
 - `Debug why zinit is slow at shell startup.` (Shell startup; no source-state edit.)
 - `Write an ADR for the new mise lockfile policy.` (Docs; no chezmoi state.)
-- `Add a new skill under home/dot_agents/skills/.` (Skill authoring; not chezmoi.)
+- `Add a new skill under agent-marketplace/packages/core/skills/.` (Use `agent-skill-management` for portable skill authoring.)
 - `Review this PR for unrelated bugs.`
 
 If `code-gardening` already owns a state-sync task and chezmoi is incidental, keep `code-gardening` primary and consult this skill only when a chezmoi command or `home/.chezmoi*/` path enters scope.
@@ -49,7 +49,7 @@ If `code-gardening` already owns a state-sync task and chezmoi is incidental, ke
 
 These apply across every mode. Do not skip them.
 
-1. **Edit source under `home/`, never the target.** Prefer `chezmoi edit <target>` — it opens the source, handles `.tmpl`/encryption, and re-encrypts on save. When unsure which is which, ask chezmoi (`source-path`/`target-path`); see `references/source-target-translation.md`.
+1. **Edit the owning source.** Direct chezmoi entries live under `home/`; prefer `chezmoi edit <target>` for those files. Script-created output such as `~/.agents/plugins` has a separate owner. Check `references/source-target-translation.md` before capturing a path that `chezmoi source-path` cannot map.
 2. **Always `chezmoi diff` before `chezmoi apply`.** Use `chezmoi apply --dry-run --verbose` for a structural preview, especially when `home/.chezmoiscripts/` changed.
 3. **Destructive command discipline.** `forget` stops managing (safe). `destroy` removes source AND target AND state (never use unless the user explicitly asks). `add` on a `.tmpl` clobbers the template with rendered output (never). `re-add` is the right tool for already-managed plain/`encrypted_` files but **SKIPS `.tmpl` sources** — pre-check with `chezmoi source-path <target>`; if it ends in `.tmpl`, skip `re-add` and edit by hand. Full command semantics in `references/chezmoi-cheatsheet.md`.
 4. **Files under `home/.chezmoidata/` cannot be templates.** They load before the template engine starts. Dynamic data goes in `home/.chezmoi.<format>.tmpl` or via template functions (`output`, `fromJson`, `fromYaml`).
@@ -65,6 +65,7 @@ Route by the file or command in scope. Load the matching reference plus `referen
 | `home/.chezmoitemplates/<bundle-id>.plist.tmpl`; `home/.chezmoiassets/`; capturing macOS app preferences; `modify_` stubs; `home/.chezmoiignore` for opt-in apps | `references/app-config.md` |
 | `home/.chezmoidata/{packages,secrets,licenses}.toml`; `brewfile.tmpl`; `DOTFILES_INSTALL_*` env vars; 1Password `op://` references | `references/packages-and-secrets.md` |
 | Translating `~/.<file>` ↔ `home/<dot_*>` source paths in any mode | `references/source-target-translation.md` |
+| `agent-marketplace/`, `home/.chezmoidata/agent_plugins.toml`, script-created `~/.agents/plugins`, or native plugin activation | [agent-skill-management](../agent-skill-management/SKILL.md); `references/workflow.md` for chezmoi apply scope |
 | Cross-cutting chezmoi command lookup, attribute grammar, "what does X do" | `references/chezmoi-cheatsheet.md` |
 | Updating this skill itself because chezmoi practices in the repo changed | `references/meta-skill-maintenance.md` |
 

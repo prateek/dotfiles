@@ -1,6 +1,6 @@
 # Source ↔ Target Translation
 
-Shared module for any mode that needs to map between target paths (`~/.zshrc`) and source paths (`home/dot_zshrc`). Always invoke a chezmoi command. Do not parse prefixes by hand.
+Shared module for mapping direct chezmoi entries between target paths (`~/.zshrc`) and source paths (`home/dot_zshrc`). Use chezmoi's commands for these entries. Check ownership separately for script-created output.
 
 ## The Three Commands That Replace Guessing
 
@@ -12,7 +12,15 @@ chezmoi managed --include=files  # files only
 chezmoi unmanaged                # files in destination NOT in source
 ```
 
-If `chezmoi source-path` errors, the file is not managed. Use `chezmoi add` (plain files) or hand-author a source file, then re-run.
+If `chezmoi source-path` errors, first establish who owns the file. Use `chezmoi add` for a plain file only when it should become a direct managed entry; generated output belongs to its producer.
+
+## Script-Created Plugin Output
+
+`~/.agents/plugins` is a materialized marketplace built from `agent-marketplace/`, outside the `home/` source root. Its files have no direct chezmoi source mapping. Keep edits in the portable project: authored skills live under `agent-marketplace/packages/<package>/skills/<name>/`; imported content changes through reviewed patches or overlays. Those inputs use native filenames, without chezmoi attribute escaping such as `literal_`.
+
+Read [agent-skill-management](../../agent-skill-management/SKILL.md) for the owning inputs and materialization workflow. Host activation policy lives in `home/.chezmoidata/agent_plugins.toml`; native clients own their install records and caches. Capturing artifact or cache files with `chezmoi add` or `re-add` would create a competing source copy.
+
+Repo-local skills remain under `.agents/skills/`. The `~/.agents/skills` directory is Codex's runtime stub, reached through `~/.codex/skills`; it is not the portable skill source. Use [workflow](workflow.md#agent-marketplace-apply) when applying or verifying plugin changes.
 
 ## Attribute Prefix Grammar
 
@@ -81,11 +89,11 @@ home/.chezmoitemplates/com.manytricks.Moom.plist.tmpl     -> not a target; inclu
 
 ## When Translation Goes Wrong
 
-- **`chezmoi source-path ~/.zshrc` errors.** File is not managed. Decide: add it (`chezmoi add`) or treat as unmanaged.
+- **`chezmoi source-path` errors.** Check ownership before adding a source entry; script-created plugin output follows the workflow above.
 - **`chezmoi target-path home/dot_zshrc` returns the wrong path.** Check that prefixes are in the strict order above.
 - **You renamed a source file and `chezmoi diff` shows nothing.** Run `chezmoi managed` to confirm chezmoi sees the new name; old name may still be remembered in `chezmoi state`.
 - **Encrypted file appears as garbage in editor.** Use `chezmoi edit <target>` — it decrypts to a temp dir and re-encrypts on save.
 
 ## Why Not Parse Prefixes In Code
 
-The prefix list above is conservative. Future chezmoi versions may add prefixes. The grammar already has edge cases (encryption suffix stripping, `.literal` to escape). `chezmoi source-path` and `chezmoi target-path` are the only safe translation. Treat them as the API; treat the prefix table here as a reading aid.
+The prefix list above is conservative. Future chezmoi versions may add prefixes. The grammar already has edge cases (encryption suffix stripping, `.literal` to escape). For direct managed entries, use `chezmoi source-path` and `chezmoi target-path` as the translation API; treat the prefix table here as a reading aid.

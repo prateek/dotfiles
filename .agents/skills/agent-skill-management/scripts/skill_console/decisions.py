@@ -6,11 +6,13 @@ copy the tree, apply the edits in the copy, validate the copy, and only then
 move each path into place behind a per-path hash check. The batch as a whole
 is not atomic; git is the recovery mechanism, which is safe because commit
 refuses to touch a target path that is dirty.
+Imported text edits also require unchanged marketplace inputs before any write.
 """
 
 from __future__ import annotations
 
 import hashlib
+import difflib
 import json
 import os
 import re
@@ -21,7 +23,7 @@ import time
 import types
 import typing
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, field, fields
 from pathlib import Path
 
 import tomllib
@@ -45,20 +47,13 @@ from skill_console import (
 )
 from skill_console.budget import listing_text, utf16_length, write_safe
 from skill_console.inventory import REPO_MARKETPLACE
+from artifact import digest, source_files
 
-PACKAGES_DIR = "home/dot_agents/packages"
+PACKAGES_DIR = "agent-marketplace/packages"
+POLICY_FILE = "home/.chezmoidata/agent_plugins.toml"
 SETTINGS_TEMPLATE = "home/.chezmoitemplates/claude-settings-managed.json.tmpl"
 SCRIPTS_DIR = ".agents/skills/agent-skill-management/scripts"
 VALIDATE_SCRIPT = f"{SCRIPTS_DIR}/validate-agent-packages"
-VENDOR_SCRIPT = f"{SCRIPTS_DIR}/vendor-agent-package"
-RENDER_SCRIPT = f"{SCRIPTS_DIR}/render-agent-plugin-marketplace"
-# Committed files the renderer derives from package.toml; a default_loaded
-# change is incomplete until they are regenerated.
-GENERATED_TEMPLATES = (
-    "home/.chezmoitemplates/agent-codex-plugin-config.toml.tmpl",
-    "home/.chezmoitemplates/agent-claude-plugin-settings.json.tmpl",
-    "home/dot_pi/agent/claude-plugins.json.tmpl",
-)
 STAGED_MAKE_TARGETS = (
     "test-agent-skill-packages",
     "test-claude-settings",
@@ -72,7 +67,7 @@ ENABLED_PLUGINS_KEY = "enabledPlugins"
 
 # Tracked references to a skill under these roots block its deletion; under
 # docs/ they only warn, because prose goes stale without breaking anything.
-REFERENCE_REFUSE_ROOTS = ("tests", ".agents", "home")
+REFERENCE_REFUSE_ROOTS = ("tests", ".agents", "home", "agent-marketplace")
 REFERENCE_WARN_ROOTS = ("docs",)
 
 _TOP_LEVEL_KEYS = ("schema_version", "harness", "snapshot", "predicted", "operations")
@@ -116,7 +111,6 @@ _INPUT_FIELDS = (
     "budget_env_override",
 )
 
-_APM_DEPENDENCY_LINE = re.compile(r"^- APM dependency: `([^`]+)`\s*$", re.MULTILINE)
 # A plugin key lands verbatim in a Go-template file that chezmoi renders, so
 # both segments are limited to characters that cannot open a template action.
 _PLUGIN_KEY = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*@[A-Za-z0-9][A-Za-z0-9._-]*")
@@ -164,6 +158,7 @@ class ApplyPlan:
     edits: tuple[PathEdit, ...]
     warnings: tuple[str, ...]
     guards: tuple[DeletionGuard, ...] = ()
+    source_digest: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -417,23 +412,31 @@ def _source_record(row: Row) -> SkillRecord | None:
 
 def _dep_key(dependency: str) -> str:
     """The APM dependency identity, ignoring case and a `#ref` pin."""
-    return dependency.strip().strip("`").split("#", 1)[0].strip("/").lower()
+    return dependency.strip().strip("`").split("#", 1)[0].split("@", 1)[0].strip("/").lower()
+
+
+def _selection_of(skill_dir: Path) -> Path:
+    for parent in skill_dir.parents:
+        if parent.name == "agent-marketplace":
+            package = skill_dir.parent.parent.name
+            return parent / "packages" / package / "publish.toml"
+    return skill_dir.parent.parent / "publish.toml"
 
 
 def _apm_dependency_of(skill_dir: Path) -> str | None:
-    source_md = skill_dir / "SOURCE.md"
-    if not source_md.is_file():
+    selection = _selection_of(skill_dir)
+    if not selection.is_file():
         return None
-    match = _APM_DEPENDENCY_LINE.search(source_md.read_text(encoding="utf-8", errors="replace"))
-    return match.group(1).strip() if match else None
+    return next((entry["dependency"] for entry in tomllib.loads(selection.read_text()).get("skills", [])
+                 if entry["name"] == skill_dir.name), None)
 
 
 def _dependency_skill_count(skill_dir: Path, dependency: str) -> int:
     wanted = _dep_key(dependency)
     return sum(
         1
-        for sibling in skill_dir.parent.iterdir()
-        if sibling.is_dir() and (dep := _apm_dependency_of(sibling)) is not None and _dep_key(dep) == wanted
+        for entry in tomllib.loads(_selection_of(skill_dir).read_text()).get("skills", [])
+        if _dep_key(entry["dependency"]) == wanted
     )
 
 
@@ -485,11 +488,11 @@ def _validate_skill_operation(
         skill_dir = _skill_dir(row.source_record)
         own_dependency = _apm_dependency_of(skill_dir)
         if own_dependency is None:
-            violations.append(Violation("V17", f"{skill_dir / 'SOURCE.md'} names no APM dependency", f"{pointer}/apm_dep"))
+            violations.append(Violation("V17", f"{skill_dir} has no APM publication selection", f"{pointer}/apm_dep"))
             return
         if _dep_key(str(op.fields["apm_dep"])) != _dep_key(own_dependency):
             violations.append(
-                Violation("V17", f"apm_dep {op.fields['apm_dep']!r} != SOURCE.md dependency {own_dependency!r}", f"{pointer}/apm_dep")
+                Violation("V17", f"apm_dep {op.fields['apm_dep']!r} != publication dependency {own_dependency!r}", f"{pointer}/apm_dep")
             )
             return
         count = _dependency_skill_count(skill_dir, own_dependency)
@@ -645,7 +648,7 @@ def _set_toml_bool(text: str, key: str, value: bool) -> str:
         lines.insert(last + 1, f"{key} = {literal}\n")
     result = "".join(lines)
     if tomllib.loads(result).get(key) is not value:
-        raise ApplyError(f"could not set {key} = {literal} in package.toml")
+        raise ApplyError(f"could not set {key} = {literal} in activation policy")
     return result
 
 
@@ -673,7 +676,7 @@ def _set_setting(text: str, key: str, subkey: str | None, value: object) -> str:
 
 
 def _remove_apm_manifest_dependency(text: str, dependency: str, relpath: str) -> str:
-    """Drop one `- <dep>` item from apm.yml's `dependencies.apm` list."""
+    """Drop one `- <dep>` item from apm.yml's `devDependencies.apm` list."""
     wanted = _dep_key(dependency)
     lines = text.splitlines(keepends=True)
     in_dependencies = in_apm = False
@@ -682,7 +685,7 @@ def _remove_apm_manifest_dependency(text: str, dependency: str, relpath: str) ->
     remaining = 0
     for i, line in enumerate(lines):
         stripped = line.strip()
-        if stripped == "dependencies:":
+        if stripped == "devDependencies:":
             in_dependencies, in_apm = True, False
             continue
         if not in_dependencies:
@@ -703,127 +706,6 @@ def _remove_apm_manifest_dependency(text: str, dependency: str, relpath: str) ->
     if remaining == 0 and apm_line is not None:
         lines[apm_line] = lines[apm_line].replace("apm:", "apm: []", 1)
     return "".join(lines)
-
-
-def _yaml_items(lines: Sequence[str], start: int) -> list[tuple[int, int]]:
-    """(first, end) line spans of the `- ` items under the top-level key at `start`."""
-    items: list[tuple[int, int]] = []
-    i = start + 1
-    while i < len(lines):
-        line = lines[i]
-        if line.strip() and not line[0].isspace() and not line.startswith("- "):
-            break
-        if line.startswith("- "):
-            j = i + 1
-            while j < len(lines) and not lines[j].startswith("- ") and not (lines[j].strip() and not lines[j][0].isspace()):
-                j += 1
-            items.append((i, j))
-            i = j
-        else:
-            i += 1
-    return items
-
-
-def _lock_scalar(raw: str) -> str | None:
-    value = raw.strip()
-    if value in ("", "~", "null"):
-        return None
-    if len(value) >= 2 and value[0] == value[-1] and value[0] in "'\"":
-        return value[1:-1]
-    return value
-
-
-def _lock_items(lines: Sequence[str], start: int, relpath: str) -> list[tuple[tuple[int, int], dict[str, object]]]:
-    """Each `- ` item under the top-level key at `start`: its line span and fields.
-
-    apm writes the lock in one fixed shape: two-space indents, one scalar or one
-    list of scalars per key, and nested maps (deployed_file_hashes) the console
-    never reads. A line scanner covers that without a YAML parser, which keeps
-    the console free of third-party dependencies like every sibling script.
-    """
-    items: list[tuple[tuple[int, int], dict[str, object]]] = []
-    for first, end in _yaml_items(lines, start):
-        fields: dict[str, object] = {}
-        open_key: str | None = None
-        for number in range(first, end):
-            line = lines[number].rstrip("\r\n")
-            body = f"  {line[2:]}" if number == first else line
-            if not body.strip() or body.lstrip().startswith("#"):
-                continue
-            indent = len(body) - len(body.lstrip(" "))
-            content = body.strip()
-            if indent == 2 and content.startswith("- ") and open_key is not None:
-                if fields.get(open_key) is None:
-                    fields[open_key] = []
-                if not isinstance(fields[open_key], list):
-                    raise ApplyError(f"{relpath}:{number + 1}: list item under a mapping key; layout not understood")
-                fields[open_key].append(_lock_scalar(content[2:]))
-                continue
-            if indent == 2 and ":" in content:
-                key, _, value = content.partition(":")
-                if value and not value.startswith(" "):
-                    raise ApplyError(f"{relpath}:{number + 1}: unquoted scalar with a colon; layout not understood")
-                fields[key.strip()] = _lock_scalar(value)
-                open_key = key.strip() if not value.strip() else None
-                continue
-            if indent >= 4 and open_key is not None and ":" in content:
-                if fields.get(open_key) is None:
-                    fields[open_key] = {}
-                nested = fields[open_key]
-                if not isinstance(nested, dict):
-                    raise ApplyError(f"{relpath}:{number + 1}: mapping under a list key; layout not understood")
-                key, _, value = content.partition(":")
-                nested[key.strip()] = _lock_scalar(value)
-                continue
-            raise ApplyError(f"{relpath}:{number + 1}: unexpected line {line!r}; layout not understood")
-        items.append(((first, end), fields))
-    return items
-
-
-def _lock_dependency_key(record: Mapping[str, object]) -> str:
-    repo = str(record.get("materialization_repo_url") or record.get("repo_url") or "")
-    virtual_path = str(record.get("virtual_path") or "").strip("/")
-    return _dep_key(f"{repo}/{virtual_path}" if virtual_path else repo)
-
-
-def _lock_section(lines: Sequence[str], key: str, relpath: str) -> list[tuple[tuple[int, int], Mapping[str, object]]]:
-    """Each item of a top-level list section paired with its line span."""
-    start = next((i for i, line in enumerate(lines) if line.startswith(f"{key}:")), None)
-    return [] if start is None else _lock_items(lines, start, relpath)
-
-
-def _remove_apm_lock_dependency(text: str, dependency: str, relpath: str) -> tuple[str, str | None]:
-    """Drop the dependency's lock entry and the deployments it owned.
-
-    Returns the new text and a warning when the lock had no entry to drop.
-    """
-    wanted = _dep_key(dependency)
-    lines = text.splitlines(keepends=True)
-    if not any(line.startswith("dependencies:") for line in lines):
-        return text, f"{relpath} has no dependencies section; leaving it untouched"
-    dependencies = _lock_section(lines, "dependencies", relpath)
-    matched = [(span, record) for span, record in dependencies if _lock_dependency_key(record) == wanted]
-    if not matched:
-        return text, f"{relpath} has no entry for {dependency!r}; run `{VENDOR_SCRIPT}` to regenerate it"
-    span, record = matched[0]
-    deployed = {str(path) for path in record.get("deployed_files") or ()}
-    deployments = _lock_section(lines, "deployments", relpath)
-    doomed = [span]
-    for dep_span, entry in deployments:
-        if str(entry.get("value")) in deployed or _dep_key(str(entry.get("active_owner") or "")) == wanted:
-            doomed.append(dep_span)
-    for first, end in sorted(doomed, reverse=True):
-        del lines[first:end]
-    for key in ("dependencies", "deployments"):
-        index = next((i for i, line in enumerate(lines) if line.startswith(f"{key}:")), None)
-        if index is not None and not _yaml_items(lines, index):
-            lines[index] = f"{key}: []\n"
-    result = "".join(lines)
-    expected = (len(dependencies) - 1, len(deployments) - (len(doomed) - 1))
-    remaining = tuple(len(_lock_section(result.splitlines(keepends=True), key, relpath)) for key in ("dependencies", "deployments"))
-    if remaining != expected:
-        raise ApplyError(f"{relpath} would not scan cleanly after removing {dependency!r}: {remaining} items left, expected {expected}")
-    return result, None
 
 
 def _ere_escape(text: str) -> str:
@@ -867,7 +749,8 @@ def _subprocess_env() -> dict[str, str]:
 
     Either variable would silently point the copy's scripts back at the real tree.
     """
-    return {key: value for key, value in os.environ.items() if key not in ("REPO_ROOT", "AGENT_SKILL_PACKAGES_ROOT")}
+    return {key: value for key, value in os.environ.items()
+            if key not in ("REPO_ROOT", "AGENT_SKILL_PACKAGES_ROOT") and not key.startswith("GIT_")}
 
 
 def _copy_working_tree(repo_root: Path, dest: Path) -> None:
@@ -876,7 +759,8 @@ def _copy_working_tree(repo_root: Path, dest: Path) -> None:
         raise ApplyError("rsync is required to copy the working tree")
     dest.mkdir(parents=True, exist_ok=True)
     result = subprocess.run(
-        ["rsync", "-a", "--delete", "--exclude=.git", f"{repo_root}/", f"{dest}/"],
+        ["rsync", "-a", "--delete", "--exclude=.git", "--exclude=agent-marketplace/build",
+         "--exclude=agent-marketplace/.venv", "--exclude=__pycache__", f"{repo_root}/", f"{dest}/"],
         capture_output=True,
         text=True,
     )
@@ -900,6 +784,8 @@ class _Workspace:
     order: list[str]
     warnings: list[str]
     guards: list[DeletionGuard]
+    published: dict[str, tuple[str, str]] = field(default_factory=dict)
+    changed_packages: set[str] = field(default_factory=set)
 
     def _touch(self, relpath: str) -> None:
         if relpath not in self.order:
@@ -944,95 +830,231 @@ class _Workspace:
 def _refuse_symlink(path: Path, relpath: str) -> None:
     # Commit replaces the path atomically, which would swap the link for a
     # regular file and leave the linked file carrying the old content.
-    if path.is_symlink():
-        raise ApplyError(f"{relpath} is a symlink; edit the file it points to instead")
+    depth = len(Path(relpath).parts)
+    for parent in (path, *path.parents)[:depth]:
+        if parent.is_symlink():
+            raise ApplyError(f"{relpath} is a symlink; edit the file it points to instead")
 
 
 def _source_relpath(row: Row, repo_root: Path) -> str:
     if row.source_record is None:
         raise ApplyError(f"{row.name} has no source-tree record; nothing to edit")
-    skill_dir = _skill_dir(row.source_record).resolve()
+    source_path = row.source_record.source_path
+    skill_dir = source_path if source_path and source_path.is_dir() else _skill_dir(row.source_record)
+    _refuse_symlink(skill_dir, f"{PACKAGES_DIR}/{row.package}/skills/{row.directory}")
+    skill_dir = skill_dir.resolve()
     try:
         return skill_dir.relative_to(repo_root).as_posix()
     except ValueError as exc:
         raise ApplyError(f"{row.name} lives outside the repository at {skill_dir}") from exc
 
 
-def _vendor_warning(relpath: str, package: str) -> str:
-    return f"{relpath}: vendored edit; the next `{VENDOR_SCRIPT} {package}` run reverts it"
+def _published_edit(ws: _Workspace, row: Row, relative: str, transform) -> None:
+    package_rel = f"{PACKAGES_DIR}/{row.package}"
+    if row.origin is Origin.REPO_VENDOR:
+        overlay = f"{package_rel}/overlays/skills/{row.directory}/{relative}"
+        key = f"{row.package}/skills/{row.directory}/{relative}"
+        source = _skill_dir(row.source_record) / relative
+        _refuse_symlink(source, f"agent-marketplace/build/marketplace/plugins/{row.package}/skills/{row.directory}/{relative}")
+        if (ws.repo_root / overlay).exists() or overlay in ws.texts or (not source.is_file() and key not in ws.published):
+            current = ws.read(overlay) if (ws.repo_root / overlay).exists() or overlay in ws.texts else ""
+            ws.write(overlay, transform(current))
+        else:
+            original = source.read_text()
+            before, current = ws.published.get(key, (original, original))
+            ws.published[key] = (before, transform(current))
+    else:
+        relpath = f"{_source_relpath(row, ws.repo_root)}/{relative}"
+        current = ws.read(relpath) if (ws.repo_root / relpath).exists() or relpath in ws.texts else ""
+        ws.write(relpath, transform(current))
+    if row.package and row.origin in _REPO_ORIGINS:
+        ws.changed_packages.add(row.package)
+
+
+def _sidecar_policy(text: str, denied: bool) -> str:
+    literal = "false" if denied else "true"
+    parsed = frontmatter.parse_text("---\n" + text + "\n---\n").values
+    policy = parsed.get("policy", {})
+    if not isinstance(policy, Mapping):
+        raise ApplyError("openai.yaml policy must be a block mapping")
+    if "policy" not in parsed:
+        return text.rstrip() + ("\n" if text.strip() else "") + f"policy:\n  allow_implicit_invocation: {literal}\n"
+    lines = text.splitlines(keepends=True)
+    start = next((i for i, line in enumerate(lines) if line.strip() == "policy:"), None)
+    if start is None:
+        raise ApplyError("edit the flow-style openai.yaml policy by hand")
+    end = next((i for i in range(start + 1, len(lines)) if lines[i].strip() and not lines[i].startswith((" ", "\t", "#"))), len(lines))
+    for index in range(start + 1, end):
+        if lines[index].lstrip().startswith("allow_implicit_invocation:"):
+            lines[index] = f"  allow_implicit_invocation: {literal}\n"
+            break
+    else:
+        lines.insert(end, f"  allow_implicit_invocation: {literal}\n")
+    return "".join(lines)
 
 
 def _plan_frontmatter_edit(ws: _Workspace, row: Row, changes: Mapping[str, str | bool | None]) -> None:
-    skill_md = f"{_source_relpath(row, ws.repo_root)}/SKILL.md"
-    text = ws.read(skill_md)
     try:
-        fm = frontmatter.parse_text(text, path=ws.repo_root / skill_md)
-        ws.write(skill_md, frontmatter.edit(fm, changes))
+        _published_edit(ws, row, "SKILL.md", lambda text: frontmatter.edit(frontmatter.parse_text(text), changes))
+        if "disable-model-invocation" in changes:
+            _published_edit(ws, row, "agents/openai.yaml", lambda text: _sidecar_policy(text, changes["disable-model-invocation"] is True))
     except frontmatter.FrontmatterError as exc:
-        raise ApplyError(f"{skill_md}: {exc}") from exc
-    if row.origin is Origin.REPO_VENDOR:
-        ws.warn(_vendor_warning(skill_md, row.package))
+        raise ApplyError(str(exc)) from exc
+
+
+def _plan_patches_and_versions(ws: _Workspace) -> None:
+    patches: dict[str, str] = {}
+    for key, (before, after) in ws.published.items():
+        package, relative = key.split("/", 1)
+        lines = difflib.unified_diff(
+            before.splitlines(keepends=True), after.splitlines(keepends=True),
+            fromfile=f"a/{relative}", tofile=f"b/{relative}")
+        delta = "".join(line if line.endswith("\n") else line + "\n\\ No newline at end of file\n"
+                        for line in lines)
+        if delta:
+            patches[package] = patches.get(package, "") + f"diff --git a/{relative} b/{relative}\n" + delta
+    for package, patch in patches.items():
+        if not patch:
+            continue
+        directory = ws.repo_root / PACKAGES_DIR / package / "patches"
+        existing = [path.name for path in directory.glob("*.patch")]
+        numbers = [int(name.split("-", 1)[0]) for name in existing if name.split("-", 1)[0].isdigit()]
+        numbers.extend(int(match[1]) for name in existing
+                       if (match := re.search(r"(\d+)-console\.patch$", name)))
+        number = max(numbers, default=0) + 1
+        filename = f"{number:03d}-console.patch"
+        if existing and filename <= max(existing):
+            last = max(existing)
+            for index in range(len(last) + 1):
+                candidate = f"{last[:index]}~{number:020d}-console.patch"
+                # Leave room for the atomic writer's temporary filename suffix.
+                if candidate > last and len(candidate.encode()) <= 200:
+                    filename = candidate
+                    break
+            else:
+                raise ApplyError(f"rename the last patch to leave room for a following console patch: {last}")
+        ws.write(f"{PACKAGES_DIR}/{package}/patches/{filename}", patch)
+    for package in sorted(ws.changed_packages):
+        manifest_rel = f"{PACKAGES_DIR}/{package}/apm.yml"
+        codex_rel = f"{PACKAGES_DIR}/{package}/.codex-plugin/plugin.json"
+        manifest = ws.read(manifest_rel)
+        codex = json.loads(ws.read(codex_rel))
+        match = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)", codex["version"])
+        if not match:
+            raise ApplyError(f"cannot bump non-numeric plugin version: {codex['version']}")
+        version = f"{match[1]}.{match[2]}.{int(match[3]) + 1}"
+        manifest, count = re.subn(r"(?m)^version:.*$", f"version: {version}", manifest)
+        if count != 1:
+            raise ApplyError(f"cannot find one version field in {manifest_rel}")
+        codex["version"] = version
+        ws.write(manifest_rel, manifest)
+        ws.write(codex_rel, json.dumps(codex, indent=2) + "\n")
+
+
+def _remove_selection(text: str, name: str) -> str:
+    blocks = re.split(r"(?m)(?=^\[\[)", text)
+    result = []
+    removed = False
+    for block in blocks:
+        data = tomllib.loads(block)
+        if data.get("skills", [{}])[0].get("name") == name:
+            removed = True
+        else:
+            result.append(block)
+    if not removed:
+        raise ApplyError(f"no publication selection for {name}")
+    return "".join(result)
+
+
+def _plan_native_lock(ws: _Workspace, package: str, manifest_rel: str, lock_rel: str) -> None:
+    from artifact import tree_files
+    with tempfile.TemporaryDirectory(prefix="skill-console-lock-") as temporary:
+        project = Path(temporary) / "package"
+        shutil.copytree(ws.repo_root / PACKAGES_DIR / package, project)
+        (project / "apm.yml").write_text(ws.texts[manifest_rel])
+        before = tree_files(project / "apm_modules")
+        command = ["uv", "run", "--project", str(ws.repo_root / "agent-marketplace"),
+                   "--offline", "--frozen", "apm", "lock"]
+        result = subprocess.run(command, cwd=project, env=_subprocess_env(), capture_output=True, text=True, timeout=60)
+        if result.returncode:
+            raise ApplyError(f"native APM lock failed during deletion preview:\n{_output_tail(result)}")
+        if before != tree_files(project / "apm_modules"):
+            raise ApplyError("native APM lock changed cached inputs during deletion; review acquisition separately")
+        if any((project / name).exists() for name in (".agents", ".claude", ".codex", "CLAUDE.md", "AGENTS.md")):
+            raise ApplyError("native APM lock unexpectedly deployed agent files")
+        ws.write(lock_rel, (project / "apm.lock.yaml").read_text())
 
 
 def _plan_deletion(ws: _Workspace, row: Row, op: Operation) -> None:
-    skill_rel = _source_relpath(row, ws.repo_root)
-    skill_path = Path(skill_rel)
-    if skill_path.parent.name != "vendor" or skill_path.parent.parent.name != "skills":
-        raise ApplyError(f"{skill_rel} is not a vendored skill directory; only skills/vendor/* can be deleted")
-    package_rel = skill_path.parent.parent.parent.as_posix()
+    package_rel = f"{PACKAGES_DIR}/{row.package}"
+    selection_rel = f"{package_rel}/publish.toml"
     manifest_rel, lock_rel = f"{package_rel}/apm.yml", f"{package_rel}/apm.lock.yaml"
+    skill_rel = f"{package_rel}/skills/{row.directory}"
     dependency = str(op.fields["apm_dep"])
-    guard = DeletionGuard(row.name, row.directory, row.package, skill_rel, dependency, (skill_rel, manifest_rel, lock_rel))
-
+    excluded = (selection_rel, manifest_rel, lock_rel, f"{package_rel}/patches",
+                f"{package_rel}/overlays/skills/{row.directory}", "agent-marketplace/build",
+                *(f"{PACKAGES_DIR}/{p.name}/apm_modules" for p in (ws.repo_root / PACKAGES_DIR).iterdir()))
+    guard = DeletionGuard(row.name, row.directory, row.package, skill_rel, dependency, excluded)
     blocking, mentions = _blocking_references(ws.repo_root, guard)
     if blocking:
         raise ApplyError(f"{row.name} is still referenced by tracked files; remove the references first: {', '.join(blocking)}")
     for path in mentions:
         ws.warn(f"{path} still mentions {row.directory}; update it after the deletion")
-
+    _refuse_symlink(ws.repo_root / selection_rel, selection_rel)
+    selection = ws.texts.get(selection_rel, (ws.repo_root / selection_rel).read_text())
+    if op.fields["remove_apm_dep"] and any(_dep_key(item["dependency"]) == _dep_key(dependency)
+                                           for item in tomllib.loads(selection).get("payloads", [])):
+        raise ApplyError(f"{dependency} still owns a supporting payload")
     ws.guards.append(guard)
-    ws.delete_tree(skill_rel)
+    overlay_rel = f"{package_rel}/overlays/skills/{row.directory}"
+    if (ws.repo_root / overlay_rel).exists():
+        ws.delete_tree(overlay_rel)
+    ws.write(selection_rel, _remove_selection(selection, row.directory))
+    for patch in sorted((ws.repo_root / package_rel / "patches").glob("*.patch")):
+        relative = patch.relative_to(ws.repo_root).as_posix()
+        text = ws.read(relative)
+        sections = re.split(r"(?m)(?=^diff --git )", text)
+        selected = f"skills/{row.directory}/"
+        kept = []
+        for section in sections:
+            if selected in section:
+                if not section.startswith("diff --git "):
+                    raise ApplyError(f"{relative}: split this patch into git diff sections before deleting {row.directory}")
+                paths = re.findall(r"(?m)^[+-]{3} [ab]/(.+)$", section)
+                if paths and all(path.startswith(selected) for path in paths):
+                    continue
+            kept.append(section)
+        ws.write(relative, "".join(kept))
     if op.fields["remove_apm_dep"]:
         ws.write(manifest_rel, _remove_apm_manifest_dependency(ws.read(manifest_rel), dependency, manifest_rel))
-        if (ws.repo_root / lock_rel).is_file():
-            new_lock, warning = _remove_apm_lock_dependency(ws.read(lock_rel), dependency, lock_rel)
-            ws.write(lock_rel, new_lock)
-            if warning:
-                ws.warn(warning)
-    else:
-        ws.warn(f"{skill_rel}: {dependency} stays in {manifest_rel}; the next `{VENDOR_SCRIPT} {row.package}` run restores the skill")
+        _plan_native_lock(ws, row.package, manifest_rel, lock_rel)
+    ws.changed_packages.add(row.package)
 
 
-def _plan_generated_templates(ws: _Workspace) -> None:
-    """Regenerate the package-derived templates by running the real renderer.
-
-    It runs in a scratch copy of the working tree carrying the edited
-    package.toml files, so the plan stays complete and the generator's format
-    is never duplicated here.
-    """
-    with tempfile.TemporaryDirectory(prefix="skill-console-render-") as tmp:
-        scratch = Path(tmp) / "tree"
-        _copy_working_tree(ws.repo_root, scratch)
-        for relpath, text in ws.texts.items():
-            if relpath.endswith("/package.toml"):
-                (scratch / relpath).write_bytes(text.encode("utf-8"))
-        result = subprocess.run(
-            [str(scratch / RENDER_SCRIPT), "--plugins-root", str(Path(tmp) / "plugins")],
-            cwd=scratch,
-            env=_subprocess_env(),
-            capture_output=True,
-            text=True,
-        )
-        if result.returncode != 0:
-            raise ApplyError(f"{RENDER_SCRIPT} failed in the scratch copy ({result.returncode}):\n{_output_tail(result)}")
-        for relpath in GENERATED_TEMPLATES:
-            ws.write(relpath, (scratch / relpath).read_text(encoding="utf-8"))
+def _set_default_loaded(text: str, package: str, value: bool) -> str:
+    if package not in tomllib.loads(text)["agent_plugins"]:
+        raise ApplyError(f"unknown activation policy: {package}")
+    sections = re.split(r"(?m)(?=^\[)", text)
+    for index, section in enumerate(sections):
+        if section.startswith(f"[agent_plugins.{package}]"):
+            header, body = section.split("\n", 1)
+            sections[index] = header + "\n" + _set_toml_bool(body, "default_loaded", value)
+            return "".join(sections)
+    raise ApplyError(f"expected explicit policy table for {package}")
 
 
 def plan(decisions: Decisions, rows: Sequence[Row], repo_root: Path) -> ApplyPlan:
     """Turn operations into per-path edits against the working tree. Reads only."""
     repo_root = repo_root.resolve()
     rows_by_name = {row.name: row for row in rows}
+    imported = {row.name for row in rows if row.origin is Origin.REPO_VENDOR}
+    source_digest = None
+    if any(op.key in imported and op.op in {Op.SET_DESCRIPTION, Op.SET_FRONTMATTER}
+           for op in decisions.operations):
+        try:
+            source_digest = digest(source_files(repo_root / "agent-marketplace"))
+        except (OSError, ValueError) as exc:
+            raise ApplyError(f"cannot fingerprint marketplace inputs: {exc}") from exc
     ws = _Workspace(repo_root, {}, {}, {}, [], [], [])
 
     def row_for(op: Operation) -> Row:
@@ -1050,15 +1072,13 @@ def plan(decisions: Decisions, rows: Sequence[Row], repo_root: Path) -> ApplyPla
             case Op.DELETE_SKILL:
                 _plan_deletion(ws, row_for(op), op)
             case Op.SET_DEFAULT_LOADED:
-                relpath = f"{PACKAGES_DIR}/{op.key}/package.toml"
-                ws.write(relpath, _set_toml_bool(ws.read(relpath), "default_loaded", bool(op.fields["value"])))
+                ws.write(POLICY_FILE, _set_default_loaded(ws.read(POLICY_FILE), op.key, bool(op.fields["value"])))
             case Op.SET_PACKAGE_ENABLED:
                 ws.write(SETTINGS_TEMPLATE, _set_setting(ws.read(SETTINGS_TEMPLATE), ENABLED_PLUGINS_KEY, op.key, bool(op.fields["value"])))
             case Op.SET_BUDGET_FRACTION:
                 ws.write(SETTINGS_TEMPLATE, _set_setting(ws.read(SETTINGS_TEMPLATE), BUDGET_FRACTION_KEY, None, float(op.fields["to_value"])))
 
-    if any(relpath.endswith("/package.toml") for relpath in ws.order):
-        _plan_generated_templates(ws)
+    _plan_patches_and_versions(ws)
 
     edits: list[PathEdit] = []
     for relpath in ws.order:
@@ -1073,7 +1093,8 @@ def plan(decisions: Decisions, rows: Sequence[Row], repo_root: Path) -> ApplyPla
         if before is not None and encoded == before:
             continue
         edits.append(PathEdit(relpath, "write", _sha256(before) if before is not None else None, _sha256(encoded), content))
-    return ApplyPlan(edits=tuple(edits), warnings=tuple(ws.warnings), guards=tuple(ws.guards))
+    return ApplyPlan(edits=tuple(edits), warnings=tuple(ws.warnings), guards=tuple(ws.guards),
+                     source_digest=source_digest)
 
 
 # --- staging --------------------------------------------------------------------
@@ -1160,8 +1181,7 @@ def _dirty_paths(repo_root: Path, relpaths: Sequence[str]) -> list[str]:
 
 
 def _commit_write(staged: Path, target: Path, edit: PathEdit) -> None:
-    if target.is_symlink():
-        raise ApplyError("became a symlink since planning; refusing to replace the link with a file")
+    _refuse_symlink(target, edit.relpath)
     current = _file_sha256(target)
     if current != edit.before_sha256:
         raise ApplyError(f"changed since planning (expected {edit.before_sha256}, found {current})")
@@ -1181,8 +1201,7 @@ def _tree_intact(target: Path, expected: str | None) -> bool:
 
 
 def _commit_deletion(target: Path, edit: PathEdit) -> None:
-    if target.is_symlink():
-        raise ApplyError("became a symlink since planning")
+    _refuse_symlink(target, edit.relpath)
     if not target.is_dir():
         raise ApplyError("no longer a directory")
     current = _tree_sha256(target)
@@ -1211,6 +1230,13 @@ def commit(batch: StagedBatch, repo_root: Path, *, allow_dirty: bool) -> CommitR
     def report(failure: str | None) -> CommitReport:
         return CommitReport(tuple(applied), tuple(path for path in targets if path not in applied), failure)
 
+    if batch.plan.source_digest is not None:
+        try:
+            current = digest(source_files(repo_root / "agent-marketplace"))
+        except (OSError, ValueError) as exc:
+            return report(f"cannot verify marketplace inputs; re-plan before applying: {exc}")
+        if current != batch.plan.source_digest:
+            return report("marketplace inputs changed since planning; re-plan before applying")
     for guard in batch.plan.guards:
         try:
             failure = _guard_failure(repo_root, guard)
@@ -1247,6 +1273,6 @@ def _guard_failure(repo_root: Path, guard: DeletionGuard) -> str | None:
     if blocking:
         return f"{guard.name} is referenced by tracked files since planning; re-plan after removing them: {', '.join(blocking)}"
     skill_dir = repo_root / guard.skill_relpath
-    if skill_dir.is_dir() and (count := _dependency_skill_count(skill_dir, guard.dependency)) != 1:
+    if (count := _dependency_skill_count(skill_dir, guard.dependency)) != 1:
         return f"{guard.dependency} owns {count} vendored skills since planning, not 1; re-plan"
     return None

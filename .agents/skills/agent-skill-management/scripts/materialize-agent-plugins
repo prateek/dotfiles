@@ -1,0 +1,73 @@
+#!/usr/bin/env python3
+"""Build or receive an artifact, then replace the owned marketplace with rollback retained."""
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+import tempfile
+
+PROJECT = Path(__file__).resolve().parents[4] / "agent-marketplace"
+sys.path.insert(0, str(PROJECT / "scripts"))
+from artifact import validate_artifact
+
+
+def materialize(artifact: Path, target: Path) -> None:
+    incoming = validate_artifact(artifact)
+    if target.is_symlink() or target.is_file():
+        raise ValueError(f"refusing non-directory marketplace: {target}")
+    if target.exists():
+        if (target / "release.json").exists():
+            current = validate_artifact(target)
+            if incoming["files"] == current["files"]:
+                return
+        elif not (target / "README.generated.md").is_file():
+            raise ValueError(f"refusing unowned marketplace: {target}")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    previous = target.with_name(target.name + ".previous")
+    if previous.exists() and not ((previous / "release.json").is_file() or (previous / "README.generated.md").is_file()):
+        raise ValueError(f"refusing unowned rollback directory: {previous}")
+    if previous.is_symlink():
+        raise ValueError(f"refusing symlink rollback directory: {previous}")
+    if (previous / "release.json").is_file():
+        validate_artifact(previous)
+    with tempfile.TemporaryDirectory(prefix=f".{target.name}-", dir=target.parent) as scratch:
+        staged = Path(scratch) / "next"
+        shutil.copytree(artifact, staged)
+        validate_artifact(staged)
+        older = Path(scratch) / "older"
+        if previous.exists():
+            previous.rename(older)
+        try:
+            if target.exists():
+                target.rename(previous)
+            staged.rename(target)
+        except OSError:
+            if previous.exists() and not target.exists():
+                previous.rename(target)
+            if older.exists():
+                older.rename(previous)
+            raise
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--artifact-root", type=Path)
+    parser.add_argument("--project-root", type=Path, default=PROJECT)
+    parser.add_argument("--plugins-root", type=Path, required=True)
+    args = parser.parse_args()
+    try:
+        if args.artifact_root is None:
+            subprocess.run(["make", "-C", str(args.project_root), "build"], check=True, timeout=300)
+        artifact = args.artifact_root or args.project_root / "build/marketplace"
+        materialize(artifact.absolute(), args.plugins_root.expanduser().absolute())
+    except (OSError, ValueError, KeyError, subprocess.SubprocessError) as error:
+        print(f"materialize-agent-plugins: {error}", file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

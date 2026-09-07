@@ -1,0 +1,25 @@
+{
+  "name": "hig-doctor-remotion-demo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate-data": "node scripts/generate-data.mjs",
+    "render": "bun run generate-data && remotion render src/index.jsx HigDoctorShowcase out/hig-doctor-showcase.mp4",
+    "render:linkedin": "remotion render src/index.jsx HigDoctorLinkedIn out/hig-doctor-linkedin.mp4",
+    "render:x": "remotion render src/index.jsx HigDoctorX out/hig-doctor-x.mp4",
+    "render:social": "bun run render:linkedin && bun run render:x",
+    "preview": "bun run generate-data && remotion studio src/index.jsx"
+  },
+  "dependencies": {
+    "@remotion/transitions": "4.0.484",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "4.0.484"
+  },
+  "devDependencies": {
+    "@remotion/cli": "4.0.484"
+  },
+  "engines": {
+    "node": "24.x"
+  }
+}

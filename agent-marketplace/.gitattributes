@@ -1,0 +1,3 @@
+# APM hashes raw fetched bytes, including upstream line endings.
+packages/*/apm_modules/** -text -whitespace
+packages/*/patches/*.patch -whitespace

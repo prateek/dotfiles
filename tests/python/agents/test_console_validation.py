@@ -5,13 +5,14 @@ class ConsoleValidationTests(ConsoleCase):
     def setUp(self):
         super().setUp()
         self.pkgtree = self.fixtures / "pkgtree/pkg/skills"
-        for name in ("local/local", "vendor/vend-a", "vendor/vend-b", "vendor/solo"):
+        for name in ("local", "vend-a", "vend-b", "solo"):
             path = self.pkgtree / name
             path.mkdir(parents=True)
             (path / "SKILL.md").write_text(f"---\nname: {path.name}\ndescription: Local skill.\n---\n\n# Skill\n")
-            if name.startswith("vendor/"):
+            if name != "local":
                 dependency = "solo" if path.name == "solo" else "shared"
-                (path / "SOURCE.md").write_text(f"# Source\n\n- APM dependency: `example/repo/skills/{dependency}`\n- Ref: `abc`\n")
+                with (self.pkgtree.parent / "publish.toml").open("a") as selection:
+                    selection.write(f'[[skills]]\nname = "{path.name}"\ndependency = "example/repo/skills/{dependency}"\npath = "."\n')
 
     def test_structural_validation_v1_through_v9(self):
         import copy

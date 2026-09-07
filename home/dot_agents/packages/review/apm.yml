@@ -1,8 +1,0 @@
-name: review
-version: 1.0.0
-targets:
-  - agent-skills
-
-dependencies:
-  apm:
-    - tomasz-tomczyk/crit/integrations/claude-code

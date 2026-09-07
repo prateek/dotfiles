@@ -62,25 +62,24 @@ reviewer did not expect.
 
 ## Local deltas to the vendored skills
 
-The `crit` and `crit-cli` skills in the `review` package carry local edits kept
-as upstream-shaped git patches under
-`home/dot_agents/packages/review/patches/<skill>/`. They are re-applied
-automatically during re-vendor by `apply-vendor-patches` and verified in CI by
-`make test-vendor-skill-patches`.
+The `crit` and `crit-cli` skills in the `review` package carry local edits in
+`agent-marketplace/packages/review/patches/`. The build applies these patches to
+temporary copies of committed APM inputs. `make -C agent-marketplace check`
+checks them and fails on upstream drift.
 
-Each patch is written against upstream paths so the same file opens as a pull
-request without editing. When one lands upstream, delete it rather than
-carrying it.
+Patches use published native paths such as `skills/crit/SKILL.md`. Remap those
+paths to the upstream integration directory when submitting a change. Remove a
+local patch after its changes are present in the accepted upstream revision.
 
 ## Behavioural evals
 
-`home/dot_agents/packages/review/evals/` holds four cases, one per failure mode
+`agent-marketplace/packages/review/evals/` holds four cases, one per failure mode
 this setup was built to stop: comment visibility, diff scope, review target, and
 CLI shape. They are synthetic — a throwaway repo and an invented PR number — so
 nothing from a work repo is in them.
 
 `make test-crit-evals` runs them with the report kept local. It is on-demand,
-not per-PR: it costs tokens and needs network. Run it after re-vendoring or
+not per-PR: it costs tokens and needs network. Run it after refreshing APM inputs or
 after changing the crit skills.
 
 `claude plugin eval` is currently gated behind early access, so the target skips

@@ -36,6 +36,23 @@ class LockedDocsTests(DocsFixture):
         self.doc("research/other.md", "# Wrong Other", kind="research")
         self.validate(base=self.base, error="body edits are blocked")
 
+    def test_historical_links_follow_detected_skill_moves_outside_docs(self):
+        old = self.repo / "old-skills/example/SKILL.md"
+        old.parent.mkdir(parents=True)
+        old.write_text("---\nname: example\ndescription: Example skill.\n---\n")
+        body = "# Old Plan\n\nSee [example](../../old-skills/example/SKILL.md)."
+        self.doc("plans/old-plan.md", body, status="archived", **ARCHIVED)
+        base = self.commit()
+        new = self.repo / "agent-marketplace/packages/example/skills/example/SKILL.md"
+        new.parent.mkdir(parents=True)
+        self.git("mv", str(old), str(new))
+        self.doc("plans/old-plan.md", body.replace("old-skills/example", "agent-marketplace/packages/example/skills/example"),
+                 status="archived", **ARCHIVED)
+        self.validate(base=base)
+        self.doc("plans/old-plan.md", body.replace("old-skills/example", "agent-marketplace/packages/example/skills/example") + "\nChanged history.",
+                 status="archived", **ARCHIVED)
+        self.validate(base=base, error="body edits are blocked")
+
     def test_unchanged_move_cannot_silently_retarget_relative_links(self):
         self.move("plans/link-source.md", "research/link-source.md")
         self.doc("research/target.md", "# Wrong Target", kind="research")

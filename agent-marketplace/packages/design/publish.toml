@@ -1,0 +1,119 @@
+[[skills]]
+name = "banner-design"
+dependency = "nextlevelbuilder/ui-ux-pro-max-skill"
+path = ".apm/skills/banner-design"
+
+[[skills]]
+name = "brand"
+dependency = "nextlevelbuilder/ui-ux-pro-max-skill"
+path = ".apm/skills/brand"
+
+[[skills]]
+name = "design"
+dependency = "nextlevelbuilder/ui-ux-pro-max-skill"
+path = ".apm/skills/design"
+
+[[skills]]
+name = "design-system"
+dependency = "nextlevelbuilder/ui-ux-pro-max-skill"
+path = ".apm/skills/design-system"
+
+[[skills]]
+name = "hig-components-content"
+dependency = "raintree-technology/apple-hig-skills"
+path = ".apm/skills/hig-components-content"
+
+[[skills]]
+name = "hig-components-controls"
+dependency = "raintree-technology/apple-hig-skills"
+path = ".apm/skills/hig-components-controls"
+
+[[skills]]
+name = "hig-components-dialogs"
+dependency = "raintree-technology/apple-hig-skills"
+path = ".apm/skills/hig-components-dialogs"
+
+[[skills]]
+name = "hig-components-layout"
+dependency = "raintree-technology/apple-hig-skills"
+path = ".apm/skills/hig-components-layout"
+
+[[skills]]
+name = "hig-components-menus"
+dependency = "raintree-technology/apple-hig-skills"
+path = ".apm/skills/hig-components-menus"
+
+[[skills]]
+name = "hig-components-search"
+dependency = "raintree-technology/apple-hig-skills"
+path = ".apm/skills/hig-components-search"
+
+[[skills]]
+name = "hig-components-status"
+dependency = "raintree-technology/apple-hig-skills"
+path = ".apm/skills/hig-components-status"
+
+[[skills]]
+name = "hig-components-system"
+dependency = "raintree-technology/apple-hig-skills"
+path = ".apm/skills/hig-components-system"
+
+[[skills]]
+name = "hig-foundations"
+dependency = "raintree-technology/apple-hig-skills"
+path = ".apm/skills/hig-foundations"
+
+[[skills]]
+name = "hig-inputs"
+dependency = "raintree-technology/apple-hig-skills"
+path = ".apm/skills/hig-inputs"
+
+[[skills]]
+name = "hig-patterns"
+dependency = "raintree-technology/apple-hig-skills"
+path = ".apm/skills/hig-patterns"
+
+[[skills]]
+name = "hig-platforms"
+dependency = "raintree-technology/apple-hig-skills"
+path = ".apm/skills/hig-platforms"
+
+[[skills]]
+name = "hig-project-context"
+dependency = "raintree-technology/apple-hig-skills"
+path = ".apm/skills/hig-project-context"
+
+[[skills]]
+name = "hig-technologies"
+dependency = "raintree-technology/apple-hig-skills"
+path = ".apm/skills/hig-technologies"
+
+[[skills]]
+name = "slides"
+dependency = "nextlevelbuilder/ui-ux-pro-max-skill"
+path = ".apm/skills/slides"
+
+[[skills]]
+name = "ui-styling"
+dependency = "nextlevelbuilder/ui-ux-pro-max-skill"
+path = ".apm/skills/ui-styling"
+
+[[skills]]
+name = "ui-ux-pro-max"
+dependency = "nextlevelbuilder/ui-ux-pro-max-skill"
+path = ".apm/skills/ui-ux-pro-max"
+
+[[payloads]]
+dependency = "nextlevelbuilder/ui-ux-pro-max-skill"
+path = "LICENSE"
+target = "licenses/nextlevelbuilder/ui-ux-pro-max-skill/LICENSE"
+
+[[payloads]]
+dependency = "raintree-technology/apple-hig-skills"
+path = "LICENSE"
+target = "licenses/raintree-technology/apple-hig-skills/LICENSE"
+
+[[payloads]]
+dependency = "raintree-technology/apple-hig-skills"
+path = "THIRD_PARTY_NOTICES.md"
+target = "licenses/raintree-technology/apple-hig-skills/THIRD_PARTY_NOTICES.md"

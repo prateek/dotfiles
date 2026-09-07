@@ -1,0 +1,74 @@
+[[skills]]
+name = "brainstorming"
+dependency = "obra/superpowers"
+path = ".apm/skills/brainstorming"
+
+[[skills]]
+name = "dispatching-parallel-agents"
+dependency = "obra/superpowers"
+path = ".apm/skills/dispatching-parallel-agents"
+
+[[skills]]
+name = "executing-plans"
+dependency = "obra/superpowers"
+path = ".apm/skills/executing-plans"
+
+[[skills]]
+name = "finishing-a-development-branch"
+dependency = "obra/superpowers"
+path = ".apm/skills/finishing-a-development-branch"
+
+[[skills]]
+name = "receiving-code-review"
+dependency = "obra/superpowers"
+path = ".apm/skills/receiving-code-review"
+
+[[skills]]
+name = "requesting-code-review"
+dependency = "obra/superpowers"
+path = ".apm/skills/requesting-code-review"
+
+[[skills]]
+name = "subagent-driven-development"
+dependency = "obra/superpowers"
+path = ".apm/skills/subagent-driven-development"
+
+[[skills]]
+name = "systematic-debugging"
+dependency = "obra/superpowers"
+path = ".apm/skills/systematic-debugging"
+
+[[skills]]
+name = "test-driven-development"
+dependency = "obra/superpowers"
+path = ".apm/skills/test-driven-development"
+
+[[skills]]
+name = "using-git-worktrees"
+dependency = "obra/superpowers"
+path = ".apm/skills/using-git-worktrees"
+
+[[skills]]
+name = "using-superpowers"
+dependency = "obra/superpowers"
+path = ".apm/skills/using-superpowers"
+
+[[skills]]
+name = "verification-before-completion"
+dependency = "obra/superpowers"
+path = ".apm/skills/verification-before-completion"
+
+[[skills]]
+name = "writing-plans"
+dependency = "obra/superpowers"
+path = ".apm/skills/writing-plans"
+
+[[skills]]
+name = "writing-skills"
+dependency = "obra/superpowers"
+path = ".apm/skills/writing-skills"
+
+[[payloads]]
+dependency = "obra/superpowers"
+path = ".apm/hooks"
+target = "hooks"

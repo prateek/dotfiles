@@ -1,0 +1,119 @@
+name: Publish HIG Doctor MCP
+
+env:
+  MISE_LOCKED: "1"
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "hig-mcp-v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: packages/mcp
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+
+      - uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db
+        with:
+          version: 2026.7.1
+          install: true
+          cache: true
+      - name: Verify version (tag matches manifest, not already published)
+        id: version
+        run: |
+          PKG_NAME="$(node -p "require('./package.json').name")"
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            TAG_VERSION="${GITHUB_REF_NAME#hig-mcp-v}"
+            if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+              echo "::error::Tag ${GITHUB_REF_NAME} implies version ${TAG_VERSION} but package.json is ${PKG_VERSION}"
+              exit 1
+            fi
+          fi
+          if npm view "${PKG_NAME}@${PKG_VERSION}" version > /dev/null 2>&1; then
+            if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+              echo "npm_published=true" >> "$GITHUB_OUTPUT"
+              echo "${PKG_NAME}@${PKG_VERSION} is already on npm; continuing with the MCP Registry"
+            else
+              echo "::error::${PKG_NAME}@${PKG_VERSION} is already published to npm"
+              exit 1
+            fi
+          else
+            echo "npm_published=false" >> "$GITHUB_OUTPUT"
+            echo "OK to publish ${PKG_NAME}@${PKG_VERSION}"
+          fi
+
+      - name: Install dependencies
+        run: mise run setup
+
+      - name: Run tests
+        run: bun test
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build bundle
+        run: npm run build
+
+      - name: Smoke check the built server
+        run: |
+          printf '%s\n' \
+            '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"ci","version":"0"}}}' \
+            '{"jsonrpc":"2.0","method":"notifications/initialized"}' \
+            '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' | node dist/index.js > /tmp/mcp-out.json 2>/dev/null &
+          PID=$!; sleep 2; kill "$PID" 2>/dev/null || true; wait "$PID" 2>/dev/null || true
+          for tool in hig_list_skills hig_lookup hig_search hig_audit hig_audit_file hig_explain_finding; do
+            grep -q "\"name\":\"$tool\"" /tmp/mcp-out.json || { echo "missing MCP tool: $tool" >&2; exit 1; }
+          done
+
+      - name: Package dry run
+        run: mise x -- npm pack --dry-run
+
+      - name: Publish with trusted publishing
+        if: steps.version.outputs.npm_published != 'true'
+        run: mise x -- npm publish --provenance --access public
+
+      - name: Install MCP Registry publisher
+        env:
+          MCP_PUBLISHER_VERSION: 1.7.9
+        run: |
+          set -euo pipefail
+          os="$(uname -s | tr '[:upper:]' '[:lower:]')"
+          arch="$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')"
+          archive="mcp-publisher_${os}_${arch}.tar.gz"
+          checksums="registry_${MCP_PUBLISHER_VERSION}_checksums.txt"
+          base_url="https://github.com/modelcontextprotocol/registry/releases/download/v${MCP_PUBLISHER_VERSION}"
+          curl -fsSLo "$RUNNER_TEMP/$archive" "$base_url/$archive"
+          curl -fsSLo "$RUNNER_TEMP/$checksums" "$base_url/$checksums"
+          (cd "$RUNNER_TEMP" && grep "  $archive$" "$checksums" | sha256sum -c -)
+          tar -xzf "$RUNNER_TEMP/$archive" mcp-publisher
+
+      - name: Align MCP Registry metadata version
+        run: |
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          jq --arg version "$PKG_VERSION" '.version = $version | .packages[0].version = $version' server.json > server.tmp
+          mv server.tmp server.json
+
+      - name: Publish to MCP Registry
+        run: |
+          ./mcp-publisher login github-oidc
+          ./mcp-publisher publish

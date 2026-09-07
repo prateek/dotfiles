@@ -9,7 +9,8 @@ This is the repo-specific contract for coding agents working in Prateek's dotfil
 - `home/.chezmoiscripts/`: idempotent setup run by `chezmoi apply`.
 - `home/.chezmoitemplates/`: shared templates, including Brewfile, macOS defaults, and plist merge helpers.
 - `.agents/`: repo-local agent surface for this checkout. Keep repo-specific `AGENTS.md` and `CLAUDE.md` at the repo root; keep repo-local skills and tool adapters under `.agents/`.
-- `home/dot_agents/`: chezmoi-managed machine agent surface. Machine-wide `AGENTS.md`, docs, skills, and workflow conventions live here so they materialize under `~/.agents`.
+- `home/dot_agents/`: chezmoi-managed machine agent surface. Machine-wide `AGENTS.md`, docs, and workflow conventions materialize under `~/.agents`.
+- `agent-marketplace/`: portable machine-wide skill publishing project with its own Makefile. Authored skills, committed APM inputs, patches, and native metadata live here, outside the chezmoi source root.
 - `home/dot_claude/`: chezmoi-managed Claude config for this machine. Its `CLAUDE.md` target should symlink to `../.agents/AGENTS.md`.
 - `home/dot_codex/`: chezmoi-managed Codex config for this machine.
 - `scripts/`: focused helpers for packages, macOS/app config, Tart, traces, audits, and hooks.
@@ -23,12 +24,12 @@ This is the repo-specific contract for coding agents working in Prateek's dotfil
 
 Chezmoi is the ongoing command surface: prefer `chezmoi apply`, `chezmoi status`, `chezmoi diff`, `chezmoi verify`, `chezmoi managed`, and `chezmoi unmanaged` over adding a wrapper.
 
-Keep repo-local and machine-level agent state separate. Files that define how agents work in this dotfiles checkout stay at the repo root or under repo-root `.agents/`. Files that configure Prateek's machine-wide agent environment stay under `home/` so chezmoi materializes them into `$HOME`.
+Keep repo-local and machine-level agent state separate. Files that define how agents work in this dotfiles checkout stay at the repo root or under repo-root `.agents/`. Machine-wide configuration stays under `home/` so chezmoi materializes it into `$HOME`. The portable `agent-marketplace/` publishing project is the exception: consumers materialize its built artifact.
 
-Use the `agent-skill-management` skill for changes to `home/dot_agents/packages/`,
+Use the `agent-skill-management` skill for changes to `agent-marketplace/`,
 apply-time skill/plugin render scripts, Codex or Claude rendered plugin
-activation, and the related docs (`docs/plans/chezmoi-agent-skills-plan.md`,
-`docs/research/agent-skill-management-research.md`, `docs/adr/0007-default-loaded-plugin-policy.md`). Packages render as plugins into
+activation, and the related docs (`docs/references/agent-marketplace.md`,
+`docs/plans/apm-agent-marketplace-plan.md`, `docs/adr/0023-apm-agent-marketplace-packaging.md`). Packages build as plugins and materialize into
 `~/.agents/plugins` (the only skill projection; `~/.agents/skills` survives as
 an empty stub for Codex runtime skills); do not commit source copies under
 `home/dot_agents/skills`, `home/dot_claude/skills`, or

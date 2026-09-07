@@ -2,11 +2,12 @@
 status: proposed
 doc_type: adr
 created: 2026-08-28
-updated: 2026-09-03
+updated: 2026-09-07
 owner: Prateek
 related:
   - ../plans/acpx-claude-streaming-poc-plan.md
   - 0013-apm-vendored-tool-integrations.md
+  - ../plans/apm-agent-marketplace-plan.md
 status_detail: "Sketch for review before implementation; acpx is the first customer. Scope note: a router skill whose reference bodies are skills in their own right does not need this mapping — mark them disable-model-invocation and point at the sibling paths, as core/skills/local/writing-for-humans does. The mapping is for reference material that is not itself a skill."
 ---
 
@@ -32,7 +33,11 @@ removes the second listing outright rather than betting on arbitration.
 Ways to approximate this inside today's contract fall short — see Options
 considered.
 
-## Decision
+## Proposed decision
+
+This older sketch uses the retired `package.toml`/vendor layout. Rebase its
+source mapping and provenance assumptions onto `agent-marketplace/` before
+implementation; generated `SOURCE.md` files are no longer part of the contract.
 
 `package.toml` gains an optional per-skill vendor destination:
 
@@ -55,13 +60,13 @@ Semantics:
   edits, no injected headers. Provenance lives solely in `SOURCE.md`,
   matching the ecosystem norm of intact redistribution with sidecar
   metadata.
-- A nested or root `SKILL.md` inside `dest` is inert: plugin skill
-  discovery is flat (`skills/<name>/SKILL.md` only, per the plugins
-  reference), and trycycle's nested copies already render today without
-  registering. Implementation verifies Codex and pi discovery are also
-  flat before relying on this; if any consumer ever recurses, the
-  fallback is a rename step for the offending files — a transform this
-  decision otherwise deliberately avoids.
+- Nested `SKILL.md` files are not reliably inert. The APM migration verified
+  that Codex 0.153.4 discovers all four nested trycycle skills: 162 skills
+  across the library versus Claude's 158 top-level entries. This proposal
+  must choose an explicit publication rule for reference-only skill files
+  and verify each consumer before adoption. The current migration retains
+  nested discovery unchanged; moving upstream text under `references/`
+  alone does not remove its Codex trigger.
 - The script owns `dest` exactly: it deletes and recreates that directory
   on every refresh, preserving the reviewed sidecar set (`SOURCE.md`'s
   `License`/`Notes` fields and any review-time license file) across the

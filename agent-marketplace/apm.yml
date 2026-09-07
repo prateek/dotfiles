@@ -1,0 +1,41 @@
+name: prateek-local
+version: 1.1.0
+description: Reviewed local and curated skills
+license: UNLICENSED
+marketplace:
+  owner:
+    name: Prateek
+  outputs:
+    claude: {}
+    codex: {}
+  packages:
+  - name: core
+    source: ./plugins/core
+    category: Productivity
+  - name: design
+    source: ./plugins/design
+    category: Productivity
+  - name: experimental
+    source: ./plugins/experimental
+    category: Productivity
+  - name: ios
+    source: ./plugins/ios
+    category: Productivity
+  - name: mattpocock
+    source: ./plugins/mattpocock
+    category: Productivity
+  - name: obsidian-wiki
+    source: ./plugins/obsidian-wiki
+    category: Productivity
+  - name: review
+    source: ./plugins/review
+    category: Productivity
+  - name: superpowers
+    source: ./plugins/superpowers
+    category: Productivity
+  - name: utils-agent
+    source: ./plugins/utils-agent
+    category: Productivity
+  - name: utils-human
+    source: ./plugins/utils-human
+    category: Productivity

@@ -183,11 +183,11 @@ alongside the app-config slice: retain the landed shared plist verification
 and tests-index routing, and update its command pointers as lanes migrate.
 An ordinary preference edit should use the checks that cover its risk.
 
-The shared [testing-philosophy](../../home/dot_agents/packages/core/skills/local/testing-philosophy/SKILL.md)
+The shared [testing-philosophy](../../agent-marketplace/packages/core/skills/testing-philosophy/SKILL.md)
 already explains deliberate omission. Reconcile its earlier “never whether to
 test” wording with that guidance in one narrow edit; keep dotfiles runners and
 paths out of the machine-wide skill. Existing
-[code-gardening](../../home/dot_agents/packages/core/skills/local/code-gardening/SKILL.md)
+[code-gardening](../../agent-marketplace/packages/core/skills/code-gardening/SKILL.md)
 already covers source authority and synchronized validation, so it needs no
 content change for this plan. Use the existing vendored `mattpocock:tdd` and
 `writing-for-agents` guidance unchanged.

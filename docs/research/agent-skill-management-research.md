@@ -503,7 +503,7 @@ show up in shared agent setups:
 This maps well to a chezmoi-managed skill tree, but the path assumptions need
 testing. `skills-janitor` knows about `~/.claude/skills/` and
 `~/.agents/skills/`. In this plan, canonical skill content lives under
-`home/dot_agents/packages/<package>/skills/local/` and
+`agent-marketplace/packages/<package>/skills/` and
 `home/dot_agents/packages/<package>/skills/vendor/`; `$HOME/.agents/skills` and
 `$HOME/.claude/skills` are generated materialized output. The first experiment
 should run on a copied projection, not on the canonical source tree.

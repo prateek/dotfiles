@@ -1,77 +1,149 @@
-# Plugin Reconcile
+# Native plugin reconciliation
 
-Chezmoi owns desired plugin source and config. Codex and Claude Code own their
-install records and caches, and only their CLIs write them.
-
-`chezmoi apply` converges those records. After rendering `~/.agents/plugins`,
-`run_onchange_after_36-agent-plugins.sh.tmpl` runs
+Run the helpers from the dotfiles repository root:
 
 ```sh
-.agents/skills/agent-skill-management/scripts/reconcile-agent-plugins \
-  --apply --plugins-root ~/.agents/plugins --agent claude [--agent codex]
+plugin_tools=.agents/skills/agent-skill-management/scripts
+"$plugin_tools/reconcile-agent-plugins" --apply --agent claude --agent codex
 ```
 
-for each CLI in the machine's `agent_clis`
-([ADR 0020](../../../../docs/adr/0020-apply-reconciles-plugin-installs.md)).
-Per agent:
+The reconciler reads a validated artifact and explicit host policy, then changes
+only `prateek-local`. Use `--plugins-root` and `--policy` for isolated state;
+`--dry-run` reads native state and prints planned mutations. Invalid input fails
+before native mutations. Each inventory and registration is read once.
 
-- Claude: `claude plugin marketplace add ~/.agents/plugins --scope user` when
-  `marketplace list --json` lacks `prateek-local` (declaring it in
-  `settings.json` is not enough for the CLI to install from it);
-  `plugin install` for every rendered package missing from
-  `plugin list --json`; `enable` or `disable` only when the listed state
-  differs from `default_loaded` (install enables, and both toggles fail when
-  the plugin is already in the target state); `uninstall` for `@prateek-local`
-  records whose package no longer renders. Commands run from `$HOME` so
-  project-scoped settings do not colour the state it reads.
-- Codex: `codex plugin add` for every default-loaded package on each run (Codex
-  copies plugins into its cache, so `add` is the content refresh), and
-  `codex plugin remove` for orphaned `@prateek-local` records. `add` also
-  writes `enabled = true`, so disabled packages are left alone. To use one in
-  a single project, run `codex plugin add <pkg>@prateek-local` by hand and then
-  `chezmoi apply ~/.codex/config.toml` to restore its user-level
-  `enabled = false` before relying on the project override.
+Claude registers the local root, installs eligible plugins, refreshes changed
+versions, restores `default_loaded`, and removes owned orphans. Native remove/install
+supports downgrade and removes stale files. Unrelated marketplace records are kept.
 
-Any failing command fails the script and chezmoi retries it on the next apply.
-The script reruns only when its inputs change (renderer, reconciler, package
-tree); to force a pass, run the command above by hand or
-`chezmoi state delete-bucket --bucket=scriptState`.
+Codex discovers `.agents/plugins/marketplace.json` relative to the registered
+artifact root. `plugin add` refreshes its cache and enables the plugin. Enabled
+defaults refresh automatically. Installed disabled plugins refresh with an explicit
+`--refresh-disabled PACKAGE`; the adapter restores disabled state through the
+native `config/value/write` API after each refresh, including failure paths.
+Relocation requires remove/add registration, so installed disabled plugins are
+remembered and refreshed on relocation too.
 
-Without flags the script prints the full command list for a manual pass. It
-emits the Codex refresh for default-loaded Codex plugins, then a Claude install
-plus `enable` or `disable` per render policy, sorted by package id:
+For first-time project use of a disabled Codex plugin, run `codex plugin add
+PACKAGE@prateek-local`, then reconcile to restore its global disabled state and set
+the trusted project's enabled override. Subsequent updates use the explicit refresh
+option. Claude installs eligible plugins even when globally disabled. Pi follows
+Claude selection; Cursor's marketplace/ACP policy is separate.
+
+## Roll back a release with a receipt
+
+Retain the matching host policy with each release. Restore that reviewed policy to
+`home/.chezmoidata/agent_plugins.toml`, preserving any current local edits first.
+The following commands assume `~/.agents/plugins.previous/release.json` exists and
+use the current library's six disabled packages:
 
 ```sh
-claude plugin marketplace add ~/.agents/plugins --scope user
+plugin_tools=.agents/skills/agent-skill-management/scripts
+"$plugin_tools/materialize-agent-plugins" \
+  --artifact-root "$HOME/.agents/plugins.previous" \
+  --plugins-root "$HOME/.agents/plugins"
+
+chezmoi --source "$PWD" diff --exclude=scripts -- \
+  "$HOME/.claude/settings.json" "$HOME/.codex/config.toml" \
+  "$HOME/.pi/agent/claude-plugins.json"
+chezmoi --source "$PWD" apply --exclude=scripts -- \
+  "$HOME/.claude/settings.json" "$HOME/.codex/config.toml" \
+  "$HOME/.pi/agent/claude-plugins.json"
+
+"$plugin_tools/reconcile-agent-plugins" --apply --agent claude --agent codex \
+  --refresh-disabled design --refresh-disabled experimental \
+  --refresh-disabled ios --refresh-disabled obsidian-wiki \
+  --refresh-disabled superpowers --refresh-disabled utils-human
+
+claude plugin list --json
+codex plugin list --json
+```
+
+Adjust the refresh list to the restored policy if package membership or eligibility
+changed. Omitting it at an unchanged root leaves installed disabled Codex caches at
+their newer version. Verify native versions, enabled states, and changed payload
+files, then restart the agent session. Keep full `chezmoi apply` paused until source
+and the desired release agree: script 36 builds current source and could otherwise
+reapply the newer release.
+
+## First-migration rollback
+
+The first migration can preserve a legacy marketplace at `.previous`: it has
+`README.generated.md`, no `release.json`, and its Codex catalog is at
+`marketplace.json`. The new materializer cannot use that legacy tree as an input.
+Keep the baseline checkout or Git history at
+`9a24d70664e52f119f00907929c2587305d54bc7` through cutover. Its renderer and source can
+reconstruct a missing legacy artifact; `~/.agents/packages.retired` also retains
+verified materialized legacy source.
+
+Restore prior managed settings through the retained baseline source. Keep running
+commands from the current checkout, which supplies the native RPC helper:
+
+```sh
+legacy_checkout=/path/to/retained/dotfiles-baseline
+chezmoi --source "$legacy_checkout" diff --exclude=scripts -- \
+  "$HOME/.claude/settings.json" "$HOME/.codex/config.toml" \
+  "$HOME/.pi/agent/claude-plugins.json"
+chezmoi --source "$legacy_checkout" apply --exclude=scripts -- \
+  "$HOME/.claude/settings.json" "$HOME/.codex/config.toml" \
+  "$HOME/.pi/agent/claude-plugins.json"
+```
+
+Do not run either version of script 36 during this manual recovery. If `.previous`
+is the verified legacy tree, retain the failed new artifact and move it back:
+
+```sh
+failed_release_backup="$(mktemp -d "$HOME/.agents/failed-marketplace.XXXXXX")"
+mv "$HOME/.agents/plugins" "$failed_release_backup/marketplace"
+mv "$HOME/.agents/plugins.previous" "$HOME/.agents/plugins"
+
+claude plugin marketplace add "$HOME/.agents/plugins" --scope user
 claude plugin marketplace update prateek-local
-codex plugin add core@prateek-local
-codex plugin add review@prateek-local
-codex plugin add utils-agent@prateek-local
-claude plugin install core@prateek-local --scope user
-claude plugin enable core@prateek-local --scope user
-claude plugin install design@prateek-local --scope user
-claude plugin disable design@prateek-local --scope user
-# ... experimental and ios (both disabled) ...
-claude plugin install review@prateek-local --scope user
-claude plugin enable review@prateek-local --scope user
-claude plugin install utils-agent@prateek-local --scope user
-claude plugin enable utils-agent@prateek-local --scope user
-claude plugin install utils-human@prateek-local --scope user
-claude plugin disable utils-human@prateek-local --scope user
+if codex plugin marketplace list --json | jq -e \
+  '.marketplaces | any(.name == "prateek-local")' >/dev/null; then
+  codex plugin marketplace remove prateek-local
+fi
+codex plugin marketplace add "$HOME"
 ```
 
-Content refreshes need no reinstall on Claude. Claude loads plugins from a
-`directory`-source marketplace in place: with `claude -p ... --debug-file`,
-the skill and hook paths for every `@prateek-local` plugin resolve under
-`~/.agents/plugins/plugins/<pkg>/`, not under the copy `plugin install` left
-in `~/.claude/plugins/cache/` (verified on Claude Code 2.1.258; GitHub-sourced
-plugins do load from the cache). The docs describe cache copies for all
-marketplace plugins, so re-check the debug paths after a Claude upgrade
-before relying on this. `chezmoi apply` re-rendering the marketplace tree is
-therefore the refresh, and the next session sees it. What the install record
-still gates is loading at all: plugins are enumerated from
-`installed_plugins.json`, which is why the apply step creates the record for a
-new package before any project can enable it.
+**Codex's legacy registration root is `$HOME`.** It finds the old catalog at
+`$HOME/.agents/plugins/marketplace.json`, whose sources start with
+`./.agents/plugins/plugins/`. The new artifact registers `$HOME/.agents/plugins`
+because its catalog lives one level deeper. Native registration corrects the
+baseline config's old root; do not overwrite that correction with another baseline
+config apply while recovering.
 
-Do not render or edit `~/.claude/plugins/known_marketplaces.json`,
-`~/.claude/plugins/installed_plugins.json`, or either tool's plugin cache.
+Reinstall owned plugins through the native clients and restore the old defaults:
+
+```sh
+legacy_claude_installs="$(claude plugin list --json)"
+for package in core design experimental ios mattpocock obsidian-wiki review superpowers utils-agent utils-human; do
+  identity="$package@prateek-local"
+  if printf '%s' "$legacy_claude_installs" | jq -e --arg id "$identity" \
+    'any(.id == $id and .scope == "user")' >/dev/null; then
+    claude plugin uninstall "$identity" --scope user
+  fi
+  claude plugin install "$identity" --scope user
+  codex plugin add "$identity"
+  case "$package" in
+    core|mattpocock|review|utils-agent) ;;
+    *) claude plugin disable "$identity" --scope user ;;
+  esac
+done
+
+plugin_tools=.agents/skills/agent-skill-management/scripts
+PYTHONPATH="$plugin_tools" python3 -B - <<'PY'
+from codex_rpc import enabled_edit, requests
+requests([enabled_edit(f"{name}@prateek-local", False) for name in
+          ("design", "experimental", "ios", "obsidian-wiki", "superpowers", "utils-human")])
+PY
+
+claude plugin list --json
+codex plugin list --json
+```
+
+Use the current checkout's `codex_rpc.py` for that last native configuration call.
+The isolated rehearsal restored all ten version-1.0.0 plugin payloads, every file's
+bytes/modes, the four enabled defaults, 162 Codex skills, and unrelated plugin state.
+This procedure restores native operation without editing cache databases. Resolve
+the source/registration differences before resuming ordinary full apply.

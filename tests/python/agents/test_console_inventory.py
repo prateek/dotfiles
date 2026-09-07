@@ -3,6 +3,38 @@ from tests.python.agents.console_support import ConsoleCase, ROOT
 
 class ConsoleInventoryTests(ConsoleCase):
 
+    def test_source_approval_expires_for_metadata_policy_and_modes_but_not_build_output(self):
+        from skill_console import BudgetInputs
+        from skill_console.inventory import MergedSettings, build_snapshot
+
+        repo = self.work / "repo"
+        project = repo / "agent-marketplace"
+        paths = [project / "packages/example/.codex-plugin/plugin.json",
+                 project / "packages/example/apm.lock.yaml",
+                 repo / "home/.chezmoidata/agent_plugins.toml"]
+        for path in paths:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("accepted input\n")
+
+        def snapshot():
+            return build_snapshot(inputs=BudgetInputs(context_window=200_000, bytes_per_token=3, fraction=0.04,
+                max_desc_chars=1536, env_budget=None), model="fixture", by_tree={}, settings=MergedSettings({}, (), "x"),
+                usage={}, capture=None, binary_path=None, repo_root=repo, cwd=repo, project_root=repo, now_ms=0)
+
+        accepted = snapshot().source_hash
+        for path in paths:
+            with self.subTest(path=path):
+                path.write_text("changed input\n")
+                self.assertNotEqual(snapshot().source_hash, accepted)
+                path.write_text("accepted input\n")
+        paths[1].chmod(0o755)
+        self.assertNotEqual(snapshot().source_hash, accepted)
+        paths[1].chmod(0o644)
+        build = project / "build/marketplace/output"
+        build.parent.mkdir(parents=True)
+        build.write_text("disposable\n")
+        self.assertEqual(snapshot().source_hash, accepted)
+
     def test_duplicate_names_deduped_by_entries_for(self):
         from pathlib import Path
 

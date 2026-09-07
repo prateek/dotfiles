@@ -92,7 +92,8 @@ class ConsoleFrontmatterTests(ConsoleCase):
 
         from skill_console.frontmatter import edit, parse
 
-        root = ROOT / "home/dot_agents/packages"
+        from agent_skill_lib import ensure_marketplace
+        root = ensure_marketplace(ROOT / "agent-marketplace") / "plugins"
         paths = sorted(root.rglob("SKILL.md"))
         self.assertTrue(paths, "the real skill inventory must be nonempty")
         for path in paths:

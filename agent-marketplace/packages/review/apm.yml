@@ -1,0 +1,10 @@
+name: review
+version: 1.1.0
+targets:
+- claude
+devDependencies:
+  apm:
+  - tomasz-tomczyk/crit/integrations/claude-code
+description: Review skills from Prateek's dotfiles.
+author: Prateek
+license: UNLICENSED

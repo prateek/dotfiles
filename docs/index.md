@@ -2,10 +2,10 @@
 status: current
 doc_type: index
 created: 2026-05-12
-updated: 2026-09-05
+updated: 2026-09-07
 related:
   - document-lifecycle.md
-  - ../home/dot_agents/packages/core/skills/local/code-gardening/SKILL.md
+  - ../agent-marketplace/packages/core/skills/code-gardening/SKILL.md
 status_detail: "Entry point for docs routing. Update when docs are added, moved, closed, or reclassified."
 ---
 
@@ -16,7 +16,7 @@ document's frontmatter decides whether it is current guidance, active work, a
 proposal, or history.
 
 When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
-[code-gardening workflow](../home/dot_agents/packages/core/skills/local/code-gardening/SKILL.md).
+[code-gardening workflow](../agent-marketplace/packages/core/skills/code-gardening/SKILL.md).
 
 ## Current Guidance
 
@@ -24,6 +24,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | --- | --- |
 | [Documentation Index](index.md) | Routing to current guidance, proposed work, decisions, and history. |
 | [Document Lifecycle](document-lifecycle.md) | Frontmatter, status transitions, and index rules for `docs/`. |
+| [Agent Marketplace](references/agent-marketplace.md) | Isolated APM source/build project, host activation, recovery, and validation lanes. |
 | [Chezmoi Architecture](references/chezmoi-architecture.md) | Dotfiles source-state architecture and validation entrypoints. |
 | [Chezmoi Drift Banner](../home/dot_config/dotfiles/chezmoi-drift/README.md) | Cached shell banner for managed chezmoi drift. |
 | [Chezmoi Hook Lifecycle](references/chezmoi-hook-lifecycle.md) | Ordering and design rules for config hooks, apply scripts, init, and modify targets. |
@@ -41,7 +42,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | --- | --- |
 | [acpx Claude Code Streaming PoC](plans/acpx-claude-streaming-poc-plan.md) | Active; PoC executed with a go recommendation — `poll-stream` helper landed at `home/dot_agents/bin/` (target `~/.agents/bin/poll-stream`), review-hardened, and the acpx conventions doc teaches per-harness watching lanes. Remaining: live steering demo, the ADR 0016 packaging move, land. |
 | [ADR 0016 - Vendored dependency content may land inside a local skill](adr/0016-vendor-into-skill-references.md) | Proposed; per-skill vendor destinations so a local skill can carry upstream content as references. First customer: acpx ([plan](plans/acpx-claude-streaming-poc-plan.md)). |
-| [Agent Plugin Renderer](plans/agent-plugin-renderer-plan.md) | Active; plugin-only render mode, APM payload pass-through, and hooks vendoring landed. Pack-bundle vendoring stays deferred. |
+| [APM Agent Marketplace](plans/apm-agent-marketplace-plan.md) | Active; source migration and isolated acceptance passed. Landing, scoped live apply, and fresh-session verification remain. Includes migration/recovery gates and a future registry TODO. See [ADR 0023](adr/0023-apm-agent-marketplace-packaging.md). |
 | [Agent Session Wiki](plans/agent-session-wiki-plan.md) | Active; hourly launchd archive sync and AgentsView wiring. Scheduled wiki ingest is paused. See [ADR 0017](adr/0017-agent-session-archive.md). |
 | [Revisit Wiki Ingestion](plans/wiki-ingest-revisit-plan.md) | TODO; decide whether and how to resume wiki ingestion. |
 | [SSD Layout And Arq Coverage](plans/ssd-arq-layout-plan.md) | Active; Code, Tart, and WinMux storage migrated. Both SSD volumes retained for Code and GhostPepper; Arq selection and restore checks deferred. |
@@ -87,6 +88,7 @@ for day-to-day implementation details.
 | [ADR 0020 - chezmoi apply reconciles plugin install records](adr/0020-apply-reconciles-plugin-installs.md) | `reconcile-agent-plugins --apply`, run by `run_onchange_after_36-agent-plugins`; see [Plugin Reconcile](../.agents/skills/agent-skill-management/references/plugin-reconcile.md). |
 | [ADR 0021 - Shared plist verification](adr/0021-shared-plist-verification.md) | [Tests index](../tests/README.md#plist-merge-verification) and [Chezmoi Architecture](references/chezmoi-architecture.md). |
 | [ADR 0022 - Bats with repo-owned zsh test support](adr/0022-bats-and-zsh-test-support.md) | [Test Refactoring](plans/test-suite-rebuild-plan.md); implemented and validated locally and in remote CI. |
+| [ADR 0023 - Isolate marketplace packaging and commit APM module inputs](adr/0023-apm-agent-marketplace-packaging.md) | Accepted; [APM Agent Marketplace plan](plans/apm-agent-marketplace-plan.md). Current operations are in the [marketplace reference](references/agent-marketplace.md) and [management skill](../.agents/skills/agent-skill-management/SKILL.md). |
 
 ## Research
 
@@ -94,6 +96,12 @@ for day-to-day implementation details.
 | --- | --- |
 | [Shell Testing Framework Comparison](research/shell-testing-framework-comparison.md) | Alternatives, decision history, and experiment/upstream evidence supporting the [Test Refactoring plan](plans/test-suite-rebuild-plan.md). |
 | [Agent Skill Management Research](research/agent-skill-management-research.md) | Background on skill context pressure, package layout, and plugin defaults. |
+| [Public Dotfiles Skill Packaging](research/public-dotfiles-skills-packaging-research.md) | Eight public examples of skill source ownership, installation, and updates, with pinned source links and a comparison to this repo. |
+| [Nix Agent Skill Packaging](research/nix-agent-skills-packaging-research.md) | Five public Nix configurations, Home Manager skill and plugin options, source catalogs, dependency packaging, and deployment ownership. |
+| [Agent Marketplace Packaging Tools](research/agent-marketplace-packaging-tools-research.md) | Packaging tools and reusable compilers for reviewed local skill sources, separate plugins, and Claude/Codex marketplace output. |
+| [APM Skill Marketplace Spike](research/apm-skill-marketplace-spike.md) | Executed APM source publication, native Claude/Codex inventory parity, offline updates, bundle limitations, and the Mise setup incident. |
+| [APM Migration Verification](research/apm-marketplace-migration-verification.md) | Executed acquisition, offline source transport, payload parity, native recovery, combined isolated apply, review fixes, and assertion migration. |
+| [APM Module Vendoring](research/apm-modules-vendoring-research.md) | Pinned source findings for committing APM caches, native lock-only acquisition, local patches, Git round-trip checks, and deferred registry/mirror options. |
 | [Skill Invocation-Control Frontmatter](research/skill-invocation-frontmatter-research.md) | Which harnesses honor `disable-model-invocation` and `user-invocable`, with per-harness evidence and citations. |
 | [Self-Improving Agents](research/self-improving-agents.md) | Pattern reference for durable agent feedback loops. |
 | [macOS Defaults: Sources And Verified Facts](research/macos-defaults-sources.md) | Sources to mine for the next rework of the macOS defaults layer, plus key encodings and Apple Silicon power facts verified on hardware. |
@@ -107,6 +115,7 @@ or `superseded_by` frontmatter before using them.
 
 | Doc | Current guidance |
 | --- | --- |
+| [Agent Plugin Renderer](plans/agent-plugin-renderer-plan.md) | Replaced by [APM Agent Marketplace](plans/apm-agent-marketplace-plan.md); [current guidance](references/agent-marketplace.md). |
 | [Test Refactoring](plans/test-suite-rebuild-plan.md) | Completed Bats/native runner migration, local and remote CI validation, and scoped apply; [tests index](../tests/README.md) and [ADR 0022](adr/0022-bats-and-zsh-test-support.md). |
 | [Shared Config-Merge Verification](plans/config-merge-verification-plan.md) | Completed local implementation and validation; [tests index](../tests/README.md#plist-merge-verification) and [ADR 0021](adr/0021-shared-plist-verification.md). |
 | [Chezmoi Agent Skills Plan](plans/chezmoi-agent-skills-plan.md) | [Agent Skill Management](../.agents/skills/agent-skill-management/SKILL.md) and [ADR 0007](adr/0007-default-loaded-plugin-policy.md). |

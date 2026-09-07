@@ -1,30 +1,28 @@
 {{ template "script_lib.sh" . }}
 
-# render-agent-plugin-marketplace sha256: {{ include (printf "%s/../.agents/skills/agent-skill-management/scripts/render-agent-plugin-marketplace" .chezmoi.sourceDir) | sha256sum }}
+# materialize-agent-plugins sha256: {{ include (printf "%s/../.agents/skills/agent-skill-management/scripts/materialize-agent-plugins" .chezmoi.sourceDir) | sha256sum }}
 # reconcile-agent-plugins sha256: {{ include (printf "%s/../.agents/skills/agent-skill-management/scripts/reconcile-agent-plugins" .chezmoi.sourceDir) | sha256sum }}
 # agent_skill_lib.py sha256: {{ include (printf "%s/../.agents/skills/agent-skill-management/scripts/agent_skill_lib.py" .chezmoi.sourceDir) | sha256sum }}
-# dot_agents/packages tree sha256: {{ includeTemplate "agent-packages-tree-hash.tmpl" . }}
+# policy sha256: {{ include ".chezmoidata/agent_plugins.toml" | sha256sum }}
+# codex_rpc.py sha256: {{ include (printf "%s/../.agents/skills/agent-skill-management/scripts/codex_rpc.py" .chezmoi.sourceDir) | sha256sum }}
+# retire-legacy-agent-packages sha256: {{ include (printf "%s/../.agents/skills/agent-skill-management/scripts/retire-legacy-agent-packages" .chezmoi.sourceDir) | sha256sum }}
+# agent-marketplace tree sha256: {{ includeTemplate "agent-marketplace-tree-hash.tmpl" . }}
 
 set -euo pipefail
 
 {{- $f := includeTemplate "features.tmpl" . | fromJson }}
 
-generator="{{ .chezmoi.sourceDir }}/../.agents/skills/agent-skill-management/scripts/render-agent-plugin-marketplace"
+generator="{{ .chezmoi.sourceDir }}/../.agents/skills/agent-skill-management/scripts/materialize-agent-plugins"
 reconciler="{{ .chezmoi.sourceDir }}/../.agents/skills/agent-skill-management/scripts/reconcile-agent-plugins"
 
-[ -x "$generator" ] || die "Agent plugin renderer is missing or not executable: $generator"
+[ -x "$generator" ] || die "Agent plugin materializer is missing or not executable: $generator"
 [ -x "$reconciler" ] || die "Agent plugin reconciler is missing or not executable: $reconciler"
-have uv || die "uv is required to render agent plugins."
+have uv || die "uv is required to build agent plugins. Run make -C agent-marketplace tools first."
 
-# The renderer resets the marketplace destination before copying package-selected plugins.
-run_timed "render agent plugins" \
+run_timed "materialize agent plugins" \
   "$generator" \
-  --plugins-root "$HOME/.agents/plugins" \
-  --skip-config-templates
+  --plugins-root "$HOME/.agents/plugins"
 
-# Each CLI owns its install records, so the reconciler drives them through
-# `claude plugin` / `codex plugin`: a new package becomes installable and a
-# disabled one stays disabled without a manual step after apply.
 agents=""
 {{- range $f.agent_clis }}
 {{- if or (eq . "claude") (eq . "codex") }}
@@ -39,3 +37,5 @@ else
   run_timed "reconcile agent plugin installs" \
     "$reconciler" --apply --plugins-root "$HOME/.agents/plugins" $agents
 fi
+
+"{{ .chezmoi.sourceDir }}/../.agents/skills/agent-skill-management/scripts/retire-legacy-agent-packages"

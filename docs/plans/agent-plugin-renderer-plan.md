@@ -1,15 +1,19 @@
 ---
-status: active
+status: superseded
 doc_type: plan
 owner: Prateek
 created: 2026-07-02
-updated: 2026-09-02
+updated: 2026-09-06
 related:
   - ../adr/0007-default-loaded-plugin-policy.md
   - ../adr/0013-apm-vendored-tool-integrations.md
   - ../adr/0019-plugin-hooks-in-vendored-payload.md
   - ../research/agent-skill-management-research.md
+  - apm-agent-marketplace-plan.md
   - ../../.agents/skills/agent-skill-management/SKILL.md
+closed: 2026-09-07
+superseded_by: apm-agent-marketplace-plan.md
+current_guidance: ../references/agent-marketplace.md
 status_detail: "Implementation landed on prateek/debug-crit-triggers 2026-07-02; hooks payload vendoring landed with the superpowers package 2026-09-02; pack-bundle vendoring remains deferred."
 ---
 

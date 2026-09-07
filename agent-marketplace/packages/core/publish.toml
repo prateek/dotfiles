@@ -1,0 +1,20 @@
+[[skills]]
+name = "better-writing"
+dependency = "forjd/better-writing"
+path = "."
+exclude = ["skills"]
+
+[[skills]]
+name = "code-principles"
+dependency = "wiseiodev/skills/code-principles"
+path = "."
+
+[[skills]]
+name = "deep-research"
+dependency = "199-biotechnologies/claude-deep-research-skill"
+path = "."
+
+[[skills]]
+name = "writing-clearly-and-concisely"
+dependency = "aiskillstore/marketplace/skills/cygnusfear/writing-clearly-and-concisely"
+path = "."

@@ -1,0 +1,24 @@
+{
+  "name": "mattpocock",
+  "version": "1.1.0",
+  "description": "Matt Pocock Skills skills from Prateek's dotfiles.",
+  "author": {
+    "name": "Prateek"
+  },
+  "license": "UNLICENSED",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Matt Pocock Skills",
+    "shortDescription": "Matt Pocock Skills skills",
+    "longDescription": "Generated local plugin for Matt Pocock Skills.",
+    "developerName": "Prateek",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Use the Matt Pocock Skills plugin."
+    ]
+  }
+}

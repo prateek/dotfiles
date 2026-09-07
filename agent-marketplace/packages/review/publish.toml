@@ -1,0 +1,19 @@
+[[skills]]
+name = "crit"
+dependency = "tomasz-tomczyk/crit/integrations/claude-code"
+path = ".apm/skills/crit"
+
+[[skills]]
+name = "crit-cli"
+dependency = "tomasz-tomczyk/crit/integrations/claude-code"
+path = ".apm/skills/crit-cli"
+
+[[skills]]
+name = "crit-story"
+dependency = "tomasz-tomczyk/crit/integrations/claude-code"
+path = ".apm/skills/crit-story"
+
+[[payloads]]
+dependency = "tomasz-tomczyk/crit/integrations/claude-code"
+path = ".apm/hooks"
+target = "hooks"

@@ -90,6 +90,23 @@
         "Re-runs the checks after the rebase, then pushes again as a normal fast-forward",
         "Does NOT rewrite already-pushed master history to resolve the rejection"
       ]
+    },
+    {
+      "id": 7,
+      "name": "marketplace-only-land-apply-scope",
+      "tags": ["happy-path", "script-inputs", "chezmoi-apply-is-opt-in"],
+      "prompt": "Land this marketplace-only branch onto master and summarize the pending apply. Don't apply it yet.",
+      "expected_output": "The agent follows the normal checked, fast-forward landing workflow and uses agent-skill-management for the marketplace checks. After confirming the canonical chezmoi source, it inspects script effects even though the branch changed no home/ files. It identifies script 36's changed marketplace input hash and the resulting materialization/native reconciliation, distinguishes the unrelated Karabiner file drift, and leaves unchanged script 35 and native config inputs outside the proposed change. It explains that ~/.agents/plugins is script-created output and that eventual plugin convergence requires artifact/native-state checks beyond chezmoi verify. It does not apply.",
+      "files": ["evals/files/eval7_marketplace_only_land"],
+      "expectations": [
+        "Runs the normal preflight, rebase/squash, changed-area checks, ff-only merge, push, and remote equality verification before reporting landing complete",
+        "Uses agent-skill-management and the tests index for marketplace validation even though no home/ source file changed",
+        "Confirms the canonical chezmoi source and inspects rendered script effects, such as with chezmoi diff --include=scripts",
+        "Identifies script 36 as pending because its marketplace input hash changed and maps it to artifact materialization and native client reconciliation",
+        "Separates unrelated Karabiner drift from the landed change and recognizes that script 35 and native config inputs are unchanged in this fixture",
+        "Does not treat ~/.agents/plugins as a direct chezmoi target or claim chezmoi verify certifies artifact/native-cache convergence",
+        "Performs no chezmoi apply, direct materialization, or native reconciliation because apply was explicitly deferred"
+      ]
     }
   ]
 }

@@ -1,0 +1,48 @@
+{
+  "private": true,
+  "scripts": {
+    "dev": "bun run --cwd website dev",
+    "build": "bun run --cwd website build && bun run --cwd packages/core build && bun run --cwd packages/cli build && bun run --cwd packages/mcp build",
+    "validate": "bun run lint && bun run typecheck && bun run test && bun run validate:skills",
+    "validate:skills": "node packages/skill-validator/src/cli.js . --verbose",
+    "validate:strict": "node packages/skill-validator/src/cli.js . --strict",
+    "validate:full": "bun run validate && bun run build && bun run test:e2e",
+    "validate:score": "node packages/skill-validator/src/cli.js . --score",
+    "validate:tui": "node packages/skill-validator/src/cli.js . --tui",
+    "sync:audit-patterns": "cp packages/core/src/patterns.ts website/lib/audit/patterns.ts && mkdir -p website/lib/audit/engines && cp packages/core/src/engines/swift-structural.ts website/lib/audit/engines/swift-structural.ts",
+    "test": "bun --cwd packages/skill-validator test && bun --cwd packages/core test && bun --cwd packages/cli test && bun --cwd packages/mcp test && bun test scripts/hig-drift.test.ts && node --test test/workflow-security.test.mjs test/audit-patterns-sync.test.mjs test/rule-docs-sync.test.mjs test/benchmark-docs-sync.test.mjs test/readme-rule-counts.test.mjs test/readme-structure.test.mjs",
+    "docs:rules": "bun scripts/generate-rule-docs.ts",
+    "docs:benchmark": "bun scripts/generate-benchmark.ts",
+    "drift:seed": "bun scripts/hig-drift.ts --seed",
+    "drift:check": "bun scripts/hig-drift.ts --check",
+    "test:unit": "bun run test",
+    "test:e2e": "bun run validate:strict",
+    "lint": "bun run --cwd website lint",
+    "lint:fix": "bun --cwd website biome check . --write",
+    "format": "bun --cwd website biome format . --write",
+    "typecheck": "bun run --cwd website typecheck && bun run --cwd packages/core typecheck && bun run --cwd packages/cli typecheck && bun run --cwd packages/mcp typecheck",
+    "test:security": "node --test test/workflow-security.test.mjs",
+    "test:audit-sync": "node --test test/audit-patterns-sync.test.mjs"
+  },
+  "packageManager": "bun@1.3.11",
+  "workspaces": [
+    "website",
+    "packages/core",
+    "packages/cli",
+    "packages/mcp",
+    "packages/skill-validator",
+    "demos/remotion-hig-doctor"
+  ],
+  "engines": {
+    "node": "24.x"
+  },
+  "overrides": {
+    "@hono/node-server": "1.19.15",
+    "fast-uri": "3.1.5",
+    "hono": "4.12.34",
+    "ip-address": "10.3.1",
+    "nanoid": "3.3.18",
+    "postcss": "8.5.26",
+    "sharp": "0.35.3"
+  }
+}

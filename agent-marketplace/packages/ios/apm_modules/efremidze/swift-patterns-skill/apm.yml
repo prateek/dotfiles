@@ -1,0 +1,8 @@
+name: swift-patterns
+version: 1.0.0
+description: Expert Swift and SwiftUI guidance for state management, navigation, testing,
+  dependency injection, performance optimization, and code quality patterns.
+author: Lasha Efremidze
+license: MIT
+repository: https://github.com/efremidze/swift-patterns-skill
+type: hybrid

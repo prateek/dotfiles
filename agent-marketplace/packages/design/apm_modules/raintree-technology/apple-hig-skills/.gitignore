@@ -1,0 +1,35 @@
+_raw/
+.claude/
+.DS_Store
+node_modules/
+packages/mcp/dist/
+packages/cli/dist/
+packages/core/dist/
+.vercel/
+.agents/*
+!.agents/product-marketing.md
+skills-lock.json
+
+.vercel
+
+# Local environment/secrets.
+.env
+.env.*
+!.env.example
+!.env.*.example
+!.env.sample
+!.env.template
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+!.dev.vars.*.example
+
+# mise local overrides
+mise.local.toml
+mise.*.local.toml
+mise.local.lock
+mise.*.local.lock
+.mise/
+
+# Local audit cache
+.hig-cache.json

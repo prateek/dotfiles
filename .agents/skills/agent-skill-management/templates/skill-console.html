@@ -641,7 +641,7 @@ function refusal(m, op) {
   }
   if (op === "delete_skill") {
     if (getOp("set_description", m.name)) return "set_description staged for this skill (V15)";
-    if (!m.apm) return "no APM dependency recorded in its SOURCE.md";
+    if (!m.apm) return "no APM publication selection";
     if (m.apm.dep_owns_skills !== 1) return `APM dependency owns ${m.apm.dep_owns_skills} skills; needs the exclusion mechanism`;
   }
   return null;
@@ -654,7 +654,7 @@ function packageRefusal(p, op) {
     if (!p.marketplace) return "marketplace unknown; payload lacks packages[] or enabled_plugins";
     if (p.info && p.info.render_claude && p.info.render_claude !== "plugin") return `render.claude is "${p.info.render_claude}", not a Claude plugin`;
   }
-  if (op === "set_default_loaded" && p.defaultLoaded === null) return "package.toml default_loaded unknown";
+  if (op === "set_default_loaded" && p.defaultLoaded === null) return "agent_plugins.toml default_loaded unknown";
   const target = op === "set_default_loaded" ? !p.defaultLoaded : !(p.liveEnabled !== false);
   if (target) {
     const unmeasurable = p.rows.filter((m) => !m.listed && m.unlistedReason === "package" && !m.measurable);
@@ -881,7 +881,7 @@ function harnessStates(p) {
   if (p.kind === "third-party") return [c, { h: "X", on: null, src: "third-party Claude plugin; no Codex state" }, { h: "π", on: null, src: "third-party Claude plugin; no pi state" }];
   const dl = getOp("set_default_loaded", p.name);
   const shipped = dl ? dl.value : p.defaultLoaded;
-  const src = shipped === null ? "package.toml default_loaded unknown" : `${dl ? "staged " : ""}package.toml default_loaded; per-harness overrides are not in this snapshot`;
+  const src = shipped === null ? "agent_plugins.toml default_loaded unknown" : `${dl ? "staged " : ""}agent_plugins.toml default_loaded; per-harness overrides are not in this snapshot`;
   return [c, { h: "X", on: shipped, src }, { h: "π", on: shipped, src }];
 }
 
@@ -1500,7 +1500,7 @@ function renderPackagesView(main) {
       h("td", { class: "usage" }, `${c.total}`, c.local || c.vendor ? h("span", { class: "t3", text: `  ${c.local} local · ${c.vendor} vendor` }) : null),
       h("td", { class: "usage" }, `${c.listedA}`, h("span", { class: "t3", text: `  ${c.fullA} full · ${c.nameOnlyA} name-only` })),
       h("td", { class: "usage", text: `${c.modelOn} / ${c.total}` }),
-      h("td", { class: "inv" }, h("span", { class: dl ? "st" : (shipped === false ? "off" : ""), text: shipped === null ? "unknown" : `${dl ? "● " : ""}${shipped ? "on" : "off"}` }), h("span", { class: "t3", text: p.kind === "repo" ? "  package.toml" : "  n/a" })),
+      h("td", { class: "inv" }, h("span", { class: dl ? "st" : (shipped === false ? "off" : ""), text: shipped === null ? "unknown" : `${dl ? "● " : ""}${shipped ? "on" : "off"}` }), h("span", { class: "t3", text: p.kind === "repo" ? "  agent_plugins.toml" : "  n/a" })),
       h("td", { class: "harn" }, ...hs.map((x) => h("b", { class: x.on === null ? "unk" : x.on ? "" : "off", title: `${x.h === "C" ? "Claude" : x.h === "X" ? "Codex" : "pi"} ${x.on === null ? "unknown" : x.on ? "on" : "off"} · ${x.src}`, text: x.on === null ? `${x.h}?` : x.h })),
         packageEnabledOp(p) ? h("span", { class: "st", text: "● staged" }) : h("span", { class: "t3", text: hs[0].src === "enabledPlugins override" ? "override" : "" })),
       h("td", { class: "n num", text: fmt(c.charsA) }),
@@ -1515,11 +1515,8 @@ function renderPackagesView(main) {
 }
 
 const SETTINGS_PATH = "home/.chezmoitemplates/claude-settings-managed.json.tmpl";
-function pkgTomlPath(p) {
-  const rec = p.rows.map((m) => m.row.source_record).find((r) => r && String(r.path).includes("/skills/"));
-  if (!rec) return "package.toml (path unknown)";
-  const path = String(rec.path);
-  return relPath(path.slice(0, path.indexOf("/skills/")) + "/package.toml");
+function packagePolicyPath() {
+  return "home/.chezmoidata/agent_plugins.toml";
 }
 function pkgForOp(o) {
   const name = o.op === "set_package_enabled" ? o.key.split("@")[0] : o.key;
@@ -1537,9 +1534,9 @@ function changeDetails(o) {
     d.label = o.op === "set_package_enabled" ? `enabledPlugins ${o.key}` : `package ${o.key} default_loaded`;
     d.before = p ? String(o.op === "set_package_enabled" ? p.liveEnabled !== false : p.defaultLoaded) : "unknown";
     d.after = String(o.value);
-    d.path = o.op === "set_package_enabled" ? SETTINGS_PATH : (p ? pkgTomlPath(p) : "");
+    d.path = o.op === "set_package_enabled" ? SETTINGS_PATH : (p ? packagePolicyPath(p) : "");
     d.effect = p ? `${p.rows.length} skills · ${listedArrow(p)}` : "";
-    if (o.op === "set_default_loaded") d.warnings.push("regenerates Claude, Codex, and pi policy; may also activate this package's commands, agents, hooks, and MCP servers");
+    if (o.op === "set_default_loaded") d.warnings.push("changes Claude, Codex, and pi defaults; may also activate this package's commands, agents, hooks, and MCP servers");
     if (p) {
       const en = packageEnabledOp(p), dl = getOp("set_default_loaded", p.name);
       if (en && dl && en.value !== dl.value) d.warnings.push(`enabledPlugins (${en.value}) is merged last and wins over default_loaded (${dl.value})`);
@@ -1548,7 +1545,7 @@ function changeDetails(o) {
   } else {
     const m = modelByName.get(o.key);
     d.target = m || null;
-    const dir = m ? skillPath(m) : "";
+    const dir = m ? relPath((m.edit || {}).source_path || (m.edit || m.live || {}).path) : "";
     if (o.op === "set_description") {
       Object.assign(d, { label: `${o.key} description`, before: `${fmt(o.from_chars)} chars`, after: `${fmt(o.to_chars)} chars`, path: dir ? `${dir}/SKILL.md` : "" });
       if (m) d.effect = `${listingBefore(m)} → ${listingAfter(m)}${m.cost && m.costAfter ? ` · full cost ${fmt(m.cost.full_cost)} → ${fmt(m.costAfter.full_cost)}` : ""}`;
@@ -1559,9 +1556,12 @@ function changeDetails(o) {
       if (m) d.effect = o.field === "user-invocable" ? "slash command only; listing and budget unchanged" : `${listingBefore(m)} → ${listingAfter(m)}`;
     } else if (o.op === "delete_skill") {
       Object.assign(d, { label: `delete ${o.key}`, before: "present", after: "removed", path: dir, destructive: true, effect: m ? `${listingBefore(m)} → removed` : "" });
-      d.warnings.push(`removes the skill directory, the apm.yml dependency ${o.apm_dep}, and its lockfile entry; apply reruns reference checks`);
+      d.warnings.push(`removes the publication selection${o.remove_apm_dep ? ` and APM dependency ${o.apm_dep}` : ""}; the accepted cache remains available and apply reruns reference checks`);
     }
-    if (m && m.origin === "repo-vendor" && o.op !== "delete_skill") d.warnings.push("temporary vendor edit: the next vendor-agent-package refresh restores upstream content");
+    if (m && m.origin === "repo-vendor") {
+      d.path = `agent-marketplace/packages/${m.pkg}/${o.op === "delete_skill" ? "publish.toml" : "patches/ + overlays/"}`;
+      if (o.op !== "delete_skill") d.warnings.push("imported edit: the console updates a reviewed patch or overlay and bumps the plugin version");
+    }
     if (m && (o.op === "set_description" || o.op === "set_frontmatter") && packageDisabledInBatch(m.pkgModel)) d.warnings.push("conflicts with disabling its package in this batch (V15)");
   }
   return d;
@@ -1645,7 +1645,7 @@ const onOff = (v) => (v === null ? "unknown" : v ? "on" : "off");
 function skillInspector(m) {
   const inv = invocation(m);
   const descWhy = refusal(m, "set_description");
-  const editability = descWhy ? "read-only" : (m.origin === "repo-vendor" ? "editable (temporary; re-vendoring overwrites)" : "editable");
+  const editability = descWhy ? "read-only" : (m.origin === "repo-vendor" ? "editable through a reviewed patch" : "editable");
   const out = [h("div", { class: "ihead" }, h("div", null, h("div", { class: "title", text: m.name }),
     h("div", { class: "badges" }, h("span", { text: m.prov }), h("span", { text: editability }), m.protected ? h("span", { class: "prot", text: "protected" }) : null,
       m.health.level === "warn" ? h("span", { class: "warn", text: `⚠ ${m.health.label}` }) : null, getOp("delete_skill", m.name) ? h("span", { class: "bad", text: "will delete" }) : null)),
@@ -1701,7 +1701,7 @@ function skillInspector(m) {
   if (m.divs.length) prov.push(h("div", { class: "divs" }, ...m.divs.map((d) => h("div", { text: `${d.kind}: ${d.detail}` }))));
   else if (m.health.level === "ok") prov.push(h("div", { class: "note ok", text: "source, marketplace, and cache agree" }));
   if (m.apm) prov.push(h("div", { class: "note" }, `APM dependency `, h("span", { class: "mono", text: m.apm.apm_dep }), ` owns ${m.apm.dep_owns_skills} skill${m.apm.dep_owns_skills === 1 ? "" : "s"}. `,
-    m.apm.dep_owns_skills === 1 ? "Deleting this skill may remove the dependency." : "Deletion is unavailable without a durable exclusion mechanism.", " Edits are overwritten by the next vendor refresh."));
+    m.apm.dep_owns_skills === 1 ? "Deleting this skill may remove the dependency." : "Review multi-skill dependency selections in publish.toml.", " Edits are kept as reviewed patches."));
   if (m.row.frontmatter_name && m.row.directory && m.row.frontmatter_name !== m.row.directory) prov.push(h("div", { class: "note", text: `frontmatter name ${m.row.frontmatter_name}, directory ${m.row.directory}` }));
   out.push(section("Provenance", ...prov));
 
@@ -1739,8 +1739,8 @@ function packageInspector(p) {
   const dl = getOp("set_default_loaded", p.name);
   const shipped = dl ? dl.value : p.defaultLoaded;
   const lWhy = dl ? null : packageRefusal(p, "set_default_loaded");
-  out.push(section("Shipping policy", kv([["Ship enabled by default", h("span", null, stagedMark(Boolean(dl)), onOff(shipped)), "package.toml default_loaded"]]),
-    h("div", { class: "note", text: "Changes package.toml and the regenerated Claude, Codex, and pi policy. It may also activate this package's commands, agents, hooks, and MCP servers." }),
+  out.push(section("Shipping policy", kv([["Ship enabled by default", h("span", null, stagedMark(Boolean(dl)), onOff(shipped)), "agent_plugins.toml default_loaded"]]),
+    h("div", { class: "note", text: "Changes agent_plugins.toml and the Claude, Codex, and pi policy read from it. It may also activate this package's commands, agents, hooks, and MCP servers." }),
     h("div", { class: "actions", style: "margin-top:8px" }, lWhy ? h("div", { class: "na" }, h("b", { text: "Toggle unavailable" }), ` — ${lWhy}`)
       : h("button", { type: "button", class: "small", onclick: () => stagePackage(p, "set_default_loaded") }, kbd("L"), ` ${dl ? "Undo staged default_loaded" : `Ship enabled by default → ${!shipped}`}`))));
   const en = packageEnabledOp(p);
@@ -1838,7 +1838,7 @@ function stageDraft({ close = false } = {}) {
     if (getOp("set_description", m.name)) { delOp("set_description", m.name); toast("description restored to the source value; staged edit removed"); } else { toast("no change to stage"); renderInspector(); }
   } else {
     setOp({ op: "set_description", target: "skill", key: m.name, from_chars: m.text.length, to_chars: text.length, text });
-    toast(m.origin === "repo-vendor" ? "Staged. Temporary vendor edit: the next vendor-agent-package refresh restores upstream content." : "description staged");
+    toast(m.origin === "repo-vendor" ? "Staged as a reviewed patch with a plugin version bump." : "description staged");
   }
   if (close) { S.inspectorOpen = false; renderMain(); paintCursor(false); }
 }
@@ -1985,7 +1985,7 @@ function stagePackage(p, op) {
   const fx = [`${p.rows.length} skills`, `Claude listed ${listedNow} → ${listedThen}`, `full ${AFTER.full.length} → ${sim.after.full.length}`, `name-only ${AFTER.name_only.length} → ${sim.after.name_only.length}`];
   const en = packageEnabledOp(p);
   const text = op === "set_default_loaded"
-    ? `Stage default_loaded → ${!live} for ${p.name}? Changes package.toml and the regenerated Claude, Codex, and pi policy; it may also activate this package's commands, agents, hooks, and MCP servers. ${en ? `A staged enabledPlugins override (${en.value}) wins over this default. ` : (p.marketplace && `${p.name}@${p.marketplace}` in ENABLED_PLUGINS ? `The managed enabledPlugins override (${ENABLED_PLUGINS[`${p.name}@${p.marketplace}`]}) wins over this default. ` : "")}${fx.join(" · ")}.`
+    ? `Stage default_loaded → ${!live} for ${p.name}? Changes agent_plugins.toml and the Claude, Codex, and pi policy read from it; it may also activate this package's commands, agents, hooks, and MCP servers. ${en ? `A staged enabledPlugins override (${en.value}) wins over this default. ` : (p.marketplace && `${p.name}@${p.marketplace}` in ENABLED_PLUGINS ? `The managed enabledPlugins override (${ENABLED_PLUGINS[`${p.name}@${p.marketplace}`]}) wins over this default. ` : "")}${fx.join(" · ")}.`
     : `Stage enabledPlugins ${key} → ${!live}? Managed Claude override; Codex and pi are unaffected. ${fx.join(" · ")}.`;
   showPrompt({ text, onConfirm: () => setOp(o) });
 }
@@ -2017,7 +2017,7 @@ function deleteSkill(m) {
   if (getOp("delete_skill", m.name)) { showPrompt({ text: `Undo the staged delete of ${m.name}?`, onConfirm: () => delOp("delete_skill", m.name) }); return; }
   const why = refusal(m, "delete_skill");
   if (why) {
-    const apm = m.apm && m.apm.dep_owns_skills !== 1 ? ` APM dependency ${m.apm.apm_dep} owns ${m.apm.dep_owns_skills} skills; re-vendoring would restore this directory. A durable exclusion mechanism is required.` : "";
+    const apm = m.apm && m.apm.dep_owns_skills !== 1 ? ` APM dependency ${m.apm.apm_dep} owns ${m.apm.dep_owns_skills} skills; review its publication selections before removing one.` : "";
     showPrompt({ text: `Cannot delete ${m.name}: ${why}.${apm}` });
     return;
   }

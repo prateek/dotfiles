@@ -1,0 +1,69 @@
+import { getAllTopicMetas } from "@/lib/topics";
+
+const BASE_URL = "https://apple.raintree.technology";
+
+// llms.txt — structured index of HIG content for LLM retrieval.
+// Spec: https://llmstxt.org/
+export const dynamic = "force-static";
+
+export function GET() {
+  const topics = getAllTopicMetas();
+
+  const byCategory = new Map<string, typeof topics>();
+  for (const t of topics) {
+    let bucket = byCategory.get(t.categoryName);
+    if (!bucket) {
+      bucket = [];
+      byCategory.set(t.categoryName, bucket);
+    }
+    bucket.push(t);
+  }
+
+  const lines: string[] = [];
+  lines.push("# HIG Doctor");
+  lines.push("");
+  lines.push(
+    "> Apple Human Interface Guidelines as agent skills for AI coding agents. Snapshot from February 2025, structured for progressive disclosure. Raw markdown is available for every topic — append `.md` or use the `/raw/<slug>` endpoint.",
+  );
+  lines.push("");
+  lines.push(
+    "Source: https://developer.apple.com/design/human-interface-guidelines/  ·  License: Apple content is Apple IP, referenced here for AI agent guidance.",
+  );
+  lines.push("");
+  lines.push("## MCP server");
+  lines.push("");
+  lines.push(
+    `- [HIG Doctor MCP server](${BASE_URL}/mcp): stdio MCP server exposing skill discovery, search, lookup, project and file audits, and finding explanations.`,
+  );
+  lines.push("");
+  lines.push("## Audit tool");
+  lines.push("");
+  lines.push(
+    `- [HIG Doctor audit CLI](${BASE_URL}): source auditor across 14 frameworks; Apple-platform checks cite the HIG directly, while other surfaces use aligned accessibility and interface-quality rules.`,
+  );
+  lines.push("");
+
+  const sortedCategories = [...byCategory.entries()].sort((a, b) =>
+    a[0].localeCompare(b[0]),
+  );
+  for (const [cat, catTopics] of sortedCategories) {
+    lines.push(`## ${cat}`);
+    lines.push("");
+    const ts = catTopics.slice().sort((a, b) => a.title.localeCompare(b.title));
+    for (const t of ts) {
+      const desc = t.excerpt ? `: ${t.excerpt}` : "";
+      lines.push(`- [${t.title}](${BASE_URL}/raw/${t.slug})${desc}`);
+    }
+    lines.push("");
+  }
+
+  return new Response(lines.join("\n"), {
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Cache-Control": "public, max-age=3600, s-maxage=86400",
+      // Machine-readable index for LLM retrieval, not a page meant to rank.
+      // LLM crawlers fetch it directly; keep it out of search indexes.
+      "X-Robots-Tag": "noindex",
+    },
+  });
+}

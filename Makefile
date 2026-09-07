@@ -1,4 +1,4 @@
-.PHONY: test-shell test-tools
+.PHONY: test-shell test-tools test-agent-marketplace
 BATS_PATH ?= tests/bats
 BATS_ARGS ?=
 TEST_BASH ?= bash
@@ -193,9 +193,11 @@ test-orca-settings:
 test-crit-config:
 	@$(TEST_ENV) python3 -B scripts/tests/python discover -s tests/python -p test_crit.py
 
-## Regression tests for the vendored-skill patch layer (local deltas stay applied).
-test-vendor-skill-patches:
-	@$(TEST_ENV) python3 -B scripts/tests/python discover -s tests/python -p test_vendor_patches.py
+## Native acquisition, pristine cache, publication, and patch contracts.
+test-agent-marketplace:
+	@$(TEST_ENV) $(MAKE) -C agent-marketplace check
+
+test-vendor-skill-patches: test-agent-marketplace
 
 ## Behavioural evals for the crit failure modes (F1-F4), driven through acpx.
 ## Costs tokens and needs network, so it is on-demand: run it after re-vendoring
@@ -219,11 +221,11 @@ test-agent-skill-packages:
 ## Unit tests for the ios-audit skill source.
 test-ios-audit:
 	@$(TEST_ENV) python3 -B scripts/tests/python discover \
-		-s ./home/dot_agents/packages/ios/skills/local/ios-audit/tests \
+		-s ./agent-marketplace/packages/ios/skills/ios-audit/tests \
 		-p 'test_*.py'
 
 ## Installed Claude and Codex validation for the generated plugin marketplace.
-test-agent-skill-packages-native:
+test-agent-skill-packages-native: test-agent-marketplace
 	@$(MAKE) --no-print-directory test-shell BATS_PATH=tests/bats/agents/native-plugins.bats BATS_TAGS=host
 
 ## Regression tests for the skill management console.
@@ -413,7 +415,7 @@ test-shell:
 test-ci:
 	@DOTFILES_SKIP_LAUNCHCTL_SYNC=1 GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null $(TEST_ENV) $(MAKE) --no-print-directory test-ci-suites
 
-test-ci-suites: test-static test-shell test-python test-node test-chezmoi-apply
+test-ci-suites: test-agent-marketplace test-static test-shell test-python test-node test-chezmoi-apply
 
 test-static: check-docs-lifecycle
 	@zsh -n scripts/trace/run-zsh

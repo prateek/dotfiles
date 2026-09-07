@@ -17,7 +17,7 @@
 # Required to author / maintain this repo, not to run it. When we have a
 # module system that gates installs by role, mark these as dev-only and
 # skip on machines that just consume the dotfiles.
-"pipx:apm-cli" = "latest"  # drives `vendor-agent-package` for skill packages; subdir deps must not contain symlinks escaping the subdir (apm's sparse cone leaves them dangling) — depend on the repo root instead
+"pipx:apm-cli" = "0.29.1"  # agent-marketplace/ also pins its own build environment
 
 # === AI coding harnesses ===
 # Interactive AI coding tools the human runs directly. The desktop `claude`

@@ -135,7 +135,7 @@ The `modify_` mechanism works for any config where chezmoi owns some keys and th
 
 - `home/dot_codex/modify_private_config.toml.tmpl` — TOML modify_ stub.
 - `home/.chezmoitemplates/codex-config-managed.toml.tmpl` — fragment of chezmoi-owned defaults.
-- `home/dot_claude/modify_private_settings.json.tmpl` — JSON modify_ stub merging two fragments (generated plugin fragment + hand-maintained `claude-settings-managed.json.tmpl`; the managed fragment merges last and wins).
+- `home/dot_claude/modify_private_settings.json.tmpl` — JSON modify_ stub merging `agent-claude-plugin-settings.json.tmpl`, rendered directly from `home/.chezmoidata/agent_plugins.toml`, then `claude-settings-managed.json.tmpl`. The managed fragment merges last and wins. Policy edits take effect on template render; there is no generated fragment to regenerate.
 
 **Important: non-plist modify_ stubs (TOML, JSON) do NOT use the plist bash-shim pattern.** They are standalone Python scripts (`#!/usr/bin/env -S uv run --quiet --script` with their own PEP 723 metadata and imports) that:
 

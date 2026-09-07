@@ -1,0 +1,51 @@
+# Host activation policy. Availability is defined by the published catalogs.
+
+[agent_plugins.core]
+default_loaded = true
+claude = true
+codex = true
+
+[agent_plugins.design]
+default_loaded = false
+claude = true
+codex = true
+
+[agent_plugins.experimental]
+default_loaded = false
+claude = true
+codex = true
+
+[agent_plugins.ios]
+default_loaded = false
+claude = true
+codex = true
+
+[agent_plugins.mattpocock]
+default_loaded = true
+claude = true
+codex = true
+
+[agent_plugins.obsidian-wiki]
+default_loaded = false
+claude = true
+codex = true
+
+[agent_plugins.review]
+default_loaded = true
+claude = true
+codex = true
+
+[agent_plugins.superpowers]
+default_loaded = false
+claude = true
+codex = true
+
+[agent_plugins.utils-agent]
+default_loaded = true
+claude = true
+codex = true
+
+[agent_plugins.utils-human]
+default_loaded = false
+claude = true
+codex = true

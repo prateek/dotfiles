@@ -6,8 +6,8 @@ created: 2026-07-01
 updated: 2026-08-23
 related:
   - ../adr/0007-default-loaded-plugin-policy.md
-  - ../../home/dot_agents/packages/core/skills/local/decomment/SKILL.md
-  - ../../home/dot_agents/packages/core/skills/local/code-gardening/SKILL.md
+  - ../../agent-marketplace/packages/core/skills/decomment/SKILL.md
+  - ../../agent-marketplace/packages/core/skills/code-gardening/SKILL.md
   - ../../.agents/skills/agent-skill-management/SKILL.md
 status_detail: "Approved in crit review 2026-07-02; implementation in progress."
 ---
@@ -499,7 +499,7 @@ and Claude manifests expose the same skill source. The AGENTS.md edits reach
 both agents through the `~/.claude/CLAUDE.md` symlink. The skill is
 user-invocable as `/decomment` in Claude Code and `$decomment` in Codex.
 
-### New skill: `home/dot_agents/packages/core/skills/local/decomment/SKILL.md`
+### New skill: `agent-marketplace/packages/core/skills/decomment/SKILL.md`
 
 Frontmatter is `name` + `description` only. The description stays compact for
 the cross-agent listing budget while preserving its routing boundaries:
@@ -589,7 +589,7 @@ instructions.
 ### Evals: `decomment/evals/`
 
 skill-creator format (`evals.json` + `setup_fixture.sh` + `files/`), modeled on
-[code-gardening's evals](../../home/dot_agents/packages/core/skills/local/code-gardening/evals/evals.json)
+[code-gardening's evals](../../agent-marketplace/packages/core/skills/code-gardening/evals/evals.json)
 (fixtures, git-init special case) and write-for-humans' greppable
 counting-rule assertions:
 

@@ -1,0 +1,2 @@
+{{- $project := printf "%s/../agent-marketplace" .chezmoi.sourceDir -}}
+{{- output "python3" (printf "%s/scripts/artifact.py" $project) $project | trim -}}

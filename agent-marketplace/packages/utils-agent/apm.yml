@@ -1,0 +1,13 @@
+name: utils-agent
+version: 1.1.0
+targets:
+- claude
+devDependencies:
+  apm:
+  - openclaw/acpx/skills/acpx
+  - stablyai/agent-slack/skills/agent-slack
+  - stablyai/orca/skills/orca-cli
+  - stablyai/orca/skills/orchestration
+description: Agent Utilities skills from Prateek's dotfiles.
+author: Prateek
+license: UNLICENSED

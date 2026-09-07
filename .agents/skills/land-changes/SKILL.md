@@ -70,6 +70,7 @@ List the changed paths (`git -C "$WT" diff --name-only origin/master..HEAD`) and
 - `git -C "$WT" diff --check` always.
 - `shellcheck -x` on changed shell scripts.
 - For changed `home/` files, dry-run chezmoi against the worktree source: `make test-chezmoi-apply` (run from `$WT`).
+- For `agent-marketplace/` or plugin adapter changes, use [agent-skill-management](../agent-skill-management/SKILL.md) to select package, consumer, and config checks. These inputs can change rendered chezmoi scripts even when no `home/` file changed.
 - Read [the tests index](../../../tests/README.md#checks-by-changed-area) for the changed-area checks and execution lanes. The `Makefile` and `.github/workflows/install-smoke.yml` are executable truth for those commands.
 
 Fix failures on the branch and re-run. Never land red.
@@ -86,14 +87,18 @@ If the merge refuses, master moved while you worked — refetch and redo step 2.
 
 ### 5. Confirm chezmoi's source and summarize the apply
 
-Landing is done; do not apply. Confirm the source, then preview what an apply would change:
+Confirm the source, then preview pending effects before any requested apply:
 
 ```sh
 chezmoi source-path                                          # must resolve under ~/dotfiles
 chezmoi diff                                                 # what a chezmoi apply would change in $HOME
 ```
 
-If `chezmoi source-path` is not under `~/dotfiles`, stop and surface it. Otherwise summarize for the user which targets an apply would change and how they map to what you landed. Apply only if asked — from `~/dotfiles`, scoped to those targets, then `chezmoi verify`.
+If `chezmoi source-path` is not under `~/dotfiles`, stop and surface it. Summarize pending effects against the landed diff and identify unrelated drift separately.
+
+For marketplace inputs or plugin adapters, also inspect `chezmoi diff --include=scripts` and the relevant rendered scripts. Script 36 can change after a marketplace-only edit; script 35 owns runtime-root maintenance. Map those effects to the materialized marketplace and native client state. `~/.agents/plugins` is script-created output, with no direct chezmoi source mapping.
+
+Apply only if requested, from `~/dotfiles`. Use `chezmoi verify` for directly managed entries. For plugin changes, follow [agent-skill-management](../agent-skill-management/SKILL.md) to select the materialization/reconciliation steps and affected config entries, then complete its artifact and native-state checks. A clean file diff or successful `chezmoi verify` does not establish plugin convergence.
 
 ## Report
 

@@ -1,0 +1,24 @@
+{
+  "name": "utils-human",
+  "version": "1.1.0",
+  "description": "Human Utilities skills from Prateek's dotfiles.",
+  "author": {
+    "name": "Prateek"
+  },
+  "license": "UNLICENSED",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Human Utilities",
+    "shortDescription": "Human Utilities skills",
+    "longDescription": "Generated local plugin for Human Utilities.",
+    "developerName": "Prateek",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Use the Human Utilities plugin."
+    ]
+  }
+}

@@ -1,0 +1,19 @@
+[[skills]]
+name = "acpx"
+dependency = "openclaw/acpx/skills/acpx"
+path = "."
+
+[[skills]]
+name = "agent-slack"
+dependency = "stablyai/agent-slack/skills/agent-slack"
+path = "."
+
+[[skills]]
+name = "orca-cli"
+dependency = "stablyai/orca/skills/orca-cli"
+path = "."
+
+[[skills]]
+name = "orca-stration"
+dependency = "stablyai/orca/skills/orchestration"
+path = "."

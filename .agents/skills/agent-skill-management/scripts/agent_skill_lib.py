@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-import hashlib
 import json
 import os
-import shutil
+import subprocess
+import sys
 import tomllib
+from functools import lru_cache
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
@@ -15,31 +16,18 @@ REPO_ROOT = SCRIPT_DIR.parents[3]
 PACKAGES_ROOT = Path(
     os.environ.get(
         "AGENT_SKILL_PACKAGES_ROOT",
-        str(REPO_ROOT / "home/dot_agents/packages"),
+        str(REPO_ROOT / "agent-marketplace/packages"),
     )
 )
-CODEX_PLUGIN_CONFIG_TEMPLATE = (
-    REPO_ROOT / "home/.chezmoitemplates/agent-codex-plugin-config.toml.tmpl"
-)
-CLAUDE_PLUGIN_SETTINGS_TEMPLATE = (
-    REPO_ROOT / "home/.chezmoitemplates/agent-claude-plugin-settings.json.tmpl"
-)
-PI_CLAUDE_PLUGINS_TEMPLATE = REPO_ROOT / "home/dot_pi/agent/claude-plugins.json.tmpl"
-
+POLICY_PATH = REPO_ROOT / "home/.chezmoidata/agent_plugins.toml"
+sys.path.insert(0, str(REPO_ROOT / "agent-marketplace/scripts"))
+from artifact import validate_artifact
 GENERATED_README = "README.generated.md"
-VALID_RENDER_VALUES = {"plugin", "none"}
 AGENTS = ("codex", "claude")
-MAX_SKILL_DESCRIPTION_CHARS = 1024
 
-# Plugin-shaped payload surface a package may carry beyond skills/: the plugin
-# layout both agents auto-discover, and the shape apm normalizes a marketplace
-# plugin into under .apm/. hooks/ holds hooks.json plus the scripts it runs.
-# evals/ holds `claude plugin eval` cases, which have to sit inside the rendered
-# plugin for a plugin@marketplace target to find them.
-PAYLOAD_DIRS = ("agents", "commands", "evals", "hooks")
+PAYLOAD_DIRS = ("agents", "commands", "evals", "hooks", "licenses")
 PAYLOAD_FILES = (".mcp.json",)
 
-# shutil.ignore_patterns globs for files that never reach a rendered skill.
 SKILL_TREE_IGNORE_PATTERNS = (
     "__pycache__", "*.pyc", ".venv", ".cache", ".data", "forkengine"
 )
@@ -51,6 +39,8 @@ class SkillSource:
     kind: str
     skill_id: str
     path: Path
+    source_path: Path | None = None
+    dependency: str | None = None
 
 
 @dataclass(frozen=True)
@@ -62,39 +52,55 @@ class Package:
     skills: tuple[SkillSource, ...]
     default_loaded: bool = True
     payloads: tuple[str, ...] = ()
+    version: str = ""
+
+
+def load_policy(path: Path, names: set[str]) -> dict:
+    data = tomllib.loads(path.read_text())["agent_plugins"]
+    if set(data) != names:
+        raise ValueError(f"policy must explicitly cover every published package: {path}")
+    for name, entry in data.items():
+        if set(entry) != {"default_loaded", "claude", "codex"} or any(type(v) is not bool for v in entry.values()):
+            raise ValueError(f"invalid activation policy for {name}: expected explicit boolean default_loaded, claude, codex")
+    return data
+
+
+def load_published_packages(artifact: Path, policy_path: Path = POLICY_PATH) -> list[Package]:
+    validate_artifact(artifact)
+    catalog = json.loads((artifact / ".agents/plugins/marketplace.json").read_text())
+    if catalog["name"] != "prateek-local":
+        raise ValueError("consumer only owns prateek-local")
+    policy = load_policy(policy_path, {entry["name"] for entry in catalog["plugins"]})
+    packages = []
+    for entry in catalog["plugins"]:
+        name = entry["name"]
+        path = artifact / "plugins" / name
+        manifest = json.loads((path / ".codex-plugin/plugin.json").read_text())
+        packages.append(Package(name, path, manifest.get("interface", {}).get("displayName", name),
+                                {agent: "plugin" if policy[name][agent] else "none" for agent in AGENTS},
+                                tuple(SkillSource(name, "local", skill.name, skill) for skill in sorted((path / "skills").iterdir())
+                                      if (skill / "SKILL.md").is_file()), policy[name]["default_loaded"],
+                                tuple(iter_package_payloads(path)), manifest["version"]))
+    return packages
+
+
+@lru_cache(maxsize=None)
+def ensure_marketplace(project: Path) -> Path:
+    result = subprocess.run(["make", "-C", str(project), "build"], capture_output=True, text=True, timeout=300)
+    if result.returncode:
+        raise ValueError(f"marketplace build failed:\n{result.stdout}\n{result.stderr}")
+    artifact = project / "build/marketplace"
+    validate_artifact(artifact)
+    return artifact
 
 
 def load_packages(packages_root: Path = PACKAGES_ROOT) -> list[Package]:
-    packages: list[Package] = []
-    if not packages_root.exists():
-        return packages
-    for path in sorted(p for p in packages_root.iterdir() if p.is_dir()):
-        manifest = path / "package.toml"
-        if not manifest.exists():
-            raise ValueError(f"missing package manifest: {manifest}")
-        data = tomllib.loads(manifest.read_text())
-        render = {
-            agent: str(data.get("render", {}).get(agent, "none"))
-            for agent in AGENTS
-        }
-        default_loaded = data.get("default_loaded", True)
-        if not isinstance(default_loaded, bool):
-            raise ValueError(
-                f"{manifest}: default_loaded must be a TOML boolean, "
-                f"got {type(default_loaded).__name__} {default_loaded!r}"
-            )
-        packages.append(
-            Package(
-                package_id=path.name,
-                path=path,
-                display_name=str(data.get("display_name", path.name)),
-                render=render,
-                skills=tuple(iter_package_skills(path)),
-                default_loaded=default_loaded,
-                payloads=tuple(iter_package_payloads(path)),
-            )
-        )
-    return packages
+    artifact = ensure_marketplace(packages_root.parent)
+    policy_path = packages_root.parent.parent / "home/.chezmoidata/agent_plugins.toml"
+    published = load_published_packages(artifact, policy_path)
+    return [Package(p.package_id, packages_root / p.package_id, p.display_name, p.render,
+                    tuple(iter_package_skills(packages_root / p.package_id)), p.default_loaded,
+                    p.payloads, p.version) for p in published]
 
 
 def iter_package_payloads(package_path: Path) -> Iterable[str]:
@@ -108,18 +114,15 @@ def iter_package_payloads(package_path: Path) -> Iterable[str]:
 
 def iter_package_skills(package_path: Path) -> Iterable[SkillSource]:
     package_id = package_path.name
-    for kind, path in iter_package_skill_dirs(package_path):
-        if (path / "SKILL.md").exists():
-            yield SkillSource(package_id, kind, path.name, path)
-
-
-def iter_package_skill_dirs(package_path: Path) -> Iterable[tuple[str, Path]]:
-    for kind in ("local", "vendor"):
-        root = package_path / "skills" / kind
-        if not root.exists():
-            continue
-        for path in sorted(p for p in root.iterdir() if p.is_dir()):
-            yield kind, path
+    published = package_path.parents[1] / "build/marketplace/plugins" / package_id / "skills"
+    selection_path = package_path / "publish.toml"
+    selections = tomllib.loads(selection_path.read_text()).get("skills", []) if selection_path.exists() else []
+    imports = {item["name"]: item["dependency"] for item in selections}
+    for path in sorted(published.iterdir()):
+        if (path / "SKILL.md").is_file():
+            dependency = imports.get(path.name)
+            yield SkillSource(package_id, "vendor" if dependency else "local", path.name, path,
+                              selection_path if dependency else package_path / "skills" / path.name, dependency)
 
 
 def skill_frontmatter(path: Path) -> dict[str, str]:
@@ -165,6 +168,12 @@ def skill_frontmatter(path: Path) -> dict[str, str]:
 
 
 def iter_skill_dirs(root: Path) -> Iterable[Path]:
+    if (root / "agent-marketplace").is_dir():
+        root = ensure_marketplace(root / "agent-marketplace") / "plugins"
+    elif (root / "apm.yml").is_file() and (root / "packages").is_dir():
+        root = ensure_marketplace(root) / "plugins"
+    elif root.name == "packages" and (root.parent / "apm.yml").is_file():
+        root = ensure_marketplace(root.parent) / "plugins"
     for skill_md in sorted(root.rglob("SKILL.md")):
         yield skill_md.parent
 
@@ -174,66 +183,9 @@ def iter_skill_metadata(root: Path) -> Iterable[tuple[Path, dict[str, str]]]:
         yield skill_dir, skill_frontmatter(skill_dir)
 
 
-def package_skills_by_name(
-    packages: Iterable[Package],
-) -> tuple[dict[str, SkillSource], dict[str, list[SkillSource]]]:
-    skills: dict[str, SkillSource] = {}
-    duplicates: dict[str, list[SkillSource]] = {}
-    for package in packages:
-        for skill in package.skills:
-            name = skill_frontmatter(skill.path)["name"]
-            if name in skills:
-                duplicates.setdefault(name, [skills[name]]).append(skill)
-                continue
-            skills[name] = skill
-    return skills, duplicates
-
-
-def copy_skill_tree(source: Path, target: Path) -> None:
-    if target.is_symlink() or target.is_file():
-        target.unlink()
-    elif target.exists():
-        shutil.rmtree(target)
-    shutil.copytree(
-        source,
-        target,
-        ignore=shutil.ignore_patterns(*SKILL_TREE_IGNORE_PATTERNS),
-        copy_function=_copy_stripping_literal_prefix,
-    )
-
-
-def _copy_stripping_literal_prefix(src: str, dst: str) -> None:
-    # Mirror chezmoi's `literal_` attribute prefix so vendored files that collide
-    # with chezmoi script prefixes (e.g. `run_*.py`) land at their real names in
-    # the rendered tree, matching the names chezmoi materializes from the source.
-    # `shutil.copytree` hands `copy_function` os.path.join'd strings, hence str args.
-    dst_path = Path(dst)
-    if dst_path.name.startswith("literal_"):
-        stripped = dst_path.with_name(dst_path.name.removeprefix("literal_"))
-        if stripped.exists():
-            raise FileExistsError(
-                f"literal_-stripped target already exists: {stripped}"
-            )
-        dst_path = stripped
-    shutil.copy2(src, dst_path)
-
-
-def reset_dir(path: Path) -> None:
-    if path.is_symlink() or path.is_file():
-        path.unlink()
-    elif path.exists():
-        shutil.rmtree(path)
-    path.mkdir(parents=True, exist_ok=True)
-
-
 def write_text(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text)
-
-
-def write_json(path: Path, data: object) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=2, sort_keys=False) + "\n")
 
 
 def write_generated_readme(path: Path, generator: str, detail: str = "") -> None:
@@ -243,7 +195,7 @@ def write_generated_readme(path: Path, generator: str, detail: str = "") -> None
         (
             "# Generated Directory\n\n"
             f"Generated by `{generator}`.\n\n"
-            "Edit `home/dot_agents/packages/` instead, then rerun the generator."
+            "Edit `agent-marketplace/packages/` instead, then rebuild the marketplace."
             f"{suffix}"
         ),
     )
@@ -258,48 +210,3 @@ def write_skills_gitignore(path: Path) -> None:
             ".system/\n"
         ),
     )
-
-
-def relative_files(root: Path) -> dict[str, str]:
-    result: dict[str, str] = {}
-    if not root.exists():
-        return result
-    for path in sorted(p for p in root.rglob("*") if p.is_file() or p.is_symlink()):
-        rel = path.relative_to(root).as_posix()
-        if path.is_symlink():
-            result[rel] = f"symlink:{os.readlink(path)}"
-        else:
-            # Hook scripts run from the rendered tree, so a mode-only change
-            # is real drift.
-            mode = "x" if path.stat().st_mode & 0o111 else "-"
-            result[rel] = f"{hashlib.sha256(path.read_bytes()).hexdigest()}:{mode}"
-    return result
-
-
-def compare_dirs(expected: Path, actual: Path) -> list[str]:
-    expected_files = relative_files(expected)
-    actual_files = relative_files(actual)
-    diffs: list[str] = []
-    for rel in sorted(expected_files.keys() - actual_files.keys()):
-        diffs.append(f"missing {rel}")
-    for rel in sorted(actual_files.keys() - expected_files.keys()):
-        diffs.append(f"extra {rel}")
-    for rel in sorted(expected_files.keys() & actual_files.keys()):
-        if expected_files[rel] != actual_files[rel]:
-            diffs.append(f"changed {rel}")
-    return diffs
-
-
-def require_no_drift(expected: Path, actual: Path, label: str) -> None:
-    diffs = compare_dirs(expected, actual)
-    if diffs:
-        preview = "\n".join(f"  - {diff}" for diff in diffs[:20])
-        more = "" if len(diffs) <= 20 else f"\n  ... {len(diffs) - 20} more"
-        raise SystemExit(f"{label} is stale:\n{preview}{more}")
-
-
-def require_file_text(expected: Path, actual: Path, label: str) -> None:
-    if not actual.exists():
-        raise SystemExit(f"{label} is stale:\n  - missing {actual}")
-    if expected.read_text() != actual.read_text():
-        raise SystemExit(f"{label} is stale:\n  - changed {actual}")

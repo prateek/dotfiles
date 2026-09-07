@@ -8,10 +8,10 @@ Apply / diff / verify / merge / edit / drift resolution / script execution. Load
 1. chezmoi diff                              # show destination -> target changes
 2. chezmoi apply --dry-run --verbose         # structural preview (fast)
 3. chezmoi apply                             # execute
-4. chezmoi verify                            # exit 0 if all targets match target state
+4. chezmoi verify                            # checks direct managed entries
 ```
 
-Add `--exclude=scripts` to the dry-run when scripts are unchanged and you only want to preview file diffs. Add `--include=scripts` when verifying a script change without running file updates.
+Add `--exclude=scripts` to the dry-run only when rendered scripts and their inputs are unchanged and you want a file-only preview. Use `--include=scripts` to inspect script changes without running file updates. Script-created output needs its owner's verification; plugin changes follow [Agent Marketplace Apply](#agent-marketplace-apply).
 
 `chezmoi diff` already accounts for templates and encrypted files. Trust it over `git diff` against the destination.
 
@@ -107,7 +107,7 @@ For non-regular sources, start with `chezmoi edit <target>` (see "Editing Source
 
 ## Editing Source Files
 
-Three options, in preference order:
+For direct managed entries, three options in preference order. For script-created output, first resolve its owner through [source-target translation](source-target-translation.md#script-created-plugin-output).
 
 1. **`chezmoi edit <target>`** — opens the source file, handles encryption transparently, preserves the `.tmpl` extension so editors detect it. Add `--apply` to apply on save.
 2. **Direct edit under `home/`** — fine for plain templates and scripts; you must know the exact source path.
@@ -153,6 +153,14 @@ Sudo keepalive is no longer a separate `99-sudo` script. Privileged phases call 
 
 `macos-defaults.sh.tmpl` lives in `home/.chezmoitemplates/` (not as a sibling under `.chezmoiscripts/`). The `30-macos-defaults` script includes it via `{{ template ... }}`, so editing defaults means editing the template fragment.
 
+### Agent Marketplace Apply
+
+Script 36 hashes `agent-marketplace/`, host policy, and its adapters. A change outside `home/` can therefore rerun plugin materialization and native reconciliation. Include scripts in the preview for those inputs. Include script 35 when runtime-root maintenance is also in scope.
+
+Read [agent-skill-management](../../agent-skill-management/SKILL.md) to select the materialization/reconciliation steps and affected native config entries within the requested apply scope. `~/.agents/plugins` is script-created output, so `chezmoi apply <plugin-file>` cannot update it as a direct managed target.
+
+Complete the owning skill's artifact and native-state checks before claiming plugin convergence. `chezmoi verify` covers directly managed config files and symlinks; it does not validate the marketplace payload or native client caches. Use the same checks when restoring a worktree trial or rolling back a plugin apply.
+
 ## Resetting Script State
 
 When a `run_once_` or `run_onchange_` should run again without changing its content:
@@ -166,7 +174,7 @@ Use sparingly. Both clear ALL script history, not just one script.
 
 ## Path Translation
 
-Always invoke `chezmoi source-path` / `target-path` / `managed`. Full grammar and edge cases in `source-target-translation.md`.
+Use `chezmoi source-path` / `target-path` / `managed` for direct entries. [Source-target translation](source-target-translation.md) covers their grammar and the script-created output exception.
 
 ## Working From a Git Worktree
 
@@ -203,7 +211,7 @@ chezmoi diff
 chezmoi apply
 
 # 4. Confirm convergence:
-chezmoi verify                       # exit 0 = live matches default source
+chezmoi verify                       # direct entries match default source; check script output with its owner
 ```
 
 If `chezmoi source-path` ever prints a worktree path, the override got persisted (someone ran `chezmoi init` against it or edited `sourceDir`). Restore `sourceDir` to the canonical checkout in `~/.config/chezmoi/chezmoi.toml` (or re-run `chezmoi init <checkout>`), then re-check step 1.
@@ -253,9 +261,9 @@ previews alongside the relevant behavior checks:
 
 ```text
 chezmoi diff                                            # always
-chezmoi verify                                          # when claiming "applied"
+chezmoi verify                                          # direct managed entries
 
-# file-only changes (scripts untouched):
+# file-only changes (rendered scripts and their inputs unchanged):
 chezmoi apply --dry-run --verbose --exclude=scripts
 
 # script changes (scripts MUST be in scope to be validated):
@@ -264,10 +272,10 @@ chezmoi apply --dry-run --verbose --include=scripts
 shellcheck <(chezmoi execute-template < home/.chezmoiscripts/<script>.sh.tmpl)
 ```
 
-Use `--exclude=scripts` only when scripts are unchanged. When scripts changed, excluding them hides the very surface you need to verify. If `chezmoi verify` exits non-zero, list each failing target before mutating.
+Include scripts when their rendered content or inputs change, including marketplace inputs outside `home/`. For plugin output, also complete [the owning verification](#agent-marketplace-apply). If `chezmoi verify` exits non-zero, list each failing target before mutating.
 
 ## Common Pitfalls
 
 - **Editing the target then expecting apply to merge.** It prompts; blind `a` overwrites the user's edit with source.
-- **Forgetting `--exclude=scripts` in dry-run.** Some scripts cannot dry-run cleanly; exclude them when previewing file diffs.
+- **Treating a file-only preview as a script check.** Inspect rendered scripts whenever their inputs change; `--exclude=scripts` covers only file diffs.
 - **Treating `git diff` on the destination as the source of truth.** Use `chezmoi diff` — it accounts for templates and encryption.

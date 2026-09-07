@@ -9,12 +9,12 @@ current_guidance:
   - ../index.md
   - ../document-lifecycle.md
   - ../../AGENTS.md
-  - ../../home/dot_agents/packages/core/skills/local/code-gardening/SKILL.md
+  - ../../agent-marketplace/packages/core/skills/code-gardening/SKILL.md
 related:
   - ../document-lifecycle.md
   - ../index.md
   - ../research/self-improving-agents.md
-  - ../../home/dot_agents/packages/core/skills/local/code-gardening/SKILL.md
+  - ../../agent-marketplace/packages/core/skills/code-gardening/SKILL.md
 status_detail: "Implemented and retained for archaeology. Current docs routing lives in AGENTS.md, docs/index.md, and docs/document-lifecycle.md."
 ---
 

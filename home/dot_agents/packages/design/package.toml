@@ -1,6 +1,0 @@
-display_name = "Design"
-default_loaded = false
-
-[render]
-codex = "plugin"
-claude = "plugin"

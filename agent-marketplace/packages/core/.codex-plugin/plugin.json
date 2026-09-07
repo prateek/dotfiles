@@ -1,0 +1,24 @@
+{
+  "name": "core",
+  "version": "1.1.0",
+  "description": "Core Agent Skills skills from Prateek's dotfiles.",
+  "author": {
+    "name": "Prateek"
+  },
+  "license": "UNLICENSED",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Core Agent Skills",
+    "shortDescription": "Core Agent Skills skills",
+    "longDescription": "Generated local plugin for Core Agent Skills.",
+    "developerName": "Prateek",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Use the Core Agent Skills plugin."
+    ]
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "name": "swiftui-expert",
+  "version": "4.2.0",
+  "description": "Expert SwiftUI guidance for state management, view composition, performance, and iOS 26+ Liquid Glass adoption.",
+  "author": {
+    "name": "Antoine van der Lee",
+    "email": "contact@avanderlee.com",
+    "url": "https://www.avanderlee.com"
+  },
+  "homepage": "https://github.com/AvdLee/SwiftUI-Agent-Skill",
+  "repository": "https://github.com/AvdLee/SwiftUI-Agent-Skill",
+  "license": "MIT",
+  "keywords": [
+    "swift",
+    "swiftui",
+    "ios",
+    "apple",
+    "state-management",
+    "performance",
+    "liquid-glass",
+    "view-composition",
+    "navigation",
+    "lists",
+    "sheets"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "SwiftUI Expert",
+    "shortDescription": "Build better SwiftUI views",
+    "longDescription": "Expert SwiftUI guidance for state management, view composition, performance, and iOS 26+ Liquid Glass adoption.",
+    "developerName": "Antoine van der Lee",
+    "category": "Developer Tools",
+    "websiteURL": "https://github.com/AvdLee/SwiftUI-Agent-Skill",
+    "defaultPrompt": [
+      "Review this view for unnecessary invalidations and fix them.",
+      "Refactor this view's state management using @Observable.",
+      "Adopt Liquid Glass in this screen."
+    ],
+    "brandColor": "#006BFF",
+    "composerIcon": "./skills/swiftui-expert-skill/assets/logo-small.png",
+    "logo": "./skills/swiftui-expert-skill/assets/logo.png",
+    "termsOfServiceURL": "https://github.com/AvdLee/SwiftUI-Agent-Skill/blob/main/LICENSE"
+  }
+}

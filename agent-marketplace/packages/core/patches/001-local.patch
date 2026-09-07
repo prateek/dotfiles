@@ -1,0 +1,45 @@
+diff --git a/skills/better-writing/SKILL.md b/skills/better-writing/SKILL.md
+index b2b4e072c8ac33f341d72dd4a70da765ad437ff0..04952ed31f84c483e3516cc1e7cc7e982b36df26 100644
+--- a/skills/better-writing/SKILL.md
++++ b/skills/better-writing/SKILL.md
+@@ -1,6 +1,7 @@
+ ---
+ name: better-writing
+ description: Rewrite, draft, and review prose so it is clear, specific, human, and fits its context. Use when improving emails, reports, documentation, marketing copy, UI text, or posts that sound generic, AI-written, verbose, salesy, or formulaic. Covers voice calibration, anti-slop audits, and pre-flight checks.
++disable-model-invocation: true
+ license: MIT
+ ---
+ 
+diff --git a/skills/better-writing/agents/openai.yaml b/skills/better-writing/agents/openai.yaml
+index 72be908c98175eeb9f6e2bc647e1a6fad6f0deb8..5a12f6d140e2491ae98d67ff9eac10cdd0442838 100644
+--- a/skills/better-writing/agents/openai.yaml
++++ b/skills/better-writing/agents/openai.yaml
+@@ -4,4 +4,4 @@ interface:
+   default_prompt: "Use $better-writing to rewrite this draft so it sounds clear, specific, and natural."
+ 
+ policy:
+-  allow_implicit_invocation: true
++  allow_implicit_invocation: false
+diff --git a/skills/writing-clearly-and-concisely/SKILL.md b/skills/writing-clearly-and-concisely/SKILL.md
+index 3ad4f3163032bac4a531ed28383210357db712bf..7413b3e23ffed1c99294511ee2845ec8ea4fb98e 100644
+--- a/skills/writing-clearly-and-concisely/SKILL.md
++++ b/skills/writing-clearly-and-concisely/SKILL.md
+@@ -1,6 +1,7 @@
+ ---
+ name: writing-clearly-and-concisely
+ description: Apply Strunk's timeless writing rules to ANY prose humans will read—documentation, commit messages, error messages, explanations, reports, or UI text. Makes your writing clearer, stronger, and more professional.
++disable-model-invocation: true
+ ---
+ 
+ # Writing Clearly and Concisely
+diff --git a/skills/writing-clearly-and-concisely/agents/openai.yaml b/skills/writing-clearly-and-concisely/agents/openai.yaml
+new file mode 100644
+index 0000000000000000000000000000000000000000..2bbb8a4dcd922cefc17912f751ecc90cccf9544c
+--- /dev/null
++++ b/skills/writing-clearly-and-concisely/agents/openai.yaml
+@@ -0,0 +1,5 @@
++interface:
++  display_name: "Writing Clearly And Concisely"
++  short_description: "Strunk's Elements of Style"
++policy:
++  allow_implicit_invocation: false

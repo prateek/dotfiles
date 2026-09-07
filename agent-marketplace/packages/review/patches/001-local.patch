@@ -1,0 +1,173 @@
+diff --git a/skills/crit-cli/SKILL.md b/skills/crit-cli/SKILL.md
+index ea6bb564a699d80de103257131f5a0db6d333abf..4032ba9d979c7e4a2c6b026bc523340586091947 100644
+--- a/skills/crit-cli/SKILL.md
++++ b/skills/crit-cli/SKILL.md
+@@ -120,6 +120,54 @@ Hard rules:
+ - **Only pass `--resolve` when the user explicitly asks.** Never resolve proactively.
+ </important>
+ 
++<important if="you authored comments and are about to tell the user to look at the review">
++
++`crit comments` and the review file are the **store**. The browser renders the
++running daemon's **filtered projection** of that store, scoped to the session's
++current focus. A comment can be present in both and still render nowhere, so
++reading it back with `crit comments` does not prove the reviewer can see it.
++
++Check what the daemon actually serves before handing the review back. Wait for
++readiness first, and give `crit comment` a second to land: it writes to disk and
++the daemon picks it up on a one-second watcher tick, so an id missing
++immediately after the CLI returns proves nothing.
++
++```bash
++PORT=$(crit status --json | jq -r '.daemon.port // empty')   # empty: several sessions match
++for _ in $(seq 20); do
++  code=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$PORT/api/session")
++  [ "$code" = 503 ] || break                                  # 200 ready, anything else terminal
++  sleep 1
++done
++for _ in $(seq 5); do                                         # the watcher tick has arbitrary phase
++  out=$(curl -s --get --data-urlencode "path=<repo-relative-path>" \
++    "http://127.0.0.1:$PORT/api/file/comments")
++  case "$out" in *"<one id you just created>"*) break;; esac
++  sleep 1
++done
++printf '%s\n' "$out"
++curl -s "http://127.0.0.1:$PORT/api/health"
++```
++
++- `/api/file/comments` must list the ids you just created. When `crit comments`
++  shows them and this still does not after the tick, the active focus filters
++  them out; re-author them through the daemon.
++- `crit status --json` omits `.daemon.port` while several sessions match the
++  branch. Read the port out of `.sessions[]` instead, picking the id you want:
++  `crit status` takes no `--session`.
++- `/api/health` reports `browser_clients`, which counts live `/api/events`
++  connections. Read it as a hint: a tab that is loading or reconnecting reads
++  as `false`.
++- A line or file comment you POST does not reach an open tab on its own; that
++  path emits no `comments-changed`. The daemon serving your comment and the
++  reviewer seeing it stay two different facts, so ask them to reload.
++- Reconnecting to a live daemon keeps its focus. Restarting a dead one loses it:
++  a `--pr`, `--mr` or `--range` session persists no `cli_args`, so
++  `crit --session <id>` comes back in working-tree focus and hides every comment
++  scoped to the old focus. Relaunch with the invocation that created the review.
++
++</important>
++
+ <important if="you are leaving 3+ comments in one operation">
+ 
+ Use `--json` for atomicity (single write, no partial state) and speed (one process). Two ways to feed the JSON:
+@@ -179,6 +227,51 @@ crit comment --plan my-plan-2026-03-23 --reply-to c_a1b2c3 --author 'Claude Code
+ ```
+ </important>
+ 
++<important if="a daemon is running and you need to edit, delete, or re-anchor an existing comment">
++
++While `crit` is running, the daemon holds the comments in memory and is the
++source of truth. Within a round it merges only structural changes from the
++review file, so a body you edit directly in `review.json` reaches neither the
++daemon nor the browser, and the daemon can overwrite it on its next write. The
++next round transition reloads file comments from disk and would carry that body
++forward, which makes the outcome depend on timing you do not control. There is
++no CLI verb for editing a comment body — use the HTTP API.
++
++Get the port from `crit status --json` (`.daemon.port`), and poll
++`GET /api/session` until it answers 200 before calling anything else. 503 means
++the session is still initialising; 500 means initialisation failed, and no
++amount of waiting fixes it.
++
++```
++GET|POST   /api/file/comments?path=<repo-rel>              list / add line and file comments
++PUT|DELETE /api/comment/<id>?path=<repo-rel>               update body / delete
++POST       /api/comment/<id>/replies?path=<repo-rel>       add a reply
++PUT|DELETE /api/comment/<id>/replies/<rid>?path=<repo-rel> edit / delete a reply
++PUT        /api/comment/<id>/resolve?path=<repo-rel>       set resolved
++GET|POST   /api/comments                                   list / add review-level comments
++PUT|DELETE /api/review-comment/<id>                        review-level update / delete
++POST       /api/review-comment/<id>/replies                add a review-level reply
++PUT|DELETE /api/review-comment/<id>/replies/<rid>          edit / delete one
++PUT        /api/review-comment/<id>/resolve                set resolved
++GET        /api/health                                     liveness, plus browser_clients
++```
++
++- `POST /api/file/comments` takes `{start_line, end_line, body, author}` and
++  stamps the session's focus onto the new comment, which makes it the reliable
++  authoring path inside a `--pr` or `--range` session. A file-level comment
++  needs `"scope": "file"`; without it the omitted lines fail the line-range
++  check.
++- `PUT` replaces the body and leaves a line comment's range alone; to move one,
++  POST a copy at the new lines and DELETE the old id. It does carry
++  `dom_anchor`, so a live-mode pin can be re-anchored in place.
++- Review-scope ids (`r_…`) live under `/api/review-comment/<id>`, take no
++  `path`, and are listed by `GET /api/comments`.
++- A round transition mints fresh ids for every carried-forward comment on a
++  file, line scope and file scope alike, while review-level ids stay put.
++  Re-read ids from `GET /api/file/comments` before editing one.
++
++</important>
++
+ <important if="you are syncing with a GitHub PR or GitLab MR (pull or push)">
+ 
+ ```bash
+diff --git a/skills/crit/SKILL.md b/skills/crit/SKILL.md
+index 2bf32a77f6997908834a8245926b15b10c8c8104..8d9d72fa55e9af1e1230af9ed84ea8bfb0b1b6ce 100644
+--- a/skills/crit/SKILL.md
++++ b/skills/crit/SKILL.md
+@@ -24,10 +24,55 @@ crit --mr <iid|url>            # GitLab MR (range mode)
+ crit --range <base>..<head>    # commit range (range mode)
+ crit                           # no args → branch diff
+ ```
+-If no arguments, check conversation context:
++When there is no argument, or the argument is a bare word that names no file
++(`/crit`, `crit this`) and is not a flag or a subcommand the CLI understands
++(`live`, `preview`, `plan`, `story`), check conversation context, in order:
+ 
+ 1. A plan file was written earlier in this conversation → `crit <plan-file>`
+-2. Otherwise → bare `crit` (branch diff)
++2. The user named the artifact ("the table", "that write-up", "the plan") →
++   review that artifact
++3. The previous assistant message is substantial prose the user is plausibly
++   reacting to, a plan or an analysis or a set of options → ask which they
++   meant, in one line: the code changes, or that message
++4. Otherwise → bare `crit` (branch diff)
++
++Asking which **target** to review is correct when it is genuinely ambiguous.
++That differs from asking which **mode** to use, which the CLI reads off the
++argument. Launching blocks on a browser round trip, so a wrong target costs the
++user more than one short question.
++
++To review something that exists only in the conversation, write it to a
++markdown file and pass that path. `crit` reviews any file, including one
++outside a repository.
++
++<important if="the branch sits in a stack of dependent branches">
++
++Range mode is what makes crit stack-aware. Bare `crit` and `--base-branch` both
++review in working-tree focus, where the picker offers no stack switcher.
++`--range` puts the session in range focus, where the picker offers the layers it
++can see and the reviewer hops between them.
++
++```bash
++crit --pr <num>                      # one layer, exactly what that pull request holds
++crit --mr <iid>                      # the same, on GitLab
++crit --range <parent-branch>..HEAD   # one layer, while the parent is an ancestor of HEAD
++crit --range <trunk>..HEAD           # every layer, the stack as one diff
++```
++
++Prefer `--pr`, or `--mr` on GitLab, for a single layer that has one. `--range`
++is a two-dot diff between the two tips, so once the parent branch advances it
++pulls in commits that belong to the parent; both forge modes diff from the
++merge-base and do not.
++
++The picker walks at most twenty ancestor commits and, on git, keeps only the
++topic chain, so a deep stack or a branch that is not an ancestor of HEAD will be
++missing from the switcher.
++
++`crit story` resolves its own session from its own arguments rather than
++inheriting an open review's focus. Repeat whichever of `--pr`, `--mr` or
++`--range` you used, or the story narrates the working tree instead of the
++commits.
++</important>
+ 
+ <important if="the user wants to open the review from another device — e.g. a phone over Tailscale">
+ Keep crit on loopback and reverse-proxy in. Same Step 1 args still apply (file, bare `crit`, etc.):

@@ -1,0 +1,25 @@
+{
+  "name": "review",
+  "version": "1.1.0",
+  "description": "Review skills from Prateek's dotfiles.",
+  "author": {
+    "name": "Prateek"
+  },
+  "license": "UNLICENSED",
+  "skills": "./skills/",
+  "hooks": {},
+  "interface": {
+    "displayName": "Review",
+    "shortDescription": "Review skills",
+    "longDescription": "Generated local plugin for Review.",
+    "developerName": "Prateek",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Use the Review plugin."
+    ]
+  }
+}

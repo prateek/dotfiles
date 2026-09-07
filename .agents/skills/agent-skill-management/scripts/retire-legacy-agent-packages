@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+"""Retain the old source as a backup only when it matches its Git-owned target state."""
+from __future__ import annotations
+
+import argparse
+import io
+from pathlib import Path
+import subprocess
+import sys
+import tarfile
+import tempfile
+
+PROJECT = Path(__file__).resolve().parents[4]
+sys.path.insert(0, str(PROJECT / 'agent-marketplace/scripts'))
+from artifact import tree_files
+
+BASELINE = '9a24d70664e52f119f00907929c2587305d54bc7'
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--repo-root', type=Path, default=PROJECT)
+    parser.add_argument('--baseline', default=BASELINE)
+    parser.add_argument('--packages-root', type=Path, default=Path.home() / '.agents/packages')
+    args = parser.parse_args()
+    target = args.packages_root.expanduser().absolute()
+    if not target.exists() and not target.is_symlink():
+        return 0
+    backup = target.with_name(target.name + '.retired')
+    try:
+        if backup.exists() or backup.is_symlink():
+            raise ValueError(f'backup already exists: {backup}')
+        actual = tree_files(target)
+        with tempfile.TemporaryDirectory(prefix='legacy-agent-packages-') as temporary:
+            work = Path(temporary)
+            result = subprocess.run(['git', '-C', str(args.repo_root), 'archive', args.baseline,
+                                     'home/dot_agents/packages'], capture_output=True, check=True, timeout=30)
+            with tarfile.open(fileobj=io.BytesIO(result.stdout)) as source:
+                source.extractall(work / 'source', filter='data')
+            config = work / 'chezmoi.toml'
+            config.write_text('')
+            archive = work / 'targets.tar'
+            destination = work / 'destination'
+            subprocess.run(['chezmoi', '--source', str(work / 'source/home'), '--config', str(config),
+                '--destination', str(destination), '--cache', str(work / 'cache'),
+                '--persistent-state', str(work / 'state.boltdb'), '--no-tty', 'archive', '--format', 'tar',
+                '--output', str(archive), str(destination / '.agents/packages')],
+                capture_output=True, check=True, timeout=30)
+            with tarfile.open(archive) as rendered:
+                rendered.extractall(destination, filter='data')
+            expected_root = destination / '.agents/packages'
+            expected = tree_files(expected_root)
+            directories = lambda root: {path.relative_to(root) for path in root.rglob('*') if path.is_dir()}
+            if actual != expected or directories(target) != directories(expected_root):
+                raise ValueError('unrecognized local files, bytes, or modes differ from the legacy Git baseline')
+            if tree_files(target) != actual:
+                raise ValueError('legacy source changed during verification')
+            target.rename(backup)
+        print(f'Retained verified legacy source at {backup}')
+    except (OSError, ValueError, subprocess.SubprocessError, tarfile.TarError) as error:
+        print(f'Preserved legacy source at {target}: {error}', file=sys.stderr)
+    return 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

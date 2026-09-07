@@ -33,7 +33,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-EVALS_ROOT = REPO_ROOT / "home/dot_agents/packages/review/evals"
+EVALS_ROOT = REPO_ROOT / "agent-marketplace/packages/review/evals"
 DONE_RE = re.compile(r"^\[done\] (\S+)", re.MULTILINE)
 
 JUDGE_TEMPLATE = """You are grading one transcript from an agent-behaviour eval. Judge only what

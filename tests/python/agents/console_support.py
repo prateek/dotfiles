@@ -2,6 +2,7 @@ import json
 import os
 import shutil
 import sys
+import subprocess
 import uuid
 from pathlib import Path
 from unittest.mock import patch
@@ -29,6 +30,7 @@ class ConsoleRepoCase(ConsoleCase):
     def setUp(self):
         super().setUp()
         self.env["DOTFILES_TEST_RUNTIME_READY"] = "1"
+        self.env["UV_CACHE_DIR"] = subprocess.check_output(["uv", "cache", "dir"], text=True).strip()
         self.enterContext(patch.dict(os.environ, self.env, clear=True))
         self.repo = self.work / "repo"
         self.repo.mkdir()
@@ -52,34 +54,46 @@ class ConsoleRepoCase(ConsoleCase):
         return self.command(["git", "-c", "user.name=console-test", "-c", "user.email=test@example.invalid", *args], cwd=self.repo)
 
     def add_synthetic_vendor(self):
-        # The reference scanner must not find the fixture's name in tracked tests.
         self.synth_skill = "lone-" + uuid.uuid4().hex
-        package = self.repo / "home/dot_agents/packages/synth"
-        lone = self.synth_skill
-        for name in (lone, "twin-a", "twin-b"):
-            skill = package / "skills/vendor" / name
-            skill.mkdir(parents=True)
-            (skill / "SKILL.md").write_text(f"---\nname: {name}\ndescription: Synthetic vendored skill.\n---\n\n# {name}\n")
-            dependency = lone if name == lone else "twins"
-            (skill / "SOURCE.md").write_text(f"# Source\n\n- APM dependency: `example/repo/skills/{dependency}`\n")
-        scripts = package / "skills/vendor" / lone / "scripts"
-        scripts.mkdir()
-        (scripts / "tool.py").write_text('print("tool")\n')
-        (package / "package.toml").write_text('display_name = "Synth"\n\n[render]\nclaude = "plugin"\ncodex = "plugin"\n')
-        (package / "apm.yml").write_text(f"name: synth\nversion: 1.0.0\ntargets:\n  - agent-skills\n\ndependencies:\n  apm:\n    - example/repo/skills/{lone}\n    - example/repo/skills/twins\n")
-        lock = "lockfile_version: '1'\ngenerated_at: '2026-09-02T00:00:00+00:00'\napm_version: 0.28.0\ndependencies:\n"
-        for name, sha, deployed in ((lone, "0" * 39 + "1", [lone, lone + "/SKILL.md"]), ("twins", "0" * 39 + "2", ["twin-a", "twin-b"])):
-            lock += f"- repo_url: example/repo\n  name: {name}\n  host: github.com\n  resolved_commit: {sha}\n  version: unknown\n  virtual_path: skills/{name}\n  is_virtual: true\n  package_type: claude_skill\n  deployed_files:\n"
-            lock += "".join(f"  - .agents/skills/{path}\n" for path in deployed)
-            lock += f"  deployed_file_hashes:\n    .agents/skills/{deployed[0]}/SKILL.md: sha256:aa\n  content_hash: sha256:bb\n"
-        lock += "deployments:\n"
-        for path, owner in ((lone, lone), (lone + "/SKILL.md", lone), ("twin-a", "twins")):
-            lock += f"- kind: project-relative\n  target: agent-skills\n  value: .agents/skills/{path}\n  runtime: null\n  scope: project\n  owners:\n  - example/repo/skills/{owner}\n  active_owner: example/repo/skills/{owner}\n"
-        (package / "apm.lock.yaml").write_text(lock)
-        (self.repo / "docs/synth-note.md").write_text(f"# Notes\n\nThe synth:{lone} skill is mentioned here.\n")
-        self.git("add", "-A")
+        package = self.repo / "agent-marketplace/packages/synth"
+        self.command([str(ROOT / "agent-marketplace/.venv/bin/python"), "-c", SYNTH_PACKAGE,
+                      str(package), self.synth_skill])
+        (self.repo / "docs/synth-note.md").write_text(f"# Notes\n\nThe synth:{self.synth_skill} skill is mentioned here.\n")
+        self.git("add", "-f", "agent-marketplace/packages/synth", "docs/synth-note.md")
         self.git("commit", "-q", "-m", "synthetic vendor")
         self.git("tag", "synth")
+
+
+SYNTH_PACKAGE = r'''import json,sys
+from pathlib import Path
+import yaml
+from apm_cli.utils.content_hash import compute_package_hash
+package=Path(sys.argv[1]);lone=sys.argv[2]
+package.mkdir(parents=True)
+lock=[];selections=[]
+for dependency,names in ((lone,[lone]),("twins",["twin-a","twin-b"])):
+    module=package/"apm_modules/example/repo/skills"/dependency
+    for name in names:
+        skill=module/"skills"/name;skill.mkdir(parents=True)
+        (skill/"SKILL.md").write_text(f"---\nname: {name}\ndescription: Synthetic imported skill.\n---\n\nOriginal.\n")
+        selections.append(f'[[skills]]\nname = "{name}"\ndependency = "example/repo/skills/{dependency}"\npath = "skills/{name}"\n')
+    (module/"apm.yml").write_text(f"name: {dependency}\nversion: 1.0.0\n")
+    sha="a"*40 if dependency==lone else "b"*40
+    (module/".apm-pin").write_text(json.dumps({"schema_version":1,"resolved_commit":sha}))
+    lock.append({"repo_url":"example/repo","host":"github.com","name":dependency,"resolved_commit":sha,
+                 "virtual_path":f"skills/{dependency}","is_virtual":True,"package_type":"apm_package",
+                 "content_hash":compute_package_hash(module),"is_dev":True})
+(package/"apm.lock.yaml").write_text(yaml.safe_dump({"lockfile_version":"1","apm_version":"0.29.1","dependencies":lock,"deployments":[]}))
+(package/"apm.yml").write_text(yaml.safe_dump({"name":"synth","version":"1.0.0","targets":["claude"],
+    "devDependencies":{"apm":[f"example/repo/skills/{lone}","example/repo/skills/twins"]}}))
+(package/"publish.toml").write_text("\n".join(selections))
+(package/".codex-plugin").mkdir()
+(package/".codex-plugin/plugin.json").write_text(json.dumps({"name":"synth","version":"1.0.0","skills":"./skills/"}))
+overlay=package/"overlays/skills"/lone
+(overlay/"scripts").mkdir(parents=True)
+(overlay/"scripts/tool.py").write_text('print("tool")\n')
+(overlay/"extra.md").write_text("Local addition.\n")
+'''
 
 
 def fixture_entry(item):

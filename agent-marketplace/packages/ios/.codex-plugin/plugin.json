@@ -1,0 +1,24 @@
+{
+  "name": "ios",
+  "version": "1.1.0",
+  "description": "iOS skills from Prateek's dotfiles.",
+  "author": {
+    "name": "Prateek"
+  },
+  "license": "UNLICENSED",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "iOS",
+    "shortDescription": "iOS skills",
+    "longDescription": "Generated local plugin for iOS.",
+    "developerName": "Prateek",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Use the iOS plugin."
+    ]
+  }
+}

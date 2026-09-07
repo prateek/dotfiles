@@ -86,7 +86,7 @@ from skill_console.inventory import (
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parents[3]
-PACKAGES_ROOT = REPO_ROOT / "home/dot_agents/packages"
+PACKAGES_ROOT = REPO_ROOT / "agent-marketplace/packages"
 TEMPLATE_PATH = SCRIPT_DIR.parent / "templates/skill-console.html"
 BUILTINS_FIXTURE = SCRIPT_DIR / "skill_console/builtins.json"
 STATE_HOME = Path(os.environ.get("XDG_STATE_HOME") or Path.home() / ".local/state")
@@ -549,12 +549,8 @@ def _apm_ownership(rows: Sequence[Row]) -> dict[str, dict[str, object]]:
         record = row.source_record
         if record is None or record.origin is not Origin.REPO_VENDOR:
             continue
-        source_md = record.path / "SOURCE.md"
-        if not source_md.is_file():
-            continue
-        match = APM_DEPENDENCY_LINE.search(source_md.read_text())
-        if match:
-            dependency_of[row.name] = (record.package, match.group(1))
+        if record.dependency:
+            dependency_of[row.name] = (record.package, record.dependency)
     owned: dict[tuple[str, str], int] = {}
     for key in dependency_of.values():
         owned[key] = owned.get(key, 0) + 1

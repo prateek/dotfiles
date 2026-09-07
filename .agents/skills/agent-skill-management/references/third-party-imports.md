@@ -1,22 +1,29 @@
-# Third-Party Imports
+# Third-party imports
 
-Remote skills should be vendored into package source before they become active.
+Follow [Acquire or update upstream inputs](../../../../agent-marketplace/README.md#acquire-or-update-upstream-inputs).
+APM 0.29.1 is pinned in the project's uv environment and the managed Mise CLI
+selection. Use the project targets so cache/lock review guards run before APM.
 
-Preferred path:
+For dependency behavior questions, use `utils-agent:ask` against
+`github:microsoft/apm@v0.29.1`. Acquisition uses development dependencies and native
+`apm lock`; publication uses native source directories. The bundle exporter is not
+a substitute: the executed research found missing helpers and rejected evals.
 
-1. Add the remote dependency to the package's `apm.yml`.
-2. Resolve it with
-   `.agents/skills/agent-skill-management/scripts/vendor-agent-package
-   <package>` once the APM dependency path is ready.
-3. Review the resulting `skills/vendor/<skill-id>/` diff, including
-   `SOURCE.md`, and any `hooks/` payload the dependency shipped (its own
-   `SOURCE.md` records the same provenance).
-4. Regenerate and validate generated projections.
+Subdirectory dependencies must be self-contained. This build refuses payload
+symlinks, including ones APM's content hash omits. Disposable `__pycache__` entries
+are ignored without traversal. A repository-root dependency plus explicit
+publication selection works when a subdirectory depends on siblings. Hidden skill
+collections may need one declaration per skill subdirectory.
 
-Manual vendoring is allowed only when a useful remote skill cannot be expressed
-as an APM dependency yet. Add source notes in the vendored skill root before
-activating it.
+When the corresponding CLI changes, review the skill update at the same time
+(for example crit, acpx, and agent-slack). Review upstream policy changes as well
+as prompt text. The critical content scan runs on the final assembled payload,
+after patches and overlays; acquisition itself does not establish that guarantee.
 
-Keep `apm.yml` dependencies unpinned so they target latest upstream refs. The
-reviewed vendored snapshot is recorded by `apm.lock.yaml` plus each vendored
-skill's `SOURCE.md` ref.
+Keep licenses and receipts supplied by upstream/APM. Subdirectory publication
+must explicitly select root licenses and notices that its skills do not already
+carry, using `licenses/<owner>/<repo>/` payload targets. Acceptance includes the
+complete cache, including files hidden by upstream ignore rules. Keep old inputs
+until replacements build and native consumers pass. Registry/mirror acquisition
+and cold-cache GitHub-independent recovery remain future work; current outage
+independence comes from committed bytes and retained exports.

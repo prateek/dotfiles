@@ -41,10 +41,7 @@ mise.local.toml
 
 *.bak
 
-# Include local formatter dependencies
 node_modules/
-!home/dot_agents/packages/**/node_modules/
-!home/dot_agents/packages/**/node_modules/**
 
 # Apply-time generated agent projections
 home/dot_agents/skills/
@@ -61,9 +58,6 @@ build/
 # would scaffold `ask.json` and a subsequent `ask install` would clobber the
 # curated AGENTS.md. Surface it as untracked so it doesn't get committed.
 ask.json
-
-# Go build artifact of the downstream-fork engine.
-home/dot_agents/packages/review/skills/local/downstream-fork/engine/forkengine
 
 # Eval run output (transcripts, verdicts); regenerated per run.
 .crit-evals/

@@ -165,6 +165,8 @@ class SkillRecord:
     # is the binary's body-derived fallback; plugin-loaded skills in that state
     # are not listed unless they carry `when_to_use`.
     description_derived: bool = False
+    source_path: Path | None = None
+    dependency: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

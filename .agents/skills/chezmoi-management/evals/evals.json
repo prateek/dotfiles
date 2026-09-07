@@ -233,6 +233,22 @@
         "Mentions that official `homebrew/*` entries are excluded from trust automation",
         "Suggests `make test-render-brewfile` and `make test-brew-bundle-script` as validation lanes"
       ]
+    },
+    {
+      "id": 14,
+      "name": "script-created-plugin-source-translation",
+      "mode": "source-target",
+      "tags": ["pitfall", "generated-output-ownership"],
+      "prompt": "I edited ~/.agents/plugins/plugins/core/skills/code-gardening/SKILL.md, but chezmoi source-path for it says it is not managed. Where should I make the change portable? Should I add the plugin under home/dot_agents/plugins and give its helper scripts literal_ prefixes? Tell me the source and validation path; do not apply anything yet.",
+      "expected_output": "The agent recognizes ~/.agents/plugins as script-created marketplace output and treats the missing direct chezmoi mapping as expected. It routes to agent-skill-management and identifies agent-marketplace/packages/core/skills/code-gardening/ as this authored skill's durable source. The portable project is outside home/ and uses native filenames, so there is no chezmoi add/re-add capture or literal_ conversion. It recommends the package build/check and version workflow, and explains that later materialization/native reconciliation needs its own verification beyond chezmoi verify. It performs no apply.",
+      "files": ["evals/files/eval14_script_created_plugin"],
+      "expectations": [
+        "Explains that ~/.agents/plugins is script-created output with no direct chezmoi source mapping; a source-path error is not a reason to capture it",
+        "Routes to agent-skill-management and identifies agent-marketplace/packages/core/skills/code-gardening/ as the authored source for this fixture",
+        "Uses native filenames in agent-marketplace/ and rejects home/dot_agents/plugins copies, chezmoi add/re-add capture, and literal_ conversion",
+        "Points to the package build/check and native version workflow, including make -C agent-marketplace check",
+        "Distinguishes artifact/native-state verification from chezmoi verify and performs no apply"
+      ]
     }
   ]
 }

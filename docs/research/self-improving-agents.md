@@ -6,7 +6,7 @@ created: 2026-05-11
 updated: 2026-05-18
 related:
   - ../plans/docs-reorg-plan.md
-  - ../../home/dot_agents/packages/core/skills/local/code-gardening/SKILL.md
+  - ../../agent-marketplace/packages/core/skills/code-gardening/SKILL.md
 status_detail: "Pattern reference. Surveys external patterns for self-improving agents across two surfaces: the repo-state surface (files in this repo that change agent behavior) and the runtime surface (agent memory and skills that evolve in-process). Part 5 tracks this repo's open questions about skill coverage, subagent context, and dark skills."
 ---
 

@@ -380,7 +380,7 @@ def git_renamed_markdown_paths(
     new_ref: str | None = None,
 ) -> dict[str, str]:
     renames: dict[str, str] = {}
-    for kind, old_rel, new_rel in git_changed_markdown_paths(root, docs_root, old_ref, new_ref):
+    for kind, old_rel, new_rel in git_changed_markdown_paths(root, root, old_ref, new_ref):
         if kind == "R" and old_rel and new_rel:
             renames[old_rel] = new_rel
     return renames
@@ -1053,11 +1053,7 @@ def validate_commit_against_parent(
     )
 
     changes = git_changed_markdown_paths(root, docs_root, previous_ref, commit)
-    renamed_paths = {
-        old_rel: new_rel
-        for kind, old_rel, new_rel in changes
-        if kind == "R" and old_rel and new_rel
-    }
+    renamed_paths = git_renamed_markdown_paths(root, docs_root, previous_ref, commit)
 
     for _kind, old_rel, new_rel in changes:
         old_state = git_doc_state(root, previous_ref, old_rel) if old_rel else None

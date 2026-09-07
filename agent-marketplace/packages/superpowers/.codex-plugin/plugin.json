@@ -1,0 +1,25 @@
+{
+  "name": "superpowers",
+  "version": "1.1.0",
+  "description": "Superpowers skills from Prateek's dotfiles.",
+  "author": {
+    "name": "Prateek"
+  },
+  "license": "UNLICENSED",
+  "skills": "./skills/",
+  "hooks": {},
+  "interface": {
+    "displayName": "Superpowers",
+    "shortDescription": "Superpowers skills",
+    "longDescription": "Generated local plugin for Superpowers.",
+    "developerName": "Prateek",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Use the Superpowers plugin."
+    ]
+  }
+}

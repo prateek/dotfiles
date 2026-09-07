@@ -182,27 +182,44 @@ CI formula installation step and Tart lanes validate actual installation.
 
 ### Agent-package checks
 
-Package schema, render policy, or activation changes can affect independent
-consumers. Run `make test-agent-skill-packages` for native Python checks of validators, rendering,
-inventory, and generated-state checks, plus `make test-claude-settings
-test-codex-config test-cursor-config test-pi-settings` for all consumer merges.
-Use `make test-vendor-skill-patches` for local vendor deltas and
-`make test-skill-console` for native Python console tests, including budget and
-frontmatter examples, inventory, validation, planning, staging, guarded writes,
-CLI behavior, and Node execution of the shipped browser functions. Missing Node
-or console modules fail the lane. Temporary Git repositories disable automatic
+The portable project owns packaging tests: `make -C agent-marketplace check`
+validates cached inputs, patches/overlays, skill entrypoints, cache exclusion, paths, critical content scanning,
+versions, invocation pairs, native publication, repeatability, and export.
+`make test-agent-marketplace` delegates to it; `make test-vendor-skill-patches`
+remains a compatibility alias. `make test-tools` provisions its frozen APM 0.29.1
+environment, and the project check runs in the required macOS CI lane.
+
+Consumer changes use `make test-agent-skill-packages`, covering explicit policy,
+artifact materialization/rollback, legacy-source ownership, and native CLI
+reconciliation through subprocess fixtures. Its combined isolated chezmoi apply
+covers scripts 35/36, managed symlinks, all four client configs, runtime skill
+preservation, and an unchanged repeat apply. Run `make test-claude-settings
+test-codex-config test-cursor-config test-pi-settings` for the four independent
+config merges. `make test-skill-console` covers budget/frontmatter examples,
+inventory, validation, staging, guarded edits, imported patch/overlay ownership,
+paired policy/version changes, deletion, CLI behavior, and Node execution of the
+shipped browser functions. Imported description/frontmatter edits refuse changed
+marketplace inputs before any write, including with the dirty-write override.
+Temporary Git repositories disable automatic
 maintenance and carry the pinned assertion libraries for staged validation.
 
-After package-source edits, follow the explicit temporary-root render and
-`--check` procedure in the [agent-skill-management skill](../.agents/skills/agent-skill-management/SKILL.md#validation).
-That validates generated output without writing the live plugin tree. Native
-CLI validation is a separate host lane: `make test-agent-skill-packages-native`
-selects installed Claude marketplace validation and Codex app-server plugin
-reading as separate cases. Console producer verification and its accepted
-render/apply cycle use `BATS_TAGS=host make test-shell
-BATS_PATH=tests/bats/agents/console-native.bats` and require the exact Claude
-2.1.258 build recorded by the console. An unrecognized build fails this check;
-ordinary fixture success does not certify it. `make test-crit-evals` needs authenticated
+The [assertion migration record](../docs/research/apm-marketplace-migration-verification.md#replaced-assertions)
+accounts for retired renderer and vendoring tests. SOURCE metadata generation,
+chezmoi filename escaping, upstream-shaped patch paths, and catalog filtering by
+local eligibility changed deliberately; their old assertions do not apply.
+
+`make test-agent-skill-packages-native` is a separate host lane requiring both
+installed clients. It builds first, then exercises all ten plugins through real
+materialization/native CLI installation, versioned updates, stale-file removal,
+relocation, disabled-state restoration, rollback, and artifact-root Git
+consumption over local smart HTTP. It reads every Codex plugin and checks cached
+payloads in both clients, with isolated HOME/CODEX_HOME/CLAUDE_CONFIG_DIR and no
+model calls. Verified versions: Claude 2.1.261 and Codex 0.153.4.
+
+Console producer verification uses `BATS_TAGS=host make test-shell
+BATS_PATH=tests/bats/agents/console-native.bats` and requires the exact Claude
+2.1.258 build recorded by the console. A different build fails that check;
+packaging success does not certify it. `make test-crit-evals` needs authenticated
 agents and network and consumes tokens. Neither is implied by fixture success.
 
 Claude and Pi footer payloads use `make test-claude-statusline` and

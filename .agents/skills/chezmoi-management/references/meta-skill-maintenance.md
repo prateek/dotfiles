@@ -76,7 +76,7 @@ Keep the eval set tight: one happy-path plus one pitfall per mode is the target.
 
 ## Repo-Local Location
 
-This skill lives at `/Users/prateek/dotfiles/.agents/skills/chezmoi-management/`. The managed-home skills tree under `home/dot_agents/skills/` is separate.
+This skill lives at `.agents/skills/chezmoi-management/` in each dotfiles checkout. Portable machine-wide skills live in `agent-marketplace/packages/` and materialize as plugins. Use [agent-skill-management](../../agent-skill-management/SKILL.md) for their source and publishing workflow.
 
 Maintenance steps after structural edits:
 

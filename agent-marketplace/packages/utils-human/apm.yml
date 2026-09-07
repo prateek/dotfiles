@@ -1,0 +1,7 @@
+name: utils-human
+version: 1.1.0
+targets:
+- claude
+description: Human Utilities skills from Prateek's dotfiles.
+author: Prateek
+license: UNLICENSED

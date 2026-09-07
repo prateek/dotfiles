@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "types": ["node", "bun"],
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@raintree-technology/hig-doctor-core": ["../core/src/index.ts"]
+    }
+  },
+  "include": ["src", "../core/src"]
+}

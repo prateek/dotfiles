@@ -1,0 +1,5 @@
+/.venv/
+/build/
+__pycache__/
+!/packages/*/skills/*/evals/files/**/node_modules/
+!/packages/*/skills/*/evals/files/**/node_modules/**

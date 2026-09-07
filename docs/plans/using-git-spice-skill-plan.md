@@ -293,7 +293,7 @@ this suite.
 
 ### Phase 5: land
 
-1. Replace `home/dot_agents/packages/review/skills/local/using-git-spice/`
+1. Replace `agent-marketplace/packages/review/skills/using-git-spice/`
    with the new files. Delete `references/using-git-spice.md` and
    `test-scenarios.md`.
 2. Pin `git-spice@chronosphere-claude-plugins` to `false` in

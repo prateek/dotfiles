@@ -455,7 +455,7 @@ protection.
 
 | `origin` | Where the skill lives |
 |---|---|
-| `repo-local` | `home/dot_agents/packages/*/skills/local/*` |
+| `repo-local` | `agent-marketplace/packages/*/skills/*` |
 | `repo-vendor` | `home/dot_agents/packages/*/skills/vendor/*` |
 | `repo-project` | `.claude/skills/*` from the working directory up to the project root (here `.claude/skills` is a symlink to `.agents/skills/`) |
 | `user-skill` | `~/.claude/skills/*`, unmanaged |

@@ -3,8 +3,155 @@ from tests.python.agents.console_support import ConsoleRepoCase
 
 class ConsoleWriteTests(ConsoleRepoCase):
 
+    def test_imported_edits_apply_after_arbitrary_patch_names_and_preserve_missing_final_newlines(self):
+        from tests.python.agents.console_documents import decisions, describe, row
+        from skill_console import Origin
+        from skill_console.decisions import plan, stage
+        from skill_console.frontmatter import parse
+
+        self.add_synthetic_vendor()
+        project = self.repo / "agent-marketplace"
+        with (project / "apm.yml").open("a") as manifest:
+            manifest.write("  - name: synth\n    source: ./plugins/synth\n    category: Productivity\n")
+        package = project / "packages/synth"
+        patches = package / "patches"
+        patches.mkdir()
+        published = project / "build/marketplace/plugins/synth/skills" / self.synth_skill
+        identity = f"synth:{self.synth_skill}"
+        for filename, newline in (("z-reviewed.patch", True), ("z" * 235 + ".patch", True),
+                                  ("001-reviewed.patch", False)):
+            with self.subTest(filename=filename, final_newline=newline):
+                baseline = patches / filename
+                tail = " Original.\n" if newline else "-Original.\n+Original.\n\\ No newline at end of file\n"
+                baseline.write_text(f"--- a/skills/{self.synth_skill}/SKILL.md\n+++ b/skills/{self.synth_skill}/SKILL.md\n"
+                    f"@@ -1,6 +1,6 @@\n ---\n name: {self.synth_skill}\n"
+                    "-description: Synthetic imported skill.\n+description: Reviewed baseline.\n ---\n \n" + tail)
+                try:
+                    self.command(["make", "-C", str(project), "build"])
+                    self.assertEqual((published / "SKILL.md").read_text().endswith("\n"), newline)
+                    planned = plan(decisions(describe(identity, "Console-approved description.")),
+                        [row(identity, "synth", self.synth_skill, Origin.REPO_VENDOR, str(published))], self.repo)
+                    batch = stage(planned, self.repo, self.work / filename)
+                    self.command(["make", "-C", str(batch.root / "agent-marketplace"), "build"])
+                    result = batch.root / published.relative_to(self.repo) / "SKILL.md"
+                    self.assertEqual(parse(result).values["description"], "Console-approved description.")
+                    self.assertEqual(result.read_text().endswith("\n"), newline)
+                    self.assertEqual((batch.root / baseline.relative_to(self.repo)).read_bytes(), baseline.read_bytes())
+                finally:
+                    baseline.unlink()
+
+    def test_imported_commit_refuses_changed_marketplace_inputs_before_any_write(self):
+        import difflib
+        from tests.python.agents.console_documents import decisions, describe, row
+        from skill_console import Origin
+        from skill_console.decisions import commit, plan, stage
+        from skill_console.frontmatter import parse
+
+        self.add_synthetic_vendor()
+        project = self.repo / "agent-marketplace"
+        with (project / "apm.yml").open("a") as manifest:
+            manifest.write("  - name: synth\n    source: ./plugins/synth\n    category: Productivity\n")
+        package = project / "packages/synth"
+        source = package / "apm_modules/example/repo/skills" / self.synth_skill / "skills" / self.synth_skill / "SKILL.md"
+        original = source.read_text()
+        patch = package / "patches/001-reviewed.patch"
+        patch.parent.mkdir()
+        patch.write_text("".join(difflib.unified_diff(original.splitlines(True),
+            original.replace("Synthetic imported skill.", "Reviewed baseline.").splitlines(True),
+            fromfile=f"a/skills/{self.synth_skill}/SKILL.md", tofile=f"b/skills/{self.synth_skill}/SKILL.md")))
+        self.git("add", "agent-marketplace")
+        self.git("commit", "-q", "-m", "reviewed imported baseline")
+        self.command(["make", "-C", str(project), "build"])
+        published = project / "build/marketplace/plugins/synth/skills" / self.synth_skill
+        identity = f"synth:{self.synth_skill}"
+        planned = plan(decisions(describe(identity, "Console-approved description.")),
+                       [row(identity, "synth", self.synth_skill, Origin.REPO_VENDOR, str(published))], self.repo)
+        batch = stage(planned, self.repo, self.work / "staged-import")
+        self.command(["make", "-C", str(batch.root / "agent-marketplace"), "build"])
+        targets = {edit.relpath: (self.repo / edit.relpath).read_bytes()
+                   if (self.repo / edit.relpath).exists() else None for edit in planned.edits}
+        mutations = (
+            (patch, patch.read_bytes().replace(b"Reviewed baseline.", b"Concurrent baseline.")),
+            (package / "overlays/extra.md", b"A new marketplace input.\n"),
+            (project / "scripts/marketplace.py", (project / "scripts/marketplace.py").read_bytes() + b"\n"),
+        )
+        for path, changed in mutations:
+            before = path.read_bytes() if path.exists() else None
+            try:
+                path.write_bytes(changed)
+                for allow_dirty in (False, True):
+                    with self.subTest(path=path.relative_to(self.repo), allow_dirty=allow_dirty):
+                        report = commit(batch, self.repo, allow_dirty=allow_dirty)
+                        self.assertEqual(report.applied, ())
+                        self.assertEqual(report.unapplied, tuple(targets))
+                        self.assertIn("marketplace inputs changed since planning", report.failure or "")
+                        for relative, accepted in targets.items():
+                            target = self.repo / relative
+                            self.assertEqual(target.read_bytes() if target.exists() else None, accepted)
+            finally:
+                if before is None:
+                    path.unlink()
+                else:
+                    path.write_bytes(before)
+        note = self.repo / "README.md"
+        note.write_text(note.read_text() + "\nUnrelated edit.\n")
+        report = commit(batch, self.repo, allow_dirty=False)
+        self.assertIsNone(report.failure)
+        self.assertEqual(report.applied, tuple(targets))
+        self.command(["make", "-C", str(project), "build"])
+        self.assertEqual(parse(published / "SKILL.md").values["description"], "Console-approved description.")
+        self.assertEqual(source.read_text(), original)
+        self.assertTrue(note.read_text().endswith("Unrelated edit.\n"))
+
+    def test_imported_edits_stage_patches_overlay_policy_and_matching_versions(self):
+        import json
+        import subprocess
+        from tests.python.agents.console_documents import decisions, describe, op, row
+        from skill_console import Op, Origin
+        from skill_console.decisions import plan, stage
+        from skill_console.frontmatter import parse
+
+        self.add_synthetic_vendor()
+        project = self.repo / "agent-marketplace"
+        with (project / "apm.yml").open("a") as manifest:
+            manifest.write("  - name: synth\n    source: ./plugins/synth\n    category: Productivity\n")
+        package = project / "packages/synth"
+        sidecar = package / "overlays/skills" / self.synth_skill / "agents/openai.yaml"
+        sidecar.parent.mkdir()
+        sidecar.write_text("interface:\n  display_name: Preserve me\npolicy:\n  allow_implicit_invocation: true\n")
+        self.command(["make", "-C", str(project), "build"])
+        published = project / "build/marketplace/plugins/synth/skills" / self.synth_skill
+        source = package / "apm_modules/example/repo/skills" / self.synth_skill / "skills" / self.synth_skill / "SKILL.md"
+        original = source.read_bytes()
+        identity = f"synth:{self.synth_skill}"
+        document = decisions(describe(identity, "Reviewed imported description."),
+            op(Op.SET_FRONTMATTER, identity, field="disable-model-invocation", value=True),
+            op(Op.SET_FRONTMATTER, "synth:twin-a", field="disable-model-invocation", value=True))
+        planned = plan(document, [row(identity, "synth", self.synth_skill, Origin.REPO_VENDOR, str(published)),
+            row("synth:twin-a", "synth", "twin-a", Origin.REPO_VENDOR, str(published.parent / "twin-a"))], self.repo)
+        self.assertFalse(any("/apm_modules/" in edit.relpath for edit in planned.edits))
+        staged = self.work / "staged-import"
+        stage(planned, self.repo, staged)
+        result = subprocess.run(["make", "-C", str(staged / "agent-marketplace"), "build"],
+                                env=self.env, capture_output=True, text=True, timeout=60)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        output = staged / "agent-marketplace/build/marketplace/plugins/synth"
+        meta = parse(output / "skills" / self.synth_skill / "SKILL.md").values
+        self.assertEqual(meta["description"], "Reviewed imported description.")
+        self.assertTrue(meta["disable-model-invocation"])
+        policy_text = (output / "skills" / self.synth_skill / "agents/openai.yaml").read_text()
+        self.assertIn("allow_implicit_invocation: false", policy_text)
+        self.assertIn("display_name: Preserve me", policy_text)
+        self.assertTrue(parse(output / "skills/twin-a/SKILL.md").values["disable-model-invocation"])
+        self.assertIn("allow_implicit_invocation: false", (output / "skills/twin-a/agents/openai.yaml").read_text())
+        for native in ("claude", "codex"):
+            self.assertEqual(json.loads((output / f".{native}-plugin/plugin.json").read_text())["version"], "1.0.1")
+        self.assertEqual(source.read_bytes(), original)
+        self.assertEqual((staged / source.relative_to(self.repo)).read_bytes(), original)
+
     def test_dry_run_leaves_the_worktree_untouched(self):
         from pathlib import Path
+        import tomllib
         from tests.python.agents.console_documents import decisions, describe, git_status, op, sha256, skill_row
         from skill_console import Op
         from skill_console.decisions import plan, stage, validate_staged
@@ -12,9 +159,9 @@ class ConsoleWriteTests(ConsoleRepoCase):
 
         repo, staging = Path(str(self.repo)), Path(str(self.work / "staging"))
         self.assertTrue(git_status(repo) == "", "the copy must start clean")
-        skill = "home/dot_agents/packages/core/skills/local/code-gardening/SKILL.md"
-        package_toml = "home/dot_agents/packages/design/package.toml"
-        self.assertTrue("default_loaded = false" in (repo / package_toml).read_text(), "fixture: design starts default_loaded = false")
+        skill = "agent-marketplace/packages/core/skills/code-gardening/SKILL.md"
+        package_toml = "home/.chezmoidata/agent_plugins.toml"
+        self.assertFalse(tomllib.loads((repo / package_toml).read_text())["agent_plugins"]["design"]["default_loaded"])
         rows = [skill_row(repo, "core", "code-gardening")]
         doc = decisions(describe("core:code-gardening", "Console test description."), op(Op.SET_DEFAULT_LOADED, "design", value=True))
 
@@ -26,7 +173,8 @@ class ConsoleWriteTests(ConsoleRepoCase):
             edit = by_path[path]
             self.assertTrue(edit.kind == "write" and edit.before_sha256 == before[path], f"{path}: before hash")
             self.assertTrue(edit.after_sha256 == __import__("hashlib").sha256(edit.content.encode()).hexdigest(), f"{path}: after hash")
-        self.assertTrue(any(path.startswith("home/.chezmoitemplates/") or path.startswith("home/dot_pi/") for path in by_path), "flipping default_loaded must regenerate the derived templates")
+        self.assertIn("agent-marketplace/packages/core/.codex-plugin/plugin.json", by_path)
+        self.assertNotIn("home/.chezmoitemplates/agent-codex-plugin-config.toml.tmpl", by_path)
         self.assertTrue(git_status(repo) == "", f"plan must not touch the worktree:\n{git_status(repo)}")
 
         batch = stage(apply_plan, repo, staging)
@@ -34,7 +182,7 @@ class ConsoleWriteTests(ConsoleRepoCase):
         self.assertTrue(git_status(repo) == "", f"stage must not touch the worktree:\n{git_status(repo)}")
         self.assertTrue({path: sha256(repo / path) for path in before} == before, "target files unchanged in the worktree")
         self.assertTrue(parse(staging / skill).values["description"] == "Console test description.", "the staged SKILL.md carries the new description")
-        self.assertTrue("default_loaded = true" in (staging / package_toml).read_text(), "the staged package.toml carries the flip")
+        self.assertTrue(tomllib.loads((staging / package_toml).read_text())["agent_plugins"]["design"]["default_loaded"])
         self.assertTrue(not (staging / ".git").exists(), "the staging copy must not carry .git")
         ok, detail = validate_staged(batch)
         self.assertTrue(ok, f"set_default_loaded must pass staged validation:\n{detail}")
@@ -45,7 +193,7 @@ class ConsoleWriteTests(ConsoleRepoCase):
         from skill_console.decisions import commit, plan, stage
 
         repo, staging = Path(str(self.repo)), Path(str(self.work / "staging"))
-        skill = "home/dot_agents/packages/core/skills/local/code-gardening/SKILL.md"
+        skill = "agent-marketplace/packages/core/skills/code-gardening/SKILL.md"
         original = (repo / skill).read_bytes()
         rows = [skill_row(repo, "core", "code-gardening")]
         doc = decisions(describe("core:code-gardening", "Dirty target check."))
@@ -54,7 +202,7 @@ class ConsoleWriteTests(ConsoleRepoCase):
         with (repo / "README.md").open("a") as handle:
             handle.write("\nunrelated local change\n")
         report = commit(batch, repo, allow_dirty=False)
-        self.assertTrue(report.failure is None and report.applied == (skill,) and report.unapplied == (), f"unrelated dirt: {report}")
+        self.assertTrue(report.failure is None and report.applied == tuple(edit.relpath for edit in batch.plan.edits) and report.unapplied == (), f"unrelated dirt: {report}")
         self.assertTrue(b"Dirty target check." in (repo / skill).read_bytes(), "the edit landed")
         self.assertTrue(" M README.md" in git_status(repo), "the unrelated change is still there")
         git(repo, "checkout", "--", ".")
@@ -65,7 +213,7 @@ class ConsoleWriteTests(ConsoleRepoCase):
         (repo / skill).write_bytes(dirty)
         report = commit(batch, repo, allow_dirty=False)
         self.assertTrue(report.failure and "dirty" in report.failure and skill in report.failure, f"dirty target: {report.failure!r}")
-        self.assertTrue(report.applied == () and report.unapplied == (skill,), f"nothing may be applied: {report}")
+        self.assertTrue(report.applied == () and report.unapplied == tuple(edit.relpath for edit in batch.plan.edits), f"nothing may be applied: {report}")
         self.assertTrue((repo / skill).read_bytes() == dirty, "the dirty file is left exactly as it was")
         git(repo, "checkout", "--", ".")
         self.assertTrue(git_status(repo) == "", "clean again")
@@ -83,7 +231,7 @@ class ConsoleWriteTests(ConsoleRepoCase):
         self.assertTrue(ok is False, "a 1100-character description must fail validate-agent-packages in the copy")
         self.assertTrue("validate-agent-packages" in reason and "1024" in reason, f"reason must name the failing step: {reason!r}")
         self.assertTrue(git_status(repo) == "", f"the worktree must be untouched:\n{git_status(repo)}")
-        self.assertTrue("x" * 1100 in (staging / "home/dot_agents/packages/core/skills/local/code-gardening/SKILL.md").read_text(), "the staging copy keeps the failing edit for inspection")
+        self.assertTrue("x" * 1100 in (staging / "agent-marketplace/packages/core/skills/code-gardening/SKILL.md").read_text(), "the staging copy keeps the failing edit for inspection")
 
     def test_hash_precondition_at_commit_time(self):
         from pathlib import Path
@@ -91,12 +239,12 @@ class ConsoleWriteTests(ConsoleRepoCase):
         from skill_console.decisions import commit, plan, stage
 
         repo, staging = Path(str(self.repo)), Path(str(self.work / "staging"))
-        first = "home/dot_agents/packages/core/skills/local/code-gardening/SKILL.md"
-        second = "home/dot_agents/packages/core/skills/local/decomment/SKILL.md"
+        first = "agent-marketplace/packages/core/skills/code-gardening/SKILL.md"
+        second = "agent-marketplace/packages/core/skills/decomment/SKILL.md"
         rows = [skill_row(repo, "core", "code-gardening"), skill_row(repo, "core", "decomment")]
         doc = decisions(describe("core:code-gardening", "First edit."), describe("core:decomment", "Second edit."))
         apply_plan = plan(doc, rows, repo)
-        self.assertTrue([edit.relpath for edit in apply_plan.edits] == [first, second], f"edit order {[e.relpath for e in apply_plan.edits]}")
+        self.assertTrue([edit.relpath for edit in apply_plan.edits][:2] == [first, second], f"edit order {[e.relpath for e in apply_plan.edits]}")
         batch = stage(apply_plan, repo, staging)
 
         # Someone else changes the second target after planning and commits it, so the
@@ -108,7 +256,7 @@ class ConsoleWriteTests(ConsoleRepoCase):
 
         report = commit(batch, repo, allow_dirty=False)
         self.assertTrue(report.applied == (first,), f"applied {report.applied}")
-        self.assertTrue(report.unapplied == (second,), f"unapplied {report.unapplied}")
+        self.assertTrue(report.unapplied == tuple(edit.relpath for edit in apply_plan.edits[1:]), f"unapplied {report.unapplied}")
         self.assertTrue(report.failure and second in report.failure and "changed since planning" in report.failure, f"failure {report.failure!r}")
         self.assertTrue(b"First edit." in (repo / first).read_bytes(), "the first path landed")
         self.assertTrue((repo / second).read_bytes() == mutated, "the refused path is left as the other writer left it")
@@ -164,7 +312,7 @@ class ConsoleWriteTests(ConsoleRepoCase):
 
         repo, staging = Path(str(self.repo)), Path(str(self.work / "staging"))
         head = subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"], capture_output=True, text=True, check=True).stdout.strip()
-        skill = "home/dot_agents/packages/core/skills/local/code-gardening/SKILL.md"
+        skill = "agent-marketplace/packages/core/skills/code-gardening/SKILL.md"
         real = "docs/code-gardening-SKILL.md"
         rows = [skill_row(repo, "core", "code-gardening")]
         doc = decisions(describe("core:code-gardening", "Through the link."))
@@ -194,39 +342,39 @@ class ConsoleWriteTests(ConsoleRepoCase):
         self.assertTrue(git_status(repo) == "", f"nothing left behind:\n{git_status(repo)}")
         git(repo, "reset", "-q", "--hard", head)
 
-    def test_delete_skill_plans_the_tree_apm_yml_and_apm_lock_yaml(self):
+    def test_delete_skill_plans_selection_native_lock_and_version_without_editing_cache(self):
         self.add_synthetic_vendor()
         from pathlib import Path
         from tests.python.agents.console_documents import decisions, git_status, op, row
         from skill_console import Op, Origin
         from skill_console.decisions import plan
-
-        repo, skill = Path(str(self.repo)), str(self.synth_skill)
-        package = "home/dot_agents/packages/synth"
-        skill_rel, manifest, lock = f"{package}/skills/vendor/{skill}", f"{package}/apm.yml", f"{package}/apm.lock.yaml"
-        target = row(f"synth:{skill}", "synth", skill, Origin.REPO_VENDOR, str(repo / skill_rel))
-
-
-        def delete(remove_apm_dep):
-            return op(Op.DELETE_SKILL, f"synth:{skill}", apm_dep=f"example/repo/skills/{skill}", dep_owns_skills=1, remove_apm_dep=remove_apm_dep)
-
-
-        apply_plan = plan(decisions(delete(True)), [target], repo)
-        by_path = {edit.relpath: edit for edit in apply_plan.edits}
-        self.assertTrue(set(by_path) == {skill_rel, manifest, lock}, f"plan paths {sorted(by_path)}")
-        self.assertTrue(by_path[skill_rel].kind == "delete-tree" and by_path[skill_rel].after_sha256 is None, "the skill directory goes as a tree")
-        manifest_text = by_path[manifest].content
-        self.assertTrue(skill not in manifest_text and "    - example/repo/skills/twins\n" in manifest_text, f"apm.yml after:\n{manifest_text}")
-        lock_text = by_path[lock].content
-        self.assertTrue(skill not in lock_text, f"the lock still mentions {skill}:\n{lock_text}")
-        self.assertTrue(lock_text.count("- repo_url: example/repo") == 1 and "virtual_path: skills/twins" in lock_text, "the sibling dependency survives")
-        self.assertTrue(lock_text.count("- kind: project-relative") == 1 and "value: .agents/skills/twin-a" in lock_text, "only the deleted dependency's deployments go")
-        self.assertTrue(any("docs/synth-note.md" in warning for warning in apply_plan.warnings), f"a docs/ reference only warns: {apply_plan.warnings}")
-
-        kept = plan(decisions(delete(False)), [target], repo)
-        self.assertTrue({edit.relpath for edit in kept.edits} == {skill_rel}, f"remove_apm_dep false must leave apm.yml and the lock alone: {[e.relpath for e in kept.edits]}")
-        self.assertTrue(any("vendor-agent-package" in warning and "restores the skill" in warning for warning in kept.warnings), f"warnings {kept.warnings}")
-        self.assertTrue(git_status(repo) == "", f"planning a deletion writes nothing:\n{git_status(repo)}")
+        from artifact import tree_files
+        repo, skill = self.repo, self.synth_skill
+        package = "agent-marketplace/packages/synth"
+        manifest, lock = f"{package}/apm.yml", f"{package}/apm.lock.yaml"
+        selection = f"{package}/publish.toml"
+        overlay = f"{package}/overlays/skills/{skill}"
+        codex = f"{package}/.codex-plugin/plugin.json"
+        target = row(f"synth:{skill}", "synth", skill, Origin.REPO_VENDOR, str(repo / package / "skills" / skill))
+        before = tree_files(repo / package / "apm_modules")
+        def delete(remove):
+            return decisions(op(Op.DELETE_SKILL, f"synth:{skill}", apm_dep=f"example/repo/skills/{skill}", dep_owns_skills=1, remove_apm_dep=remove))
+        edits = {edit.relpath: edit for edit in plan(delete(True), [target], repo).edits}
+        self.assertEqual(set(edits), {selection, overlay, manifest, lock, codex})
+        self.assertEqual(edits[overlay].kind, "delete-tree")
+        self.assertNotIn(skill, edits[selection].content)
+        self.assertIn('name = "twin-a"', edits[selection].content)
+        self.assertNotIn(skill, edits[manifest].content)
+        self.assertIn("example/repo/skills/twins", edits[manifest].content)
+        self.assertNotIn(skill, edits[lock].content)
+        self.assertIn("virtual_path: skills/twins", edits[lock].content)
+        self.assertIn("deployments: []", edits[lock].content)
+        self.assertIn('"version": "1.0.1"', edits[codex].content)
+        kept = {edit.relpath: edit for edit in plan(delete(False), [target], repo).edits}
+        self.assertEqual(set(kept), {selection, overlay, manifest, codex})
+        self.assertIn(f"example/repo/skills/{skill}", kept[manifest].content)
+        self.assertEqual(tree_files(repo / package / "apm_modules"), before)
+        self.assertEqual(git_status(repo), "")
 
     def test_a_failed_tree_removal_leaves_the_skill_at_its_own_path(self):
         self.add_synthetic_vendor()
@@ -237,9 +385,9 @@ class ConsoleWriteTests(ConsoleRepoCase):
         from skill_console.decisions import commit, plan, stage
 
         repo, skill, staging = Path(str(self.repo)), str(self.synth_skill), Path(str(self.work / "staging"))
-        skill_rel = f"home/dot_agents/packages/synth/skills/vendor/{skill}"
+        skill_rel = f"agent-marketplace/packages/synth/overlays/skills/{skill}"
         skill_dir = repo / skill_rel
-        target = row(f"synth:{skill}", "synth", skill, Origin.REPO_VENDOR, str(skill_dir))
+        target = row(f"synth:{skill}", "synth", skill, Origin.REPO_VENDOR, str(repo / "agent-marketplace/packages/synth/skills" / skill))
         doc = decisions(op(Op.DELETE_SKILL, f"synth:{skill}", apm_dep=f"example/repo/skills/{skill}", dep_owns_skills=1, remove_apm_dep=True))
         batch = stage(plan(doc, [target], repo), repo, staging)
 
@@ -256,12 +404,12 @@ class ConsoleWriteTests(ConsoleRepoCase):
         self.assertTrue(not [p for p in skill_dir.parent.iterdir() if p.name.startswith(".")], f"no renamed leftover: {sorted(p.name for p in skill_dir.parent.iterdir())}")
         self.assertTrue(all(path == skill_rel for path in report.applied), f"the manifest edits never start: {report}")
         # rmtree's order is the directory's, so whether SKILL.md went first varies.
-        if (skill_dir / "SKILL.md").is_file() and (skill_dir / "SOURCE.md").is_file():
+        if (skill_dir / "extra.md").is_file():
             self.assertTrue(report.applied == () and "git restore" not in report.failure, f"an intact tree is not reported as applied: {report}")
         else:
             self.assertTrue(report.applied == (skill_rel,) and "git restore" in report.failure, f"a partly removed tree is reported for recovery: {report}")
         git(repo, "restore", "--", skill_rel)
-        self.assertTrue(git_status(repo) == "" and (skill_dir / "SKILL.md").is_file(), f"git restore rebuilds the skill:\n{git_status(repo)}")
+        self.assertTrue(git_status(repo) == "" and (skill_dir / "extra.md").is_file(), f"git restore rebuilds the local additions:\n{git_status(repo)}")
 
     def test_delete_skill_preconditions_are_re_checked_at_commit(self):
         self.add_synthetic_vendor()
@@ -271,8 +419,8 @@ class ConsoleWriteTests(ConsoleRepoCase):
         from skill_console.decisions import commit, plan, stage
 
         repo, skill, staging = Path(str(self.repo)), str(self.synth_skill), Path(str(self.work / "staging"))
-        package = "home/dot_agents/packages/synth"
-        skill_rel = f"{package}/skills/vendor/{skill}"
+        package = "agent-marketplace/packages/synth"
+        skill_rel = f"{package}/skills/{skill}"
         target = row(f"synth:{skill}", "synth", skill, Origin.REPO_VENDOR, str(repo / skill_rel))
         doc = decisions(op(Op.DELETE_SKILL, f"synth:{skill}", apm_dep=f"example/repo/skills/{skill}", dep_owns_skills=1, remove_apm_dep=True))
 
@@ -287,7 +435,7 @@ class ConsoleWriteTests(ConsoleRepoCase):
             git(repo, "add", "-A")
             git(repo, "commit", "-q", "-m", "concurrent change")
             report = commit(batch, repo, allow_dirty=False)
-            self.assertTrue(report.applied == () and (repo / skill_rel / "SKILL.md").is_file(), f"nothing may move: {report}")
+            self.assertTrue(report.applied == () and skill in (repo / package / "publish.toml").read_text(), f"nothing may move: {report}")
             git(repo, "reset", "-q", "--hard", "synth")
             return report.failure or ""
 
@@ -296,10 +444,11 @@ class ConsoleWriteTests(ConsoleRepoCase):
         self.assertTrue("tests/uses-synth.zsh" in failure and "re-plan" in failure, f"a new tracked reference must refuse the commit: {failure!r}")
         # A sibling that starts sharing the APM dependency after planning, spelled in
         # another case so the reference scan cannot see it and only the count can.
-        sibling = f"{package}/skills/vendor/{skill}-copy/SOURCE.md"
-        failure = commit_after(staged("sibling"), sibling, f"# Source\n\n- APM dependency: `example/repo/skills/{skill.upper()}`\n")
+        sibling = f"{package}/publish.toml"
+        text = (repo / sibling).read_text() + f'\n[[skills]]\nname = "new-sibling"\ndependency = "example/repo/skills/{skill.upper()}"\npath = "."\n'
+        failure = commit_after(staged("sibling"), sibling, text)
         self.assertTrue("owns 2" in failure and "re-plan" in failure, f"a new sibling on the dependency must refuse the commit: {failure!r}")
         report = commit(staged("clean"), repo, allow_dirty=False)
-        self.assertTrue(report.failure is None and report.applied == (skill_rel, f"{package}/apm.yml", f"{package}/apm.lock.yaml"), f"an unchanged tree commits: {report}")
+        self.assertTrue(report.failure is None and f"{package}/publish.toml" in report.applied and f"{package}/apm.lock.yaml" in report.applied, f"an unchanged tree commits: {report}")
         git(repo, "reset", "-q", "--hard", "synth")
         self.assertTrue(git_status(repo) == "", "clean again")

@@ -2,244 +2,135 @@ import json
 import os
 import shlex
 import shutil
+import subprocess
 import sys
 import tomllib
+from pathlib import Path
 
 from tests.support.python import ROOT, RepoTestCase
 
 SCRIPTS = ROOT / ".agents/skills/agent-skill-management/scripts"
+PROJECT = ROOT / "agent-marketplace"
 
 
 class PackageTestCase(RepoTestCase):
     def setUp(self):
         super().setUp()
-        self.packages = self.work / "packages"
-        self.packages.mkdir()
-        self.plugins = self.work / ".agents/plugins"
-        self.bin = self.work / "bin"
-        self.bin.mkdir()
-        self.env["PATH"] = str(self.bin) + os.pathsep + self.env["PATH"]
+        self.repo = self.work / "repo"
+        self.project = self.repo / "agent-marketplace"
+        self.packages = self.project / "packages"
+        self.packages.mkdir(parents=True)
+        shutil.copytree(PROJECT / "scripts", self.project / "scripts")
+        self.python = PROJECT / ".venv/bin/python"
+        (self.project / "Makefile").write_text(
+            f"RUN :=\nPYTHON := {shlex.quote(str(self.python))}\n" + (PROJECT / "Makefile").read_text())
+        self.plugins = self.home / ".agents/plugins"
+        self.policy = self.repo / "home/.chezmoidata/agent_plugins.toml"
+        self.policy.parent.mkdir(parents=True)
+        self.policy.write_text("")
         self.env["AGENT_SKILL_PACKAGES_ROOT"] = str(self.packages)
+        self.env["PATH"] = str(PROJECT / ".venv/bin") + os.pathsep + self.env["PATH"]
+        self.entries = []
 
     def tool(self, name, *args, **kwargs):
         return self.command([sys.executable, str(SCRIPTS / name), *map(str, args)], **kwargs)
 
-    def skill(self, package, name, *, kind="local", dependency=None, description="Fixture skill."):
-        path = package / "skills" / kind / name
-        path.mkdir(parents=True)
-        (path / "SKILL.md").write_text(f"---\nname: {name}\ndescription: {description}\n---\n\n# {name}\n")
-        if dependency:
-            (path / "SOURCE.md").write_text(
-                "# Source\n\n"
-                f"- Upstream: https://github.com/{dependency}\n"
-                f"- APM dependency: `{dependency}`\n- Ref: `old`\n- License: MIT.\n"
-            )
+    def package(self, name="sample", *, loaded=False, codex=True, claude=True):
+        path = self.packages / name
+        skill = path / "skills" / (name + "-skill")
+        skill.mkdir(parents=True)
+        (skill / "SKILL.md").write_text(f"---\nname: {name}-skill\ndescription: Fixture skill.\n---\n\nHello.\n")
+        (path / "apm.yml").write_text(f"name: {json.dumps(name)}\nversion: 1.0.0\ndescription: Example skills\nlicense: UNLICENSED\ntargets: [claude]\n")
+        (path / ".codex-plugin").mkdir()
+        (path / ".codex-plugin/plugin.json").write_text(json.dumps({"name": name, "version": "1.0.0", "skills": "./skills/"}))
+        with self.policy.open("a") as policy:
+            policy.write(f"[agent_plugins.{name}]\ndefault_loaded = {str(loaded).lower()}\nclaude = {str(claude).lower()}\ncodex = {str(codex).lower()}\n\n")
+        self.entries.append({"name": name, "source": f"./plugins/{name}", "category": "Productivity"})
+        # JSON is an APM-supported YAML subset.
+        (self.project / "apm.yml").write_text(json.dumps({"name": "prateek-local", "version": "1.0.0", "license": "UNLICENSED",
+            "marketplace": {"owner": {"name": "Fixture"}, "outputs": {"claude": {}, "codex": {}}, "packages": self.entries}}))
         return path
 
-    def package(self, name="sample", *, loaded=None, codex="none", claude="none", dependencies=()):
-        path = self.packages / name
-        path.mkdir()
-        policy = "" if loaded is None else f"default_loaded = {str(loaded).lower()}\n"
-        (path / "package.toml").write_text(
-            f'display_name = "{name.title()}"\n{policy}\n[render]\ncodex = "{codex}"\nclaude = "{claude}"\n'
-        )
-        deps = "apm:\n" + "".join(f"    - {dep}\n" for dep in dependencies) if dependencies else "apm: []\n"
-        (path / "apm.yml").write_text(f"name: {name}\nversion: 1.0.0\ntargets:\n  - agent-skills\ndependencies:\n  {deps}")
-        if dependencies:
-            (path / "apm.lock.yaml").write_text("lockfile_version: '1'\ndependencies: []\n")
-        self.skill(path, f"{name}-skill")
-        return path
+    def build(self):
+        self.command(["make", "-C", str(self.project), "build"])
+        return self.project / "build/marketplace"
+
+    def materialize(self, artifact=None, **kwargs):
+        return self.tool("materialize-agent-plugins", "--artifact-root", artifact or self.build(), "--plugins-root", self.plugins, **kwargs)
 
 
 class PackageValidationTests(PackageTestCase):
-    def test_committed_layout_provenance_and_inventory_are_valid(self):
-        actual = ROOT / "home/dot_agents/packages"
-        result = self.tool("validate-agent-packages", env={"AGENT_SKILL_PACKAGES_ROOT": str(actual)})
+
+    def test_legacy_retirement_checks_chezmoi_target_bytes_and_preserves_unknown_changes(self):
+        source = self.repo / "home/dot_agents/packages/sample/skills/local/old/literal_run.py"
+        source.parent.mkdir(parents=True)
+        source.write_text("print('old')\n")
+        for args in (["init", "-q"], ["add", "home/dot_agents/packages"],
+                     ["-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "-qm", "Legacy source"]):
+            self.command(["git", *args], cwd=self.repo)
+        target = self.home / ".agents/packages"
+        installed = target / "sample/skills/local/old/run.py"
+        installed.parent.mkdir(parents=True)
+        installed.write_bytes(source.read_bytes())
+        unknown = target / "personal-note"
+        unknown.write_text("keep\n")
+        args = ("--repo-root", self.repo, "--baseline", "HEAD", "--packages-root", target)
+        self.assertIn(b"Preserved legacy source", self.tool("retire-legacy-agent-packages", *args).stderr)
+        self.assertEqual(unknown.read_text(), "keep\n")
+        unknown.unlink()
+        result = self.tool("retire-legacy-agent-packages", *args)
+        self.assertEqual(result.stderr, b"")
+        self.assertFalse(target.exists())
+        self.assertEqual((target.with_name("packages.retired") / installed.relative_to(target)).read_bytes(), source.read_bytes())
+    def test_selected_inventory_and_explicit_policy(self):
+        self.package("on", loaded=True)
+        self.package("off", codex=False, claude=False)
+        result = self.tool("validate-agent-packages")
         self.assertEqual(result.stdout, b"OK validate-agent-packages\n")
-        self.assertEqual(result.stderr, b"")
-        for path in ("home/dot_agents/skills", "home/dot_claude/skills", "home/dot_agents/plugins"):
-            self.assertFalse((ROOT / path).exists(), path)
-        for path in ("core/skills/vendor/deep-research/SOURCE.md", "review/skills/vendor/crit/SOURCE.md", "experimental/skills/vendor/cli-creator/SOURCE.md"):
-            self.assertTrue((actual / path).is_file(), path)
-        for path in ("core/skills/local/deep-research", "ios/skills/vendor/swift-patterns/swift-patterns/SKILL.md", "ios/skills/vendor/swiftui-expert/swiftui-expert-skill/SKILL.md"):
-            self.assertFalse((actual / path).exists(), path)
-        result = self.tool("inventory-agent-skills", env={"AGENT_SKILL_PACKAGES_ROOT": str(actual)})
-        inventory = json.loads(result.stdout)["packages"]
-        self.assertTrue(inventory)
-        for package in inventory:
-            self.assertIs(type(package["default_loaded"]), bool, package)
-            self.assertIsInstance(package["payloads"], list, package)
-        self.assertEqual((ROOT / "home/dot_codex/symlink_skills").read_text().strip(), "../.agents/skills")
+        inventory = json.loads(self.tool("inventory-agent-skills").stdout)["packages"]
+        self.assertEqual({p["id"]: p["default_loaded"] for p in inventory}, {"off": False, "on": True})
+        artifact = self.project / "build/marketplace"
+        catalog = json.loads((artifact / ".agents/plugins/marketplace.json").read_text())
+        self.assertEqual({p["name"] for p in catalog["plugins"]}, {"on", "off"})
+        self.policy.write_text("")
+        self.tool("validate-agent-packages", expected_status=1)
 
-    def test_validator_rejects_non_sha_dependency_refs(self):
-        package = self.package(dependencies=["example/repo/skills/invalid#main"])
-        (package / "apm.lock.yaml").write_text("lockfile_version: '1'\ndependencies: []\n")
-        result = self.tool("validate-agent-packages", expected_status=1)
-        self.assertIn(b"dependency ref pins must be full commit SHAs", result.stderr)
-
-    def test_validator_rejects_overlong_descriptions(self):
+    def test_materialization_preserves_modes_stale_removal_and_previous_release_without_apm(self):
         package = self.package()
-        (package / "skills/local/sample-skill/SKILL.md").write_text(
-            "---\nname: sample-skill\ndescription: >-\n  " + "x" * 1100 + "\n---\n# Fixture\n"
-        )
-        result = self.tool("validate-agent-packages", expected_status=1)
-        self.assertIn(b"description exceeds 1024 chars", result.stderr)
+        helper = package / "skills/sample-skill/helper"
+        helper.write_text("#!/bin/sh\nexit 0\n")
+        helper.chmod(0o755)
+        first = self.build()
+        self.materialize(first, env={"PATH": "/usr/bin:/bin"})
+        installed = self.plugins / "plugins/sample/skills/sample-skill/helper"
+        self.assertEqual(installed.stat().st_mode & 0o777, 0o755)
+        helper.unlink()
+        self.materialize()
+        self.assertFalse(installed.exists())
+        previous = self.plugins.with_name("plugins.previous")
+        self.assertTrue((previous / "plugins/sample/skills/sample-skill/helper").is_file())
+        rollback_receipt = (previous / "release.json").read_bytes()
+        self.materialize()
+        self.assertEqual((previous / "release.json").read_bytes(), rollback_receipt)
+        self.materialize(previous)
+        self.assertEqual(installed.stat().st_mode & 0o777, 0o755)
 
-    def test_validator_refuses_a_filename_chezmoi_would_execute(self):
-        package = self.package()
-        (package / "skills/local/sample-skill/run_manifest.json").write_text("{}")
-        result = self.tool("validate-agent-packages", expected_status=1)
-        self.assertIn(b"rename with a literal_ prefix", result.stderr)
-
-    def test_validator_requires_hooks_manifest(self):
-        package = self.package()
-        (package / "hooks").mkdir()
-        (package / "hooks/session-start").touch()
-        result = self.tool("validate-agent-packages", expected_status=1)
-        self.assertIn(b"hooks payload is missing hooks.json", result.stderr)
-
-    def test_source_audit_accepts_skills_and_hooks_but_refuses_unsupported_components(self):
-        result = self.tool("audit-apm-source-surface", ROOT / "home/dot_agents/packages/core/skills/local/code-gardening")
-        self.assertEqual(result.stderr, b"")
-        audit = self.work / "audit"
-        (audit / "example/plugin/.apm/hooks").mkdir(parents=True)
-        (audit / "example/plugin/hooks").mkdir()
-        self.tool("audit-apm-source-surface", audit)
-        (audit / "prompts").mkdir()
-        result = self.tool("audit-apm-source-surface", audit, expected_status=1)
-        self.assertIn(b"unsupported APM component", result.stderr)
-
-
-class PackageVendorTests(PackageTestCase):
-    def setUp(self):
-        super().setUp()
-        shutil.copyfile(ROOT / "tests/scenarios/agents/fake-apm.zsh", self.bin / "apm")
-        (self.bin / "apm").chmod(0o700)
-        self.sample = self.package(dependencies=["Example/Repo/skills/fake-skill"])
-        curated = self.skill(self.sample, "curated-fake", kind="vendor", dependency="Example/Repo/skills/fake-skill")
-        (curated / "SKILL.md").write_text("---\nname: fake-skill\ndescription: Existing curated skill.\n---\n# Curated skill\n")
-        with (curated / "SOURCE.md").open("a") as source:
-            source.write("- Notes: Vendored source is kept under the local skill id `curated-fake`.\n")
-        self.skill(self.sample, "stale-skill", kind="vendor", dependency="example/old/skills/stale-skill")
-
-    def vendor(self, name="sample", **kwargs):
-        return self.tool("vendor-agent-package", name, "--packages-root", self.packages, **kwargs)
-
-    def assert_manifest_exception(self, result):
-        self.assertEqual(result.stderr, b"vendor-agent-package: ignoring apm audit config-consistency manifest false positive\n")
-        self.assertIn(b'"name": "config-consistency", "passed": false', result.stdout)
-
-    def test_vendor_preserves_curated_ids_and_provenance_and_removes_stale_skills(self):
-        result = self.vendor()
-        self.assert_manifest_exception(result)
-        vendor = self.sample / "skills/vendor"
-        for path in ("curated-fake/SKILL.md", "curated-fake/agents/openai.yaml", "plugin-skill/SKILL.md", "second-skill/SKILL.md"):
-            self.assertTrue((vendor / path).is_file(), path)
-        self.assertFalse((vendor / "fake-skill").exists())
-        self.assertFalse((vendor / "stale-skill").exists())
-        source = (vendor / "curated-fake/SOURCE.md").read_text()
-        for literal in ("Ref: `abc123`", "APM dependency: `Example/Repo/skills/fake-skill`", "Upstream: https://github.com/Example/Repo/tree/abc123/skills/fake-skill", "local skill id `curated-fake`"):
-            self.assertIn(literal, source)
-        hooks = self.sample / "hooks"
-        self.assertTrue((hooks / "hooks.json").is_file())
-        self.assertTrue(os.access(hooks / "session-start", os.X_OK))
-        self.assertIn("APM dependency: `Example/Plugin`", (hooks / "SOURCE.md").read_text())
-        self.assertIn("Ref: `def456`", (hooks / "SOURCE.md").read_text())
-        self.assertTrue((self.sample / "apm.lock.yaml").is_file())
-
-    def test_vendor_refuses_hand_authored_hooks_before_replacing_skills(self):
-        hooks = self.sample / "hooks"
-        hooks.mkdir()
-        (hooks / "hooks.json").write_text('{"hooks": {}}\n')
-        result = self.vendor(expected_status=1)
-        self.assertIn(b"not APM-vendored", result.stderr)
-        self.assertEqual((hooks / "hooks.json").read_text(), '{"hooks": {}}\n')
-        self.assertTrue((self.sample / "skills/vendor/stale-skill/SKILL.md").is_file())
-        self.assertFalse((self.sample / "skills/vendor/second-skill").exists())
-
-    def test_vendor_rejects_audit_findings_outside_the_manifest_exception(self):
-        result = self.vendor(expected_status=1, env={"FAKE_APM_AUDIT_FAIL": "other"})
-        self.assertIn(b"hidden-unicode", result.stdout)
-        self.assertNotIn(b"ignoring apm audit", result.stderr)
-
-    def test_vendor_refuses_multiple_dependencies_with_hooks(self):
-        result = self.vendor(expected_status=1, env={"FAKE_APM_HOOKS": "conflict"})
-        self.assertIn(b"multiple dependencies ship hooks/", result.stderr)
-
-    def test_removing_all_dependencies_removes_vendor_state_but_preserves_local_skills(self):
-        empty = self.package("empty")
-        old = self.skill(empty, "old-skill", kind="vendor", dependency="example/old")
-        (empty / "apm.lock.yaml").write_text("lockfile_version: '1'\ndependencies: []\n")
-        (empty / "hooks").mkdir()
-        (empty / "hooks/hooks.json").write_text('{"hooks": {}}')
-        shutil.copyfile(old / "SOURCE.md", empty / "hooks/SOURCE.md")
-        result = self.vendor("empty")
-        self.assert_manifest_exception(result)
-        for path in ("skills/vendor/old-skill", "hooks", "apm.lock.yaml"):
-            self.assertFalse((empty / path).exists(), path)
-        self.assertTrue((empty / "skills/local/empty-skill/SKILL.md").is_file())
-
-
-class PackageRenderTests(PackageTestCase):
-    def render_plugins(self, *extra, **kwargs):
-        return self.tool("render-agent-plugin-marketplace", "--plugins-root", self.plugins, *extra, **kwargs)
-
-    def test_real_marketplace_paths_context_and_loading_templates_match_source_policy(self):
-        actual = ROOT / "home/dot_agents/packages"
-        self.env["AGENT_SKILL_PACKAGES_ROOT"] = str(actual)
-        for options in (["--skip-config-templates"], ["--check"]):
-            result = self.render_plugins(*options)
-            self.assertEqual(set(result.stderr.decode().splitlines()), {
-                "warning: review: codex has no mapping for evals; that payload is claude-only",
-                "warning: review: codex has no mapping for hooks; that payload is claude-only",
-                "warning: superpowers: codex has no mapping for hooks; that payload is claude-only",
-            })
-        codex = json.loads((self.plugins / "marketplace.json").read_text())
-        self.assertTrue(codex["plugins"])
-        for plugin in codex["plugins"]:
-            self.assertEqual(plugin["source"], {"source": "local", "path": f'./.agents/plugins/plugins/{plugin["name"]}'})
-        claude = json.loads((self.plugins / ".claude-plugin/marketplace.json").read_text())
-        self.assertTrue(claude["plugins"])
-        for plugin in claude["plugins"]:
-            self.assertEqual(plugin["source"], f'./plugins/{plugin["name"]}')
-        self.assertTrue(os.access(self.plugins / "plugins/superpowers/hooks/run-hook.cmd", os.X_OK))
-        json.loads(self.tool("audit-skill-context", "--agent", "codex", self.plugins / "plugins/core/skills").stdout)
-        expected = {
-            f"{path.parent.name}@prateek-local": tomllib.loads(path.read_text()).get("default_loaded", True)
-            for path in actual.glob("*/package.toml")
-        }
-        self.assertIn(True, expected.values())
-        self.assertIn(False, expected.values())
-        claude = json.loads(self.render("home/.chezmoitemplates/agent-claude-plugin-settings.json.tmpl"))["enabledPlugins"]
-        codex = tomllib.loads((ROOT / "home/.chezmoitemplates/agent-codex-plugin-config.toml.tmpl").read_text())["plugins"]
-        pi = json.loads(self.render("home/dot_pi/agent/claude-plugins.json.tmpl"))["plugins"]
-        self.assertEqual({key: claude[key] for key in expected}, expected)
-        self.assertEqual({key: codex[key]["enabled"] for key in expected}, expected)
-        self.assertEqual({key: pi[key]["enabled"] for key in expected}, expected)
-
-    def test_payloads_preserve_execution_modes_and_agent_specific_hooks_discovery(self):
-        package = self.package("hooked", codex="plugin", claude="plugin")
-        (package / "hooks").mkdir()
-        (package / "hooks/hooks.json").write_text('{"hooks": {"SessionStart": []}}')
-        (package / "hooks/session-start").write_text("#!/bin/sh\necho hi\n")
-        (package / "hooks/session-start").chmod(0o755)
-        (package / "commands").mkdir()
-        (package / "commands/hello.md").touch()
-        result = self.render_plugins("--skip-config-templates")
-        self.assertEqual(set(result.stderr.decode().splitlines()), {
-            "warning: hooked: codex has no mapping for hooks; that payload is claude-only",
-            "warning: hooked: codex has no mapping for commands; that payload is claude-only",
-        })
-        rendered = self.plugins / "plugins/hooked"
-        self.assertTrue((rendered / "commands/hello.md").is_file())
-        self.assertTrue((rendered / "hooks/hooks.json").is_file())
-        self.assertTrue(os.access(rendered / "hooks/session-start", os.X_OK))
-        self.assertNotIn("hooks", json.loads((rendered / ".claude-plugin/plugin.json").read_text()))
-        self.assertEqual(json.loads((rendered / ".codex-plugin/plugin.json").read_text())["hooks"], {})
-        self.render_plugins("--check", "--skip-config-templates")
-        (rendered / "hooks/session-start").chmod(0o644)
-        result = self.render_plugins("--check", "--skip-config-templates", expected_status=1)
-        self.assertIn(b"changed plugins/hooked/hooks/session-start", result.stdout + result.stderr)
+    def test_failed_artifact_validation_preserves_live_and_foreign_directories(self):
+        self.package()
+        artifact = self.build()
+        self.materialize(artifact)
+        installed = self.plugins / "plugins/sample/skills/sample-skill/SKILL.md"
+        before = installed.read_bytes()
+        (artifact / "plugins/sample/skills/sample-skill/SKILL.md").write_text("damaged\n")
+        result = self.materialize(artifact, expected_status=1)
+        self.assertIn(b"release receipt", result.stderr)
+        self.assertEqual(installed.read_bytes(), before)
+        shutil.rmtree(self.plugins)
+        self.plugins.mkdir()
+        (self.plugins / "my-plugin").write_text("keep\n")
+        result = self.materialize(expected_status=1)
+        self.assertIn(b"unowned", result.stderr)
+        self.assertEqual((self.plugins / "my-plugin").read_text(), "keep\n")
 
     def test_root_maintenance_preserves_runtime_and_hand_authored_claude_skills(self):
         codex, claude = self.home / ".agents/skills", self.home / ".claude/skills"
@@ -265,83 +156,204 @@ class PackageRenderTests(PackageTestCase):
 class PluginReconcileTests(PackageTestCase):
     def setUp(self):
         super().setUp()
-        self.package("on", codex="plugin", claude="plugin")
-        self.package("off", loaded=False, claude="plugin")
+        self.package("on", loaded=True)
+        self.package("off")
+        self.materialize()
         self.state = self.work / "plugin-state.json"
         self.log = self.work / "plugin.log"
         self.state.write_text(json.dumps({
             "marketplaces": {"prateek-local": "/tmp/stale-plugins-root"},
-            "claude": {"on@prateek-local": False, "stale@prateek-local": True, "other@other-mkt": True},
-            "codex": ["on@prateek-local", "stale@prateek-local"],
+            "codex_marketplaces": {"prateek-local": "/tmp/stale-plugins-root"},
+            "claude": {"on@prateek-local": {"enabled": False, "version": "0.9.0"},
+                       "stale@prateek-local": {"enabled": True, "version": "1.0.0"},
+                       "other@other-mkt": {"enabled": True, "version": "2.0.0"}},
+            "codex": {"on@prateek-local": {"enabled": True, "version": "0.9.0"},
+                      "off@prateek-local": {"enabled": False, "version": "0.9.0"},
+                      "stale@prateek-local": {"enabled": True, "version": "1.0.0"},
+                      "other@other-mkt": {"enabled": False, "version": "2.0.0"}},
         }))
         self.env.update(FAKE_PLUGIN_STATE=str(self.state), FAKE_PLUGIN_LOG=str(self.log))
+        executables = self.work / "bin"
+        executables.mkdir()
+        self.env["PATH"] = str(executables) + os.pathsep + self.env["PATH"]
         for cli in ("claude", "codex"):
-            script = self.bin / cli
+            script = executables / cli
             script.write_text(f"#!/bin/sh\nFAKE_PLUGIN_CLI={cli} exec {shlex.quote(sys.executable)} {shlex.quote(str(ROOT / 'tests/scenarios/agents/fake-plugin-cli.py'))} \"$@\"\n")
             script.chmod(0o700)
 
     def reconcile(self, *args, **kwargs):
-        return self.tool("reconcile-agent-plugins", "--apply", "--agent", "claude", "--agent", "codex", "--plugins-root", self.plugins, *args, **kwargs)
+        return self.tool("reconcile-agent-plugins", "--apply", "--agent", "claude", "--agent", "codex",
+                         "--plugins-root", self.plugins, "--policy", self.policy, *args, **kwargs)
 
-    def mutations(self):
-        return [line for line in self.log.read_text().splitlines() if " list " not in line]
-
-    def test_preview_respects_default_loading_and_agent_render_policy(self):
-        result = self.tool("reconcile-agent-plugins")
-        self.assertEqual(result.stderr, b"")
-        self.assertEqual(result.stdout.decode().splitlines(), [
-            "claude plugin marketplace add ~/.agents/plugins --scope user",
-            "claude plugin marketplace update prateek-local",
-            "codex plugin add on@prateek-local",
-            "claude plugin install off@prateek-local --scope user",
-            "claude plugin disable off@prateek-local --scope user",
-            "claude plugin install on@prateek-local --scope user",
-            "claude plugin enable on@prateek-local --scope user",
-        ])
-        self.assertFalse(self.log.exists())
-
-    def test_apply_converges_own_marketplace_and_refreshes_only_codex_in_steady_state(self):
+    def test_converges_owned_versions_and_state_preserving_foreign_plugins(self):
         self.reconcile()
-        self.assertEqual(self.mutations(), [
-            f"claude plugin marketplace add {self.plugins} --scope user",
-            "claude plugin install off@prateek-local --scope user",
-            "claude plugin disable off@prateek-local --scope user",
-            "claude plugin enable on@prateek-local --scope user",
-            "claude plugin uninstall stale@prateek-local --scope user",
-            "codex plugin add on@prateek-local",
-            "codex plugin remove stale@prateek-local",
-        ])
         state = json.loads(self.state.read_text())
-        self.assertEqual(state["claude"], {"on@prateek-local": True, "other@other-mkt": True, "off@prateek-local": False})
-        self.assertEqual(state["codex"], ["on@prateek-local"])
-        self.assertEqual(state["marketplaces"]["prateek-local"], str(self.plugins))
+        for agent in ("claude", "codex"):
+            self.assertEqual(state[agent]["on@prateek-local"], {"enabled": True, "version": "1.0.0"})
+            self.assertEqual(state[agent]["off@prateek-local"], {"enabled": False, "version": "1.0.0"})
+            self.assertNotIn("stale@prateek-local", state[agent])
+            self.assertEqual(state[agent]["other@other-mkt"]["version"], "2.0.0")
+        self.assertFalse(state["codex"]["other@other-mkt"]["enabled"])
         self.log.write_text("")
         self.reconcile()
-        self.assertEqual(self.mutations(), ["codex plugin add on@prateek-local"])
+        mutations = [line for line in self.log.read_text().splitlines() if " list " not in line]
+        self.assertEqual(mutations, ["codex plugin add on@prateek-local"])
+        self.log.write_text("")
+        self.reconcile("--refresh-disabled", "off")
+        self.assertIn("codex plugin add off@prateek-local", self.log.read_text())
+        self.assertFalse(json.loads(self.state.read_text())["codex"]["off@prateek-local"]["enabled"])
 
-    def test_dry_run_reports_changes_without_mutating_cli_state(self):
-        self.reconcile()
-        state = json.loads(self.state.read_text())
-        state["claude"]["on@prateek-local"] = False
-        self.state.write_text(json.dumps(state))
+    def test_dry_run_reads_each_state_once_without_mutations(self):
         before = self.state.read_bytes()
-        self.log.write_text("")
         result = self.reconcile("--dry-run")
-        self.assertIn(b"[dry-run] claude plugin enable on@prateek-local --scope user\n", result.stdout)
-        self.assertIn(b"[dry-run] codex plugin add on@prateek-local\n", result.stdout)
-        self.assertEqual(self.mutations(), [])
+        self.assertIn(b"[dry-run]", result.stdout)
         self.assertEqual(self.state.read_bytes(), before)
-        state["claude"]["on@prateek-local"] = True
-        self.state.write_text(json.dumps(state))
-        self.log.write_text("")
-        self.reconcile()
-        self.assertEqual(self.mutations(), ["codex plugin add on@prateek-local"])
+        self.assertEqual(len(self.log.read_text().splitlines()), 4)
+
+    def test_missing_policy_fails_before_any_native_call(self):
+        self.policy.unlink()
+        self.reconcile(expected_status=1)
+        self.assertFalse(self.log.exists())
 
     def test_cli_failure_names_command_and_stops_later_mutations(self):
         result = self.reconcile(env={"FAKE_PLUGIN_FAIL": "install"}, expected_status=1)
-        self.assertIn(b"claude plugin install off@prateek-local --scope user failed", result.stderr)
+        self.assertIn(b"claude plugin install", result.stderr)
         self.assertIn(b"simulated install failure", result.stderr)
-        self.assertEqual(self.mutations(), [
-            f"claude plugin marketplace add {self.plugins} --scope user",
-            "claude plugin install off@prateek-local --scope user",
-        ])
+        self.assertNotIn("codex", self.log.read_text())
+
+    def test_later_codex_failure_keeps_refreshed_disabled_plugin_disabled(self):
+        self.package("zbad", loaded=True)
+        self.materialize()
+        result = self.tool("reconcile-agent-plugins", "--apply", "--agent", "codex",
+                           "--plugins-root", self.plugins, "--policy", self.policy,
+                           env={"FAKE_PLUGIN_FAIL": "zbad@prateek-local"}, expected_status=1)
+        self.assertIn(b"codex plugin add zbad@prateek-local failed", result.stderr)
+        state = json.loads(self.state.read_text())["codex"]
+        self.assertEqual(state["off@prateek-local"], {"version": "1.0.0", "enabled": False})
+
+    def test_scoped_chezmoi_apply_converges_the_complete_agent_layout_and_hashes_source_changes(self):
+        templates = self.repo / "home/.chezmoitemplates"
+        templates.mkdir()
+        for name in ("script_lib.sh", "features.tmpl", "agent-marketplace-tree-hash.tmpl",
+                     "agent-claude-plugin-settings.json.tmpl", "agent-codex-plugin-config.toml.tmpl",
+                     "claude-settings-managed.json.tmpl", "codex-config-managed.toml.tmpl",
+                     "cursor-cli-config-managed.json.tmpl"):
+            shutil.copy2(ROOT / "home/.chezmoitemplates" / name, templates / name)
+        shutil.copy2(ROOT / "home/.chezmoidata/machines.toml", self.policy.parent / "machines.toml")
+        shutil.copytree(SCRIPTS, self.repo / ".agents/skills/agent-skill-management/scripts",
+                        ignore=shutil.ignore_patterns("__pycache__"))
+        scripts = self.repo / "home/.chezmoiscripts"
+        scripts.mkdir()
+        for name in ("run_onchange_after_35-agent-skill-roots.sh.tmpl", "run_onchange_after_36-agent-plugins.sh.tmpl"):
+            shutil.copy2(ROOT / "home/.chezmoiscripts" / name, scripts / name)
+        source = scripts / "run_onchange_after_36-agent-plugins.sh.tmpl"
+        for relative in ("dot_agents/AGENTS.md", "dot_claude/symlink_CLAUDE.md", "dot_codex/symlink_skills",
+                         "dot_claude/modify_private_settings.json.tmpl", "dot_codex/modify_private_config.toml.tmpl",
+                         "dot_cursor/modify_private_cli-config.json.tmpl", "dot_pi/agent/modify_settings.json.tmpl",
+                         "dot_pi/agent/claude-plugins.json.tmpl"):
+            target = self.repo / "home" / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(ROOT / "home" / relative, target)
+        (self.repo / ".chezmoiroot").write_text("home\n")
+        self.env.update(CODEX_HOME=str(self.home / ".codex"), CLAUDE_CONFIG_DIR=str(self.home / ".claude"),
+                        UV_CACHE_DIR=subprocess.check_output(["uv", "cache", "dir"], text=True).strip())
+        initial = {
+            ".claude/settings.json": '{"env":{"KEEP":"yes"},"enabledPlugins":{"other@other-mkt":true}}\n',
+            ".codex/config.toml": '[unrelated]\nkeep = true\n[plugins."other@other-mkt"]\nenabled = false\n',
+            ".cursor/cli-config.json": '{"auth":{"token":"fixture"}}\n',
+            ".pi/agent/settings.json": '{"theme":"fixture","packages":["npm:fixture"]}\n',
+            ".agents/skills/.system/runtime/SKILL.md": "Runtime sentinel.\n",
+            ".agents/skills/stale/SKILL.md": "Old projection.\n",
+            ".claude/skills/README.generated.md": "Old generated root.\n",
+            ".agents/packages/personal-note": "Preserve unknown legacy source.\n",
+        }
+        for relative, content in initial.items():
+            path = self.home / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(content)
+        helper = self.packages / "on/skills/on-skill/helper.sh"
+        helper.write_text("#!/bin/sh\nexit 0\n")
+        helper.chmod(0o755)
+        command = ["chezmoi", "--source", str(self.repo), "--config", str(self.config), "--destination", str(self.home),
+                   "--cache", str(self.work / "chezmoi-cache"), "--persistent-state", str(self.work / "chezmoi-state"),
+                   "--no-tty", "--override-data", json.dumps({"machine_type": "personal",
+                   "chezmoi": {"hostname": "dotfiles-test-host"}, "machines_local": {"agent_clis": ["claude", "codex"]}})]
+        before = self.command([*command, "execute-template", "--file", str(source)]).stdout
+        self.assertIn(b"materialize-agent-plugins", self.command([*command, "diff", "--include=scripts"]).stdout)
+        applied = self.command([*command, "apply", "--force"])
+        self.assertIn(b"Preserved legacy source", applied.stderr)
+        state = json.loads(self.state.read_text())
+        self.assertEqual(state["claude"]["on@prateek-local"], {"version": "1.0.0", "enabled": True})
+        self.assertFalse(state["codex"]["off@prateek-local"]["enabled"])
+        self.assertEqual(state["codex"]["other@other-mkt"], {"version": "2.0.0", "enabled": False})
+        self.assertTrue((self.plugins / "release.json").is_file())
+        for native, catalog in (("claude", ".claude-plugin/marketplace.json"), ("codex", ".agents/plugins/marketplace.json")):
+            entries = json.loads((self.plugins / catalog).read_text())["plugins"]
+            for entry in entries:
+                relative = entry["source"] if native == "claude" else entry["source"]["path"]
+                plugin = self.plugins / relative
+                self.assertEqual(plugin.resolve(), (self.plugins / "plugins" / entry["name"]).resolve())
+                self.assertTrue((plugin / f".{native}-plugin/plugin.json").is_file())
+        self.assertEqual((self.plugins / "plugins/on/skills/on-skill/helper.sh").stat().st_mode & 0o777, 0o755)
+        self.assertEqual((self.home / ".codex/skills").readlink().as_posix(), "../.agents/skills")
+        self.assertEqual((self.home / ".claude/CLAUDE.md").readlink().as_posix(), "../.agents/AGENTS.md")
+        self.assertEqual((self.home / ".claude/CLAUDE.md").read_bytes(), (ROOT / "home/dot_agents/AGENTS.md").read_bytes())
+        self.assertEqual((self.home / ".codex/skills/.system/runtime/SKILL.md").read_text(), initial[".agents/skills/.system/runtime/SKILL.md"])
+        self.assertFalse((self.home / ".agents/skills/stale").exists())
+        self.assertFalse((self.home / ".claude/skills").exists())
+        self.assertEqual((self.home / ".agents/packages/personal-note").read_text(), initial[".agents/packages/personal-note"])
+        claude = json.loads((self.home / ".claude/settings.json").read_text())
+        self.assertEqual(claude["extraKnownMarketplaces"]["prateek-local"]["source"]["path"], str(self.plugins))
+        self.assertEqual(claude["enabledPlugins"], {"on@prateek-local": True, "off@prateek-local": False, "other@other-mkt": True})
+        self.assertEqual(claude["env"]["KEEP"], "yes")
+        codex = tomllib.loads((self.home / ".codex/config.toml").read_text())
+        self.assertEqual(codex["marketplaces"]["prateek-local"]["source"], str(self.plugins))
+        self.assertEqual({key: value for key, value in codex["plugins"].items() if key.endswith("@prateek-local")},
+                         {"on@prateek-local": {"enabled": True}, "off@prateek-local": {"enabled": False}})
+        self.assertEqual(codex["plugins"]["other@other-mkt"], {"enabled": False})
+        self.assertTrue(codex["unrelated"]["keep"])
+        cursor = json.loads((self.home / ".cursor/cli-config.json").read_text())
+        self.assertEqual(cursor["marketplaces"]["prateek-local"]["path"], str(self.plugins))
+        self.assertEqual(cursor["auth"], {"token": "fixture"})
+        pi = json.loads((self.home / ".pi/agent/claude-plugins.json").read_text())
+        self.assertEqual(pi["marketplaces"]["prateek-local"], {"source": str(self.plugins), "autoupdate": False})
+        self.assertEqual(pi["plugins"], {"on@prateek-local": {"enabled": True}, "off@prateek-local": {"enabled": False}})
+        pi_settings = json.loads((self.home / ".pi/agent/settings.json").read_text())
+        self.assertEqual(pi_settings["theme"], "fixture")
+        self.assertIn("npm:fixture", pi_settings["packages"])
+        self.assertIn("npm:pi-claude-marketplace", pi_settings["packages"])
+        preserved = [self.home / name for name in initial if (self.home / name).is_file()]
+        preserved.extend([self.home / ".pi/agent/claude-plugins.json", self.plugins / "release.json",
+                          self.plugins.with_name("plugins.previous") / "release.json"])
+        accepted = {path: path.read_bytes() for path in preserved}
+        calls = self.log.read_bytes()
+        self.command([*command, "apply", "--force"])
+        self.command([*command, "verify", "--exclude=scripts"])
+        self.assertEqual(self.log.read_bytes(), calls)
+        self.assertEqual({path: path.read_bytes() for path in preserved}, accepted)
+        helper.write_text("#!/bin/sh\nexit 1\n")
+        after = self.command([*command, "execute-template", "--file", str(source)]).stdout
+        self.assertNotEqual(before, after)
+        helper.chmod(0o644)
+        self.assertNotEqual(after, self.command([*command, "execute-template", "--file", str(source)]).stdout)
+
+
+class CodexRpcTests(RepoTestCase):
+    def test_fragmented_responses_and_notifications_across_multiple_requests(self):
+        cli = self.work / "codex"
+        cli.write_text(f"#!{sys.executable}\n" + '''import json, sys, time
+for line in sys.stdin:
+    request = json.loads(line)
+    response = json.dumps({"id": request["id"], "result": {"method": request["method"]}})
+    sys.stdout.write(response[:8])
+    sys.stdout.flush()
+    time.sleep(0.05)
+    sys.stdout.write(response[8:] + '\\n{"method":"notification"}\\n')
+    sys.stdout.flush()
+''')
+        cli.chmod(0o700)
+        result = self.command([sys.executable, "-c",
+            "import sys,json; sys.path.insert(0,sys.argv[1]); from codex_rpc import requests; "
+            "print(json.dumps(requests([('one',{}),('two',{})],cli=sys.argv[2])))",
+            str(SCRIPTS), str(cli)])
+        self.assertEqual(json.loads(result.stdout), [{"method": "one"}, {"method": "two"}])

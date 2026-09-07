@@ -1,0 +1,229 @@
+[[skills]]
+name = "claude-history-ingest"
+dependency = "ar9av/obsidian-wiki/.skills/claude-history-ingest"
+path = "."
+
+[[skills]]
+name = "code-understand"
+dependency = "ar9av/obsidian-wiki/.skills/code-understand"
+path = "."
+
+[[skills]]
+name = "codex-history-ingest"
+dependency = "ar9av/obsidian-wiki/.skills/codex-history-ingest"
+path = "."
+
+[[skills]]
+name = "copilot-history-ingest"
+dependency = "ar9av/obsidian-wiki/.skills/copilot-history-ingest"
+path = "."
+
+[[skills]]
+name = "cross-linker"
+dependency = "ar9av/obsidian-wiki/.skills/cross-linker"
+path = "."
+
+[[skills]]
+name = "daily-update"
+dependency = "ar9av/obsidian-wiki/.skills/daily-update"
+path = "."
+
+[[skills]]
+name = "defuddle"
+dependency = "kepano/obsidian-skills"
+path = ".apm/skills/defuddle"
+
+[[skills]]
+name = "graph-colorize"
+dependency = "ar9av/obsidian-wiki/.skills/graph-colorize"
+path = "."
+
+[[skills]]
+name = "hermes-history-ingest"
+dependency = "ar9av/obsidian-wiki/.skills/hermes-history-ingest"
+path = "."
+
+[[skills]]
+name = "impl-validator"
+dependency = "ar9av/obsidian-wiki/.skills/impl-validator"
+path = "."
+
+[[skills]]
+name = "json-canvas"
+dependency = "kepano/obsidian-skills"
+path = ".apm/skills/json-canvas"
+
+[[skills]]
+name = "llm-wiki"
+dependency = "ar9av/obsidian-wiki/.skills/llm-wiki"
+path = "."
+
+[[skills]]
+name = "memory-bridge"
+dependency = "ar9av/obsidian-wiki/.skills/memory-bridge"
+path = "."
+
+[[skills]]
+name = "obsidian-bases"
+dependency = "kepano/obsidian-skills"
+path = ".apm/skills/obsidian-bases"
+
+[[skills]]
+name = "obsidian-cli"
+dependency = "kepano/obsidian-skills"
+path = ".apm/skills/obsidian-cli"
+
+[[skills]]
+name = "obsidian-layout-adjustment"
+dependency = "ar9av/obsidian-wiki/.skills/obsidian-layout-adjustment"
+path = "."
+
+[[skills]]
+name = "obsidian-markdown"
+dependency = "kepano/obsidian-skills"
+path = ".apm/skills/obsidian-markdown"
+
+[[skills]]
+name = "openclaw-history-ingest"
+dependency = "ar9av/obsidian-wiki/.skills/openclaw-history-ingest"
+path = "."
+
+[[skills]]
+name = "pi-history-ingest"
+dependency = "ar9av/obsidian-wiki/.skills/pi-history-ingest"
+path = "."
+
+[[skills]]
+name = "session-brain"
+dependency = "ar9av/obsidian-wiki/.skills/session-brain"
+path = "."
+
+[[skills]]
+name = "session-search"
+dependency = "ar9av/obsidian-wiki/.skills/session-search"
+path = "."
+
+[[skills]]
+name = "skill-creator"
+dependency = "ar9av/obsidian-wiki/.skills/skill-creator"
+path = "."
+
+[[skills]]
+name = "tag-taxonomy"
+dependency = "ar9av/obsidian-wiki/.skills/tag-taxonomy"
+path = "."
+
+[[skills]]
+name = "vault-skill-factory"
+dependency = "ar9av/obsidian-wiki/.skills/vault-skill-factory"
+path = "."
+
+[[skills]]
+name = "wiki-agent"
+dependency = "ar9av/obsidian-wiki/.skills/wiki-agent"
+path = "."
+
+[[skills]]
+name = "wiki-capture"
+dependency = "ar9av/obsidian-wiki/.skills/wiki-capture"
+path = "."
+
+[[skills]]
+name = "wiki-context-pack"
+dependency = "ar9av/obsidian-wiki/.skills/wiki-context-pack"
+path = "."
+
+[[skills]]
+name = "wiki-dashboard"
+dependency = "ar9av/obsidian-wiki/.skills/wiki-dashboard"
+path = "."
+
+[[skills]]
+name = "wiki-dedup"
+dependency = "ar9av/obsidian-wiki/.skills/wiki-dedup"
+path = "."
+
+[[skills]]
+name = "wiki-digest"
+dependency = "ar9av/obsidian-wiki/.skills/wiki-digest"
+path = "."
+
+[[skills]]
+name = "wiki-export"
+dependency = "ar9av/obsidian-wiki/.skills/wiki-export"
+path = "."
+
+[[skills]]
+name = "wiki-history-ingest"
+dependency = "ar9av/obsidian-wiki/.skills/wiki-history-ingest"
+path = "."
+
+[[skills]]
+name = "wiki-import"
+dependency = "ar9av/obsidian-wiki/.skills/wiki-import"
+path = "."
+
+[[skills]]
+name = "wiki-ingest"
+dependency = "ar9av/obsidian-wiki/.skills/wiki-ingest"
+path = "."
+
+[[skills]]
+name = "wiki-lint"
+dependency = "ar9av/obsidian-wiki/.skills/wiki-lint"
+path = "."
+
+[[skills]]
+name = "wiki-narrate"
+dependency = "ar9av/obsidian-wiki/.skills/wiki-narrate"
+path = "."
+
+[[skills]]
+name = "wiki-query"
+dependency = "ar9av/obsidian-wiki/.skills/wiki-query"
+path = "."
+
+[[skills]]
+name = "wiki-rebuild"
+dependency = "ar9av/obsidian-wiki/.skills/wiki-rebuild"
+path = "."
+
+[[skills]]
+name = "wiki-research"
+dependency = "ar9av/obsidian-wiki/.skills/wiki-research"
+path = "."
+
+[[skills]]
+name = "wiki-setup"
+dependency = "ar9av/obsidian-wiki/.skills/wiki-setup"
+path = "."
+
+[[skills]]
+name = "wiki-stage-commit"
+dependency = "ar9av/obsidian-wiki/.skills/wiki-stage-commit"
+path = "."
+
+[[skills]]
+name = "wiki-status"
+dependency = "ar9av/obsidian-wiki/.skills/wiki-status"
+path = "."
+
+[[skills]]
+name = "wiki-switch"
+dependency = "ar9av/obsidian-wiki/.skills/wiki-switch"
+path = "."
+
+[[skills]]
+name = "wiki-synthesize"
+dependency = "ar9av/obsidian-wiki/.skills/wiki-synthesize"
+path = "."
+
+[[skills]]
+name = "wiki-update"
+dependency = "ar9av/obsidian-wiki/.skills/wiki-update"
+path = "."
+
+[[payloads]]
+dependency = "kepano/obsidian-skills"
+path = "LICENSE"
+target = "licenses/kepano/obsidian-skills/LICENSE"

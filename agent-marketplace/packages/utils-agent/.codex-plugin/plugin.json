@@ -1,0 +1,24 @@
+{
+  "name": "utils-agent",
+  "version": "1.1.0",
+  "description": "Agent Utilities skills from Prateek's dotfiles.",
+  "author": {
+    "name": "Prateek"
+  },
+  "license": "UNLICENSED",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Agent Utilities",
+    "shortDescription": "Agent Utilities skills",
+    "longDescription": "Generated local plugin for Agent Utilities.",
+    "developerName": "Prateek",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Use the Agent Utilities plugin."
+    ]
+  }
+}

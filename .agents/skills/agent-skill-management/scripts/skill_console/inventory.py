@@ -1,6 +1,6 @@
 """Read-only discovery for the skill console.
 
-Everything the simulation runs over comes from here: the chezmoi package source,
+Everything the simulation runs over comes from here: the portable package source,
 the rendered marketplace, the plugin roots Claude Code actually loads, the
 merged settings projection, the built-in listing fixture, and the usage
 snapshot. Every root is a parameter so tests can point the same code at
@@ -52,7 +52,7 @@ from skill_console.budget import (
     utf16_length,
 )
 
-PACKAGES_RELPATH = Path("home/dot_agents/packages")
+PACKAGES_RELPATH = Path("agent-marketplace/packages")
 REPO_MARKETPLACE = "prateek-local"
 ENV_BUDGET_VAR = "SLASH_COMMAND_TOOL_CHAR_BUDGET"
 
@@ -348,15 +348,13 @@ def _content_sha256(skill_dir: Path) -> str:
         rel = path.relative_to(skill_dir)
         if _left_out_of_render(rel):
             continue
-        # chezmoi's `literal_` attribute prefix is stripped when a skill is
-        # rendered, so the source and rendered trees must hash the same name.
-        rel = rel.with_name(rel.name.removeprefix("literal_"))
         digest.update(rel.as_posix().encode("utf-8"))
         digest.update(b"\0")
         if path.is_symlink():
             digest.update(b"symlink:" + os.readlink(path).encode("utf-8"))
         else:
             digest.update(hashlib.sha256(path.read_bytes()).hexdigest().encode("ascii"))
+            digest.update(b"x" if path.stat().st_mode & 0o111 else b"-")
         digest.update(b"\n")
     return digest.hexdigest()
 
@@ -551,21 +549,18 @@ def _plugin_records(plugin_root: Path, tree: Tree) -> list[SkillRecord]:
     records: list[SkillRecord] = []
     for skill_root in skill_roots:
         for skill_dir in _skill_dirs(skill_root):
-            # SOURCE.md is the vendoring marker vendor-agent-package leaves in
-            # every copied skill; it survives rendering, so it tells local from
-            # vendor in trees that have flattened the source layout.
-            origin = Origin.REPO_VENDOR if (skill_dir / "SOURCE.md").is_file() else Origin.REPO_LOCAL
-            records.append(_skill_record(skill_dir, tree=tree, package=package, origin=origin))
+            records.append(_skill_record(skill_dir, tree=tree, package=package, origin=Origin.REPO_LOCAL))
     return records
 
 
 def _source_records(packages_root: Path) -> list[SkillRecord]:
     records: list[SkillRecord] = []
-    for package_dir in sorted(p for p in packages_root.iterdir() if p.is_dir()):
-        for skill in agent_skill_lib.iter_package_skills(package_dir):
+    for package in agent_skill_lib.load_packages(packages_root):
+        for skill in package.skills:
             origin = Origin.REPO_VENDOR if skill.kind == "vendor" else Origin.REPO_LOCAL
             records.append(
-                _skill_record(skill.path, tree=Tree.SOURCE, package=skill.package_id, origin=origin)
+                replace(_skill_record(skill.path, tree=Tree.SOURCE, package=skill.package_id, origin=origin),
+                        source_path=skill.source_path, dependency=skill.dependency)
             )
     return records
 
@@ -584,6 +579,13 @@ def load_skills(root: Path, tree: Tree, *, origin: Origin | None = None) -> list
         return []
     if tree is Tree.SOURCE:
         return _source_records(root)
+    artifact = root if (root / ".agents/plugins/marketplace.json").is_file() else root.parent
+    if tree is Tree.MARKETPLACE and (artifact / ".agents/plugins/marketplace.json").is_file():
+        from artifact import validate_artifact
+        validate_artifact(artifact)
+        catalog = json.loads((artifact / ".agents/plugins/marketplace.json").read_text())
+        return [record for entry in catalog["plugins"]
+                for record in _plugin_records(artifact / entry["source"]["path"], tree)]
     if origin is Origin.USER_COMMAND:
         return _command_records(root, tree)
     if origin in (Origin.USER_SKILL, Origin.REPO_PROJECT):
@@ -1136,7 +1138,7 @@ def reconcile(rows: Sequence[Row]) -> list[Divergence]:
                     Divergence(
                         package,
                         "enable-state",
-                        f"package.toml default_loaded={str(repo_default).lower()} but {harness.value} has it {'enabled' if live else 'disabled'}",
+                        f"agent_plugins.toml default_loaded={str(repo_default).lower()} but {harness.value} has it {'enabled' if live else 'disabled'}",
                     )
                 )
     return divergences
@@ -1151,6 +1153,15 @@ def _tree_hash(records: Iterable[SkillRecord]) -> str:
         for record in records
     )
     return "sha256:" + _sha256_text("\n".join(lines))
+
+
+def _source_hash(repo_root: Path, records: Iterable[SkillRecord]) -> str:
+    from artifact import digest, tree_files
+    project = repo_root / "agent-marketplace"
+    inputs = tree_files(project, skip={"build", ".venv", "**/__pycache__", ".git"}) if project.is_dir() else {}
+    policy = repo_root / "home/.chezmoidata/agent_plugins.toml"
+    return "sha256:" + digest({"payload": _tree_hash(records), "inputs": inputs,
+                                "policy": policy.read_text() if policy.is_file() else None})
 
 
 def _usage_hash(usage: Mapping[str, Usage]) -> str:
@@ -1202,7 +1213,7 @@ def build_snapshot(
         binary_version=BINARY_VERSION,
         binary_hash=f"sha256:{binary_hex}" if binary_hex else "",
         binary_hash_matched=binary_hex == BINARY_SHA256,
-        source_hash=_tree_hash(by_tree.get(Tree.SOURCE, ())),
+        source_hash=_source_hash(repo_root, by_tree.get(Tree.SOURCE, ())),
         marketplace_hash=_tree_hash(by_tree.get(Tree.MARKETPLACE, ())),
         cache_hash=_tree_hash(by_tree.get(Tree.CACHE, ())),
         settings_hash=f"sha256:{settings.projection_hash}",

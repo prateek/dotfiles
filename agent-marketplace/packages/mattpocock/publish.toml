@@ -1,0 +1,124 @@
+[[skills]]
+name = "ask-matt"
+dependency = "mattpocock/skills"
+path = ".apm/skills/ask-matt"
+
+[[skills]]
+name = "code-review"
+dependency = "mattpocock/skills"
+path = ".apm/skills/code-review"
+
+[[skills]]
+name = "codebase-design"
+dependency = "mattpocock/skills"
+path = ".apm/skills/codebase-design"
+
+[[skills]]
+name = "diagnosing-bugs"
+dependency = "mattpocock/skills"
+path = ".apm/skills/diagnosing-bugs"
+
+[[skills]]
+name = "domain-modeling"
+dependency = "mattpocock/skills"
+path = ".apm/skills/domain-modeling"
+
+[[skills]]
+name = "grill-me"
+dependency = "mattpocock/skills"
+path = ".apm/skills/grill-me"
+
+[[skills]]
+name = "grill-with-docs"
+dependency = "mattpocock/skills"
+path = ".apm/skills/grill-with-docs"
+
+[[skills]]
+name = "grilling"
+dependency = "mattpocock/skills"
+path = ".apm/skills/grilling"
+
+[[skills]]
+name = "handoff"
+dependency = "mattpocock/skills"
+path = ".apm/skills/handoff"
+
+[[skills]]
+name = "implement"
+dependency = "mattpocock/skills"
+path = ".apm/skills/implement"
+
+[[skills]]
+name = "improve-codebase-architecture"
+dependency = "mattpocock/skills"
+path = ".apm/skills/improve-codebase-architecture"
+
+[[skills]]
+name = "prototype"
+dependency = "mattpocock/skills"
+path = ".apm/skills/prototype"
+
+[[skills]]
+name = "research"
+dependency = "mattpocock/skills"
+path = ".apm/skills/research"
+
+[[skills]]
+name = "resolving-merge-conflicts"
+dependency = "mattpocock/skills"
+path = ".apm/skills/resolving-merge-conflicts"
+
+[[skills]]
+name = "setup-matt-pocock-skills"
+dependency = "mattpocock/skills"
+path = ".apm/skills/setup-matt-pocock-skills"
+
+[[skills]]
+name = "tdd"
+dependency = "mattpocock/skills"
+path = ".apm/skills/tdd"
+
+[[skills]]
+name = "teach"
+dependency = "mattpocock/skills"
+path = ".apm/skills/teach"
+
+[[skills]]
+name = "to-questionnaire"
+dependency = "mattpocock/skills"
+path = ".apm/skills/to-questionnaire"
+
+[[skills]]
+name = "to-spec"
+dependency = "mattpocock/skills"
+path = ".apm/skills/to-spec"
+
+[[skills]]
+name = "to-tickets"
+dependency = "mattpocock/skills"
+path = ".apm/skills/to-tickets"
+
+[[skills]]
+name = "triage"
+dependency = "mattpocock/skills"
+path = ".apm/skills/triage"
+
+[[skills]]
+name = "wait-what"
+dependency = "mattpocock/skills"
+path = ".apm/skills/wait-what"
+
+[[skills]]
+name = "wayfinder"
+dependency = "mattpocock/skills"
+path = ".apm/skills/wayfinder"
+
+[[skills]]
+name = "wizard"
+dependency = "mattpocock/skills"
+path = ".apm/skills/wizard"
+
+[[skills]]
+name = "writing-for-agents"
+dependency = "mattpocock/skills"
+path = ".apm/skills/writing-for-agents"

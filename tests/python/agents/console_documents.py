@@ -51,10 +51,10 @@ def row(name, package, directory, origin, path=None, protected=False, descriptio
 
 def rows_for(pkgtree):
     return [
-        row("pkg:local", "pkg", "local", Origin.REPO_LOCAL, f"{pkgtree}/local/local"),
-        row("pkg:vend-a", "pkg", "vend-a", Origin.REPO_VENDOR, f"{pkgtree}/vendor/vend-a"),
-        row("pkg:vend-b", "pkg", "vend-b", Origin.REPO_VENDOR, f"{pkgtree}/vendor/vend-b"),
-        row("pkg:solo", "pkg", "solo", Origin.REPO_VENDOR, f"{pkgtree}/vendor/solo"),
+        row("pkg:local", "pkg", "local", Origin.REPO_LOCAL, f"{pkgtree}/local"),
+        row("pkg:vend-a", "pkg", "vend-a", Origin.REPO_VENDOR, f"{pkgtree}/vend-a"),
+        row("pkg:vend-b", "pkg", "vend-b", Origin.REPO_VENDOR, f"{pkgtree}/vend-b"),
+        row("pkg:solo", "pkg", "solo", Origin.REPO_VENDOR, f"{pkgtree}/solo"),
         row("proj-skill", "", "proj-skill", Origin.REPO_PROJECT, "/work/tree/.claude/skills/proj-skill"),
         row("my-skill", "", "my-skill", Origin.USER_SKILL),
         row("my-cmd", "", "my-cmd", Origin.USER_COMMAND),
@@ -103,7 +103,7 @@ def sha256(path):
 
 
 def skill_row(repo, package, directory):
-    skill_dir = Path(repo) / "home/dot_agents/packages" / package / "skills/local" / directory
+    skill_dir = Path(repo) / "agent-marketplace/packages" / package / "skills" / directory
     description = parse(skill_dir / "SKILL.md").values["description"]
     return row(f"{package}:{directory}", package, directory, Origin.REPO_LOCAL, str(skill_dir), description=description)
 
