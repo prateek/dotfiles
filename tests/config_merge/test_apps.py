@@ -4,14 +4,25 @@ from scenarios import SCENARIOS
 from tests.config_merge.support import PlistTestCase
 
 
-class AppPlistTests(PlistTestCase):
-    apps = SCENARIOS
+def _scenario_test(app):
+    def test(self):
+        self.check_scenario(SCENARIOS[app])
 
-    def test_modifiers(self):
-        for app in self.apps:
-            with self.subTest(app=app):
-                self.check_scenario(SCENARIOS[app])
+    test.__name__ = f"test_{app}"
+    return test
 
+
+class AppPlistMeta(type):
+    """Give every app its own test id so `-k <app>` and failure names name the app."""
+
+    def __new__(metaclass, name, bases, namespace):
+        for app in SCENARIOS:
+            test = _scenario_test(app)
+            namespace[test.__name__] = test
+        return super().__new__(metaclass, name, bases, namespace)
+
+
+class AppPlistTests(PlistTestCase, metaclass=AppPlistMeta):
     def check_scenario(self, scenario):
         modifier = self.modifier(scenario.bundle_id)
         desired_xml = self.render(

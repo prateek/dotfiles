@@ -1,7 +1,7 @@
 -- Hammerspoon entrypoint.
 --
 -- Source of truth: `init.fnl` -> compiled to `init.generated.lua` via:
---   `make hammerspoon`
+--   `just hammerspoon`
 --
 -- This file stays small and stable so `~/.hammerspoon/init.lua` can remain a
 -- symlink to it.

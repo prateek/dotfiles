@@ -8,13 +8,22 @@ fi
 PATH="$(dirname "$BASH"):$PATH"
 export PATH
 bats="$(command -v bats)" || {
-  printf 'Missing Bats; run mise run test-tools.\n' >&2
+  printf 'Missing Bats; run just test-tools.\n' >&2
   exit 1
 }
 [[ "$("$BASH" "$bats" --version)" == 'Bats 1.14.0' ]] || {
-  printf 'Shell tests require Bats 1.14.0; run mise run test-tools.\n' >&2
+  printf 'Shell tests require Bats 1.14.0; run just test-tools.\n' >&2
   exit 1
 }
+# build/ is git-ignored, so a fresh worktree has Bats but no assertion libraries;
+# without this the failure surfaces as an opaque bats_load_safe error per file.
+libraries="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/build/test-libraries"
+for library in bats-support-0.3.0 bats-assert-2.1.0; do
+  [[ -f "$libraries/$library/load.bash" ]] || {
+    printf 'Missing %s; run just test-tools.\n' "$library" >&2
+    exit 1
+  }
+done
 tags="${BATS_TAGS-!host,!network,!vm}"
 selection=(--recursive --filter-tags "$tags" "$@")
 count="$("$BASH" "$bats" --count "${selection[@]}")"

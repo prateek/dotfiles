@@ -337,9 +337,9 @@ def export(root: Path) -> None:
     output = root / "build/marketplace"
     receipt = validate_artifact(output)
     if not receipt.get("checked"):
-        raise ValueError("run make check before export")
+        raise ValueError("run just check before export")
     if receipt["source_digest"] != digest(source_files(root)):
-        raise ValueError("stale build; run make check before export")
+        raise ValueError("stale build; run just check before export")
     target = root / "build/marketplace.tar.gz"
     with tarfile.open(target, "w:gz") as archive:
         archive.add(output, arcname="marketplace")

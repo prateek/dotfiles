@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tomllib
@@ -85,8 +86,29 @@ def load_published_packages(artifact: Path, policy_path: Path = POLICY_PATH) -> 
 
 
 @lru_cache(maxsize=None)
+def just_binary() -> str:
+    # A mise shim resolves its version from the *caller's* directory, and these
+    # commands run inside copies whose mise.toml is untrusted at its temp path.
+    resolved = shutil.which("just")
+    if resolved and f"{os.sep}shims{os.sep}" in resolved:
+        try:
+            real = subprocess.run(["mise", "which", "just"], capture_output=True, text=True)
+        except OSError:
+            return resolved
+        if real.returncode == 0 and real.stdout.strip():
+            return real.stdout.strip()
+    return resolved or "just"
+
+
+def marketplace_build_command(project: Path) -> list[str]:
+    # A project copy can sit outside any justfile search path, so address it explicitly.
+    return [just_binary(), "--justfile", str(project / "justfile"),
+            "--working-directory", str(project), "build"]
+
+
+@lru_cache(maxsize=None)
 def ensure_marketplace(project: Path) -> Path:
-    result = subprocess.run(["make", "-C", str(project), "build"], capture_output=True, text=True, timeout=300)
+    result = subprocess.run(marketplace_build_command(project), capture_output=True, text=True, timeout=300)
     if result.returncode:
         raise ValueError(f"marketplace build failed:\n{result.stdout}\n{result.stderr}")
     artifact = project / "build/marketplace"

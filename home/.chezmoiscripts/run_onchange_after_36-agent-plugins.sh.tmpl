@@ -17,7 +17,7 @@ reconciler="{{ .chezmoi.sourceDir }}/../.agents/skills/agent-skill-management/sc
 
 [ -x "$generator" ] || die "Agent plugin materializer is missing or not executable: $generator"
 [ -x "$reconciler" ] || die "Agent plugin reconciler is missing or not executable: $reconciler"
-have uv || die "uv is required to build agent plugins. Run make -C agent-marketplace tools first."
+have uv || die "uv is required to build agent plugins. Run just tools in agent-marketplace first."
 
 run_timed "materialize agent plugins" \
   "$generator" \

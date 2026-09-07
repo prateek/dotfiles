@@ -115,7 +115,7 @@ manifest in `wiki/` dedupes already-ingested sources.
 ## Onboard a machine
 
 1. Add `wiki_host_alias = "<alias>"` under its `[machines.host.<hostname>]`
-   layer in machines.toml (unique, non-empty; `make test-machines-features`
+   layer in machines.toml (unique, non-empty; `just test-python -p test_machines.py`
    enforces both). The machine type must have `agent_session_wiki = true`.
 2. `chezmoi apply` on that machine: clones the repo in the type's shape
    (sparse for work), renders the alias and named QMD configs, builds the
@@ -127,7 +127,7 @@ manifest in `wiki/` dedupes already-ingested sources.
 
 1. Move `agent_session_wiki_ingest = true` to the new host's
    `[machines.host.*]` layer in machines.toml (exactly one host, enforced by
-   `make test-machines-features`). The new host must hold the full archive
+   `just test-python -p test_machines.py`). The new host must hold the full archive
    (not `agent_session_wiki_sparse`); the bootstrap script refuses otherwise.
 2. `chezmoi apply` on both hosts (old one disables its ingest automation, new
    one registers it).

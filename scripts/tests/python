@@ -1,24 +1,52 @@
 #!/usr/bin/env python3
+"""Run native unittest cases across several roots under one selection guard.
+
+Discovery spans every root in one process so a single filter can select from
+any of them, and so an empty or entirely skipped selection fails once rather
+than once per root.
+"""
+import argparse
 import sys
 import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("roots", nargs="+", help="Directories to discover cases in.")
+parser.add_argument("-p", "--pattern", dest="patterns", action="append", default=[],
+                    help="Filename glob selecting case files; repeatable.")
+parser.add_argument("-t", "--top-level-dir")
+parser.add_argument("-k", dest="filters", action="append", default=[],
+                    help="Substring or glob selecting test ids; repeatable.")
+parser.add_argument("-v", "--verbosity", type=int, default=2)
+args = parser.parse_args()
 
-class RequiredResult(unittest.TextTestResult):
-    def wasSuccessful(self):
-        return super().wasSuccessful() and self.testsRun > len(self.skipped)
+loader = unittest.TestLoader()
+if args.filters:
+    loader.testNamePatterns = [f if "*" in f else f"*{f}*" for f in args.filters]
 
 
-class RequiredRunner(unittest.TextTestRunner):
-    resultclass = RequiredResult
-
-    def run(self, test):
-        result = super().run(test)
-        if result.testsRun == len(result.skipped):
-            print("No Python tests executed; empty or entirely skipped selection.", file=sys.stderr)
-        return result
+def cases(test):
+    if isinstance(test, unittest.TestSuite):
+        for child in test:
+            yield from cases(child)
+    else:
+        yield test
 
 
-unittest.main(module=None, testRunner=RequiredRunner(verbosity=2))
+suite = unittest.TestSuite()
+seen = set()
+for root in args.roots:
+    for pattern in args.patterns or ["test_*.py"]:
+        for test in cases(loader.discover(root, pattern=pattern, top_level_dir=args.top_level_dir)):
+            # Overlapping globs would otherwise run a case once per matching pattern.
+            if test.id() not in seen:
+                seen.add(test.id())
+                suite.addTest(test)
+
+result = unittest.TextTestRunner(verbosity=args.verbosity).run(suite)
+if result.testsRun == len(result.skipped):
+    print("No Python tests executed; empty or entirely skipped selection.", file=sys.stderr)
+    raise SystemExit(1)
+raise SystemExit(not result.wasSuccessful())

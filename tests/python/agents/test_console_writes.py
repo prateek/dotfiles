@@ -1,5 +1,8 @@
 from tests.python.agents.console_support import ConsoleRepoCase
 
+# console_support puts the console scripts on sys.path.
+from agent_skill_lib import marketplace_build_command
+
 
 class ConsoleWriteTests(ConsoleRepoCase):
 
@@ -25,12 +28,12 @@ class ConsoleWriteTests(ConsoleRepoCase):
                     f"@@ -1,6 +1,6 @@\n ---\n name: {self.synth_skill}\n"
                     "-description: Synthetic imported skill.\n+description: Reviewed baseline.\n ---\n \n" + tail)
                 try:
-                    self.command(["make", "-C", str(project), "build"])
+                    self.command(marketplace_build_command(project))
                     self.assertEqual((published / "SKILL.md").read_text().endswith("\n"), newline)
                     planned = plan(decisions(describe(identity, "Console-approved description.")),
                         [row(identity, "synth", self.synth_skill, Origin.REPO_VENDOR, str(published))], self.repo)
                     batch = stage(planned, self.repo, self.work / filename)
-                    self.command(["make", "-C", str(batch.root / "agent-marketplace"), "build"])
+                    self.command(marketplace_build_command(batch.root / "agent-marketplace"))
                     result = batch.root / published.relative_to(self.repo) / "SKILL.md"
                     self.assertEqual(parse(result).values["description"], "Console-approved description.")
                     self.assertEqual(result.read_text().endswith("\n"), newline)
@@ -57,13 +60,13 @@ class ConsoleWriteTests(ConsoleRepoCase):
             fromfile=f"a/skills/{self.synth_skill}/SKILL.md", tofile=f"b/skills/{self.synth_skill}/SKILL.md")))
         self.git("add", "agent-marketplace")
         self.git("commit", "-q", "-m", "reviewed imported baseline")
-        self.command(["make", "-C", str(project), "build"])
+        self.command(marketplace_build_command(project))
         published = project / "build/marketplace/plugins/synth/skills" / self.synth_skill
         identity = f"synth:{self.synth_skill}"
         planned = plan(decisions(describe(identity, "Console-approved description.")),
                        [row(identity, "synth", self.synth_skill, Origin.REPO_VENDOR, str(published))], self.repo)
         batch = stage(planned, self.repo, self.work / "staged-import")
-        self.command(["make", "-C", str(batch.root / "agent-marketplace"), "build"])
+        self.command(marketplace_build_command(batch.root / "agent-marketplace"))
         targets = {edit.relpath: (self.repo / edit.relpath).read_bytes()
                    if (self.repo / edit.relpath).exists() else None for edit in planned.edits}
         mutations = (
@@ -94,7 +97,7 @@ class ConsoleWriteTests(ConsoleRepoCase):
         report = commit(batch, self.repo, allow_dirty=False)
         self.assertIsNone(report.failure)
         self.assertEqual(report.applied, tuple(targets))
-        self.command(["make", "-C", str(project), "build"])
+        self.command(marketplace_build_command(project))
         self.assertEqual(parse(published / "SKILL.md").values["description"], "Console-approved description.")
         self.assertEqual(source.read_text(), original)
         self.assertTrue(note.read_text().endswith("Unrelated edit.\n"))
@@ -113,7 +116,7 @@ class ConsoleWriteTests(ConsoleRepoCase):
         sidecar = package / "overlays/skills" / self.synth_skill / "agents/openai.yaml"
         sidecar.parent.mkdir()
         sidecar.write_text("interface:\n  display_name: Preserve me\npolicy:\n  allow_implicit_invocation: true\n")
-        self.command(["make", "-C", str(project), "build"])
+        self.command(marketplace_build_command(project))
         published = project / "build/marketplace/plugins/synth/skills" / self.synth_skill
         source = project / "apm_modules/example/repo/skills" / self.synth_skill / "skills" / self.synth_skill / "SKILL.md"
         original = source.read_bytes()
@@ -126,7 +129,7 @@ class ConsoleWriteTests(ConsoleRepoCase):
         self.assertFalse(any("/apm_modules/" in edit.relpath for edit in planned.edits))
         staged = self.work / "staged-import"
         stage(planned, self.repo, staged)
-        result = subprocess.run(["make", "-C", str(staged / "agent-marketplace"), "build"],
+        result = subprocess.run(marketplace_build_command(staged / "agent-marketplace"),
                                 env=self.env, capture_output=True, text=True, timeout=60)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         output = staged / "agent-marketplace/build/marketplace/plugins/synth"

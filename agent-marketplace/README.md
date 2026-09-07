@@ -13,21 +13,21 @@ directories; consumer adapters decide where to put them and which to enable.
 Provision the pinned Python, uv, and APM environment once with network access:
 
 ```sh
-make tools
+just tools
 ```
 
 Then run:
 
 ```sh
-make build
-make check
-make export
+just build
+just check
+just export
 ```
 
 `build/marketplace` contains both catalogs and `plugins/<package>`. `check`
 executes the packaging tests and compares two fresh builds. `export` writes
 `build/marketplace.tar.gz`; it refuses an unchecked, damaged, or stale artifact.
-`make clean` removes only `build/`.
+`just clean` removes only `build/`.
 
 Builds use committed input files and `apm pack --offline`. A missing cache file
 is an error, with its path and a recovery instruction. Restore that file from
@@ -132,8 +132,8 @@ Start with an accepted, clean cache and lock. Both commands refuse tracked,
 staged, untracked, and ignored pending cache/lock changes before calling APM:
 
 ```sh
-make fetch                   # native apm lock at the project root
-make update                  # native apm lock --update for all root dependencies
+just fetch                   # native apm lock at the project root
+just update                  # native apm lock --update for all root dependencies
 ```
 
 Edit root declarations before `fetch` when adding or removing dependencies.

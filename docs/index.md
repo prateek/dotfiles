@@ -48,6 +48,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [SSD Layout And Arq Coverage](plans/ssd-arq-layout-plan.md) | Active; Code, Tart, and WinMux storage migrated. Both SSD volumes retained for Code and GhostPepper; Arq selection and restore checks deferred. |
 | [BetterDisplay Display Modes](plans/betterdisplay-display-modes-plan.md) | Proposed only; no `displayctl` implementation exists in this checkout. |
 | [Decomment Skill](plans/decomment-skill-plan.md) | Active; decomment core skill, trigger-channel fixes, and evals under implementation. |
+| [Justfile Migration](plans/justfile-migration-plan.md) | Accepted and executed; both Makefiles replaced by justfiles, per-file test targets deleted, and selection moved into the runners. See [ADR 0026](adr/0026-just-task-runner.md). |
 | [Orcactl](plans/orcactl-plan.md) | Draft for a separate Go repo/tool; dotfiles integration is future install/skill wiring. |
 | [Downstream Fork](plans/downstream-fork-plan.md) | Active; thin assembly-repo forks as daily drivers on the `prateek/forks` fleet monorepo — engine, three-job template, harness, security review, monorepo scaffold, and fleet digest done; dotfiles gardening landed bar the retoken; provisioning + ghost-pepper migration pending Prateek. |
 | [Goku Karabiner Migration](plans/goku-karabiner-migration-plan.md) | Active; Karabiner config now compiles from `karabiner.edn` via goku — on-device pad verification pending. |
@@ -91,6 +92,7 @@ for day-to-day implementation details.
 | [ADR 0023 - Isolate marketplace packaging and commit APM module inputs](adr/0023-apm-agent-marketplace-packaging.md) | Accepted; [APM Agent Marketplace plan](plans/apm-agent-marketplace-plan.md). Current operations are in the [marketplace reference](references/agent-marketplace.md) and [management skill](../.agents/skills/agent-skill-management/SKILL.md). |
 | [ADR 0024 - Setapp subscription apps install from packages.toml](adr/0024-setapp-subscription-app-installs.md) | `setapp_apps` groups in `packages.toml`, rendered by `scripts/packages/render-setapp-applist` and installed by `run_after_22-setapp-apps` via Setapp's store API. |
 | [ADR 0025 - Share APM acquisition across native plugins](adr/0025-shared-apm-acquisition.md) | One root manifest, lock, and committed cache; per-plugin native metadata remains. See the [marketplace reference](references/agent-marketplace.md). |
+| [ADR 0026 - just as the task runner](adr/0026-just-task-runner.md) | Accepted; [justfile migration plan](plans/justfile-migration-plan.md). Both Makefiles replaced and per-file test targets deleted; selection moves to the runners. See the [tests index](../tests/README.md). |
 
 ## Research
 

@@ -66,7 +66,7 @@ out only their own host, so no repo entries are generated there. Entries
 regenerate on every apply, and the archive's sync
 script reconciles them between applies when a pull reveals a new host; both
 implementations are held identical by a fixture test
-(`BATS_TAGS=host make test-shell BATS_PATH=tests/bats/agents/agentsview-parity.bats` in the dotfiles checkout). Hand-written `session_sources`
+(`BATS_TAGS=host just test-shell tests/bats/agents/agentsview-parity.bats` in the dotfiles checkout). Hand-written `session_sources`
 entries are preserved. After config changes, restart the daemon:
 `agentsview serve --background --replace` (the restart performs its own
 initial sync — no explicit `agentsview sync` after it).

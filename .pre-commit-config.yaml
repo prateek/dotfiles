@@ -11,13 +11,13 @@ repos:
     hooks:
       - id: chezmoi-dry-run
         name: chezmoi apply --dry-run
-        entry: make test-chezmoi-apply
+        entry: just test-chezmoi-apply
         language: system
         pass_filenames: false
         files: ^home/
       - id: docs-lifecycle
         name: docs lifecycle validation
-        entry: env DOCS_LIFECYCLE_BASE=HEAD make test-docs-lifecycle
+        entry: env DOCS_LIFECYCLE_BASE=HEAD just test-docs-lifecycle
         language: system
         always_run: true
         pass_filenames: false

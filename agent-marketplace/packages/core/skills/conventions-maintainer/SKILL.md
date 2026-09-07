@@ -87,7 +87,7 @@ to recover the lost reliability.
   path, as `slack.md` does.
 - Search touched topics for duplicated or contradictory guidance.
 - Confirm steps have observable completion criteria.
-- Run `make test-agents-doc-pointers` after changing `AGENTS.md` or a convention
+- Run `just test-python -p test_convention_pointers.py` after changing `AGENTS.md` or a convention
   doc.
 - Run the relevant chezmoi preview and package validator after changing
   generated paths or a packaged skill.

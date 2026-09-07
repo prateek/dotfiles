@@ -64,7 +64,7 @@ reviewer did not expect.
 
 The `crit` and `crit-cli` skills in the `review` package carry local edits in
 `agent-marketplace/packages/review/patches/`. The build applies these patches to
-temporary copies of committed APM inputs. `make -C agent-marketplace check`
+temporary copies of committed APM inputs. `just -f agent-marketplace/justfile -d agent-marketplace check`
 checks them and fails on upstream drift.
 
 Patches use published native paths such as `skills/crit/SKILL.md`. Remap those
@@ -78,7 +78,7 @@ this setup was built to stop: comment visibility, diff scope, review target, and
 CLI shape. They are synthetic — a throwaway repo and an invented PR number — so
 nothing from a work repo is in them.
 
-`make test-crit-evals` runs them with the report kept local. It is on-demand,
+`just test-crit-evals` runs them with the report kept local. It is on-demand,
 not per-PR: it costs tokens and needs network. Run it after refreshing APM inputs or
 after changing the crit skills.
 

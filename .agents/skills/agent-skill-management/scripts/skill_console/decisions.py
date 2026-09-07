@@ -48,17 +48,20 @@ from skill_console import (
 from skill_console.budget import listing_text, utf16_length, write_safe
 from skill_console.inventory import REPO_MARKETPLACE
 from artifact import digest, source_files
+from agent_skill_lib import just_binary
 
 PACKAGES_DIR = "agent-marketplace/packages"
 POLICY_FILE = "home/.chezmoidata/agent_plugins.toml"
 SETTINGS_TEMPLATE = "home/.chezmoitemplates/claude-settings-managed.json.tmpl"
 SCRIPTS_DIR = ".agents/skills/agent-skill-management/scripts"
 VALIDATE_SCRIPT = f"{SCRIPTS_DIR}/validate-agent-packages"
-STAGED_MAKE_TARGETS = (
-    "test-agent-skill-packages",
-    "test-claude-settings",
-    "test-codex-config",
-    "test-pi-settings",
+# The projection plus the four independent client-config merges it can disturb.
+STAGED_RECIPES = (
+    ("test-python", "-p", "test_packages.py"),
+    ("test-python", "-p", "test_claude.py"),
+    ("test-python", "-p", "test_codex.py"),
+    ("test-python", "-p", "test_pi.py"),
+    ("test-shell", "tests/bats/programs/pi-isolated-run.bats"),
 )
 STAGED_STEP_TIMEOUT_S = 600
 FRONTMATTER_FIELDS = frozenset({"disable-model-invocation", "user-invocable"})
@@ -1147,11 +1150,11 @@ def stage(plan: ApplyPlan, repo_root: Path, staging_root: Path) -> StagedBatch:
 
 
 def validate_staged(batch: StagedBatch) -> tuple[bool, str]:
-    """Run validate-agent-packages and the four make targets inside the copy."""
+    """Run validate-agent-packages and the staged checks inside the copy."""
     root = batch.root
     env = _subprocess_env()
     steps = [("validate-agent-packages", [str(root / VALIDATE_SCRIPT)])]
-    steps += [(f"make {target}", ["make", "-C", str(root), target]) for target in STAGED_MAKE_TARGETS]
+    steps += [(f"just {' '.join(recipe)}", [just_binary(), *recipe]) for recipe in STAGED_RECIPES]
     for label, command in steps:
         try:
             result = subprocess.run(command, cwd=root, env=env, capture_output=True, text=True, timeout=STAGED_STEP_TIMEOUT_S)

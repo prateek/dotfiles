@@ -10,7 +10,7 @@ This is the repo-specific contract for coding agents working in Prateek's dotfil
 - `home/.chezmoitemplates/`: shared templates, including Brewfile, macOS defaults, and plist merge helpers.
 - `.agents/`: repo-local agent surface for this checkout. Keep repo-specific `AGENTS.md` and `CLAUDE.md` at the repo root; keep repo-local skills and tool adapters under `.agents/`.
 - `home/dot_agents/`: chezmoi-managed machine agent surface. Machine-wide `AGENTS.md`, docs, and workflow conventions materialize under `~/.agents`.
-- `agent-marketplace/`: portable machine-wide skill publishing project with its own Makefile. One root APM manifest, lock, and committed cache serve all plugins; `packages/` holds authored skills, selections, patches, and native metadata, outside the chezmoi source root.
+- `agent-marketplace/`: portable machine-wide skill publishing project with its own justfile. One root APM manifest, lock, and committed cache serve all plugins; `packages/` holds authored skills, selections, patches, and native metadata, outside the chezmoi source root.
 - `home/dot_claude/`: chezmoi-managed Claude config for this machine. Its `CLAUDE.md` target should symlink to `../.agents/AGENTS.md`.
 - `home/dot_codex/`: chezmoi-managed Codex config for this machine.
 - `scripts/`: focused helpers for packages, macOS/app config, Tart, traces, audits, and hooks.
@@ -54,7 +54,8 @@ an empty stub for Codex runtime skills); do not commit source copies under
 - Render package input: `scripts/packages/render-brewfile --machine-type <type>` (ci/personal/homelab/work).
 - Package/app audits: `scripts/audit/brew-inventory.sh`, `scripts/audit/brewfile-usage.sh`, `scripts/audit/app-inventory.sh`.
 - Fresh-shell checks: `scripts/audit/zsh-fresh-shells.zsh verify` and `bench`.
-- Docs lifecycle checks: `make test-docs-lifecycle` for the local diff and `DOCS_LIFECYCLE_BASE=origin/master make test-docs-lifecycle` for a full branch check.
+- Docs lifecycle checks: `just test-docs-lifecycle` for the local diff and `DOCS_LIFECYCLE_BASE=origin/master just test-docs-lifecycle` for a full branch check.
+- Task runner: `just` at the repo root and in `agent-marketplace/`. `just --list` is the current index of recipes.
 - Test index: `tests/README.md`.
 - Tart local install lane: `docs/runbooks/tart-mini-validation.md`.
 - Worktree workflow: `home/dot_agents/docs/worktrees.md`.

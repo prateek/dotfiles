@@ -15,8 +15,8 @@ The lane runs locally on a Mac mini with a dedicated external SSD. Tart storage 
 ## Current implementation
 
 - VM runner: `scripts/vm/test-install-tart.sh`
-- Contract test: `make test-tart-install-helper`
-- Trace tests: `make test-trace-perfetto`
+- Contract test: `just test-shell tests/bats/vm/install-helper.bats`
+- Trace tests: `just test-python -p test_perfetto.py`
 - Make targets: `test-tart-install-helper`, `test-trace-perfetto`, `test-install-tart-dry-run`, `test-install-tart-smoke`, `test-install-tart-full`
 - Guest shell oracle: `scripts/audit/zsh-fresh-shells.zsh verify`
 
@@ -66,7 +66,7 @@ Mac App Store entries are omitted from generated Brewfiles by default because di
 
 Every Tart run prints a slowest-phase timing summary before cleanup exits. The guest package scripts also emit `TIMING|...` log lines around expensive setup steps, so a slow run can usually be diagnosed from the plain log before opening a Perfetto trace.
 
-Dry-run is a mode layered on top of the smoke lane. `make test-install-tart-dry-run` boots Tart, downloads chezmoi via `get.chezmoi.io`, runs `chezmoi init --promptDefaults --promptChoice 'machine_type=ci' --source ~/dotfiles`, and then `chezmoi apply --dry-run --verbose`; it can continue past missing Xcode Command Line Tools because the point is to validate the bootstrap path, not install tools.
+Dry-run is a mode layered on top of the smoke lane. `just test-install-tart smoke --dry-run` boots Tart, downloads chezmoi via `get.chezmoi.io`, runs `chezmoi init --promptDefaults --promptChoice 'machine_type=ci' --source ~/dotfiles`, and then `chezmoi apply --dry-run --verbose`; it can continue past missing Xcode Command Line Tools because the point is to validate the bootstrap path, not install tools.
 
 ## Host assumptions
 
@@ -106,12 +106,12 @@ On a host with a `machines.host.<hostname>` layer that sets `tart_home` in `home
 From the repo checkout on the validation host. `TART_HOME` is already set on the SSD; trace and cache paths default to a sibling of `TART_HOME` (`/Volumes/TartVMs/homebrew-cache`), so they only need to be set to override:
 
 ```sh
-make test-tart-install-helper
-make test-zsh-fresh-shells
+just test-shell tests/bats/vm/install-helper.bats
+just zsh-fresh-shells selftest
 
 DOTFILES_TRACE=1 \
 DOTFILES_TART_TRACE_FILE=/Volumes/TartVMs/dotfiles-tart-smoke.trace.json \
-  make test-install-tart-smoke TART_FLAGS="--vm-name dotfiles-tart-smoke-$(date +%Y%m%d-%H%M%S)"
+  just test-install-tart smoke --vm-name "dotfiles-tart-smoke-$(date +%Y%m%d-%H%M%S)"
 ```
 
 The run should end with:
@@ -136,16 +136,16 @@ The helper mounts a persistent host-backed Homebrew cache into the guest by defa
 To disable the cache for a debugging run:
 
 ```sh
-make test-install-tart-smoke TART_FLAGS="--no-homebrew-cache"
+just test-install-tart smoke --no-homebrew-cache
 ```
 
 Run the full lane when changing full package, cask, or app-install behavior:
 
 ```sh
-make test-install-tart-full TART_FLAGS="--vm-name dotfiles-tart-full-$(date +%Y%m%d-%H%M%S)"
+just test-install-tart full --vm-name "dotfiles-tart-full-$(date +%Y%m%d-%H%M%S)"
 ```
 
-`make test-install-tart-full` defaults to `ghcr.io/cirruslabs/macos-tahoe-xcode:latest`. Override it with `TART_FULL_IMAGE=...` only when validating a specific Xcode image or a pinned digest.
+`just test-install-tart full` defaults to `ghcr.io/cirruslabs/macos-tahoe-xcode:latest`. Override it with `TART_FULL_IMAGE=...` only when validating a specific Xcode image or a pinned digest.
 
 Open a captured trace with:
 

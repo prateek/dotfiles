@@ -37,7 +37,7 @@ marketplace configuration points at `~/.agents/plugins`; its two catalogs resolv
 relative paths beneath `plugins/<package>/`. Do not capture script-created
 marketplaces or native caches with `chezmoi add`.
 
-For layout changes, run `make test-agent-skill-packages` and the four config merge
+For layout changes, run `just test-python -p test_packages.py` and the four config merge
 checks. The combined isolated apply checks both scripts, managed symlinks, config
 paths, runtime skill preservation, executable payloads, unknown legacy source,
 and an unchanged repeat apply. `chezmoi verify --exclude=scripts` verifies direct

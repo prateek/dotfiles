@@ -4,7 +4,7 @@
 ;; captures keystrokes with an eventtap so it works in any app without needing focus.
 ;;
 ;; Build:
-;;   `cd ~/dotfiles && make hammerspoon` -> `.hammerspoon/init.generated.lua`
+;;   `cd ~/dotfiles && just hammerspoon` -> `.hammerspoon/init.generated.lua`
 
 (local config
   {:dotfilesBin (.. (or (os.getenv "HOME") "") "/dotfiles/bin")
@@ -1804,10 +1804,10 @@
 (local hyper ["ctrl" "alt" "cmd" "shift"])
 (hs.hotkey.bind hyper "r"
                (fn []
-                 (log.i "hyper-r: make hammerspoon")
+                 (log.i "hyper-r: just hammerspoon")
                  (hs.alert.show "Hammerspoon: build…" 0.6)
 
-                 (_shAsync "cd \"$HOME/dotfiles\" && make hammerspoon"
+                 (_shAsync "cd \"$HOME/dotfiles\" && just hammerspoon"
                            (fn [ok _ err]
                              (if ok
                                (do

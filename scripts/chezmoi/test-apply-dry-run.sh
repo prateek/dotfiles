@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Shared helper for validating chezmoi apply --dry-run in a clean temp environment.
-# Used by Makefile targets, CI, and test scripts.
+# Used by justfile recipes, CI, and test scripts.
 
 set -euo pipefail
 

@@ -35,7 +35,7 @@ neither root nor Full Disk Access.
 Build or update the local app from the dotfiles checkout:
 
 ```sh
-make install-session-sync-app
+just install-session-sync-app
 open -a "$HOME/Applications/Session Archive Sync.app" --args --check-access
 ```
 

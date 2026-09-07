@@ -13,6 +13,22 @@ SCRIPTS = ROOT / ".agents/skills/agent-skill-management/scripts"
 PROJECT = ROOT / "agent-marketplace"
 
 
+def _just_binary():
+    resolved = shutil.which("just")
+    if resolved and f"{os.sep}shims{os.sep}" in resolved:
+        try:
+            real = subprocess.run(["mise", "which", "just"], capture_output=True, text=True)
+        except OSError:
+            return resolved
+        if real.returncode == 0 and real.stdout.strip():
+            return real.stdout.strip()
+    return resolved or "just"
+
+
+# A shim would resolve its version from the fixture cwd, which has no mise config.
+JUST = _just_binary()
+
+
 class PackageTestCase(RepoTestCase):
     def setUp(self):
         super().setUp()
@@ -22,8 +38,11 @@ class PackageTestCase(RepoTestCase):
         self.packages.mkdir(parents=True)
         shutil.copytree(PROJECT / "scripts", self.project / "scripts")
         self.python = PROJECT / ".venv/bin/python"
-        (self.project / "Makefile").write_text(
-            f"RUN :=\nPYTHON := {shlex.quote(str(self.python))}\n" + (PROJECT / "Makefile").read_text())
+        shutil.copy(PROJECT / "justfile", self.project / "justfile")
+        # The chezmoi apply script builds this copy through its own materializer,
+        # so the runtime override has to reach that invocation too.
+        self.env["MARKETPLACE_RUN"] = ""
+        self.env["MARKETPLACE_PYTHON"] = str(self.python)
         self.plugins = self.home / ".agents/plugins"
         self.policy = self.repo / "home/.chezmoidata/agent_plugins.toml"
         self.policy.parent.mkdir(parents=True)
@@ -51,7 +70,8 @@ class PackageTestCase(RepoTestCase):
         return path
 
     def build(self):
-        self.command(["make", "-C", str(self.project), "build"])
+        self.command([JUST, "--justfile", str(self.project / "justfile"),
+                      "--working-directory", str(self.project), "build"])
         return self.project / "build/marketplace"
 
     def materialize(self, artifact=None, **kwargs):

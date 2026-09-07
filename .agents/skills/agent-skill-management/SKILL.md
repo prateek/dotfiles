@@ -29,11 +29,11 @@ artifact.
    re-plan and revalidate; `--allow-dirty-targets` does not bypass that check.
    Deleting a root dependency requires checking every plugin's skill and
    supporting-payload selections, including disabled plugins.
-3. Validate the changed boundary. Run `make -C agent-marketplace check` for
-   package changes; run `make test-agent-skill-packages test-skill-console` for
+3. Validate the changed boundary. Run `just -f agent-marketplace/justfile -d agent-marketplace check`
+   for package changes; run `just test-python -p test_packages.py -p 'test_console_*.py'` for
    consumer or console changes. Activation changes also need the Claude, Codex,
    Cursor, and pi config merge checks. Native client changes need
-   `make test-agent-skill-packages-native` on a host with both clients installed.
+   `just test-agent-skill-packages-native` on a host with both clients installed.
    The consumer suite applies scripts 35/36, config entries, and managed symlinks
    together in an isolated home, then repeats apply and verifies managed targets.
    Completion means the relevant checks pass and every payload change has a

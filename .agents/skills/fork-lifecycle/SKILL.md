@@ -70,7 +70,7 @@ apply-time reconciler runs first and uninstalls the fork.
 
 ```sh
 scripts/packages/render-brewfile --machine-type personal   # the entry renders
-make test-fork-reconcile                                    # swap logic still holds
+just test-shell tests/bats/packages/fork-reconcile.bats     # swap logic still holds
 ```
 
 Then open an ordinary PR (the `land-changes` skill, or `gh pr create`). A human

@@ -69,9 +69,9 @@ List the changed paths (`git -C "$WT" diff --name-only origin/master..HEAD`) and
 
 - `git -C "$WT" diff --check` always.
 - `shellcheck -x` on changed shell scripts.
-- For changed `home/` files, dry-run chezmoi against the worktree source: `make test-chezmoi-apply` (run from `$WT`).
+- For changed `home/` files, dry-run chezmoi against the worktree source: `just test-chezmoi-apply` (run from `$WT`).
 - For `agent-marketplace/` or plugin adapter changes, use [agent-skill-management](../agent-skill-management/SKILL.md) to select package, consumer, and config checks. These inputs can change rendered chezmoi scripts even when no `home/` file changed.
-- Read [the tests index](../../../tests/README.md#checks-by-changed-area) for the changed-area checks and execution lanes. The `Makefile` and `.github/workflows/install-smoke.yml` are executable truth for those commands.
+- Read [the tests index](../../../tests/README.md#checks-by-changed-area) for the changed-area checks and execution lanes. The `justfile` and `.github/workflows/install-smoke.yml` are executable truth for those commands.
 
 Fix failures on the branch and re-run. Never land red.
 

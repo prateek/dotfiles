@@ -50,7 +50,8 @@ jobs:
       - name: Install pinned test tools
         run: |
           mise trust
-          make test-tools
+          mise install just
+          mise exec -- just test-tools
 
       - name: Docs lifecycle
         if: github.event_name == 'pull_request'
@@ -67,7 +68,7 @@ jobs:
           fi
 
       - name: Static and behavior suites
-        run: make test-ci
+        run: mise exec -- just test-ci
 
       - name: Bootstrap app list regression
         run: |

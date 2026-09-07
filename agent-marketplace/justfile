@@ -1,0 +1,48 @@
+set shell := ["bash", "-euo", "pipefail", "-c"]
+
+# Overrides travel by environment so they reach every invoker of a project copy,
+# including the materializer the chezmoi apply script runs.
+run := env("MARKETPLACE_RUN", "uv run --offline --frozen")
+python := env("MARKETPLACE_PYTHON", "python3")
+script := env("MARKETPLACE_SCRIPT", "scripts/marketplace.py")
+
+[private]
+default: build
+
+# Install this project's pinned runtime and locked Python dependencies.
+tools:
+    mise install
+    mise exec -- uv sync --locked
+
+# Build both native catalogues and every plugin payload into build/.
+build:
+    {{ run }} "{{ python }}" -B "{{ script }}" build
+
+# Validate cached inputs, patches, entrypoints, versions, and publication.
+check:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    # Fixture copies of this project ship without tests; only run them when present.
+    if compgen -G 'tests/test_*.py' > /dev/null; then
+      {{ run }} "{{ python }}" -B -m unittest discover -s tests -p 'test_*.py'
+    fi
+    {{ run }} "{{ python }}" -B "{{ script }}" check
+
+# Copy the validated build to the published artifact root.
+export:
+    {{ run }} "{{ python }}" -B "{{ script }}" export
+
+clean:
+    {{ run }} "{{ python }}" -B "{{ script }}" clean
+
+# Acquire every root dependency's APM inputs at its locked versions.
+fetch:
+    {{ run }} "{{ python }}" -B "{{ script }}" fetch
+
+# Re-lock all root dependencies against current upstream and refresh their inputs.
+update:
+    {{ run }} "{{ python }}" -B "{{ script }}" update
+
+# Run this project's own unit tests without the rest of check.
+test:
+    {{ run }} "{{ python }}" -B -m unittest discover -s tests -p 'test_*.py'

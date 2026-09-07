@@ -11,6 +11,7 @@ import tempfile
 
 PROJECT = Path(__file__).resolve().parents[4] / "agent-marketplace"
 sys.path.insert(0, str(PROJECT / "scripts"))
+from agent_skill_lib import marketplace_build_command
 from artifact import validate_artifact
 
 
@@ -60,7 +61,7 @@ def main() -> int:
     args = parser.parse_args()
     try:
         if args.artifact_root is None:
-            subprocess.run(["make", "-C", str(args.project_root), "build"], check=True, timeout=300)
+            subprocess.run(marketplace_build_command(args.project_root), check=True, timeout=300)
         artifact = args.artifact_root or args.project_root / "build/marketplace"
         materialize(artifact.absolute(), args.plugins_root.expanduser().absolute())
     except (OSError, ValueError, KeyError, subprocess.SubprocessError) as error:

@@ -2,9 +2,9 @@
 
 Follow [Acquire or update upstream inputs](../../../../agent-marketplace/README.md#acquire-or-update-upstream-inputs).
 APM 0.29.1 is pinned in the project's uv environment and the managed Mise CLI
-selection. Use the project targets so cache/lock review guards run before APM.
-Declarations, the lock, and `apm_modules/` live at the project root. `make fetch`
-and `make update` operate on that shared graph; there is no package selector.
+selection. Use the project recipes so cache/lock review guards run before APM.
+Declarations, the lock, and `apm_modules/` live at the project root. `just fetch`
+and `just update` operate on that shared graph; there is no package selector.
 Before removing an input, check selections in every plugin. A shared input update
 requires reviewing the output and bumping the version of each affected plugin.
 

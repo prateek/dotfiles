@@ -181,7 +181,7 @@ rendered source state unless a focused app plan says otherwise.
 
 Use the smallest check that proves the changed surface:
 
-- Docs lifecycle: `make test-docs-lifecycle`
+- Docs lifecycle: `just test-docs-lifecycle`
 - Package rendering: `scripts/packages/render-brewfile --machine-type <type>`
 - File-only apply preview:
   `chezmoi apply --dry-run --verbose --exclude=scripts`

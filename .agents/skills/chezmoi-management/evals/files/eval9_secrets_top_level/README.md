@@ -9,5 +9,5 @@ Expected behavior:
 - Agent explains templates resolve via `.secrets.refs.<name>` through `onepasswordRead` — a top-level key won't be reachable.
 - Agent recommends moving the entry under `[secrets.refs]`.
 - Agent confirms the obfuscated `op://vault-id/item-id/field-id` form itself is correct (does not conflate with the human-readable rule from eval 3).
-- Agent suggests `chezmoi data --format=yaml | grep -i secrets` to verify the loaded shape, and `make test-secret-backed-files`.
+- Agent suggests `chezmoi data --format=yaml | grep -i secrets` to verify the loaded shape, and `just test-shell tests/bats/config/secrets.bats`.
 - Agent does NOT propose changing template-side code to read top-level (wrong direction of fix).

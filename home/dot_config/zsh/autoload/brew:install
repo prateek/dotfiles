@@ -58,7 +58,7 @@ Follow the repo contract:
 - Install from declared state after updating config; do not run a raw brew install that leaves the repo stale.
 - Do not run chezmoi apply.
 - Do not commit.
-- Validate with the smallest relevant checks, including make test-render-brewfile for packages.toml changes.
+- Validate with the smallest relevant checks, including just test-python -p test_brewfile.py for packages.toml changes.
 - End with changed files, commands run, and any follow-up needed.
 
 Dangerous bypass mode requested by wrapper: ${dangerous}

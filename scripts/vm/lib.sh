@@ -4,7 +4,7 @@
 # REPO_ROOT and may have set LOG_FILE / VM_NAME.
 #
 # Image / CPU / memory defaults are intentionally per-script: callers can
-# work standalone, and the Makefile is authoritative when invoked via `make`.
+# work standalone, and the justfile is authoritative when invoked via `just`.
 
 log() {
   if [ -n "${LOG_FILE:-}" ]; then

@@ -33,7 +33,7 @@
         "Leaves the legitimate `{{ .chezmoi.username }}` and `{{ .chezmoi.hostname }}` directives unchanged",
         "References the Moom-style precedent or the repo rule that plist literals must be escaped",
         "Suggests `chezmoi execute-template < home/.chezmoitemplates/com.example.geo.plist.tmpl` to confirm the fix renders cleanly (no `function ... not defined` errors)",
-        "Suggests `make test-plist-hooks` as the validation lane",
+        "Suggests `just test-shell tests/bats/hooks/plist-hooks.bats` as the validation lane",
         "Does not move the file to home/.chezmoiassets/ (templating is still desired for other parts of the file)"
       ]
     },
@@ -51,7 +51,7 @@
         "Asks for or shows how to obtain the obfuscated vault-id, item-id, and field-id (e.g., via `op item get Anthropic --vault Personal --format=json`)",
         "Notes that human-readable refs go in `~/.config/chezmoi/chezmoi.toml.local`, which is not committed",
         "References the repo rule about obfuscated `op://` refs only in committed source",
-        "Suggests `make test-secret-backed-files` as the validation lane",
+        "Suggests `just test-shell tests/bats/config/secrets.bats` as the validation lane",
         "Notes that `secrets_enabled` (resolved from `machines.toml`, default false) controls whether the template renders, not an env var on every apply"
       ]
     },
@@ -122,7 +122,7 @@
         "Adds the entry under a group's `mas = [...]` inline array using `{ name = \"Things 3\", id = 904280696 }` (integer id, no quotes). Does NOT add under casks/brews, does NOT use array-of-tables `[[packages.groups.dev.mas]]`, does NOT add at top level of `[packages]`",
         "Classifies `DOTFILES_INSTALL_MAS_APPS` as an APPLY-time gate (read on every `chezmoi apply` via env template function), NOT an init-time prompt persisted to `chezmoi.toml`. The user must export the var on each invocation, not just at init.",
         "Reasons about which group to add it to and how groups compose into machine types (a machine type is the union of its groups): `base` reaches every machine type including `ci`, `dev` excludes `ci`",
-        "Suggests a GATED render verification using `scripts/packages/render-brewfile --machine-type <type> --include-mas` (the wrapper flag — the bare `DOTFILES_INSTALL_MAS_APPS=true` env-form does NOT work because the wrapper script clears that var with `env -u`). Plain `make test-render-brewfile` or `render-brewfile --machine-type <type>` without the flag is insufficient because they omit `mas` lines entirely.",
+        "Suggests a GATED render verification using `scripts/packages/render-brewfile --machine-type <type> --include-mas` (the wrapper flag — the bare `DOTFILES_INSTALL_MAS_APPS=true` env-form does NOT work because the wrapper script clears that var with `env -u`). Plain `just test-python -p test_brewfile.py` or `render-brewfile --machine-type <type>` without the flag is insufficient because they omit `mas` lines entirely.",
         "Understands machine_type composition lives in `home/.chezmoidata/machines.toml` (resolved by `features.tmpl`, default `personal`) when reasoning about which group reaches every machine type, not a `[packages]`-level or per-app setting",
         "References the apply-time vs init-prompt split documented in `references/packages-and-secrets.md` (e.g., explicitly mentions the apply-time env var table or the two-flavors-of-env-var distinction)"
       ]
@@ -158,7 +158,7 @@
         "Recommends moving the entry under the existing `[secrets.refs]` table",
         "Confirms the obfuscated `op://vault-id/item-id/field-id` form itself is correct (does not conflate with the human-readable-form rule)",
         "Suggests `chezmoi data --format=yaml | grep -i secrets` (or equivalent) to verify the loaded shape",
-        "Suggests `make test-secret-backed-files` as the validation lane",
+        "Suggests `just test-shell tests/bats/config/secrets.bats` as the validation lane",
         "Does NOT propose changing template-side code to read top-level (wrong direction of fix)"
       ]
     },
@@ -231,7 +231,7 @@
         "Says non-official tap-owned formulae and casks should be tap-qualified in package data so the rendered Brewfile exposes the tap-qualified identity",
         "Mentions that the rendered Brewfile uses `trusted: true` for tap-qualified non-official formulae and casks",
         "Mentions that official `homebrew/*` entries are excluded from trust automation",
-        "Suggests `make test-render-brewfile` and `make test-brew-bundle-script` as validation lanes"
+        "Suggests `just test-python -p test_brewfile.py` and `just test-shell tests/bats/packages/brew-bundle.bats` as validation lanes"
       ]
     },
     {
@@ -246,7 +246,7 @@
         "Explains that ~/.agents/plugins is script-created output with no direct chezmoi source mapping; a source-path error is not a reason to capture it",
         "Routes to agent-skill-management and identifies agent-marketplace/packages/core/skills/code-gardening/ as the authored source for this fixture",
         "Uses native filenames in agent-marketplace/ and rejects home/dot_agents/plugins copies, chezmoi add/re-add capture, and literal_ conversion",
-        "Points to the package build/check and native version workflow, including make -C agent-marketplace check",
+        "Points to the package build/check and native version workflow, including just -f agent-marketplace/justfile -d agent-marketplace check",
         "Distinguishes artifact/native-state verification from chezmoi verify and performs no apply"
       ]
     }

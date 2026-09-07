@@ -1,5 +1,6 @@
 [tools]
 bats = "1.14.0"
+just = "1.58.0"
 node = "24.12.0"
 python = "3.14.6"
 uv = "0.11.26"
@@ -7,4 +8,4 @@ shellcheck = "0.11.0"
 
 [tasks.test-tools]
 description = "Install pinned test runners and assertion libraries"
-run = ["mise install bats node python uv shellcheck", "scripts/tests/install-bats-libraries", "uv sync --locked --project agent-marketplace"]
+run = ["mise install bats just node python uv shellcheck", "scripts/tests/install-bats-libraries", "uv sync --locked --project agent-marketplace"]
