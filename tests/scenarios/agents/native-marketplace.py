@@ -20,7 +20,7 @@ sys.path.insert(0, str(ROOT / 'agent-marketplace/scripts'))
 from artifact import tree_files, validate_artifact
 from codex_rpc import enabled_edit, requests
 
-DEFAULTS = {'core', 'mattpocock', 'review', 'utils-agent'}
+DEFAULTS = {'core', 'last30days', 'mattpocock', 'review', 'utils-agent'}
 
 
 @contextmanager

@@ -20,6 +20,11 @@ default_loaded = false
 claude = true
 codex = true
 
+[agent_plugins.last30days]
+default_loaded = true
+claude = true
+codex = true
+
 [agent_plugins.mattpocock]
 default_loaded = true
 claude = true

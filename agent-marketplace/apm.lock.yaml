@@ -492,6 +492,17 @@ dependencies:
   content_hash: sha256:22de78eb0eca8ad3f1830f955999ff588650e1f6bbb1f436236eff4fb0296eda
   is_dev: true
   declared_license: MIT
+- repo_url: mvanhorn/last30days-skill
+  name: last30days
+  host: github.com
+  resolved_commit: 1f378527b229ffcb00102b6440e49fa06c582443
+  resolved_ref: v3.23.0
+  version: unknown
+  virtual_path: skills/last30days
+  is_virtual: true
+  package_type: claude_skill
+  content_hash: sha256:a7ed84aebfd849fdf056a5c7d437b1f9fb50199b61ad58f7a264bf559aad4bb8
+  is_dev: true
 - repo_url: nextlevelbuilder/ui-ux-pro-max-skill
   name: ui-ux-pro-max
   host: github.com

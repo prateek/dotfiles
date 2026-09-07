@@ -216,7 +216,7 @@ chezmoi filename escaping, upstream-shaped patch paths, and catalog filtering by
 local eligibility changed deliberately; their old assertions do not apply.
 
 `just test-agent-skill-packages-native` is a separate host lane requiring both
-installed clients. It builds first, then exercises all ten plugins through real
+installed clients. It builds first, then exercises all published plugins through real
 materialization/native CLI installation, versioned updates, stale-file removal,
 relocation, disabled-state restoration, rollback, and artifact-root Git
 consumption over local smart HTTP. It reads every Codex plugin and checks cached

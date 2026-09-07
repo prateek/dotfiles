@@ -1,0 +1,4 @@
+[[skills]]
+name = "last30days"
+dependency = "mvanhorn/last30days-skill/skills/last30days"
+path = "."

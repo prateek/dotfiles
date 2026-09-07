@@ -36,9 +36,9 @@ The consumer boundary is:
 | `~/.claude/CLAUDE.md` | Managed symlink to `../.agents/AGENTS.md` |
 | Claude/Codex native caches | Native client CLIs and app-server APIs |
 
-The default enabled set is `core`, `mattpocock`, `review`, and `utils-agent`. All ten
-packages remain available in both catalogs. Codex's hook-bearing plugins suppress
-hook discovery with an explicit empty `hooks` object. The 22 paired human-only
+The default enabled set is `core`, `last30days`, `mattpocock`, `review`, and
+`utils-agent`. All eleven packages remain available in both catalogs. Codex's
+hook-bearing plugins suppress hook discovery with an explicit empty `hooks` object. The 22 paired human-only
 controls remain file contracts; these checks do not prove model invocation behavior.
 
 Only the root APM manifest is maintained. Each plugin's Codex manifest owns its

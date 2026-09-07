@@ -21,6 +21,9 @@ marketplace:
   - name: ios
     source: ./plugins/ios
     category: Productivity
+  - name: last30days
+    source: ./plugins/last30days
+    category: Productivity
   - name: mattpocock
     source: ./plugins/mattpocock
     category: Productivity
@@ -91,6 +94,7 @@ devDependencies:
   - hefgi/skills/shortcut
   - kepano/obsidian-skills
   - mattpocock/skills
+  - mvanhorn/last30days-skill/skills/last30days#v3.23.0
   - nextlevelbuilder/ui-ux-pro-max-skill
   - obra/superpowers
   - openai/skills/skills/.curated/cli-creator
