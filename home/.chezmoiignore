@@ -82,9 +82,6 @@ Library/Application Support/orca/orca-data.json
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "ghostty")) "true" }}
 .config/ghostty
 {{- end }}
-{{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "hammerspoon")) "true" }}
-.hammerspoon
-{{- end }}
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "bettertouchtool")) "true" }}
 Library/Preferences/com.hegenberg.BetterTouchTool.plist
 {{- end }}

@@ -2,7 +2,7 @@
 status: current
 doc_type: reference
 created: 2026-04-27
-updated: 2026-09-05
+updated: 2026-09-07
 related:
   - ../index.md
   - ../adr/0006-chezmoi-migration-prototype.md
@@ -66,7 +66,7 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply --source ~/dotfiles prateek
 There is no durable `install.sh` or `bootstrap.sh`.
 
 Chezmoi scripts under `home/.chezmoiscripts/` handle package installation,
-mise runtime setup, selected macOS defaults, Hammerspoon compilation, and
+mise runtime setup, selected macOS defaults, and
 post-apply verification. Use `run_once_before_` for prerequisites and
 `run_onchange_after_` for work that should rerun when the rendered script
 changes.

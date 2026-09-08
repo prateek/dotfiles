@@ -149,7 +149,6 @@ run_after_18-tartelet-tart-softnet-wrapper.sh.tmpl
 run_onchange_after_20-mise-install.sh.tmpl
 run_after_21-raycast-extensions.sh.tmpl
 run_after_22-setapp-apps.sh.tmpl
-run_onchange_after_25-hammerspoon.sh.tmpl
 run_onchange_after_30-macos-defaults.sh.tmpl
 run_onchange_after_35-agent-skill-roots.sh.tmpl
 run_onchange_after_36-agent-plugins.sh.tmpl

@@ -1,12 +1,11 @@
 #!/usr/bin/env zsh
 #
-# gemini-meeting-sync: periodic Gemini meeting notes sync (transcripts + notes).
+# gemini-meeting-sync: Gemini meeting notes sync (transcripts + notes).
 #
 # This wrapper:
 # - runs the gog-gemini-meeting-import sync script with sane defaults
 # - prevents overlapping runs
 # - writes logs + status to /var/tmp (NOT the notes vault)
-# - exposes enable/disable + status helpers for Hammerspoon/Raycast/etc.
 
 set -euo pipefail
 unsetopt xtrace 2>/dev/null || true
@@ -30,10 +29,6 @@ config_file() {
 
 default_out_dir() {
   echo "$HOME/code/github.com/prateek/personal-notes/21-openai-meetings"
-}
-
-enabled_file() {
-  echo "$(config_dir)/enabled"
 }
 
 tmp_root() {
@@ -70,11 +65,8 @@ ensure_default_config() {
 {
   "out_dir": "__OUT_DIR__",
   "lookback_days": 7,
-  "interval_seconds": 900,
   "use_calendar": false,
-  "artifact_prune_days": 2,
-  "notify_on_success": "on_change",
-  "notify_on_failure": true
+  "artifact_prune_days": 2
 }
 EOF
   python3 - <<'PY' "$cfg" "$out_dir"
@@ -250,21 +242,6 @@ for path in logs_dir.glob("run-*.log"):
 PY
 }
 
-cmd_enable() {
-  ensure_dirs
-  ensure_default_config
-  touch "$(enabled_file)"
-  echo "Enabled: $(enabled_file)"
-  echo "Hammerspoon will pick this up on its next timer tick."
-  echo "Run now: gemini-meeting-sync run"
-}
-
-cmd_disable() {
-  ensure_dirs
-  rm -f "$(enabled_file)" 2>/dev/null || true
-  echo "Disabled (removed): $(enabled_file)"
-}
-
 cmd_status() {
   local f
   f="$(status_file)"
@@ -358,11 +335,8 @@ Usage:
   gemini-meeting-sync run
   gemini-meeting-sync status
   gemini-meeting-sync tail
-  gemini-meeting-sync enable
-  gemini-meeting-sync disable
 
 State:
-  - Enabled marker: ~/.config/gemini-meeting-sync/enabled
   - Config: ~/.config/gemini-meeting-sync/config.json
 
 Logs + status:
@@ -379,8 +353,6 @@ case "${1:-}" in
   run) shift; cmd_run "$@" ;;
   status) shift; cmd_status "$@" ;;
   tail) shift; cmd_tail "$@" ;;
-  enable) shift; cmd_enable "$@" ;;
-  disable) shift; cmd_disable "$@" ;;
   -h|--help|"") cmd_help ;;
   *) die "unknown command: $1 (use --help)" ;;
 esac

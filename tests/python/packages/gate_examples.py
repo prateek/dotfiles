@@ -2,7 +2,6 @@ MANAGED = {
     'personal': (
         '.config/cmux/preferences.json',
         '.config/ghostty',
-        '.hammerspoon',
         'Library/Preferences/com.hegenberg.BetterTouchTool.plist',
         'Library/Preferences/com.raycast.macos.plist',
         '.config/raycast/scripts/temp-admin.sh',
@@ -33,7 +32,6 @@ MANAGED = {
     ),
     'work': (
         '.config/ghostty',
-        '.hammerspoon',
         'Library/Preferences/pro.betterdisplay.BetterDisplay.plist',
         '.config/zed',
         'Library/Application Support/orca/orca-data.json',
@@ -65,7 +63,6 @@ UNMANAGED = {
     'ci': (
         '.config/cmux',
         '.config/ghostty',
-        '.hammerspoon',
         'Library/Preferences/com.hegenberg.BetterTouchTool.plist',
         'Library/Preferences/com.raycast.macos.plist',
         '.config/raycast/scripts/temp-admin.sh',
@@ -103,7 +100,6 @@ UNMANAGED = {
     ),
     'homelab': (
         '.config/ghostty',
-        '.hammerspoon',
         'Library/Preferences/com.hegenberg.BetterTouchTool.plist',
         'Library/Preferences/com.raycast.macos.plist',
         'Library/Preferences/com.setapp.DesktopClient.plist',
@@ -143,7 +139,6 @@ IGNORED = {
         '.config/cmux',
         'Library/Application Support/orca/orca-data.json',
         '.orca/keybindings.json',
-        '.hammerspoon',
         'Library/Colors/nvALT.clr',
         'Library/Preferences/com.cmuxterm.app.plist',
         'Library/Preferences/net.elasticthreads.nv.plist',

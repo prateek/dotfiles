@@ -108,24 +108,6 @@ audit-orca-settings:
 install-session-sync-app:
     bash ./scripts/agent-sessions/install-sync-app
 
-# Compile Hammerspoon config (Fennel -> Lua).
-hammerspoon:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    command -v fennel >/dev/null 2>&1 || { echo "Missing 'fennel' (brew install fennel)"; exit 1; }
-    mkdir -p build/hammerspoon
-    fennel --compile home/dot_hammerspoon/init.fnl > build/hammerspoon/init.generated.lua
-
-# Compile and validate the generated Lua (syntax only).
-hammerspoon-check: hammerspoon
-    command -v luac >/dev/null 2>&1 || { echo "Missing 'luac' (brew install lua)"; exit 1; }
-    luac -p build/hammerspoon/init.generated.lua
-
-# Compile and reload Hammerspoon (requires hs.ipc loaded).
-hammerspoon-reload: hammerspoon
-    command -v hs >/dev/null 2>&1 || { echo "Missing 'hs' CLI"; exit 1; }
-    hs -c 'hs.reload(); "ok"' -q
-
 # lane: smoke (base image, casks skipped) or full (Xcode image). Add --dry-run to skip installs.
 test-install-tart lane="smoke" *flags:
     ./scripts/vm/test-install-tart.sh --lane {{ lane }} \

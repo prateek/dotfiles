@@ -7,28 +7,11 @@ setup() {
   wrapper="$DOTFILES_ROOT/bin/gemini-meeting-sync"
 }
 
-@test "Gemini sync enable creates its marker and valid generated defaults" {
+@test "Gemini sync records a successful producer run with valid defaults" {
   run_zsh 0 -n "$wrapper"
   assert_success
   run -0 "$TEST_PYTHON" -m json.tool "$DOTFILES_ROOT/home/dot_config/gemini-meeting-sync/config.json"
   assert_success
-  run_zsh 0 "$wrapper" enable
-  assert_success
-  [ -z "$stderr" ]
-  [ -f "$XDG_CONFIG_HOME/gemini-meeting-sync/enabled" ]
-  run -0 "$TEST_PYTHON" - "$XDG_CONFIG_HOME/gemini-meeting-sync/config.json" <<'PY'
-import json, os, sys
-cfg = json.load(open(sys.argv[1]))
-assert cfg['out_dir'] == '~/code/github.com/prateek/personal-notes/21-openai-meetings', cfg
-assert os.path.expanduser(cfg['out_dir']) == os.environ['HOME'] + '/code/github.com/prateek/personal-notes/21-openai-meetings'
-assert cfg['interval_seconds'] == 900, cfg
-assert cfg['notify_on_success'] == 'on_change', cfg
-assert cfg['notify_on_failure'] is True, cfg
-PY
-  assert_success
-}
-
-@test "Gemini sync records a successful producer run and its output directory" {
   export GEMINI_MEETING_SYNC_SCRIPT="$FIXTURE/importer.py"
   cat > "$GEMINI_MEETING_SYNC_SCRIPT" <<'PY'
 import argparse, json, os
@@ -48,6 +31,13 @@ PY
   run_zsh 0 "$wrapper" run
   assert_success
   [ -z "$stderr" ]
+  run -0 "$TEST_PYTHON" - "$XDG_CONFIG_HOME/gemini-meeting-sync/config.json" <<'PY'
+import json, os, sys
+cfg = json.load(open(sys.argv[1]))
+assert cfg['out_dir'] == '~/code/github.com/prateek/personal-notes/21-openai-meetings', cfg
+assert os.path.expanduser(cfg['out_dir']) == os.environ['HOME'] + '/code/github.com/prateek/personal-notes/21-openai-meetings'
+PY
+  assert_success
   run -0 "$TEST_PYTHON" - "$GEMINI_MEETING_SYNC_TMP_ROOT/latest-status.json" <<'PY'
 import json, os, sys
 status = json.load(open(sys.argv[1]))

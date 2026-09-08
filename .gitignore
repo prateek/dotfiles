@@ -51,7 +51,7 @@ home/dot_claude/skills/
 # Codex system skills (installed automatically)
 .codex/skills/.system/
 
-# Hammerspoon build output
+# Build output and test libraries
 build/
 
 # Tripwire: this repo doesn't use `ask`'s declarative mode. A stray `ask add`

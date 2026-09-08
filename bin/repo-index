@@ -1,5 +1,5 @@
 #!/usr/bin/env zsh
-# List locally tracked repos (canonical clones) as TSV for shell + Hammerspoon.
+# List locally tracked repos (canonical clones) as TSV for shell pickers.
 #
 # Output (tsv): <owner/repo>\t<https_url>\t<local_path>
 #

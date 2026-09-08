@@ -43,7 +43,7 @@ Use this table to find the right file. If a change touches more than one file, u
 3. **Keep `SKILL.md` ≤ 200 lines.** If a section grows, push depth into a `references/<mode>.md`. The router pattern is the design.
 4. **Push universal rules sparingly.** A rule belongs in `SKILL.md` Universal Rules or Repo-Specific Gotchas only if violating it creates a destructive or hard-to-recover outcome. Otherwise it lives in a `references/<mode>.md` Common Pitfalls section.
 5. **Self-contained means self-contained.** Do not link out to chezmoi.io. If you need to add chezmoi-tool knowledge, add it to `references/chezmoi-cheatsheet.md`. Relative paths to dotfiles repo files (`home/.chezmoidata/...`) are fine.
-6. **Keep examples concrete and from this repo.** No fictional bundle IDs; reuse the ones already cited (Moom, Hammerspoon, etc.).
+6. **Keep examples concrete and from this repo.** No fictional bundle IDs; reuse the ones already cited (Moom, Yojam, etc.).
 
 ## Post-Edit Validation Checklist
 

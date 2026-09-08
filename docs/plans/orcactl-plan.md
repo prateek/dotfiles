@@ -3,7 +3,7 @@ status: draft
 doc_type: plan
 owner: Prateek
 created: 2026-05-13
-updated: 2026-05-13
+updated: 2026-09-07
 status_detail: "Draft for a separate Go repo/tool; dotfiles integration is limited to eventual install and skill wiring."
 ---
 
@@ -25,7 +25,7 @@ Several specific scenarios come up enough that they deserve first-class commands
 5. **Resume a just-exited session** — claude/codex print `--resume <uuid>` on exit; copy-pasting that command is friction worth removing.
 6. **Read sibling pane output** — last shell command output, last agent reply.
 7. **Layout changes** — split↔tab, swap split direction, join tabs into splits.
-8. **External triggers** — Hammerspoon / Raycast / BetterTouchTool keybinds need to know the current Orca state to compose what to invoke.
+8. **External triggers** — Raycast / BetterTouchTool keybinds need to know the current Orca state to compose what to invoke.
 
 Plus the daily-driver micros: status, comment, list, jump, dashboard.
 
@@ -271,12 +271,10 @@ $ o ts                                   # stub: blocked on upstream
 $ o psw                                  # stub: blocked on upstream
 ```
 
-### 8. External trigger (Hammerspoon binding)
+### 8. External trigger (launcher shell command)
 
-```lua
-hs.hotkey.bind({"cmd","ctrl"}, "F", function()
-  hs.execute("orcactl wt fork $(orcactl ctx --field active.worktree.name)-debug", true)
-end)
+```sh
+orcactl wt fork "$(orcactl ctx --field active.worktree.name)-debug"
 ```
 
 `orcactl` works the same whether invoked from inside an Orca terminal or from outside — `ctx` always reflects what Orca itself considers the active worktree/terminal.
@@ -570,7 +568,7 @@ Filing under whatever Stably's public issue tracker is. Title: `terminal move: e
 4. **Symlink behavior across volumes**: warn on out-of-repo symlinks at fork time. Don't try to resolve.
 5. **Claude SDK availability**: confirm `@anthropic-ai/claude-agent-sdk` v0.1.51+ is reachable from a Go binary. Likely path: shell out to a tiny node wrapper (`orcactl-claude-sdk-helper`) that ships alongside the binary. Avoid full Node embedding.
 6. **Codex resume-hint exact wording**: capture during fixture work. Build a small `internal/scrape/fixtures/*.txt` directory with one fixture per (agent × known-version) pair, regex tests against all of them.
-7. **`o ctx` performance**: 5-10 `orca` RPC calls per invocation. Cache for the lifetime of a single CLI invocation; revisit if Hammerspoon/BTT keybinds need sub-50ms response.
+7. **`o ctx` performance**: 5-10 `orca` RPC calls per invocation. Cache for the lifetime of a single CLI invocation; revisit if launcher keybinds need sub-50ms response.
 8. **Skill complement**: thin `orcactl` skill for Claude/Codex teaching when to invoke which subcommand. Phase 2.
 9. **PR review default agent**: claude or codex? Default claude for now. Configurable.
 

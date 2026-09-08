@@ -3,7 +3,7 @@ status: active
 doc_type: plan
 owner: Prateek
 created: 2026-07-04
-updated: 2026-07-04
+updated: 2026-09-07
 related:
   - ../adr/0009-goku-karabiner-codegen.md
   - ../adr/0010-machine-type-package-selection.md
@@ -57,7 +57,7 @@ reliable authoring path is: build each bind once in the Tuna GUI, then commit
 the exported `config.toml` as the chezmoi source. The table below is the intent;
 exact URL strings come from the export.
 
-| Key | Today (Leader Key) | Tuna action shape |
+| Key | Action | Tuna action shape |
 | --- | --- | --- |
 | `t s b g c o w m p f` | `application` launches (Ghostty, Slack, Arc, Chrome, Cursor, Orca, Obsidian, Spotify, 1Password, Finder) | `tuna://run/path.<enc-app-path>/Open` |
 | `z` | group "misc" | `[[comboMode.bindings.children]]` under `key = 'z'`, `label = 'misc'` |
@@ -65,13 +65,11 @@ exact URL strings come from the export.
 | `z m` | `url` `vnc://m4mini…` | `tuna://run/url.<enc-url>/…Open URL` |
 | `z z` | `command` DAYJOB password (`op read` + paste; op:// ref) | `tuna://run/text.<enc-cmd>/Run Text as Shell Command` |
 | `z t` | `command` `~/.config/raycast/scripts/temp-admin.sh` | `tuna://run/text.<enc-cmd>/Run Text as Shell Command` |
-| `z r` | `command` `open "hammerspoon://gp-record"` | `tuna://run/url.hammerspoon:%252F%252Fgp-record/…Open URL` |
-| `z g` | `command` `open "hammerspoon://gp-copy"` | `tuna://run/url.hammerspoon:%252F%252Fgp-copy/…Open URL` |
+| `z r` | Start/stop GhostPepper recording | `tuna://run/url.ghostpepper:%252F%252Fstart-meeting%253Fx-error=ghostpepper%25253A%25252F%25252Fstop-meeting/…Open URL` |
+| `z g` | Copy last GhostPepper recording | `tuna://run/url.ghostpepper:%252F%252Fcopy-last-recording/…Open URL` |
 
 Notes:
-- The two GhostPepper binds become direct URL actions instead of `open "…"`
-  shell wrappers. The Hammerspoon `gp-record` / `gp-copy` handlers
-  (`home/dot_hammerspoon/init.fnl:1803-1854`) are unchanged.
+- The two GhostPepper binds use the app's native URL actions directly.
 - The DAYJOB bind keeps the `op://` reference inline, exactly as the committed
   Leader Key JSON does today (an `op://` ref is a pointer, not a secret).
 - `$HOME` expands because "Run Text as Shell Command" runs through a shell.
@@ -150,7 +148,7 @@ The CLI is enabled via the plist (`CLIEnabled`); Tuna self-installs
 1. **Shell + URL action execution.** Verified: combo-bind schema, nesting, and
    F18 hotkey import via reload. NOT yet verified: that
    `text.<cmd>/Run Text as Shell Command` actually runs shell and
-   `url.<scheme>/…Open URL` opens `vnc://` and `hammerspoon://` on this build.
+   `url.<scheme>/…Open URL` opens `vnc://` and `ghostpepper://` on this build.
    Build one of each in the GUI, export, and fire it before porting all binds.
 2. **First-launch bootstrap.** On a fresh machine (empty internal state, sync
    folder pre-populated by chezmoi), does the first launch import the folder or
@@ -173,7 +171,7 @@ The CLI is enabled via the plist (`CLIEnabled`); Tuna self-installs
 - Tests retargeted and green (`make test-package-gated-configs`,
   `make test-karabiner-goku`).
 - On-device: ⌘-tap opens Tuna combo mode on F18; cheatsheet shows after 1s;
-  every ported bind fires (apps, shell, `vnc://`, `hammerspoon://`); cutover
+  every ported bind fires (apps, shell, `vnc://`, `ghostpepper://`); cutover
   leaves no Leader Key process or hotkey.
 
 ## Follow-ups

@@ -27,7 +27,6 @@ capture_mackup_candidates() {
     cursor
     fastscripts
     ghostty
-    hammerspoon
     iterm2
     moom
     nvalt
