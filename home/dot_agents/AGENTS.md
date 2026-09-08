@@ -39,7 +39,6 @@ Load the matching convention before acting:
 - iOS or Apple-platform work: `~/.agents/docs/ios.md`
 - Agent-session debugging or agentsview: `~/.agents/docs/agentsview.md`
 - Crit review behavior or stacked-branch scope: `~/.agents/docs/crit.md`
-- acpx delegation or shortcut selection: `~/.agents/docs/acpx.md`
 
 ## Secrets
 

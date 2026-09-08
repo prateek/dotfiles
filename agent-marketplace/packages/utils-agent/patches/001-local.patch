@@ -1,3 +1,14 @@
+diff --git a/skills/acpx-cli/SKILL.md b/skills/acpx-cli/SKILL.md
+index bccefb618285594ba349cf4fc544715b4206054d..b38afa5a6ac3765a961bd45479a81baa56c1f28b 100644
+--- a/skills/acpx-cli/SKILL.md
++++ b/skills/acpx-cli/SKILL.md
+@@ -1,5 +1,5 @@
+ ---
+-name: acpx
++name: acpx-cli
+ description: Use acpx as a headless ACP CLI for agent-to-agent communication, including prompt/exec/sessions workflows, session scoping, queueing, permissions, output formats, system-prompt overrides, and multi-agent flows authored with defineFlow/decision/decisionEdge.
+ ---
+ 
 diff --git a/skills/orca-stration/SKILL.md b/skills/orca-stration/SKILL.md
 index 85a0ff8c4b081feb744dbf14979678c080241fec..defe8678553f4a2dafc0bc52cf02a8f4b9398e06 100644
 --- a/skills/orca-stration/SKILL.md

@@ -1,13 +1,17 @@
 ---
-status: active
+status: archived
 doc_type: plan
 owner: Prateek
 created: 2026-08-28
-updated: 2026-08-28
+updated: 2026-09-08
+closed: 2026-09-08
+current_guidance: ../../agent-marketplace/packages/utils-agent/skills/acpx/references/harness-lanes.md
 related:
-  - ../../home/dot_agents/docs/acpx.md
+  - ../../agent-marketplace/packages/utils-agent/skills/acpx/SKILL.md
+  - ../adr/0028-router-skill-over-vendor-remap.md
   - ../adr/0016-vendor-into-skill-references.md
-status_detail: "PoC executed 2026-08-28: helper landed and review-hardened, five scenarios evidenced end to end (steering mechanism validated, live demo pending), go recommended."
+  - ./acpx-skill-packaging-plan.md
+status_detail: "PoC executed 2026-08-28: helper landed and review-hardened, five scenarios evidenced end to end (steering mechanism validated, live demo pending), go recommended. Closed 2026-09-08 when the per-harness lanes moved into the acpx skill's harness-lanes reference; the packaging follow-up shipped as ADR 0028, not the ADR 0016 sketch this body anticipates."
 ---
 
 # acpx Claude Code Streaming PoC Plan

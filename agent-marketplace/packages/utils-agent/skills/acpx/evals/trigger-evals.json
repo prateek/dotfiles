@@ -1,0 +1,20 @@
+[
+  {"query": "agptx - take a look at the retry logic in internal/queue/dispatch.go and tell me whether the backoff can starve the DLQ writer", "should_trigger": true},
+  {"query": "i've been staring at docs/migration-plan.md for an hour and i think it's fine but i want another model to poke holes in it before i commit to it", "should_trigger": true},
+  {"query": "the intro in README.md reads like a press release. can you get it cleaned up properly rather than doing it yourself", "should_trigger": true},
+  {"query": "kick off a long review with afable on this branch, keep it in a session called review so i can ask follow-ups, and give it half an hour", "should_trigger": true},
+  {"query": "have agpt review the diff on this branch. it must not touch any files - this checkout has uncommitted work i can't lose", "should_trigger": true},
+  {"query": "afablex: is the lock ordering in pkg/store/txn.go actually deadlock-free or am i fooling myself", "should_trigger": true},
+  {"query": "get gemini's take on deploy/api/Dockerfile - mostly whether the layer caching is sane, i keep getting full rebuilds on every push", "should_trigger": true},
+  {"query": "farm the migration audit out to another agent, i don't want the files under db/migrations eating my context. i just want a list of the ones that aren't reversible", "should_trigger": true},
+  {"query": "have opus look over docs/design/sharding.md and tell me what i'm missing. don't change anything, just report back", "should_trigger": true},
+  {"query": "my ~/.acpx directory is getting huge. how do i clear out the closed sessions and their event streams from more than a month ago?", "should_trigger": false},
+  {"query": "ask the opus model whether the index in db/migrations/0007_add_orders_idx.sql will actually get used, and then update the migration if it won't", "should_trigger": false},
+  {"query": "how do i set up a named acpx session so follow-up prompts keep the same context? the docs mention -s but i'm not sure how the scope works with --cwd", "should_trigger": false},
+  {"query": "acpx exec keeps dying with NO_SESSION when i call it from a cron script but works fine from my shell. what am i doing wrong", "should_trigger": false},
+  {"query": "write me an acpx flow with defineFlow that runs codex on a task first and then has claude review whatever codex produced", "should_trigger": false},
+  {"query": "spin up a subagent to map out how internal/http/middleware/auth.go gets wired into the router, i don't need the details in my context, just the summary", "should_trigger": false},
+  {"query": "run the test suite in the background and let me know when it's done, i want to keep working on the Dockerfile meanwhile", "should_trigger": false},
+  {"query": "gpt-5 says the regex ^[a-z0-9]+(?:-[a-z0-9]+)*$ is fine for slugs but i don't trust it, can you check it yourself against the cases in the README", "should_trigger": false},
+  {"query": "can you get a second pair of eyes on pkg/store/txn.go - like just re-read it yourself, carefully, before i ship it", "should_trigger": false}
+]

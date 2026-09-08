@@ -1249,9 +1249,15 @@ def validate_current_tree(root: Path, docs_root: Path) -> list[str]:
                 if pattern in text:
                     errors.append(f"{rel}: stale moved docs path reference: {pattern}")
 
-        for target in markdown_link_targets(without_fenced_code_blocks(body)):
-            if should_validate_repo_link(target) and not target_exists(root, path, target):
-                errors.append(f"{rel}: Markdown link target must exist: {target}")
+        # A closed doc is not maintained and may go stale, links included;
+        # checking its links would make anything it ever linked undeletable.
+        # Accepted ADRs are locked too, but they are live direction and keep
+        # the check: close the ADR before removing what it points at.
+        status = meta.get("status")
+        if not (isinstance(status, str) and status in CLOSED_STATUSES):
+            for target in markdown_link_targets(without_fenced_code_blocks(body)):
+                if should_validate_repo_link(target) and not target_exists(root, path, target):
+                    errors.append(f"{rel}: Markdown link target must exist: {target}")
 
     if index_path.is_file():
         # A link in index frontmatter is not a routing entry.

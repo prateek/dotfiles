@@ -34,3 +34,7 @@ bin/grmrepo-refresh
 .claude/commands/plan-tdd.md
 .claude/commands/session-summary.md
 .claude/commands/setup.md
+
+# acpx conventions moved into the utils-agent acpx skill (ADR 0028)
+.agents/docs/acpx.md
+.agents/docs/acpx-harness-lanes.md

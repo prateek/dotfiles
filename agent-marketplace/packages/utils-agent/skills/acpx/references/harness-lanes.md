@@ -1,6 +1,6 @@
 # acpx Harness Lanes
 
-Read this reference after choosing a launch shape in [acpx.md](acpx.md) when a
+Read this reference after choosing a launch shape in [SKILL.md](../SKILL.md) when a
 run must be watched, relayed, cancelled, or recovered.
 
 ## Completion markers
@@ -20,7 +20,7 @@ The final answer is the assistant text immediately before the terminal marker.
 ## Claude Code: redirected relay
 
 Claude Code watches the redirected log created by the canonical launch in
-[acpx.md](acpx.md). Use one blocking `~/.agents/bin/poll-stream` call per wait;
+[SKILL.md](../SKILL.md). Use one blocking `~/.agents/bin/poll-stream` call per wait;
 read the helper's header for its current arguments and exit codes.
 
 ```sh
@@ -42,8 +42,7 @@ limits can split a marker or leave earlier output unread. Treat the harness
 completion notification as the backstop for a markerless run.
 
 Cancel by stopping the background task or killing only the slug-specific
-process. A broad kill can terminate cursor-agent's shared authentication
-worker.
+process, within the cleanup limits in [SKILL.md](../SKILL.md).
 
 When a native first-party monitor is available, use it instead of the relay
 because it wakes on stream output.
@@ -62,7 +61,7 @@ acpx run itself leaves no separate log.
 Run acpx as a background shell job or let the command timeout background it.
 When starting it manually with `&`, use `nohup` and redirect stdout and stderr
 to a slug-specific log; cursor-agent's tool shell can reap a bare background
-process. Use the redirected launch in [acpx.md](acpx.md) as the fallback shape.
+process. Use the redirected launch in [SKILL.md](../SKILL.md) as the fallback shape.
 Use escaped regular-expression notification patterns for stable milestones,
 such as `\[done\]` and `\[error\]`, and await only when the next step depends
 on the result.

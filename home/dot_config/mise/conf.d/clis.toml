@@ -31,12 +31,12 @@
 # convention docs in ~/.agents/docs/. Inline comment names the consumer
 # when the package name doesn't make it obvious.
 "github:openclaw/gogcli" = { version = "latest", exe = "gog" } # Google Workspace CLI (gogcli.sh, formerly steipete/gogcli); see ~/.agents/docs/google-workspace.md
-"npm:@agentclientprotocol/claude-agent-acp" = "latest"     # claude-agent-acp; ACP adapter for acpx afable shortcuts. see ~/.agents/docs/acpx.md
+"npm:@agentclientprotocol/claude-agent-acp" = "latest"     # claude-agent-acp; ACP adapter for the acpx afable shortcuts; acpx skill (utils-agent)
 "npm:@pleaseai/ask" = "latest"                             # ask skill (utils-agent); see [env] below
 "npm:@shortcut-cli/shortcut-cli" = "latest"                # shortcut skill; binary is `short`
 "npm:@steipete/bird" = "latest"                            # twitter; see ~/.agents/docs/twitter.md
 "npm:@tobilu/qmd" = "latest"                               # qmd; local wiki and session-history search
-"npm:acpx" = "latest"                                      # acpx CLI; acpx skill (utils-agent), headless ACP client. see ~/.agents/docs/acpx.md
+"npm:acpx" = "latest"                                      # acpx CLI; acpx + acpx-cli skills (utils-agent), headless ACP client
 "npm:agent-slack" = "latest"                               # agent-slack CLI; slack skill (utils-agent), see ~/.agents/docs/slack.md
 "pipx:absurdctl" = "latest"                                # durable-workflow CLI for agent use
 "pipx:obsidian-wiki" = "latest"                            # obsidian-wiki plugin pkg + wiki-agent-sessions repo (sessions-build/query, lint)

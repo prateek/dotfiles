@@ -5,7 +5,7 @@ owner: Prateek
 created: 2026-09-03
 updated: 2026-09-03
 related:
-  - ../../home/dot_agents/docs/acpx.md
+  - ../../agent-marketplace/packages/utils-agent/skills/acpx/SKILL.md
   - ../../home/dot_acpx/config.json.tmpl
   - ../../agent-marketplace/packages/core/skills/writing-for-humans/SKILL.md
 status_detail: "Backs the agptw pin (gpt-5.6-luna-high). Re-run the method here when the cursor-agent catalog moves a pinned family or the drift audit flags agptw."

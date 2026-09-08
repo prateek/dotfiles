@@ -112,6 +112,21 @@ class CurrentTreeTests(DocsFixture):
                 self.doc("plans/body.md", "# Body\n\n```markdown\n" + body + "\n```", status="proposed")
                 self.validate()
 
+    def test_closed_docs_are_not_held_to_inline_link_targets(self):
+        body = "# Body\n\nSee [gone](missing.md)."
+        for label, status, kind in (("proposed plan", "proposed", "plan"), ("accepted adr", "accepted", "adr")):
+            with self.subTest(checked=label):
+                self.doc("plans/body.md", body, status=status, kind=kind)
+                self.validate(error="Markdown link target must exist: missing.md")
+        for label, status, metadata in (
+            ("archived", "archived", ARCHIVED),
+            ("superseded", "superseded", SUPERSEDED),
+            ("rejected", "rejected", REJECTED),
+        ):
+            with self.subTest(closed=label):
+                self.doc("plans/body.md", body, status=status, **metadata)
+                self.validate()
+
     def test_retired_docs_dev_is_rejected_even_without_frontmatter(self):
         path = self.doc("dev/foo.md", "# Retired Dev Folder", status="proposed")
         self.validate(error="docs/dev is retired")

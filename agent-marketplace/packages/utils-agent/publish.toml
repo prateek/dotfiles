@@ -1,5 +1,5 @@
 [[skills]]
-name = "acpx"
+name = "acpx-cli"
 dependency = "openclaw/acpx/skills/acpx"
 path = "."
 

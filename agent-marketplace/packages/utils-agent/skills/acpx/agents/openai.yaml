@@ -1,0 +1,4 @@
+interface:
+  display_name: "acpx Delegation"
+  short_description: "Delegate a task to another coding agent through acpx"
+  default_prompt: "Use $acpx to delegate this task to another agent."

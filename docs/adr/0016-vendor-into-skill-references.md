@@ -1,14 +1,17 @@
 ---
-status: proposed
+status: superseded
 doc_type: adr
 created: 2026-08-28
-updated: 2026-09-07
+updated: 2026-09-08
+closed: 2026-09-08
 owner: Prateek
+superseded_by: 0028-router-skill-over-vendor-remap.md
 related:
+  - 0028-router-skill-over-vendor-remap.md
   - ../plans/acpx-claude-streaming-poc-plan.md
   - 0013-apm-vendored-tool-integrations.md
   - ../plans/apm-agent-marketplace-plan.md
-status_detail: "Sketch for review before implementation; acpx is the first customer. Scope note: a router skill whose reference bodies are skills in their own right does not need this mapping — mark them disable-model-invocation and point at the sibling paths, as core/skills/local/writing-for-humans does. The mapping is for reference material that is not itself a skill."
+status_detail: "Never implemented. Its own scope note was the refutation: acpx's upstream body is a skill, so the router points at a published sibling instead of relocating vendored content. ADR 0028 records what shipped. Body describes the retired package.toml/vendor layout."
 ---
 
 # ADR 0016 — Vendored dependency content may land inside a local skill

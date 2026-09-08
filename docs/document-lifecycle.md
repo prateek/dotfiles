@@ -2,7 +2,7 @@
 status: current
 doc_type: convention
 created: 2026-05-10
-updated: 2026-05-18
+updated: 2026-09-08
 ---
 
 # Document Lifecycle
@@ -160,7 +160,11 @@ be repo-local relative paths that exist. Do not use `~/...`,
 absolute paths, or web URLs in lifecycle routing metadata.
 
 Use inline Markdown links for cross-references in doc bodies. The validator
-checks repo-local inline links outside fenced code blocks.
+checks repo-local inline links outside fenced code blocks in every doc that is
+not closed. A closed doc keeps its body as written, so its inline links may go
+stale and are not checked; a file is not kept alive by a historical link to it.
+Accepted ADRs are still checked: to remove a file one points at, close the ADR
+first.
 
 ## Docs Index
 
