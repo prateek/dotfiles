@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Re-publish NODE_EXTRA_CA_CERTS into the launchd GUI domain at every login.
+  `launchctl setenv` writes to the live session only, so without this the
+  corporate CA trust that Node clients inside GUI apps depend on disappears at
+  the next logout. The wrapper explains why the managed zsh export is not
+  enough: LaunchServices does not hand shell environment to Dock-launched apps.
+  Background: docs/runbooks/corp-tls-inspection.md.
+
+  Gated in .chezmoiignore on the tls_inspection feature. Bootstrapped and
+  reloaded on change by run_after_19-corp-ca-bundle.sh; to load by hand:
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.prateek.gui-corp-ca.plist
+
+  One-shot on purpose (RunAtLoad, no KeepAlive): the job's whole output is the
+  session's environment, and launchd would otherwise treat each clean exit as a
+  crash loop.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.prateek.gui-corp-ca</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>{{ .chezmoi.homeDir }}/.local/bin/corp-ca-gui-env</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <!-- The wrapper resolves launchctl through PATH; pin the system one so the
+         job never depends on whatever PATH init.sh last pushed into the GUI
+         domain. -->
+    <key>PATH</key>
+    <string>/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>ProcessType</key>
+  <string>Background</string>
+  <key>LimitLoadToSessionType</key>
+  <string>Aqua</string>
+</dict>
+</plist>

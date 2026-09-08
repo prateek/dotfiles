@@ -1,0 +1,130 @@
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- if and $f.run_install_scripts (eq .chezmoi.os "darwin") -}}
+{{ template "script_lib.sh" . }}
+
+label="com.prateek.gui-corp-ca"
+plist="$HOME/Library/LaunchAgents/$label.plist"
+publisher="$HOME/.local/bin/corp-ca-gui-env"
+bundle_dir="$HOME/.config/certs"
+bundle="$bundle_dir/corp-ca-bundle.pem"
+{{- if not $f.tls_inspection }}
+
+# Kill switch: chezmoi stops managing the launch agent once the feature is off
+# but does not delete it, so the GUI domain would keep handing out
+# NODE_EXTRA_CA_CERTS long after the machine stopped sitting behind the proxy.
+# The bundle is machine-local state, so it goes with them. No-op, and no
+# launchctl call at all, on machines that never had the feature.
+if [ -e "$plist" ] || [ -e "$publisher" ] || [ -e "$bundle" ]; then
+  launchctl bootout "gui/$(id -u)/$label" 2>/dev/null || true
+  launchctl unsetenv NODE_EXTRA_CA_CERTS 2>/dev/null || true
+  rm -f "$plist" "$publisher" "$bundle"
+  log "tls_inspection is off; removed the corporate CA bundle and its launch agent."
+fi
+{{- else }}
+
+# The proxy decrypts and re-signs TLS with a corporate CA. Safari and Chromium
+# read that CA from the System keychain; Node ships its own root store and
+# ignores the keychain, so Node clients need NODE_EXTRA_CA_CERTS pointing at a
+# PEM bundle exported from it. See docs/runbooks/corp-tls-inspection.md.
+#
+# Regenerated every apply rather than on change: IT rotates these roots, and a
+# bundle that quietly falls behind fails exactly like a missing one — a
+# SELF_SIGNED_CERT_IN_CHAIN out of nowhere, in one tool, with nothing locally
+# changed to blame. The export costs under a second, so there is nothing to win
+# by being clever about it.
+#
+# The keychain is the only trustworthy source. Never fetch the corporate root
+# over the network: that fetch is itself intercepted, so it is exactly how an
+# attacker's CA would get installed. The bundle is generated here, never
+# committed.
+
+# Export only self-signed CAs. `security find-certificate -a` dumps every
+# certificate in the keychain, which on a managed Mac also means MDM device
+# identities carrying the operator's name and email, and intermediates that
+# macOS holds but does not treat as roots. NODE_EXTRA_CA_CERTS promotes every
+# PEM it is handed to a trust anchor, and it ignores macOS trust settings, so
+# exporting the lot would let Node terminate a chain at an intermediate — or at
+# a certificate macOS explicitly distrusts — that Safari would reject.
+# Self-signed CA reproduces the admin trust-domain root set exactly; check that
+# with `security dump-trust-settings -d` if the count here ever looks wrong.
+#
+# /usr/bin/openssl is LibreSSL and has no -ext flag, so basic constraints come
+# out of -text. Homebrew's openssl is both absent on a fresh machine and five
+# times slower to spawn.
+select_trust_anchors() {
+  local block="" line text subject issuer
+  while IFS= read -r line; do
+    block="$block$line"$'\n'
+    [ "$line" = "-----END CERTIFICATE-----" ] || continue
+    if text="$(printf '%s' "$block" | /usr/bin/openssl x509 -noout -subject -issuer -text 2>/dev/null)"; then
+      subject="$(printf '%s\n' "$text" | sed -n 's/^subject= *//p' | head -1)"
+      issuer="$(printf '%s\n' "$text" | sed -n 's/^issuer= *//p' | head -1)"
+      if [ -n "$subject" ] && [ "$subject" = "$issuer" ] \
+          && printf '%s\n' "$text" | grep -A1 'X509v3 Basic Constraints' | grep -q 'CA:TRUE'; then
+        printf '%s' "$block"
+      fi
+    fi
+    block=""
+  done
+}
+
+if [ -e "$bundle" ] && [ ! -f "$bundle" ]; then
+  die "$bundle exists and is not a regular file; refusing to replace it"
+fi
+
+mkdir -p "$bundle_dir"
+chmod 700 "$bundle_dir"
+
+# Stage inside $bundle_dir, not $TMPDIR: same filesystem makes the swap a
+# rename rather than macOS mv's cross-device copy, so a failure mid-write
+# cannot leave a truncated bundle at the path both halves already point at.
+raw="$(mktemp "$bundle_dir/.corp-ca-raw.XXXXXX")"
+tmp="$(mktemp "$bundle_dir/.corp-ca-bundle.XXXXXX")"
+trap 'rm -f "$raw" "$tmp"' EXIT
+
+if ! security find-certificate -a -p /Library/Keychains/System.keychain >"$raw" 2>/dev/null; then
+  # Not fatal: a bundle from an earlier apply still carries yesterday's roots.
+  warn "could not read the System keychain; leaving $bundle unchanged."
+else
+  select_trust_anchors <"$raw" >"$tmp"
+  # Every anchor here parsed whole, so counting BEGIN markers counts
+  # certificates. A truncated export yields none rather than half of one:
+  # replacing good roots with an unloadable file fails exactly like having none.
+  anchors="$(grep -c '^-----BEGIN CERTIFICATE-----$' "$tmp" 2>/dev/null || true)"
+  if [ "${anchors:-0}" -eq 0 ]; then
+    warn "System keychain yielded no complete trust anchors; leaving $bundle unchanged."
+  elif [ -f "$bundle" ] && cmp -s "$tmp" "$bundle"; then
+    : # Already current.
+  else
+    chmod 0644 "$tmp"
+    mv -f "$tmp" "$bundle"
+    log "refreshed $bundle ($anchors corporate trust anchors from the System keychain)"
+  fi
+fi
+
+if [ ! -x "$publisher" ]; then
+  warn "missing $publisher; the launch agent has nothing to run"
+fi
+
+# Let launchd run the publisher; do not run it from here. `launchctl setenv`
+# writes to the caller's bootstrap context, so a publisher executed straight
+# from this hook would land wherever `chezmoi apply` was invoked from — an SSH
+# session, say — instead of the Aqua session the Dock launches apps into.
+# Bootstrapping the job and kickstarting it puts the publisher in gui/<uid>
+# regardless. RunAtLoad already fires it on bootstrap; the explicit kickstart
+# covers a re-apply where the job was loaded and the bundle has since changed.
+# Kickstart without -k: this job is one-shot and has already exited by now, and
+# -k spends its full ten-second timeout waiting to kill a process that is gone.
+if [ -f "$plist" ]; then
+  launchctl bootout "gui/$(id -u)/$label" 2>/dev/null || true
+  if launchctl bootstrap "gui/$(id -u)" "$plist" 2>/dev/null \
+      && launchctl kickstart "gui/$(id -u)/$label" 2>/dev/null; then
+    log "GUI domain trust republished; already-running apps need a restart to pick it up."
+  else
+    warn "could not load $label (no GUI session?); load manually: launchctl bootstrap gui/\$(id -u) $plist"
+  fi
+else
+  warn "missing $plist; GUI trust will not survive logout"
+fi
+{{- end }}
+{{- end -}}

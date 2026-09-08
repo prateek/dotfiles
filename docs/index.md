@@ -2,7 +2,7 @@
 status: current
 doc_type: index
 created: 2026-05-12
-updated: 2026-09-07
+updated: 2026-09-08
 related:
   - document-lifecycle.md
   - ../agent-marketplace/packages/core/skills/code-gardening/SKILL.md
@@ -29,6 +29,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [Chezmoi Architecture](references/chezmoi-architecture.md) | Dotfiles source-state architecture and validation entrypoints. |
 | [Chezmoi Drift Banner](../home/dot_config/dotfiles/chezmoi-drift/README.md) | Cached shell banner for managed chezmoi drift. |
 | [Chezmoi Hook Lifecycle](references/chezmoi-hook-lifecycle.md) | Ordering and design rules for config hooks, apply scripts, init, and modify targets. |
+| [Corporate TLS Inspection](runbooks/corp-tls-inspection.md) | Corporate CA trust for Node clients in shells and GUI apps behind a decrypting proxy. |
 | [Host Storage](runbooks/host-storage.md) | Required SSD mounts before apply computes targets or installs packages. |
 | [Jamf Self Service Elevation](references/jamf-self-service-elevation.md) | Temporary admin elevation on Jamf-managed work Macs. |
 | [Mise Tool Management](references/mise-tool-management.md) | Mise-native CLI and tool selection. |

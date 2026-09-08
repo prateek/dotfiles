@@ -17,21 +17,24 @@ class MachineFeaturesTests(RepoTestCase):
                 "groups": ["core"], "run_install_scripts": True,
                 "apply_macos_defaults": True, "secrets_enabled": False,
                 "private_overlay": False, "elevation": "none", "granola_mcp": False,
+                "tls_inspection": False,
             },
             "personal": {
                 "groups": ["core", "mac-desktop", "ai-agent-apps", "codex", "developer-tools", "personal-apps", "forks"],
                 "run_install_scripts": True, "apply_macos_defaults": True,
                 "secrets_enabled": False, "elevation": "none",
-                "private_overlay": False, "granola_mcp": True,
+                "private_overlay": False, "granola_mcp": True, "tls_inspection": False,
             },
             "homelab": {
                 "groups": ["core", "ai-agent-apps", "codex", "developer-tools", "apple-development", "homelab-overlay"],
                 "runner_vm_name": "tartelet-runner", "runner_vm_count": 1,
                 "runner_scope": "repo", "runner_start_on_launch": True, "granola_mcp": True,
+                "tls_inspection": False,
             },
             "work": {
                 "groups": ["core", "mac-desktop", "ai-agent-apps", "developer-tools", "work-apps", "forks"],
                 "private_overlay": True, "elevation": "jamf-self-service", "granola_mcp": False,
+                "tls_inspection": True,
             },
         }
         for machine, fields in expected.items():

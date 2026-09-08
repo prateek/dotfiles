@@ -18,6 +18,14 @@
 .cursor/cli-config.json
 {{- end }}
 
+{{/* Corporate CA trust for GUI apps: only where a proxy re-signs TLS. The
+     bundle itself is generated on the machine by run_after_19-corp-ca-bundle.sh
+     and never managed here. */}}
+{{- if not $f.tls_inspection }}
+.local/bin/corp-ca-gui-env
+Library/LaunchAgents/com.prateek.gui-corp-ca.plist
+{{- end }}
+
 {{/* Machine-local credentials, trust databases, and tool state. */}}
 .config/chezmoi
 .config/op

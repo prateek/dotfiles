@@ -41,6 +41,8 @@ MANAGED = {
         'Library/Preferences/com.stonerl.Thaw.plist',
         '.config/qmd/wiki-agent-sessions.yml',
         '.local/bin/wiki-sessions-sync',
+        '.local/bin/corp-ca-gui-env',
+        'Library/LaunchAgents/com.prateek.gui-corp-ca.plist',
     ),
     'homelab': (
         'Library/Preferences/io.tailscale.ipn.macsys.plist',
@@ -59,6 +61,8 @@ MANAGED = {
 UNMANAGED = {
     'personal': (
         'Library/Preferences/io.tailscale.ipn.macsys.plist',
+        '.local/bin/corp-ca-gui-env',
+        'Library/LaunchAgents/com.prateek.gui-corp-ca.plist',
     ),
     'ci': (
         '.config/cmux',
@@ -87,6 +91,8 @@ UNMANAGED = {
         '.config/mise/conf.d/mcporter.toml',
         '.config/qmd/wiki-agent-sessions.yml',
         '.local/bin/wiki-sessions-sync',
+        '.local/bin/corp-ca-gui-env',
+        'Library/LaunchAgents/com.prateek.gui-corp-ca.plist',
     ),
     'work': (
         'Library/Colors/nvALT.clr',
@@ -108,6 +114,8 @@ UNMANAGED = {
         'Library/Colors/nvALT.clr',
         'Library/Preferences/com.prakashjoshipax.VoiceInk.plist',
         'Library/Preferences/com.stonerl.Thaw.plist',
+        '.local/bin/corp-ca-gui-env',
+        'Library/LaunchAgents/com.prateek.gui-corp-ca.plist',
     ),
 }
 
@@ -123,6 +131,8 @@ IGNORED = {
         '.config/ghostty',
         'Library/Preferences/com.setapp.DesktopClient.plist',
         'Library/Preferences/com.prakashjoshipax.VoiceInk.plist',
+        '.local/bin/corp-ca-gui-env',
+        'Library/LaunchAgents/com.prateek.gui-corp-ca.plist',
     ),
     'ci': (
         '.config/ghostty',
@@ -151,6 +161,8 @@ IGNORED = {
         '.config/mise/conf.d/mcporter.toml',
         '.config/qmd/wiki-agent-sessions.yml',
         '.local/bin/wiki-sessions-sync',
+        '.local/bin/corp-ca-gui-env',
+        'Library/LaunchAgents/com.prateek.gui-corp-ca.plist',
     ),
     'empty': (
         '.codex',
@@ -171,5 +183,7 @@ IGNORED = {
         '.local/share/raycast-extensions',
         'Library/Preferences/io.tailscale.ipn.macsys.plist',
         'Library/Preferences/com.setapp.DesktopClient.plist',
+        '.local/bin/corp-ca-gui-env',
+        'Library/LaunchAgents/com.prateek.gui-corp-ca.plist',
     ),
 }

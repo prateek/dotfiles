@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# Publish NODE_EXTRA_CA_CERTS into the launchd GUI domain so apps launched from
+# the Dock, Spotlight, or Finder trust the corporate CA behind the TLS-inspecting
+# proxy. Node ships its own root store and ignores the macOS keychain, so
+# without this every Node client inside a GUI app fails TLS with
+# SELF_SIGNED_CERT_IN_CHAIN.
+#
+# The managed zsh export covers terminals only: macOS does not hand shell
+# environment variables to LaunchServices-launched apps. Orca is the worked
+# example — its sign-in exchanges the auth code with a bare `fetch` in the
+# Electron main process (the Node stack, not Chromium's `net` module), so the
+# browser half of the flow succeeded while the token exchange died.
+#
+# Must run inside the GUI domain. `launchctl setenv` writes to the caller's
+# bootstrap context, not to a domain you can name, so this only reaches
+# Dock-launched apps when launchd runs it as com.prateek.gui-corp-ca — at login
+# via RunAtLoad, and on apply via the kickstart in
+# run_after_19-corp-ca-bundle.sh. Running it by hand works from a terminal
+# inside the Aqua session and does nothing useful over SSH.
+#
+# Only processes started afterwards inherit the variable; a running app has to
+# be restarted.
+set -euo pipefail
+
+bundle="$HOME/.config/certs/corp-ca-bundle.pem"
+current="$(launchctl getenv NODE_EXTRA_CA_CERTS 2>/dev/null || true)"
+
+if [[ -r "$bundle" ]]; then
+  [[ "$current" == "$bundle" ]] || launchctl setenv NODE_EXTRA_CA_CERTS "$bundle"
+elif [[ -n "$current" ]]; then
+  # Self-heal a stale pointer: Node warns and silently drops the extra roots
+  # when the file named here is gone, which looks identical to no trust at all.
+  launchctl unsetenv NODE_EXTRA_CA_CERTS
+fi

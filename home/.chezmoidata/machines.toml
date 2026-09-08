@@ -43,6 +43,12 @@ agent_session_wiki_ingest = false
 # refuses a host that resolves both flags.
 # See docs/adr/0018-sparse-work-archive-clones.md.
 agent_session_wiki_sparse = false
+# The machine sits behind a TLS-inspecting proxy that re-signs every
+# connection with a corporate CA. macOS puts that CA in the System keychain,
+# which Safari and Chromium read, but Node ships its own root store and ignores
+# the keychain — so Node clients need NODE_EXTRA_CA_CERTS pointing at a bundle
+# exported from it. See docs/runbooks/corp-tls-inspection.md.
+tls_inspection = false
 
 # Minimal/fast tier for CI dry-run, Tart smoke, and shell audits. Keeps the
 # defaults' run_install_scripts/apply_macos_defaults = true so the Tart smoke
@@ -85,6 +91,7 @@ elevation = "jamf-self-service"
 agent_clis = ["cursor-agent", "claude"]
 agent_session_wiki = true
 agent_session_wiki_sparse = true
+tls_inspection = true
 
 # os.<os> and host.<hostname> layers are intentionally absent until needed.
 # The resolver digs them with an empty-dict default, so a missing layer is a

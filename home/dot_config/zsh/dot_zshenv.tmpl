@@ -20,6 +20,17 @@ if [[ -z "${WINMUX_E2E_ARTIFACT_ROOT:-}" ]]; then
   export WINMUX_E2E_ARTIFACT_ROOT={{ $f.winmux_e2e_artifact_root | quote }}
 fi
 {{- end }}
+{{- if $f.tls_inspection }}
+# Node ignores the macOS keychain, so behind the TLS-inspecting proxy every Node
+# client needs the corporate roots exported to a file. GUI apps get this from
+# the launchd GUI domain (com.prateek.gui-corp-ca); shells need it here because
+# .zshenv is the one startup file every shell reads. The bundle is regenerated
+# on each apply by run_after_19-corp-ca-bundle.sh; guard on readability so a
+# fresh checkout before the first apply does not point Node at nothing.
+if [[ -z "${NODE_EXTRA_CA_CERTS:-}" && -r "$HOME/.config/certs/corp-ca-bundle.pem" ]]; then
+  export NODE_EXTRA_CA_CERTS="$HOME/.config/certs/corp-ca-bundle.pem"
+fi
+{{- end }}
 
 # acpx withholds Claude user settings from the claude-agent-acp sessions it
 # spawns, which drops extraKnownMarketplaces and enabledPlugins and leaves
