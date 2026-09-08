@@ -17,9 +17,12 @@ zstyle ':bracketed-paste-magic' active-widgets '.self-insert-unmeta'
 # Zsh vi-mode has two keymaps: `vicmd` (normal/command mode) and `viins` (insert mode).
 # Keep `vicmd` behaving like vim, but make `viins` behave like emacs so common Ctrl keys
 # (Ctrl-W/Ctrl-K/Ctrl-A/Ctrl-E/etc) work while you're inserting.
-# Note: this copies the emacs map into `viins`, so it must run *before* any custom `viins`
-# bindings below (Home/End, fzf Ctrl-T, etc.) which intentionally override defaults.
+#
+# `bindkey -A` aliases rather than copies, so it orphans the keymap `bindkey -v` linked to
+# `main` -- the one ZLE actually reads at the prompt. Re-link `main` so the `bindkey -M
+# viins` overrides below (Home/End, fzf Ctrl-T, fzf-tab) take effect.
 bindkey -A emacs viins
+bindkey -A viins main
 bindkey -M viins $'\e' vi-cmd-mode
 
 # Keep the real vi mode transitions, but use non-vi delete widgets so

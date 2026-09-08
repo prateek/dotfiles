@@ -3,12 +3,15 @@
 # vim:filetype=zsh
 
 # make fzf ctrl-r behave like zaw, via https://github.com/fsouza/dotfiles/blob/main/extra/fzf
+#
+# Ordering: fzf's default scheme ranks a scattered match at word starts (`add
+# chronosphere` for "adc") above a literal one mid-token (`--update-adc`).
 function _rebind_ctrl-r {
 	function fzf-history-widget {
 		local selected num
 		setopt localoptions noglobsubst noposixbuiltins pipefail no_aliases 2> /dev/null
 		selected=( $(fc -rl 1 | perl -ne 'print if !$seen{($_ =~ s/^\s*[0-9]+\s+//r)}++' |
-			FZF_DEFAULT_OPTS="--height ${FZF_TMUX_HEIGHT:-40%} ${FZF_DEFAULT_OPTS} -n2..,.. --tiebreak=index --bind=ctrl-r:toggle-sort --expect=ctrl-e $FZF_CTRL_R_OPTS --query=${(qqq)LBUFFER} +m" $(__fzfcmd)) )
+			FZF_DEFAULT_OPTS="--height ${FZF_TMUX_HEIGHT:-40%} ${FZF_DEFAULT_OPTS} -n2..,.. --scheme=history --tiebreak=chunk --bind=ctrl-r:toggle-sort --expect=ctrl-e $FZF_CTRL_R_OPTS --query=${(qqq)LBUFFER} +m" $(__fzfcmd)) )
 		local ret=$?
 		if [ -n "${selected}" ]; then
 			local accept=0
@@ -141,21 +144,22 @@ function _rebind_ctrl-t {
 }
 
 function _setup_fzf {
-	local fzf_bin fzf_root fzf_shell_dir
-	fzf_bin="${commands[fzf]:A}"
-	fzf_root="${fzf_bin:h:h}"
-
-	for fzf_shell_dir in \
-		"${fzf_root}/opt/fzf/shell" \
-		"${fzf_root}/share/fzf/shell" \
-		/opt/homebrew/opt/fzf/shell \
-		/usr/local/opt/fzf/shell
+	# Both the upstream installer and a Homebrew keg put shell/ beside bin/, so
+	# one resolved path covers both. The opt/ fallback is for a PATH shim that
+	# does not resolve into the keg.
+	local candidate fzf_shell_dir=""
+	for candidate in \
+		"${commands[fzf]:A:h:h}/shell" \
+		"${HOMEBREW_PREFIX:-/opt/homebrew}/opt/fzf/shell"
 	do
-		[[ -d "$fzf_shell_dir" ]] && break
+		if [[ -d "$candidate" ]]; then
+			fzf_shell_dir="$candidate"
+			break
+		fi
 	done
 
 	# Ensure fzf completion and key-bindings are configured when zle is available.
-	if [[ -n "$fzf_shell_dir" && -d "$fzf_shell_dir" ]]; then
+	if [[ -n "$fzf_shell_dir" ]]; then
 
 		# very opinionated FZF style opts.
 		export FZF_DEFAULT_OPTS="
