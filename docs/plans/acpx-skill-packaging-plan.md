@@ -9,7 +9,7 @@ related:
   - ../adr/0016-vendor-into-skill-references.md
   - ./acpx-claude-streaming-poc-plan.md
   - ../research/acpx-rewrite-model-bakeoff.md
-status_detail: "Skill, vendored rename, and docs closure landed together; trigger arbitration measured 2026-09-08 (15/18, no cross-listing steals). Open: two eval labels to settle."
+status_detail: "Skill, vendored rename, and docs closure landed together; trigger arbitration measured 2026-09-08 (no cross-listing steals; 16/18 after one relabel). Nothing open; the 'another agent' query stays a documented boundary."
 ---
 
 # acpx Skill Packaging Plan
@@ -135,26 +135,48 @@ ask.
   names, and `acpx-cli`'s body is upstream's byte for byte below the frontmatter
   (the reconstructed pre-image hashes to the blob the patch names).
 - `just test-docs-lifecycle`, and `git diff --check`.
-- `evals/run_trigger_evals.sh` — 18 trigger queries through skill-creator's
-  runner, serial, against the installed listing. 15/18 on 2026-09-08 with
-  `claude-fable-5-1`; the router took all 21 delegation runs and the vendored
-  skill all 12 command-surface runs. `evals/evals.json` is the separate
-  behavior lane, graded by hand. Both are documented in `evals/README.md`.
+- `evals/run_trigger_evals.sh` — 18 trigger queries against the installed
+  listing. Before installation, through skill-creator's temp-command runner:
+  15/18 as labeled on 2026-09-08 with `claude-fable-5-1`, 16/18 after case 8
+  was relabeled, the router taking all 21 delegation runs and the vendored
+  skill all 12 command-surface runs. After installation, through the repo's
+  own `trigger_eval.py` (see below): 13/18 and 15/18 in two consecutive runs
+  with `claude-opus-5`, negatives stable 8/8, the file-scoped positives on the
+  boundary. `evals/evals.json` is the separate behavior lane, graded by hand.
+  Both are documented in `evals/README.md`.
 
-## Open
+## Settled after the measurement
 
 - Arbitration is measured: neither listing took the other's queries in 33
-  runs, so the description narrowing stays deferred. Two eval labels remain to
-  settle. "Ask the opus model … then update the migration" triggered 3/3 and
-  the model's reading is coherent, so it is probably a should-trigger case
-  mislabeled as a near miss. "Farm the migration audit out to another agent"
-  went to the built-in Agent tool 3/3; the router's run-it-elsewhere clause
-  does not beat a subagent when the motive is context budget, and widening it
-  to compete would be the wrong fix. Disabling model invocation on the sibling
-  stays off the table.
-- The fixture's `CLAUDE.md` retires the old `~/.agents/docs/acpx.md` pointer
-  for the duration of a run. Remove that line from `setup_fixture.sh` once
-  every machine has applied the change that deletes the pointer.
+  runs, so the description narrowing stays deferred. "Ask the opus model …
+  then update the migration" triggered 3/3 with a coherent reading — delegate
+  the question, act on the answer locally — so it is relabeled
+  `should_trigger: true` in both eval files. "Farm the migration audit out to
+  another agent" went to the built-in Agent tool 3/3 and stays a documented
+  boundary: the router's run-it-elsewhere clause does not beat a subagent when
+  the motive is context budget, and widening it to compete would be the wrong
+  fix. Disabling model invocation on the sibling stays off the table.
+- The fixture writes a `CLAUDE.md` retiring the old `~/.agents/docs/acpx.md`
+  pointer only while the installed `~/.agents/AGENTS.md` still carries it, so
+  the shim removes itself as machines apply and needs no follow-up.
+- skill-creator's trigger runner stopped working the moment 1.3.0 was
+  materialized: it injects the description as a temporary command, which then
+  sits next to the real `utils-agent:acpx` with identical text, and the model
+  picks the installed one — scored as a miss (11/18, transcripts showing the
+  installed skill chosen). The lane now runs `evals/trigger_eval.py`, which
+  classifies the first tool call against the real listing with no injection,
+  keeps each run's pre-tool text, records the model from the init event, and
+  refuses to run unless `utils-agent` ≥ 1.3.0 is installed. The trade is that
+  it measures the installed description, so an edit is applied before it is
+  measured; the wrapper warns on drift.
+- Trigger scores are model-dependent and, for file-scoped positives without a
+  shortcut named, on the boundary at three runs: `claude-opus-5` often reads the
+  named file before it delegates, which the first-tool rule scores as a miss
+  even when the pre-tool text says it is about to delegate. Compare like with
+  like and use `--runs 5` before acting on a change in those queries. A
+  pushier description ("load this before opening the files the delegate will
+  review") is the lever if that order matters; it costs listing budget and is
+  not taken here.
 - The description budget moves with the rest of the installed listing. A
   regression here looks like a triggering failure, so check the budget before
   blaming the wording.

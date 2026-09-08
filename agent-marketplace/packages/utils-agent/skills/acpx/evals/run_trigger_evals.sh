@@ -1,50 +1,53 @@
 #!/usr/bin/env bash
-# Run trigger-evals.json through skill-creator's trigger runner against the
-# installed skill listing. Prints the runner's JSON to stdout; progress and the
-# per-query table go to stderr.
+# Run trigger-evals.json against the installed acpx skill. Prints the runner's
+# JSON to stdout; the per-query table and the fixture path go to stderr.
 #
-# Usage: run_trigger_evals.sh [--runs N] [--timeout S] [--model ID] [--keep]
+# Usage: run_trigger_evals.sh [--runs N] [--workers N] [--timeout S] [--model ID]
+#                             [--transcripts DIR] [--keep]
 #
-# Serial on purpose. The runner materializes one temporary command per run in
-# the fixture's .claude/commands/, and every concurrent worker shares that
-# directory, so parallel runs each see several identical acpx entries in the
-# listing and score each other's picks as misses. The first full run here was
-# 0/27 on the positives at four workers and 6/9 at one.
+# trigger_eval.py measures the real listing, so utils-agent 1.3.0 or later must
+# be materialized under ~/.agents/plugins, and the eval scores the installed
+# description rather than this checkout's; the wrapper warns when they differ.
+# Nothing is injected into the listing, so runs can be concurrent. Pass
+# --transcripts to keep each run's event stream outside the fixture.
 
 set -euo pipefail
 
 HERE="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 SKILL="$(dirname -- "$HERE")"
+INSTALLED="$HOME/.agents/plugins/plugins/utils-agent/skills"
 RUNS=3
+WORKERS=3
 TIMEOUT=120
 MODEL=""
+TRANSCRIPTS=""
 KEEP=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --runs) RUNS="$2"; shift 2 ;;
+    --workers) WORKERS="$2"; shift 2 ;;
     --timeout) TIMEOUT="$2"; shift 2 ;;
     --model) MODEL="$2"; shift 2 ;;
+    --transcripts) TRANSCRIPTS="$(cd -- "$(dirname -- "$2")" && pwd)/$(basename -- "$2")"; shift 2 ;;
     --keep) KEEP=1; shift ;;
-    -h | --help) sed -n '2,13p' "$0"; exit 0 ;;
+    -h | --help) sed -n '2,12p' "$0"; exit 0 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
 done
 
 command -v claude >/dev/null || { echo "claude is not on PATH" >&2; exit 1; }
-
-# skill-creator ships the runner; look in the Anthropic marketplace checkout
-# first, then any plugin that vendors the skill.
-CREATOR=""
-for candidate in \
-  "$HOME/.claude/plugins/marketplaces/anthropic-agent-skills/skills/skill-creator" \
-  "$HOME"/.agents/plugins/plugins/*/skills/skill-creator; do
-  if [[ -f "$candidate/scripts/run_eval.py" ]]; then
-    CREATOR="$candidate"
-    break
+for name in acpx acpx-cli; do
+  if [[ ! -f "$INSTALLED/$name/SKILL.md" ]]; then
+    echo "utils-agent:$name is not installed under $INSTALLED; apply utils-agent >= 1.3.0 first" >&2
+    exit 1
   fi
 done
-[[ -n "$CREATOR" ]] || { echo "skill-creator's scripts/run_eval.py not found under ~/.claude/plugins or ~/.agents/plugins" >&2; exit 1; }
+
+description() { sed -n '2,/^---$/p' "$1" | grep -m1 '^description:'; }
+if [[ "$(description "$SKILL/SKILL.md")" != "$(description "$INSTALLED/acpx/SKILL.md")" ]]; then
+  echo "warning: the installed acpx description differs from this checkout's; the eval scores the installed one" >&2
+fi
 
 FIXTURE="$(mktemp -d "${TMPDIR:-/tmp}/acpx-trigger-eval.XXXXXX")"
 rmdir "$FIXTURE"
@@ -57,28 +60,20 @@ fi
 
 args=(
   --eval-set "$HERE/trigger-evals.json"
-  --skill-path "$SKILL"
-  --runs-per-query "$RUNS"
-  --num-workers 1
+  --runs "$RUNS"
+  --workers "$WORKERS"
   --timeout "$TIMEOUT"
   --verbose
 )
 [[ -n "$MODEL" ]] && args+=(--model "$MODEL")
-
-# Record the model the runs will actually use. Without --model, claude -p takes
-# the user's default, which only a real call reports (modelUsage in the result).
-if [[ -z "$MODEL" ]]; then
-  MODEL_USED="$(env -u CLAUDECODE claude -p 'Reply with the single word ok.' --output-format json 2>/dev/null \
-    | python3 -c 'import json,sys; print(",".join(json.load(sys.stdin).get("modelUsage", {})) or "unknown")')"
-else
-  MODEL_USED="$MODEL"
-fi
-
-{
-  echo "runner: $CREATOR/scripts/run_eval.py"
-  echo "model: $MODEL_USED"
-  echo "runs per query: $RUNS, serial, timeout ${TIMEOUT}s"
-} >&2
+[[ -n "$TRANSCRIPTS" ]] && args+=(--transcripts "$TRANSCRIPTS")
+echo "runs per query: $RUNS, workers: $WORKERS, timeout ${TIMEOUT}s${TRANSCRIPTS:+, transcripts: $TRANSCRIPTS}" >&2
 
 cd -- "$FIXTURE"
-PYTHONPATH="$CREATOR" exec python3 -m scripts.run_eval "${args[@]}"
+# Not exec: the EXIT trap has to outlive the runner to remove the fixture.
+if python3 "$HERE/trigger_eval.py" "${args[@]}"; then
+  status=0
+else
+  status=$?
+fi
+exit "$status"

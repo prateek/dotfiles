@@ -100,15 +100,15 @@
     },
     {
       "id": 8,
-      "name": "local-work-does-not-delegate",
-      "should_trigger": false,
+      "name": "model-named-question-delegates-then-acts-locally",
+      "should_trigger": true,
       "prompt": "ask the opus model whether this SQL index will actually get used, and then update the migration if it won't",
-      "expected_output": "A near miss: naming a model family is not a request to spawn a separate agent process. The current session answers.",
+      "expected_output": "Naming a model is a delegation request. The question goes to aopus read-only; the current session applies the migration change itself once the answer is back.",
       "files": [],
       "expectations": [
-        "Does not spawn an acpx delegation just because a model family was named",
-        "Answers the index question in the current session",
-        "If it does consider delegating, says why and asks first rather than silently launching aopus"
+        "Selects aopus for the question rather than answering it in the current session",
+        "Keeps the delegation read-only: the delegate answers, it does not edit the migration",
+        "Plans to make the migration change locally after the delegate's answer, not to hand the edit to the delegate"
       ]
     }
   ]

@@ -5,9 +5,10 @@
 # Every query in trigger-evals.json names a path in this tree, so the model has
 # nothing to hunt for before it decides whether to consult the skill. The tree
 # is a git repo with one uncommitted change (the "diff on this branch" cases)
-# and a project CLAUDE.md that retires the machine conventions' old pointer to
-# ~/.agents/docs/acpx.md, so a machine that has not applied the change yet does
-# not read that doc first and count as a miss.
+# and, only while the installed ~/.agents/AGENTS.md still points at
+# ~/.agents/docs/acpx.md, a project CLAUDE.md that retires that pointer, so a
+# machine that has not applied the change yet does not read the doc first and
+# count as a miss. Once a machine has applied, no CLAUDE.md is written.
 
 set -euo pipefail
 
@@ -31,12 +32,16 @@ fi
 mkdir -p -- "$DEST"/{.claude,internal/queue,internal/http/middleware,pkg/store,deploy/api,db/migrations,docs/design}
 cd -- "$DEST"
 
-cat > CLAUDE.md <<'MD'
+# The tilde is the literal text AGENTS.md carries, not a path to expand.
+# shellcheck disable=SC2088
+if grep -qF '~/.agents/docs/acpx.md' "${HOME}/.agents/AGENTS.md" 2>/dev/null; then
+  cat > CLAUDE.md <<'MD'
 # Project notes
 
 The machine conventions' pointer to `~/.agents/docs/acpx.md` is retired. Do not
 read that file; it carries no current guidance.
 MD
+fi
 
 cat > internal/queue/dispatch.go <<'GO'
 package queue
@@ -159,4 +164,4 @@ git -c user.name="acpx eval" -c user.email="acpx-eval@example.com" add -A
 git -c user.name="acpx eval" -c user.email="acpx-eval@example.com" commit -qm "fixture"
 printf '// wip\n' >> internal/queue/dispatch.go
 
-printf 'fixture=%s\n' "$DEST"
+printf 'fixture=%s\npointer_shim=%s\n' "$DEST" "$([ -f CLAUDE.md ] && echo yes || echo no)"

@@ -42,7 +42,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 
 | Doc | Status |
 | --- | --- |
-| [acpx Skill Packaging](plans/acpx-skill-packaging-plan.md) | Active; the acpx conventions are now a trigger-owning skill next to the vendored `acpx-cli` command surface, the conventions doc and its AGENTS.md pointer are deleted. See [ADR 0028](adr/0028-router-skill-over-vendor-remap.md). Trigger arbitration measured 2026-09-08 (15/18, no cross-listing steals); remaining: two eval labels to settle. |
+| [acpx Skill Packaging](plans/acpx-skill-packaging-plan.md) | Active; the acpx conventions are now a trigger-owning skill next to the vendored `acpx-cli` command surface, the conventions doc and its AGENTS.md pointer are deleted. See [ADR 0028](adr/0028-router-skill-over-vendor-remap.md). Trigger arbitration measured 2026-09-08 (no cross-listing steals; 16/18 after one relabel); nothing open. |
 | [Agent Session Wiki](plans/agent-session-wiki-plan.md) | Active; hourly launchd archive sync, QMD history index, AgentsView wiring, and daily Claude wiki ingest on m4mini. See [ADR 0017](adr/0017-agent-session-archive.md). |
 | [Restore Wiki Ingestion](plans/wiki-ingest-revisit-plan.md) | Active; the m4mini schedule and Claude Sonnet 5/high configuration are live and passed an end-to-end ingest. |
 | [SSD Layout And Arq Coverage](plans/ssd-arq-layout-plan.md) | Active; Code, Tart, and WinMux storage migrated. Both SSD volumes retained for Code and GhostPepper; Arq selection and restore checks deferred. |

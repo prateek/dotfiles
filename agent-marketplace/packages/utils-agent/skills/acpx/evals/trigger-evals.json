@@ -9,7 +9,7 @@
   {"query": "farm the migration audit out to another agent, i don't want the files under db/migrations eating my context. i just want a list of the ones that aren't reversible", "should_trigger": true},
   {"query": "have opus look over docs/design/sharding.md and tell me what i'm missing. don't change anything, just report back", "should_trigger": true},
   {"query": "my ~/.acpx directory is getting huge. how do i clear out the closed sessions and their event streams from more than a month ago?", "should_trigger": false},
-  {"query": "ask the opus model whether the index in db/migrations/0007_add_orders_idx.sql will actually get used, and then update the migration if it won't", "should_trigger": false},
+  {"query": "ask the opus model whether the index in db/migrations/0007_add_orders_idx.sql will actually get used, and then update the migration if it won't", "should_trigger": true},
   {"query": "how do i set up a named acpx session so follow-up prompts keep the same context? the docs mention -s but i'm not sure how the scope works with --cwd", "should_trigger": false},
   {"query": "acpx exec keeps dying with NO_SESSION when i call it from a cron script but works fine from my shell. what am i doing wrong", "should_trigger": false},
   {"query": "write me an acpx flow with defineFlow that runs codex on a task first and then has claude review whatever codex produced", "should_trigger": false},
