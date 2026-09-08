@@ -25,6 +25,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [Documentation Index](index.md) | Routing to current guidance, proposed work, decisions, and history. |
 | [Document Lifecycle](document-lifecycle.md) | Frontmatter, status transitions, and index rules for `docs/`. |
 | [Agent Marketplace](references/agent-marketplace.md) | Isolated APM source/build project, host activation, recovery, and validation lanes. |
+| [Dotfiles Landing](runbooks/dotfiles-landing.md) | Repo-specific checks and chezmoi preview for the published land-changes skill. |
 | [Chezmoi Architecture](references/chezmoi-architecture.md) | Dotfiles source-state architecture and validation entrypoints. |
 | [Chezmoi Drift Banner](../home/dot_config/dotfiles/chezmoi-drift/README.md) | Cached shell banner for managed chezmoi drift. |
 | [Chezmoi Hook Lifecycle](references/chezmoi-hook-lifecycle.md) | Ordering and design rules for config hooks, apply scripts, init, and modify targets. |
@@ -119,6 +120,7 @@ or `superseded_by` frontmatter before using them.
 
 | Doc | Current guidance |
 | --- | --- |
+| [Portable land-changes](plans/portable-land-changes-plan.md) | Review plugin's [published skill source](../agent-marketplace/packages/review/skills/land-changes/SKILL.md) and [dotfiles landing](runbooks/dotfiles-landing.md). |
 | [APM Agent Marketplace](plans/apm-agent-marketplace-plan.md) | Completed shared acquisition, just-based apply, native skill invocation, maintenance round trip, and CI verification. Use the [marketplace reference](references/agent-marketplace.md); see the [rollout evidence](research/apm-marketplace-migration-verification.md#rollout-completion). |
 | [Agent Plugin Renderer](plans/agent-plugin-renderer-plan.md) | Replaced by [APM Agent Marketplace](plans/apm-agent-marketplace-plan.md); [current guidance](references/agent-marketplace.md). |
 | [Test Refactoring](plans/test-suite-rebuild-plan.md) | Completed Bats/native runner migration, local and remote CI validation, and scoped apply; [tests index](../tests/README.md) and [ADR 0022](adr/0022-bats-and-zsh-test-support.md). |

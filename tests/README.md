@@ -191,6 +191,10 @@ The portable project owns packaging tests: `just -f agent-marketplace/justfile -
 validates cached inputs, patches/overlays, skill entrypoints, cache exclusion, paths, critical content scanning,
 versions, invocation pairs, shared root acquisition, independent plugin publication,
 repeatability, and export.
+It also runs the authored land-changes preferences helper's CLI tests: explicit
+and saved options, repository/branch isolation, concurrent writes, and malformed
+configuration. The [land-changes decision scenarios](../agent-marketplace/packages/review/skills/land-changes/evals/README.md)
+require a separate authenticated model run with expected answers withheld.
 `just test-agent-marketplace` delegates to it. `just test-tools` provisions its frozen APM 0.29.1
 environment, and the project check runs in the required macOS CI lane.
 

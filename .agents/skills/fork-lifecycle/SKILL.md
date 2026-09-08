@@ -73,6 +73,6 @@ scripts/packages/render-brewfile --machine-type personal   # the entry renders
 just test-shell tests/bats/packages/fork-reconcile.bats     # swap logic still holds
 ```
 
-Then open an ordinary PR (the `land-changes` skill, or `gh pr create`). A human
+Then open an ordinary PR with `gh pr create`. A human
 merges; `chezmoi apply` swaps the install. Close the fork's retire self-issue if
 one drove the change.
