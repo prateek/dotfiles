@@ -35,6 +35,13 @@ Git (`git restore -- path/to/file`) or recopy a complete source export. Builds
 never invoke acquisition. Tool provisioning and upstream acquisition may need
 network access; a provisioned source export has been built under network denial.
 
+`just tools` provisions the interactive lanes. `chezmoi apply` does not run it:
+`run_onchange_after_36-agent-plugins.sh.tmpl` builds this project through
+`materialize-agent-plugins` and sets `MARKETPLACE_RUN="uv run --frozen"`, so uv
+provisions the venv from the lock instead of failing on a cold cache. Export
+`MARKETPLACE_RUN` yourself, including as an empty string, to keep your own
+runner; the apply script supplies a default only for an unset variable.
+
 `release.json` records the input digest, Git revision/dirty state when available, APM version,
 and every artifact file's hash and mode. It is a release receipt, not an upstream
 provenance store. It lets a consumer validate the artifact with Python's standard

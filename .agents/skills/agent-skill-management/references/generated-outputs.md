@@ -9,17 +9,21 @@ From the dotfiles repository root, a prebuilt artifact can be copied with:
   --artifact-root /path/to/marketplace --plugins-root "$HOME/.agents/plugins"
 ```
 
-This needs only Python's standard library. Omitting
-`--artifact-root` runs the project's offline `just build` first, which needs the
-provisioned APM environment.
+This needs only Python's standard library. Omitting `--artifact-root` runs the
+project's `just build` first, which needs `just` and the project's locked Python
+environment. Acquisition stays offline either way.
 
 ## Tool lookup during chezmoi apply
 
 When `just` resolves to a mise shim, the adapter runs `mise which just` from the
 repository root to select its pinned version. This works when chezmoi runs its
 scripts from the home directory and when the build uses a temporary project copy.
-Provision the repo's tools first; the apply does not need an outer `mise exec`.
-Run the scoped commands from the canonical checkout:
+The apply provisions itself and needs no outer `mise exec` and no prior
+`just tools`: `just` ships in the `core` Homebrew group, so a machine that never
+ran `mise install` in this repo still has it, and script 36 defaults
+`MARKETPLACE_RUN` to `uv run --frozen` so uv builds the venv from the lock rather
+than failing on a cold cache. Missing `uv` or `just` stops the script with a
+named prerequisite. Run the scoped commands from the canonical checkout:
 
 ```sh
 cd ~/dotfiles

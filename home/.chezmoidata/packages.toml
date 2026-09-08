@@ -23,6 +23,7 @@ brews = [
   { name = "zoxide" },
   { name = "neovim" },
   { name = "tmux" },
+  { name = "just" },
   { name = "shellcheck" },
   { name = "uv" },
 ]

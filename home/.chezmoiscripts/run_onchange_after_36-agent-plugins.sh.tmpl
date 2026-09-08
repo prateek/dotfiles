@@ -18,6 +18,12 @@ reconciler="{{ .chezmoi.sourceDir }}/../.agents/skills/agent-skill-management/sc
 [ -x "$generator" ] || die "Agent plugin materializer is missing or not executable: $generator"
 [ -x "$reconciler" ] || die "Agent plugin reconciler is missing or not executable: $reconciler"
 have uv || die "uv is required to build agent plugins. Run just tools in agent-marketplace first."
+have just || die "just is required to build agent plugins. Install the core package group, or brew install just."
+
+# `just build` defaults to `uv run --offline`, and nothing in apply syncs the
+# project venv, so a cold uv cache fails the build. Default to an online runner
+# without overriding a caller's; the consumer suite passes an empty one.
+export MARKETPLACE_RUN="${MARKETPLACE_RUN-uv run --frozen}"
 
 run_timed "materialize agent plugins" \
   "$generator" \

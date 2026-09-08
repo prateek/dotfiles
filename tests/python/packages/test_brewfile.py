@@ -71,6 +71,13 @@ class BrewfileTests(RepoTestCase):
         ))
         self.assertIn('mas "Okta Verify", id: 490179405', self.brewfile("work", "--include-mas"))
 
+    def test_apply_time_marketplace_build_tools_reach_every_machine_type(self):
+        # run_onchange_after_36-agent-plugins.sh.tmpl builds the marketplace with just
+        # and uv, on machines that never run mise install in this repo.
+        for machine in ("ci", "personal", "homelab", "work"):
+            with self.subTest(machine=machine):
+                self.assert_entries(self.brewfile(machine), present=('brew "just"', 'brew "uv"'))
+
     def test_mise_owns_gog_while_homebrew_owns_crit(self):
         tools = tomllib.loads((ROOT / "home/dot_config/mise/conf.d/clis.toml").read_text())["tools"]
         self.assertFalse(any("tomasz-tomczyk/crit" in key for key in tools))
