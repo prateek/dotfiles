@@ -96,6 +96,7 @@ for day-to-day implementation details.
 | [ADR 0026 - just as the task runner](adr/0026-just-task-runner.md) | Accepted; [justfile migration plan](plans/justfile-migration-plan.md). Both Makefiles replaced and per-file test targets deleted; selection moves to the runners. See the [tests index](../tests/README.md). |
 | [ADR 0027 - Codex CLI installs standalone](adr/0027-codex-standalone-installer.md) | Accepted; `run_after_07-codex-standalone.sh` installs the CLI through OpenAI's installer and `[packages.retired]` drops the cask, because `/agents` and the app-server daemon need the standalone layout. See [Mise Tool Management](references/mise-tool-management.md) > Codex workflow. |
 | [ADR 0028 - Sibling router skill over vendored remap](adr/0028-router-skill-over-vendor-remap.md) | Accepted; when local conventions and a vendored skill share a subject, publish both as siblings in one package and split the trigger between their descriptions. First customer: the `acpx` / `acpx-cli` pair ([plan](plans/acpx-skill-packaging-plan.md)). |
+| [ADR 0029 - Claude Code CLI installs natively](adr/0029-claude-code-native-installer.md) | Accepted; `run_after_06-claude-native.sh` installs the CLI through Anthropic's installer and retires the npm copies, because npm updates rewrite the package tree under running sessions. See [Mise Tool Management](references/mise-tool-management.md) > Claude Code workflow. |
 
 ## Research
 

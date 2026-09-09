@@ -1,0 +1,137 @@
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- if and $f.run_install_scripts (has "claude" $f.agent_clis) -}}
+{{ template "script_lib.sh" . }}
+
+# The Claude Code CLI installs through Anthropic's installer instead of the npm
+# package mise used to pin: an npm update relinks its package tree at the same
+# path while sessions are running, orphaning the image a running session is
+# executing, and the native layout never unlinks one.
+# See docs/adr/0029-claude-code-native-installer.md.
+#
+# This hook is numbered ahead of 36-agent-plugins, which fails the apply when a
+# CLI listed in agent_clis is missing from PATH.
+
+launcher="$HOME/.local/bin/claude"
+mise_data="${MISE_DATA_DIR:-$HOME/.local/share/mise}"
+
+# The installer writes its target into ~/.claude/settings.json as
+# autoUpdatesChannel, which chezmoi also manages through
+# home/.chezmoitemplates/claude-settings-managed.json.tmpl. A mismatch between
+# the two is a write-fight, not a preference.
+channel=latest
+
+# Two npm copies can exist: mise's npm-backend copy of the retired
+# `npm:@anthropic-ai/claude-code` pin, and the package under a mise-managed
+# node's global prefix, where Claude Code's own updater reinstalls itself.
+# Retiring either unlinks the binary a session started from it is still
+# executing, so each is gated on the processes running from that copy.
+in_use() {
+  pgrep -f "$1" >/dev/null 2>&1
+}
+
+retire_npm_install() {
+  local node_dir pkg mise_copy version has_version
+
+  # mise reaches one install through several version-alias paths while a running
+  # session names only the resolved one, so checking a copy under an alias would
+  # clear the guard below and retire it anyway.
+  for node_dir in "$mise_data"/installs/node/*/; do
+    if [ -L "${node_dir%/}" ]; then
+      continue
+    fi
+    pkg="${node_dir}lib/node_modules/@anthropic-ai/claude-code"
+    [ -d "$pkg" ] || continue
+    if in_use "^${node_dir}bin/claude( |\$)" || in_use "$pkg/"; then
+      warn "Claude Code is still running from ${node_dir}bin/claude; leaving it in place. The next chezmoi apply retires it."
+      continue
+    fi
+    if [ ! -x "${node_dir}bin/npm" ]; then
+      warn "Cannot retire $pkg: no npm in ${node_dir}bin."
+      continue
+    fi
+    # npm's shebang resolves node from PATH, and its global prefix has to be
+    # this node install, not whichever one the caller's environment points at.
+    run_timed "retire npm Claude Code" \
+      env PATH="${node_dir}bin:$PATH" npm_config_prefix="${node_dir%/}" \
+        "${node_dir}bin/npm" uninstall -g @anthropic-ai/claude-code \
+      || warn "Could not uninstall @anthropic-ai/claude-code from ${node_dir%/}."
+  done
+
+  mise_copy="$mise_data/installs/npm-anthropic-ai-claude-code"
+  [ -d "$mise_copy" ] || return 0
+
+  # A shim execs the version it selects, so a live session names
+  # $mise_copy/<version>/bin/claude and only a wrapper keeps the shim path.
+  if in_use "$mise_copy/" || in_use 'mise/shims/claude( |$)'; then
+    warn "Claude Code is still running from the mise npm-backend copy; leaving it in place. The next chezmoi apply retires it."
+    return 0
+  fi
+
+  # Version aliases here are symlinks, so a `-d` test skips the dangling ones
+  # mise leaves behind and only a real install reaches the uninstall.
+  has_version=0
+  for version in "$mise_copy"/*/; do
+    [ -d "$version" ] || continue
+    has_version=1
+    break
+  done
+
+  if [ "$has_version" = 1 ]; then
+    if ! have mise; then
+      warn "mise is not installed; leaving $mise_copy in place."
+      return 0
+    fi
+    if ! run_timed "retire mise Claude Code" \
+      mise uninstall --all "npm:@anthropic-ai/claude-code"; then
+      warn "Could not uninstall the mise npm:@anthropic-ai/claude-code copy."
+      return 0
+    fi
+  fi
+
+  # mise's uninstall drops the version but leaves the alias symlinks and its
+  # backend marker, which would make every later apply re-run the uninstall.
+  rm -rf "$mise_copy" || warn "Could not remove $mise_copy."
+}
+
+if [ -x "$launcher" ] && "$launcher" --version >/dev/null 2>&1; then
+  retire_npm_install
+  log "ok: Claude Code native install is present."
+  exit 0
+fi
+
+# install.sh hands off to `claude install <target>`, which edits a shell startup
+# file when the install directory is off PATH. zprofile already puts
+# ~/.local/bin ahead of the mise shims, so handing the installer that directory
+# plus the system paths gives it nothing to fix and leaves managed shell
+# configuration alone. Homebrew's prefix is deliberately absent: install.sh's
+# optional jq and zstd are not installed this early in the apply, and it has
+# documented fallbacks for both.
+installer_path="$HOME/.local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+
+installer="$(mktemp "${TMPDIR:-/tmp}/dotfiles-claude-install.XXXXXX")"
+trap 'rm -f "$installer"' EXIT
+
+log "Installing Claude Code with Anthropic's installer."
+installed=0
+if curl -fsSL https://claude.ai/install.sh -o "$installer"; then
+  if run_timed "claude native install" \
+    env PATH="$installer_path" bash "$installer" "$channel"; then
+    installed=1
+  fi
+else
+  warn "Could not download https://claude.ai/install.sh."
+fi
+
+if [ "$installed" = 1 ] && [ -x "$launcher" ] && "$launcher" --version >/dev/null 2>&1; then
+  retire_npm_install
+  log "ok: Claude Code native install is present."
+  exit 0
+fi
+
+if have claude; then
+  warn "Claude Code native install failed; the npm install stays on PATH and the next chezmoi apply retries."
+  exit 0
+fi
+
+die "Claude Code native install failed and no claude is on PATH. Re-run chezmoi apply, or install by hand: curl -fsSL https://claude.ai/install.sh | bash -s ${channel}"
+{{- end -}}

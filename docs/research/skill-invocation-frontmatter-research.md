@@ -2,7 +2,7 @@
 status: current
 doc_type: research
 created: 2026-09-01
-updated: 2026-09-01
+updated: 2026-09-09
 related:
   - agent-skill-management-research.md
   - ../plans/skill-management-console-plan.md
@@ -46,8 +46,12 @@ and `user-invocable` is a Claude Code extension.
 
 ## Claude Code
 
-Version inspected: 2.1.257, via `strings` over the installed binary
-(`/opt/homebrew/lib/node_modules/@anthropic-ai/claude-code/bin/claude.exe`).
+Version inspected: 2.1.257, via `strings` over the installed binary. That was
+the Homebrew npm install at
+`/opt/homebrew/lib/node_modules/@anthropic-ai/claude-code/bin/claude.exe`, which
+no longer exists: the CLI now installs natively
+([ADR 0029](../adr/0029-claude-code-native-installer.md)), so the binary to run
+`strings` over today is `~/.local/share/claude/versions/<version>`.
 Official reference: [Extend Claude with skills](https://code.claude.com/docs/en/skills).
 
 Both directions exist, with these schema descriptions embedded in the binary:

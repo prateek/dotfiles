@@ -180,6 +180,7 @@ Claude ingest automation registration.
 | Fork reconciliation / adoption | `just test-shell tests/bats/packages/fork-reconcile.bats tests/bats/packages/retired-packages.bats` and `just test-python -p test_fork_entry.py` |
 | mise / GitHub extensions / Xcode scripts | `just test-shell tests/bats/packages/mise-install.bats tests/bats/packages/gh-extensions.bats tests/bats/packages/xcode-install.bats` for the changed installer. |
 | Codex CLI standalone installer | `just test-shell tests/bats/packages/codex-standalone.bats`; role gate, normal-home targeting under an inherited `CODEX_HOME`, the sanitized installer environment that keeps managed shell startup files unedited, and the failure path that leaves the Homebrew cask for `08-retired-packages` to keep. |
+| Claude Code native installer | `just test-shell tests/bats/packages/claude-native.bats`; `agent_clis` gate, the sanitized installer environment and update channel, retirement of both npm copies, the deferral that leaves them alone while a session still executes one (including through a mise version alias), and the two failure paths (warn when a `claude` remains on `PATH`, fail the apply when none does). |
 
 Inspect `scripts/packages/render-brewfile --machine-type <type>` for affected
 types and the `--include-mas` opt-in. Tests use fake install commands; the macOS

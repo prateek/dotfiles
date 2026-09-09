@@ -21,8 +21,8 @@
 
 # === AI coding harnesses ===
 # Interactive AI coding tools the human runs directly. The desktop `claude`
-# app is a Homebrew cask in packages.toml; this is the CLI.
-"npm:@anthropic-ai/claude-code" = "latest"
+# app is a Homebrew cask in packages.toml; the Claude Code CLI installs from
+# run_after_06-claude-native.sh (ADR 0029), not here.
 "npm:@earendil-works/pi-coding-agent" = "latest"                 # pi; Cursor SDK bridge peers are managed in ~/.pi/agent/settings.json
 "npm:@google/gemini-cli" = "latest"
 

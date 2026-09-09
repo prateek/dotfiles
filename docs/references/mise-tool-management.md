@@ -4,6 +4,7 @@ doc_type: reference
 related:
   - ../adr/0005-mise-tool-management.md
   - ../adr/0027-codex-standalone-installer.md
+  - ../adr/0029-claude-code-native-installer.md
 ---
 
 # Mise Tool Management Reference
@@ -97,17 +98,42 @@ The task does this:
 - `main` builds `codex-cli` from `openai/codex` `main` with Cargo, links it as `codex@main`, and selects it
 - `pr <number>` resolves the PR head with `gh`, builds that exact SHA with Cargo, links it as `codex@pr-<number>`, and selects it
 
-The four mise channels record a selection that `~/.local/bin/codex` shadows, the
-same way it shadows the `claude` pin in `clis.toml`. Run those builds explicitly:
+The four mise channels record a selection that `~/.local/bin/codex` shadows. Run
+those builds explicitly:
 
 ```sh
 mise exec codex@main -- codex --version
 ```
 
+## Claude Code workflow
+
+The Claude Code CLI is not mise-managed either.
+`run_after_06-claude-native.sh` installs it with Anthropic's installer
+([ADR 0029](../adr/0029-claude-code-native-installer.md)), gated on `claude`
+appearing in the machine's `agent_clis`. Each release lands at its own path
+under `~/.local/share/claude/versions/`, with `~/.local/bin/claude` pointing at
+the current one — so an update never unlinks the image a running session is
+executing, which the npm package did.
+
+The same hook retires the npm copies once the native install answers for
+`claude`, and skips retirement while a session is still executing one of them.
+There is no `claude:use` task and no mise channel; the CLI updates itself on the
+channel set by `autoUpdatesChannel` in
+`home/.chezmoitemplates/claude-settings-managed.json.tmpl`. `claude doctor`
+reports the installed version and that channel. To move it by hand:
+
+```sh
+claude install latest
+```
+
+`npm:@agentclientprotocol/claude-agent-acp` is a different package and stays in
+`clis.toml`.
+
 ## Implemented State
 
 - ADR 0005 records the decision.
 - Codex source experiments live in the repo-owned mise task under `home/dot_config/mise/tasks/`; the CLI itself installs standalone ([ADR 0027](../adr/0027-codex-standalone-installer.md)).
+- Claude Code installs through Anthropic's installer ([ADR 0029](../adr/0029-claude-code-native-installer.md)); `tests/bats/packages/claude-native.bats` covers the hook.
 - Homebrew installs crit through the `developer-tools` package group; crit is not mise-managed, and `just test-python -p test_brewfile.py` fails if a crit entry returns to `clis.toml`.
 - `bin/devtool`, `bin/devtool-shim`, `.config/devtools/config.toml`, and `docs/devtools.md` are removed.
 - `devtool` is no longer linked into `~/bin`.
