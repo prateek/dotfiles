@@ -145,7 +145,6 @@ taps = [
   { name = "neovim/neovim" },
   { name = "oven-sh/bun" },
   { name = "romkatv/powerlevel10k" },
-  { name = "cirruslabs/cli" },
   { name = "dagger/tap" },
   { name = "hashicorp/tap" },
   { name = "eugene1g/safehouse" },
@@ -317,7 +316,7 @@ casks = [
 description = "Xcode, iOS, and Apple platform development tools"
 taps = [
   { name = "facebook/fb" },
-  { name = "peripheryapp/periphery" },
+  { name = "openai/tools" },
 ]
 brews = [
   { name = "homebrew/core/xcodes", args = ["force-bottle"] },
@@ -325,11 +324,10 @@ brews = [
   { name = "xcodegen" },
   { name = "swiftformat" },
   { name = "xcbeautify" },
-  { name = "cirruslabs/cli/tart" },
+  { name = "openai/tools/tart" },
 ]
 casks = [
   { name = "tuist" },
-  { name = "peripheryapp/periphery/periphery" },
 ]
 xcode_required_brews = [
   { name = "facebook/fb/idb-companion" },
@@ -409,4 +407,5 @@ brews = [
 ]
 casks = [
   { name = "codex" },  # the CLI installs standalone (run_after_07-codex-standalone.sh)
+  { name = "periphery" },
 ]

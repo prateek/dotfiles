@@ -37,7 +37,7 @@ class BrewfileTests(RepoTestCase):
             'cask "setapp"', 'cask "jump-desktop"',
         ), absent=(
             'mas "', 'brew "gogcli"', 'tap "xcodesorg/made"', 'cask "codex"',
-            'brew "homebrew/core/xcodes"', 'brew "fastlane"', 'brew "cirruslabs/cli/tart"',
+            'brew "homebrew/core/xcodes"', 'brew "fastlane"', 'brew "openai/tools/tart"',
             'facebook/fb/idb-companion', 'brew "swiftlint"',
             'cask "ghostpepper"', 'cask "tailscale-app"',
         ))
@@ -47,7 +47,7 @@ class BrewfileTests(RepoTestCase):
             'brew "aria2"', 'brew "f/mcptools/mcp", trusted: true',
             'cask "slack"', 'cask "google-drive"', 'cask "setapp"',
         ), absent=(
-            'brew "homebrew/core/xcodes"', 'brew "fastlane"', 'brew "cirruslabs/cli/tart"',
+            'brew "homebrew/core/xcodes"', 'brew "fastlane"', 'brew "openai/tools/tart"',
             'brew "steipete/tap/imsg"', 'brew "gogcli"', 'cask "ghostpepper"',
             'cask "tailscale-app"', 'cask "arq"', 'cask "voiceink"',
             'brew "codex-acp"',
@@ -56,7 +56,7 @@ class BrewfileTests(RepoTestCase):
     def test_homelab_selects_apple_vm_and_agent_tools_without_desktop_subscriptions(self):
         self.assert_entries(self.brewfile("homelab"), present=(
             'brew "homebrew/core/xcodes", args: ["force-bottle"]',
-            'brew "cirruslabs/cli/tart", trusted: true', 'brew "f/mcptools/mcp", trusted: true',
+            'brew "openai/tools/tart", trusted: true', 'brew "f/mcptools/mcp", trusted: true',
             'cask "tailscale-app"', 'cask "jump-desktop"', 'cask "agentsview"',
             'cask "stablyai/orca/orca"', 'brew "codex-acp"',
             'cask "claude"', 'cask "cmux"',

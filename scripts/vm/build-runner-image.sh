@@ -60,7 +60,7 @@ while [ "$#" -gt 0 ]; do
   shift
 done
 
-command -v tart >/dev/null 2>&1 || die "tart is required (brew install cirruslabs/cli/tart)."
+command -v tart >/dev/null 2>&1 || die "tart is required (brew install openai/tools/tart)."
 command -v jq >/dev/null 2>&1 || die "jq is required to read the Xcode pin."
 [ -r "$TRIPLE_FILE" ] || die "missing Xcode version pin: $TRIPLE_FILE"
 

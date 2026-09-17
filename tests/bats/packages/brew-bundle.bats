@@ -86,8 +86,7 @@ render_bundle() {
     'cask "stablyai/orca/orca", trusted: true'; do
     [[ "$brewfile" == *"$entry"* ]]
   done
-  for entry in 'cask "peripheryapp/periphery/periphery", trusted: true' \
-    'brew "homebrew/core/xcodes"' 'brew "fastlane"' 'brew "cirruslabs/cli/tart"'; do
+  for entry in 'brew "homebrew/core/xcodes"' 'brew "fastlane"' 'brew "openai/tools/tart"'; do
     [[ "$brewfile" != *"$entry"* ]]
   done
   before="$(cat "$FIXTURE/brew.calls")"

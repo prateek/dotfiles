@@ -221,7 +221,7 @@ if [ "$MODE" != "local" ] && [ "$MODE" != "remote" ]; then
 fi
 
 if ! command -v tart >/dev/null 2>&1; then
-  die "tart is not installed. Install it first: brew install cirruslabs/cli/tart"
+  die "tart is not installed. Install it first: brew install openai/tools/tart"
 fi
 
 if [ -z "$VM_NAME" ]; then
