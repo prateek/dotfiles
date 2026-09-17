@@ -1,0 +1,60 @@
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- if or (hasKey $f "agentsview_data_dir") (hasKey $f "qmd_cache_dir") -}}
+{{ template "script_lib.sh" . }}
+
+# Hosts that keep agent data off the boot disk link each tool's fixed home path
+# to its store. agentsview and the session archive's sync script hardcode
+# ~/.agentsview, and qmd derives its index path from the cache directory, so a
+# symlink is the one location every caller shares. A missing store volume
+# leaves a dangling link, which fails closed instead of starting an empty store
+# on the boot disk.
+
+# link_store LINK STORE: point LINK at STORE without hiding existing data.
+link_store() {
+  local link="$1" store="$2"
+  if ! (umask 077 && mkdir -p "$store") 2>/dev/null; then
+    warn "$store is unavailable; is its volume mounted?"
+    return 1
+  fi
+  if [ -L "$link" ] && [ "$(readlink "$link")" = "$store" ]; then
+    return 0
+  fi
+  if [ -e "$link" ] || [ -L "$link" ]; then
+    warn "$link is not a link to $store; move its data there first (docs/runbooks/host-storage.md)."
+    return 1
+  fi
+  mkdir -p "$(dirname "$link")"
+  ln -s "$store" "$link"
+  log "Linked $link to $store."
+}
+{{- if hasKey $f "agentsview_data_dir" }}
+
+# .chezmoiignore skips ~/.agentsview on this host, so run its modify_ template
+# here, through the link.
+if link_store "$HOME/.agentsview" {{ $f.agentsview_data_dir | quote }}; then
+  brew_shellenv
+  have uv || die "uv is required to reconcile ~/.agentsview/config.toml."
+  config="$HOME/.agentsview/config.toml"
+  modifier="$(mktemp)"
+  merged="$(mktemp "$config.XXXXXX")"
+  trap 'rm -f "$modifier" "$merged"' EXIT
+  cat > "$modifier" <<'MODIFIER'
+{{ includeTemplate "private_dot_agentsview/modify_private_config.toml.tmpl" . }}
+MODIFIER
+  input=/dev/null
+  if [ -f "$config" ]; then input="$config"; fi
+  uv run --quiet --script "$modifier" < "$input" > "$merged"
+  if [ -f "$config" ] && cmp -s "$merged" "$config"; then
+    log "ok: agentsview config already reconciled."
+  else
+    chmod 600 "$merged"
+    mv "$merged" "$config"
+    log "Reconciled $config."
+  fi
+fi
+{{- end }}
+{{- if hasKey $f "qmd_cache_dir" }}
+
+link_store "${XDG_CACHE_HOME:-$HOME/.cache}/qmd" {{ $f.qmd_cache_dir | quote }} || true
+{{- end }}
+{{- end -}}

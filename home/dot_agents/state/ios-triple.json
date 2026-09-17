@@ -1,19 +1,19 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "Prateek's canonical Xcode / iOS runtime / device triple for new iOS projects. Pinned to match what GitHub Actions macos-15 and macos-26 runner images ship out of the box, so local dev and CI use the same runtime without a download step. Read by ios-project-scaffold and ios.md. Update on quarterly review.",
-  "last_reviewed": "2026-04-10",
-  "xcode_version": "26.3",
-  "ios_runtime_primary": "iOS 26.2",
-  "ios_runtime_primary_id": "com.apple.CoreSimulator.SimRuntime.iOS-26-2",
-  "ios_runtime_compat": "iOS 26.2",
-  "ios_runtime_compat_id": "com.apple.CoreSimulator.SimRuntime.iOS-26-2",
+  "description": "Prateek's canonical Xcode / iOS runtime / device triple for new iOS projects. Pinned to the latest stable Xcode that runs on the installed macOS, with the iOS runtime matching its SDK. Read by ios-project-scaffold and ios.md. Update on quarterly review.",
+  "last_reviewed": "2026-09-17",
+  "xcode_version": "26.6",
+  "ios_runtime_primary": "iOS 26.5",
+  "ios_runtime_primary_id": "com.apple.CoreSimulator.SimRuntime.iOS-26-5",
+  "ios_runtime_compat": "iOS 26.5",
+  "ios_runtime_compat_id": "com.apple.CoreSimulator.SimRuntime.iOS-26-5",
   "phone_device_type": "iPhone 17 Pro",
   "phone_device_type_id": "com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro",
   "tablet_device_type": "iPad Pro 13-inch (M5)",
   "tablet_device_type_id": "com.apple.CoreSimulator.SimDeviceType.iPad-Pro-13-inch-M5-12GB",
   "rationale": {
-    "xcode": "Latest stable Xcode 26 point release. Both macos-15 and macos-26 GHA images bundle 26.3.",
-    "runtime": "iOS 26.2 is the most-recent iOS 26 runtime pre-installed on GHA macos-15 and macos-26 runner images, so pinning here avoids an Apple-ID runtime download step in CI. Local dev should install iOS 26.2 if not already present: `xcodes runtimes install \"iOS 26.2\"`.",
-    "devices": "Current-year flagship phone and tablet, both present in Xcode 26.3 device-type registry."
+    "xcode": "Latest stable Xcode that runs on macOS 26.4. Xcode 27.0 requires macOS 26.6, so move to it after the macOS update.",
+    "runtime": "iOS 26.5 matches Xcode 26.6's iOS SDK. CI runner images may lag this pin and need a runtime download step: `xcodes runtimes install \"iOS 26.5\"`.",
+    "devices": "Current-year flagship phone and tablet, both supported by the iOS 26.5 runtime."
   }
 }

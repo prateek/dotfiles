@@ -33,6 +33,12 @@
          through its mise shim before consulting PATH. -->
     <key>PATH</key>
     <string>/Applications/AgentsView.app/Contents/MacOS:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+{{- $f := includeTemplate "features.tmpl" . | fromJson }}
+{{- if hasKey $f "agentsview_data_dir" }}
+    <!-- The sync restarts agentsview, which refuses the symlinked ~/.agentsview. -->
+    <key>AGENTSVIEW_DATA_DIR</key>
+    <string>{{ $f.agentsview_data_dir }}</string>
+{{- end }}
   </dict>
   <key>WorkingDirectory</key>
   <string>{{ .chezmoi.homeDir }}</string>

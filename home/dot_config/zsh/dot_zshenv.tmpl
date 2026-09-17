@@ -20,6 +20,13 @@ if [[ -z "${WINMUX_E2E_ARTIFACT_ROOT:-}" ]]; then
   export WINMUX_E2E_ARTIFACT_ROOT={{ $f.winmux_e2e_artifact_root | quote }}
 fi
 {{- end }}
+{{- if hasKey $f "agentsview_data_dir" }}
+# ~/.agentsview links here, but agentsview refuses a symlinked data directory.
+# The desktop app inherits this through its login-shell probe.
+if [[ -z "${AGENTSVIEW_DATA_DIR:-}" ]]; then
+  export AGENTSVIEW_DATA_DIR={{ $f.agentsview_data_dir | quote }}
+fi
+{{- end }}
 {{- if $f.tls_inspection }}
 # Node ignores the macOS keychain, so behind the TLS-inspecting proxy every Node
 # client needs the corporate roots exported to a file. GUI apps get this from

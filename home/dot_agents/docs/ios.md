@@ -52,8 +52,8 @@ jq -r .tablet_device_type  ~/.agents/state/ios-triple.json
 ```
 
 Review the triple quarterly rather than upgrading in the middle of a project.
-Prefer the runtime bundled by the matching GitHub Actions macOS image so local
-and CI builds do not require different downloads.
+The pin tracks the latest stable Xcode that runs on the installed macOS, so a
+CI runner image can lag it; install the pinned runtime in CI when it does.
 
 ## Defaults
 

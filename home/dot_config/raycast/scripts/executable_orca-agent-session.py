@@ -294,10 +294,18 @@ def agentsview_base_url():
     not a hotkey. Re-read on every run: `serve status` exits 0 whether or not
     a server runs, the URL in its output is the liveness signal, and the port
     changes across daemon restarts.
+
+    Raycast does not read shell startup files, so a host that links
+    ~/.agentsview to another volume passes the resolved directory explicitly:
+    through the symlink, status finds no daemon.
     """
+    env = dict(os.environ)
+    data_dir = os.path.expanduser("~/.agentsview")
+    if os.path.islink(data_dir):
+        env.setdefault("AGENTSVIEW_DATA_DIR", os.path.realpath(data_dir))
     try:
         proc = subprocess.run(
-            ["agentsview", "serve", "status"], capture_output=True, text=True
+            ["agentsview", "serve", "status"], capture_output=True, text=True, env=env
         )
     except FileNotFoundError:
         return None

@@ -32,7 +32,7 @@ dir = "/srv/handwritten/copilot"
 machine = "buildbox"
 '''
         result = self.command(self.modify, current)
-        expected = tomllib.loads(current.decode()) | {"codex_sessions_dirs": self.local_dirs}
+        expected = tomllib.loads(current.decode()) | {"agents": {"codex": {"dirs": self.local_dirs}}}
         sources = expected["session_sources"]
         sources.extend({"agent": agent, "dir": str(self.clone / "sessions" / host / suffix), "machine": host}
                        for host, agent, suffix in (
@@ -51,4 +51,23 @@ machine = "buildbox"
     def test_unregistered_host_without_archive_gets_only_local_codex_roots(self):
         modify = self.modifier("home/private_dot_agentsview/modify_private_config.toml.tmpl")
         result = self.command(modify, env={"WIKI_SESSIONS_CLONE": str(self.work / "no-clone")})
-        self.assertEqual(tomllib.loads(result.stdout.decode()), {"codex_sessions_dirs": self.local_dirs})
+        self.assertEqual(tomllib.loads(result.stdout.decode()), {"agents": {"codex": {"dirs": self.local_dirs}}})
+
+    def test_legacy_codex_sessions_dirs_moves_under_agents_table(self):
+        current = b'''auth_token = "secret-token"
+codex_sessions_dirs = ["/stale/codex"]
+
+[agents.claude]
+dirs = ["/srv/claude"]
+
+[agents.codex]
+homes = ["/srv/codex-home"]
+'''
+        result = self.command(self.modify, current)
+        migrated = tomllib.loads(result.stdout.decode())
+        self.assertNotIn("codex_sessions_dirs", migrated)
+        self.assertEqual(migrated["auth_token"], "secret-token")
+        self.assertEqual(migrated["agents"], {
+            "claude": {"dirs": ["/srv/claude"]},
+            "codex": {"homes": ["/srv/codex-home"], "dirs": self.local_dirs},
+        })

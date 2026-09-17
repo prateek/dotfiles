@@ -355,8 +355,10 @@ args = ["pre"]
         config.write_text("")
         tart = str(self.root / "unmounted/vms/tart")
         artifacts = str(self.root / "unmounted/artifacts/winmux")
+        agentsview = str(self.root / "unmounted/agentsview")
         data = dict(machine_type="ci", dotfiles_dir=str(ROOT),
-                    machines_local=dict(tart_home=tart, winmux_e2e_artifact_root=artifacts))
+                    machines_local=dict(tart_home=tart, winmux_e2e_artifact_root=artifacts,
+                                        agentsview_data_dir=agentsview))
         zsh_dir = Path(self.env["XDG_CONFIG_HOME"]) / "zsh"
         zsh_dir.mkdir(parents=True)
         for source, target in (("dot_zshenv.tmpl", self.target.parent / ".zshenv"),
@@ -370,17 +372,19 @@ args = ["pre"]
             for override in (None, str(self.root / "chosen-tart")):
                 with self.subTest(inherited=inherited, override=override):
                     env = dict(self.env)
-                    for key in ("TART_HOME", "WINMUX_E2E_ARTIFACT_ROOT", "ZDOTDIR"):
+                    for key in ("TART_HOME", "WINMUX_E2E_ARTIFACT_ROOT", "AGENTSVIEW_DATA_DIR", "ZDOTDIR"):
                         env.pop(key, None)
                     if inherited:
                         env["ZDOTDIR"] = str(zsh_dir)
                     if override:
                         env["TART_HOME"] = override
-                    shell = subprocess.run(["/bin/zsh", "-c", 'printf "%s\\n%s\\n" "$TART_HOME" "$WINMUX_E2E_ARTIFACT_ROOT"'],
+                    shell = subprocess.run(["/bin/zsh", "-c",
+                                            'printf "%s\\n%s\\n%s\\n" "$TART_HOME" "$WINMUX_E2E_ARTIFACT_ROOT" "$AGENTSVIEW_DATA_DIR"'],
                                            env=env, capture_output=True, text=True, check=True)
-                    self.assertEqual(shell.stdout.splitlines(), [override or tart, artifacts])
+                    self.assertEqual(shell.stdout.splitlines(), [override or tart, artifacts, agentsview])
         self.assertFalse(Path(tart).exists())
         self.assertFalse(Path(artifacts).exists())
+        self.assertFalse(Path(agentsview).exists())
 
     def test_first_init_apply_checks_storage_before_modifiers(self):
         command = self.chezmoi_fixture()

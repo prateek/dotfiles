@@ -8,11 +8,13 @@
 Two managed surfaces, everything else round-trips untouched (auth_token,
 cursor_secret, hand-written entries) preserved verbatim by tomlkit:
 
-- codex_sessions_dirs: Orca launches Codex with its own CODEX_HOME under its
+- [agents.codex] dirs: Orca launches Codex with its own CODEX_HOME under its
   runtime-home dir instead of ~/.codex (see home/dot_agents/docs/agentsview.md),
   so agentsview's default Codex scan misses those sessions. The key replaces
   agentsview's defaults rather than extending them, so the stock paths are
-  listed alongside both Orca builds' paths.
+  listed alongside both Orca builds' paths. agentsview 0.43 refuses to load a
+  config that also sets the legacy top-level codex_sessions_dirs, so that key
+  is removed.
 
 - [[session_sources]]: cross-host roots from the wiki-agent-sessions clone
   (agentsview's documented topology for git-transported native layouts, with
@@ -87,7 +89,12 @@ if "--print-session-sources" in sys.argv:
 
 current_text = sys.stdin.read()
 doc = tomlkit.loads(current_text) if current_text.strip() else tomlkit.document()
-doc["codex_sessions_dirs"] = DESIRED_DIRS
+doc.pop("codex_sessions_dirs", None)
+agents = doc.get("agents") or tomlkit.table(is_super_table=True)
+codex = agents.get("codex") or tomlkit.table()
+codex["dirs"] = DESIRED_DIRS
+agents["codex"] = codex
+doc["agents"] = agents
 
 desired = repo_session_sources(CLONE, SELF_HOST)
 existing = doc.get("session_sources")

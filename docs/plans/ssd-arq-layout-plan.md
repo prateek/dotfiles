@@ -3,8 +3,8 @@ status: active
 doc_type: plan
 owner: Prateek
 created: 2026-09-05
-updated: 2026-09-05
-status_detail: "Code, Tart, and WinMux storage migrated; GhostPepper retained in place. Arq configuration deferred by Prateek."
+updated: 2026-09-17
+status_detail: "Code, Tart, WinMux, agentsview, and qmd storage migrated; GhostPepper retained in place. Arq configuration deferred by Prateek."
 related:
   - wiki-ingest-revisit-plan.md
   - ../runbooks/session-sync-permissions.md
@@ -48,7 +48,9 @@ remains mounted for that app.
 Code (APFS volume, mounted at ~/code)
 ├── github.com/…                       repositories and session archive
 └── .storage/
+    ├── agentsview/                    agentsview archive and config
     ├── artifacts/winmux/              retained test evidence
+    ├── qmd/                           qmd index and downloaded models
     └── vms/tart/                      disposable VM/cache storage
 ```
 
@@ -77,10 +79,19 @@ remain historical issues, including stale source revisions and command formats.
 
 GhostPepper remains at `/Volumes/TartVMs/prateek/models/GhostPepper`, with
 its existing link from `~/Library/Application Support/GhostPepper`. This is
-the agreed exception to the symlink preference. The app can create personal
+one of the agreed exceptions to the symlink preference. The app can create personal
 state beside downloaded models, so exclude specific model subdirectories
 from backups rather than its entire app-data root. The two APFS volumes
 still share one physical 2 TB pool.
+
+agentsview and qmd are the other exceptions. On September 17, their stores
+moved to `.storage/agentsview` and `.storage/qmd`, freeing about 13 GiB on
+the internal disk. `~/.agentsview` and `~/.cache/qmd` now link to them. qmd has
+no index-path setting. agentsview also gets `AGENTSVIEW_DATA_DIR`, because it
+refuses a symlinked data directory, while chezmoi and the archive sync script
+edit its config through the link.
+[Host storage](../runbooks/host-storage.md#agent-data-stores) describes the
+links, the variable, and the apply script that owns them.
 
 ## Arq configuration
 
@@ -95,7 +106,8 @@ Retain the existing standard generated-file exclusions for this selection.
 | Repository contents, uncommitted work, and `.git` | Include |
 | Raw session archive and local unpublished commits | Include |
 | Retained WinMux evidence | Include |
-| Downloaded models and disposable VM/cache storage | Exclude their specific directories |
+| agentsview archive (`.storage/agentsview`) | Include |
+| Downloaded models and disposable VM/cache storage, including `.storage/qmd` | Exclude their specific directories |
 
 Add the retained `TartVMs` volume explicitly if GhostPepper contains personal
 data, and apply model exclusions within it. Do not rely on

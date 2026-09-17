@@ -3,7 +3,7 @@ status: active
 doc_type: runbook
 owner: Prateek
 created: 2026-09-05
-updated: 2026-09-05
+updated: 2026-09-17
 related:
   - ../references/chezmoi-hook-lifecycle.md
   - ../plans/ssd-arq-layout-plan.md
@@ -51,6 +51,41 @@ The pre-hook runs on every apply, even when dotfiles have not changed.
 Mount setup belongs here because a `run_before_` script would run after
 chezmoi has read destination state. There is no additional source script
 to leave `chezmoi status` reporting pending work after a successful apply.
+
+## Agent data stores
+
+On m4mini, agentsview's archive and qmd's index and models live on the code
+volume. The `agentsview_data_dir` and `qmd_cache_dir` host facts name the
+stores. On every apply, `run_after_34-agent-data-store.sh` links
+`~/.agentsview` and `~/.cache/qmd` to them.
+
+qmd has no index-directory setting apart from `XDG_CACHE_HOME`, so the link is
+all it needs. agentsview needs both the link and `AGENTSVIEW_DATA_DIR`:
+
+- The chezmoi `modify_` template and the session archive's sync script edit
+  `~/.agentsview/config.toml` directly, so they go through the link.
+- agentsview refuses to start from a symlinked data directory, so the daemon
+  and CLI need the real path. `$ZDOTDIR/.zshenv` exports it, and the desktop
+  app picks it up through its login-shell probe. The session sync launch agent
+  and script 38's daemon restart set it explicitly, and the Raycast
+  `orca-agent-session` script resolves it from the link.
+
+A launcher without the variable cannot start a second archive on the boot
+disk: agentsview exits with `~/.agentsview is a symlink`. `serve status`
+without the variable reports that no server is running even when one is.
+
+chezmoi replaces a symlinked directory it manages with a real directory, so
+`.chezmoiignore` skips `~/.agentsview` on hosts with the fact. Script 34 runs
+the same `modify_private_config.toml.tmpl` through the link instead. When the
+SSD is absent, the links dangle and the mount point is read-only, so both
+tools fail instead of writing to the boot disk.
+
+The script never hides an existing directory. It warns and leaves the data in
+place. To migrate an existing store, stop its consumers
+(`agentsview serve stop`, and any `qmd` process), move the directory aside,
+copy it into the store with `rsync -a`, and compare the files. Then rerun
+apply, start agentsview with `AGENTSVIEW_DATA_DIR` set, and remove the
+original once the tool reads from the store.
 
 ## Scope and recovery
 

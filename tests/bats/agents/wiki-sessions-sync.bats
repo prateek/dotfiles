@@ -103,6 +103,18 @@ run_wrapper() {
   assert_success
 }
 
+@test "Launchd passes a relocated agentsview data directory only on hosts that configure one" {
+  plist="$DOTFILES_ROOT/home/Library/LaunchAgents/com.prateek.wiki-sessions-sync.plist.tmpl"
+  run -0 chezmoi --source "$DOTFILES_ROOT" --override-data \
+    '{"chezmoi":{"hostname":"dotfiles-test-host"},"machines_local":{"agentsview_data_dir":"/Volumes/Store/agentsview"}}' \
+    execute-template --file "$plist"
+  [ "$(printf '%s\n' "$output" | plutil -extract EnvironmentVariables.AGENTSVIEW_DATA_DIR raw -o - -)" = /Volumes/Store/agentsview ]
+
+  run -0 chezmoi --source "$DOTFILES_ROOT" --override-data '{"chezmoi":{"hostname":"dotfiles-test-host"}}' \
+    execute-template --file "$plist"
+  run -1 plutil -extract EnvironmentVariables.AGENTSVIEW_DATA_DIR raw -o - - <<< "$output"
+}
+
 @test "Managed QMD config includes the model identities persisted by the CLI" {
   run chezmoi --source "$DOTFILES_ROOT" execute-template \
     --file "$DOTFILES_ROOT/home/dot_config/qmd/wiki-agent-sessions.yml.tmpl"

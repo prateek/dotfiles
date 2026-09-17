@@ -104,11 +104,15 @@ wiki_host_alias = "personal-mbp"
 
 # The code volume is reconciled before apply reads destination state.
 # See docs/runbooks/host-storage.md. Tart's separate storage path is exported by
-# home/dot_config/zsh/dot_zshenv.tmpl and checked by scripts/vm/lib.sh.
+# home/dot_config/zsh/dot_zshenv.tmpl and checked by scripts/vm/lib.sh. The
+# agentsview and qmd stores are linked from their home paths by
+# run_after_34-agent-data-store.sh; zshenv also exports AGENTSVIEW_DATA_DIR.
 [machines.host.m4mini]
 code_volume_uuid = "8C16DA8F-1B9B-4ADC-9C7D-EFA8FF8B15D7"
 tart_home = "/Users/prateek/code/.storage/vms/tart"
 winmux_e2e_artifact_root = "/Users/prateek/code/.storage/artifacts/winmux"
+agentsview_data_dir = "/Users/prateek/code/.storage/agentsview"
+qmd_cache_dir = "/Users/prateek/code/.storage/qmd"
 wiki_host_alias = "m4mini"
 # The always-on mini is the single writer for the distilled wiki.
 agent_session_wiki_ingest = true

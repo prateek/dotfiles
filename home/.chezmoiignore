@@ -43,6 +43,12 @@ Library/LaunchAgents/com.prateek.gui-corp-ca.plist
 .config/mise/conf.d/mcporter.toml
 {{- end }}
 
+{{/* A relocated agentsview store is a symlink owned by run_after_34-agent-data-store.sh;
+     chezmoi would replace it with a directory. */}}
+{{- if hasKey $f "agentsview_data_dir" }}
+.agentsview
+{{- end }}
+
 {{/* Session-archive wiring (prateek/wiki-agent-sessions) only on participating machines. */}}
 {{- $sessionWiki := includeTemplate "features.tmpl" . | fromJson }}
 {{- if not $sessionWiki.agent_session_wiki }}

@@ -135,6 +135,11 @@ agentsview_cli="$(command -v agentsview 2>/dev/null || true)"
 if [ -x /Applications/AgentsView.app/Contents/MacOS/agentsview ]; then
   agentsview_cli=/Applications/AgentsView.app/Contents/MacOS/agentsview
 fi
+{{- if hasKey $f "agentsview_data_dir" }}
+# ~/.agentsview is a symlink on this host, and agentsview refuses to serve from one.
+: "${AGENTSVIEW_DATA_DIR:={{ $f.agentsview_data_dir }}}"
+export AGENTSVIEW_DATA_DIR
+{{- end }}
 if [ -n "$agentsview_cli" ]; then
   run_timed "restart agentsview daemon" "$agentsview_cli" serve --background --replace || \
     warn "agentsview restart failed; restart manually: agentsview serve --background --replace"

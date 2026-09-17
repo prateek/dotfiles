@@ -149,6 +149,10 @@ Agentsview's comparison with the separate wiki producer is explicit:
 It requires the local wiki checkout's `sync-sessions` script, or an explicit
 `WIKI_SESSION_SYNC_SCRIPT` path. Ordinary discovery covers the modifier's own
 ownership and archive reconciliation behavior.
+`just test-shell tests/bats/hooks/agent-data-store.bats` covers hosts whose
+agentsview and qmd stores live on another volume: linking, config
+reconciliation through the link, refusal to hide existing data, and an
+unavailable volume. A fake `uv` stands in for the modifier.
 
 ### Chezmoi workflow checks
 

@@ -17,7 +17,7 @@ The store is read-only ground truth about past agent behavior. Treat it as evide
 
 - Prefer the `agentsview` CLI. It speaks to the live store correctly and emits JSON with `--format json`.
 - For ad-hoc text search or custom joins, query SQLite on a **copy** of the DB. The viewer daemon holds the live database locked, so `sqlite3 -readonly` on the live file fails with `unable to open database file`. Copy first, then open the copy.
-- The live store path is `~/.agentsview/sessions.db`.
+- The live store path is `~/.agentsview/sessions.db`. On a host where `~/.agentsview` is a symlink to another volume, use `$AGENTSVIEW_DATA_DIR/sessions.db`; agentsview refuses to run through the symlink, so invoke it with that variable set (shells export it).
 - Treat the store as **read-only**. Never write to, mutate, or run `agentsview prune` against the live DB while debugging. Work on the `/tmp` copy.
 - Per-agent breakdowns come from joining `tool_calls` / `messages` to `sessions` on `session_id` and grouping by `sessions.agent`.
 
@@ -31,12 +31,15 @@ your real Codex profile, but it also means agentsview's default Codex root
 (`~/.codex/sessions` + `~/.codex/archived_sessions`) silently misses every
 session Orca launched.
 
-The fix is `codex_sessions_dirs` in `~/.agentsview/config.toml`. Setting it
+The fix is `[agents.codex] dirs` in `~/.agentsview/config.toml`. Setting it
 **replaces** agentsview's built-in defaults rather than extending them, so the
-stock paths must be listed explicitly alongside the Orca one(s):
+stock paths must be listed explicitly alongside the Orca one(s). agentsview
+0.43 renamed the old top-level `codex_sessions_dirs` key to this table and
+refuses to load a config that sets both.
 
 ```toml
-codex_sessions_dirs = [
+[agents.codex]
+dirs = [
   "~/.codex/sessions",
   "~/.codex/archived_sessions",
   "~/Library/Application Support/orca/codex-runtime-home/home/sessions",
@@ -47,7 +50,7 @@ codex_sessions_dirs = [
 This repo keeps that key in sync via
 `home/private_dot_agentsview/modify_private_config.toml.tmpl`, a chezmoi
 `modify_` script (same pattern as `home/dot_codex/modify_private_config.toml.tmpl`).
-It manages two surfaces: `codex_sessions_dirs`, and the generated
+It manages two surfaces: `[agents.codex] dirs`, and the generated
 `[[session_sources]]` entries for the cross-machine session archive (see
 below). Everything else in the file, including the `auth_token` and
 `cursor_secret` that agentsview generates itself, round-trips untouched,
