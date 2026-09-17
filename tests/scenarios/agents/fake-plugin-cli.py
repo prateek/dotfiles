@@ -20,7 +20,8 @@ def fail(message):
     sys.exit(1)
 
 
-marketplaces = state["marketplaces" if cli == "claude" else "codex_marketplaces"]
+marketplaces = state["codex_marketplaces"] if cli == "codex" else state["marketplaces"]
+omp_installed = state.setdefault("omp", {})
 if args[0] == "app-server":
     for line in sys.stdin:
         request = json.loads(line)
@@ -29,6 +30,40 @@ if args[0] == "app-server":
             state["codex"][key]["enabled"] = request["params"]["value"]
             save()
         print(json.dumps({"id": request["id"], "result": {}}), flush=True)
+elif args[:3] == ["plugin", "marketplace", "list"] and cli == "omp":
+    if marketplaces:
+        print("Configured Marketplaces:\n")
+        for name, root in marketplaces.items():
+            print(f"  {name}  {root}")
+    else:
+        print("No marketplaces configured\n")
+        print("Add one with: omp plugin marketplace add <source>")
+elif args[:3] == ["plugin", "list", "--json"] and cli == "omp":
+    plugins = [{"id": key, "scope": "user",
+                "entries": [{"scope": "user", **value,
+                             **({} if value["enabled"] else {"enabled": False})}]}
+               for key, value in omp_installed.items()]
+    print(json.dumps({"npm": [], "marketplace": plugins}))
+elif args[:2] == ["plugin", "install"] and cli == "omp" and "--force" in args:
+    key = args[2]
+    if os.environ.get("FAKE_PLUGIN_FAIL") in ("install", key):
+        fail("simulated install failure")
+    name = key.split("@")[0]
+    manifest = Path(marketplaces["prateek-local"]) / "plugins" / name / ".claude-plugin/plugin.json"
+    prior = omp_installed.get(key)
+    omp_installed[key] = {"enabled": bool(prior["enabled"]) if prior else True, "version": json.loads(manifest.read_text())["version"]}
+    save()
+elif args[:2] == ["plugin", "install"] and cli == "omp":
+    fail("unexpected omp install without --force: " + " ".join(args))
+elif args[:2] in (["plugin", "enable"], ["plugin", "disable"]) and cli == "omp":
+    target = args[1] == "enable"
+    if omp_installed[args[2]]["enabled"] is target:
+        fail("plugin already has that enabled state")
+    omp_installed[args[2]]["enabled"] = target
+    save()
+elif args[:2] == ["plugin", "uninstall"] and cli == "omp":
+    del omp_installed[args[2]]
+    save()
 elif args[:3] == ["plugin", "marketplace", "list"]:
     entries = [{"name": name, "root": root, "installLocation": root} for name, root in marketplaces.items()]
     print(json.dumps(entries if cli == "claude" else {"marketplaces": entries}))

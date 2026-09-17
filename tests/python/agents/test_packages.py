@@ -201,6 +201,8 @@ class PluginReconcileTests(PackageTestCase):
         self.state.write_text(json.dumps({
             "marketplaces": {"prateek-local": "/tmp/stale-plugins-root"},
             "codex_marketplaces": {"prateek-local": "/tmp/stale-plugins-root"},
+            "omp": {"on@prateek-local": {"enabled": False, "version": "0.9.0"},
+                    "stale@prateek-local": {"enabled": True, "version": "1.0.0"}},
             "claude": {"on@prateek-local": {"enabled": False, "version": "0.9.0"},
                        "stale@prateek-local": {"enabled": True, "version": "1.0.0"},
                        "other@other-mkt": {"enabled": True, "version": "2.0.0"}},
@@ -213,7 +215,7 @@ class PluginReconcileTests(PackageTestCase):
         executables = self.work / "bin"
         executables.mkdir()
         self.env["PATH"] = str(executables) + os.pathsep + self.env["PATH"]
-        for cli in ("claude", "codex"):
+        for cli in ("claude", "codex", "omp"):
             script = executables / cli
             script.write_text(f"#!/bin/sh\nFAKE_PLUGIN_CLI={cli} exec {shlex.quote(sys.executable)} {shlex.quote(str(ROOT / 'tests/scenarios/agents/fake-plugin-cli.py'))} \"$@\"\n")
             script.chmod(0o700)
@@ -239,6 +241,26 @@ class PluginReconcileTests(PackageTestCase):
         self.reconcile("--refresh-disabled", "off")
         self.assertIn("codex plugin add off@prateek-local", self.log.read_text())
         self.assertFalse(json.loads(self.state.read_text())["codex"]["off@prateek-local"]["enabled"])
+
+
+    def omp_reconcile(self, *args, **kwargs):
+        return self.tool("reconcile-agent-plugins", "--apply", "--agent", "omp",
+                         "--plugins-root", self.plugins, "--policy", self.policy, *args, **kwargs)
+
+    def test_omp_converges_versions_enabled_state_and_owned_orphans(self):
+        self.omp_reconcile()
+        state = json.loads(self.state.read_text())
+        self.assertEqual(state["omp"], {"on@prateek-local": {"enabled": True, "version": "1.0.0"},
+                                        "off@prateek-local": {"enabled": False, "version": "1.0.0"}})
+        self.assertNotIn("stale@prateek-local", state["omp"])
+        self.assertEqual(state["marketplaces"]["prateek-local"], str(self.plugins))
+        self.log.write_text("")
+        self.omp_reconcile()
+        mutations = [line for line in self.log.read_text().splitlines() if " list" not in line]
+        self.assertEqual(mutations, [])
+        self.log.write_text("")
+        dry = self.omp_reconcile("--dry-run")
+        self.assertEqual(dry.stdout, b"")
 
     def test_dry_run_reads_each_state_once_without_mutations(self):
         before = self.state.read_bytes()

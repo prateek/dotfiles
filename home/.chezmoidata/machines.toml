@@ -22,9 +22,9 @@ secrets_enabled = false          # enable per machine via [data].machines_local
 private_overlay = false
 elevation = "none"
 granola_mcp = false
-# ACP-backed agent CLIs present on this machine. The acpx config emits only the
-# shortcuts whose CLI is listed, and crit's agent_cmd is set only when claude is
-# listed. Empty by default so a machine opts in explicitly.
+# Agent CLIs present on this machine. Plugin reconciliation and ACP shortcuts
+# select supported clients from this list; crit's agent_cmd is set only when
+# claude is listed. Empty by default so a machine opts in explicitly.
 agent_clis = []
 # Cross-machine agent-session archive (prateek/wiki-agent-sessions): hourly raw
 # sync via a launchd agent, agentsview session_sources wiring, obsidian-wiki
@@ -61,7 +61,7 @@ groups = ["core"]
 # Personal daily-driver Mac.
 [machines.type.personal]
 groups = ["core", "mac-desktop", "ai-agent-apps", "codex", "developer-tools", "personal-apps", "forks"]
-agent_clis = ["claude", "codex"]
+agent_clis = ["claude", "codex", "omp"]
 granola_mcp = true
 agent_session_wiki = true
 
@@ -78,7 +78,7 @@ runner_vm_count = 1
 runner_labels = "tartelet,homelab"
 runner_scope = "repo"                  # GitHubRunnerScope rawValue: "organization" | "repo"; repo = one runner per repo
 runner_start_on_launch = true
-agent_clis = ["claude", "codex"]
+agent_clis = ["claude", "codex", "omp"]
 granola_mcp = true
 agent_session_wiki = true
 
@@ -88,7 +88,7 @@ agent_session_wiki = true
 groups = ["core", "mac-desktop", "ai-agent-apps", "developer-tools", "work-apps", "forks"]
 private_overlay = true
 elevation = "jamf-self-service"
-agent_clis = ["cursor-agent", "claude"]
+agent_clis = ["cursor-agent", "claude", "omp"]
 agent_session_wiki = true
 agent_session_wiki_sparse = true
 tls_inspection = true

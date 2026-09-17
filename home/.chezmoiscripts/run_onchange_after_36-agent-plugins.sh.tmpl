@@ -31,13 +31,13 @@ run_timed "materialize agent plugins" \
 
 agents=""
 {{- range $f.agent_clis }}
-{{- if or (eq . "claude") (eq . "codex") }}
+{{- if or (eq . "claude") (eq . "codex") (eq . "omp") }}
 have {{ . }} || die "{{ . }} is listed in agent_clis but not on PATH; install it before agent plugins can reconcile."
 agents="$agents --agent {{ . }}"
 {{- end }}
 {{- end }}
 if [ -z "$agents" ]; then
-  log "no claude or codex CLI in agent_clis for this machine; skipping plugin install reconcile."
+  log "no claude, codex, or omp CLI in agent_clis for this machine; skipping plugin install reconcile."
 else
   # shellcheck disable=SC2086
   run_timed "reconcile agent plugin installs" \

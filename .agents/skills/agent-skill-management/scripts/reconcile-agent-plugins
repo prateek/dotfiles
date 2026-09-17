@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -19,7 +20,7 @@ def slug(name: str) -> str:
     return f"{name}@{MARKETPLACE}"
 
 
-def command(args: list[str], *, read: bool = False):
+def command(args: list[str], *, read: bool = False, text: bool = False):
     if not read:
         print(("[dry-run] " if DRY_RUN else "") + " ".join(args), flush=True)
         if DRY_RUN:
@@ -27,7 +28,9 @@ def command(args: list[str], *, read: bool = False):
     result = subprocess.run(args, cwd=Path.home(), text=True, capture_output=True, timeout=90)
     if result.returncode:
         raise RuntimeError(f"{' '.join(args)} failed ({result.returncode}): {(result.stdout + result.stderr).strip()}")
-    return json.loads(result.stdout) if read else None
+    if not read:
+        return None
+    return result.stdout if text else json.loads(result.stdout)
 
 
 def reconcile_claude(packages, root: Path) -> None:
@@ -92,10 +95,59 @@ def reconcile_codex(packages, root: Path, refresh_disabled: set[str]) -> None:
             command(["codex", "plugin", "remove", key])
 
 
+def omp_marketplaces() -> dict[str, Path]:
+    # omp plugin marketplace list ignores --json.
+    listing = command(["omp", "plugin", "marketplace", "list"], read=True, text=True)
+    if "No marketplaces configured" in listing:
+        return {}
+    if not listing.startswith("Configured Marketplaces:"):
+        raise ValueError(f"unrecognized omp marketplace listing: {listing!r}")
+    entries: dict[str, Path] = {}
+    for line in listing.splitlines()[1:]:
+        if not line.strip():
+            continue
+        parts = line.strip().split(maxsplit=1)
+        if len(parts) != 2 or not re.fullmatch(r"[a-z0-9][a-z0-9.-]*", parts[0]):
+            raise ValueError(f"unrecognized omp marketplace listing line: {line!r}")
+        entries[parts[0]] = Path(parts[1])
+    return entries
+
+
+def reconcile_omp(packages, root: Path) -> None:
+    registered = omp_marketplaces()
+    installed = {}
+    for plugin in command(["omp", "plugin", "list", "--json"], read=True)["marketplace"]:
+        entries = [entry for entry in plugin["entries"] if entry.get("scope") == "user"]
+        if len(entries) > 1:
+            raise ValueError(f"ambiguous omp user-scope install: {plugin['id']}")
+        if entries:
+            installed[plugin["id"]] = {**entries[0], "enabled": entries[0].get("enabled", True)}
+    desired = {slug(p.package_id): p for p in packages if p.render["claude"] == "plugin"}
+    moved = MARKETPLACE in registered and registered[MARKETPLACE].resolve() != root.resolve()
+    if moved:
+        command(["omp", "plugin", "marketplace", "remove", MARKETPLACE])
+    if MARKETPLACE not in registered or moved:
+        command(["omp", "plugin", "marketplace", "add", str(root)])
+    if moved or any(key in installed and installed[key].get("version") != p.version
+                    for key, p in desired.items()):
+        command(["omp", "plugin", "marketplace", "update", MARKETPLACE])
+    for key, package in desired.items():
+        entry = installed.get(key)
+        if entry is None or entry.get("version") != package.version or moved:
+            # --force refreshes in place; it preserves an existing disabled flag.
+            command(["omp", "plugin", "install", key, "--scope", "user", "--force"])
+        prior = entry["enabled"] if entry is not None else True
+        if prior != package.default_loaded:
+            command(["omp", "plugin", "enable" if package.default_loaded else "disable", key, "--scope", "user"])
+    for key in sorted(installed.keys() - desired.keys()):
+        if key.endswith(f"@{MARKETPLACE}"):
+            command(["omp", "plugin", "uninstall", key, "--scope", "user"])
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--apply", action="store_true")
-    parser.add_argument("--agent", action="append", choices=["claude", "codex"], default=[])
+    parser.add_argument("--agent", action="append", choices=["claude", "codex", "omp"], default=[])
     parser.add_argument("--plugins-root", type=Path, default=Path.home() / ".agents/plugins")
     parser.add_argument("--policy", type=Path, default=POLICY_PATH)
     parser.add_argument("--refresh-disabled", action="append", default=[], metavar="PACKAGE")
@@ -118,6 +170,8 @@ def main() -> int:
             reconcile_claude(packages, root)
         if "codex" in args.agent:
             reconcile_codex(packages, root, set(args.refresh_disabled))
+        if "omp" in args.agent:
+            reconcile_omp(packages, root)
     except (OSError, ValueError, KeyError, RuntimeError, subprocess.TimeoutExpired) as error:
         print(f"reconcile-agent-plugins: {error}", file=sys.stderr)
         return 1
