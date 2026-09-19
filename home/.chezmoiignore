@@ -35,7 +35,11 @@ Library/LaunchAgents/com.prateek.gui-corp-ca.plist
 .pi/agent/npm
 .pi/agent/sessions
 .pi/agent/trust.json
-.ssh
+{{/* ~/.ssh stays machine-local except the Include line in config and the managed fragment directories. */}}
+.ssh/*
+!.ssh/config
+!.ssh/config.d
+!.ssh/known_hosts.d
 
 {{/* Granola's personal meeting data and MCP tooling never reach work or CI machines. */}}
 {{- if not (includeTemplate "features.tmpl" . | fromJson).granola_mcp }}

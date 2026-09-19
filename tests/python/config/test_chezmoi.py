@@ -59,7 +59,7 @@ class ChezmoiConfigTests(RepoTestCase):
     def test_unmanaged_listing_excludes_local_and_secret_state_but_reports_unrelated_files(self):
         excluded = (
             ".zprofile.local", ".zshrc.local", ".config/chezmoi/chezmoi.toml",
-            ".config/cmux/settings.json", ".config/op/config", ".gnupg/gpg.conf", ".ssh/config",
+            ".config/cmux/settings.json", ".config/op/config", ".gnupg/gpg.conf", ".ssh/config", ".ssh/id_ed25519",
         )
         for name in (*excluded, ".local-unmanaged-marker"):
             path = self.home / name

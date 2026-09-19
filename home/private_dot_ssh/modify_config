@@ -1,0 +1,12 @@
+#!/bin/sh
+# Load the managed fragments in ~/.ssh/config.d and leave the rest of the file
+# machine-local. The Include goes first: ssh scopes an Include that follows a
+# Host block to that block.
+include='Include ~/.ssh/config.d/*.conf'
+config="$(cat; printf x)"
+config="${config%x}"
+case "$config" in
+  *"$include"*) printf '%s' "$config" ;;
+  '') printf '%s\n' "$include" ;;
+  *) printf '%s\n\n%s' "$include" "$config" ;;
+esac
