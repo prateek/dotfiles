@@ -25,12 +25,16 @@ Use the minimal `ci` machine type for a faster, core-only install (`--promptChoi
 sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply --promptChoice 'machine_type=ci' --source ~/dotfiles prateek
 ```
 
-Secret-backed files (1Password) are off by default. After `op` is signed in, enable them for this machine and apply:
+Secret-backed files (1Password) are off by default. chezmoi reads them as a 1Password service account whose token lives in the login keychain, so an apply needs no `op signin`. Store the token, enable secrets for this machine, and apply:
 
 ```sh
+security add-generic-password -U -s op-devland-sa -a "$USER" -w   # prompts for the token
+chezmoi init          # machines set up before this: re-render the config with its [onepassword] block
 chezmoi edit-config   # add a [data.machines_local] block with secrets_enabled = true
 chezmoi apply
 ```
+
+The service account needs read access to the vault that holds each ref in `home/.chezmoidata/secrets.toml` (or this machine's `[data.secrets.refs]`); service accounts cannot read the Private vault.
 
 ## Notes
 

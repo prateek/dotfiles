@@ -1,14 +1,11 @@
-[licenses]
 # Target paths (relative to $HOME) of license files materialized via
-# secret-backed chezmoi templates. Listed here so .chezmoiignore can skip
-# them when secrets_enabled=false. The corresponding 1Password ref for
-# each goes in home/.chezmoidata/secrets.toml under [secrets.refs] with
-# the same key name as the template uses (e.g. bettertouchtool_license).
+# secret-backed chezmoi templates, keyed by their ref name in
+# home/.chezmoidata/secrets.toml > [secrets.refs]. .chezmoiignore skips a
+# path unless secrets_enabled=true and its ref is set.
 #
 # Verify paths on first `chezmoi apply --dry-run`. App publishers
 # occasionally relocate license files between major versions.
-paths = [
-  "Library/Application Support/BetterTouchTool/license.bttlicense",
-  "Library/Application Support/Many Tricks/Moom/Registration",
-  "Library/Application Support/Alfred/License/Alfred.alfredlicense",
-]
+[licenses.paths]
+bettertouchtool_license = "Library/Application Support/BetterTouchTool/bettertouchtool.bttlicense"
+moom_license = "Library/Application Support/Many Tricks/Licenses/Moom.moomcombolicense"
+alfred_license = "Library/Application Support/Alfred/License/Alfred.alfredlicense"

@@ -12,10 +12,11 @@
       [data.secrets.refs]
       alfred_license = "op://<vault>/<item>/<field>"
   Then enable [data.machines_local] secrets_enabled = true and run: chezmoi apply
+
+  While the ref is empty, .chezmoiignore skips this target.
 */ -}}
 {{- if (includeTemplate "features.tmpl" . | fromJson).secrets_enabled -}}
-{{-   if not .secrets.refs.alfred_license -}}
-{{-     fail "secrets_enabled is true but secrets.refs.alfred_license is empty; set it in ~/.config/chezmoi/chezmoi.toml under [data.secrets.refs] or disable secrets to skip license materialization" -}}
+{{-   with .secrets.refs.alfred_license -}}
+{{ onepasswordRead . }}
 {{-   end -}}
-{{ onepasswordRead .secrets.refs.alfred_license }}
 {{- end -}}

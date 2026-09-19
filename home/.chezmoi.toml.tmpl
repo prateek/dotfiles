@@ -44,6 +44,14 @@ xdg_state_dir = {{ (env "XDG_STATE_HOME" | default (joinPath .chezmoi.homeDir ".
 machine_type = {{ $machineType | quote }}
 jamf_policy_id = {{ $jamfPolicyId | quote }}
 
+# Secret-backed templates read 1Password as a service account whose token lives
+# in the login keychain. The wrapper hands the token to `op` alone; chezmoi's
+# "service" mode would need it in chezmoi's environment, which every apply
+# script inherits. Prompt off skips `op signin`.
+[onepassword]
+command = "{{ $dotfilesDir }}/scripts/chezmoi-hooks/op-service-account"
+prompt = false
+
 # Render binary plists as XML for `chezmoi diff`. This only changes diff output.
 # Apply still writes binary plists. See docs/references/chezmoi-architecture.md > Plist Management.
 [[textconv]]

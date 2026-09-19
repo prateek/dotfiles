@@ -8,7 +8,7 @@ Managing data files under `home/.chezmoidata/`, rendering Brewfiles, gating inst
 home/.chezmoidata/packages.toml          # Homebrew formulae, casks, MAS apps, reusable groups
 home/.chezmoidata/machines.toml          # per-machine_type group + behavior layers (resolved by features.tmpl)
 home/.chezmoidata/secrets.toml           # [secrets.refs] obfuscated op:// refs only
-home/.chezmoidata/licenses.toml          # [licenses] paths = [...] target paths (refs live in secrets.toml)
+home/.chezmoidata/licenses.toml          # [licenses.paths] <ref name> = "<path>" target paths (refs live in secrets.toml)
 home/.chezmoitemplates/brewfile.tmpl     # renders to a Brewfile from packages.toml + the resolver
 home/.chezmoitemplates/features.tmpl     # resolves machines.toml layers into one feature set (JSON)
 ```
@@ -158,24 +158,22 @@ moom_license = ""
 moom_license = "op://Personal/Moom/license"
 ```
 
-Empty value semantics: an empty ref means "not configured on this machine." The corresponding template renders empty and `.chezmoiignore` skips the path while `secrets_enabled=false`. When `secrets_enabled=true` but the ref is empty, the license template fails loudly.
+Empty value semantics: an empty ref means "not configured." `.chezmoiignore` skips a license path unless `secrets_enabled=true` and its ref is set, so enabling secrets manages only the configured licenses. The skip must stay in `.chezmoiignore`: a template that merely renders empty makes chezmoi delete an existing target, which would remove a hand-installed license.
 
-Per-machine human-readable overrides go in `~/.config/chezmoi/chezmoi.toml.local`, which is NOT committed. The local file can use human-readable `op://` paths with vault and item names for convenience.
+Per-machine overrides go under `[data.secrets.refs]` in `~/.config/chezmoi/chezmoi.toml`, which is NOT committed. They win over the committed ref with the same key and can use human-readable `op://` paths with vault and item names for convenience.
 
 ## Licenses.toml
 
-`licenses.toml` lists target paths (relative to `$HOME`) for license files that get materialized via secret-backed chezmoi templates. It does NOT contain op:// refs — those live in `secrets.toml` under `[secrets.refs]` with matching key names.
+`licenses.toml` maps each license's ref name to its target path (relative to `$HOME`). It does NOT contain op:// refs — those live in `secrets.toml` under `[secrets.refs]` with the same key.
 
 ```toml
-[licenses]
-paths = [
-  "Library/Application Support/BetterTouchTool/license.bttlicense",
-  "Library/Application Support/Many Tricks/Moom/Registration",
-  "Library/Application Support/Alfred/License/Alfred.alfredlicense",
-]
+[licenses.paths]
+bettertouchtool_license = "Library/Application Support/BetterTouchTool/bettertouchtool.bttlicense"
+moom_license = "Library/Application Support/Many Tricks/Licenses/Moom.moomcombolicense"
+alfred_license = "Library/Application Support/Alfred/License/Alfred.alfredlicense"
 ```
 
-`.chezmoiignore` reads `licenses.paths` to skip these targets when `secrets_enabled=false`. Note: a `secrets.paths` table was once planned (and is referenced in the migration plan) but was retired as always-empty — do not add it back unless the ignore template is updated to consume it.
+`.chezmoiignore` walks `licenses.paths` and skips a target unless `secrets_enabled=true` and the ref with the same key is set. Note: a `secrets.paths` table was once planned (and is referenced in the migration plan) but was retired as always-empty — do not add it back unless the ignore template is updated to consume it.
 
 ## Secret-Backed Template Pattern
 
@@ -183,19 +181,15 @@ A template that needs a secret reads `.secrets.refs.<name>` via `onepasswordRead
 
 ```text
 {{- if (includeTemplate "features.tmpl" . | fromJson).secrets_enabled -}}
-{{- $ref := .secrets.refs.bettertouchtool_license -}}
-{{- if $ref -}}
-{{ onepasswordRead $ref }}
-{{- else -}}
-{{- /* secrets enabled but ref is empty — fail loudly */ -}}
-{{ fail "bettertouchtool_license: secrets_enabled is true but ref is empty" }}
-{{- end -}}
+{{-   with .secrets.refs.bettertouchtool_license -}}
+{{ onepasswordRead . }}
+{{-   end -}}
 {{- end -}}
 ```
 
 `secrets_enabled` resolves from `machines.toml` (default `false` for every type). Enable it per machine with a host-local `[data.machines_local]` block (`secrets_enabled = true`) in `~/.config/chezmoi/chezmoi.toml`; it takes effect on the next apply with no re-init.
 
-A `op signin` is still required before any apply that resolves secret refs, since `onepasswordRead` shells out to the `op` CLI.
+`onepasswordRead` runs `op` through `scripts/chezmoi-hooks/op-service-account` (the `[onepassword] command` in `home/.chezmoi.toml.tmpl`), which reads a 1Password service account token from the login keychain item `op-devland-sa`. No `op signin` is involved; the service account needs read access to each ref's vault and cannot read the Private vault.
 
 ## Validation
 
@@ -233,8 +227,9 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply --promptChoice 'machine_typ
 After init, to enable secrets on an existing machine:
 
 ```text
+security add-generic-password -U -s op-devland-sa -a "$USER" -w   # prompts for the service account token
+chezmoi init              # only if the rendered config predates the [onepassword] block
 chezmoi edit-config       # add [data.machines_local] with secrets_enabled = true
-op signin
 chezmoi apply
 ```
 

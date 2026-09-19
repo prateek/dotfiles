@@ -2,7 +2,7 @@
 status: current
 doc_type: reference
 created: 2026-04-27
-updated: 2026-09-07
+updated: 2026-09-18
 related:
   - ../index.md
   - ../adr/0006-chezmoi-migration-prototype.md
@@ -159,8 +159,15 @@ desired state only through an explicit adoption step.
 Committed secret metadata may contain obfuscated `op://` references and target
 paths. Actual machine-local secret values belong in local chezmoi config.
 
-Secret-backed templates should fail clearly when secret rendering is enabled
-but the required reference is empty.
+A secret-backed target is managed only when secret rendering is enabled and
+its reference is set; `.chezmoiignore` skips it otherwise. Do the skip there,
+not by rendering an empty template, because chezmoi deletes a target whose
+template renders empty.
+
+chezmoi reads refs as a 1Password service account. `[onepassword] command` in
+`home/.chezmoi.toml.tmpl` points at `scripts/chezmoi-hooks/op-service-account`,
+which takes the token from the login keychain item `op-devland-sa` and
+gives it to that `op` process only.
 
 ## Agent Surfaces
 

@@ -1,0 +1,24 @@
+{{- /*
+  Moom license. Materialized only when secrets_enabled=true AND
+  .secrets.refs.moom_license is a real op:// reference.
+
+  Many Tricks apps read every license in ~/Library/Application Support/Many
+  Tricks/Licenses by extension; the file name is free. The ref must point at a
+  .moomcombolicense, the single file Moom writes there once the original and
+  upgrade licenses are both registered. An upgrade license alone does not
+  register the app.
+
+  Set the ref locally:
+      chezmoi edit-config
+  and add:
+      [data.secrets.refs]
+      moom_license = "op://<vault>/<item>/<field>"
+  Then enable [data.machines_local] secrets_enabled = true and run: chezmoi apply
+
+  While the ref is empty, .chezmoiignore skips this target.
+*/ -}}
+{{- if (includeTemplate "features.tmpl" . | fromJson).secrets_enabled -}}
+{{-   with .secrets.refs.moom_license -}}
+{{ onepasswordRead . }}
+{{-   end -}}
+{{- end -}}

@@ -20,7 +20,7 @@ check_file "$HOME/.zshenv"
 check_file "${ZDOTDIR:-$HOME/.config/zsh}/.zshrc"
 
 if [ {{ (includeTemplate "features.tmpl" . | fromJson).secrets_enabled | quote }} != "true" ]; then
-  log "secrets disabled; sign in to 1Password and enable [data.machines_local] secrets_enabled = true when needed."
+  log "secrets disabled; store the 1Password service account token in the keychain (see README) and enable [data.machines_local] secrets_enabled = true when needed."
 fi
 
 {{- if eq (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "tartelet")) "true" }}

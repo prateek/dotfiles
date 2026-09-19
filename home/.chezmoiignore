@@ -141,9 +141,12 @@ Library/LaunchAgents/com.prateek.tartelet-runner.plist
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "karabiner-elements")) "true" }}
 .config/karabiner.edn
 {{- end }}
-{{- if not (includeTemplate "features.tmpl" . | fromJson).secrets_enabled }}
-{{- range .licenses.paths }}
-{{ . }}
-{{ . | dir }}
+{{/* A license is managed only when secrets are enabled and its ref is set.
+     Otherwise ignore it: an empty template would delete a hand-installed license. */}}
+{{- $secretsEnabled := (includeTemplate "features.tmpl" . | fromJson).secrets_enabled }}
+{{- range $ref, $path := .licenses.paths }}
+{{- if not (and $secretsEnabled (dig $ref "" $.secrets.refs)) }}
+{{ $path }}
+{{ $path | dir }}
 {{- end }}
 {{- end }}
