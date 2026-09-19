@@ -144,9 +144,17 @@ Library/LaunchAgents/com.prateek.tartelet-runner.plist
 {{/* A license is managed only when secrets are enabled and its ref is set.
      Otherwise ignore it: an empty template would delete a hand-installed license. */}}
 {{- $secretsEnabled := (includeTemplate "features.tmpl" . | fromJson).secrets_enabled }}
+{{- $managedDirs := dict }}
+{{- range $ref, $path := .licenses.paths }}
+{{- if and $secretsEnabled (dig $ref "" $.secrets.refs) }}
+{{- $_ := set $managedDirs ($path | dir) true }}
+{{- end }}
+{{- end }}
 {{- range $ref, $path := .licenses.paths }}
 {{- if not (and $secretsEnabled (dig $ref "" $.secrets.refs)) }}
 {{ $path }}
+{{- if not (hasKey $managedDirs ($path | dir)) }}
 {{ $path | dir }}
+{{- end }}
 {{- end }}
 {{- end }}

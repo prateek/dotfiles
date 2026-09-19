@@ -169,7 +169,8 @@ Per-machine overrides go under `[data.secrets.refs]` in `~/.config/chezmoi/chezm
 ```toml
 [licenses.paths]
 bettertouchtool_license = "Library/Application Support/BetterTouchTool/bettertouchtool.bttlicense"
-moom_license = "Library/Application Support/Many Tricks/Licenses/Moom.moomcombolicense"
+moom_license = "Library/Application Support/Many Tricks/Licenses/Moom.moomlicense"
+moom_upgrade_license = "Library/Application Support/Many Tricks/Licenses/Moom.moomupgradelicense"
 alfred_license = "Library/Application Support/Alfred/License/Alfred.alfredlicense"
 ```
 

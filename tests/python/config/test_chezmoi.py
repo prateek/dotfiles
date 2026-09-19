@@ -39,6 +39,23 @@ class ChezmoiConfigTests(RepoTestCase):
         self.assertEqual(data["machine_type"], "work")
         self.assertEqual(data["jamf_policy_id"], "LEGACY777")
 
+    def test_reinitialization_keeps_host_local_overrides_without_copying_committed_data(self):
+        self.config.write_text(
+            '[data]\nmachine_type = "homelab"\n'
+            '[data.machines_local]\nsecrets_enabled = true\ngroups = ["core", "developer"]\n'
+            '[data.secrets.refs]\nmoom_license = "op://Shared/Moom/license"\n'
+        )
+        self.chezmoi("init", "--promptDefaults")
+        data = tomllib.loads(self.config.read_text())["data"]
+        self.assertEqual(data["machines_local"], {"secrets_enabled": True, "groups": ["core", "developer"]})
+        self.assertEqual(data["secrets"], {"refs": {"moom_license": "op://Shared/Moom/license"}})
+
+        self.config.write_text('[data]\nmachine_type = "homelab"\n')
+        self.chezmoi("init", "--promptDefaults")
+        data = tomllib.loads(self.config.read_text())["data"]
+        self.assertNotIn("machines_local", data)
+        self.assertNotIn("secrets", data)
+
     def test_unmanaged_listing_excludes_local_and_secret_state_but_reports_unrelated_files(self):
         excluded = (
             ".zprofile.local", ".zshrc.local", ".config/chezmoi/chezmoi.toml",

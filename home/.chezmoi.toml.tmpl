@@ -43,6 +43,19 @@ xdg_cache_dir = {{ (env "XDG_CACHE_HOME" | default (joinPath .chezmoi.homeDir ".
 xdg_state_dir = {{ (env "XDG_STATE_HOME" | default (joinPath .chezmoi.homeDir ".local/state")) | quote }}
 machine_type = {{ $machineType | quote }}
 jamf_policy_id = {{ $jamfPolicyId | quote }}
+{{- /* Host-local overrides exist only in this rendered file, so carry them
+       across re-init. During init `.` holds this file's data, not .chezmoidata,
+       so committed values are never copied here. */}}
+{{- with dig "machines_local" dict . }}
+
+[data.machines_local]
+{{ toToml . | trim }}
+{{- end }}
+{{- with dig "secrets" "refs" dict . }}
+
+[data.secrets.refs]
+{{ toToml . | trim }}
+{{- end }}
 
 # Secret-backed templates read 1Password as a service account whose token lives
 # in the login keychain. The wrapper hands the token to `op` alone; chezmoi's

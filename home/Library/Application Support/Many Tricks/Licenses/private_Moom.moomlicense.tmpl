@@ -1,0 +1,16 @@
+{{- /*
+  Moom original license. Materialized only when secrets_enabled=true AND
+  .secrets.refs.moom_license is a real op:// reference.
+
+  Many Tricks apps read every license in ~/Library/Application Support/Many
+  Tricks/Licenses by extension; the file name is free. Moom 4 registers only
+  with both the original license and the upgrade license (Moom.moomupgradelicense) present. It
+  leaves them untouched and writes its own Moom.moomcombolicense beside them.
+
+  While the ref is empty, .chezmoiignore skips this target.
+*/ -}}
+{{- if (includeTemplate "features.tmpl" . | fromJson).secrets_enabled -}}
+{{-   with .secrets.refs.moom_license -}}
+{{ onepasswordRead . }}
+{{-   end -}}
+{{- end -}}
