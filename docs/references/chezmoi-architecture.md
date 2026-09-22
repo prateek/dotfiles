@@ -2,11 +2,12 @@
 status: current
 doc_type: reference
 created: 2026-04-27
-updated: 2026-09-18
+updated: 2026-09-22
 related:
   - ../index.md
   - ../adr/0006-chezmoi-migration-prototype.md
   - ../adr/0021-shared-plist-verification.md
+  - ../adr/0030-touchid-sudo.md
   - chezmoi-hook-lifecycle.md
 status_detail: "Current architecture reference. Historical migration detail lives in ADRs and git history."
 ---
@@ -126,6 +127,36 @@ exceptions go in a host-local `[data].machines_local` block; apply-time runtime
 switches (`DOTFILES_SKIP_*`, etc.) stay separate and are never managed desired
 state. See [ADR 0012](../adr/0012-config-gating-convention.md) for the convention
 and the missing-key / `default`-both-arms gotchas.
+
+## Touch ID for sudo
+
+`run_before_01-touchid-sudo` manages `/etc/pam.d/sudo_local` on every apply,
+after Homebrew bootstrap and before core tools. The `touchid_sudo` flag defaults
+to false; personal and work profiles explicitly enable it. Homelab, CI, and new
+roles stay off unless they opt in, and the hook skips non-macOS hosts. Override it in
+`[data.machines_local]`; `run_install_scripts=false` leaves the existing PAM file
+unchanged. [ADR 0030](../adr/0030-touchid-sudo.md) records the ownership policy.
+
+The hook writes Apple's `auth sufficient pam_tid.so` rule as root:wheel, mode
+0444. It skips with a warning if the active `sudo_local` include or root-owned
+module is missing. It preserves foreign files, symlinks, and manually enabled
+Apple templates. Disabling the flag removes only the exact file this hook owns.
+Unreadable files are compared with administrator access before deciding ownership.
+The hook checks the target again after authentication and staging, immediately
+before replacing or removing it. Each write uses its own temporary file.
+An unchanged apply requests no administrator access for this hook.
+
+Review a conflict before changing it; the hook does not merge authentication
+rules. A manually configured file can already provide Touch ID while remaining
+outside this hook's ownership. Work Macs still need
+[Jamf temporary admin](jamf-self-service-elevation.md). Touch ID does not change
+sudoers authorization or credential caching, and this hook adds no tmux support.
+
+To check authentication after applying from a GUI terminal, run `sudo -k` and
+then `sudo -v`. Confirm Touch ID and password fallback. Fixture tests only verify
+file management. If the managed file ever prevents sudo from working, remove
+`/etc/pam.d/sudo_local` from an existing root shell or the mounted system volume
+in macOS Recovery.
 
 ## App Config
 

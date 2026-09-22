@@ -169,6 +169,15 @@ locking, invalidation, and failure cooldown.
 Keep script-aware diff/dry-run and rendered shellcheck checks for changed apply
 scripts. `just test-chezmoi-apply` previews `ci`, `personal`, and `work`; Tart
 installation and live-machine apply remain explicit operator lanes.
+
+`just test-shell tests/bats/hooks/touchid-sudo.bats` checks PAM file creation,
+metadata repair, unreadable and foreign-file preservation, edits during
+authentication or staging, disable, and failed-write recovery in a temporary
+directory. The sudo fixture checks installation ownership arguments and simulates
+privileged reads. Authentication is substituted; no live PAM file or
+sudo credential is changed. Machine defaults are covered by
+`just test-python -p test_machines.py`.
+
 `just test-shell tests/bats/agents/wiki-sessions-sync.bats` checks the
 raw-sync-before-QMD boundary, exit 7, the permission-owning app handoff, and
 Claude ingest automation registration.

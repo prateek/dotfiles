@@ -14,24 +14,28 @@ class MachineFeaturesTests(RepoTestCase):
     def test_machine_compositions_and_absent_identity_default(self):
         expected = {
             "ci": {
+                "touchid_sudo": False,
                 "groups": ["core"], "run_install_scripts": True,
                 "apply_macos_defaults": True, "secrets_enabled": False,
                 "private_overlay": False, "elevation": "none", "granola_mcp": False,
                 "tls_inspection": False,
             },
             "personal": {
+                "touchid_sudo": True,
                 "groups": ["core", "mac-desktop", "ai-agent-apps", "codex", "developer-tools", "personal-apps", "forks"],
                 "run_install_scripts": True, "apply_macos_defaults": True,
                 "secrets_enabled": False, "elevation": "none",
                 "private_overlay": False, "granola_mcp": True, "tls_inspection": False,
             },
             "homelab": {
+                "touchid_sudo": False,
                 "groups": ["core", "ai-agent-apps", "codex", "developer-tools", "apple-development", "homelab-overlay"],
                 "runner_vm_name": "tartelet-runner", "runner_vm_count": 1,
                 "runner_scope": "repo", "runner_start_on_launch": True, "granola_mcp": True,
                 "tls_inspection": False,
             },
             "work": {
+                "touchid_sudo": True,
                 "groups": ["core", "mac-desktop", "ai-agent-apps", "developer-tools", "work-apps", "forks"],
                 "private_overlay": True, "elevation": "jamf-self-service", "granola_mcp": False,
                 "tls_inspection": True,
@@ -88,6 +92,13 @@ class MachineFeaturesTests(RepoTestCase):
         os_layer = self.resolve(machines={"os": {"darwin": {"apply_macos_defaults": False}}})
         self.assertIs(os_layer["apply_macos_defaults"], False)
         self.assertIs(os_layer["run_install_scripts"], True)
+        self.assertIs(self.resolve(machines_local={"touchid_sudo": False})["touchid_sudo"], False)
+
+    def test_new_machine_roles_do_not_opt_into_touchid(self):
+        self.assertIs(self.resolve(
+            "headless", machines={"type": {"headless": {"groups": ["core"]}}},
+        )["touchid_sudo"], False)
+        self.assertIs(self.resolve("homelab", chezmoi={"hostname": "m4mini"})["touchid_sudo"], False)
 
     def test_unknown_type_fails_with_a_typo_diagnostic(self):
         result = self.command([

@@ -2,7 +2,7 @@
 status: current
 doc_type: index
 created: 2026-05-12
-updated: 2026-09-08
+updated: 2026-09-22
 related:
   - document-lifecycle.md
   - ../agent-marketplace/packages/core/skills/code-gardening/SKILL.md
@@ -59,6 +59,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [Tartelet Self-Hosted Runners](plans/tartelet-runner-plan.md) | Active; cask, managed plist, LaunchAgent, host data, VM-image builder, and runbook landed. On-mini end-to-end (golden VM build + first-run credential paste) still to be exercised. |
 | [Tartelet Runner Memory-Guard](plans/tartelet-runner-memory-guard-proposal.md) | Proposed; design for a circuit breaker that sheds the runner under host memory pressure after a 2026-07-03 jetsam wedge. Prototyped and validated, then dropped — no code in-tree. |
 | [Using-git-spice Skill](plans/using-git-spice-skill-plan.md) | Active; the replacement skill and config are applied, the duplicate is disabled, and the Orca smoke passed. Only the disruptive manual logged-out auth check remains. |
+| [Touch ID for sudo](plans/touchid-sudo-plan.md) | Active; focused `sudo_local` configuration and fixture checks. Live authentication remains an attended check. |
 | [Zsh Fresh-Shell Validator](plans/zsh-fresh-shell-validator-plan.md) | Active plan for shell correctness and startup checks. |
 
 ## Decision Records
@@ -97,6 +98,7 @@ for day-to-day implementation details.
 | [ADR 0027 - Codex CLI installs standalone](adr/0027-codex-standalone-installer.md) | Accepted; `run_after_07-codex-standalone.sh` installs the CLI through OpenAI's installer and `[packages.retired]` drops the cask, because `/agents` and the app-server daemon need the standalone layout. See [Mise Tool Management](references/mise-tool-management.md) > Codex workflow. |
 | [ADR 0028 - Sibling router skill over vendored remap](adr/0028-router-skill-over-vendor-remap.md) | Accepted; when local conventions and a vendored skill share a subject, publish both as siblings in one package and split the trigger between their descriptions. First customer: the `acpx` / `acpx-cli` pair ([plan](plans/acpx-skill-packaging-plan.md)). |
 | [ADR 0029 - Claude Code CLI installs natively](adr/0029-claude-code-native-installer.md) | Accepted; `run_after_06-claude-native.sh` installs the CLI through Anthropic's installer and retires the npm copies, because npm updates rewrite the package tree under running sessions. See [Mise Tool Management](references/mise-tool-management.md) > Claude Code workflow. |
+| [ADR 0030 - Touch ID for sudo](adr/0030-touchid-sudo.md) | [Chezmoi Architecture](references/chezmoi-architecture.md#touch-id-for-sudo); machine flag and owned-file apply hook. |
 
 ## Research
 

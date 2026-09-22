@@ -1,0 +1,12 @@
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- if $f.run_install_scripts -}}
+{{ template "script_lib.sh" . }}
+{{ template "touchid_sudo.sh" . }}
+
+if [ "$(uname -s)" != "Darwin" ]; then
+  log "Touch ID for sudo skipped on non-macOS host."
+  exit 0
+fi
+
+touchid_sudo_reconcile /etc/pam.d {{ $f.touchid_sudo }} root wheel /usr/lib/pam/pam_tid.so.2
+{{- end -}}
