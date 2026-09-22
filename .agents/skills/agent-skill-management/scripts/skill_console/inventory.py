@@ -582,7 +582,7 @@ def load_skills(root: Path, tree: Tree, *, origin: Origin | None = None) -> list
     artifact = root if (root / ".agents/plugins/marketplace.json").is_file() else root.parent
     if tree is Tree.MARKETPLACE and (artifact / ".agents/plugins/marketplace.json").is_file():
         from artifact import validate_artifact
-        validate_artifact(artifact)
+        validate_artifact(artifact, allow_runtime_cache=True)
         catalog = json.loads((artifact / ".agents/plugins/marketplace.json").read_text())
         return [record for entry in catalog["plugins"]
                 for record in _plugin_records(artifact / entry["source"]["path"], tree)]

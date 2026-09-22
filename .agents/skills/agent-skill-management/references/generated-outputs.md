@@ -2,6 +2,9 @@
 
 `agent-marketplace/build/marketplace` is disposable build output. Its release
 receipt validates bytes, modes, catalog membership, and contained relative sources.
+Installed-tree validation ignores runtime `__pycache__` entries without traversing
+them. Materialization omits these caches from copies, including rollback; build
+and export validation still require an exact receipt match.
 From the dotfiles repository root, a prebuilt artifact can be copied with:
 
 ```sh

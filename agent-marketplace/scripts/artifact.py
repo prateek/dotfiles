@@ -55,11 +55,12 @@ def source_files(root: Path) -> dict:
     return tree_files(root, skip={"build", ".venv", ".git", "**/__pycache__"})
 
 
-def validate_artifact(root: Path) -> dict:
+def validate_artifact(root: Path, *, allow_runtime_cache: bool = False) -> dict:
     receipt = json.loads(contained(root, RECEIPT).read_text())
     if receipt.get("schema") != 1 or not receipt.get("files"):
         raise ValueError(f"missing or unsupported release receipt: {root}")
-    if tree_files(root, skip={RECEIPT}) != receipt["files"]:
+    skip = {RECEIPT, "**/__pycache__"} if allow_runtime_cache else {RECEIPT}
+    if tree_files(root, skip=skip) != receipt["files"]:
         raise ValueError(f"artifact bytes or modes differ from release receipt: {root}")
     catalogs = [json.loads((root / path).read_text()) for path in
                 (".claude-plugin/marketplace.json", ".agents/plugins/marketplace.json")]

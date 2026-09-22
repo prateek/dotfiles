@@ -208,6 +208,18 @@ class MarketplaceTests(unittest.TestCase):
             self.assertFalse((self.root / "packages" / name / "apm.yml").exists())
             self.assertFalse((output / "plugins" / name / "apm.yml").exists())
 
+    def test_export_refuses_unreceipted_runtime_cache(self):
+        self.recipe("check")
+        self.recipe("export")
+        archive = self.root / "build/marketplace.tar.gz"
+        before = archive.read_bytes()
+        cache = self.root / "build/marketplace/plugins/example/skills/hello/__pycache__"
+        cache.mkdir()
+        (cache / "helper.pyc").write_bytes(b"runtime bytecode")
+        result = self.recipe("export", success=False)
+        self.assertIn("release receipt", result.stderr)
+        self.assertEqual(archive.read_bytes(), before)
+
     def test_acquisition_rejects_obsolete_package_scope_before_touching_inputs(self):
         before = (self.root / "apm.yml").read_bytes()
         for target in ("fetch", "update"):

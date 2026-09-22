@@ -67,7 +67,7 @@ def load_policy(path: Path, names: set[str]) -> dict:
 
 
 def load_published_packages(artifact: Path, policy_path: Path = POLICY_PATH) -> list[Package]:
-    validate_artifact(artifact)
+    validate_artifact(artifact, allow_runtime_cache=True)
     catalog = json.loads((artifact / ".agents/plugins/marketplace.json").read_text())
     if catalog["name"] != "prateek-local":
         raise ValueError("consumer only owns prateek-local")

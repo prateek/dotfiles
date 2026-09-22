@@ -46,6 +46,9 @@ runner; the apply script supplies a default only for an unset variable.
 and every artifact file's hash and mode. It is a release receipt, not an upstream
 provenance store. It lets a consumer validate the artifact with Python's standard
 library, without APM or the source cache. Keep complete exports for recovery.
+Consumers may ignore runtime `__pycache__` entries when validating installed
+trees, but must omit them from artifact copies. Build and export validation
+require an exact receipt match.
 
 Inside Git, cache executable bits must match the index; review and stage an
 intentional mode change before building it. A standalone source export trusts

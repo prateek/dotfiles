@@ -1,5 +1,6 @@
 import json
 import os
+import py_compile
 import shlex
 import shutil
 import subprocess
@@ -168,6 +169,76 @@ class PackageValidationTests(PackageTestCase):
         result = self.materialize(expected_status=1)
         self.assertIn(b"unowned", result.stderr)
         self.assertEqual((self.plugins / "my-plugin").read_text(), "keep\n")
+
+    def test_runtime_bytecode_preserves_repeat_materialization_upgrade_and_rollback(self):
+        package = self.package()
+        helper = package / "skills/sample-skill/helper.py"
+        helper.write_text("VALUE = 1\n")
+        artifact = self.build()
+        self.materialize(artifact)
+        installed = self.plugins / "plugins/sample/skills/sample-skill/helper.py"
+        cache = installed.parent / "__pycache__/helper.pyc"
+        py_compile.compile(str(installed), cfile=str(cache), doraise=True)
+        cached_bytes = cache.read_bytes()
+        receipt = (self.plugins / "release.json").read_bytes()
+
+        self.materialize(artifact)
+        self.assertEqual(cache.read_bytes(), cached_bytes)
+        self.assertEqual((self.plugins / "release.json").read_bytes(), receipt)
+        previous = self.plugins.with_name("plugins.previous")
+        self.assertFalse(previous.exists())
+        result = self.tool("reconcile-agent-plugins", "--plugins-root", self.plugins, "--policy", self.policy)
+        self.assertIn(b"sample: version 1.0.0", result.stdout)
+
+        helper.unlink()
+        self.materialize()
+        self.assertFalse(installed.exists())
+        self.assertFalse(cache.parent.exists())
+        self.assertEqual((previous / cache.relative_to(self.plugins)).read_bytes(), cached_bytes)
+        self.materialize(previous)
+        self.assertEqual(installed.read_text(), "VALUE = 1\n")
+        self.assertFalse(cache.parent.exists())
+        self.assertFalse((previous / installed.relative_to(self.plugins)).exists())
+
+    def test_runtime_cache_tolerance_still_refuses_payload_drift(self):
+        self.package()
+        artifact = self.build()
+        self.materialize(artifact)
+        installed = self.plugins / "plugins/sample/skills/sample-skill/SKILL.md"
+        before = installed.read_bytes()
+        mode = installed.stat().st_mode & 0o777
+        cache = installed.parent / "__pycache__"
+        cache.mkdir()
+        (cache / "helper.pyc").write_bytes(b"runtime bytecode")
+        extra = installed.parent / "notes.txt"
+        for kind in ("bytes", "mode", "missing", "extra", "symlink"):
+            with self.subTest(kind=kind):
+                try:
+                    if kind == "bytes":
+                        installed.write_text("local edit\n")
+                    elif kind == "mode":
+                        installed.chmod(0o755)
+                    elif kind == "missing":
+                        installed.unlink()
+                    elif kind == "extra":
+                        extra.write_text("keep\n")
+                    else:
+                        extra.symlink_to(installed)
+                    result = self.materialize(artifact, expected_status=1)
+                    self.assertIn(b"symlink" if kind == "symlink" else b"release receipt", result.stderr)
+                    self.assertFalse(self.plugins.with_name("plugins.previous").exists())
+                    if kind == "bytes":
+                        self.assertEqual(installed.read_text(), "local edit\n")
+                    elif kind == "mode":
+                        self.assertEqual(installed.stat().st_mode & 0o777, 0o755)
+                    elif kind == "missing":
+                        self.assertFalse(installed.exists())
+                    else:
+                        self.assertTrue(extra.exists())
+                finally:
+                    installed.write_bytes(before)
+                    installed.chmod(mode)
+                    extra.unlink(missing_ok=True)
 
     def test_root_maintenance_preserves_runtime_and_hand_authored_claude_skills(self):
         codex, claude = self.home / ".agents/skills", self.home / ".claude/skills"

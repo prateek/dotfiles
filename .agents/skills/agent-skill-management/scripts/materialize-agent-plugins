@@ -16,12 +16,12 @@ from artifact import validate_artifact
 
 
 def materialize(artifact: Path, target: Path) -> None:
-    incoming = validate_artifact(artifact)
+    incoming = validate_artifact(artifact, allow_runtime_cache=True)
     if target.is_symlink() or target.is_file():
         raise ValueError(f"refusing non-directory marketplace: {target}")
     if target.exists():
         if (target / "release.json").exists():
-            current = validate_artifact(target)
+            current = validate_artifact(target, allow_runtime_cache=True)
             if incoming["files"] == current["files"]:
                 return
         elif not (target / "README.generated.md").is_file():
@@ -33,10 +33,10 @@ def materialize(artifact: Path, target: Path) -> None:
     if previous.is_symlink():
         raise ValueError(f"refusing symlink rollback directory: {previous}")
     if (previous / "release.json").is_file():
-        validate_artifact(previous)
+        validate_artifact(previous, allow_runtime_cache=True)
     with tempfile.TemporaryDirectory(prefix=f".{target.name}-", dir=target.parent) as scratch:
         staged = Path(scratch) / "next"
-        shutil.copytree(artifact, staged)
+        shutil.copytree(artifact, staged, ignore=shutil.ignore_patterns("__pycache__"))
         validate_artifact(staged)
         older = Path(scratch) / "older"
         if previous.exists():
