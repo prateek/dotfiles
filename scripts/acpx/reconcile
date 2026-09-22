@@ -1,0 +1,421 @@
+#!/usr/bin/env python3
+"""Resolve declared ACP routes during apply; runtime shortcuts use frozen selections."""
+
+import argparse
+import fcntl
+import json
+import os
+from pathlib import Path
+import re
+import selectors
+import shutil
+import signal
+import subprocess
+import sys
+import tempfile
+import time
+
+
+LEGACY_ALIASES = {"agpt", "agptx", "agptw", "aopus", "aopusx", "afable", "afablex", "agemini"}
+
+
+class RoutingError(Exception):
+    pass
+
+
+def read_json(path):
+    value = json.loads(Path(path).read_text())
+    if not isinstance(value, dict):
+        raise RoutingError(f"{path}: expected a JSON object")
+    return value
+
+
+def validate(policy):
+    declared = policy["declared"]
+    if len(declared) != len(set(declared)):
+        raise RoutingError("duplicate acpx route declaration")
+    for route in declared:
+        if route not in policy["routes"]:
+            raise RoutingError(f"unknown declared route: {route}")
+    for family, order in policy["preferences"].items():
+        if family not in policy["models"]["families"]:
+            raise RoutingError(f"unknown family preference: {family}")
+        if len(order) != len(set(order)) or not set(order) <= set(declared):
+            raise RoutingError(f"{family}: preference must contain unique declared routes only")
+    for family, rule in policy["models"]["families"].items():
+        pattern = re.compile(rule["pattern"])
+        if "generation" not in pattern.groupindex or not rule["tiers"]:
+            raise RoutingError(f"{family}: require a generation capture and ordered tiers")
+    if policy["models"]["base_effort"] not in policy["models"]["efforts"]:
+        raise RoutingError("base effort is absent from the effort ladder")
+
+
+def route_environment(route):
+    env = dict(os.environ)
+    for key in route.get("unset_env", []):
+        env.pop(key, None)
+    env.update(route.get("env", {}))
+    return env
+
+
+def command(argv, *, env=None, timeout=60):
+    with tempfile.TemporaryDirectory(prefix="acpx-catalog-") as cwd:
+        proc = subprocess.Popen(argv, cwd=cwd, env=env, stdin=subprocess.DEVNULL,
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True)
+        try:
+            stdout, _ = proc.communicate(timeout=timeout)
+            if proc.returncode:
+                raise RoutingError(f"{argv[0]} catalog command exited {proc.returncode}")
+            return stdout.decode()
+        except subprocess.TimeoutExpired:
+            raise RoutingError(f"{argv[0]} catalog command timed out after {timeout}s") from None
+        finally:
+            stop(proc)
+
+
+def stop(proc):
+    # Adapters spawn their own servers.
+    try:
+        os.killpg(proc.pid, signal.SIGTERM)
+    except ProcessLookupError:
+        pass
+    try:
+        proc.wait(timeout=2)
+    except subprocess.TimeoutExpired:
+        os.killpg(proc.pid, signal.SIGKILL)
+        proc.wait()
+
+
+def acp_catalog(argv, env):
+    with tempfile.TemporaryDirectory(prefix="acpx-catalog-") as cwd:
+        proc = subprocess.Popen(argv, cwd=cwd, env=env, stdin=subprocess.PIPE,
+                                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, start_new_session=True)
+        selector = selectors.DefaultSelector()
+        selector.register(proc.stdout, selectors.EVENT_READ)
+        buffer = b""
+
+        def send(message):
+            proc.stdin.write((json.dumps(message) + "\n").encode())
+            proc.stdin.flush()
+
+        def request(number, method, params):
+            nonlocal buffer
+            send({"jsonrpc": "2.0", "id": number, "method": method, "params": params})
+            deadline = time.monotonic() + 30
+            while time.monotonic() < deadline:
+                while b"\n" in buffer:
+                    line, buffer = buffer.split(b"\n", 1)
+                    reply = json.loads(line)
+                    if "method" in reply and "id" in reply:
+                        send({"jsonrpc": "2.0", "id": reply["id"], "error": {
+                            "code": -32601, "message": "Catalog discovery does not execute tools",
+                        }})
+                    elif reply.get("id") == number:
+                        if "error" in reply:
+                            raise RoutingError(f"{argv[0]} refused {method} (ACP {reply['error'].get('code')})")
+                        return reply["result"]
+                if selector.select(max(0, deadline - time.monotonic())):
+                    chunk = os.read(proc.stdout.fileno(), 65536)
+                    if not chunk:
+                        raise RoutingError(f"{argv[0]} closed during {method}")
+                    buffer += chunk
+                    if len(buffer) > 8 * 1024 * 1024:
+                        raise RoutingError("ACP catalog response exceeded 8 MiB")
+            raise RoutingError(f"{argv[0]} timed out during {method}")
+
+        try:
+            request(1, "initialize", {"protocolVersion": 1, "clientCapabilities": {},
+                                     "clientInfo": {"name": "dotfiles-catalog", "version": "1"}})
+            return request(2, "session/new", {"cwd": cwd, "mcpServers": []})
+        finally:
+            selector.close()
+            stop(proc)
+
+
+def codex_models(route):
+    session = acp_catalog(["codex-acp"], route_environment(route))
+    models = {}
+    # The model picker also includes an unadvertised configured default.
+    for item in session.get("models", {}).get("availableModels", []):
+        match = re.fullmatch(r"(.+)\[([a-z]+)\]", item["modelId"])
+        if match:
+            model, effort = match.groups()
+            models.setdefault(model, {"id": model, "efforts": []})["efforts"].append(effort)
+    return list(models.values())
+
+
+def claude_models(route):
+    executable = Path(shutil.which("claude-agent-acp")).resolve()
+    if "shims" in executable.parts:
+        executable = Path(command(["mise", "which", "claude-agent-acp"]).strip()).resolve()
+    helper = Path(__file__).with_name("claude-models.mjs")
+    if not helper.exists():
+        helper = Path(__file__).resolve().parents[1] / "lib/acpx/claude-models.mjs"
+    env = route_environment(route)
+    env["ACPX_CLAUDE_INCLUDE_USER_SETTINGS"] = "1"
+    return json.loads(command(["node", str(helper), str(executable)], env=env))["models"]
+
+
+def cursor_models(route):
+    text = command(["cursor-agent", "--list-models"], env=route_environment(route))
+    models = {}
+    for line in text.splitlines():
+        if " - " not in line:
+            continue
+        identifier = line.split(" - ", 1)[0].strip()
+        if re.search(r"(?:-fast(?:$|\[)|fast=true)", identifier):
+            continue
+        match = re.fullmatch(r"(.+?)(?:-thinking)?-(low|medium|high|xhigh|max|ultra)", identifier)
+        if match:
+            base, effort = match.groups()
+        else:
+            match = re.fullmatch(r"([^\[]+)\[([^]]+)\]", identifier)
+            if not match:
+                continue
+            base, parameters = match.groups()
+            params = dict(part.split("=", 1) for part in parameters.split(",") if "=" in part)
+            effort = params.get("effort", params.get("reasoning"))
+            if not effort:
+                continue
+        model = models.setdefault(base, {"id": base, "efforts": [], "variants": {}})
+        model["efforts"].append(effort)
+        model["variants"][effort] = identifier
+    return list(models.values())
+
+
+def discover(policy):
+    catalogs = {}
+    omp = None
+    for name in policy["declared"]:
+        route = policy["routes"][name]
+        missing = [exe for exe in route["requires"] if not shutil.which(exe)]
+        if missing:
+            catalogs[name] = {"error": "missing dependencies: " + ", ".join(missing)}
+            continue
+        try:
+            source = route["catalog"]
+            if source == "omp":
+                if omp is None:
+                    try:
+                        omp = json.loads(command(["omp", "models", "refresh", "--json"], timeout=90))["models"]
+                    except (RoutingError, ValueError, KeyError) as error:
+                        omp = str(error)
+                if isinstance(omp, str):
+                    raise RoutingError(omp)
+                models = [{"id": row["id"], "provider": row["provider"], "efforts": row.get("thinking") or []}
+                          for row in omp if row["provider"] in route["providers"]]
+            elif source == "codex":
+                models = codex_models(route)
+            elif source == "claude":
+                models = claude_models(route)
+            elif source == "cursor":
+                models = cursor_models(route)
+            else:
+                raise RoutingError(f"unknown catalog source: {source}")
+            if not models:
+                raise RoutingError("no accessible models; check credentials, provider configuration, and catalog support")
+            catalogs[name] = {"models": models}
+        except (RoutingError, OSError, ValueError, KeyError) as error:
+            catalogs[name] = {"error": str(error)}
+    return catalogs
+
+
+def candidates(policy, route, catalog, family):
+    capability = policy["routes"][route]
+    if family not in capability["families"] and "*" not in capability["families"]:
+        return []
+    rule = policy["models"]["families"][family]
+    result = []
+    for row in catalog.get("models", []):
+        identifier = row["id"].split("/")[-1]
+        identifier = re.sub(r"\[(?:1m|200k)\]$", "", identifier)
+        match = re.fullmatch(rule["pattern"], identifier)
+        if not match:
+            continue
+        tier = match.groupdict().get("tier") or ""
+        if tier not in rule["tiers"]:
+            continue
+        generation = tuple(int(part) for part in re.split(r"[.-]", match["generation"]))
+        result.append(dict(row, generation=generation, tier=rule["tiers"].index(tier)))
+    return result
+
+
+def launch(policy, route_name, model, effort, family):
+    route = policy["routes"][route_name]
+    env = dict(route.get("env", {}))
+    argv = ["env"]
+    for name in route.get("unset_env", []):
+        argv += ["-u", name]
+    harness = route["harness"]
+    if harness == "codex":
+        env["CODEX_CONFIG"] = json.dumps({"model": model["id"], "model_reasoning_effort": effort,
+                                        "service_tier": "default"}, separators=(",", ":"))
+        command_argv = ["codex-acp"]
+    elif harness == "claude":
+        env.update(ANTHROPIC_MODEL=model["id"], CLAUDE_CODE_EFFORT_LEVEL=effort,
+                   CLAUDE_CODE_DISABLE_FAST_MODE="1", ACPX_CLAUDE_INCLUDE_USER_SETTINGS="1")
+        # The adapter may normalize a concrete ID back to its moving alias.
+        env[route["model_alias_env"][family]] = model["id"]
+        command_argv = ["claude-agent-acp"]
+    elif harness == "cursor":
+        command_argv = ["cursor-agent", "--model", model["variants"][effort]]
+        for relative in (".agents/plugins", ".claude/plugins/marketplaces"):
+            directory = Path(policy["home"]) / relative
+            if directory.is_dir():
+                command_argv += ["--add-dir", str(directory)]
+        command_argv += ["acp"]
+    elif harness == "omp":
+        if model.get("provider") not in route["providers"]:
+            raise RoutingError(f"{route_name}: catalog model has an undeclared provider")
+        command_argv = ["omp", "acp", "--provider", model["provider"], "--model", model["id"], "--thinking", effort]
+    else:
+        raise RoutingError(f"unknown harness: {harness}")
+    argv += [f"{key}={value}" for key, value in sorted(env.items())]
+    return argv + command_argv if len(argv) > 1 else command_argv
+
+
+def resolve(policy, catalogs):
+    validate(policy)
+    shortcuts = {}
+    problems = {name: catalogs.get(name, {"error": "catalog missing"}).get("error")
+                for name in policy["declared"]}
+    problems = {name: error for name, error in problems.items() if error}
+    spec = policy["models"]
+    ladder = spec["efforts"]
+    max_steps = len(ladder) - ladder.index(spec["base_effort"]) - 1
+
+    def add(alias, family, previous, steps, smallest=False):
+        try:
+            ordered = policy["preferences"].get(family, policy["declared"])
+            route, models = None, []
+            for name in ordered:
+                if name not in problems:
+                    models = candidates(policy, name, catalogs[name], family)
+                    if models:
+                        route = name
+                        break
+            if route is None:
+                raise RoutingError(f"no declared, usable route advertises {family}")
+            generations = sorted({model["generation"] for model in models}, reverse=True)
+            if previous and len(generations) < 2:
+                raise RoutingError(f"{route} has no preceding {family} generation")
+            generation = generations[1 if previous else 0]
+            models = [model for model in models if model["generation"] == generation]
+            tier = (min if smallest else max)(model["tier"] for model in models)
+            model = sorted((model for model in models if model["tier"] == tier), key=lambda row: row["id"])[-1]
+            supported = [level for level in ladder if level in model["efforts"]]
+            if spec["base_effort"] not in supported:
+                raise RoutingError(f"{route}/{model['id']} does not support high effort")
+            index = supported.index(spec["base_effort"]) + steps
+            if index >= len(supported):
+                raise RoutingError(f"{route}/{model['id']} has no effort {steps} step(s) above high")
+            effort = supported[index]
+            shortcuts[alias] = {"route": route, "model": model["id"], "effort": effort,
+                                "argv": launch(policy, route, model, effort, family)}
+        except RoutingError as error:
+            message = f"{alias}: {error}"
+            shortcuts[alias] = {"error": str(error), "argv": [policy["launcher"], "reject", message]}
+
+    if policy["declared"]:
+        for family in spec["families"]:
+            for prefix, previous in ((spec["latest_prefix"], False), (spec["previous_prefix"], True)):
+                for steps in range(max_steps + 1):
+                    add(prefix + family + "x" * steps, family, previous, steps)
+        add(spec["writing_alias"], "gpt", True, 0, smallest=True)
+    return {"version": 1, "shortcuts": shortcuts, "problems": problems,
+            "catalogs": {key: value for key, value in catalogs.items() if key in policy["declared"]}}
+
+
+def atomic_json(path, value):
+    if path.is_symlink():
+        raise RoutingError(f"refusing to replace symlink: {path}")
+    content = json.dumps(value, indent=2, sort_keys=True) + "\n"
+    if path.exists() and path.read_text() == content:
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, temporary = tempfile.mkstemp(prefix=".acpx-", dir=path.parent)
+    try:
+        with os.fdopen(fd, "w") as handle:
+            handle.write(content)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+
+
+def publish(report, config_path, report_path):
+    if config_path.resolve() == report_path.resolve():
+        raise RoutingError("configuration and report must be different files")
+    for path in (config_path, report_path):
+        if path.is_symlink():
+            raise RoutingError(f"refusing to replace symlink: {path}")
+    current = read_json(config_path) if config_path.exists() else {}
+    previous = read_json(report_path) if report_path.exists() else {}
+    owned = LEGACY_ALIASES | set(previous.get("managed_aliases", []))
+    agents = current.setdefault("agents", {})
+    if not isinstance(agents, dict):
+        raise RoutingError("acpx agents must be an object")
+    collisions = set(report["shortcuts"]) & (set(agents) - owned)
+    if collisions:
+        raise RoutingError("shortcut conflicts with unmanaged agents: " + ", ".join(sorted(collisions)))
+    for name in owned:
+        agents.pop(name, None)
+    agents.update({name: {"argv": selected["argv"]} for name, selected in report["shortcuts"].items()})
+    # Retain ownership through an interrupted two-file publication and retirement.
+    report["managed_aliases"] = sorted(owned | set(report["shortcuts"]))
+    atomic_json(report_path, report)
+    atomic_json(config_path, current)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("action", choices=["refresh", "resolve", "show", "reject"])
+    parser.add_argument("message", nargs="?")
+    parser.add_argument("--policy", type=Path, default=Path.home() / ".config/acpx/routing.json")
+    parser.add_argument("--catalogs", type=Path, help="replay a captured catalog JSON object without network")
+    parser.add_argument("--config", type=Path, default=Path.home() / ".acpx/config.json")
+    parser.add_argument("--report", type=Path, default=Path.home() / ".acpx/routing.json")
+    args = parser.parse_args()
+    if args.action == "reject":
+        raise RoutingError(args.message or "unsupported model request")
+    if args.action == "show":
+        report = read_json(args.report)
+        if args.message:
+            selected = report["shortcuts"].get(args.message)
+            if selected is None:
+                raise RoutingError(f"unknown shortcut: {args.message}")
+            if "error" in selected:
+                raise RoutingError(f"{args.message}: {selected['error']}")
+            print(json.dumps(selected, indent=2))
+        else:
+            print(json.dumps(report, indent=2))
+        return
+    policy = read_json(args.policy)
+    validate(policy)
+    catalogs = read_json(args.catalogs) if args.catalogs else discover(policy)
+    report = resolve(policy, catalogs)
+    if args.action == "resolve":
+        print(json.dumps(report, indent=2))
+        return
+    args.config.parent.mkdir(parents=True, exist_ok=True)
+    with (args.config.parent / ".routing.lock").open("w") as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise RoutingError("another acpx routing publication is running") from None
+        publish(report, args.config, args.report)
+    for route, problem in report["problems"].items():
+        print(f"acpx: {route}: {problem}", file=sys.stderr)
+    for alias, selected in report["shortcuts"].items():
+        detail = selected.get("error") or f"{selected['route']} / {selected['model']} / {selected['effort']}"
+        print(f"{alias}: {detail}")
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except (RoutingError, OSError, ValueError, KeyError, TypeError) as error:
+        print(f"acpx routing: {error}", file=sys.stderr)
+        sys.exit(2)

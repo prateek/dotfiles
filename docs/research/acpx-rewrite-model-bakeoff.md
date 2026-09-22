@@ -1,14 +1,16 @@
 ---
-status: current
+status: superseded
 doc_type: research
 owner: Prateek
 created: 2026-09-03
-updated: 2026-09-03
+updated: 2026-09-22
+closed: 2026-09-22
+superseded_by: ../references/acpx-routing.md
 related:
   - ../../agent-marketplace/packages/utils-agent/skills/acpx/SKILL.md
-  - ../../home/dot_acpx/config.json.tmpl
+  - ../../home/.chezmoidata/acpx_models.toml
   - ../../agent-marketplace/packages/core/skills/writing-for-humans/SKILL.md
-status_detail: "Backs the agptw pin (gpt-5.6-luna-high). Re-run the method here when the cursor-agent catalog moves a pinned family or the drift audit flags agptw."
+status_detail: "Historical model-quality experiment. Dynamic routing now defines agptw as the preceding generation's smallest tier at high effort; the historical pin is retired."
 ---
 
 # Which Model Should Do acpx Prose Rewrites

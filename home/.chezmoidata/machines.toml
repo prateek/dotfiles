@@ -23,10 +23,14 @@ private_overlay = false
 elevation = "none"
 granola_mcp = false
 touchid_sudo = false
-# Agent CLIs present on this machine. Plugin reconciliation and ACP shortcuts
-# select supported clients from this list; crit's agent_cmd is set only when
-# claude is listed. Empty by default so a machine opts in explicitly.
+# Agent CLIs selected for installation/plugin activation. crit's agent_cmd is
+# set only when claude is listed. Empty by default so a machine opts in explicitly.
 agent_clis = []
+# ACP eligibility and preference are independent of installed/plugin clients.
+# Lists replace wholesale in host/local overrides. acpx_order_<family> can
+# reorder a subset for one family without admitting an undeclared route.
+acpx_routes = []
+acpx_local_providers = ["local", "ollama", "lmstudio"]
 # Cross-machine agent-session archive (prateek/wiki-agent-sessions): hourly raw
 # sync via a launchd agent, agentsview session_sources wiring, obsidian-wiki
 # vault config. Hosts with this on MUST also set wiki_host_alias in their
@@ -64,6 +68,7 @@ groups = ["core"]
 groups = ["core", "mac-desktop", "ai-agent-apps", "codex", "developer-tools", "personal-apps", "forks"]
 touchid_sudo = true
 agent_clis = ["claude", "codex", "omp"]
+acpx_routes = ["local", "codex", "claude", "openai", "anthropic", "cerebras", "openrouter"]
 granola_mcp = true
 agent_session_wiki = true
 
@@ -81,6 +86,7 @@ runner_labels = "tartelet,homelab"
 runner_scope = "repo"                  # GitHubRunnerScope rawValue: "organization" | "repo"; repo = one runner per repo
 runner_start_on_launch = true
 agent_clis = ["claude", "codex", "omp"]
+acpx_routes = ["local", "codex", "claude", "openai", "anthropic", "cerebras", "openrouter"]
 granola_mcp = true
 agent_session_wiki = true
 
@@ -92,6 +98,7 @@ touchid_sudo = true
 private_overlay = true
 elevation = "jamf-self-service"
 agent_clis = ["cursor-agent", "claude", "omp"]
+acpx_routes = ["claude-vertex", "cursor"]
 agent_session_wiki = true
 agent_session_wiki_sparse = true
 tls_inspection = true

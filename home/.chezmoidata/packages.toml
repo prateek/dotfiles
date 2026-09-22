@@ -125,7 +125,7 @@ casks = [
 ]
 
 # Applies to: personal, homelab. Work excludes Codex; cursor-agent covers the
-# GPT tier there (see machines.toml agent_clis).
+# GPT tier there (see machines.toml acpx_routes).
 #
 # Only the ACP adapter is a Homebrew package. Selecting this group also selects
 # run_after_07-codex-standalone.sh, which installs the CLI itself through

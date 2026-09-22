@@ -1,6 +1,6 @@
 ---
 name: acpx
-description: Delegate a task to another coding agent through acpx, in its own process and context. Use when the user names a shortcut (agpt, agptx, agptw, aopus, aopusx, afable, afablex, agemini), asks for a second opinion from a different model, or wants work run outside this session and reported back.
+description: Delegate a task to another coding agent through acpx, in its own process and context. Use when the user names a model shortcut (agpt, pgpt, agptx, pgptx, agptw, aopus, popus, afable, pfable, agemini, pgemini), asks for a second opinion from a different model, or wants work run outside this session and reported back.
 argument-hint: "[-m|--model agptx] [-w|--write] <task> [-- <acpx flags>]"
 ---
 
@@ -29,31 +29,38 @@ cannot.
 
 ## Choose the shortcut
 
-Each shortcut is a complete model selection. They are acpx agent names, not
-binaries, and one renders only when its backing CLI is installed on the machine.
-`acpx config show` lists what this machine actually has.
+Each shortcut selects a model independently of its harness. `a` means the latest
+generation in the preferred declared harness's catalog; `p` means the preceding
+generation in that catalog. Both start at high effort. Each trailing `x` advances
+one supported effort level; an unsupported step fails. Fast mode is disabled.
+
+`acpx config show` lists launch commands. `~/.agents/bin/acpx-routing show` gives
+the resolved model, effort, route, and any unavailable-request diagnostics.
+Selections stay fixed until the next `chezmoi apply`. An installed executable
+alone does not make its harness eligible.
+
+Before launching, run `~/.agents/bin/acpx-routing show <shortcut>` and stop if
+it fails. Do not pass an unknown shortcut to acpx: it may interpret the name as
+prompt text for its default agent.
 
 | Shortcut | Job |
 | --- | --- |
-| `agpt` | Default GPT delegation or second opinion |
-| `agptx` | Higher-effort GPT after `agpt` is insufficient |
-| `agptw` | Prose rewriting |
-| `aopus` | Default Claude for long context or deep reasoning |
-| `aopusx` | Higher-effort Claude after `aopus` is insufficient |
-| `afable` | Claude Code with its harness and skills |
-| `afablex` | Higher-effort Claude Code |
-| `agemini` | An opinion outside the GPT and Claude families |
+| `agpt`, `pgpt` | Latest or preceding GPT generation |
+| `agptx`, `pgptx` | One effort step above high; add another `x` for another step |
+| `agptw` | Prose: preceding GPT generation, smallest available tier, high effort |
+| `aopus`, `popus` | Latest or preceding Opus generation |
+| `afable`, `pfable` | Latest or preceding Fable generation |
+| `agemini`, `pgemini` | Latest or preceding Gemini generation |
 
 `agptw` is the prose lane. Give it the draft plus
 `~/.agents/plugins/plugins/core/skills/writing-for-humans/SKILL.md`, and prefer
-it to `agpt` for editing prose. Its pin comes from the rewrite bakeoff in
-`docs/research/acpx-rewrite-model-bakeoff.md` in the dotfiles checkout being
-edited.
+it to `agpt` for editing prose. Check its resolved model before launching: a
+preferred harness with no preceding generation cannot satisfy this preset.
 
 ## Permission flags are not a gate
 
-Probed on acpx 0.15.0 with cursor-agent 2026.07.01 and claude-agent-acp 0.75.1:
-`agpt` and `afable` send no `session/request_permission` at all. Both wrote a
+Earlier probes on acpx 0.15.0 with cursor-agent 2026.07.01 and claude-agent-acp
+0.75.1 found no `session/request_permission` from either adapter. Both wrote a
 file and ran a shell command under `--non-interactive-permissions deny`, and
 again under `--deny-all`. The flags answer requests, and these adapters make
 none. `--no-terminal` changes nothing either; neither adapter calls ACP
@@ -73,7 +80,7 @@ A read-only delegation is therefore a prompt plus an audit:
    gives the exact `kind` and `title`.
 
 Keep `--non-interactive-permissions deny` in the launch anyway: it costs nothing
-and still fails closed on adapters that do ask, such as a `codex-acp` fallback.
+and still fails closed on adapters that do ask, such as `codex-acp`.
 Never report a delegation as read-only because of the flags alone.
 
 ## Launch
@@ -117,20 +124,22 @@ completion markers and the per-harness monitoring loop.
 
 ## Adapter facts
 
-- `agpt*`, `aopus*`, and `agemini` run on cursor-agent, with model and effort
-  baked into the pinned id.
-- Those cursor-agent shortcuts receive `--add-dir` paths for the generated plugin
+- A shortcut's prefix/family/effort never selects its harness. Machine
+  declarations and model-family preferences select the route during apply.
+- Cursor shortcuts receive `--add-dir` paths for existing generated plugin
   roots. Files there are readable by exact path but not discoverable through
   workspace glob or grep, so name every file the delegate needs.
-- On machines without cursor-agent, `agpt` and `agptx` fall back to `codex-acp`
-  and use its configured model. `agptw` has no fallback.
-- `afable*` run `claude-agent-acp`; their environment selects the Claude model
-  and effort.
+- Codex shortcuts set exact model and effort through `CODEX_CONFIG` JSON;
+  `codex-acp` uses its compatible bundled Codex. Its ACP startup ignores `-c`.
+- Claude shortcuts set exact model and effort in their environment, including
+  the backing ID of a normalized model alias. Work routes through Vertex;
+  non-work prefers subscription access.
+- Direct APIs, OpenRouter, and declared local providers use `omp acp` with an
+  explicit provider, model, and thinking level.
 - Claude ACP sees user plugin skills only when
   `ACPX_CLAUDE_INCLUDE_USER_SETTINGS=1` reaches the shell environment.
-- The cursor-agent model ids are explicit pins because bare aliases resolve to
-  older generations. Audit them with `scripts/audit/acpx-model-drift.sh` from the
-  dotfiles checkout being validated.
+- Local preference preserves the model family. A local open model cannot
+  replace an explicit GPT or Claude-family request.
 
 ## Beyond one shot
 
@@ -141,8 +150,8 @@ policy shapes, and durable multi-step flows.
 ## Prerequisites and cleanup
 
 - `acpx` installs through mise as `npm:acpx`.
-- cursor-agent shortcuts require cursor-agent authentication; `afable*` requires
-  Claude authentication.
+- Authentication must match the resolved route: Cursor, Claude subscription or
+  Vertex, Codex subscription, or the selected omp provider.
 - Scope cleanup to the prompt-file slug. A broad process kill terminates
   cursor-agent's shared authentication worker while its status still reports a
   valid login.
@@ -156,8 +165,8 @@ policy shapes, and durable multi-step flows.
 - Without `-w`, the log's tool calls are accounted for and every write is
   reported.
 - `acpx config show` agrees with the machine's rendered shortcut set.
-- The model-drift audit passes after a pin or catalog change.
+- The routing report agrees with the launched model and effort. Unavailable
+  shortcuts fail explicitly; choose another only with the user's direction.
 
-Last verified with acpx 0.15.0, cursor-agent 2026.07.01, claude-agent-acp 0.75.1,
-and pi 0.84.4. Treat a version change as the trigger to re-probe the permission
-claims and recheck the lanes.
+Permission evidence above predates dynamic routing. A harness change requires
+rechecking its permission behavior and monitoring lane.

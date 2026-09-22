@@ -1,0 +1,22 @@
+[acpx_models]
+efforts = ["low", "medium", "high", "xhigh", "max", "ultra"]
+base_effort = "high"
+latest_prefix = "a"
+previous_prefix = "p"
+writing_alias = "agptw"
+
+[acpx_models.families.gpt]
+pattern = '^gpt-(?P<generation>\d+(?:\.\d+)*)(?:-(?P<tier>astra|sol|terra|luna|mini|nano))?(?:-\d{4}-\d{2}-\d{2})?$'
+tiers = ["nano", "mini", "luna", "terra", "", "sol", "astra"]
+
+[acpx_models.families.opus]
+pattern = '^claude-opus-(?P<generation>\d+(?:[.-]\d{1,2})*)(?:-\d{8})?(?:@\d{8})?$'
+tiers = [""]
+
+[acpx_models.families.fable]
+pattern = '^claude-fable-(?P<generation>\d+(?:[.-]\d{1,2})*)(?:-\d{8})?(?:@\d{8})?$'
+tiers = [""]
+
+[acpx_models.families.gemini]
+pattern = '^gemini-(?P<generation>\d+(?:\.\d+)*)(?:-(?P<tier>flash-lite|flash|pro))?(?:-preview(?:-\d{2}-\d{2})?)?$'
+tiers = ["flash-lite", "flash", "", "pro"]

@@ -128,6 +128,7 @@ this section maps a change to the distinct guarantees it can affect.
 | Apply-time plist guard and relaunch | `just test-shell tests/bats/hooks/plist-hooks.bats`; Bats drives actual hook code and terminal prompts with external app commands substituted. |
 | Codex TOML / Claude JSON / Cursor JSON | `just test-python -p test_codex.py`, `just test-python -p test_claude.py`, or `just test-python -p test_cursor.py`; preserve credentials, approvals, and unrelated application state. |
 | Agentsview TOML / Pi JSON / Orca JSON / crit JSON | `just test-python -p test_agentsview.py`, `just test-python -p test_pi.py`, `just test-python -p test_orca.py`, or `just test-python -p test_crit.py`; format-specific merging and launch contracts. |
+| acpx model/harness routing | `just test-python -p test_acpx.py -p test_machines.py`; rendered policy, catalog/ACP command boundaries, exact selections, rejection, and generated-config ownership. |
 | macOS defaults and app/package gates | `just test-shell tests/bats/hooks/macos-defaults.bats` and `just test-python -p test_config_gates.py` for the affected behavior. |
 
 An ordinary preference edit needs the lightest meaningful render/parse check and

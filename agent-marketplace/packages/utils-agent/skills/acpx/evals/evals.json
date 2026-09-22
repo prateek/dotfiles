@@ -1,6 +1,6 @@
 {
   "skill_name": "acpx",
-  "context": "Triggering and invocation-shape evaluation. The machine has cursor-agent and claude-agent-acp installed, so every shortcut in the job table renders. Ask the model what it would do and show the exact acpx invocation it would run; nothing here authorizes actually spawning a delegate. For should-trigger cases, judge whether the acpx delegation skill is loaded and whether the invocation it builds matches the expectations. For should-not-trigger cases, judge whether the model stays out of the delegation skill; reaching the separate acpx-cli command-surface skill is correct where noted.",
+  "context": "Triggering and invocation-shape evaluation. Assume the machine's acpx routing report contains successful resolutions for the shortcuts used here. Ask the model what it would do and show the exact acpx invocation it would run; nothing here authorizes actually spawning a delegate. For should-trigger cases, judge whether the acpx delegation skill is loaded and whether the invocation it builds matches the expectations. For should-not-trigger cases, judge whether the model stays out of the delegation skill; reaching the separate acpx-cli command-surface skill is correct where noted.",
   "evals": [
     {
       "id": 1,

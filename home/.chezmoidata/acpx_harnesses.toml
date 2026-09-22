@@ -1,0 +1,66 @@
+# A route combines a harness with its provider/account access. Machine policy
+# declares eligible route IDs separately; this table never enables a route.
+[acpx_harnesses.routes.local]
+harness = "omp"
+providers = ["local", "ollama", "lmstudio"]
+families = ["*"]
+requires = ["omp"]
+catalog = "omp"
+
+[acpx_harnesses.routes.codex]
+harness = "codex"
+families = ["gpt"]
+requires = ["codex-acp"]
+catalog = "codex"
+unset_env = ["CODEX_PATH", "CODEX_CONFIG", "MODEL_PROVIDER", "CODEX_API_KEY", "OPENAI_API_KEY"]
+
+[acpx_harnesses.routes.claude]
+harness = "claude"
+families = ["opus", "fable"]
+requires = ["claude-agent-acp", "node"]
+catalog = "claude"
+model_alias_env = { opus = "ANTHROPIC_DEFAULT_OPUS_MODEL", fable = "ANTHROPIC_DEFAULT_FABLE_MODEL" }
+unset_env = ["ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "CLAUDE_CODE_USE_VERTEX", "CLAUDE_CODE_USE_BEDROCK", "CLAUDE_CODE_USE_FOUNDRY"]
+
+[acpx_harnesses.routes.claude-vertex]
+harness = "claude"
+families = ["opus", "fable"]
+requires = ["claude-agent-acp", "node", "gcloud"]
+catalog = "claude"
+model_alias_env = { opus = "ANTHROPIC_DEFAULT_OPUS_MODEL", fable = "ANTHROPIC_DEFAULT_FABLE_MODEL" }
+unset_env = ["ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "CLAUDE_CODE_USE_BEDROCK", "CLAUDE_CODE_USE_FOUNDRY"]
+env = { CLAUDE_CODE_USE_VERTEX = "1" }
+
+[acpx_harnesses.routes.openai]
+harness = "omp"
+providers = ["openai"]
+families = ["gpt"]
+requires = ["omp"]
+catalog = "omp"
+
+[acpx_harnesses.routes.anthropic]
+harness = "omp"
+providers = ["anthropic"]
+families = ["opus", "fable"]
+requires = ["omp"]
+catalog = "omp"
+
+[acpx_harnesses.routes.cerebras]
+harness = "omp"
+providers = ["cerebras"]
+families = ["*"]
+requires = ["omp"]
+catalog = "omp"
+
+[acpx_harnesses.routes.openrouter]
+harness = "omp"
+providers = ["openrouter"]
+families = ["*"]
+requires = ["omp"]
+catalog = "omp"
+
+[acpx_harnesses.routes.cursor]
+harness = "cursor"
+families = ["gpt", "opus", "fable", "gemini"]
+requires = ["cursor-agent"]
+catalog = "cursor"

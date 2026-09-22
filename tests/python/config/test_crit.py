@@ -35,38 +35,3 @@ class CritConfigTests(RepoTestCase):
                    "notify_on_round_ready": True}
         self.assertEqual(json.loads(self.command(modify, json.dumps(current).encode()).stdout), {"auth_token": "x"})
         self.assertEqual(self.command(modify).stdout, b"")
-
-
-class AcpxConfigTests(RepoTestCase):
-    def agents(self, machine_type):
-        return json.loads(self.render("home/dot_acpx/config.json.tmpl", machine_type))["agents"]
-
-    def test_work_shortcuts_select_models_before_acp_and_reach_plugins(self):
-        agents = self.agents("work")
-        self.assertEqual(set(agents), {"agpt", "agptw", "agptx", "aopus", "aopusx", "agemini", "afable", "afablex"})
-        self.assertEqual(agents["agpt"]["command"], "cursor-agent")
-        for name in ("agpt", "agptx", "agptw", "aopus", "aopusx", "agemini"):
-            with self.subTest(shortcut=name):
-                args = agents[name]["args"]
-                self.assertEqual(args[0], "--model")
-                self.assertTrue(args[1])
-                self.assertEqual(args[args.index("--add-dir") + 1], str(self.home / ".agents/plugins"))
-                self.assertEqual(args[-1], "acp")
-
-    def test_claude_marketplace_path_is_added_only_when_present(self):
-        args = self.agents("work")["agptw"]["args"]
-        self.assertEqual(args.count("--add-dir"), 1)
-        marketplace = self.home / ".claude/plugins/marketplaces"
-        marketplace.mkdir(parents=True)
-        args = self.agents("work")["agptw"]["args"]
-        directories = [args[index + 1] for index, value in enumerate(args) if value == "--add-dir"]
-        self.assertEqual(directories, [str(self.home / ".agents/plugins"), str(marketplace)])
-        self.assertEqual(args[-1], "acp")
-
-    def test_codex_profiles_and_empty_ci_select_only_available_adapters(self):
-        for machine_type in ("personal", "homelab"):
-            with self.subTest(machine_type=machine_type):
-                agents = self.agents(machine_type)
-                self.assertEqual(set(agents), {"agpt", "agptx", "afable", "afablex"})
-                self.assertEqual(agents["agpt"]["command"], "codex-acp")
-        self.assertEqual(self.agents("ci"), {})

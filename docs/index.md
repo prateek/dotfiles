@@ -24,6 +24,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | --- | --- |
 | [Documentation Index](index.md) | Routing to current guidance, proposed work, decisions, and history. |
 | [Document Lifecycle](document-lifecycle.md) | Frontmatter, status transitions, and index rules for `docs/`. |
+| [acpx Routing](references/acpx-routing.md) | Model shortcuts, machine route declarations, catalog resolution, and diagnostics. |
 | [Agent Marketplace](references/agent-marketplace.md) | Isolated APM source/build project, host activation, recovery, and validation lanes. |
 | [Dotfiles Landing](runbooks/dotfiles-landing.md) | Repo-specific checks and chezmoi preview for the published land-changes skill. |
 | [Chezmoi Architecture](references/chezmoi-architecture.md) | Dotfiles source-state architecture and validation entrypoints. |
@@ -43,6 +44,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | Doc | Status |
 | --- | --- |
 | [acpx Skill Packaging](plans/acpx-skill-packaging-plan.md) | Active; the acpx conventions are now a trigger-owning skill next to the vendored `acpx-cli` command surface, the conventions doc and its AGENTS.md pointer are deleted. See [ADR 0028](adr/0028-router-skill-over-vendor-remap.md). Trigger arbitration measured 2026-09-08 (no cross-listing steals; 16/18 after one relabel); nothing open. |
+| [acpx Routing](plans/acpx-routing-plan.md) | Accepted and implemented; model/harness separation and apply-time resolution validated locally. Not yet applied to the host. See [current guidance](references/acpx-routing.md) and [ADR 0032](adr/0032-acpx-model-routing.md). |
 | [Agent Session Wiki](plans/agent-session-wiki-plan.md) | Active; hourly launchd archive sync, QMD history index, AgentsView wiring, and daily Claude wiki ingest on m4mini. See [ADR 0017](adr/0017-agent-session-archive.md). |
 | [Restore Wiki Ingestion](plans/wiki-ingest-revisit-plan.md) | Active; the m4mini schedule and Claude Sonnet 5/high configuration are live and passed an end-to-end ingest. |
 | [SSD Layout And Arq Coverage](plans/ssd-arq-layout-plan.md) | Active; Code, Tart, and WinMux storage migrated. Both SSD volumes retained for Code and GhostPepper; Arq selection and restore checks deferred. |
@@ -99,8 +101,8 @@ for day-to-day implementation details.
 | [ADR 0028 - Sibling router skill over vendored remap](adr/0028-router-skill-over-vendor-remap.md) | Accepted; when local conventions and a vendored skill share a subject, publish both as siblings in one package and split the trigger between their descriptions. First customer: the `acpx` / `acpx-cli` pair ([plan](plans/acpx-skill-packaging-plan.md)). |
 | [ADR 0029 - Claude Code CLI installs natively](adr/0029-claude-code-native-installer.md) | Accepted; `run_after_06-claude-native.sh` installs the CLI through Anthropic's installer and retires the npm copies, because npm updates rewrite the package tree under running sessions. See [Mise Tool Management](references/mise-tool-management.md) > Claude Code workflow. |
 | [ADR 0030 - Touch ID for sudo](adr/0030-touchid-sudo.md) | [Chezmoi Architecture](references/chezmoi-architecture.md#touch-id-for-sudo); machine flag and owned-file apply hook. |
-
 | [ADR 0031 - Discover landing workflows](adr/0031-discovered-landing-workflows.md) | [Land-changes skill](../agent-marketplace/packages/review/skills/land-changes/SKILL.md) and [dotfiles landing](runbooks/dotfiles-landing.md). |
+| [ADR 0032 - acpx model routing](adr/0032-acpx-model-routing.md) | [acpx Routing](references/acpx-routing.md); separate model intent, harness capabilities, and machine policy. |
 
 ## Research
 
@@ -117,7 +119,7 @@ for day-to-day implementation details.
 | [Skill Invocation-Control Frontmatter](research/skill-invocation-frontmatter-research.md) | Which harnesses honor `disable-model-invocation` and `user-invocable`, with per-harness evidence and citations. |
 | [Self-Improving Agents](research/self-improving-agents.md) | Pattern reference for durable agent feedback loops. |
 | [macOS Defaults: Sources And Verified Facts](research/macos-defaults-sources.md) | Sources to mine for the next rework of the macOS defaults layer, plus key encodings and Apple Silicon power facts verified on hardware. |
-| [acpx Rewrite Model Bake-Off](research/acpx-rewrite-model-bakeoff.md) | Why `agptw` pins `gpt-5.6-luna-high`, with the scoring method and repro steps for re-picking the prose-rewrite model. |
+| [acpx Rewrite Model Bake-Off](research/acpx-rewrite-model-bakeoff.md) | Superseded historical quality experiment; `agptw` now follows the generation/tier policy in [acpx Routing](references/acpx-routing.md). |
 | [Nix Migration Research](research/nix-migration-research.md) | Why the repo stays on chezmoi, what a package-only nix spike would look like, and the work-Mac MDM check that gates nix-darwin. |
 
 ## Historical Records

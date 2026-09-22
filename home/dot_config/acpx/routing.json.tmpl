@@ -1,0 +1,17 @@
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- $preferences := dict -}}
+{{- range $key, $value := $f -}}
+{{- if hasPrefix "acpx_order_" $key -}}
+{{- $_ := set $preferences (trimPrefix "acpx_order_" $key) $value -}}
+{{- end -}}
+{{- end -}}
+{{- $routes := deepCopy .acpx_harnesses.routes -}}
+{{- $_ := set (get $routes "local") "providers" $f.acpx_local_providers -}}
+{{ dict
+  "models" .acpx_models
+  "routes" $routes
+  "declared" $f.acpx_routes
+  "preferences" $preferences
+  "home" .chezmoi.homeDir
+  "launcher" (printf "%s/.agents/bin/acpx-routing" .chezmoi.homeDir)
+  | toPrettyJson }}
