@@ -1,27 +1,27 @@
 # Landing decision evaluations
 
-`evals.json` describes portable hypothetical repositories. For each case, load the
-skill and provide the shared `context`, case `context`, and user `prompt`. Keep
-`expectations` hidden until grading. Ask for ordered actions and the resulting
-report or unresolved decision; no case authorizes operating on a real repository.
+`evals.json` supplies hypothetical evidence and requests. Give the evaluator the
+skill, relevant references, shared context, and each case's context/prompt, with
+expectations withheld. Ask for ordered actions, publication/follow-up decisions,
+and the report. These inputs authorize no operation on a real repository.
 
-Judge behavior and action order, not wording or exact command spelling. Record
-per-expectation passes/failures with evidence from the response and the model/runtime
-used. These are model decision simulations: they do not prove that Git, hosting,
-or deployment commands execute successfully. The separate helper CLI suite in
-`agent-marketplace/tests/test_land_options.py` exercises real isolated persistence.
+Grade each expectation against the response and record the model/runtime. Cases
+1-36 retain the prior destination, history, scope, recovery, and option guarantees;
+removed enum interfaces now use discovered choices. The dirty-target case now
+expects isolated publication with local synchronization pending, as approved.
+History cases explicitly leave conventions unsettled; established routes no longer
+require a history survey on every invocation. Cases 37 onward cover the invocation
+audit and adversarial-review findings, including completed versus unfinished apply,
+standing preferences, gate bypass, informational checks, and automatic deployment.
 
-The cases cover destination discovery, full change scope, history evidence,
-policy, authorization, publication ordering/recovery, configuration, and deployment.
-Test-mode cases distinguish skipped suites from other checks, Git hooks, and
-required CI, and cover persistence and an explicit return to running tests.
-One portable happy path combines squash/attribution, spaced worktree paths, and a
-stale ref for the same task. The missing-ref stack case protects scope discovery
-independently of a stack tool. Bot PRs, agent reviews, and signatures share a
-negative-evidence case; human reviews in formal, external, and discussion records
-remain separate so one source cannot hide a missing lookup.
+`test_land_choices.py` drives the actual helper CLI with isolated XDG storage.
+It retains identity/target separation, private atomic persistence, concurrent saves,
+read-only resolution, malformed/symlink handling, explicit precedence, and reset
+isolation from the old `test_land_options.py`. Fixed-enum assertions are replaced
+by named choices and inert v1 migration assertions. Added cases cover snapshots,
+dynamic groups, changed meaning, and one-time removal of a saved follow-up.
 
-Repository-specific preview details belong to the repository's runbook. The
-preview case checks following that guidance, separating unrelated drift, and
-honoring deferred application; it deliberately does not assert particular app
-paths, hook numbers, package names, or cache internals.
+`test_land_git.py` exercises the direct-Git command snippets against disposable
+local remotes, including the zsh refspec regression and accidental tag publication.
+Decision simulations do not prove native deployment, GitHub policy enforcement,
+or real client activation; report those evidence boundaries separately.

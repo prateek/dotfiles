@@ -39,7 +39,7 @@ gh api --hostname "$HOST" --method GET --paginate "repos/$REPO/pulls" \
 
 Verify returned head repo/branch and base repo/branch against this landing.
 
-## Historical evidence: `auto` and `confirm`
+## Historical evidence: only when convention discovery needs history
 
 For every sampled `SHA`, use [commit associations](https://docs.github.com/en/rest/commits/commits#list-pull-requests-associated-with-a-commit)
 to find PRs, including squash/rebase merges whose subjects contain no PR number:

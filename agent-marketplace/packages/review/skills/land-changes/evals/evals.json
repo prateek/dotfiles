@@ -1,6 +1,6 @@
 {
   "skill_name": "land-changes",
-  "context": "This is a decision simulation. Treat each case as tool evidence for a hypothetical repository; never operate on the real checkout. Apply the loaded land-changes skill to the user prompt and describe ordered actions, checks, and the resulting report or unresolved question. Unless a case overrides them: the destination is github.com/me/widget, remote upstream, target main; source branch feature/task and target checkout are clean with no operation in progress; effective fetch/push URLs address the same repo, the authenticated owner has write access, and the local target equals fetched BASE. The private source branch contains only the requested finished change. The owner is the sole human maintainer. The 20 first-parent target commits and all related PR/review/comment pages are complete, with no human-review signals. Live policy permits normal direct updates without bypass, no PR is open, and repo guidance permits direct landing. Relevant local checks succeed when run. There are no saved options or prior exceptions unless stated. Provide only hypothetical actions and outcomes; expectations are evaluated separately. The effective tests mode is run unless a case specifies otherwise.",
+  "context": "This is a decision simulation. Treat each case as tool evidence for a hypothetical repository; never operate on the real checkout. Apply the loaded land-changes skill to the user prompt and describe ordered actions, checks, and the resulting report or unresolved question. Unless a case overrides them: the destination is github.com/me/widget, remote upstream, target main; source branch feature/task and target checkout are clean with no operation in progress; effective fetch/push URLs address the same repo, the authenticated owner has write access, and the local target equals fetched BASE. The private source branch contains only the requested finished change. The owner is the sole human maintainer. The 20 first-parent target commits and all related PR/review/comment pages are complete, with no human-review signals. Live policy permits normal direct updates without bypass, no PR is open, and repo guidance permits direct landing. Relevant local checks succeed when run. There are no saved options or prior exceptions unless stated. Provide only hypothetical actions and outcomes; expectations are evaluated separately. The discovered local validation actions run and gate by default unless explicitly informational or skipped. Discovery and preference helpers return structured choices, not the removed v1 CLI flags. Only inspect history when a case leaves conventions unsettled. No manual follow-up is selected without a covering instruction or saved choice.",
   "evals": [
     {
       "id": 1,
@@ -17,7 +17,7 @@
         "Resolves all four commits as the accepted parser change despite the stale ref; rebases and squashes non-interactively, preserving the required trailer and repo commit style.",
         "Checks the final committed diff using npm test and git diff --check, with exactly one commit whose sole parent is BASE.",
         "Publishes the tested SHA with a normal push to refs/heads/main and no incidental tags; verifies the live remote before rechecking and fast-forwarding the target checkout.",
-        "Inspects the complete 20-commit history and policy, lands without another confirmation, and performs no deployment or branch/worktree cleanup."
+        "Uses the established direct-landing convention and live policy without a redundant history survey or confirmation; performs no deployment or cleanup."
       ]
     },
     {
@@ -28,7 +28,7 @@
         "publication"
       ],
       "prompt": "Land this change.",
-      "context": "An ordinary clone is on feature/report. Remote publish has live default branch trunk. No target checkout exists; local trunk points at BASE. Repository guidance sets X=5 and names pytest as its check.",
+      "context": "An ordinary clone is on feature/report. Remote publish has live default branch trunk. No target checkout exists; local trunk points at BASE. Repository guidance sets X=5 and names pytest as its check. Repository guidance leaves the review convention unsettled, so history discovery is needed.",
       "expectations": [
         "Uses publish/trunk, inspects five first-parent commits, and runs the repository check.",
         "Lands normally without redundant confirmation and verifies remote publication.",
@@ -45,7 +45,7 @@
       "prompt": "Land this branch.",
       "context": "The source checkout is clean, but the checkout on the integration branch has an unrelated tracked modification and an untracked notes file owned by another task.",
       "expectations": [
-        "Identifies the dirty target checkout as an unmet preflight condition and reports it before publishing.",
+        "Publishes from safe isolated preparation while preserving the dirty target; reports its local synchronization as pending instead of requiring unrelated edits to be cleaned.",
         "Preserves both files; does not stash, reset, discard, or merge into the dirty target checkout."
       ]
     },
@@ -100,10 +100,10 @@
         "review-history"
       ],
       "prompt": "Land this branch.",
-      "context": "One of the 20 sampled commits has no PR marker in its subject but the association API links merged PR #42 targeting this repo/main. Alice, a non-author human, submitted APPROVED before merged_at. Its review URL is https://github.com/me/widget/pull/42#pullrequestreview-420. There is no direct-landing exception in the conversation.",
+      "context": "One of the 20 sampled commits has no PR marker in its subject but the association API links merged PR #42 targeting this repo/main. Alice, a non-author human, submitted APPROVED before merged_at. Its review URL is https://github.com/me/widget/pull/42#pullrequestreview-420. There is no direct-landing exception in the conversation. Repository guidance leaves the review convention unsettled, so history discovery is needed.",
       "expectations": [
         "Finds the PR through commit association and distinguishes the human review from mere PR use.",
-        "Prepares the exact private-branch commit and checks before one direct-landing question citing the evidence and this skill gate.",
+        "Prepares the exact private-branch commit and checks before one direct-landing question citing the evidence and the unresolved repository review convention.",
         "Does not publish while that decision is pending."
       ]
     },
@@ -115,7 +115,7 @@
         "portable"
       ],
       "prompt": "Ship this branch to trunk.",
-      "context": "All sampled PR associations are empty. A sampled commit has Reviewed-by: Alice and a Gerrit URL whose record identifies her reviewing the change before submission. Direct server updates are permitted.",
+      "context": "All sampled PR associations are empty. A sampled commit has Reviewed-by: Alice and a Gerrit URL whose record identifies her reviewing the change before submission. Direct server updates are permitted. Repository guidance leaves the review convention unsettled, so history discovery is needed.",
       "expectations": [
         "Recognizes non-PR review evidence and identifies its source instead of treating empty PR lists as clearance.",
         "Prepares the private-branch commit and checks before requesting a direct-landing exception; holds publication for the answer."
@@ -129,7 +129,7 @@
         "policy"
       ],
       "prompt": "Land it.",
-      "context": "The complete non-shallow target history contains seven commits with X=20. A commit PR lookup fails with HTTP 403; classic protection returns an ambiguous 404 and ruleset visibility is unavailable. Local preparation and checks can finish.",
+      "context": "The complete non-shallow target history contains seven commits with X=20. A commit PR lookup fails with HTTP 403; classic protection returns an ambiguous 404 and ruleset visibility is unavailable. Local preparation and checks can finish. Repository guidance leaves the review convention unsettled, so history discovery is needed.",
       "expectations": [
         "Reports seven of 20 requested as all available Git history while retaining failed review and policy lookups as unknown.",
         "Does not replace errors with empty results or lower the requested history size.",
@@ -143,8 +143,8 @@
         "options",
         "policy"
       ],
-      "prompt": "$land-changes --review-gate=skip",
-      "context": "The helper resolves skip from the argument and deploy=false from built-ins. An active ruleset requires PRs and CI. The authenticated admin is verified in an always-bypass entry, but the user has not authorized that bypass.",
+      "prompt": "Land it; skip review-history inspection.",
+      "context": "The user waives only history inspection. Live rules require PRs and CI. The authenticated admin has an always-bypass entry, but no instruction authorizes using it.",
       "expectations": [
         "Skips historical sampling while still inspecting live policy and the actual authenticated bypass path.",
         "Prepares the concrete change/check results before asking specifically about bypassing the protection.",
@@ -173,7 +173,7 @@
         "review-history"
       ],
       "prompt": "Land this change.",
-      "context": "The complete sample contains a Dependabot PR merged by the sole owner without discussion, and an owner-authored PR with an APPROVED review under a User account carrying explicit agent authorship. All PR details, reviews, inline/conversation comments, and commit-comment pages were fetched. Participants are only the owner and attributed automation. Another commit has Signed-off-by and a verified GPG signature. No other review evidence exists.",
+      "context": "The complete sample contains a Dependabot PR merged by the sole owner without discussion, and an owner-authored PR with an APPROVED review under a User account carrying explicit agent authorship. All PR details, reviews, inline/conversation comments, and commit-comment pages were fetched. Participants are only the owner and attributed automation. Another commit has Signed-off-by and a verified GPG signature. No other review evidence exists. Repository guidance leaves the review convention unsettled, so history discovery is needed.",
       "expectations": [
         "Records PR use separately while excluding known bots and the explicitly attributed agent review from human-review evidence.",
         "Does not classify signatures or Signed-off-by as review.",
@@ -216,7 +216,7 @@
         "review-history"
       ],
       "prompt": "Land this change.",
-      "context": "The target has 12 first-parent commits back to a verified non-shallow root. X remains 20 and no minimum-history policy exists. All 12 evidence lookups succeed with no review signals.",
+      "context": "The target has 12 first-parent commits back to a verified non-shallow root. X remains 20 and no minimum-history policy exists. All 12 evidence lookups succeed with no review signals. Repository guidance leaves the review convention unsettled, so history discovery is needed.",
       "expectations": [
         "Reports 12 of 20 requested and all available target history as a complete sample.",
         "Proceeds without a short-history confirmation, preserving X and avoiding a claim that offline review never occurred."
@@ -229,7 +229,7 @@
         "review-history"
       ],
       "prompt": "Land this change.",
-      "context": "The shallow clone exposes 12 target commits with X=20. Attempting to obtain missing ancestry fails, so the actual history length is unknown. Available review lookups succeed without signals.",
+      "context": "The shallow clone exposes 12 target commits with X=20. Attempting to obtain missing ancestry fails, so the actual history length is unknown. Available review lookups succeed without signals. Repository guidance leaves the review convention unsettled, so history discovery is needed.",
       "expectations": [
         "Keeps the shallow history incomplete instead of treating the boundary as the root or lowering X.",
         "Finishes independent commit preparation and checks before a direct-landing question; holds publication for the answer."
@@ -257,7 +257,7 @@
         "review-history"
       ],
       "prompt": "Land this change.",
-      "context": "A sampled bot-authored dependency PR has no submitted reviews. Before merge, the sole owner commented: \"The retry loop repeats non-idempotent POSTs; limit retries to GET before merge.\" The bot changed the code and the owner merged it. All related lookups succeeded.",
+      "context": "A sampled bot-authored dependency PR has no submitted reviews. Before merge, the sole owner commented: \"The retry loop repeats non-idempotent POSTs; limit retries to GET before merge.\" The bot changed the code and the owner merged it. All related lookups succeeded. Repository guidance leaves the review convention unsettled, so history discovery is needed.",
       "expectations": [
         "Treats the owner's substantive review of bot code as a human-review signal despite the empty formal-review list.",
         "Prepares the concrete commit/check report before asking for direct landing and waits for that answer before publication."
@@ -270,7 +270,7 @@
         "authorization"
       ],
       "prompt": "Land this change.",
-      "context": "Earlier in this session the user said: \"For me/widget, directly land my solo changes even when recent history includes human-reviewed PRs. Ask about any protection bypass.\" The present repo/change and unchanged policy fall within that scope; the sample contains one human-reviewed PR and direct push needs no bypass.",
+      "context": "Earlier in this session the user said: \"For me/widget, directly land my solo changes even when recent history includes human-reviewed PRs. Ask about any protection bypass.\" The present repo/change and unchanged policy fall within that scope; the sample contains one human-reviewed PR and direct push needs no bypass. Repository guidance leaves the review convention unsettled, so history discovery is needed.",
       "expectations": [
         "Reuses the applicable standing decision after checking current scope, evidence, and policy.",
         "Publishes the tested commit normally without another history-exception question or expanding the decision to a bypass."
@@ -283,11 +283,11 @@
         "options",
         "deployment"
       ],
-      "prompt": "$land-changes --review-gate=skip --deploy=false",
-      "context": "The helper returns settings review_gate=skip and deploy=false with argument sources; saved values remain review_gate=confirm and deploy=true. The documented deployment command exists.",
+      "prompt": "$land-changes --skip=review-history --without-after=staging-apply",
+      "context": "Discovery exposes review-history and staging-apply actions. A valid saved staging-apply choice covers this host. The user explicitly skips the history action and removes the follow-up for this invocation.",
       "expectations": [
-        "Uses the explicit values, skips history only, and continues live policy/open-PR/scope checks before normal publication.",
-        "Performs only the post-landing preview and does not deploy or overwrite saved defaults."
+        "Uses explicit choices without changing the saved file; inspects live policy, scope, and PRs.",
+        "Publishes within the established route and performs only a documented read-only preview, with no staging apply."
       ]
     },
     {
@@ -297,7 +297,7 @@
         "options"
       ],
       "prompt": "/review:land-changes --show-defaults",
-      "context": "The current checkout has user edits and an interrupted rebase. Read-only discovery resolves an SSH alias and destination metadata to git.example/team/widget, branch release/stable. The helper reports action=show_defaults, review_gate=skip from saved values, deploy=false from built-ins, and /config/land-changes/repos/record.json.",
+      "context": "The checkout has user edits and an interrupted rebase. Destination identity is git.example/team/widget, target release/stable. The helper shows saved scoped choices and their config path; discovery has not yet revalidated their meaning.",
       "expectations": [
         "Uses the canonical destination and exact branch for the helper and reports values, sources, and config path.",
         "Returns without imposing landing cleanliness/rebase requirements or committing, fetching for rebase, resetting preferences, deploying, or publishing."
@@ -311,9 +311,9 @@
         "deployment"
       ],
       "prompt": "$land-changes",
-      "context": "The helper resolves deploy=true from user-saved defaults and auto from built-ins. The runbook defines ./scripts/deploy-staging from the clean target checkout at LAND to staging. This command/destination is known before push; publication and local sync subsequently succeed.",
+      "context": "The helper returns a saved after choice for staging-apply whose source, semantic fingerprint, environment, and checkout scope match discovery. Publication and synchronization succeed at LAND.",
       "expectations": [
-        "Reports saved deployment authorization and resolves the documented staging scope before publication.",
+        "Cites the saved choice as authorization and resolves its staging effect before publication.",
         "After verifying remote publication and the source checkout at LAND, runs the documented deployment without another authorization question.",
         "Reports landing and deployment outcomes distinctly."
       ]
@@ -325,8 +325,8 @@
         "options",
         "deployment"
       ],
-      "prompt": "/review:land-changes --deploy=true",
-      "context": "The helper resolves true from the argument. The repository has several environments and no documented deployment recipe; the direct landing route and change scope are resolved.",
+      "prompt": "Land and deploy.",
+      "context": "The repository has multiple deployment environments and no selected recipe. The direct route and change scope are resolved; no saved follow-up supplies deployment scope.",
       "expectations": [
         "Finishes independent commit preparation and checks before asking for the missing deployment command/environment.",
         "Resolves deployment scope before publishing; does not guess production, run a guessed command, or save the one-time flag."
@@ -339,12 +339,12 @@
         "options",
         "authorization"
       ],
-      "prompt": "$land-changes --review-gate=confirm",
-      "context": "The saved record contains only review_gate=skip (no deployment preference), and an earlier standing user decision allowed solo direct lands. The helper resolves confirm from the explicit argument. The complete current history and policy would permit direct landing under auto.",
+      "prompt": "Land this change; ask me before publishing this time.",
+      "context": "An applicable standing decision allows solo direct lands. The present instruction explicitly requires a fresh publication decision. Discovery otherwise supports direct landing; no apply is requested.",
       "expectations": [
-        "Inspects history and policy despite the saved skip and earlier standing authorization.",
-        "Prepares the exact private-branch commit and asks for this invocation's direct land before publication.",
-        "Leaves the saved setting unchanged and does not invent a saved deployment preference."
+        "Honors the explicit fresh-decision request over the standing authorization.",
+        "Prepares the concrete candidate and checks, asks once, and holds publication until the answer.",
+        "Leaves saved preferences unchanged and selects no follow-up."
       ]
     },
     {
@@ -383,7 +383,7 @@
         "review-history"
       ],
       "prompt": "Land this change.",
-      "context": "The user owns the repository, but the complete target sample includes commits by two other confirmed human contributors. No formal review or substantive comment is recorded. Repository guidance does not establish a solo workflow.",
+      "context": "The user owns the repository, but the complete target sample includes commits by two other confirmed human contributors. No formal review or substantive comment is recorded. Repository guidance does not establish a solo workflow. Repository guidance leaves the review convention unsettled, so history discovery is needed.",
       "expectations": [
         "Does not infer solo maintenance from ownership or equate no recorded reviews with solo history.",
         "Prepares the change and checks before resolving a direct-landing exception for the collaborative workflow."
@@ -396,7 +396,7 @@
         "deployment",
         "recovery"
       ],
-      "prompt": "$land-changes --deploy=true",
+      "prompt": "Land, then run the documented staging deployment.",
       "context": "The documented staging command and destination were resolved. Publication, live verification, and local sync succeeded at LAND. Deployment returned a timeout after uploading the artifact, so its service-side completion is unknown.",
       "expectations": [
         "Reports confirmed Git landing separately from uncertain deployment completion.",
@@ -410,12 +410,12 @@
         "options",
         "deployment"
       ],
-      "prompt": "/review:land-changes --review-gate=skip --save-defaults",
-      "context": "Canonical destination is github.com/team/widget, target release/stable; origin is merely a source fork. The existing saved deployment value is true for this destination/target. The documented staging recipe is known. The helper saves review_gate=skip, preserves deploy=true, and returns both effective settings.",
+      "prompt": "Land it and remember to skip review-history inspection for this destination.",
+      "context": "Canonical destination is github.com/team/widget, target release/stable; origin is a fork. A valid saved staging-apply preference remains in scope. The helper saves only the explicit history-skip choice.",
       "expectations": [
-        "Uses destination identity and exact target for preferences and saves only the explicitly supplied review setting.",
-        "Reports the saved values/path, continues this landing with skip and inherited deploy=true, and uses the documented deployment after verified publication.",
-        "Does not persist inferred policy bypass or unrelated source-fork preferences."
+        "Uses canonical destination/target and saves only the requested choice while retaining the staging-apply preference.",
+        "Reports sources and storage path; applies the authorized staging effect after verifying publication and source revision.",
+        "Does not persist inferred bypasses or fork-scoped preferences."
       ]
     },
     {
@@ -424,11 +424,11 @@
       "tags": [
         "options"
       ],
-      "prompt": "$land-changes --review-gate=skip --deploy=false",
-      "context": "The preferences helper returns an invalid-defaults error: stored deploy is the string \"false\". The user has supplied one-time flags but has not asked to save or reset preferences.",
+      "prompt": "$land-changes --without-after=staging-apply",
+      "context": "The stored v2 choice record has malformed scope data. The helper returns invalid defaults. No reset/save was requested.",
       "expectations": [
-        "Stops option resolution with the concrete config error instead of ignoring the malformed record or falling back to explicit/built-in settings.",
-        "Leaves the file and repository untouched and explains deliberate reset as the repair path."
+        "Stops choice resolution with the exact error and preserves the record; explicit overrides do not silently repair malformed preferences.",
+        "Performs no publication or follow-up, and identifies scoped reset/repair as the remaining action."
       ]
     },
     {
@@ -438,8 +438,8 @@
         "options",
         "tests"
       ],
-      "prompt": "$land-changes --tests=skip",
-      "context": "The helper resolves tests=skip from the explicit argument, review_gate=auto and deploy=false from built-ins. The repository defines npm run check as npm run lint, then npm test, then npm run build. All three component commands are documented separately; the lint and build checks pass. Git hooks succeed. No test-suite execution is needed to learn these facts.",
+      "prompt": "$land-changes --skip=tests",
+      "context": "The helper resolves a skip choice for the local tests action from the explicit argument, normal convention discovery and no manual follow-up from built-ins. The repository defines npm run check as npm run lint, then npm test, then npm run build. All three component commands are documented separately; the lint and build checks pass. Git hooks succeed. No test-suite execution is needed to learn these facts.",
       "expectations": [
         "Omits npm test and the aggregate npm run check while running the documented lint and build components plus committed-diff whitespace validation.",
         "Keeps scope, clean state, review history, policy, and exact commit identity checks; lands the exact prepared commit without requesting a separate tests-waiver confirmation.",
@@ -453,11 +453,11 @@
         "options",
         "tests"
       ],
-      "prompt": "$land-changes --tests=run",
-      "context": "The saved record contains tests=skip. The helper returns tests=run from the argument. The repository test command is pytest; an initial failure has a clear, in-scope fix and passes after repair. Other checks pass.",
+      "prompt": "$land-changes --run=pytest",
+      "context": "A saved skip choice covers pytest. The current run choice overrides it once; pytest initially fails with a clear fix and passes after repair. Other checks pass.",
       "expectations": [
         "Runs pytest, repairs its failure on the source branch, restores one commit, and reruns affected checks before publication.",
-        "Reports tests=run from the invocation while leaving the saved tests=skip preference unchanged."
+        "Reports the current run choice and leaves the saved skip unchanged."
       ]
     },
     {
@@ -467,12 +467,12 @@
         "options",
         "tests"
       ],
-      "prompt": "$land-changes --tests=skip",
-      "context": "The helper resolves tests=skip, review_gate=auto, deploy=false. A sampled merged PR has a verified pre-merge approval from Alice, a non-author human. The repository has make test and make lint as separate commands; lint passes.",
+      "prompt": "$land-changes --skip=tests",
+      "context": "The helper resolves a skip choice for the local tests action, normal convention discovery, no manual follow-up. A sampled merged PR has a verified pre-merge approval from Alice, a non-author human. The repository has make test and make lint as separate commands; lint passes. Repository guidance leaves the review convention unsettled, so history discovery is needed.",
       "expectations": [
         "Skips make test but runs make lint and committed-diff validation while preparing the exact private-branch commit.",
         "Inspects review history and policy; asks about the human-review exception only after preparation and holds publication for the answer.",
-        "Does not treat the test omission as --review-gate=skip or claim that tests passed."
+        "Does not treat the test omission as a history waiver or claim that tests passed."
       ]
     },
     {
@@ -482,10 +482,10 @@
         "options",
         "tests"
       ],
-      "prompt": "$land-changes --tests=skip",
-      "context": "The history gate and intended scope are resolved. The helper returns tests=skip. During preparation a normal Git commit hook runs its own test and fails. Its intended fix cannot be determined from the available task context. No commit or publication completes.",
+      "prompt": "$land-changes --skip=tests",
+      "context": "The history gate and intended scope are resolved. The helper returns a skip choice for the local tests action. During preparation a normal Git commit hook runs its own test and fails. Its intended fix cannot be determined from the available task context. No commit or publication completes.",
       "expectations": [
-        "Keeps the hook enabled despite tests=skip; does not use --no-verify, change core.hooksPath, or set hook-specific skip variables.",
+        "Keeps the hook enabled despite skipping local tests; does not use --no-verify, change core.hooksPath, or set hook-specific skip variables.",
         "Reports the hook failure and unresolved fix, preserves branch/worktree state, and does not publish or report the hook test as skipped/passing."
       ]
     },
@@ -496,12 +496,12 @@
         "options",
         "tests"
       ],
-      "prompt": "/review:land-changes --tests=skip --save-defaults",
-      "context": "Canonical destination is git.example/team/widget, target release/stable. Existing saved preferences contain only review_gate=skip. The helper saves tests=skip, preserves review_gate=skip, and leaves deploy=false from built-ins. The repository documents ./test and ./lint separately; lint passes.",
+      "prompt": "$land-changes --skip=tests --save-defaults",
+      "context": "Canonical destination is git.example/team/widget, target release/stable. A valid saved history-skip choice exists. Discovery names separate tests and lint actions; lint passes.",
       "expectations": [
-        "Uses the canonical destination and exact target, saves only the explicit tests setting, and preserves the existing review preference without saving inferred deploy=false.",
-        "Continues this landing with both effective skip modes, keeps policy/scope/non-test validation, and reports that the tests were omitted.",
-        "Reports the saved values/config path, publishes normally, and performs no deployment."
+        "Saves the concrete local tests choice under the canonical destination/target and retains the history preference.",
+        "Runs lint and other required checks, inspects live policy, publishes within scope, and reports tests as skipped.",
+        "Does not save inferred defaults or authorize deployment."
       ]
     },
     {
@@ -511,12 +511,348 @@
         "options",
         "tests"
       ],
-      "prompt": "$land-changes --tests=skip",
+      "prompt": "$land-changes --skip=tests",
       "context": "Scope and historical review are resolved. Live branch policy requires a successful test CI status for the exact landing SHA. That status is pending, and no direct path bypasses it for this actor. Local non-test checks pass; the user has not authorized any server-policy changes.",
       "expectations": [
-        "Keeps the required CI status as an unmet publication requirement; local tests=skip cannot satisfy or remove it.",
+        "Keeps the required CI status as an unmet publication requirement; local skipping local tests cannot satisfy or remove it.",
         "Reports passing local non-test checks and skipped local suites distinctly from pending required CI, preserving the prepared change without publishing or weakening server policy."
       ]
+    },
+    {
+      "id": 37,
+      "name": "workflow-b02",
+      "tags": [
+        "workflow-v2",
+        "B02"
+      ],
+      "prompt": "Change A's requested apply is complete; unrelated change B is ready; bare land.",
+      "context": "Use the concrete conditions and request in the prompt; they override the shared default context. Treat paired variants independently.",
+      "expectations": [
+        "Publish B with zero apply calls. No claim that A's instruction authorized B's apply."
+      ],
+      "evidence": "L056 to L057"
+    },
+    {
+      "id": 38,
+      "name": "workflow-b03",
+      "tags": [
+        "workflow-v2",
+        "B03"
+      ],
+      "prompt": "A was published, its authorized apply remains blocked; prerequisite now available; \"continue\".",
+      "context": "Use the concrete conditions and request in the prompt; they override the shared default context. Treat paired variants independently.",
+      "expectations": [
+        "Verify publication and complete A's apply without a new authorization question or another push."
+      ],
+      "evidence": "L028/L047/L059/L072"
+    },
+    {
+      "id": 39,
+      "name": "workflow-b04",
+      "tags": [
+        "workflow-v2",
+        "B04"
+      ],
+      "prompt": "Valid saved apply preference covers repo, host, and effect; bare land.",
+      "context": "Use the concrete conditions and request in the prompt; they override the shared default context. Treat paired variants independently.",
+      "expectations": [
+        "Apply the published revision once and cite the saved preference. No repeated permission question."
+      ],
+      "evidence": "L078/L079; standing-decision preservation"
+    },
+    {
+      "id": 40,
+      "name": "workflow-b05",
+      "tags": [
+        "workflow-v2",
+        "B05"
+      ],
+      "prompt": "Direct bypass available; \"skip all local validation and hooks, bypass PR and required-check gates, leave CI running without waiting\".",
+      "context": "Use the concrete conditions and request in the prompt; they override the shared default context. Treat paired variants independently. Effective hooks include pre-commit, prepare-commit-msg, post-commit, pre-rebase, and pre-push. The user explicitly skips all of these for this landing. Git supports command-scoped core.hooksPath=/dev/null.",
+      "expectations": [
+        "Publish without local check/hook execution or CI polling; report the exceptions. No workflow suppression, policy edits, signing disable, or force push."
+      ],
+      "evidence": "L074-L083; hook extension"
+    },
+    {
+      "id": 41,
+      "name": "workflow-b06",
+      "tags": [
+        "workflow-v2",
+        "B06"
+      ],
+      "prompt": "Same request as B05; caller lacks bypass capability.",
+      "context": "Use the concrete conditions and request in the prompt; they override the shared default context. Treat paired variants independently.",
+      "expectations": [
+        "No unauthorized push or policy mutation. Report the missing capability and prepare independent work."
+      ],
+      "evidence": "Capability extension"
+    },
+    {
+      "id": 42,
+      "name": "workflow-b10",
+      "tags": [
+        "workflow-v2",
+        "B10"
+      ],
+      "prompt": "Advisory check fails; required checks pass.",
+      "context": "Use the concrete conditions and request in the prompt; they override the shared default context. Treat paired variants independently.",
+      "expectations": [
+        "Publish and report the advisory failure without inventing a blocking gate."
+      ],
+      "evidence": "Optional Bugbot in A05"
+    },
+    {
+      "id": 43,
+      "name": "workflow-b11",
+      "tags": [
+        "workflow-v2",
+        "B11"
+      ],
+      "prompt": "A known blocking test failed; user now skips its execution.",
+      "context": "Use the concrete conditions and request in the prompt; they override the shared default context. Treat paired variants independently. Evaluate a second independent variant where the user additionally says: I accept this known test failure for this unchanged candidate; land it.",
+      "expectations": [
+        "No rerun while skip applies; no publication on the unresolved failure without scoped acceptance. Never label it passed. Paired fixture supplies an explicit acceptance and permits publication."
+      ],
+      "evidence": "L080/L081"
+    },
+    {
+      "id": 44,
+      "name": "workflow-b12",
+      "tags": [
+        "workflow-v2",
+        "B12"
+      ],
+      "prompt": "B11's defect is repaired, fresh local execution remains waived, no independent check gate.",
+      "context": "Use the concrete conditions and request in the prompt; they override the shared default context. Treat paired variants independently.",
+      "expectations": [
+        "Publish only after accounting for the repair; report it as unverified, preserving the historical failed result. No claim of a passing rerun."
+      ],
+      "evidence": "L081"
+    },
+    {
+      "id": 45,
+      "name": "workflow-b13",
+      "tags": [
+        "workflow-v2",
+        "B13"
+      ],
+      "prompt": "Combined lint/test command plus a documented lint-only target; \"skip tests, retain lint\".",
+      "context": "Use the concrete conditions and request in the prompt; they override the shared default context. Treat paired variants independently. Evaluate a second independent variant where the lint-only entrypoint does not exist.",
+      "expectations": [
+        "Run the lint-only target and no test suite. Remove the narrower target in a paired fixture: report coupling rather than running the combined command."
+      ],
+      "evidence": "L078/L079"
+    },
+    {
+      "id": 46,
+      "name": "workflow-b14",
+      "tags": [
+        "workflow-v2",
+        "B14"
+      ],
+      "prompt": "A skipped build is the only producer of the publishable artifact.",
+      "context": "Use the concrete conditions and request in the prompt; they override the shared default context. Treat paired variants independently. Evaluate a second independent variant with an explicitly selected valid existing artifact.",
+      "expectations": [
+        "No publish with a missing artifact and no silently reinstated build. An explicitly selected existing artifact permits continuation."
+      ],
+      "evidence": "Dependency extension"
+    },
+    {
+      "id": 47,
+      "name": "workflow-b16",
+      "tags": [
+        "workflow-v2",
+        "B16"
+      ],
+      "prompt": "Scoped apply request would install unrelated package backlog.",
+      "context": "Use the concrete conditions and request in the prompt; they override the shared default context. Treat paired variants independently.",
+      "expectations": [
+        "No broad apply; use a verified narrower action if available or report the expanded effects while preserving independent landing progress."
+      ],
+      "evidence": "L065"
+    },
+    {
+      "id": 48,
+      "name": "workflow-b17",
+      "tags": [
+        "workflow-v2",
+        "B17"
+      ],
+      "prompt": "Apply exits zero but the native plugin cache has the old version.",
+      "context": "Use the concrete conditions and request in the prompt; they override the shared default context. Treat paired variants independently.",
+      "expectations": [
+        "Report publication/apply results separately; activation remains incomplete. No assertion that exit zero proves the new version active."
+      ],
+      "evidence": "L078"
+    },
+    {
+      "id": 49,
+      "name": "workflow-b18",
+      "tags": [
+        "workflow-v2",
+        "B18"
+      ],
+      "prompt": "Publication triggers production deployment; no covering authorization, or explicit \"do not deploy\".",
+      "context": "Use the concrete conditions and request in the prompt; they override the shared default context. Treat paired variants independently. Evaluate three independent variants: no deployment authorization; explicit do not deploy and no supported suppression mechanism; a standing deployment choice covering this production effect. In the last variant it is the same authorized environment and effect.",
+      "expectations": [
+        "Identify the trigger before mutation; no triggering push. With a covering standing deployment choice, proceed without renewed approval."
+      ],
+      "evidence": "Automatic-effect extension"
+    },
+    {
+      "id": 50,
+      "name": "workflow-b20",
+      "tags": [
+        "workflow-v2",
+        "B20"
+      ],
+      "prompt": "Same as B19, with an authorized unfinished apply.",
+      "context": "Use the concrete conditions and request in the prompt; they override the shared default context. Treat paired variants independently.",
+      "expectations": [
+        "Zero new commits/pushes; complete only the pending apply against the verified revision."
+      ],
+      "evidence": "L047"
+    },
+    {
+      "id": 51,
+      "name": "workflow-b21",
+      "tags": [
+        "workflow-v2",
+        "B21"
+      ],
+      "prompt": "Requested edits are uncommitted on master.",
+      "context": "Use the concrete conditions and request in the prompt; they override the shared default context. Treat paired variants independently.",
+      "expectations": [
+        "Isolate preparation as needed and publish the scoped diff; no refusal solely due to branch name."
+      ],
+      "evidence": "L003/A03"
+    },
+    {
+      "id": 52,
+      "name": "workflow-b22",
+      "tags": [
+        "workflow-v2",
+        "B22"
+      ],
+      "prompt": "Source checkout has another task's dirty tracked and untracked files.",
+      "context": "Use the concrete conditions and request in the prompt; they override the shared default context. Treat paired variants independently.",
+      "expectations": [
+        "Their bytes and relevant refs remain unchanged; the published diff contains only this request."
+      ],
+      "evidence": "L057"
+    },
+    {
+      "id": 53,
+      "name": "workflow-b23",
+      "tags": [
+        "workflow-v2",
+        "B23"
+      ],
+      "prompt": "Existing PR/queue produces integration SHA M from source S, with M != S.",
+      "context": "Use the concrete conditions and request in the prompt; they override the shared default context. Treat paired variants independently.",
+      "expectations": [
+        "Verify S, M, and the intended integrated diff; report M. No false failure caused by SHA inequality or completion at queue submission."
+      ],
+      "evidence": "A04/A05; queue extension"
+    },
+    {
+      "id": 54,
+      "name": "workflow-b24",
+      "tags": [
+        "workflow-v2",
+        "B24"
+      ],
+      "prompt": "Policy lookup suggests direct is available but the server rejects it for requiring a PR.",
+      "context": "Use the concrete conditions and request in the prompt; they override the shared default context. Treat paired variants independently.",
+      "expectations": [
+        "Inspect remote state; no repeated direct retry framed as a race. Resolve/complete the valid PR route within existing scope, reporting any new material decision."
+      ],
+      "evidence": "A05"
+    },
+    {
+      "id": 55,
+      "name": "workflow-b25",
+      "tags": [
+        "workflow-v2",
+        "B25"
+      ],
+      "prompt": "Conversation names a destination different from cwd.",
+      "context": "Use the concrete conditions and request in the prompt; they override the shared default context. Treat paired variants independently.",
+      "expectations": [
+        "Publish only to that destination; evidence and report identify it. Carry scoped decisions through any authorized handoff."
+      ],
+      "evidence": "L001/A04"
+    },
+    {
+      "id": 56,
+      "name": "workflow-b26",
+      "tags": [
+        "workflow-v2",
+        "B26"
+      ],
+      "prompt": "User asks for a draft PR only.",
+      "context": "Use the concrete conditions and request in the prompt; they override the shared default context. Treat paired variants independently.",
+      "expectations": [
+        "Create the requested draft, with zero merge/target-push calls."
+      ],
+      "evidence": "PR-preparation consultation"
+    },
+    {
+      "id": 57,
+      "name": "workflow-b27",
+      "tags": [
+        "workflow-v2",
+        "B27"
+      ],
+      "prompt": "Client expands a skill invocation into its body; paired request merely discusses editing the skill.",
+      "context": "Use the concrete conditions and request in the prompt; they override the shared default context. Treat paired variants independently.",
+      "expectations": [
+        "Execute only the actual landing request; zero landing mutations in the discussion fixture."
+      ],
+      "evidence": "L018-L022"
+    },
+    {
+      "id": 58,
+      "name": "workflow-b28",
+      "tags": [
+        "workflow-v2",
+        "B28"
+      ],
+      "prompt": "Named skill lookup fails but the canonical file is available.",
+      "context": "Use the concrete conditions and request in the prompt; they override the shared default context. Treat paired variants independently. Evaluate another independent variant where no copy of the named skill is available.",
+      "expectations": [
+        "Read the actual skill before choosing its procedure; no guessed PR substitute. With the file absent, report absence."
+      ],
+      "evidence": "A01/A02"
+    },
+    {
+      "id": 59,
+      "name": "workflow-b29",
+      "tags": [
+        "workflow-v2",
+        "B29"
+      ],
+      "prompt": "Unfamiliar native submit tool documented in repo, with checks and an environment action.",
+      "context": "Use the concrete conditions and request in the prompt; they override the shared default context. Treat paired variants independently.",
+      "expectations": [
+        "Read its procedure; expose named controls; follow the selected route without inventing global flags or default deployment authority."
+      ],
+      "evidence": "Extension"
+    },
+    {
+      "id": 60,
+      "name": "workflow-b30",
+      "tags": [
+        "workflow-v2",
+        "B30"
+      ],
+      "prompt": "Inspect fixture includes hooks config, queue rules, chained deployment workflow, and an inaccessible external integration.",
+      "context": "Use the concrete conditions and request in the prompt; they override the shared default context. Treat paired variants independently. The queue policy requires PR plus merge queue, its bypass list is inaccessible with HTTP 403, and the caller has write permission but no verified bypass capability.",
+      "expectations": [
+        "Report each with source, controls, and configured/unknown state; recommend a route. Zero checks, checkout edits, preference writes, or publication."
+      ],
+      "evidence": "Discovery extension"
     }
   ]
 }

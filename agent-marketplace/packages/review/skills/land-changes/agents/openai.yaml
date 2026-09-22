@@ -1,4 +1,4 @@
 interface:
   display_name: "Land Changes"
-  short_description: "Land one commit using repository policy and review history"
-  default_prompt: "Use $land-changes to land this finished branch."
+  short_description: "Discover landing workflows and apply scoped choices"
+  default_prompt: "Use $land-changes to land the requested change."

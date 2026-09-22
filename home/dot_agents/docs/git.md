@@ -25,7 +25,8 @@ guidance takes precedence.
 - Follow the repository's commit style. When it expects conventional commits,
   use an imperative present-tense subject such as `fix: handle empty PR body`.
 - Keep the subject concise; use the body for motivation or non-obvious context.
-- Let hooks run and address their output before retrying.
+- Let hooks run by default and address their output before retrying. Honor an
+  explicit scoped hook override as described below.
 
 ## Pull requests and issues
 
@@ -88,15 +89,19 @@ When a commit hook fails:
 3. Fix the cause and rerun the hook.
 4. Commit only after the hooks pass.
 
-Do not use hook-bypass flags such as `--no-verify`, `--no-hooks`, or
-`--no-pre-commit-hook`. If the failure cannot be fixed within the task, report
-the blocker instead of bypassing it.
+A user instruction or saved standing choice may explicitly skip hooks within its
+recorded scope. Use only the supported command-scoped mechanism for that choice;
+report exactly which hooks were skipped. Skipping test suites alone does not skip
+hooks, signing, or required CI. If a control also skips unrequested hooks, resolve
+that expansion before using it. Retain known failures; a skip never makes them pass.
+Without a covering override, report an unresolved hook failure as a blocker.
 
 ## Completion
 
 - The worktree and branch are the intended ones.
 - The selected files contain only the authorized change.
 - Repository contribution and commit conventions are satisfied.
-- Hooks and requested checks pass with clean output.
+- Required hooks/checks pass or have a recorded scoped exception; skipped and
+  informational outcomes are reported separately.
 - Every posted GitHub comment has exactly one attribution marker.
 - No human reviewer received an unprompted agent reply.

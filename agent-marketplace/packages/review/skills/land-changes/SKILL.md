@@ -1,157 +1,127 @@
 ---
 name: land-changes
-description: Land a finished branch as one commit, or manage repository landing defaults. Use for "land it", "ship this branch", or "push to main". Checks repository policy and recent human-review history before choosing direct landing or the review workflow.
-argument-hint: "[--review-gate=auto|skip|confirm] [--tests=run|skip] [--deploy=true|false] [--save-defaults | --show-defaults | --reset-defaults]"
+description: Land requested changes, inspect available landing workflows, or manage repository landing preferences. Use for "land it", "ship this branch", or "push to main".
+argument-hint: "[--inspect] [--via=<method>] [--skip=<action>] [--bypass=<gate>] [--after=<action>] [defaults controls]"
 ---
 
 # Land changes
 
-Publish the requested change as one commit on the destination's integration
-branch. A landing request authorizes preparation and publication when the route
-below permits it. Editing this skill does not authorize a land.
+Land the requested change using the destination's workflow and the user's choices.
+Inspecting, discussing, or editing this skill authorizes no landing.
 
-## 1. Resolve the destination and options
+## 1. Establish the request and current state
 
-Read the repository's contribution/agent guidance and landing runbook. Discover:
+Resolve the change, source checkout, destination repository, target, and requested
+stopping point from the conversation. For publication, verify publishing identity and effective
+remote destinations; source and destination may differ.
 
-- `WT`: `git rev-parse --show-toplevel` from the current directory; `BRANCH`:
-  its symbolic branch. The worktree list below locates only the target checkout.
-- `REMOTE`: the intended publishing remote. Inspect tracking, push configuration,
-  and effective fetch/push URLs; both must resolve to the same destination repo.
-  Resolve ambiguous, mirrored, or multiple push destinations before mutation.
-- `TARGET`: the user's named branch, otherwise that destination's live default
-  from `git ls-remote --symref "$REMOTE" HEAD` or hosting metadata.
-- The destination's canonical host/repository identity, including SSH aliases.
+Account for the diff, uncommitted edits, dependencies, PR/stack metadata, and any
+already-completed work. Preserve unrelated changes; isolate preparation when it
+would disturb them. Default to one integration commit where the method supports it.
 
-Read [options](references/options.md) and run its helper with this identity and
-`TARGET`. Report effective values and their sources. Show/reset requests finish
-here, without requiring a clean worktree or preparing a landing.
+Read [choices and preferences](references/preferences.md) to resolve invocation
+arguments and scoped saved choices. Show/reset requests finish after preference
+handling. Inspection makes no checkout, check-run, preference, or publication changes.
 
-## 2. Establish the change and local state
+Complete when the intended scope and remaining authorized outcomes are recorded.
+An earlier completed action does not become a request for a new change.
 
-Require an existing remote target, a source branch distinct from `TARGET`, clean
-worktrees (including untracked files), and no Git operation in progress. Finish
-remaining authorized task edits first; preserve edits belonging to other work.
-Find any target checkout by its `branch refs/heads/$TARGET` record in
-`git worktree list --porcelain -z`, preserving paths with spaces. Check that
-checkout too; leave `MAIN` unset if none exists. Record its branch and tip.
+## 2. Discover the workflow
 
-Fetch the target and keep its immutable starting point:
+A method publishes; an action does work; a gate requires evidence before proceeding.
+Use these distinctions internally. The user can name an outcome without classifying it.
 
-```sh
-git -C "$WT" fetch "$REMOTE" "refs/heads/$TARGET"
-BASE="$(git -C "$WT" rev-parse FETCH_HEAD)"
-```
+Account for these evidence sources, following the destination's workflow pointers:
 
-Any local target branch must equal or be an ancestor of `BASE`; investigate
-local-only target commits before proceeding. Inspect `BASE..HEAD`, the full
-proposed diff, and available stack/PR metadata. Account for every change against
-the user's requested scope before rewriting. Branch refs are clues: deleted
-refs can hide dependencies and stale refs can resemble them. Resolve unrequested
-ancestral work through the user or the repo's stack workflow before including it.
+- Contribution/agent guidance and the repository's landing procedure.
+- Applicable task definitions, validation selection, and effective Git/tool hooks.
+- Live host policy, caller capabilities, and existing PR/queue/stack state.
+- Automation triggered by the selected publication, including follow-on workflows,
+  release/deployment jobs, environments, and available external integration metadata.
 
-When `deploy=true`, identify the repository's documented deployment command,
-environment, and source checkout/artifact now. Resolve missing deployment scope
-before publication; finish independent preparation while that decision remains.
+For GitHub, read [host evidence](references/github-review-evidence.md). For an
+unfamiliar mechanism, read native help and official documentation. When guidance
+leaves a convention unsettled, read [review history](references/review-history.md).
+History informs recommendations; it grants no exception or follow-up permission.
 
-## 3. Choose the landing route
+Use source-owned names, qualified where needed. For each relevant choice, identify
+its mechanism, dependencies, controls, affected scope, and completion evidence.
+Account for each evidence source as inspected, inapplicable, or unavailable; keep
+material unknowns and conflicts visible. Live capability evidence cannot grant
+user authorization, and user authorization cannot make a capability available.
 
-Verify the authenticated publishing identity, destination write permission,
-live branch policy, and any open PR for this source and target. On GitHub read
-[GitHub evidence](references/github-review-evidence.md); on other hosts use their
-native equivalents. Policy visibility failures remain unknown.
+For landing, inspect the selected route and resolve dependencies; avoid cataloguing
+unrelated routes. For --inspect, show configured choices, alternatives requiring
+setup, and unknowns, each with its source and controls; recommend a route and stop.
+Discovery is complete when those sources are accounted for and every requested
+outcome has a procedure or an identified blocker.
 
-For `review_gate=auto` or `confirm`, inspect [review history](references/review-history.md).
-For `review_gate=skip`, omit that scan and report the explicit/saved history waiver. The
-waiver covers historical review only; policy, existing PRs, and scope still apply.
+## 3. Resolve the plan
 
-Use the first applicable route:
+Apply explicit choices, applicable standing decisions, and valid saved preferences
+before defaults. Use the selectors in [choices and preferences](references/preferences.md)
+or equivalent natural language. Resolve contradictions by scope and recency.
 
-| Condition | Route |
-| --- | --- |
-| Mandatory PR/review/queue rules with no permitted direct path for this caller | Run the selected checks and report unmet requirements to the user. Stop this procedure with the PR/review work pending. |
-| Direct push needs a protection bypass; this branch has an open PR; repository guidance requires review; or policy remains unknown | Resolve that specific direct-landing decision with the user. |
-| Effective `review_gate=confirm` | Request a direct-landing decision for this invocation, even if history permits it. |
-| Effective `review_gate=skip` | Direct landing is authorized by the history waiver. |
-| Human-review signals, collaborative history, or incomplete review evidence | Resolve a direct-landing exception with the user. |
-| Complete history sample, confirmed solo workflow, no human-review signals, and policy allows direct push without bypass | The landing request authorizes direct publication. |
+Absent an overriding choice:
 
-Reuse explicit decisions that cover this repo, change, and current conditions,
-including standing decisions. An explicit `confirm` requests a fresh decision.
-A generic "land it" does not acknowledge newly discovered review or bypass facts.
+- Follow the established route that satisfies policy without a bypass; resolve a
+  material route ambiguity before publication.
+- Run relevant repository validation and hooks. Their failures block by default;
+  preserve checks explicitly designated informational. Wait for required evidence,
+  not unrelated or informational CI.
+- Run no manual follow-up without an explicit instruction or saved preference
+  whose scope covers this change, host/environment, and effect.
 
-## 4. Prepare the result before asking
+Record each selected action and gate, its run/skip or enforce/bypass decision,
+waiting behavior, and source. For every bypass and follow-up, cite the instruction
+or saved key authorizing its scope. Include automatic publication effects: when
+an effect lacks covering authorization or conflicts with a user constraint, find
+an authorized route avoiding it or resolve that decision before publishing.
+A no-deployment constraint requires evidence that the selected route avoids the
+deployment before publication; publishing and watching for a deploy is no proof.
 
-For an accepted scope on a private branch, complete the preparation below. For
-an active PR, run the selected checks on the current diff and use the decision presentation
-at the end of this step before rewriting its history.
+Skipping execution retains known results; it never turns a failure into a pass.
+Enforce applicable gates unless a scoped exception covers them and the actor has
+a usable bypass. Report informational failures separately. Shared protection edits,
+new privileges, and overwriting history require their own explicit scope.
 
-Record `ORIGINAL` as the source tip, then rebase onto `BASE`. Resolve conflicts
-when the intended result is clear. If a conflict remains ambiguous, save useful
-resolution edits outside the worktree, including conflicted file contents, then
-`git rebase --abort`. Verify the original tip, clean status, and no remaining
-operation. If saving or aborting fails, preserve the current state and report
-recovery paths; do not reset away work.
+Reuse covering decisions and resume unfinished authorized actions without asking
+again. A completed change-specific apply does not authorize another change's apply.
+The resolved plan, including follow-up scope and source, governs execution; revise
+it explicitly when new evidence changes a choice instead of inferring it again.
 
-After rebase, zero remaining commits means the change is already present. For
-multiple commits, squash non-interactively with `git reset --soft "$BASE"` and
-`git commit -F "$MESSAGE_FILE"`. Use the repository's commit style, preserve
-required attribution/trailers, and retain signing and hooks. Require exactly one
-commit whose sole parent is `BASE`.
+Complete when choices are resolved or marked blocking. Continue independent
+preparation while resolving blockers; publication requires the blockers resolved.
 
-For every route, select validation from the changed paths, repository test index,
-task runner, and CI. With `tests=run` (default), run the relevant test suites.
-With `tests=skip`, omit the skill's test-suite runs and identify them in the report;
-use documented non-test components of combined check commands. Keep relevant
-non-test checks, such as lint, type checking, and builds. Git hooks and required
-CI remain in force even when they run tests; this option does not bypass them.
-Always run `git diff --check "$BASE..HEAD"` against the final committed result.
-Fix failures in checks that run, restore the one-commit invariant, and rerun
-affected checks. Record `LAND` after selected checks pass and the worktree is
-clean; `LAND` is the exact SHA proposed for publication.
+## 4. Prepare and publish
 
-Present the destination, scope, check results, and relevant review evidence,
-unknowns, or bypass. Ask only for unresolved publication/deployment decisions,
-identifying this skill's applicable gate; reuse decisions already established.
-Continue after the required decisions are resolved.
+For a direct update, follow [direct Git landing](references/direct-git.md).
+For a PR, queue, stack, or another method, follow its repository/native procedure.
+Preserve attribution and PR/stack relationships. Run selected actions on the final
+candidate and record results. Complete independent preparation before requesting
+any unresolved publication decision.
 
-## 5. Publish the exact commit
+Before publication, verify scope, destination, live policy, and the candidate.
+Every applicable gate must have valid evidence or a usable authorized exception;
+every resulting effect must fit the resolved plan. A target or candidate change
+requires refreshing affected evidence and choices, retaining decisions still in scope.
+Inspect remote state after an uncertain response before retrying publication.
 
-Recheck `LAND`, clean local state, destination URLs/identity, target checkout,
-and live policy immediately before publication. Read the remote target again.
-If it differs from `BASE`, refetch and repeat scope, route, preparation, and
-checks against the new base. Reuse decisions only while their scope still fits.
-Stop after two publication attempts if the target keeps moving.
+Complete publication only when the live destination contains the intended change.
+For direct pushes, verify the prepared commit or its ancestry. For server-created
+commits, verify source revision, integration commit, and intended diff from the
+method's result metadata. PR/queue submission is intermediate unless requested
+as the stopping point. Report a policy rejection as such and resolve a valid route.
 
-```sh
-git -C "$WT" push --no-follow-tags "$REMOTE" "$LAND:refs/heads/$TARGET"
-git -C "$WT" ls-remote --exit-code "$REMOTE" "refs/heads/$TARGET"
-```
+## 5. Finish the remaining work
 
-Use a normal fast-forward push with hooks and protections intact, never a force
-push. Verify the live remote, not just a tracking ref. Equality with `LAND`
-confirms publication; if the remote advanced again, fetch and establish whether
-it contains `LAND`. After a transport error, inspect remote state before retrying:
-the push may have succeeded. Diagnose other rejections from their actual errors;
-permission or policy failures are not concurrent updates.
+Safely synchronize local checkouts. For a selected follow-up, read its repository
+runbook, then verify the authorization source, effect scope, and published revision
+or artifact still match the plan. Execute only the remaining authorized actions.
+Check actual activation when command success alone does not establish the result.
+After an uncertain outcome, inspect state before repeating a side effect.
 
-## 6. Synchronize and report
-
-Only after confirmed publication, recheck that `MAIN`, when present, is clean,
-on `TARGET`, at its recorded tip, and has no Git operation in progress. Then
-`git -C "$MAIN" merge --ff-only "$LAND"`. If that check or update fails, preserve
-the checkout and report the successful remote land separately. With no target
-checkout, leave the local target branch alone and report it as unsynchronized.
-Keep worktrees and branches unless their cleanup was separately requested.
-
-Run the repository's documented read-only post-landing preview. With
-`deploy=true`, execute the agreed deployment after verifying its source matches
-`LAND`; a failed local sync must be resolved before deploying from that checkout.
-The explicit flag or saved default authorizes this documented deployment scope.
-Report deployment failure separately from publication and inspect its state before
-retrying. With `deploy=false`, finish after the preview; applying configuration
-or releasing software requires its own request.
-
-Report the commit and destination, review-gate conclusion, passed/failed/skipped
-checks, observed remote/local state, and deployment outcome when enabled. Skipped
-tests are not passing tests.
+Report publication, local synchronization, validation, CI, and follow-up outcomes
+separately as passed, failed, skipped, pending, or unknown. Name bypassed gates and
+unrequested follow-ups. Keep branches and worktrees unless cleanup was requested.
+Finish when each requested outcome is verified or its exact blocker is reported.

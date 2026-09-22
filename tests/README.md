@@ -206,8 +206,9 @@ validates cached inputs, patches/overlays, skill entrypoints, cache exclusion, p
 versions, invocation pairs, shared root acquisition, independent plugin publication,
 repeatability, and export.
 It also runs the authored land-changes preferences helper's CLI tests: explicit
-and saved options, repository/branch isolation, concurrent writes, and malformed
-configuration. The [land-changes decision scenarios](../agent-marketplace/packages/review/skills/land-changes/evals/README.md)
+and saved named choices, repository/branch isolation, concurrent writes, malformed
+configuration, semantic drift, bounded/dynamic groups, and deliberate v1 migration.
+Disposable Git fixtures cover the direct-push refspec and tag boundary. The [land-changes decision scenarios](../agent-marketplace/packages/review/skills/land-changes/evals/README.md)
 require a separate authenticated model run with expected answers withheld.
 `just test-agent-marketplace` delegates to it. `just test-tools` provisions its frozen APM 0.29.1
 environment, and the project check runs in the required macOS CI lane.

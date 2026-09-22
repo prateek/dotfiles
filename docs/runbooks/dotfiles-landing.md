@@ -2,7 +2,7 @@
 status: current
 doc_type: runbook
 created: 2026-09-07
-updated: 2026-09-07
+updated: 2026-09-22
 related:
   - ../../agent-marketplace/packages/review/skills/land-changes/SKILL.md
   - ../../.agents/skills/agent-skill-management/SKILL.md
@@ -10,53 +10,57 @@ related:
 
 # Dotfiles landing
 
-Use the published [land-changes skill](../../agent-marketplace/packages/review/skills/land-changes/SKILL.md)
-for the Git procedure and review-history gate. Dotfiles normally lands one
-commit directly onto `origin/master`; the canonical checkout is `~/dotfiles`.
-Resolve and verify that checkout by its branch, including clean status, before
-landing. Use the skill's effective review options and inspect live hosting rules.
-Some task-specific workflows, such as fork adoption, request a PR instead.
-
-The skill's `--deploy=true` (or an explicit saved default) selects the chezmoi
-apply procedure below after landing. `--deploy=false` keeps the preview only.
-The generic history waiver does not authorize a GitHub protection bypass.
+Use the published [land-changes skill](../../agent-marketplace/packages/review/skills/land-changes/SKILL.md).
+Dotfiles normally lands one commit directly onto `origin/master`; the canonical
+checkout is `~/dotfiles`. Verify its branch and local state before synchronization.
+Inspect live hosting rules and the actual caller's capabilities. Direct landing
+can require an explicitly authorized bypass; a history waiver does not supply it.
+Task-specific workflows such as fork adoption can select a PR instead.
 
 ## Checks for the diff
 
-Apply the skill's effective `tests` mode to test-suite commands below. With
-`tests=skip`, retain non-test checks and the post-landing preview, and report the
-omitted suites. The option does not disable Git hooks or required CI.
+Read [the tests index](../../tests/README.md#checks-by-changed-area) for applicable
+checks. The `justfile`, effective hooks, and `.github/workflows/` define the current
+commands and triggers. Use those native names as choices; the user may select,
+skip, or bypass individual actions/gates through the skill. Preserve the distinction
+between skipping a local check and satisfying or bypassing a server requirement.
 
-Read [the tests index](../../tests/README.md#checks-by-changed-area) for the
-affected paths and execution lanes. The `justfile` and `.github/workflows/`
-are executable truth. Run whitespace validation against the committed landing
-diff, and `shellcheck -x` for changed shell scripts where appropriate.
+By default run whitespace validation against the committed diff, and `shellcheck -x`
+for changed shell scripts where appropriate. For changed `home/` files, run
+`just test-chezmoi-apply` from the worktree. For marketplace inputs or adapters,
+use [agent-skill-management](../../.agents/skills/agent-skill-management/SKILL.md)
+to select package, consumer, and config checks. Marketplace-only changes can alter
+rendered scripts even without changing a `home/` source file.
 
-For changed `home/` files, run `just test-chezmoi-apply` from the worktree.
-For marketplace inputs or plugin adapters, use
-[agent-skill-management](../../.agents/skills/agent-skill-management/SKILL.md)
-to select package, consumer, and config checks. Marketplace-only changes can
-change rendered chezmoi scripts without changing any `home/` source file.
+## Follow-up effects
 
-## After landing
+A bare landing selects no manual apply. Choose an effect by this runbook name or
+equivalent natural language. Each selected effect records the instruction/saved
+choice that covers its host, source revision, and scope.
 
-Confirm `chezmoi source-path` resolves to `~/dotfiles/home` before previewing
-the apply. If it points elsewhere, surface the mismatch; do not silently change
-the source. Run `chezmoi diff`, map pending effects to the landed source diff,
-and identify unrelated drift separately.
+| Name | Effect and completion evidence |
+| --- | --- |
+| `preview` | Read-only post-landing `chezmoi diff`, including scripts for marketplace changes; report which pending effects belong to the landed change. Default inspection, not apply authorization. |
+| `apply-landed` | Apply only the authorized effects of the landed change on the named host. Verify directly managed entries and any separately affected runtime state. |
+| `apply-full` | Full `chezmoi apply` on the named host after reviewing all pending effects, including unrelated drift covered by this explicit scope. |
+| `activate-plugins` | Materialize/reconcile the landed marketplace and verify artifact receipt, native plugin version, and enabled state. A managed-file diff alone is insufficient. |
 
-For marketplace inputs or plugin adapters, also inspect
-`chezmoi diff --include=scripts` and the relevant rendered scripts. Script 36
-can change after a marketplace-only edit; script 35 owns runtime-root maintenance.
-Map those effects to the materialized marketplace and native client state.
-`~/.agents/plugins` is script-created output with no direct chezmoi source mapping.
+Before preview, confirm `chezmoi source-path` resolves to `~/dotfiles/home`.
+Surface a mismatch rather than changing the source silently. Map pending effects
+to the landed diff and report unrelated drift separately. For marketplace changes,
+inspect `chezmoi diff --include=scripts` and the relevant rendered scripts.
+Script-created `~/.agents/plugins` has no direct chezmoi source mapping.
 
-Apply when requested, including through effective `deploy=true`, from `~/dotfiles`.
-Verify the checkout is clean and at the landed commit, review pending effects,
-and use `chezmoi apply` within the agreed scope. Resolve unrelated drift that
-would expand the apply before executing it. Use `chezmoi verify` for directly
-managed entries. For plugin changes, follow agent-skill-management's scoped
-materialization/reconciliation and artifact/native-state checks. A clean file
-diff or successful `chezmoi verify` does not establish plugin convergence.
+Before applying, verify the source checkout is clean and at the verified revision.
+Use `chezmoi diff` and the scoped dry-run from
+[materialization](../../.agents/skills/agent-skill-management/references/generated-outputs.md)
+when plugin effects are selected. Resolve any expansion beyond the selected scope
+before execution. A command scoped to a target can still run broader hooks.
+If a local sync failed, resolve the source revision before using that checkout.
 
-Report the pending apply and whether it ran. Leave worktree cleanup to Orca.
+Use `chezmoi verify` for directly managed entries. For plugins, follow
+[reconciliation](../../.agents/skills/agent-skill-management/references/plugin-reconcile.md)
+and inspect native state; successful apply alone does not prove activation.
+Resume an unfinished authorized effect without republishing. A completed apply
+for one change does not authorize an apply for the next. Report publication,
+preview, apply, and activation independently. Leave worktree cleanup to Orca.

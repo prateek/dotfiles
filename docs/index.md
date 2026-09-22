@@ -100,6 +100,8 @@ for day-to-day implementation details.
 | [ADR 0029 - Claude Code CLI installs natively](adr/0029-claude-code-native-installer.md) | Accepted; `run_after_06-claude-native.sh` installs the CLI through Anthropic's installer and retires the npm copies, because npm updates rewrite the package tree under running sessions. See [Mise Tool Management](references/mise-tool-management.md) > Claude Code workflow. |
 | [ADR 0030 - Touch ID for sudo](adr/0030-touchid-sudo.md) | [Chezmoi Architecture](references/chezmoi-architecture.md#touch-id-for-sudo); machine flag and owned-file apply hook. |
 
+| [ADR 0031 - Discover landing workflows](adr/0031-discovered-landing-workflows.md) | [Land-changes skill](../agent-marketplace/packages/review/skills/land-changes/SKILL.md) and [dotfiles landing](runbooks/dotfiles-landing.md). |
+
 ## Research
 
 | Doc | Use it for |
@@ -127,6 +129,7 @@ or `superseded_by` frontmatter before using them.
 | --- | --- |
 | [acpx Claude Code Streaming PoC](plans/acpx-claude-streaming-poc-plan.md) | Completed; the relay loop it proved now lives in the acpx skill's [harness lanes](../agent-marketplace/packages/utils-agent/skills/acpx/references/harness-lanes.md), and the packaging follow-up went to [ADR 0028](adr/0028-router-skill-over-vendor-remap.md). |
 | [Portable land-changes](plans/portable-land-changes-plan.md) | Review plugin's [published skill source](../agent-marketplace/packages/review/skills/land-changes/SKILL.md) and [dotfiles landing](runbooks/dotfiles-landing.md). |
+| [Discovered Landing Workflows](plans/land-changes-workflow-plan.md) | Implemented in review 2.0.0; use the [skill](../agent-marketplace/packages/review/skills/land-changes/SKILL.md) and [dotfiles landing](runbooks/dotfiles-landing.md). |
 | [APM Agent Marketplace](plans/apm-agent-marketplace-plan.md) | Completed shared acquisition, just-based apply, native skill invocation, maintenance round trip, and CI verification. Use the [marketplace reference](references/agent-marketplace.md); see the [rollout evidence](research/apm-marketplace-migration-verification.md#rollout-completion). |
 | [Agent Plugin Renderer](plans/agent-plugin-renderer-plan.md) | Replaced by [APM Agent Marketplace](plans/apm-agent-marketplace-plan.md); [current guidance](references/agent-marketplace.md). |
 | [Test Refactoring](plans/test-suite-rebuild-plan.md) | Completed Bats/native runner migration, local and remote CI validation, and scoped apply; [tests index](../tests/README.md) and [ADR 0022](adr/0022-bats-and-zsh-test-support.md). |

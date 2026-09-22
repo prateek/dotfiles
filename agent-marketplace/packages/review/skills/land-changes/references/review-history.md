@@ -1,6 +1,7 @@
 # Review history
 
-Use this procedure for `auto` and `confirm`. Inspect the last `X` first-parent
+Use this procedure when guidance leaves review conventions unsettled, unless
+an explicit choice waives this history scan. Inspect the last `X` first-parent
 commits from the fetched target `BASE`: 20 by default, or the positive count
 specified by the user/repository. Keep the requested count unchanged.
 
@@ -37,4 +38,5 @@ ownership and a single commit author alone are insufficient.
 Report requested/inspected counts and `BASE`, commits with merged-PR associations,
 human-review signals, and unknowns separately, with representative SHAs/links.
 Say "no human-review signals found in N inspected commits" when applicable;
-available records cannot rule out offline review. Use the route in `SKILL.md`.
+available records cannot rule out offline review. Use the entrypoint to resolve the route; historical patterns do not authorize
+policy bypasses or follow-up actions.
