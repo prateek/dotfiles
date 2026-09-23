@@ -121,6 +121,7 @@ for day-to-day implementation details.
 | [macOS Defaults: Sources And Verified Facts](research/macos-defaults-sources.md) | Sources to mine for the next rework of the macOS defaults layer, plus key encodings and Apple Silicon power facts verified on hardware. |
 | [acpx Rewrite Model Bake-Off](research/acpx-rewrite-model-bakeoff.md) | Superseded historical quality experiment; `agptw` now follows the generation/tier policy in [acpx Routing](references/acpx-routing.md). |
 | [Nix Migration Research](research/nix-migration-research.md) | Why the repo stays on chezmoi, what a package-only nix spike would look like, and the work-Mac MDM check that gates nix-darwin. |
+| [Ralph Loop Workflow](research/ralph-loop-workflow.md) | Build log for an unattended plan/implement/review loop that commits and fast-forwards a real branch: what the design has to get right, the blockers an adversarial review caught before first run, and the guardrail that is still too strict. |
 
 ## Historical Records
 
