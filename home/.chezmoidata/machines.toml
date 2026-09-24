@@ -100,12 +100,18 @@ agent_session_wiki = true
 
 # Managed work Mac: no personal apps, no Apple/iOS toolchain; Jamf elevation and
 # the private config overlay.
+# omp is excluded: Cortex XDR's BIOC "SOC - AI Apps BTP Mac" (process_start_978)
+# matches omp on process start and terminates the whole causality group, which is
+# rooted at the terminal's login session, so any apply that reconciles omp plugins
+# (see docs/adr/0020-apply-reconciles-plugin-installs.md) kills the terminal. omp
+# is not an acpx route here either. The binary still installs via mise; only the
+# apply-time plugin reconcile is dropped.
 [machines.type.work]
 groups = ["core", "mac-desktop", "ai-agent-apps", "developer-tools", "work-apps", "forks"]
 touchid_sudo = true
 private_overlay = true
 elevation = "jamf-self-service"
-agent_clis = ["cursor-agent", "claude", "omp"]
+agent_clis = ["cursor-agent", "claude"]
 acpx_routes = ["claude-vertex", "cursor"]
 agent_session_wiki = true
 agent_session_wiki_sparse = true
