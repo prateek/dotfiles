@@ -38,3 +38,6 @@ bin/grmrepo-refresh
 # acpx conventions moved into the utils-agent acpx skill (ADR 0028)
 .agents/docs/acpx.md
 .agents/docs/acpx-harness-lanes.md
+
+# browser CDP convention replaced by the utils-agent browser skill and docs/browser.md
+.agents/docs/browser-cdp.md
