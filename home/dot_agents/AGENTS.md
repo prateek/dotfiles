@@ -33,7 +33,7 @@ Load the matching convention before acting:
 - Linear CLI work: `~/.agents/docs/linear.md`
 - Google Workspace or `gog`: `~/.agents/docs/google-workspace.md`
 - Granola meeting-note access: `~/.agents/docs/granola.md`
-- Browser CDP profile selection: `~/.agents/docs/browser-cdp.md`
+- Browser, web page, or desktop-UI work: `~/.agents/docs/browser.md`
 - Twitter/X or `bird`: `~/.agents/docs/twitter.md`
 - marimo notebooks: `~/.agents/docs/marimo.md`
 - iOS or Apple-platform work: `~/.agents/docs/ios.md`

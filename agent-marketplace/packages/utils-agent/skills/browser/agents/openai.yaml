@@ -1,0 +1,4 @@
+interface:
+  display_name: "Browser"
+  short_description: "Route browser and desktop-UI work by harness"
+  default_prompt: "Use $browser to do this in the browser."

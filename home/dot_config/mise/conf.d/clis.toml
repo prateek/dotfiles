@@ -38,6 +38,7 @@
 "npm:@steipete/bird" = "latest"                            # twitter; see ~/.agents/docs/twitter.md
 "npm:@tobilu/qmd" = "latest"                               # qmd; local wiki and session-history search
 "npm:acpx" = "latest"                                      # acpx CLI; acpx + acpx-cli skills (utils-agent), headless ACP client
+"npm:agent-browser" = "latest"                             # browser skill (utils-agent); terminal page driver
 "npm:agent-slack" = "latest"                               # agent-slack CLI; slack skill (utils-agent), see ~/.agents/docs/slack.md
 "pipx:absurdctl" = "latest"                                # durable-workflow CLI for agent use
 "pipx:obsidian-wiki" = "latest"                            # obsidian-wiki plugin pkg + wiki-agent-sessions repo (sessions-build/query, lint)

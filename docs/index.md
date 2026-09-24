@@ -2,7 +2,7 @@
 status: current
 doc_type: index
 created: 2026-05-12
-updated: 2026-09-22
+updated: 2026-09-23
 related:
   - document-lifecycle.md
   - ../agent-marketplace/packages/core/skills/code-gardening/SKILL.md
@@ -45,6 +45,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | --- | --- |
 | [acpx Skill Packaging](plans/acpx-skill-packaging-plan.md) | Active; the acpx conventions are now a trigger-owning skill next to the vendored `acpx-cli` command surface, the conventions doc and its AGENTS.md pointer are deleted. See [ADR 0028](adr/0028-router-skill-over-vendor-remap.md). Trigger arbitration measured 2026-09-08 (no cross-listing steals; 16/18 after one relabel); nothing open. |
 | [acpx Routing](plans/acpx-routing-plan.md) | Accepted and implemented; model/harness separation and apply-time resolution validated locally. Not yet applied to the host. See [current guidance](references/acpx-routing.md) and [ADR 0032](adr/0032-acpx-model-routing.md). |
+| [Browser Skill](plans/browser-skill-plan.md) | Active; repo changes built, host cleanup pending landing. One `browser` router skill in `utils-agent` replaces `managed-chrome-cdp`, with Orca routing inside Orca (browser-harness for live Chrome) and `agent-browser` elsewhere. |
 | [Agent Session Wiki](plans/agent-session-wiki-plan.md) | Active; hourly launchd archive sync, QMD history index, AgentsView wiring, and daily Claude wiki ingest on m4mini. See [ADR 0017](adr/0017-agent-session-archive.md). |
 | [Restore Wiki Ingestion](plans/wiki-ingest-revisit-plan.md) | Active; the m4mini schedule and Claude Sonnet 5/high configuration are live and passed an end-to-end ingest. |
 | [SSD Layout And Arq Coverage](plans/ssd-arq-layout-plan.md) | Active; Code, Tart, and WinMux storage migrated. Both SSD volumes retained for Code and GhostPepper; Arq selection and restore checks deferred. |
