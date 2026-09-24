@@ -14,6 +14,7 @@ class MachineFeaturesTests(RepoTestCase):
     def test_machine_compositions_and_absent_identity_default(self):
         expected = {
             "ci": {
+                "pin_hostname": False,
                 "touchid_sudo": False,
                 "groups": ["core"], "run_install_scripts": True,
                 "apply_macos_defaults": True, "secrets_enabled": False,
@@ -21,13 +22,15 @@ class MachineFeaturesTests(RepoTestCase):
                 "tls_inspection": False,
             },
             "personal": {
+                "pin_hostname": True,
                 "touchid_sudo": True,
                 "groups": ["core", "mac-desktop", "ai-agent-apps", "codex", "developer-tools", "personal-apps", "forks"],
                 "run_install_scripts": True, "apply_macos_defaults": True,
-                "secrets_enabled": False, "elevation": "none",
+                "secrets_enabled": True, "elevation": "none",
                 "private_overlay": False, "granola_mcp": True, "tls_inspection": False,
             },
             "homelab": {
+                "pin_hostname": True,
                 "touchid_sudo": False,
                 "groups": ["core", "ai-agent-apps", "codex", "developer-tools", "apple-development", "homelab-overlay"],
                 "runner_vm_name": "tartelet-runner", "runner_vm_count": 1,
@@ -35,6 +38,7 @@ class MachineFeaturesTests(RepoTestCase):
                 "tls_inspection": False,
             },
             "work": {
+                "pin_hostname": False,
                 "touchid_sudo": True,
                 "groups": ["core", "mac-desktop", "ai-agent-apps", "developer-tools", "work-apps", "forks"],
                 "private_overlay": True, "elevation": "jamf-self-service", "granola_mcp": False,

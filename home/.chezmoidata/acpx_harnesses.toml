@@ -33,7 +33,8 @@ env = { CLAUDE_CODE_USE_VERTEX = "1" }
 
 [acpx_harnesses.routes.openai]
 harness = "omp"
-providers = ["openai"]
+# openai-codex is omp's ChatGPT-subscription login; openai is an API key.
+providers = ["openai-codex", "openai"]
 families = ["gpt"]
 requires = ["omp"]
 catalog = "omp"

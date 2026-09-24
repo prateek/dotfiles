@@ -1,0 +1,48 @@
+{{- /* Rendered and run by the apply pre-hook (scripts/chezmoi-hooks/plist-hooks.sh)
+       before chezmoi computes any target. A nonzero exit aborts the apply. */ -}}
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- $pin := and $f.run_install_scripts $f.pin_hostname (eq .chezmoi.os "darwin") -}}
+{{- $unarchived := and $f.agent_session_wiki (not (dig "wiki_host_alias" "" $f)) -}}
+{{- if or $pin $unarchived $f.secrets_enabled -}}
+{{ template "script_lib.sh" . }}
+{{- if $pin }}
+{{ template "pin_hostname.sh" . }}
+
+pin_hostname_reconcile {{ .chezmoi.hostname | quote }}
+{{- end }}
+{{- if $unarchived }}
+warn {{ printf "no wiki_host_alias for host '%s' in machines.toml; session archive sync stays off until [machines.host.%s] sets one." .chezmoi.hostname .chezmoi.hostname | quote }}
+{{- end }}
+{{- if $f.secrets_enabled }}
+
+# Secret-backed templates call op through scripts/chezmoi-hooks/op-service-account,
+# which reads this keychain item. Bootstrap (`chezmoi init --apply`, which runs
+# this hook with CHEZMOI_COMMAND=init) fetches a missing token through the
+# operator's own 1Password session when a terminal can answer the unlock prompt;
+# a plain apply only checks.
+if ! security find-generic-password -s op-devland-sa >/dev/null 2>&1; then
+  token_ref={{ dig "secrets" "bootstrap" "op_service_account_token" "" . | quote }}
+  manual='security add-generic-password -U -s op-devland-sa -a "$USER" -w  (or opt out: [data.machines_local] secrets_enabled = false)'
+  if [ "${CHEZMOI_COMMAND:-}" != init ] && [ -n "$token_ref" ]; then
+    die "secrets_enabled is on, but the 1Password service account token is not in the login keychain. Fetch it from 1Password with: chezmoi init --apply  (or store it with: $manual)"
+  fi
+  if [ -z "$token_ref" ] || ! have op || [ ! -t 0 ]; then
+    die "secrets_enabled is on, but the 1Password service account token is not in the login keychain. Store it with: $manual"
+  fi
+  log "1Password service account token missing; reading it from your 1Password account (approve the unlock prompt)."
+  # The Private vault is readable only as the operator, never the service account.
+  token="$(env -u OP_SERVICE_ACCOUNT_TOKEN op read --no-newline "$token_ref")" || die "could not read the service account token from 1Password. Store it with: $manual"
+  case "$token" in
+    ''|*[!A-Za-z0-9_=.-]*) die "the 1Password item did not hold a service account token. Store it with: $manual" ;;
+  esac
+  # security -i reads the command from stdin, which keeps the token out of argv.
+  printf 'add-generic-password -U -s op-devland-sa -a "%s" -w "%s"\n' "$USER" "$token" | security -i >/dev/null
+  unset token
+  security find-generic-password -s op-devland-sa >/dev/null 2>&1 || die "storing the service account token in the keychain failed. Store it with: $manual"
+  log "Stored the 1Password service account token in the login keychain."
+fi
+if ! security find-generic-password -s op-devland-sa -w >/dev/null 2>&1; then
+  die 'the 1Password service account token is in the keychain but unreadable (locked keychain, e.g. over SSH). Run: security unlock-keychain ~/Library/Keychains/login.keychain-db'
+fi
+{{- end }}
+{{- end -}}

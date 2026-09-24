@@ -3,7 +3,7 @@ status: current
 doc_type: reference
 owner: Prateek
 created: 2026-09-02
-updated: 2026-09-05
+updated: 2026-09-23
 related:
   - chezmoi-architecture.md
 status_detail: "Execution order and design rules for chezmoi config hooks, source scripts, init, apply, and modify targets."
@@ -91,8 +91,10 @@ so embedding another file's checksum makes its changes retrigger a script.
 
 The generated config declares `hooks.apply.pre` and `hooks.apply.post` through
 `scripts/chezmoi-hooks/plist-hooks.sh`. Before plist handling, the pre hook
-renders only the host-mount script and reconciles any required code volume.
-That template reads the layered machine facts without computing file targets
+renders and runs the apply preflight (see
+[Host identity and apply preflight](chezmoi-architecture.md#host-identity-and-apply-preflight)),
+then the host-mount script, which reconciles any required code volume.
+These templates read the layered machine facts without computing file targets
 or running modifiers. The mount is ready before the plist guard's recursive
 `chezmoi status` and the parent apply's target computation.
 

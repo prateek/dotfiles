@@ -64,7 +64,8 @@ an empty stub for Codex runtime skills); do not commit source copies under
 - New-machine bootstrap (agent-assisted): if the machine will run AI agents,
   also onboard it into the session archive — add `wiki_host_alias` under its
   `[machines.host.<hostname>]` layer in `home/.chezmoidata/machines.toml`
-  (unique, non-empty), `chezmoi apply`, and after its first successful sync
+  (unique, non-empty; `<hostname>` is the `LocalHostName`, which apply pins
+  as `HostName`), `chezmoi apply`, and after its first successful sync
   add the alias to `health/expected-hosts` in `prateek/wiki-agent-sessions`.
   Full steps: the `agent-session-wiki` skill (utils-agent package).
 

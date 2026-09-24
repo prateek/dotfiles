@@ -18,11 +18,16 @@
 groups = ["core"]
 run_install_scripts = true
 apply_macos_defaults = true
-secrets_enabled = false          # enable per machine via [data].machines_local
+# Secret-backed templates need the 1Password service account token in the
+# login keychain; the apply preflight fails fast when it is missing.
+secrets_enabled = false
 private_overlay = false
 elevation = "none"
 granola_mcp = false
 touchid_sudo = false
+# Pin macOS HostName to <LocalHostName>.local when unset. Unset, the kernel hostname
+# comes from DHCP (often just "Mac"), so the host.<hostname> layer never matches.
+pin_hostname = false
 # Agent CLIs selected for installation/plugin activation. crit's agent_cmd is
 # set only when claude is listed. Empty by default so a machine opts in explicitly.
 agent_clis = []
@@ -67,6 +72,8 @@ groups = ["core"]
 [machines.type.personal]
 groups = ["core", "mac-desktop", "ai-agent-apps", "codex", "developer-tools", "personal-apps", "forks"]
 touchid_sudo = true
+pin_hostname = true
+secrets_enabled = true
 agent_clis = ["claude", "codex", "omp"]
 acpx_routes = ["local", "codex", "claude", "openai", "anthropic", "cerebras", "openrouter"]
 granola_mcp = true
@@ -77,6 +84,7 @@ agent_session_wiki = true
 # full interactive personal desktop surface.
 [machines.type.homelab]
 groups = ["core", "ai-agent-apps", "codex", "developer-tools", "apple-development", "homelab-overlay"]
+pin_hostname = true
 # Non-secret Tartelet runner facts consumed by the managed dk.shape.Tartelet.plist
 # fragment (verified key encodings from Tartelet source; see the runner plan). The
 # secret half (org, App ID, private key, SSH login) is keychain-only and GUI-entered.

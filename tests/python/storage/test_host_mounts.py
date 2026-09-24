@@ -277,6 +277,25 @@ args = ["pre"]
         self.assertFalse((self.target.parent / "result").exists())
         self.assertEqual(self.mutations(), [])
 
+    def test_failed_preflight_blocks_the_mount_and_the_apply(self):
+        command = self.chezmoi_fixture()
+        for name in ("apply-preflight.sh.tmpl", "script_lib.sh", "pin_hostname.sh"):
+            shutil.copy(ROOT / "home/.chezmoitemplates" / name, self.root / "source/.chezmoitemplates")
+        config = self.root / "chezmoi.toml"
+        config.write_text(config.read_text().replace(
+            "[data.machines_local]\n", "[data.machines_local]\nsecrets_enabled = true\n"))
+        security = self.bin / "security"
+        security.write_text("#!/bin/sh\nexit 44\n")
+        security.chmod(0o755)
+        self.state["mounted_at"] = ""
+        (self.root / "state.json").write_text(json.dumps(self.state))
+        result = subprocess.run(command + ["apply"], env=self.env, capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("1Password service account token is not in the login keychain", result.stderr)
+        self.assertFalse((self.root / "modifier-ran").exists())
+        self.assertFalse((self.root / "downstream-ran").exists())
+        self.assertEqual(self.mutations(), [])
+
     def test_apply_reconciles_before_modifiers_and_checks_again_on_next_apply(self):
         command = self.chezmoi_fixture()
         self.state["mounted_at"] = ""

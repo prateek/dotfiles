@@ -41,14 +41,16 @@ dry_run="$(/usr/bin/perl "$mount_renderer" --print-dry-run)"
 [[ "$dry_run" != true ]] || exit 0
 
 if [[ "$mode" == pre && -n "${CHEZMOI_SOURCE_DIR:-}" ]]; then
-  mount_template="$CHEZMOI_SOURCE_DIR/.chezmoitemplates/host-mounts.sh.tmpl"
-  if [[ -f "$mount_template" ]]; then
-    mount_args=(--source "$CHEZMOI_SOURCE_DIR")
-    [[ -z "${CHEZMOI_CONFIG_FILE:-}" ]] || mount_args+=(--config "$CHEZMOI_CONFIG_FILE")
-    [[ -z "${CHEZMOI_DEST_DIR:-}" ]] || mount_args+=(--destination "$CHEZMOI_DEST_DIR")
-    mount_script="$(/usr/bin/perl "$mount_renderer" "${mount_args[@]}" execute-template --file "$mount_template")"
-    [[ -z "$mount_script" ]] || /bin/bash -c "$mount_script" dotfiles-host-mount
-  fi
+  mount_args=(--source "$CHEZMOI_SOURCE_DIR")
+  [[ -z "${CHEZMOI_CONFIG_FILE:-}" ]] || mount_args+=(--config "$CHEZMOI_CONFIG_FILE")
+  [[ -z "${CHEZMOI_DEST_DIR:-}" ]] || mount_args+=(--destination "$CHEZMOI_DEST_DIR")
+  # Preflight fails the apply before chezmoi renders a secret-backed template.
+  for pre_name in apply-preflight host-mounts; do
+    pre_template="$CHEZMOI_SOURCE_DIR/.chezmoitemplates/$pre_name.sh.tmpl"
+    [[ -f "$pre_template" ]] || continue
+    pre_script="$(/usr/bin/perl "$mount_renderer" "${mount_args[@]}" execute-template --file "$pre_template")"
+    [[ -z "$pre_script" ]] || /bin/bash -c "$pre_script" "dotfiles-$pre_name"
+  done
 fi
 
 # Explicit opt-out skips plist handling. Use cases: zsh-fresh-shells.zsh's

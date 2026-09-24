@@ -406,11 +406,13 @@ def main():
         except BlockingIOError:
             raise RoutingError("another acpx routing publication is running") from None
         publish(report, args.config, args.report)
+    routes_by_problem = {}
     for route, problem in report["problems"].items():
-        print(f"acpx: {route}: {problem}", file=sys.stderr)
-    for alias, selected in report["shortcuts"].items():
-        detail = selected.get("error") or f"{selected['route']} / {selected['model']} / {selected['effort']}"
-        print(f"{alias}: {detail}")
+        routes_by_problem.setdefault(problem, []).append(route)
+    for problem, routes in routes_by_problem.items():
+        print(f"acpx: {', '.join(routes)}: {problem}", file=sys.stderr)
+    resolved = sum("error" not in selected for selected in report["shortcuts"].values())
+    print(f"acpx: {resolved}/{len(report['shortcuts'])} shortcuts resolved; details: acpx-routing show")
 
 
 if __name__ == "__main__":

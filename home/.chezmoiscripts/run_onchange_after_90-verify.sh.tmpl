@@ -20,7 +20,7 @@ check_file "$HOME/.zshenv"
 check_file "${ZDOTDIR:-$HOME/.config/zsh}/.zshrc"
 
 if [ {{ (includeTemplate "features.tmpl" . | fromJson).secrets_enabled | quote }} != "true" ]; then
-  log "secrets disabled; store the 1Password service account token in the keychain (see README) and enable [data.machines_local] secrets_enabled = true when needed."
+  log "secrets disabled on this machine; see README to enable them."
 fi
 
 {{- if eq (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "tartelet")) "true" }}
@@ -55,8 +55,12 @@ if wiki_drift="$("${wiki_reconcile[@]}" --check 2>&1)"; then
 else
   log "wiki-agent-sessions clone drifted: ${wiki_drift:-unknown}; run: ${wiki_reconcile[*]}"
 fi
-if launchctl print "gui/$(id -u)/com.prateek.wiki-sessions-sync" >/dev/null 2>&1; then
-  log "ok: hourly sync launch agent loaded (com.prateek.wiki-sessions-sync)"
+if sync_status="$(launchctl print "gui/$(id -u)/com.prateek.wiki-sessions-sync" 2>/dev/null)"; then
+  sync_exit="$(printf '%s\n' "$sync_status" | sed -n 's/^[[:space:]]*last exit code = //p' | head -n 1)"
+  case "$sync_exit" in
+    ''|0|'(never exited)') log "ok: hourly sync launch agent loaded (com.prateek.wiki-sessions-sync)" ;;
+    *) warn "hourly sync launch agent's last run exited $sync_exit; see ${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/wiki-sessions-sync/sync.log." ;;
+  esac
 else
   log "hourly sync launch agent not loaded; recover with: launchctl bootstrap gui/\$(id -u) $HOME/Library/LaunchAgents/com.prateek.wiki-sessions-sync.plist"
 fi

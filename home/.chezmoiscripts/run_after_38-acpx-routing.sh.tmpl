@@ -1,9 +1,7 @@
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- if $f.run_install_scripts -}}
 {{ template "script_lib.sh" . }}
 
-{{- $f := includeTemplate "features.tmpl" . | fromJson }}
-{{- if $f.run_install_scripts }}
 run_timed "resolve acpx model shortcuts" \
   "$HOME/.agents/bin/acpx-routing" refresh
-{{- else }}
-log "acpx catalog resolution disabled with install scripts."
-{{- end }}
+{{- end -}}

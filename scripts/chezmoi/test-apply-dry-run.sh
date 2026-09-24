@@ -38,13 +38,14 @@ run_chezmoi() {
       --config "$tmp_home/.config/chezmoi/chezmoi.toml" \
       --cache "$tmp_home/.cache/chezmoi" \
       --persistent-state "$tmp_home/.local/state/chezmoi/state.boltdb" \
-      --override-data '{"chezmoi":{"hostname":"dotfiles-test-host"}}' \
+      --override-data '{"chezmoi":{"hostname":"dotfiles-test-host"},"machines_local":{"secrets_enabled":false}}' \
       "$@"
 }
 
 # Select the machine type non-interactively (--promptChoice keys on the prompt
-# text). run_install_scripts / apply_macos_defaults / secrets_enabled now resolve
-# from machines.toml per type, so they need no env override here; --dry-run never
-# executes scripts regardless of how those resolve.
+# text). run_install_scripts / apply_macos_defaults resolve from machines.toml per
+# type; --dry-run never executes scripts regardless of how those resolve. Secrets
+# stay off: the isolated HOME has no keychain token, and secret-backed rendering
+# is covered by tests/bats/config/secrets.bats.
 run_chezmoi init --promptDefaults --promptChoice "machine_type=$machine_type" --source "$dotfiles_root" >/dev/null
 run_chezmoi apply --dry-run --refresh-externals=never --source "$dotfiles_root/home" --destination "$tmp_home" >/dev/null

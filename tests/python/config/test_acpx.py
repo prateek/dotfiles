@@ -170,6 +170,20 @@ class AcpxRoutingTests(RepoTestCase):
         self.assertIn("no declared, usable route", report["shortcuts"]["agpt"]["error"])
         self.assertEqual(report["shortcuts"]["agpt"]["argv"][1], "reject")
 
+    def test_refresh_summarizes_shortcuts_and_groups_route_problems(self):
+        self.resolve({
+            "codex": {"models": [{"id": "gpt-5.5", "efforts": ["high"]}]},
+            "local": {"error": "no accessible models"},
+            "cerebras": {"error": "no accessible models"},
+        })
+        result = self.run_cli("refresh")
+        shortcuts = json.loads((self.home / ".acpx/routing.json").read_text())["shortcuts"]
+        resolved = sum("error" not in selected for selected in shortcuts.values())
+        self.assertEqual(result.stdout.decode().splitlines(), [
+            f"acpx: {resolved}/{len(shortcuts)} shortcuts resolved; details: acpx-routing show",
+        ])
+        self.assertIn(b"acpx: local, cerebras: no accessible models\n", result.stderr)
+
     def test_show_validates_resolved_unavailable_and_unknown_shortcuts(self):
         self.resolve({"codex": {"models": [{"id": "gpt-5.5", "efforts": ["high"]}]}})
         self.run_cli("refresh")
@@ -181,6 +195,16 @@ class AcpxRoutingTests(RepoTestCase):
         self.assertIn(b"no effort 1 step(s) above high", result.stderr)
         result = self.command([*argv, "agptxxxx"], expected_status=2)
         self.assertIn(b"unknown shortcut", result.stderr)
+
+    def test_openai_route_accepts_the_chatgpt_subscription_login(self):
+        report = self.resolve({
+            "codex": {"error": "missing dependencies: codex-acp"},
+            "openai": {"models": [{"id": "gpt-5.5", "provider": "openai-codex", "efforts": ["high"]}]},
+        })
+        self.assertEqual(report["shortcuts"]["agpt"]["route"], "openai")
+        self.assertEqual(report["shortcuts"]["agpt"]["argv"], [
+            "omp", "acp", "--provider", "openai-codex", "--model", "gpt-5.5", "--thinking", "high",
+        ])
 
     def test_configuration_does_not_invent_effort_for_nonreasoning_models(self):
         report = self.resolve({"codex": {"models": [{"id": "gpt-5.6-sol", "efforts": []}]}})

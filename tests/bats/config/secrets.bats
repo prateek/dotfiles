@@ -46,6 +46,7 @@ CONFIG
 }
 
 @test "Disabled secret-backed files remain ignored and render empty without contacting 1Password" {
+  data="$("$TEST_PYTHON" -c 'import json,sys; print(json.dumps(json.loads(sys.argv[1]) | {"machines_local":{"secrets_enabled":False}}))' "$data")"
   run -0 --separate-stderr render_template home/.chezmoiignore personal "$data"
   assert_success
   [ -z "$stderr" ]

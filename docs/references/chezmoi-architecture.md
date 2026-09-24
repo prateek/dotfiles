@@ -2,7 +2,7 @@
 status: current
 doc_type: reference
 created: 2026-04-27
-updated: 2026-09-22
+updated: 2026-09-23
 related:
   - ../index.md
   - ../adr/0006-chezmoi-migration-prototype.md
@@ -127,6 +127,36 @@ exceptions go in a host-local `[data].machines_local` block; apply-time runtime
 switches (`DOTFILES_SKIP_*`, etc.) stay separate and are never managed desired
 state. See [ADR 0012](../adr/0012-config-gating-convention.md) for the convention
 and the missing-key / `default`-both-arms gotchas.
+
+## Host identity and apply preflight
+
+`host.<hostname>` keys on `.chezmoi.hostname`, the kernel hostname before its
+first dot. While macOS `HostName` is unset, the kernel hostname comes from
+DHCP or reverse DNS, and many routers answer `Mac`, so no host layer matches.
+Name host layers after `LocalHostName` (the Sharing-pane name).
+
+The apply pre-hook renders `.chezmoitemplates/apply-preflight.sh.tmpl` and runs
+it before chezmoi computes any target; a failure aborts the apply. It:
+
+- pins `HostName` to `<LocalHostName>.local` with administrator access on
+  machines with `pin_hostname` (personal and homelab) when `HostName` is unset.
+  The `.local` suffix keeps `gethostname()` resolvable through Bonjour; a bare
+  name has no DNS entry and breaks tools that resolve their own hostname. An
+  explicit `HostName`, such as one Jamf assigns, is left alone. chezmoi resolved
+  the hostname before the hook ran, so when pinning changes it the hook aborts
+  that apply and asks for a rerun.
+- warns when `agent_session_wiki` is on but no host layer supplies
+  `wiki_host_alias`, because the session-archive sync fails closed without it.
+- ensures the 1Password service account token is readable from the login
+  keychain when `secrets_enabled` is on (personal by default). Only during
+  bootstrap (`chezmoi init --apply`, which runs the hook with
+  `CHEZMOI_COMMAND=init`) and only when a terminal can answer the unlock
+  prompt, a missing token is read with the operator's own `op` session from
+  the `secrets.bootstrap.op_service_account_token` ref (Private vault, which
+  the service account itself cannot read) and stored through `security -i` so
+  it never appears in argv. A plain apply only checks. A missing token outside
+  bootstrap, or a locked keychain (e.g. over SSH), stops the apply with the
+  fix.
 
 ## Touch ID for sudo
 
