@@ -37,6 +37,10 @@ jobs:
 
   macos-dry-run:
     runs-on: macos-latest
+    # Homebrew's mise has no token of its own; unauthenticated GitHub API calls
+    # share a 60/hour limit per runner IP and fail tool installs.
+    env:
+      MISE_GITHUB_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
         with:
