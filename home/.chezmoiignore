@@ -26,6 +26,11 @@
 Library/LaunchAgents/com.prateek.gui-corp-ca.plist
 {{- end }}
 
+{{/* Install the direnv whitelist only where the work monorepo is present. */}}
+{{- if not $f.direnv_trust_monorepo }}
+.config/direnv/direnv.toml
+{{- end }}
+
 {{/* Machine-local credentials, trust databases, and tool state. */}}
 .config/chezmoi
 .config/op

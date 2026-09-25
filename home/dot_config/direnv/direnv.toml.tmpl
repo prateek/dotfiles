@@ -1,0 +1,9 @@
+# Managed by chezmoi. Each prefix ends in `/` because direnv's whitelist is a
+# bare HasPrefix with no path boundary: without it `.../monorepo` would also
+# auto-run a sibling like `.../monorepo-scratch/.envrc`. direnv does not expand
+# `~`.
+[whitelist]
+prefix = [
+  "{{ .chezmoi.homeDir }}/code/github.com/chronosphereio/monorepo/",
+  "{{ .chezmoi.homeDir }}/code/worktrees/monorepo/",
+]
