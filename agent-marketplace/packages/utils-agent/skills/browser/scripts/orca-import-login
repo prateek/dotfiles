@@ -1,0 +1,269 @@
+#!/usr/bin/env python3
+"""Open a page in an Orca tab signed in with a login copied from a named browser.
+
+Creates an imported Orca browser profile, runs Orca's native cookie import from
+the named browser profile, opens the URL in a tab bound to that profile, and
+checks that the tab stays on the requested host. Prints one JSON object with
+the page and profile IDs on success.
+
+Any failure exits nonzero after closing the tab and deleting the profile this
+run created. Cookie values never pass through this process: Orca reads the
+source browser's store itself and returns only counts.
+"""
+
+import argparse
+import json
+import os
+import re
+import socket
+import subprocess
+import sys
+import time
+import uuid
+from urllib.parse import urlsplit
+
+# Orca releases whose runtime exposes browser.profileImportFromBrowser with the
+# request and result shapes used below. Other versions stop before any change.
+TESTED_MIN = (1, 4, 210)
+TESTED_SERIES = (1, 4)
+LOGIN_HOSTS = re.compile(r"(^|\.)(okta\.com|oktapreview\.com|okta-emea\.com)$")
+
+
+class Failure(Exception):
+    pass
+
+
+def log(message):
+    print(f"orca-import-login: {message}", file=sys.stderr)
+
+
+def orca(*args):
+    proc = subprocess.run(
+        ["orca", *args, "--json"], capture_output=True, text=True, check=False
+    )
+    try:
+        reply = json.loads(proc.stdout)
+    except json.JSONDecodeError:
+        raise Failure(
+            f"orca {' '.join(args[:2])} returned no JSON (exit {proc.returncode})"
+        )
+    if proc.returncode != 0 or not reply.get("ok"):
+        error = (reply.get("error") or {}).get("message") or f"exit {proc.returncode}"
+        raise Failure(f"orca {' '.join(args[:2])} failed: {error}")
+    return reply["result"]
+
+
+def check_version():
+    proc = subprocess.run(
+        ["orca", "--version"], capture_output=True, text=True, check=False
+    )
+    match = re.search(r"(\d+)\.(\d+)\.(\d+)", proc.stdout)
+    if not match:
+        raise Failure("could not read the Orca version")
+    version = tuple(int(part) for part in match.groups())
+    if version[:2] != TESTED_SERIES or version < TESTED_MIN:
+        raise Failure(
+            f"Orca {'.'.join(map(str, version))} is outside the tested range "
+            f"{'.'.join(map(str, TESTED_MIN))}-{'.'.join(map(str, TESTED_SERIES))}.x; "
+            "recheck its browser import surface before updating this helper"
+        )
+
+
+def runtime_rpc(method, params, timeout=120):
+    user_data = os.environ.get("ORCA_USER_DATA_PATH") or os.path.expanduser(
+        "~/Library/Application Support/orca"
+    )
+    try:
+        with open(os.path.join(user_data, "orca-runtime.json")) as handle:
+            metadata = json.load(handle)
+        endpoint = next(
+            t["endpoint"] for t in metadata["transports"] if t["kind"] == "unix"
+        )
+        token = metadata["authToken"]
+    except (OSError, ValueError, KeyError, StopIteration):
+        raise Failure("could not read Orca runtime metadata; is the Orca app running?")
+    request_id = str(uuid.uuid4())
+    request = {"id": request_id, "authToken": token, "method": method, "params": params}
+    try:
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as conn:
+            conn.settimeout(timeout)
+            conn.connect(endpoint)
+            conn.sendall((json.dumps(request) + "\n").encode())
+            buffered = b""
+            while True:
+                chunk = conn.recv(65536)
+                if not chunk:
+                    raise Failure(f"Orca runtime closed the connection during {method}")
+                buffered += chunk
+                *lines, buffered = buffered.split(b"\n")
+                for line in lines:
+                    if not line.strip():
+                        continue
+                    try:
+                        frame = json.loads(line)
+                    except json.JSONDecodeError:
+                        raise Failure(f"Orca runtime sent non-JSON during {method}")
+                    if frame.get("_keepalive"):
+                        continue
+                    if frame.get("id") != request_id:
+                        raise Failure(
+                            f"Orca runtime answered {method} with a mismatched id"
+                        )
+                    if not frame.get("ok"):
+                        error = (frame.get("error") or {}).get("message") or "unknown error"
+                        raise Failure(f"{method} failed: {error}")
+                    return frame["result"]
+    except OSError as error:
+        raise Failure(f"Orca runtime socket error during {method}: {error}")
+
+
+def find_source(family, browser_profile):
+    browsers = runtime_rpc("browser.profileDetectBrowsers", None)["browsers"]
+    browser = next((b for b in browsers if b["family"] == family), None)
+    if browser is None:
+        found = ", ".join(b["family"] for b in browsers) or "none"
+        raise Failure(
+            f"Orca cannot import from browser family {family!r}; detected: {found}. "
+            "Sign in to the site in a detected browser, then rerun with that family"
+        )
+    for profile in browser["profiles"]:
+        if browser_profile in (profile["directory"], profile["name"]):
+            return profile["directory"]
+    names = ", ".join(f"{p['directory']} ({p['name']})" for p in browser["profiles"])
+    raise Failure(f"{family} has no profile {browser_profile!r}; profiles: {names}")
+
+
+def import_login(profile_id, family, browser_profile):
+    # TODO(agent): between 2026-10-09 and 2026-10-23, check stablyai/orca
+    # #10584, #10655, #15458, and #17637 and the current Orca source for a
+    # public import command. If one exists, call it instead of this private
+    # runtime method and drop the version gate.
+    result = runtime_rpc(
+        "browser.profileImportFromBrowser",
+        {
+            "profileId": profile_id,
+            "browserFamily": family,
+            "browserProfile": browser_profile,
+            "supportsPartitionSkippedCookies": True,
+        },
+    )
+    if not result.get("ok"):
+        raise Failure(f"import failed: {result.get('reason') or 'no reason given'}")
+    summary = result.get("summary") or {}
+    if summary.get("warning"):
+        log(f"import warning: {summary['warning'].get('code')}")
+    if not summary.get("importedCookies"):
+        raise Failure(f"import copied no cookies from {family} {browser_profile}")
+    return summary
+
+
+def registrable(host):
+    # Best-effort eTLD+1: the last two labels. Not PSL-accurate, so a multi-label
+    # public suffix (co.uk, github.io) collapses to a broader match. That is fine
+    # here: this only widens an exact-host check to accept apex<->www redirects
+    # within one site, and known login hosts are still rejected below.
+    labels = host.split(".")
+    return ".".join(labels[-2:]) if len(labels) >= 2 else host
+
+
+def same_site(host, want_host):
+    return bool(host) and registrable(host) == registrable(want_host)
+
+
+def verify_host(page_id, want_host, timeout):
+    try:
+        orca("wait", "--load", "load", "--page", page_id)
+    except Failure as error:
+        log(f"{error}; checking the page anyway")
+    deadline = time.monotonic() + timeout
+    host = ""
+    while True:
+        origin = orca("snapshot", "--page", page_id).get("origin") or ""
+        host = urlsplit(origin).hostname or ""
+        if host and not LOGIN_HOSTS.search(host) and same_site(host, want_host):
+            return origin
+        if time.monotonic() >= deadline:
+            break
+        time.sleep(1)
+    if LOGIN_HOSTS.search(host):
+        raise Failure(
+            f"the tab stopped at the login page on {host}; the imported session is "
+            "missing or expired. Sign in to the site in the source browser, then rerun"
+        )
+    raise Failure(f"the tab ended on {host or 'no page'} instead of {want_host}")
+
+
+def cleanup(page_id, profile_id):
+    if page_id:
+        try:
+            orca("tab", "close", "--page", page_id)
+        except Failure as error:
+            log(f"left tab {page_id} open: {error}")
+    if profile_id:
+        try:
+            orca("tab", "profile", "delete", "--profile", profile_id)
+        except Failure as error:
+            log(f"left profile {profile_id}: {error}")
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--url", required=True, help="page to open")
+    parser.add_argument(
+        "--browser", required=True, help="source browser family, e.g. chrome"
+    )
+    parser.add_argument(
+        "--browser-profile", default="Default", help="source profile directory or name"
+    )
+    parser.add_argument("--label", default="imported-login", help="Orca profile label")
+    parser.add_argument("--worktree", help="Orca worktree selector for the tab")
+    parser.add_argument(
+        "--verify-timeout",
+        type=float,
+        default=30,
+        help="seconds to wait for the final host",
+    )
+    args = parser.parse_args()
+    want_host = urlsplit(args.url).hostname
+    if not want_host:
+        parser.error(f"--url needs a host: {args.url}")
+
+    profile_id = page_id = None
+    try:
+        check_version()
+        source_profile = find_source(args.browser, args.browser_profile)
+        profile_id = orca(
+            "tab", "profile", "create", "--label", args.label, "--scope", "imported"
+        )["profile"]["id"]
+        summary = import_login(profile_id, args.browser, source_profile)
+        tab_args = ["tab", "create", "--url", args.url, "--profile", profile_id]
+        if args.worktree:
+            tab_args += ["--worktree", args.worktree]
+        page_id = orca(*tab_args)["browserPageId"]
+        origin = verify_host(page_id, want_host, args.verify_timeout)
+    except Failure as error:
+        log(str(error))
+        cleanup(page_id, profile_id)
+        return 1
+    except Exception:
+        # An unexpected error (not one of our Failures) still leaks the tab and
+        # profile this run created. Tear them down, then re-raise with the
+        # original traceback so the surprise stays visible instead of masked.
+        cleanup(page_id, profile_id)
+        raise
+    print(
+        json.dumps(
+            {
+                "browserPageId": page_id,
+                "profileId": profile_id,
+                "origin": origin,
+                "importedCookies": summary.get("importedCookies"),
+                "domains": len(summary.get("domains") or []),
+            }
+        )
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
