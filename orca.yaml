@@ -1,6 +1,8 @@
 # orca.yaml — committed per-repo Orca config for this dotfiles repo.
 # Applies to every Orca worktree of this repo, on every machine (trust-gated
 # once per machine). A sane starting point; extend as worktree needs grow.
+# No defaultTabs: Orca already opens the agent's terminal (or seeds one when
+# no agent launches) and splits setup off it, so a default tab is a third PTY.
 # Recognized keys only: scripts.setup, scripts.archive, issueCommand, defaultTabs.
 scripts:
   # Runs after a worktree is created. Env: $ORCA_WORKTREE_PATH, $ORCA_ROOT_PATH.
@@ -12,5 +14,3 @@ scripts:
   setup: |
     mise trust "$ORCA_WORKTREE_PATH" >/dev/null 2>&1 || true
     mise trust "$ORCA_WORKTREE_PATH/agent-marketplace" >/dev/null 2>&1 || true
-defaultTabs:
-  - title: shell
