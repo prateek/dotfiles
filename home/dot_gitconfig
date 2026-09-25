@@ -23,6 +23,12 @@
 [rerere]
 	enabled = true
 
+[checkout]
+	# Parallelize working-tree checkout across cores. Cuts `git worktree add`
+	# time on large repos (~3x on the monorepo); Orca inherits it because it
+	# shells a plain `git worktree add` with no config overrides.
+	workers = 4
+
 [spice "branchCreate"]
 	prefix = prateek/
 
