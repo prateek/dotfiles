@@ -25,7 +25,8 @@ Load the matching convention before acting:
 
 - Code, config, or durable-doc changes; technical investigation; or code review: `~/.agents/docs/engineering.md`
 - Global CLI installation, tool-version selection, or mise configuration: `~/.agents/docs/mise.md`
-- Git, GitHub, commits, or GitHub reviews: `~/.agents/docs/git.md`
+- Git, GitHub, commits, or before creating, describing, reviewing, or commenting on a pull request: `~/.agents/docs/git.md`
+- Before creating or editing a dashboard, monitor, or notebook, or rolling out a change: `~/.agents/docs/observability.md`
 - Worktree creation, isolation, or Orca repo setup: `~/.agents/docs/worktrees.md`
 - Python or uv work: `~/.agents/docs/python-and-uv.md`
 - Go work: `~/.agents/docs/go.md`

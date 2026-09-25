@@ -43,6 +43,58 @@ GitHub wraps rendered Markdown. Keep prose paragraphs on one line or use one
 sentence per source line; do not hard-wrap them at a column boundary. Use
 Markdown's explicit line-break syntax when a rendered break matters.
 
+### Writing the description
+
+The reader is a senior engineer you respect who has no context on this work
+and little time. Every rule below follows from that.
+
+- Say what the change is trying to achieve and why. Describe how only when the
+  code does not show it.
+- Lead with a summary the reader can check at a glance, then the detail for
+  those who want to dig in.
+- Include only what the review needs. Leave out investigation history, agent
+  narration, and dead ends.
+- Back performance and behavior claims with evidence: numbers, before and
+  after screenshots, and links to traces, dashboards, or the incident that
+  motivated the change.
+- When asked to update a PR, rewrite the title and description from the
+  current diff instead of patching the old text.
+
+## Reviewing pull requests
+
+Terms: the *review verdict* is the top-level body of a review; an *inline
+comment* is attached to a line; a *draft comment* is either, before it is
+posted, including crit comments.
+
+Feedback goes to the same reader as a description: a respected engineer who
+has not seen your investigation.
+
+- Keep the verdict to a brief summary of what you think of the PR and at most
+  one or two asks of the author. Do not retell the inline comments.
+- Add a tl;dr to any comment longer than a paragraph.
+- Ask politely instead of directing, and avoid harsh or judgmental wording.
+- State a fact only after checking it. When in doubt, ask instead of telling.
+- Link factual claims to permalinks or other citations so the author can
+  verify them.
+- Use GitHub suggestion blocks when proposing a concrete code change.
+- Every posted comment carries the attribution footer described in the next
+  section.
+
+### Fresh-reader check
+
+A *fresh reader* is a subagent started with none of this session's context,
+briefed to read as the audience. Before delivering PR feedback anywhere
+(chat, GitHub, or crit), run one:
+
+1. Give it the draft comments, the diff, and the reader description above.
+2. Ask it, as the PR author, which comments help and which do not, why, and
+   what is unclear or unnecessary in each.
+3. Apply its verdicts, then deliver.
+
+Skip the check only when Prateek says to post as is, and say that it was
+skipped. For other text that leaves the session (descriptions, docs, Slack
+messages, handoffs), the check is available on request.
+
 ## GitHub comments on Prateek's behalf
 
 A GitHub comment appears under Prateek's account, so attribution and reply
@@ -104,4 +156,6 @@ Without a covering override, report an unresolved hook failure as a blocker.
 - Required hooks/checks pass or have a recorded scoped exception; skipped and
   informational outcomes are reported separately.
 - Every posted GitHub comment has exactly one attribution marker.
+- PR feedback went through a fresh-reader check, or Prateek waived it and the
+  handoff says so.
 - No human reviewer received an unprompted agent reply.

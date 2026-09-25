@@ -1,0 +1,4 @@
+interface:
+  display_name: "PR Walkthrough"
+  short_description: "Explain a PR or branch to a senior engineer with no context"
+  default_prompt: "Use $pr-walkthrough to walk me through this PR."

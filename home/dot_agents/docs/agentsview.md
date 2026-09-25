@@ -20,6 +20,7 @@ The store is read-only ground truth about past agent behavior. Treat it as evide
 - The live store path is `~/.agentsview/sessions.db`. On a host where `~/.agentsview` is a symlink to another volume, use `$AGENTSVIEW_DATA_DIR/sessions.db`; agentsview refuses to run through the symlink, so invoke it with that variable set (shells export it).
 - Treat the store as **read-only**. Never write to, mutate, or run `agentsview prune` against the live DB while debugging. Work on the `/tmp` copy.
 - Per-agent breakdowns come from joining `tool_calls` / `messages` to `sessions` on `session_id` and grouping by `sessions.agent`.
+- A sync that ends with `sync worker pass reported failed` usually means one session file agentsview cannot decode; the rest landed. Check `~/.agentsview/serve.log` for the offending file and confirm the rows you need before treating the store as incomplete.
 
 ## Orca-launched Codex sessions live outside ~/.codex
 
@@ -122,12 +123,14 @@ sqlite3 -header -column /tmp/av.db "
 
 ### 3) Check whether a convention doc is actually read
 
-Reads of a file show up as `tool_name='Read'` with the path in `input_json`. Example: how many times the git convention doc was read.
+Reads of a file show up as `tool_name='Read'` or as a Bash `cat`/`sed`, with the path in `input_json`, and often in a subagent rather than the top-level session. Count both tools and join child sessions to their parent, or the number comes out several times too low. Example: how many top-level sessions had the git convention doc in context.
 
 ```sh
-sqlite3 /tmp/av.db \
-  "SELECT COUNT(*) FROM tool_calls
-   WHERE tool_name='Read' AND input_json LIKE '%/.agents/docs/git.md%';"
+sqlite3 /tmp/av.db "
+  SELECT COUNT(DISTINCT coalesce(s.parent_session_id, s.id))
+  FROM tool_calls t JOIN sessions s ON s.id = t.session_id
+  WHERE t.tool_name IN ('Read','Bash')
+    AND t.input_json LIKE '%/.agents/docs/git.md%';"
 ```
 
 ### 4) See which skills fire
