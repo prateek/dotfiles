@@ -1,0 +1,127 @@
+#!/usr/bin/env bash
+# Run one acpx invocation where a human can watch it. Inside an Orca terminal
+# the run gets its own split pane beside the caller, titled with the parent
+# session, and waits for a keypress before the pane closes. The full output is
+# also appended to <log>, so the caller relays it exactly as for an inline run.
+# Elsewhere, or with --inline, acpx runs here with its output redirected to
+# <log>.
+#
+# This process blocks until acpx exits and returns its status, so the calling
+# harness's background-task completion stays the backstop. Stopping this
+# process closes the pane, which hangs up acpx.
+set -euo pipefail
+
+usage() {
+  echo "usage: acpx-pane --log <file> [--label <shortcut>] [--inline] -- <acpx args...>" >&2
+  exit 2
+}
+
+log=""
+label="acpx"
+inline=0
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --log) [ "$#" -ge 2 ] || usage; log="$2"; shift 2 ;;
+    --label) [ "$#" -ge 2 ] || usage; label="$2"; shift 2 ;;
+    --inline) inline=1; shift ;;
+    --) shift; break ;;
+    *) usage ;;
+  esac
+done
+[ -n "$log" ] && [ "$#" -gt 0 ] || usage
+
+run_inline() {
+  exec acpx "$@" > "$log" 2>&1
+}
+
+# The pane runner and the inline fallback race for this claim, so a split that
+# reports failure after its pane already started can never run acpx twice.
+claim="$log.claim"
+
+if [ "$inline" = 1 ] || [ -z "${ORCA_TERMINAL_HANDLE:-}" ] || ! command -v orca > /dev/null; then
+  run_inline "$@"
+fi
+
+# Session ids are long; the title keeps the harness name and an id prefix.
+if [ -n "${ACPX_PARENT_SESSION:-}" ]; then
+  parent="$ACPX_PARENT_SESSION" short_parent="$ACPX_PARENT_SESSION"
+elif [ -n "${CLAUDE_CODE_SESSION_ID:-}" ]; then
+  parent="claude $CLAUDE_CODE_SESSION_ID"
+  short_parent="claude $(printf '%.8s' "$CLAUDE_CODE_SESSION_ID")"
+else
+  parent="Orca terminal $ORCA_TERMINAL_HANDLE"
+  short_parent="orca $(printf '%.8s' "${ORCA_TERMINAL_HANDLE#term_}")"
+fi
+parent_title=$(orca terminal show --terminal "$ORCA_TERMINAL_HANDLE" --json 2> /dev/null \
+  | jq -r '.result.terminal.title // empty' 2> /dev/null || true)
+
+exit_file="$log.exit"
+runner="$log.pane.sh"
+rm -f "$exit_file"
+rmdir "$claim" 2> /dev/null || true
+: > "$log"
+
+{
+  echo '#!/usr/bin/env bash'
+  echo 'set -o pipefail'
+  printf 'log=%q exit_file=%q\n' "$log" "$exit_file"
+  printf 'mkdir %q 2> /dev/null || exit 0\n' "$claim"
+  printf 'title=%q parent=%q parent_title=%q\n' "acpx $label ← $short_parent" "$parent" "$parent_title"
+  # shellcheck disable=SC2016
+  cat <<'RUNNER'
+record() { [ -e "$exit_file" ] || { printf '%s\n' "$1" > "$exit_file.tmp" && mv -f "$exit_file.tmp" "$exit_file"; }; }
+trap 'record 129' HUP
+printf '\033]0;%s\007\033[H\033[2J' "$title"
+printf '\033[1;36m━━ %s ━━\033[0m\n' "$title"
+printf 'parent session: %s\n' "$parent"
+[ -z "$parent_title" ] || printf 'parent pane:    %s\n' "$parent_title"
+printf 'log:            %s\n\n' "$log"
+RUNNER
+  printf 'cd %q || exit 1\n' "$PWD"
+  printf 'acpx'
+  printf ' %q' "$@"
+  # shellcheck disable=SC2016
+  printf ' 2>&1 | tee -a "$log"\n'
+  # shellcheck disable=SC2016
+  cat <<'RUNNER'
+rc=$?
+record "$rc"
+printf '\n\033[1;36m━━ acpx exited %s. Press any key to close this pane. ━━\033[0m' "$rc"
+read -rsn1 || true
+RUNNER
+} > "$runner"
+
+split=$(orca terminal split --terminal "$ORCA_TERMINAL_HANDLE" --direction horizontal \
+  --command "exec bash $(printf %q "$runner")" --json 2> /dev/null || true)
+pane=$(printf '%s' "$split" | jq -r '.result.split.handle // empty' 2> /dev/null || true)
+if [ -z "$pane" ]; then
+  if mkdir "$claim" 2> /dev/null; then
+    echo "acpx-pane: orca terminal split failed; running inline" >&2
+    run_inline "$@"
+  fi
+  echo "acpx-pane: orca terminal split reported no pane, but its runner started; waiting on it" >&2
+fi
+echo "pane: ${pane:-unknown}"
+
+trap '[ -z "$pane" ] || orca terminal close --terminal "$pane" --json > /dev/null 2>&1 || true; exit 130' INT TERM
+
+# Only Orca saying the pane is gone counts; a busy or restarting Orca does not.
+pane_state() {
+  orca terminal show --terminal "$pane" --json 2> /dev/null \
+    | jq -r 'if .ok == false then .error.code else (.result.terminal.connected | tostring) end' \
+      2> /dev/null || true
+}
+
+ticks=0
+while [ ! -e "$exit_file" ]; do
+  sleep 1
+  ticks=$((ticks + 1))
+  if [ -n "$pane" ] && [ $((ticks % 15)) = 0 ]; then
+    state=$(pane_state)
+    if { [ "$state" = false ] || [ "$state" = terminal_handle_stale ]; } && [ ! -e "$exit_file" ]; then
+      echo "[error] acpx pane $pane closed before acpx reported an exit status" >> "$log"
+      exit 129
+    fi
+  fi
+done
+exit "$(cat "$exit_file")"

@@ -1,7 +1,7 @@
 ---
 name: acpx
 description: Delegate a task to another coding agent through acpx, in its own process and context. Use when the user names a model shortcut (agpt, pgpt, agptx, pgptx, agptw, aopus, popus, afable, pfable, agemini, pgemini), asks for a second opinion from a different model, or wants work run outside this session and reported back.
-argument-hint: "[-m|--model agptx] [-w|--write] <task> [-- <acpx flags>]"
+argument-hint: "[-m|--model agptx] [-w|--write] [--inline] <task> [-- <acpx flags>]"
 ---
 
 # acpx delegation
@@ -18,6 +18,7 @@ the calling harness.
 | --- | --- |
 | `-m`, `--model <shortcut>` | Shortcut that runs the task. Pick from the job table when absent. |
 | `-w`, `--write` | The delegate may change files. Absent means read-only. |
+| `--inline` | Inside Orca, run in the calling harness instead of a sibling pane. |
 | `-- <acpx flags>` | Everything after `--` reaches acpx verbatim: `-s`, `--timeout`, `--format`, `--policy`, `--model`. |
 
 `-m agptx`, `--model agptx`, and `--model=agptx` are the same. Its value is a
@@ -115,6 +116,30 @@ timeout.
 
 Swap `--format quiet` for a one-line answer nobody needs to watch, or
 `--format json --json-strict` when a script parses the result.
+
+### Inside Orca: a sibling pane
+
+When `ORCA_TERMINAL_HANDLE` is set and `--inline` is absent, every harness
+launches through this skill's [`scripts/acpx-pane`](scripts/acpx-pane) instead of
+the direct or redirected acpx line. It splits a pane beside the caller, titles it
+`acpx <shortcut> ← <parent session>`, prints the parent session and pane, streams
+the run, and holds the pane open until a keypress. It also writes the full output
+to the log, blocks until acpx exits, and returns acpx's status, so the relay and
+audit work unchanged:
+
+```sh
+~/.agents/plugins/plugins/utils-agent/skills/acpx/scripts/acpx-pane --log "$log" --label agpt -- \
+  --format text --suppress-reads --non-interactive-permissions deny \
+  --timeout 600 --prompt-retries 2 \
+  agpt exec -f "/tmp/acpx-$slug.prompt.md"
+```
+
+The pane runs in a fresh login shell in the caller's working directory, so pass
+anything acpx needs as flags or prompt text rather than ad hoc exported
+variables. Claude Code sessions are named by `CLAUDE_CODE_SESSION_ID`; other
+harnesses set `ACPX_PARENT_SESSION` to name theirs, or the pane falls back to the
+caller's Orca terminal handle. Outside Orca, or with `--inline`, the helper runs
+acpx in place with the redirect.
 
 ## Watch, relay, cancel
 

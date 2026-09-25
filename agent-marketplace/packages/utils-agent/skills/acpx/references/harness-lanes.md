@@ -17,6 +17,10 @@ In text output, the final line determines the result:
 
 The final answer is the assistant text immediately before the terminal marker.
 
+Under `acpx-pane`, the Orca pane is the human-visible trail and the log carries
+the same bytes. Harnesses that normally watch a direct run wait for the helper
+to return, then read the log.
+
 ## Claude Code: redirected relay
 
 Claude Code watches the redirected log created by the canonical launch in
@@ -42,7 +46,8 @@ limits can split a marker or leave earlier output unread. Treat the harness
 completion notification as the backstop for a markerless run.
 
 Cancel by stopping the background task or killing only the slug-specific
-process, within the cleanup limits in [SKILL.md](../SKILL.md).
+process, within the cleanup limits in [SKILL.md](../SKILL.md). Under
+`acpx-pane`, stopping the background task closes the pane and hangs up acpx.
 
 When a native first-party monitor is available, use it instead of the relay
 because it wakes on stream output.
