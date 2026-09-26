@@ -159,6 +159,7 @@ taps = [
   { name = "sourcegraph/src-cli" },
   { name = "juxt/allium" },
   { name = "thoughtbot/formulae" },
+  { name = "heartleo/tap" },
 ]
 brews = [
   # Dotfiles, agent, and AI tooling.
@@ -267,6 +268,7 @@ brews = [
   { name = "goaccess" },
 
   # Documents, media, image processing, and OCR.
+  { name = "heartleo/tap/zlib" },
   { name = "asciinema" },
   { name = "fontforge" },
   { name = "gl2ps" },
