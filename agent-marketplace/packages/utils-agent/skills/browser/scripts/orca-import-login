@@ -1,14 +1,9 @@
 #!/usr/bin/env python3
-"""Open a page in an Orca tab signed in with a login copied from a named browser.
+"""Import a named browser profile's login into a new Orca tab.
 
-Creates an imported Orca browser profile, runs Orca's native cookie import from
-the named browser profile, opens the URL in a tab bound to that profile, and
-checks that the tab stays on the requested host. Prints one JSON object with
-the page and profile IDs on success.
-
-Any failure exits nonzero after closing the tab and deleting the profile this
-run created. Cookie values never pass through this process: Orca reads the
-source browser's store itself and returns only counts.
+Return page/profile IDs and import counts after checking the landing host.
+The caller must verify signed-in page state. On failure, attempt cleanup and
+report any remaining resources. Orca handles cookie values internally.
 """
 
 import argparse
@@ -22,8 +17,7 @@ import time
 import uuid
 from urllib.parse import urlsplit
 
-# Orca releases whose runtime exposes browser.profileImportFromBrowser with the
-# request and result shapes used below. Other versions stop before any change.
+# Private import RPC compatibility; reject other versions before mutation.
 TESTED_MIN = (1, 4, 210)
 TESTED_SERIES = (1, 4)
 LOGIN_HOSTS = re.compile(r"(^|\.)(okta\.com|oktapreview\.com|okta-emea\.com)$")
@@ -158,10 +152,8 @@ def import_login(profile_id, family, browser_profile):
 
 
 def registrable(host):
-    # Best-effort eTLD+1: the last two labels. Not PSL-accurate, so a multi-label
-    # public suffix (co.uk, github.io) collapses to a broader match. That is fine
-    # here: this only widens an exact-host check to accept apex<->www redirects
-    # within one site, and known login hosts are still rejected below.
+    # Last-two-label comparison, not a public-suffix or security boundary.
+    # Sibling hosts under co.uk or github.io can pass this landing check.
     labels = host.split(".")
     return ".".join(labels[-2:]) if len(labels) >= 2 else host
 
@@ -246,9 +238,6 @@ def main():
         cleanup(page_id, profile_id)
         return 1
     except Exception:
-        # An unexpected error (not one of our Failures) still leaks the tab and
-        # profile this run created. Tear them down, then re-raise with the
-        # original traceback so the surprise stays visible instead of masked.
         cleanup(page_id, profile_id)
         raise
     print(

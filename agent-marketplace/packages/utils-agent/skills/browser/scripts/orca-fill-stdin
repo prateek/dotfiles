@@ -1,0 +1,163 @@
+#!/usr/bin/env python3
+"""Fill and verify one Orca password field from stdin; leave the form unsubmitted."""
+
+import argparse
+import json
+import os
+from pathlib import Path
+import socket
+import subprocess
+import sys
+import uuid
+from urllib.parse import urlsplit
+
+
+class Failure(Exception):
+    pass
+
+
+def rpc(method, params):
+    root = Path(
+        os.environ.get(
+            "ORCA_USER_DATA_PATH", Path.home() / "Library/Application Support/orca"
+        )
+    )
+    metadata = json.loads((root / "orca-runtime.json").read_text())
+    endpoint = next(
+        t["endpoint"] for t in metadata["transports"] if t["kind"] == "unix"
+    )
+    request_id = str(uuid.uuid4())
+    request = {
+        "id": request_id,
+        "authToken": metadata["authToken"],
+        "method": method,
+        "params": params,
+    }
+    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as conn:
+        conn.settimeout(45)
+        conn.connect(endpoint)
+        conn.sendall((json.dumps(request) + "\n").encode())
+        with conn.makefile("rb") as stream:
+            for line in stream:
+                if len(line) > 1024 * 1024:
+                    raise Failure("oversized runtime reply")
+                frame = json.loads(line)
+                if frame.get("_keepalive"):
+                    continue
+                if frame.get("id") != request_id or frame.get("ok") is not True:
+                    # Runtime errors may include the attempted value or page content.
+                    raise Failure(f"{method} failed; response withheld")
+                return frame["result"]
+    raise Failure("runtime disconnected")
+
+
+def evaluate(page, expression):
+    return json.loads(
+        rpc("browser.eval", {"page": page, "expression": expression})["result"]
+    )
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--page", required=True, help="owned browserPageId")
+    parser.add_argument(
+        "--selector", required=True, help="unique password input CSS selector"
+    )
+    parser.add_argument(
+        "--origin",
+        required=True,
+        help="expected exact origin, e.g. https://example.com",
+    )
+    args = parser.parse_args()
+    marker = "data-orca-fill-" + uuid.uuid4().hex
+    marked = False
+    try:
+        origin = urlsplit(args.origin)
+        if (
+            origin.scheme not in ("https", "http")
+            or not origin.hostname
+            or origin.username
+            or origin.password
+            or origin.path
+            or origin.query
+            or origin.fragment
+        ):
+            raise Failure("--origin must contain only scheme, host, and optional port")
+        if origin.scheme == "http" and origin.hostname not in (
+            "localhost",
+            "127.0.0.1",
+            "::1",
+        ):
+            raise Failure("HTTP is allowed only for local test forms")
+        if any(
+            os.environ.get(key)
+            for key in ("ORCA_PAIRING_CODE", "ORCA_REMOTE_PAIRING", "ORCA_ENVIRONMENT")
+        ):
+            raise Failure("this helper supports only the local macOS runtime")
+        if sys.stdin.isatty():
+            raise Failure("pipe the password on stdin; interactive entry is disabled")
+        value = sys.stdin.buffer.read(4097)
+        if not value or len(value) > 4096:
+            raise Failure("stdin must contain 1 to 4096 UTF-8 bytes")
+        value = value.decode("utf-8")
+        version = subprocess.run(
+            ["orca", "--version"], capture_output=True, text=True, timeout=10
+        )
+        if version.returncode or version.stdout.strip() != "1.4.212":
+            raise Failure("unsupported Orca version; revalidate helper before use")
+        guard = f"location.origin === {json.dumps(args.origin)}"
+        prepared = evaluate(
+            args.page,
+            f"""(() => {{
+          if (!({guard})) return false;
+          const nodes = document.querySelectorAll({json.dumps(args.selector)});
+          if (nodes.length !== 1) return false;
+          const el = nodes[0];
+          if (!(el instanceof HTMLInputElement) || el.type !== 'password' || el.disabled || el.readOnly) return false;
+          el.setAttribute({json.dumps(marker)}, '');
+          return true;
+        }})()""",
+        )
+        if prepared is not True:
+            raise Failure("origin or unique editable password field check failed")
+        marked = True
+        rpc(
+            "browser.fill",
+            {"page": args.page, "element": f"[{marker}]", "value": value},
+        )
+        matched = evaluate(
+            args.page,
+            f"""(() => {{
+          if (!({guard})) return false;
+          const el = document.querySelector('[{marker}]');
+          return !!el && el.value === {json.dumps(value)};
+        }})()""",
+        )
+        if matched is not True:
+            raise Failure(
+                "field did not retain the exact input; no submission attempted"
+            )
+        print(json.dumps({"filled": True, "verified": True, "submitted": False}))
+        return 0
+    except Failure as error:
+        print(f"orca-fill-stdin: {error}", file=sys.stderr)
+        return 1
+    except Exception:
+        print(
+            "orca-fill-stdin: operation failed; details withheld to protect stdin",
+            file=sys.stderr,
+        )
+        return 1
+    finally:
+        if marked:
+            try:
+                evaluate(
+                    args.page,
+                    f"document.querySelector('[{marker}]')?.removeAttribute({json.dumps(marker)}); true",
+                )
+            except Exception:
+                pass
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,86 +1,77 @@
 # Browser identity and login
 
-Choose the identity before the task's first browser command. Isolated is the
-default.
+## Choose an identity
+
+Use isolated state unless Prateek requests an import or live attach. Resolve
+the identity before the first session command; live attach uses his existing
+logins and permissions.
 
 | Identity | Orca | Terminal |
 | --- | --- | --- |
-| Isolated | `orca tab profile create --label <task> --scope isolated --json`, then `orca tab create --url <url> --profile <id> --json` | `agent-browser --session <name>` with a session name unique to this task |
-| Imported | `scripts/orca-import-login`; see [Import source](#import-source) | `agent-browser --profile <Chrome profile name>` |
-| Live attach | [browser-harness](drivers/browser-harness.md); Orca cannot drive Prateek's Chrome | [browser-harness](drivers/browser-harness.md), or Claude in Chrome when Prateek names it; both act inside his running Chrome |
-
-## Import source
-
-Import only from a browser and profile Prateek named. If he has not named one,
-ask.
-
-- Orca: run
-  `~/.agents/plugins/plugins/utils-agent/skills/browser/scripts/orca-import-login
-  --url <url> --browser <family> --browser-profile <directory or name>
-  [--label <task>] [--worktree <selector>]`. It creates an imported profile,
-  copies the named browser profile's login into it, opens the tab, checks the
-  tab stayed on the site, and prints the page and profile IDs. On any failure it
-  deletes what it created. `orca tab profile create --scope imported` by itself
-  creates an empty profile; the import happens only through this script.
-- Orca imports from the browser families it detects on this machine (Chrome,
-  Edge, Arc, Chromium-based browsers such as Brave, Comet, Helium, and Safari);
-  an unknown family's error lists the detected ones. Orca does not detect
-  Prisma Access Browser (`Prisma Browser`, bundle `com.talon-sec.Work`), so
-  its login cannot be imported. Do not decrypt its cookie store by hand either;
-  work in Prisma itself with computer use instead: `orca computer` inside Orca,
-  the [native driver](drivers/native.md) outside it. Signing in through Chrome
-  and importing from Chrome is the fallback.
-- Computer use in Prisma keeps Prateek's focus where it is:
-  - Open a page with `open -g -a "Prisma Browser" <url>`, which loads it
-    without raising the app.
-  - Read with `orca computer get-app-state --app com.talon-sec.Work` and its
-    screenshot, without `--restore-window`. Prisma exposes only its browser
-    chrome (tabs, address bar) to accessibility, so page content comes from
-    the screenshot.
-  - Act by `--element-index` (`click`, `set-value`,
-    `perform-secondary-action`) without `--restore-window`.
-  - `type-text`, `press-key`, `hotkey`, and coordinate clicks act on whatever
-    has focus. Use them only after Prateek agrees to hand over the window, and
-    restore focus to where he left it afterwards.
-- When the script reports a stop at the login page, the source browser's
-  session has expired. Ask Prateek to sign in there, then rerun; leave the
-  login and MFA prompts to him.
-- `agent-browser --profile <name>` copies a named Chrome profile to a
-  temporary directory; `agent-browser profiles` lists the names.
-- For another browser, ask Prateek for the profile directory path. Tell him
-  agent-browser uses a path in place as a persistent profile, so the browser
-  writes to that directory. Pass the path only after he confirms.
+| Isolated | Create an isolated profile and a tab bound to it using the installed Orca guide | Create a named agent-browser session |
+| Imported | Follow [Import source](#import-source) | Use `agent-browser --profile` with the named source below |
+| Live attach | [browser-harness](drivers/browser-harness.md) | [browser-harness](drivers/browser-harness.md), or Claude in Chrome when named |
 
 ## Sessions
 
-Give each terminal task its own session name: a task prefix plus a short
-random part, such as `checkout-k3f9`. Each shell command may run in a new
-shell, where a shell variable is gone, so write the name down and type the
-literal name into every command. If the name is lost,
-`agent-browser session list` shows the active sessions. Reuse an earlier name
-only to resume a login saved under it.
+For terminal work, choose a unique session name such as `checkout-k3f9` and
+pass it literally on every command. Shell variables may disappear between
+tool calls. Recover a lost name with `agent-browser session list`; reuse an
+existing name only to resume that session.
+
+If login will be needed, settle retention before the first command. Reuse
+Prateek's stated preference; ask if it is missing. For a retained agent-browser
+login, pass `--restore` from the first command onward. In 0.38.1, adding it
+later relaunches the browser and loses the current login. Saved state contains
+plaintext cookies and localStorage under `~/.agent-browser` and expires after
+30 days. Apply the shared [cleanup policy](policy.md#ownership) when finished.
+
+## Import source
+
+1. **Source.** Identify the browser and profile Prateek named. Ask for either
+   missing value before importing.
+2. **Import.** Use the selected driver's path:
+   - **Orca:** run [`orca-import-login`](../scripts/orca-import-login) with
+     `--url`, `--browser`, and `--browser-profile`; consult `--help` for optional
+     arguments. Follow the [focus policy](policy.md#focus) before it opens the
+     new tab. Success returns the new page and profile IDs; use those IDs for
+     subsequent commands. A profile created with `--scope imported` alone is
+     empty and does not import a login.
+   - **Terminal / Chrome:** use `agent-browser profiles` to resolve the named
+     profile, then `--profile <name>`. This copies it into a temporary directory.
+   - **Terminal / another browser:** obtain the profile directory and explain
+     that `--profile <path>` writes to it in place. Use it after that write
+     access is authorized.
+3. **Verify.** Inspect a signed-in page element, such as the account menu.
+   The Orca helper checks host suffixes; it does not prove site identity or login.
+   If the page requires login, follow [Login hand-off](#login-hand-off).
+
+Orca's helper reports the browser families it detects. For an unsupported
+source, use its native UI or ask for a supported source. Prisma requires the
+[Prisma Access Browser workflow](drivers/native.md#prisma-access-browser);
+its cookie store is not an import fallback. An expired source login needs a
+fresh sign-in before repeating the import.
 
 ## Login hand-off
 
-When the task needs a login the identity lacks:
+When the chosen identity needs a login:
 
-1. Terminal: before the session's first command, ask Prateek whether to keep
-   the login. To keep it, pass `--restore` on every command from the first
-   one. In agent-browser 0.38.1, adding `--restore` to a running session
-   relaunches its browser and loses the login.
-2. Open the page headed (`agent-browser --headed ...`, or the Orca tab, which
-   is already visible).
-3. Ask Prateek to sign in, and wait for his reply.
-4. Confirm the signed-in state from a page element, such as the account menu;
-   never from cookies.
+1. If credential entry is already authorized, follow the driver's password
+   workflow: [Orca](drivers/orca.md#secrets) or the terminal vault below.
+   Otherwise prepare the page and ask Prateek to sign in. Get the
+   [focus agreement](policy.md#focus) before opening or revealing a headed
+   window; an existing Orca tab is not necessarily visible or focused.
+2. Wait for the requested sign-in or any uncovered MFA, CAPTCHA, consent, or
+   account decision. Reuse decisions already supplied for this task.
+3. Verify a signed-in page element before continuing. Cookie presence and
+   successful command receipts do not establish login success.
 
-## Kept logins and credentials
+## Terminal credential vault
 
-A kept login is saved on close as plaintext cookies and localStorage under
-`~/.agent-browser`, and loads again when a later command uses the same session
-name with `--restore`. agent-browser deletes saved state after 30 days.
-
-When Prateek asks for a reusable credential,
+When Prateek requests a reusable credential, use
 `agent-browser auth save <name> --url <login-url> --username <user>
---password-stdin` stores it in agent-browser's encrypted vault. He supplies
-the password on stdin, and `agent-browser auth login <name>` uses it later.
+--password-stdin`, with the approved secret reader piped directly to stdin.
+It stores the credential in the encrypted vault; `auth login <name>` uses it.
+Verify the signed-in page after login. For Orca, use its
+[password workflow](drivers/orca.md#secrets); the terminal vault route does not
+establish Orca login support.
