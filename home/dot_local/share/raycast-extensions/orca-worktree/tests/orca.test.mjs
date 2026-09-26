@@ -26,9 +26,16 @@ test("parseGitHubRepo rejects non-GitHub hosts", () => {
   assert.equal(parseGitHubRepo("https://gitlab.com/stablyai/orca").ok, false);
 });
 
-test("parseAgentIds reads ids from Orca help text", () => {
-  const help = "  --provider <agent>     Agent id such as codex, claude, or gemini";
-  assert.deepEqual(parseAgentIds(help), ["claude", "codex", "gemini"]);
+test("parseAgentIds reads installed agents, including pi and omp", () => {
+  const output = JSON.stringify({ agents: ["pi", "claude", "omp", "codex", "gemini", "pi"] });
+  assert.deepEqual(parseAgentIds(output), ["claude", "codex", "gemini", "omp", "pi"]);
+});
+
+test("parseAgentIds rejects an invalid discovery response", () => {
+  for (const output of ['{"agents":[null]}', '{"error":"Orca unavailable"}', '{"agents":"claude"}']) {
+    assert.throws(() => parseAgentIds(output), /agent list/);
+  }
+  assert.deepEqual(parseAgentIds('{"agents":[]}'), []);
 });
 
 test("buildOhcArgs omits Orca default agent and includes user options", () => {

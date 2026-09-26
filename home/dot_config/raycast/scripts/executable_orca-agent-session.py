@@ -31,27 +31,9 @@
 #   orca-agent-session --fork --dry-run --json   # print the fork plan only
 #   orca-agent-session --worktree ~/code/worktrees/dotfiles/foo --json
 #
-# Resolution pipeline, most of it through Orca itself so agent CLIs never
-# need to be hardcoded here:
-#   1. focused workspace   `orca worktree ps --json` (public CLI, isActive)
-#   2. focused pane        `orca terminal list --include-visual-layouts` (public CLI)
-#   3. agent detection     terminal.agentStatus + terminal.inspectProcess
-#                          (runtime RPC), with session.tabs.list launchAgent
-#                          as fallback when the foreground is transiently a
-#                          shell
-#   4. session lookup      aiVault.listSessions (runtime RPC), Orca's own
-#                          cross-agent session scanner, filtered to the pane's
-#                          agent + the workspace path, newest first
-#
-# Steps 3-4 use undocumented runtime RPCs over the same unix-socket envelope
-# the `orca` CLI uses (orca-runtime.json). Public alternatives exist for
-# detection but are worse fits: `terminal wait --for tui-idle` blocks and
-# can't distinguish a busy agent from no agent, and `diagnostics memory`'s
-# pane->pid bridge requires walking the process tree against a hand-kept
-# agent-binary list. Provider session IDs have no public surface at all in
-# 1.4.187 (deliberate: the orchestration guide forbids even guessing them).
-# So these four methods are the accepted private dependency; they fail
-# loudly if a future Orca drifts.
+# Session identity uses Orca's private session.tabs.list providerSession
+# metadata and aiVault.listSessions. Without a pane binding, only a unique
+# local session is accepted; timestamps cannot identify a focused conversation.
 
 import argparse
 import json
@@ -70,7 +52,7 @@ ORCA_BUNDLE_ID = "com.stablyai.orca"
 # Orca reports the pane's foreground process; the AI vault keys sessions by
 # agent name. These differ for a handful of agents (from Orca's
 # tui-agent-config detectCmd -> agent key). Unlisted names pass through, and
-# shells mean "no agent process in the foreground".
+# shells and shared interpreters cannot identify an agent on their own.
 VAULT_AGENT_BY_PROCESS = {
     "agent": "cursor",
     "agy": "antigravity",
@@ -83,7 +65,7 @@ VAULT_AGENT_BY_PROCESS = {
     "traecli": "trae",
     "vibe": "mistral-vibe",
 }
-SHELL_PROCESSES = {"zsh", "bash", "fish", "sh", "login", "nu", "tcsh"}
+GENERIC_PROCESSES = {"zsh", "bash", "fish", "sh", "login", "nu", "tcsh", "node", "bun"}
 
 JSON_MODE = False
 
@@ -179,53 +161,13 @@ def focused_worktree():
     return active
 
 
-def candidate_panes(worktree_id):
-    """Terminal panes of the workspace, UI-focused pane first."""
-    result = orca_cli(
-        "terminal", "list", "--worktree", f"id:{worktree_id}", "--include-visual-layouts"
-    )
-    layouts = [
-        l for l in result.get("visualLayouts", []) if l.get("worktreeId") == worktree_id
-    ]
-    ranked = []
-
-    def collect_panes(node, bucket):
-        if not isinstance(node, dict):
-            return
-        if node.get("type") == "terminal" and node.get("handle"):
-            bucket.append(node)
-            return
-        # pane-split nodes hold their two halves under first/second;
-        # children/panes covers group-style containers.
-        for child in [node.get("first"), node.get("second")]:
-            collect_panes(child, bucket)
-        for child in node.get("children") or node.get("panes") or []:
-            collect_panes(child, bucket)
-
-    def walk_group(node):
-        if not isinstance(node, dict) or node.get("type") != "group":
-            return
-        for tab in node.get("tabs", []):
-            panes = []
-            collect_panes(tab.get("panes"), panes)
-            is_active_tab = tab.get("tabId") == node.get("activeTabId")
-            for pane in panes:
-                active_leaf = tab.get("activeLeafId")
-                is_active_pane = bool(pane.get("active")) or (
-                    active_leaf is not None and pane.get("leafId") == active_leaf
-                )
-                # Every pane in the visible tab outranks hidden tabs' panes.
-                rank = (0 if is_active_pane else 1) if is_active_tab else (2 if is_active_pane else 3)
-                ranked.append((rank, pane, is_active_tab and is_active_pane))
-        for child in node.get("children", []):
-            walk_group(child)
-
-    for layout in layouts:
-        walk_group(layout.get("root"))
-    if not ranked:
-        fail("The focused Orca workspace has no terminals")
-    ranked.sort(key=lambda entry: entry[0])
-    return [(pane, focused) for _, pane, focused in ranked]
+def focused_pane(worktree_id):
+    result = rpc("session.tabs.list", {"worktree": worktree_id})
+    pane = next((tab for tab in result.get("tabs", [])
+                 if tab.get("id") == result.get("activeTabId")), None)
+    if not pane or pane.get("type") != "terminal" or not pane.get("terminal"):
+        fail("Focus an Orca agent terminal first")
+    return pane
 
 
 def pane_agent(handle):
@@ -238,32 +180,15 @@ def pane_agent(handle):
     process = (process_result or {}).get("process") or {}
     name = os.path.basename(process.get("foregroundProcess") or "").lower()
     name = name.removesuffix(".exe")
-    if not name or name in SHELL_PROCESSES:
+    if not name or name in GENERIC_PROCESSES:
         return True, None
     return True, VAULT_AGENT_BY_PROCESS.get(name, name)
 
 
-def launch_agent(worktree_id, pane):
-    """Agent identity from the tab's launcher, for when the pane's foreground
-    process is transiently a shell (e.g. the agent is mid-tool-execution).
-    Without this the vault lookup would silently cross agents in workspaces
-    running more than one."""
-    tabs = (rpc("session.tabs.list", {"worktree": worktree_id}, fatal=False) or {}).get("tabs", [])
-    for tab in tabs:
-        if (
-            tab.get("type") == "terminal"
-            and tab.get("parentTabId") == pane.get("tabId")
-            and tab.get("leafId") == pane.get("leafId")
-        ):
-            return tab.get("launchAgent")
-    return None
-
-
-def vault_session(agent, worktree_path):
-    """Newest AI-vault session for the workspace, filtered to agent when known."""
+def vault_session(agent, worktree_path, provider_session):
     sessions = rpc(
         "aiVault.listSessions",
-        {"scopePaths": [worktree_path], "force": True, "limit": 100},
+        {"scopePaths": [worktree_path], "force": True, "unlimited": True},
         timeout=60,
     )["sessions"]
     root = worktree_path.rstrip("/")
@@ -276,14 +201,26 @@ def vault_session(agent, worktree_path):
         s
         for s in sessions
         if not s.get("subagent")
-        and (agent is None or s.get("agent") == agent)
+        and s.get("executionHostId", "local") == "local"
+        and s.get("agent") == agent
         and in_worktree(s)
     ]
+    sid = provider_session.get("id")
+    transcript = provider_session.get("transcriptPath")
+    if sid or transcript:
+        matches = [s for s in matches
+                   if (not sid or s.get("sessionId") == sid)
+                   and (not transcript or s.get("filePath") == transcript)]
+        if len(matches) != 1:
+            fail(f"The focused {agent} session could not be identified in the local vault")
+        return matches[0]
     exact = [s for s in matches if (s.get("cwd") or "").rstrip("/") == root]
     scoped = exact or matches
     if not scoped:
         return None
-    return max(scoped, key=lambda s: s.get("updatedAt") or "")
+    if len(scoped) != 1:
+        fail(f"Orca has not identified the focused {agent} session; {len(scoped)} sessions match")
+    return scoped[0]
 
 
 def agentsview_base_url():
@@ -316,21 +253,15 @@ def agentsview_base_url():
 
 
 def fork_argv(agent, session):
-    """Command to continue a fork of the session in a fresh pane, or None
-    when the agent has no fork semantics. Verified against installed CLI
-    help: claude --fork-session, `codex fork`, pi --fork, droid --fork.
-    cursor-agent and gemini can only resume the same session — spawning a
-    second writer — so they are deliberately unsupported. The permissive
-    flags mirror the yolo/yoloc aliases; spelled out because zsh functions
-    don't resolve in a spawned pane.
-    """
+    """Native forks only: resuming the source would create a second writer."""
     sid = session["sessionId"]
     if agent == "claude":
         return ["claude", "--dangerously-skip-permissions", "--resume", sid, "--fork-session"]
     if agent == "codex":
-        return ["codex", "--dangerously-bypass-approvals-and-sandbox", "fork", sid]
-    if agent == "pi":
-        return ["pi", "--fork", session.get("filePath") or sid]
+        home = session.get("codexHome") or os.path.expanduser("~/.codex")
+        return ["env", f"CODEX_HOME={home}", "codex", "--dangerously-bypass-approvals-and-sandbox", "fork", sid]
+    if agent in {"pi", "omp"}:
+        return [agent, "--fork", session.get("filePath") or sid]
     if agent == "droid":
         return ["droid", "--fork", sid]
     return None
@@ -366,11 +297,20 @@ def main():
     )
     parser.add_argument("--json", action="store_true", help="print JSON; skip gate, copy, and open")
     parser.add_argument("--copy", action="store_true", help="copy the session ID via pbcopy")
+    parser.add_argument("--agent-only", action="store_true", help="identify the focused agent without looking up its session")
+    parser.add_argument("--list-agents", action="store_true", help="list agents detected by the local Orca runtime")
     parser.add_argument("--fork", action="store_true", help="fork the session into a new split instead of revealing it")
     parser.add_argument("--dry-run", action="store_true", help="with --fork: print the plan without splitting")
     parser.add_argument("--worktree", help="workspace path (default: Orca's focused workspace)")
     args = parser.parse_args()
     JSON_MODE = args.json
+
+    if args.list_agents:
+        agents = rpc("preflight.detectAgents", {})
+        if not isinstance(agents, list) or any(not isinstance(agent, str) for agent in agents):
+            fail("Orca returned an invalid agent list")
+        print(json.dumps({"agents": agents}) if args.json else "\n".join(agents))
+        return
 
     hud_mode = not args.json
     if hud_mode and not args.worktree and not frontmost_is_orca():
@@ -385,19 +325,24 @@ def main():
     else:
         active = focused_worktree()
 
-    agent = None
-    chosen = None
-    for pane, focused in candidate_panes(active["worktreeId"]):
-        running, pane_agent_name = pane_agent(pane["handle"])
-        if running:
-            if pane_agent_name is None:
-                pane_agent_name = launch_agent(active["worktreeId"], pane)
-            agent, chosen = pane_agent_name, (pane, focused)
-            break
-    if chosen is None:
-        fail("No agent running in the focused workspace's terminals")
+    pane = focused_pane(active["worktreeId"])
+    running, agent = pane_agent(pane["terminal"])
+    if not running:
+        fail("No agent running in the focused terminal")
+    status = pane.get("agentStatus") or {}
+    reported_agent = status.get("agentType") or pane.get("launchAgent")
+    if agent is None:
+        agent = reported_agent
+    if not agent:
+        fail("Could not identify the agent in the focused terminal")
+    if args.agent_only:
+        print(json.dumps({"agent": agent}) if args.json else agent)
+        return
+    provider_session = status.get("providerSession") or {}
+    if status.get("agentType") != agent:
+        provider_session = {}
 
-    session = vault_session(agent, active["path"])
+    session = vault_session(agent, active["path"], provider_session)
     if session is None:
         fail(f"Agent {agent or '(unknown)'} is running but no session found on disk yet")
 
@@ -421,7 +366,7 @@ def main():
                   if args.json else f"would fork {agent_name} {session_id[:8]}: {command}")
             return
         split = orca_cli(
-            "terminal", "split", "--terminal", chosen[0]["handle"], "--command", command
+            "terminal", "split", "--terminal", pane["terminal"], "--command", command
         )
         new_handle = (split.get("terminal") or split.get("split") or {}).get("handle") if isinstance(split, dict) else None
         if args.json:
@@ -456,8 +401,8 @@ def main():
                 "title": session.get("title"),
                 "cwd": session.get("cwd"),
                 "worktree": active["path"],
-                "terminalTitle": chosen[0].get("title"),
-                "terminalIsFocusedPane": chosen[1],
+                "terminalTitle": pane.get("title"),
+                "terminalIsFocusedPane": True,
                 "filePath": session.get("filePath"),
                 "resumeCommand": session.get("resumeCommand"),
                 "agentsviewUrl": (

@@ -11,7 +11,7 @@
 # (defined in ~/.claude/commands/q.md) lands as its own later turn.
 # Single-line drafts only — Home is line-scoped in the composer, so a
 # multi-line draft would prefix its last line and queue as a plain
-# (absorbed) message. Attended flow; no gating beyond frontmost-app.
+# (absorbed) message. Orca requires a positively identified Claude pane.
 set -euo pipefail
 
 front="$(lsappinfo front)"
@@ -20,6 +20,15 @@ case "$bundle" in
   com.stablyai.orca|com.mitchellh.ghostty) ;;
   *) exit 0 ;;
 esac
+
+if [[ "$bundle" == com.stablyai.orca ]]; then
+  resolver="$HOME/.config/raycast/scripts/orca-agent-session.py"
+  if ! identity="$("$resolver" --json --agent-only)" ||
+      ! printf '%s' "$identity" | python3 -c 'import json, sys; sys.exit(json.load(sys.stdin).get("agent") != "claude")'; then
+    echo 'Queue draft is Claude-only; focus a Claude pane in Orca.' >&2
+    exit 1
+  fi
+fi
 
 # Let Tuna's combo overlay dismiss and focus settle back on the terminal.
 sleep 0.2

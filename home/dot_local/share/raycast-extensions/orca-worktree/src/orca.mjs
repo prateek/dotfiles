@@ -105,29 +105,18 @@ export function parseGitHubRepo(input) {
   return { ok: true, slug: `${owner}/${repo}` };
 }
 
-export function parseAgentIds(helpText) {
-  const found = new Set();
-  const text = String(helpText ?? "");
-
-  for (const match of text.matchAll(/Agent id such as ([^.:\n]+)/gi)) {
-    for (const piece of match[1].split(/,|\bor\b/gi)) {
-      const id = piece.trim();
-      if (/^[a-z][a-z0-9_-]*$/.test(id)) {
-        found.add(id);
-      }
-    }
+export function parseAgentIds(output) {
+  const agents = JSON.parse(output)?.agents;
+  if (!Array.isArray(agents) || agents.some((id) => typeof id !== "string" || !/^[a-z][a-z0-9_-]*$/.test(id))) {
+    throw new Error("Orca returned an invalid agent list.");
   }
-
-  for (const match of text.matchAll(/--(?:agent|provider)\s+([a-z][a-z0-9_-]*)\b/gi)) {
-    found.add(match[1]);
-  }
-
-  return Array.from(found).sort();
+  return Array.from(new Set(agents)).sort();
 }
 
 export async function loadAgentIds() {
-  const help = await execCli("orca", ["automations", "create", "--help"], { timeout: 15000 });
-  return parseAgentIds(help);
+  const helper = join(homedir(), ".config", "raycast", "scripts", "orca-agent-session.py");
+  const output = await execCli(helper, ["--list-agents", "--json"], { timeout: 30000 });
+  return parseAgentIds(output);
 }
 
 export function buildOhcArgs(values, slug) {

@@ -3,6 +3,10 @@
 Local Raycast extension that clones a GitHub repo with `ohc` and starts a new
 Orca worktree. It is a personal, unpublished extension managed by chezmoi.
 
+The agent picker reads Orca's installed-agent detection through the shared
+`~/.config/raycast/scripts/orca-agent-session.py` helper. Orca must be running
+to populate it; if detection fails, the form still offers Orca's default agent.
+
 ## Layout
 
 It lives at `~/.local/share/raycast-extensions/orca-worktree`, **not** under

@@ -2,7 +2,7 @@
 status: current
 doc_type: index
 created: 2026-05-12
-updated: 2026-09-23
+updated: 2026-09-26
 related:
   - document-lifecycle.md
   - ../agent-marketplace/packages/core/skills/code-gardening/SKILL.md
@@ -53,6 +53,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [Decomment Skill](plans/decomment-skill-plan.md) | Active; decomment core skill, trigger-channel fixes, and evals under implementation. |
 | [Justfile Migration](plans/justfile-migration-plan.md) | Accepted and executed; both Makefiles replaced by justfiles, per-file test targets deleted, and selection moved into the runners. See [ADR 0026](adr/0026-just-task-runner.md). |
 | [Orcactl](plans/orcactl-plan.md) | Draft for a separate Go repo/tool; dotfiles integration is future install/skill wiring. |
+| [Orca Shortcut Repair](plans/orca-shortcuts-plan.md) | Source fixes and focused validation complete; activation and attended hotkey checks remain. |
 | [Downstream Fork](plans/downstream-fork-plan.md) | Active; thin assembly-repo forks as daily drivers on the `prateek/forks` fleet monorepo — engine, three-job template, harness, security review, monorepo scaffold, and fleet digest done; dotfiles gardening landed bar the retoken; provisioning + ghost-pepper migration pending Prateek. |
 | [Goku Karabiner Migration](plans/goku-karabiner-migration-plan.md) | Active; Karabiner config now compiles from `karabiner.edn` via goku — on-device pad verification pending. |
 | [Leader Key to Tuna Migration](plans/leader-key-to-tuna-migration-plan.md) | Active; full cutover applied on the migrate-tuna branch (config at `~/.config/tuna`, F18→combo). Remaining: grant Tuna Accessibility, verify shell/URL binds. Leader Key kept as fallback. |

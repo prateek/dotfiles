@@ -11,7 +11,7 @@
 # @raycast.needsConfirmation false
 #
 # Documentation:
-# @raycast.description When Orca is frontmost, fork the agent session in the focused terminal into a new split and continue it there (claude/codex/pi/droid). Bind to ⌥F.
+# @raycast.description When Orca is frontmost, fork the agent session in the focused terminal into a new split and continue it there (claude/codex/pi/omp/droid). Bind to ⌥F.
 # @raycast.author Prateek Rungta
 #
 # Thin entry point: all logic lives in the sibling orca-agent-session.py
