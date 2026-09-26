@@ -171,6 +171,7 @@ brews = [
   { name = "f/mcptools/mcp" },
   { name = "repomix" },
   { name = "eugene1g/safehouse/agent-safehouse" },
+  { name = "steipete/tap/peekaboo" },  # screenshots and UI driving for the browser and peekaboo-vm-app-audit skills
 
   # Source control and repository workflow.
   { name = "git-spice" },

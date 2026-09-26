@@ -3,8 +3,8 @@ status: active
 doc_type: plan
 owner: Prateek
 created: 2026-09-23
-updated: 2026-09-23
-status_detail: "Repo changes implemented on prateek/browser-skill; host cleanup waits for landing and apply."
+updated: 2026-09-26
+status_detail: "Landed and applied on personal-mbp; follow-ups remain open."
 related:
   - ../adr/0028-router-skill-over-vendor-remap.md
   - ../references/agent-marketplace.md
@@ -68,6 +68,8 @@ disagree.
 | `references/drivers/playwright.md` | Cross-browser tests; installed only when a task needs it |
 | `references/drivers/browser-harness.md` | The opt-in live-attach adapter for the user's Chrome |
 | `references/drivers/native.md` | Native UI outside Orca: the harness's Computer Use or Peekaboo |
+| `scripts/orca-import-login` | Imports a named browser profile's login into an Orca profile and opens the tab; fails closed |
+| `scripts/orca-fill-stdin` | Fills an owned password field from stdin, verifies the entry, and never submits |
 
 The skill is authored at
 `agent-marketplace/packages/utils-agent/skills/browser/`. That package is
@@ -94,9 +96,12 @@ not copy Orca's command surface.
 ### Authentication
 
 - Default to an isolated identity.
-- Import only on request. Inside Orca, use
-  `orca tab profile create --scope imported`. Orca copies cookies from Chrome,
-  Edge, Arc, Brave, Comet, or Helium. Outside Orca, follow upstream:
+- Import only on request. Inside Orca, run `scripts/orca-import-login`;
+  `orca tab profile create --scope imported` alone makes an empty profile.
+  Orca imports from Chrome, Edge, Arc, Chromium-based browsers such as Brave,
+  Comet, and Helium, and Safari. It cannot import from Prisma Access Browser;
+  work inside Prisma with computer use and never decrypt its cookies. Outside
+  Orca, follow upstream:
   `agent-browser --profile <Chrome profile name>` copies that profile to a
   temporary directory. A profile path is used in place, so accept one only
   when Prateek gives it explicitly after being told.
@@ -164,8 +169,11 @@ is set.
 - [x] Add `home/dot_agents/docs/browser.md`. Replace the `AGENTS.md` pointer
   and delete `home/dot_agents/docs/browser-cdp.md`.
 - [x] Declare `npm:agent-browser` in mise.
-- [ ] After landing and `chezmoi apply`, install it with `mise install`, then
-  remove the stray installs listed above.
+- [x] After landing and `chezmoi apply`, install it with `mise install`, then
+  remove the stray installs listed above. Two caches stay on purpose:
+  `~/.agent-browser/browsers` holds the Chrome 149 that agent-browser 0.38.1
+  uses, and `~/Library/Caches/ms-playwright` is still linked by
+  `~/code/worktrees/pi-story/story-harness`.
 - [x] Update `docs/index.md`.
 
 ## Validation
@@ -184,6 +192,12 @@ is set.
   - a request to print cookies, which must be refused
   - an Orca browser request, to see whether `browser` or the vendored
     `orca-cli` skill loads first
+  - an Orca login-import request, which must go through `orca-import-login`
+  - a Prisma Access Browser login, which gets computer use and no cookie
+    handling
+  - a browser request in a Claude Code session that lists the built-in
+    `chrome-browser`, `built-in-browser`, and `computer-use` skills, to see
+    whether `browser` still wins
 
 ## Known risks
 
@@ -193,6 +207,10 @@ is set.
   [ADR 0028](../adr/0028-router-skill-over-vendor-remap.md) splits sibling
   triggers by description; this pair is left unsplit until the routing evals
   show whether the listings compete.
+- Claude in Chrome also appears as built-in skills (`chrome-browser`,
+  `built-in-browser`, `computer-use`) in the Claude Code listing, a second
+  route that can win before `browser` loads. `CLAUDE_CODE_ENABLE_CFC=false`
+  may not cover those entries.
 - Inside Orca, typed commands such as `orca snapshot` return page content
   without boundary markers. Only `orca exec` passes agent-browser safety
   flags.
@@ -202,14 +220,21 @@ is set.
 
 ## Follow-ups
 
-- Declare Peekaboo in the package data, or drop it from the native driver.
+- Done 2026-09-26: declared `steipete/tap/peekaboo` in the `developer-tools`
+  group.
 
 - Fix the `design` and `banner-design` HTML-to-PNG export step through a
   package patch that uses the `browser` skill.
-- Remove the stray installs that shadow declared tools: `pi` 0.79.3 over the
-  declared 0.85.1, `qmd`, and the uv `absurdctl` 0.3.0 over mise 0.5.0.
-- Review the Homebrew formulae and casks that are not in the rendered
-  Brewfile.
+- Done 2026-09-24: removed the stray installs that shadowed declared tools:
+  `pi` 0.79.3, `qmd`, and `pi-subagents` from mise node 24.12.0's npm globals,
+  and the uv `absurdctl` 0.3.0. pi reinstalls its packages under
+  `~/.pi/agent/npm`.
+- Homebrew review, 2026-09-26: removed the formulae a declared owner had
+  superseded (`go`, `yarn`, `gemini-cli`, `apm` via mise; `sudo-touchid` via
+  ADR 0030; the `agentsview` formula via its cask) and untapped
+  `microsoft/apm` and `artginzburg/tap`. The remaining undeclared formulae
+  and casks have no repo owner; their triage moved to the machine-janitor
+  handoff.
 - Add an audit check that each mise node install contains only `npm` and
   `corepack`.
 - Add the behavioral routing evals.
