@@ -40,5 +40,5 @@ The service account needs read access to the vault that holds each ref in `home/
 ## Notes
 
 - Source state in `home/` materializes into `$HOME`.
-- Repo-local agent guidance lives in `AGENTS.md`; `CLAUDE.md` points there too. Repo-local skills live in `.agents/skills/`, with `.claude/skills` as the Claude Code adapter. Machine-wide agent guidance and skills are managed under `home/dot_agents/` and materialize to `~/.agents`.
+- Repo-local agent guidance lives in `AGENTS.md`. Repo-local skills live in `.agents/skills/`, with `.claude/skills` as the Claude Code adapter. Machine-wide agent guidance and skills are managed under `home/dot_agents/` and materialize to `~/.agents`.
 - Plans live in `docs/plans/`; references in `docs/references/`; runbooks in `docs/runbooks/`; decisions in `docs/adr/`.

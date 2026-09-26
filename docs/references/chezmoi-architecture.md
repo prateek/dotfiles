@@ -2,7 +2,7 @@
 status: current
 doc_type: reference
 created: 2026-04-27
-updated: 2026-09-23
+updated: 2026-09-26
 related:
   - ../index.md
   - ../adr/0006-chezmoi-migration-prototype.md
@@ -232,11 +232,13 @@ gives it to that `op` process only.
 
 ## Agent Surfaces
 
-- Repo guidance for this checkout stays in root `AGENTS.md`, root `CLAUDE.md`,
-  and repo-local `.agents/`.
+- Repo guidance for this checkout stays in root `AGENTS.md` and repo-local
+  `.agents/`. Claude Code reads the root `AGENTS.md` directly.
 - Machine-wide guidance and skills materialize from `home/dot_agents/`.
 - Claude's machine-wide `CLAUDE.md` is a symlink adapter to
-  `../.agents/AGENTS.md` so shared instructions do not drift.
+  `../.agents/AGENTS.md` so shared instructions do not drift. Keep this adapter:
+  Claude Code's [AGENTS.md discovery](https://code.claude.com/docs/en/memory#when-claude-code-reads-agents-md)
+  does not read files under `.agents/`.
 - Codex machine config materializes from `home/dot_codex/` on machines whose
   groups include the `codex` package group (personal/homelab); elsewhere
   `~/.codex` is ignored.

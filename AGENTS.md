@@ -8,7 +8,7 @@ This is the repo-specific contract for coding agents working in Prateek's dotfil
 - `home/.chezmoidata/`: committed structured data for package groups and machine types, secrets, license targets, and template inputs.
 - `home/.chezmoiscripts/`: idempotent setup run by `chezmoi apply`.
 - `home/.chezmoitemplates/`: shared templates, including Brewfile, macOS defaults, and plist merge helpers.
-- `.agents/`: repo-local agent surface for this checkout. Keep repo-specific `AGENTS.md` and `CLAUDE.md` at the repo root; keep repo-local skills and tool adapters under `.agents/`.
+- `.agents/`: repo-local agent surface for this checkout. Keep repo-specific guidance in root `AGENTS.md`; keep repo-local skills and tool adapters under `.agents/`.
 - `home/dot_agents/`: chezmoi-managed machine agent surface. Machine-wide `AGENTS.md`, docs, and workflow conventions materialize under `~/.agents`.
 - `agent-marketplace/`: portable machine-wide skill publishing project with its own justfile. One root APM manifest, lock, and committed cache serve all plugins; `packages/` holds authored skills, selections, patches, and native metadata, outside the chezmoi source root.
 - `home/dot_claude/`: chezmoi-managed Claude config for this machine. Its `CLAUDE.md` target should symlink to `../.agents/AGENTS.md`.
