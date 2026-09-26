@@ -22,7 +22,7 @@ case "$bundle" in
 esac
 
 if [[ "$bundle" == com.stablyai.orca ]]; then
-  resolver="$HOME/.config/raycast/scripts/orca-agent-session.py"
+  resolver="$HOME/bin/orca-agent-session"
   if ! identity="$("$resolver" --json --agent-only)" ||
       ! printf '%s' "$identity" | python3 -c 'import json, sys; sys.exit(json.load(sys.stdin).get("agent") != "claude")'; then
     echo 'Queue draft is Claude-only; focus a Claude pane in Orca.' >&2
