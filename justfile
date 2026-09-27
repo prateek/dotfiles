@@ -3,7 +3,7 @@ set quiet := true
 
 # agent-marketplace also holds vendored third-party suites, so roots stay explicit.
 python_roots := "tests/config_merge tests/python agent-marketplace/packages/ios/skills/ios-audit/tests"
-node_tests := "home/dot_local/share/raycast-extensions/orca-worktree/tests/*.test.mjs"
+node_tests := "home/dot_local/share/raycast-extensions/orca-worktree/tests/*.test.mjs tests/node/browser-jev/*.test.mjs tests/fixtures/browser-jev/fixture.test.mjs"
 test_bash := env("TEST_BASH", "bash")
 docs_base := env("DOCS_LIFECYCLE_BASE", "HEAD")
 tart_image := env("TART_IMAGE", "ghcr.io/cirruslabs/macos-tahoe-base:latest")
@@ -45,7 +45,7 @@ test-shell *args:
 test-python *args:
     DOTFILES_SKIP_LAUNCHCTL_SYNC=1 {{ mise_env }} python3 -B scripts/tests/python {{ python_roots }} {{ args }}
 
-# Native Node cases, which stay with the extension that owns them.
+# Native Node cases from explicit application and browser-runner roots.
 [group('suite')]
 test-node *args:
     {{ mise_env }} bash scripts/tests/node {{ node_tests }} {{ args }}

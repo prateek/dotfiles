@@ -1,0 +1,23 @@
+#!/usr/bin/env node
+const empty = (reason) => ({ version: 1, status: 'failed', reason, receipts: [], counters: { actions: 0, decisions: 0 } });
+let output;
+let job;
+try {
+  let input = '';
+  process.stdin.setEncoding('utf8');
+  for await (const chunk of process.stdin) {
+    input += chunk;
+    if (Buffer.byteLength(input) > 131072) throw new Error('invalid_job');
+  }
+  job = JSON.parse(input);
+} catch {
+  output = empty('invalid_job');
+}
+if (!output) {
+  try {
+    const { runCli } = await import('./jev/cli.mjs');
+    output = await runCli(job);
+  } catch (error) { output = empty(error.code === 'invalid_job' ? 'invalid_job' : 'execution_failed'); }
+}
+process.stdout.write(`${JSON.stringify(output)}\n`);
+process.exitCode = output.status === 'verified' ? 0 : output.status === 'handoff' ? 2 : 1;

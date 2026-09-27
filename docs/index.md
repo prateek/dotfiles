@@ -49,6 +49,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [acpx Skill Packaging](plans/acpx-skill-packaging-plan.md) | Active; the acpx conventions are now a trigger-owning skill next to the vendored `acpx-cli` command surface, the conventions doc and its AGENTS.md pointer are deleted. See [ADR 0028](adr/0028-router-skill-over-vendor-remap.md). Trigger arbitration measured 2026-09-08 (no cross-listing steals; 16/18 after one relabel); nothing open. |
 | [acpx Routing](plans/acpx-routing-plan.md) | Accepted and implemented; model/harness separation and apply-time resolution validated locally. Not yet applied to the host. See [current guidance](references/acpx-routing.md) and [ADR 0032](adr/0032-acpx-model-routing.md). |
 | [Browser Skill](plans/browser-skill-plan.md) | Active; landed and applied on personal-mbp, follow-ups open. One `browser` router skill in `utils-agent` replaces `managed-chrome-cdp`, with Orca routing inside Orca (browser-harness for live Chrome) and `agent-browser` elsewhere. |
+| [Jev Deterministic Preparation](plans/jev-deterministic-preparation-plan.md) | Active; the separate `browser-jev` skill owns dynamic control discovery and deterministic field execution. Two synthetic Cloudflare trials passed; end-to-end comparison remains open. |
 | [Agent Session Wiki](plans/agent-session-wiki-plan.md) | Active; hourly launchd archive sync, QMD history index, AgentsView wiring, and daily Claude wiki ingest on m4mini. See [ADR 0017](adr/0017-agent-session-archive.md). |
 | [Restore Wiki Ingestion](plans/wiki-ingest-revisit-plan.md) | Active; the m4mini schedule and Claude Sonnet 5/high configuration are live and passed an end-to-end ingest. |
 | [SSD Layout And Arq Coverage](plans/ssd-arq-layout-plan.md) | Active; Code, Tart, and WinMux storage migrated. Both SSD volumes retained for Code and GhostPepper; Arq selection and restore checks deferred. |
@@ -108,11 +109,15 @@ for day-to-day implementation details.
 | [ADR 0030 - Touch ID for sudo](adr/0030-touchid-sudo.md) | [Chezmoi Architecture](references/chezmoi-architecture.md#touch-id-for-sudo); machine flag and owned-file apply hook. |
 | [ADR 0031 - Discover landing workflows](adr/0031-discovered-landing-workflows.md) | [Land-changes skill](../agent-marketplace/packages/review/skills/land-changes/SKILL.md) and [dotfiles landing](runbooks/dotfiles-landing.md). |
 | [ADR 0032 - acpx model routing](adr/0032-acpx-model-routing.md) | [acpx Routing](references/acpx-routing.md); separate model intent, harness capabilities, and machine policy. |
+| [ADR 0033 - Skill-owned Jev browser runner](adr/0033-skill-owned-jev-browser-runner.md) | Placement superseded by ADR 0035; the shared JSON runner and borrowed browser ownership remain. The [completed experiment](plans/jev-browser-runner-plan.md) rejected adoption. |
+| [ADR 0034 - Discover Jev controls in the browser skill](adr/0034-discover-jev-controls-in-the-browser-skill.md) | Accepted; dynamic preparation now lives in the separate experimental skill. The [follow-up experiment](plans/jev-deterministic-preparation-plan.md) remains active. |
+| [ADR 0035 - Separate experimental Jev browser skill](adr/0035-separate-experimental-jev-browser-skill.md) | Accepted; `browser-jev` links to the regular `browser` skill for policy and routing while owning the Jev runner. |
 
 ## Research
 
 | Doc | Use it for |
 | --- | --- |
+| [Jev Browser Integrations](research/jev-browser-integrations.md) | Source assessment, isolated headless Orca proof, the completed development comparison that rejected adoption, and the dynamic follow-up boundary. |
 | [Shell Testing Framework Comparison](research/shell-testing-framework-comparison.md) | Alternatives, decision history, and experiment/upstream evidence supporting the [Test Refactoring plan](plans/test-suite-rebuild-plan.md). |
 | [Agent Skill Management Research](research/agent-skill-management-research.md) | Background on skill context pressure, package layout, and plugin defaults. |
 | [Public Dotfiles Skill Packaging](research/public-dotfiles-skills-packaging-research.md) | Eight public examples of skill source ownership, installation, and updates, with pinned source links and a comparison to this repo. |
@@ -135,6 +140,7 @@ or `superseded_by` frontmatter before using them.
 
 | Doc | Current guidance |
 | --- | --- |
+| [Jev Browser Runner](plans/jev-browser-runner-plan.md) | Completed implementation and development experiment; adoption rejected. Use the [experimental skill reference](../agent-marketplace/packages/utils-agent/skills/browser-jev/references/jev.md) and [research findings](research/jev-browser-integrations.md). |
 | [acpx Claude Code Streaming PoC](plans/acpx-claude-streaming-poc-plan.md) | Completed; the relay loop it proved now lives in the acpx skill's [harness lanes](../agent-marketplace/packages/utils-agent/skills/acpx/references/harness-lanes.md), and the packaging follow-up went to [ADR 0028](adr/0028-router-skill-over-vendor-remap.md). |
 | [Portable land-changes](plans/portable-land-changes-plan.md) | Review plugin's [published skill source](../agent-marketplace/packages/review/skills/land-changes/SKILL.md) and [dotfiles landing](runbooks/dotfiles-landing.md). |
 | [Discovered Landing Workflows](plans/land-changes-workflow-plan.md) | Implemented in review 2.0.0; use the [skill](../agent-marketplace/packages/review/skills/land-changes/SKILL.md) and [dotfiles landing](runbooks/dotfiles-landing.md). |
