@@ -1,7 +1,7 @@
 # Tests
 
 Shell commands and hooks use Bats; structured checks use native Python
-discovery, and the Raycast extension retains Node's native runner. `just` and
+discovery. Raycast and browser-runner checks use Node's native runner. `just` and
 `just test-ci` compose the same local macOS lane; `just --list` is the recipe
 index.
 
@@ -108,7 +108,8 @@ selections fail.
 Every migrated shell harness has been retired. Raycast build hooks, macOS
 defaults, secret-backed files, and retired-package cleanup participate in
 ordinary Bats discovery. `just test-node` discovers the Raycast extension's
-source-owned `tests/*.test.mjs` with Node 24.12.0. Its TAP reporter requires a
+source-owned `tests/*.test.mjs`, `tests/node/browser-jev/*.test.mjs`, and
+`tests/fixtures/browser-jev/fixture.test.mjs` with Node 24.12.0. Its TAP reporter requires a
 passing registered test: Node's automatic success for an empty file does not
 count. Empty, skipped-only, missing-file, and failing selections are checked
 through Bats.
@@ -217,6 +218,24 @@ require a separate authenticated model run with expected answers withheld.
 `just test-agent-marketplace` delegates to it. `just test-tools` provisions its frozen APM 0.29.1
 environment, and the project check runs in the required macOS CI lane.
 
+The Jev browser runner's offline suite lives in `tests/node/browser-jev/` and
+runs with `just test-node`. It checks provider and runner contracts at external
+HTTP/process boundaries using synthetic inputs, plus benchmark receipt
+validation and reporting. The local fixture server in
+`tests/fixtures/browser-jev/` keeps an independent result and effect ledger;
+its `fixture.test.mjs` runs in the same suite.
+Offline cases must not invoke an installed browser, read live credentials, or
+spend model tokens.
+
+Real Orca/Jev trials are a separate host/network lane requiring a task-owned
+page, the selected driver version, and the authorized Cloudflare credential.
+Use the [experimental skill reference](../agent-marketplace/packages/utils-agent/skills/browser-jev/references/jev.md)
+for current execution requirements, the [fixture guide](fixtures/browser-jev/README.md)
+for independent checks, and the [receipt evaluator](../scripts/eval/browser-jev.mjs)
+for paired development and holdout reporting. Report those results separately
+from offline tests and exported-plugin checks; neither proves a live browser
+task or a speed improvement.
+
 Consumer changes use `just test-python -p test_packages.py`, covering explicit policy,
 artifact materialization/rollback, repository tool resolution when called from
 outside the checkout, legacy-source ownership, and native CLI
@@ -283,7 +302,7 @@ Run `ghc`/`ohc` URL handling tests:
 just test-shell tests/bats/programs/github-checkout.bats
 ```
 
-Run Raycast Orca worktree extension core tests:
+Run Raycast Orca worktree and offline Jev browser-runner tests:
 
 ```sh
 just test-node
@@ -337,7 +356,7 @@ BATS_TAGS=host just test-shell tests/bats/config/kanata.bats
 just test-python -p test_brewfile.py                 # one file
 just test-python -k moom                             # one plist scenario
 just test-python -k Plist                            # the whole plist suite
-just test-node                                       # the Raycast extension
+just test-node                                       # Raycast and offline browser-runner cases
 ```
 
 `-p` selects files and `-k` selects test ids; both span every root, and a
