@@ -2,7 +2,7 @@
 
 Use this after the first working build and again after proof media is wired in.
 
-If `/Users/prateek/.agents/skills/ui-ux-pro-max/SKILL.md` exists, use that as the broader design review source. This file is the portable subset for repo-driven guideline sites, so the skill still works when that local skill is missing.
+If the `ui-ux-pro-max` skill (the `design` plugin) is available, use it as the broader design review source. This file is the portable subset for repo-driven guideline sites, so the skill still works when that local skill is missing.
 
 ## Review Order
 

@@ -7,26 +7,6 @@ export ZSHCONFIG="${ZSHCONFIG:-${ZDOTDIR:-${XDG_CONFIG_HOME:-$HOME/.config}/zsh}
 # Allow `#` comments in interactive shells.
 setopt interactivecomments
 
-# Globs: keep zsh's strict default (`nomatch`) so typos fail fast.
-#
-# Why: Unmatched patterns like `rm *.tmp` should error if there are no matches,
-# rather than silently passing a literal `*.tmp` or expanding to nothing.
-#
-# Risk: This can feel "not bash-like" and can be annoying when you intentionally
-# want a glob to be optional or you want to pass a literal pattern through.
-#
-# Idiomatic escape hatch: use zsh's `(N)` qualifier for optional globs, e.g.
-#   ls *.log(N)
-# or
-#   for f in ~/.config/*.json(N); do ...; done
-#
-# Reconsider switching away from `nomatch` if you routinely run commands with
-# globs where "no files is fine" and you keep hitting `no matches found`.
-# Alternatives:
-# - `unsetopt nomatch`  (bash-like: unmatched globs stay literal)
-# - `setopt nullglob`   (unmatched globs disappear; can be risky globally)
-setopt nomatch
-
 ZSH_INIT="${ZSHCONFIG}/init.sh"
 if [[ -s "${ZSH_INIT}" ]]; then
     source "${ZSH_INIT}"

@@ -18,8 +18,8 @@ Important: Generated skills are **not** first-class Codex MCP tools (`mcp__...`)
 
 ## Generate a skill
 
-Generator:
-- `~/.agents/skills/mcporter-skillifier/scripts/generate_skill.py`
+Generator (relative to this skill's base directory):
+- `scripts/generate_skill.py`
 
 Typical invocation (stdio server):
 

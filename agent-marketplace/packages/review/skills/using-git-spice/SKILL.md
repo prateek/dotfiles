@@ -22,7 +22,9 @@ Choose the smallest scope. `(needs restack)` marks a stale branch.
 
    Check `git show-ref --verify --quiet refs/spice/data`; if absent, run step 2
    before any other git-spice command. Then inspect with
-   `git-spice log short` or `git-spice log short --all`.
+   `git-spice log short` or `git-spice log short --all`; `git-spice log long`
+   adds each branch's commits. There is no `branch info`: a branch's base and
+   position come from the `log` tree.
 
    Adopt an untracked Orca worktree branch against its known base:
 

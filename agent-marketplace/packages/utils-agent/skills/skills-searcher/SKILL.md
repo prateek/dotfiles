@@ -5,10 +5,11 @@ description: Search for installable agent skills across GitHub and skills.sh. Us
 
 # Skills Searcher
 
-Use the bundled CLI instead of hand-rolling GitHub or Sourcegraph queries.
+Use the bundled CLI instead of hand-rolling GitHub or Sourcegraph queries. Paths
+below are relative to this skill's base directory.
 
 ```bash
-~/.agents/skills/skills-searcher/scripts/skill-search search <query> --limit 10 --progress
+scripts/skill-search search <query> --limit 10 --progress
 ```
 
 If `~/bin/skill-search` is available, use that shorter command. The script is self-contained and uses a `uv run --script` shebang with only Python standard-library code.
@@ -85,8 +86,8 @@ Use Sourcegraph and `npx skills` results while GitHub recovers. Keep `--limit` s
 After editing this skill, run:
 
 ```bash
-python3 -m py_compile ~/.agents/skills/skills-searcher/scripts/skill-search
-zsh ~/.agents/skills/skills-searcher/tests/skill-search.zsh
+python3 -m py_compile scripts/skill-search
+zsh tests/skill-search.zsh
 ```
 
 When working from this dotfiles checkout, run:

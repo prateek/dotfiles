@@ -67,8 +67,17 @@ Generated, vendored, ignored, and fixture files that intentionally model
 external code may follow their source format. Treat an exception as durable
 only when it recurs, and record the path and reason here.
 
-Inline `python3 -c '…'` in shell is not a separate Python form. Express tiny
-logic in shell or `jq`; promote substantial logic to a PEP 723 script.
+Inline `python3 -c '…'` and `python3 - <<'PY'` heredocs in shell are not a
+separate Python form. Express tiny logic in shell or `jq`; promote substantial
+logic to a PEP 723 script. The `python3` on `PATH` carries no declared
+dependencies, so an inline snippet that imports a third-party package runs
+through uv with it declared:
+
+```sh
+uv run --with pyyaml python - <<'PY'
+import yaml
+PY
+```
 
 ## Completion
 

@@ -32,7 +32,8 @@ typeset -ga VERIFY_CHECKS=(
   env_editor
   env_ghcup_use_xdg_dirs
   option_interactivecomments
-  option_nomatch
+  option_nomatch_off
+  option_equals_off
   path_home_bin_first
   path_go_bin
   path_pnpm_bin
@@ -76,6 +77,21 @@ typeset -ga VERIFY_CHECKS=(
   zoxide_jump
   ghc_usage
   gsp_behavior
+  noninteractive_glob_passthrough_c
+  noninteractive_glob_probe_quiet_c
+  noninteractive_equals_literal_c
+  noninteractive_glob_qualifier_c
+  noninteractive_glob_passthrough_lc
+  noninteractive_glob_probe_quiet_lc
+  noninteractive_equals_literal_lc
+  noninteractive_glob_qualifier_lc
+  noninteractive_glob_passthrough_c_no_zdotdir
+  noninteractive_glob_probe_quiet_c_no_zdotdir
+  noninteractive_equals_literal_c_no_zdotdir
+  noninteractive_glob_qualifier_c_no_zdotdir
+  noninteractive_glob_passthrough_claude
+  noninteractive_glob_probe_quiet_claude
+  noninteractive_equals_literal_claude
 )
 
 typeset -gA BENCH_BUDGETS=(
@@ -249,10 +265,16 @@ prepare_home() {
   local xdg_state_home="$home_dir/.local/state"
   mkdir -p "$xdg_config_home/chezmoi" "$xdg_cache_home/chezmoi" "$xdg_state_home/chezmoi"
 
+  # The synthetic home has an empty mise trust store, and apply-time hooks run
+  # mise from the caller's directory, which is usually this checkout. Walking up
+  # from there, mise also meets the real global config as an ancestor config.
+  local mise_config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/mise"
+
   env -u ZDOTDIR \
     HOME="$home_dir" \
     DOTFILES_ROOT="$dotfiles_root" \
     DOTFILES_SKIP_PLIST_HOOKS=1 \
+    MISE_TRUSTED_CONFIG_PATHS="$dotfiles_root:$mise_config_dir" \
     XDG_CONFIG_HOME="$xdg_config_home" \
     XDG_CACHE_HOME="$xdg_cache_home" \
     XDG_STATE_HOME="$xdg_state_home" \
@@ -269,6 +291,7 @@ prepare_home() {
     HOME="$home_dir" \
     DOTFILES_ROOT="$dotfiles_root" \
     DOTFILES_SKIP_PLIST_HOOKS=1 \
+    MISE_TRUSTED_CONFIG_PATHS="$dotfiles_root:$mise_config_dir" \
     XDG_CONFIG_HOME="$xdg_config_home" \
     XDG_CACHE_HOME="$xdg_cache_home" \
     XDG_STATE_HOME="$xdg_state_home" \
@@ -556,6 +579,17 @@ audit_expect_option_on() {
   fi
 }
 
+audit_expect_option_off() {
+  local check_id="$1"
+  local option_name="$2"
+
+  if [[ -o "$option_name" ]]; then
+    audit_fail "$check_id" "$option_name=on"
+  else
+    audit_pass "$check_id" "$option_name=off"
+  fi
+}
+
 audit_expect_binding_contains() {
   local check_id="$1"
   local keymap="$2"
@@ -756,7 +790,8 @@ audit_verify_all() {
   audit_expect_equal env_editor "nvim" "${EDITOR:-}"
   audit_expect_equal env_ghcup_use_xdg_dirs "1" "${GHCUP_USE_XDG_DIRS:-}"
   audit_expect_option_on option_interactivecomments interactivecomments
-  audit_expect_option_on option_nomatch nomatch
+  audit_expect_option_off option_nomatch_off nomatch
+  audit_expect_option_off option_equals_off equals
   audit_expect_equal path_home_bin_first "$HOME/bin" "${path[1]-}"
   audit_expect_path_contains path_go_bin "$HOME/go/bin"
   audit_expect_path_contains path_pnpm_bin "$HOME/Library/pnpm"
@@ -837,6 +872,57 @@ EOF
   print -r -- "$output"
 }
 
+# Agents and scripts reach zsh through `zsh -c` and `zsh -lc`, never the
+# interactive PTY path, and ZDOTDIR set or unset selects a different .zshenv.
+# The claude lane mirrors Claude Code, which evals each command after
+# `setopt NO_EXTENDED_GLOB NO_BARE_GLOB_QUAL`, so glob qualifiers stay literal.
+run_noninteractive_verify() {
+  local home_dir="$1"
+  local cwd="$2"
+  local lane zdotdir_arg shell_flag lane_probe
+  local probe
+  probe="$(cat <<'PROBE'
+lane="$1"
+emit() { print -r -- "RESULT|verify|$1|noninteractive_$2_$lane|$3"; }
+scratch="$(mktemp -d)"
+cd "$scratch"
+out="$( { grep -rn needle --include=*.go .; } 2>&1 )"; rc=$?
+if [[ $rc -eq 1 && -z "$out" ]]; then emit PASS glob_passthrough "rc=$rc"; else emit FAIL glob_passthrough "rc=$rc out=$out"; fi
+out="$( { ls ./absent-* 2>/dev/null; print -r -- ok; } 2>&1 )"
+if [[ "$out" == ok ]]; then emit PASS glob_probe_quiet "out=$out"; else emit FAIL glob_probe_quiet "out=${out//$'\n'/ }"; fi
+out="$(print -r -- =ls 2>&1)"
+if [[ "$out" == '=ls' ]]; then emit PASS equals_literal "out=$out"; else emit FAIL equals_literal "out=$out"; fi
+if [[ "$lane" != claude ]]; then
+  set -- ./absent-*(N)
+  if [[ $# -eq 0 ]]; then emit PASS glob_qualifier "count=$#"; else emit FAIL glob_qualifier "count=$#"; fi
+fi
+cd /
+rm -rf "$scratch"
+PROBE
+)"
+
+  for lane in c lc c_no_zdotdir claude; do
+    shell_flag='-c'
+    zdotdir_arg="ZDOTDIR=$home_dir/.config/zsh"
+    lane_probe="$probe"
+    [[ "$lane" == lc ]] && shell_flag='-lc'
+    [[ "$lane" == c_no_zdotdir ]] && zdotdir_arg='DOTFILES_AUDIT_NO_ZDOTDIR=1'
+    [[ "$lane" == claude ]] && lane_probe="setopt NO_EXTENDED_GLOB NO_BARE_GLOB_QUAL && eval ${(q)probe}"
+    (
+      cd "$cwd"
+      env -i \
+        HOME="$home_dir" \
+        PATH="$DEFAULT_SAFE_PATH" \
+        SHELL=/bin/zsh \
+        USER="${USER:-prateek}" \
+        LOGNAME="${LOGNAME:-${USER:-prateek}}" \
+        "$zdotdir_arg" \
+        DOTFILES_SKIP_LAUNCHCTL_SYNC=1 \
+        /bin/zsh "$shell_flag" "$lane_probe" zsh "$lane" 2>/dev/null
+    ) || true
+  done
+}
+
 run_verify() {
   local dotfiles_root="$1"
   local home_dir neutral_cwd probe_root session_name='audit_verify'
@@ -896,6 +982,18 @@ run_verify() {
     print -r -- "$raw_results"
     count_result_lines "$raw_results"
   fi
+
+  raw_results="$(extract_prefixed_lines "$(run_noninteractive_verify "$home_dir" "$neutral_cwd")" 'RESULT|')"
+  if [[ -n "$raw_results" ]]; then
+    print -r -- "$raw_results"
+    count_result_lines "$raw_results"
+  fi
+  local lane
+  for lane in c lc c_no_zdotdir claude; do
+    if [[ "$raw_results" != *"_${lane}|"* ]]; then
+      emit_result verify FAIL "noninteractive_lane_$lane" 'lane emitted no results'
+    fi
+  done
 
   emit_summary verify
   (( audit_failures == 0 ))

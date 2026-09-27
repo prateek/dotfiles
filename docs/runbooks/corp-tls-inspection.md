@@ -3,7 +3,7 @@ status: active
 doc_type: runbook
 owner: Prateek
 created: 2026-09-08
-updated: 2026-09-08
+updated: 2026-09-26
 related:
   - ../references/chezmoi-hook-lifecycle.md
   - ../adr/0012-config-gating-convention.md
@@ -30,6 +30,7 @@ true for the `work` machine type and false everywhere else.
 | `~/.local/bin/corp-ca-gui-env` | Sets `NODE_EXTRA_CA_CERTS` in the launchd GUI domain, or clears it when the bundle is gone. |
 | `com.prateek.gui-corp-ca` | Runs that wrapper at every login, because `launchctl setenv` only lives as long as the session. |
 | `$ZDOTDIR/.zshenv` | Exports the same variable for shells, which do not inherit the GUI domain's copy. |
+| `~/.config/certs/corp-ca-bundle-full.pem` | Built by the same hook: Apple's public roots from `SystemRootCertificates.keychain`, followed by the corporate anchors. Shells export `SSL_CERT_FILE` and `REQUESTS_CA_BUNDLE` to it. |
 
 Two separate paths because macOS has two. Shells get their environment from zsh
 startup; apps launched from the Dock, Spotlight, or Finder get theirs from
@@ -44,6 +45,15 @@ changes. IT rotates these roots, and a bundle that quietly falls behind fails
 exactly like a missing one — `SELF_SIGNED_CERT_IN_CHAIN` out of nowhere, in one
 tool, with nothing locally changed to blame. The keychain export costs about
 a second.
+
+OpenSSL-based clients (Python's `ssl`, `requests`, curl built on OpenSSL, uv)
+need a different variable, and Apple's `/usr/bin/curl` honors it too.
+`SSL_CERT_FILE` replaces the client's trust store instead of extending it, so
+pointing it at the corporate-only bundle would break every public site. The
+public half comes from the system root keychain, not `/etc/ssl/cert.pem`,
+which is a stale 2021 list. The full bundle carries the system roots first, and is
+rebuilt only from a complete corporate bundle. It is exported to shells only;
+GUI apps keep their own stores.
 
 ## What goes in the bundle
 
@@ -103,6 +113,12 @@ node -e 'fetch("https://api.github.com/")
   .then(r=>console.log("ok",r.status)).catch(e=>console.log("ERR",e.cause?.code))'
 ```
 
+Any HTTP status means TLS succeeded. For OpenSSL clients, from a shell:
+
+```sh
+python3 -c 'import urllib.request; print(urllib.request.urlopen("https://api.github.com/").status)'
+```
+
 Any HTTP status means TLS succeeded. `ERR SELF_SIGNED_CERT_IN_CHAIN` means that
 process did not trust the chain — usually the variable never reached it, but a
 stale or narrowed bundle looks identical, so check the bundle's contents before
@@ -131,7 +147,7 @@ launchctl bootstrap "gui/$(id -u)" ~/Library/LaunchAgents/com.prateek.gui-corp-c
 Set `tls_inspection = false` for the machine and apply. Chezmoi stops managing
 the launch agent but does not delete it, so the hook's kill switch does: it
 boots the agent out, clears the GUI variable, and removes the plist, the
-wrapper, and the bundle.
+wrapper, and both bundles.
 
 ## Checks
 

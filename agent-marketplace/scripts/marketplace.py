@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 from pathlib import Path
+import re
 import signal
 import shutil
 import subprocess
@@ -226,6 +227,30 @@ def validate_plugin(plugin: Path, expected_skills: set[str]) -> None:
             raise ValueError(f"pair disable-model-invocation with policy.allow_implicit_invocation: false: {path}")
 
 
+# Skills materialize under ~/.agents/plugins; ~/.agents/skills is an empty stub.
+RETIRED_SKILL_PATH = re.compile(r"(?:~|\$HOME|\$\{HOME\}|/Users/[^/\s]+)/\.agents/skills/")
+RETIRED_SKILL_PATH_ALLOWED = {"ios/skills/ios-audit/references/migration-from-ios-flow-audit.md"}
+
+
+def validate_authored_paths(package: Path) -> None:
+    skills = package / "skills"
+    if not skills.is_dir():
+        return
+    findings = []
+    for relative in tree_files(skills, skip={"**/__pycache__"}):
+        name = f"{package.name}/skills/{relative}"
+        if name in RETIRED_SKILL_PATH_ALLOWED or not (skills / relative).is_file():
+            continue
+        try:
+            lines = (skills / relative).read_text(encoding="utf-8").splitlines()
+        except UnicodeDecodeError:
+            continue
+        findings.extend(f"{name}:{number}" for number, line in enumerate(lines, 1) if RETIRED_SKILL_PATH.search(line))
+    if findings:
+        raise ValueError("retired skill path; refer to files relative to the skill's base directory: "
+                         + ", ".join(findings))
+
+
 def apply_overlays(package: Path, plugin: Path) -> None:
     overlay = package / "overlays"
     if not overlay.exists():
@@ -260,6 +285,7 @@ def build(root: Path) -> Path:
         output.mkdir()
         shutil.copy2(root / "apm.yml", output / "apm.yml")
         for package in sorted((root / "packages").iterdir()):
+            validate_authored_paths(package)
             plugin = output / "plugins" / package.name
             plugin.mkdir(parents=True)
             for name in ("skills", ".codex-plugin", "hooks", "evals", "agents", "commands", "licenses", ".mcp.json"):

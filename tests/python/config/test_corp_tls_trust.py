@@ -65,6 +65,9 @@ f0gtIR4yqoT5lCBYAiEA2j1/CToxNExcpaNejrlO+V47DihwlU9fBO/V3xGqHgE=
 -----END CERTIFICATE-----
 """
 KEYCHAIN = INTERMEDIATE + IDENTITY_LEAF + ROOT_CA
+# Stands in for Apple's public root store export; only its position in the
+# OpenSSL bundle matters, not what it certifies.
+SYSTEM_ROOTS = ROTATED_ROOT_CA
 
 # launchd's GUI domain and the System keychain, as files. Both real tools mutate
 # machine-wide state a test must never touch. `bootstrap` and `kickstart` really
@@ -79,9 +82,11 @@ state = json.loads(store.read_text()) if store.exists() else {"env": {}, "jobs":
 tool, args = pathlib.Path(sys.argv[0]).name, sys.argv[1:]
 
 if tool == "security":
-    if args[:2] != ["find-certificate", "-a"] or args[-1] != "/Library/Keychains/System.keychain":
+    exports = {"/Library/Keychains/System.keychain": "keychain.pem",
+               "/System/Library/Keychains/SystemRootCertificates.keychain": "system-roots.pem"}
+    if args[:2] != ["find-certificate", "-a"] or args[-1] not in exports:
         raise SystemExit("unexpected security: " + repr(args))
-    export = root / "keychain.pem"
+    export = root / exports[args[-1]]
     if not export.exists():
         raise SystemExit(1)
     sys.stdout.write(export.read_text())
@@ -158,6 +163,8 @@ class CorporateTlsTrust(RepoTestCase):
                         PATH=str(self.bin) + os.pathsep + os.environ["PATH"])
         self.keychain = self.work / "keychain.pem"
         self.keychain.write_text(KEYCHAIN)
+        self.system_roots = self.work / "system-roots.pem"
+        self.system_roots.write_text(SYSTEM_ROOTS)
         self.bundle = self.home / ".config/certs/corp-ca-bundle.pem"
         self.publisher = self.home / ".local/bin/corp-ca-gui-env"
         self.plist = self.home / f"Library/LaunchAgents/{LABEL}.plist"
@@ -245,9 +252,9 @@ class CorporateTlsTrust(RepoTestCase):
         self.assertEqual(self.domain()["env"], {"NODE_EXTRA_CA_CERTS": str(self.bundle)})
         self.assertEqual(self.domain()["jobs"], [LABEL])
         # Staging happens inside the bundle directory so the swap is a rename;
-        # nothing may survive the run.
+        # nothing but the two bundles may survive the run.
         self.assertEqual(sorted(p.name for p in self.bundle.parent.iterdir()),
-                         ["corp-ca-bundle.pem"])
+                         ["corp-ca-bundle-full.pem", "corp-ca-bundle.pem"])
 
         # Rotated roots must land on the next apply; a bundle that quietly falls
         # behind fails exactly like a missing one.
@@ -322,6 +329,73 @@ class CorporateTlsTrust(RepoTestCase):
         (self.work / "calls").unlink()
         self.assertEqual(self.run_hook("personal").returncode, 0)
         self.assertEqual(self.calls(), [])
+
+    def test_openssl_bundle_keeps_public_roots_and_adds_only_corporate_anchors(self):
+        # SSL_CERT_FILE replaces an OpenSSL client's trust store rather than
+        # extending it, so the file it names must still carry the public roots.
+        self.install_targets()
+        result = self.run_hook()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        full = self.home / ".config/certs/corp-ca-bundle-full.pem"
+        self.assertEqual(full.read_text(), SYSTEM_ROOTS + ROOT_CA)
+        self.assertEqual(full.stat().st_mode & 0o777, 0o644)
+        self.assertEqual(sorted(p.name for p in full.parent.iterdir()),
+                         ["corp-ca-bundle-full.pem", "corp-ca-bundle.pem"])
+
+        self.keychain.write_text(ROTATED_ROOT_CA)
+        self.assertEqual(self.run_hook().returncode, 0)
+        self.assertEqual(full.read_text(), SYSTEM_ROOTS + ROTATED_ROOT_CA)
+
+        # Without a public root export there is no safe store to name.
+        self.system_roots.unlink()
+        result = self.run_hook()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(full.read_text(), SYSTEM_ROOTS + ROTATED_ROOT_CA)
+        self.assertIn("could not build", result.stderr + result.stdout)
+
+        # Leaving the proxy removes it with the rest.
+        self.assertEqual(self.run_hook("personal").returncode, 0)
+        self.assertFalse(full.exists())
+
+    def test_openssl_trust_reaches_both_shell_startup_paths_only_where_tls_is_inspected(self):
+        zsh_dir = Path(self.env["XDG_CONFIG_HOME"]) / "zsh"
+        zsh_dir.mkdir(parents=True)
+        full = self.home / ".config/certs/corp-ca-bundle-full.pem"
+        full.parent.mkdir(parents=True)
+        full.write_text(ROOT_CA)
+        inherited = str(self.work / "inherited.pem")
+        probe = 'printf "%s|%s" "$SSL_CERT_FILE" "$REQUESTS_CA_BUNDLE"'
+
+        for machine, wanted in (("work", str(full)), ("personal", "")):
+            for source, target in (("dot_zshenv.tmpl", self.home / ".zshenv"),
+                                   ("dot_config/zsh/dot_zshenv.tmpl", zsh_dir / ".zshenv")):
+                target.write_bytes(self.render(f"home/{source}", machine,
+                                               data={"dotfiles_dir": str(ROOT)}))
+            for zdotdir in (None, str(zsh_dir)):
+                for preset in (None, inherited):
+                    with self.subTest(machine=machine, zdotdir=zdotdir, preset=preset):
+                        env = dict(self.env)
+                        for name in ("SSL_CERT_FILE", "REQUESTS_CA_BUNDLE", "ZDOTDIR"):
+                            env.pop(name, None)
+                        if zdotdir:
+                            env["ZDOTDIR"] = zdotdir
+                        if preset:
+                            env["SSL_CERT_FILE"] = env["REQUESTS_CA_BUNDLE"] = preset
+                        shell = subprocess.run(["/bin/zsh", "-c", probe], env=env,
+                                               capture_output=True, text=True, check=True)
+                        value = preset or wanted
+                        self.assertEqual(shell.stdout, f"{value}|{value}")
+
+        # A missing bundle must not point every OpenSSL client at nothing.
+        full.unlink()
+        env = dict(self.env, ZDOTDIR=str(zsh_dir))
+        for name in ("SSL_CERT_FILE", "REQUESTS_CA_BUNDLE"):
+            env.pop(name, None)
+        target = zsh_dir / ".zshenv"
+        target.write_bytes(self.render("home/dot_config/zsh/dot_zshenv.tmpl", "work",
+                                       data={"dotfiles_dir": str(ROOT)}))
+        shell = subprocess.run(["/bin/zsh", "-c", probe], env=env, capture_output=True, text=True, check=True)
+        self.assertEqual(shell.stdout, "|")
 
     def test_node_trust_reaches_both_shell_startup_paths_only_where_tls_is_inspected(self):
         zsh_dir = Path(self.env["XDG_CONFIG_HOME"]) / "zsh"

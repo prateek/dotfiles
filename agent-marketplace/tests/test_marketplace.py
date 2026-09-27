@@ -608,6 +608,18 @@ class MarketplaceTests(unittest.TestCase):
         sidecar.write_text("policy:\n  allow_implicit_invocation: false\n")
         self.recipe("build")
 
+    def test_build_rejects_retired_skill_paths_in_authored_skills(self):
+        reference = self.skill / "references/usage.md"
+        reference.parent.mkdir()
+        for retired in ("~/.agents/skills/hello/hello.sh", "/Users/someone/.agents/skills/hello/SKILL.md",
+                        "$HOME/.agents/skills/hello/hello.sh", "${HOME}/.agents/skills/hello/hello.sh"):
+            reference.write_text(f"Run `{retired}`.\n")
+            result = self.recipe("build", success=False)
+            self.assertIn("retired skill path", result.stderr)
+            self.assertIn("references/usage.md", result.stderr)
+        reference.write_text("Run `hello.sh` from this skill's base directory.\n")
+        self.recipe("build")
+
     def test_overlays_are_additions_and_export_requires_fresh_checked_output(self):
         self.imported_skill()
         addition = self.package / "overlays/skills/curated/local.txt"

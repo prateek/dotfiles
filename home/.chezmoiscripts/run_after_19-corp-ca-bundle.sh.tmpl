@@ -7,6 +7,7 @@ plist="$HOME/Library/LaunchAgents/$label.plist"
 publisher="$HOME/.local/bin/corp-ca-gui-env"
 bundle_dir="$HOME/.config/certs"
 bundle="$bundle_dir/corp-ca-bundle.pem"
+full_bundle="$bundle_dir/corp-ca-bundle-full.pem"
 {{- if not $f.tls_inspection }}
 
 # Kill switch: chezmoi stops managing the launch agent once the feature is off
@@ -14,10 +15,10 @@ bundle="$bundle_dir/corp-ca-bundle.pem"
 # NODE_EXTRA_CA_CERTS long after the machine stopped sitting behind the proxy.
 # The bundle is machine-local state, so it goes with them. No-op, and no
 # launchctl call at all, on machines that never had the feature.
-if [ -e "$plist" ] || [ -e "$publisher" ] || [ -e "$bundle" ]; then
+if [ -e "$plist" ] || [ -e "$publisher" ] || [ -e "$bundle" ] || [ -e "$full_bundle" ]; then
   launchctl bootout "gui/$(id -u)/$label" 2>/dev/null || true
   launchctl unsetenv NODE_EXTRA_CA_CERTS 2>/dev/null || true
-  rm -f "$plist" "$publisher" "$bundle"
+  rm -f "$plist" "$publisher" "$bundle" "$full_bundle"
   log "tls_inspection is off; removed the corporate CA bundle and its launch agent."
 fi
 {{- else }}
@@ -80,7 +81,9 @@ chmod 700 "$bundle_dir"
 # cannot leave a truncated bundle at the path both halves already point at.
 raw="$(mktemp "$bundle_dir/.corp-ca-raw.XXXXXX")"
 tmp="$(mktemp "$bundle_dir/.corp-ca-bundle.XXXXXX")"
-trap 'rm -f "$raw" "$tmp"' EXIT
+full_tmp="$(mktemp "$bundle_dir/.corp-ca-bundle-full.XXXXXX")"
+roots_tmp="$(mktemp "$bundle_dir/.corp-ca-system-roots.XXXXXX")"
+trap 'rm -f "$raw" "$tmp" "$full_tmp" "$roots_tmp"' EXIT
 
 if ! security find-certificate -a -p /Library/Keychains/System.keychain >"$raw" 2>/dev/null; then
   # Not fatal: a bundle from an earlier apply still carries yesterday's roots.
@@ -100,6 +103,27 @@ else
     mv -f "$tmp" "$bundle"
     log "refreshed $bundle ($anchors corporate trust anchors from the System keychain)"
   fi
+fi
+
+# SSL_CERT_FILE replaces an OpenSSL client's trust store rather than extending
+# it, and Apple's curl honors it too, so its bundle starts with Apple's current
+# public roots. Not /etc/ssl/cert.pem: that is LibreSSL's 2021 list and still
+# carries CAs Apple has since removed. Built only from complete exports and
+# swapped by rename, so SSL_CERT_FILE never names a store without public roots.
+if [ -f "$bundle" ] \
+    && security find-certificate -a -p /System/Library/Keychains/SystemRootCertificates.keychain \
+         >"$roots_tmp" 2>/dev/null \
+    && grep -q '^-----BEGIN CERTIFICATE-----$' "$roots_tmp"; then
+  cat "$roots_tmp" "$bundle" >"$full_tmp"
+  if [ -f "$full_bundle" ] && cmp -s "$full_tmp" "$full_bundle"; then
+    : # Already current.
+  else
+    chmod 0644 "$full_tmp"
+    mv -f "$full_tmp" "$full_bundle"
+    log "refreshed $full_bundle (system roots plus corporate anchors, for SSL_CERT_FILE)"
+  fi
+else
+  warn "could not build $full_bundle; OpenSSL clients keep their previous trust store."
 fi
 
 if [ ! -x "$publisher" ]; then

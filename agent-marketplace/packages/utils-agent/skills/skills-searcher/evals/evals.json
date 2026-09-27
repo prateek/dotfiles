@@ -8,7 +8,7 @@
       "expected_output": "The agent invokes the skills-searcher skill, runs `skill-search search` (not raw gh / Sourcegraph queries), and presents a ranked candidate list with stars/installs/sources. It does not ask the user which backend to query.",
       "files": [],
       "expectations": [
-        "Runs `skill-search search` (or `~/bin/skill-search search`, or the full `~/.agents/skills/skills-searcher/scripts/skill-search search` path) with a query containing 'chezmoi' or 'dotfiles'",
+        "Runs `skill-search search` (or `~/bin/skill-search search`, or the skill's own `scripts/skill-search search`) with a query containing 'chezmoi' or 'dotfiles'",
         "Does NOT issue raw `gh api /search/code`, `gh skill search`, `src search`, or `npx skills find` invocations directly to assemble results",
         "Does NOT ask the user to choose a backend (gh-skill vs Sourcegraph vs GitHub code vs npx-skills) — runs them in parallel via the CLI",
         "Surfaces multiple candidate rows with at least one of: stars, installs, sources count, or repo path",

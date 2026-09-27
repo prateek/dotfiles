@@ -6,6 +6,9 @@ guidance takes precedence.
 
 ## Defaults
 
+- A branch checked out in one worktree cannot be checked out in another. Before
+  switching branches, check `git worktree list`; work in the worktree that owns
+  the branch, or run `git -C <that worktree>`.
 - Use an Orca worktree for isolated tasks. Read [worktrees.md](worktrees.md)
   before creating or configuring one.
 - Use the real `gh` CLI for GitHub operations.

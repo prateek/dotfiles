@@ -114,8 +114,9 @@ project `.acpxrc.json` cannot silently change the output shape. Match the timeou
 to the calling harness, and to background work that outlasts the harness command
 timeout.
 
-Swap `--format quiet` for a one-line answer nobody needs to watch, or
-`--format json --json-strict` when a script parses the result.
+Use `--format text` by default, and `--format json --json-strict` when a
+script parses the result. Never use `--format quiet`: it drops the progress
+and thinking that show whether a run is stuck.
 
 ### Inside Orca: a sibling pane
 
