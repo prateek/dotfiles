@@ -5,7 +5,7 @@
       "id": 1,
       "name": "nongit-durable-doc-drift",
       "prompt": "I renamed the `drafts/` folder to `working/` in my docs workspace. Update AGENTS.md to reflect the new name.",
-      "expected_output": "The agent surfaces that AGENTS.md is a non-git durable doc with redundant folder listings and stale migration-era content, and asks before making structural edits beyond the rename. It does not silently rewrite the whole AGENTS.md.",
+      "expected_output": "The agent updates the requested folder name in AGENTS.md, identifies its duplicated folder list and completed migration note, and asks before a broader structural edit or defers it because the workspace is outside Git.",
       "files": ["evals/files/eval1_nongit_docs"],
       "expectations": [
         "Detects the workspace is not a git repository before editing AGENTS.md",
@@ -19,7 +19,7 @@
       "id": 2,
       "name": "git-small-doc-sync",
       "prompt": "I renamed the `--quick` flag to `--fast` in cli.py. Sync the README so users see the new flag name.",
-      "expected_output": "The agent makes the small README edit directly because the change is git-tracked and tightly coupled to the task. It does not stall on permission prompts for the in-scope sync.",
+      "expected_output": "The agent directly changes every README reference from --quick to --fast and preserves the rest of the git-tracked document.",
       "files": ["evals/files/eval2_git_cli"],
       "expectations": [
         "Updates README.md to reference --fast instead of --quick",
@@ -32,7 +32,7 @@
       "id": 3,
       "name": "agents-md-redundancy-and-migration",
       "prompt": "Can you give AGENTS.md a pass? I want it cleaned up if anything in it is redundant or stale.",
-      "expected_output": "The agent rereads the full AGENTS.md, flags the duplicated 'Top-Level Structure' section and the completed 2024 Q2 migration notice as candidates to remove, and either removes them (in git) or proposes removal (in non-git).",
+      "expected_output": "The agent reads the full AGENTS.md, finds the duplicated 'Top-Level Structure' section and the completed 2024 Q2 migration notice, then collapses the duplicate into one section and removes the notice in Git, or proposes those edits outside Git.",
       "files": ["evals/files/eval3_agents_redundant"],
       "expectations": [
         "Identifies that the 'Top-Level Structure' section is duplicated in AGENTS.md",

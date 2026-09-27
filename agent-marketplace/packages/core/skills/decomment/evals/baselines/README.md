@@ -1,21 +1,21 @@
-# Baseline arms for the comparative benchmark
+# Benchmark arms
 
-These files are comparison arms for the decomment eval suite, not installable
-skills. They are plain markdown (deliberately not named `SKILL.md`) so the
-package renderer and validator never pick them up.
+Use these fixed comparison prompts when evaluating the live
+[`decomment` skill](../../SKILL.md). They are plain Markdown so the package
+renderer does not install them as skills.
 
-- `cody-decomment.md`: the source skill this one was adapted from. Internal
-  identifiers in its examples are renamed for publication; rules, structure,
-  and severity are unchanged.
-- `john-style.md`: a write-time prevention prompt, verbatim.
+| Arm | Purpose |
+| --- | --- |
+| `cody-decomment.md` | Source prompt adapted into the live skill. Internal example identifiers were renamed for publication; its rules, structure, and severity remain the benchmark baseline. |
+| `john-style.md` | Verbatim prevention prompt. It addresses comment generation rather than cleanup. |
 
-The benchmark runs `evals.json` across four arms: no skill, `john-style.md`,
-`cody-decomment.md`, and the live decomment SKILL.md. The runner materializes
-each arm into a temporary skill directory for its runs. Acceptance: the live
-skill matches or beats `cody-decomment.md` on every eval. `john-style.md` is
-prevention-only and is expected to compete only on eval 3 (generation). The
-authoritative record of the 2026-07 benchmark lives in
-`docs/plans/decomment-skill-plan.md`; in short, both skills hit the ceiling on
-evals 1-3 and 5-6, and the differentiator was eval 4, where the live skill
-deleted 11-12 of 12 planted borderline markers per rep against Cody's
-consistent 10.
+Run [`evals.json`](../evals.json) against no skill, these two arms, and the live
+skill. The benchmark runner materializes each arm in a temporary skill
+directory. The live skill must match or beat `cody-decomment.md` on every eval;
+`john-style.md` is expected to compete only on eval 3.
+
+The 2026-07 benchmark record at `docs/plans/decomment-skill-plan.md` in the
+dotfiles source repo reports a ceiling on evals 1-3 and 5-6 for the live and
+Cody arms. Eval 4 separated them: the live skill deleted 11-12 of 12 planted
+borderline markers per repetition, compared with Cody's 10. Keep the arm
+prompts and planted fixtures fixed when measuring changes to the live skill.

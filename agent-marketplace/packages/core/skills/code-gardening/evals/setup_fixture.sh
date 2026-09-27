@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copy an eval fixture into a per-run working dir.
+# Prepare one isolated eval workspace.
 # Usage: setup_fixture.sh <fixture_name> <dest_dir>
 #   eval1_nongit_docs       — non-git workspace
 #   eval2_git_cli           — initializes git and commits

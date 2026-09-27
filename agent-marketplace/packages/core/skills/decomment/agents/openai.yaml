@@ -1,4 +1,4 @@
 interface:
   display_name: "Decomment"
-  short_description: "Prune slop and restating comments from your changes"
-  default_prompt: "Prune comments added or modified by the current work: delete restatement and narration, trim doc comments to their contract, and leave pre-existing comments alone."
+  short_description: "Prune comments from code changes or a named scope"
+  default_prompt: "Decomment code changed in the current task before handoff, or clean up comments in the named scope: delete narration and restatement, trim doc comments to caller contracts, and preserve directives and out-of-scope pre-existing comments."

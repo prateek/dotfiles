@@ -1,181 +1,40 @@
 ---
 name: code-gardening
-description: Keep code, tests, docs, comments, config, and agent instructions synchronized in existing repos. Use when comments drift from behavior, for parser/config drift, pre-existing failures, or edits to `SKILL.md`, `AGENTS.md`, `README`, plans, and generated files. Skip isolated read-only review.
+description: Synchronize drift in existing repos. Use for stale comments or examples, parser/config errors, pre-existing failures, recurring confusion, or edits to README, plans, SKILL.md, AGENTS.md, CLAUDE.md, generated files, and build/config files. Skip isolated read-only reviews.
 ---
 
 # Code Gardening
 
-## Overview
-
-Use this skill to keep touched codebases trustworthy without turning every task into a cleanup project.
-
-Gardening means:
-- fix cheap local drift
-- recover intent before changing ambiguous behavior
-- update durable state when facts change
-- surface broader drift instead of quietly routing around it
-
-Gardening does not mean unrelated churn, stealth rewrites, or long essays in root instruction files.
-
-## Trigger Check
-
-Use this skill when any of these are true:
-
-- Code, tests, docs, comments, examples, or config disagree.
-- The task touches `AGENTS.md`, `CLAUDE.md`, `README`, `SKILL.md`, plan/progress/spec docs, or build/config files.
-- A parser, validator, or config error hints at stale state.
-- A failure may be pre-existing.
-- The same confusion or bug has appeared more than once.
-- You are closing out a non-trivial change and need to sync durable state.
-
-Skip this skill for greenfield brainstorming, pure research, or tiny isolated edits with no durable-state impact.
-
-## Trigger Boundaries
-
-Should trigger:
-
-- `I changed this CLI command. Update the README, examples, and any stale comments or agent docs.`
-- `This skill's frontmatter stopped parsing after I edited SKILL.md and openai.yaml. Fix the drift and validate it.`
-- `The test is failing, but I do not trust that my change caused it. Check what is pre-existing before we patch around it.`
-- `I fixed the behavior in this module. Make sure nearby tests, docs, and config still match.`
-
-Should not trigger by itself:
-
-- `Review this diff for bugs only. Do not suggest unrelated cleanup.`
-- `Implement this isolated feature in a new module.`
-- `Brainstorm three approaches for this greenfield feature.`
-- `Do a cold read of this spec and tell me what the repo is trying to do.`
-
-If another skill already owns the task shape, keep that skill primary. Use gardening only when drift, provenance, or state sync becomes part of the work.
+Keep the touched part of an existing codebase trustworthy. Fix cheap, related drift; recover intent where authority is unclear; leave broader uncertainty visible. Keep changes tied to the task. Get the user's approval before rewriting an ambiguous system or starting a broad cleanup. If another skill owns the task, use it as the primary workflow and garden the state it touches. Tiny isolated edits without durable-state impact need no gardening pass.
 
 ## Workflow
 
-### 1. Go See The Work
+### 1. Inspect the real boundary
 
-- Read the actual file, not just the excerpt.
-- Run the actual command, test, build, parser, or validator when feasible.
-- Inspect logs and outputs before speculating.
-- When sweeping for a known-stale reference (deprecated flag, removed command, renamed identifier, snapshotted output), grep the file or repo for the pattern before editing. Sequential rereading reveals structure but misses identical matches in distant sections.
+Read each touched file and its nearby callers. Run the actual command, test, parser, build, or validator when feasible; inspect its output. Search the relevant tree for each known-stale identifier or example before editing, so distant matches are counted. Read large, shared, or foundational files in full.
 
-If the file is large, shared, or foundational, read the whole thing before editing.
+Finish when the affected behavior and every matching stale reference have been located, or the inspection limit is stated.
 
-### 2. Classify The Drift
+### 2. Establish authority and scope
 
-Fix now:
-- stale nearby comment or docstring
-- renamed command/example mismatch
-- small style mismatch in code you are already touching
-- missing state update tightly coupled to the task
-- stale plan/progress entry when the prompt explicitly uses those docs
+Check a baseline early when a failure may predate the task. Prefer observed behavior and passing tests, then tool-native truth (parsers, compilers, `git check-ignore`, generated outputs, schemas), then current docs/specs, then comments. Resolve disagreements with evidence.
 
-Surface before leaving:
-- cross-cutting or behavior-changing drift
-- unclear authority between code, docs, comments, and tests
-- parser/config failures you cannot confidently fix in scope
-- anything that would require a rewrite or broad cleanup to resolve
+Fix small, related drift now: nearby comments or docstrings, renamed examples, style in touched code, missing coupled state, and plan/progress entries named by the task. Surface cross-cutting or behavior-changing drift, uncertain authority, parser/config failures that cannot be fixed confidently in scope, and drift whose fix needs a rewrite or broad cleanup.
 
-### 3. Pick The Working Edge
+Finish when each discrepancy has a supported authoritative source or stated uncertainty, and a fix-or-surface decision.
 
-When multiple surfaces disagree, decide what is authoritative before editing.
+### 3. Recover intent when needed
 
-Usual order:
-1. Observed behavior and passing tests
-2. Tool-native truth such as parsers, compilers, `git check-ignore`, generated outputs, or schema validators
-3. Current docs/specs that still match the system
-4. Comments and stale prose
+When local evidence is inconclusive, follow [archaeology](references/archaeology.md) for history commands and the cold read when its trigger applies. Finish when history clarifies the intended behavior or the remaining ambiguity is explicit.
 
-Do not treat comments as stronger evidence than the system they describe.
+### 4. Synchronize durable state
 
-### 4. Run Archaeology When Intent Is Fuzzy
+Update the nearest code, tests, comments, examples, docs, plans, specs, config, build inputs, generated-file policy, and agent guidance affected by a changed fact, vocabulary, workflow, or invariant. For `AGENTS.md`, `CLAUDE.md`, `README`, `SKILL.md`, and long-lived guides, follow [durable-doc editing](references/durable-docs.md). For human-facing prose, apply `writing-for-humans`.
 
-Start cheap:
-- `git status`
-- `git diff`
-- `git log --follow -- <file>`
-- `git log -S 'term' -- <path>`
-- `git log -G 'pattern' -- <path>`
+Finish when every affected surface agrees with the chosen authority, or each remaining mismatch is recorded.
 
-Escalate when provenance is still unclear:
-- `git blame -w -M -C <file>`
-- related PRs, review comments, issues, ADRs, or design notes
+### 5. Validate and hand off
 
-When the change is large, contentious, or context-contaminated, spawn an `explorer` for a cold archaeology pass.
+Use the smallest tool-native checks covering the boundary. After a skill edit, run its parser or validator immediately. Compare failures against the baseline, and report which evidence is current versus unverified. Close with a short note of drift fixed, durable state changed, drift remaining, and whether a recurring lesson belongs in agent guidance.
 
-Use a bounded prompt like:
-
-```text
-Read the current code/tests/docs for <path>. Reconstruct intent from behavior, history, and review context. Return only:
-1. durable findings
-2. contradictions
-3. likely source of truth
-4. what should be synced now vs surfaced
-```
-
-Do not default to archaeology on every task. Use it when local reading and normal verification are not enough.
-
-### 5. Sync Durable State
-
-State includes:
-- code and tests
-- comments and docstrings
-- README/docs/examples
-- plans, progress logs, and specs when they are part of the workflow
-- config, build files, generated-file policy, and validator expectations
-- agent guidance such as `AGENTS.md`, `CLAUDE.md`, and skill docs
-
-If you change durable vocabulary, workflow, invariants, or operating assumptions, update the nearest durable state in the same task.
-
-When editing prose humans will read, apply the `writing-for-humans` skill; it routes to the Strunk rules for structure.
-
-#### Durable docs are steady-state artifacts
-
-`AGENTS.md`, `CLAUDE.md`, `README`, `SKILL.md`, and long-lived guides are part of the system, not commentary about it. When you touch them, treat the whole doc as in scope, not just the local edit site:
-
-- Compare the doc against the live tree or live behavior, not the nearby excerpt.
-- Reread the whole doc before finishing. Drift often shows up as redundancy or stale structure, not wrong facts.
-- Remove migration-era notes once the migration is complete.
-- Collapse repeated lists or restatements when one index will do.
-- Prefer one authoritative section over several partial restatements.
-
-#### Git vs non-git workspaces
-
-Provenance and rollback are weaker outside git. Raise the bar accordingly:
-
-- In a non-git workspace, surface durable-doc drift and ask before editing. Do not silently modify `AGENTS.md`-style files.
-- In a git-tracked workspace, small doc sync tightly coupled to the task stays in scope. Larger structural rewrites still need a heads-up.
-- If you cannot tell whether the workspace is git-tracked (for example, a docs root under `~/Documents`), check with `git rev-parse --is-inside-work-tree` before editing durable docs.
-
-### 6. Validate The Boundary You Touched
-
-- Use tool-native checks instead of regex guesses.
-- After editing a skill, run its validator or parser immediately.
-- After editing a durable doc, reread the whole file and check for redundancy, migration-era wording, and sections that disagree with the live tree.
-- If a failure may be pre-existing, baseline it early.
-- Before commit or handoff on non-trivial work, run the smallest matching verification.
-
-Examples:
-- `git check-ignore` instead of hand-parsing `.gitignore`
-- repo parser/validator instead of assuming frontmatter is valid
-- skill validator after touching `SKILL.md` or `agents/openai.yaml`
-- focused test target instead of claiming a regression without a baseline
-
-### 7. Close With A Short Maintenance Note
-
-Before finishing, ask:
-- What drift did I fix?
-- What drift remains?
-- What durable state changed?
-- Does a recurring lesson belong in `AGENTS.md` or a skill?
-
-Keep this short. The goal is to leave the next reader with a trustworthy surface, not a diary.
-
-## Do Not
-
-- Use gardening as cover for unrelated cleanup.
-- Rewrite ambiguous systems from scratch without permission.
-- Bury uncertainty behind a “cleanup” label.
-- Stuff one-off incident notes into `AGENTS.md`.
-- Trust stale comments over observed behavior.
-- Leave parser or validator drift unverified after touching skill or config files.
-- Silently edit durable docs in a non-git workspace. Surface the drift and ask first.
-- Patch a local line in `AGENTS.md`-style files without rereading the whole doc for redundancy and migration-era wording.
+Finish when checks have been inspected and all remaining drift is named.

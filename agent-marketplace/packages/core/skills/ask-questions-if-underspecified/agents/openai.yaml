@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ask Questions If Underspecified"
+  short_description: "Clarify blocking decisions before implementation"
+  default_prompt: "Use $ask-questions-if-underspecified to resolve the blocking decisions in this request before implementing."

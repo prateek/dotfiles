@@ -1,101 +1,75 @@
 ---
 name: conventions-maintainer
-description: Maintain machine-wide agent conventions in ~/.agents/AGENTS.md and ~/.agents/docs. Use when adding, pruning, restructuring, or validating convention guidance; keep AGENTS as a small kernel and router, and keep topic docs focused on local policy rather than tool manuals.
+description: Maintain machine-wide agent conventions in ~/.agents/AGENTS.md and ~/.agents/docs. Use for adding, pruning, restructuring, or validating guidance, including generated docs; keep AGENTS a small router and topic docs focused on local policy.
 ---
 
 # Conventions Maintainer
 
-Use `writing-for-agents` as the design reference. The maintenance target is a
-predictable information hierarchy, not a uniform document template.
-
-## Boundaries
-
-- `~/.agents/AGENTS.md` is the always-loaded kernel and router. Keep only
-  preferences and guardrails needed across most tasks, plus short pointers.
-- `~/.agents/docs/*.md` holds reference needed by a distinct task branch.
-- A model-invoked skill owns an executable workflow that must be discovered
-  autonomously. Convention docs may add machine-specific policy, but should not
-  copy the skill's command reference.
-- The environment, repository configuration, tool `--help`, and upstream docs
-  are sources of truth. Cache their contents only when lookup is expensive and
-  the local copy has a clear refresh owner.
-- Repo-specific guidance belongs in that repository, not in these machine-wide
-  files.
+Read `writing-for-agents` for context pointers, information hierarchy, and
+completion criteria. Maintain the human-edited chezmoi source under
+`home/dot_agents/`; `~/.agents/` is the rendered target.
 
 ## Workflow
 
-### 1. Locate the human-edited source
+1. **Locate the owner.** Read `home/dot_agents/AGENTS.md`, the relevant topic
+   docs, and any source that generates a rendered doc. Keep repo-specific
+   instructions in the owning repository. For `~/.agents/docs/slack.md`, edit
+   `home/.chezmoitemplates/agent-slack-base.md` or its private overlay. Finish
+   when every instruction being changed has an identified source and audience.
 
-- Edit chezmoi source under `home/dot_agents/`, not rendered files under
-  `~/.agents/`.
-- Update an existing focused topic file instead of creating a synonym.
-- Keep filenames stable and obvious.
-- `slack.md` is generated at apply time from
-  `home/.chezmoitemplates/agent-slack-base.md` plus a private overlay. Edit the
-  base or overlay source, never the rendered file.
+2. **Place each meaning once.** Use this hierarchy:
 
-### 2. Place each instruction on the right tier
+   - Put preferences and guardrails needed before acting on nearly every task in
+     `home/dot_agents/AGENTS.md`, the always-loaded kernel and router.
+   - Put policy for an identifiable task branch in an existing focused file
+     under `home/dot_agents/docs/`. Give a new branch its own doc only when it
+     earns a new pointer; keep filenames stable and obvious.
+   - Put an independently triggered executable workflow in a model-invoked
+     skill. Keep machine-specific policy in the convention doc and the
+     workflow in the skill.
+   - Leave cheaply discoverable facts in repo configuration, the environment,
+     tool `--help`, or upstream docs. Cache a fact only when lookup is expensive
+     and its refresh owner is clear.
 
-For every instruction, decide:
+   Finish when each changed meaning has one authoritative home and every
+   must-follow rule remains reachable before the task that needs it.
 
-1. Does nearly every task need it before acting? Keep it in `AGENTS.md`.
-2. Does one identifiable branch need it? Put it in a focused doc and add a
-   pointer.
-3. Is it an executable workflow with an independent trigger? Put the workflow
-   in a skill and leave only local policy in the doc.
-4. Can the agent obtain it cheaply from the environment or upstream source?
-   Leave it there.
+3. **Write the route and destination.**
 
-When a must-follow rule moves behind a pointer, make the pointer strong enough
-to recover the lost reliability.
+   - **Pointer.** Front-load the task condition, name each distinct branch once,
+     and use the exact rendered `~/.agents/docs/<topic>.md` path. For example:
+     ``- Git or GitHub work: `~/.agents/docs/git.md` ``. Group related pointers
+     in `AGENTS.md`; keep identity and explanation in the target doc.
+   - **Topic doc.** State its trigger and record the local delta: preferences,
+     authorization boundaries, private topology, generated-file ownership, and
+     gotchas the environment does not reveal. Let content choose the sections;
+     use `Defaults`, `Workflow`, `Safety`, or `Completion` only when each carries
+     real material. Co-locate each rule with its reason, caveats, and exact
+     formats. End ordered work on a checkable, exhaustive completion criterion.
+     Include commands when their exact local shape is part of the contract;
+     otherwise point to version-matched `--help`, upstream docs, or the owning
+     skill.
 
-### 3. Write the pointer
+   Finish when every disclosed branch has a clear route and each topic doc can
+   be followed without reconstructing scattered rules.
 
-- Front-load the task condition: `Git or GitHub work: ...`.
-- Name each distinct trigger branch once. Avoid lists of synonyms.
-- Point to the exact rendered path under `~/.agents/docs/`.
-- Keep identity and explanation in the target doc.
-- Place related pointers together so the router is scannable.
+4. **Prune and verify.**
 
-### 4. Write the topic doc
+   - **Prune.** Remove no-op instructions, stale field manuals, generic
+     motivation, discoverable command lists, and duplicated skill content.
+     State the desired behavior positively; retain explicit prohibitions for
+     hard guardrails. Split only when a real branch or sequence boundary earns
+     another pointer.
+   - **Verify.** Reread every changed instruction file end to end, inspect
+     pointer targets or their generation paths, and search touched topics for
+     duplicated or contradictory guidance. Confirm each ordered step ends on a
+     checkable, exhaustive criterion. After changing `AGENTS.md` or a convention
+     doc, run `just test-python -p test_convention_pointers.py`. For generated
+     paths, run the relevant chezmoi preview; for a packaged skill, use the
+     package check from `agent-skill-management`.
 
-- Open with the condition under which the doc applies.
-- Let the content determine the sections. Use `Defaults`, `Workflow`,
-  `Safety`, and `Completion` only when they carry real material.
-- Co-locate a concept's rule, rationale, caveats, and exact formats.
-- End ordered work on a checkable, exhaustive completion criterion.
-- Include commands only when the exact local shape matters. Otherwise point to
-  version-matched `--help`, upstream docs, or the owning skill.
-- Record the local delta: preferences, authorization boundaries, private
-  topology, generated-file ownership, and gotchas the environment does not
-  reveal.
+   Finish when the relevant checks pass and every changed convention has one
+   home, a reliable route, and no unresolved contradiction.
 
-### 5. Prune
-
-- Delete no-ops that do not change model behavior.
-- Keep each meaning in one authoritative place.
-- Replace repeated prohibitions with a positive target; retain a prohibition
-  only for a hard guardrail.
-- Remove stale field manuals, generic motivation, discoverable command lists,
-  and duplicated skill content.
-- Split only when a real branch or sequence boundary earns another pointer.
-
-### 6. Validate the boundary
-
-- Reread every changed instruction file end-to-end.
-- Confirm each pointer target exists in source or has an explicit generation
-  path, as `slack.md` does.
-- Search touched topics for duplicated or contradictory guidance.
-- Confirm steps have observable completion criteria.
-- Run `just test-python -p test_convention_pointers.py` after changing `AGENTS.md` or a convention
-  doc.
-- Run the relevant chezmoi preview and package validator after changing
-  generated paths or a packaged skill.
-
-The work is complete when every changed convention has one authoritative home,
-every disclosed branch has a reliable pointer, and validation passes.
-
-## Handoff
-
-Report the files and boundaries changed, the validation run, and any unresolved
-pointer, generation, or source-of-truth question.
+Report the changed sources and routing decisions, checks run, and any unresolved
+pointer, generation, or ownership question.

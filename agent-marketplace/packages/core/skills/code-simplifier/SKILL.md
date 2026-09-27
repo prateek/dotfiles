@@ -1,46 +1,18 @@
 ---
 name: code-simplifier
-description: Simplify and refine code for clarity, consistency, and maintainability while preserving behavior. Use for refactor/simplify requests, polishing PR diffs, or cleaning up recently modified code without changing outputs.
+description: Simplify code for readability and maintainability while preserving behavior. Use for refactoring, readability requests, polishing PR diffs, or cleaning up recently modified code.
 ---
 
 # Code Simplifier
 
-## Goal
-
-Refactor code to be easier to read and maintain without changing what it does. Prefer explicit, straightforward code over clever compactness.
-
-## Scope
-
-- Default to the most recently modified code (current diff/PR, staged changes, or the snippet the user provided).
-- Don’t refactor unrelated areas unless explicitly requested.
+Make code easier to read and maintain. Prefer explicit, straightforward code over clever compactness.
 
 ## Workflow
 
-1. Identify the target
-   - Prefer a small, reviewable surface area: touched files/functions/lines.
-   - If working in a repo, start from `git diff`/`git status` to find what changed.
+1. **Bound the scope.** Use the files, functions, or snippet the user named. Otherwise, inspect `git status`, `git diff`, and staged changes for recent work. For a PR or committed branch, inspect its diff against the target base (for example, `git diff <base>...HEAD`). Keep edits within that target and the adjacent lines strictly required to complete an in-scope change. Widen the refactor only when the user requests it. Finish when the target is fixed and every later edit stays inside it.
 
-2. Preserve behavior
-   - Keep inputs/outputs, side effects, error semantics, and public APIs identical.
-   - Avoid “refactors” that change ordering, timing, or edge-case handling unless requested.
+2. **Record the contract.** Read repo guidance first, then linters, formatters, and adjacent code for naming, module boundaries, error handling, and formatting. Identify the affected inputs, outputs, side effects, errors, public APIs, ordering, timing, and edge cases. Finish when the behavior and local conventions that constrain the edit are clear enough to compare before and after.
 
-3. Follow project standards
-   - Apply repo-local guidance first (e.g., `AGENTS.md`, `CLAUDE.md`, linters/formatters, adjacent code patterns).
-   - Match naming, module boundaries, error handling, and formatting conventions already in use.
+3. **Simplify locally.** Choose the smallest change that clarifies the code: flatten a branch when an early return helps, remove redundant code or abstractions, consolidate tightly related logic, or give a variable, function, or type a clearer name. Keep responsibilities focused. Express multi-branch logic with `if/else` or `switch` instead of nested ternaries. Match the naming, module boundaries, error handling, and formatting found in step 2. Keep comments that explain reasons or constraints; remove comments that merely narrate the code. After simplifying, use the `decomment` skill for a dedicated comment pass. Finish when each changed line improves clarity, follows local conventions, and preserves the recorded behavior, except for changes the user explicitly requested.
 
-4. Simplify for clarity (choose the least disruptive option)
-   - Reduce unnecessary nesting and branching; prefer early returns when they clarify flow.
-   - Remove redundant code and abstractions; consolidate tightly related logic.
-   - Use descriptive names for variables, functions, and types; keep responsibilities focused.
-   - Avoid nested ternary operators; use `if/else` chains or `switch` for multi-branch logic.
-   - Delete comments that restate obvious code; keep comments that explain “why” or tricky constraints. For a dedicated comment-pruning pass, use the decomment skill after simplifying.
-
-5. Validate
-   - Run the smallest relevant checks (tests, typecheck, build) if available.
-   - Keep diffs focused and easy to review.
-
-## Output expectations
-
-- Make minimal, behavior-preserving changes that improve readability and maintainability.
-- Prefer small, local refactors over broad rewrites.
-- Summarize only the meaningful structure changes (e.g., simplified control flow, removed redundancy, clearer naming).
+4. **Check the result.** Review the diff for scope and behavior changes. Run the smallest relevant tests, typecheck, or build available for the changed code. Fix or revert any failure introduced by the edit. Finish when the checks pass, or when unavailable checks or verified pre-existing failures are reported with the remaining risk. Summarize the meaningful structural changes and the checks run.

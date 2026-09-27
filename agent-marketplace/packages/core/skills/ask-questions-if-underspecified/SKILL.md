@@ -1,83 +1,52 @@
 ---
 name: ask-questions-if-underspecified
-description: Clarify requirements before implementing. Do not use automatically, only when invoked explicitly.
+description: Clarify underspecified requirements before implementation. Use only when the user explicitly invokes this skill.
 ---
 
 # Ask Questions If Underspecified
 
-## Goal
-
-Ask the minimum set of clarifying questions needed to avoid wrong work; do not start implementing until the must-have questions are answered (or the user explicitly approves proceeding with stated assumptions).
+Resolve decisions that could send the work down different paths before implementing.
 
 ## Workflow
 
-### 1) Decide whether the request is underspecified
+1. **Inspect the request and nearby evidence.** Read relevant project files, configuration, and conventions to answer what you can through low-risk discovery. Check:
+   - Objective: what changes and what stays the same.
+   - Done: acceptance criteria, examples, and edge cases.
+   - Scope: included and excluded files, components, or users.
+   - Constraints: compatibility, performance, style, dependencies, and time.
+   - Environment: language and runtime versions, OS, and build or test runner.
+   - Safety: migration, rollout, rollback, and reversibility.
 
-Treat a request as underspecified if after exploring how to perform the work, some or all of the following are not clear:
-- Define the objective (what should change vs stay the same)
-- Define "done" (acceptance criteria, examples, edge cases)
-- Define scope (which files/components/users are in/out)
-- Define constraints (compatibility, performance, style, deps, time)
-- Identify environment (language/runtime versions, OS, build/test runner)
-- Clarify safety/reversibility (data migration, rollout/rollback, risk)
+   A request needs clarification when any of these leaves multiple plausible paths. Finish when each uncertainty is resolved by evidence or identified as a question that could change the work. If none remain, go to step 4.
 
-If multiple plausible interpretations exist, assume it is underspecified.
+2. **Ask the blocking questions.** Ask 1–5 questions per pass, starting with decisions that eliminate whole branches. Batch independent decisions. Keep optional details behind a reasonable default. Frame a question as multiple choice or yes/no when that settles it; use open-ended prose when the answer shapes the next question. For discrete choices, use the harness's native structured-question tool when available: Claude Code `AskUserQuestion`, Codex `request_user_input`, Cursor `AskQuestion`, or the Pi `question` extension. Put the recommended choice first. When the tool is unavailable, use the [plain-prose question format](#plain-prose-question-format) for discrete choices. Finish when the highest-impact blocking decisions for this pass are asked and the available evidence answers none of them.
 
-### 2) Ask must-have questions first (keep it small)
+3. **Wait for the decisions.** While blocking answers are pending, limit work to clearly labeled, low-risk discovery that does not commit to a direction. Keep dependent commands, edits, and detailed plans pending. If the user asks you to proceed without answers, state assumptions for every remaining blocking decision in a short numbered list and ask them to confirm or correct it; proceed after that confirmation. Finish when each asked blocking decision is answered or its stated assumption is confirmed. If blocking decisions remain unasked, or an answer reveals another, return to step 2.
 
-Ask 1-5 questions in the first pass. Prefer questions that eliminate whole branches of work.
+4. **Resume the work.** Once no blocking decisions remain, restate the agreed requirements, key constraints, and success condition in 1–3 sentences, then implement.
 
-**Prefer your harness's native structured-question tool** for discrete choices. It gives the user one-click options and hands you a clean, parseable answer instead of a prose reply you have to interpret:
-- Claude Code `AskUserQuestion`, Codex `request_user_input`, Cursor `AskQuestion`, Pi `question` extension.
-- Lead with the recommended option, keep it to a few questions, and batch independent decisions into one call instead of a back-and-forth.
-- Reserve plain prose for open-ended or iterative questions, where each answer reshapes the next. Never hand-roll a multiple-choice question as a plain-text message when the tool is available.
+## Plain-prose question format
 
-When no structured-question tool is available, ask in prose and make it easy to answer:
-- Optimize for scannability (short, numbered questions; avoid paragraphs)
-- Offer multiple-choice options when possible
-- Suggest reasonable defaults when appropriate (mark them clearly as the default/recommended choice; bold the recommended choice in the list, or if you present options in a code block, put a bold "Recommended" line immediately above the block and also tag defaults inside the block)
-- Include a fast-path response (e.g., reply `defaults` to accept all recommended/default choices)
-- Include a low-friction "not sure" option when helpful (e.g., "Not sure - use default")
-- Separate "Need to know" from "Nice to know" if that reduces friction
-- Structure options so the user can respond with compact decisions (e.g., `1b 2a 3c`); restate the chosen options in plain language to confirm
+Use this format for discrete choices when a structured-question tool is unavailable:
 
-### 3) Pause before acting
+- Number short questions and letter the choices so the user can reply `1b 2a`.
+- Mark a recommended or default choice clearly. In a Markdown list, bold it; in a code block, place a bold **Recommended** line immediately above the block and tag the default inside it.
+- Offer `defaults` as a fast-path reply when all recommended choices can be accepted together. Offer “Not sure — use default” when helpful.
+- Separate blocking from optional questions when that reduces friction. Restate the selected choices in plain language after the reply.
 
-Until must-have answers arrive:
-- Do not run commands, edit files, or produce a detailed plan that depends on unknowns
-- Do perform a clearly labeled, low-risk discovery step only if it does not commit you to a direction (e.g., inspect repo structure, read relevant config files)
+Example:
 
-If the user explicitly asks you to proceed without answers:
-- State your assumptions as a short numbered list
-- Ask for confirmation; proceed only after they confirm or correct them
-
-### 4) Confirm interpretation, then proceed
-
-Once you have answers, restate the requirements in 1-3 sentences (including key constraints and what success looks like), then start work.
-
-## Question templates
-
-- "Before I start, I need: (1) ..., (2) ..., (3) .... If you don't care about (2), I will assume ...."
-- "Which of these should it be? A) ... B) ... C) ... (pick one)"
-- "What would you consider 'done'? For example: ..."
-- "Any constraints I must follow (versions, performance, style, deps)? If none, I will target the existing project defaults."
-- Use numbered questions with lettered options and a clear reply format
+**Recommended:** choose the current project defaults for both questions.
 
 ```text
 1) Scope?
 a) Minimal change (default)
 b) Refactor while touching the area
-c) Not sure - use default
+c) Not sure — use default
 2) Compatibility target?
 a) Current project defaults (default)
 b) Also support older versions: <specify>
-c) Not sure - use default
+c) Not sure — use default
 
 Reply with: defaults (or 1a 2a)
 ```
-
-## Anti-patterns
-
-- Don't ask questions you can answer with a quick, low-risk discovery read (e.g., configs, existing patterns, docs).
-- Don't ask open-ended questions if a tight multiple-choice or yes/no would eliminate ambiguity faster.
-- Don't paste a numbered options list into chat when a native structured-question tool is available — use the tool.

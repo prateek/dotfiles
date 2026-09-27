@@ -1,13 +1,5 @@
 #!/usr/bin/env bash
-# Copy an eval fixture into a per-run working dir.
 # Usage: setup_fixture.sh <fixture_name> <dest_dir>
-#   eval1_failure_modes  — plain workspace
-#   eval2_git_scope      — commits base/ as a human baseline, overlays
-#                          uncommitted working-tree changes from overlay/
-#   eval3_zsh_generate   — plain workspace
-#   eval4_borderline     — plain workspace
-#   eval5_python_report  — plain workspace
-#   eval6_zsh_envfile    — plain workspace
 
 set -euo pipefail
 
@@ -23,7 +15,7 @@ fi
 
 rm -rf "$DEST"
 mkdir -p "$DEST"
-DEST="$(cd "$DEST" && pwd)"  # absolutize: the eval2 branch cd's into it before copying the overlay
+DEST="$(cd "$DEST" && pwd)"  # eval2 changes directory before copying the overlay
 
 if [[ "$FIXTURE" == "eval2_git_scope" ]]; then
   cp -R "$SRC/base"/. "$DEST"/

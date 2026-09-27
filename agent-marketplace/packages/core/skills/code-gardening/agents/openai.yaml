@@ -1,4 +1,4 @@
 interface:
   display_name: "Code Gardening"
-  short_description: "Sync drift, recover intent, update state"
-  default_prompt: "Use $code-gardening to decide what nearby drift to fix now, what history to inspect, and what durable state to update before finishing this change."
+  short_description: "Sync code, docs, tests, and agent guidance"
+  default_prompt: "Use $code-gardening to observe drift, establish authority, sync the affected durable state, and validate the changed boundary."
