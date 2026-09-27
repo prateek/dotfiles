@@ -1,9 +1,11 @@
 """CLI secret-handling checks against a substitute Orca runtime socket."""
 
 import json
+import hashlib
 import os
 from pathlib import Path
 import socket
+import re
 import subprocess
 import sys
 import tempfile
@@ -71,16 +73,18 @@ class OrcaFillStdinTests(unittest.TestCase):
                 request = json.loads(stream.readline())
                 self.calls.append(request)
                 method = request["method"]
-                if method == "browser.fill":
-                    result = {"filled": request["params"]["element"]}
-                else:
+                if method == "browser.eval":
                     evals += 1
-                    result = {
-                        "result": json.dumps(
-                            self.prepare if evals == 1 else self.verify
-                        )
-                    }
-                failed = method == "browser.fill" and self.fill_error
+                    expression = request["params"]["expression"].splitlines()[-1]
+                    if expression.startswith("inputDigest("):
+                        salt = re.search(r'inputDigest\([^\n]*, "([0-9a-f]{32})"\)', expression).group(1)
+                        reply = hashlib.sha256((salt + self.secret).encode()).hexdigest() if self.verify else None
+                    else:
+                        reply = self.prepare if evals == 1 else True
+                    result = {"result": json.dumps(reply)}
+                else:
+                    result = {}
+                failed = method == "browser.keyboardInsertText" and self.fill_error
                 frames = [
                     {"_keepalive": True},
                     {
@@ -121,20 +125,18 @@ class OrcaFillStdinTests(unittest.TestCase):
             json.loads(result.stdout),
             {"filled": True, "verified": True, "submitted": False},
         )
-        fills = [c for c in self.calls if c["method"] == "browser.fill"]
-        self.assertEqual(len(fills), 1)
-        self.assertEqual(fills[0]["params"]["value"], self.secret)
+        self.assertEqual(len(self.calls), 5)
+        self.assertTrue(all(self.secret not in c["params"]["expression"] for c in self.calls if c["method"] == "browser.eval"))
+        self.assertEqual(self.calls[1]["params"]["text"], self.secret)
         self.assertTrue(all(c["params"]["page"] == "owned-page" for c in self.calls))
-        self.assertEqual(
-            {c["method"] for c in self.calls}, {"browser.eval", "browser.fill"}
-        )
+        self.assertEqual([c["method"] for c in self.calls], ["browser.eval", "browser.keyboardInsertText", "browser.eval", "browser.eval", "browser.eval"])
 
     def test_rejected_origin_or_field_never_receives_the_password(self):
         self.prepare = False
         result = self.run_helper()
         self.assertEqual(result.returncode, 1)
-        self.assertIn("origin or unique editable password field", result.stderr)
-        self.assertFalse(any(c["method"] == "browser.fill" for c in self.calls))
+        self.assertIn("origin or unique editable input", result.stderr)
+        self.assertEqual(len(self.calls), 1)
         self.assertNotIn(self.secret, json.dumps(self.calls, ensure_ascii=False))
 
     def test_runtime_error_cannot_echo_secret_or_trigger_a_retry(self):
@@ -143,7 +145,7 @@ class OrcaFillStdinTests(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         self.assertIn("response withheld", result.stderr)
         self.assertEqual(
-            len([c for c in self.calls if c["method"] == "browser.fill"]), 1
+            len(self.calls), 2
         )
 
     def test_successful_fill_receipt_is_not_enough(self):

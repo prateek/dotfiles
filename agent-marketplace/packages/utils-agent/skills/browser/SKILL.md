@@ -33,6 +33,8 @@ description: Browser automation and desktop UI. Use for web-page reads and inter
    session, importing a login, or entering credentials, read
    [auth.md](references/auth.md). Continue when the identity is chosen and any
    import source or live browser has been named by Prateek.
+   For an owned private service whose self-signed certificate Orca cannot
+   accept, follow [certificate recovery](references/certificate.md).
 5. **Work.** Follow the selected driver's workflow and the shared
    [interaction loop](references/policy.md#interaction). Verify the requested
    page or app state before reporting success.

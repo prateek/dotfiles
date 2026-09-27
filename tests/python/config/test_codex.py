@@ -46,7 +46,7 @@ trusted_hash = "sha256:live"
         result = self.command(self.modify, raw)
         data = tomllib.loads(result.stdout.decode())
         current = tomllib.loads(raw.decode())
-        for key, expected in {"model": "gpt-6-astra", "model_reasoning_effort": "xhigh",
+        for key, expected in {"model": "gpt-6-sol", "model_reasoning_effort": "medium",
                               "service_tier": "default", "custom_top_level": "keep"}.items():
             self.assertEqual(data[key], expected)
         self.assertEqual((data["agents"]["max_threads"], data["agents"]["max_depth"]), (16, 3))

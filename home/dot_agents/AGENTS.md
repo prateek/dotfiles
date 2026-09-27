@@ -52,4 +52,4 @@ Load the matching convention before acting:
 
 - Use preset secret-backed environment variables as the default authentication path.
 - Keep secret values out of tool arguments, logs, diffs, and replies; inspect secret-bearing files through redacted or targeted reads.
-- Ask before proceeding when a required credential is missing or expired. When a CLI reports it cannot prompt in a non-interactive shell or returns 401, stop and ask instead of retrying.
+- For authorized authentication, check session and explicitly available vault credentials and supported second factors before asking. Recover a non-interactive prompt or 401 through an interactive path, then verify signed-in state. Ask for an inaccessible factor or human hardware/biometrics; stop after one diagnostic retry fails.

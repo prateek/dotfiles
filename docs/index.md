@@ -2,7 +2,7 @@
 status: current
 doc_type: index
 created: 2026-05-12
-updated: 2026-09-26
+updated: 2026-09-27
 related:
   - document-lifecycle.md
   - ../agent-marketplace/packages/core/skills/code-gardening/SKILL.md
@@ -31,6 +31,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [Chezmoi Drift Banner](../home/dot_config/dotfiles/chezmoi-drift/README.md) | Cached shell banner for managed chezmoi drift. |
 | [Chezmoi Hook Lifecycle](references/chezmoi-hook-lifecycle.md) | Ordering and design rules for config hooks, apply scripts, init, and modify targets. |
 | [Corporate TLS Inspection](runbooks/corp-tls-inspection.md) | Corporate CA trust for Node clients in shells and GUI apps behind a decrypting proxy. |
+| [Private Service Certificate in Orca](../agent-marketplace/packages/utils-agent/skills/browser/references/certificate.md) | Host-scoped trust preference and pinned loopback recovery for an owned private HTTPS service. |
 | [Host Storage](runbooks/host-storage.md) | Required SSD mounts before apply computes targets or installs packages. |
 | [Jamf Self Service Elevation](references/jamf-self-service-elevation.md) | Temporary admin elevation on Jamf-managed work Macs. |
 | [Mise Tool Management](references/mise-tool-management.md) | Mise-native CLI and tool selection. |
@@ -45,7 +46,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | --- | --- |
 | [Self-help and Psychology Book Archive and Agent Tools](plans/psychology-book-archive-and-tools-plan.md) | Proposed; archive the full collection, extract source-linked lessons, and build practical agent workflows and learning tools. |
 | [Agent Friction Remediation](plans/agent-friction-remediation-plan.md) | Active; implemented and committed, not yet applied: bash-compatible glob parsing in zsh with non-interactive audit lanes, acpx/agent-slack/git-spice/retired-path fixes with validators, fake-HOME mise trust in the audit, an OpenSSL CA bundle for work shells, and five conventions. Global mise trust roots await a decision. |
-| [Periodic Session Review](plans/periodic-session-review-plan.md) | Proposed; a monthly review of agent sessions for repeated failures and optimizations, plus an AgentsView request to retain every harness's tool results. |
+| [Periodic Session Review](plans/periodic-session-review-plan.md) | Proposed; completed-session retros, weekly incremental reviews, monthly historical sweeps, and a bounded backfill. No schedule enabled. |
 | [acpx Skill Packaging](plans/acpx-skill-packaging-plan.md) | Active; the acpx conventions are now a trigger-owning skill next to the vendored `acpx-cli` command surface, the conventions doc and its AGENTS.md pointer are deleted. See [ADR 0028](adr/0028-router-skill-over-vendor-remap.md). Trigger arbitration measured 2026-09-08 (no cross-listing steals; 16/18 after one relabel); nothing open. |
 | [acpx Routing](plans/acpx-routing-plan.md) | Accepted and implemented; model/harness separation and apply-time resolution validated locally. Not yet applied to the host. See [current guidance](references/acpx-routing.md) and [ADR 0032](adr/0032-acpx-model-routing.md). |
 | [Browser Skill](plans/browser-skill-plan.md) | Active; landed and applied on personal-mbp, follow-ups open. One `browser` router skill in `utils-agent` replaces `managed-chrome-cdp`, with Orca routing inside Orca (browser-harness for live Chrome) and `agent-browser` elsewhere. |

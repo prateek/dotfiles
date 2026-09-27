@@ -11,7 +11,12 @@ only the missing decision before a consequential action:
 - purchasing, starting a paid service, publishing, deleting, or changing access;
 - storing credentials or accepting permissions;
 - uploading a personal file;
-- entering credentials or personal, payment, or access data.
+- entering personal, payment, or access data beyond the authorized task.
+
+An authorized sign-in includes entering credentials and accessible second
+factors from the session or an explicitly available vault. Check
+[auth.md](auth.md#credential-aware-recovery) before pausing. Credential
+availability does not authorize unrelated account changes.
 
 Reading, navigating, searching, and filling other fields can proceed when
 they preserve focus. A tool's pending-confirmation receipt is not user
@@ -67,6 +72,7 @@ page JavaScript, uploads, or external actions only within his requested task.
 
 ## Stopping
 
-Pause the affected workflow when it reaches an uncovered login, MFA, CAPTCHA,
-consent, or account decision, or when the same action fails twice. Report the
-blocker and ask for the missing input. Continue independent authorized work.
+For an authorized login, follow [credential-aware recovery](auth.md#credential-aware-recovery).
+Pause for an inaccessible factor, required human hardware or biometrics,
+consent or account choice outside the task, or the same failed action twice.
+Report the specific blocker and continue independent authorized work.

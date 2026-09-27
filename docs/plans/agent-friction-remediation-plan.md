@@ -3,7 +3,7 @@ status: active
 doc_type: plan
 owner: Prateek
 created: 2026-09-26
-updated: 2026-09-26
+updated: 2026-09-27
 related:
   - using-git-spice-skill-plan.md
   - acpx-skill-packaging-plan.md
@@ -313,15 +313,17 @@ target region immediately before a patch whenever anything else may have
 touched the file. Why a rule: the patch tool is correct to refuse; the
 stale read is the defect.
 
-**W4.4 · Stop on non-interactive auth failures.** Evidence: 21 rows across
-five providers; `gcloud` said "cannot prompt during non-interactive
-execution" and was retried; m4mini `gh` returned 401 seven times over ten
-days. Rule: when a CLI reports it cannot prompt or returns 401, stop and
-ask; do not retry. Separately, run `gh auth status` on m4mini once. Why a
-rule plus one one-off check: the providers differ, and only the m4mini
-`gh` case is recurring. The four `cursor-agent` login rows are covered by
-the rule; acpx's per-machine route declarations already decide whether a
-cursor-backed shortcut exists on a host, so no acpx change is proposed.
+**W4.4 · Recover authorized authentication.** Evidence: 21 rows across
+five providers; `gcloud` could not prompt in a non-interactive shell and
+m4mini `gh` returned 401 seven times over ten days. On an authorized task,
+check credentials and supported second factors available in the session or
+Devland before asking. Use an interactive path when a CLI cannot prompt,
+then verify signed-in state. Ask for inaccessible factors, human hardware or
+biometrics, or a decision outside the task. A repeated 401 after one
+diagnostic retry is a blocker, not a reason to loop. Run `gh auth status` on
+m4mini once. The four `cursor-agent` login rows are covered by this rule;
+acpx's per-machine route declarations already decide whether a cursor-backed
+shortcut exists on a host.
 
 **W4.5 · Worktree ownership.** Evidence: 14 rows of `is already used by
 worktree`, mostly `git checkout master` inside a monorepo worktree, plus 9
@@ -339,10 +341,12 @@ Two independent items.
 
 1. **A generic proposal for periodic review of agent sessions.** Not tied
    to the issues above. A `docs/plans/` proposal that says: on a cadence
-   (monthly to start), take a snapshot of the local AgentsView store and
-   the archive, look for repeated failure modes and for optimizations the
-   sessions make visible (wasted retries, slow steps, repeated manual
-   prompts), and turn what recurs into fixes with acceptance checks. The
+   (completed-session retros, weekly incremental review, and monthly
+   historical sweep as proposed defaults), take a snapshot of the local
+   AgentsView store and archive, look for repeated failure modes and for
+   optimizations the sessions make visible (wasted retries, slow steps,
+   repeated manual prompts), and turn what recurs into fixes with acceptance
+   checks. The
    proposal covers the snapshot procedure (copy-on-write clone of
    `sessions.db`, recorded max message timestamp), which scripts are kept
    and where (`scripts/audit/`), where reports live (private state, not the
@@ -356,9 +360,10 @@ Two independent items.
    review. File the upstream request, with the parser evidence, once
    Prateek approves the filing.
 
-Acceptance: the proposal exists and is accepted, and its first scheduled
-run produces a report; the upstream request is filed and linked from the
-proposal.
+Acceptance: the proposal is accepted, a bounded backfill produces a
+coverage-aware report with checkpointed evidence, and a later enabled
+schedule produces its first incremental report. The upstream request is
+filed and linked from the proposal after approval.
 
 ## Sequencing
 

@@ -20,7 +20,7 @@ tool calls. Recover a lost name with `agent-browser session list`; reuse an
 existing name only to resume that session.
 
 If login will be needed, settle retention before the first command. Reuse
-Prateek's stated preference; ask if it is missing. For a retained agent-browser
+Prateek's stated preference; otherwise use temporary state. For a retained agent-browser
 login, pass `--restore` from the first command onward. In 0.38.1, adding it
 later relaunches the browser and loses the current login. Saved state contains
 plaintext cookies and localStorage under `~/.agent-browser` and expires after
@@ -56,15 +56,32 @@ fresh sign-in before repeating the import.
 
 When the chosen identity needs a login:
 
-1. If credential entry is already authorized, follow the driver's password
-   workflow: [Orca](drivers/orca.md#secrets) or the terminal vault below.
-   Otherwise prepare the page and ask Prateek to sign in. Get the
+1. For an authorized task, check the available credential sources and follow
+   the driver's password workflow: [Orca](drivers/orca.md#secrets) or the
+   terminal vault below. If the source is inaccessible, prepare the page and
+   ask Prateek to sign in. Get the
    [focus agreement](policy.md#focus) before opening or revealing a headed
    window; an existing Orca tab is not necessarily visible or focused.
-2. Wait for the requested sign-in or any uncovered MFA, CAPTCHA, consent, or
-   account decision. Reuse decisions already supplied for this task.
+2. Resolve accessible factors under [credential-aware recovery](#credential-aware-recovery).
 3. Verify a signed-in page element before continuing. Cookie presence and
    successful command receipts do not establish login success.
+
+## Credential-aware recovery
+
+Use credentials already supplied in the session, Devland through
+`scripts/chezmoi-hooks/op-service-account`, or another explicitly available
+source for the authorized service. Search for an existing item before creating
+one and include `--vault` on 1Password item operations. Pass secrets through
+stdin or an approved secret transport, keeping them out of argv, logs, and
+screenshots. Never print a retrieved value.
+For SSH Key items, follow [Devland operations](onepassword.md).
+
+Complete supported TOTP and accessible email or SMS codes. Solve a CAPTCHA
+when the available browser can do so within the authorized sign-in. Check the
+resulting application state after each step. Ask Prateek for a factor that is
+inaccessible or requires human hardware or biometrics; ask for an account or
+consent decision that the task does not supply. A failed action gets one
+diagnostic retry at most, then a specific blocker report.
 
 ## Terminal credential vault
 
