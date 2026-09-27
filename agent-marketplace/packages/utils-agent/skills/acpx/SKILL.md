@@ -18,7 +18,7 @@ the calling harness.
 | --- | --- |
 | `-m`, `--model <shortcut>` | Shortcut that runs the task. Pick from the job table when absent. |
 | `-w`, `--write` | The delegate may change files. Absent means read-only. |
-| `--inline` | Inside Orca, run in the calling harness instead of a sibling pane. |
+| `--inline` | Inside Orca, run in the calling harness instead of the shared view. |
 | `-- <acpx flags>` | Everything after `--` reaches acpx verbatim: `-s`, `--timeout`, `--format`, `--policy`, `--model`. |
 
 `-m agptx`, `--model agptx`, and `--model=agptx` are the same. Its value is a
@@ -118,15 +118,17 @@ Use `--format text` by default, and `--format json --json-strict` when a
 script parses the result. Never use `--format quiet`: it drops the progress
 and thinking that show whether a run is stuck.
 
-### Inside Orca: a sibling pane
+### Inside Orca: the shared ACPX view
 
 When `ORCA_TERMINAL_HANDLE` is set and `--inline` is absent, every harness
 launches through this skill's [`scripts/acpx-pane`](scripts/acpx-pane) instead of
-the direct or redirected acpx line. It splits a pane beside the caller, titles it
-`acpx <shortcut> ← <parent session>`, prints the parent session and pane, streams
-the run, and holds the pane open until a keypress. It also writes the full output
-to the log, blocks until acpx exits, and returns acpx's status, so the relay and
-audit work unchanged:
+the direct or redirected acpx line. The first call opens one Orca pane containing
+a compact Herdr session. Later calls from the same Orca terminal add tabs there.
+Each tab shows its launch order, local time, and shortcut, such as
+`02 14:41 aopus`. The bottom strip shows the number of session tabs; use
+`Ctrl+B`, then `n` or `p` to switch. The helper writes the full output to the log,
+blocks until acpx exits, and returns acpx's status, so the relay and audit work
+unchanged:
 
 ```sh
 ~/.agents/plugins/plugins/utils-agent/skills/acpx/scripts/acpx-pane --log "$log" --label agpt -- \
@@ -135,12 +137,17 @@ audit work unchanged:
   agpt exec -f "/tmp/acpx-$slug.prompt.md"
 ```
 
-The pane runs in a fresh login shell in the caller's working directory, so pass
-anything acpx needs as flags or prompt text rather than ad hoc exported
-variables. Claude Code sessions are named by `CLAUDE_CODE_SESSION_ID`; other
-harnesses set `ACPX_PARENT_SESSION` to name theirs, or the pane falls back to the
-caller's Orca terminal handle. Outside Orca, or with `--inline`, the helper runs
-acpx in place with the redirect.
+The launch command is the same for every calling harness. To create the empty
+view or switch Orca back to the existing one, run
+`~/.agents/plugins/plugins/utils-agent/skills/acpx/scripts/acpx-pane --view`.
+The helper manages the Herdr session and its tab labels; callers do not need
+Herdr commands. Missing Herdr or Python 3, or a failed view launch, falls back to inline acpx.
+Outside Orca, or with `--inline`, the helper runs acpx in place with the redirect.
+Herdr is declared in the mac-desktop package group. Completed tabs wait quietly
+on their final output for review, without returning to a shell prompt. Press
+an ordinary key or `Ctrl+C` to close a completed tab; when it is the last ACPX
+tab, the Orca view closes too. `Ctrl+B`, then `q` detaches the Herdr view while
+keeping its tabs available. Stopping a waiting helper closes only its tab.
 
 ## Watch, relay, cancel
 

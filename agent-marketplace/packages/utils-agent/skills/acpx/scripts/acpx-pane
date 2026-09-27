@@ -1,127 +1,250 @@
 #!/usr/bin/env bash
-# Run one acpx invocation where a human can watch it. Inside an Orca terminal
-# the run gets its own split pane beside the caller, titled with the parent
-# session, and waits for a keypress before the pane closes. The full output is
-# also appended to <log>, so the caller relays it exactly as for an inline run.
-# Elsewhere, or with --inline, acpx runs here with its output redirected to
-# <log>.
-#
-# This process blocks until acpx exits and returns its status, so the calling
-# harness's background-task completion stays the backstop. Stopping this
-# process closes the pane, which hangs up acpx.
 set -euo pipefail
+umask 077
 
 usage() {
-  echo "usage: acpx-pane --log <file> [--label <shortcut>] [--inline] -- <acpx args...>" >&2
+  echo "usage: acpx-pane [--view] | --log <file> [--label <shortcut>] [--inline] -- <acpx args...>" >&2
   exit 2
 }
 
-log=""
-label="acpx"
-inline=0
+log="" label="acpx" inline=0 view=0
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --log) [ "$#" -ge 2 ] || usage; log="$2"; shift 2 ;;
     --label) [ "$#" -ge 2 ] || usage; label="$2"; shift 2 ;;
     --inline) inline=1; shift ;;
+    --view) view=1; shift ;;
     --) shift; break ;;
     *) usage ;;
   esac
 done
-[ -n "$log" ] && [ "$#" -gt 0 ] || usage
+if [ "$view" = 1 ]; then
+  [ -z "$log" ] && [ "$#" = 0 ] && [ "$inline" = 0 ] || usage
+else
+  [ -n "$log" ] && [ "$#" -gt 0 ] || usage
+fi
 
-run_inline() {
-  exec acpx "$@" > "$log" 2>&1
-}
+run_inline() { exec acpx "$@" > "$log" 2>&1; }
 
-# The pane runner and the inline fallback race for this claim, so a split that
-# reports failure after its pane already started can never run acpx twice.
-claim="$log.claim"
-
-if [ "$inline" = 1 ] || [ -z "${ORCA_TERMINAL_HANDLE:-}" ] || ! command -v orca > /dev/null; then
+if [ "$inline" = 1 ] || [ -z "${ORCA_TERMINAL_HANDLE:-}" ] ||
+   ! command -v orca > /dev/null || ! command -v herdr > /dev/null ||
+   ! command -v python3 > /dev/null; then
+  if [ "$view" = 1 ]; then
+    echo "acpx-pane: viewing requires Orca, Herdr, and Python 3" >&2
+    exit 1
+  fi
   run_inline "$@"
 fi
 
-# Session ids are long; the title keeps the harness name and an id prefix.
-if [ -n "${ACPX_PARENT_SESSION:-}" ]; then
-  parent="$ACPX_PARENT_SESSION" short_parent="$ACPX_PARENT_SESSION"
-elif [ -n "${CLAUDE_CODE_SESSION_ID:-}" ]; then
-  parent="claude $CLAUDE_CODE_SESSION_ID"
-  short_parent="claude $(printf '%.8s' "$CLAUDE_CODE_SESSION_ID")"
-else
-  parent="Orca terminal $ORCA_TERMINAL_HANDLE"
-  short_parent="orca $(printf '%.8s' "${ORCA_TERMINAL_HANDLE#term_}")"
+herdr_bin=$(command -v herdr)
+orca_bin=$(command -v orca)
+python_bin=$(command -v python3)
+key=$(printf '%s' "$ORCA_TERMINAL_HANDLE" | shasum -a 256 | cut -c1-16)
+state="${XDG_STATE_HOME:-$HOME/.local/state}/acpx-pane/$key"
+session="acpx-$key"
+mkdir -p "$state"
+chmod 700 "$state"
+lock_file="$state/lock.flock"
+
+herdr_session() {
+  local result
+  result=$("$herdr_bin" --session "$session" "$@" 9>&-) || return
+  [ -n "$result" ] || return 0
+  if ! jq -e '.error == null' > /dev/null <<< "$result"; then
+    printf 'acpx-pane: Herdr %s: %s\n' "$1" "$result" >&2
+    return 1
+  fi
+  printf '%s\n' "$result"
+}
+unlock() {
+  exec 9>&-
+}
+lock() {
+  exec 9>> "$lock_file"
+  if ! "$python_bin" -c '
+import fcntl
+import sys
+import time
+
+deadline = time.monotonic() + 20
+while True:
+    try:
+        fcntl.flock(9, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        break
+    except BlockingIOError:
+        if time.monotonic() >= deadline:
+            sys.exit(1)
+        time.sleep(0.1)
+'; then
+    unlock
+    echo "acpx-pane: timed out waiting for the shared view" >&2
+    return 1
+  fi
+}
+
+write_config() {
+  cat > "$state/count.sh" <<EOF
+#!/usr/bin/env bash
+"\${HERDR_BIN_PATH:-herdr}" --session "$session" tab list 2>/dev/null \
+  | jq -r '[.result.tabs[]? | select(.label | test("^[0-9]+ "))] | length | "sessions: " + tostring' 2>/dev/null
+EOF
+  chmod 700 "$state/count.sh"
+  cat > "$state/config.toml" <<EOF
+onboarding = false
+[ui]
+sidebar_start_collapsed = true
+sidebar_collapsed_mode = "hidden"
+pane_borders = "off"
+pane_outer_borders = false
+pane_scrollbars = false
+pane_gaps = false
+tab_bar_position = "bottom"
+hide_tab_bar_when_single_tab = false
+window_title = "ACPX"
+tab_bar_right = [{ type = "command", command = "$state/count.sh", interval_seconds = 2, timeout_seconds = 2 }]
+[ui.toast]
+delivery = "off"
+EOF
+}
+
+ensure_view() {
+  local pane="" split="" state_json="" spaces="" created=""
+  if [ -f "$state/pane" ]; then
+    pane=$(cat "$state/pane")
+    state_json=$(orca terminal show --terminal "$pane" --json 9>&- 2> /dev/null || true)
+    if [ "$(printf '%s' "$state_json" | jq -r '.result.terminal.connected // false' 2> /dev/null)" != true ]; then
+      pane=""
+      if ! herdr_session workspace list > /dev/null 2>&1; then
+        "$herdr_bin" session delete "$session" > /dev/null 2>&1 || true
+      fi
+    fi
+  fi
+  if [ -z "$pane" ]; then
+    write_config
+    split=$(orca terminal split --terminal "$ORCA_TERMINAL_HANDLE" --direction horizontal \
+      --command "exec env HERDR_CONFIG_PATH=$(printf %q "$state/config.toml") $(printf %q "$herdr_bin") --session $session" \
+      --json 9>&- 2> /dev/null || true)
+    pane=$(printf '%s' "$split" | jq -r '.result.split.handle // empty' 2> /dev/null || true)
+    [ -n "$pane" ] || return 1
+    printf '%s\n' "$pane" > "$state/pane"
+  fi
+  for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
+    spaces=$(herdr_session workspace list 2> /dev/null) && break
+    sleep 0.25
+  done
+  [ -n "$spaces" ] || return 1
+  workspace=$(printf '%s' "$spaces" | jq -r '.result.workspaces[0].workspace_id // empty')
+  if [ -z "$workspace" ]; then
+    created=$(herdr_session workspace create --cwd "$PWD" --label ACPX)
+    workspace=$(printf '%s' "$created" | jq -r '.result.workspace.workspace_id // empty')
+  fi
+  [ -n "$workspace" ] || return 1
+  view_pane="$pane"
+}
+
+lock
+trap unlock EXIT
+if ! ensure_view; then
+  unlock
+  trap - EXIT
+  if [ "$view" = 1 ]; then
+    echo "acpx-pane: could not open the Herdr view" >&2
+    exit 1
+  fi
+  echo "acpx-pane: could not open Herdr; running inline" >&2
+  run_inline "$@"
 fi
-parent_title=$(orca terminal show --terminal "$ORCA_TERMINAL_HANDLE" --json 2> /dev/null \
-  | jq -r '.result.terminal.title // empty' 2> /dev/null || true)
+
+if [ "$view" = 1 ]; then
+  unlock
+  trap - EXIT
+  orca terminal switch --terminal "$view_pane" --json > /dev/null
+  echo "pane: $view_pane"
+  exit 0
+fi
+
+tabs=$(herdr_session tab list --workspace "$workspace")
+sequence=0
+[ ! -f "$state/sequence" ] || sequence=$(cat "$state/sequence")
+last_tab_sequence=$(printf '%s' "$tabs" | jq -r '[.result.tabs[].label | select(test("^[0-9]+ ")) | split(" ")[0] | tonumber] | max // 0')
+[ "$sequence" -ge "$last_tab_sequence" ] || sequence="$last_tab_sequence"
+sequence=$((sequence + 1))
+printf '%s\n' "$sequence" > "$state/sequence"
+tab_label=$(printf '%02d %s %s' "$sequence" "$(date +%H:%M)" "$label")
+if [ "$(printf '%s' "$tabs" | jq '.result.tabs | length')" = 1 ] &&
+   [ "$(printf '%s' "$tabs" | jq -r '.result.tabs[0].label')" = 1 ]; then
+  tab=$(printf '%s' "$tabs" | jq -r '.result.tabs[0].tab_id')
+  herdr_session tab rename "$tab" "$tab_label" > /dev/null
+  pane=$(herdr_session pane list --workspace "$workspace" | jq -r --arg tab "$tab" '.result.panes[] | select(.tab_id == $tab) | .pane_id' | head -1)
+else
+  created=$(herdr_session tab create --workspace "$workspace" --cwd "$PWD" --label "$tab_label" --focus)
+  tab=$(printf '%s' "$created" | jq -r '.result.tab.tab_id')
+  pane=$(printf '%s' "$created" | jq -r '.result.root_pane.pane_id')
+fi
+[ -n "$tab" ] && [ -n "$pane" ] || { echo "acpx-pane: Herdr did not create a tab" >&2; exit 1; }
 
 exit_file="$log.exit"
 runner="$log.pane.sh"
 rm -f "$exit_file"
-rmdir "$claim" 2> /dev/null || true
 : > "$log"
-
 {
   echo '#!/usr/bin/env bash'
   echo 'set -o pipefail'
-  printf 'log=%q exit_file=%q\n' "$log" "$exit_file"
-  printf 'mkdir %q 2> /dev/null || exit 0\n' "$claim"
-  printf 'title=%q parent=%q parent_title=%q\n' "acpx $label ← $short_parent" "$parent" "$parent_title"
-  # shellcheck disable=SC2016
+  printf 'log=%q exit_file=%q session=%q view_pane=%q orca_bin=%q python_bin=%q lock_file=%q\n' \
+    "$log" "$exit_file" "$session" "$view_pane" "$orca_bin" "$python_bin" "$lock_file"
+  declare -f lock unlock
   cat <<'RUNNER'
 record() { [ -e "$exit_file" ] || { printf '%s\n' "$1" > "$exit_file.tmp" && mv -f "$exit_file.tmp" "$exit_file"; }; }
 trap 'record 129' HUP
-printf '\033]0;%s\007\033[H\033[2J' "$title"
-printf '\033[1;36m━━ %s ━━\033[0m\n' "$title"
-printf 'parent session: %s\n' "$parent"
-[ -z "$parent_title" ] || printf 'parent pane:    %s\n' "$parent_title"
-printf 'log:            %s\n\n' "$log"
 RUNNER
-  printf 'cd %q || exit 1\n' "$PWD"
+  printf 'cd %q || { record 1; exit 1; }\n' "$PWD"
   printf 'acpx'
   printf ' %q' "$@"
-  # shellcheck disable=SC2016
-  printf ' 2>&1 | tee -a "$log"\n'
-  # shellcheck disable=SC2016
+  echo ' 2>&1 | tee -a "$log"'
   cat <<'RUNNER'
 rc=$?
 record "$rc"
-printf '\n\033[1;36m━━ acpx exited %s. Press any key to close this pane. ━━\033[0m' "$rc"
-read -rsn1 || true
+printf '\n[acpx exited %s; press any key to close]\n' "$rc"
+close_completed_tab() {
+  trap - INT
+  lock || exit 1
+  other_tabs=$("${HERDR_BIN_PATH:-herdr}" --session "$session" tab list 9>&- 2>/dev/null \
+    | jq -er '.result.tabs | [.[] | select(.label | test("^[0-9]+ "))] | length' 2>/dev/null)
+  if [ "$other_tabs" = 1 ]; then
+    "$orca_bin" terminal close --terminal "$view_pane" --json 9>&- > /dev/null 2>&1 || true
+  fi
+  unlock
+  exit 0
+}
+trap close_completed_tab INT
+read -rsn1 _ || true
+close_completed_tab
 RUNNER
 } > "$runner"
 
-split=$(orca terminal split --terminal "$ORCA_TERMINAL_HANDLE" --direction horizontal \
-  --command "exec bash $(printf %q "$runner")" --json 2> /dev/null || true)
-pane=$(printf '%s' "$split" | jq -r '.result.split.handle // empty' 2> /dev/null || true)
-if [ -z "$pane" ]; then
-  if mkdir "$claim" 2> /dev/null; then
-    echo "acpx-pane: orca terminal split failed; running inline" >&2
-    run_inline "$@"
-  fi
-  echo "acpx-pane: orca terminal split reported no pane, but its runner started; waiting on it" >&2
+if ! herdr_session pane run "$pane" "exec bash $(printf %q "$runner")" > /dev/null; then
+  herdr_session tab close "$tab" > /dev/null 2>&1 || true
+  echo "acpx-pane: Herdr could not start acpx" >&2
+  exit 1
 fi
-echo "pane: ${pane:-unknown}"
+unlock
+trap - EXIT
+echo "pane: $view_pane; tab: $tab_label"
 
-trap '[ -z "$pane" ] || orca terminal close --terminal "$pane" --json > /dev/null 2>&1 || true; exit 130' INT TERM
-
-# Only Orca saying the pane is gone counts; a busy or restarting Orca does not.
-pane_state() {
-  orca terminal show --terminal "$pane" --json 2> /dev/null \
-    | jq -r 'if .ok == false then .error.code else (.result.terminal.connected | tostring) end' \
-      2> /dev/null || true
+cancel() {
+  trap - INT TERM
+  herdr_session tab close "$tab" > /dev/null 2>&1 || true
+  exit 130
 }
+trap cancel INT TERM
 
 ticks=0
 while [ ! -e "$exit_file" ]; do
   sleep 1
   ticks=$((ticks + 1))
-  if [ -n "$pane" ] && [ $((ticks % 15)) = 0 ]; then
-    state=$(pane_state)
-    if { [ "$state" = false ] || [ "$state" = terminal_handle_stale ]; } && [ ! -e "$exit_file" ]; then
-      echo "[error] acpx pane $pane closed before acpx reported an exit status" >> "$log"
-      exit 129
-    fi
+  if [ $((ticks % 5)) = 0 ] && ! herdr_session tab get "$tab" > /dev/null 2>&1; then
+    echo "[error] acpx tab $tab closed before acpx reported an exit status" >> "$log"
+    exit 129
   fi
 done
 exit "$(cat "$exit_file")"

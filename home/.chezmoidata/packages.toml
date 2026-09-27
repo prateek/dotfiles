@@ -51,6 +51,7 @@ brews = [
 
   # Desktop app install support and editor integration.
   { name = "mas" },
+  { name = "herdr" },
 ]
 casks = [
   # Accounts, browsers, terminals, and editors.
