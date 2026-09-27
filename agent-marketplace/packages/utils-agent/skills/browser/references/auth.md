@@ -15,9 +15,9 @@ logins and permissions.
 ## Sessions
 
 For terminal work, choose a unique session name such as `checkout-k3f9` and
-pass it literally on every command. Shell variables may disappear between
-tool calls. Recover a lost name with `agent-browser session list`; reuse an
-existing name only to resume that session.
+include it literally in every command. Shell variables may not survive between
+tool calls. If the name is lost, run `agent-browser session list`; reuse an
+existing session only to resume it.
 
 If login will be needed, settle retention before the first command. Reuse
 Prateek's stated preference; otherwise use temporary state. For a retained agent-browser
@@ -28,33 +28,35 @@ plaintext cookies and localStorage under `~/.agent-browser` and expires after
 
 ## Import source
 
-1. **Source.** Identify the browser and profile Prateek named. Ask for either
-   missing value before importing.
-2. **Import.** Use the selected driver's path:
+1. **Identify the source.** Use the browser and profile Prateek named. Ask for
+   either missing value before importing.
+2. **Import the login.** Use the path for the selected driver:
    - **Orca:** run [`orca-import-login`](../scripts/orca-import-login) with
-     `--url`, `--browser`, and `--browser-profile`; consult `--help` for optional
-     arguments. Follow the [focus policy](policy.md#focus) before it opens the
-     new tab. Success returns the new page and profile IDs; use those IDs for
-     subsequent commands. A profile created with `--scope imported` alone is
-     empty and does not import a login.
-   - **Terminal / Chrome:** use `agent-browser profiles` to resolve the named
-     profile, then `--profile <name>`. This copies it into a temporary directory.
-   - **Terminal / another browser:** obtain the profile directory and explain
-     that `--profile <path>` writes to it in place. Use it after that write
-     access is authorized.
-3. **Verify.** Inspect a signed-in page element, such as the account menu.
-   The Orca helper checks host suffixes; it does not prove site identity or login.
-   If the page requires login, follow [Login hand-off](#login-hand-off).
+     `--url`, `--browser`, and `--browser-profile`. Read `--help` for optional
+     arguments. Follow the [focus policy](policy.md#focus) before opening the
+     new tab. On success, use the returned page and profile IDs in later calls.
+     Creating a profile with `--scope imported` alone creates an empty profile;
+     it does not copy a login.
+   - **Terminal / Chrome:** use `agent-browser profiles` to find the named
+     profile, then pass it with `--profile <name>`. This copies it to a
+     temporary directory.
+   - **Terminal / another browser:** get the profile directory and explain
+     that `--profile <path>` writes into it. Use that path after write access
+     is authorized.
+3. **Verify the login.** Inspect a signed-in page element, such as the account
+   menu. The Orca helper checks host suffixes; that does not establish site
+   identity or prove login. If the page still requires login, follow
+   [Login hand-off](#login-hand-off).
 
-Orca's helper reports the browser families it detects. For an unsupported
-source, use its native UI or ask for a supported source. Prisma requires the
-[Prisma Access Browser workflow](drivers/native.md#prisma-access-browser);
-its cookie store is not an import fallback. An expired source login needs a
-fresh sign-in before repeating the import.
+The Orca helper reports detected browser families. For an unsupported source,
+use its native UI or ask for a supported source. Prisma requires the
+[Prisma Access Browser workflow](drivers/native.md#prisma-access-browser); its
+cookie store is not an import fallback. If the source login has expired, sign
+in again before repeating the import.
 
 ## Login hand-off
 
-When the chosen identity needs a login:
+When the selected identity needs a login:
 
 1. For an authorized task, check the available credential sources and follow
    the driver's password workflow: [Orca](drivers/orca.md#secrets) or the
@@ -85,10 +87,10 @@ diagnostic retry at most, then a specific blocker report.
 
 ## Terminal credential vault
 
-When Prateek requests a reusable credential, use
+When Prateek requests a reusable credential, run
 `agent-browser auth save <name> --url <login-url> --username <user>
---password-stdin`, with the approved secret reader piped directly to stdin.
-It stores the credential in the encrypted vault; `auth login <name>` uses it.
-Verify the signed-in page after login. For Orca, use its
-[password workflow](drivers/orca.md#secrets); the terminal vault route does not
+--password-stdin` and pipe the approved secret reader directly to stdin. The
+command stores the credential in the encrypted vault; `auth login <name>` uses
+it. Verify the signed-in page after login. For Orca, use its
+[password workflow](drivers/orca.md#secrets); this terminal vault does not
 establish Orca login support.

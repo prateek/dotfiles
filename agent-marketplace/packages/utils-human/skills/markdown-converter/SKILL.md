@@ -6,69 +6,79 @@ disable-model-invocation: true
 
 # Markdown Converter
 
-Convert files to Markdown using `uvx markitdown` — no installation required.
+Convert a file or URL to Markdown with `uvx markitdown`. `uvx` runs the tool
+without requiring a separate installation.
 
-## Basic Usage
+## Convert a source
+
+Choose the invocation that matches where the source comes from and where the
+Markdown should go:
 
 ```bash
-# Convert to stdout
+# Convert a local file to stdout
 uvx markitdown input.pdf
 
-# Convert a remote URL (markitdown will fetch it)
+# Convert a remote URL to stdout
 uvx markitdown https://example.com
 
-# Save to file
+# Write directly to a file
 uvx markitdown input.pdf -o output.md
+
+# Redirect stdout to a file
 uvx markitdown input.docx > output.md
 
-# From stdin
+# Read the source from stdin
 cat input.pdf | uvx markitdown
 ```
 
-## Supported Formats
-
-- **Documents**: PDF, Word (.docx), PowerPoint (.pptx), Excel (.xlsx, .xls)
-- **Web/Data**: HTML, CSV, JSON, XML
-- **Media**: Images (EXIF + OCR), Audio (EXIF + transcription)
-- **Other**: ZIP (iterates contents), remote URLs (HTTP/HTTPS, including YouTube), EPub
-
-## Options
+For stdin, add a type hint when the input type cannot be inferred:
 
 ```bash
--o OUTPUT      # Output file
--x EXTENSION   # Hint file extension (for stdin)
--m MIME_TYPE   # Hint MIME type
--c CHARSET     # Hint charset (e.g., UTF-8)
--d             # Use Azure Document Intelligence
--e ENDPOINT    # Document Intelligence endpoint
---use-plugins  # Enable 3rd-party plugins
---list-plugins # Show installed plugins
+cat document | uvx markitdown -x .pdf > output.md
 ```
 
-## Examples
+## Choose an input type
+
+MarkItDown supports these source types:
+
+- Documents: PDF, Word (`.docx`), PowerPoint (`.pptx`), and Excel (`.xlsx`, `.xls`)
+- Web and data: HTML, CSV, JSON, and XML
+- Media: images (EXIF data and OCR) and audio (EXIF data and transcription)
+- Other: ZIP archives (iterates over their contents), remote HTTP/HTTPS URLs
+  including YouTube, and EPub
+
+Examples for common document types:
 
 ```bash
-# Convert Word document
 uvx markitdown report.docx -o report.md
-
-# Convert a remote document
 uvx markitdown https://example.com/report.pdf -o report.md
-
-# Convert Excel spreadsheet
 uvx markitdown data.xlsx > data.md
-
-# Convert PowerPoint presentation
 uvx markitdown slides.pptx -o slides.md
+```
 
-# Convert with file type hint (for stdin)
-cat document | uvx markitdown -x .pdf > output.md
+## Set conversion options
 
-# Use Azure Document Intelligence for better PDF extraction
+Use these flags when the source needs a hint or a specific conversion service:
+
+```text
+-o OUTPUT       Write Markdown to OUTPUT
+-x EXTENSION    Hint the file extension, especially for stdin
+-m MIME_TYPE    Hint the MIME type
+-c CHARSET      Hint the character set, such as UTF-8
+-d              Use Azure Document Intelligence
+-e ENDPOINT     Set the Document Intelligence endpoint
+--use-plugins   Enable third-party plugins
+--list-plugins  List installed plugins
+```
+
+For example, use Azure Document Intelligence when a scanned PDF or a PDF with
+poor extraction needs better results. Supply the endpoint for your Azure resource:
+
+```bash
 uvx markitdown scan.pdf -d -e "https://your-resource.cognitiveservices.azure.com/"
 ```
 
-## Notes
+## Output and first run
 
-- Output preserves document structure: headings, tables, lists, links
-- First run caches dependencies; subsequent runs are faster
-- For complex PDFs with poor extraction, use `-d` with Azure Document Intelligence
+The Markdown output preserves document structure such as headings, tables,
+lists, and links. The first run caches dependencies; later runs are faster.

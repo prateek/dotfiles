@@ -16,163 +16,88 @@ description: |
 
 # Review Prompt Craft
 
-## Purpose
+Good review context tells a reviewer which project decisions are intentional. Without it, AI reviewers often flag generic concerns about authentication, rate limits, validation, and error handling that do not fit the deployment model. Capture these decisions and the real risks so reviews focus on actionable bugs.
 
-AI code reviewers are only as good as the context they receive. Without project
-context, they flood PRs with generic warnings about auth, rate limiting, input
-validation, and error handling that do not apply. This skill teaches you to
-build review infrastructure that produces high-signal, actionable findings.
+Choose the workflow that matches the request:
 
-The core insight: the most valuable review document is not a list of what to
-check -- it is a list of what NOT to flag. Every project has intentional design
-decisions that look like bugs to a context-free reviewer. Documenting those
-decisions is the single highest-leverage thing you can do for review quality.
+- **Setup**: create or improve review context, a reviewer matrix, or CI integration.
+- **Review**: assess a PR or diff using the project's context; if no context exists, gather it from project instructions and the README.
 
-## Two Modes
+## Setup: Build review infrastructure
 
-This skill operates in two modes:
+### 1. Learn the project and its false positives
 
-1. **Setup mode**: Build review infrastructure for a project (context docs,
-   multi-agent config, CI integration).
-2. **Review mode**: Conduct an individual PR review using project context.
+Read the relevant code, existing review configuration, project instructions, PR history, and issue discussions. Establish:
 
-Determine which mode the user needs. If they ask to "set up review" or "write
-review guidelines," use setup mode. If they ask to "review this PR" or "review
-these changes," use review mode (and check whether project context exists first).
+1. Who runs the software: one person on localhost, an internal team, or public users?
+2. Where trust boundaries lie: loopback, authenticated API, isolated container, or local files?
+3. Which unusual design choices are intentional?
+4. Which findings have reviewers repeatedly raised incorrectly?
 
----
+Use concrete evidence from the codebase to answer these questions before writing configuration.
 
-## Mode 1: Setup -- Build Review Infrastructure
+### 2. Write the negative-space context
 
-### Step 1: Audit the Project's Threat Model
-
-Before writing any review config, answer these questions by reading the codebase:
-
-1. **Who runs this?** Single user on localhost? Multi-tenant SaaS? Internal
-   tool behind a VPN? The answer determines which security findings are valid.
-2. **What is the trust boundary?** Loopback-only? Auth-gated API?
-   Network-isolated container? Trusted input from local files?
-3. **What are the accepted design decisions?** Every project has things that
-   look wrong but are intentional. Find them before reviewers do.
-4. **What has the project already been falsely flagged for?** Check PR history,
-   existing review configs, CLAUDE.md, and issue trackers.
-
-### Step 2: Write the Negative-Space Context Document
-
-The context document teaches reviewers what the project is and what NOT to flag.
-It is the single most important artifact in the review system.
-
-**Format**: Use a TOML file (`.roborev.toml`) with a `review_guidelines` key
-containing a multi-line string. TOML is preferred because it is
-language-agnostic, parseable, and works with any review tool.
-
-**Structure template**:
+Use a root `.roborev.toml` with a `review_guidelines` multi-line string when the review tool accepts that format. The context document is the main review artifact: explain the deployment model, what reviewers should not flag, and what would be a real defect.
 
 ```toml
 review_guidelines = """
-<PROJECT NAME> is <one-sentence description including deployment model>.
-<Key architectural constraint, e.g. "Not designed for multi-user or
-internet-facing deployment.">
+<PROJECT> is <description, including deployment model>.
+<Key architectural constraint, such as local-only or single-user operation.>
 
-Key assumptions reviewers MUST account for:
+Key assumptions reviewers must account for:
 
-1. <CATEGORY>: <What the project does and why it is correct>.
+1. <CATEGORY>: <what the project does and why it is correct>.
    Do not flag <specific false-positive pattern>.
-   DO flag <what would actually be a bug in this area>.
+   DO flag <the actual failure condition>.
 
-2. <CATEGORY>: <Explanation of intentional design decision>.
-   Do not flag <the thing reviewers always incorrectly flag>.
+2. <CATEGORY>: <another intentional design decision>.
+   Do not flag <recurring false positive>.
 
-...
-
-Do NOT flag issues that only apply to <inapplicable deployment model>.
-Focus on <what actually matters: bugs, logic errors, data corruption, etc.>.
+Do not flag issues that apply only to <inapplicable deployment model>.
+Focus on <the project's actual correctness and risk concerns>.
 """
 ```
 
-**Writing principles**:
+Make each item specific: name functions, middleware, and configuration keys. Pair each “do not flag” case with the condition that would make it a real bug. Number the items so a finding or fix can refer to a stable guideline number. Include recurring false positives only when they apply to this project, such as:
 
-- **Be specific, not abstract.** "Do not flag missing auth on local-only code
-  paths" beats "Consider the auth model." Name the function, the middleware,
-  the config flag.
-- **Pair every "do not flag" with a "DO flag."** This prevents reviewers from
-  over-correcting. Example: "Do not flag missing auth on loopback paths. DO
-  flag any path that lets the backend bind non-loopback without auth."
-- **Number every item.** Numbered items are referenceable in findings and fix
-  commits. "Violates guideline #4" is actionable; "violates the XSS policy"
-  is ambiguous.
-- **Cover the repeat offenders.** The top false-positive categories for AI
-  reviewers are:
-  - Auth/authz on single-user or loopback-only tools
-  - Rate limiting on non-public services
-  - Input validation on trusted local input
-  - TOCTOU on user-owned local files
-  - Sensitive data exposure when displaying user-owned data is the purpose
-  - Subprocess environment inheritance when it is intentional
-  - Missing TLS when the user is responsible for transport security
-- **Include schema and control-flow caveats.** AI reviewers frequently
-  misread database schemas and control flow. If your schema has constraints
-  that prevent certain states, say so. If early returns make certain paths
-  unreachable, say so.
-- **Reference real code.** Use function names, middleware names, and config
-  keys. "{@html renderMarkdown(...)} is safe because renderMarkdown()
-  sanitizes via DOMPurify" is much stronger than "XSS is handled."
+- Authentication or authorization in single-user or loopback-only paths.
+- Rate limiting on services that are not public.
+- Validation of trusted local input.
+- TOCTOU concerns for user-owned local files.
+- Display of user-owned data when that display is the feature.
+- Intentional subprocess environment inheritance.
+- Missing TLS when the user is responsible for transport security.
 
-**Anti-patterns to avoid in context docs**:
+Explain schema constraints that rule out a suspected state and control flow that makes a path unreachable. Cite real code where possible; for example, identify the sanitizer that makes a particular rendering call safe. Keep the document focused, usually 50–150 lines. Describe categories rather than listing names that change often, and avoid vague security advice or positive-only checklists.
 
-- Enumerating lists that go stale (e.g., listing every agent name when agents
-  are added regularly). Use descriptions of categories instead.
-- Over-documenting (the context doc should be 50-150 lines, not 500).
-- Vague guidance ("be careful with security" -- this helps nobody).
-- Positive-only guidance (telling reviewers what to check without telling
-  them what NOT to check produces the same noisy output as no guidance).
+### 3. Choose the reviewer count
 
-### Step 3: Decide on a Review Matrix
+A single reviewer is usually enough for a small or familiar project, regression-focused reviews, or when speed matters most. Use two or three independent models when the change crosses subsystems, the security surface is complex, or you need complementary review strengths.
 
-**Single-agent review** is sufficient when:
-- The project is small or well-understood.
-- Review is primarily catching regressions, not discovering novel issues.
-- Speed matters more than coverage.
+One possible division of focus is:
 
-**Multi-agent review** (2-3 models) is worth the cost when:
-- The project has a complex security surface.
-- PRs touch multiple subsystems (backend + frontend + infra).
-- You want to catch different classes of issues: one model may excel at
-  logic errors while another catches API design problems.
-- You are establishing a review baseline for a new project.
+| Reviewer | Focus |
+| --- | --- |
+| Claude Code | Architecture, logic errors, subtle bugs |
+| Codex | Code quality, project patterns, missing edge cases |
+| Gemini | Security surface, API design, documentation |
 
-**Recommended matrix** (when using multiple agents):
+Give each reviewer the same context. Merge, deduplicate, and prioritize their independent findings.
 
-| Agent        | Strength                                    |
-| ------------ | ------------------------------------------- |
-| Claude Code  | Architecture, logic errors, subtle bugs     |
-| Codex        | Code quality, patterns, missing edge cases  |
-| Gemini       | Security surface, API design, documentation |
+### 4. Define the review-fix-re-review loop
 
-Each agent receives the same context document but produces independent
-findings. Findings are then merged, deduplicated, and prioritized.
+1. Give each finding a unique ID within the review, plus severity, file and line, category, explanation, and a concrete suggested fix.
+2. Make fixes in traceable commits that reference finding IDs, for example:
 
-### Step 4: Set Up the Review-Fix Loop
-
-The review-fix loop turns findings into commits:
-
-1. **Review produces numbered findings.** Every finding gets a unique ID
-   (e.g., `#13915`). Findings include: severity, file/line, description,
-   and suggested fix.
-
-2. **Developer (human or AI) fixes findings in traceable commits.** Commit
-   messages reference the finding IDs:
-   ```
+   ```text
    fix: address review finding #13915 and #13917 on PR #314
    ```
 
-3. **Re-review runs on the fix commits.** The reviewer checks whether the
-   fixes are correct and whether they introduced new issues.
+3. Re-review the fix commits for correctness and regressions.
+4. Stop when no blockers remain or the remaining findings are accepted trade-offs.
 
-4. **Loop terminates** when no blockers remain, or when remaining findings
-   are acknowledged as accepted trade-offs.
-
-**Finding format template**:
+Use this finding shape:
 
 ```markdown
 ### Finding #<ID> [<SEVERITY>]
@@ -180,106 +105,72 @@ The review-fix loop turns findings into commits:
 **File**: `<path>:<line>`
 **Category**: <bug | security | logic | performance | style | docs>
 
-<Description of the issue -- what is wrong and why it matters.>
+<What is wrong and why it matters.>
 
 **Suggested fix**:
-<Concrete code change or approach, not just "fix this.">
+<A concrete change or approach.>
 ```
 
-Severity levels:
-- **BLOCKER**: Must fix before merge. Correctness, security, data loss.
-- **HIGH**: Should fix. Performance, missing edge cases, maintainability.
-- **LOW**: Consider fixing. Style, docs, minor improvements.
-- **NIT**: Optional. Consistency, naming, formatting.
+Use severity consistently:
 
-### Step 5: Integrate with CI (Optional)
+- **BLOCKER**: correctness, security, or data-loss issue that must be fixed before merge.
+- **HIGH**: issue that should be fixed, such as a meaningful performance problem or missing edge case.
+- **LOW**: issue worth considering, such as maintainability or documentation.
+- **NIT**: optional consistency, naming, or formatting change.
 
-For automated review on every PR:
+### 5. Add CI when useful
 
-1. Store `.roborev.toml` in the repo root.
-2. Configure a CI job that runs on `pull_request` events.
-3. The CI job invokes the review agent(s) with the context document.
-4. Findings are posted as PR comments (or a review).
-5. Fix commits trigger re-review automatically.
+For automated PR reviews, store the context in `.roborev.toml`, run the selected reviewer or reviewers from a `pull_request` CI job, and publish findings as comments or a review. Re-run review when fix commits arrive. Update the context in the same PR when the architecture changes.
 
-The context document travels with the code. When the architecture changes,
-update the context document in the same PR.
+### 6. Reuse project instructions
 
-### Step 6: Leverage Existing Project Instructions
+Make review context complement `CLAUDE.md`, `AGENTS.md`, or equivalent instructions. Builder instructions explain how to change the project; review context explains which existing decisions are intentional. Link to or summarize relevant conventions instead of copying them.
 
-If the project has a `CLAUDE.md`, `AGENTS.md`, or similar instruction file,
-the review context document should complement it, not duplicate it. The
-instruction file tells the AI builder what to do; the review context tells
-the AI reviewer what is already done correctly.
+## Review: Assess a PR or diff
 
-Common pattern: extract the "conventions" and "architecture" sections from
-`CLAUDE.md` and reference them in the review context. Do not copy-paste --
-link or summarize.
+### 1. Gather the evidence
 
----
+Collect the diff (`git diff <base>...HEAD` or `gh pr diff <number>`), the PR's intent, relevant project review context, CI status, and prior review comments. Look for `.roborev.toml`, `CLAUDE.md`, `AGENTS.md`, or equivalent files at the project root.
 
-## Mode 2: Review -- Conduct a PR Review
+### 2. Read context before the diff
 
-### Step 1: Gather Context
+Apply the numbered assumptions in the review context before evaluating code. This keeps known intentional choices from becoming false positives. If there is no dedicated context document, use the project instructions and README to understand the deployment model and conventions.
 
-Before reviewing, collect:
+### 3. Review in risk order
 
-1. **The diff**: `git diff <base>...HEAD` or `gh pr diff <number>`.
-2. **Project review context**: Look for `.roborev.toml`, `CLAUDE.md`,
-   `AGENTS.md`, or similar files in the repo root.
-3. **PR description**: What is the intent of the change?
-4. **CI status**: Are checks passing?
-5. **Prior review comments**: Has this PR already been reviewed?
+Prioritize:
 
-### Step 2: Apply the Context Document
+1. Correctness: logic errors, off-by-one errors, nil dereferences, and material race conditions. Ignore local-file TOCTOU concerns when the project's ownership model makes them irrelevant.
+2. Security issues that apply to the actual deployment model; do not raise generic authentication advice without evidence it applies.
+3. Persistent-state integrity.
+4. Unintended API or ABI breaks.
+5. Missing tests for new behavior, rather than for every helper.
+6. Performance issues with measurable, significant impact.
+7. Maintainability problems that make code genuinely hard to follow.
+8. Style issues that conflict with established project patterns.
 
-Read the negative-space context document before looking at the code. For each
-numbered item, internalize what NOT to flag. This prevents the most common
-failure mode: flooding the review with false positives that waste everyone's
-time and bury real issues.
+### 4. Write actionable findings
 
-### Step 3: Review with the Right Focus
-
-Prioritize findings in this order:
-
-1. **Correctness bugs**: Logic errors, off-by-ones, nil dereferences, race
-   conditions that matter (not TOCTOU on local files).
-2. **Security issues that apply to THIS deployment model**: Not generic
-   "you should add auth" -- only issues that matter given the project's
-   actual threat model.
-3. **Data integrity**: Anything that could corrupt persistent state.
-4. **API/ABI breaks**: Unintentional breaking changes.
-5. **Missing tests**: For new behavior, not for every helper function.
-6. **Performance**: Only when the impact is measurable and significant.
-7. **Maintainability**: Only when the code is genuinely hard to follow,
-   not just different from your preferred style.
-8. **Style**: Only when it contradicts the project's established patterns.
-
-### Step 4: Format Findings
-
-Use the numbered finding format from Step 4 of Setup mode. Every finding must:
-
-- Have a unique ID (sequential within the review).
-- State the severity honestly (most findings are LOW or NIT, not BLOCKER).
-- Be specific enough to act on without re-reading the entire file.
-- Include a suggested fix (code or approach), not just a complaint.
+Use the finding format above. Number findings sequentially within the review, give severity honestly, include a precise file and line, explain the impact, and suggest a fix. A developer should be able to act without asking what the finding means.
 
 **Good finding**:
+
 ```markdown
 ### Finding #3 [HIGH]
 
 **File**: `internal/server/sessions.go:142`
 **Category**: bug
 
-The error from `db.GetSession()` is checked but the nil session is not --
-if the query returns no rows without an error, the handler will panic on
-line 145 when accessing `session.ID`.
+The error from `db.GetSession()` is checked, but the handler does not check
+whether the session is nil. If the query returns no rows without an error,
+accessing `session.ID` on line 145 will panic.
 
-**Suggested fix**: Add `if session == nil { http.NotFound(w, r); return }`
-after the error check.
+**Suggested fix**: Return `http.NotFound(w, r)` when `session == nil` after
+the error check.
 ```
 
 **Bad finding**:
+
 ```markdown
 ### Finding #3 [HIGH]
 
@@ -289,12 +180,11 @@ after the error check.
 Consider adding authentication to this endpoint.
 ```
 
-The bad finding ignores the project's auth model (it might be loopback-only),
-lacks a specific line number, and has no actionable suggestion.
+The bad example has no precise location or actionable evidence and may ignore a loopback-only auth model.
 
-### Step 5: Summarize
+### 5. Summarize the review
 
-End the review with a short summary:
+End with a short summary using this shape:
 
 ```markdown
 ## Summary
@@ -305,98 +195,48 @@ Reviewed <N> files, <M> additions, <K> deletions.
 - **High**: <count> (should fix)
 - **Low/Nit**: <count> (consider fixing)
 
-<One sentence on overall assessment: "Clean change, one edge case to handle
-before merge." or "Significant concerns about data integrity in the migration
-path.">
+<One sentence on the overall assessment.>
 ```
 
----
+## Failure patterns to catch
 
-## Anti-Patterns
+- **Context-free flag flooding**: generic warnings about auth, rate limits, or validation that ignore architecture. Read project context first; if it is missing, gather context from project instructions and the README.
+- **Style-only review**: focus on bugs first. Keep style findings below 20% of findings; if only style issues remain, say so without inflating their severity.
+- **Severity inflation**: most findings are LOW or NIT. Reconsider a review with more than two or three BLOCKER findings.
+- **Vague findings**: state what is wrong, why it matters, where it occurs, and how to fix it.
+- **Stale context**: update review guidance when architecture changes or a recurring false positive appears.
+- **Overlong PR descriptions**: describe what the change does now; avoid duplicating test plans, checklists, or change logs. The code and tests carry those details.
+- **Stale findings on reworked PRs**: credit the original community PR and explain what changed, but review the new code fresh rather than carrying findings forward.
 
-These are the most common ways AI code review goes wrong. Avoid them.
+## Evaluate an existing review setup
 
-### Context-Free Flag Flooding
+Check whether:
 
-Reviewing code without reading the project's architecture, deployment model,
-or existing conventions. Produces dozens of generic warnings about auth, rate
-limiting, and input validation that do not apply. The fix: always read the
-context document first; if none exists, read `CLAUDE.md` and the README.
-
-### Style-Only Reviews
-
-Reviewing only for formatting, naming, and code organization while missing
-actual bugs. Style findings should be at most 20% of a review. If you have
-only style findings, say so explicitly -- do not inflate their severity.
-
-### Severity Inflation
-
-Marking everything as BLOCKER or HIGH. If a review has more than 2-3
-blockers, re-evaluate whether they are truly merge-blocking. Most findings
-are LOW or NIT. Inflated severity trains developers to ignore review output.
-
-### Vague Findings
-
-"This could be improved" or "Consider error handling here" without saying
-what is wrong, why it matters, or how to fix it. Every finding must be
-specific enough that a developer can act on it without asking follow-up
-questions.
-
-### Stale Context Documents
-
-Writing a context document once and never updating it. The context document
-must evolve with the codebase. When architecture changes, update the context
-document in the same PR. When a new false-positive pattern emerges, add it.
-
-### Over-Documentation in PR Descriptions
-
-PR descriptions should be concise summaries of what the code does now, not
-test plans, checklists, or change logs. The code and tests are the
-documentation. PR descriptions that are longer than the diff are a smell.
-
-### The "Supersedes" Trap
-
-When a community PR is reworked by a maintainer, the new PR should credit
-the original and explain what changed. But do not carry forward stale review
-findings from the original PR -- re-review the new code fresh.
-
----
-
-## Checklist: Is Your Review Infrastructure Working?
-
-Use this checklist to evaluate whether an existing review setup is effective:
-
-- [ ] Context document exists and covers the project's deployment model.
-- [ ] Context document has "do not flag" items for the top false-positive
-      categories.
-- [ ] Every "do not flag" is paired with a corresponding "DO flag."
-- [ ] Context document references real code (function names, not abstractions).
-- [ ] Context document is under 150 lines.
-- [ ] Findings are numbered and include severity, file/line, and suggested fix.
+- [ ] Context describes the deployment model.
+- [ ] Context addresses the leading false-positive categories with both “do not flag” and “DO flag” conditions.
+- [ ] Context cites real functions, configuration, or other code evidence.
+- [ ] Context stays under 150 lines.
+- [ ] Findings have sequential IDs, severity, file and line, category, explanation, and suggested fix.
 - [ ] Fix commits reference finding IDs.
-- [ ] Less than 30% of findings are false positives.
-- [ ] Less than 20% of findings are style-only.
-- [ ] Context document has been updated in the last 10 PRs that changed
-      architecture.
+- [ ] Fewer than 30% of findings are false positives.
+- [ ] Fewer than 20% of findings are style-only.
+- [ ] Context was revisited in the last 10 PRs that changed architecture.
 
----
+## One-off review prompt
 
-## Quick Reference: Review Prompt Structure
-
-When crafting a one-off review prompt (no `.roborev.toml`), use this structure:
+When no `.roborev.toml` context exists, use this structure:
 
 ```text
 Review the following PR diff for <REPO_NAME>.
 
 ## Project Context
-<1-3 sentences: what the project is, who runs it, deployment model.>
+<1–3 sentences: what the project is, who runs it, and its deployment model.>
 
 ## Do Not Flag
 <Numbered list of accepted design decisions and known false positives.>
 
 ## Focus Areas
-<What actually matters for this review: specific subsystems, risk areas,
-or concerns from the PR author.>
+<Specific subsystems, risk areas, or concerns from the PR author.>
 
 ## Diff
 <The diff or a pointer to it.>
@@ -407,5 +247,4 @@ LOW, NIT. Include file:line, category, description, and suggested fix
 for each finding. End with a summary count by severity.
 ```
 
-This structure works for any AI reviewer (Claude, Codex, Gemini, etc.)
-and produces consistent, actionable output.
+This structure works with Claude, Codex, Gemini, and other AI reviewers.

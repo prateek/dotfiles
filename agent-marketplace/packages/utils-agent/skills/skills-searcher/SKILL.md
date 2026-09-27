@@ -1,40 +1,43 @@
 ---
 name: skills-searcher
-description: Search for installable agent skills across GitHub and skills.sh. Use when Codex needs to find SKILL.md files, compare skill candidates, inspect skill metadata, validate skill-search backends, diagnose GitHub skill-search rate limits, or produce install commands from gh skill search, Sourcegraph, GitHub code search, and npx skills results.
+description: Search for installable agent skills across GitHub and skills.sh. Use when Codex needs to find SKILL.md files, compare candidates, inspect skill metadata, validate search backends, diagnose GitHub search rate limits, or produce install commands from gh skill search, Sourcegraph, GitHub code search, and npx skills results.
 ---
 
 # Skills Searcher
 
-Use the bundled CLI instead of hand-rolling GitHub or Sourcegraph queries. Paths
-below are relative to this skill's base directory.
+Use the bundled CLI to search all backends together. Its script is self-contained and uses only Python's standard library through a `uv run --script` shebang. Paths in this skill are relative to its base directory.
+
+Use the short command when it is installed:
+
+```bash
+~/bin/skill-search search <query> --limit 10 --progress
+```
+
+Otherwise run the bundled script:
 
 ```bash
 scripts/skill-search search <query> --limit 10 --progress
 ```
 
-If `~/bin/skill-search` is available, use that shorter command. The script is self-contained and uses a `uv run --script` shebang with only Python standard-library code.
+## Search and rank candidates
 
-## Workflow
+1. In a new environment, run `skill-search doctor` first to check local tools and backend connectivity.
+2. Search with `skill-search search <query> --limit 10 --progress`. The CLI queries all available backends in parallel; do not ask the user to choose one.
+3. Use `--sort-by installs --direction desc` as a second view when popularity is likely to help decide among skills for a mainstream framework, language, or tool. Installs come only from the skills.sh backend.
+4. Compare stars, installs, and source count as signals. Agreement from at least two independent backends is the strongest precision signal because each indexes a different part of the ecosystem.
+5. Check authorship before choosing a winner. Prefer the framework vendor, platform owner, or a widely cited domain educator when they authored a candidate. Authorship can outweigh a third-party collection's stronger raw counts; use multi-source agreement to break ties between peers.
 
-1. Run `skill-search doctor` in a new environment.
-2. Run `skill-search search <query> --limit 10 --progress`. When popularity is likely the deciding signal — a mainstream framework, language, or tool with an established author/educator ecosystem — also try `--sort-by installs --direction desc` to see the skills.sh ranking inline.
-3. Prefer candidates with higher stars, higher installs, and multiple sources. A hit confirmed by 2+ independent backends is the strongest precision signal — each backend indexes a different surface, so agreement is rare and meaningful.
-4. Check for an obvious upstream authority before picking a winner: the framework's vendor (Microsoft for Playwright, Vercel for Next.js, Apple for Swift), the platform owner, or a widely-cited domain educator (e.g. `twostraws`/Paul Hudson for SwiftUI, `avanderlee` for Swift concurrency). If a candidate is authored by that authority, prefer it even when a third-party collection has more raw signal. Multi-source agreement breaks ties between peers; it does not override authorship.
-5. Read unfamiliar `SKILL.md` files before recommending. For each finalist, state in one sentence whether the SKILL.md scope matches the *narrow* semantics of the query or merely adjacent territory — "anti-slop writing" is narrower than "writing quality"; "React performance" is narrower than "React". Drop adjacent-only matches even if their stars or installs are higher.
-6. Apply quality caution thresholds, but treat them as guardrails, not gates:
-   - **Install count**: prefer 1K+; treat below 100 with skepticism. Missing values are not a negative signal — install counts come from the `skills-cli` backend only.
-   - **Repo stars**: treat skills from repos with fewer than 100 stars with skepticism, unless multi-source agreement compensates.
-   - **Niche domains**: when a topic is genuinely small (e.g. chezmoi, plist merge engines, Tart), the install/star bars calibrated for mainstream ecosystems will exclude everything. Don't refuse to recommend — fall back to the strongest multi-source-confirmed candidate with explicit caveats, or say plainly that no candidate meets the bars and offer to help directly (`npx skills init <name>` to scaffold a local skill is fine to suggest).
-7. Use the install command from the result row when the user asks to install a skill.
+## Inspect finalists
 
-The search command runs all backends automatically and in parallel. Do not ask the user to choose a backend.
+Read each finalist's `SKILL.md` before recommending it. Say in one sentence whether its scope matches the query's narrow meaning or covers only adjacent territory. For example, “anti-slop writing” is narrower than “writing quality,” and “React performance” is narrower than “React.” Drop adjacent-only matches even when their stars or install counts are higher.
 
-Backends — complementary, not redundant. Each reaches a different corner of the ecosystem:
+Treat these thresholds as caution signals, not hard gates:
 
-- `gh skill search` — narrow, curated GitHub-native skill index. Highest precision, lowest recall.
-- Sourcegraph `src search` — best for skills hosted in registry-style aggregators that the GitHub-native indexes don't cover.
-- GitHub code search via `gh api /search/code` — raw `SKILL.md` matches across GitHub, catches dotfiles and tooling repos that haven't been indexed by any registry.
-- `npx skills find` — the only backend with install counts; reach for it when popularity matters.
+- Prefer skills with at least 1K installs; scrutinize counts below 100. A missing install count is neutral because only the skills.sh backend provides it.
+- Scrutinize skills from repositories with fewer than 100 stars unless agreement across sources compensates.
+- For niche topics such as chezmoi, plist merge engines, or Tart, mainstream thresholds can exclude every candidate. Recommend the strongest candidate confirmed by multiple sources with clear caveats, or say that none meets the usual thresholds and offer direct help. Suggest `npx skills init <name>` when scaffolding a local skill would help.
+
+When the user asks to install a skill, use the install command shown in that result row.
 
 ## Commands
 
@@ -47,39 +50,41 @@ skill-search search "github pr review" --sort-by sources --direction desc
 skill-search raw sourcegraph "chezmoi dotfiles"
 ```
 
-Useful sort fields:
+The `--json` option emits structured JSON for search and doctor. The search output includes preview and install commands alongside each result.
 
-- `stars`
-- `installs`
-- `sources`
-- `file-commits`
-- `repo-commits`
-- `skill-name`
+Sort fields are `stars`, `installs`, `sources`, `file-commits`, `repo-commits`, and `skill-name`.
 
 Use `--no-enrich` when GitHub enrichment is slow or rate-limited. Use `--github-concurrency <n>` to tune parallel GitHub API calls during enrichment; the default is conservative.
 
-## Sourcegraph Query Shape
+## Backends
 
-The Sourcegraph backend uses:
+Each backend reaches a different part of the ecosystem:
+
+- `gh skill search` is a narrow, curated GitHub-native index with high precision and lower recall.
+- Sourcegraph `src search` finds skills in registry-style aggregators that GitHub-native indexes may miss.
+- GitHub code search through `gh api /search/code` finds raw `SKILL.md` matches, including dotfiles and tooling repositories that registries have not indexed.
+- `npx skills find` is the only source of install counts; use it when popularity matters.
+
+## Sourcegraph query shape
+
+The Sourcegraph backend builds queries in this form:
 
 ```text
 file:(?i)skill\.md <terms> select:file count:<limit> timeout:<seconds>s
 ```
 
-Each token expands to `(file:<token> OR repo:<token> OR content:/(?m)^(name|description):.*<token>/)`, so a hit must have the term in the SKILL.md path, the repo name, or a frontmatter `name:` / `description:` line. Body-content matches are excluded — they used to surface skills that merely mentioned the term in passing.
+Each term expands to `(file:<term> OR repo:<term> OR content:/(?m)^(name|description):.*<term>/)`. Results must match a term in the `SKILL.md` path, repository name, or frontmatter `name:`/`description:` line. Body matches are excluded because they surfaced skills that only mentioned a term in passing. Keep `select:file` so Sourcegraph returns file-level matches, and `(?i)` so filename matching is case-insensitive.
 
-Keep `select:file`; it returns file-level matches. `(?i)` keeps filename matching case-insensitive.
+## Rate limits
 
-## Rate Limits
-
-GitHub skill search and GitHub code search can hit search quotas or secondary rate limits. When that happens:
+GitHub skill search and GitHub code search may hit search quotas or secondary rate limits. Check the quota. If GitHub enrichment calls are rate-limited, retry with `--no-enrich` to skip them; a search backend that is itself rate-limited may remain unavailable:
 
 ```bash
 gh api rate_limit
 skill-search search <query> --no-enrich
 ```
 
-Use Sourcegraph and `npx skills` results while GitHub recovers. Keep `--limit` small during exploration. Do not retry GitHub search in a tight loop.
+While GitHub recovers, use Sourcegraph and `npx skills` results. Keep `--limit` small during exploration, and avoid tight retry loops against GitHub.
 
 ## Validation
 
@@ -90,7 +95,7 @@ python3 -m py_compile scripts/skill-search
 zsh tests/skill-search.zsh
 ```
 
-When working from this dotfiles checkout, run:
+From the dotfiles checkout, run:
 
 ```bash
 zsh agent-marketplace/packages/utils-agent/skills/skills-searcher/tests/skill-search.zsh

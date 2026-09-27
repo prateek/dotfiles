@@ -26,8 +26,7 @@ fi
 
 run_inline() { exec acpx "$@" > "$log" 2>&1; }
 
-if [ "$inline" = 1 ] || [ -z "${ORCA_TERMINAL_HANDLE:-}" ] ||
-   ! command -v orca > /dev/null || ! command -v herdr > /dev/null ||
+if [ "$inline" = 1 ] || ! command -v orca > /dev/null || ! command -v herdr > /dev/null ||
    ! command -v python3 > /dev/null; then
   if [ "$view" = 1 ]; then
     echo "acpx-pane: viewing requires Orca, Herdr, and Python 3" >&2
@@ -35,6 +34,37 @@ if [ "$inline" = 1 ] || [ -z "${ORCA_TERMINAL_HANDLE:-}" ] ||
   fi
   run_inline "$@"
 fi
+
+worktree=$(orca worktree current --json 2> /dev/null || true)
+worktree_id=$(printf '%s' "$worktree" | jq -r 'if .ok == true then .result.worktree.id // empty else empty end' 2> /dev/null || true)
+parent_handle=""
+if [ -n "$worktree_id" ] && [ -n "${ORCA_TERMINAL_HANDLE:-}" ]; then
+  parent=$(orca terminal show --terminal "$ORCA_TERMINAL_HANDLE" --json 2> /dev/null || true)
+  parent_handle=$(printf '%s' "$parent" | jq -r --arg worktree "$worktree_id" \
+    'if .ok == true and .result.terminal.worktreeId == $worktree and .result.terminal.connected == true then .result.terminal.handle // empty else empty end' \
+    2> /dev/null || true)
+fi
+if [ -n "$worktree_id" ] && [ -z "$parent_handle" ]; then
+  terminals=$(orca terminal list --worktree "id:$worktree_id" --json 2> /dev/null || true)
+  parent_handle=$(printf '%s' "$terminals" | jq -r --arg worktree "$worktree_id" \
+    'if .ok == true then [.result.terminals[] | select(.worktreeId == $worktree and .connected == true and (.agentIdentity // "") != "" and ((.title // "") | startswith("acpx ") | not))] | if length == 1 then .[0].handle else empty end else empty end' \
+    2> /dev/null || true)
+fi
+if [ -n "$worktree_id" ] && [ -z "$parent_handle" ]; then
+  active=$(orca terminal show --json 2> /dev/null || true)
+  parent_handle=$(printf '%s' "$active" | jq -r --arg worktree "$worktree_id" \
+    'if .ok == true and .result.terminal.worktreeId == $worktree and .result.terminal.connected == true and ((.result.terminal.title // "") | startswith("acpx ") | not) then .result.terminal.handle // empty else empty end' \
+    2> /dev/null || true)
+fi
+if [ -z "$parent_handle" ]; then
+  if [ "$view" = 1 ]; then
+    echo "acpx-pane: no active terminal in the current worktree" >&2
+    exit 1
+  fi
+  echo "acpx-pane: no active terminal in the current worktree; running inline" >&2
+  run_inline "$@"
+fi
+ORCA_TERMINAL_HANDLE="$parent_handle"
 
 herdr_bin=$(command -v herdr)
 orca_bin=$(command -v orca)

@@ -5,156 +5,137 @@ description: "Comprehensive iOS audit for Swift and SwiftUI apps. Runs determini
 
 # iOS Audit
 
-One end-to-end audit skill for Swift/SwiftUI iOS apps. Runs four pillars (Code Health, UX, Runtime, Release) through four phases (COLLECT → ANALYZE → RENDER → DIFF), producing:
+Use this skill to create a reproducible engineering baseline for a Swift or
+SwiftUI app. The audit runs four pillars through four phases:
 
-- **`docs/`** — a replacement documentation tree (architecture, UX flows, operations, quality, release) written by analyzers
-- **`audit.json`** — a single JSON baseline containing every finding with severity, priority, evidence, and RICE score
-- **`audit.html`** — a self-contained HTML report for sharing
-- **`audit-diff.md`** — a trend report comparing this run to the previous baseline
+1. **COLLECT** deterministic evidence from source, tools, and optionally a simulator.
+2. **ANALYZE** that evidence and author current-run docs and findings for each pillar.
+3. **RENDER** a complete docs tree, `audit.json`, and `audit.html`.
+4. **DIFF** the new baseline against an earlier one when available.
 
-Use this skill when the goal is a **complete, reproducible snapshot of an iOS app's engineering state**, not a one-off review. It is the right tool for baselining before a refactor, ship-gate reviews, quarterly health checks, onboarding packages, and catching drift between audits.
+The outputs are a replacement documentation tree covering architecture, UX,
+operations, quality, and release; a JSON baseline with findings, severity,
+priority, evidence, and RICE scores; a self-contained HTML report; and, when a
+prior baseline exists, `audit-diff.md` with changes since that run. Use it for
+refactor baselines, release reviews, recurring health checks, onboarding, and
+auditing drift between runs. Use a focused review when the user needs only a
+single question answered.
 
-## Workflow decision tree
+## Choose the run
 
-```
-User asks to "audit this iOS app" / "generate docs" / "baseline quality"
-│
-├─ Do you have a booted simulator + a workflow YAML for UX flows?
-│  ├─ YES → Run ALL four pillars (full audit)
-│  └─ NO  → Run --no-ux (skip UX pillar). You still get Code Health, Runtime, Release.
-│
-├─ Is this the FIRST audit (no prior audit.json)?
-│  ├─ YES → Skip DIFF phase; today's audit.json becomes the baseline.
-│  └─ NO  → DIFF phase compares against prior baseline; writes audit-diff.md.
-│
-└─ Does the user want to replace the existing docs/?
-   ├─ YES → --docs-dir docs/
-   └─ NO  → --docs-dir .audit/docs-preview/ (renders into a sandbox)
-```
+- With a booted simulator and a UX workflow YAML, run all four pillars.
+- Without either UX prerequisite, pass `--no-ux`; Code Health, Runtime Quality,
+  and Release & Compliance still run.
+- If this is the first run, omit DIFF. The new `audit.json` becomes the baseline.
+- Write docs to the app's `docs/` only when the user wants to replace that tree.
+  Otherwise use `--docs-dir .audit/docs-preview/` to keep the output isolated.
 
-The skill's top-level script is `scripts/audit.py`. It has four subcommands — `collect`, `analyze`, `render`, `diff` — plus `all` which runs everything in order.
+The CLI is `scripts/audit.py`. Its subcommands are `collect`, `analyze`,
+`render`, and `diff`; `all` runs the sequence and pauses after COLLECT so you
+can perform ANALYZE. It prints the raw-input and prompt paths, then waits on
+STDIN.
 
-Fresh-run invariant:
+## Run the audit
 
-- `collect` treats `--output` as disposable generated state and deletes it before recollecting.
-- `analyze` must author a complete current-run docs tree; do not reuse prior audit prose, screenshots, thumbnails, or findings.
-- `render` now fails fast if the required authored docs or findings are missing for any pillar that ran.
+### 1. Prepare inputs
 
-## The four pillars
+Install `uv`. `swiftlint` and `periphery` are optional, recommended collectors.
+For UX flows, prepare a workflow file in the app repository, a booted simulator,
+and the `ios-simulator-skill` in the rendered `ios` plugin. Start from
+`examples/movies-do.yaml` or `examples/silly-tavern.yaml`; see
+[`references/authoring-workflows.md`](references/authoring-workflows.md) for
+workflow syntax and selectors.
 
-| Pillar | What it answers | Raw inputs | Doc outputs |
-|---|---|---|---|
-| **Code Health** | How is the code organized? Where do state, configuration, and magic constants actually come from? Where are the smells, dead code, concurrency bugs, and undocumented layers? | SwiftLint JSON, Periphery JSON, Tuist graph, file tree, per-screen layer hierarchies, state/config inventories | `docs/architecture/*.md`, `docs/quality/*.md` |
-| **UX** | What does the app actually look and feel like at every step? Are repeated capabilities and metadata consistent across surfaces? Was adaptive UI exercised on the right device classes? | Screenshots, accessibility trees, navigation graph, component catalog, semantic-surface signals, workflow/device-lane coverage | `docs/ux/screen-inventory.md`, `docs/ux/flows/*.md`, `docs/ux/component-catalog.md`, `docs/ux/navigation-graph.md`, `docs/ux/consistency-audit.md` |
-| **Runtime Quality** | How does it fail, recover, cache, and perform under real conditions? Is data stored in the right bucket with the right cleanup policy? | os_log grep, error-path scan, cache patterns, network resilience grep, storage-policy inventory, Instruments (optional) | `docs/operations/failure-modes.md`, `docs/operations/runbooks/*.md`, `docs/operations/caching-strategy.md`, `docs/operations/resource-usage.md`, `docs/operations/storage-policy.md` |
-| **Release & Compliance** | Is this thing shippable? Privacy manifest, Info.plist, localization, signing, App Store risks. | `PrivacyInfo.xcprivacy`, `Info.plist`, `*.lproj/Localizable.strings`, entitlements, signing config | `docs/release/privacy-manifest.md`, `docs/release/localization.md`, `docs/release/app-store-readiness.md` |
-
-See `references/pillars/*.md` for the authoritative description of each pillar's inputs, prompts, and doc outputs.
-
-## Phases
-
-### 1. COLLECT — deterministic, no LLM
-
-`scripts/audit.py collect` runs Python collectors that invoke tools and greps against the repo + (optionally) the simulator. It writes raw JSON under `.audit/raw/`:
-
-```
-.audit/raw/
-  meta.json              # git rev, timestamp, tool versions, target app
-  code_health.json       # swiftlint, periphery, file tree, complexity, state/config provenance
-  ux.json                # flow capture results, device-lane coverage, semantic consistency signals
-  runtime.json           # os_log usage, catch-blocks, retry/backoff patterns, cache usage, storage policy
-  release.json           # privacy manifest presence, Info.plist perms, localization coverage
-```
-
-Collectors are under `scripts/collect/`. They are tolerant of missing tools: if `swiftlint` is not on `PATH`, the collector records a `tool_missing` note instead of failing. Re-running `collect` regenerates the entire audit root from scratch.
-
-### 2. ANALYZE — LLM synthesis, pillar by pillar
-
-This phase is performed by **you, the agent invoking this skill**. For each pillar:
-
-1. Read the raw inputs at `.audit/raw/<pillar>.json`.
-2. Read the analysis prompt at `scripts/analyze/prompts/<pillar>.md`. It tells you what sections to author, what questions to answer, and what structure the findings must have.
-3. Write the markdown docs into `.audit/docs/<section>/*.md` (authored prose, NOT rendered from templates).
-4. Write findings into `.audit/findings/<pillar>.json` as a JSON array matching the schema in `audit-schema.json` (the `findings` key). Each finding needs: `id`, `pillar`, `severity`, `priority`, `title`, `summary`, `evidence`, `recommendation`, `rice`, `tags`.
-5. Treat every doc named in the pillar prompt as required output for that run. Partial docs are not acceptable; `render` enforces this.
-
-Do not copy forward prior audit prose or screenshots. Every claim in the new docs must be backed by the current raw inputs and current source.
-
-The four prompts are discoverable at:
-- `scripts/analyze/prompts/code_health.md`
-- `scripts/analyze/prompts/ux.md`
-- `scripts/analyze/prompts/runtime.md`
-- `scripts/analyze/prompts/release.md`
-
-Read each one before working on that pillar — they contain the rubric, the doc outline, and the priority model.
-
-### 3. RENDER — merge findings and build outputs
-
-`scripts/audit.py render` reads `.audit/docs/` + `.audit/findings/*.json` + `.audit/raw/meta.json` and produces:
-
-- `audit.json` — the merged baseline for this run (see `audit-schema.json`)
-- `audit.html` — a self-contained single-file report, built from `scripts/render/templates/audit.html.j2`
-- `<docs-dir>/` — the freshly authored markdown is copied into the target docs tree
-
-Render is intentionally strict. If the current audit root is missing required docs, required findings files, or current-run UX flow screenshots, the command errors instead of producing a thin or misleading report.
-
-### 4. DIFF — compare against the previous baseline
-
-`scripts/audit.py diff` reads the new `audit.json` plus the previous baseline (auto-detected from `docs/audit.json` if present, or explicit `--baseline PATH`). It writes `audit-diff.md` showing:
-
-- Findings fixed since baseline (IDs no longer present)
-- Findings new since baseline
-- Findings regressed (severity increased)
-- Findings demoted (severity decreased)
-- Net RICE delta
-
-If there is no prior baseline, this phase prints "First audit — no baseline" and exits 0.
-
-## Quick start
+Use helper-owned simulator UDIDs when available. In a scaffolded project:
 
 ```bash
-# 1. Make sure prerequisites are installed
-brew install uv
-brew install swiftlint       # optional, recommended
-brew install peripheryapp/periphery/periphery  # optional, recommended
-
-# 2. In a scaffolded project, provision the worktree-owned simulator
 make run-iphone run-ipad
 export IOS_AUDIT_IPHONE_UDID="$(jq -er .udid build/simulators/iphone.json)"
 export IOS_AUDIT_IPAD_UDID="$(jq -er .udid build/simulators/ipad.json)"
-# In an unscaffolded project, set these to explicitly assigned simulators
-# that no other agent is using.
+```
 
-# 3. Write a workflow YAML for UX flows (see examples/movies-do.yaml)
-cp ~/.agents/plugins/plugins/ios/skills/ios-audit/examples/movies-do.yaml \
-   ~/code/my-app/.audit/workflows.yaml
-# Edit bundle_id, credentials (use env vars), and flows. Set each
-# `device_matrix` lane's `udid` to `${IOS_AUDIT_IPHONE_UDID}` or
-# `${IOS_AUDIT_IPAD_UDID}` so the executor uses helper-owned devices.
+Set each `device_matrix` lane's `udid` to the matching environment variable.
+For a single lane without `device_matrix`, pass `--udid "$IOS_AUDIT_IPHONE_UDID"`.
+Use explicitly assigned simulators in an unscaffolded project; never rely on
+whichever simulator happens to be booted.
 
-# 4. Run COLLECT
+Workflow credentials must use environment-variable references. Never commit
+plaintext credentials. The collector expands `${VAR}` values at runtime and
+fails before the flow starts if a referenced variable is unset. For Xcode UI
+tests, forward credentials with the `TEST_RUNNER_` prefix (Xcode 15.3+):
+
+```bash
+TEST_RUNNER_MY_APP_TEST_USERNAME="$MY_APP_TEST_USERNAME" \
+  xcodebuild test -workspace MyApp.xcworkspace -scheme MyApp ...
+```
+
+### 2. Collect
+
+Run collectors against the app repository. `--output` is disposable generated
+state: each collection removes and regenerates the entire audit root.
+
+```bash
 ~/.agents/plugins/plugins/ios/skills/ios-audit/scripts/audit.py collect \
   --repo ~/code/my-app \
   --workflows ~/code/my-app/.audit/workflows.yaml \
   --output ~/code/my-app/.audit
+```
 
-# 5. ANALYZE — as the invoking agent, read each prompt and write docs + findings
-#    (see scripts/analyze/prompts/*.md)
+Omit `--workflows` when UX is not being collected and pass `--no-ux` when
+required. Collectors write JSON under `.audit/raw/`: `meta.json`,
+`code_health.json`, `ux.json`, `runtime.json`, and `release.json`. Missing
+optional tools are recorded as `tool_missing` where supported; they do not
+silently produce equivalent evidence.
 
-# 6. RENDER
+### 3. Analyze
+
+For every pillar that ran, follow its prompt and create all required outputs:
+
+1. Read `.audit/raw/<pillar>.json` and inspect the current source needed to
+   verify its claims.
+2. Read `scripts/analyze/prompts/<pillar>.md` before authoring that pillar.
+3. Write authored Markdown under `.audit/docs/` in the structure required by
+   the prompt. Treat every listed document as required.
+4. Write `.audit/findings/<pillar>.json` as an array matching the `findings`
+   schema in `audit-schema.json`. Include `id`, `pillar`, `severity`,
+   `priority`, `title`, `summary`, `evidence`, `recommendation`, `rice`, and
+   `tags` for each finding.
+
+The pillar names are `code_health`, `ux`, `runtime`, and `release`; their
+prompts are under `scripts/analyze/prompts/`. Back every claim with the current
+raw inputs and source. Author a fresh docs tree for every run: do not reuse
+prior audit prose, findings, screenshots, or thumbnails. Include only
+current-run UX screenshots and copy every referenced screenshot into
+`.audit/docs/` where the UX prompt requires it.
+
+### 4. Render
+
+```bash
 ~/.agents/plugins/plugins/ios/skills/ios-audit/scripts/audit.py render \
   --audit ~/code/my-app/.audit \
   --docs-dir ~/code/my-app/docs
-
-# 7. DIFF (no-op on first run)
-~/.agents/plugins/plugins/ios/skills/ios-audit/scripts/audit.py diff \
-  --current ~/code/my-app/.audit/audit.json
-
-# 8. Open the report
-open ~/code/my-app/.audit/audit.html
 ```
 
-Or run everything in one shot:
+Rendering merges `.audit/docs/`, `.audit/findings/*.json`, and
+`.audit/raw/meta.json`. It writes `audit.json`, `audit.html`, and copies the
+freshly authored Markdown into `<docs-dir>/`. Rendering fails if required docs,
+findings files, or current-run UX screenshots are missing. Resolve those gaps
+before proceeding; a partial report is not a completed audit.
+
+### 5. Diff
+
+```bash
+~/.agents/plugins/plugins/ios/skills/ios-audit/scripts/audit.py diff \
+  --current ~/code/my-app/.audit/audit.json
+```
+
+DIFF uses `docs/audit.json` as the default previous baseline, or accepts
+`--baseline PATH`. It writes `audit-diff.md` with fixed, new, regressed, and
+demoted findings plus the net RICE change. With no previous baseline, it prints
+`First audit — no baseline` and exits successfully.
+
+To run the phases together, use `all` with the same project inputs and desired
+docs target:
 
 ```bash
 ~/.agents/plugins/plugins/ios/skills/ios-audit/scripts/audit.py all \
@@ -163,120 +144,47 @@ Or run everything in one shot:
   --docs-dir ~/code/my-app/docs
 ```
 
-For a single-lane workflow without `device_matrix`, pass
-`--udid "$IOS_AUDIT_IPHONE_UDID"` instead. Never rely on whichever simulator
-happens to be booted.
+Python entrypoints include `uv` script metadata and can run directly or through
+`uv run path/to/script.py`.
 
-`all` will pause between COLLECT and RENDER so the invoking agent can do the ANALYZE step. The script prints the exact paths to the prompts and raw inputs and waits on STDIN.
+## Pillars and analysis guides
 
-The Python entrypoints in this skill are self-contained `uv` scripts with `# /// script`
-metadata. Run them directly, or equivalently via `uv run path/to/script.py ...`.
+| Pillar | Evidence and focus | Main docs |
+|---|---|---|
+| **Code Health** | SwiftLint, Periphery, Tuist graph, file inventory, state/config provenance, layer hierarchies, concurrency and error-handling smells | `docs/architecture/*.md`, `docs/quality/*.md` |
+| **UX** | Screenshots, accessibility trees, navigation, components, gestures, repeated semantic surfaces, workflow and device-lane coverage | `docs/ux/` |
+| **Runtime Quality** | Logging, errors, retries, timeouts, caches, network resilience, storage placement and cleanup | `docs/operations/` |
+| **Release & Compliance** | Privacy manifests, plist and entitlement settings, localization, signing, risky APIs, Fastlane | `docs/release/` |
 
-## Credentials and secrets
+Read the relevant guide in `references/pillars/` for that pillar's evidence,
+tool requirements, output list, and common finding patterns. Read its analysis
+prompt for the exact document outline and finding rules. The prompt is the
+required authoring contract; the guide explains the collector and pillar.
 
-Workflow YAMLs may reference credentials for test accounts. **Never commit plaintext credentials.** Use env-var interpolation:
+Each finding carries three separate assessments:
 
-```yaml
-app:
-  credentials:
-    username: "${MY_APP_TEST_USERNAME}"
-    password: "${MY_APP_TEST_PASSWORD}"
+- `severity`: `critical`, `major`, `moderate`, or `minor` describes the harm.
+- `priority`: `must`, `should`, `could`, or `wont` describes when to address it.
+- `rice`: `{reach, impact, confidence, effort, score}` estimates work value;
+  `score = (reach * impact * confidence) / effort`.
 
-device_matrix:
-  - id: iphone_compact
-    device: "iPhone 16 Pro"
-    traits: [compact, phone]
-    default: true
-  - id: ipad_regular
-    device: "iPad Pro 13-inch (M4)"
-    traits: [regular, ipad]
-    default: false
-```
+Use all three. They can disagree, and that disagreement can be informative.
+See [`references/priority-model.md`](references/priority-model.md) for scales
+and scoring guidance.
 
-`scripts/audit.py` expands `${VAR}` references at runtime. If a referenced variable is unset, collect fails with a clear error. For Xcode UI tests, pass credentials through the `TEST_RUNNER_` prefix pattern (Xcode 15.3+): `TEST_RUNNER_MY_APP_TEST_USERNAME="$MY_APP_TEST_USERNAME" xcodebuild test ...`.
+## Project files
 
-## Pillars in detail
+UX workflow YAML belongs to the app repository, typically at
+`.audit/workflows.yaml` or `.audit/flows/*.yaml`. `workflow-schema.yaml` defines
+its format, and `examples/` contains full examples. Keep audit-generated files
+out of Git except for `.audit/audit.json` when the project intentionally
+checks in a baseline. In that case, ignore `.audit/raw/` and `.audit/docs/`.
+Store non-audit notes outside a docs tree that the audit will replace. Run
+separate audit output roots for separate device or appearance variants.
 
-See the files under `references/pillars/`:
-
-- `references/pillars/code-health.md`
-- `references/pillars/ux.md`
-- `references/pillars/runtime.md`
-- `references/pillars/release.md`
-
-Each contains:
-- What raw inputs the pillar collects
-- Which tools are required vs. optional
-- The exact doc structure the analyzer should produce
-- The severity + priority rubric (MoSCoW + RICE)
-- Common findings patterns worth flagging
-
-## Priority model
-
-Every finding has:
-- **severity**: `critical` | `major` | `moderate` | `minor`
-- **priority**: `must` | `should` | `could` | `wont` (MoSCoW)
-- **rice**: `{reach, impact, confidence, effort, score}` where `score = (reach * impact * confidence) / effort`
-
-See `references/priority-model.md` for definitions and scoring guidance.
-
-## Files
-
-```
-ios-audit/
-  SKILL.md                    # This file
-  audit-schema.json           # JSON schema for audit.json and findings/*.json
-  workflow-schema.yaml        # YAML schema for UX flow definitions
-  scripts/
-    audit.py                  # Top-level CLI: collect | analyze | render | diff | all
-    common.py                 # Shared helpers (repo detection, env interpolation, JSON I/O)
-    collect/
-      __init__.py
-      code_health.py          # SwiftLint, Periphery, file tree, complexity, layer hierarchies
-      ux.py                   # Wraps ../ux/run_workflows.py and captures a11y trees + device coverage
-      runtime.py              # os_log, catch, retry/backoff, cache usage + storage policy scans
-      release.py              # PrivacyInfo.xcprivacy, Info.plist, localization, signing
-    analyze/
-      prompts/
-        code_health.md        # ANALYZE prompt for Code Health pillar
-        ux.md                 # ANALYZE prompt for UX pillar
-        runtime.md            # ANALYZE prompt for Runtime pillar
-        release.md            # ANALYZE prompt for Release pillar
-  render/
-      render.py               # Validate completeness, then merge findings + docs → audit.json + audit.html + docs/
-      templates/
-        audit.html.j2         # Self-contained HTML report template
-    diff/
-      diff.py                 # Compare current audit.json to baseline → audit-diff.md
-    ux/
-      run_workflows.py        # Flow executor (ported, now supports workflow device lanes)
-      workflow_matrix.py      # Device-lane normalization + coverage summaries
-      generate_report.py      # HTML flow report (ported)
-      review_screenshots.py   # LLM review manifest builder (ported)
-  references/
-    pillars/
-      code-health.md
-      ux.md
-      runtime.md
-      release.md
-    priority-model.md         # MoSCoW + RICE definitions
-    authoring-workflows.md    # How to write flow YAMLs
-    migration-from-ios-flow-audit.md
-  assets/
-    styles/audit.css          # Stylesheet for audit.html
-  examples/
-    movies-do.yaml            # Streaming app flows
-    silly-tavern.yaml         # Chat app flows
-  agents/
-    openai.yaml               # UI metadata
-```
-
-## Tips
-
-- **Run COLLECT behind a Makefile target** (`make audit`) so the command invocation is stable across runs.
-- **Keep `.audit/` out of git** except for `.audit/audit.json` if you want a checked-in baseline. Add `.audit/raw/` and `.audit/docs/` to `.gitignore`.
-- **Use `device_matrix` in the workflow YAML** when the app has compact/regular or iPhone/iPad branches. If adaptive layout signals exist and only one lane runs, the UX pillar should raise a coverage finding.
-- **Use separate `--output` directories per lane** (compact vs standard, light vs dark) if you run multiple audit variants.
-- **Do not preserve prior audit docs or assets.** If you need to keep non-audit notes, store them outside the audit target tree.
-- **Diff every audit** once you have a baseline. Regressions are the highest-signal output of this skill.
-- **Fail loud on missing tools** the first time, then decide if the missing tool is worth installing. Do not silently skip collectors — the doc outputs become inconsistent across runs.
+The analysis prompts define required documentation and finding outputs. The
+schema files define their machine-readable formats. The main implementation
+lives in `scripts/collect/`, `scripts/render/`, `scripts/diff/`, and
+`scripts/ux/`; Python entrypoints are self-contained scripts. See
+[`references/migration-from-ios-flow-audit.md`](references/migration-from-ios-flow-audit.md)
+when moving an existing caller from the former `ios-flow-audit` skill.

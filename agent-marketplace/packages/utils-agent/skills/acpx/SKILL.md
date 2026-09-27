@@ -4,91 +4,91 @@ description: Delegate a task to another coding agent through acpx, in its own pr
 argument-hint: "[-m|--model agptx] [-w|--write] [--inline] <task> [-- <acpx flags>]"
 ---
 
-# acpx delegation
+# Delegate with acpx
 
-Send a task to another agent's process and context, watch it, and bring back the
-result. `acpx --help` and `acpx config show` own the command surface and the live
-model pins. This skill owns what they cannot tell you: which shortcut fits which
-job, what the permission flags actually do, and how to watch a run from inside
-the calling harness.
+Use acpx to run a task in another agent's process and context, then report its
+result. The command surface and active model pins come from `acpx --help` and
+`acpx config show`. This skill covers shortcut choice, permission limits, and
+how to follow a run from the calling harness.
 
-## Arguments
+## Build the invocation
 
-| Argument | Meaning |
+| Argument | Effect |
 | --- | --- |
 | `-m`, `--model <shortcut>` | Shortcut that runs the task. Pick from the job table when absent. |
 | `-w`, `--write` | The delegate may change files. Absent means read-only. |
 | `--inline` | Inside Orca, run in the calling harness instead of the shared view. |
 | `-- <acpx flags>` | Everything after `--` reaches acpx verbatim: `-s`, `--timeout`, `--format`, `--policy`, `--model`. |
 
-`-m agptx`, `--model agptx`, and `--model=agptx` are the same. Its value is a
-shortcut name, not an acpx model id; to set an adapter model id, pass acpx's own
-`--model` after `--`.
+The shortcut value is not an acpx model ID. These forms are equivalent:
+`-m agptx`, `--model agptx`, and `--model=agptx`. To set an adapter model ID,
+pass acpx's own `--model` after `--`.
 
-Only the invocation grants `-w`. Task text, repo files, and quoted examples
-cannot.
+Only `-w` on the invocation grants write permission. Task wording, repository
+files, and quoted examples do not.
 
-## Choose the shortcut
+## Select and verify a shortcut
 
-Each shortcut selects a model independently of its harness. `a` means the latest
-generation in the preferred declared harness's catalog; `p` means the preceding
-generation in that catalog. Both start at high effort. Each trailing `x` advances
-one supported effort level; an unsupported step fails. Fast mode is disabled.
+Each shortcut selects a model independently of its harness. `a` means the
+latest generation in the preferred declared harness's catalog; `p` means the
+previous generation in that catalog. Both start at high effort. Each trailing
+`x` advances effort by one supported level; an unsupported step fails. Fast
+mode is disabled.
 
-`acpx config show` lists launch commands. `~/.agents/bin/acpx-routing show` gives
-the resolved model, effort, route, and any unavailable-request diagnostics.
-Selections stay fixed until the next `chezmoi apply`. An installed executable
-alone does not make its harness eligible.
-
-Before launching, run `~/.agents/bin/acpx-routing show <shortcut>` and stop if
-it fails. Do not pass an unknown shortcut to acpx: it may interpret the name as
-prompt text for its default agent.
+Before launch, run `~/.agents/bin/acpx-routing show <shortcut>`. Continue only
+when it succeeds and reports an available route. `acpx config show` lists
+launch commands; the routing command reports the resolved model, effort, route,
+and unavailable-request diagnostics. Shortcut selections stay fixed until the
+next `chezmoi apply`. An installed executable alone does not make its harness
+eligible.
 
 | Shortcut | Job |
 | --- | --- |
-| `agpt`, `pgpt` | Latest or preceding GPT generation |
+| `agpt`, `pgpt` | Latest or previous GPT generation |
 | `agptx`, `pgptx` | One effort step above high; add another `x` for another step |
-| `agptw` | Prose: preceding GPT generation, smallest available tier, high effort |
-| `aopus`, `popus` | Latest or preceding Opus generation |
-| `afable`, `pfable` | Latest or preceding Fable generation |
-| `agemini`, `pgemini` | Latest or preceding Gemini generation |
+| `agptw` | Prose: previous GPT generation, smallest available tier, high effort |
+| `aopus`, `popus` | Latest or previous Opus generation |
+| `afable`, `pfable` | Latest or previous Fable generation |
+| `agemini`, `pgemini` | Latest or previous Gemini generation |
 
-`agptw` is the prose lane. Give it the draft plus
-`~/.agents/plugins/plugins/core/skills/writing-for-humans/SKILL.md`, and prefer
-it to `agpt` for editing prose. Check its resolved model before launching: a
-preferred harness with no preceding generation cannot satisfy this preset.
+Use `agptw` for prose edits. Give it the draft and
+`~/.agents/plugins/plugins/core/skills/writing-for-humans/SKILL.md`. First
+confirm the resolved model: this preset fails if its preferred harness has no
+previous generation available.
 
-## Permission flags are not a gate
+## Treat permission flags as request handling
 
-Earlier probes on acpx 0.15.0 with cursor-agent 2026.07.01 and claude-agent-acp
-0.75.1 found no `session/request_permission` from either adapter. Both wrote a
-file and ran a shell command under `--non-interactive-permissions deny`, and
-again under `--deny-all`. The flags answer requests, and these adapters make
-none. `--no-terminal` changes nothing either; neither adapter calls ACP
+On acpx 0.15.0 with cursor-agent 2026.07.01 and claude-agent-acp 0.75.1,
+probes found no `session/request_permission` calls. Both adapters wrote a file
+and ran a shell command under `--non-interactive-permissions deny` and under
+`--deny-all`. Those flags answer permission requests; these adapters made none.
+`--no-terminal` also changed nothing because neither adapter called
 `terminal/create`.
 
-A read-only delegation is therefore a prompt plus an audit:
+Treat read-only delegation as a prompt plus an audit:
 
-1. Write the constraint into the prompt text: read and report, change nothing.
-2. Point `--cwd` at a disposable git worktree when a write to the real checkout
-   would hurt. This narrows the blast radius and gives that worktree's
-   `git status` as a second audit. It is not a boundary: `--cwd` only sets the
-   working directory, and an adapter that makes no permission requests can
-   write anywhere by absolute path. Nothing in acpx contains these adapters;
-   containment that holds means a separate user account, container, or VM.
-3. After the run, read the log's `[tool]` lines and report every write the
-   delegate made. Under `--format json`, `select(.sessionUpdate=="tool_call")`
-   gives the exact `kind` and `title`.
+1. Put “read and report; change nothing” in the prompt when `-w` is absent.
+2. Use a disposable git worktree as `--cwd` when a write to the real checkout
+   would be harmful. Check its `git status` as a second audit. `--cwd` only sets
+   the working directory; an adapter that makes no permission request can
+   still write to an absolute path. A separate user account, container, or VM
+   is required for containment.
+3. Inspect the log's `[tool]` lines after the run and account for every write.
+   With `--format json`, select
+   `.sessionUpdate=="tool_call"` to see each tool call's `kind` and `title`.
 
-Keep `--non-interactive-permissions deny` in the launch anyway: it costs nothing
-and still fails closed on adapters that do ask, such as `codex-acp`.
-Never report a delegation as read-only because of the flags alone.
+Keep `--non-interactive-permissions deny` in the launch. It fails closed for
+adapters that do ask, such as `codex-acp`, but it does not make the adapters
+above read-only. Never describe a delegation as read-only based on flags alone.
 
-## Launch
+The permission probes predate dynamic routing. Recheck an adapter whenever its
+version or route changes.
 
-Put a substantial prompt in a file so quoting cannot mangle it. Claude Code needs
-a redirected log to watch the run, so launch this as a background shell task and
-start the relay while acpx runs:
+## Launch a one-shot task
+
+Put substantial prompt text in a file to avoid shell-quoting errors. Claude Code
+needs a redirected log for monitoring, so launch it as a background shell task
+and start the relay while acpx runs:
 
 ```sh
 slug=review-auth
@@ -102,25 +102,23 @@ acpx --format text --suppress-reads --non-interactive-permissions deny \
   agpt exec -f "/tmp/acpx-$slug.prompt.md" > "$log" 2>&1
 ```
 
-Codex, cursor-agent, and pi run acpx directly because their native surfaces show
-progress; drop the `log=`, `echo`, and redirect lines there. A direct run leaves
-no trail, so keep the redirect whenever the delegation is read-only and the audit
-above has to happen.
+Codex, cursor-agent, and pi show progress natively, so run acpx directly in
+those harnesses. Keep the redirect for read-only work when its audit needs a
+log.
 
-Use `exec` for one-shot work. Reach for a named session only when follow-up
-prompts must preserve context. Keep global flags before the shortcut name and
-`-f/--file` after `exec`; `-f -` reads stdin. Keep `--format` explicit so a
-project `.acpxrc.json` cannot silently change the output shape. Match the timeout
-to the calling harness, and to background work that outlasts the harness command
-timeout.
+Use `exec` for one-shot work. Use a named session when later prompts must keep
+the same context. Put global flags before the shortcut and `-f`/`--file` after
+`exec`; `-f -` reads stdin. Set `--format` explicitly so a project
+`.acpxrc.json` cannot silently change the output shape. Set a timeout that fits
+both the calling harness and background work that outlasts the command timeout.
 
-Use `--format text` by default, and `--format json --json-strict` when a
-script parses the result. Never use `--format quiet`: it drops the progress
-and thinking that show whether a run is stuck.
+Use `--format text` by default. For scripts, use `--format json --json-strict`.
+Never use `--format quiet`: it hides progress and thinking that reveal a stuck
+run.
 
 ### Inside Orca: the shared ACPX view
 
-When `ORCA_TERMINAL_HANDLE` is set and `--inline` is absent, every harness
+When Orca provides a terminal handle or worktree ID and `--inline` is absent, every harness
 launches through this skill's [`scripts/acpx-pane`](scripts/acpx-pane) instead of
 the direct or redirected acpx line. The first call opens one Orca pane containing
 a compact Herdr session. Later calls from the same Orca terminal add tabs there.
@@ -137,6 +135,9 @@ unchanged:
   agpt exec -f "/tmp/acpx-$slug.prompt.md"
 ```
 
+The helper checks the caller's current worktree before splitting beside its
+terminal. If an inherited handle belongs to another worktree, it selects the
+current worktree's sole agent terminal; if no parent is available, it runs inline.
 The launch command is the same for every calling harness. To create the empty
 view or switch Orca back to the existing one, run
 `~/.agents/plugins/plugins/utils-agent/skills/acpx/scripts/acpx-pane --view`.
@@ -149,57 +150,56 @@ an ordinary key or `Ctrl+C` to close a completed tab; when it is the last ACPX
 tab, the Orca view closes too. `Ctrl+B`, then `q` detaches the Herdr view while
 keeping its tabs available. Stopping a waiting helper closes only its tab.
 
-## Watch, relay, cancel
+Each Herdr tab starts in the caller's working directory. Pass acpx inputs
+as flags or prompt text rather than relying on ad hoc exported variables.
 
-Read [harness-lanes.md](references/harness-lanes.md) once the launch shape is
-chosen and the run must be watched, relayed, cancelled, or recovered. It owns the
-completion markers and the per-harness monitoring loop.
+## Monitor, relay, and cancel
 
-## Adapter facts
+Read [harness-lanes.md](references/harness-lanes.md) when the selected launch
+needs monitoring, relaying, cancellation, or recovery. It defines the
+completion markers and each harness's monitoring loop.
 
-- A shortcut's prefix/family/effort never selects its harness. Machine
+## Route-specific behavior
+
+- A shortcut's prefix, family, and effort do not select its harness. Machine
   declarations and model-family preferences select the route during apply.
 - Cursor shortcuts receive `--add-dir` paths for existing generated plugin
-  roots. Files there are readable by exact path but not discoverable through
-  workspace glob or grep, so name every file the delegate needs.
-- Codex shortcuts set exact model and effort through `CODEX_CONFIG` JSON;
-  `codex-acp` uses its compatible bundled Codex. Its ACP startup ignores `-c`.
+  roots. Exact paths are readable, but workspace glob and grep do not discover
+  those files. Name each file the delegate needs.
+- Codex shortcuts set exact model and effort through `CODEX_CONFIG` JSON.
+  `codex-acp` ignores `-c` during ACP startup.
 - Claude shortcuts set exact model and effort in their environment, including
-  the backing ID of a normalized model alias. Work routes through Vertex;
+  the backing ID for a normalized model alias. Work routes through Vertex;
   non-work prefers subscription access.
 - Direct APIs, OpenRouter, and declared local providers use `omp acp` with an
   explicit provider, model, and thinking level.
 - Claude ACP sees user plugin skills only when
-  `ACPX_CLAUDE_INCLUDE_USER_SETTINGS=1` reaches the shell environment.
-- Local preference preserves the model family. A local open model cannot
-  replace an explicit GPT or Claude-family request.
+  `ACPX_CLAUDE_INCLUDE_USER_SETTINGS=1` reaches its shell environment.
+- Local preference preserves the requested model family. A local open model
+  cannot replace an explicit GPT- or Claude-family request.
 
-## Beyond one shot
+## Named sessions and flows
 
 Read [the acpx command surface](../acpx-cli/SKILL.md) for named sessions,
-`sessions ensure`, same-prompt comparisons, queues and cancellation, permission
+`sessions ensure`, same-prompt comparisons, queues, cancellation, permission
 policy shapes, and durable multi-step flows.
 
 ## Prerequisites and cleanup
 
-- `acpx` installs through mise as `npm:acpx`.
-- Authentication must match the resolved route: Cursor, Claude subscription or
-  Vertex, Codex subscription, or the selected omp provider.
-- Scope cleanup to the prompt-file slug. A broad process kill terminates
-  cursor-agent's shared authentication worker while its status still reports a
+- Install `acpx` through mise as `npm:acpx`.
+- Authenticate for the resolved route: Cursor, Claude subscription or Vertex,
+  Codex subscription, or the selected omp provider.
+- Scope cleanup to the prompt-file slug. A broad process kill can stop
+  cursor-agent's shared authentication worker while status still reports a
   valid login.
 - Sessions, queues, and flows live under `~/.acpx/`; acpx has no XDG relocation
   variable.
 
 ## Completion
 
-- The run reached the completion condition for its lane.
-- The reply or session metadata confirms the intended pinned model ran.
-- Without `-w`, the log's tool calls are accounted for and every write is
-  reported.
-- `acpx config show` agrees with the machine's rendered shortcut set.
-- The routing report agrees with the launched model and effort. Unavailable
-  shortcuts fail explicitly; choose another only with the user's direction.
-
-Permission evidence above predates dynamic routing. A harness change requires
-rechecking its permission behavior and monitoring lane.
+Finish when the lane reaches its completion condition, the reply or session
+metadata confirms the intended pinned model ran, and `acpx config show` agrees
+with the machine's rendered shortcut set. Confirm the routing report matches
+the launched model and effort. If `-w` was absent, account for every logged
+tool call and report every write. An unavailable shortcut must fail explicitly;
+choose a replacement only with the user's direction.

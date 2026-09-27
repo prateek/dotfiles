@@ -7,16 +7,15 @@ description: Browser automation and desktop UI. Use for web-page reads and inter
 
 ## Workflow
 
-1. **Policy.** Read [policy.md](references/policy.md) before acting. It owns
-   authorization, focus, resource ownership, and secret handling for every
-   driver. Resolve any conflict with a driver reference in favor of policy.
-2. **Harness.** Use Orca when `ORCA_WORKTREE_ID` is set; otherwise use terminal.
-   For Orca, check `orca status --json` until `runtime.reachable` is true, at
-   ten-second intervals for at most one minute. Stop the browser workflow if
-   it remains unavailable and report the blocker. Continue when the harness
-   is identified and, for Orca, its runtime is reachable.
-3. **Driver.** Choose the first matching row and read its linked reference.
-   Use the selected harness's column throughout the task.
+1. **Read policy.** Read [policy.md](references/policy.md) before browser or
+   desktop actions. It defines authorization, focus, ownership, and secret
+   handling for every driver and takes precedence over driver-specific advice.
+2. **Identify the harness.** Use Orca when `ORCA_WORKTREE_ID` is set; otherwise
+   use the terminal. When using Orca, poll `orca status --json` every ten
+   seconds for at most one minute. Continue once `runtime.reachable` is true.
+   If it remains unavailable, stop browser work and report the blocker.
+3. **Select a driver.** Choose the first matching row and read its linked
+   reference. Stay within the selected harness column for the task.
 
    | Task | Orca | Terminal |
    | --- | --- | --- |
@@ -27,9 +26,9 @@ description: Browser automation and desktop UI. Use for web-page reads and inter
    | Public-page read without interaction | Web fetch, API, or domain CLI | Web fetch, API, or domain CLI |
    | Other page work, including blocked or incomplete fetches | [Orca](references/drivers/orca.md) | [agent-browser](references/drivers/agent-browser.md) |
 
-   For running Chrome inside Orca, explain that browser-harness controls it
-   because Orca's browser commands control only its embedded pages.
-4. **Identity.** Use an isolated identity by default. Before creating a browser
+   For Chrome running inside Orca, use browser-harness and explain that Orca's
+   browser commands operate only on Orca's embedded pages.
+4. **Choose identity.** Use isolated state by default. Before creating a
    session, importing a login, or entering credentials, read
    [auth.md](references/auth.md). Continue when the identity is chosen and any
    import source or live browser has been named by Prateek.
@@ -37,16 +36,17 @@ description: Browser automation and desktop UI. Use for web-page reads and inter
    accept, follow [certificate recovery](references/certificate.md).
 5. **Work.** Follow the selected driver's workflow and the shared
    [interaction loop](references/policy.md#interaction). Verify the requested
-   page or app state before reporting success.
-6. **Finish.** Apply [resource cleanup](references/policy.md#ownership).
-   Report the result, identity used, and any resources retained for reuse.
+   page or app state before calling the task complete.
+6. **Clean up and report.** Apply [resource cleanup](references/policy.md#ownership).
+   State the result, identity used, and any resources intentionally retained.
 
 ## Terms
 
-- **Harness:** where this agent runs: Orca or terminal.
-- **Driver:** the tool acting on a page or window.
-- **Identity:** browser state. **Isolated** is fresh task-owned state;
-  **imported** copies a login from a source Prateek names; **live attach**
-  controls his running browser. Import and live attach require his request.
-- **Owned:** a browser, session, profile, or tab created by this task or named
-  by Prateek for this task.
+- **Harness:** the environment running this agent: Orca or terminal.
+- **Driver:** the tool that acts on a page or native window.
+- **Identity:** browser state used for the task. **Isolated** means fresh,
+  task-owned state. **Imported** means a login copied from a source Prateek
+  names. **Live attach** means control of his running browser. Imports and live
+  attaches require his request.
+- **Owned resource:** a browser, session, profile, or tab created for this task
+  or explicitly named by Prateek for it.

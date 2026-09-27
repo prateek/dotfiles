@@ -4,68 +4,52 @@ description: 'Import Gemini meeting Google Doc URLs using `gog` to export the do
 disable-model-invocation: true
 ---
 
-# Gemini Meeting Import (gog)
+# Import Gemini meeting notes
 
-Use this skill to turn a Gemini meeting Google Doc into two files in your notes repo:
+Use this skill when asked to save a Gemini meeting Google Doc as a transcript and structured notes. It uses `gog` for Google Docs access and writes files to `/Users/prateek/code/github.com/prateek/personal-notes/21-openai-meetings` by default.
 
-- `YYYY-MM-DD-meeting-transcript-<participants>.md` (raw transcript section)
-- `YYYY-MM-DD-meeting-notes-<participants>.md` (structured notes generated from the transcript)
+## Requirements
 
-For automation / collision-proof naming, you can append a short docId suffix:
+`gog` must be installed and authenticated for Google Docs access.
 
-- `YYYY-MM-DD-meeting-transcript-<participants>-<docIdShort>.md`
-- `YYYY-MM-DD-meeting-notes-<participants>-<docIdShort>.md`
+## Import one document
 
-## Preconditions
-
-- `gog` is installed and authenticated for Google Docs access.
-
-## Workflow
-
-### 1) Export + extract transcript
-
-Run the helper script (defaults output dir to `/Users/prateek/code/github.com/prateek/personal-notes/21-openai-meetings`):
+Pass either the Google Doc URL or its doc ID to the importer:
 
 ```bash
 python3 scripts/import_gemini_meeting.py "<google_doc_url_or_doc_id>"
 ```
 
-If you want a different destination:
+To choose another destination, pass `--out-dir`:
 
 ```bash
 python3 scripts/import_gemini_meeting.py "<url>" --out-dir "/path/to/notes/dir"
 ```
 
-The script writes the transcript file and prints the transcript path plus the suggested notes path.
+The importer exports the document, extracts its Transcript section, writes the transcript, and prints the transcript and suggested notes paths. It does not generate the notes for a single-document import. Read `references/meeting-notes.md` and the transcript, then write the requested structured notes to the suggested notes path, following that prompt.
 
-### 1b) Sync all recent Gemini meeting docs (Drive + Calendar)
+The filenames use `YYYY-MM-DD-meeting-transcript-<participants>.md` and `YYYY-MM-DD-meeting-notes-<participants>.md`. The importer infers the date and participant names from the transcript, then the document title; if it cannot infer them, it uses `unknown-date` or `unknown-attendees`. It can append a short doc ID to both names to avoid collisions when the importer is invoked with `--include-doc-id`.
 
-Dry-run discovery (recommended while iterating):
+The importer refuses to overwrite an existing transcript by default. Its `--overwrite` option replaces that file. Its `--allow-existing` option permits an existing transcript and returns the suggested paths without replacing it; use this when a workflow needs to reuse an existing transcript.
+
+## Sync recent documents
+
+Use the sync helper to discover Gemini meeting docs through Drive and Calendar. Preview discovery first:
 
 ```bash
 python3 scripts/sync_gemini_meetings.py --dry-run --days 7
 ```
 
-Apply (imports transcript + generates notes, and records processed docIds):
+Import discovered documents and generate transcript and notes files with Codex:
 
 ```bash
 python3 scripts/sync_gemini_meetings.py --days 90
 ```
 
-State is stored in your notes repo at:
+The sync helper records completed doc IDs in `.gemini-sync/processed-docids.txt` under the output directory. It writes discovery and debug artifacts to the OS temporary directory and prints its location as `Run dir`. By default, it uses the same personal-notes meetings folder as the single-document importer. Pass `--out-dir` to select another destination.
 
-- `.gemini-sync/processed-docids.txt` (one docId per line)
+## Transcript extraction
 
-Debug artifacts are written to an OS temp directory (see the printed “Run dir” path).
+The importer starts at the `📖 Transcript` marker when present. It also accepts a plain `Transcript` marker and can fall back to a Transcript line followed by timecodes. It takes everything from that marker to the end of the document.
 
-### 2) Generate meeting notes from the transcript
-
-1. Read `references/meeting-notes.md` (the prompt).
-2. Read the transcript file created by the script.
-3. Produce meeting notes that follow the prompt exactly.
-4. Write the notes to the suggested notes path printed by the script.
-
-## Notes
-
-- Transcript extraction starts at the transcript marker (prefers a `📖 Transcript` line; falls back to a `Transcript` line that looks like it’s followed by timecodes).
-- Filenames are inferred from the transcript header when possible; otherwise the script falls back to the doc title metadata.
+If extraction fails, preserve the source document and report that no transcript marker was found; do not invent transcript content. If the importer warns that the date or participants could not be inferred, keep its `unknown-date` or `unknown-attendees` filename unless the source provides reliable metadata to correct it.

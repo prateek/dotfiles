@@ -5,85 +5,39 @@ description: Self-contained Nano Banana skill for direct Gemini image generation
 
 # Image Gen Nano Banana
 
-Use this skill when the user wants Nano Banana image generation or editing through a direct Gemini path that we own locally.
+Use this skill when the user asks to generate or edit an image with Nano Banana through the local Gemini runner.
 
-This skill deliberately splits responsibilities:
+## Run the workflow
 
-- `SKILL.md` handles prompt rewriting and authoring behavior
-- `scripts/nano_banana_skill.py` does direct generation or editing
-- no retrieval or exemplar lookup
-- no runtime dependency on the benchmark reference repos
+1. Decide whether the user's prompt is ready to use or needs help.
+2. If it needs help, refine it conversationally using [Prompt rewriting](#prompt-rewriting).
+3. Run `scripts/nano_banana_skill.py` with the final prompt. Pass that prompt as-is; the runner performs generation or editing directly.
 
-## Files
+Prompt authoring belongs in this skill's instructions. The runner has no scripted `plan` flow, retrieval step, exemplar lookup, or dependency on benchmark reference repositories.
 
-- Runner: `scripts/nano_banana_skill.py`
+## Prompt rewriting
 
-## Workflow
+Rewrite when the user asks for help with the prompt, the request is vague, or the image needs a polished result for a hero, poster, mascot, or marketing use. Ask up to two or three focused questions, then cover the fields that matter:
 
-1. Decide whether the user needs prompt help or already has a good prompt.
-2. If needed, do Kousen-style prompt rewriting conversationally.
-3. When the prompt is ready, run the direct generator script.
+- subject and setting
+- mood and atmosphere
+- style or medium
+- composition and framing
+- lighting and materials
+- purpose or use case
+- exact text, when present
 
-Do not use a scripted `plan` flow. The prompt-authoring behavior in this skill is instructional, not encoded as a subcommand.
+Turn the answers into a natural-language prompt rather than a list of tags. Use specific details, explain the use case, guide composition, lighting, and material choices, and preserve quoted text exactly. Briefly explain the main choices and offer one refinement pass.
 
-## Prompt Rewriting
+Use the user's prompt directly when it is already precise, when editing should preserve a reference, or when grounded realism and factual fidelity matter more than reinterpretation.
 
-When the user prompt is vague, underspecified, or clearly asks for help crafting the image prompt, follow the original Kousen-style approach in conversation:
+### Raw prompts
 
-1. Ask up to 2-3 targeted questions, not a giant questionnaire.
-2. Fill the important missing fields:
-   - subject
-   - setting/environment
-   - mood/atmosphere
-   - style/medium
-   - composition/framing
-   - lighting
-   - purpose/use case
-   - exact text, if any
-3. Write the final prompt in natural language, not keyword soup.
-4. Give a short rationale for the main choices.
-5. Offer one refinement pass if the user wants changes.
+The user can opt out of rewriting with a `RAW:` prefix, a `[RAW]` marker anywhere in the request, or clear wording such as “use this exactly,” “do not rewrite,” or “pass this through raw.” Treat `RAW:` and `[RAW]` case-insensitively. In this mode:
 
-Use the Kousen principles directly:
-
-- natural language over tag soup
-- stronger specificity
-- use-case context
-- composition, lighting, and materiality guidance
-- quoted text preserved exactly
-
-Do this instructionally in the conversation, then pass the finalized prompt to the script as-is.
-
-## When To Rewrite
-
-Use prompt rewriting when:
-
-- the user says “help me write the prompt”
-- the request is vague or abstract
-- the image needs polish for a hero, poster, mascot, or marketing-style result
-- exact text, composition, or mood matter and the prompt is still thin
-
-Skip rewriting and use the user prompt directly when:
-
-- the prompt is already precise enough
-- it is a reference-preserving edit
-- grounded realism or factual fidelity matters more than reinterpretation
-
-## Explicit No-Rewrite Mode
-
-Users can explicitly opt out of prompt rewriting.
-
-If the request either:
-
-- starts with `RAW:`
-- contains `[RAW]` anywhere in the request
-
-do all of the following:
-
-- do not ask prompt-authoring follow-up questions
-- do not polish, expand, or reinterpret the prompt
-- strip the `RAW:` prefix or `[RAW]` marker before sending the prompt
-- pass the remaining prompt to the script verbatim
+1. Do not ask prompt-authoring questions or polish, expand, or reinterpret the prompt.
+2. Remove the `RAW:` prefix or `[RAW]` marker.
+3. Pass the remaining prompt verbatim to the runner.
 
 Examples:
 
@@ -91,38 +45,17 @@ Examples:
 - `A photoreal portrait of a violinist in soft studio light. [RAW]`
 - `RAW: Convert this dark UI screenshot into a light theme while preserving layout.`
 
-Treat both `RAW:` and `[RAW]` case-insensitively.
+For exact-text tasks, keep the quoted wording unchanged in the final prompt. Image text fidelity is imperfect, so set that expectation with the user.
 
-Also treat plain-language requests like `use this exactly`, `do not rewrite`, or `pass this through raw` the same way when the intent is unambiguous.
+## Choose a model
 
-## Models
+Use `flash` by default. It maps to `gemini-3.1-flash-image-preview`, supports `512`, `1K`, `2K`, and `4K`, supports aspect-ratio overrides including `1:4`, `1:8`, `4:1`, and `8:1`, and accepts up to 14 input images.
 
-- `flash`
-  - maps to `gemini-3.1-flash-image-preview`
-  - best for fast iteration and default use
-  - supports `512`, `1K`, `2K`, `4K`
-  - supports the wider Flash aspect-ratio set including `1:4`, `1:8`, `4:1`, and `8:1`
-  - supports up to 14 input images
-- `pro`
-  - maps to `gemini-3-pro-image-preview`
-  - use when you want the higher-fidelity path
-  - supports `1K`, `2K`, `4K`
-  - does not support aspect-ratio overrides in this skill
-  - supports at most one input image
+Choose `pro` when the user wants the higher-fidelity path. It maps to `gemini-3-pro-image-preview`, supports `1K`, `2K`, and `4K`, accepts at most one input image, and does not support aspect-ratio overrides in this skill.
 
-## Auth
+## Run examples
 
-The runner resolves API auth in this order:
-
-1. `--api-key`
-2. `GEMINI_API_KEY`
-3. `GOOGLE_API_KEY`
-
-In this experiment repo, the local `.env` file is also read automatically.
-
-## Commands
-
-Generate an image directly:
+Generate an image:
 
 ```bash
 skills/image-gen-nano-banana/scripts/nano_banana_skill.py \
@@ -131,7 +64,7 @@ skills/image-gen-nano-banana/scripts/nano_banana_skill.py \
   --output /tmp/mascot.png
 ```
 
-Reference-preserving edit:
+Edit an image while preserving its reference:
 
 ```bash
 skills/image-gen-nano-banana/scripts/nano_banana_skill.py \
@@ -141,7 +74,7 @@ skills/image-gen-nano-banana/scripts/nano_banana_skill.py \
   --filename /tmp/ui-light.png
 ```
 
-High-fidelity Pro generation:
+Generate with Pro:
 
 ```bash
 skills/image-gen-nano-banana/scripts/nano_banana_skill.py \
@@ -150,23 +83,10 @@ skills/image-gen-nano-banana/scripts/nano_banana_skill.py \
   --output /tmp/portrait.png
 ```
 
-## Rules
+`--filename` is an alias for `--output`, retained for direct-style compatibility. When the prompt includes `RAW:` or `[RAW]`, remove the marker before passing the prompt through unchanged. Preserve the user's wording directly when fidelity matters more than reinterpretation.
 
-- Do not use retrieval or exemplar lookup with this skill.
-- Do Kousen-style prompt rewriting in conversation, not in the runner.
-- If the user includes `RAW:` or `[RAW]`, skip rewriting entirely and pass the prompt through verbatim after removing the marker.
-- Preserve the user prompt directly when fidelity matters more than reinterpretation.
-- Use `--model flash` by default and `--model pro` when the user explicitly wants the higher-fidelity path.
-- `--model pro` is intentionally stricter here: no aspect-ratio override and at most one input image.
-- `--filename` is supported as an alias for `--output` for compatibility with direct-style usage.
-- If resolution is omitted and input images are provided, the runner auto-selects a resolution from the input size, including downshifting Flash to `512` for very small inputs.
-- For exact-text tasks, keep quoted text verbatim in the final prompt, but still warn yourself that image text fidelity is imperfect.
+## Authentication and output
 
-## Output Expectations
+The runner checks credentials in this order: `--api-key`, `GEMINI_API_KEY`, then `GOOGLE_API_KEY`. In this experiment repository it also reads a local `.env` file automatically.
 
-The runner writes:
-
-- the image file(s)
-- a `.json` sidecar with model, prompt, resolution, output paths, and any auto-resolution note
-
-That keeps the execution path direct and inspectable without embedding prompt-planning logic into the script.
+The runner writes the generated image file or files and a `.json` sidecar containing the model, prompt, resolution, aspect ratio, reference paths, output paths, any model text, and an auto-resolution note when applicable. With no explicit resolution, it normally uses `1K`; when reference images are supplied it can choose a resolution from their dimensions, including downshifting Flash to `512` for very small inputs.

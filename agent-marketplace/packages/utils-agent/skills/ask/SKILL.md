@@ -4,103 +4,55 @@ description: Fetch version-matched dependency docs, source, and producer skills 
 allowed-tools: Bash(ask:*)
 ---
 
-# Version-Accurate Docs & Source with `ask`
+# Read Version-Matched Docs and Source with `ask`
 
-`ask` resolves the version from the project's lockfile
-(`bun.lock → package-lock.json → pnpm-lock.yaml → yarn.lock → package.json`
-range fallback), fetches docs or source once, caches them globally at
-`~/.ask/` (override via `ASK_HOME`), and prints absolute paths to stdout so
-the commands compose naturally in shell substitutions. Progress / errors go
-to stderr, paths go to stdout — safe for `$(ask …)`.
-
-## Core Pattern
+Use `ask` when a dependency's installed version or source matters. It resolves npm versions from the project's lockfile (`bun.lock → package-lock.json → pnpm-lock.yaml → yarn.lock → package.json` range fallback), fetches docs or source once, and caches the checkout globally under `~/.ask/` (or `ASK_HOME`). It prints absolute paths to stdout and sends progress and errors to stderr, so command substitution remains safe:
 
 ```bash
-# Docs — one candidate path per line
+# Docs — one candidate directory per line
 cat "$(ask docs zod | head -n1)"/README.md
 rg "parseAsync" $(ask docs zod)
 
-# Source — single absolute path to the checkout root
+# Source — one absolute path to the checkout root
 rg "ZodError" $(ask src zod)
 fd -e test.ts . $(ask src zod)
 
-# Producer-shipped skills — one /skills/ dir per line
+# Producer skills — one /skills/ directory per line
 ls $(ask skills vercel/ai)
 ```
 
-`ask docs` emits candidate documentation directories (publish-time
-`dist/docs` first, then any subdirectory whose basename matches `/doc/i`
-up to depth 4, falling back to the checkout root when nothing matches).
-`ask src` emits exactly one path: the checkout root. Both auto-fetch on
-cache miss; pass `--no-fetch` to fail fast (exit 1) on miss instead.
+`ask docs` prints candidate documentation directories. It checks publish-time `dist/docs` first, then directories whose basename matches `/doc/i` through depth 4, and uses the checkout root if none match. `ask src` prints exactly one path: the checkout root. Either command fetches on a cache miss; add `--no-fetch` to fail with exit 1 instead. `ask skills <spec>` finds producer-shipped skill directories and is equivalent to `ask skills list <spec>`.
 
-## Spec Grammar
+## Choose a spec
 
-```
-zod                         # bare → npm ecosystem (resolved via lockfile)
-npm:next                    # explicit ecosystem
-npm:@mastra/client-js       # scoped package
-facebook/react              # owner/repo → github:facebook/react@main
+Bare package names use the npm ecosystem and the project's lockfile version. Use an explicit ecosystem or ref when needed:
+
+```text
+zod                         # bare npm package; resolve from lockfile
+npm:next                    # explicit npm ecosystem
+npm:@mastra/client-js       # scoped npm package
+facebook/react              # GitHub repo; defaults to main
 github:vercel/next.js@v14.2.3   # pinned tag
 github:owner/repo@main          # pinned branch
 ```
 
-- For `npm:` specs (and bare names), the version comes from the project's
-  lockfile. Append `@version` to pin explicitly: `zod@3.22.0`,
-  `npm:next@14.2.3`.
-- For `github:` specs, `@<ref>` pins a tag or branch. Bare `owner/repo`
-  (no `@ref`) defaults to `main`.
-- Any ref works with these one-shot reading commands — branches, tags,
-  or mutable refs like `main` / `master` are all accepted, since
-  nothing is persisted.
+For npm packages, append `@version` to pin a version, for example `zod@3.22.0` or `npm:next@14.2.3`. For GitHub specs, `@<ref>` pins a tag or branch; bare `owner/repo` defaults to `main`. Reading commands accept mutable refs such as `main` and `master` because they do not persist changes.
 
-## One-Shot Reading Commands
+All three commands share `ensureCheckout`, so the same spec reuses its cached path. Running `ask docs`, `ask src`, and `ask skills list` for one spec fetches it only once.
 
-| Command | Output | Use when |
-|---------|--------|----------|
-| `ask docs <spec> [--no-fetch]` | Candidate doc dirs, one per line | You want README / guides / handwritten docs at the installed version |
-| `ask src <spec> [--no-fetch]`  | Checkout root, single line        | You need to read real source, search all files, follow implementations |
-| `ask skills <spec>` (= `ask skills list`) | `/skills/` dirs, one per line | The library ships its own Claude / Cursor / OpenCode skills |
+The reading forms are `ask docs <spec> [--no-fetch]`, `ask src <spec> [--no-fetch]`, and `ask skills <spec>` (also `ask skills list <spec>`). The first two print one or more paths as described above; the skills form prints one `/skills/` directory per line.
 
-All three share `ensureCheckout`, so the cached path is reused across
-commands — calling `ask docs`, then `ask src`, then `ask skills list` on
-the same spec fetches once.
+## Pick the right source
 
-## When You Need More
+- Use docs when you need the installed version's README, guides, or handwritten documentation.
+- Use source when behavior, edge cases, error paths, or internal helpers are not settled by the public types or docs.
+- Use `ask skills list <spec>` when the library may ship its own agent skills.
+- Skip `ask` when TypeScript, LSP, or intellisense answers the question, or when the user supplied the exact source file.
 
-Lazy-load these references only when the situation calls for them:
+Version-matched material prevents API details from drifting with training data. Lockfiles and pinned refs anchor the read to the dependency the project actually uses.
 
-- **Managing the cache** — disk pressure, stale entries, `--kind` /
-  `--older-than` filters, legacy v1 layout cleanup →
-  [`references/cache.md`](references/cache.md).
-- **Project-level declarative workflow** — `ask.json`, `ask install`,
-  `ask add`, `ask remove`, `ask list`, auto-regenerated `AGENTS.md` and
-  per-library `.claude/skills/<name>-docs/SKILL.md` →
-  [`references/declarative-workflow.md`](references/declarative-workflow.md).
-- **Vendoring producer skills into this project** — `ask skills install`,
-  `--force`, `--agent claude,cursor,opencode,codex`, `ask skills remove
-  --ignore-missing` →
-  [`references/skills-vendoring.md`](references/skills-vendoring.md).
+## Load references when needed
 
-## When to Reach for `ask`
-
-Reach for it when:
-
-- The installed version matters — otherwise the agent risks fabricating
-  API shape from an outdated training snapshot.
-- The answer lives in source, not types — edge cases, error paths,
-  internal helpers, behavior that isn't documented anywhere else.
-- A library may ship its own skills — `ask skills list <spec>` discovers
-  producer-side `skills/` directories without touching the project.
-
-Skip it when TypeScript / LSP / intellisense can answer the question, or
-when the user has already pointed at a specific file path.
-
-## Why This Exists
-
-Training data ages; lockfiles don't. `ask` bridges the two by pinning
-every read to the version the project actually runs, so generated code
-reflects reality instead of last year's docs. The `$(ask …)` idiom is
-the main ergonomic: it turns a cached path into a first-class argument
-to `rg`, `cat`, `fd`, or any tool that accepts a path — no extra API to
-learn.
+- For cache cleanup, staleness, `--kind` or `--older-than` filters, or legacy v1 layout migration, read [`references/cache.md`](references/cache.md).
+- For project-level configuration with `ask.json`, `ask install`, `ask add`, `ask remove`, `ask list`, generated `AGENTS.md`, or per-library `.claude/skills/<name>-docs/SKILL.md`, read [`references/declarative-workflow.md`](references/declarative-workflow.md).
+- For vendoring producer skills with `ask skills install`, `--force`, `--agent claude,cursor,opencode,codex`, or `ask skills remove --ignore-missing`, read [`references/skills-vendoring.md`](references/skills-vendoring.md).

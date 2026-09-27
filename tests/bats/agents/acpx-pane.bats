@@ -19,17 +19,33 @@ STUB
 #!/usr/bin/env bash
 printf '%s\n' "$*" >> "$FIXTURE/orca-calls"
 case "$1 $2" in
+  "worktree current")
+    [ -n "${ORCA_TERMINAL_HANDLE:-}${ORCA_WORKTREE_ID:-}" ] || exit 1
+    printf '{"ok":true,"result":{"worktree":{"id":"w1"}}}\n'
+    ;;
   "terminal split")
     [ -z "${SPLIT_FAILS:-}" ] || exit 1
     touch "$FIXTURE/server-started"
     printf '{"result":{"split":{"handle":"term_child"}}}\n'
     ;;
   "terminal show")
-    if [ -n "${STALE_VIEW:-}" ]; then
-      printf '{"result":{"terminal":{"connected":false}}}\n'
-    else
-      printf '{"result":{"terminal":{"connected":true}}}\n'
-    fi
+    case " $* " in
+      *" --terminal term_stale "*)
+        printf '{"ok":true,"result":{"terminal":{"handle":"term_stale","worktreeId":"w1","connected":false}}}\n' ;;
+      *" --terminal term_parent "*)
+        if [ -n "${PARENT_IN_OTHER_WORKTREE:-}" ]; then
+          printf '{"ok":true,"result":{"terminal":{"handle":"term_parent","worktreeId":"w2","connected":true}}}\n'
+        else
+          printf '{"ok":true,"result":{"terminal":{"handle":"term_parent","worktreeId":"w1","connected":true}}}\n'
+        fi ;;
+      *" --terminal term_agent "*)
+        printf '{"ok":true,"result":{"terminal":{"handle":"term_agent","worktreeId":"w1","connected":true}}}\n' ;;
+      *)
+        printf '{"ok":true,"result":{"terminal":{"handle":"term_active","worktreeId":"w1","connected":true}}}\n' ;;
+    esac
+    ;;
+  "terminal list")
+    printf '{"ok":true,"result":{"terminals":[{"handle":"term_agent","worktreeId":"w1","connected":true,"agentIdentity":"codex","title":"Agent"}]}}\n'
     ;;
   "terminal switch") printf '{}\n' ;;
   "terminal close") printf '{}\n' ;;
@@ -115,6 +131,15 @@ STUB
   assert_output 'pane: term_child'
   [ ! -e "$log" ]
   assert_equal "$(rg -c 'terminal split' "$FIXTURE/orca-calls")" 1
+}
+
+@test "a stale parent handle opens the shared view beside an agent in the current worktree" {
+  export PARENT_IN_OTHER_WORKTREE=1
+  run_bash 0 "$pane_cmd" --view
+  assert_output 'pane: term_child'
+  assert_regex "$(cat "$FIXTURE/orca-calls")" 'terminal list --worktree id:w1'
+  assert_regex "$(cat "$FIXTURE/orca-calls")" 'terminal split --terminal term_agent --direction horizontal'
+  ! rg -q 'terminal split --terminal term_parent' "$FIXTURE/orca-calls"
 }
 
 @test "acpx-pane runs inline once when Orca cannot open the shared view" {

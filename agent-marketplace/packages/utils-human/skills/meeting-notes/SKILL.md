@@ -5,134 +5,66 @@ argument-hint: '[FILE=<path>] [TITLE="<title>"] [DATE=YYYY-MM-DD] [ATTENDEES="<n
 disable-model-invocation: true
 ---
 
-You are an expert meeting scribe. You take **messy, raw transcripts** (with false starts, fillers, side-bars, people talking over each other) and turn them into **clean, structured meeting notes** that are easy for a team to read later.
+Turn a raw meeting transcript into concise, neutral notes. Distill the discussion; never reproduce the transcript.
 
-Do **not** repeat the entire transcript. Distill it.
+## Get the transcript and overrides
 
-Follow this specification exactly.
+- Read the transcript from the path supplied as `FILE=...`. If no file is supplied, use transcript text pasted in the chat.
+- If neither is available, ask the user to provide the transcript and stop.
+- Use supplied `TITLE=...`, `DATE=...`, and `ATTENDEES=...` values verbatim. If absent, infer them from the transcript where possible.
 
----
+## Extract the meeting record
 
-## 1. Inputs you will get
+Identify the meeting's purpose, major topics, key discussion and rationale, explicit decisions, unresolved questions, and next actions. Remove fillers, chit-chat, and repeated points; retain the clearest version of each idea.
 
-* **transcript**:
-  * If a file path is provided as `FILE=...`, read the transcript from `$FILE`.
-  * Otherwise, use the transcript text pasted into the chat.
-  * If you have neither, ask the user to paste the transcript and stop.
-* **optional overrides** (may be empty):
-  * `TITLE=...` → `$TITLE` (use verbatim if provided)
-  * `DATE=...` → `$DATE` (use verbatim if provided)
-  * `ATTENDEES=...` → `$ATTENDEES` (use verbatim if provided)
+For action items, capture commitments and requests, including phrases such as “I can,” “I’ll,” and “Can you,” as well as follow-ups, drafts, reviews, updates, tests, schedules, and other concrete work. Name an owner only when the transcript does; otherwise use `TBD`. Preserve relative due dates as spoken (for example, “by next week” or “before launch”); use `TBD` when no due date is given.
 
----
+Treat proposals as decisions only when the speakers indicate agreement or a choice, for example “let’s,” “we agreed,” or “we’ll go with.” Put contested topics without a final choice under open questions. If the transcript does not state a decision, say so explicitly.
 
-## 2. Your goals
+Use speaker names from the transcript. When names are absent, use the available generic speaker label (such as “Engineering,” “PM,” or “Caller 2”); never invent a person. Infer the facilitator or primary speaker only when supported by the discussion.
 
-1. Capture what the meeting was **about**.
-2. Capture what was **decided**.
-3. Capture what is **still open**.
-4. Capture **next actions** with owners and (if possible) due dates.
-5. Remove fluff and fillers.
+If details are missing or speech is unclear, mark that uncertainty instead of guessing. Strip obvious email addresses, tokens, and API keys; replace credential-like strings with `[redacted sensitive string]`.
 
-If information is missing (e.g. you don't know the owner or date), **call it out explicitly** instead of guessing.
+For transcripts shorter than 10 lines, keep the same format and include Summary, Decisions, and Action Items, even when some sections have no entries.
 
----
+## Output
 
-## 3. Output format (Markdown)
+Return only the Markdown meeting notes below. Use `Unknown` for an uninferable date, `Untitled` for an uninferable title, and `Not specified` for attendees not supplied or named. Use `TBD` for missing action owners or due dates. In the source/confidence section, identify unclear transcript segments and any assumptions made.
 
 ```markdown
 # Meeting Notes
-**Title:** (Use `$TITLE` if provided; else infer from transcript; else "Untitled")  
-**Date:** (Use `$DATE` if provided; else infer from transcript; else "Unknown")  
-**Attendees:** (Use `$ATTENDEES` if provided; else list names if present; else "Not specified")  
-**Facilitator/Primary speaker:** (Infer from transcript, or "Not specified")
+**Title:** <supplied title, inferred title, or Untitled>
+**Date:** <supplied date, inferred date, or Unknown>
+**Attendees:** <supplied attendees, names in transcript, or Not specified>
+**Facilitator/Primary speaker:** <supported speaker or Not specified>
 
-## 1. Summary (3-6 bullets)
-- ...
-- ...
+## 1. Summary
+- <3–6 concise bullets>
 
 ## 2. Agenda / Topics Covered
-1. Topic 1 — short description
-2. Topic 2 — short description
-3. Topic 3 — short description
+1. <Topic> — <short description>
 
 ## 3. Discussion Details
-### Topic 1
+### <Topic>
 - Key points:
-  - ...
-  - ...
+  - <point>
 - Rationale / context:
-  - ...
-
-### Topic 2
-- Key points:
-  - ...
-
-(continue for all major topics)
+  - <context, when present>
 
 ## 4. Decisions
-- Decision: ... (why: ...)
-- Decision: ...
-
-(If no decisions were made, say: "No explicit decisions captured.")
+- Decision: <choice> (why: <reason, when stated>)
 
 ## 5. Action Items
 | # | Action | Owner | Due | Notes / Source |
 |---|--------|-------|-----|----------------|
-| 1 | ...    | ...   | ... | said by <speaker> when discussing <topic> |
-| 2 | ...    | ...   | ... | ... |
-
-(If owner/due not in transcript, write `TBD`.)
+| 1 | <action> | <owner or TBD> | <date or TBD> | <speaker and topic, when available> |
 
 ## 6. Open Questions / Parking Lot
-- ...
-- ...
+- <unresolved question or topic>
 
 ## 7. Source / Confidence
-- Transcript segments that were unclear: ...
-- Assumptions made: ...
+- Transcript segments that were unclear: <segments or None>
+- Assumptions made: <assumptions or None>
 ```
 
----
-
-## 4. Extraction rules
-
-1. **Action items**
-   * Look for verbs like *follow up, send, create, update, review, decide, draft, migrate, test, schedule, document, share, file a ticket, ping X*.
-   * If speaker says "I can..." or "I'll..." or "Can you..." → that is an action.
-   * If no owner is explicitly named, set **Owner = TBD**.
-   * If date is relative ("by next week", "before launch"), keep the text as-is.
-
-2. **Decisions**
-   * Any place someone says "let's", "we'll go with", "we agreed", "for now we'll", "we're standardizing on", "we'll ship this first" → mark as a decision.
-   * If there was contention but no final choice, move it to **Open Questions**.
-
-3. **De-duplication**
-   * If the same idea is repeated, keep the clearest version once.
-
-4. **Speaker names**
-   * If the transcript has names, use them.
-   * If not, keep it generic ("Engineering", "PM", "Caller 2"), but don't invent real people.
-
-5. **Tone**
-   * Neutral, business-like, concise.
-   * No chit-chat, no "um", no "hi everyone".
-
----
-
-## 5. Redaction / safety (lightweight)
-
-* Strip obvious email addresses, tokens, or API keys if they accidentally show up.
-* If a segment looks like credentials/secrets, write: `[redacted sensitive string]`.
-
----
-
-## 6. If the transcript is very short
-
-If the transcript is < 10 lines, still produce **Summary**, **Decisions**, **Action Items** (possibly empty) so the format stays consistent.
-
----
-
-## 7. Final instruction
-
-Produce **only** the Markdown output above. Do **not** explain what you did. Only replace `TBD` values when the transcript explicitly provides the missing information.
+When no explicit decisions were captured, write: `No explicit decisions captured.` Keep empty sections present so the record has a consistent shape.

@@ -2,96 +2,139 @@
 name: ci-autofix-loop
 description: >
   End-to-end CI fixer loop for the current git branch/PR (GitHub Actions + Buildkite).
-  Use when asked to “fix CI”, “make checks green”, or “address failing checks”, and the workflow should:
-  (1) discover failing checks via `gh pr checks`,
-  (2) diagnose failures via provider logs (Buildkite log tooling/API or `gh run view --log-failed`),
-  (3) apply minimal code fixes,
-  (4) run `code-simplifier` + `code-review`,
-  (5) commit + push, and
-  (6) iterate until remaining failures are unfixable via code change.
+  Use when asked to “fix CI”, “make checks green”, or “address failing checks”, and
+  the workflow should: (1) discover failing checks via `gh pr checks`, (2) diagnose
+  failures via provider logs (Buildkite log tooling/API or `gh run view --log-failed`),
+  (3) apply minimal code fixes, (4) run `code-simplifier` + `code-review`, (5) commit
+  + push, and (6) iterate until remaining failures are unfixable via code change.
 ---
 
 # CI Autofix Loop
 
-## Assumptions
+Use this workflow to diagnose and fix CI failures on the current PR or pushed
+branch. Work one failure at a time, validate the smallest relevant change, and
+repeat until checks pass or the remaining failures need action outside the code.
 
-- Work in a git repo with a PR (preferred) or a branch pushed to a remote.
-- `gh` is authenticated for the repo.
-- If Buildkite checks exist, Buildkite access is available via `BUILDKITE_TOKEN`.
+## Before you start
 
-## Workflow
+- Work in a git repository with a PR, or a branch pushed to a remote.
+- Confirm `gh` is authenticated for this repository.
+- If the PR has Buildkite checks, confirm Buildkite access through
+  `BUILDKITE_TOKEN`.
 
-### 0) Identify PR + base
+Identify the PR and base branch with:
 
-- Prefer PR context:
-  - `gh pr view --json number,baseRefName,headRefName,url`
-- If no PR, operate on the current branch and upstream tracking ref:
-  - `git status -sb`
-  - `git rev-parse --abbrev-ref --symbolic-full-name @{u}` (if set)
+```sh
+gh pr view --json number,baseRefName,headRefName,url
+```
 
-### 1) Enumerate failing checks
+If there is no PR, use the current branch and its upstream tracking ref:
 
-- `gh pr checks --json name,state,link,description`
-- If check entries are missing a URL, fall back to:
-  - `gh pr view --json statusCheckRollup`
-- Group checks into:
-  - **Buildkite**: `link` is a buildkite.com URL (often `buildkite/<pipeline>` contexts).
-  - **GitHub Actions**: `link` is a github.com/actions URL.
-  - **Manual/unfixable-by-code**: e.g. `codeownerous` (review requirements), org policy checks, or anything that is purely approval-gated.
+```sh
+git status -sb
+git rev-parse --abbrev-ref --symbolic-full-name @{u}
+```
 
-### 2) Diagnose + fix (one failure at a time)
+The upstream command may have no result when tracking is not configured.
 
-#### Buildkite failures
+## Find and classify failing checks
 
-1) Normalize to a base build URL:
-   - `https://buildkite.com/<org>/<pipeline>/builds/<num>`
-2) Prefer local log tooling when available:
-   - If the repo contains `.codex/skills/buildkite-fetch-logs/scripts/get_buildkite_logs.py`, use it to download failed logs to a temp dir and inspect the failing job(s).
-   - If it isn’t there, search for it in the workspace or CODEX_HOME before falling back to the API.
-   - Otherwise, use the Buildkite API (`curl -H "Authorization: Bearer $BUILDKITE_TOKEN" ...`) to inspect job state + logs.
-3) Common “not a code bug” pattern: **stale branch / merge base check**
-   - Symptom: log contains “Your PR is too stale” / “must include commit <sha>”.
-   - Fix:
-     - `git fetch <remote> <baseBranch>`
-     - `git rebase <remote>/<baseBranch>` (resolve conflicts if any)
-     - `git push --force-with-lease`
-4) Otherwise, map the error to code, implement the smallest fix, and run the exact test command(s) mentioned in the failing logs when feasible.
+Get the check list:
 
-#### GitHub Actions failures
+```sh
+gh pr checks --json name,state,link,description
+```
 
-1) Extract the run/job IDs from the check URL if present:
-   - Run URL: `.../actions/runs/<run_id>`
-   - Job URL: `.../actions/runs/<run_id>/job/<job_id>`
-2) Pull failing logs and identify the exact failing command:
-   - Run-level: `gh run view <run_id> --log-failed`
-   - Job-level (when you have `<job_id>`): `gh run view <run_id> --job <job_id> --log-failed`
-3) Map failure → code:
-   - Find referenced files/commands; run the smallest local equivalent (formatter/typecheck/unit test) if feasible.
-4) Implement the minimal fix and rely on the push-triggered workflow re-run for validation.
-5) If failures appear flaky or infra-only (no deterministic repro / no actionable logs), treat as unfixable-by-code and stop with a summary + links.
+If a check has no URL, inspect the rollup:
 
-### 3) Simplify and review before committing
+```sh
+gh pr view --json statusCheckRollup
+```
 
-- Run `code-simplifier` on the current diff (keep behavior identical; avoid unrelated refactors).
-- Run `code-review` against the PR base (or upstream branch) and address any blockers.
+Classify each failure by its link or purpose:
 
-### 4) Commit + push
+- **Buildkite:** the link uses `buildkite.com`, often with a `buildkite/<pipeline>`
+  context.
+- **GitHub Actions:** the link uses `github.com/actions`.
+- **Manual or external gate:** review requirements, organization policy, or another
+  check that code changes cannot satisfy.
 
-- Prefer one focused commit per logical CI fix (or squash related changes if they’re tightly coupled).
-- Push to the PR branch.
-- If you rebased or rewrote history, use `git push --force-with-lease` (never plain `--force`).
+Resolve actionable failures individually. For each one, inspect its logs, identify
+the failing command and relevant code, then make the smallest useful fix.
 
-### 5) Iterate until done
+## Diagnose Buildkite failures
 
-- Re-check:
-  - `gh pr checks`
-- Stop when:
-  - All CI checks are green **or**
-  - Remaining items are not addressable via code changes (review-required gates, infra “broken” steps with no logs, external scanners, etc.).
-- If you hit repeated failures with no new signal after 2–3 iterations, stop and summarize what’s blocking (with concrete URLs).
+Normalize the check link to the base build URL:
+
+```text
+https://buildkite.com/<org>/<pipeline>/builds/<num>
+```
+
+Use the local log helper when available. First check for
+`.codex/skills/buildkite-fetch-logs/scripts/get_buildkite_logs.py` in the repo. If
+it is absent, search the workspace or `CODEX_HOME`. Use the helper to download
+failed logs to a temporary directory and inspect the failing jobs. If the helper
+is unavailable, inspect job state and logs through the Buildkite API with
+`BUILDKITE_TOKEN`.
+
+Treat a stale-branch message such as “Your PR is too stale” or “must include commit
+<sha>” as a base-branch sync issue. Fetch and rebase onto the PR base, resolve any
+conflicts, then update the branch with lease protection:
+
+```sh
+git fetch <remote> <baseBranch>
+git rebase <remote>/<baseBranch>
+git push --force-with-lease
+```
+
+For other failures, map the log error to the relevant code, apply the smallest fix,
+and run the exact test command named in the log when feasible.
+
+## Diagnose GitHub Actions failures
+
+Read the run or job ID from the check URL. Run URLs contain
+`/actions/runs/<run_id>`; job URLs also contain `/job/<job_id>`. Fetch failed logs
+for the narrowest available scope:
+
+```sh
+gh run view <run_id> --log-failed
+gh run view <run_id> --job <job_id> --log-failed
+```
+
+Use the job-level command when the URL provides a job ID. Find the referenced files
+or commands, then run the smallest local equivalent, such as the formatter,
+typecheck, or unit test. Make the minimal fix and let the push-triggered workflow
+rerun validate it.
+
+If a failure is flaky or infrastructure-only, has no deterministic local
+reproduction, or has no actionable logs, classify it as unfixable by code. Stop
+with a summary and links to the relevant checks.
+
+## Review, commit, and push
+
+Before committing, run `code-simplifier` on the current diff. Keep behavior
+unchanged and remove unrelated refactoring. Then run `code-review` against the PR
+base or upstream branch, and address any blockers.
+
+Create one focused commit per logical CI fix; squash related changes when they form
+one coherent fix. Push the PR branch. If history was rebased or rewritten, use
+`git push --force-with-lease`, never plain `--force`.
+
+## Repeat and stop
+
+After each push, check the PR again with:
+
+```sh
+gh pr checks
+```
+
+Continue while a failure provides actionable code-level evidence. Stop when all CI
+checks are green, or when every remaining item requires a review, external policy,
+or infrastructure action that code cannot address. If two or three iterations
+produce no new signal, stop and report the blocker with concrete links.
 
 ## Guardrails
 
-- Never print or persist secrets (Buildkite token, GitHub tokens).
-- Clean up temp log directories after use.
-- Prefer minimal, reviewable diffs; avoid “drive-by” refactors.
+- Keep Buildkite and GitHub credentials secret: never print or persist tokens.
+- Remove temporary log directories after inspecting them.
+- Keep every fix minimal and reviewable; avoid unrelated refactoring.

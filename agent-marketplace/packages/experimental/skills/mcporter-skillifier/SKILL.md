@@ -1,73 +1,55 @@
 ---
 name: mcporter-skillifier
-description: Generate Codex skills that wrap MCP servers via MCPorter (CLI + keep-alive daemon) so skills can “just call” an MCP server (no Codex MCP wiring), including multi-turn `continuation_id` flows.
+description: Generate Codex skills that call MCP servers through MCPorter, including stdio or HTTP connections and keep-alive support for multi-turn `continuation_id` flows.
 ---
 
 # Mcporter Skillifier
 
-## Overview
+Use this skill to generate a Codex skill that calls an MCP server through the `mcporter` CLI. The generated skill contains a shell wrapper and a skill-local `mcporter.json`; it does not register MCP tools with Codex. The wrapper invokes `bash scripts/mcp` through `exec_command`.
 
-This skill generates other skills: it writes a new `$skill-name/` folder that wraps an MCP server via the `mcporter` CLI (default: pinned `mcporter@${MCPORTER_VERSION}` via `npx`; optionally set `MCPORTER_BIN=mcporter` to use a local binary).
+The wrapper uses `npx -y mcporter@${MCPORTER_VERSION}` by default, with the generated script pin as its default version. Set `MCPORTER_BIN=mcporter` to use a local binary instead. MCPorter provides the keep-alive daemon used by servers that retain state between calls.
 
-Use this when you want:
-- Skill-local MCP access without modifying Codex core (no always-on Codex MCP server wiring).
-- Multi-turn MCP flows that require server process persistence (e.g. PAL `continuation_id`) via MCPorter’s keep-alive daemon.
-- A generic wrapper you can reuse for any MCP server (stdio or HTTP) without writing MCP protocol glue.
+## Generate the skill
 
-Important: Generated skills are **not** first-class Codex MCP tools (`mcp__...`). They are shell wrappers (`bash scripts/mcp ...`) that the skill can invoke via `exec_command`.
+Run `scripts/generate_skill.py` from this skill's directory. Choose exactly one connection method: `--stdio` for a local process or `--http-url` for an HTTP MCP endpoint.
 
-## Generate a skill
-
-Generator (relative to this skill's base directory):
-- `scripts/generate_skill.py`
-
-Typical invocation (stdio server):
+For a stdio server that keeps an in-memory continuation, enable `--keep-alive`:
 
 ```bash
-python3 "scripts/generate_skill.py" \
+python3 scripts/generate_skill.py \
   --skill-name my-mcp-skill \
   --stdio 'uvx --from ${PAL_MCP_FROM} pal-mcp-server' \
   --keep-alive \
   --with-fixture-tests
 ```
 
-Options (high level):
-- `--skill-name`: folder name (hyphen-case).
-- `--out-dir`: where to write the generated skill (defaults to `.../.agents/skills/`).
-- `--http-url` or `--stdio`: how to connect to the MCP server.
-- `--env KEY=VALUE`: fixed env overrides passed to the server process (repeatable).
-- `--keep-alive`: enables MCPorter daemon keep-alive (required for in-memory `continuation_id` flows).
-- `--idle-timeout-ms`: optional keep-alive idle timeout.
-- `--with-fixture-tests`: adds a deterministic fixture MCP server + offline tests to validate keep-alive multi-turn behavior without API keys.
-- `--[no-]verify`: runs the generated skill’s `scripts/selftest` after writing files (default: no-verify).
+The generator normalizes the skill and server names to hyphen-case. By default it writes beside this skill's directory; set `--out-dir` to choose another parent directory. The output directory name is the normalized skill name. Use `--force` only when you intend to replace an existing output directory.
 
-Note on interpolation: MCPorter supports `${VAR}` interpolation in config commands, but not bash defaulting like `${VAR:-fallback}`. If you need defaults, set env vars before running.
+Set server environment values with repeatable `--env KEY=VALUE` arguments. Optional `--server-name` and `--server-description` configure the entry in `mcporter.json`. For keep-alive servers, `--idle-timeout-ms` sets the daemon idle timeout.
 
-Also: if you embed a bash snippet inside `mcporter.json`, avoid `${local_var}` for shell-local variables. MCPorter may treat it as a required placeholder and fail unless that env var is set.
+`--with-fixture-tests` adds a deterministic fixture MCP server and offline tests for multi-turn behavior. Generation does not run the generated self-test unless `--verify` is supplied. Verification requires `npx` and may require authentication or network access; `--no-verify` explicitly keeps generation offline.
 
-## Using a generated skill
+MCPorter interpolates `${VAR}` in configuration commands, but does not support Bash defaults such as `${VAR:-fallback}`. Set variables before running the generated skill when a value needs a default. Avoid `${local_var}` in shell snippets embedded in `mcporter.json`; MCPorter may treat it as a required configuration placeholder.
 
-From inside the generated skill directory:
+## Call the generated skill
+
+From the generated skill directory, list the configured server's tools and call one:
 
 ```bash
-bash "scripts/mcp" list
-bash "scripts/mcp" call <tool> --output json --args '{"key":"value"}'
+bash scripts/mcp list
+bash scripts/mcp call <tool> --output json --args '{"key":"value"}'
 ```
 
-## Tests
+The wrapper also accepts fully qualified `server.tool` selectors and HTTP URLs after `call`. It uses the skill's `mcporter.json` by default; set `MCP_SKILL_CONFIG` to use another config file. With no command or a help argument, `scripts/mcp` prints its usage and the MCPorter selection options.
 
-When generating with `--with-fixture-tests`, the generated skill includes an offline unittest:
+For in-memory `continuation_id` flows, generate with `--keep-alive` so separate wrapper invocations reuse the server process. The fixture tests exercise this behavior without API keys:
 
 ```bash
 python3 -m unittest -q tests/test_offline.py
 ```
 
-In the `codex-skill-scoped-mcp` experiment, there are also integration tests that prove:
-- multi-turn continuity works via keep-alive across separate CLI invocations
-- config-path isolation (continuation IDs don’t cross skills/configs)
-- parallel calls and parallel invocations behave as expected
+The `codex-skill-scoped-mcp` experiment also contains integration checks for continuity across CLI invocations, isolation between skill configs, parallel calls, and parallel invocations:
 
-See:
 - `experiments/codex-skill-scoped-mcp/scripts/test_mcporter_skillifier_fixture_multiturn.sh`
 - `experiments/codex-skill-scoped-mcp/scripts/test_mcporter_skillifier_parallel_calls_same_daemon.sh`
 - `experiments/codex-skill-scoped-mcp/scripts/test_mcporter_skillifier_parallel_invocations_isolated_daemons.sh`

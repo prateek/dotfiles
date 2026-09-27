@@ -1,5 +1,9 @@
 # Visual Design Principles for Developer Tool UIs
 
+Use this reference when establishing the visual system for a dense data
+interface. Treat the values as examples; keep semantic roles consistent while
+choosing colors and type that fit the product.
+
 ## Table of Contents
 
 1. [Color System Architecture](#color-system-architecture)

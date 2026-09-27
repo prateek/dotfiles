@@ -6,9 +6,11 @@ disable-model-invocation: true
 
 # llms.txt from Website
 
-Generate a high-signal `llms.txt` (curated manifest) plus `llms-full.txt` (full text bundle) even when you don’t know the site stack and there’s no sitemap.
+Use this skill when a user provides a website URL and wants a curated `llms.txt` plus a fuller `llms-full.txt`. It works without knowing the site framework or having a sitemap. The generator tries existing files first, then the docs repository, then a sitemap or bounded internal crawl.
 
-## Quick start
+## Generate the files
+
+Run the bundled script with the docs or product URL and an output directory:
 
 ```bash
 python "<path-to-skill>/scripts/generate_llms_files.py" \
@@ -16,74 +18,57 @@ python "<path-to-skill>/scripts/generate_llms_files.py" \
   --out "./llms-out"
 ```
 
-Outputs:
+The script creates a URL-derived subdirectory containing:
 
-- `./llms-out/<slug>/llms.txt`
-- `./llms-out/<slug>/llms-full.txt`
-- `./llms-out/<slug>/metadata.json`
+- `llms.txt`: the curated manifest.
+- `llms-full.txt`: the available full-text bundle.
+- `metadata.json`: the source and generation details.
 
-Print generation metadata (useful for debugging / chaining):
+Add `--json` to print the metadata to stdout for debugging or chaining:
 
 ```bash
-python "<path-to-skill>/scripts/generate_llms_files.py" --url "<url>" --out "./llms-out" --json
+python "<path-to-skill>/scripts/generate_llms_files.py" \
+  --url "<url>" --out "./llms-out" --json
 ```
 
-## Workflow (decision order)
+## How the generator chooses sources
 
-### 1) Reuse existing files (best case)
+The script follows this order; use the first successful source and keep the generated metadata with the outputs.
 
-- Fetch and reuse `/<root>/llms.txt` (also try the exact docs subpath root the user gave you).
-- If `llms-full.txt` exists too, download it.
-- If only `llms.txt` exists, generate `llms-full.txt` by converting the linked pages (prefer `*.md` endpoints when the site supports them; else use `uvx markitdown`).
+1. **Existing files.** It looks for `llms.txt` at the supplied URL's root and the site origin, including an exact docs subpath. If it finds `llms-full.txt`, it downloads that too. Otherwise, it builds the full file from links in `llms.txt`, preferring Markdown endpoints and using `uvx markitdown` for pages it converts.
+2. **Docs repository.** If no existing `llms.txt` is found, inspect the homepage for “Edit this page”, “View source”, GitHub, repository, or similar links. The generator discovers a linked GitHub repository, shallow-clones it, and looks for docs sources (`.md`, `.mdx`, `.rst`). For large repositories, `repomix` packs the selected sources. If discovery is unclear but a public docs repository likely exists, search the web for `<project> docs github`, then rerun with the relevant docs URL.
+3. **Sitemap or crawl.** When repository discovery does not produce usable docs, the generator checks `robots.txt` for sitemap hints and tries `/sitemap.xml`. If it finds no usable sitemap, it crawls internal links from the supplied URL within the configured page and depth limits.
 
-### 2) Prefer docs source over crawling (higher quality)
+The repository path produces links to the live site when those pages resolve, and otherwise uses GitHub source links. By default, provenance stays in `metadata.json`; pass `--include-source-links` to include absolute source URLs beside manifest links.
 
-- Fetch the homepage HTML and look for:
-  - “Edit this page”, “View source”, “GitHub”, “Repository” links
-  - Any `github.com/<owner>/<repo>` references
-- Clone the repo (shallow) and extract docs markdown (`.md`, `.mdx`, `.rst`).
-- If the repo is huge, use `repomix` with include patterns to pack only the docs subtree.
-- If repo discovery fails but you strongly suspect a public repo exists, do a quick web search for “<project> docs github” and re-run with the docs URL (the script discovers repos from the site HTML).
+## Shape the outputs
 
-### 3) Fall back to sitemap, then crawl
+`llms.txt` should help a reader choose relevant documentation quickly:
 
-- Try `robots.txt` for `Sitemap:` hints and `/sitemap.xml`.
-- If no sitemap, crawl internal links starting from the provided URL (cap pages/depth).
+- Start with `# <Project/Docs name>` and a one-sentence `> summary`.
+- Add a few lines of useful context without introducing headings.
+- Group absolute links under `##` sections, with each link as `- [Name](URL)`.
+- Put non-essential links under `## Optional`.
+- Keep local paths and provenance out of the manifest unless source links are requested.
 
-### 4) Produce outputs
+`llms-full.txt` should include the documentation text available from the chosen source. Repository sources are packed from Markdown where possible; website pages are converted to Markdown and concatenated with clear separators.
 
-`llms.txt`:
+## Use Context7 for library documentation
 
-- Follow the common manifest shape:
-  - `# <Project/Docs name>`
-  - `> <1 sentence summary>`
-  - (no headings) a few lines of context
-  - `##` sections containing bullet lists: `- [Name](URL)`
-  - Put non-essential links under `## Optional`
-- Use absolute URLs in link targets (avoid local file paths).
-- Keep traceability (repo file paths, etc.) out of `llms.txt` by default; use `metadata.json` and/or `--include-source-links` when you need provenance.
+For a known library or framework, use Context7 when its MCP tools are available to fill gaps or cross-check the generated material:
 
-`llms-full.txt`:
-
-- If a docs repo was found: pack the docs sources (prefer raw markdown) into one file (repomix or concatenation).
-- Else: convert top pages to markdown (`uvx markitdown <url>`) and concatenate them with clear separators.
-
-## Optional: Context7 (library docs)
-
-Use this when the target is a known software library/framework and Context7 MCP is available.
-
-- Resolve a library ID:
-  - tool: `resolve-library-id`
-  - inputs: `libraryName`, `query`
-- Retrieve relevant docs:
-  - tool: `query-docs`
-  - inputs: `libraryId`, `query`
-- Use Context7 output to fill gaps (e.g., missing API reference) and to cross-check the repo/crawl outputs.
+1. Call `resolve-library-id` with `libraryName` and `query`.
+2. Call `query-docs` with the returned `libraryId` and a focused `query`.
+3. Compare the result with the repository or crawl output and use it to identify missing references.
 
 ## Script options
 
-- `--max-pages`: cap for sitemap/crawl (default is conservative)
-- `--full-scope all|selected`: include all docs sources or only the curated subset
-- `--max-full-bytes`: safety cap before falling back to `selected` (unless `--force-full`)
-- `--no-crawl`: stop after “existing llms” + “repo discovery” attempts
-- `--include-source-links`: add absolute “source” URLs (e.g. GitHub blob) next to each link in `llms.txt`
+- `--max-pages`: maximum pages to process during sitemap or crawl work; default `60`.
+- `--max-depth`: maximum internal-crawl depth; default `3`.
+- `--max-links`: maximum links in `llms.txt`; default `30`.
+- `--full-scope all|selected`: include all repository docs sources or only the curated subset; default `all`.
+- `--max-full-bytes`: repository full-text size limit before falling back to `selected`; default `12 MB`.
+- `--force-full`: ignore `--max-full-bytes` and use the requested `--full-scope`.
+- `--no-crawl`: stop if existing `llms.txt` and repository discovery both fail, instead of trying a sitemap or crawl.
+- `--include-source-links`: include absolute source URLs beside links in `llms.txt`.
+- `--json`: print generation metadata to stdout.

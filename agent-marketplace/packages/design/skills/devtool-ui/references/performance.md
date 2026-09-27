@@ -1,5 +1,9 @@
 # Performance Patterns for Developer Tool UIs
 
+Use these patterns when lists, rendering, or network work threaten
+responsiveness. The listed thresholds are starting points from a production
+viewer; measure the target app and tune them against its data and devices.
+
 ## Table of Contents
 
 1. [Virtual Scrolling](#virtual-scrolling)

@@ -1,53 +1,36 @@
 # Maintenance Cadence
 
-Keep the routine realistic. The best system is one that survives boredom.
+Choose a routine the user will keep doing. These intervals are defaults; adjust them to the records and the user's available time.
 
 ## Weekly
 
-- Drop new files into `00-Inbox`
-- Rename obviously important new documents
-- Move the easy wins into target folders
+- Put new files in `00-Inbox`.
+- Rename important new records and move easy items into their target folders.
 
 ## Monthly
 
-- Empty or reduce the inbox
-- Review recent downloads and scans
-- Check for duplicate filenames or misplaced documents
-- Confirm new case folders have sensible names
+- Reduce the inbox.
+- Review recent downloads and scans.
+- Look for duplicate filenames, misplaced records, and poorly named case folders.
 
 ## Quarterly
 
-- Review active categories such as taxes, immigration, health claims, or employment paperwork
-- Archive closed cases
-- Check that sensitive folders still have the right sharing rules
+- Review active categories such as taxes, immigration, health claims, or employment.
+- Archive closed cases.
+- Check sharing rules for sensitive folders.
 
-## Annual
+## Annually
 
-- Prepare the tax-year folder
-- Review identity and immigration expirations
-- Review insurance cards and health paperwork
-- Review backup posture and exportability
-- Clean category drift from the root
+- Prepare the tax-year folder.
+- Review identity and immigration expiration dates.
+- Review insurance cards and health paperwork.
+- Check backup and export options.
+- Remove category drift from the root.
 
-## Good Manual Tasks
+## Assign work clearly
 
-- Save signed documents promptly
-- Put scans into the inbox
-- Keep physical originals labeled if they matter
-- Confirm before deleting anything important
+**Manual:** save signed records promptly, put scans in the inbox, label important physical originals, and confirm before deleting a record.
 
-## Good LLM-Assisted Tasks
+**LLM-assisted:** propose filenames and destinations, summarize missing paperwork in an active case, audit naming drift, draft a cleanup plan, or review a year folder before tax season.
 
-- Propose filenames
-- Suggest destination folders
-- Summarize missing paperwork in an active case
-- Audit a tree for naming drift
-- Draft a cleanup plan from messy sources
-- Review a year folder before tax season
-
-## Prompted-Only Tasks
-
-- Large-scale renames
-- Bulk moves
-- Privacy or sharing changes
-- Deduplication that could delete the wrong version
+**Only when explicitly requested:** large-scale renames, bulk moves, changes to privacy or sharing, and deduplication that might remove the wrong version.

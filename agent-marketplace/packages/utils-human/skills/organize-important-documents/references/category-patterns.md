@@ -1,8 +1,8 @@
 # Category Patterns
 
-Use these as starting points, not rigid requirements.
+Treat these layouts as starting points. Add a top-level category only when it is durable and large enough to need its own place.
 
-## Default Root
+## Default root
 
 ```text
 Important Documents/
@@ -20,21 +20,11 @@ Important Documents/
   99-Archive/
 ```
 
-Keep the root narrow. Add a top-level folder only when the category is durable and large enough to justify it.
+Keep the root narrow and use subfolders for cases, providers, or years.
 
-## Domain Patterns
+## By life domain
 
-### Identity
-
-Good fits:
-
-- Passport
-- Driver license
-- Birth certificate
-- SSN or tax identifiers
-- National ID
-
-Pattern:
+**Identity** groups core credentials and certificates:
 
 ```text
 01-Identity/
@@ -43,11 +33,7 @@ Pattern:
   Birth-Certificate/
 ```
 
-### Immigration
-
-Group by case or renewal, not by random file type.
-
-Pattern:
+**Immigration** groups records by case or renewal, rather than file type:
 
 ```text
 02-Immigration/
@@ -58,11 +44,7 @@ Pattern:
     2025-eb1a/
 ```
 
-### Work
-
-Group by employer or process.
-
-Pattern:
+**Work** groups records by employer or process:
 
 ```text
 03-Work/
@@ -74,11 +56,7 @@ Pattern:
     Employment-Letters/
 ```
 
-### Home
-
-Group by address, move, or landlord interaction.
-
-Pattern:
+**Home** groups records by address, move, or landlord interaction:
 
 ```text
 04-Home/
@@ -86,11 +64,7 @@ Pattern:
   2018-move/
 ```
 
-### Health
-
-Use providers, episodes, or claim groups.
-
-Pattern:
+**Health** groups records by provider, episode, or claim:
 
 ```text
 05-Health/
@@ -101,11 +75,7 @@ Pattern:
     2018-treatment/
 ```
 
-### Taxes
-
-Taxes work best by year.
-
-Pattern:
+**Taxes** groups by year. Keep the return, e-file receipt, W-2 or 1099 forms, and notable correspondence together:
 
 ```text
 06-Taxes/
@@ -114,13 +84,9 @@ Pattern:
   2025/
 ```
 
-Within a year, keep return, e-file receipt, W-2 or 1099 forms, and notable correspondence together.
+## Archive closed work
 
-## Archive Pattern
-
-Archive closed cases without cluttering active folders.
-
-Pattern:
+Move closed cases out of active folders while retaining a clear label:
 
 ```text
 99-Archive/
@@ -128,29 +94,16 @@ Pattern:
   2018-old-apartment-applications/
 ```
 
-## Naming Rules
+## Name files for retrieval
 
-Prefer:
+Use an ISO date followed by a useful description:
 
 - `2025-04-18 offer-letter-openai.pdf`
 - `2024-08-22 i94.pdf`
 - `2025-07-30 dmv-appointment-confirmation.pdf`
 
-Avoid:
+Avoid names that hide the document's date or purpose, such as `scan.pdf`, `final-final.pdf`, `August 6, 2016.pdf`, or `Documents/`.
 
-- `scan.pdf`
-- `final-final.pdf`
-- `August 6, 2016.pdf`
-- `Documents/`
+## Keep unrelated work elsewhere
 
-## Common Exclusions
-
-These usually belong elsewhere:
-
-- Code repositories
-- School notes and assignments
-- Creative writing
-- Photo libraries unrelated to a case
-- Build artifacts
-- App caches
-- Raw exports that only support a temporary analysis
+Common exclusions include code repositories, school notes and assignments, creative writing, unrelated photo libraries, build artifacts, app caches, and raw exports kept only for temporary analysis.

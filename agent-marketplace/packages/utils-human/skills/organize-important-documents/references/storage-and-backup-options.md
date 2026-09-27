@@ -1,87 +1,26 @@
-# Storage And Backup Options
+# Storage and Backup Options
 
-Use this when the user has not chosen the long-term home yet.
+Use this guide when the user has not chosen a long-term home. Choose one primary source of truth, then decide how backup and sharing should work. Avoid multiple active cloud homes unless the user has a specific reason.
 
-## Decision Rule
+## Compare storage homes
 
-Pick one primary source of truth. Then add backup and sharing rules around it.
+**iCloud Drive** fits users who rely on Apple devices and benefit from iPhone, Mac, or family access. Check cross-platform needs and whether family sharing exposes sensitive records too broadly.
 
-Do not recommend an always-active multi-cloud sprawl unless the user has a very specific reason.
+**Google Drive** fits users who need web search and cross-platform access or already use Gmail and Google Workspace. Watch for shared-drive sprawl and records split indefinitely between Gmail and Drive.
 
-## iCloud Drive
+**Dropbox** fits users with an established archive, cross-platform needs, or family workflows already based on shared folders. Check for stale folders and sensitive records inside broad shares.
 
-Best when:
+**Local-first storage** fits strict privacy needs and users with a reliable backup routine. Confirm there is an offsite backup and that one device failure will not destroy the only copy.
 
-- The user lives in the Apple ecosystem
-- iPhone and Mac access matter most
-- Family sharing is useful
+## Choose a backup shape
 
-Watch for:
+- **Simple:** one primary cloud home, one local machine copy, and a separate backup such as Time Machine or an exported archive.
+- **More private:** a primary cloud home for most categories, with a separate encrypted or local-only home for especially sensitive records.
+- **Family handoff:** a personal source of truth, a narrowly scoped shared folder for records others need, and emergency-access notes stored outside the folder tree.
 
-- Mixed experience on non-Apple devices
-- Shared family access that may be too broad for sensitive categories
+## Resolve access and originals
 
-## Google Drive
-
-Best when:
-
-- Web access and search matter
-- Cross-platform access matters
-- The user already lives in Gmail and Google Workspace
-
-Watch for:
-
-- Shared-drive sprawl
-- Users treating Gmail and Drive as separate sources of truth forever
-
-## Dropbox
-
-Best when:
-
-- The user already keeps a stable Dropbox archive
-- Sync behavior and cross-platform use matter
-- Shared folders are already part of family workflow
-
-Watch for:
-
-- Legacy folders that were never cleaned up
-- Sensitive records mixed into broad shared folders
-
-## Local-First
-
-Best when:
-
-- Privacy requirements are strict
-- The user already has a disciplined backup setup
-
-Watch for:
-
-- No offsite backup
-- Single-device failure risk
-
-## Recommended Backup Shapes
-
-### Simple default
-
-- One primary cloud home
-- One local machine copy
-- One separate backup system such as Time Machine or exported archive
-
-### Higher privacy split
-
-- Primary cloud home for most categories
-- Separate encrypted or local-only location for especially sensitive categories
-
-### Family handoff aware
-
-- Primary personal source of truth
-- Clearly scoped shared folder for documents others need
-- Written emergency-access notes outside the folder tree
-
-## Questions To Resolve
-
-- Who needs access now?
-- Who needs access if the owner is unavailable?
-- Which categories should stay private even from family?
+- Who needs access now, and who needs it if the owner is unavailable?
+- Which categories should remain private from family members?
 - Which originals must remain physical?
-- What happens if the same file exists in email, Downloads, and cloud storage?
+- How should the system handle copies in email, Downloads, and cloud storage?

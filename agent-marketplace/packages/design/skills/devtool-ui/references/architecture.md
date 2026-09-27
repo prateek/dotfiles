@@ -1,5 +1,9 @@
 # Component Architecture and Build Patterns
 
+Use this reference when choosing the frontend's component boundaries,
+deployment shape, content model, or page layout. The examples assume Svelte 5;
+adapt them to the app's routing and hosting requirements.
+
 ## Table of Contents
 
 1. [Component Organization](#component-organization-by-domain)

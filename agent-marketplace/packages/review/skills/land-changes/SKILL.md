@@ -6,122 +6,132 @@ argument-hint: "[--inspect] [--via=<method>] [--skip=<action>] [--bypass=<gate>]
 
 # Land changes
 
-Land the requested change using the destination's workflow and the user's choices.
-Inspecting, discussing, or editing this skill authorizes no landing.
+Use the destination's landing procedure and the user's choices to publish the
+requested change and complete its authorized follow-ups. Inspecting, discussing,
+or editing this skill authorizes no landing.
 
-## 1. Establish the request and current state
+## Resolve scope and state
 
-Resolve the change, source checkout, destination repository, target, and requested
-stopping point from the conversation. For publication, verify publishing identity and effective
-remote destinations; source and destination may differ.
+From the conversation, identify the change, source checkout, destination, target,
+and requested stopping point. Before publication, verify the publishing identity
+and effective remote destinations; source and destination may differ.
 
-Account for the diff, uncommitted edits, dependencies, PR/stack metadata, and any
-already-completed work. Preserve unrelated changes; isolate preparation when it
-would disturb them. Default to one integration commit where the method supports it.
+Inspect the full diff, uncommitted work, dependencies, PR/stack metadata, and any
+work already completed. Preserve unrelated changes and isolate preparation when it
+would disturb them. Prefer one integration commit where the selected method allows.
 
-Read [choices and preferences](references/preferences.md) to resolve invocation
-arguments and scoped saved choices. Show/reset requests finish after preference
-handling. Inspection makes no checkout, check-run, preference, or publication changes.
+Read [choices and preferences](references/preferences.md) before acting. Resolve
+invocation arguments and applicable saved choices there. Show and reset requests
+end after preference handling. `--inspect` makes no checkout, check-run,
+preference, or publication changes.
 
-Complete when the intended scope and remaining authorized outcomes are recorded.
-An earlier completed action does not become a request for a new change.
+An action completed earlier does not request a new change. Record the intended
+scope and the outcomes still authorized; that defines when this run is complete.
 
-## 2. Discover the workflow
+## Discover the destination's workflow
 
-A method publishes; an action does work; a gate requires evidence before proceeding.
-Use these distinctions internally. The user can name an outcome without classifying it.
+Treat a **method** as the publication route, an **action** as work to perform, and
+a **gate** as evidence required before proceeding. The user may name outcomes
+without using these categories.
 
-Account for these evidence sources, following the destination's workflow pointers:
+Follow the destination's guidance and inspect the evidence that applies:
 
-- Contribution/agent guidance and the repository's landing procedure.
-- Applicable task definitions, validation selection, and effective Git/tool hooks.
-- Live host policy, caller capabilities, and existing PR/queue/stack state.
-- Automation triggered by the selected publication, including follow-on workflows,
-  release/deployment jobs, environments, and available external integration metadata.
+- Contribution or agent instructions and the repository landing procedure.
+- Task definitions, selected validation, and effective Git/tool hooks.
+- Live host policy, available caller capabilities, and existing PR, queue, or
+  stack state.
+- Automation caused by publication, including follow-on workflows,
+  release/deployment jobs, environments, and available integration metadata.
 
-For GitHub, read [host evidence](references/github-review-evidence.md). For an
-unfamiliar mechanism, read native help and official documentation. When guidance
-leaves a convention unsettled, read [review history](references/review-history.md).
-History informs recommendations; it grants no exception or follow-up permission.
+For GitHub, follow [host evidence](references/github-review-evidence.md). For an
+unfamiliar mechanism, read its native help and official documentation. When the
+repository's convention remains unclear, read [review history](references/review-history.md).
+History can inform a recommendation; it cannot grant an exception or follow-up.
 
-Use source-owned names, qualified where needed. For each relevant choice, identify
-its mechanism, dependencies, controls, affected scope, and completion evidence.
-Account for each evidence source as inspected, inapplicable, or unavailable; keep
-material unknowns and conflicts visible. Live capability evidence cannot grant
-user authorization, and user authorization cannot make a capability available.
+Use names from the destination, qualified when necessary. For every relevant
+choice, establish its mechanism, dependencies, controls, affected scope, and
+completion evidence. Mark each evidence source inspected, inapplicable, or
+unavailable, and keep important unknowns or conflicts visible. Capability does
+not grant user authorization; authorization does not make a capability available.
 
-For landing, inspect the selected route and resolve dependencies; avoid cataloguing
-unrelated routes. For --inspect, show configured choices, alternatives requiring
-setup, and unknowns, each with its source and controls; recommend a route and stop.
-Discovery is complete when those sources are accounted for and every requested
-outcome has a procedure or an identified blocker.
+For a landing request, inspect the chosen route and its dependencies rather than
+cataloguing unrelated routes. For `--inspect`, show configured choices,
+alternatives that need setup, and unknowns with their sources and controls;
+recommend a route and stop. Discovery is complete when every relevant source is
+accounted for and every requested outcome has a procedure or a named blocker.
 
-## 3. Resolve the plan
+## Resolve choices and gates
 
 Apply explicit choices, applicable standing decisions, and valid saved preferences
-before defaults. Use the selectors in [choices and preferences](references/preferences.md)
-or equivalent natural language. Resolve contradictions by scope and recency.
+before defaults. Use the selectors or equivalent natural language in
+[choices and preferences](references/preferences.md). Resolve conflicts by
+scope and recency.
 
-Absent an overriding choice:
+Without an overriding choice:
 
-- Follow the established route that satisfies policy without a bypass; resolve a
-  material route ambiguity before publication.
-- Run relevant repository validation and hooks. Their failures block by default;
-  preserve checks explicitly designated informational. Wait for required evidence,
-  not unrelated or informational CI.
-- Run no manual follow-up without an explicit instruction or saved preference
-  whose scope covers this change, host/environment, and effect.
+- Use the established route that meets policy without a bypass. Resolve material
+  route ambiguity before publishing.
+- Run relevant repository checks and hooks. A failure blocks by default; retain
+  checks explicitly marked informational. Wait for required evidence, not
+  unrelated or informational CI.
+- Run manual follow-ups only when explicitly requested or covered by a saved
+  preference scoped to this change, host/environment, and effect.
 
-Record each selected action and gate, its run/skip or enforce/bypass decision,
-waiting behavior, and source. For every bypass and follow-up, cite the instruction
-or saved key authorizing its scope. Include automatic publication effects: when
-an effect lacks covering authorization or conflicts with a user constraint, find
-an authorized route avoiding it or resolve that decision before publishing.
-A no-deployment constraint requires evidence that the selected route avoids the
-deployment before publication; publishing and watching for a deploy is no proof.
+Record each selected action and gate, whether it will run or be skipped, whether
+it will be enforced or bypassed, its waiting behavior, and the source of that
+decision. For every bypass or follow-up, cite the instruction or saved key that
+covers its scope. Include effects triggered automatically by publication. If an
+effect lacks authorization or conflicts with a user constraint, find an authorized
+route that avoids it or resolve the decision before publishing. A no-deployment
+constraint requires evidence before publication that the route avoids deployment;
+publishing and then watching for deployment is not proof.
 
-Skipping execution retains known results; it never turns a failure into a pass.
-Enforce applicable gates unless a scoped exception covers them and the actor has
-a usable bypass. Report informational failures separately. Shared protection edits,
-new privileges, and overwriting history require their own explicit scope.
+Skipping a check preserves its known result; it does not convert failure to pass.
+Enforce each applicable gate unless a scoped exception covers it and the actor
+has a usable bypass. Report informational failures separately. Shared protection
+changes, new privileges, and history rewrites each need explicit scope.
 
-Reuse covering decisions and resume unfinished authorized actions without asking
-again. A completed change-specific apply does not authorize another change's apply.
-The resolved plan, including follow-up scope and source, governs execution; revise
-it explicitly when new evidence changes a choice instead of inferring it again.
+Reuse decisions that still cover the work and resume unfinished authorized
+actions without asking again. A completed apply for one change does not authorize
+an apply for another. The resolved plan, including follow-up scope and source,
+governs execution. If new evidence changes a choice, revise the plan explicitly.
 
-Complete when choices are resolved or marked blocking. Continue independent
-preparation while resolving blockers; publication requires the blockers resolved.
+Resolve all choices or mark them as blockers. Continue independent preparation
+while a blocker is being resolved; publication waits until its blockers are clear.
 
-## 4. Prepare and publish
+## Prepare and publish
 
-For a direct update, follow [direct Git landing](references/direct-git.md).
-For a PR, queue, stack, or another method, follow its repository/native procedure.
+For a direct update, follow [direct Git landing](references/direct-git.md). For a
+PR, queue, stack, or other method, follow the repository's or host's procedure.
 Preserve attribution and PR/stack relationships. Run selected actions on the final
-candidate and record results. Complete independent preparation before requesting
-any unresolved publication decision.
+candidate and record their results. Finish independent preparation before asking
+for an unresolved publication decision.
 
-Before publication, verify scope, destination, live policy, and the candidate.
-Every applicable gate must have valid evidence or a usable authorized exception;
-every resulting effect must fit the resolved plan. A target or candidate change
-requires refreshing affected evidence and choices, retaining decisions still in scope.
-Inspect remote state after an uncertain response before retrying publication.
+Immediately before publication, verify the scope, destination, live policy, and
+candidate. Every applicable gate needs valid evidence or a usable authorized
+exception, and every resulting effect must fit the resolved plan. If the target
+or candidate changed, refresh affected evidence and choices while retaining
+decisions that remain in scope. After an uncertain response, inspect remote state
+before retrying.
 
-Complete publication only when the live destination contains the intended change.
-For direct pushes, verify the prepared commit or its ancestry. For server-created
-commits, verify source revision, integration commit, and intended diff from the
-method's result metadata. PR/queue submission is intermediate unless requested
-as the stopping point. Report a policy rejection as such and resolve a valid route.
+Publication is complete only when the live destination contains the intended
+change. For a direct push, verify the prepared commit or its ancestry. For a
+server-created commit, verify the source revision, integration commit, and
+intended diff from the method's result metadata. PR or queue submission is an
+intermediate result unless the user requested it as the stopping point. Report a
+policy rejection as a rejection, then resolve an authorized route.
 
-## 5. Finish the remaining work
+## Complete authorized follow-ups
 
-Safely synchronize local checkouts. For a selected follow-up, read its repository
-runbook, then verify the authorization source, effect scope, and published revision
-or artifact still match the plan. Execute only the remaining authorized actions.
-Check actual activation when command success alone does not establish the result.
-After an uncertain outcome, inspect state before repeating a side effect.
+Safely synchronize local checkouts. For each selected follow-up, read its
+repository runbook and confirm that its authorization, effect scope, and
+published revision or artifact still match the plan. Perform only the remaining
+authorized work. Verify actual activation when command success alone is
+insufficient. After an uncertain outcome, inspect state before repeating a side
+effect.
 
-Report publication, local synchronization, validation, CI, and follow-up outcomes
-separately as passed, failed, skipped, pending, or unknown. Name bypassed gates and
-unrequested follow-ups. Keep branches and worktrees unless cleanup was requested.
-Finish when each requested outcome is verified or its exact blocker is reported.
+Report publication, local synchronization, validation, CI, and follow-ups
+separately as passed, failed, skipped, pending, or unknown. Name bypassed gates
+and unrequested follow-ups. Keep branches and worktrees unless cleanup was
+requested. Finish when every requested outcome is verified or its exact blocker
+is reported.

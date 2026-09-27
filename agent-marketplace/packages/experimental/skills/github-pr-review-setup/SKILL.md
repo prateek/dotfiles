@@ -3,94 +3,83 @@ name: github-pr-review-setup
 description: Prepare a clean local checkout for a GitHub PR (worktree-first via `ohc`/Orca), fetch the PR base ref, and emit PR context (CI checks + PR comments/reviews) as JSON for downstream review.
 ---
 
-# GitHub PR Review Setup
+# Set up a GitHub PR review
 
-Use this skill to prepare a local checkout for reviewing a GitHub PR. The script
-prints one JSON payload with the checkout path, base ref, PR metadata, CI checks,
-and discussion threads.
+Run this skill when a review needs a clean local checkout and a JSON bundle of
+the PR's metadata, CI checks, and discussion. The script prints that bundle to
+stdout and can also save it to a file.
 
-## Inputs
+## Prepare the checkout
 
-- `pr`: PR number or URL (preferred)
-- `repo` (optional): `OWNER/REPO` (used when `pr` is a number and repo can’t be inferred)
-- `repo-dir` (optional): local clone path (required when you aren’t already in the target repo)
-- `checkout-mode` (optional): `worktree` (default) or `inplace`
-- `worktree-name` (optional): override worktree/branch name (default: `pr-review-<number>`)
-- `out` (optional): path to also write the JSON payload
+1. Run the script with a PR number or GitHub PR URL:
 
-## Quick start
+   ```sh
+   python "<path-to-skill>/scripts/prepare_github_pr_review.py" --pr "<number-or-url>"
+   ```
 
-Prepare a PR review workspace and print JSON:
+2. Supply `--repo OWNER/REPO` when `--pr` is a number and the repository cannot
+   be inferred from the current checkout. Supply `--repo-dir <path-to-clone>`
+   when you are not running inside the target repository.
 
-```sh
-python "<path-to-skill>/scripts/prepare_github_pr_review.py" --pr "<number-or-url>"
+3. Use the default `--checkout-mode worktree` for an isolated Orca worktree.
+   The script resolves `ohc`, requires `zsh`, `orca`, and `gh`, then asks `ohc`
+   to create a worktree named `pr-review-<number>`. Set `--worktree-name` to
+   choose another name. `ohc` clones through `ghc`, registers the repository in
+   Orca, and creates the worktree; the script then runs `gh pr checkout` in it
+   with `--branch <worktree-name> --force`. This handles same-repository and
+   fork PRs through the same checkout path.
+
+4. Use `--checkout-mode inplace` only when you want the PR branch in the
+   existing clone. The script requires a clean clone and, when it can detect
+   the local `origin`, checks that it matches the requested repository. It
+   checks out the PR with `gh pr checkout`; Orca is not required.
+
+   ```sh
+   python "<path-to-skill>/scripts/prepare_github_pr_review.py" \
+     --pr "<number-or-url>" \
+     --checkout-mode inplace
+   ```
+
+5. The script fetches the PR base branch so the returned `compare_to` ref is
+   available locally. It uses `upstream` when present, otherwise `origin`,
+   otherwise the first configured remote. If there are no remotes, the base
+   ref must already exist locally.
+
+## Read the review context
+
+Use the JSON payload as the input to the review. It includes:
+
+- `worktree_dir`: checkout path, whether created as a worktree or used in place
+- `repo_dir`: underlying clone path when known
+- `compare_to`: fetched base ref suitable for review tools, such as
+  `upstream/main`
+- `pr`: metadata returned by `gh pr view`
+- `checks` and `checks_summary`: CI checks and counts grouped by result bucket
+- `issue_comments`, `reviews`, and `review_comments`: paginated PR discussion
+- `git`: resolved base and checked-out head commit IDs
+
+CI checks come from `gh pr checks`; PR metadata comes from `gh pr view`; the
+three discussion fields come from paginated `gh api` requests. A pending-checks
+exit from `gh pr checks` is accepted and represented in the returned payload.
+
+Pass these values to the review tool:
+
+```text
+path = worktree_dir
+compare_to = compare_to
 ```
 
-Add `--repo "<owner/repo>"` when `--pr` is only a number and the repo cannot be
-inferred. Add `--repo-dir "<path-to-local-clone>"` when not running inside the
-target repo.
+## Save the payload
 
-Use the default checkout mode for a clean Orca worktree:
+Use `--out <path>` to write the same JSON payload to a file as well as stdout.
+The script creates parent directories for that path.
 
 ```sh
 python "<path-to-skill>/scripts/prepare_github_pr_review.py" \
   --pr "<number-or-url>" \
-  --checkout-mode worktree
+  --out "/path/to/pr-context.json"
 ```
 
-Use in-place checkout only when the current clone is clean and you want to check
-out the PR branch there:
-
-```sh
-python "<path-to-skill>/scripts/prepare_github_pr_review.py" \
-  --pr "<number-or-url>" \
-  --checkout-mode inplace
-```
-
-## Output (JSON)
-
-The script prints one JSON object to stdout containing at least:
-
-- `worktree_dir`: local checkout path (worktree or in-place)
-- `repo_dir`: underlying clone path, when known
-- `compare_to`: fetched base ref suitable for review tools, for example `upstream/main`
-- `pr`: `gh pr view` JSON for the PR
-- `checks`: `gh pr checks` JSON
-- `issue_comments`, `reviews`, `review_comments`: all PR discussion content pulled via `gh api --paginate`
-
-## Workflow
-
-### 1) Create / reuse a clean checkout (default: worktree)
-
-Default mode is `--checkout-mode worktree`. The script resolves `ohc`, requires
-`zsh`, `orca`, and `gh`, then asks `ohc` to create a clean Orca worktree named
-`pr-review-<number>` unless `--worktree-name` is set. `ohc` clones through `ghc`,
-registers the repo in Orca, and creates the worktree.
-
-After Orca creates the worktree, the script runs `gh pr checkout` inside it with
-`--branch <worktree-name> --force`. That path handles same-repo PRs and fork PRs
-the same way.
-
-For `--checkout-mode inplace`, the script uses `gh pr checkout` directly in the
-existing clone. The clone must be clean, and the local `origin` must match the
-requested repo when `origin` can be detected. This mode does not require Orca.
-
-### 2) Fetch the PR base ref (shared prerequisite)
-
-The script chooses a remote for the base branch: `upstream` when present,
-otherwise `origin`, otherwise the first configured remote. It fetches the PR's
-base ref so `compare_to` exists locally.
-
-### 3) Pull CI + discussion context (JSON only)
-
-- CI checks come from `gh pr checks`.
-- PR metadata comes from `gh pr view`.
-- Issue comments, reviews, and inline review comments come from paginated
-  `gh api` calls.
-
-### 4) Run the actual review
-
-Use the review tool with:
-
-- `path = worktree_dir`
-- `compare_to = compare_to`
+The script requires `git` and `gh` in either checkout mode. A PR number can be
+paired with `--repo` or inferred from the local `origin`; a GitHub PR URL
+provides its repository directly.

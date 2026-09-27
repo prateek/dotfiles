@@ -1,93 +1,52 @@
 # Interview Checklist
 
-Use these prompts in small batches. Ask at most 4-5 questions at a time.
+Ask in short batches of no more than five questions. Resolve must-have decisions first, offer examples or a default where useful, and inspect material when a low-risk read can answer a question. After each batch, summarize what is known and ask only what still blocks the next step.
 
-## Interview Rules
+## 1. What to track
 
-- Ask must-have questions before nice-to-have questions.
-- Prefer short numbered questions over open-ended paragraphs.
-- Offer examples and a reasonable default when the user might be unsure.
-- If a low-risk inventory read can answer something, inspect first instead of asking.
-- After each batch, summarize what is known and ask only the next blocking questions.
+- What kinds of important information should the system cover?
+- Which categories matter now?
+- Is the system for one person or a family?
+- Who needs access now or in an emergency?
+- Which categories are private, and which records need physical originals?
 
-## Batch 1: What To Track
+Examples: identity, taxes, immigration, health, insurance, employment, housing, finance, education, legal, travel, estate, and family records.
 
-- What kinds of important information should this system track?
-- Which categories matter right now?
-- Is this just for one person, or for a family?
-- Who else needs access now or in an emergency?
-- Which categories are especially private?
-- Which documents still need physical originals?
+## 2. Where it lives
 
-Suggested category examples:
+- Where are the records now, and which sources are already organized?
+- Which sources are hardest to manage?
+- What can the user share or provide access to now?
+- Are there sources they can describe but cannot share yet?
 
-- Identity
-- Taxes
-- Immigration
-- Health
-- Insurance
-- Employment
-- Housing
-- Finance
-- Education
-- Legal
-- Travel
-- Estate
-- Family records
+Examples: local folders, Downloads, Desktop, email attachments or Gmail search, Google Drive, Dropbox, iCloud Drive, phone scans, notes apps, paper, and old drives.
 
-## Batch 2: Where It Lives
+## 3. Long-term home
 
-- Where does this information currently live?
-- Which sources are already somewhat organized?
-- Which sources are the messiest?
-- Which sources can you give access to right now?
-- Are there sources you can describe now but not share yet?
+- What should be the primary source of truth?
+- Which devices or platforms matter most: iPhone, Mac, Windows, web, or shared family devices?
+- Does the user need family sharing or offline access?
+- Is search quality or Apple ecosystem fit more important?
+- Should there be one cloud home plus backup, or several active homes?
 
-Suggested source examples:
-
-- Local folders
-- Downloads
-- Desktop
-- Email attachments
-- Gmail search
-- Google Drive
-- Dropbox
-- iCloud Drive
-- Phone scans
-- Notes apps
-- Physical paper
-- Old drives
-
-## Batch 3: Long-Term Home
-
-- What should be the main source of truth?
-- Does the system need to work best on iPhone, Mac, Windows, web, or shared family devices?
-- Is family sharing important?
-- Is offline access important?
-- Is search quality more important than Apple ecosystem fit?
-- Does the user want one cloud home plus backup, or several active homes?
-
-## Batch 4: Operating Constraints
+## 4. Operating constraints
 
 - How much manual upkeep is realistic?
-- Should this be optimized for solo use or handoff to family?
-- Should sensitive categories live in separate locations?
-- Are there categories that should remain physical-first?
-- Are there specific annual processes to support?
+- Should the system support solo use, family handoff, or both?
+- Should sensitive categories live separately?
+- Are any categories physical-first?
+- Which annual processes should the system support?
 
-## Audit Prompts For Existing Systems
+## Audit prompts
 
-- What parts of the current system already feel easy to use?
-- What feels confusing or embarrassing?
+- What already feels easy to use, and what feels confusing?
 - What is mixed together that should be separated?
-- Are filenames searchable and consistent?
-- Are there folders that are really archives, not active categories?
-- Are there obvious junk or generated files in the records area?
+- Are filenames consistent and searchable?
+- Which folders are archives rather than active categories?
+- Is there junk or generated material in the records area?
 
-## Migration Prompts
+## Migration prompts
 
-- Which sources should be migrated first?
-- Which categories deliver the most value if organized now?
-- Which sources should remain untouched for now?
-- What should stay outside the records system entirely?
-- What should be renamed versus simply moved?
+- Which sources should move first, and which categories offer the most immediate value?
+- What should remain untouched for now or stay outside the records system?
+- Which files need renaming, and which only need a new location?

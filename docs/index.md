@@ -25,6 +25,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [Documentation Index](index.md) | Routing to current guidance, proposed work, decisions, and history. |
 | [Document Lifecycle](document-lifecycle.md) | Frontmatter, status transitions, and index rules for `docs/`. |
 | [acpx Routing](references/acpx-routing.md) | Model shortcuts, machine route declarations, catalog resolution, and diagnostics. |
+| [acpx Skill Rewrite](runbooks/acpx-skill-rewrite.md) | Balanced native flows; five-skill live pilot completed at peak concurrency two with one afablex review and a validated unapplied patch. Includes required runtime overrides. |
 | [Agent Marketplace](references/agent-marketplace.md) | Isolated APM source/build project, host activation, recovery, and validation lanes. |
 | [Dotfiles Landing](runbooks/dotfiles-landing.md) | Repo-specific checks and chezmoi preview for the published land-changes skill. |
 | [Chezmoi Architecture](references/chezmoi-architecture.md) | Dotfiles source-state architecture and validation entrypoints. |
@@ -133,6 +134,8 @@ for day-to-day implementation details.
 | [Self-Improving Agents](research/self-improving-agents.md) | Pattern reference for durable agent feedback loops. |
 | [macOS Defaults: Sources And Verified Facts](research/macos-defaults-sources.md) | Sources to mine for the next rework of the macOS defaults layer, plus key encodings and Apple Silicon power facts verified on hardware. |
 | [acpx Rewrite Model Bake-Off](research/acpx-rewrite-model-bakeoff.md) | Superseded historical quality experiment; `agptw` now follows the generation/tier policy in [acpx Routing](references/acpx-routing.md). |
+| [acpx Visual Workflow Authoring](research/acpx-visual-workflow-authoring.md) | Native authoring limits, replay viewer capabilities, current release verification, and visual workflow alternatives. |
+| [acpx Flow Capabilities](research/acpx-flow-capabilities.md) | Native flow control, orchestration gaps, and the fit with historical workflow discussions. |
 | [Nix Migration Research](research/nix-migration-research.md) | Why the repo stays on chezmoi, what a package-only nix spike would look like, and the work-Mac MDM check that gates nix-darwin. |
 | [Ralph Loop Workflow](research/ralph-loop-workflow.md) | Build log for an unattended plan/implement/review loop that commits and fast-forwards a real branch: what the design has to get right, the blockers an adversarial review caught before first run, and the guardrail that is still too strict. |
 
@@ -144,6 +147,8 @@ or `superseded_by` frontmatter before using them.
 | Doc | Current guidance |
 | --- | --- |
 | [Jev Browser Runner](plans/jev-browser-runner-plan.md) | Completed implementation and development experiment; adoption rejected. Use the [experimental skill reference](../agent-marketplace/packages/utils-agent/skills/browser-jev/references/jev.md) and [research findings](research/jev-browser-integrations.md). |
+| [Native acpx Skill Rewrite](plans/acpx-native-skill-rewrite-plan.md) | Archived implementation record for native ACP nodes and bounded child flows; current operation and live-pilot results are in the [runbook](runbooks/acpx-skill-rewrite.md). |
+| [acpx Skill Rewrite](plans/acpx-skill-rewrite-plan.md) | Archived authoring and fixture-validation record; current operation and live-pilot results are in the [runbook](runbooks/acpx-skill-rewrite.md). |
 | [acpx Claude Code Streaming PoC](plans/acpx-claude-streaming-poc-plan.md) | Completed; the relay loop it proved now lives in the acpx skill's [harness lanes](../agent-marketplace/packages/utils-agent/skills/acpx/references/harness-lanes.md), and the packaging follow-up went to [ADR 0028](adr/0028-router-skill-over-vendor-remap.md). |
 | [Portable land-changes](plans/portable-land-changes-plan.md) | Review plugin's [published skill source](../agent-marketplace/packages/review/skills/land-changes/SKILL.md) and [dotfiles landing](runbooks/dotfiles-landing.md). |
 | [Discovered Landing Workflows](plans/land-changes-workflow-plan.md) | Implemented in review 2.0.0; use the [skill](../agent-marketplace/packages/review/skills/land-changes/SKILL.md) and [dotfiles landing](runbooks/dotfiles-landing.md). |

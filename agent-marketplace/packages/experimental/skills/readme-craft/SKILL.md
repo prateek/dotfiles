@@ -8,284 +8,76 @@ description: |
 
 # README Craft
 
-## Why This Matters
+Treat a README as a plain-text landing page. Help a new reader understand the project, install it, and see it work before asking them to read further. Keep reference detail on the documentation site when one exists.
 
-A README is a landing page rendered in plain text. Most visitors scan for
-30 seconds, then leave or install. Every line competes for those seconds.
-The job is not to document everything -- it is to get a stranger from
-"what is this?" to running it, as fast as possible, then get out of the
-way.
+## README order
 
-## The Information Hierarchy
+Use this hierarchy, moving optional material lower or into docs. The first 29 lines should orient and activate a reader; install should appear within 20 lines and quick start within 30.
 
-Structure every README in this order. Sections near the top are
-mandatory. Sections near the bottom are optional or should be offloaded.
+1. **Title and one-liner** (2–3 lines): say what the project does and why it matters in one or two factual sentences. Name the audience through the use case and include concrete trust signals; avoid generic adjectives.
+2. **Hero image or screenshot** (optional, one): show the product rather than its logo. For public projects, prefer an externally hosted image so updates do not add binary files to Git history.
+3. **Install** (5–8 lines): show the fastest route from zero to installed in one code block, or two when separating platforms such as macOS/Linux and Windows. Put build-from-source instructions under Development.
+4. **Quick start** (3–5 lines): show one or two commands that produce visible output. Put short explanations in inline comments.
+5. **Primary features**: order by the path requiring the least setup. Give one or two sections with brief introductions, 3–5 real commands where useful, and scannable capability bullets.
+6. **Screenshots** (optional): use a 2×2 or 2×1 table to control layout. Skip explanatory prose; a screenshot should make the interface clear.
+7. **Secondary features** (optional, 1–2): use the same short example-and-bullets pattern.
+8. **Compatibility**: show supported platforms, agents, or languages in a table.
+9. **Privacy and security** (when relevant): state the facts in 3–5 sentences.
+10. **Documentation**: link to the docs site without repeating its content.
+11. **Contributor material**: put a horizontal rule before Development, then list only essential prerequisites, build and test commands (about 10–15 lines). Project layout and acknowledgements are optional; put the license in one line.
 
-### The First 29 Lines (The Billboard)
+A reader who stops after the opening should still know what the project does and how to try it. For example:
 
-The reader decides to stay or leave here. Pack these lines tight:
-
-1. **H1 + one-liner** (2-3 lines). The one-liner must answer "what does
-   this do?" and "why should I care?" in one or two sentences. Embed
-   value props and trust signals. No adjectives.
-2. **Hero image or screenshot** (1 element, optional). Show the product,
-   not a logo. Host externally if the repo is public (keeps git clean,
-   images update without commits).
-3. **Install** (5-8 lines). The fastest path from zero to installed. One
-   code block, two max (macOS/Linux + Windows). No "build from source"
-   here -- that goes in Development.
-4. **Quick start** (3-5 lines). One or two commands that produce visible
-   output. Annotate with inline comments, not prose.
-
-Example (agentsview, post-rewrite):
-
-```markdown
+````markdown
 # agentsview
 
-Browse, search, and track costs across all your AI coding agents. One
-binary, no accounts, everything local.
+Browse, search, and track costs across your AI coding agents. One binary,
+no accounts, everything local.
 
 ## Install
 
-\`\`\`bash
+```bash
 curl -fsSL https://agentsview.io/install.sh | bash
-\`\`\`
+```
 
 ## Quick Start
 
-\`\`\`bash
+```bash
 agentsview                 # start server, open web UI
 agentsview usage daily     # print daily cost summary
-\`\`\`
 ```
+````
 
-That is 15 lines. A reader who stops here still knows what the tool does
-and how to get it.
+## Write the one-liner
 
-### The Middle (Evidence and Orientation)
+Use an action verb and concrete object, identify the target user through the use case, and compress trust signals into specific facts:
 
-After the billboard, provide evidence that the tool delivers on its
-promises. Order sections by **fastest path to value** -- put the feature
-that requires the least setup first.
+> Browse, search, and track costs across all your AI coding agents. One binary, no accounts, everything local.
 
-5. **Primary feature section** with usage examples. Brief prose intro,
-   then a code block showing 3-5 real commands. End with a bullet list
-   of capabilities (scan-friendly, no paragraphs).
-6. **Screenshots** as a 2x2 or 2x1 table. No explanatory prose -- if
-   the screenshot needs explanation, the UI has a problem. Use tables,
-   not inline images, to control layout.
-7. **Secondary feature sections** (1-2 max). Same pattern: brief intro,
-   code block, bullet list.
-8. **Compatibility / supported X** as a table. Tables scan faster than
-   prose lists and do not need justification text.
-9. **Privacy / security** if relevant. Keep it short -- 3-5 sentences.
-   Brevity reads as confidence.
-10. **Documentation links**. One line linking to the docs site. If the
-    project has a docs site, the README must not duplicate it.
+Avoid vague noun phrases and claims such as “powerful” or “intuitive.” “Managing and analyzing your AI coding sessions with an intuitive interface” says little about the actual behavior and offers no evidence.
 
-### The Footer (Below the Fold)
+## Keep the copy factual
 
-Use a horizontal rule (`---`) to visually separate user-facing content
-from contributor-facing content. This respects two audiences in one
-document.
+Describe what the project does and what the reader can do. Remove generic sales language such as “powerful,” “seamless,” “game-changing,” “revolutionary,” “cutting-edge,” “robust,” “elegant,” “intuitive,” “effortless,” “next-generation,” “supercharge,” “unlock,” and “leverage” as a verb.
 
-11. **Development** (below the rule). Prerequisites, build commands, test
-    commands. Keep to essentials -- 10-15 lines max.
-12. **Project layout** (optional, below the rule). A `tree`-style code
-    block, not prose.
-13. **Acknowledgements** (optional). Credit inspirations and
-    predecessors.
-14. **License** (one line).
+Replace emotional or indirect patterns with direct statements:
 
-## Writing the One-Liner
+- “Never lose track of…” → state the feature.
+- “Say goodbye to…” → state the behavior.
+- “Whether you’re a…or a…” → name the supported audience or cases.
+- “With X, you can…” → begin with what X does.
 
-The one-liner is the hardest sentence in the README. It must:
+For example, replace “Never lose track of that clever solution your agent came up with three weeks ago” with “A local web application for browsing, searching, and analyzing AI agent coding sessions.”
 
-- State what the tool does (verb phrase, not noun phrase)
-- Identify the target user without naming them ("your AI coding agents"
-  implies developer)
-- Include 2-3 trust signals as compressed noun phrases
+## Keep the README focused
 
-Structure: `[Action verb] [what] [across/for what]. [Trust signals].`
+- **Config dumps:** the README is not a reference manual. Move configuration examples longer than five lines to the docs and link to them. A project README once carried Caddy TLS and subnet rules, PostgreSQL blocks, desktop environment overrides, and Linux `setcap` instructions; one-line links to the relevant guides serve readers better.
+- **Feature sprawl:** show 2–3 primary features with examples. Summarize the rest in bullets or table rows and link to details.
+- **Marketing copy:** delete adjectives that could describe any software project. If the sentence becomes empty, it was not conveying useful information.
+- **Audience collision:** separate user instructions from contributor instructions with `---` so install guidance is easy to find.
+- **Stale screenshots:** prefer externally hosted screenshots referenced by URL. Checked-in images can become stale and add to Git history.
 
-Good: "Browse, search, and track costs across all your AI coding agents.
-One binary, no accounts, everything local."
-
-- Three actions packed into one clause
-- "all your AI coding agents" = breadth
-- "One binary, no accounts, everything local" = three trust signals in
-  seven words
-
-Bad: "A powerful tool for managing and analyzing your AI coding sessions
-with an intuitive interface."
-
-- "Powerful" and "intuitive" are meaningless adjectives
-- "Managing and analyzing" is vague
-- No trust signals
-
-## Tone
-
-Use direct, factual language. Describe what the tool does, not how the
-reader should feel about it.
-
-**Remove these words on sight:** powerful, seamless, game-changing,
-revolutionary, cutting-edge, robust, elegant, intuitive, effortless,
-next-generation, supercharge, unlock, leverage (as verb).
-
-**Remove these sentence patterns:**
-- "Never lose track of..." (emotional manipulation)
-- "Say goodbye to..." (infomercial)
-- "Whether you're a...or a..." (fence-sitting)
-- "With X, you can..." (add indirection; just say what it does)
-
-The agentsview repo learned this early. Its first commit had "Never lose
-track of that clever solution your agent came up with three weeks ago."
-The next commit replaced the entire intro with "A local web application
-for browsing, searching, and analyzing AI agent coding sessions." Direct.
-Factual. Better.
-
-## Anti-Patterns
-
-### 1. Config Dump
-
-The README is not a reference manual. When a README accumulates config
-snippets, each feature owner adds "just one more example" until the
-README is 50+ lines of TOML/YAML that belongs on a docs site.
-
-The agentsview README grew to 370 lines. It included a full Caddy reverse
-proxy setup (TLS certs, subnet whitelisting, bind hosts), PostgreSQL
-config blocks, desktop env escape hatches, and Linux setcap instructions.
-The rewrite cut all of it, replacing each with a one-line link:
-"See [PostgreSQL docs](https://agentsview.io/postgresql/) for setup."
-
-**Rule:** If a config example exceeds 5 lines, it belongs in docs, not
-the README. Link to it.
-
-### 2. Feature-by-Feature Bloat
-
-Each new feature gets a section. Each section gets examples. The README
-grows linearly with the feature set. Eventually nobody reads any of it.
-
-**Rule:** The README covers 2-3 primary features with examples. All
-other features get a bullet point or a table row. Details go to docs.
-
-### 3. Marketing Fluff
-
-README language drifts toward marketing copy because contributors want
-the project to sound impressive. This backfires: developers distrust
-adjective-heavy prose.
-
-**Rule:** If a sentence contains an adjective that could apply to any
-software project, delete the adjective. If the sentence is now empty, it
-was always empty.
-
-### 4. Audience Collision
-
-User docs and contributor docs interleaved without separation. A reader
-looking for install instructions scrolls past build prerequisites and
-test commands.
-
-**Rule:** Use a horizontal rule to separate user content (above) from
-contributor content (below). Contributors know to scroll down.
-
-### 5. Stale Screenshots
-
-Screenshots checked into the repo as PNGs. They go stale, bloat git
-history, and require commits to update.
-
-**Rule:** Host screenshots externally. Reference by URL. They update
-without touching the repo.
-
-## Greenfield README Workflow
-
-When writing a README for a new project:
-
-1. **Ask:** What does this do, in one sentence, with no adjectives?
-2. **Ask:** What is the single fastest way to install it?
-3. **Ask:** What is the single command that shows it working?
-4. **Write the billboard** (first 29 lines) using those three answers.
-5. **Add evidence:** 1-2 feature sections with usage examples.
-6. **Add orientation:** supported platforms/agents/languages as a table.
-7. **Add the rule.** Below it: dev setup, project layout, license.
-8. **Count lines.** If over 200, audit every section: does it belong
-   here, or on a docs site?
-9. **Read it as a stranger.** Start at line 1. Can you install and run
-   the tool before you lose interest?
-
-## README Rewrite Workflow
-
-When an existing README has grown bloated (150+ lines, config dumps,
-marketing language, duplicated docs):
-
-1. **Measure:** Count lines. Note which sections exist. Identify the
-   docs site if one exists.
-2. **Audit each section** against the hierarchy above. For each section,
-   decide: keep, trim, or offload to docs.
-3. **Identify the billboard.** Where does install appear? Where is quick
-   start? If they are below line 30, the README has structural problems.
-4. **Draft the new hierarchy:**
-   - Move all config blocks >5 lines to docs
-   - Collapse feature sections to bullet lists
-   - Replace duplicated docs content with links
-   - Remove marketing adjectives and emotional appeals
-   - Separate user/contributor content with a rule
-5. **Write the rewrite.** Do not edit in place -- draft from scratch
-   following the hierarchy, pulling content from the old README.
-6. **Compare line counts.** A rewrite typically cuts 40-60%. If the new
-   version is longer than the old, something went wrong.
-7. **Verify links.** Every link to a docs site must resolve.
-
-The agentsview rewrite went from 370 to 177 lines (52% reduction). It:
-- Moved Caddy config, PG setup, reverse proxy docs to the docs site
-- Dropped the keyboard shortcuts table (available in-app via `?`)
-- Dropped the "Why?" section (the one-liner already answers it)
-- Dropped "Build from source" from install (moved to Development)
-- Added a Token Usage section (new primary feature, fastest path to
-  value -- requires zero setup)
-- Compressed Privacy from 12 lines to 4
-
-## README Audit Checklist
-
-Use this checklist to evaluate an existing README:
-
-```
-[ ] One-liner exists and contains no adjectives
-[ ] Install appears within first 20 lines
-[ ] Quick start appears within first 30 lines
-[ ] No config blocks longer than 5 lines
-[ ] No marketing language (powerful, seamless, etc.)
-[ ] Screenshots hosted externally (not in repo)
-[ ] User content separated from contributor content
-[ ] No duplication of docs-site content
-[ ] Total line count under 200 (under 250 with large tables)
-[ ] Every external link resolves
-[ ] Feature sections ordered by least-setup-required first
-[ ] Tables used for scan-friendly data (agents, platforms, shortcuts)
-```
-
-## Output Format
-
-When asked to write or rewrite a README, produce:
-
-1. The complete README in a single code block
-2. A brief summary of editorial decisions (what was cut and why, what
-   was added and why)
-3. A line count comparison (before/after for rewrites)
-
-When asked to audit a README, produce:
-
-1. The checklist above with each item marked pass/fail
-2. Specific findings with line numbers
-3. Recommended changes ranked by impact
-
-## Working with Docs Sites
-
-When a project has a separate documentation site:
-
-- The README links to the docs site, never duplicates it
-- Configuration details always live on the docs site
-- The README mentions features; the docs site explains them
-- Use a compact link block for docs navigation:
+When a docs site exists, the README names features and links to explanations; setup details and configuration belong on the site. A compact navigation block works well:
 
 ```markdown
 ## Documentation
@@ -296,22 +88,56 @@ Full docs at **[example.io](https://example.io)**:
 [CLI Reference](https://example.io/commands/)
 ```
 
-This pattern (from agentsview) puts 5 doc links on 4 lines with zero
-wasted words.
+## Write a new README
 
-## Edge Cases
+1. Identify the project in one factual sentence, without generic adjectives.
+2. Find the fastest install path and the one command that demonstrates the project working.
+3. Draft the opening hierarchy: title, one-liner, install, and quick start.
+4. Add one or two feature sections with useful examples, then a compatibility table.
+5. Put contributor setup below a horizontal rule; add layout, acknowledgements, or license only when useful.
+6. If the README exceeds 200 lines, inspect each section for material that belongs in docs.
+7. Read from the top as a new visitor. Confirm the purpose, install path, and working example are clear before attention runs out.
 
-**No docs site exists.** The README must be more comprehensive, but
-still not a reference manual. Use collapsible `<details>` sections for
-config examples and advanced usage so they do not bloat the scan path.
+## Rewrite an existing README
 
-**The project is a library, not a tool.** Replace Install + Quick Start
-with Install + Minimal Usage Example. The code block should show import,
-initialization, and one meaningful call. Keep it under 10 lines.
+Use this workflow when the README is bloated (typically 150+ lines), contains configuration dumps or marketing language, or repeats a docs site:
 
-**The project is an API.** Lead with a curl example that returns real
-data. Authentication setup goes in a collapsed section or docs link.
+1. Count lines, inventory sections, and identify the docs site.
+2. Decide for each section whether to keep, trim, or move it to docs. Check where install and quick start appear; if either is below line 30, fix the hierarchy.
+3. Draft a new structure from the old README’s useful facts. Move config blocks longer than five lines to docs, compress secondary features, link instead of duplicating docs, remove sales language, and separate user and contributor sections.
+4. Write the new draft from scratch, carrying over accurate details and links.
+5. Compare line counts. A typical rewrite cuts 40–60%; if it grows, review what was added and why.
+6. Verify every link, including external docs links.
 
-**Monorepo with multiple packages.** One top-level README with a table
-of packages (name, one-liner, link to package README). Each package
-README follows this same hierarchy.
+A worked `agentsview` rewrite went from 370 to 177 lines (52% shorter): it moved Caddy, PostgreSQL, and reverse-proxy setup to the docs site; removed keyboard shortcuts available in-app via `?`; dropped a “Why?” section already covered by the one-liner; moved source builds to Development; promoted zero-setup token usage; and shortened Privacy from 12 lines to 4.
+
+## Audit a README
+
+Evaluate every item and mark it pass or fail. Report failed items with line numbers and rank the recommended changes by impact.
+
+```text
+[ ] One-liner exists and contains no generic adjectives
+[ ] Install appears within the first 20 lines
+[ ] Quick start appears within the first 30 lines
+[ ] No configuration block exceeds 5 lines
+[ ] No marketing language
+[ ] Screenshots are hosted externally, not stored in the repository
+[ ] User content is separated from contributor content
+[ ] Docs-site content is not duplicated
+[ ] Total length is under 200 lines (under 250 with large tables)
+[ ] Every external link resolves
+[ ] Features are ordered by least setup required
+[ ] Tables present scan-friendly data such as agents, platforms, or shortcuts
+```
+
+## Return the requested deliverable
+
+- **Write or rewrite:** provide the complete README in one code block, a brief summary of editorial decisions (what changed and why), and for rewrites a before/after line count.
+- **Audit:** provide the checklist with each item marked pass or fail, specific findings with line numbers, and recommendations ranked by impact.
+
+## Adapt to project type
+
+- **No docs site:** include enough detail to use the project without turning the README into a reference manual. Put advanced usage and configuration in collapsible `<details>` sections.
+- **Library:** replace Install + Quick Start with Install + Minimal Usage Example. Show import, initialization, and one meaningful call in fewer than 10 lines.
+- **API:** lead with a `curl` example that returns real data. Put authentication setup in a collapsed section or docs link.
+- **Monorepo:** use one top-level README with a table of package names, one-line descriptions, and links to each package README. Each package README follows this hierarchy.

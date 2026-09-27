@@ -5,104 +5,88 @@ description: Write or rewrite prose that people will read (replies, docs, README
 
 # Writing for Humans
 
-One entry point for prose. Three sibling skills hold the guidance; this file
-says which to load, in what order, and when a short pass is enough. They are
-user-invoked only, so they cost no listing budget. Read them as files. Do not
-try to invoke them through the Skill tool; that route is closed and only the
-human typing a name reopens it.
+Use this skill for prose people will read: replies, docs, READMEs, PRs, commits,
+issues, email, Slack, and reports. Leave code, config, data, quoted text, front
+matter, and structured output unchanged. Keep a format the user requested.
 
-Paths starting `../` are relative to this file's directory: the three sit
-beside it in the same plugin. A bare filename inside a step is relative to the
-skill that step just sent you to, not to this file.
+This skill routes to three user-invoked references. Read them as files; do not
+try to invoke them through the Skill tool. They sit beside this skill in the
+same plugin:
 
-- `../writing-clearly-and-concisely/`: Strunk's *Elements of Style*. Sentence
-  and paragraph structure. The full text is about 12,000 tokens.
-- `../write-for-humans/`: the seven anti-slop rules in order, voice
-  preservation, an exhaustive pattern catalog (`REFERENCE.md`), and a
+- [`../writing-clearly-and-concisely/`](../writing-clearly-and-concisely/):
+  Strunk's *Elements of Style*, for sentence and paragraph structure. Its full
+  text is about 12,000 tokens.
+- [`../write-for-humans/`](../write-for-humans/): the seven anti-slop rules,
+  voice preservation, a pattern catalog in `REFERENCE.md`, and a
   `prose-humanizer` subagent for long rewrites.
-- `../better-writing/`: audience and genre fit. Voice dials, genre tells and
-  exemptions, an anti-slop audit, and a delivery preflight.
+- [`../better-writing/`](../better-writing/): audience and genre fit, voice
+  dials, genre tells and exemptions, an anti-slop audit, and a delivery
+  preflight.
 
-## Scope
+Relative paths beginning with `../` start at this file. A bare filename in a
+step is relative to the sibling skill that step names.
 
-Prose humans will read: docs, READMEs, PRs, commit messages, issues, email,
-Slack, reports, and any reply the user reads as text. Leave code, config,
-data, quoted text, front matter, and structured output alone. When the user
-asked for a specific format, keep it.
+## Short pass: ordinary replies
 
-## Default pass (every reply)
+Edit from memory. Do not load references for a normal reply. Keep the author's
+meaning and voice; then return the edited text without a preamble.
 
-Do this from memory. Do not load references for a normal reply.
+1. Lead with the answer. Remove openers, closers, throat-clearing, and sentences
+   that announce what the next sentence will say.
+2. State the positive claim directly. Remove negative parallelism such as
+   “not X, it's Y” and “not just X but Y.”
+3. Replace inflated words (such as *pivotal*, *crucial*, *robust*, *seamless*,
+   *testament*, and *landscape*) with a fact or remove them.
+4. Prefer plain verbs: use “is,” “has,” or “does,” or turn a noun back into its
+   active verb.
+5. End sentences at the fact. Remove editorializing “-ing” endings.
+6. Earn adjectives and em dashes. Use no more than two em dashes per page; omit
+   bold-label bullets, decorative Unicode, and emoji unless the medium expects
+   them.
+7. Vary sentence rhythm. Use at most one tricolon in a short piece; break
+   repeated openings and ornamental variation.
 
-1. Lead with the answer. Delete openers, closers, throat-clearing, and
-   sentences that announce what the next sentence will do.
-2. Kill negative parallelism: "not X, it's Y", "not just X but Y".
-3. Be specific instead of significant. Swap inflating words (pivotal,
-   crucial, robust, seamless, testament, landscape) for a fact or nothing.
-4. Plain verbs: "is", "has", "does", or the active verb hiding in the noun.
-5. End sentences at the fact. Cut "-ing" tack-ons that editorialize.
-6. Earn adjectives and em-dashes. At most two em-dashes per page. No
-   bold-label bullets, no decorative Unicode, no emoji unless the medium
-   expects them.
-7. Vary rhythm. One tricolon per short piece at most; break anaphora and
-   elegant variation.
+Before returning, check that the first sentence makes a claim, the ending adds
+no recap, and no edit changes meaning or voice. Remove any remaining inflated
+word, negative parallel, or editorializing ending.
 
-Then run the self-edit checklist below and return the text with no preamble.
+## Full pass: drafts for editing or publication
 
-## Full pass (documents, rewrites, anything the user will edit or publish)
+Use this sequence for documents, rewrites, and anything the user will edit or
+publish. Finish each pass before moving to the next.
 
-Work in this order. Earlier passes remove material later passes would have
-to rewrite.
+1. **Structure.** Read `../writing-clearly-and-concisely/SKILL.md` for its rule
+   list. Load `elements-of-style.md` only for a long document or when a
+   structural problem needs the source. Prefer active voice, one topic per
+   paragraph, the topic first, needless-word cuts, and emphatic endings.
+2. **Register.** Read `../write-for-humans/SKILL.md` and apply its seven rules
+   in order. For heavy slop or a long draft, read `REFERENCE.md` for the full
+   catalog, or dispatch `../write-for-humans/agents/prose-humanizer.md` with
+   the draft when context is tight.
+3. **Fit.** When audience, channel, or genre matters, or the user asks to
+   “humanize,” “de-AI,” or make text sound less like a bot, read
+   `../better-writing/SKILL.md`. Set the read (genre, audience, tone, outcome)
+   with `../better-writing/references/voice-and-context.md`; check genre
+   exemptions in `genre-tells.md`; finish with `preflight.md`.
 
-1. **Structure first.** Read `../writing-clearly-and-concisely/SKILL.md` for
-   the rule list; load `elements-of-style.md` only for a long document or
-   when a structural problem needs the source. Active voice, one topic per
-   paragraph, topic sentence first, omit needless words, emphatic words at
-   the end.
-2. **Register second.** Read `../write-for-humans/SKILL.md` and apply the
-   seven rules in order. For heavy slop or a long draft, load `REFERENCE.md`
-   for the full catalog, or dispatch
-   `../write-for-humans/agents/prose-humanizer.md` with the draft when
-   context is tight.
-3. **Fit last.** When audience, channel, or genre matters, or the user says
-   "humanize", "de-AI", or "make this sound less like a bot", read
-   `../better-writing/SKILL.md`. Set the read (genre, audience, tone,
-   outcome) with `../better-writing/references/voice-and-context.md`, check
-   genre exemptions in `genre-tells.md`, and finish with `preflight.md`.
+For rewrite mode, read the whole draft, judge whether the slop is light or
+heavy, cut first, then rewrite. Compare the result with the original and revert
+edits that change meaning or flatten the writer's voice.
 
-Rewrite mode: read the whole draft, judge light versus heavy slop, cut
-first and rewrite second, then diff against the original and revert any
-edit that changed meaning or flattened the writer's voice.
+## Voice and accuracy
 
-## Voice and guardrails
+- Simplify and subtract. Do not add facts, quotes, names, numbers, next steps,
+  or opinions absent from the source.
+- Keep the author's rhythm, contractions, first person, swearing, rough edges,
+  and lowercase style.
+- Editing is not fact-checking. Flag a doubtful fact in a note; do not silently
+  correct it.
+- Preserve code identifiers, API and product names, regulatory terms, and
+  exact UI labels.
+- When two edits work equally well, choose the shorter one.
 
-- Only subtract and simplify. Never add facts, quotes, names, numbers,
-  next steps, or opinions the source does not hold.
-- Keep the author's rhythm, contractions, first person, swearing, and
-  rough edges. Lowercase stays lowercase.
-- Editing is not fact-checking. Flag a doubtful fact in a note; do not
-  silently correct it.
-- Preserve code identifiers, API names, product names, regulatory terms,
-  and exact UI labels.
-- If two rewrites are equally good, pick the shorter one.
+## Tables in narrow displays
 
-## Tables and terminal output
-
-When the text lands in a terminal, TUI, chat transcript, or narrow pane,
-keep tables physically readable: short columns, split wide tables, prefer a
-list when a table would wrap. Rendered Markdown files can use normal tables
-with short column names.
-
-## Self-edit checklist
-
-1. Does the first sentence make a claim, or announce? Announce means cut.
-2. Search " not " and "isn't"; kill any not-X-but-Y construction.
-3. More than two em-dashes in the piece? Reduce.
-4. Inflating vocabulary present? Replace with a fact or delete.
-5. Sentences ending in an editorializing "-ing" phrase? Cut the phrase.
-6. Signposted closer or a last sentence that restates the first? Cut.
-7. Count "X, Y, and Z" lists. Over one per 500 words: convert the weakest
-   to prose.
-8. Bold-first bullets? Convert to prose or plain bullets.
-9. Three consecutive sentences with the same opening subject? Break it.
-10. Did anything change meaning or voice? Revert it.
+For terminal output, TUIs, chat transcripts, and narrow panes, keep tables
+readable: shorten columns, split wide tables, or use a list when a table wraps.
+Rendered Markdown files can use ordinary tables with short column names.

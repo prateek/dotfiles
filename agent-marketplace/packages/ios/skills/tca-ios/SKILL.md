@@ -18,129 +18,79 @@ description: >-
 
 ## Posture
 
-You are working on an iOS 16+ codebase that uses TCA or adjacent Point-Free libraries. Target modern TCA 1.25+ for new guidance, including the live 2.0-prep deprecation traits, but verify the installed version before recommending APIs. Older APIs are recognized only as inputs to migration or removal, not as live patterns.
+For new guidance, target modern TCA 1.25+ and account for live 2.0-prep deprecation traits. Verify the project’s installed version before recommending APIs. Treat older APIs as migration inputs, not current patterns. Prioritize product correctness, clear state ownership, testability, and maintainability; make broad rewrites only with the user’s authorization.
 
-Be pragmatic: product correctness, clear state ownership, testability, and maintainability outrank purity. Do not propose sweeping rewrites unless the user explicitly authorizes them.
+## Mode banner
 
-## Mode Banner
-
-Declare the active TCA iOS mode at the top of every response that invokes this skill, exactly once:
+At the top of every response that invokes this skill, declare exactly one active mode:
 
 `**Mode: tca-ios/build**`
 
-Allowed banners: `**Mode: tca-ios/build**`, `**Mode: tca-ios/review**`, `**Mode: tca-ios/modernize**`, `**Mode: tca-ios/diagnose**`, `**Mode: tca-ios/decide**`.
+Choose one of these banners: `**Mode: tca-ios/build**`, `**Mode: tca-ios/review**`, `**Mode: tca-ios/modernize**`, `**Mode: tca-ios/diagnose**`, or `**Mode: tca-ios/decide**`.
 
-## Version Probe
+## Route the request
 
-Before changing or judging code, inspect the installed TCA generation:
+Use `build` by default when the request triggers this skill without choosing a mode.
 
-1. Check `Package.swift`, `Package.resolved`, `.xcodeproj/project.pbxproj`, Tuist manifests, XcodeGen specs, and local package pins for `swift-composable-architecture`.
-2. Search for markers:
-   - Modern: `@Reducer`, `@ObservableState`, `StoreOf<Feature>`, direct store observation, `@Dependency`, `Effect.run`, `@Presents`.
-   - Transitional: `@Reducer` mixed with `ViewStore`, `@PresentationState`, Combine schedulers, or old navigation helpers.
-   - Legacy: `ReducerProtocol`, `reduce(into:)` as the top-level reducer entry point, `Reducer.combine`, Environment structs, `WithViewStore`, `IfLetStore`, `ForEachStore`, `SwitchStore`, `NavigationStackStore`, `Effect.task`, `Effect.publisher`.
-3. Load `references/version-ledger.md` when the version or API generation matters. Treat TCA 1.25+ as the target for new work.
-4. Load `references/index.md` when choosing optional or support references.
-5. Do not modernize a stable legacy area unless the user asked for it or the old API creates concrete risk.
+- **Build:** For feature implementation, load `references/core/modern-tca-anatomy.md`, `references/core/state-shape.md`, `references/core/action-vocabulary.md`, `references/core/naming-conventions.md`, `references/core/reducer-composition.md`, `references/core/view-integration.md`, `references/effects/effect-run.md`, `references/effects/dependencies.md`, and `references/testing/teststore-basics.md`. Also load navigation, persistence, or app-architecture guides for touched areas.
+- **Review:** For a review, audit, health check, or idiom question, load `references/review/coordinator.md`, `references/review/survey.md`, `references/review/finding-format.md`, `references/review/synthesis.md`, the focused review agents for the code, and relevant technical guides from `references/index.md`.
+- **Modernize:** For migration, upgrade, legacy API removal, Swift 6 adoption, or 2.0 preparation, load `references/modernize/version-probe.md`, `references/version-ledger.md`, and a migration recipe for each detected API.
+- **Diagnose:** For a failure, warning, leak, re-render storm, TestStore diff, cancellation or dismissal bug, Sendable warning, or database tracing problem, load `references/version-ledger.md`, the matching guide from `references/index.md`, and relevant guides under `effects`, `testing`, `navigation`, `ui`, or `persistence`.
+- **Decide:** For whether to use or adopt TCA, an architecture recommendation, or a comparison with MVVM, `@Observable`, or SwiftUI `@State`, make no edits. Load `references/app-architecture/observable-vs-tca.md` and `references/app-architecture/adoption-fit.md`.
 
-## Mode Router
-
-Default first-turn mode is `build` when the prompt triggers this skill but does not clearly choose another mode.
-
-When the user asks to add, scaffold, or implement a feature, use `build`. Load:
-- `references/core/modern-tca-anatomy.md`
-- `references/core/state-shape.md`
-- `references/core/action-vocabulary.md`
-- `references/core/naming-conventions.md`
-- `references/core/reducer-composition.md`
-- `references/core/view-integration.md`
-- `references/effects/effect-run.md`
-- `references/effects/dependencies.md`
-- `references/testing/teststore-basics.md`
-- navigation, persistence, or app-architecture references when the task touches those areas
-
-When the user asks for a review, audit, health check, or "is this idiomatic", use `review`. Load:
-- `references/review/coordinator.md`
-- `references/review/survey.md`
-- `references/review/finding-format.md`
-- `references/review/synthesis.md`
-- the focused review agents that match the code under review
-- supporting technical references from `references/index.md` before finalizing a finding
-
-When the user asks to migrate, upgrade, remove legacy APIs, adopt Swift 6, or prepare for 2.0, use `modernize`. Load:
-- `references/modernize/version-probe.md`
-- `references/version-ledger.md`
-- the specific migration recipe for each detected legacy API
-
-When the user brings a failure, warning, leak, re-render storm, TestStore diff, cancellation issue, dismissal bug, Sendable warning, or database tracing problem, use `diagnose`. Load:
-- `references/version-ledger.md`
-- the matching diagnose reference listed in `references/index.md`
-- supporting references from `effects`, `testing`, `navigation`, `ui`, or `persistence`
-
-When the user asks "should I use TCA", "should we adopt TCA", "is TCA the right architecture", "evaluate whether (TCA / Composable Architecture)", "architecture recommendation", "TCA vs MVVM", "TCA vs `@Observable`", "TCA vs SwiftUI `@State`", or otherwise asks for an architecture decision, use `decide`. **No edits.** Load:
-- `references/app-architecture/observable-vs-tca.md`
-- `references/app-architecture/adoption-fit.md`
-
-If a prompt spans modes, choose one mode for the current response, state which mode the next turn should be in, and tell the user which work remains. If switching from the last declared mode, write one line before the new mode banner:
+When a prompt spans modes, choose the mode for the current response, state which mode the next turn should use, and identify remaining work. Before changing modes, write a transition line, for example:
 
 `Switching from tca-ios/review to tca-ios/diagnose: user requested a fix for finding N.`
 
-## Mode Contracts
+## Check the installed generation
 
-**Build** may edit files. Scaffold tests alongside feature code in the same change. Match the surrounding file's style. Do not refactor neighboring code that the user did not ask to change.
+Before changing or judging code:
 
-**Review** is read-only. Do not edit files. Produce findings using `references/review/finding-format.md` (severity, confidence, files, evidence, why, fix, test). Do not invent issues. Prefer pragmatic incremental recommendations over rewrites.
+1. Find the `swift-composable-architecture` version in `Package.swift`, `Package.resolved`, `.xcodeproj/project.pbxproj`, Tuist manifests, XcodeGen specs, or local package pins.
+2. Classify the code from its API markers:
+   - **Modern:** `@Reducer`, `@ObservableState`, `StoreOf<Feature>`, direct store observation, `@Dependency`, `Effect.run`, `@Presents`.
+   - **Transitional:** `@Reducer` mixed with `ViewStore`, `@PresentationState`, Combine schedulers, or older navigation helpers.
+   - **Legacy:** `ReducerProtocol`, top-level `reduce(into:)`, `Reducer.combine`, Environment structs, `WithViewStore`, `IfLetStore`, `ForEachStore`, `SwitchStore`, `NavigationStackStore`, `Effect.task`, or `Effect.publisher`.
+3. When version or API generation matters, load `references/version-ledger.md`. Load `references/index.md` to select optional or supporting references.
+4. Leave stable legacy code in place unless the user requests modernization or an old API creates a concrete risk.
 
-**Modernize** probes version first via `references/modernize/version-probe.md`. Migrate incrementally per recipe; justify each migration by risk reduction or compatibility, not style. Edits stay scoped to the recipe.
+## Mode contracts
 
-**Diagnose** starts from the user's exact symptom (TestStore diff, Xcode warning, observed behavior). Reproduce or inspect the smallest failing surface, then apply one narrow fix. Edit only the file(s) named in the diagnosis.
+- **Build** may edit files and should add feature tests alongside feature code. Match local style and keep edits to the requested feature.
+- **Review** is read-only. Use `references/review/finding-format.md` for severity, confidence, files, evidence, rationale, fix, and test. Report supported findings and prefer incremental fixes.
+- **Modernize** probes the version through `references/modernize/version-probe.md`, then follows the relevant recipes incrementally. Tie each migration to risk reduction or compatibility.
+- **Diagnose** starts from the reported symptom. Inspect or reproduce the smallest failing surface, then make one narrow fix in the files implicated by the diagnosis.
+- **Decide** makes no code edits. Ground the recommendation in the two app-architecture guides and favor the least ceremony that fits the product and team.
 
-**Decide** makes no code edits. Produce a recommendation grounded in `observable-vs-tca.md` and `adoption-fit.md`. Recommend the least ceremony that still fits the product and team.
+## Design guidance
 
-## Load-Bearing Opinions
+- Name reducers after the feature, such as `Settings`; name actions after user events or system results, such as `saveButtonTapped`, `searchResponse(Result<...>)`, and `delegate(.saved)`. Use delegate actions for child-to-parent communication.
+- Keep state authoritative. Represent impossible combinations with enums, optional presentation state, or precise domain types.
+- For modern code, use `@Reducer`, `@ObservableState`, `StoreOf<Feature>`, direct store observation, `@Bindable`, and `BindingReducer`. New code should use these APIs instead of `WithViewStore`, `ViewStore`, `IfLetStore`, `ForEachStore`, `SwitchStore`, `NavigationStackStore`, `ReducerProtocol`, old closure reducers, or top-level `reduce(into:)` reducers.
+- Declare `@Dependency` properties directly in reducers. In `@Observable` classes, use `@ObservationIgnored @Dependency`. Control dates, UUIDs, clocks, randomness, network and file clients, analytics, notifications, and database clients through dependencies. Make live implementations `Sendable`; define deliberate test and preview values.
+- Prefer `Effect.run` with async/await. Assign cancellation IDs to repeatable effects, including search, refresh, polling, subscriptions, and sheet-owned streams. Give each effect a lifecycle and cancel effects owned by dismissed features.
+- Model child collections with `IdentifiedArrayOf<Child.State>` and `IdentifiedActionOf<Child>`. Use `@Presents` with `Destination` enum reducers for tree navigation, and `StackState` with `StackActionOf` for stack navigation.
+- Where the ecosystem expects case-path access, pair `@CasePathable` with `@dynamicMemberLookup`. Use `@Shared` for shared or persisted values when they represent a real shared source of truth.
+- For SQLiteData, call `bootstrapDatabase` from `prepareDependencies` in the app entry point.
+- On iOS 16, wrap view bodies and lazy SwiftUI closures in `WithPerceptionTracking`; iOS 17 uses native Observation.
+- In tests, prefer `expectDifference` for mutations: it identifies changed fields while comparing complete before-and-after values. Compare full values rather than transformations. Use a non-exhaustive `TestStore` when exhaustive assertions would mirror implementation noise.
 
-- Name a reducer `Settings`, not `SettingsReducer`.
-- Name actions after user events or system results: `saveButtonTapped`, `searchResponse(Result<...>)`, `delegate(.saved)`.
-- Use delegate actions for child-to-parent communication.
-- Keep state as the source of truth. Model impossible states with enums, optional presentation state, or more precise domain types.
-- Use `@Reducer`, `@ObservableState`, `StoreOf<Feature>`, direct store observation, `@Bindable`, and `BindingReducer`.
-- Avoid `WithViewStore`, `ViewStore`, `IfLetStore`, `ForEachStore`, `SwitchStore`, and `NavigationStackStore` in modern code.
-- Avoid `ReducerProtocol`, old closure reducers, and top-level `reduce(into:)` implementations in new code.
-- Put `@Dependency` properties directly in reducers. In `@Observable` classes, use `@ObservationIgnored @Dependency`.
-- Control `Date`, `UUID`, clocks, randomness, networking, files, analytics, notifications, and database clients through dependencies.
-- Provide Sendable live dependency implementations. Make test and preview values deliberate.
-- Prefer `Effect.run` with async/await. Avoid legacy Combine-based effects and old effect scheduling operators.
-- Give repeatable effects a cancellation ID. Search, refresh, polling, subscriptions, and sheet-owned streams must have a lifecycle story.
-- Dismissal must cancel effects scoped to dismissed features.
-- Use `IdentifiedArrayOf<Child.State>` with `IdentifiedActionOf<Child>` for child lists.
-- Use `@Presents` plus `Destination` enum reducers for tree navigation; use `StackState` and `StackActionOf` for stack navigation.
-- Use `@CasePathable` and `@dynamicMemberLookup` together for case-path access where the ecosystem expects it.
-- Use `@Shared` for shared values and persisted values only when there is a real shared source of truth.
-- Bootstrap SQLiteData with `bootstrapDatabase` and call it from `prepareDependencies` in the app entry point.
-- Wrap view bodies and lazy SwiftUI closures in `WithPerceptionTracking` for iOS 16 deployments; iOS 17 uses native Observation.
-- In tests, prefer `expectDifference` over `expectNoDifference` when asserting a mutation: it names the changed fields directly while still comparing full before/after values. Compare full values, not transformations. Use non-exhaustive TestStore only when the exhaustive test would mirror implementation noise.
-- Do not recommend broad rewrites unless the user explicitly authorizes them.
+## Architecture decision
 
-## Decision Heuristic
+TCA fits multi-screen flows, shared domain state, effect-heavy logic, deep links, cancellation needs, or teams that value reducer-level tests. Prefer SwiftUI state or an `@Observable` model for a small utility, isolated screens, mostly local UI state, or a team that will not maintain TCA conventions. For organization-level tradeoffs, use `references/app-architecture/adoption-fit.md`.
 
-TCA is a good fit when an app has multi-screen flows, shared domain state, effect-heavy logic, deep links, cancellation needs, or a team that values reducer-level tests.
+## Reference map
 
-Prefer plain SwiftUI state or an `@Observable` model for a small utility app, isolated screens, mostly local UI state, or a team that will not maintain the TCA conventions.
-
-Use `references/app-architecture/adoption-fit.md` for organization-level concerns: module lockstep, root reducer growth, encapsulation leaks, and key-person risk.
-
-## Reference Map
-
-- `references/core/`: feature anatomy, naming, state, actions, reducer composition, views, case paths.
-- `references/effects/`: dependencies, effect lifecycles, cancellation, clocks, Sendable, issue reporting.
-- `references/navigation/`: destination enums, stacks, sheets, deep links, dismissal, global routers, UIKit navigation.
-- `references/testing/`: TestStore, dependency overrides, cancellation, navigation, shared state, custom dump, snapshots, macros.
-- `references/persistence/`: Sharing, SQLiteData, StructuredQueries, iCloud, migrations.
-- `references/app-architecture/`: app root, session, tabs, modules, Package.swift, Xcode integration, adoption fit.
-- `references/ui/`: SwiftUI idioms, observable models, UIKit interop.
+- `references/core/`: feature anatomy, naming, state, actions, reducer composition, views, and case paths.
+- `references/effects/`: dependencies, effect lifecycles, cancellation, clocks, Sendable, and issue reporting.
+- `references/navigation/`: destination enums, stacks, sheets, deep links, dismissal, global routers, and UIKit navigation.
+- `references/testing/`: TestStore, dependency overrides, cancellation, navigation, shared state, custom dump, snapshots, and macros.
+- `references/persistence/`: Sharing, SQLiteData, StructuredQueries, iCloud, and migrations.
+- `references/app-architecture/`: app root, session, tabs, modules, Package.swift, Xcode integration, and adoption fit.
+- `references/ui/`: SwiftUI idioms, observable models, and UIKit interop.
 - `references/back-deploy/`: Perception support for iOS 16 deployments.
-- `references/review/`: coordinator and focused review-agent prompts.
+- `references/review/`: review coordinator and focused review-agent prompts.
 - `references/modernize/`: migration recipes.
 - `references/diagnose/`: symptom-to-cause-to-fix guides.
-- `references/index.md`: mode routing and support-reference maps.
-- `references/version-ledger.md`: TCA API generation and migration checkpoints.
+- `references/index.md`: mode routing and supporting-reference maps.
+- `references/version-ledger.md`: TCA API generations and migration checkpoints.

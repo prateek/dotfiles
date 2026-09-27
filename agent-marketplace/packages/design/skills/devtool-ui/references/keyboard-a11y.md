@@ -1,5 +1,9 @@
 # Keyboard Interaction, Accessibility, and Responsive Design
 
+Use this reference when adding app-wide shortcuts, keyboard navigation,
+dialogs, or small-screen behavior. Apply the ARIA and focus patterns to the
+controls the interface actually exposes.
+
 ## Table of Contents
 
 1. [Centralized Keyboard Handler](#centralized-keyboard-handler)

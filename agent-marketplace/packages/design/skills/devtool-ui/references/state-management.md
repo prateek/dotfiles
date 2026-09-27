@@ -1,5 +1,9 @@
 # State Management and Data Flow
 
+Use this reference when dividing reactive state, synchronizing server updates,
+or connecting the SPA to its API. The examples use module-level Svelte 5 stores;
+keep persistence and side effects limited to state that needs them.
+
 ## Table of Contents
 
 1. [Singleton Class Store Pattern](#singleton-class-store-pattern)
