@@ -1,0 +1,244 @@
+[[skills]]
+name = "architect"
+dependency = "cursor/plugins/pstack"
+path = "skills/architect"
+
+[[skills]]
+name = "arena"
+dependency = "cursor/plugins/pstack"
+path = "skills/arena"
+
+[[skills]]
+name = "automate-me"
+dependency = "cursor/plugins/pstack"
+path = "skills/automate-me"
+
+[[skills]]
+name = "blast-radius"
+dependency = "cursor/plugins/pstack"
+path = "skills/blast-radius"
+
+[[skills]]
+name = "bro"
+dependency = "cursor/plugins/pstack"
+path = "skills/bro"
+
+[[skills]]
+name = "create-verification-skill"
+dependency = "cursor/plugins/pstack"
+path = "skills/create-verification-skill"
+
+[[skills]]
+name = "figure-it-out"
+dependency = "cursor/plugins/pstack"
+path = "skills/figure-it-out"
+
+[[skills]]
+name = "how"
+dependency = "cursor/plugins/pstack"
+path = "skills/how"
+
+[[skills]]
+name = "interrogate"
+dependency = "cursor/plugins/pstack"
+path = "skills/interrogate"
+
+[[skills]]
+name = "maintain-verification-skill"
+dependency = "cursor/plugins/pstack"
+path = "skills/maintain-verification-skill"
+
+[[skills]]
+name = "make-bot-ui"
+dependency = "cursor/plugins/pstack"
+path = "skills/make-bot-ui"
+
+[[skills]]
+name = "no-comments"
+dependency = "cursor/plugins/pstack"
+path = "skills/no-comments"
+
+[[skills]]
+name = "poteto-mode"
+dependency = "cursor/plugins/pstack"
+path = "skills/poteto-mode"
+
+[[skills]]
+name = "principle-attack-the-premise"
+dependency = "cursor/plugins/pstack"
+path = "skills/principle-attack-the-premise"
+
+[[skills]]
+name = "principle-boundary-discipline"
+dependency = "cursor/plugins/pstack"
+path = "skills/principle-boundary-discipline"
+
+[[skills]]
+name = "principle-build-the-lever"
+dependency = "cursor/plugins/pstack"
+path = "skills/principle-build-the-lever"
+
+[[skills]]
+name = "principle-encode-lessons-in-structure"
+dependency = "cursor/plugins/pstack"
+path = "skills/principle-encode-lessons-in-structure"
+
+[[skills]]
+name = "principle-exhaust-the-design-space"
+dependency = "cursor/plugins/pstack"
+path = "skills/principle-exhaust-the-design-space"
+
+[[skills]]
+name = "principle-experience-first"
+dependency = "cursor/plugins/pstack"
+path = "skills/principle-experience-first"
+
+[[skills]]
+name = "principle-fix-root-causes"
+dependency = "cursor/plugins/pstack"
+path = "skills/principle-fix-root-causes"
+
+[[skills]]
+name = "principle-foundational-thinking"
+dependency = "cursor/plugins/pstack"
+path = "skills/principle-foundational-thinking"
+
+[[skills]]
+name = "principle-guard-the-context-window"
+dependency = "cursor/plugins/pstack"
+path = "skills/principle-guard-the-context-window"
+
+[[skills]]
+name = "principle-laziness-protocol"
+dependency = "cursor/plugins/pstack"
+path = "skills/principle-laziness-protocol"
+
+[[skills]]
+name = "principle-make-operations-idempotent"
+dependency = "cursor/plugins/pstack"
+path = "skills/principle-make-operations-idempotent"
+
+[[skills]]
+name = "principle-migrate-callers-then-delete-legacy-apis"
+dependency = "cursor/plugins/pstack"
+path = "skills/principle-migrate-callers-then-delete-legacy-apis"
+
+[[skills]]
+name = "principle-minimize-reader-load"
+dependency = "cursor/plugins/pstack"
+path = "skills/principle-minimize-reader-load"
+
+[[skills]]
+name = "principle-model-the-domain"
+dependency = "cursor/plugins/pstack"
+path = "skills/principle-model-the-domain"
+
+[[skills]]
+name = "principle-never-block-on-the-human"
+dependency = "cursor/plugins/pstack"
+path = "skills/principle-never-block-on-the-human"
+
+[[skills]]
+name = "principle-outcome-oriented-execution"
+dependency = "cursor/plugins/pstack"
+path = "skills/principle-outcome-oriented-execution"
+
+[[skills]]
+name = "principle-prove-it-works"
+dependency = "cursor/plugins/pstack"
+path = "skills/principle-prove-it-works"
+
+[[skills]]
+name = "principle-redesign-from-first-principles"
+dependency = "cursor/plugins/pstack"
+path = "skills/principle-redesign-from-first-principles"
+
+[[skills]]
+name = "principle-separate-before-serializing-shared-state"
+dependency = "cursor/plugins/pstack"
+path = "skills/principle-separate-before-serializing-shared-state"
+
+[[skills]]
+name = "principle-sequence-verifiable-units"
+dependency = "cursor/plugins/pstack"
+path = "skills/principle-sequence-verifiable-units"
+
+[[skills]]
+name = "principle-subtract-before-you-add"
+dependency = "cursor/plugins/pstack"
+path = "skills/principle-subtract-before-you-add"
+
+[[skills]]
+name = "principle-test-behavior-not-implementation"
+dependency = "cursor/plugins/pstack"
+path = "skills/principle-test-behavior-not-implementation"
+
+[[skills]]
+name = "principle-type-system-discipline"
+dependency = "cursor/plugins/pstack"
+path = "skills/principle-type-system-discipline"
+
+[[skills]]
+name = "recall"
+dependency = "cursor/plugins/pstack"
+path = "skills/recall"
+
+[[skills]]
+name = "reflect"
+dependency = "cursor/plugins/pstack"
+path = "skills/reflect"
+
+[[skills]]
+name = "setup-pstack"
+dependency = "cursor/plugins/pstack"
+path = "skills/setup-pstack"
+
+[[skills]]
+name = "show-me-your-work"
+dependency = "cursor/plugins/pstack"
+path = "skills/show-me-your-work"
+
+[[skills]]
+name = "swarm"
+dependency = "cursor/plugins/pstack"
+path = "skills/swarm"
+
+[[skills]]
+name = "tdd"
+dependency = "cursor/plugins/pstack"
+path = "skills/tdd"
+
+[[skills]]
+name = "teach"
+dependency = "cursor/plugins/pstack"
+path = "skills/teach"
+
+[[skills]]
+name = "technical-writing"
+dependency = "cursor/plugins/pstack"
+path = "skills/technical-writing"
+
+[[skills]]
+name = "typescript-best-practices"
+dependency = "cursor/plugins/pstack"
+path = "skills/typescript-best-practices"
+
+[[skills]]
+name = "unslop"
+dependency = "cursor/plugins/pstack"
+path = "skills/unslop"
+
+[[skills]]
+name = "why"
+dependency = "cursor/plugins/pstack"
+path = "skills/why"
+
+[[payloads]]
+dependency = "cursor/plugins/pstack"
+path = "agents"
+target = "agents"
+
+[[payloads]]
+dependency = "cursor/plugins/pstack"
+path = "LICENSE"
+target = "licenses/cursor/plugins/LICENSE"

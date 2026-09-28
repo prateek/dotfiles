@@ -30,6 +30,9 @@ marketplace:
   - name: obsidian-wiki
     source: ./plugins/obsidian-wiki
     category: Productivity
+  - name: pstack
+    source: ./plugins/pstack
+    category: Productivity
   - name: review
     source: ./plugins/review
     category: Productivity
@@ -88,6 +91,7 @@ devDependencies:
   - ar9av/obsidian-wiki/.skills/wiki-synthesize
   - ar9av/obsidian-wiki/.skills/wiki-update
   - conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill
+  - cursor/plugins/pstack
   - danshapiro/trycycle
   - efremidze/swift-patterns-skill
   - forjd/better-writing

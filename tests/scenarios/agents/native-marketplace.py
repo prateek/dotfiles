@@ -21,6 +21,7 @@ from artifact import tree_files, validate_artifact
 from codex_rpc import enabled_edit, requests
 
 DEFAULTS = {'core', 'last30days', 'mattpocock', 'review', 'utils-agent'}
+DISABLED = {'design', 'experimental', 'ios', 'obsidian-wiki', 'pstack', 'superpowers', 'utils-human'}
 
 
 @contextmanager
@@ -98,7 +99,7 @@ def main():
     original = scratch / 'original'
     shutil.copytree(ROOT / 'agent-marketplace/build/marketplace', original)
     names = sorted(path.name for path in (original / 'plugins').iterdir())
-    assert set(names) == DEFAULTS | {'design', 'experimental', 'ios', 'obsidian-wiki', 'superpowers', 'utils-human'}
+    assert set(names) == DEFAULTS | DISABLED
     for name in names:
         plugin = original / 'plugins' / name
         (plugin / 'release-probe.txt').write_text('original\n')

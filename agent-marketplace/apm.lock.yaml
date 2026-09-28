@@ -439,6 +439,17 @@ dependencies:
   package_type: claude_skill
   content_hash: sha256:4d6c14e18411bbe29620b158c178dbdfd1622ab513857abc8d7578b6aed88f9f
   is_dev: true
+- repo_url: cursor/plugins
+  name: pstack
+  host: github.com
+  resolved_commit: ecc249f1e306fc64ddf83c7bed16cacf7c2239db
+  version: 0.15.5
+  virtual_path: pstack
+  is_virtual: true
+  package_type: skill_bundle
+  content_hash: sha256:1a0724c21afeeae377fc33f7d2ceb13b7d65e0fded25742c44100661ea000bed
+  is_dev: true
+  declared_license: MIT
 - repo_url: danshapiro/trycycle
   name: trycycle
   host: github.com

@@ -2,7 +2,7 @@
 status: current
 doc_type: index
 created: 2026-05-12
-updated: 2026-09-27
+updated: 2026-09-28
 related:
   - document-lifecycle.md
   - ../agent-marketplace/packages/core/skills/code-gardening/SKILL.md
@@ -128,6 +128,7 @@ for day-to-day implementation details.
 | [Nix Agent Skill Packaging](research/nix-agent-skills-packaging-research.md) | Five public Nix configurations, Home Manager skill and plugin options, source catalogs, dependency packaging, and deployment ownership. |
 | [Agent Marketplace Packaging Tools](research/agent-marketplace-packaging-tools-research.md) | Packaging tools and reusable compilers for reviewed local skill sources, separate plugins, and Claude/Codex marketplace output. |
 | [APM Skill Marketplace Spike](research/apm-skill-marketplace-spike.md) | Executed APM source publication, native Claude/Codex inventory parity, offline updates, bundle limitations, and the Mise setup incident. |
+| [pstack Context Impact](research/pstack-context-impact.md) | Pinned pstack package contents, default-disabled and human-only controls, Claude/Codex context projections, native discovery checks, and Cursor-specific compatibility limits. |
 | [APM Migration Verification](research/apm-marketplace-migration-verification.md) | Executed acquisition, source transport, native recovery, changed-source plain apply, fresh skill invocation, authored/imported edit and restore, and legacy backup review. |
 | [APM Module Vendoring](research/apm-modules-vendoring-research.md) | Pinned source findings for committing APM caches, native lock-only acquisition, local patches, Git round-trip checks, and deferred registry/mirror options. |
 | [Skill Invocation-Control Frontmatter](research/skill-invocation-frontmatter-research.md) | Which harnesses honor `disable-model-invocation` and `user-invocable`, with per-harness evidence and citations. |

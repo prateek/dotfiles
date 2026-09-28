@@ -3,7 +3,7 @@ status: current
 doc_type: reference
 owner: Prateek
 created: 2026-09-07
-updated: 2026-09-07
+updated: 2026-09-28
 related:
   - ../../agent-marketplace/README.md
   - ../../.agents/skills/agent-skill-management/SKILL.md
@@ -37,9 +37,14 @@ The consumer boundary is:
 | Claude/Codex native caches | Native client CLIs and app-server APIs |
 
 The default enabled set is `core`, `last30days`, `mattpocock`, `review`, and
-`utils-agent`. All eleven packages remain available in both catalogs. Codex's
-hook-bearing plugins suppress hook discovery with an explicit empty `hooks` object. The 22 paired human-only
-controls remain file contracts; these checks do not prove model invocation behavior.
+`utils-agent`. All twelve packages remain available in both catalogs. `pstack`
+is default-disabled because its workflows and bundled agents target Cursor.
+Its 47 skills also carry paired human-only controls for Claude and Codex. The
+[context-impact report](../research/pstack-context-impact.md) records the default
+zero-row projection, the uncontrolled comparison, and the native-client checks.
+Codex's hook-bearing plugins suppress hook discovery with an explicit empty
+`hooks` object. The 69 paired human-only controls remain file contracts; these
+checks do not prove model invocation behavior after a skill is explicitly loaded.
 
 Only the root APM manifest is maintained. Each plugin's Codex manifest owns its
 version and shared metadata; the build derives temporary APM manifests to generate

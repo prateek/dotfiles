@@ -35,6 +35,11 @@ default_loaded = false
 claude = true
 codex = true
 
+[agent_plugins.pstack]
+default_loaded = false
+claude = true
+codex = true
+
 [agent_plugins.review]
 default_loaded = true
 claude = true
