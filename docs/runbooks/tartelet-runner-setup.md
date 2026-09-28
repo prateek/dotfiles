@@ -3,7 +3,7 @@ status: active
 doc_type: runbook
 owner: Prateek
 created: 2026-07-03
-updated: 2026-09-05
+updated: 2026-09-26
 related:
   - ../plans/tartelet-runner-plan.md
   - ../adr/0014-tartelet-self-hosted-runners.md
@@ -22,6 +22,11 @@ and the softnet wrapper. It applies non-secret settings from
 and `tart_home` values for this host before setup;
 [the resolver](../../home/.chezmoitemplates/features.tmpl) includes host and
 `machines_local` overrides.
+
+`runner_start_on_launch` controls the login service and automatic VM startup.
+It is disabled for `m4mini`. Set it to `false` in a host layer to keep the app
+and VM setup installed without starting runners automatically. Applying a plist
+does not unload an already-running service; stop it as described below.
 
 The [settings hook](../../home/.chezmoiscripts/run_onchange_after_17-tartelet-settings.sh.tmpl)
 uses `defaults` because `cfprefsd` reverts direct plist writes after Tartelet has
@@ -103,13 +108,28 @@ its actual `xcodebuild -version` output matches the intended runner version.
 
 ## 5. Launch Tartelet
 
-The LaunchAgent starts Tartelet at the next login. To start it now:
+With `runner_start_on_launch = true` applied, the LaunchAgent starts Tartelet
+at the next login. To start it now, including after a previous manual disable:
 
 ```sh
+launchctl enable gui/$(id -u)/com.prateek.tartelet-runner
 launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.prateek.tartelet-runner.plist
 ```
 
 Continue when Tartelet is running and its Settings window opens.
+
+To pause an existing runner, set `runner_start_on_launch = false` in the host
+layer, disable and unload the service, then stop its running VM clones before
+applying the updated settings:
+
+```sh
+launchctl disable gui/$(id -u)/com.prateek.tartelet-runner
+launchctl bootout gui/$(id -u)/com.prateek.tartelet-runner
+tart stop tartelet-runner-1
+```
+
+Use `tart list` to identify additional clones if `runner_vm_count` exceeds one.
+An already-unloaded service or stopped VM needs no further stop action.
 
 ## 6. Enter credentials in the UI (one time)
 

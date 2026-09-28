@@ -1,13 +1,11 @@
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- $start := dig "runner_start_on_launch" false $f -}}
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  Launch Tartelet at login on a runner host and keep it running. Paired with the
-  startVirtualMachinesOnLaunch=true key in the managed dk.shape.Tartelet.plist, so
-  login -> running ephemeral runners is unattended. Gated in .chezmoiignore on the
-  tartelet cask, so it only lands on hosts that install Tartelet (homelab).
-
-  Loads at the next login automatically; to load immediately after apply:
-    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.prateek.tartelet-runner.plist
+  runner_start_on_launch controls both this login service and Tartelet's
+  startVirtualMachinesOnLaunch setting. Gated in .chezmoiignore on the tartelet
+  cask. See the runner runbook for stopping or re-enabling an existing service.
 
   Runner-guest LAN isolation is not set here. Tartelet cannot pass networking flags
   to `tart run`, so the tart wrapper at /opt/homebrew/bin/tart adds --net-softnet
@@ -22,9 +20,11 @@
     <string>/Applications/Tartelet.app/Contents/MacOS/Tartelet</string>
   </array>
   <key>RunAtLoad</key>
-  <true/>
+  <{{ $start }}/>
   <key>KeepAlive</key>
-  <true/>
+  <{{ $start }}/>
+  <key>Disabled</key>
+  <{{ not $start }}/>
   <key>LimitLoadToSessionType</key>
   <string>Aqua</string>
 </dict>

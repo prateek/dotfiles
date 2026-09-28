@@ -130,6 +130,7 @@ wiki_host_alias = "personal-mbp"
 # agentsview and qmd stores are linked from their home paths by
 # run_after_34-agent-data-store.sh; zshenv also exports AGENTSVIEW_DATA_DIR.
 [machines.host.m4mini]
+runner_start_on_launch = false
 code_volume_uuid = "8C16DA8F-1B9B-4ADC-9C7D-EFA8FF8B15D7"
 tart_home = "/Users/prateek/code/.storage/vms/tart"
 winmux_e2e_artifact_root = "/Users/prateek/code/.storage/artifacts/winmux"
