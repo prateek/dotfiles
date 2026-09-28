@@ -128,7 +128,7 @@ def reconcile_omp(packages, root: Path) -> None:
         command(["omp", "plugin", "marketplace", "remove", MARKETPLACE])
     if MARKETPLACE not in registered or moved:
         command(["omp", "plugin", "marketplace", "add", str(root)])
-    if moved or any(key in installed and installed[key].get("version") != p.version
+    if moved or any(key not in installed or installed[key].get("version") != p.version
                     for key, p in desired.items()):
         command(["omp", "plugin", "marketplace", "update", MARKETPLACE])
     for key, package in desired.items():

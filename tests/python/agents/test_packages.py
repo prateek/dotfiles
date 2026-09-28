@@ -333,6 +333,18 @@ class PluginReconcileTests(PackageTestCase):
         dry = self.omp_reconcile("--dry-run")
         self.assertEqual(dry.stdout, b"")
 
+    def test_omp_refreshes_catalog_before_installing_new_plugin(self):
+        state = json.loads(self.state.read_text())
+        state["marketplaces"]["prateek-local"] = str(self.plugins)
+        state["omp"] = {"on@prateek-local": {"enabled": True, "version": "1.0.0"}}
+        state["omp_catalog"] = ["on"]
+        self.state.write_text(json.dumps(state))
+
+        self.omp_reconcile()
+        state = json.loads(self.state.read_text())
+        self.assertEqual(state["omp"]["off@prateek-local"], {"enabled": False, "version": "1.0.0"})
+        self.assertIn("off", state["omp_catalog"])
+
     def test_dry_run_reads_each_state_once_without_mutations(self):
         before = self.state.read_bytes()
         result = self.reconcile("--dry-run")
