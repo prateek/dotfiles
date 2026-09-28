@@ -43,7 +43,7 @@ Its 47 skills also carry paired human-only controls for Claude and Codex. The
 [context-impact report](../research/pstack-context-impact.md) records the default
 zero-row projection, the uncontrolled comparison, and the native-client checks.
 Codex's hook-bearing plugins suppress hook discovery with an explicit empty
-`hooks` object. The 69 paired human-only controls remain file contracts; these
+`hooks` object. The 71 paired human-only controls remain file contracts; these
 checks do not prove model invocation behavior after a skill is explicitly loaded.
 
 Only the root APM manifest is maintained. Each plugin's Codex manifest owns its

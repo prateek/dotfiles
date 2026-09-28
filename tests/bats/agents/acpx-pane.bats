@@ -117,7 +117,8 @@ STUB
   run_bash 3 "$pane_cmd" --log "$log" --label agpt -- --format text agpt exec 'two words'
   assert_output ''
   assert_equal "$(cat "$log")" $'arg:--format\narg:text\narg:agpt\narg:exec\narg:two words\n[done] end_turn'
-  [ ! -e "$FIXTURE/orca-calls" ]
+  ! rg -q 'terminal split|terminal switch' "$FIXTURE/orca-calls"
+  [ ! -e "$FIXTURE/herdr-calls" ]
 }
 
 @test "acpx-pane --inline keeps the run out of Herdr" {
@@ -229,11 +230,13 @@ PY
   "$pane_cmd" --view > "$FIXTURE/launcher-output" 2>&1 &
   launcher=$!
   sleep 0.3
-  [ ! -e "$FIXTURE/orca-calls" ]
+  ! rg -q 'terminal split|terminal switch' "$FIXTURE/orca-calls"
+  [ ! -e "$FIXTURE/herdr-calls" ]
   touch "$FIXTURE/release-lock"
   wait "$holder"
   wait "$launcher"
   assert_equal "$(cat "$FIXTURE/launcher-output")" 'pane: term_child'
+  assert_equal "$(rg -c 'terminal split' "$FIXTURE/orca-calls")" 1
 }
 
 @test "closing a completed tab waits for a concurrent launch" {

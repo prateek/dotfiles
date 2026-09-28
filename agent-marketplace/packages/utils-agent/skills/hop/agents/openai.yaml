@@ -1,0 +1,5 @@
+interface:
+  display_name: "Hop to Orca"
+  short_description: "Pause and hand off work with a resume checkpoint"
+policy:
+  allow_implicit_invocation: false
