@@ -1,0 +1,5 @@
+interface:
+  display_name: "Hand Off to Orca"
+  short_description: "Hand off current work to a fresh agent in an Orca worktree or terminal"
+policy:
+  allow_implicit_invocation: false
