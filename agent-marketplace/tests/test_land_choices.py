@@ -20,17 +20,21 @@ class LandChoicesTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name)
-        self.env = dict(os.environ, XDG_CONFIG_HOME=str(self.root / 'config'), HOME=str(self.root / 'home'))
+        self.root = Path(self.temp.name).resolve()
+        self.repo = self.root / 'repo'
+        subprocess.run(['git', 'init', '-q', str(self.repo)], check=True)
+        self.defaults = self.repo / '.agents/land-changes.json'
+        self.env = dict(os.environ, HOME=str(self.root / 'home'), GIT_CONFIG_NOSYSTEM='1')
         self.catalog = {'items': [item('unit'), item('lint'), item('hook'),
                                  item('apply', host='this-mac', environment='personal'),
                                  item('required-ci', 'gate', actor='me'), item('direct', 'method')],
                         'groups': [dict(item('tests', meaning='all local test suites'), members=['unit'])]}
         self.catalog_path = self.root / 'discovery.json'
 
-    def command(self, *flags, repo='github.com/me/widget', target='main', catalog=True):
+    def command(self, *flags, repo='github.com/me/widget', target='main', catalog=True, checkout=None):
         self.catalog_path.write_text(json.dumps(self.catalog))
         return [sys.executable, '-B', str(SCRIPT), '--repo-id', repo, '--target', target,
+                '--checkout', str(checkout or self.repo),
                 *(['--discovery', str(self.catalog_path)] if catalog else []), *flags]
 
     def run_options(self, *flags, error=None, **kwargs):
@@ -51,17 +55,17 @@ class LandChoicesTests(unittest.TestCase):
         chosen = self.run_options('--via=direct', '--skip=unit', '--bypass=required-ci', '--after=apply')
         self.assertEqual(self.decisions(chosen), {('direct', 'via'): 'argument', ('unit', 'skip'): 'argument',
                                                 ('required-ci', 'bypass'): 'argument', ('apply', 'after'): 'argument'})
-        self.assertFalse((self.root / 'config').exists())
+        self.assertFalse(self.defaults.exists())
         self.assertEqual(self.run_options()['choices'], [])
 
     def test_save_override_and_remove_followup(self):
         saved = self.run_options('--skip=unit', '--after=apply', '--save-defaults')
         path = Path(saved['defaults_path']); before = path.read_bytes()
+        self.assertEqual(path, self.defaults)
         override = self.run_options('--run=unit', '--without-after=apply')
         self.assertEqual(self.decisions(override), {('unit', 'run'): 'argument', ('apply', 'without-after'): 'argument'})
         self.assertEqual(path.read_bytes(), before)
-        self.assertEqual(path.stat().st_mode & 0o777, 0o600)
-        self.assertEqual(path.parent.stat().st_mode & 0o777, 0o700)
+        self.assertEqual(path.stat().st_mode & 0o777, 0o644)
         merged = self.run_options('--bypass=required-ci', '--save-defaults')
         self.assertEqual(set(self.decisions(merged)), {('unit', 'skip'), ('apply', 'after'), ('required-ci', 'bypass')})
         self.run_options('--reset-defaults')
@@ -137,7 +141,7 @@ class LandChoicesTests(unittest.TestCase):
             result = subprocess.run(self.command('--skip=unit', '--save-defaults'), env=self.env,
                                     text=True, capture_output=True)
             self.assertNotEqual(result.returncode, 0)
-            self.assertFalse((self.root / 'config').exists())
+            self.assertFalse(self.defaults.exists())
 
     def test_invalid_choices_do_not_write(self):
         for flags, error in [(['--skip=missing'], 'unknown'), (['--skip=direct'], 'kind'),
@@ -149,32 +153,21 @@ class LandChoicesTests(unittest.TestCase):
                              (['--deploy=true'], 'unrecognized'),
                              (['--skip=unit', '--skip=unit'], 'duplicate')]:
             with self.subTest(flags=flags):self.run_options(*flags, error=error)
-        self.assertFalse((self.root / 'config').exists())
+        self.assertFalse(self.defaults.exists())
 
-    def test_v1_is_inert_until_deliberate_migration(self):
-        result = self.run_options(); path = Path(result['defaults_path']); path.parent.mkdir(parents=True)
-        old = {'version': 1, 'repo_id': 'github.com/me/widget', 'target': 'main',
-               'defaults': {'deploy': True, 'tests': 'skip', 'review_gate': 'skip'}}
-        path.write_text(json.dumps(old)); before = path.read_bytes()
-        result = self.run_options()
-        self.assertEqual(result['legacy_defaults'], old['defaults'])
-        self.assertEqual(result['choices'], [])
-        self.assertEqual(path.read_bytes(), before)
-        self.run_options('--after=apply', '--save-defaults', error='migrate')
-        self.run_options('--after=apply', '--save-defaults', '--migrate-defaults')
-        self.assertEqual(json.loads(path.read_text())['version'], 2)
+    def test_file_is_tracked_state_without_litter(self):
+        self.run_options('--after=apply', '--save-defaults')
+        self.run_options('--skip=unit', '--save-defaults', target='release/stable')
+        status = subprocess.run(['git', '-C', str(self.repo), 'status', '--porcelain', '--untracked-files=all'],
+                                env=self.env, text=True, capture_output=True, check=True).stdout
+        self.assertEqual(status, '?? .agents/land-changes.json\n')
+        data = json.loads(self.defaults.read_text())
+        self.assertEqual([(d['repo_id'], d['target']) for d in data['destinations']],
+                         [('github.com/me/widget', 'main'), ('github.com/me/widget', 'release/stable')])
+        self.run_options('--reset-defaults', target='release/stable')
         self.assertEqual(self.decisions(self.run_options()), {('apply', 'after'): 'saved'})
-
-    def test_malformed_v1_values_do_not_become_authorization(self):
-        path = Path(self.run_options()['defaults_path'])
-        path.parent.mkdir(parents=True)
-        for defaults in ({'deploy': 'false'}, {'deploy': 0}, {'tests': False}, {'tests': []},
-                         {'review_gate': []}, {'review_gate': 'bypass'}, {'command': 'execute'}):
-            raw = json.dumps({'version': 1, 'repo_id': 'github.com/me/widget', 'target': 'main',
-                              'defaults': defaults})
-            path.write_text(raw)
-            self.run_options('--after=apply', error='invalid defaults')
-            self.assertEqual(path.read_text(), raw)
+        self.run_options('--reset-defaults')
+        self.assertFalse(self.defaults.exists())
 
     def test_identity_scopes_and_cwd(self):
         self.run_options('--after=apply', '--save-defaults')
@@ -183,8 +176,8 @@ class LandChoicesTests(unittest.TestCase):
             with self.subTest(repo=repo, target=target):
                 self.assertEqual(self.run_options(repo=repo, target=target)['choices'], [])
                 self.run_options('--skip=unit', '--save-defaults', repo=repo, target=target)
-        other = self.root / 'other'; other.mkdir()
-        result = subprocess.run(self.command(), env=self.env, cwd=other, text=True, capture_output=True)
+        other = self.root / 'other'; other.mkdir(); nested = self.repo / 'src'; nested.mkdir()
+        result = subprocess.run(self.command(checkout=nested), env=self.env, cwd=other, text=True, capture_output=True)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(self.decisions(json.loads(result.stdout)), {('apply', 'after'): 'saved'})
         self.run_options('--reset-defaults')
@@ -192,27 +185,29 @@ class LandChoicesTests(unittest.TestCase):
 
     def test_malformed_records_never_fall_back(self):
         path = Path(self.run_options('--after=apply', '--save-defaults')['defaults_path'])
-        valid = json.loads(path.read_text())
-        changed = [dict(valid, version=True), dict(valid, target='elsewhere'), dict(valid, choices={}),
-                   dict(valid, extra='unknown'), dict(valid, choices=[dict(valid['choices'][0], fingerprint='bad')]),
-                   dict(valid, choices=[dict(valid['choices'][0], operation='execute')]),
-                   dict(valid, choices=[dict(valid['choices'][0], scope={'host': []})])]
-        for raw in ['not json', *map(json.dumps, changed), path.read_text().replace('"version": 2', '"version": 2, "version": 2')]:
+        valid = json.loads(path.read_text()); entry = valid['destinations'][0]; choice = entry['choices'][0]
+
+        def with_entry(**changes):
+            return dict(valid, destinations=[dict(entry, **changes)])
+        changed = [dict(valid, version=True), dict(valid, version=2), dict(valid, extra='unknown'),
+                   dict(valid, destinations=[entry, entry]), with_entry(choices={}), with_entry(extra='unknown'),
+                   with_entry(choices=[dict(choice, fingerprint='bad')]),
+                   with_entry(choices=[dict(choice, operation='execute')]),
+                   with_entry(choices=[dict(choice, scope={'host': []})])]
+        for raw in ['not json', *map(json.dumps, changed), path.read_text().replace('"version": 3', '"version": 3, "version": 3')]:
             with self.subTest(raw=raw):
                 path.write_text(raw)
                 self.run_options('--without-after=apply', error='invalid defaults')
                 self.run_options('--skip=unit', '--save-defaults', error='invalid defaults')
+                self.run_options('--reset-defaults', error='invalid defaults')
                 self.assertEqual(path.read_text(), raw)
-        self.run_options('--reset-defaults')
-        self.assertEqual(self.run_options()['choices'], [])
 
     def test_symlink_reset_preserves_target(self):
         path = Path(self.run_options('--after=apply', '--save-defaults')['defaults_path'])
         other = self.root / 'other.json'; path.rename(other); before = other.read_bytes(); path.symlink_to(other)
         self.run_options(error='symlinked')
-        self.run_options('--reset-defaults')
+        self.run_options('--reset-defaults', error='symlinked')
         self.assertEqual(other.read_bytes(), before)
-        self.assertFalse(path.is_symlink())
 
     def test_concurrent_saves_merge(self):
         commands = [self.command(flag, '--save-defaults') for flag in ['--skip=unit', '--after=apply', '--bypass=required-ci']]
@@ -222,18 +217,15 @@ class LandChoicesTests(unittest.TestCase):
             self.assertEqual(process.returncode, 0, error)
         self.assertEqual(set(self.decisions(self.run_options())), {('unit', 'skip'), ('apply', 'after'), ('required-ci', 'bypass')})
 
-    def test_invalid_identity_xdg_and_duplicate_controls(self):
+    def test_invalid_identity_checkout_and_duplicate_controls(self):
         for repo in ['https://github.com/me/widget', 'git@github.com:me/widget', 'github.com/a/../b',
                      'github.com//widget', 'widget', 'github.com/me/bad name']:
             self.run_options('--skip=unit', '--save-defaults', repo=repo, error='identity')
         self.run_options(target='', error='identity')
         self.run_options('--show-defaults', '--show-defaults', error='duplicate')
         self.run_options('--show-defaults', '--reset-defaults', error='not allowed')
-        self.env['XDG_CONFIG_HOME'] = 'relative'
-        self.run_options(error='absolute')
-        self.env.pop('XDG_CONFIG_HOME')
-        result = self.run_options()
-        self.assertTrue(result['defaults_path'].startswith(str(self.root / 'home/.config/')))
+        outside = self.root / 'outside'; outside.mkdir()
+        self.run_options(checkout=outside, error='Git worktree')
 
 
 if __name__ == '__main__':

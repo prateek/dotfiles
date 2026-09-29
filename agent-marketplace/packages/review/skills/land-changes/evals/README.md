@@ -14,12 +14,12 @@ require a history survey on every invocation. Cases 37 onward cover the invocati
 audit and adversarial-review findings, including completed versus unfinished apply,
 standing preferences, gate bypass, informational checks, and automatic deployment.
 
-`test_land_choices.py` drives the actual helper CLI with isolated XDG storage.
-It retains identity/target separation, private atomic persistence, concurrent saves,
-read-only resolution, malformed/symlink handling, explicit precedence, and reset
-isolation from the old `test_land_options.py`. Fixed-enum assertions are replaced
-by named choices and inert v1 migration assertions. Added cases cover snapshots,
-dynamic groups, changed meaning, and one-time removal of a saved follow-up.
+`test_land_choices.py` drives the actual helper CLI against a disposable Git
+checkout. It covers identity/target separation within the tracked
+`.agents/land-changes.json`, atomic persistence without untracked litter,
+concurrent saves, read-only resolution, malformed/symlink handling, explicit
+precedence, reset isolation, snapshots, dynamic groups, changed meaning, and
+one-time removal of a saved follow-up.
 
 `test_land_git.py` exercises the direct-Git command snippets against disposable
 local remotes, including the zsh refspec regression and accidental tag publication.

@@ -116,6 +116,7 @@ for day-to-day implementation details.
 | [ADR 0034 - Discover Jev controls in the browser skill](adr/0034-discover-jev-controls-in-the-browser-skill.md) | Accepted; dynamic preparation now lives in the separate experimental skill. The [follow-up experiment](plans/jev-deterministic-preparation-plan.md) remains active. |
 | [ADR 0035 - Separate experimental Jev browser skill](adr/0035-separate-experimental-jev-browser-skill.md) | Accepted; `browser-jev` links to the regular `browser` skill for policy and routing while owning the Jev runner. |
 | [ADR 0036 - ACPX shared Herdr pane](adr/0036-acpx-shared-herdr-pane.md) | [ACPX shared pane plan](plans/acpx-shared-pane-plan.md) and the [acpx skill](../agent-marketplace/packages/utils-agent/skills/acpx/SKILL.md). |
+| [ADR 0037 - Repo-tracked landing preferences](adr/0037-repo-tracked-landing-preferences.md) | [Land-changes preferences](../agent-marketplace/packages/review/skills/land-changes/references/preferences.md). |
 
 ## Research
 

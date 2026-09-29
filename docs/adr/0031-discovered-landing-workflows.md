@@ -6,6 +6,7 @@ updated: 2026-09-22
 related:
   - ../plans/land-changes-workflow-plan.md
   - ../runbooks/dotfiles-landing.md
+  - 0037-repo-tracked-landing-preferences.md
 ---
 
 # Discover landing workflows and persist scoped choices

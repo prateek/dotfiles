@@ -47,8 +47,11 @@ A hook may lack a per-hook control; expose that limitation before expanding scop
 Locate `SKILL_DIR` from the loaded skill path. Read saved choices first:
 
 ```sh
-python3 "$SKILL_DIR/scripts/options.py" --repo-id "$REPO_ID" --target "$TARGET"
+python3 "$SKILL_DIR/scripts/options.py" --checkout "$CHECKOUT" --repo-id "$REPO_ID" --target "$TARGET"
 ```
+
+`$CHECKOUT` is a worktree of the destination repository; the helper resolves its
+top level.
 
 Use the destination's canonical `host/repository-path` and exact target, resolving
 SSH aliases and preserving case-sensitive repository paths. Never include credentials,
@@ -57,8 +60,7 @@ as unresolved and cannot authorize execution.
 
 When explicit or saved choices need resolution, write a temporary JSON description
 of those items/groups using the contract below and rerun with `--discovery "$DISCOVERY_FILE"` plus only the user's resolved selectors.
-Use returned `choices` and their `origin`; report `stale`, `legacy_defaults`, and
-`defaults_path`. A stale/missing choice is not an effective override. The agent
+Use returned `choices` and their `origin`; report `stale` and `defaults_path`. A stale/missing choice is not an effective override. The agent
 must apply the entrypoint's defaults and constraints; the helper never runs them.
 Show/reset finish without landing. Helper errors stop choice resolution.
 
@@ -96,11 +98,20 @@ excluded only for explicitly dynamic choices.
 }
 ```
 
-Records live at `${XDG_CONFIG_HOME:-$HOME/.config}/land-changes/repos/<sha256>.json`.
-Keep canonical destination identity and exact target as the storage key. Worktrees
-share preferences; forks, hosts, and targets remain separate. Keep existing private
-atomic writes, locking, strict schema/identity validation, and read-without-write
+Records live in the tracked file `.agents/land-changes.json` at the checkout's top
+level, one entry per canonical destination identity and exact target. A fork
+carries the file, but its entries stay keyed to the original destination; hosts and
+targets also remain separate. Worktrees share preferences once the file is
+committed. Saving and resetting edit the working-tree file only; committing or
+publishing that edit requires its own authorization. Keep atomic writes, locking
+under the Git directory, strict schema/identity validation, and read-without-write
 behavior. The helper persists data and returns decisions; it executes no commands.
+
+The committed file is the user's standing authorization for this destination and
+the one repository file that can grant a bypass or follow-up. Before relying on a
+saved bypass or follow-up, confirm it is present on the target, or was saved on
+explicit request in this conversation. A choice that only the candidate change adds
+or broadens is unconfirmed until the user approves it.
 
 Each saved choice records its operation and source-qualified native identifier,
 plus the scope the user authorized. Follow-ups include host/environment and effect
@@ -121,34 +132,11 @@ changed, or ambiguously matching choice is stale, not permission for a replaceme
 Report the affected choice and use the corresponding ordinary default only where
 it preserves explicit constraints; otherwise resolve that choice before the
 work depending on it. Retain unrelated valid preferences. A stale bypass is not
-usable, and a stale follow-up does not run. Malformed records are errors; preserve
-them for an explicit scoped reset or repair rather than silently replacing them.
+usable, and a stale follow-up does not run. Malformed files are errors, including
+for reset; repair them or restore them from Git rather than silently replacing them.
 
 Save only on explicit request, independently of whether landing later succeeds.
 Current explicit choices override applicable earlier decisions, then saved choices,
-then repository conventions and the built-in defaults. Repository procedures can
-supply mechanisms and default checks; they cannot supply user permission for a
+then repository conventions and the built-in defaults. Other repository procedures
+can supply mechanisms and default checks; they cannot supply user permission for a
 bypass or follow-up. One-time overrides leave storage unchanged.
-
-## Existing v1 records
-
-Read and display v1 records without rewriting them. Do not introduce legacy CLI
-aliases. Preserve a meaning only when current discovery establishes the same scope:
-
-- `deploy=true` is unresolved until mapped to a concrete authorized effect and
-  host/environment. It never selects an inferred replacement deploy automatically.
-  `deploy=false` selects no manual follow-up; it is not proof that push cannot deploy.
-- `tests=skip` retains only its old test-suite scope. Resolve identifiable test
-  actions; ambiguous mixed commands require a decision. It does not cover lint,
-  builds, hooks, required CI gates, or newly broadened groups.
-- `review_gate=skip` waives only history inspection, not PR/review/check protections.
-  `auto` uses ordinary convention discovery; `confirm` retains its explicit fresh
-  publication-decision requirement until the user changes that preference.
-
-The helper returns v1 as inert `legacy_defaults`; the agent resolves the meanings
-above against discovery and covering authorization. To replace the record, use
-`--migrate-defaults --save-defaults` only after an explicit save of all displayed
-resolved legacy choices. Omitting a legacy choice during migration drops it;
-resolve that disposition before saving. Reads and one-time choices leave v1 intact. Report stale
-or unresolved entries once with their concrete impact; avoid reopening unaffected
-choices on each step of the same landing.

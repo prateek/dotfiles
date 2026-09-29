@@ -10,6 +10,7 @@ import json
 import os
 from pathlib import Path
 import re
+import subprocess
 import tempfile
 
 OPERATIONS = {
@@ -20,6 +21,7 @@ OPERATIONS = {
     'wait': ('action', 'waiting'), 'no-wait': ('action', 'waiting'),
 }
 FIELDS = {'id', 'kind', 'source', 'scope', 'fingerprint', 'operation', 'dynamic'}
+DEFAULTS_FILE = Path('.agents/land-changes.json')
 
 
 class Once(argparse.Action):
@@ -33,13 +35,12 @@ def arguments():
     parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
     for name in ('repo-id', 'target'):
         parser.add_argument(f'--{name}', required=True, action=Once)
+    parser.add_argument('--checkout', action=Once, help='destination checkout holding the preferences file (default: .)')
     parser.add_argument('--discovery', action=Once, help='JSON items/groups describing current native meanings')
     for operation in OPERATIONS:
         parser.add_argument(f'--{operation}', action='append', default=[], metavar='ID')
     parser.add_argument('--dynamic', action='append', default=[], metavar='GROUP',
                         help='explicitly save future membership within the selected group scope')
-    parser.add_argument('--migrate-defaults', action=Once, nargs=0, const=True,
-                        help='replace v1 only after all displayed legacy choices have been resolved')
     parser.add_argument('--inspect', action=Once, nargs=0, const=True)
     mode = parser.add_mutually_exclusive_group()
     for flag in ('save-defaults', 'show-defaults', 'reset-defaults'):
@@ -48,12 +49,10 @@ def arguments():
     explicit = [(op, name) for op in OPERATIONS for name in getattr(args, op.replace('-', '_'))]
     if args.save_defaults and not explicit:
         parser.error('--save-defaults requires explicit choices')
-    if (args.show_defaults or args.reset_defaults) and (explicit or args.dynamic or args.migrate_defaults):
-        parser.error('cannot combine show/reset with choices or migration')
-    if args.inspect and (args.save_defaults or args.reset_defaults or args.migrate_defaults):
+    if (args.show_defaults or args.reset_defaults) and (explicit or args.dynamic):
+        parser.error('cannot combine show/reset with choices')
+    if args.inspect and (args.save_defaults or args.reset_defaults):
         parser.error('cannot combine inspect with preference writes')
-    if args.migrate_defaults and not args.save_defaults:
-        parser.error('--migrate-defaults requires --save-defaults')
     if args.dynamic and not args.save_defaults:
         parser.error('--dynamic requires --save-defaults')
     if len(set(explicit)) != len(explicit) or len(set(args.dynamic)) != len(args.dynamic):
@@ -65,12 +64,14 @@ def arguments():
     return parser, args, explicit
 
 
-def defaults_path(repo_id, target):
-    base = Path(os.environ.get('XDG_CONFIG_HOME') or Path.home() / '.config')
-    if not base.is_absolute():
-        raise ValueError('XDG_CONFIG_HOME must be absolute')
-    identity = json.dumps([repo_id, target], ensure_ascii=True, separators=(',', ':'))
-    return base / 'land-changes' / 'repos' / f'{hashlib.sha256(identity.encode()).hexdigest()}.json'
+def git_paths(checkout):
+    def git(*args):
+        result = subprocess.run(['git', '-C', checkout, 'rev-parse', '--path-format=absolute', *args],
+                                text=True, capture_output=True)
+        if result.returncode:
+            raise ValueError(f'--checkout must be inside a Git worktree: {result.stderr.strip()}')
+        return Path(result.stdout.strip())
+    return git('--show-toplevel') / DEFAULTS_FILE, git('--git-path', 'land-changes.lock')
 
 
 def unique_object(pairs):
@@ -173,48 +174,52 @@ def explicit_choices(selections, dynamic, nodes):
     return list((groups | concrete).values())
 
 
-def read_defaults(path, repo_id, target):
+def validate_choices(choices):
+    if not isinstance(choices, list):
+        raise ValueError('choices must be a list')
+    seen = set()
+    for choice in choices:
+        if not isinstance(choice, dict) or set(choice) != FIELDS:
+            raise ValueError('unsupported choice fields')
+        validate_identity(choice)
+        if (not isinstance(choice['operation'], str) or choice['operation'] not in OPERATIONS
+                or OPERATIONS[choice['operation']][0] != choice['kind']
+                or type(choice['dynamic']) is not bool
+                or choice['dynamic'] and (choice['kind'] == 'method' or not choice['scope'])
+                or not isinstance(choice['fingerprint'], str)
+                or not re.fullmatch(r'[0-9a-f]{64}', choice['fingerprint'])):
+            raise ValueError('invalid choice operation, scope, or fingerprint')
+        key = slot(choice)
+        if key in seen:
+            raise ValueError('duplicate saved choice')
+        seen.add(key)
+
+
+def read_file(path):
+    """Return every destination's saved choices keyed by (repo_id, target)."""
     if not path.exists() and not path.is_symlink():
-        return [], {}, False
+        return {}
     try:
         if path.is_symlink():
             raise ValueError('symlinked defaults file')
         data = load_json(path)
-        if (not isinstance(data, dict) or type(data.get('version')) is not int
-                or data['version'] not in (1, 2) or data.get('repo_id') != repo_id or data.get('target') != target):
-            raise ValueError('schema or repository/target mismatch')
-        if data['version'] == 1:
-            if set(data) != {'version', 'repo_id', 'target', 'defaults'}:
-                raise ValueError('unsupported legacy fields')
-            legacy = data['defaults']
-            if not isinstance(legacy, dict) or set(legacy) - {'review_gate', 'tests', 'deploy'}:
-                raise ValueError('unsupported legacy preferences')
-            if ('deploy' in legacy and type(legacy['deploy']) is not bool
-                    or 'tests' in legacy and legacy['tests'] not in ('run', 'skip')
-                    or 'review_gate' in legacy and legacy['review_gate'] not in ('auto', 'skip', 'confirm')):
-                raise ValueError('invalid legacy preference value')
-            return [], legacy, True
-        if set(data) != {'version', 'repo_id', 'target', 'choices'} or not isinstance(data['choices'], list):
-            raise ValueError('unsupported preferences')
-        seen = set()
-        for choice in data['choices']:
-            if not isinstance(choice, dict) or set(choice) != FIELDS:
-                raise ValueError('unsupported choice fields')
-            validate_identity(choice)
-            if (not isinstance(choice['operation'], str) or choice['operation'] not in OPERATIONS
-                    or OPERATIONS[choice['operation']][0] != choice['kind']
-                    or type(choice['dynamic']) is not bool
-                    or choice['dynamic'] and (choice['kind'] == 'method' or not choice['scope'])
-                    or not isinstance(choice['fingerprint'], str)
-                    or not re.fullmatch(r'[0-9a-f]{64}', choice['fingerprint'])):
-                raise ValueError('invalid choice operation, scope, or fingerprint')
-            key = slot(choice)
-            if key in seen:
-                raise ValueError('duplicate saved choice')
-            seen.add(key)
-        return data['choices'], {}, False
+        if (not isinstance(data, dict) or set(data) != {'version', 'destinations'}
+                or type(data['version']) is not int or data['version'] != 3
+                or not isinstance(data['destinations'], list)):
+            raise ValueError('unsupported schema')
+        destinations = {}
+        for entry in data['destinations']:
+            if (not isinstance(entry, dict) or set(entry) != {'repo_id', 'target', 'choices'}
+                    or not all(text(entry[k]) for k in ('repo_id', 'target'))):
+                raise ValueError('unsupported destination fields')
+            key = (entry['repo_id'], entry['target'])
+            if key in destinations:
+                raise ValueError(f'duplicate destination: {key[0]} {key[1]}')
+            validate_choices(entry['choices'])
+            destinations[key] = entry['choices']
+        return destinations
     except (ValueError, UnicodeError) as error:
-        raise ValueError(f'invalid defaults at {path}: {error}; use --reset-defaults to clear') from error
+        raise ValueError(f'invalid defaults at {path}: {error}; repair it or restore it from Git') from error
 
 
 def activate(choices, nodes, origin):
@@ -237,57 +242,64 @@ def activate(choices, nodes, origin):
     return effective, stale
 
 
-def write_defaults(path, repo_id, target, choices):
-    data = {'version': 2, 'repo_id': repo_id, 'target': target, 'choices': choices}
-    fd, temporary = tempfile.mkstemp(prefix=f'.{path.stem}.', dir=path.parent)
+def write_file(path, destinations):
+    if not destinations:
+        path.unlink(missing_ok=True)
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    data = {'version': 3, 'destinations': [{'repo_id': repo_id, 'target': target, 'choices': choices}
+                                           for (repo_id, target), choices in sorted(destinations.items())]}
+    mode = path.stat().st_mode & 0o777 if path.exists() else 0o644
+    fd, temporary = tempfile.mkstemp(prefix=f'.{path.name}.', dir=path.parent)
     try:
         with os.fdopen(fd, 'w') as stream:
             json.dump(data, stream, indent=2)
             stream.write('\n')
             stream.flush()
             os.fsync(stream.fileno())
+        os.chmod(temporary, mode)
         os.replace(temporary, path)
     finally:
         Path(temporary).unlink(missing_ok=True)
 
 
 def resolve(args, selections):
-    path = defaults_path(args.repo_id, args.target)
+    path, lock_path = git_paths(args.checkout or '.')
+    identity = (args.repo_id, args.target)
     nodes = read_discovery(args.discovery)
     explicit = explicit_choices(selections, args.dynamic, nodes)
     explicit_active, _ = activate(explicit, nodes, 'argument')
 
     def load_and_save():
+        destinations = read_file(path)
+        saved = destinations.get(identity, [])
         if args.reset_defaults:
-            path.unlink(missing_ok=True)
-            return [], {}, False
-        saved, legacy, version1 = read_defaults(path, args.repo_id, args.target)
-        if args.save_defaults:
-            if version1 and not args.migrate_defaults:
-                raise ValueError('v1 defaults require --migrate-defaults after resolving all legacy choices')
-            if args.migrate_defaults and not version1:
-                raise ValueError('--migrate-defaults requires an existing v1 record')
+            saved = []
+        elif args.save_defaults:
             merged = {slot(c): c for c in saved if c['dynamic'] or slot(c) not in explicit_active}
             merged.update({slot(c): c for c in explicit})
             saved = list(merged.values())
             activate(saved, nodes, 'saved')
-            write_defaults(path, args.repo_id, args.target, saved)
-            legacy, version1 = {}, False
-        return saved, legacy, version1
+        else:
+            return saved
+        if saved:
+            destinations[identity] = saved
+        else:
+            destinations.pop(identity, None)
+        write_file(path, destinations)
+        return saved
 
     if args.save_defaults or args.reset_defaults:
-        for directory in (path.parent.parent, path.parent):
-            directory.mkdir(mode=0o700, parents=True, exist_ok=True)
-        descriptor = os.open(path.with_suffix('.lock'), os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
+        descriptor = os.open(lock_path, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
         with os.fdopen(descriptor, 'w') as lock:
             fcntl.flock(lock, fcntl.LOCK_EX)
-            saved, legacy, version1 = load_and_save()
+            saved = load_and_save()
     else:
-        saved, legacy, version1 = load_and_save()
+        saved = load_and_save()
     effective, stale = activate(saved, nodes, 'saved')
     effective.update(explicit_active)
     return {'repo_id': args.repo_id, 'target': args.target, 'choices': list(effective.values()),
-            'stale': stale, 'saved_choices': saved, 'legacy_defaults': legacy, 'migration_required': version1,
+            'stale': stale, 'saved_choices': saved,
             'defaults_path': str(path), 'defaults_saved': bool(args.save_defaults),
             'action': 'show_defaults' if args.show_defaults else 'reset_defaults' if args.reset_defaults
             else 'inspect' if args.inspect else 'resolve'}

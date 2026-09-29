@@ -1,0 +1,60 @@
+{
+  "version": 3,
+  "destinations": [
+    {
+      "repo_id": "github.com/prateek/dotfiles",
+      "target": "master",
+      "choices": [
+        {
+          "id": "direct-push",
+          "kind": "method",
+          "source": "docs/runbooks/dotfiles-landing.md",
+          "scope": {
+            "remote": "github.com/prateek/dotfiles",
+            "target": "master"
+          },
+          "fingerprint": "9e6777af5c3196bc7e1822bdfd2d02451f4d41f2e93725f9b46b28e4cc10b5e7",
+          "operation": "via",
+          "dynamic": false
+        },
+        {
+          "id": "pull_request",
+          "kind": "gate",
+          "source": "github-ruleset:18469973:pull_request",
+          "scope": {
+            "policy": "protect-master",
+            "caller": "repository-admin-bypass"
+          },
+          "fingerprint": "2f1fc51b995b0f5da20728afd91b774af32ef9107a0cef57bd7a11c069ebc150",
+          "operation": "bypass",
+          "dynamic": false
+        },
+        {
+          "id": "required_status_checks",
+          "kind": "gate",
+          "source": "github-ruleset:18469973:required_status_checks",
+          "scope": {
+            "policy": "protect-master",
+            "caller": "repository-admin-bypass"
+          },
+          "fingerprint": "dd17ed2be8bb1ec9bf3a6c2b08b19c54ef1741cc7d5c90b79950cd8f7a852396",
+          "operation": "bypass",
+          "dynamic": false
+        },
+        {
+          "id": "apply-full",
+          "kind": "action",
+          "source": "docs/runbooks/dotfiles-landing.md:apply-full",
+          "scope": {
+            "host": "work-mbp",
+            "checkout": "~/dotfiles",
+            "effect": "chezmoi-apply-full"
+          },
+          "fingerprint": "7ba460ee6e62f9f20143365e56ea3cb102bc9fe7ccfb04ec31d9834bb43379b0",
+          "operation": "after",
+          "dynamic": false
+        }
+      ]
+    }
+  ]
+}
