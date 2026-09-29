@@ -1,10 +1,13 @@
 ---
-status: accepted
+status: superseded
 doc_type: adr
 owner: Prateek
 created: 2026-08-30
-updated: 2026-09-22
+updated: 2026-09-28
+closed: 2026-09-28
+superseded_by: 0038-touchid-sudo-adopts-existing-file.md
 related:
+  - 0038-touchid-sudo-adopts-existing-file.md
   - ../plans/touchid-sudo-plan.md
   - ../references/chezmoi-architecture.md
 ---

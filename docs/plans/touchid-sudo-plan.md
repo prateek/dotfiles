@@ -3,9 +3,10 @@ status: active
 doc_type: plan
 owner: Prateek
 created: 2026-08-30
-updated: 2026-09-22
+updated: 2026-09-28
 related:
   - ../adr/0030-touchid-sudo.md
+  - ../adr/0038-touchid-sudo-adopts-existing-file.md
   - ../references/chezmoi-architecture.md
 status_detail: "Implementation and local checks complete; live authentication has not been exercised."
 ---
@@ -13,7 +14,9 @@ status_detail: "Implementation and local checks complete; live authentication ha
 # Touch ID for sudo
 
 Enable Apple's `pam_tid` module through `/etc/pam.d/sudo_local` during
-`chezmoi apply`. [ADR 0030](../adr/0030-touchid-sudo.md) records the decision.
+`chezmoi apply`. [ADR 0030](../adr/0030-touchid-sudo.md) records the decision;
+[ADR 0038](../adr/0038-touchid-sudo-adopts-existing-file.md) replaces its
+exact-payload ownership with `sudo-touchid`'s adopt-and-remove model.
 
 ## Scope
 
@@ -22,13 +25,12 @@ Enable Apple's `pam_tid` module through `/etc/pam.d/sudo_local` during
 - Run `run_before_01-touchid-sudo` after Homebrew bootstrap and before core
   tool installation. Render it empty when `run_install_scripts=false`.
 - Require the active `sudo_local` include and Apple's root-owned PAM module.
-- Create the managed file, repair its metadata, and remove it when disabled.
-  Preserve any file whose full contents differ, including a manually enabled
-  Apple template. Preserve symlinks and other non-regular files.
-  Compare unreadable files with administrator access before deciding ownership.
+- Create the managed file only when `sudo_local` is absent. Treat any existing
+  file or symlink as installed. When disabled, remove any file or symlink; leave
+  a directory with a warning.
 - Install through a unique temporary name in the PAM directory, then recheck the
-  target before renaming. Recheck after authentication before removal, too.
-  Do not request sudo when the managed file is already correct.
+  target before renaming, keeping anything that appeared meanwhile.
+  Do not request sudo when `sudo_local` already exists.
 
 Keep the existing sudo helper and Jamf elevation behavior. Changes to credential
 caching, 1Password askpass, Xcode installation, and tmux support are separate work.
@@ -36,15 +38,17 @@ caching, 1Password askpass, Xcode installation, and tmux support are separate wo
 ## Validation
 
 Passing local checks cover rendering, machine flags, file contents and permissions,
-repeated applies, foreign files, missing prerequisites, removal, and failed writes.
-Regressions cover unreadable files, administrator edits during authentication or
-staging, and the disabled default for new machine roles. The sudo fixture checks
-the requested installation owner and group without requiring root.
+repeated applies, adoption of existing files, missing prerequisites, removal, and
+failed writes. Regressions cover unreadable files, files created during
+authentication or staging, and the disabled default for new machine roles. The
+sudo fixture checks the requested installation owner and group without requiring
+root.
 The former Linux flag-value assertion is replaced by executing the rendered hook
 with a non-macOS runtime: profile opt-in must never change PAM there.
 The Bats suite replaces the old zsh harness's status-name and write-count checks
-with file outcomes and injected write failures. Manual Apple configurations are
-now preserved. The incidental one-line log assertion was dropped.
+with file outcomes and injected write failures. Under ADR 0038, metadata repair
+and foreign-file preservation on disable were dropped by design, along with
+their assertions.
 
 ```sh
 just test-shell tests/bats/hooks/touchid-sudo.bats tests/bats/hooks/chezmoi-status.bats

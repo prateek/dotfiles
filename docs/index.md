@@ -109,7 +109,7 @@ for day-to-day implementation details.
 | [ADR 0027 - Codex CLI installs standalone](adr/0027-codex-standalone-installer.md) | Accepted; `run_after_07-codex-standalone.sh` installs the CLI through OpenAI's installer and `[packages.retired]` drops the cask, because `/agents` and the app-server daemon need the standalone layout. See [Mise Tool Management](references/mise-tool-management.md) > Codex workflow. |
 | [ADR 0028 - Sibling router skill over vendored remap](adr/0028-router-skill-over-vendor-remap.md) | Accepted; when local conventions and a vendored skill share a subject, publish both as siblings in one package and split the trigger between their descriptions. First customer: the `acpx` / `acpx-cli` pair ([plan](plans/acpx-skill-packaging-plan.md)). |
 | [ADR 0029 - Claude Code CLI installs natively](adr/0029-claude-code-native-installer.md) | Accepted; `run_after_06-claude-native.sh` installs the CLI through Anthropic's installer and retires the npm copies, because npm updates rewrite the package tree under running sessions. See [Mise Tool Management](references/mise-tool-management.md) > Claude Code workflow. |
-| [ADR 0030 - Touch ID for sudo](adr/0030-touchid-sudo.md) | [Chezmoi Architecture](references/chezmoi-architecture.md#touch-id-for-sudo); machine flag and owned-file apply hook. |
+| [ADR 0030 - Touch ID for sudo](adr/0030-touchid-sudo.md) | Exact-payload ownership superseded by [ADR 0038](adr/0038-touchid-sudo-adopts-existing-file.md); the machine flag and apply hook remain. |
 | [ADR 0031 - Discover landing workflows](adr/0031-discovered-landing-workflows.md) | [Land-changes skill](../agent-marketplace/packages/review/skills/land-changes/SKILL.md) and [dotfiles landing](runbooks/dotfiles-landing.md). |
 | [ADR 0032 - acpx model routing](adr/0032-acpx-model-routing.md) | [acpx Routing](references/acpx-routing.md); separate model intent, harness capabilities, and machine policy. |
 | [ADR 0033 - Skill-owned Jev browser runner](adr/0033-skill-owned-jev-browser-runner.md) | Placement superseded by ADR 0035; the shared JSON runner and borrowed browser ownership remain. The [completed experiment](plans/jev-browser-runner-plan.md) rejected adoption. |
@@ -117,6 +117,7 @@ for day-to-day implementation details.
 | [ADR 0035 - Separate experimental Jev browser skill](adr/0035-separate-experimental-jev-browser-skill.md) | Accepted; `browser-jev` links to the regular `browser` skill for policy and routing while owning the Jev runner. |
 | [ADR 0036 - ACPX shared Herdr pane](adr/0036-acpx-shared-herdr-pane.md) | [ACPX shared pane plan](plans/acpx-shared-pane-plan.md) and the [acpx skill](../agent-marketplace/packages/utils-agent/skills/acpx/SKILL.md). |
 | [ADR 0037 - Repo-tracked landing preferences](adr/0037-repo-tracked-landing-preferences.md) | [Land-changes preferences](../agent-marketplace/packages/review/skills/land-changes/references/preferences.md). |
+| [ADR 0038 - Touch ID for sudo adopts any existing sudo_local](adr/0038-touchid-sudo-adopts-existing-file.md) | [Chezmoi Architecture](references/chezmoi-architecture.md#touch-id-for-sudo); `sudo-touchid`'s adopt-and-remove model for the apply hook. |
 
 ## Research
 

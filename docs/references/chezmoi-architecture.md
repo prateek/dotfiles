@@ -165,20 +165,22 @@ after Homebrew bootstrap and before core tools. The `touchid_sudo` flag defaults
 to false; personal and work profiles explicitly enable it. Homelab, CI, and new
 roles stay off unless they opt in, and the hook skips non-macOS hosts. Override it in
 `[data.machines_local]`; `run_install_scripts=false` leaves the existing PAM file
-unchanged. [ADR 0030](../adr/0030-touchid-sudo.md) records the ownership policy.
+unchanged. [ADR 0038](../adr/0038-touchid-sudo-adopts-existing-file.md) records
+the ownership policy.
 
-The hook writes Apple's `auth sufficient pam_tid.so` rule as root:wheel, mode
-0444. It skips with a warning if the active `sudo_local` include or root-owned
-module is missing. It preserves foreign files, symlinks, and manually enabled
-Apple templates. Disabling the flag removes only the exact file this hook owns.
-Unreadable files are compared with administrator access before deciding ownership.
-The hook checks the target again after authentication and staging, immediately
-before replacing or removing it. Each write uses its own temporary file.
-An unchanged apply requests no administrator access for this hook.
+Like `sudo-touchid`, the hook treats any existing `sudo_local` file or symlink as
+installed and leaves it untouched, whatever it contains. When the path is absent,
+it writes Apple's `auth sufficient pam_tid.so` rule as root:wheel, mode 0444, and
+skips with a warning if the active `sudo_local` include or root-owned module is
+missing. It checks the target again after authentication and staging and keeps
+anything that appeared meanwhile. Each write uses its own temporary file.
+Disabling the flag removes any `sudo_local` file or symlink; a directory is left
+with a warning. An apply with `sudo_local` present requests no administrator
+access for this hook.
 
-Review a conflict before changing it; the hook does not merge authentication
-rules. A manually configured file can already provide Touch ID while remaining
-outside this hook's ownership. Work Macs still need
+The hook does not merge authentication rules or repair an existing file's
+contents or permissions. To switch a hand-made file to the managed payload,
+delete it and apply. Work Macs still need
 [Jamf temporary admin](jamf-self-service-elevation.md). Touch ID does not change
 sudoers authorization or credential caching, and this hook adds no tmux support.
 

@@ -44,13 +44,6 @@ case "$cmd" in
     command install "${args[@]}"
     if [ -f "$FIXTURE/during-install" ]; then bash "$FIXTURE/during-install"; fi
     ;;
-  cmp)
-    target="${args[1]}"
-    mode="$(stat -f '%Lp' "$target")"
-    trap 'chmod "$mode" "$target"' EXIT
-    chmod u+r "$target"
-    command cmp "${args[@]}"
-    ;;
   mktemp|mv|rm) exec "$cmd" "${args[@]}" ;;
   *) exit 99 ;;
 esac
@@ -99,77 +92,85 @@ assert_canonical() {
   assert_canonical
 }
 
-@test "Touch ID repairs metadata on its exact managed payload" {
-  cp "$FIXTURE/canonical" "$FIXTURE/pam.d/sudo_local"
-  chmod 644 "$FIXTURE/pam.d/sudo_local"
-  run_bash 0 "$scenario" true
-  assert_success
-  assert_canonical
-}
-
-@test "Touch ID repairs and removes an unreadable managed file" {
-  local enabled
-  for enabled in true false; do
-    rm -f "$FIXTURE/pam.d/sudo_local"
-    cp "$FIXTURE/canonical" "$FIXTURE/pam.d/sudo_local"
-    chmod 000 "$FIXTURE/pam.d/sudo_local"
-    run_bash 0 "$scenario" "$enabled"
+@test "Touch ID treats any existing sudo_local as installed without sudo" {
+  local kind
+  printf '%s\n' '# sudo_local: local config file for sudo' 'auth       sufficient     pam_tid.so' >"$FIXTURE/apple-template"
+  for kind in empty foreign apple-template unreadable symlink dangling-symlink directory; do
+    rm -rf "$FIXTURE/pam.d/sudo_local"
+    case "$kind" in
+      empty) : >"$FIXTURE/pam.d/sudo_local" ;;
+      foreign) printf 'auth required pam_opendirectory.so\n' >"$FIXTURE/pam.d/sudo_local" ;;
+      apple-template) cp "$FIXTURE/apple-template" "$FIXTURE/pam.d/sudo_local" ;;
+      unreadable) cp "$FIXTURE/apple-template" "$FIXTURE/pam.d/sudo_local"; chmod 000 "$FIXTURE/pam.d/sudo_local" ;;
+      symlink) ln -s ../apple-template "$FIXTURE/pam.d/sudo_local" ;;
+      dangling-symlink) ln -s ../missing "$FIXTURE/pam.d/sudo_local" ;;
+      directory) mkdir "$FIXTURE/pam.d/sudo_local" ;;
+    esac
+    ls -ldn "$FIXTURE/pam.d/sudo_local" >"$FIXTURE/before"
+    run_bash 0 "$scenario" true
     assert_success
     assert_equal "$stderr" ''
-    if [ "$enabled" = true ]; then
-      assert_canonical
-    else
-      [ ! -e "$FIXTURE/pam.d/sudo_local" ]
-    fi
+    assert_regex "$output" 'exists; treating it as installed'
+    ls -ldn "$FIXTURE/pam.d/sudo_local" | cmp "$FIXTURE/before" -
+    [ ! -s "$FIXTURE/sudo.log" ]
   done
+  chmod 600 "$FIXTURE/pam.d/sudo_local" 2>/dev/null || true
 }
 
-@test "Touch ID preserves unreadable foreign contents and permissions" {
-  local enabled
+@test "Touch ID disable removes any sudo_local file or symlink" {
+  local kind
   printf 'auth required pam_opendirectory.so\n' >"$FIXTURE/foreign"
-  cp "$FIXTURE/foreign" "$FIXTURE/pam.d/sudo_local"
-  for enabled in true false; do
-    chmod 000 "$FIXTURE/pam.d/sudo_local"
-    run_bash 0 "$scenario" "$enabled"
+  for kind in managed foreign unreadable symlink dangling-symlink; do
+    case "$kind" in
+      managed) cp "$FIXTURE/canonical" "$FIXTURE/pam.d/sudo_local" ;;
+      foreign) cp "$FIXTURE/foreign" "$FIXTURE/pam.d/sudo_local" ;;
+      unreadable) cp "$FIXTURE/foreign" "$FIXTURE/pam.d/sudo_local"; chmod 000 "$FIXTURE/pam.d/sudo_local" ;;
+      symlink) ln -s ../foreign "$FIXTURE/pam.d/sudo_local" ;;
+      dangling-symlink) ln -s ../missing "$FIXTURE/pam.d/sudo_local" ;;
+    esac
+    run_bash 0 "$scenario" false
     assert_success
-    assert_regex "$stderr" 'warning:.*leaving it unchanged'
-    assert_equal "$(stat -f '%Lp' "$FIXTURE/pam.d/sudo_local")" 0
-    chmod 600 "$FIXTURE/pam.d/sudo_local"
-    cmp "$FIXTURE/foreign" "$FIXTURE/pam.d/sudo_local"
+    assert_equal "$stderr" ''
+    [ ! -e "$FIXTURE/pam.d/sudo_local" ] && [ ! -L "$FIXTURE/pam.d/sudo_local" ]
+    # Removing a symlink leaves its target alone.
+    [ -f "$FIXTURE/foreign" ]
   done
 }
 
-@test "Touch ID preserves files replaced while authenticating or staging" {
-  local enabled boundary kind
+@test "Touch ID disable leaves a sudo_local directory unchanged" {
+  mkdir "$FIXTURE/pam.d/sudo_local"
+  run_bash 0 "$scenario" false
+  assert_success
+  assert_regex "$stderr" 'warning:.*is a directory; leaving it unchanged'
+  [ -d "$FIXTURE/pam.d/sudo_local" ]
+  [ ! -s "$FIXTURE/sudo.log" ]
+}
+
+@test "Touch ID keeps a sudo_local created while authenticating or staging" {
+  local boundary kind
   printf 'auth required pam_opendirectory.so\n' >"$FIXTURE/foreign"
-  for enabled in true false; do
-    for boundary in auth install; do
-      if [ "$enabled" = false ] && [ "$boundary" = install ]; then continue; fi
-      for kind in file symlink directory; do
-        rm -rf "$FIXTURE/pam.d/sudo_local"
-        cp "$FIXTURE/canonical" "$FIXTURE/pam.d/sudo_local"
-        chmod 644 "$FIXTURE/pam.d/sudo_local"
-        cat >"$FIXTURE/during-$boundary" <<'CHANGE'
-rm -f "$FIXTURE/pam.d/sudo_local"
+  for boundary in auth install; do
+    for kind in file symlink directory; do
+      rm -rf "$FIXTURE/pam.d/sudo_local"
+      cat >"$FIXTURE/during-$boundary" <<'CHANGE'
 case "$REPLACEMENT_KIND" in
   file) cp "$FIXTURE/foreign" "$FIXTURE/pam.d/sudo_local" ;;
   symlink) ln -s ../foreign "$FIXTURE/pam.d/sudo_local" ;;
   directory) mkdir "$FIXTURE/pam.d/sudo_local" ;;
 esac
 CHANGE
-        export REPLACEMENT_KIND="$kind"
-        run_bash 0 "$scenario" "$enabled"
-        assert_success
-        assert_regex "$stderr" 'warning:.*leaving it unchanged'
-        case "$kind" in
-          file) cmp "$FIXTURE/foreign" "$FIXTURE/pam.d/sudo_local" ;;
-          symlink) assert_equal "$(readlink "$FIXTURE/pam.d/sudo_local")" ../foreign ;;
-          directory) [ -d "$FIXTURE/pam.d/sudo_local" ] ;;
-        esac
-        assert_equal "$(ls -A "$TMPDIR")" ''
-        assert_equal "$(find "$FIXTURE/pam.d" -name '.sudo_local.chezmoi*')" ''
-        rm "$FIXTURE/during-$boundary"
-      done
+      export REPLACEMENT_KIND="$kind"
+      run_bash 0 "$scenario" true
+      assert_success
+      assert_regex "$output" 'appeared during setup; treating it as installed'
+      case "$kind" in
+        file) cmp "$FIXTURE/foreign" "$FIXTURE/pam.d/sudo_local" ;;
+        symlink) assert_equal "$(readlink "$FIXTURE/pam.d/sudo_local")" ../foreign ;;
+        directory) [ -d "$FIXTURE/pam.d/sudo_local" ] ;;
+      esac
+      assert_equal "$(ls -A "$TMPDIR")" ''
+      assert_equal "$(find "$FIXTURE/pam.d" -name '.sudo_local.chezmoi*')" ''
+      rm "$FIXTURE/during-$boundary"
     done
   done
 }
@@ -182,58 +183,6 @@ CHANGE
   assert_success
   assert_regex "$output" 'skipped on non-macOS host'
   [ ! -s "$FIXTURE/sudo.log" ]
-}
-
-@test "Touch ID preserves foreign, empty, manually enabled and modified files on enable and disable" {
-  local kind enabled
-  for kind in empty foreign apple-template extra-rule; do
-    case "$kind" in
-      empty) : >"$FIXTURE/pam.d/sudo_local" ;;
-      foreign) printf '# Owned by an administrator\n' >"$FIXTURE/pam.d/sudo_local" ;;
-      apple-template)
-        printf '%s\n' '# sudo_local: local config file for sudo' 'auth       sufficient     pam_tid.so' >"$FIXTURE/pam.d/sudo_local"
-        ;;
-      extra-rule)
-        cat "$FIXTURE/canonical" >"$FIXTURE/pam.d/sudo_local"
-        printf 'auth required pam_opendirectory.so\n' >>"$FIXTURE/pam.d/sudo_local"
-        ;;
-    esac
-    chmod 644 "$FIXTURE/pam.d/sudo_local"
-    cp -p "$FIXTURE/pam.d/sudo_local" "$FIXTURE/snapshot"
-    for enabled in true false; do
-      run_bash 0 "$scenario" "$enabled"
-      assert_success
-      cmp "$FIXTURE/snapshot" "$FIXTURE/pam.d/sudo_local"
-      assert_equal "$(stat -f '%Lp' "$FIXTURE/pam.d/sudo_local")" 644
-      [ ! -s "$FIXTURE/sudo.log" ]
-      assert_regex "$stderr" 'warning:.*leaving it unchanged'
-    done
-  done
-}
-
-@test "Touch ID leaves symlinks and directories unchanged on enable and disable" {
-  local link_target enabled
-  cp "$FIXTURE/canonical" "$FIXTURE/elsewhere"
-  for link_target in ../elsewhere ../missing; do
-    ln -s "$link_target" "$FIXTURE/pam.d/sudo_local"
-    for enabled in true false; do
-      run_bash 0 "$scenario" "$enabled"
-      assert_success
-      assert_regex "$stderr" 'warning:.*leaving it unchanged'
-      assert_equal "$(readlink "$FIXTURE/pam.d/sudo_local")" "$link_target"
-      cmp "$FIXTURE/canonical" "$FIXTURE/elsewhere"
-      [ ! -s "$FIXTURE/sudo.log" ]
-    done
-    rm "$FIXTURE/pam.d/sudo_local"
-  done
-  mkdir "$FIXTURE/pam.d/sudo_local"
-  for enabled in true false; do
-    run_bash 0 "$scenario" "$enabled"
-    assert_success
-    assert_regex "$stderr" 'warning:.*leaving it unchanged'
-    [ -d "$FIXTURE/pam.d/sudo_local" ]
-    [ ! -s "$FIXTURE/sudo.log" ]
-  done
 }
 
 @test "Touch ID requires an active include and a regular module with the expected owner" {
@@ -271,32 +220,21 @@ CHANGE
   [ ! -s "$FIXTURE/sudo.log" ]
 }
 
-@test "Touch ID write failures preserve live state and a later apply recovers" {
-  local command initial
+@test "Touch ID write failures leave no file and a later apply recovers" {
+  local command
   for command in install mv; do
-    for initial in absent managed; do
-      rm -f "$FIXTURE/pam.d/sudo_local"
-      if [ "$initial" = managed ]; then
-        cp "$FIXTURE/canonical" "$FIXTURE/pam.d/sudo_local"
-        chmod 644 "$FIXTURE/pam.d/sudo_local"
-      fi
-      printf '%s\n' "$command" >"$FIXTURE/fail-command"
-      run_bash 1 "$scenario" true
-      assert_failure 1
-      assert_regex "$stderr" "injected $command failure"
-      if [ "$initial" = managed ]; then
-        cmp "$FIXTURE/canonical" "$FIXTURE/pam.d/sudo_local"
-        assert_equal "$(stat -f '%Lp' "$FIXTURE/pam.d/sudo_local")" 644
-      else
-        [ ! -e "$FIXTURE/pam.d/sudo_local" ]
-      fi
-      assert_equal "$(ls -A "$TMPDIR")" ''
-      assert_equal "$(find "$FIXTURE/pam.d" -name '.sudo_local.chezmoi*')" ''
-      rm "$FIXTURE/fail-command"
-      run_bash 0 "$scenario" true
-      assert_success
-      assert_canonical
-    done
+    printf '%s\n' "$command" >"$FIXTURE/fail-command"
+    run_bash 1 "$scenario" true
+    assert_failure 1
+    assert_regex "$stderr" "injected $command failure"
+    [ ! -e "$FIXTURE/pam.d/sudo_local" ]
+    assert_equal "$(ls -A "$TMPDIR")" ''
+    assert_equal "$(find "$FIXTURE/pam.d" -name '.sudo_local.chezmoi*')" ''
+    rm "$FIXTURE/fail-command"
+    run_bash 0 "$scenario" true
+    assert_success
+    assert_canonical
+    rm -f "$FIXTURE/pam.d/sudo_local"
   done
 }
 
