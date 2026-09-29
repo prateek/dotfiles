@@ -19,7 +19,7 @@ class MachineFeaturesTests(RepoTestCase):
                 "groups": ["core"], "run_install_scripts": True,
                 "apply_macos_defaults": True, "secrets_enabled": False,
                 "private_overlay": False, "elevation": "none", "granola_mcp": False,
-                "tls_inspection": False,
+                "tls_inspection": False, "mcp_gateway_browser_hook": False,
             },
             "personal": {
                 "pin_hostname": True,
@@ -42,7 +42,7 @@ class MachineFeaturesTests(RepoTestCase):
                 "touchid_sudo": True,
                 "groups": ["core", "mac-desktop", "ai-agent-apps", "developer-tools", "work-apps", "forks"],
                 "private_overlay": True, "elevation": "jamf-self-service", "granola_mcp": False,
-                "tls_inspection": True,
+                "tls_inspection": True, "mcp_gateway_browser_hook": True,
             },
         }
         for machine, fields in expected.items():

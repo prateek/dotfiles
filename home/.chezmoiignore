@@ -26,6 +26,13 @@
 Library/LaunchAgents/com.prateek.gui-corp-ca.plist
 {{- end }}
 
+{{/* The MCP gateway wrapper shadows an IT-installed binary that exists only on
+     the work Mac. */}}
+{{- if not $f.mcp_gateway_browser_hook }}
+.local/bin/mcp-gateway
+.local/bin/mcp-gateway-open-bg
+{{- end }}
+
 {{/* Install the direnv whitelist only where the work monorepo is present. */}}
 {{- if not $f.direnv_trust_monorepo }}
 .config/direnv/direnv.toml

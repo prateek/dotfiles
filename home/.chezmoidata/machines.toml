@@ -60,6 +60,9 @@ agent_session_wiki_sparse = false
 # exported from it. See docs/runbooks/corp-tls-inspection.md.
 tls_inspection = false
 direnv_trust_monorepo = false
+# Wrap IT's MCP gateway so its per-session CyberArk sign-in opens in a
+# background Orca tab and asks for attention instead of stealing focus.
+mcp_gateway_browser_hook = false
 
 # Minimal/fast tier for CI dry-run, Tart smoke, and shell audits. Keeps the
 # defaults' run_install_scripts/apply_macos_defaults = true so the Tart smoke
@@ -119,6 +122,7 @@ agent_session_wiki_sparse = true
 tls_inspection = true
 # Whitelist the work monorepo's .envrc so direnv skips the per-worktree prompt.
 direnv_trust_monorepo = true
+mcp_gateway_browser_hook = true
 
 # Personal daily-driver MacBook.
 [machines.host.prateek-personal-mbp]

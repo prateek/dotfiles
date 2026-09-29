@@ -1,0 +1,9 @@
+#!/bin/bash
+# Shadows IT's /usr/local/bin/mcp-gateway (managed-mcp.json runs the bare
+# command, and ~/.local/bin sits earlier on PATH) to route the gateway's
+# per-session OIDC sign-in through mcp-gateway-open-bg instead of stealing
+# focus with a browser window. Delegates to the untouched IT wrapper, which
+# execs the gateway, so IT upgrades keep working.
+BROWSER="$(dirname "$0")/mcp-gateway-open-bg"
+export BROWSER
+exec /usr/local/bin/mcp-gateway "$@"

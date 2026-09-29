@@ -1,0 +1,113 @@
+#!/bin/sh
+# BROWSER hook for mcp-gateway. Inside an Orca session, opens the CyberArk OIDC
+# URL as a background tab in Orca's embedded browser: CLI-created tabs never
+# activate the app or switch the pane, so a live CyberArk session completes
+# invisibly and the tab is closed.
+#
+# When a login is needed, nothing is brought forward. Instead the hook presses
+# "Send me a push" on the page and rings the bell on the Claude session's
+# terminal (the gateway inherits its TTY), which Orca shows as an unread
+# worktree and terminal tab plus an OS notification. Approve the push and the
+# tab closes itself. Outside Orca, falls back to the default browser.
+#
+# Success is read from the gateway's own log (gateway_<pid>_*.log, pid = our
+# parent). webbrowser.open() waits for this process, so the work runs detached
+# and the hook returns immediately.
+
+url=$1
+gateway_pid=$PPID
+log_dir=${MCP_GATEWAY_LOG_DIR:-$HOME/.mcp-gateway/logs}
+profile=${MCP_GATEWAY_ORCA_PROFILE:-default}
+grace=${MCP_GATEWAY_SILENT_GRACE:-5}
+login_timeout=${MCP_GATEWAY_LOGIN_TIMEOUT:-125} # gateway gives up after 120s and logs it
+auto_push=${MCP_GATEWAY_AUTO_PUSH:-1}
+orca=${ORCA_CLI_COMMAND:-orca}
+trace=${TMPDIR:-/tmp}/mcp-gateway-open-bg.log
+tty=${MCP_GATEWAY_TTY:-$(ps -o tty= -p "$gateway_pid" 2>/dev/null | tr -d ' ')}
+
+log=$(ls -t "$log_dir"/gateway_"$gateway_pid"_*.log 2>/dev/null | head -1)
+seen=$([ -n "$log" ] && wc -l <"$log" | tr -d ' ' || echo 0)
+
+new_log_lines() {
+	[ -n "$log" ] && tail -n +"$((seen + 1))" "$log"
+}
+
+# The gateway is done waiting: it got the callback, or it gave up.
+callback_seen() {
+	new_log_lines | grep -qE 'Exchanging authorization code|Authentication (successful|failed|error)|No authorization code'
+}
+
+signed_in() {
+	new_log_lines | grep -qE 'Exchanging authorization code|Authentication successful'
+}
+
+# Polls every 0.5s until the callback shows up or $1 seconds pass.
+wait_for_callback() {
+	polls=$(($1 * 2))
+	while [ "$polls" -gt 0 ]; do
+		callback_seen && return 0
+		sleep 0.5
+		polls=$((polls - 1))
+	done
+	return 1
+}
+
+note() {
+	echo "$(date '+%F %T') [$gateway_pid] $*" >>"$trace"
+}
+
+# Orca marks the terminal's worktree and tab unread on BEL. Without a terminal,
+# post a macOS notification instead.
+ask_for_attention() {
+	if [ -n "$tty" ] && [ "$tty" != "??" ] && printf '\a' >"/dev/$tty" 2>/dev/null; then
+		note "rang bell on $tty"
+	else
+		osascript -e "display notification \"$1\" with title \"mcp-gateway\"" 2>/dev/null
+		note "posted notification"
+	fi
+}
+
+# Presses the CyberArk "Send me a push" button, if that's the page showing.
+press_push() {
+	ref=$("$orca" snapshot --page "$1" --json 2>/dev/null |
+		jq -r '.result.snapshot // empty' | grep -m1 'button "Send me a push"' |
+		sed -nE 's/.*\[ref=(e[0-9]+)\].*/\1/p')
+	[ -n "$ref" ] && "$orca" click --page "$1" --element "@$ref" --json >/dev/null 2>&1
+}
+
+(
+	page=
+	if [ -n "$ORCA_WORKTREE_ID" ] && [ -n "$log" ] && command -v "$orca" >/dev/null; then
+		page=$("$orca" tab create --url "$url" --worktree "id:$ORCA_WORKTREE_ID" \
+			--profile "$profile" --json 2>/dev/null | jq -r '.result.browserPageId // empty')
+	fi
+	if [ -z "$page" ]; then
+		note "no orca tab (worktree=${ORCA_WORKTREE_ID:-unset} log=${log:-none}); default browser"
+		open "$url"
+		exit 0
+	fi
+	note "orca tab $page (profile $profile)"
+
+	if wait_for_callback "$grace"; then
+		note "callback seen silently"
+	else
+		note "no callback after ${grace}s; login needed"
+		# Show the login tab in its worktree: at once if you are on that worktree, otherwise when you come back to it.
+		"$orca" tab switch --page "$page" --focus --json >/dev/null 2>&1
+		if [ "$auto_push" = 1 ] && press_push "$page"; then
+			note "pressed Send me a push"
+			ask_for_attention "Approve the CyberArk push to finish MCP gateway sign-in"
+		else
+			ask_for_attention "Sign in to CyberArk in this worktree's Orca browser tab"
+		fi
+		if wait_for_callback "$login_timeout" && signed_in; then
+			note "signed in"
+		else
+			note "not signed in; gateway gave up"
+		fi
+	fi
+	sleep 1
+	"$orca" tab close --page "$page" --json >/dev/null 2>&1
+) </dev/null >/dev/null 2>&1 &
+
+exit 0
