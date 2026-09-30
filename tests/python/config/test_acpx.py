@@ -20,6 +20,25 @@ class AcpxRoutingTests(RepoTestCase):
         ])
         return json.loads(result.stdout)
 
+    def test_declared_route_without_a_selected_harness_agent_fails_the_render(self):
+        for machine, agents, route, harness in (
+            ("work", ["claude"], "cursor", "cursor"),
+            ("personal", ["claude", "codex"], "local", "omp"),
+        ):
+            with self.subTest(machine=machine):
+                result = self.command([
+                    "chezmoi", "--source", str(ROOT), "--config", str(self.config),
+                    "--destination", str(self.home), "--override-data",
+                    json.dumps({"machine_type": machine, "chezmoi": {"os": "darwin"},
+                                "machines_local": {"agent_clis": agents}}),
+                    "execute-template", "--file", str(ROOT / "home/dot_config/acpx/routing.json.tmpl"),
+                ], expected_status=1)
+                self.assertIn(f'route "{route}" needs harness "{harness}"'.encode(), result.stderr)
+        # Every shipped machine type declares only routes its agents provide.
+        for machine in ("personal", "homelab", "work", "devbox", "ci"):
+            with self.subTest(machine=machine):
+                self.render("home/dot_config/acpx/routing.json.tmpl", machine)
+
     def test_native_gpt_effort_and_model_are_explicit_and_harness_precedes_generation(self):
         report = self.resolve({
             "codex": {"models": [

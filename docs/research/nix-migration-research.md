@@ -120,7 +120,7 @@ The survey first claimed package drift was not a live pain. It is.
   reviewed lock bump.
 - CI renders templates but cannot build a dependency closure.
 - The dev-deps note atop
-  [`clis.toml`](../../home/dot_config/mise/conf.d/clis.toml) asks for a
+  [`clis.toml`](../../home/dot_config/mise/conf.d/clis.toml.tmpl) asks for a
   module system that gates installs by role.
 
 A nix closure for the nixpkgs-covered formulae gives atomic generations,

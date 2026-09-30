@@ -1,0 +1,305 @@
+#!/usr/bin/env -S uv run --quiet --script
+# /// script
+# requires-python = ">=3.14"
+# dependencies = []
+# ///
+"""Reconcile the tracked Orca settings into Orca's profile-state store.
+
+Orca keeps user settings in the `settings` row of
+<userData>/profiles/<profile>/profile-state.db (SQLite, WAL). `check` reports
+which desired keys differ from that row; `apply` writes them the way Orca's own
+offline settings writer does: no live participant lease, an exclusive
+maintenance lease of our own, one snapshot read of the profile revision and the
+row, and a revision-fenced UPDATE whose content_hash is the sha256 of the
+payload. Keys the desired set does not name are left as Orca wrote them. The
+legacy orca-data.json and the acceptance marker are never touched.
+
+Desired settings arrive as a JSON object, base64 in --desired-b64 or a path in
+--desired-file. Exit codes: 0 in sync or applied; 1 drift (check); 2 refused or
+skipped (Orca holds the store, no database yet, an unknown store version);
+3 usage or store error.
+"""
+import argparse
+import base64
+import hashlib
+import json
+import os
+import re
+import socket
+import sqlite3
+import sys
+import time
+import uuid
+from pathlib import Path
+
+DOCUMENT_VERSION = 1
+STORE_USER_VERSION = 3
+PROFILE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$")
+MISSING = object()
+
+
+class Refused(Exception):
+    """A precondition Orca relies on is not met; nothing was written."""
+
+
+def fail(message: str, status: int) -> int:
+    print(f"orca settings: {message}", file=sys.stderr)
+    return status
+
+
+def default_user_data() -> Path:
+    if override := os.environ.get("ORCA_USER_DATA_PATH"):
+        return Path(override)
+    if sys.platform == "darwin":
+        return Path.home() / "Library/Application Support/orca"
+    return Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "orca"
+
+
+def active_profile(user_data: Path) -> str:
+    # The .bak is Orca's own fallback for a torn index write.
+    for name in ("orca-profile-index.json", "orca-profile-index.json.bak"):
+        try:
+            index = json.loads((user_data / name).read_text())
+        except (OSError, ValueError):
+            continue
+        profiles = [p.get("id") for p in index.get("profiles", []) if isinstance(p, dict)]
+        profiles = [p for p in profiles if isinstance(p, str) and PROFILE_ID.match(p)]
+        active = index.get("activeProfileId")
+        if active in profiles:
+            return active
+        if profiles:
+            return profiles[0]
+    return "local-default"
+
+
+def load_desired(args: argparse.Namespace) -> dict:
+    if args.desired_b64:
+        raw = base64.b64decode(args.desired_b64)
+    else:
+        raw = Path(args.desired_file).read_bytes()
+    desired = json.loads(raw)
+    if not isinstance(desired, dict):
+        raise Refused("desired settings must be a JSON object")
+    return desired
+
+
+def sha256_hex(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def compact(value) -> str:
+    # Orca stores JSON.stringify output: no spaces, non-ASCII kept as is.
+    return json.dumps(value, separators=(",", ":"), ensure_ascii=False)
+
+
+def drift(live: dict, desired: dict) -> list[tuple[str, object, object]]:
+    return [(key, live.get(key, MISSING), value) for key, value in desired.items()
+            if live.get(key, MISSING) != value]
+
+
+def describe(value) -> str:
+    return "<unset>" if value is MISSING else compact(value)
+
+
+def pid_alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+def live_owner(path: Path) -> dict | None:
+    """The owner record in a lease directory, if a live process holds it."""
+    if not path.is_dir():
+        return None
+    for entry in path.iterdir():
+        if entry.suffix != ".owner":
+            continue
+        try:
+            owner = json.loads(entry.read_text())
+        except (OSError, ValueError):
+            # Orca treats a malformed owner as in use; so do we.
+            return {"pid": "?", "host": "?", "path": str(entry)}
+        pid = owner.get("pid")
+        if isinstance(pid, int) and pid_alive(pid):
+            return {"pid": pid, "host": owner.get("host", "?"), "path": str(entry)}
+    return None
+
+
+class MaintenanceLease:
+    """Orca's exclusive lease: a candidate directory renamed into place."""
+
+    def __init__(self, user_data: Path):
+        self.root = user_data / ".profile-state-access"
+        self.token = str(uuid.uuid4())
+        self.candidate = self.root / "candidates" / self.token
+        self.target = self.root / "maintenance"
+        self.entry = f"{self.token}.owner"
+
+    def __enter__(self):
+        participants = self.root / "participants"
+        if participants.is_dir():
+            for lease in participants.iterdir():
+                if owner := live_owner(lease):
+                    raise Refused(
+                        f"Orca holds the profile store (pid {owner['pid']} on {owner['host']}); "
+                        "quit Orca, then retry")
+        if self.target.exists():
+            owner = live_owner(self.target) or {"pid": "?", "host": "?"}
+            raise Refused(
+                f"another maintenance run holds the profile store (pid {owner['pid']}); retry later")
+        self.candidate.mkdir(parents=True, mode=0o700)
+        owner = {
+            "token": self.token,
+            "pid": os.getpid(),
+            "host": socket.gethostname(),
+            "platform": sys.platform,
+            "pidNamespace": os.readlink("/proc/self/ns/pid") if sys.platform == "linux" else None,
+        }
+        entry = self.candidate / self.entry
+        entry.write_text(json.dumps(owner))
+        entry.chmod(0o600)
+        try:
+            self.candidate.rename(self.target)
+        except OSError as error:
+            entry.unlink(missing_ok=True)
+            self.candidate.rmdir()
+            raise Refused(f"could not take Orca's maintenance lease: {error}") from error
+        return self
+
+    def __exit__(self, *_):
+        (self.target / self.entry).unlink(missing_ok=True)
+        try:
+            self.target.rmdir()
+        except OSError:
+            pass
+        return False
+
+
+def assert_store_shape(con: sqlite3.Connection) -> None:
+    version = con.execute("PRAGMA user_version").fetchone()[0]
+    if version != STORE_USER_VERSION:
+        raise Refused(f"profile-state user_version is {version}, expected {STORE_USER_VERSION}; "
+                      "Orca changed its store, update settings-reconcile before writing")
+    if con.execute("PRAGMA journal_mode").fetchone()[0] != "wal":
+        raise Refused("profile-state is not in WAL mode, which Orca requires; not touching it")
+    if con.execute("PRAGMA quick_check").fetchone()[0] != "ok":
+        raise Refused("profile-state failed quick_check; not touching it")
+
+
+def assert_legacy_json_accepted(con: sqlite3.Connection, profile_dir: Path) -> None:
+    """Mirror Orca's offline writer: a profile JSON beside the store must match the marker."""
+    legacy = profile_dir / "orca-data.json"
+    if not legacy.exists():
+        return
+    row = con.execute("SELECT value FROM profile_state_meta WHERE key = 'legacy_json_acceptance'").fetchone()
+    marker = json.loads(row[0]) if row else {}
+    accepted = {marker.get("jsonHash"), (marker.get("pending") or {}).get("jsonHash")}
+    if hashlib.sha256(legacy.read_bytes()).hexdigest() not in accepted:
+        raise Refused(f"{legacy} diverged from the store; let Orca resolve it before writing settings")
+
+
+def read_row(con: sqlite3.Connection) -> tuple[dict, int]:
+    row = con.execute("SELECT payload FROM profile_state_documents WHERE domain = 'settings'").fetchone()
+    if row is None:
+        raise Refused("the store has no settings row yet; start Orca once so it seeds one")
+    settings = json.loads(row[0])
+    if not isinstance(settings, dict):
+        raise Refused("the settings row is not a JSON object; not touching it")
+    meta = con.execute("SELECT value FROM profile_state_meta WHERE key = 'revision'").fetchone()
+    return settings, int(meta[0]) if meta else 0
+
+
+def report(profile: str, changes: list, tracked: int) -> None:
+    print(f"Orca settings ({profile}): {len(changes)} of {tracked} tracked keys differ")
+    for key, live, desired in changes:
+        print(f"  ~ {key}: live {describe(live)} -> desired {describe(desired)}")
+
+
+def run_check(db: Path, profile: str, desired: dict) -> int:
+    con = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
+    try:
+        assert_store_shape(con)
+        settings, _ = read_row(con)
+    finally:
+        con.close()
+    changes = drift(settings, desired)
+    if not changes:
+        print(f"ok: Orca settings ({profile}) match all {len(desired)} tracked keys")
+        return 0
+    report(profile, changes, len(desired))
+    return 1
+
+
+def run_apply(user_data: Path, db: Path, profile: str, desired: dict) -> int:
+    with MaintenanceLease(user_data):
+        con = sqlite3.connect(db, isolation_level=None, timeout=5)
+        try:
+            con.execute("PRAGMA busy_timeout = 5000")
+            assert_store_shape(con)
+            assert_legacy_json_accepted(con, db.parent)
+            con.execute("BEGIN IMMEDIATE")
+            try:
+                settings, revision = read_row(con)
+                changes = drift(settings, desired)
+                if not changes:
+                    con.execute("ROLLBACK")
+                    print(f"ok: Orca settings ({profile}) match all {len(desired)} tracked keys")
+                    return 0
+                merged = {**settings, **desired}
+                payload = compact(merged)
+                next_revision = revision + 1
+                con.execute(
+                    "UPDATE profile_state_documents SET payload = ?, domain_version = ?, revision = ?, "
+                    "updated_at = ?, content_hash = ? WHERE domain = 'settings'",
+                    (payload, DOCUMENT_VERSION, next_revision, int(time.time() * 1000), sha256_hex(payload)),
+                )
+                con.execute(
+                    "INSERT INTO profile_state_meta (key, value) VALUES ('revision', ?) "
+                    "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+                    (str(next_revision),),
+                )
+                con.execute("COMMIT")
+            except BaseException:
+                con.execute("ROLLBACK")
+                raise
+            if con.execute("PRAGMA quick_check").fetchone()[0] != "ok":
+                raise Refused("profile-state failed quick_check after the write; inspect it before starting Orca")
+        finally:
+            con.close()
+    report(profile, changes, len(desired))
+    print(f"applied: profile revision {revision} -> {next_revision}")
+    return 0
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("mode", choices=("check", "apply"))
+    source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument("--desired-b64", help="base64 of the desired settings JSON object")
+    source.add_argument("--desired-file", help="path to the desired settings JSON object")
+    parser.add_argument("--user-data", type=Path, default=None,
+                        help="Orca userData directory (default: $ORCA_USER_DATA_PATH or the platform path)")
+    args = parser.parse_args()
+
+    user_data = args.user_data or default_user_data()
+    try:
+        desired = load_desired(args)
+        profile = active_profile(user_data)
+        db = user_data / "profiles" / profile / "profile-state.db"
+        if not db.exists():
+            return fail(f"no profile-state database at {db}; nothing to reconcile", 2)
+        if args.mode == "check":
+            return run_check(db, profile, desired)
+        return run_apply(user_data, db, profile, desired)
+    except Refused as refused:
+        return fail(str(refused), 2)
+    except (OSError, ValueError, sqlite3.Error) as error:
+        return fail(f"{type(error).__name__}: {error}", 3)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -5,7 +5,7 @@ This is the repo-specific contract for coding agents working in Prateek's dotfil
 ## Repo Map
 
 - `home/`: chezmoi source state. `.chezmoiroot` points here, so files materialize into `$HOME`.
-- `home/.chezmoidata/`: committed structured data for package groups and machine types, secrets, license targets, and template inputs.
+- `home/.chezmoidata/`: committed structured data for package groups, machine types, the agent CLI catalogue (`agents.toml`, selected per machine by `agent_clis`), secrets, license targets, and template inputs.
 - `home/.chezmoiscripts/`: idempotent setup run by `chezmoi apply`.
 - `home/.chezmoitemplates/`: shared templates, including Brewfile, macOS defaults, and plist merge helpers.
 - `.agents/`: repo-local agent surface for this checkout. Keep repo-specific guidance in root `AGENTS.md`; keep repo-local skills and tool adapters under `.agents/`.

@@ -89,10 +89,12 @@ STUB
   [[ "$stderr" == *'the next chezmoi apply retries'* ]]
 }
 
-@test "Codex CLI installation is limited to machine types that select the codex group" {
-  local machine
-  for machine in work ci; do
-    render_template "$template" "$machine" '{"machines_local":{"run_install_scripts":true}}' > "$FIXTURE/excluded.sh"
+@test "Codex CLI installation is limited to machines that list codex in agent_clis" {
+  local machine data
+  for machine in work ci personal; do
+    data='{"machines_local":{"run_install_scripts":true}}'
+    [ "$machine" != personal ] || data='{"machines_local":{"run_install_scripts":true,"agent_clis":["claude"]}}'
+    render_template "$template" "$machine" "$data" > "$FIXTURE/excluded.sh"
     run_bash 0 "$FIXTURE/excluded.sh"
     assert_success
     assert_output ''

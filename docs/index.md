@@ -72,6 +72,8 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [Using-git-spice Skill](plans/using-git-spice-skill-plan.md) | Active; the replacement skill and config are applied, the duplicate is disabled, and the Orca smoke passed. Only the disruptive manual logged-out auth check remains. |
 | [Touch ID for sudo](plans/touchid-sudo-plan.md) | Active; focused `sudo_local` configuration and fixture checks. Live authentication remains an attended check. |
 | [Linux Devbox](plans/linux-devbox-plan.md) | Active; dotfiles and headless Orca on the Linux Cloud Workstation, one live-verified increment at a time. See [ADR 0040](adr/0040-devbox-machine-type.md). |
+| [agent_clis Consolidation](plans/agent-clis-consolidation-plan.md) | Active; one validated per-machine agent list plus a catalogue drives mise entries, install hooks, config gates, plugin reconcile, the acpx route check, and Orca. Implemented in source; live applies pending. See [ADR 0041](adr/0041-agent-clis-single-declaration.md). |
+| [Orca Settings Store](plans/orca-settings-store-plan.md) | Active; tracked Orca settings are written into its profile-state SQLite store with a quit-and-relaunch guard, agent and editor entries derive from `agent_clis` and casks, the dead `orca-data.json` modify is gone. Implemented in source; live write pending. See [ADR 0042](adr/0042-orca-profile-state-reconcile.md). |
 | [Zsh Fresh-Shell Validator](plans/zsh-fresh-shell-validator-plan.md) | Active plan for shell correctness and startup checks. |
 
 ## Decision Records
@@ -121,6 +123,8 @@ for day-to-day implementation details.
 | [ADR 0038 - Touch ID for sudo adopts any existing sudo_local](adr/0038-touchid-sudo-adopts-existing-file.md) | [Chezmoi Architecture](references/chezmoi-architecture.md#touch-id-for-sudo); `sudo-touchid`'s adopt-and-remove model for the apply hook. |
 | [ADR 0039 - Work overlay lives in the work repo](adr/0039-work-overlay-in-work-repo.md) | Accepted; a prompted, shallow git-repo external brings the work overlay's Slack fragments and its `work-overlay` native marketplace, installed by the reconciler's `--overlay` mode. [Agent Marketplace](references/agent-marketplace.md). |
 | [ADR 0040 - Devbox machine type](adr/0040-devbox-machine-type.md) | Accepted; [Linux devbox plan](plans/linux-devbox-plan.md). A dedicated `devbox` type whose `managed_allowlist` feature limits `.chezmoiignore` to an explicit allowlist. |
+| [ADR 0041 - agent_clis is the single per-machine agent declaration](adr/0041-agent-clis-single-declaration.md) | Accepted; [agent_clis consolidation plan](plans/agent-clis-consolidation-plan.md). A catalogue plus one validated list replaces per-CLI gates. |
+| [ADR 0042 - Reconcile Orca settings through its profile-state store](adr/0042-orca-profile-state-reconcile.md) | Accepted; [Orca settings store plan](plans/orca-settings-store-plan.md). Revision-fenced SQLite write with Orca stopped, via the plist guard. |
 
 ## Research
 

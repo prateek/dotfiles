@@ -8,6 +8,8 @@ related:
   - 0005-mise-tool-management.md
   - 0010-machine-type-package-selection.md
   - ../references/mise-tool-management.md
+  - 0041-agent-clis-single-declaration.md
+status_detail: "Installer decision unchanged. Since ADR 0041 the hook gates on `codex` in agent_clis, and codex-acp is the codex entry's adapter in agents.toml; the `codex` package group is gone."
 ---
 
 # ADR 0027: Install the Codex CLI with OpenAI's standalone installer

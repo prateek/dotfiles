@@ -49,4 +49,13 @@
 {{- $f = mergeOverwrite $f (deepCopy $hostLayer) -}}
 {{- $f = mergeOverwrite $f (deepCopy $localLayer) -}}
 {{- $f = mergeOverwrite $f (dict "machine_type" $mt) -}}
+{{- /* agent_clis names entries of the agents.toml catalogue (ADR 0041). An
+       unknown id would install nothing and gate nothing, silently; fail here so
+       every consumer inherits the check. */ -}}
+{{- $catalogue := dig "agents" (dict) . -}}
+{{- range $id := default (list) (dig "agent_clis" (list) $f) -}}
+{{-   if not (hasKey $catalogue $id) -}}
+{{-     fail (printf "features.tmpl: unknown agent %q in agent_clis (add it to home/.chezmoidata/agents.toml)" $id) -}}
+{{-   end -}}
+{{- end -}}
 {{- $f | toJson -}}

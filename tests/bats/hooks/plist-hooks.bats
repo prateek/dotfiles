@@ -27,6 +27,40 @@ setup() { setup_hooks; }
   [ ! -s "$pending" ]
 }
 
+@test "plist pre-hook treats drifted Orca settings like a pending plist for the running app" {
+  orca_source 1
+  printf 'com.stablyai.orca\n' > "$FIXTURE/running"
+  run -1 bash "$hook" pre
+  assert_failure 1
+  assert_equal "$(cat "$pending")" com.stablyai.orca
+  run -0 grep -c '^orca check --desired-b64 ' "$events"
+  assert_output '1'
+  : > "$FIXTURE/running"
+  rm -f "$pending"
+  run -0 bash "$hook" pre
+  assert_success
+  assert_equal "$(cat "$pending")" com.stablyai.orca
+}
+
+@test "plist pre-hook leaves Orca alone when its settings match or cannot be checked" {
+  printf 'com.stablyai.orca\n' > "$FIXTURE/running"
+  local status
+  for status in 0 2; do
+    orca_source "$status"
+    rm -f "$pending"
+    run -0 bash "$hook" pre
+    assert_success
+    [ ! -s "$pending" ]
+  done
+  # Without a chezmoi source directory the check is skipped entirely.
+  unset CHEZMOI_SOURCE_DIR
+  : > "$events"
+  run -0 bash "$hook" pre
+  assert_success
+  [ ! -s "$pending" ]
+  [ ! -s "$events" ]
+}
+
 @test "plist post-hook with empty or missing state has no app effects" {
   for state in missing empty; do
     if [[ "$state" == empty ]]; then : > "$pending"; fi

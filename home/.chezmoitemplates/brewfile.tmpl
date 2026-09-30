@@ -64,6 +64,19 @@
 {{-   end -}}
 {{- end -}}
 
+{{- /* Adapter formulae follow the agent CLI that needs them: an agent selected in
+       agent_clis brings its `brew:` adapters from the agents.toml catalogue
+       (ADR 0041), so no package group has to mirror the agent selection. */ -}}
+{{- $a := includeTemplate "agents.tmpl" . | fromJson -}}
+{{- range $id, $agent := $a.selected -}}
+{{-   range default (list) (dig "adapters" (list) $agent) -}}
+{{-     if hasPrefix "brew:" . -}}
+{{-       $name := trimPrefix "brew:" . -}}
+{{-       if and (not (has $name $brewSeen)) (not (has $name $replacedBrews)) -}}{{- $brews = mustAppend $brews (dict "name" $name) -}}{{- $brewSeen = mustAppend $brewSeen $name -}}{{- end -}}
+{{-     end -}}
+{{-   end -}}
+{{- end -}}
+
 {{- /* Homebrew refuses third-party formulae, casks and commands unless their
        tap is trusted. A declared tap is one we rely on, so trust all of it. */ -}}
 {{- $tapLines := list -}}

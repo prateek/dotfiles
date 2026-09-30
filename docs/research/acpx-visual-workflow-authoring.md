@@ -43,7 +43,7 @@ and help, with no editor command. The installed package contains `dist`,
 The npm `latest` tag and GitHub latest release both resolve to **0.19.3**,
 published on 2026-09-25. No newer published version was available to upgrade
 to during this check. Mise already selects 0.19.3 through a `latest` setting
-owned by the [managed CLI configuration](../../home/dot_config/mise/conf.d/clis.toml).
+owned by the [managed CLI configuration](../../home/dot_config/mise/conf.d/clis.toml.tmpl).
 [Release](https://github.com/openclaw/acpx/releases/tag/v0.19.3),
 [npm metadata](https://registry.npmjs.org/acpx/latest).
 

@@ -1,0 +1,53 @@
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- if and $f.run_install_scripts (has "cursor-agent" $f.agent_clis) -}}
+{{ template "script_lib.sh" . }}
+
+# The Cursor CLI installs through Cursor's installer, which unpacks the release
+# it pins into ~/.local/share/cursor-agent/versions/<version>/ (atomic mv over
+# a temp dir) and re-links ~/.local/bin/cursor-agent and ~/.local/bin/agent at
+# it, so an update never unlinks the image a running session is executing.
+# Later releases come from `cursor-agent update`, not from this hook. The CLI
+# is selected through agent_clis (ADR 0041) and numbered with the other agent
+# installers, ahead of the plugin and acpx hooks that expect it on PATH.
+
+launcher="$HOME/.local/bin/cursor-agent"
+
+if [ -x "$launcher" ] && "$launcher" --version >/dev/null 2>&1; then
+  log "ok: Cursor CLI is installed."
+  exit 0
+fi
+
+# The installer never edits shell startup files; when its install directory is
+# off PATH it prints `export PATH=...` advice instead, which would read as an
+# instruction in the apply log. zprofile already puts ~/.local/bin first, so
+# handing the installer that directory plus the system paths (curl and tar
+# live in /usr/bin) keeps its output to the short form, as the Claude and
+# Codex hooks do.
+installer_path="$HOME/.local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+
+installer="$(mktemp "${TMPDIR:-/tmp}/dotfiles-cursor-agent-install.XXXXXX")"
+trap 'rm -f "$installer"' EXIT
+
+log "Installing the Cursor CLI with Cursor's installer."
+installed=0
+if curl -fsSL https://cursor.com/install -o "$installer"; then
+  if run_timed "cursor-agent install" \
+    env PATH="$installer_path" bash "$installer"; then
+    installed=1
+  fi
+else
+  warn "Could not download https://cursor.com/install."
+fi
+
+if [ "$installed" = 1 ] && [ -x "$launcher" ] && "$launcher" --version >/dev/null 2>&1; then
+  log "ok: Cursor CLI is installed."
+  exit 0
+fi
+
+if have cursor-agent; then
+  warn "Cursor CLI install failed; the cursor-agent already on PATH stays and the next chezmoi apply retries."
+  exit 0
+fi
+
+die "Cursor CLI install failed and no cursor-agent is on PATH. Re-run chezmoi apply, or install by hand: curl -fsSL https://cursor.com/install | bash"
+{{- end -}}

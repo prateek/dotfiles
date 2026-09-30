@@ -26,8 +26,15 @@ PY
 set -eu
 case "${0##*/}" in
   chezmoi)
-    [ "$1" = status ] && [ "$2" = --path-style=absolute ]
-    cat "$FIXTURE/status"
+    if [ "$1" = status ]; then
+      [ "$2" = --path-style=absolute ]
+      cat "$FIXTURE/status"
+    else
+      # render-host-mount renders the Orca desired-settings template.
+      for arg in "$@"; do [ "$arg" = execute-template ] && found=1; done
+      [ "${found:-0}" = 1 ]
+      printf '{"theme":"dark"}\n'
+    fi
     ;;
   lsappinfo)
     [ "$1" = info ] && [ "$2" = -only ] && [ "$3" = bundleid ]
@@ -64,6 +71,23 @@ pending_apps() {
   for id in "$@"; do
     printf ' M %s/Library/Preferences/%s.plist\n' "$HOME" "$id"
   done > "$FIXTURE/status"
+}
+
+# A chezmoi source tree whose Orca settings reconciler reports the given exit
+# code (1 = drift, 0 = in sync, 2 = skipped) and records its invocations.
+orca_source() {
+  local status="$1"
+  export CHEZMOI_SOURCE_DIR="$FIXTURE/source"
+  mkdir -p "$CHEZMOI_SOURCE_DIR/.chezmoitemplates" "$FIXTURE/scripts/orca"
+  : > "$CHEZMOI_SOURCE_DIR/.chezmoitemplates/orca-settings.desired.json.tmpl"
+  cat > "$FIXTURE/scripts/orca/settings-reconcile" <<STUB
+#!/bin/sh
+printf 'orca %s\n' "\$*" >> "$FIXTURE/events"
+exit $status
+STUB
+  chmod +x "$FIXTURE/scripts/orca/settings-reconcile"
+  printf '#!/bin/sh\nexit 0\n' > "$FIXTURE/bin/uv"
+  chmod +x "$FIXTURE/bin/uv"
 }
 
 hook_dialogue() {

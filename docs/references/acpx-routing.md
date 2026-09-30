@@ -57,11 +57,15 @@ If the preceding GPT generation has one tier, `pgpt` and `agptw` select it.
 | [reconcile](../../scripts/acpx/reconcile) | Catalog discovery, resolution, and atomic file replacement; installs as `~/.agents/bin/acpx-routing` |
 | [apply hook](../../home/.chezmoiscripts/run_after_38-acpx-routing.sh.tmpl) | Refreshes after the package, mise, and plugin hooks on every apply |
 
-`agent_clis` continues to control installation/plugin activation. It does not
-enable acpx routes. A `codex` declaration checks `codex-acp`, which has its own
-bundled Codex; a `claude` declaration checks `claude-agent-acp` and Node, which
-provide the SDK runtime. Vertex additionally requires `gcloud`. The presence
-of Cursor on PATH never enables it on a non-work machine.
+`agent_clis` controls which agent CLIs a machine gets
+([ADR 0041](../adr/0041-agent-clis-single-declaration.md)); it does not enable
+acpx routes. The two meet at render time: every declared route's harness must be
+provided by a selected agent (`harness` in `home/.chezmoidata/agents.toml`), or
+`routing.json.tmpl` fails the apply naming the route and the missing agent. A
+`codex` declaration checks `codex-acp`, which has its own bundled Codex; a
+`claude` declaration checks `claude-agent-acp` and Node, which provide the SDK
+runtime. Vertex additionally requires `gcloud`. The presence of Cursor on PATH
+never enables it on a non-work machine.
 
 The reconciler owns its generated entries in `~/.acpx/config.json`, preserving
 other agents, credentials, and top-level settings. It tracks generated names

@@ -1,0 +1,24 @@
+{{- /*
+  agents.tmpl — resolve this machine's agent CLIs against the catalogue in
+  home/.chezmoidata/agents.toml (ADR 0041). Emits JSON so consumers read the
+  selection once:
+
+    {{- $a := includeTemplate "agents.tmpl" . | fromJson -}}
+    {{- range $id, $agent := $a.selected }} ... {{- end }}
+
+  `selected` holds the catalogue entries named in agent_clis, `unselected` the
+  rest; both are keyed by id, so `range` iterates them in id order. features.tmpl
+  has already rejected an agent_clis id the catalogue does not know.
+*/ -}}
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- $catalogue := dig "agents" (dict) . -}}
+{{- $selected := dict -}}
+{{- $unselected := dict -}}
+{{- range $id, $entry := $catalogue -}}
+{{-   if has $id $f.agent_clis -}}
+{{-     $_ := set $selected $id $entry -}}
+{{-   else -}}
+{{-     $_ := set $unselected $id $entry -}}
+{{-   end -}}
+{{- end -}}
+{{- dict "selected" $selected "unselected" $unselected | toJson -}}

@@ -126,8 +126,19 @@ reports the installed version and that channel. To move it by hand:
 claude install latest
 ```
 
-`npm:@agentclientprotocol/claude-agent-acp` is a different package and stays in
-`clis.toml`.
+`npm:@agentclientprotocol/claude-agent-acp` is a different package; it renders
+into `clis.toml` as the `claude` entry's adapter from
+`home/.chezmoidata/agents.toml`.
+
+## Agent CLIs
+
+`conf.d/clis.toml` is a template. Its "AI coding harnesses" section renders
+from the machine's `agent_clis` selection against the catalogue in
+`home/.chezmoidata/agents.toml` ([ADR 0041](../adr/0041-agent-clis-single-declaration.md)):
+an agent with `install = "mise"` contributes its `mise` spec, and `mise:`
+adapters follow their agent. `run_onchange_after_20-mise-install.sh` re-runs
+when the selection changes and uninstalls a catalogue agent the machine no
+longer selects, since mise itself only installs.
 
 ## Implemented State
 

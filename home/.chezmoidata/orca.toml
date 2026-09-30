@@ -1,8 +1,28 @@
-# Per-machine_type Orca settings overlays, merged over orca-settings.base.json.tmpl
-# by modify_orca-data.json.tmpl. Machine types without an entry inherit base only.
-[orca.machine_types.work]
-defaultTuiAgent = "claude"
-disabledTuiAgents = ["codex"]
+# Inputs for the derived Orca settings in
+# home/.chezmoitemplates/orca-settings.desired.json.tmpl (ADR 0042). The flat
+# preferences live in that template; this file holds what varies by machine.
+[orca]
+# defaultTuiAgent is the first of these (agents.toml ids) in the machine's agent_clis.
+default_agent_order = ["codex", "claude", "cursor-agent", "omp"]
 
+# Applications Orca offers to open a worktree in, each with its terminal quick
+# command. An entry renders only where its cask is selected for the machine.
+[[orca.open_in]]
+cask = "cursor"
+id = "cursor"
+label = "Cursor"
+command = "cursor"
+quick_label = "Open in Cursor"
+quick_command = "cursor --classic . && exit"
+
+[[orca.open_in]]
+cask = "visual-studio-code"
+id = "vscode"
+label = "VS Code"
+command = "code"
+quick_label = "Open in VS Code"
+quick_command = "code . && exit"
+
+# Agents a machine type hides beyond those absent from its agent_clis.
 [orca.machine_types.homelab]
-disabledTuiAgents = ["claude-agent-teams"]
+disabled_extra = ["claude-agent-teams"]

@@ -1,0 +1,63 @@
+{{- /*
+  orca-settings.desired.json.tmpl — the Orca settings this machine should
+  hold, as the flat `settings` object that scripts/orca/settings-reconcile
+  merges into Orca's profile-state store (ADR 0042). The literal preferences
+  sit in the dict at the bottom; the agent and editor entries derive from the
+  machine's agent_clis selection (agents.tmpl), its casks, and
+  .chezmoidata/orca.toml. Keys absent here are Orca's to keep.
+*/ -}}
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- $a := includeTemplate "agents.tmpl" . | fromJson -}}
+{{- $orca := .orca -}}
+
+{{- /* Orca only launches agents it detects on PATH, so the hide-list covers the
+       catalogue agents this machine does not select, plus the type's own extras. */ -}}
+{{- $hidden := list -}}
+{{- range $id, $agent := $a.unselected -}}
+{{-   $tui := dig "orca" "" $agent -}}
+{{-   if and $tui (not (has $tui $hidden)) -}}{{- $hidden = mustAppend $hidden $tui -}}{{- end -}}
+{{- end -}}
+{{- range dig "machine_types" $f.machine_type "disabled_extra" (list) $orca -}}
+{{-   if not (has . $hidden) -}}{{- $hidden = mustAppend $hidden . -}}{{- end -}}
+{{- end -}}
+
+{{- $default := "" -}}
+{{- range $orca.default_agent_order -}}
+{{-   if and (not $default) (hasKey $a.selected .) -}}{{- $default = dig "orca" "" (index $a.selected .) -}}{{- end -}}
+{{- end -}}
+
+{{- /* Editors follow their casks; Finder is always there. */ -}}
+{{- $openIn := list -}}
+{{- $quick := list (dict "action" "terminal-command" "appendEnter" true "command" "open . && exit" "id" "open-in-finder" "label" "Open in Finder" "scope" (dict "type" "global")) -}}
+{{- range $orca.open_in -}}
+{{-   if eq (includeTemplate "package-cask-enabled.tmpl" (dict "root" $ "name" .cask)) "true" -}}
+{{-     $openIn = mustAppend $openIn (dict "command" .command "id" .id "label" .label) -}}
+{{-     $quick = mustAppend $quick (dict "action" "terminal-command" "appendEnter" true "command" .quick_command "id" (printf "open-in-%s" .id) "label" .quick_label "scope" (dict "type" "global")) -}}
+{{-   end -}}
+{{- end -}}
+
+{{- $settings := dict
+      "diffDefaultView" "side-by-side"
+      "disabledTuiAgents" $hidden
+      "experimentalActivity" true
+      "experimentalMobile" true
+      "experimentalPet" true
+      "experimentalTerminalAttention" true
+      "floatingTerminalTriggerLocation" "status-bar"
+      "mobileAutoRestoreFitMs" 60000
+      "openInApplications" $openIn
+      "refreshLocalBaseRefOnWorktreeCreate" true
+      "setupScriptLaunchMode" "split-horizontal"
+      "skipDeleteWorktreeConfirm" true
+      "terminalAllowOsc52Clipboard" true
+      "terminalDividerColorDark" "#c20000"
+      "terminalFontFamily" "JetBrains Mono"
+      "terminalGpuAcceleration" "on"
+      "terminalLigatures" "on"
+      "terminalQuickCommands" $quick
+      "terminalShortcutPolicy" "terminal-first"
+      "terminalUseSeparateLightTheme" false
+      "theme" "dark"
+      "workspaceDir" (printf "%s/code/worktrees" .chezmoi.homeDir) -}}
+{{- if $default -}}{{- $_ := set $settings "defaultTuiAgent" $default -}}{{- end -}}
+{{ $settings | toPrettyJson }}

@@ -43,6 +43,14 @@ class BrewfileTests(RepoTestCase):
             'cask "ghostpepper"', 'cask "tailscale-app"',
         ))
 
+    def test_adapter_formulae_follow_the_agent_selection(self):
+        # codex-acp is the codex entry's adapter in agents.toml, not a package group.
+        self.assertNotIn('brew "codex-acp"', self.brewfile("work"))
+        rendered = self.render("home/.chezmoitemplates/brewfile.tmpl", "work",
+                               data={"machines_local": {"agent_clis": ["claude", "codex"]}}).decode()
+        self.assertIn('brew "codex-acp"', rendered)
+        self.assertEqual(rendered.count('brew "codex-acp"'), 1)
+
     def test_work_selects_shared_desktop_and_work_apps_without_personal_or_apple_groups(self):
         self.assert_entries(self.brewfile("work"), present=(
             'brew "aria2"', 'tap "f/mcptools", trusted: true',
@@ -79,10 +87,32 @@ class BrewfileTests(RepoTestCase):
             with self.subTest(machine=machine):
                 self.assert_entries(self.brewfile(machine), present=('brew "just"', 'brew "uv"'))
 
+    def mise_tools(self, machine, **data):
+        rendered = self.render("home/dot_config/mise/conf.d/clis.toml.tmpl", machine, data=data)
+        return tomllib.loads(rendered.decode())["tools"]
+
     def test_mise_owns_gog_while_homebrew_owns_crit(self):
-        tools = tomllib.loads((ROOT / "home/dot_config/mise/conf.d/clis.toml").read_text())["tools"]
+        tools = self.mise_tools("personal")
         self.assertFalse(any("tomasz-tomczyk/crit" in key for key in tools))
         self.assertEqual(tools["github:openclaw/gogcli"], {"version": "latest", "exe": "gog"})
+
+    def test_mise_agent_harnesses_follow_agent_clis(self):
+        omp, pi, gemini = "github:can1357/oh-my-pi", "npm:@earendil-works/pi-coding-agent", "npm:@google/gemini-cli"
+        adapter = "npm:@agentclientprotocol/claude-agent-acp"
+        expected = {
+            "personal": {omp, pi, gemini, adapter}, "homelab": {omp, pi, gemini, adapter},
+            "work": {pi, adapter}, "devbox": {omp, pi, adapter}, "ci": set(),
+        }
+        for machine, present in expected.items():
+            with self.subTest(machine=machine):
+                tools = self.mise_tools(machine)
+                self.assertEqual({omp, pi, gemini, adapter} & set(tools), present)
+                self.assertIn("npm:acpx", tools)
+        tools = self.mise_tools("work", machines_local={"agent_clis": ["cursor-agent"]})
+        self.assertNotIn(adapter, tools)
+        # mise's own template syntax has to survive the chezmoi render untouched.
+        rendered = self.render("home/dot_config/mise/conf.d/clis.toml.tmpl", "work").decode()
+        self.assertIn("{{ get_env(name='XDG_CACHE_HOME', default='~/.cache') }}/ask", rendered)
 
     def test_file_output_matches_stdout_with_one_trailing_newline(self):
         output = self.work / "rendered Brewfile"

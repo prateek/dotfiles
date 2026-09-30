@@ -25,15 +25,16 @@ if [ ! -f "$catalog" ]; then
   exit 0
 fi
 
+{{- $a := includeTemplate "agents.tmpl" . | fromJson }}
 agents=""
-{{- range $f.agent_clis }}
-{{- if or (eq . "claude") (eq . "codex") (eq . "omp") }}
-have {{ . }} || die "{{ . }} is listed in agent_clis but not on PATH; install it before agent plugins can reconcile."
-agents="$agents --agent {{ . }}"
+{{- range $id, $agent := $a.selected }}
+{{- if dig "plugins" false $agent }}
+have {{ $agent.binary }} || die "{{ $id }} is listed in agent_clis but not on PATH; install it before agent plugins can reconcile."
+agents="$agents --agent {{ $id }}"
 {{- end }}
 {{- end }}
 if [ -z "$agents" ]; then
-  log "no claude, codex, or omp CLI in agent_clis for this machine; skipping work overlay plugins."
+  log "no plugin-capable agent CLI in agent_clis for this machine; skipping work overlay plugins."
   exit 0
 fi
 # shellcheck disable=SC2086

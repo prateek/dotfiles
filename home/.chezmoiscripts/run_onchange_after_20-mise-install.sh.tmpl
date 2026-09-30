@@ -1,12 +1,14 @@
 {{ template "script_lib.sh" . }}
 
 {{- $f := includeTemplate "features.tmpl" . | fromJson }}
+{{- $a := includeTemplate "agents.tmpl" . | fromJson }}
 # mise config sha256: {{ include "dot_config/mise/config.toml" | sha256sum }}
-# mise clis sha256: {{ include "dot_config/mise/conf.d/clis.toml" | sha256sum }}
+# mise clis sha256: {{ include "dot_config/mise/conf.d/clis.toml.tmpl" | sha256sum }}
 # mise runtimes sha256: {{ include "dot_config/mise/conf.d/runtimes.toml" | sha256sum }}
 {{- if $f.granola_mcp }}
 # mise mcporter sha256: {{ include "dot_config/mise/conf.d/mcporter.toml" | sha256sum }}
 {{- end }}
+# agent_clis: {{ join "," $f.agent_clis }}
 
 {{- if $f.run_install_scripts }}
 if ! have mise; then
@@ -14,11 +16,36 @@ if ! have mise; then
   exit 0
 fi
 
+# mise only installs: an agent CLI dropped from agent_clis (ADR 0041) stays on
+# the machine until removed. Uninstall it, then clear the install root, whose
+# leftover version aliases and backend marker would otherwise re-run this on
+# every apply.
+mise_retire() {
+  local id="$1" spec="$2" installed install_root
+  installed="$(mise ls --json "$spec" 2>/dev/null | tr -d '[:space:]')"
+  if [ -z "$installed" ] || [ "$installed" = "[]" ]; then
+    return 0
+  fi
+  install_root="$(dirname "$(mise where "$spec" 2>/dev/null || printf '/nonexistent/none')")"
+  if ! run_timed "mise uninstall $id" mise uninstall --all "$spec"; then
+    warn "Could not uninstall $id ($spec); the next chezmoi apply retries."
+    return 0
+  fi
+  if [ "$install_root" != "/nonexistent" ]; then
+    rm -rf "$install_root" || warn "Could not remove $install_root."
+  fi
+}
+
 export MISE_RUBY_GITHUB_ATTESTATIONS="${MISE_RUBY_GITHUB_ATTESTATIONS:-false}"
 mise trust "$HOME/.config/mise/config.toml" >/dev/null 2>&1 || true
 run_timed "mise install node" mise install -y node || warn "mise node install failed; retry with: mise install -y node"
 run_timed "mise install go" mise install -y go || warn "mise go install failed; retry with: mise install -y go"
 run_timed "mise install" mise exec node -- mise install -y || warn "mise install failed; retry with: mise exec node -- mise install -y"
+{{- range $id, $agent := $a.unselected }}
+{{- if eq $agent.install "mise" }}
+mise_retire {{ $id | quote }} {{ $agent.mise | quote }}
+{{- end }}
+{{- end }}
 {{- else }}
 log "mise runtime install disabled."
 {{- end }}

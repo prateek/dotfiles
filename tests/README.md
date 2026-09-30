@@ -205,6 +205,9 @@ Claude ingest automation registration.
 | mise / GitHub extensions / Xcode scripts | `just test-shell tests/bats/packages/mise-install.bats tests/bats/packages/gh-extensions.bats tests/bats/packages/xcode-install.bats` for the changed installer. |
 | Codex CLI standalone installer | `just test-shell tests/bats/packages/codex-standalone.bats`; role gate, normal-home targeting under an inherited `CODEX_HOME`, the sanitized installer environment that keeps managed shell startup files unedited, and the failure path that leaves the Homebrew cask for `08-retired-packages` to keep. |
 | Claude Code native installer | `just test-shell tests/bats/packages/claude-native.bats`; `agent_clis` gate, the sanitized installer environment and update channel, retirement of both npm copies, the deferral that leaves them alone while a session still executes one (including through a mise version alias), and the two failure paths (warn when a `claude` remains on `PATH`, fail the apply when none does). |
+| Cursor CLI installer | `just test-shell tests/bats/packages/cursor-agent.bats`; `agent_clis` gate, the sanitized installer environment, the skip once the launcher answers, and the warn/fail paths. |
+| Orca settings | `just test-python -p test_orca.py` and `just test-shell tests/bats/hooks/plist-hooks.bats`; the desired-settings template per machine type, the profile-state writer against a fixture store (revision fence, content hash, participant and maintenance leases, foreign store version, index fallback), and the guard's Orca quit/relaunch cases. |
+| Agent catalogue (`agents.toml`, `agent_clis`) | `just test-python -p test_agents.py -p test_machines.py`; catalogue contract, per-type selection, the config gates each agent owns, plugin-hook agent lists, and the unknown-id diagnostic. `test_brewfile.py` covers the rendered mise harness entries and adapter formulae; `test_acpx.py` covers the declared-route harness check. |
 
 Inspect `scripts/packages/render-brewfile --machine-type <type>` for affected
 types and the `--include-mas` opt-in. Tests use fake install commands; the macOS
@@ -408,12 +411,13 @@ Run `just test-shell tests/bats/hooks/plist-hooks.bats` and `just test-python -p
 including Claude's `plugin validate` and Codex's app-server `plugin/read`.
 Both installed clients are required; a missing client fails the lane.
 
-Audit tracked Orca settings against the installed app's current defaults (run
-after upgrading Orca or a settings spree; refreshes the committed defaults
-snapshot, and its git diff shows what an Orca upgrade moved):
+Compare the tracked Orca settings with the `settings` row in Orca's
+profile-state store, or push them with Orca closed (ADR 0042). Both render the
+desired settings from this checkout:
 
 ```sh
-just audit-orca-settings
+just orca-settings check   # read-only; exits 1 on drift (also: just audit-orca-settings)
+just orca-settings apply   # refuses while Orca holds the store
 ```
 
 Run Tart VM install checks locally:

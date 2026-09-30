@@ -77,7 +77,7 @@ Scripts must be idempotent. A rerun should converge or report a clear blocker.
 ## Packages And Tools
 
 - Reusable package groups (`[packages.groups.*]`: `core`, `mac-desktop`,
-  `ai-agent-apps`, `codex`, `developer-tools`, `apple-development`, `work-apps`,
+  `ai-agent-apps`, `developer-tools`, `apple-development`, `work-apps`,
   `personal-apps`, `homelab-overlay`) live in
   `home/.chezmoidata/packages.toml`.
 - Selection is driven by a single axis, `machine_type`. Each type composes a set
@@ -85,16 +85,22 @@ Scripts must be idempotent. A rerun should converge or report a clear blocker.
   (`[machines.type.*].groups`), resolved by `home/.chezmoitemplates/features.tmpl`:
   `ci=[core]`,
   `work=[core,mac-desktop,ai-agent-apps,developer-tools,work-apps,forks]`,
-  `personal=[core,mac-desktop,ai-agent-apps,codex,developer-tools,personal-apps,forks]`,
-  and `homelab=[core,ai-agent-apps,codex,developer-tools,apple-development,homelab-overlay]`.
-  Work omits personal apps, Apple/iOS tooling, and Codex (cursor-agent covers
-  the GPT tier there); personal omits Apple/iOS tooling for now; homelab keeps
-  Apple tooling, remote/admin tools, and AI agent apps (agentsview + Orca)
-  without the full interactive desktop surface. `ci` is
+  `personal=[core,mac-desktop,ai-agent-apps,developer-tools,personal-apps,forks]`,
+  and `homelab=[core,ai-agent-apps,developer-tools,apple-development,homelab-overlay]`.
+  Work omits personal apps and Apple/iOS tooling; personal omits Apple/iOS
+  tooling for now; homelab keeps Apple tooling, remote/admin tools, and AI agent
+  apps (agentsview + Orca) without the full interactive desktop surface. `ci` is
   the minimal CI/Tart/audit tier and a first-class `machine_type` prompt choice.
   See
   [ADR 0010](../adr/0010-machine-type-package-selection.md) and the config-gating
   convention in [ADR 0012](../adr/0012-config-gating-convention.md).
+- Agent CLIs are a second per-type list, `agent_clis`, validated against the
+  catalogue in `home/.chezmoidata/agents.toml` and resolved by
+  `home/.chezmoitemplates/agents.tmpl`. The mise harness entries, adapter
+  formulae (`codex-acp`), the Claude/Codex/cursor-agent install hooks, the
+  `.codex`/`.pi`/`.cursor` gates, the plugin reconcile hooks, the acpx route
+  check, and Orca's agent picker all read that selection; no package group
+  mirrors it ([ADR 0041](../adr/0041-agent-clis-single-declaration.md)).
 - `home/.chezmoitemplates/brewfile.tmpl` renders the Brewfile input as the union
   of each section across the selected machine type's groups, deduped by name.
   `package-cask-enabled.tmpl` gates app config the same way. Both read the

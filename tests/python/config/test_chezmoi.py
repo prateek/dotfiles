@@ -49,6 +49,7 @@ class ChezmoiConfigTests(RepoTestCase):
         files = {
             ".zshenv", ".inputrc", ".lesskey", ".vimrc",
             ".chezmoiscripts/00-homebrew.sh", ".chezmoiscripts/05-core-tools.sh",
+            ".chezmoiscripts/07-cursor-agent.sh",
             ".chezmoiscripts/10-brew-bundle.sh", ".chezmoiscripts/10-zinit-compat.sh",
             ".chezmoiscripts/11-zinit-update.sh", ".chezmoiscripts/20-mise-install.sh",
             ".config/mise/config.toml", ".config/mise/conf.d/clis.toml",

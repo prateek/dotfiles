@@ -29,15 +29,16 @@ run_timed "materialize agent plugins" \
   "$generator" \
   --plugins-root "$HOME/.agents/plugins"
 
+{{- $a := includeTemplate "agents.tmpl" . | fromJson }}
 agents=""
-{{- range $f.agent_clis }}
-{{- if or (eq . "claude") (eq . "codex") (eq . "omp") }}
-have {{ . }} || die "{{ . }} is listed in agent_clis but not on PATH; install it before agent plugins can reconcile."
-agents="$agents --agent {{ . }}"
+{{- range $id, $agent := $a.selected }}
+{{- if dig "plugins" false $agent }}
+have {{ $agent.binary }} || die "{{ $id }} is listed in agent_clis but not on PATH; install it before agent plugins can reconcile."
+agents="$agents --agent {{ $id }}"
 {{- end }}
 {{- end }}
 if [ -z "$agents" ]; then
-  log "no claude, codex, or omp CLI in agent_clis for this machine; skipping plugin install reconcile."
+  log "no plugin-capable agent CLI in agent_clis for this machine; skipping plugin install reconcile."
 else
   # shellcheck disable=SC2086
   run_timed "reconcile agent plugin installs" \

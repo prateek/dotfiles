@@ -1,4 +1,5 @@
 {{- $f := includeTemplate "features.tmpl" . | fromJson }}
+{{- $a := includeTemplate "agents.tmpl" . | fromJson }}
 {{- if $f.managed_allowlist }}
 {{/* Allowlist profile: ignore every target and script, then un-ignore what
      the machine takes. A negation beats any ignore, but `*` stops at `/` and an
@@ -28,6 +29,7 @@
 {{- end }}
 !.chezmoiscripts/00-homebrew.sh
 !.chezmoiscripts/05-core-tools.sh
+!.chezmoiscripts/07-cursor-agent.sh
 !.chezmoiscripts/10-brew-bundle.sh
 !.chezmoiscripts/10-zinit-compat.sh
 !.chezmoiscripts/11-zinit-update.sh
@@ -60,10 +62,13 @@ code/*
      (on work machines) the internal map from the work overlay. */}}
 .agents/docs/slack.md
 
-{{/* Cursor's CLI config is Cursor-owned state we only merge one key into. Off
-     a cursor-agent machine the modify script would conjure the file instead. */}}
-{{- if not (has "cursor-agent" $f.agent_clis) }}
-.cursor/cli-config.json
+{{/* Config owned by an agent CLI this machine does not select stays unmanaged;
+     the modify scripts would conjure the files instead. The paths come from
+     each agent's config_paths in .chezmoidata/agents.toml (ADR 0041). */}}
+{{- range $id, $agent := $a.unselected }}
+{{- range default (list) (dig "config_paths" (list) $agent) }}
+{{ . }}
+{{- end }}
 {{- end }}
 
 {{/* Corporate CA trust for GUI apps: only where a proxy re-signs TLS. The
@@ -132,11 +137,6 @@ Library/Preferences/com.cmuxterm.app.plist
 {{- end }}
 {{/* Generated cmux settings stay local; preferences.json carries our durable choices. */}}
 .config/cmux/settings.json
-{{/* The Codex CLI is not a cask (ADR 0027), so its config follows the package
-     group that selects Codex for this machine. */}}
-{{- if not (has "codex" $f.groups) }}
-.codex
-{{- end }}
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "zed")) "true" }}
 .config/zed
 {{- end }}
@@ -154,7 +154,6 @@ Library/Application Support/obsidian/obsidian.json
 Library/Application Support/Yojam/config.json
 {{- end }}
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "stablyai/orca/orca")) "true" }}
-Library/Application Support/orca/orca-data.json
 .orca/keybindings.json
 {{- end }}
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "ghostty")) "true" }}

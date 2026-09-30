@@ -35,6 +35,23 @@ contains() {
   return 1
 }
 
+# Orca keeps its settings in a SQLite store that run_after_47-orca-settings
+# writes only while Orca is closed (ADR 0042). True when the tracked settings
+# differ from that store, so Orca can join the quit/relaunch prompt below.
+orca_settings_drift() {
+  local reconcile template desired
+  [[ -n "${CHEZMOI_SOURCE_DIR:-}" ]] || return 1
+  reconcile="$CHEZMOI_SOURCE_DIR/../scripts/orca/settings-reconcile"
+  template="$CHEZMOI_SOURCE_DIR/.chezmoitemplates/orca-settings.desired.json.tmpl"
+  [[ -x "$reconcile" && -f "$template" ]] || return 1
+  command -v uv >/dev/null 2>&1 || return 1
+  desired="$(/usr/bin/perl "$mount_renderer" "${mount_args[@]+"${mount_args[@]}"}" \
+    execute-template --file "$template" 2>/dev/null | base64)" || return 1
+  [[ -n "$desired" ]] || return 1
+  "$reconcile" check --desired-b64 "$desired" >/dev/null 2>&1
+  [[ $? -eq 1 ]]
+}
+
 # Hooks run during previews too. Parse flags outside JSON override data.
 mount_renderer="$(dirname "${BASH_SOURCE[0]}")/render-host-mount"
 dry_run="$(/usr/bin/perl "$mount_renderer" --print-dry-run)"
@@ -99,6 +116,10 @@ pre)
         ;;
     esac
   done < <(chezmoi status "${status_args[@]}" 2>/dev/null || true)
+
+  if orca_settings_drift; then
+    pending+=("com.stablyai.orca")
+  fi
 
   if (( ${#pending[@]} == 0 )); then
     exit 0

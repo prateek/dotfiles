@@ -1,4 +1,5 @@
 {{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- $a := includeTemplate "agents.tmpl" . | fromJson -}}
 {{- $preferences := dict -}}
 {{- range $key, $value := $f -}}
 {{- if hasPrefix "acpx_order_" $key -}}
@@ -7,6 +8,22 @@
 {{- end -}}
 {{- $routes := deepCopy .acpx_harnesses.routes -}}
 {{- $_ := set (get $routes "local") "providers" $f.acpx_local_providers -}}
+{{- /* A declared route needs an agent in agent_clis that provides its harness
+       (ADR 0041). Failing the render here names the gap; the reconciler's PATH
+       check would only report "missing dependencies" after apply. */ -}}
+{{- range $route := $f.acpx_routes -}}
+{{-   if not (hasKey $routes $route) -}}
+{{-     fail (printf "acpx: declared route %q is not defined in acpx_harnesses.toml" $route) -}}
+{{-   end -}}
+{{-   $harness := (index $routes $route).harness -}}
+{{-   $provided := false -}}
+{{-   range $id, $agent := $a.selected -}}
+{{-     if eq (dig "harness" "" $agent) $harness -}}{{- $provided = true -}}{{- end -}}
+{{-   end -}}
+{{-   if not $provided -}}
+{{-     fail (printf "acpx: route %q needs harness %q, which no agent in agent_clis provides; add that agent or drop the route from acpx_routes" $route $harness) -}}
+{{-   end -}}
+{{- end -}}
 {{ dict
   "models" .acpx_models
   "routes" $routes

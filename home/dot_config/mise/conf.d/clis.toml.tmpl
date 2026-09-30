@@ -1,3 +1,4 @@
+{{- $a := includeTemplate "agents.tmpl" . | fromJson -}}
 # Standalone CLIs installed via mise.
 #
 # Sections group CLIs by purpose, not by install backend. Within a section,
@@ -20,12 +21,21 @@
 "pipx:apm-cli" = "0.29.1"  # agent-marketplace/ also pins its own build environment
 
 # === AI coding harnesses ===
-# Interactive AI coding tools the human runs directly. The desktop `claude`
-# app is a Homebrew cask in packages.toml; the Claude Code CLI installs from
-# run_after_06-claude-native.sh (ADR 0029), not here.
-"github:can1357/oh-my-pi" = "latest"                              # omp (oh-my-pi); standalone release binary
-"npm:@earendil-works/pi-coding-agent" = "latest"                 # pi; Cursor SDK bridge peers are managed in ~/.pi/agent/settings.json
-"npm:@google/gemini-cli" = "latest"
+# Interactive AI coding tools the human runs directly. Which ones a machine
+# gets is agent_clis in machines.toml, described by .chezmoidata/agents.toml
+# (ADR 0041); run_onchange_after_20-mise-install uninstalls a delisted one.
+# The desktop `claude` app is a Homebrew cask in packages.toml; the Claude Code
+# CLI installs from run_after_06-claude-native.sh (ADR 0029), not here.
+{{- range $id, $agent := $a.selected }}
+{{- if eq $agent.install "mise" }}
+{{ $agent.mise | quote }} = "latest"  # {{ $id }}
+{{- end }}
+{{- range default (list) (dig "adapters" (list) $agent) }}
+{{- if hasPrefix "mise:" . }}
+{{ trimPrefix "mise:" . | quote }} = "latest"  # {{ $id }} ACP adapter; routes declared in acpx_harnesses.toml
+{{- end }}
+{{- end }}
+{{- end }}
 
 # === Agent skill backends ===
 # CLIs the agent reaches for, either via a SKILL.md wrapper or via the
@@ -33,7 +43,6 @@
 # when the package name doesn't make it obvious.
 "github:openclaw/gogcli" = { version = "latest", exe = "gog" } # Google Workspace CLI (gogcli.sh, formerly steipete/gogcli); see ~/.agents/docs/google-workspace.md
 "github:rootlyhq/rootly-cli" = { version = "latest", exe = "rootly" } # Rootly incident CLI; standalone release binary
-"npm:@agentclientprotocol/claude-agent-acp" = "latest"     # Claude ACP adapter; routes declared in acpx_harnesses.toml
 "npm:@pleaseai/ask" = "latest"                             # ask skill (utils-agent); see [env] below
 "npm:@shortcut-cli/shortcut-cli" = "latest"                # shortcut skill; binary is `short`
 "npm:@steipete/bird" = "latest"                            # twitter; see ~/.agents/docs/twitter.md
@@ -49,7 +58,7 @@ sops = "latest"                                            # aqua:getsops/sops; 
 
 [env]
 # ask: cache lives under XDG_CACHE_HOME so it stays out of $HOME root.
-ASK_HOME = "{{ get_env(name='XDG_CACHE_HOME', default='~/.cache') }}/ask"
+ASK_HOME = "{{ "{{" }} get_env(name='XDG_CACHE_HOME', default='~/.cache') {{ "}}" }}/ask"
 # crit: integrations are APM-vendored (ADR 0013); silence the startup tip that
 # tells agents to run `crit install`, which would clobber renderer-owned roots.
 CRIT_NO_INTEGRATION_CHECK = "1"

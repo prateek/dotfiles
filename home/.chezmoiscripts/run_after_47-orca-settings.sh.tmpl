@@ -1,0 +1,29 @@
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- if and $f.run_install_scripts (eq (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "stablyai/orca/orca")) "true") -}}
+{{ template "script_lib.sh" . }}
+
+# Orca reads its settings from a per-profile SQLite store, not from a file
+# chezmoi can manage, so the tracked settings are merged in after the files
+# land by scripts/orca/settings-reconcile (ADR 0042). The writer refuses while
+# Orca holds the store; the plist guard offers to quit Orca before apply when
+# the settings would change, so this hook usually finds it closed and the
+# guard relaunches it afterwards.
+
+reconcile="{{ .chezmoi.sourceDir }}/../scripts/orca/settings-reconcile"
+[ -x "$reconcile" ] || die "Orca settings reconciler is missing or not executable: $reconcile"
+if ! have uv; then
+  warn "uv is required to reconcile Orca settings; skipping."
+  exit 0
+fi
+
+desired='{{ includeTemplate "orca-settings.desired.json.tmpl" . | b64enc }}'
+if "$reconcile" apply --desired-b64 "$desired"; then
+  exit 0
+fi
+status=$?
+if [ "$status" = 2 ]; then
+  warn "Orca settings were not reconciled; with Orca closed, run: just orca-settings apply"
+else
+  warn "Orca settings reconcile failed (exit $status); run: just orca-settings apply"
+fi
+{{- end -}}

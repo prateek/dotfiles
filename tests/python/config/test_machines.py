@@ -24,7 +24,8 @@ class MachineFeaturesTests(RepoTestCase):
             "personal": {
                 "pin_hostname": True,
                 "touchid_sudo": True,
-                "groups": ["core", "mac-desktop", "ai-agent-apps", "codex", "developer-tools", "mac-developer-tools", "personal-apps", "forks"],
+                "groups": ["core", "mac-desktop", "ai-agent-apps", "developer-tools", "mac-developer-tools", "personal-apps", "forks"],
+                "agent_clis": ["claude", "codex", "omp", "pi", "gemini"],
                 "run_install_scripts": True, "apply_macos_defaults": True,
                 "secrets_enabled": True, "elevation": "none",
                 "private_overlay": False, "granola_mcp": True, "tls_inspection": False,
@@ -32,7 +33,8 @@ class MachineFeaturesTests(RepoTestCase):
             "homelab": {
                 "pin_hostname": True,
                 "touchid_sudo": False,
-                "groups": ["core", "ai-agent-apps", "codex", "developer-tools", "mac-developer-tools", "apple-development", "homelab-overlay"],
+                "groups": ["core", "ai-agent-apps", "developer-tools", "mac-developer-tools", "apple-development", "homelab-overlay"],
+                "agent_clis": ["claude", "codex", "omp", "pi", "gemini"],
                 "runner_vm_name": "tartelet-runner", "runner_vm_count": 1,
                 "runner_scope": "repo", "runner_start_on_launch": True, "granola_mcp": True,
                 "tls_inspection": False,
@@ -41,11 +43,13 @@ class MachineFeaturesTests(RepoTestCase):
                 "pin_hostname": False,
                 "touchid_sudo": True,
                 "groups": ["core", "mac-desktop", "ai-agent-apps", "developer-tools", "mac-developer-tools", "work-apps", "forks"],
+                "agent_clis": ["claude", "cursor-agent", "pi"],
                 "private_overlay": True, "elevation": "jamf-self-service", "granola_mcp": False,
                 "tls_inspection": True, "mcp_gateway_browser_hook": True,
             },
             "devbox": {
                 "groups": ["devbox"],
+                "agent_clis": ["claude", "cursor-agent", "omp", "pi"],
                 "apply_macos_defaults": False, "managed_allowlist": True, "git_config_xdg": True,
             },
         }
@@ -120,6 +124,11 @@ class MachineFeaturesTests(RepoTestCase):
 
     def test_unknown_type_fails_with_a_typo_diagnostic(self):
         self.assertIn(b"unknown machine type", self.refuse({"machine_type": "nope"}))
+
+    def test_unknown_agent_cli_fails_with_a_catalogue_diagnostic(self):
+        stderr = self.refuse({"machine_type": "personal", "machines_local": {"agent_clis": ["claude", "clawd"]}})
+        self.assertIn(b'unknown agent "clawd" in agent_clis', stderr)
+        self.assertIn(b"agents.toml", stderr)
 
     def test_a_type_must_declare_its_os(self):
         stderr = self.refuse({"machine_type": "headless", "machines": {"type": {"headless": {"groups": ["core"]}}}})

@@ -120,18 +120,6 @@ casks = [
   { name = "stablyai/orca/orca" },
 ]
 
-# Applies to: personal, homelab. Work excludes Codex; cursor-agent covers the
-# GPT tier there (see machines.toml acpx_routes).
-#
-# Only the ACP adapter is a Homebrew package. Selecting this group also selects
-# run_after_07-codex-standalone.sh, which installs the CLI itself through
-# OpenAI's standalone installer; that script explains why the cask cannot.
-[packages.groups.codex]
-description = "OpenAI Codex CLI and its ACP adapter"
-brews = [
-  { name = "codex-acp" },
-]
-
 # Applies to: devbox.
 # Only the formulae the last 60 days of agent sessions actually ran (see
 # docs/plans/linux-devbox-plan.md). Casks and macOS-only tools stay off. Add a

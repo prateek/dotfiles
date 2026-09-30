@@ -100,9 +100,12 @@ test-crit-evals *args:
 zsh-fresh-shells mode="verify":
     zsh ./scripts/audit/zsh-fresh-shells.zsh {{ mode }} --dotfiles-root "{{ justfile_directory() }}"
 
-# Compare tracked Orca settings against the installed app and refresh the snapshot.
-audit-orca-settings:
-    bash ./scripts/audit/orca-settings.sh
+# Report drift between the tracked Orca settings and Orca's live profile-state store (read-only).
+audit-orca-settings: (orca-settings "check")
+
+# Reconcile tracked Orca settings into Orca's profile-state store. mode: check, or apply with Orca closed.
+orca-settings mode="check":
+    bash ./scripts/audit/orca-settings.sh {{ mode }}
 
 # Install the launch agent that syncs agent sessions to the archive.
 install-session-sync-app:

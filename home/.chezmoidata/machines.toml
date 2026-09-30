@@ -36,8 +36,10 @@ touchid_sudo = false
 # Pin macOS HostName to <LocalHostName>.local when unset. Unset, the kernel hostname
 # comes from DHCP (often just "Mac"), so the host.<hostname> layer never matches.
 pin_hostname = false
-# Agent CLIs selected for installation/plugin activation. crit's agent_cmd is
-# set only when claude is listed. Empty by default so a machine opts in explicitly.
+# Every agent CLI this machine gets, by id from home/.chezmoidata/agents.toml:
+# installs, config gates, plugin activation, acpx harness checks, and Orca's
+# agent picker all derive from this list (ADR 0041). crit's agent_cmd is set
+# only when claude is listed. Empty by default so a machine opts in explicitly.
 agent_clis = []
 # ACP eligibility and preference are independent of installed/plugin clients.
 # Lists replace wholesale in host/local overrides. acpx_order_<family> can
@@ -92,11 +94,11 @@ groups = ["core"]
 # Personal daily-driver Mac.
 [machines.type.personal]
 os = "darwin"
-groups = ["core", "mac-desktop", "ai-agent-apps", "codex", "developer-tools", "mac-developer-tools", "personal-apps", "forks"]
+groups = ["core", "mac-desktop", "ai-agent-apps", "developer-tools", "mac-developer-tools", "personal-apps", "forks"]
 touchid_sudo = true
 pin_hostname = true
 secrets_enabled = true
-agent_clis = ["claude", "codex", "omp"]
+agent_clis = ["claude", "codex", "omp", "pi", "gemini"]
 acpx_routes = ["local", "codex", "claude", "openai", "anthropic", "cerebras", "openrouter"]
 granola_mcp = true
 agent_session_wiki = true
@@ -106,7 +108,7 @@ agent_session_wiki = true
 # full interactive personal desktop surface.
 [machines.type.homelab]
 os = "darwin"
-groups = ["core", "ai-agent-apps", "codex", "developer-tools", "mac-developer-tools", "apple-development", "homelab-overlay"]
+groups = ["core", "ai-agent-apps", "developer-tools", "mac-developer-tools", "apple-development", "homelab-overlay"]
 pin_hostname = true
 # Non-secret Tartelet runner facts consumed by the managed dk.shape.Tartelet.plist
 # fragment (verified key encodings from Tartelet source; see the runner plan). The
@@ -116,7 +118,7 @@ runner_vm_count = 1
 runner_labels = "tartelet,homelab"
 runner_scope = "repo"                  # GitHubRunnerScope rawValue: "organization" | "repo"; repo = one runner per repo
 runner_start_on_launch = true
-agent_clis = ["claude", "codex", "omp"]
+agent_clis = ["claude", "codex", "omp", "pi", "gemini"]
 acpx_routes = ["local", "codex", "claude", "openai", "anthropic", "cerebras", "openrouter"]
 granola_mcp = true
 agent_session_wiki = true
@@ -125,17 +127,17 @@ agent_session_wiki = true
 # the private config overlay.
 # omp is excluded: Cortex XDR's BIOC "SOC - AI Apps BTP Mac" (process_start_978)
 # matches omp on process start and terminates the whole causality group, which is
-# rooted at the terminal's login session, so any apply that reconciles omp plugins
-# (see docs/adr/0020-apply-reconciles-plugin-installs.md) kills the terminal. omp
-# is not an acpx route here either. The binary still installs via mise; only the
-# apply-time plugin reconcile is dropped.
+# rooted at the terminal's login session, so a plugin reconcile
+# (see docs/adr/0020-apply-reconciles-plugin-installs.md) and a manual launch both
+# kill the terminal. Leaving it out of agent_clis keeps mise from installing it
+# and removes a copy an earlier apply left behind; it is not an acpx route either.
 [machines.type.work]
 os = "darwin"
 groups = ["core", "mac-desktop", "ai-agent-apps", "developer-tools", "mac-developer-tools", "work-apps", "forks"]
 touchid_sudo = true
 private_overlay = true
 elevation = "jamf-self-service"
-agent_clis = ["cursor-agent", "claude"]
+agent_clis = ["claude", "cursor-agent", "pi"]
 acpx_routes = ["claude-vertex", "cursor"]
 agent_session_wiki = true
 agent_session_wiki_sparse = true
@@ -156,7 +158,7 @@ apply_macos_defaults = false
 system_activates_mise = true
 managed_allowlist = true
 git_config_xdg = true
-agent_clis = ["claude", "cursor-agent"]
+agent_clis = ["claude", "cursor-agent", "omp", "pi"]
 
 # Personal daily-driver MacBook.
 [machines.host.prateek-personal-mbp]

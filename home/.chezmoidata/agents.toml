@@ -1,0 +1,60 @@
+# Catalogue of the AI agent CLIs a machine can select in machines.toml
+# agent_clis (ADR 0041). Each id is one table; features.tmpl refuses an
+# agent_clis entry that is not listed here, and agents.tmpl hands consumers the
+# selected and unselected entries so no template carries its own `has "x"`
+# ladder.
+#
+# Fields:
+#   binary        executable name on PATH; hooks check it before using the agent
+#   install       "native-hook" (a run_after script owns the install) or "mise"
+#   mise          mise tool spec, for install = "mise" (rendered into clis.toml)
+#   adapters      extra packages the agent brings, as "mise:<spec>" or "brew:<formula>"
+#   config_paths  chezmoi targets to ignore on a machine that lacks the agent
+#   orca          Orca's TUI agent id, for the agent picker (empty = not an Orca agent)
+#   plugins       the agent takes the rendered agent plugins (hooks 36/39)
+#   harness       acpx harness this agent provides; a declared route needs one
+
+[agents.claude]
+binary = "claude"
+install = "native-hook"                     # run_after_06-claude-native (ADR 0029)
+adapters = ["mise:npm:@agentclientprotocol/claude-agent-acp"]
+orca = "claude"
+plugins = true
+harness = "claude"
+
+[agents.codex]
+binary = "codex"
+install = "native-hook"                     # run_after_07-codex-standalone (ADR 0027)
+adapters = ["brew:codex-acp"]
+config_paths = [".codex"]
+orca = "codex"
+plugins = true
+harness = "codex"
+
+[agents.cursor-agent]
+binary = "cursor-agent"
+install = "native-hook"                     # run_after_07-cursor-agent
+config_paths = [".cursor/cli-config.json"]
+orca = "cursor"
+harness = "cursor"
+
+[agents.omp]
+binary = "omp"
+install = "mise"
+mise = "github:can1357/oh-my-pi"            # standalone release binary
+orca = "omp"
+plugins = true
+harness = "omp"
+
+[agents.pi]
+binary = "pi"
+install = "mise"
+mise = "npm:@earendil-works/pi-coding-agent" # Cursor SDK bridge peers are managed in ~/.pi/agent/settings.json
+config_paths = [".pi"]
+orca = "pi"
+
+[agents.gemini]
+binary = "gemini"
+install = "mise"
+mise = "npm:@google/gemini-cli"
+orca = "gemini"
