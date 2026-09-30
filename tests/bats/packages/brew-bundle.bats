@@ -75,15 +75,19 @@ render_bundle() {
 
 @test "Brew Bundle trusts selected third-party packages and creates their taps before installation" {
   render_bundle personal
+  # The Mac App Store warning is Mac-only; a cached sudo credential covers the cask path.
+  printf '#!/bin/sh\nprintf "Darwin\\n"\n' > "$FIXTURE/bin/uname"
+  printf '#!/bin/sh\nexit 0\n' > "$FIXTURE/bin/sudo"
+  chmod +x "$FIXTURE/bin/sudo"
   run_bash 0 "$FIXTURE/install.sh"
   assert_success
   [[ "$stderr" == *'Mac App Store installs disabled'* ]]
   local brewfile entry before
   brewfile="$(cat "$FIXTURE/Brewfile")"
-  for entry in 'brew "eugene1g/safehouse/agent-safehouse", trusted: true' \
-    'cask "dagger/tap/container-use", trusted: true' 'tap "mattt/tap"' \
-    'cask "mattt/tap/imcp", trusted: true' 'cask "nikitabobko/tap/aerospace", trusted: true' \
-    'cask "stablyai/orca/orca", trusted: true'; do
+  for entry in 'tap "eugene1g/safehouse", trusted: true' 'brew "eugene1g/safehouse/agent-safehouse"' \
+    'tap "dagger/tap", trusted: true' 'cask "dagger/tap/container-use"' 'tap "mattt/tap", trusted: true' \
+    'cask "mattt/tap/imcp"' 'tap "nikitabobko/tap", trusted: true' 'cask "nikitabobko/tap/aerospace"' \
+    'tap "stablyai/orca", trusted: true' 'cask "stablyai/orca/orca"'; do
     [[ "$brewfile" == *"$entry"* ]]
   done
   for entry in 'brew "homebrew/core/xcodes"' 'brew "fastlane"' 'brew "openai/tools/tart"'; do

@@ -85,6 +85,53 @@ def load_published_packages(artifact: Path, policy_path: Path = POLICY_PATH) -> 
     return packages
 
 
+def load_overlay_packages(root: Path) -> tuple[str, list[Package]]:
+    """Read a hand-maintained marketplace (the work overlay) with no build receipt.
+
+    A plugin is eligible for each client whose catalog lists it (claude and omp
+    read the Claude catalog, codex the Codex one) and loaded by default; the
+    overlay is opt-in per machine, so it carries no activation policy.
+    """
+    catalogs = {
+        "codex": json.loads((root / ".agents/plugins/marketplace.json").read_text()),
+        "claude": json.loads((root / ".claude-plugin/marketplace.json").read_text()),
+    }
+    name = catalogs["codex"]["name"]
+    if name == "prateek-local":
+        raise ValueError("an overlay marketplace cannot reuse the prateek-local name")
+    if catalogs["claude"]["name"] != name:
+        raise ValueError(f"Claude and Codex catalogs disagree on the overlay marketplace name: {root}")
+    paths: dict[str, dict[str, Path]] = {}
+    for agent, catalog in catalogs.items():
+        for entry in catalog["plugins"]:
+            source = entry["source"]
+            path = (root / (source if isinstance(source, str) else source["path"])).resolve()
+            if not path.is_relative_to(root.resolve()):
+                raise ValueError(f"overlay plugin {entry['name']} points outside the marketplace: {path}")
+            paths.setdefault(entry["name"], {})[agent] = path
+    packages = []
+    for plugin, by_agent in paths.items():
+        if len(set(by_agent.values())) > 1:
+            raise ValueError(f"overlay plugin {plugin} points at different directories in the Claude and Codex catalogs")
+        path = next(iter(by_agent.values()))
+        manifests = {agent: json.loads((path / f".{agent}-plugin/plugin.json").read_text()) for agent in by_agent}
+        # The reconcilers compare installed versions against the manifest's.
+        if any("version" not in manifest for manifest in manifests.values()):
+            raise ValueError(f"overlay plugin {plugin} has a manifest with no version")
+        # Claude and omp compare against the Claude manifest; a split version would reinstall every run.
+        if len({manifest["version"] for manifest in manifests.values()}) > 1:
+            raise ValueError(f"overlay plugin {plugin} has different Claude and Codex manifest versions")
+        manifest = manifests.get("codex") or manifests["claude"]
+        # Hand-maintained plugins may ship only commands or MCP config, with no skills/.
+        skills = sorted((path / "skills").iterdir()) if (path / "skills").is_dir() else []
+        packages.append(Package(plugin, path, manifest.get("interface", {}).get("displayName", plugin),
+                                {agent: "plugin" if agent in by_agent else "none" for agent in AGENTS},
+                                tuple(SkillSource(plugin, "local", skill.name, skill)
+                                      for skill in skills if (skill / "SKILL.md").is_file()),
+                                True, tuple(iter_package_payloads(path)), manifest["version"]))
+    return name, packages
+
+
 @lru_cache(maxsize=None)
 def just_binary() -> str:
     # A mise shim resolves its version from the *caller's* directory, and these

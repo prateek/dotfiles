@@ -4,4 +4,12 @@
 {{- $_ := set $plugins (printf "%s@prateek-local" $name) $policy.default_loaded -}}
 {{- end -}}
 {{- end -}}
-{{- dict "extraKnownMarketplaces" (dict "prateek-local" (dict "source" (dict "source" "directory" "path" (printf "%s/.agents/plugins" .chezmoi.homeDir)))) "enabledPlugins" $plugins | toPrettyJson -}}
+{{- $markets := dict "prateek-local" (dict "source" (dict "source" "directory" "path" (printf "%s/.agents/plugins" .chezmoi.homeDir))) -}}
+{{- $wo := includeTemplate "work-overlay.tmpl" . | fromJson -}}
+{{- if $wo.marketplace -}}
+{{-   $_ := set $markets $wo.marketplace (dict "source" (dict "source" "directory" "path" $wo.plugins)) -}}
+{{-   range $wo.claude_plugins -}}
+{{-     $_ := set $plugins (printf "%s@%s" . $wo.marketplace) true -}}
+{{-   end -}}
+{{- end -}}
+{{- dict "extraKnownMarketplaces" $markets "enabledPlugins" $plugins | toPrettyJson -}}

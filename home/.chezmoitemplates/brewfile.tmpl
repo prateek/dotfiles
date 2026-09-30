@@ -17,9 +17,13 @@
   templates fail strictly on `.foo` against a map without "foo".
 */ -}}
 {{- $root := . -}}
-{{- $groups := (includeTemplate "features.tmpl" . | fromJson).groups -}}
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- $groups := $f.groups -}}
 {{- $masOptIn := env "DOTFILES_INSTALL_MAS_APPS" | lower -}}
 {{- $includeMas := has $masOptIn (list "1" "true" "yes" "on") -}}
+{{- /* Casks and Mac App Store apps exist only on macOS. Off macOS the Brewfile
+       carries taps and formulae alone. */ -}}
+{{- $isMac := eq $f.os "darwin" -}}
 
 {{- /* Officials shadowed by an active downstream fork are subtracted from the
        Brewfile so brew bundle never reinstalls one underneath its fork build.
@@ -52,7 +56,7 @@
 {{-   range default (list) (dig "brews" (list) $g) -}}
 {{-     if and (not (has .name $brewSeen)) (not (has .name $replacedBrews)) -}}{{- $brews = mustAppend $brews . -}}{{- $brewSeen = mustAppend $brewSeen .name -}}{{- end -}}
 {{-   end -}}
-{{-   range default (list) (dig "casks" (list) $g) -}}
+{{-   range (ternary (default (list) (dig "casks" (list) $g)) (list) $isMac) -}}
 {{-     if and (not (has .name $caskSeen)) (not (has .name $replacedCasks)) -}}{{- $casks = mustAppend $casks . -}}{{- $caskSeen = mustAppend $caskSeen .name -}}{{- end -}}
 {{-   end -}}
 {{-   range default (list) (dig "mas" (list) $g) -}}
@@ -60,13 +64,15 @@
 {{-   end -}}
 {{- end -}}
 
+{{- /* Homebrew refuses third-party formulae, casks and commands unless their
+       tap is trusted. A declared tap is one we rely on, so trust all of it. */ -}}
 {{- $tapLines := list -}}
 {{- range $taps -}}
 {{-   $url := dig "url" "" . -}}
 {{-   if $url -}}
-{{-     $tapLines = mustAppend $tapLines (printf "tap %q, %q" .name $url) -}}
+{{-     $tapLines = mustAppend $tapLines (printf "tap %q, %q, trusted: true" .name $url) -}}
 {{-   else -}}
-{{-     $tapLines = mustAppend $tapLines (printf "tap %q" .name) -}}
+{{-     $tapLines = mustAppend $tapLines (printf "tap %q, trusted: true" .name) -}}
 {{-   end -}}
 {{- end -}}
 
@@ -81,10 +87,6 @@
 {{-     $quoted := list -}}
 {{-     range $args -}}{{- $quoted = mustAppend $quoted (printf "%q" .) -}}{{- end -}}
 {{-     $line = printf "%s, args: [%s]" $line (join ", " $quoted) -}}
-{{-   end -}}
-{{-   $parts := splitList "/" .name -}}
-{{-   if and (eq (len $parts) 3) (ne (index $parts 0) "homebrew") -}}
-{{-     $line = printf "%s, trusted: true" $line -}}
 {{-   end -}}
 {{-   $brewLines = mustAppend $brewLines $line -}}
 {{- end -}}
@@ -105,15 +107,11 @@
 {{-   if $appdir -}}
 {{-     $line = printf "%s, args: { appdir: %q }" $line $appdir -}}
 {{-   end -}}
-{{-   $parts := splitList "/" .name -}}
-{{-   if and (eq (len $parts) 3) (ne (index $parts 0) "homebrew") -}}
-{{-     $line = printf "%s, trusted: true" $line -}}
-{{-   end -}}
 {{-   $caskLines = mustAppend $caskLines $line -}}
 {{- end -}}
 
 {{- $masLines := list -}}
-{{- if $includeMas -}}
+{{- if and $isMac $includeMas -}}
 {{-   range $mas -}}
 {{-     $masLines = mustAppend $masLines (printf "mas %q, id: %d" .name (int .id)) -}}
 {{-   end -}}

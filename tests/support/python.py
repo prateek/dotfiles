@@ -2,10 +2,24 @@ import json
 import os
 import subprocess
 import tempfile
+import tomllib
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+
+
+def declared_os(machine_type, data=None):
+    """The OS a machine type declares; features.tmpl refuses any other.
+
+    A type layer the test injects through data wins over machines.toml. None when
+    neither declares one, so the render keeps the host's OS.
+    """
+    injected = (data or {}).get("machines", {}).get("type", {}).get(machine_type, {})
+    if "os" in injected:
+        return injected["os"]
+    machines = tomllib.loads((ROOT / "home/.chezmoidata/machines.toml").read_text())["machines"]
+    return machines["type"].get(machine_type, {}).get("os")
 
 
 class RepoTestCase(unittest.TestCase):
@@ -46,10 +60,14 @@ class RepoTestCase(unittest.TestCase):
         return result
 
     def render(self, relative_path, machine_type="personal", *, data=None, source=ROOT):
+        data = dict(data or {})
         override = {"chezmoi": {"hostname": "dotfiles-test-host"}}
+        if operating_system := declared_os(machine_type or "personal", data):
+            override["chezmoi"]["os"] = operating_system
+        override["chezmoi"] |= data.pop("chezmoi", {})
         if machine_type is not None:
             override["machine_type"] = machine_type
-        override |= data or {}
+        override |= data
         result = self.command([
             "chezmoi", "--source", str(source), "--config", str(self.config),
             "--destination", str(self.home), "--cache", str(self.work / "cache"),

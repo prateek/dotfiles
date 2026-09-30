@@ -62,7 +62,7 @@ test-chezmoi-apply:
     #!/usr/bin/env bash
     set -euo pipefail
     command -v chezmoi >/dev/null 2>&1 || { echo "Missing chezmoi for apply validation" >&2; exit 1; }
-    for type in ci personal work; do
+    for type in ci personal work devbox; do
       {{ mise_env }} ./scripts/chezmoi/test-apply-dry-run.sh "$type" "{{ justfile_directory() }}"
     done
 

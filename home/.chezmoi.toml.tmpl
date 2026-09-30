@@ -17,7 +17,7 @@
   `chezmoi init` again.
 */ -}}
 {{- $dotfilesDir := env "DOTFILES_ROOT" | default (joinPath .chezmoi.homeDir "dotfiles") -}}
-{{- $machineType := promptChoiceOnce . "machine_type" "machine_type" (list "personal" "homelab" "work" "ci") "personal" -}}
+{{- $machineType := promptChoiceOnce . "machine_type" "machine_type" (list "personal" "homelab" "work" "devbox" "ci") "personal" -}}
 
 {{- /* The Jamf Self Service policy ID is identity (which Jamf policy elevates
        this box), not a behavior toggle, so it stays in [data]. The elevation
@@ -31,10 +31,26 @@
 {{-   $jamfPolicyId = promptStringOnce . "jamf_policy_id" "Jamf Self Service policy ID for temp admin (see docs/references/jamf-self-service-elevation.md)" "" -}}
 {{- end -}}
 
+{{- /* The work overlay repo, branch, and directory name the employer, and this
+       repo is public, so they live only in the rendered config. Prompt on work,
+       where the private_overlay feature is on; leaving the repo empty disables
+       the overlay. See docs/adr/0039-work-overlay-in-work-repo.md. */ -}}
+{{- $workOverlay := dig "work_overlay" dict . -}}
+{{- if and (not $workOverlay) (eq $machineType "work") -}}
+{{-   $workOverlay = dict
+        "repo" (promptStringOnce . "work_overlay.repo" "Work overlay git URL (empty disables it)" "")
+        "ref" (promptStringOnce . "work_overlay.ref" "Work overlay branch" "")
+        "subdir" (promptStringOnce . "work_overlay.subdir" "Work overlay directory inside the repo" "") -}}
+{{- end -}}
+
 sourceDir = {{ $dotfilesDir | quote }}
 
 # Apply scripts can prompt for sudo, so disable the pager to keep the TTY free.
 pager = ""
+
+# chezmoi applies the process umask. Ubuntu's 002 would make every managed file
+# group-writable and chmod existing parents such as ~/.local; pin the macOS value.
+umask = 0o022
 
 [data]
 dotfiles_dir = {{ $dotfilesDir | quote }}
@@ -49,6 +65,11 @@ jamf_policy_id = {{ $jamfPolicyId | quote }}
 {{- with dig "machines_local" dict . }}
 
 [data.machines_local]
+{{ toToml . | trim }}
+{{- end }}
+{{- with $workOverlay }}
+
+[data.work_overlay]
 {{ toToml . | trim }}
 {{- end }}
 {{- with dig "secrets" "refs" dict . }}

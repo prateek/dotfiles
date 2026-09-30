@@ -21,6 +21,16 @@ def fail(message):
 
 
 marketplaces = state["codex_marketplaces"] if cli == "codex" else state["marketplaces"]
+
+
+def catalog_name(root):
+    catalog = ".agents/plugins/marketplace.json" if cli == "codex" else ".claude-plugin/marketplace.json"
+    return json.loads((Path(root) / catalog).read_text())["name"]
+
+
+def manifest_path(key, kind):
+    name, marketplace = key.split("@")
+    return Path(marketplaces[marketplace]) / "plugins" / name / kind / "plugin.json"
 omp_installed = state.setdefault("omp", {})
 if args[0] == "app-server":
     for line in sys.stdin:
@@ -48,10 +58,10 @@ elif args[:2] == ["plugin", "install"] and cli == "omp" and "--force" in args:
     key = args[2]
     if os.environ.get("FAKE_PLUGIN_FAIL") in ("install", key):
         fail("simulated install failure")
-    name = key.split("@")[0]
+    name, marketplace = key.split("@")
     if "omp_catalog" in state and name not in state["omp_catalog"]:
-        fail(f'Plugin "{name}" not found in marketplace "prateek-local"')
-    manifest = Path(marketplaces["prateek-local"]) / "plugins" / name / ".claude-plugin/plugin.json"
+        fail(f'Plugin "{name}" not found in marketplace "{marketplace}"')
+    manifest = manifest_path(key, ".claude-plugin")
     prior = omp_installed.get(key)
     omp_installed[key] = {"enabled": bool(prior["enabled"]) if prior else True, "version": json.loads(manifest.read_text())["version"]}
     save()
@@ -70,14 +80,14 @@ elif args[:3] == ["plugin", "marketplace", "list"]:
     entries = [{"name": name, "root": root, "installLocation": root} for name, root in marketplaces.items()]
     print(json.dumps(entries if cli == "claude" else {"marketplaces": entries}))
 elif args[:3] == ["plugin", "marketplace", "add"]:
-    marketplaces["prateek-local"] = args[3]
+    marketplaces[catalog_name(args[3])] = args[3]
     save()
 elif args[:3] == ["plugin", "marketplace", "remove"]:
     del marketplaces[args[3]]
     save()
 elif args[:3] == ["plugin", "marketplace", "update"]:
     if cli == "omp":
-        catalog = Path(marketplaces["prateek-local"]) / ".claude-plugin/marketplace.json"
+        catalog = Path(marketplaces[args[3]]) / ".claude-plugin/marketplace.json"
         state["omp_catalog"] = [entry["name"] for entry in json.loads(catalog.read_text())["plugins"]]
         save()
 elif args[:2] == ["plugin", "list"]:
@@ -87,8 +97,7 @@ elif args[:2] == ["plugin", "list"]:
 elif args[:2] in (["plugin", "install"], ["plugin", "add"], ["plugin", "update"]):
     if os.environ.get("FAKE_PLUGIN_FAIL") in ("install", args[2]):
         fail("simulated install failure")
-    name = args[2].split("@")[0]
-    manifest = Path(marketplaces["prateek-local"]) / "plugins" / name / f".{cli}-plugin/plugin.json"
+    manifest = manifest_path(args[2], f".{cli}-plugin")
     state[cli][args[2]] = {"enabled": True, "version": json.loads(manifest.read_text())["version"]}
     save()
 elif args[:2] in (["plugin", "enable"], ["plugin", "disable"]):

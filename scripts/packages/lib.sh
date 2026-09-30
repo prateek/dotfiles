@@ -3,12 +3,26 @@
 # lib.sh — shared helpers for the scripts/packages renderers.
 # Source this; do not execute it.
 
+# machine_type_os <name>
+#
+# Prints the OS a machine type declares in home/.chezmoidata/machines.toml, or
+# nothing for an undeclared or unknown type so features.tmpl reports it. Reads
+# the data directly: features.tmpl refuses to resolve a type on a host of
+# another OS, which is exactly the render the callers need.
+machine_type_os() {
+  local repo_root
+  repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
+  chezmoi --source "$repo_root/home" --config /dev/null --config-format toml \
+    execute-template "{{ dig \"type\" \"$1\" \"os\" \"\" .machines }}"
+}
+
 # render_chezmoi_template --template <path> [--machine-type <name>]
 #                         [--output <file>] [--env KEY=VALUE]...
 #
 # Renders a home/.chezmoitemplates fragment. Without --machine-type the render
 # follows the user's own chezmoi config (the current machine); without --output
-# it writes to stdout.
+# it writes to stdout. A --machine-type render is canonical for that type, so it
+# also renders as the type's declared OS instead of inheriting the host's.
 render_chezmoi_template() {
   local template="" machine_type="" output=""
   local -a env_args=()
@@ -48,6 +62,11 @@ render_chezmoi_template() {
       # end in X's.
       printf '[data]\nmachine_type = "%s"\n' "$machine_type" >"$scratch/chezmoi.toml"
       config_args+=(--config "$scratch/chezmoi.toml")
+      # The templates gate casks and Mac-only formulae on .chezmoi.os; with no
+      # user config in play, overriding it here reaches nothing else.
+      local os
+      os="$(machine_type_os "$machine_type")" || return 1
+      [[ -z $os ]] || config_args+=(--override-data "{\"chezmoi\":{\"os\":\"$os\"}}")
     fi
 
     # --source pins the source dir so the renderer works from any cwd and under

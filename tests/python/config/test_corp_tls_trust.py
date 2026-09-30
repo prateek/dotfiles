@@ -202,7 +202,7 @@ class CorporateTlsTrust(RepoTestCase):
 
     def run_hook(self, machine="work"):
         script = self.work / "hook.sh"
-        script.write_bytes(self.render(HOOK, machine, data={"chezmoi": {"os": "darwin"}}))
+        script.write_bytes(self.render(HOOK, machine))
         return subprocess.run(["/bin/bash", str(script)], env=self.env,
                               capture_output=True, text=True, timeout=120)
 

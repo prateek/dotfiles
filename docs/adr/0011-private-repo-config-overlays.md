@@ -1,13 +1,16 @@
 ---
-status: accepted
+status: superseded
 doc_type: adr
 created: 2026-06-26
+updated: 2026-09-29
+closed: 2026-09-29
 owner: Prateek
+superseded_by: 0039-work-overlay-in-work-repo.md
 related:
   - 0006-chezmoi-migration-prototype.md
   - 0010-machine-type-package-selection.md
   - ../references/chezmoi-architecture.md
-status_detail: "Accepted and implemented on the prateek/slack-conventions branch; first consumer is ~/.agents/docs/slack.md."
+status_detail: "Replaced by ADR 0039: the work overlay moved into the work repo and the private repo is a dormant placeholder. The body describes the retired external and run_after composer."
 ---
 
 # ADR 0011 — Private repo for config overlays

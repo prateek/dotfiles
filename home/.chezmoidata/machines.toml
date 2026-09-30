@@ -13,11 +13,19 @@
 # `chezmoi apply` with no re-init. A new role is a [machines.type.*] layer; a
 # richer attribute (OS, host, flavor) is a [machines.os.*] / [machines.host.*]
 # layer — no new enum, no per-file `eq .machine_type` ladders.
+#
+# Every [machines.type.*] layer declares the OS it runs as `os`; no other layer
+# may set it. features.tmpl refuses a host whose OS differs, and the per-type
+# renderers (render-brewfile, the apply dry-run, the tests) render as this OS
+# whatever the host runs.
 
 [machines.defaults]
 groups = ["core"]
 run_install_scripts = true
 apply_macos_defaults = true
+# The OS image activates mise from its system shell rc files, so nested shells
+# inherit a session; the zsh profile undoes it before setting its own PATH.
+system_activates_mise = false
 # Secret-backed templates need the 1Password service account token in the
 # login keychain; the apply preflight fails fast when it is missing.
 secrets_enabled = false
@@ -63,6 +71,14 @@ direnv_trust_monorepo = false
 # Wrap IT's MCP gateway so its per-session CyberArk sign-in opens in a
 # background Orca tab and asks for attention instead of stealing focus.
 mcp_gateway_browser_hook = false
+# Allowlist profile: .chezmoiignore ignores every target and script, then
+# un-ignores only what the machine takes. For a machine where most of the
+# source state targets macOS or another owner already writes $HOME.
+managed_allowlist = false
+# Render the git config to ~/.config/git/config instead of ~/.gitconfig, for a
+# machine where another owner writes ~/.gitconfig. Git reads the XDG file
+# first, so that owner's identity and credential settings win.
+git_config_xdg = false
 
 # Minimal/fast tier for CI dry-run, Tart smoke, and shell audits. Keeps the
 # defaults' run_install_scripts/apply_macos_defaults = true so the Tart smoke
@@ -70,11 +86,13 @@ mcp_gateway_browser_hook = false
 # contexts (the chezmoi-script-status test) opt out via [data].machines_local,
 # and dry-runs never execute scripts regardless.
 [machines.type.ci]
+os = "darwin"
 groups = ["core"]
 
 # Personal daily-driver Mac.
 [machines.type.personal]
-groups = ["core", "mac-desktop", "ai-agent-apps", "codex", "developer-tools", "personal-apps", "forks"]
+os = "darwin"
+groups = ["core", "mac-desktop", "ai-agent-apps", "codex", "developer-tools", "mac-developer-tools", "personal-apps", "forks"]
 touchid_sudo = true
 pin_hostname = true
 secrets_enabled = true
@@ -87,7 +105,8 @@ agent_session_wiki = true
 # AI agent apps (agentsview + Orca need each other to be useful), without the
 # full interactive personal desktop surface.
 [machines.type.homelab]
-groups = ["core", "ai-agent-apps", "codex", "developer-tools", "apple-development", "homelab-overlay"]
+os = "darwin"
+groups = ["core", "ai-agent-apps", "codex", "developer-tools", "mac-developer-tools", "apple-development", "homelab-overlay"]
 pin_hostname = true
 # Non-secret Tartelet runner facts consumed by the managed dk.shape.Tartelet.plist
 # fragment (verified key encodings from Tartelet source; see the runner plan). The
@@ -111,7 +130,8 @@ agent_session_wiki = true
 # is not an acpx route here either. The binary still installs via mise; only the
 # apply-time plugin reconcile is dropped.
 [machines.type.work]
-groups = ["core", "mac-desktop", "ai-agent-apps", "developer-tools", "work-apps", "forks"]
+os = "darwin"
+groups = ["core", "mac-desktop", "ai-agent-apps", "developer-tools", "mac-developer-tools", "work-apps", "forks"]
 touchid_sudo = true
 private_overlay = true
 elevation = "jamf-self-service"
@@ -123,6 +143,20 @@ tls_inspection = true
 # Whitelist the work monorepo's .envrc so direnv skips the per-worktree prompt.
 direnv_trust_monorepo = true
 mcp_gateway_browser_hook = true
+
+# Linux devbox: a Cloud Workstation that work tooling provisions and
+# re-bootstraps. That tooling owns ~/.gitconfig, ~/.bashrc, and the Claude
+# credentials, so the dotfiles manage only an allowlist. Homebrew installs the
+# CLI groups; casks and macOS defaults stay off. See
+# docs/adr/0040-devbox-machine-type.md.
+[machines.type.devbox]
+os = "linux"
+groups = ["devbox"]
+apply_macos_defaults = false
+system_activates_mise = true
+managed_allowlist = true
+git_config_xdg = true
+agent_clis = ["claude", "cursor-agent"]
 
 # Personal daily-driver MacBook.
 [machines.host.prateek-personal-mbp]

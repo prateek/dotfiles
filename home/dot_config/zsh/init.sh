@@ -35,7 +35,7 @@ ZINIT_HOME="${ZINIT_HOME:-${XDG_DATA_HOME:-$HOME/.local/share}/zinit/zinit.git}"
 #-----------------------------------------------------
 if ! source_if_readable "$ZINIT_HOME/zinit.zsh"; then
   if ! source_if_readable "$HOME/.zinit/bin/zinit.zsh"; then
-    print -u2 "zinit not found at $ZINIT_HOME/zinit.zsh (run dotfiles apply chezmoi)."
+    print -u2 "zinit not found at $ZINIT_HOME/zinit.zsh (run chezmoi apply)."
     return 0 2>/dev/null || exit 0
   fi
 fi
@@ -56,7 +56,11 @@ unset zsh_fns
 #-----------------------------------------------------
 # load zinit plugins
 #-----------------------------------------------------
-if ! source_if_readable "$ZSHCONFIG/zinit-init.zsh"; then
+# zinit returns nonzero while a first shell installs plugins, so only a missing
+# file is worth reporting.
+if [[ -r "$ZSHCONFIG/zinit-init.zsh" ]]; then
+  source "$ZSHCONFIG/zinit-init.zsh"
+else
   print -u2 "Missing $ZSHCONFIG/zinit-init.zsh; skipping plugin setup."
 fi
 

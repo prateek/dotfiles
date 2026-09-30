@@ -3,6 +3,9 @@
 # deployed target when its source is removed, so list the orphans here. Safe to
 # prune these entries once every machine has applied them.
 
+{{- /* The allowlist profile manages only its own targets, and chezmoi applies
+     these removals even to ignored paths, so skip them there. */ -}}
+{{- if not (includeTemplate "features.tmpl" . | fromJson).managed_allowlist }}
 # worktrunk
 bin/wt-hook-sparse
 .config/worktrunk
@@ -23,7 +26,6 @@ bin/grmrepo-refresh
 
 # reverted Linux DevPod Orca pilot
 .local/bin/orca-cli
-.local/bin/orca-devpod-reconcile
 
 # Claude slash commands retired in favor of the superpowers package
 # (~/.agents/plugins/plugins/superpowers, disabled by default)
@@ -41,3 +43,4 @@ bin/grmrepo-refresh
 
 # browser CDP convention replaced by the utils-agent browser skill and docs/browser.md
 .agents/docs/browser-cdp.md
+{{- end }}

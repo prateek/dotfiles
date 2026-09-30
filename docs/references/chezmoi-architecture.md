@@ -2,7 +2,7 @@
 status: current
 doc_type: reference
 created: 2026-04-27
-updated: 2026-09-26
+updated: 2026-09-29
 related:
   - ../index.md
   - ../adr/0006-chezmoi-migration-prototype.md
@@ -101,11 +101,12 @@ Scripts must be idempotent. A rerun should converge or report a clear blocker.
   selected groups from the `features.tmpl` resolver, which resolves
   `machine_type` from `[data]` (default `personal`).
 - `home/.chezmoiscripts/run_onchange_after_10-brew-bundle.sh.tmpl` runs
-  `brew bundle` from that rendered input. The rendered Brewfile marks
-  tap-qualified third-party formulae and casks with `trusted: true`, and the
+  `brew bundle` from that rendered input. The rendered Brewfile marks every
+  declared tap `trusted: true`, which trusts its formulae and casks, and the
   script pre-taps declared taps before Bundle runs.
 - `scripts/packages/render-brewfile --machine-type <type>` is the audit and CI
-  entrypoint for the same template.
+  entrypoint for the same template. It renders as the type's declared `os`, so
+  the output does not depend on the host.
 - Mac App Store entries render only when `DOTFILES_INSTALL_MAS_APPS=true` or
   `--include-mas` is used.
 - Mise owns active tool selection and shims. See
@@ -115,14 +116,18 @@ Scripts must be idempotent. A rerun should converge or report a clear blocker.
 
 `[data]` in `home/.chezmoi.toml.tmpl` holds identity only: `machine_type` (the
 sole first-run prompt, also selectable with `chezmoi init --promptChoice
-'machine_type=<type>'`), the `xdg_*`/`dotfiles_dir` paths, and `jamf_policy_id`. All
+'machine_type=<type>'`), the `xdg_*`/`dotfiles_dir` paths, `jamf_policy_id`, and
+on work machines the `work_overlay` repo, branch, and directory
+([ADR 0039](../adr/0039-work-overlay-in-work-repo.md)). All
 machine behavior — package groups, install scripts, macOS defaults, secrets, the
-private overlay, the elevation method — is composed at apply time from the layered
+work overlay, the elevation method — is composed at apply time from the layered
 `home/.chezmoidata/machines.toml` table, resolved by
 `home/.chezmoitemplates/features.tmpl`. Layers merge low→high:
 `defaults < os.<os> < type.<machine_type> < host.<hostname>` < host-local
 `[data].machines_local`; consumers read it with one
-`{{- $f := includeTemplate "features.tmpl" . | fromJson -}}`. Per-machine
+`{{- $f := includeTemplate "features.tmpl" . | fromJson -}}`. Every type layer
+declares its `os`, which picks the `os.<os>` layer; no other layer may set it
+([ADR 0040](../adr/0040-devbox-machine-type.md)). Per-machine
 exceptions go in a host-local `[data].machines_local` block; apply-time runtime
 switches (`DOTFILES_SKIP_*`, etc.) stay separate and are never managed desired
 state. See [ADR 0012](../adr/0012-config-gating-convention.md) for the convention

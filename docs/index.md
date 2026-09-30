@@ -71,6 +71,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [Tartelet Runner Memory-Guard](plans/tartelet-runner-memory-guard-proposal.md) | Proposed; design for a circuit breaker that sheds the runner under host memory pressure after a 2026-07-03 jetsam wedge. Prototyped and validated, then dropped — no code in-tree. |
 | [Using-git-spice Skill](plans/using-git-spice-skill-plan.md) | Active; the replacement skill and config are applied, the duplicate is disabled, and the Orca smoke passed. Only the disruptive manual logged-out auth check remains. |
 | [Touch ID for sudo](plans/touchid-sudo-plan.md) | Active; focused `sudo_local` configuration and fixture checks. Live authentication remains an attended check. |
+| [Linux Devbox](plans/linux-devbox-plan.md) | Active; dotfiles and headless Orca on the Linux Cloud Workstation, one live-verified increment at a time. See [ADR 0040](adr/0040-devbox-machine-type.md). |
 | [Zsh Fresh-Shell Validator](plans/zsh-fresh-shell-validator-plan.md) | Active plan for shell correctness and startup checks. |
 
 ## Decision Records
@@ -90,7 +91,7 @@ for day-to-day implementation details.
 | [ADR 0008 - Sudo askpass via 1Password](adr/0008-sudo-askpass-1password.md) | Current behavior remains [Jamf Self Service Elevation](references/jamf-self-service-elevation.md); accepted askpass design is tracked in [Sudo Askpass 1Password](plans/sudo-askpass-1password-plan.md). |
 | [ADR 0009 - Karabiner config via Goku codegen](adr/0009-goku-karabiner-codegen.md) | [Goku Karabiner Migration](plans/goku-karabiner-migration-plan.md); edit `karabiner.edn`, never `karabiner.json`. |
 | [ADR 0010 - Single machine_type axis for package selection](adr/0010-machine-type-package-selection.md) | [Chezmoi Architecture](references/chezmoi-architecture.md) > Packages And Tools. |
-| [ADR 0011 - Private repo for config overlays](adr/0011-private-repo-config-overlays.md) | `prateek/dotfiles-private` cloned via gated `.chezmoiexternal`, composed by `run_after_37-agent-slack-doc`; first consumer `~/.agents/docs/slack.md`. |
+| [ADR 0011 - Private repo for config overlays](adr/0011-private-repo-config-overlays.md) | Superseded by [ADR 0039](adr/0039-work-overlay-in-work-repo.md); the private repo is a dormant placeholder. |
 | [ADR 0012 - Config-gating convention](adr/0012-config-gating-convention.md) | chezmoi toggle convention (render-time vs init-time), implemented as one identity prompt + a layered `machines.toml` resolved by `features.tmpl`. Current guidance: [Chezmoi Architecture](references/chezmoi-architecture.md) > Config Gating. |
 | [ADR 0013 - Agent tool integrations stay APM-vendored](adr/0013-apm-vendored-tool-integrations.md) | [Agent Skill Management](../.agents/skills/agent-skill-management/SKILL.md). |
 | [ADR 0014 - Tartelet self-hosted runners](adr/0014-tartelet-self-hosted-runners.md) | [Tartelet Self-Hosted Runners](plans/tartelet-runner-plan.md). |
@@ -118,6 +119,8 @@ for day-to-day implementation details.
 | [ADR 0036 - ACPX shared Herdr pane](adr/0036-acpx-shared-herdr-pane.md) | [ACPX shared pane plan](plans/acpx-shared-pane-plan.md) and the [acpx skill](../agent-marketplace/packages/utils-agent/skills/acpx/SKILL.md). |
 | [ADR 0037 - Repo-tracked landing preferences](adr/0037-repo-tracked-landing-preferences.md) | [Land-changes preferences](../agent-marketplace/packages/review/skills/land-changes/references/preferences.md). |
 | [ADR 0038 - Touch ID for sudo adopts any existing sudo_local](adr/0038-touchid-sudo-adopts-existing-file.md) | [Chezmoi Architecture](references/chezmoi-architecture.md#touch-id-for-sudo); `sudo-touchid`'s adopt-and-remove model for the apply hook. |
+| [ADR 0039 - Work overlay lives in the work repo](adr/0039-work-overlay-in-work-repo.md) | Accepted; a prompted, shallow git-repo external brings the work overlay's Slack fragments and its `work-overlay` native marketplace, installed by the reconciler's `--overlay` mode. [Agent Marketplace](references/agent-marketplace.md). |
+| [ADR 0040 - Devbox machine type](adr/0040-devbox-machine-type.md) | Accepted; [Linux devbox plan](plans/linux-devbox-plan.md). A dedicated `devbox` type whose `managed_allowlist` feature limits `.chezmoiignore` to an explicit allowlist. |
 
 ## Research
 

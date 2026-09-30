@@ -10,5 +10,12 @@
       "source": "directory",
       "path": "{{ .chezmoi.homeDir }}/.agents/plugins"
     }
+{{- $wo := includeTemplate "work-overlay.tmpl" . | fromJson }}
+{{- if $wo.marketplace }},
+    {{ $wo.marketplace | toJson }}: {
+      "source": "directory",
+      "path": {{ $wo.plugins | toJson }}
+    }
+{{- end }}
   }
 }

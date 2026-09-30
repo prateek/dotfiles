@@ -3,7 +3,7 @@ status: active
 doc_type: plan
 owner: Prateek
 created: 2026-09-02
-updated: 2026-09-03
+updated: 2026-09-29
 related:
   - ../adr/0007-default-loaded-plugin-policy.md
   - ../plans/crit-integration-plan.md
@@ -106,8 +106,8 @@ confounded:
 
 ### Phase 1: config over prose
 
-Add to the managed `home/dot_gitconfig`, which materializes as `~/.gitconfig`
-on every machine:
+Add to the shared `home/.chezmoitemplates/gitconfig`, which materializes as
+`~/.gitconfig` on the Macs and `~/.config/git/config` on the devbox:
 
 ```ini
 [rerere]

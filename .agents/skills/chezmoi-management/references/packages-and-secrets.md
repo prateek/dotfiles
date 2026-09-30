@@ -87,11 +87,12 @@ scripts/packages/render-brewfile --machine-type ci        # eyeball (core only)
 scripts/packages/render-brewfile --machine-type personal  # eyeball (full set)
 ```
 
-The apply script treats `packages.toml` as the trust source. Keep formulae and
-casks from non-official taps tap-qualified in package data. The rendered
-Brewfile marks those tap-qualified formulae and casks with `trusted: true`,
-excluding official `homebrew/*` entries. Do not commit Homebrew's generated
-trust store; let apply recreate that local state from package data.
+The apply script treats `packages.toml` as the trust source. Every declared
+tap renders as `tap "owner/repo", trusted: true`, which trusts everything in
+it; official `homebrew/*` repos are never declared. Declare the tap for each
+third-party formula or cask and keep the entry tap-qualified, so a short name
+cannot resolve to a same-named official package. Do not commit Homebrew's
+generated trust store; let apply recreate that local state from package data.
 
 **MAS entries need an explicit flag to appear in output.** The plain `render-brewfile` invocations above omit `mas` lines because the wrapper script clears `DOTFILES_INSTALL_MAS_APPS` from the environment by default (`env -u DOTFILES_INSTALL_MAS_APPS`); setting it inline like `DOTFILES_INSTALL_MAS_APPS=true scripts/packages/render-brewfile ...` does NOT work for that reason. Use the wrapper flag instead:
 
@@ -111,7 +112,7 @@ scripts/packages/render-brewfile --machine-type personal --include-mas
 {{- range $f.groups }} ... {{- end }}
 ```
 
-Feature keys: `groups`, `run_install_scripts`, `apply_macos_defaults`, `secrets_enabled`, `private_overlay`, `elevation`, plus the resolved `machine_type`. Layers merge low→high: `defaults < os.<os> < type.<machine_type> < host.<hostname>` < host-local `[data].machines_local`. A list (e.g. `groups`) is replaced wholesale by the highest layer that sets it; an unknown `machine_type` fails the resolver loudly (the typo guard).
+Feature keys: `groups`, `run_install_scripts`, `apply_macos_defaults`, `secrets_enabled`, `private_overlay` (gates the work overlay, which also needs `[data.work_overlay].repo`; see [ADR 0039](../../../../docs/adr/0039-work-overlay-in-work-repo.md)), `elevation`, plus the resolved `machine_type`. Layers merge low→high: `defaults < os.<os> < type.<machine_type> < host.<hostname>` < host-local `[data].machines_local`. A list (e.g. `groups`) is replaced wholesale by the highest layer that sets it; an unknown `machine_type` fails the resolver loudly (the typo guard).
 
 - **Change behavior for a role:** edit `[machines.type.<type>]` in `machines.toml`. It is render-time, so it lands on the next `chezmoi apply` with no re-init.
 - **One-off per-machine exception:** add a host-local `[data].machines_local` block in `~/.config/chezmoi/chezmoi.toml` (chezmoi-ignored), e.g. `[data.machines_local]` with `secrets_enabled = true`.

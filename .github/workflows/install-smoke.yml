@@ -26,7 +26,8 @@ jobs:
           # git ls-files just returns nothing for them.
           mapfile -t scripts < <(
             git ls-files scripts home/dot_agents/bin \
-              home/dot_local/bin/executable_crit-open |
+              home/dot_local/bin/executable_crit-open \
+              home/dot_local/bin/executable_orca-devpod-reconcile |
               while IFS= read -r file; do
                 head -n 1 "$file" | grep -Eq '^#!/(usr/)?bin/(env[[:space:]]+)?(ba)?sh([[:space:]]|$)' && printf '%s\n' "$file"
               done

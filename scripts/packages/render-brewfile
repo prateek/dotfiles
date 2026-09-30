@@ -11,6 +11,9 @@
 # Usage:
 #   scripts/packages/render-brewfile [--machine-type <name>] [--include-mas] [--output <file>]
 #
+# --machine-type renders the same Brewfile on any host, for the OS the type
+# declares in home/.chezmoidata/machines.toml.
+#
 # Exit non-zero on rendering failure.
 #
 set -euo pipefail
@@ -37,7 +40,7 @@ while [[ $# -gt 0 ]]; do
     --output=*)
       output="${1#*=}"; shift ;;
     -h|--help)
-      sed -n '2,17p' "$0" >&2
+      sed -n '2,18p' "$0" >&2
       exit 0 ;;
     *)
       printf 'render-brewfile: unknown argument: %s\n' "$1" >&2

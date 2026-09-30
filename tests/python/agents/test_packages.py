@@ -30,6 +30,27 @@ def _just_binary():
 JUST = _just_binary()
 
 
+def write_overlay_marketplace(root, plugins=None, name="work-overlay", version="0.1.0"):
+    """Write a hand-maintained overlay marketplace; plugins maps each name to the clients listing it."""
+    plugins = {"work": ("claude", "codex")} if plugins is None else plugins
+    catalogs = {"claude": [], "codex": []}
+    for plugin, clients in plugins.items():
+        path = root / "plugins" / plugin
+        (path / "skills/pair").mkdir(parents=True, exist_ok=True)
+        (path / "skills/pair/SKILL.md").write_text("---\nname: pair\ndescription: Pair.\n---\n")
+        for client in clients:
+            (path / f".{client}-plugin").mkdir(exist_ok=True)
+            (path / f".{client}-plugin/plugin.json").write_text(json.dumps({"name": plugin, "version": version}))
+        if "claude" in clients:
+            catalogs["claude"].append({"name": plugin, "source": f"./plugins/{plugin}"})
+        if "codex" in clients:
+            catalogs["codex"].append({"name": plugin, "source": {"source": "local", "path": f"./plugins/{plugin}"}})
+    for client, catalog in (("claude", ".claude-plugin/marketplace.json"), ("codex", ".agents/plugins/marketplace.json")):
+        (root / catalog).parent.mkdir(parents=True, exist_ok=True)
+        (root / catalog).write_text(json.dumps({"name": name, "plugins": catalogs[client]}))
+    return root
+
+
 class PackageTestCase(RepoTestCase):
     def setUp(self):
         super().setUp()
@@ -314,6 +335,81 @@ class PluginReconcileTests(PackageTestCase):
         self.assertFalse(json.loads(self.state.read_text())["codex"]["off@prateek-local"]["enabled"])
 
 
+    def overlay_marketplace(self, version="0.1.0", plugins=None):
+        return write_overlay_marketplace(self.work / "overlay/agent-plugins", plugins, version=version)
+
+    def test_overlay_converges_its_own_marketplace_and_leaves_prateek_local_alone(self):
+        root = self.overlay_marketplace()
+        before = json.loads(self.state.read_text())
+        self.tool("reconcile-agent-plugins", "--apply", "--overlay", "--agent", "claude", "--agent", "codex",
+                  "--agent", "omp", "--plugins-root", root)
+        state = json.loads(self.state.read_text())
+        for agent in ("claude", "codex", "omp"):
+            self.assertEqual(state[agent].pop("work@work-overlay"), {"enabled": True, "version": "0.1.0"})
+            self.assertEqual(state[agent], before[agent])
+        self.assertEqual(state["marketplaces"]["work-overlay"], str(root))
+        self.assertEqual(state["marketplaces"]["prateek-local"], "/tmp/stale-plugins-root")
+
+        self.overlay_marketplace(version="0.2.0")
+        self.tool("reconcile-agent-plugins", "--apply", "--overlay", "--agent", "claude",
+                  "--plugins-root", root)
+        self.assertEqual(json.loads(self.state.read_text())["claude"]["work@work-overlay"]["version"], "0.2.0")
+
+    def test_overlay_plugin_without_skills_still_converges(self):
+        # Overlay plugins are hand-maintained; one may carry only commands or MCP config.
+        root = self.overlay_marketplace()
+        shutil.rmtree(root / "plugins/work/skills")
+        self.tool("reconcile-agent-plugins", "--apply", "--overlay", "--agent", "claude", "--plugins-root", root)
+        self.assertEqual(json.loads(self.state.read_text())["claude"]["work@work-overlay"],
+                         {"enabled": True, "version": "0.1.0"})
+
+    def test_overlay_plugin_reaches_only_the_clients_whose_catalog_lists_it(self):
+        # A Claude-only plugin ships no Codex manifest; omp reads the Claude catalog.
+        root = self.overlay_marketplace(plugins={"work": ("claude", "codex"), "hooks": ("claude",)})
+        self.tool("reconcile-agent-plugins", "--apply", "--overlay", "--agent", "claude", "--agent", "codex",
+                  "--agent", "omp", "--plugins-root", root)
+        state = json.loads(self.state.read_text())
+        for agent in ("claude", "omp"):
+            self.assertEqual(state[agent]["hooks@work-overlay"], {"enabled": True, "version": "0.1.0"})
+        self.assertNotIn("hooks@work-overlay", state["codex"])
+        self.assertIn("work@work-overlay", state["codex"])
+
+    def test_overlay_refuses_one_plugin_name_at_two_directories(self):
+        root = self.overlay_marketplace(plugins={"work": ("claude", "codex"), "other": ("claude", "codex")})
+        catalog = json.loads((root / ".claude-plugin/marketplace.json").read_text())
+        catalog["plugins"][0]["source"] = "./plugins/other"
+        (root / ".claude-plugin/marketplace.json").write_text(json.dumps(catalog))
+        result = self.tool("reconcile-agent-plugins", "--apply", "--overlay", "--agent", "claude",
+                           "--plugins-root", root, expected_status=1)
+        self.assertIn(b"points at different directories", result.stderr)
+        self.assertFalse(self.log.exists())
+
+    def test_overlay_refuses_a_manifest_with_no_version(self):
+        root = self.overlay_marketplace(plugins={"work": ("claude", "codex"), "hooks": ("claude",)})
+        (root / "plugins/hooks/.claude-plugin/plugin.json").write_text(json.dumps({"name": "hooks"}))
+        result = self.tool("reconcile-agent-plugins", "--apply", "--overlay", "--agent", "claude",
+                           "--plugins-root", root, expected_status=1)
+        self.assertIn(b"hooks has a manifest with no version", result.stderr)
+        self.assertFalse(self.log.exists())
+
+    def test_overlay_refuses_the_published_marketplace_name(self):
+        root = self.overlay_marketplace()
+        for catalog in (".claude-plugin/marketplace.json", ".agents/plugins/marketplace.json"):
+            data = json.loads((root / catalog).read_text())
+            (root / catalog).write_text(json.dumps({**data, "name": "prateek-local"}))
+        result = self.tool("reconcile-agent-plugins", "--apply", "--overlay", "--agent", "claude",
+                           "--plugins-root", root, expected_status=1)
+        self.assertIn(b"cannot reuse the prateek-local name", result.stderr)
+        self.assertFalse(self.log.exists())
+
+    def test_overlay_refuses_split_manifest_versions(self):
+        root = self.overlay_marketplace()
+        (root / "plugins/work/.claude-plugin/plugin.json").write_text(json.dumps({"name": "work", "version": "0.2.0"}))
+        result = self.tool("reconcile-agent-plugins", "--apply", "--overlay", "--agent", "claude",
+                           "--plugins-root", root, expected_status=1)
+        self.assertIn(b"different Claude and Codex manifest versions", result.stderr)
+        self.assertFalse(self.log.exists())
+
     def omp_reconcile(self, *args, **kwargs):
         return self.tool("reconcile-agent-plugins", "--apply", "--agent", "omp",
                          "--plugins-root", self.plugins, "--policy", self.policy, *args, **kwargs)
@@ -379,7 +475,7 @@ class PluginReconcileTests(PackageTestCase):
         for name in ("script_lib.sh", "features.tmpl", "agent-marketplace-tree-hash.tmpl",
                      "agent-claude-plugin-settings.json.tmpl", "agent-codex-plugin-config.toml.tmpl",
                      "claude-settings-managed.json.tmpl", "codex-config-managed.toml.tmpl",
-                     "cursor-cli-config-managed.json.tmpl"):
+                     "cursor-cli-config-managed.json.tmpl", "work-overlay.tmpl"):
             shutil.copy2(ROOT / "home/.chezmoitemplates" / name, templates / name)
         shutil.copy2(ROOT / "home/.chezmoidata/machines.toml", self.policy.parent / "machines.toml")
         shutil.copytree(SCRIPTS, self.repo / ".agents/skills/agent-skill-management/scripts",
@@ -478,6 +574,86 @@ class PluginReconcileTests(PackageTestCase):
         self.assertNotEqual(before, after)
         helper.chmod(0o644)
         self.assertNotEqual(after, self.command([*command, "execute-template", "--file", str(source)]).stdout)
+
+
+class WorkOverlayTemplateTests(RepoTestCase):
+    overlay = {"work_overlay": {"repo": "git@example.invalid:work/repo.git", "ref": "main", "subdir": "users/me"}}
+
+    def rendered(self, machine_type, data=None):
+        render = lambda path: self.render(path, machine_type, data=data).decode()
+        return {
+            "claude": json.loads(render("home/.chezmoitemplates/agent-claude-plugin-settings.json.tmpl")),
+            "codex": tomllib.loads(render("home/.chezmoitemplates/agent-codex-plugin-config.toml.tmpl")),
+            "cursor": json.loads(render("home/.chezmoitemplates/cursor-cli-config-managed.json.tmpl")),
+            "pi": json.loads(render("home/dot_pi/agent/claude-plugins.json.tmpl")),
+            "script": render("home/.chezmoiscripts/run_onchange_after_39-agent-work-overlay.sh.tmpl"),
+        }
+
+    def test_overlay_marketplace_registers_only_on_work_with_a_repo(self):
+        plugins = self.home / ".local/share/dotfiles/work-overlay/users/me/agent-plugins"
+        without_catalog = self.rendered("work", self.overlay)
+        write_overlay_marketplace(plugins, {"work": ("claude", "codex"), "extra": ("claude", "codex"),
+                                            "hooks": ("claude",), "cli": ("codex",)}, name="acme")
+        work = self.rendered("work", self.overlay)
+        plugins = str(plugins)
+        self.assertEqual(work["claude"]["extraKnownMarketplaces"]["acme"]["source"]["path"], plugins)
+        self.assertEqual({k: v for k, v in work["claude"]["enabledPlugins"].items() if k.endswith("@acme")},
+                         {"work@acme": True, "extra@acme": True, "hooks@acme": True})
+        self.assertEqual(work["codex"]["marketplaces"]["acme"]["source"], plugins)
+        self.assertEqual({k for k in work["codex"]["plugins"] if k.endswith("@acme")},
+                         {"work@acme", "extra@acme", "cli@acme"})
+        self.assertIs(work["codex"]["plugins"]["extra@acme"]["enabled"], True)
+        self.assertEqual(work["cursor"]["marketplaces"]["acme"]["path"], plugins)
+        self.assertEqual(work["pi"]["marketplaces"]["acme"]["source"], plugins)
+        self.assertIs(work["pi"]["plugins"]["work@acme"]["enabled"], True)
+        self.assertEqual({k for k in work["pi"]["plugins"] if k.endswith("@acme")},
+                         {"work@acme", "extra@acme", "hooks@acme"})
+        self.assertIn(f"--overlay --plugins-root \"$overlay\"", work["script"])
+        self.assertIn(f"overlay='{plugins}'", work["script"])
+        # Before the clone lands a catalog, clients get no marketplace but the script still runs.
+        self.assertNotIn("acme", json.dumps({k: v for k, v in without_catalog.items() if k != "script"}))
+        self.assertIn("--overlay", without_catalog["script"])
+        for rendered in (self.rendered("work"), self.rendered("personal", self.overlay)):
+            self.assertNotIn("acme", json.dumps({k: v for k, v in rendered.items() if k != "script"}))
+            self.assertEqual(rendered["script"].strip(), "")
+
+    def test_overlay_clone_is_shallow_and_sparse_on_the_overlay_directory(self):
+        external = tomllib.loads(self.render("home/.chezmoiexternal.toml.tmpl", "work", data=self.overlay).decode())
+        entry = external[".local/share/dotfiles/work-overlay"]
+        self.assertEqual(entry["url"], self.overlay["work_overlay"]["repo"])
+        self.assertEqual(entry["clone"]["args"], ["--depth", "1", "--single-branch", "--filter=blob:none",
+                                                  "--sparse", "--branch", "main"])
+        sparse = "home/.chezmoiscripts/run_after_36a-work-overlay-sparse.sh.tmpl"
+        self.assertIn("sparse-checkout set --cone 'users/me'", self.render(sparse, "work", data=self.overlay).decode())
+        self.assertEqual(self.render(sparse, "work").strip(), b"")
+        self.assertNotIn(".local/share/dotfiles/work-overlay",
+                         tomllib.loads(self.render("home/.chezmoiexternal.toml.tmpl", "personal", data=self.overlay).decode()))
+
+    def test_a_catalog_that_fails_validation_leaves_clients_unregistered_and_apply_rendering(self):
+        # The external renders from this template too; failing it would block the refresh that pulls a fix.
+        plugins = self.home / ".local/share/dotfiles/work-overlay/users/me/agent-plugins"
+        write_overlay_marketplace(plugins, name="prateek-local")
+        rendered = self.rendered("work", self.overlay)
+        self.assertNotIn(str(plugins), json.dumps({k: v for k, v in rendered.items() if k != "script"}))
+        self.assertIn("--overlay --plugins-root \"$overlay\"", rendered["script"])
+        external = tomllib.loads(self.render("home/.chezmoiexternal.toml.tmpl", "work", data=self.overlay).decode())
+        self.assertIn(".local/share/dotfiles/work-overlay", external)
+
+    def test_slack_doc_composes_overlay_fragments_only_when_the_overlay_is_enabled(self):
+        docs = self.home / ".local/share/dotfiles/work-overlay/users/me/agents/docs"
+        docs.mkdir(parents=True)
+        (docs / "slack-channels.md").write_text("## Internal map\n\n#acme-oncall\n")
+        script = "home/.chezmoiscripts/run_onchange_after_37-agent-slack-doc.sh.tmpl"
+        for machine_type, data, expected in (("work", self.overlay, "#acme-oncall"),
+                                             ("personal", self.overlay, "Not rendered on this machine"),
+                                             ("work", None, "Not rendered on this machine")):
+            with self.subTest(machine_type=machine_type, overlay=bool(data)):
+                path = self.work / "compose-slack-doc.sh"
+                path.write_bytes(self.render(script, machine_type, data=data))
+                self.command(["bash", str(path)])
+                slack = (self.home / ".agents/docs/slack.md").read_text()
+                self.assertIn(expected, slack)
+                self.assertEqual("#acme-oncall" in slack, expected == "#acme-oncall")
 
 
 class CodexRpcTests(RepoTestCase):

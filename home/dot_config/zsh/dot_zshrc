@@ -4,6 +4,13 @@ export SYSTEM=$(uname -s)
 export DOTFILES="${DOTFILES:-$HOME/dotfiles}"
 export ZSHCONFIG="${ZSHCONFIG:-${ZDOTDIR:-${XDG_CONFIG_HOME:-$HOME/.config}/zsh}}"
 
+# A system zshrc that loads nvm (the devbox image's does) runs after zprofile
+# and puts nvm's node ahead of the one mise manages. Drop it; `nvm use` still
+# works on demand.
+if [[ -n "$NVM_DIR" ]]; then
+  path=(${path:#$NVM_DIR/*})
+fi
+
 # Allow `#` comments in interactive shells.
 setopt interactivecomments
 

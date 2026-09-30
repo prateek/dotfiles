@@ -84,6 +84,7 @@ class ClaudeSettingsTests(RepoTestCase):
         (source / ".chezmoidata").mkdir()
         shutil.copyfile(ROOT / "home/.chezmoidata/agent_plugins.toml", source / ".chezmoidata/agent_plugins.toml")
         shutil.copyfile(ROOT / self.plugin_template, templates / "agent-claude-plugin-settings.json.tmpl")
+        (templates / "work-overlay.tmpl").write_text(json.dumps({"enabled": False, "marketplace": ""}))
         (templates / "claude-settings-managed.json.tmpl").write_text(json.dumps({"hooks": {
             "PermissionRequest": [hook_block("printf managed-plan-hook", "ExitPlanMode")],
             "Stop": [hook_block(None, "retired")],

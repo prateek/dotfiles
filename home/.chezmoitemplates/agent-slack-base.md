@@ -2,7 +2,7 @@
 
 <!-- Generated file: composed at chezmoi apply by the agent-slack-doc script.
      Edit the base in home/.chezmoitemplates/agent-slack-base.md; the internal map
-     is appended from the private overlay (prateek/dotfiles-private). -->
+     is appended from the work overlay (docs/adr/0039-work-overlay-in-work-repo.md). -->
 
 ## Purpose
 

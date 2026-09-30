@@ -176,7 +176,8 @@ CHANGE
 }
 
 @test "Touch ID skips a non-macOS host even when its profile opts in" {
-  render_template "$hook" personal '{"chezmoi":{"os":"linux"}}' >"$FIXTURE/rendered.sh"
+  # Only a Mac type opts in, so the runtime uname check is the guard under test.
+  render_template "$hook" personal >"$FIXTURE/rendered.sh"
   printf '#!/bin/sh\nprintf "Linux\\n"\n' >"$FIXTURE/bin/uname"
   chmod +x "$FIXTURE/bin/uname"
   run_bash 0 "$FIXTURE/rendered.sh"

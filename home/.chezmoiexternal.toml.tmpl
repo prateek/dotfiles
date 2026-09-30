@@ -2,13 +2,19 @@
 type = "git-repo"
 url = "https://github.com/zdharma-continuum/zinit.git"
 refreshPeriod = "168h"
-{{- if (includeTemplate "features.tmpl" . | fromJson).private_overlay }}
-{{/* Private overlays (internal/work-specific) composed into generated docs by
-     run_after_37-agent-slack-doc. The private_overlay feature is true only on
-     work in machines.toml; CI/personal/homelab and forks never reference the
-     private repo. */}}
-[".local/share/dotfiles/private"]
+{{- $wo := includeTemplate "work-overlay.tmpl" . | fromJson }}
+{{- if $wo.enabled }}
+{{/* Work overlay: employer-specific docs and agent plugins, composed in by
+     run_onchange_after_37-agent-slack-doc and registered as a second plugin
+     marketplace by run_onchange_after_39-agent-work-overlay. The repo is a
+     large shared work repo, so clone only the tip of the overlay's branch,
+     sparse; run_after_36a-work-overlay-sparse narrows the checkout to the
+     overlay directory.
+     See docs/adr/0039-work-overlay-in-work-repo.md. */}}
+[{{ $wo.clone | trimPrefix (printf "%s/" .chezmoi.homeDir) | quote }}]
 type = "git-repo"
-url = "git@github.com:prateek/dotfiles-private.git"
+url = {{ $wo.repo | quote }}
 refreshPeriod = "168h"
+clone.args = ["--depth", "1", "--single-branch", "--filter=blob:none", "--sparse"{{ with $wo.ref }}, "--branch", {{ . | quote }}{{ end }}]
+pull.args = ["--ff-only"]
 {{- end }}

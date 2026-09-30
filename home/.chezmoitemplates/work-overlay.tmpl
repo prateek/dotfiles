@@ -1,0 +1,50 @@
+{{- /*
+  work-overlay.tmpl — where this machine's work overlay lives, as JSON:
+
+    {{- $wo := includeTemplate "work-overlay.tmpl" . | fromJson -}}
+    {{- if $wo.enabled }} ... {{ $wo.root }} ... {{- end }}
+
+  Enabled when the private_overlay feature is on and [data.work_overlay].repo
+  is set in the rendered chezmoi config (the repo, branch, and directory are
+  employer-specific, so .chezmoi.toml.tmpl prompts for them and nothing
+  commits them). The external clones the repo to `clone`; `root` is the
+  overlay directory inside it, holding the `docs` fragments and the `plugins`
+  marketplace, whose Codex catalog is `catalog`. `marketplace`,
+  `claude_plugins`, and `codex_plugins` come from the reconciler's --json
+  listing, so the catalogs have one parser and consumers never hardcode names;
+  they are empty until the external has cloned a catalog that lists cleanly.
+*/ -}}
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- $wo := dig "work_overlay" dict . -}}
+{{- $repo := dig "repo" "" $wo -}}
+{{- $clone := joinPath .chezmoi.homeDir ".local/share/dotfiles/work-overlay" -}}
+{{- $root := joinPath $clone (dig "subdir" "" $wo) -}}
+{{- $plugins := joinPath $root "agent-plugins" -}}
+{{- $enabled := and $f.private_overlay (ne $repo "") -}}
+{{- $catalog := joinPath $plugins ".agents/plugins/marketplace.json" -}}
+{{- $listing := dict "marketplace" "" "claude_plugins" list "codex_plugins" list -}}
+{{- if and $enabled (stat $catalog) -}}
+{{-   $reconciler := joinPath .chezmoi.sourceDir "../.agents/skills/agent-skill-management/scripts/reconcile-agent-plugins" -}}
+{{- /* A broken catalog must not fail every render: this template feeds
+     .chezmoiexternal.toml, so a failure would also block the refresh that
+     pulls the fix. Clients get no overlay until it lists cleanly, and
+     script 39 runs the reconciler for real and reports why. */ -}}
+{{-   $listed := output "sh" "-c" (printf "%s --overlay --json --plugins-root %s 2>/dev/null || true" ($reconciler | squote) ($plugins | squote)) | trim -}}
+{{-   if $listed -}}
+{{-     $listing = $listed | fromJson -}}
+{{-   end -}}
+{{- end -}}
+{{- dict
+      "enabled" $enabled
+      "repo" $repo
+      "ref" (dig "ref" "" $wo)
+      "subdir" (dig "subdir" "" $wo)
+      "clone" $clone
+      "root" $root
+      "docs" (joinPath $root "agents/docs")
+      "plugins" $plugins
+      "catalog" $catalog
+      "marketplace" $listing.marketplace
+      "claude_plugins" $listing.claude_plugins
+      "codex_plugins" $listing.codex_plugins
+    | toJson -}}

@@ -19,6 +19,9 @@
 
   An unknown machine_type matches no type layer and fails loud: this is the
   typo guard, since chezmoi's --promptChoice does not validate its value.
+  Every type declares its os, and only the type layer may: the os layer is
+  picked from it. A type whose declared os differs from the host's fails loud
+  too, so a Mac type cannot land on Linux (or the reverse) and half-apply.
 
   Note: chezmoi does not load .chezmoidata during `chezmoi init`, so this
   resolver cannot run from home/.chezmoi.toml.tmpl; identity stays inlined there.
@@ -28,10 +31,22 @@
 {{- if not (hasKey $M.type $mt) -}}
 {{-   fail (printf "features.tmpl: unknown machine type %q (add a [machines.type.%s] layer to home/.chezmoidata/machines.toml)" $mt $mt) -}}
 {{- end -}}
+{{- $os := dig "type" $mt "os" "" $M -}}
+{{- if not $os -}}
+{{-   fail (printf "features.tmpl: machine type %q must declare os in [machines.type.%s]" $mt $mt) -}}
+{{- end -}}
+{{- if ne $os .chezmoi.os -}}
+{{-   fail (printf "features.tmpl: machine type %q runs on %s, but this host runs %s (pick a %s machine type)" $mt $os .chezmoi.os .chezmoi.os) -}}
+{{- end -}}
+{{- $hostLayer := dig "host" .chezmoi.hostname dict $M -}}
+{{- $localLayer := dig "machines_local" dict . -}}
+{{- if or (hasKey $hostLayer "os") (hasKey $localLayer "os") -}}
+{{-   fail "features.tmpl: only a [machines.type.*] layer may set os" -}}
+{{- end -}}
 {{- $f := deepCopy (dig "defaults" dict $M) -}}
-{{- $f = mergeOverwrite $f (deepCopy (dig "os"   .chezmoi.os       dict $M)) -}}
+{{- $f = mergeOverwrite $f (deepCopy (dig "os"   $os               dict $M)) -}}
 {{- $f = mergeOverwrite $f (deepCopy (dig "type" $mt               dict $M)) -}}
-{{- $f = mergeOverwrite $f (deepCopy (dig "host" .chezmoi.hostname dict $M)) -}}
-{{- $f = mergeOverwrite $f (deepCopy (dig "machines_local" dict .)) -}}
+{{- $f = mergeOverwrite $f (deepCopy $hostLayer) -}}
+{{- $f = mergeOverwrite $f (deepCopy $localLayer) -}}
 {{- $f = mergeOverwrite $f (dict "machine_type" $mt) -}}
 {{- $f | toJson -}}

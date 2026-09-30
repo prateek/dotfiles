@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Converge owned native plugin state from a validated artifact and host policy."""
+"""Converge owned native plugin state from a validated artifact and host policy.
+
+--overlay converges a hand-maintained second marketplace instead (the work
+overlay): its catalogs name the marketplace, and each client loads every plugin
+its own catalog lists.
+"""
 from __future__ import annotations
 
 import argparse
@@ -9,15 +14,14 @@ from pathlib import Path
 import subprocess
 import sys
 
-from agent_skill_lib import POLICY_PATH, load_published_packages
+from agent_skill_lib import POLICY_PATH, load_overlay_packages, load_published_packages
 from codex_rpc import enabled_edit, requests
 
-MARKETPLACE = "prateek-local"
 DRY_RUN = False
 
 
-def slug(name: str) -> str:
-    return f"{name}@{MARKETPLACE}"
+def slug(name: str, marketplace: str) -> str:
+    return f"{name}@{marketplace}"
 
 
 def command(args: list[str], *, read: bool = False, text: bool = False):
@@ -33,18 +37,18 @@ def command(args: list[str], *, read: bool = False, text: bool = False):
     return result.stdout if text else json.loads(result.stdout)
 
 
-def reconcile_claude(packages, root: Path) -> None:
+def reconcile_claude(packages, root: Path, marketplace: str) -> None:
     registered = {entry["name"]: Path(entry.get("installLocation") or entry.get("path") or "")
                   for entry in command(["claude", "plugin", "marketplace", "list", "--json"], read=True)}
     installed = {entry["id"]: entry for entry in command(["claude", "plugin", "list", "--json"], read=True)
                  if entry.get("scope") == "user"}
-    desired = {slug(p.package_id): p for p in packages if p.render["claude"] == "plugin"}
-    moved = MARKETPLACE in registered and registered[MARKETPLACE].resolve() != root.resolve()
-    if MARKETPLACE not in registered or moved:
+    desired = {slug(p.package_id, marketplace): p for p in packages if p.render["claude"] == "plugin"}
+    moved = marketplace in registered and registered[marketplace].resolve() != root.resolve()
+    if marketplace not in registered or moved:
         command(["claude", "plugin", "marketplace", "add", str(root), "--scope", "user"])
     changed = any(key in installed and installed[key].get("version") != p.version for key, p in desired.items())
     if changed or moved:
-        command(["claude", "plugin", "marketplace", "update", MARKETPLACE])
+        command(["claude", "plugin", "marketplace", "update", marketplace])
     for key, package in desired.items():
         entry = installed.get(key)
         enabled = bool(entry and entry.get("enabled"))
@@ -59,19 +63,19 @@ def reconcile_claude(packages, root: Path) -> None:
         if enabled != package.default_loaded:
             command(["claude", "plugin", "enable" if package.default_loaded else "disable", key, "--scope", "user"])
     for key in sorted(installed.keys() - desired.keys()):
-        if key.endswith(f"@{MARKETPLACE}"):
+        if key.endswith(f"@{marketplace}"):
             command(["claude", "plugin", "uninstall", key, "--scope", "user"])
 
 
-def reconcile_codex(packages, root: Path, refresh_disabled: set[str]) -> None:
+def reconcile_codex(packages, root: Path, marketplace: str, refresh_disabled: set[str]) -> None:
     installed = {entry["pluginId"]: entry for entry in command(["codex", "plugin", "list", "--json"], read=True)["installed"]}
     registered = {entry["name"]: Path(entry["root"]) for entry in
                   command(["codex", "plugin", "marketplace", "list", "--json"], read=True)["marketplaces"]}
-    desired = {slug(p.package_id): p for p in packages if p.render["codex"] == "plugin"}
-    moved = MARKETPLACE in registered and registered[MARKETPLACE].resolve() != root.resolve()
+    desired = {slug(p.package_id, marketplace): p for p in packages if p.render["codex"] == "plugin"}
+    moved = marketplace in registered and registered[marketplace].resolve() != root.resolve()
     if moved:
-        command(["codex", "plugin", "marketplace", "remove", MARKETPLACE])
-    if MARKETPLACE not in registered or moved:
+        command(["codex", "plugin", "marketplace", "remove", marketplace])
+    if marketplace not in registered or moved:
         command(["codex", "plugin", "marketplace", "add", str(root)])
     def disable(key):
         edit = enabled_edit(key, False)
@@ -91,7 +95,7 @@ def reconcile_codex(packages, root: Path, refresh_disabled: set[str]) -> None:
         elif not package.default_loaded and installed.get(key, {}).get("enabled"):
             disable(key)
     for key in sorted(installed.keys() - desired.keys()):
-        if key.endswith(f"@{MARKETPLACE}"):
+        if key.endswith(f"@{marketplace}"):
             command(["codex", "plugin", "remove", key])
 
 
@@ -113,7 +117,7 @@ def omp_marketplaces() -> dict[str, Path]:
     return entries
 
 
-def reconcile_omp(packages, root: Path) -> None:
+def reconcile_omp(packages, root: Path, marketplace: str) -> None:
     registered = omp_marketplaces()
     installed = {}
     for plugin in command(["omp", "plugin", "list", "--json"], read=True)["marketplace"]:
@@ -122,15 +126,15 @@ def reconcile_omp(packages, root: Path) -> None:
             raise ValueError(f"ambiguous omp user-scope install: {plugin['id']}")
         if entries:
             installed[plugin["id"]] = {**entries[0], "enabled": entries[0].get("enabled", True)}
-    desired = {slug(p.package_id): p for p in packages if p.render["claude"] == "plugin"}
-    moved = MARKETPLACE in registered and registered[MARKETPLACE].resolve() != root.resolve()
+    desired = {slug(p.package_id, marketplace): p for p in packages if p.render["claude"] == "plugin"}
+    moved = marketplace in registered and registered[marketplace].resolve() != root.resolve()
     if moved:
-        command(["omp", "plugin", "marketplace", "remove", MARKETPLACE])
-    if MARKETPLACE not in registered or moved:
+        command(["omp", "plugin", "marketplace", "remove", marketplace])
+    if marketplace not in registered or moved:
         command(["omp", "plugin", "marketplace", "add", str(root)])
     if moved or any(key not in installed or installed[key].get("version") != p.version
                     for key, p in desired.items()):
-        command(["omp", "plugin", "marketplace", "update", MARKETPLACE])
+        command(["omp", "plugin", "marketplace", "update", marketplace])
     for key, package in desired.items():
         entry = installed.get(key)
         if entry is None or entry.get("version") != package.version or moved:
@@ -140,7 +144,7 @@ def reconcile_omp(packages, root: Path) -> None:
         if prior != package.default_loaded:
             command(["omp", "plugin", "enable" if package.default_loaded else "disable", key, "--scope", "user"])
     for key in sorted(installed.keys() - desired.keys()):
-        if key.endswith(f"@{MARKETPLACE}"):
+        if key.endswith(f"@{marketplace}"):
             command(["omp", "plugin", "uninstall", key, "--scope", "user"])
 
 
@@ -152,14 +156,26 @@ def main() -> int:
     parser.add_argument("--policy", type=Path, default=POLICY_PATH)
     parser.add_argument("--refresh-disabled", action="append", default=[], metavar="PACKAGE")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--overlay", action="store_true",
+                        help="--plugins-root is a hand-maintained overlay marketplace; --policy is ignored")
+    parser.add_argument("--json", action="store_true",
+                        help="print the marketplace name and each client's eligible plugins, then exit")
     args = parser.parse_args()
     global DRY_RUN
     DRY_RUN = args.dry_run
     try:
         root = args.plugins_root.expanduser().absolute()
-        packages = load_published_packages(root, args.policy)
+        if args.overlay:
+            marketplace, packages = load_overlay_packages(root)
+        else:
+            marketplace, packages = "prateek-local", load_published_packages(root, args.policy)
         if set(args.refresh_disabled) - {p.package_id for p in packages if p.render["codex"] == "plugin"}:
             raise ValueError("--refresh-disabled must name an eligible published package")
+        if args.json:
+            print(json.dumps({"marketplace": marketplace, **{
+                f"{agent}_plugins": [p.package_id for p in packages if p.render[agent] == "plugin"]
+                for agent in ("claude", "codex")}}))
+            return 0
         if not args.apply:
             for package in packages:
                 print(f"{package.package_id}: version {package.version}, default_loaded={package.default_loaded}, eligibility={package.render}")
@@ -167,11 +183,11 @@ def main() -> int:
         if not args.agent:
             parser.error("--apply needs at least one --agent")
         if "claude" in args.agent:
-            reconcile_claude(packages, root)
+            reconcile_claude(packages, root, marketplace)
         if "codex" in args.agent:
-            reconcile_codex(packages, root, set(args.refresh_disabled))
+            reconcile_codex(packages, root, marketplace, set(args.refresh_disabled))
         if "omp" in args.agent:
-            reconcile_omp(packages, root)
+            reconcile_omp(packages, root, marketplace)
     except (OSError, ValueError, KeyError, RuntimeError, subprocess.TimeoutExpired) as error:
         print(f"reconcile-agent-plugins: {error}", file=sys.stderr)
         return 1

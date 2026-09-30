@@ -9,13 +9,17 @@
 */ -}}
 {{- $root := .root -}}
 {{- $name := .name -}}
-{{- $groups := (includeTemplate "features.tmpl" $root | fromJson).groups -}}
+{{- $f := includeTemplate "features.tmpl" $root | fromJson -}}
+{{- $groups := $f.groups -}}
 {{- $enabled := false -}}
+{{- /* Casks install only on macOS (brewfile.tmpl), so off macOS no cask is enabled. */ -}}
+{{- if eq $f.os "darwin" -}}
 {{- range $gname := $groups -}}
 {{-   if not (hasKey $root.packages.groups $gname) -}}{{- fail (printf "package-cask-enabled.tmpl: machine type references undefined group %q" $gname) -}}{{- end -}}
 {{-   $g := index $root.packages.groups $gname -}}
 {{-   range default (list) (dig "casks" (list) $g) -}}
 {{-     if eq .name $name -}}{{- $enabled = true -}}{{- end -}}
 {{-   end -}}
+{{- end -}}
 {{- end -}}
 {{- $enabled -}}

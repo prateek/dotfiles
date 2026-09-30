@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Devbox boot entry point. The work repo's onstart trampoline clones these
+# dotfiles if they are missing and execs this script on every boot, under a
+# 10-minute timeout that kills the whole process group. So the first apply,
+# which installs Homebrew and the bundle and outlasts that timeout, detaches
+# into its own session and writes a completion marker when it succeeds. Later
+# boots only start or stop headless Orca, as DEVBOX_ORCA_HEADLESS_ENABLED says,
+# also detached: a stop/start discards /usr, so start reinstalls the package.
+# Updates are manual (`chezmoi update`). See docs/plans/linux-devbox-plan.md.
+
+dotfiles_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles"
+marker="$state_dir/devbox-first-apply.done"
+lock="$state_dir/devbox-first-apply.lock"
+log="$state_dir/devbox-first-apply.log"
+orca_log="$state_dir/devbox-orca.log"
+reconciler="$HOME/.local/bin/orca-devpod-reconcile"
+
+say() {
+  printf 'devbox onstart: %s\n' "$*" >&2
+}
+
+die() {
+  say "$*"
+  exit 1
+}
+
+reconcile_orca() {
+  if [[ "${DEVBOX_ORCA_HEADLESS_ENABLED:-false}" == "true" ]]; then
+    [[ -x "$reconciler" ]] || die "$reconciler is missing; the first apply should have installed it"
+    "$reconciler" start
+  elif [[ -x "$reconciler" ]]; then
+    "$reconciler" stop
+  fi
+}
+
+first_apply() {
+  exec 9>"$lock"
+  flock -n 9 || { say "another first apply holds $lock"; return 0; }
+  [[ ! -e "$marker" ]] || return 0
+  say "first apply started $(date -u +%FT%TZ)"
+  export DOTFILES_ROOT="$dotfiles_dir"
+  # Close the lock descriptor in children so no daemon they start inherits it.
+  chezmoi --no-pager --no-tty init --source "$dotfiles_dir" --promptChoice 'machine_type=devbox' 9>&-
+  # An existing config keeps its machine type across init; never apply another.
+  machine_type="$(chezmoi --no-pager execute-template '{{ .machine_type }}' 9>&-)"
+  [[ "$machine_type" == "devbox" ]] || die "refusing to apply machine_type=$machine_type (expected devbox)"
+  chezmoi --no-pager --no-tty apply 9>&-
+  touch "$marker"
+  exec 9>&-
+  say "first apply finished $(date -u +%FT%TZ)"
+  reconcile_orca
+}
+
+mkdir -p "$state_dir"
+case "${1:-}" in
+  --first-apply) first_apply; exit ;;
+  --reconcile-orca) reconcile_orca; exit ;;
+esac
+
+detach() {
+  command -v setsid >/dev/null 2>&1 || die "setsid is required"
+  setsid "$0" "$1" >>"$2" 2>&1 </dev/null &
+}
+
+if [[ -e "$marker" ]]; then
+  detach --reconcile-orca "$orca_log"
+  say "Orca reconcile detached; follow $orca_log"
+elif ! flock -n "$lock" true; then
+  say "first apply still running; see $log"
+else
+  command -v chezmoi >/dev/null 2>&1 || die "chezmoi is required"
+  detach --first-apply "$log"
+  say "first apply detached; follow $log"
+fi

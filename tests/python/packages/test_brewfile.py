@@ -21,18 +21,19 @@ class BrewfileTests(RepoTestCase):
     def test_ci_core_excludes_desktop_development_and_overlays(self):
         output = self.brewfile("ci")
         self.assert_entries(output, present=(
-            'tap "1password/tap"', 'brew "git"', 'cask "1password-cli"',
+            'brew "git"', 'cask "1password-cli"',
         ), absent=(
-            'brew "crit"', 'cask "1password", args: { appdir: "/Applications" }',
+            'tap "', 'brew "crit"', 'cask "1password", args: { appdir: "/Applications" }',
             'brew "aria2"', 'cask "tailscale-app"',
         ))
-        sections = [line.split()[0] for line in output.splitlines() if line.startswith(("tap ", "brew ", "cask "))]
-        self.assertEqual(sections[0], "tap")
 
     def test_personal_selects_development_and_personal_apps_without_apple_or_work_groups(self):
-        self.assert_entries(self.brewfile("personal"), present=(
-            'brew "aria2"', 'brew "crit"', 'brew "f/mcptools/mcp", trusted: true',
-            'brew "steipete/tap/imsg", trusted: true', 'brew "codex-acp"',
+        output = self.brewfile("personal")
+        sections = [line.split()[0] for line in output.splitlines() if line.startswith(("tap ", "brew ", "cask "))]
+        self.assertEqual(sections[0], "tap")
+        self.assert_entries(output, present=(
+            'brew "aria2"', 'brew "crit"', 'tap "f/mcptools", trusted: true', 'brew "f/mcptools/mcp"\n',
+            'tap "steipete/tap", trusted: true', 'brew "steipete/tap/imsg"', 'brew "codex-acp"',
             'cask "arq"', 'cask "voiceink"', 'cask "google-drive"',
             'cask "setapp"', 'cask "jump-desktop"',
         ), absent=(
@@ -44,7 +45,7 @@ class BrewfileTests(RepoTestCase):
 
     def test_work_selects_shared_desktop_and_work_apps_without_personal_or_apple_groups(self):
         self.assert_entries(self.brewfile("work"), present=(
-            'brew "aria2"', 'brew "f/mcptools/mcp", trusted: true',
+            'brew "aria2"', 'tap "f/mcptools", trusted: true',
             'cask "slack"', 'cask "google-drive"', 'cask "setapp"',
         ), absent=(
             'brew "homebrew/core/xcodes"', 'brew "fastlane"', 'brew "openai/tools/tart"',
@@ -56,7 +57,7 @@ class BrewfileTests(RepoTestCase):
     def test_homelab_selects_apple_vm_and_agent_tools_without_desktop_subscriptions(self):
         self.assert_entries(self.brewfile("homelab"), present=(
             'brew "homebrew/core/xcodes", args: ["force-bottle"]',
-            'brew "openai/tools/tart", trusted: true', 'brew "f/mcptools/mcp", trusted: true',
+            'tap "openai/tools", trusted: true', 'brew "openai/tools/tart"', 'tap "f/mcptools", trusted: true',
             'cask "tailscale-app"', 'cask "jump-desktop"', 'cask "agentsview"',
             'cask "stablyai/orca/orca"', 'brew "codex-acp"',
             'cask "claude"', 'cask "cmux"',
@@ -90,6 +91,11 @@ class BrewfileTests(RepoTestCase):
         self.assertEqual(raw, self.brewfile("ci").encode())
         self.assertTrue(raw.endswith(b"\n"))
         self.assertFalse(raw.endswith(b"\n\n"))
+
+    def test_a_machine_type_renders_for_its_own_os_whatever_the_host(self):
+        # Audits run on either OS, so the host must not decide which casks a type gets.
+        self.assert_entries(self.brewfile("personal"), present=('cask "arq"',))
+        self.assert_entries(self.brewfile("devbox"), present=('brew "git"',), absent=("cask ",))
 
     def test_unknown_machine_type_has_a_diagnostic(self):
         result = self.command([self.renderer, "--machine-type", "bogus"], expected_status=1)

@@ -158,8 +158,16 @@ function _setup_fzf {
 		fi
 	done
 
+	# A release-binary install (mise) ships no shell/ dir; fzf 0.48+ prints the
+	# same integration with --zsh. Capture it once, and skip fzf setup on an
+	# older fzf that has neither.
+	local fzf_integration=""
+	if [[ -z "$fzf_shell_dir" ]]; then
+		fzf_integration="$(fzf --zsh 2>/dev/null)" || fzf_integration=""
+	fi
+
 	# Ensure fzf completion and key-bindings are configured when zle is available.
-	if [[ -n "$fzf_shell_dir" ]]; then
+	if [[ -n "$fzf_shell_dir" || -n "$fzf_integration" ]]; then
 
 		# very opinionated FZF style opts.
 		export FZF_DEFAULT_OPTS="
@@ -177,8 +185,12 @@ function _setup_fzf {
 		export FZF_DEFAULT_COMMAND="fd --type f --hidden -E '.git' -E '.hg'"
 
 		if [[ -o zle && -t 0 && -t 1 ]]; then
-			source "${fzf_shell_dir}/completion.zsh" 2> /dev/null
-			source "${fzf_shell_dir}/key-bindings.zsh"
+			if [[ -n "$fzf_shell_dir" ]]; then
+				source "${fzf_shell_dir}/completion.zsh" 2> /dev/null
+				source "${fzf_shell_dir}/key-bindings.zsh"
+			else
+				eval "$fzf_integration"
+			fi
 			_rebind_ctrl-r
 			_rebind_ctrl-t
 		fi

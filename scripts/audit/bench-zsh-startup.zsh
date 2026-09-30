@@ -56,6 +56,7 @@ require_cmd git
 require_cmd zsh
 require_cmd python3
 require_cmd rsync
+require_cmd chezmoi
 if [[ ! -r "${XDG_DATA_HOME:-$HOME/.local/share}/zinit/zinit.git/zinit.zsh" && ! -r "$HOME/.zinit/bin/zinit.zsh" ]]; then
   die "missing current zinit install"
 fi
@@ -100,7 +101,11 @@ if [[ ( "\$SHLVL" -eq 1 && ! -o LOGIN ) && -s "\$ZDOTDIR/.zprofile" ]]; then
   source "\$ZDOTDIR/.zprofile"
 fi
 EOF
-  ln -snf "$home_dir/dotfiles/home/dot_config/zsh/dot_zprofile" "$home_dir/.config/zsh/.zprofile"
+  # .zprofile is a template (its mise block is devbox-only); render it for
+  # this machine from the checkout under test.
+  chezmoi --source "$home_dir/dotfiles/home" execute-template \
+    --file "$home_dir/dotfiles/home/dot_config/zsh/dot_zprofile.tmpl" \
+    >"$home_dir/.config/zsh/.zprofile" || die "failed to render .zprofile"
   ln -snf "$home_dir/dotfiles/home/dot_config/zsh/dot_zshrc" "$home_dir/.config/zsh/.zshrc"
   ln -snf "$home_dir/dotfiles/home/dot_config/zsh/dot_zlogin" "$home_dir/.config/zsh/.zlogin"
 }

@@ -32,6 +32,18 @@ export ZSHCONFIG="${ZSHCONFIG:-${ZDOTDIR:-${XDG_CONFIG_HOME:-$HOME/.config}/zsh}
 
 # Enable XDG for `ghcup`, via https://www.haskell.org/ghcup/guide/
 export GHCUP_USE_XDG_DIRS=1
+{{- if (includeTemplate "features.tmpl" . | fromJson).system_activates_mise }}
+
+# A login shell sets its own PATH order. The image activates mise in every
+# interactive shell, so tmux panes and nested shells inherit a session: the
+# next `mise activate` would rebuild PATH from the parent's order and keep the
+# parent's tool dirs and [env] variables. Undo the session with mise's own
+# reversal, in zsh syntax whatever the parent was.
+if [[ -n "$__MISE_DIFF" ]] && whence -p mise >/dev/null; then
+  eval "$(MISE_SHELL=zsh command mise deactivate 2>/dev/null)" 2>/dev/null
+fi
+unset __MISE_ORIG_PATH __MISE_DIFF __MISE_SESSION MISE_SHELL
+{{- end }}
 
 # PATH(s), relies on zsh magic (path == $PATH but in array form and sync'd)
 path=(
@@ -40,6 +52,7 @@ path=(
   $HOME/.local/share/mise/shims
   /opt/homebrew/{bin,sbin}
   /opt/homebrew/opt/libpq/bin
+  /home/linuxbrew/.linuxbrew/{bin,sbin}
   $HOME/go/bin
   $HOME/Library/pnpm
   /opt/homebrew/opt/python@3.11/libexec/bin

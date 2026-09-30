@@ -26,6 +26,8 @@ Chezmoi is the ongoing command surface: prefer `chezmoi apply`, `chezmoi status`
 
 Keep repo-local and machine-level agent state separate. Files that define how agents work in this dotfiles checkout stay at the repo root or under repo-root `.agents/`. Machine-wide configuration stays under `home/` so chezmoi materializes it into `$HOME`. The portable `agent-marketplace/` publishing project is the exception: consumers materialize its built artifact.
 
+This repo is public, so place content by audience. Portable config and the plumbing that consumes work content live here, and name the employer only as DAYJOB. Employer content, such as Slack maps, work skills, internal hosts, and the work repo's URL, lives in the work overlay. That is Prateek's user directory in the work repo, with doc fragments in `agents/docs/` and skills as plugins in its `agent-plugins/` marketplace. Secret values go to 1Password. The dormant `dotfiles-private` repo holds only work content too sensitive for the work repo. Read [ADR 0039](docs/adr/0039-work-overlay-in-work-repo.md) before adding work content.
+
 Use the `agent-skill-management` skill for changes to `agent-marketplace/`,
 apply-time skill/plugin render scripts, Codex or Claude rendered plugin
 activation, and the related docs (`docs/references/agent-marketplace.md`,

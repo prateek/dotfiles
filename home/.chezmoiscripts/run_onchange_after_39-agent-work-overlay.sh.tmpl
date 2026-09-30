@@ -1,0 +1,42 @@
+{{- $wo := includeTemplate "work-overlay.tmpl" . | fromJson -}}
+{{- if $wo.enabled -}}
+{{ template "script_lib.sh" . }}
+
+# Register the work overlay's agent-plugins/ directory as a second native
+# marketplace and install its plugins, beside prateek-local (script 36). The
+# overlay is hand-maintained in the work repo, so there is no build or receipt:
+# the reconciler's --overlay mode reads its catalogs directly.
+# run_onchange: reruns when the overlay tree or the reconciler changes.
+#
+# reconcile-agent-plugins sha256: {{ include (printf "%s/../.agents/skills/agent-skill-management/scripts/reconcile-agent-plugins" .chezmoi.sourceDir) | sha256sum }}
+# agent_skill_lib.py sha256: {{ include (printf "%s/../.agents/skills/agent-skill-management/scripts/agent_skill_lib.py" .chezmoi.sourceDir) | sha256sum }}
+# overlay tree sha256: {{ output "sh" "-c" (printf "cd %s 2>/dev/null && find . -type f -print0 | LC_ALL=C sort -z | xargs -0 shasum -a 256 | shasum -a 256 | cut -d' ' -f1 || true" ($wo.plugins | squote)) | trim }}
+
+set -euo pipefail
+{{- $f := includeTemplate "features.tmpl" . | fromJson }}
+
+reconciler="{{ .chezmoi.sourceDir }}/../.agents/skills/agent-skill-management/scripts/reconcile-agent-plugins"
+overlay={{ $wo.plugins | squote }}
+catalog={{ $wo.catalog | squote }}
+
+[ -x "$reconciler" ] || die "Agent plugin reconciler is missing or not executable: $reconciler"
+if [ ! -f "$catalog" ]; then
+  warn "work overlay has no agent-plugins marketplace at $overlay; skipping."
+  exit 0
+fi
+
+agents=""
+{{- range $f.agent_clis }}
+{{- if or (eq . "claude") (eq . "codex") (eq . "omp") }}
+have {{ . }} || die "{{ . }} is listed in agent_clis but not on PATH; install it before agent plugins can reconcile."
+agents="$agents --agent {{ . }}"
+{{- end }}
+{{- end }}
+if [ -z "$agents" ]; then
+  log "no claude, codex, or omp CLI in agent_clis for this machine; skipping work overlay plugins."
+  exit 0
+fi
+# shellcheck disable=SC2086
+run_timed "reconcile work overlay plugins" \
+  "$reconciler" --apply --overlay --plugins-root "$overlay" $agents
+{{- end }}

@@ -7,11 +7,16 @@ set -euo pipefail
 
 machine_type="${1:-ci}"
 case "$machine_type" in
-  ci|personal|homelab|work) ;;
-  *) echo "Invalid machine type: $machine_type (must be ci, personal, homelab, or work)" >&2; exit 1 ;;
+  ci|personal|homelab|work|devbox) ;;
+  *) echo "Invalid machine type: $machine_type (must be ci, personal, homelab, work, or devbox)" >&2; exit 1 ;;
 esac
 
 dotfiles_root="${2:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+
+# shellcheck source-path=SCRIPTDIR/../packages
+source "$(dirname -- "${BASH_SOURCE[0]}")/../packages/lib.sh"
+# Preview each type as the OS it declares, so a Mac previews the devbox as Linux.
+machine_os="$(machine_type_os "$machine_type")"
 
 # The dry-run renders templates that shell out through mise shims (e.g.
 # `output "python3"` to hash a tree). mise refuses to parse the caller's global
@@ -38,7 +43,7 @@ run_chezmoi() {
       --config "$tmp_home/.config/chezmoi/chezmoi.toml" \
       --cache "$tmp_home/.cache/chezmoi" \
       --persistent-state "$tmp_home/.local/state/chezmoi/state.boltdb" \
-      --override-data '{"chezmoi":{"hostname":"dotfiles-test-host"},"machines_local":{"secrets_enabled":false}}' \
+      --override-data "{\"chezmoi\":{\"hostname\":\"dotfiles-test-host\",\"os\":\"$machine_os\"},\"machines_local\":{\"secrets_enabled\":false}}" \
       "$@"
 }
 

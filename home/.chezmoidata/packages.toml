@@ -8,9 +8,6 @@
 # Applies to: ci, personal, homelab, work.
 [packages.groups.core]
 description = "Headless-safe baseline for every managed machine, including ci"
-taps = [
-  { name = "1password/tap" },
-]
 brews = [
   { name = "git" },
   { name = "gh" },
@@ -40,7 +37,6 @@ description = "Shared GUI apps and Mac control tools for daily-driver laptops"
 taps = [
   { name = "yqrashawn/goku" },
   { name = "nikitabobko/tap" },
-  { name = "fluffypony/yojam" },
 ]
 brews = [
   # Keyboard and display control.
@@ -115,7 +111,6 @@ mas = [
 [packages.groups.ai-agent-apps]
 description = "AI coding agent CLIs, desktop apps, and the Orca orchestrator"
 taps = [
-  { name = "manaflow-ai/cmux" },
   { name = "stablyai/orca" },
 ]
 casks = [
@@ -137,41 +132,102 @@ brews = [
   { name = "codex-acp" },
 ]
 
+# Applies to: devbox.
+# Only the formulae the last 60 days of agent sessions actually ran (see
+# docs/plans/linux-devbox-plan.md). Casks and macOS-only tools stay off. Add a
+# tool here when a session needs it, not in advance.
+[packages.groups.devbox]
+description = "Minimal CLI set for the Linux devbox, drawn from measured agent usage"
+taps = [
+  { name = "hashicorp/tap" },
+  { name = "oven-sh/bun" },
+  { name = "sourcegraph/src-cli" },
+  { name = "raine/aven" },
+]
+brews = [
+  # Source control and repository workflow.
+  { name = "git" },
+  { name = "gh" },
+  { name = "git-spice" },
+  { name = "git-delta" },
+  { name = "gitleaks" },
+  { name = "crit" },
+  { name = "sourcegraph/src-cli/src-cli" },
+
+  # Shell, search, and text tools.
+  { name = "ripgrep" },
+  { name = "fd" },
+  { name = "fzf" },
+  { name = "jq" },
+  { name = "python-yq" },
+  { name = "zoxide" },
+  { name = "direnv" },
+  { name = "tmux" },
+  { name = "neovim" },
+  { name = "vim" },
+  # No zsh or bash: the image ships both, and a linuxbrew shell found by name
+  # reads its rc files from the brew prefix, skipping the image's /etc/zsh setup.
+  { name = "coreutils" },
+  { name = "moreutils" },
+  { name = "binutils" },
+  { name = "netcat" },
+  { name = "rsync" },
+  { name = "wget" },
+  { name = "zip" },
+  { name = "hyperfine" },
+
+  # Toolchains and task runners.
+  { name = "mise" },
+  { name = "uv" },
+  { name = "oven-sh/bun/bun" },
+  { name = "just" },
+  { name = "shellcheck" },
+  { name = "actionlint" },
+  { name = "buildifier" },
+
+  # Infrastructure and cloud.
+  { name = "chezmoi" },
+  { name = "docker" },
+  { name = "kubernetes-cli" },
+  { name = "hashicorp/tap/terraform" },
+  { name = "ldcli" },
+  { name = "googleworkspace-cli" },
+
+  # Agents, documents, and media.
+  { name = "raine/aven/aven" },
+  { name = "herdr" },
+  { name = "llm" },
+  { name = "pandoc" },
+  { name = "imagemagick" },
+]
+
 # Applies to: personal, homelab, work.
 [packages.groups.developer-tools]
 description = "General development toolchain for real development machines"
 taps = [
-  { name = "bazelbuild/tap" },
-  { name = "go-delve/delve" },
-  { name = "neovim/neovim" },
   { name = "oven-sh/bun" },
-  { name = "romkatv/powerlevel10k" },
   { name = "dagger/tap" },
   { name = "hashicorp/tap" },
-  { name = "eugene1g/safehouse" },
   { name = "f/mcptools" },
   { name = "prateek/tap" },
   { name = "prateek/forks", url = "https://github.com/prateek/forks" },
   { name = "steipete/tap" },
-  { name = "discoteq/discoteq" },
-  { name = "holgerbrandl/tap" },
   { name = "hudochenkov/sshpass" },
-  { name = "saulpw/vd" },
   { name = "sourcegraph/src-cli" },
   { name = "juxt/allium" },
-  { name = "thoughtbot/formulae" },
   { name = "heartleo/tap" },
+  { name = "raine/aven" },
 ]
 brews = [
   # Dotfiles, agent, and AI tooling.
   { name = "chezmoi" },
+  { name = "raine/aven/aven" },
   { name = "crit" },
   { name = "llm" },
   { name = "fabric-ai" },
   { name = "mcpm" },
   { name = "f/mcptools/mcp" },
   { name = "repomix" },
-  { name = "eugene1g/safehouse/agent-safehouse" },
   { name = "steipete/tap/peekaboo" },  # screenshots and UI driving for the browser and peekaboo-vm-app-audit skills
 
   # Source control and repository workflow.
@@ -233,7 +289,6 @@ brews = [
   { name = "pth" },
   { name = "libusb-compat" },
   { name = "sip" },
-  { name = "qscintilla2" },
 
   # Containers, infrastructure, cloud, and app stores.
   { name = "docker" },
@@ -264,16 +319,13 @@ brews = [
   { name = "socat" },
   { name = "ssh-copy-id", link = true },
   { name = "hudochenkov/sshpass/sshpass" },
-  { name = "telnet" },
   { name = "wget" },
-  { name = "wireshark" },
   { name = "goaccess" },
 
   # Documents, media, image processing, and OCR.
   { name = "heartleo/tap/zlib" },
   { name = "asciinema" },
   { name = "fontforge" },
-  { name = "gl2ps" },
   { name = "graphicsmagick" },
   { name = "graphviz" },
   { name = "imagemagick" },
@@ -304,7 +356,6 @@ brews = [
   { name = "gperftools" },
   { name = "htop" },
   { name = "hyperfine" },
-  { name = "qcachegrind" },
   { name = "watch" },
   { name = "watchman" },
 ]
@@ -313,6 +364,21 @@ casks = [
   { name = "dagger/tap/container-use" },
   { name = "mitmproxy" },
   { name = "xquartz" },
+]
+
+# Applies to: personal, homelab, work.
+[packages.groups.mac-developer-tools]
+description = "Developer formulae that only build or run on macOS"
+taps = [
+  { name = "eugene1g/safehouse" },
+]
+brews = [
+  { name = "eugene1g/safehouse/agent-safehouse" },
+  { name = "qscintilla2" },
+  { name = "telnet" },
+  { name = "wireshark" },
+  { name = "gl2ps" },
+  { name = "qcachegrind" },
 ]
 
 # Applies to: personal, homelab.

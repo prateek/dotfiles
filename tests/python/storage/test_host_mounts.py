@@ -442,13 +442,14 @@ args = ["pre"]
     def test_hook_is_scoped_to_configured_macos_hosts(self):
         config = self.root / "empty.toml"
         config.write_text("")
-        cases = (("m4mini", "darwin", True, True),
-                 ("unconfigured-host", "darwin", True, False),
-                 ("m4mini", "linux", True, False),
-                 ("m4mini", "darwin", False, False))
-        for host, operating_system, install, expected in cases:
+        # A Linux host needs a Linux type: features.tmpl refuses a Mac type there.
+        cases = (("m4mini", "darwin", "ci", True, True),
+                 ("unconfigured-host", "darwin", "ci", True, False),
+                 ("m4mini", "linux", "devbox", True, False),
+                 ("m4mini", "darwin", "ci", False, False))
+        for host, operating_system, machine_type, install, expected in cases:
             with self.subTest(host=host, operating_system=operating_system, install=install):
-                data = dict(machine_type="ci", dotfiles_dir=str(ROOT),
+                data = dict(machine_type=machine_type, dotfiles_dir=str(ROOT),
                             machines_local=dict(run_install_scripts=install),
                             chezmoi=dict(hostname=host, os=operating_system))
                 result = subprocess.run([shutil.which("chezmoi"), "--config", str(config),

@@ -5,3 +5,11 @@ source = "{{ .chezmoi.homeDir }}/.agents/plugins"
 [plugins."{{ $name }}@prateek-local"]
 enabled = {{ $policy.default_loaded }}
 {{ end }}{{ end }}
+{{- $wo := includeTemplate "work-overlay.tmpl" . | fromJson }}{{ if $wo.marketplace }}
+[marketplaces.{{ $wo.marketplace | quote }}]
+source_type = "local"
+source = {{ $wo.plugins | quote }}
+{{ range $wo.codex_plugins }}
+[plugins."{{ . }}@{{ $wo.marketplace }}"]
+enabled = true
+{{ end }}{{ end }}

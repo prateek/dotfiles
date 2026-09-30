@@ -18,6 +18,16 @@ only `prateek-local`. Use `--plugins-root` and `--policy` for isolated state;
 `--dry-run` reads native state and prints planned mutations. Invalid input fails
 before native mutations. Each inventory and registration is read once.
 
+`--overlay --plugins-root DIR` reconciles a hand-maintained marketplace instead,
+such as the work overlay ([ADR 0039](../../../../docs/adr/0039-work-overlay-in-work-repo.md)).
+It reads DIR's Claude and Codex catalogs directly, with no build, receipt, or
+policy, takes the marketplace name from them, and refuses `prateek-local`. Each
+plugin is installed and enabled for the agents whose catalog lists it (omp follows
+the Claude catalog); a plugin in both catalogs must point at one directory with
+matching manifest versions. Chezmoi script 39 runs it. `--json` prints the
+marketplace name and each client's eligible plugins instead, which
+`work-overlay.tmpl` reads so the templates never parse the catalogs themselves.
+
 Claude registers the local root, installs eligible plugins, refreshes changed
 versions, restores `default_loaded`, and removes owned orphans. Native remove/install
 supports downgrade and removes stale files. Unrelated marketplace records are kept.

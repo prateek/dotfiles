@@ -14,7 +14,7 @@ mas_opt_in={{ env "DOTFILES_INSTALL_MAS_APPS" | default "false" | quote }}
 case "$mas_opt_in" in
   1|true|TRUE|yes|YES|on|ON) ;;
   *)
-    if [ "$has_developer_tools" = "true" ]; then
+    if [ "$has_developer_tools" = "true" ] && [ "$(uname -s)" = "Darwin" ]; then
       warn "Mac App Store installs disabled; set DOTFILES_INSTALL_MAS_APPS=true to opt in."
     fi
     ;;

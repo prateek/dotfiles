@@ -176,8 +176,9 @@ refresh does not block the prompt. The refresh CLI cases cover cache privacy,
 locking, invalidation, and failure cooldown.
 
 Keep script-aware diff/dry-run and rendered shellcheck checks for changed apply
-scripts. `just test-chezmoi-apply` previews `ci`, `personal`, and `work`; Tart
-installation and live-machine apply remain explicit operator lanes.
+scripts. `just test-chezmoi-apply` previews `ci`, `personal`, `work`, and
+`devbox`, each as the OS its type declares; Tart installation and live-machine
+apply remain explicit operator lanes.
 
 `just test-shell tests/bats/hooks/touchid-sudo.bats` checks PAM file creation,
 metadata repair, unreadable and foreign-file preservation, edits during

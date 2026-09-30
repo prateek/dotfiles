@@ -1,0 +1,22 @@
+{{- $wo := includeTemplate "work-overlay.tmpl" . | fromJson -}}
+{{- if $wo.enabled -}}
+{{ template "script_lib.sh" . }}
+
+# The work overlay external clones sparse, and chezmoi cannot run the step that
+# picks the directory. Narrow the checkout to the overlay directory here, after
+# the clone and before scripts 37 and 39 read it. Idempotent, so it runs every
+# apply; it also narrows a clone made before the external went sparse.
+
+set -euo pipefail
+
+clone={{ $wo.clone | squote }}
+if [ ! -d "$clone/.git" ]; then
+  warn "work overlay clone is missing at $clone; skipping sparse checkout."
+  exit 0
+fi
+{{- if $wo.subdir }}
+git -C "$clone" sparse-checkout set --cone {{ $wo.subdir | squote }}
+{{- else }}
+git -C "$clone" sparse-checkout disable
+{{- end }}
+{{- end -}}

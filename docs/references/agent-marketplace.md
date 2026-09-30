@@ -3,12 +3,13 @@ status: current
 doc_type: reference
 owner: Prateek
 created: 2026-09-07
-updated: 2026-09-28
+updated: 2026-09-29
 related:
   - ../../agent-marketplace/README.md
   - ../../.agents/skills/agent-skill-management/SKILL.md
   - ../adr/0023-apm-agent-marketplace-packaging.md
   - ../adr/0025-shared-apm-acquisition.md
+  - ../adr/0039-work-overlay-in-work-repo.md
   - ../plans/apm-agent-marketplace-plan.md
 ---
 
@@ -58,6 +59,16 @@ for cache updates, disabled project plugins, and rollback. Script 35 preserves
 Codex's runtime skill stub; script 36 owns the build/copy/reconcile sequence.
 Config merge templates read host policy directly. Pi follows Claude selection;
 Cursor keeps its existing marketplace registration and ACP behavior.
+
+Work machines with the work overlay configured get a second marketplace,
+`work-overlay`, from the overlay clone's `agent-plugins/` directory
+([ADR 0039](../adr/0039-work-overlay-in-work-repo.md)). It is hand-maintained in
+the work repo, not built here. Script 39 installs it with the reconciler's
+`--overlay` mode. The four client config templates register it once the clone
+holds a catalog, and take the marketplace and plugin names from the reconciler's
+`--json` listing. A plugin reaches the clients whose catalog lists it. Bump its
+version in every manifest it ships to refresh installs; the reconciler refuses a
+mismatch.
 
 The [management skill](../../.agents/skills/agent-skill-management/SKILL.md) routes
 maintenance work. The [test index](../../tests/README.md#agent-package-checks)

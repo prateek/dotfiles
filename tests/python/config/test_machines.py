@@ -2,7 +2,7 @@ import json
 import re
 import tomllib
 
-from tests.support.python import ROOT, RepoTestCase
+from tests.support.python import ROOT, RepoTestCase, declared_os
 
 
 class MachineFeaturesTests(RepoTestCase):
@@ -24,7 +24,7 @@ class MachineFeaturesTests(RepoTestCase):
             "personal": {
                 "pin_hostname": True,
                 "touchid_sudo": True,
-                "groups": ["core", "mac-desktop", "ai-agent-apps", "codex", "developer-tools", "personal-apps", "forks"],
+                "groups": ["core", "mac-desktop", "ai-agent-apps", "codex", "developer-tools", "mac-developer-tools", "personal-apps", "forks"],
                 "run_install_scripts": True, "apply_macos_defaults": True,
                 "secrets_enabled": True, "elevation": "none",
                 "private_overlay": False, "granola_mcp": True, "tls_inspection": False,
@@ -32,7 +32,7 @@ class MachineFeaturesTests(RepoTestCase):
             "homelab": {
                 "pin_hostname": True,
                 "touchid_sudo": False,
-                "groups": ["core", "ai-agent-apps", "codex", "developer-tools", "apple-development", "homelab-overlay"],
+                "groups": ["core", "ai-agent-apps", "codex", "developer-tools", "mac-developer-tools", "apple-development", "homelab-overlay"],
                 "runner_vm_name": "tartelet-runner", "runner_vm_count": 1,
                 "runner_scope": "repo", "runner_start_on_launch": True, "granola_mcp": True,
                 "tls_inspection": False,
@@ -40,9 +40,13 @@ class MachineFeaturesTests(RepoTestCase):
             "work": {
                 "pin_hostname": False,
                 "touchid_sudo": True,
-                "groups": ["core", "mac-desktop", "ai-agent-apps", "developer-tools", "work-apps", "forks"],
+                "groups": ["core", "mac-desktop", "ai-agent-apps", "developer-tools", "mac-developer-tools", "work-apps", "forks"],
                 "private_overlay": True, "elevation": "jamf-self-service", "granola_mcp": False,
                 "tls_inspection": True, "mcp_gateway_browser_hook": True,
+            },
+            "devbox": {
+                "groups": ["devbox"],
+                "apply_macos_defaults": False, "managed_allowlist": True, "git_config_xdg": True,
             },
         }
         for machine, fields in expected.items():
@@ -100,14 +104,31 @@ class MachineFeaturesTests(RepoTestCase):
 
     def test_new_machine_roles_do_not_opt_into_touchid(self):
         self.assertIs(self.resolve(
-            "headless", machines={"type": {"headless": {"groups": ["core"]}}},
+            "headless", machines={"type": {"headless": {"os": "darwin", "groups": ["core"]}}},
         )["touchid_sudo"], False)
         self.assertIs(self.resolve("homelab", chezmoi={"hostname": "m4mini"})["touchid_sudo"], False)
 
-    def test_unknown_type_fails_with_a_typo_diagnostic(self):
-        result = self.command([
+    def refuse(self, data):
+        # Pin the host to the type's OS so the check under test, not the OS check, refuses.
+        if operating_system := declared_os(data["machine_type"], data):
+            data = data | {"chezmoi": {"os": operating_system} | data.get("chezmoi", {})}
+        return self.command([
             "chezmoi", "--source", str(ROOT), "--config", str(self.config),
-            "--destination", str(self.home), "--override-data", '{"machine_type":"nope"}',
+            "--destination", str(self.home), "--override-data", json.dumps(data),
             "execute-template", "--file", str(ROOT / self.template),
-        ], expected_status=1)
-        self.assertIn(b"unknown machine type", result.stderr)
+        ], expected_status=1).stderr
+
+    def test_unknown_type_fails_with_a_typo_diagnostic(self):
+        self.assertIn(b"unknown machine type", self.refuse({"machine_type": "nope"}))
+
+    def test_a_type_must_declare_its_os(self):
+        stderr = self.refuse({"machine_type": "headless", "machines": {"type": {"headless": {"groups": ["core"]}}}})
+        self.assertIn(b'machine type "headless" must declare os', stderr)
+
+    def test_only_the_type_layer_sets_os(self):
+        host = {"chezmoi": {"hostname": "dotfiles-test-host"},
+                "machines": {"host": {"dotfiles-test-host": {"os": "linux"}}}}
+        for data in (host, {"machines_local": {"os": "linux"}}):
+            with self.subTest(data=data):
+                stderr = self.refuse({"machine_type": "personal"} | data)
+                self.assertIn(b"only a [machines.type.*] layer may set os", stderr)
