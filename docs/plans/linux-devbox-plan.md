@@ -3,20 +3,21 @@ status: active
 doc_type: plan
 owner: Prateek
 created: 2026-09-24
-updated: 2026-09-29
+updated: 2026-09-30
 related:
   - ../adr/0040-devbox-machine-type.md
+  - ../adr/0043-devbox-os-gating.md
   - ../adr/0012-config-gating-convention.md
   - ../adr/0039-work-overlay-in-work-repo.md
-status_detail: "Increments 1 (type, allowlist), 2 (shell, Homebrew), and 4 (Orca reconciler) verified on a fresh devbox; the onstart script and trampoline are written and unit-tested but not yet run on a box; nothing committed."
+status_detail: "Increments 1-4 verified on the devbox; ADR 0043 replaced the allowlist with OS gates, and an apply from that branch installed the agent surface. The Ubuntu CI job waits on a token with workflow scope; the rollback rehearsal and the onstart run on a fresh box remain."
 ---
 
 # Linux devbox
 
 Run the dotfiles on Prateek's Linux devbox, a Cloud Workstation that work
 tooling provisions, and run headless Orca there for desktop Orca on the Mac.
-[ADR 0040](../adr/0040-devbox-machine-type.md) records the `devbox` machine type
-and its allowlist.
+[ADR 0040](../adr/0040-devbox-machine-type.md) records the `devbox` machine type;
+[ADR 0043](../adr/0043-devbox-os-gating.md) replaced its allowlist with OS gates.
 
 ## Ownership
 
@@ -32,7 +33,7 @@ seeds onto the box.
 | Bootstrap | `~/.gitconfig`, `~/.bashrc`, `~/.tmux.conf`, `~/.claude.json`, Claude credentials, its own keys in `~/.claude/settings.json` |
 | Agent sync (continuous) | `~/.claude/{skills,commands,rules,agents}` |
 | Image | `chezmoi`, `uv`, `mise` (activated from `/etc/profile.d`), `zsh`, `tmux`, `perl` |
-| Dotfiles | Only the paths in the `managed_allowlist` block of `home/.chezmoiignore` |
+| Dotfiles | The full source state, less the macOS targets and synced agent asset directories `home/.chezmoiignore` gates off Linux |
 
 Git reads `~/.config/git/config` before `~/.gitconfig`, so on the devbox the
 dotfiles render their git config to the XDG path and the bootstrap's identity
@@ -55,8 +56,9 @@ and credential settings win.
   Store apps, and the `mac-developer-tools` group stay on macOS. Setapp and macOS defaults scripts
   stay ignored. `claude` and `cursor-agent` are provided by work tooling.
   Homebrew's git, tmux, and nvim shadow the image's copies.
-- `agent_clis = ["claude", "cursor-agent"]` with no acpx routes. The end state
-  adds acpx and omp.
+- `agent_clis = ["claude", "cursor-agent", "omp", "pi"]` with no acpx routes.
+  Script 36 builds the agent marketplace into `~/.agents/plugins` and installs
+  the enabled Claude plugins, as on the Macs.
 - Orca: `~/.local/bin/orca-devpod-reconcile` (Linux only) takes `start`,
   `stop`, `status`, and `pair`. `start` caches the pinned `.deb`,
   checks its SHA-256, reinstalls it with `sudo -n apt-get` whenever the
@@ -83,13 +85,18 @@ and credential settings win.
 ## Increments
 
 1. `devbox` type, ADR, and an empty allowlist. The apply manages nothing and the
-   hooks survive Linux.
+   hooks survive Linux. (Done; ADR 0043 later retired the allowlist.)
 2. Shell: zsh, git (XDG), tmux, Homebrew and the bundle, mise config, nvim,
    inputrc, lesskey, vimrc. The login shell switch to zsh is a work-tooling setting
    (`DEVBOX_LOGIN_SHELL=zsh` in the laptop's `~/.devbox.local`).
 3. Agent surface: `~/.agents` docs, built plugins, Claude settings merge.
+   Done by retiring the allowlist (ADR 0043); verified with an apply on the
+   devbox: 12 plugins built, the five enabled ones installed.
 4. Orca by hand, then the reconciler and its rendered config.
-5. Onstart script, the rollback rehearsal, and an Ubuntu CI lane.
+5. Onstart script, the rollback rehearsal, and an Ubuntu CI lane. The
+   `devbox-linux` job for `install-smoke.yml` (the devbox apply dry-run and
+   render cases on Ubuntu) is written but not landed: pushing a workflow change
+   needs a token with `workflow` scope. The rehearsal needs a box stop/start.
 6. Land, then the trampoline PR in the work repo.
 
 ## Known collisions and deferred work

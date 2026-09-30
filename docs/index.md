@@ -122,9 +122,10 @@ for day-to-day implementation details.
 | [ADR 0037 - Repo-tracked landing preferences](adr/0037-repo-tracked-landing-preferences.md) | [Land-changes preferences](../agent-marketplace/packages/review/skills/land-changes/references/preferences.md). |
 | [ADR 0038 - Touch ID for sudo adopts any existing sudo_local](adr/0038-touchid-sudo-adopts-existing-file.md) | [Chezmoi Architecture](references/chezmoi-architecture.md#touch-id-for-sudo); `sudo-touchid`'s adopt-and-remove model for the apply hook. |
 | [ADR 0039 - Work overlay lives in the work repo](adr/0039-work-overlay-in-work-repo.md) | Accepted; a prompted, shallow git-repo external brings the work overlay's Slack fragments and its `work-overlay` native marketplace, installed by the reconciler's `--overlay` mode. [Agent Marketplace](references/agent-marketplace.md). |
-| [ADR 0040 - Devbox machine type](adr/0040-devbox-machine-type.md) | Accepted; [Linux devbox plan](plans/linux-devbox-plan.md). A dedicated `devbox` type whose `managed_allowlist` feature limits `.chezmoiignore` to an explicit allowlist. |
+| [ADR 0040 - Devbox machine type](adr/0040-devbox-machine-type.md) | Allowlist superseded by [ADR 0043](adr/0043-devbox-os-gating.md); the `devbox` type, declared `os`, and Homebrew group remain. [Linux devbox plan](plans/linux-devbox-plan.md). |
 | [ADR 0041 - agent_clis is the single per-machine agent declaration](adr/0041-agent-clis-single-declaration.md) | Accepted; [agent_clis consolidation plan](plans/agent-clis-consolidation-plan.md). A catalogue plus one validated list replaces per-CLI gates. |
 | [ADR 0042 - Reconcile Orca settings through its profile-state store](adr/0042-orca-profile-state-reconcile.md) | Accepted; [Orca settings store plan](plans/orca-settings-store-plan.md). Revision-fenced SQLite write with Orca stopped, via the plist guard. |
+| [ADR 0043 - Gate the devbox by OS, not by an allowlist](adr/0043-devbox-os-gating.md) | Accepted; [Linux devbox plan](plans/linux-devbox-plan.md). The devbox takes the whole source state; macOS targets, `.chezmoiremove`, and synced agent asset directories are gated off it. |
 
 ## Research
 

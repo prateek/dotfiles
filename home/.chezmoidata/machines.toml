@@ -73,10 +73,10 @@ direnv_trust_monorepo = false
 # Wrap IT's MCP gateway so its per-session CyberArk sign-in opens in a
 # background Orca tab and asks for attention instead of stealing focus.
 mcp_gateway_browser_hook = false
-# Allowlist profile: .chezmoiignore ignores every target and script, then
-# un-ignores only what the machine takes. For a machine where most of the
-# source state targets macOS or another owner already writes $HOME.
-managed_allowlist = false
+# Another tool mirrors the agent harness asset directories (~/.claude/commands,
+# skills, rules, agents) and replaces them wholesale on every sync, so the
+# dotfiles leave targets under them unmanaged.
+agent_assets_synced = false
 # Render the git config to ~/.config/git/config instead of ~/.gitconfig, for a
 # machine where another owner writes ~/.gitconfig. Git reads the XDG file
 # first, so that owner's identity and credential settings win.
@@ -148,15 +148,16 @@ mcp_gateway_browser_hook = true
 
 # Linux devbox: a Cloud Workstation that work tooling provisions and
 # re-bootstraps. That tooling owns ~/.gitconfig, ~/.bashrc, and the Claude
-# credentials, so the dotfiles manage only an allowlist. Homebrew installs the
-# CLI groups; casks and macOS defaults stay off. See
-# docs/adr/0040-devbox-machine-type.md.
+# credentials, and its asset sync owns the Claude and Cursor skill, command,
+# rule, and agent directories. macOS targets stay off through the OS gates in
+# .chezmoiignore. Homebrew installs the CLI groups; casks and macOS defaults
+# stay off. See docs/adr/0043-devbox-os-gating.md.
 [machines.type.devbox]
 os = "linux"
 groups = ["devbox"]
 apply_macos_defaults = false
 system_activates_mise = true
-managed_allowlist = true
+agent_assets_synced = true
 git_config_xdg = true
 agent_clis = ["claude", "cursor-agent", "omp", "pi"]
 

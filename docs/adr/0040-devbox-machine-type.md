@@ -1,12 +1,16 @@
 ---
-status: accepted
+status: superseded
 doc_type: adr
 owner: Prateek
 created: 2026-09-24
-updated: 2026-09-29
+updated: 2026-09-30
+closed: 2026-09-30
+superseded_by: 0043-devbox-os-gating.md
 related:
   - ../plans/linux-devbox-plan.md
   - 0012-config-gating-convention.md
+  - 0043-devbox-os-gating.md
+status_detail: "The devbox type, the per-type os declaration, and the Homebrew group remain; ADR 0043 replaces the managed_allowlist with OS gates."
 ---
 
 # ADR 0040 — Devbox machine type

@@ -3,9 +3,10 @@
 # deployed target when its source is removed, so list the orphans here. Safe to
 # prune these entries once every machine has applied them.
 
-{{- /* The allowlist profile manages only its own targets, and chezmoi applies
-     these removals even to ignored paths, so skip them there. */ -}}
-{{- if not (includeTemplate "features.tmpl" . | fromJson).managed_allowlist }}
+{{- /* These orphans were only ever deployed on macOS, and chezmoi applies
+     removals even to ignored paths, so a file at one of them elsewhere belongs
+     to another owner. */ -}}
+{{- if eq .chezmoi.os "darwin" }}
 # worktrunk
 bin/wt-hook-sparse
 .config/worktrunk

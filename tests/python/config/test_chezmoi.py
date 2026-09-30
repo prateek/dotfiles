@@ -44,27 +44,24 @@ class ChezmoiConfigTests(RepoTestCase):
         data = {"chezmoi": {"os": declared_os(data["machine_type"])}} | data
         return self.chezmoi("--override-data", json.dumps(data), "cat", str(self.home / target)).stdout
 
-    def test_devbox_allowlist_manages_only_opted_in_targets(self):
-        roots = (".config/zsh/", ".config/tmux/", ".config/nvim/", ".config/git/", ".config/mise/")
-        files = {
-            ".zshenv", ".inputrc", ".lesskey", ".vimrc",
-            ".chezmoiscripts/00-homebrew.sh", ".chezmoiscripts/05-core-tools.sh",
-            ".chezmoiscripts/07-cursor-agent.sh",
-            ".chezmoiscripts/10-brew-bundle.sh", ".chezmoiscripts/10-zinit-compat.sh",
-            ".chezmoiscripts/11-zinit-update.sh", ".chezmoiscripts/20-mise-install.sh",
-            ".config/mise/config.toml", ".config/mise/conf.d/clis.toml",
-            "code/scratch/.gitignore", "code/scratch/AGENTS.md", ".chezmoiscripts/41-scratch-dir.sh",
+    def test_devbox_manages_the_agent_surface_but_no_macos_targets(self):
+        managed = set(self.managed({"machine_type": "devbox"}))
+        wanted = {
+            ".zshenv", ".config/zsh/.zshrc", ".config/git/config", ".config/mise/config.toml",
+            ".agents/AGENTS.md", ".claude/settings.json",
+            ".chezmoiscripts/35-agent-skill-roots.sh", ".chezmoiscripts/36-agent-plugins.sh",
+            ".local/bin/orca-devpod-reconcile",
         }
-        managed = self.managed({"machine_type": "devbox"})
-        reconciler = ".local/bin/orca-devpod-reconcile"
-        self.assertEqual([p for p in managed if p not in files and not p.startswith(roots)], [reconciler])
-        self.assertLessEqual(files, set(managed))
-        self.assertIn(".config/zsh/.zshrc", managed)
-        self.assertNotIn(reconciler, self.managed({"machine_type": "personal"}))
-        unrestricted = self.managed({
-            "machine_type": "devbox", "machines_local": {"managed_allowlist": False},
-        })
-        self.assertIn(".agents/AGENTS.md", unrestricted)
+        self.assertLessEqual(wanted, managed)
+        # The asset sync owns ~/.claude/commands; ~/.zshrc and Library are Mac-only.
+        self.assertEqual([p for p in managed if p.startswith(("Library/", ".claude/commands/"))], [])
+        for path in (".zshrc", ".config/karabiner.edn", ".chezmoiscripts/30-macos-defaults.sh",
+                     ".chezmoiscripts/15-xcode.sh", ".chezmoiscripts/22-setapp-apps.sh"):
+            self.assertNotIn(path, managed)
+        personal = set(self.managed({"machine_type": "personal"}))
+        self.assertNotIn(".local/bin/orca-devpod-reconcile", personal)
+        self.assertIn(".claude/commands/q.md", personal)
+        self.assertIn("Library", {p.split("/")[0] for p in personal})
 
     def test_a_machine_type_refuses_a_host_running_another_os(self):
         template = self.work / "features.tmpl"

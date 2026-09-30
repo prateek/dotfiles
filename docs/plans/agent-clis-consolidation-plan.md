@@ -154,9 +154,9 @@ What lands per machine:
 | --- | --- | --- | --- | --- |
 | mise entries | omp, pi, gemini, claude-agent-acp | same | pi, claude-agent-acp | omp, pi, claude-agent-acp |
 | Brewfile adapters | codex-acp | codex-acp | — | — |
-| install hooks | 06 claude, 07 codex | same | 06 claude, 07 cursor-agent | 07 cursor-agent (06 not allowlisted; work tooling provisions claude) |
+| install hooks | 06 claude, 07 codex | same | 06 claude, 07 cursor-agent | 06 claude (no-op beside work tooling's native claude), 07 cursor-agent |
 | hidden config | `.cursor/cli-config.json` | same | `.codex` | `.codex` |
-| plugin reconcile | claude, codex, omp | same | claude | — (36 not allowlisted) |
+| plugin reconcile | claude, codex, omp | same | claude | claude, omp |
 | acpx check | omp, codex, claude routes ✓ | same | claude-vertex, cursor ✓ | no routes |
 | mise uninstall on first apply | — | — | omp, gemini | — |
 

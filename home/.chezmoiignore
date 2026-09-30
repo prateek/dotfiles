@@ -1,43 +1,40 @@
 {{- $f := includeTemplate "features.tmpl" . | fromJson }}
 {{- $a := includeTemplate "agents.tmpl" . | fromJson }}
-{{- if $f.managed_allowlist }}
-{{/* Allowlist profile: ignore every target and script, then un-ignore what
-     the machine takes. A negation beats any ignore, but `*` stops at `/` and an
-     ignored parent hides its children, so un-ignore each parent and give each
-     allowlisted directory its own `dir/*` line. Scripts match by target name,
-     .chezmoiscripts/<NN-name>. */}}
-*
-.*
-.chezmoiscripts/*
-!.zshenv
-!.inputrc
-!.lesskey
-!.vimrc
-!.config
-.config/*
-!.config/zsh
-!.config/tmux
-!.config/nvim
-!.config/git
-!.config/mise
-!.local
-.local/*
-!.local/bin
-.local/bin/*
-{{- if eq .chezmoi.os "linux" }}
-!.local/bin/orca-devpod-reconcile
+{{/* macOS-only targets and scripts. The scripts also skip themselves off
+     macOS at run time; ignoring them keeps a Linux apply from listing them.
+     Scripts match by target name, .chezmoiscripts/<NN-name>. */}}
+{{- if ne .chezmoi.os "darwin" }}
+Library
+.config/borders
+.config/kanata
+.config/karabiner
+.config/karabiner.edn
+.config/raycast
+.config/tuna
+.local/bin/dictation-sidekick
+bin/g95nc
+bin/orca-agent-session
+{{/* ~/.zshrc and the .chezmoiremove orphans are Mac history; elsewhere a
+     file at those paths belongs to another owner. */}}
+.zshrc
+.chezmoiscripts/01-touchid-sudo.sh
+.chezmoiscripts/13-obsidian-cli.sh
+.chezmoiscripts/15-xcode.sh
+.chezmoiscripts/16-tartelet-runner.sh
+.chezmoiscripts/17-tartelet-settings.sh
+.chezmoiscripts/18-tartelet-tart-softnet-wrapper.sh
+.chezmoiscripts/19-corp-ca-bundle.sh
+.chezmoiscripts/21-raycast-extensions.sh
+.chezmoiscripts/22-setapp-apps.sh
+.chezmoiscripts/30-macos-defaults.sh
+.chezmoiscripts/40-build-mic.sh
+.chezmoiscripts/45-karabiner-goku.sh
+.chezmoiscripts/46-tuna-reload.sh
 {{- end }}
-!.chezmoiscripts/00-homebrew.sh
-!.chezmoiscripts/05-core-tools.sh
-!.chezmoiscripts/07-cursor-agent.sh
-!.chezmoiscripts/10-brew-bundle.sh
-!.chezmoiscripts/10-zinit-compat.sh
-!.chezmoiscripts/11-zinit-update.sh
-!.chezmoiscripts/20-mise-install.sh
-!code
-code/*
-!code/scratch
-!.chezmoiscripts/41-scratch-dir.sh
+{{/* The asset sync replaces these directories wholesale; see
+     agent_assets_synced in machines.toml. */}}
+{{- if $f.agent_assets_synced }}
+.claude/commands
 {{- end }}
 {{/* Headless Orca server; the devbox onstart hook drives it. Linux only. */}}
 {{- if ne .chezmoi.os "linux" }}

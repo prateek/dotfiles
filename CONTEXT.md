@@ -8,9 +8,9 @@ The machines Prateek's dotfiles configure, and the vocabulary for how a machine'
 The single identity choice a machine makes when it first adopts the dotfiles; it selects which behavior layer applies and declares the OS the machine runs.
 _Avoid_: profile, role, flavor
 
-**Allowlist profile**:
-A machine whose managed state is an explicit allowlist: the dotfiles ignore every target and script except the paths it names. The devbox uses one.
-_Avoid_: minimal profile, restricted mode
+**Synced agent assets**:
+Harness asset directories (`~/.claude/commands`, `skills`, `rules`, `agents`) that another tool on the machine replaces wholesale; the dotfiles leave targets under them unmanaged. The devbox has them.
+_Avoid_: allowlist profile (retired; see ADR 0043)
 
 **Devbox**:
 Prateek's personal Linux Cloud Workstation, provisioned by DAYJOB's tooling, and the machine type it runs.

@@ -50,7 +50,7 @@ class MachineFeaturesTests(RepoTestCase):
             "devbox": {
                 "groups": ["devbox"],
                 "agent_clis": ["claude", "cursor-agent", "omp", "pi"],
-                "apply_macos_defaults": False, "managed_allowlist": True, "git_config_xdg": True,
+                "apply_macos_defaults": False, "agent_assets_synced": True, "git_config_xdg": True,
             },
         }
         for machine, fields in expected.items():
