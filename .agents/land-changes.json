@@ -18,6 +18,18 @@
           "dynamic": false
         },
         {
+          "id": "test-chezmoi-apply",
+          "kind": "action",
+          "source": "justfile:test-chezmoi-apply",
+          "scope": {
+            "execution": "local",
+            "category": "test"
+          },
+          "fingerprint": "7de102d9270ddccbc4b4def224ce5ba77ea6161a7b0277145cde64cfcfa97468",
+          "operation": "skip",
+          "dynamic": false
+        },
+        {
           "id": "pull_request",
           "kind": "gate",
           "source": "github-ruleset:18469973:pull_request",
