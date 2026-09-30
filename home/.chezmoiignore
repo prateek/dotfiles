@@ -32,6 +32,10 @@
 !.chezmoiscripts/10-zinit-compat.sh
 !.chezmoiscripts/11-zinit-update.sh
 !.chezmoiscripts/20-mise-install.sh
+!code
+code/*
+!code/scratch
+!.chezmoiscripts/41-scratch-dir.sh
 {{- end }}
 {{/* Headless Orca server; the devbox onstart hook drives it. Linux only. */}}
 {{- if ne .chezmoi.os "linux" }}

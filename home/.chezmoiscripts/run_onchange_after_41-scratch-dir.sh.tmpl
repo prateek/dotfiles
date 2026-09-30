@@ -1,0 +1,45 @@
+{{ template "script_lib.sh" . }}
+
+# ~/code/scratch is an agent workbench: chezmoi writes its AGENTS.md and
+# allowlist .gitignore, and this hook keeps the directory a git repo with those
+# two files committed, then registers it with Orca. git init runs before the
+# Orca registration so Orca records a git repo, not a folder.
+#
+# AGENTS.md sha256: {{ include "code/scratch/AGENTS.md" | sha256sum }}
+# .gitignore sha256: {{ include "code/scratch/dot_gitignore" | sha256sum }}
+
+scratch="$HOME/code/scratch"
+tracked=(.gitignore AGENTS.md)
+
+# chezmoi writes both files before run_after hooks; a missing one means an
+# ignore rule dropped them.
+for file in "${tracked[@]}"; do
+  [ -f "$scratch/$file" ] || die "scratch: $scratch/$file is missing; check .chezmoiignore"
+done
+
+if [ ! -d "$scratch/.git" ]; then
+  git -C "$scratch" init -q
+  log "scratch: initialized git repo at $scratch"
+fi
+
+if [ -n "$(git -C "$scratch" status --porcelain -- "${tracked[@]}")" ]; then
+  git -C "$scratch" add -- "${tracked[@]}"
+  if git -C "$scratch" commit -q -m "Update scratch-area agent conventions" -- "${tracked[@]}"; then
+    log "scratch: committed ${tracked[*]}"
+  else
+    warn "scratch: commit failed; run: git -C $scratch commit -- ${tracked[*]}"
+  fi
+fi
+
+have orca && have jq || exit 0
+registered="$(orca repo list --json 2>/dev/null |
+  jq -r --arg path "$scratch" \
+    '(.result.repos // .repos // .result.items // [])[]
+     | select(.path == $path) | (.id // empty)' |
+  head -1)" || true
+[ -n "$registered" ] && exit 0
+if orca repo add --path "$scratch" --json >/dev/null 2>&1; then
+  log "scratch: registered $scratch with Orca"
+else
+  warn "scratch: could not register with Orca (is it running?); run: orca repo add --path $scratch --json"
+fi

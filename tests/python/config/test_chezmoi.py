@@ -52,6 +52,7 @@ class ChezmoiConfigTests(RepoTestCase):
             ".chezmoiscripts/10-brew-bundle.sh", ".chezmoiscripts/10-zinit-compat.sh",
             ".chezmoiscripts/11-zinit-update.sh", ".chezmoiscripts/20-mise-install.sh",
             ".config/mise/config.toml", ".config/mise/conf.d/clis.toml",
+            "code/scratch/.gitignore", "code/scratch/AGENTS.md", ".chezmoiscripts/41-scratch-dir.sh",
         }
         managed = self.managed({"machine_type": "devbox"})
         reconciler = ".local/bin/orca-devpod-reconcile"

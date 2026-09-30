@@ -137,6 +137,7 @@ this section maps a change to the distinct guarantees it can affect.
 | Orca input and private-service recovery | `python3 -m unittest discover -s agent-marketplace/tests -p test_orca_fill_stdin.py` checks the local RPC and secret boundary; `node --test tests/node/browser-fill.test.mjs tests/node/pinned-loopback-proxy.test.mjs` checks nested shadow inputs, application events, certificate pinning, console WebSockets, and proxy lifecycle. The proxy test needs local listener permission. |
 | 1Password item lookup | `python3 -m unittest tests/python/agents/test_1password_find_item.py` checks vault scoping, exact titles, and field redaction. |
 | Devland SSH key export | `python3 -m unittest tests/python/agents/test_ssh_key_export.py` uses a dummy generated key to check OpenSSH extraction, file mode, validation, and refusal to overwrite. |
+| `~/code/scratch` workbench | `just test-shell tests/bats/hooks/scratch-dir.bats`; git init before Orca registration, commits limited to the managed `AGENTS.md` and `.gitignore`, idempotent reruns, and warn-only Orca failures. |
 | macOS defaults and app/package gates | `just test-shell tests/bats/hooks/macos-defaults.bats` and `just test-python -p test_config_gates.py` for the affected behavior. |
 
 An ordinary preference edit needs the lightest meaningful render/parse check and
