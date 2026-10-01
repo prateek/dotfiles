@@ -20,6 +20,7 @@ class MachineFeaturesTests(RepoTestCase):
                 "apply_macos_defaults": True, "secrets_enabled": False,
                 "private_overlay": False, "elevation": "none", "granola_mcp": False,
                 "tls_inspection": False, "mcp_gateway_browser_hook": False,
+                "devbox_orca_tunnel": False,
             },
             "personal": {
                 "pin_hostname": True,
@@ -46,6 +47,7 @@ class MachineFeaturesTests(RepoTestCase):
                 "agent_clis": ["claude", "cursor-agent", "pi"],
                 "private_overlay": True, "elevation": "jamf-self-service", "granola_mcp": False,
                 "tls_inspection": True, "mcp_gateway_browser_hook": True,
+                "devbox_orca_tunnel": True,
             },
             "devbox": {
                 "groups": ["devbox"],

@@ -83,6 +83,12 @@ Library/LaunchAgents/com.prateek.gui-corp-ca.plist
 .local/bin/mcp-gateway-open-bg
 {{- end }}
 
+{{/* The devbox Orca tunnel only means something where a devbox is paired. */}}
+{{- if not $f.devbox_orca_tunnel }}
+.local/bin/devbox-orca-tunnel
+Library/LaunchAgents/com.prateek.devbox-orca-tunnel.plist
+{{- end }}
+
 {{/* Install the direnv whitelist only where the work monorepo is present. */}}
 {{- if not $f.direnv_trust_monorepo }}
 .config/direnv/direnv.toml

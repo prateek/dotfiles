@@ -1,0 +1,52 @@
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- if eq .chezmoi.os "darwin" -}}
+{{ template "script_lib.sh" . }}
+
+# launch agent sha256: {{ include "Library/LaunchAgents/com.prateek.devbox-orca-tunnel.plist.tmpl" | sha256sum }}
+# wrapper sha256: {{ include "dot_local/bin/executable_devbox-orca-tunnel" | sha256sum }}
+
+set -euo pipefail
+
+label="com.prateek.devbox-orca-tunnel"
+plist="$HOME/Library/LaunchAgents/$label.plist"
+
+{{- if not $f.devbox_orca_tunnel }}
+
+wrapper="$HOME/.local/bin/devbox-orca-tunnel"
+
+# Kill switch: chezmoi ignores, but does not delete, the plist and wrapper once
+# the feature is off. No launchctl call on machines that never had it.
+if [ -e "$plist" ] || [ -e "$wrapper" ]; then
+  launchctl bootout "gui/$(id -u)/$label" 2>/dev/null || true
+  rm -f "$plist" "$wrapper"
+  log "devbox_orca_tunnel is off; removed its launch agent."
+fi
+
+{{- else if not $f.run_install_scripts }}
+
+log "install scripts disabled; skipping the devbox Orca tunnel."
+
+{{- else }}
+
+# The tmux tunnel this replaces holds port 16768 and would keep the job from
+# forwarding.
+if command -v tmux >/dev/null 2>&1; then
+  tmux list-sessions -F '#{session_name}' 2>/dev/null \
+    | grep '^devbox-orca-tunnel-' \
+    | while IFS= read -r session; do
+        tmux kill-session -t "=$session" 2>/dev/null && log "stopped legacy tmux tunnel $session"
+      done || true
+fi
+
+# launchd creates the log file but not its directory.
+mkdir -p "$HOME/.local/state/dotfiles/devbox-orca-tunnel"
+chmod 700 "$HOME/.local/state/dotfiles/devbox-orca-tunnel"
+launchctl bootout "gui/$(id -u)/$label" 2>/dev/null || true
+if launchctl bootstrap "gui/$(id -u)" "$plist" 2>/dev/null; then
+  log "loaded launch agent $label"
+else
+  warn "could not load $label (no GUI session?); load manually: launchctl bootstrap gui/\$(id -u) $plist"
+fi
+
+{{- end }}
+{{- end }}

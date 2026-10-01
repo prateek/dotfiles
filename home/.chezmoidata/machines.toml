@@ -77,6 +77,10 @@ mcp_gateway_browser_hook = false
 # skills, rules, agents) and replaces them wholesale on every sync, so the
 # dotfiles leave targets under them unmanaged.
 agent_assets_synced = false
+# Keep desktop Orca's forward to the Linux devbox's headless Orca up under a
+# launchd KeepAlive agent. The box name comes from DEVBOX_WS in ~/.devbox.local
+# at run time, so a rebuild needs no re-render.
+devbox_orca_tunnel = false
 # Render the git config to ~/.config/git/config instead of ~/.gitconfig, for a
 # machine where another owner writes ~/.gitconfig. Git reads the XDG file
 # first, so that owner's identity and credential settings win.
@@ -145,6 +149,7 @@ tls_inspection = true
 # Whitelist the work monorepo's .envrc so direnv skips the per-worktree prompt.
 direnv_trust_monorepo = true
 mcp_gateway_browser_hook = true
+devbox_orca_tunnel = true
 
 # Linux devbox: a Cloud Workstation that work tooling provisions and
 # re-bootstraps. That tooling owns ~/.gitconfig, ~/.bashrc, and the Claude

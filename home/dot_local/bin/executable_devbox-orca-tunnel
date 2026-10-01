@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Forwards 127.0.0.1:16768 to the Linux devbox's headless Orca on port 6768,
+# so desktop Orca's fixed environment work-devbox always reaches the current
+# box. launchd runs `run` under com.prateek.devbox-orca-tunnel with KeepAlive;
+# `status` and `restart` are for people.
+#
+# The forward rides the ssh Host entry that `droidcli devpod ssh-config`
+# writes, whose droidcli ProxyCommand refreshes its IAP token headlessly for
+# about 28 days and never starts a stopped box. ControlMaster is off so the
+# ssh process is the connection: while launchd reports the job running, the
+# tunnel is up, and ServerAlive ends it within 90s of the box going away.
+# No ExitOnForwardFailure: the Host entry carries its own LocalForward, which
+# fails while an interactive ssh session holds that port, and that must not
+# take this forward down. `status` probes the port itself.
+
+readonly label=com.prateek.devbox-orca-tunnel
+readonly local_port=16768
+readonly remote_port=6768
+
+usage() {
+  echo "usage: ${0##*/} run|status|restart" >&2
+  exit 2
+}
+
+log() {
+  printf '[%s] %s\n' "$(date '+%F %T')" "$*"
+}
+
+# DEVBOX_WS from the environment wins, then the last assignment in the work
+# toolkit's ~/.devbox.local. The file is read, not sourced: it belongs to
+# other tooling.
+resolve_box() {
+  local box="${DEVBOX_WS:-}"
+  if [[ -z "$box" && -r "$HOME/.devbox.local" ]]; then
+    box="$(sed -n 's/^[[:space:]]*\(export[[:space:]]\{1,\}\)\{0,1\}DEVBOX_WS=//p' \
+      "$HOME/.devbox.local" | tail -n 1)"
+    box="${box%\"}"; box="${box#\"}"; box="${box%\'}"; box="${box#\'}"
+  fi
+  printf '%s\n' "$box"
+}
+
+run() {
+  local box rc
+  box="$(resolve_box)"
+  # A clean exit tells launchd (KeepAlive SuccessfulExit=false) to stop
+  # retrying: nothing here fixes itself, and `restart` picks up the fix.
+  if [[ -z "$box" ]]; then
+    log "no DEVBOX_WS in the environment or ~/.devbox.local; not forwarding. Set it, then: ${0##*/} restart"
+    exit 0
+  fi
+  if ! ssh -G "$box" 2>/dev/null | grep -q '^proxycommand .*droidcli'; then
+    log "no droidcli ssh entry for $box; run: droidcli devpod ssh-config && ${0##*/} restart"
+    exit 0
+  fi
+  log "forwarding 127.0.0.1:$local_port -> $box:$remote_port"
+  rc=0
+  ssh -N -o BatchMode=yes -o ControlMaster=no -o ControlPath=none \
+    -o ServerAliveInterval=30 -o ServerAliveCountMax=3 \
+    -L "127.0.0.1:$local_port:localhost:$remote_port" "$box" || rc=$?
+  log "disconnected from $box (ssh exit $rc)"
+  # ssh -N exits 0 when the server closes the session; that is still a drop.
+  exit $((rc == 0 ? 1 : rc))
+}
+
+status() {
+  local rc=0 job box
+  box="$(resolve_box)"
+  echo "box: ${box:-<unset>}"
+  if job="$(launchctl print "gui/$(id -u)/$label" 2>/dev/null)"; then
+    printf '%s\n' "$job" | awk -v label="$label" '
+      /^\tstate = / { sub(/^\tstate = /, ""); print "job: " label " " $0 }
+      /^\tpid = / { sub(/^\t/, ""); print "     " $0 }
+      /^\tlast exit code = / { sub(/^\t/, ""); print "     " $0 }'
+    printf '%s\n' "$job" | grep -q '^	state = running' || rc=1
+  else
+    echo "job: $label not loaded"
+    rc=1
+  fi
+  if nc -z -G 2 127.0.0.1 "$local_port" 2>/dev/null; then
+    echo "port: 127.0.0.1:$local_port open"
+  else
+    echo "port: 127.0.0.1:$local_port closed"
+    rc=1
+  fi
+  echo "log: $HOME/.local/state/dotfiles/devbox-orca-tunnel/tunnel.log"
+  exit "$rc"
+}
+
+restart() {
+  local plist="$HOME/Library/LaunchAgents/$label.plist"
+  if launchctl print "gui/$(id -u)/$label" >/dev/null 2>&1; then
+    launchctl kickstart -k "gui/$(id -u)/$label"
+  else
+    launchctl bootstrap "gui/$(id -u)" "$plist"
+  fi
+  echo "restarted $label; check with: ${0##*/} status"
+}
+
+[[ $# -eq 1 ]] || usage
+case "$1" in
+  run) run ;;
+  status) status ;;
+  restart) restart ;;
+  *) usage ;;
+esac

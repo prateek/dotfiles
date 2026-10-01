@@ -9,7 +9,7 @@ related:
   - ../adr/0043-devbox-os-gating.md
   - ../adr/0012-config-gating-convention.md
   - ../adr/0039-work-overlay-in-work-repo.md
-status_detail: "Increments 1-4 verified on the devbox; ADR 0043 replaced the allowlist with OS gates, and an apply from that branch installed the agent surface. The Ubuntu CI job waits on a token with workflow scope; the rollback rehearsal and the onstart run on a fresh box remain."
+status_detail: "Increments 1-4 verified on the devbox; ADR 0043 replaced the allowlist with OS gates. On 2026-09-30 the trampoline, first apply, and headless Orca ran on a fresh prateek-devbox-orca-1, with the onstart hook run by hand after the first boot skipped it, and desktop Orca paired it as work-devbox. The Ubuntu CI job waits on a token with workflow scope; the rollback rehearsal remains."
 ---
 
 # Linux devbox
@@ -41,6 +41,15 @@ and credential settings win.
 
 ## Decisions
 
+- Naming: the workstation is `prateek-devbox-<purpose>-<N>`, currently
+  `prateek-devbox-orca-1` on `devpod-always-on-16`, pinned as `DEVBOX_WS` and
+  `DEVBOX_CONFIG` in the laptop's `~/.devbox.local`. A rebuild bumps `N`,
+  because a deleted name stays taken until its teardown finishes. Desktop Orca
+  names the environment with the fixed alias `work-devbox` on the fixed tunnel
+  port 16768, so a rebuild re-pairs under the same name and changes only the
+  pin and the tunnel's box argument. Create the box
+  with `gcp.sh create`, which labels it `owner=<laptop $USER>`. The toolkit
+  watchdog accepts that label for a name outside `${USER}-devbox-*`.
 - The onstart hook in the work repo is a thin trampoline. It sets PATH, clones
   the dotfiles over https if they are missing, and runs
   `~/dotfiles/scripts/devbox/onstart`. The dotfiles own everything after that.
@@ -74,6 +83,19 @@ and credential settings win.
   code straight into `orca environment add`, and `start` closes the offer.
   A repeat `start` changes nothing while the server runs the installed
   package with the same runner.
+- The Mac end of the pairing is the `com.prateek.devbox-orca-tunnel` launch
+  agent, on machines with the `devbox_orca_tunnel` feature (work). It runs
+  `~/.local/bin/devbox-orca-tunnel run`, which reads `DEVBOX_WS` from
+  `~/.devbox.local` on every start and forwards 127.0.0.1:16768 to the box's
+  6768 over the `droidcli devpod ssh-config` Host entry. The ssh process is
+  its own connection, not a ControlMaster client, so launchd's running state
+  is the tunnel's state, and the Raycast Launchd Monitor watches the label in
+  the menu bar. Add that label to the extension's preferences by hand; they
+  live in Raycast's encrypted store. After a rebuild or an ssh-config change,
+  run `devbox-orca-tunnel restart`. It replaces the work overlay's tmux
+  tunnel, whose note that endpoint security flagged launchd keepalives had no
+  source; two KeepAlive-free launch agents and the toolkit's own watchdog
+  agent run cleanly on the work Mac.
   The runner sets `SHELL` to the login shell, since Orca terminals open
   `$SHELL` and a shared tmux server hands down whatever shell started it.
   `stop` also ends Orca's detached PTY daemon, so a restart or upgrade never
@@ -105,3 +127,10 @@ and credential settings win.
   block that sources a work-repo vim fragment if one exists. The block does
   nothing today, but it shows up as drift until the next apply strips it.
   Accept the churn and fix it later.
+- First boot skips the onstart hook. The bootstrap looks for the hook in
+  `~/spacejunk-sync` or agentd's Spacejunk clone, and neither exists until
+  agentd's first sync, so `gcp.sh up` on a new box logs `user onstart enabled,
+  but ... is absent`. Once `gcp.sh ready` passes, run the hook by hand:
+  `set -a; . ~/.devbox.local; set +a; timeout 600
+  ~/spacejunk-sync/devbox/configs/prateek/dotfiles/onstart.sh`. Any later boot
+  or resume would also run it.

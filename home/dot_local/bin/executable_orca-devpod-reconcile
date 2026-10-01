@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-readonly ORCA_VERSION="1.4.215"
-readonly ORCA_DEB_SHA256="b0da86f5d8efc599a9a41e9b891c416ec28e9735ab706da625dc053ed9e81df0"
+readonly ORCA_VERSION="1.4.217"
+readonly ORCA_DEB_SHA256="dc84039c473833cab6f22dc911927f4ce14d7869b1a5d2e604636976ec4b71bd"
 readonly ORCA_DEB_URL="https://github.com/stablyai/orca/releases/download/v${ORCA_VERSION}/orca-ide_${ORCA_VERSION}_amd64.deb"
 readonly ORCA_PORT="6768"
 readonly ORCA_PAIRING_ADDRESS="127.0.0.1:16768"

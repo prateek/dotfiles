@@ -44,6 +44,8 @@ MANAGED = {
         'Library/LaunchAgents/com.prateek.gui-corp-ca.plist',
         '.pi/agent/settings.json',
         '.cursor/cli-config.json',
+        '.local/bin/devbox-orca-tunnel',
+        'Library/LaunchAgents/com.prateek.devbox-orca-tunnel.plist',
     ),
     'homelab': (
         'Library/Preferences/io.tailscale.ipn.macsys.plist',
@@ -64,6 +66,8 @@ UNMANAGED = {
         'Library/Preferences/io.tailscale.ipn.macsys.plist',
         '.local/bin/corp-ca-gui-env',
         'Library/LaunchAgents/com.prateek.gui-corp-ca.plist',
+        '.local/bin/devbox-orca-tunnel',
+        'Library/LaunchAgents/com.prateek.devbox-orca-tunnel.plist',
     ),
     'ci': (
         '.config/cmux',
@@ -95,6 +99,8 @@ UNMANAGED = {
         '.local/bin/wiki-sessions-sync',
         '.local/bin/corp-ca-gui-env',
         'Library/LaunchAgents/com.prateek.gui-corp-ca.plist',
+        '.local/bin/devbox-orca-tunnel',
+        'Library/LaunchAgents/com.prateek.devbox-orca-tunnel.plist',
     ),
     'work': (
         'Library/Colors/nvALT.clr',
@@ -118,6 +124,8 @@ UNMANAGED = {
         'Library/Preferences/com.stonerl.Thaw.plist',
         '.local/bin/corp-ca-gui-env',
         'Library/LaunchAgents/com.prateek.gui-corp-ca.plist',
+        '.local/bin/devbox-orca-tunnel',
+        'Library/LaunchAgents/com.prateek.devbox-orca-tunnel.plist',
     ),
 }
 
@@ -135,6 +143,8 @@ IGNORED = {
         'Library/Preferences/com.prakashjoshipax.VoiceInk.plist',
         '.local/bin/corp-ca-gui-env',
         'Library/LaunchAgents/com.prateek.gui-corp-ca.plist',
+        '.local/bin/devbox-orca-tunnel',
+        'Library/LaunchAgents/com.prateek.devbox-orca-tunnel.plist',
     ),
     'ci': (
         '.config/ghostty',
@@ -166,6 +176,8 @@ IGNORED = {
         '.local/bin/wiki-sessions-sync',
         '.local/bin/corp-ca-gui-env',
         'Library/LaunchAgents/com.prateek.gui-corp-ca.plist',
+        '.local/bin/devbox-orca-tunnel',
+        'Library/LaunchAgents/com.prateek.devbox-orca-tunnel.plist',
     ),
     'empty': (
         '.codex',
@@ -187,5 +199,7 @@ IGNORED = {
         'Library/Preferences/com.setapp.DesktopClient.plist',
         '.local/bin/corp-ca-gui-env',
         'Library/LaunchAgents/com.prateek.gui-corp-ca.plist',
+        '.local/bin/devbox-orca-tunnel',
+        'Library/LaunchAgents/com.prateek.devbox-orca-tunnel.plist',
     ),
 }

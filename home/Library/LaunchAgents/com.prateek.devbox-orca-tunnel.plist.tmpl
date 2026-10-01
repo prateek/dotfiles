@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Keeps desktop Orca's forward to the Linux devbox's headless Orca up
+  (127.0.0.1:16768 -> <DEVBOX_WS>:6768). The wrapper explains the ssh options
+  and reads the box name from ~/.devbox.local on every start. See
+  docs/plans/linux-devbox-plan.md.
+
+  Gated in .chezmoiignore on the devbox_orca_tunnel feature. Bootstrapped and
+  reloaded on change by run_onchange_after_41-devbox-orca-tunnel.sh; after a
+  rebuild or an ssh-config change: devbox-orca-tunnel restart.
+
+  KeepAlive restarts only a failed run, so a missing box name or ssh entry
+  stops the job instead of looping. ThrottleInterval spaces reconnects while
+  the box is stopped. Logs append to
+  ~/.local/state/dotfiles/devbox-orca-tunnel/tunnel.log. Monitor by label (the
+  Raycast "Launchd Monitor" extension watching com.prateek.devbox-orca-tunnel).
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.prateek.devbox-orca-tunnel</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>{{ .chezmoi.homeDir }}/.local/bin/devbox-orca-tunnel</string>
+    <string>run</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <!-- The droidcli ProxyCommand prepends Homebrew itself; the rest is the
+         system ssh and the tools the wrapper calls. -->
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+  <key>WorkingDirectory</key>
+  <string>{{ .chezmoi.homeDir }}</string>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <dict>
+    <key>SuccessfulExit</key>
+    <false/>
+  </dict>
+  <key>ThrottleInterval</key>
+  <integer>30</integer>
+  <key>StandardOutPath</key>
+  <string>{{ .chezmoi.homeDir }}/.local/state/dotfiles/devbox-orca-tunnel/tunnel.log</string>
+  <key>StandardErrorPath</key>
+  <string>{{ .chezmoi.homeDir }}/.local/state/dotfiles/devbox-orca-tunnel/tunnel.log</string>
+  <key>ProcessType</key>
+  <string>Background</string>
+  <key>LimitLoadToSessionType</key>
+  <string>Aqua</string>
+</dict>
+</plist>

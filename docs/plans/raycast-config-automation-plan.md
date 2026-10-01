@@ -3,7 +3,7 @@ status: proposed
 doc_type: plan
 owner: Prateek
 created: 2026-08-31
-updated: 2026-08-31
+updated: 2026-09-30
 related:
   - ../references/chezmoi-architecture.md
 status_detail: "Deferred backlog. Nothing in flight; pick items off as they start to hurt."
@@ -40,8 +40,9 @@ Not reachable from the defaults domain:
   and identity lives in the encrypted `raycast-enc.sqlite`. A port list has to be
   read off the Extensions UI by hand.
 - Per-extension preferences, including Launchd Monitor's `launchdLabels`
-  (currently `com.prateek.wiki-sessions-sync`). Same encrypted store. This stays
-  a manual bootstrap step.
+  (currently `com.prateek.wiki-sessions-sync`, plus
+  `com.prateek.devbox-orca-tunnel` on the work Mac). Same encrypted store. This
+  stays a manual bootstrap step.
 
 ## Rejected
 
