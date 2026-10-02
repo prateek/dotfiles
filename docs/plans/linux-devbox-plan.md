@@ -3,7 +3,7 @@ status: active
 doc_type: plan
 owner: Prateek
 created: 2026-09-24
-updated: 2026-09-30
+updated: 2026-10-02
 related:
   - ../adr/0040-devbox-machine-type.md
   - ../adr/0043-devbox-os-gating.md
@@ -87,12 +87,19 @@ and credential settings win.
   agent, on machines with the `devbox_orca_tunnel` feature (work). It runs
   `~/.local/bin/devbox-orca-tunnel run`, which reads `DEVBOX_WS` from
   `~/.devbox.local` on every start and forwards 127.0.0.1:16768 to the box's
-  6768 over the `droidcli devpod ssh-config` Host entry. The ssh process is
-  its own connection, not a ControlMaster client, so launchd's running state
-  is the tunnel's state, and the Raycast Launchd Monitor watches the label in
-  the menu bar. Add that label to the extension's preferences by hand; they
-  live in Raycast's encrypted store. After a rebuild or an ssh-config change,
-  run `devbox-orca-tunnel restart`. It replaces the work overlay's tmux
+  6768 over the `droidcli devpod ssh-config` Host entry. Before each connect
+  it walks ordered preconditions (box name, ssh entry, gcloud application
+  default credentials, workstation state, free local port) and logs one
+  ok/FAIL line each, with the fix under the first failure;
+  `devbox-orca-tunnel status` prints the same checks read-only. `run` starts a
+  stopped box, because Cloud Workstations stops always-on boxes fleet-wide
+  roughly weekly (five times between 2026-09-06 and 2026-10-02, despite
+  `runningTimeout: 0s`) and nothing else restarts them. The ssh process is its
+  own connection, not a ControlMaster client, and the Raycast Launchd Monitor
+  watches the label in the menu bar, but a retrying job still reads as
+  running, so `status` is the authority. Add that label to the extension's
+  preferences by hand; they live in Raycast's encrypted store. After a rebuild
+  or an ssh-config change, run `devbox-orca-tunnel restart`. It replaces the work overlay's tmux
   tunnel, whose note that endpoint security flagged launchd keepalives had no
   source; two KeepAlive-free launch agents and the toolkit's own watchdog
   agent run cleanly on the work Mac.

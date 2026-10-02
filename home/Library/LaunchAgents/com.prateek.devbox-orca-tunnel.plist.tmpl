@@ -10,9 +10,10 @@
   reloaded on change by run_onchange_after_41-devbox-orca-tunnel.sh; after a
   rebuild or an ssh-config change: devbox-orca-tunnel restart.
 
-  KeepAlive restarts only a failed run, so a missing box name or ssh entry
-  stops the job instead of looping. ThrottleInterval spaces reconnects while
-  the box is stopped. Logs append to
+  KeepAlive restarts only a failed run, so a precondition only a person can
+  fix (box name, ssh entry, deleted box) stops the job instead of looping.
+  ThrottleInterval spaces retries of the rest, such as expired gcloud
+  credentials. Logs append to
   ~/.local/state/dotfiles/devbox-orca-tunnel/tunnel.log. Monitor by label (the
   Raycast "Launchd Monitor" extension watching com.prateek.devbox-orca-tunnel).
 -->

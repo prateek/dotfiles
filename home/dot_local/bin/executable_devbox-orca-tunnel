@@ -6,6 +6,13 @@ set -euo pipefail
 # box. launchd runs `run` under com.prateek.devbox-orca-tunnel with KeepAlive;
 # `status` and `restart` are for people.
 #
+# Both `run` and `status` walk the same ordered preconditions and print one
+# ok/FAIL line per check, with the fix under the first failure, so the log or
+# the status output names the broken link directly. `run` acts on one of
+# them: it starts a stopped box. Cloud Workstations stops always-on boxes
+# fleet-wide every week or so, and nothing else brings them back. To keep a
+# box stopped on purpose, boot this job out first.
+#
 # The forward rides the ssh Host entry that `droidcli devpod ssh-config`
 # writes, whose droidcli ProxyCommand refreshes its IAP token headlessly for
 # about 28 days and never starts a stopped box. ControlMaster is off so the
@@ -13,11 +20,21 @@ set -euo pipefail
 # tunnel is up, and ServerAlive ends it within 90s of the box going away.
 # No ExitOnForwardFailure: the Host entry carries its own LocalForward, which
 # fails while an interactive ssh session holds that port, and that must not
-# take this forward down. `status` probes the port itself.
+# take this forward down. The port check covers this forward's own port.
 
 readonly label=com.prateek.devbox-orca-tunnel
 readonly local_port=16768
 readonly remote_port=6768
+
+# Preflight outcomes. A human-needed failure exits run cleanly, which tells
+# launchd (KeepAlive SuccessfulExit=false) to stop retrying until `restart`.
+# A transient one exits non-zero so launchd retries after ThrottleInterval.
+readonly needs_human=10
+readonly transient=11
+
+mode=
+box=
+droidcli=
 
 usage() {
   echo "usage: ${0##*/} run|status|restart" >&2
@@ -26,6 +43,19 @@ usage() {
 
 log() {
   printf '[%s] %s\n' "$(date '+%F %T')" "$*"
+}
+
+say() {
+  if [[ "$mode" == run ]]; then log "$*"; else printf '%s\n' "$*"; fi
+}
+
+pass() {
+  say "ok    $1: $2"
+}
+
+fail() {
+  say "FAIL  $1: $2"
+  say "      fix: $3"
 }
 
 # DEVBOX_WS from the environment wins, then the last assignment in the work
@@ -41,21 +71,145 @@ resolve_box() {
   printf '%s\n' "$box"
 }
 
-run() {
-  local box rc
+check_box() {
   box="$(resolve_box)"
-  # A clean exit tells launchd (KeepAlive SuccessfulExit=false) to stop
-  # retrying: nothing here fixes itself, and `restart` picks up the fix.
   if [[ -z "$box" ]]; then
-    log "no DEVBOX_WS in the environment or ~/.devbox.local; not forwarding. Set it, then: ${0##*/} restart"
-    exit 0
+    fail box "no DEVBOX_WS in the environment or ~/.devbox.local" \
+      "set DEVBOX_WS in ~/.devbox.local, then: ${0##*/} restart"
+    return "$needs_human"
   fi
-  if ! ssh -G "$box" 2>/dev/null | grep -q '^proxycommand .*droidcli'; then
-    log "no droidcli ssh entry for $box; run: droidcli devpod ssh-config && ${0##*/} restart"
-    exit 0
+  pass box "$box"
+}
+
+# launchd's PATH does not reach droidcli, so take its path from the ProxyCommand
+# that ssh-config wrote.
+check_ssh_entry() {
+  local proxy
+  proxy="$(ssh -G "$box" 2>/dev/null | sed -n 's/^proxycommand //p')"
+  # ssh-config single-quotes the path; accept a bare one too.
+  droidcli="$(printf '%s\n' "$proxy" | sed -n "s|.*'\([^']*/droidcli\)'.*|\1|p")"
+  [[ -n "$droidcli" ]] ||
+    droidcli="$(printf '%s\n' "$proxy" | grep -oE "[^ '\"]*/droidcli" | head -n 1 || true)"
+  if [[ -z "$droidcli" ]]; then
+    fail ssh "no droidcli ProxyCommand in the ssh entry for $box" \
+      "droidcli devpod ssh-config && ${0##*/} restart"
+    return "$needs_human"
   fi
+  if [[ ! -x "$droidcli" ]]; then
+    fail ssh "the ssh entry's droidcli is not executable: $droidcli" \
+      "rebuild droidcli or rerun droidcli devpod ssh-config, then: ${0##*/} restart"
+    return "$needs_human"
+  fi
+  pass ssh "droidcli entry via $droidcli"
+}
+
+# droidcli and its ProxyCommand authenticate with Application Default
+# Credentials. When the Workspace reauth window lapses they fail with
+# invalid_rapt; retrying picks the tunnel back up after a re-login.
+check_gcloud() {
+  local err
+  if ! command -v gcloud >/dev/null; then
+    fail gcloud "gcloud is not on PATH ($PATH)" "install gcloud-cli"
+    return "$needs_human"
+  fi
+  if ! err="$(gcloud auth application-default print-access-token 2>&1 >/dev/null)"; then
+    if [[ "$err" == *invalid_rapt* || "$err" == *invalid_grant* ]]; then
+      err="credentials need reauthentication (invalid_rapt)"
+    else
+      err="$(printf '%s\n' "$err" | grep -v '^[[:space:]]*$' | tail -n 1)"
+    fi
+    fail gcloud "application-default token failed: $err" \
+      "gcloud auth application-default login"
+    return "$transient"
+  fi
+  pass gcloud "application-default credentials valid"
+}
+
+check_workstation() {
+  local json err state errfile
+  errfile="$(mktemp)"
+  if ! json="$("$droidcli" devpod list --json --log-level=error 2>"$errfile")"; then
+    err="$(grep -v '^[[:space:]]*$' "$errfile" | tail -n 1)"
+    rm -f "$errfile"
+    fail workstation "droidcli devpod list failed: $err" \
+      "run droidcli devpod list by hand to see the full error"
+    return "$transient"
+  fi
+  rm -f "$errfile"
+  if ! state="$(jq -er --arg box "$box" \
+    'first(.[] | select(.name == $box) | .state) // ""' <<<"$json")"; then
+    fail workstation "unreadable droidcli devpod list output" \
+      "run droidcli devpod list --json by hand"
+    return "$transient"
+  fi
+  case "$state" in
+    STATE_RUNNING)
+      pass workstation "$box running"
+      ;;
+    STATE_STOPPED)
+      if [[ "$mode" != run ]]; then
+        fail workstation "$box stopped" \
+          "the running job starts it on its next attempt (${0##*/} restart to hurry it)"
+        return "$transient"
+      fi
+      say "      workstation: $box stopped; starting it"
+      if ! "$droidcli" devpod start --yes --log-level=error "$box"; then
+        fail workstation "droidcli devpod start $box failed" \
+          "run droidcli devpod start $box by hand to see the full error"
+        return "$transient"
+      fi
+      pass workstation "$box started"
+      ;;
+    "")
+      fail workstation "$box is not one of your devpods" \
+        "create one with droidcli devpod create, or correct DEVBOX_WS in ~/.devbox.local, then: ${0##*/} restart"
+      return "$needs_human"
+      ;;
+    *)
+      fail workstation "$box is $state" "wait for it to settle; launchd retries"
+      return "$transient"
+      ;;
+  esac
+}
+
+port_listener() {
+  local pid
+  pid="$(lsof -nP -iTCP:"$local_port" -sTCP:LISTEN -t 2>/dev/null | head -n 1)" || true
+  [[ -n "$pid" ]] || return 1
+  printf 'pid %s (%s)\n' "$pid" "$(ps -o comm= -p "$pid" 2>/dev/null || echo unknown)"
+}
+
+# Before connecting the port must be free; another listener would leave this
+# ssh running with no forward of its own.
+check_port_free() {
+  local holder
+  if holder="$(port_listener)"; then
+    fail port "127.0.0.1:$local_port is already held by $holder" \
+      "stop that process; launchd retries"
+    return "$transient"
+  fi
+  pass port "127.0.0.1:$local_port free"
+}
+
+# Runs the checks in order and stops at the first failure, since each one
+# depends on the one before it.
+preflight() {
+  local check
+  for check in check_box check_ssh_entry check_gcloud check_workstation "$@"; do
+    "$check" || return
+  done
+}
+
+run() {
+  local rc=0
+  mode=run
+  preflight check_port_free || rc=$?
+  case "$rc" in
+    0) ;;
+    "$needs_human") exit 0 ;;
+    *) exit 1 ;;
+  esac
   log "forwarding 127.0.0.1:$local_port -> $box:$remote_port"
-  rc=0
   ssh -N -o BatchMode=yes -o ControlMaster=no -o ControlPath=none \
     -o ServerAliveInterval=30 -o ServerAliveCountMax=3 \
     -L "127.0.0.1:$local_port:localhost:$remote_port" "$box" || rc=$?
@@ -65,26 +219,27 @@ run() {
 }
 
 status() {
-  local rc=0 job box
-  box="$(resolve_box)"
-  echo "box: ${box:-<unset>}"
+  local rc=0 job holder
+  mode=status
   if job="$(launchctl print "gui/$(id -u)/$label" 2>/dev/null)"; then
     printf '%s\n' "$job" | awk -v label="$label" '
-      /^\tstate = / { sub(/^\tstate = /, ""); print "job: " label " " $0 }
-      /^\tpid = / { sub(/^\t/, ""); print "     " $0 }
-      /^\tlast exit code = / { sub(/^\t/, ""); print "     " $0 }'
+      /^\tstate = / { sub(/^\tstate = /, ""); print "job:  " label " " $0 }
+      /^\tpid = / { sub(/^\t/, ""); print "      " $0 }
+      /^\tlast exit code = / { sub(/^\t/, ""); print "      " $0 }'
     printf '%s\n' "$job" | grep -q '^	state = running' || rc=1
   else
-    echo "job: $label not loaded"
+    echo "job:  $label not loaded (fix: ${0##*/} restart)"
     rc=1
   fi
-  if nc -z -G 2 127.0.0.1 "$local_port" 2>/dev/null; then
-    echo "port: 127.0.0.1:$local_port open"
+  preflight || rc=1
+  if holder="$(port_listener)"; then
+    pass port "127.0.0.1:$local_port held by $holder"
   else
-    echo "port: 127.0.0.1:$local_port closed"
+    fail port "127.0.0.1:$local_port closed" \
+      "fix the first FAIL above; if every check passed, the job is between attempts, so read the log"
     rc=1
   fi
-  echo "log: $HOME/.local/state/dotfiles/devbox-orca-tunnel/tunnel.log"
+  echo "log:  $HOME/.local/state/dotfiles/devbox-orca-tunnel/tunnel.log"
   exit "$rc"
 }
 
