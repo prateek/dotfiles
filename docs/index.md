@@ -45,6 +45,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 
 | Doc | Status |
 | --- | --- |
+| [Hermes Agent](plans/hermes-agent-plan.md) | Proposed; Hermes Agent as an `agent_clis` native-hook install on personal-mbp, m4mini, and (after an XDR smoke test) work-mbp, CLI-only on a local model, with policy in a chezmoi-owned managed-scope dir. |
 | [Self-help and Psychology Book Archive and Agent Tools](plans/psychology-book-archive-and-tools-plan.md) | Proposed; archive the full collection, extract source-linked lessons, and build practical agent workflows and learning tools. |
 | [Agent Friction Remediation](plans/agent-friction-remediation-plan.md) | Active; implemented and committed, not yet applied: bash-compatible glob parsing in zsh with non-interactive audit lanes, acpx/agent-slack/git-spice/retired-path fixes with validators, fake-HOME mise trust in the audit, an OpenSSL CA bundle for work shells, and five conventions. Global mise trust roots await a decision. |
 | [Periodic Session Review](plans/periodic-session-review-plan.md) | Proposed; completed-session retros, weekly incremental reviews, monthly historical sweeps, and a bounded backfill. No schedule enabled. |
@@ -132,6 +133,7 @@ for day-to-day implementation details.
 | Doc | Use it for |
 | --- | --- |
 | [Jev Browser Integrations](research/jev-browser-integrations.md) | Source assessment, isolated headless Orca proof, the completed development comparison that rejected adoption, and the dynamic follow-up boundary. |
+| [Hermes Agent Field Guide](research/hermes-agent-field-guide.md) | Pinned-source facts on Hermes Agent install paths, `~/.hermes` ownership, providers, skills, AGENTS.md loading, ACP/MCP, the launchd gateway, and dotfiles integration constraints. |
 | [Shell Testing Framework Comparison](research/shell-testing-framework-comparison.md) | Alternatives, decision history, and experiment/upstream evidence supporting the [Test Refactoring plan](plans/test-suite-rebuild-plan.md). |
 | [Agent Skill Management Research](research/agent-skill-management-research.md) | Background on skill context pressure, package layout, and plugin defaults. |
 | [Public Dotfiles Skill Packaging](research/public-dotfiles-skills-packaging-research.md) | Eight public examples of skill source ownership, installation, and updates, with pinned source links and a comparison to this repo. |
