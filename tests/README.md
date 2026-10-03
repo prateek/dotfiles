@@ -125,6 +125,7 @@ this section maps a change to the distinct guarantees it can affect.
 
 | Changed surface | Check |
 | --- | --- |
+| G95NC display command | `just test-python -p test_g95nc.py`; structured display-state fixtures exercise the real shell command with external app processes substituted. Covers sharp and butter presets, 120 Hz preconditions and macOS verification, scoped cleanup, failure recovery, deadlines, logs, and idempotence. Actual display validation follows the [runbook](../docs/runbooks/g95nc-display.md). |
 | Plist merge engine or ownership | `just test-python -k Plist`; [plist guidance](#plist-merge-verification) describes app selection, ownership, native types, preservation, and unchanged bytes. |
 | Apply-time plist guard and relaunch | `just test-shell tests/bats/hooks/plist-hooks.bats`; Bats drives actual hook code and terminal prompts with external app commands substituted. |
 | Codex TOML / Claude JSON / Cursor JSON | `just test-python -p test_codex.py`, `just test-python -p test_claude.py`, or `just test-python -p test_cursor.py`; preserve credentials, approvals, and unrelated application state. |

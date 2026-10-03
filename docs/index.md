@@ -27,6 +27,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [acpx Routing](references/acpx-routing.md) | Model shortcuts, machine route declarations, catalog resolution, and diagnostics. |
 | [acpx Skill Rewrite](runbooks/acpx-skill-rewrite.md) | Balanced native flows; five-skill live pilot completed at peak concurrency two with one afablex review and a validated unapplied patch. Includes required runtime overrides. |
 | [Agent Marketplace](references/agent-marketplace.md) | Isolated APM source/build project, host activation, recovery, and validation lanes. |
+| [G95NC Display](runbooks/g95nc-display.md) | Sharp 60 Hz and butter 120 Hz HiDPI setup, preconditions, logs, and recovery. |
 | [Dotfiles Landing](runbooks/dotfiles-landing.md) | Repo-specific checks and chezmoi preview for the published land-changes skill. |
 | [Chezmoi Architecture](references/chezmoi-architecture.md) | Dotfiles source-state architecture and validation entrypoints. |
 | [Chezmoi Drift Banner](../home/dot_config/dotfiles/chezmoi-drift/README.md) | Cached shell banner for managed chezmoi drift. |
@@ -157,6 +158,7 @@ or `superseded_by` frontmatter before using them.
 
 | Doc | Current guidance |
 | --- | --- |
+| [G95NC Preconditions and Diagnostics](plans/g95nc-diagnostics-plan.md) | Completed command hardening; use the [runbook](runbooks/g95nc-display.md). |
 | [Jev Browser Runner](plans/jev-browser-runner-plan.md) | Completed implementation and development experiment; adoption rejected. Use the [experimental skill reference](../agent-marketplace/packages/utils-agent/skills/browser-jev/references/jev.md) and [research findings](research/jev-browser-integrations.md). |
 | [Native acpx Skill Rewrite](plans/acpx-native-skill-rewrite-plan.md) | Archived implementation record for native ACP nodes and bounded child flows; current operation and live-pilot results are in the [runbook](runbooks/acpx-skill-rewrite.md). |
 | [acpx Skill Rewrite](plans/acpx-skill-rewrite-plan.md) | Archived authoring and fixture-validation record; current operation and live-pilot results are in the [runbook](runbooks/acpx-skill-rewrite.md). |
