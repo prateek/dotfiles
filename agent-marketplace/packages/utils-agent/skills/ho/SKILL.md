@@ -1,8 +1,7 @@
 ---
 name: ho
-description: Hand off the current work to a fresh agent in an Orca worktree or an adjacent terminal.
+description: Hand off the current work to a fresh agent in an Orca worktree or an adjacent terminal. Use when Prateek asks to hand off, or a skill's step says to run /ho.
 argument-hint: "[--here | --host <name>] [--agent <id>] [--base <ref> | --stack] [--name <slug>] [--attach <path>]... [--] [<subject>] [; <instructions>]"
-disable-model-invocation: true
 ---
 
 # Hand off to Orca
