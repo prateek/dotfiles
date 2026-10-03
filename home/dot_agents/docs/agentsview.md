@@ -16,9 +16,9 @@ The store is read-only ground truth about past agent behavior. Treat it as evide
 ## Defaults
 
 - Prefer the `agentsview` CLI. It speaks to the live store correctly and emits JSON with `--format json`.
-- For ad-hoc text search or custom joins, query SQLite on a **copy** of the DB. The viewer daemon holds the live database locked, so `sqlite3 -readonly` on the live file fails with `unable to open database file`. Copy first, then open the copy.
-- The live store path is `~/.agentsview/sessions.db`. On a host where `~/.agentsview` is a symlink to another volume, use `$AGENTSVIEW_DATA_DIR/sessions.db`; agentsview refuses to run through the symlink, so invoke it with that variable set (shells export it).
-- Treat the store as **read-only**. Never write to, mutate, or run `agentsview prune` against the live DB while debugging. Work on the `/tmp` copy.
+- For ad-hoc text search or custom joins, open the live store read-only in place ([workflow step 1](#1-open-the-live-store-read-only)). The store is several gigabytes, so read it where it lives.
+- The live store path is `~/.agentsview/sessions.db`. On a host where `~/.agentsview` is a symlink to another volume, SQLite reads through the link; the `agentsview` CLI refuses it and needs `AGENTSVIEW_DATA_DIR` set to the real path (shells export it).
+- Treat the store as **read-only**. Never write to, mutate, or run `agentsview prune` against the live DB while debugging.
 - Per-agent breakdowns come from joining `tool_calls` / `messages` to `sessions` on `session_id` and grouping by `sessions.agent`.
 - A sync that ends with `sync worker pass reported failed` usually means one session file agentsview cannot decode; the rest landed. Check `~/.agentsview/serve.log` for the offending file and confirm the rows you need before treating the store as incomplete.
 
@@ -88,11 +88,21 @@ just re-syncs against the daemon's stale in-memory config.
 
 ## Workflow
 
-### 1) Copy the live DB before any SQLite query
+### 1) Open the live store read-only
 
 ```sh
-cp ~/.agentsview/sessions.db /tmp/av.db
-sqlite3 /tmp/av.db   # open the copy read-write; the live file is locked by the daemon
+sqlite3 "file:$HOME/.agentsview/sessions.db?mode=ro"
+```
+
+The daemon writes in WAL mode, so read-only connections work beside it. It exits when idle and takes its `-wal` and `-shm` files with it; `mode=ro` then fails with `unable to open database file`. Confirm with `agentsview serve status`, then replace `mode=ro` with `immutable=1`, which is safe only while no daemon is writing.
+
+A query that must write (a scratch table or index) runs on a clone made on the store's own volume. Delete the clone when the query is done.
+
+```sh
+clone="$(mktemp -d "$(dirname "$(realpath ~/.agentsview)")/av-clone.XXXXXX")"
+cp -c ~/.agentsview/sessions.db* "$clone"/   # APFS clone: instant, no extra space
+sqlite3 "$clone/sessions.db"
+rm -rf "$clone"
 ```
 
 Core tables and the columns you will use most:
@@ -107,14 +117,14 @@ Core tables and the columns you will use most:
 Tool invocations live in `tool_calls`. Bash commands are in `input_json`, so a `LIKE` on the command string counts them. Example: how often agents shell out to `gh`.
 
 ```sh
-sqlite3 /tmp/av.db \
+sqlite3 "file:$HOME/.agentsview/sessions.db?mode=ro" \
   "SELECT COUNT(*) FROM tool_calls WHERE tool_name='Bash' AND input_json LIKE '%gh %';"
 ```
 
 Per-agent breakdown via a join on `sessions.agent`:
 
 ```sh
-sqlite3 -header -column /tmp/av.db "
+sqlite3 -header -column "file:$HOME/.agentsview/sessions.db?mode=ro" "
   SELECT s.agent, COUNT(*) AS gh_calls
   FROM tool_calls t JOIN sessions s ON s.id = t.session_id
   WHERE t.tool_name='Bash' AND t.input_json LIKE '%gh %'
@@ -126,7 +136,7 @@ sqlite3 -header -column /tmp/av.db "
 Reads of a file show up as `tool_name='Read'` or as a Bash `cat`/`sed`, with the path in `input_json`, and often in a subagent rather than the top-level session. Count both tools and join child sessions to their parent, or the number comes out several times too low. Example: how many top-level sessions had the git convention doc in context.
 
 ```sh
-sqlite3 /tmp/av.db "
+sqlite3 "file:$HOME/.agentsview/sessions.db?mode=ro" "
   SELECT COUNT(DISTINCT coalesce(s.parent_session_id, s.id))
   FROM tool_calls t JOIN sessions s ON s.id = t.session_id
   WHERE t.tool_name IN ('Read','Bash')
@@ -138,7 +148,7 @@ sqlite3 /tmp/av.db "
 `tool_calls.skill_name` is populated when a skill runs, so you can rank skill usage directly.
 
 ```sh
-sqlite3 -header -column /tmp/av.db "
+sqlite3 -header -column "file:$HOME/.agentsview/sessions.db?mode=ro" "
   SELECT skill_name, COUNT(*) AS n
   FROM tool_calls
   WHERE skill_name IS NOT NULL AND skill_name != ''
@@ -150,7 +160,7 @@ sqlite3 -header -column /tmp/av.db "
 `messages_fts` is FTS5, so use `MATCH` and join back to `messages` / `sessions`.
 
 ```sh
-sqlite3 /tmp/av.db "
+sqlite3 "file:$HOME/.agentsview/sessions.db?mode=ro" "
   SELECT m.session_id, m.role, substr(m.content,1,120)
   FROM messages_fts f JOIN messages m ON m.id = f.rowid
   WHERE messages_fts MATCH 'worktree' LIMIT 10;"
@@ -179,6 +189,6 @@ agentsview token-use <id>           # token usage for one session
 
 ## Validation checklist
 
-- Queried the live store through the `agentsview` CLI, or via SQLite on a `/tmp` **copy** (`cp ~/.agentsview/sessions.db /tmp/av.db`), never `sqlite3` on the locked live file.
+- Queried the live store through the `agentsview` CLI or a read-only SQLite connection, and deleted any clone made for a writing query.
 - Did not mutate, write to, or prune the live store.
 - Per-agent breakdowns join `tool_calls`/`messages` to `sessions` on `session_id` and group by `sessions.agent`.
