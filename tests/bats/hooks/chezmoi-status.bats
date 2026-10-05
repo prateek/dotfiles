@@ -20,6 +20,10 @@ if [[ "$*" == 'automations list --json' ]]; then
   printf '{"ok":true,"result":{"automations":[]}}\n'
   exit 0
 fi
+if [[ "$*" == 'repo list --json' ]]; then
+  jq -n --arg path "$HOME/code/scratch" '{result: {repos: [{id: "scratch", path: $path}]}}'
+  exit 0
+fi
 printf 'orca %s\n' "$*" >> "$FIXTURE/unexpected.calls"
 exit 64
 STUB
@@ -34,7 +38,7 @@ STUB
     --override-data '{"chezmoi":{"hostname":"dotfiles-test-host"},"machines_local":{"run_install_scripts":false}}')
 }
 
-@test "Chezmoi CI apply converges including empty scripts and only exercises disabled-wiki service cleanup" {
+@test "Chezmoi CI apply converges and limits integration calls to disabled-wiki cleanup and scratch lookup" {
   run_without_reporting_fds 0 chezmoi "${chezmoi_args[@]}" init --promptDefaults --promptChoice machine_type=ci --source "$DOTFILES_ROOT"
   assert_success
   run_without_reporting_fds 0 chezmoi "${chezmoi_args[@]}" apply --exclude=externals
@@ -51,7 +55,11 @@ STUB
   assert_success
   assert_output ''
   [ -z "$stderr" ]
-  [ ! -s "$FIXTURE/unexpected.calls" ]
+  if [ -f "$FIXTURE/unexpected.calls" ]; then
+    run cat "$FIXTURE/unexpected.calls"
+    assert_output ''
+  fi
   [ -s "$FIXTURE/launchctl.calls" ]
-  [ -s "$FIXTURE/orca.calls" ]
+  run cat "$FIXTURE/orca.calls"
+  assert_output $'automations list --json\nautomations list --json\nrepo list --json'
 }
