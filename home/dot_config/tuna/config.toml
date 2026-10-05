@@ -1,97 +1,196 @@
-schemaVersion = 1
+[[comboMode.bindings]]
+key = "t"
 
-[catalogs]
-sortOrders = []
+    [comboMode.bindings.destination]
+    type = "command"
 
-    [[catalogs.globalScopes]]
-    catalogIdentifier = 'Tuna.EffectsCatalog'
-    mode = 'none'
-    selectedItemKeys = []
-
-    [[catalogs.globalScopes]]
-    catalogIdentifier = 'TunaEmoji.EmojiCatalog'
-    mode = 'none'
-    selectedItemKeys = []
+        [comboMode.bindings.destination.command]
+        actionIdentifier = "tuna.common-actions/open"
+        behavior = "run"
+        presentation = "automatic"
+        subjectIdentifiers = ["path:/Applications/Orca.app"]
+        type = "savedCommand"
 
 [[comboMode.bindings]]
-key = 't'
-url = 'tuna://run/path.%252FApplications%252FOrca.app/Open'
+key = "b"
+
+    [comboMode.bindings.destination]
+    type = "command"
+
+        [comboMode.bindings.destination.command]
+        actionIdentifier = "tuna.common-actions/open"
+        behavior = "run"
+        presentation = "automatic"
+        subjectIdentifiers = ["path:/Applications/Arc.app"]
+        type = "savedCommand"
 
 [[comboMode.bindings]]
-key = 'b'
-url = 'tuna://run/path.%252FApplications%252FArc.app/Open'
+key = "c"
+
+    [comboMode.bindings.destination]
+    type = "command"
+
+        [comboMode.bindings.destination.command]
+        actionIdentifier = "tuna.common-actions/open"
+        behavior = "run"
+        presentation = "automatic"
+        subjectIdentifiers = ["path:/Applications/Cursor.app"]
+        type = "savedCommand"
 
 [[comboMode.bindings]]
-key = 'c'
-url = 'tuna://run/path.%252FApplications%252FCursor.app/Open'
+key = "s"
+
+    [comboMode.bindings.destination]
+    type = "command"
+
+        [comboMode.bindings.destination.command]
+        actionIdentifier = "tuna.common-actions/open"
+        behavior = "run"
+        presentation = "automatic"
+        subjectIdentifiers = ["path:/Applications/Slack.app"]
+        type = "savedCommand"
 
 [[comboMode.bindings]]
-key = 's'
-url = 'tuna://run/path.%252FApplications%252FSlack.app/Open'
+key = "m"
+
+    [comboMode.bindings.destination]
+    type = "command"
+
+        [comboMode.bindings.destination.command]
+        actionIdentifier = "tuna.common-actions/open"
+        behavior = "run"
+        presentation = "automatic"
+        subjectIdentifiers = ["path:/Applications/Spotify.app"]
+        type = "savedCommand"
 
 [[comboMode.bindings]]
-key = 'm'
-url = 'tuna://run/path.%252FApplications%252FSpotify.app/Open'
+key = "f"
+
+    [comboMode.bindings.destination]
+    type = "command"
+
+        [comboMode.bindings.destination.command]
+        actionIdentifier = "tuna.common-actions/open"
+        behavior = "run"
+        presentation = "automatic"
+        subjectIdentifiers = ["path:/System/Library/CoreServices/Finder.app"]
+        type = "savedCommand"
 
 [[comboMode.bindings]]
-key = 'f'
-url = 'tuna://run/path.%252FSystem%252FLibrary%252FCoreServices%252FFinder.app/Open'
+key = "1"
+
+    [comboMode.bindings.destination]
+    type = "command"
+
+        [comboMode.bindings.destination.command]
+        actionIdentifier = "tuna.common-actions/open"
+        behavior = "run"
+        presentation = "automatic"
+        subjectIdentifiers = ["path:/Applications/1Password.app"]
+        type = "savedCommand"
 
 [[comboMode.bindings]]
-key = '1'
-url = 'tuna://run/path.%252FApplications%252F1Password.app/Open'
+iconPath = "sparkles"
+key = "a"
+label = "ai"
+
+    [comboMode.bindings.destination]
+    type = "group"
+
+        [[comboMode.bindings.destination.bindings]]
+        iconPath = "text.append"
+        key = "q"
+        label = "queue → claude"
+
+            [comboMode.bindings.destination.bindings.destination]
+            type = "command"
+
+                [comboMode.bindings.destination.bindings.destination.command]
+                actionIdentifier = "tuna.common-actions/run-text-as-shell-command"
+                behavior = "run"
+                presentation = "automatic"
+                subjectIdentifiers = ["text:\"$HOME/bin/claude-queue-draft\""]
+                type = "savedCommand"
 
 [[comboMode.bindings]]
-iconPath = 'sparkles'
-key = 'a'
-label = 'ai'
+iconPath = "wrench.and.screwdriver"
+key = "z"
+label = "misc"
 
-    [[comboMode.bindings.children]]
-    iconPath = 'text.append'
-    key = 'q'
-    label = "queue \u2192 claude"
-    url = 'tuna://run/text.%2522%2524HOME%252Fbin%252Fclaude-queue-draft%2522/Run%20Text%20as%20Shell%20Command'
+    [comboMode.bindings.destination]
+    type = "group"
 
-[[comboMode.bindings]]
-iconPath = 'wrench.and.screwdriver'
-key = 'z'
-label = 'misc'
+        [[comboMode.bindings.destination.bindings]]
+        iconPath = "display"
+        key = "d"
+        label = "G95NC sharp"
 
-    [[comboMode.bindings.children]]
-    iconPath = 'display'
-    key = 'd'
-    label = 'G95NC sharp'
-    url = 'tuna://run/text.%2522%2524HOME%252Fbin%252Fg95nc%2522%2520set/Run%20Text%20as%20Shell%20Command'
+            [comboMode.bindings.destination.bindings.destination]
+            type = "command"
 
-    [[comboMode.bindings.children]]
-    iconPath = 'macmini'
-    key = 'm'
-    label = 'm4mini VNC'
-    url = 'tuna://run/url.vnc:%252F%252Fm4mini._rfb._tcp.local%253Fquality=high&numVirtualDisplays=1/TunaCore.CommonActionsCatalog.Open%20URL'
+                [comboMode.bindings.destination.bindings.destination.command]
+                actionIdentifier = "tuna.common-actions/run-text-as-shell-command"
+                behavior = "run"
+                presentation = "automatic"
+                subjectIdentifiers = ["text:\"$HOME/bin/g95nc\" set"]
+                type = "savedCommand"
 
-    [[comboMode.bindings.children]]
-    iconPath = 'key.fill'
-    key = 'z'
-    label = 'DAYJOB password'
-    url = 'tuna://run/text.PATH%253D%2522%252Fopt%252Fhomebrew%252Fbin%253A%252Fusr%252Flocal%252Fbin%253A%2524PATH%2522%253B%2520pw%253D%2524%2528op%2520read%2520%2522op%253A%252F%252Fsit2vqyvky7qzyumcj7j3mlf24%252Fiwkie33ipaj5jydxy4qx3ngoqe%252Fpassword%2522%2529%2520%257C%257C%2520exit%25201%253B%2520old%253D%2524%2528pbpaste%25202%253E%252Fdev%252Fnull%2529%253B%2520printf%2520%2525s%2520%2522%2524pw%2522%2520%257C%2520pbcopy%253B%2520sleep%25200.15%253B%2520osascript%2520-e%2520%2527tell%2520application%2520%2522System%2520Events%2522%2520to%2520keystroke%2520%2522v%2522%2520using%2520command%2520down%2527%253B%2520sleep%25200.4%253B%2520printf%2520%2525s%2520%2522%2524old%2522%2520%257C%2520pbcopy/Run%20Text%20as%20Shell%20Command'
+        [[comboMode.bindings.destination.bindings]]
+        iconPath = "macmini"
+        key = "m"
+        label = "m4mini VNC"
 
-    [[comboMode.bindings.children]]
-    iconPath = 'lock.shield'
-    key = 't'
-    label = 'Temp admin'
-    url = 'tuna://run/text.%2522%2524HOME%252F.config%252Fraycast%252Fscripts%252Ftemp-admin.sh%2522/Run%20Text%20as%20Shell%20Command'
+            [comboMode.bindings.destination.bindings.destination]
+            type = "url"
+            url = "vnc://m4mini._rfb._tcp.local?quality=high&numVirtualDisplays=1"
 
-    [[comboMode.bindings.children]]
-    iconPath = 'mic.fill'
-    key = 'r'
-    label = 'GhostPepper record'
-    url = 'tuna://run/url.ghostpepper:%252F%252Fstart-meeting%253Fx-error=ghostpepper%25253A%25252F%25252Fstop-meeting/TunaCore.CommonActionsCatalog.Open%20URL'
+        [[comboMode.bindings.destination.bindings]]
+        iconPath = "key.fill"
+        key = "z"
+        label = "DAYJOB password"
 
-    [[comboMode.bindings.children]]
-    iconPath = 'doc.on.clipboard'
-    key = 'g'
-    label = 'Copy last recording'
-    url = 'tuna://run/url.ghostpepper:%252F%252Fcopy-last-recording/TunaCore.CommonActionsCatalog.Open%20URL'
+            [comboMode.bindings.destination.bindings.destination]
+            type = "command"
+
+                [comboMode.bindings.destination.bindings.destination.command]
+                actionIdentifier = "tuna.common-actions/run-text-as-shell-command"
+                behavior = "run"
+                presentation = "automatic"
+                subjectIdentifiers = ["text:PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"; pw=$(op read \"op://sit2vqyvky7qzyumcj7j3mlf24/iwkie33ipaj5jydxy4qx3ngoqe/password\") || exit 1; old=$(pbpaste 2>/dev/null); printf %s \"$pw\" | pbcopy; sleep 0.15; osascript -e 'tell application \"System Events\" to keystroke \"v\" using command down'; sleep 0.4; printf %s \"$old\" | pbcopy"]
+                type = "savedCommand"
+
+        [[comboMode.bindings.destination.bindings]]
+        iconPath = "lock.shield"
+        key = "t"
+        label = "Temp admin"
+
+            [comboMode.bindings.destination.bindings.destination]
+            type = "command"
+
+                [comboMode.bindings.destination.bindings.destination.command]
+                actionIdentifier = "tuna.common-actions/run-text-as-shell-command"
+                behavior = "run"
+                presentation = "automatic"
+                subjectIdentifiers = ["text:\"$HOME/.config/raycast/scripts/temp-admin.sh\""]
+                type = "savedCommand"
+
+        [[comboMode.bindings.destination.bindings]]
+        iconPath = "mic.fill"
+        key = "r"
+        label = "GhostPepper record"
+
+            [comboMode.bindings.destination.bindings.destination]
+            type = "url"
+            url = "ghostpepper://start-meeting?x-error=ghostpepper%3A%2F%2Fstop-meeting"
+
+        [[comboMode.bindings.destination.bindings]]
+        iconPath = "doc.on.clipboard"
+        key = "g"
+        label = "Copy last recording"
+
+            [comboMode.bindings.destination.bindings.destination]
+            type = "url"
+            url = "ghostpepper://copy-last-recording"
 
 [hotkeys]
 custom = []
@@ -105,11 +204,10 @@ custom = []
     carbonModifiers = 0
 
 [settings]
-activationDoublePressTrigger = 'leftOption'
+activationDoublePressTrigger = "leftOption"
 comboModeCheatsheetDelayMS = 1000
 comboModeCheatsheetShowDetails = false
-comboModeThemeStyle = 'cheatsheet'
-fuzzyModeTriggerType = 'doublePress'
-screenPreference = 'activeWindow'
+comboModeThemeStyle = "cheatsheet"
+fuzzyModeTriggerType = "doublePress"
+screenPreference = "activeWindow"
 shelfAutoCloseWhenTasksComplete = true
-themeIdentifier = 'com.brnbw.tuna.themes.default'

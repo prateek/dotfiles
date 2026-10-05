@@ -1,0 +1,8 @@
+{{ template "script_lib.sh" . }}
+
+# Build the `keymap-overlay` floating image viewer from Swift source into
+# ~/.local/bin/keymap-overlay. Karabiner's nav layer uses it to show the generated
+# cheatsheet without taking focus. run_onchange: this rendered script embeds the source
+# (via include), so chezmoi recompiles it whenever keymap-overlay.swift changes. Ordered
+# after the Xcode step so the toolchain is present on a normal apply.
+{{ includeTemplate "swift-cli-build.sh" (dict "name" "keymap-overlay" "source" (include ".chezmoiassets/keymap-overlay.swift")) }}

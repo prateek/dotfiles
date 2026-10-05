@@ -6,7 +6,6 @@
 {{- if ne .chezmoi.os "darwin" }}
 Library
 .config/borders
-.config/kanata
 .config/karabiner
 .config/karabiner.edn
 .config/raycast
@@ -28,6 +27,7 @@ bin/orca-agent-session
 .chezmoiscripts/22-setapp-apps.sh
 .chezmoiscripts/30-macos-defaults.sh
 .chezmoiscripts/40-build-mic.sh
+.chezmoiscripts/44-build-keymap-overlay.sh
 .chezmoiscripts/45-karabiner-goku.sh
 .chezmoiscripts/46-tuna-reload.sh
 {{- end }}

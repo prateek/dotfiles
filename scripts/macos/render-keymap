@@ -1,0 +1,151 @@
+#!/usr/bin/env -S uv run --quiet --script
+# /// script
+# requires-python = ">=3.14"
+# dependencies = []
+# ///
+"""Render the Karabiner nav layer as an SVG cheatsheet.
+
+Usage: render-keymap <karabiner.json> <output.svg>
+
+Reads the compiled Default profile, so the picture cannot drift from the rules
+Karabiner is actually running: every key gated on the nav_mode variable is drawn
+with the action it sends.
+"""
+import json
+import sys
+from html import escape
+from pathlib import Path
+
+LAYER, SELECT = "nav_mode", "nav_select"
+
+# (key_code, cap label, width in key units) per row of the ANSI main block.
+ROWS = [
+    [("grave_accent_and_tilde", "`", 1), *[(c, c, 1) for c in "1234567890"],
+     ("hyphen", "-", 1), ("equal_sign", "=", 1), ("delete_or_backspace", "⌫", 1.5)],
+    [("tab", "⇥", 1.5), *[(c, c.upper(), 1) for c in "qwertyuiop"],
+     ("open_bracket", "[", 1), ("close_bracket", "]", 1), ("backslash", "\\", 1)],
+    [("caps_lock", "⇪", 1.75), *[(c, c.upper(), 1) for c in "asdfghjkl"],
+     ("semicolon", ";", 1), ("quote", "'", 1), ("return_or_enter", "⏎", 1.75)],
+    [("left_shift", "⇧", 2.25), *[(c, c.upper(), 1) for c in "zxcvbnm"],
+     ("comma", ",", 1), ("period", ".", 1), ("slash", "/", 1), ("right_shift", "⇧", 2.25)],
+    [("fn", "fn", 1), ("left_control", "⌃", 1), ("left_option", "⌥", 1), ("left_command", "⌘", 1.25),
+     ("spacebar", "", 5), ("right_command", "⌘", 1.25), ("right_option", "⌥", 1), (None, "", 3)],
+]
+
+MODIFIERS = {"command": "⌘", "option": "⌥", "control": "⌃", "shift": "⇧"}
+ARROWS = {"up_arrow": "↑", "down_arrow": "↓", "left_arrow": "←", "right_arrow": "→"}
+ACTIONS = {
+    ("left_arrow", "option"): "word ←", ("right_arrow", "option"): "word →",
+    ("left_arrow", "command"): "line start", ("right_arrow", "command"): "line end",
+    ("page_up", ""): "page ↑", ("page_down", ""): "page ↓",
+    ("z", "command"): "undo", ("x", "command"): "cut", ("c", "command"): "copy", ("v", "command"): "paste",
+    ("delete_or_backspace", ""): "⌫ delete", ("delete_forward", ""): "⌦ delete",
+    ("tab", ""): "tab", ("return_or_enter", ""): "return",
+}
+CAPS = {code: cap for row in ROWS for code, cap, _ in row if code}
+
+
+def gates(item):
+    return {c["name"] for c in item.get("conditions", []) if c["type"] == "variable_if" and c["value"] == 1}
+
+
+def assigns(events, name, value):
+    return any(event.get("set_variable") == {"name": name, "value": value} for event in events)
+
+
+def action_label(events):
+    """Name what a manipulator sends, falling back to modifier glyphs plus the key."""
+    if events and all("shell_command" in event for event in events):
+        return "this sheet"
+    for event in events:
+        if "key_code" in event:
+            key = event["key_code"]
+            mods = sorted(m.removeprefix("left_").removeprefix("right_") for m in event.get("modifiers", []))
+            named = ACTIONS.get((key, "+".join(mods)))
+            glyphs = "".join(MODIFIERS[m] for m in mods)
+            return named or glyphs + ARROWS.get(key, CAPS.get(key, key))
+    return ""
+
+
+def chord(item):
+    mods = item["from"].get("modifiers", {}).get("mandatory", [])
+    glyphs = "".join(MODIFIERS.get(m.removeprefix("left_").removeprefix("right_"), m + "+") for m in mods)
+    key = item["from"].get("key_code", "?")
+    return glyphs + {"spacebar": "Space", "escape": "Esc", "caps_lock": "Caps tap"}.get(key, CAPS.get(key, key))
+
+
+def read_layer(config):
+    profile = next((p for p in config["profiles"] if p["name"] == "Default"), None)
+    if profile is None:
+        raise SystemExit("render-keymap: no Default profile")
+    items = [m for rule in profile["complex_modifications"]["rules"] for m in rule["manipulators"]]
+    keys, enter, leave, select = {}, [], [], []
+    for item in items:
+        to, alone = item.get("to", []), item.get("to_if_alone", [])
+        if assigns(to, LAYER, 1):
+            enter.append(chord(item))
+        if gates(item) != {LAYER}:
+            continue
+        if assigns(alone, SELECT, 1):
+            select.append(chord(item) + " tap")
+        if assigns(alone, LAYER, 0) or (assigns(to, LAYER, 0) and not action_label(to)):
+            leave.append(chord(item))
+        elif action_label(to) and item["from"].get("key_code") not in (None, "left_shift", "caps_lock", "left_command"):
+            keys[item["from"]["key_code"]] = (action_label(to), assigns(to, LAYER, 0))
+    if not enter or not keys:
+        raise SystemExit("render-keymap: no nav layer found in the Default profile")
+    return keys, enter, leave, select
+
+
+def render(keys, enter, leave, select):
+    unit, gap, pad, top = 64, 6, 28, 76
+    width = int(pad * 2 + 14.5 * unit) - gap
+    height = top + len(ROWS) * unit + 96
+    out = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" width="{width}" height="{height}" '
+        'font-family="-apple-system, Helvetica, Arial, sans-serif">',
+        f'<rect width="{width}" height="{height}" rx="18" fill="#17191d"/>',
+        f'<text x="{pad}" y="46" font-size="24" font-weight="600" fill="#f2f3f5">Navigation layer</text>',
+        f'<text x="{width - pad}" y="46" font-size="15" fill="#9aa1ac" text-anchor="end">'
+        f'{escape(" or ".join(enter))} to enter</text>',
+    ]
+    for r, row in enumerate(ROWS):
+        x = pad
+        for code, cap, span in row:
+            w, y = span * unit - gap, top + r * unit
+            if code is not None:
+                label, exits = keys.get(code, (None, False))
+                fill, stroke = ("#24456e", "#5b9bf0") if label else ("#22252b", "#343841")
+                out.append(f'<rect x="{x:g}" y="{y}" width="{w:g}" height="{unit - gap}" rx="8" '
+                           f'fill="{fill}" stroke="{stroke}"/>')
+                out.append(f'<text x="{x + 8:g}" y="{y + 18}" font-size="12" '
+                           f'fill="{"#a9c8f5" if label else "#6b7280"}">{escape(cap)}</text>')
+                if label:
+                    out.append(f'<text x="{x + w / 2:g}" y="{y + 42}" font-size="{22 if len(label) < 3 else 13}" '
+                               f'font-weight="600" fill="#ffffff" text-anchor="middle">{escape(label)}</text>')
+                if exits:
+                    out.append(f'<text x="{x + w / 2:g}" y="{y + 54}" font-size="10" fill="#a9c8f5" '
+                               f'text-anchor="middle">then leave</text>')
+            x += span * unit
+    notes = [
+        f"Leave: {', '.join(dict.fromkeys(enter + leave))}",
+        f"Select mode: {', '.join(select)} — moves extend the selection" if select else "",
+        "⇧ and ⌥ pass through the move keys; ⌘ and ⌃ chords keep their normal meaning",
+    ]
+    for i, note in enumerate(n for n in notes if n):
+        out.append(f'<text x="{pad}" y="{top + len(ROWS) * unit + 28 + i * 24}" font-size="15" '
+                   f'fill="#c9ced6">{escape(note)}</text>')
+    return "\n".join(out) + "\n</svg>\n"
+
+
+def main():
+    if len(sys.argv) != 3:
+        raise SystemExit(__doc__.strip().splitlines()[2])
+    svg = render(*read_layer(json.loads(Path(sys.argv[1]).read_text())))
+    target = Path(sys.argv[2])
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(svg)
+
+
+if __name__ == "__main__":
+    main()

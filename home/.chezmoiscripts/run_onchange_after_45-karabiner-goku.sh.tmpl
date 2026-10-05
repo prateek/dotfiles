@@ -8,7 +8,11 @@
 # machine before brew bundle, or a profile without karabiner-elements; ordered after the
 # brew step so the toolchain is present on a normal apply).
 #
+# The compiled profile is then drawn as the nav-layer cheatsheet (scripts/macos/render-keymap),
+# which the layer's ` key opens.
+#
 # karabiner.edn sha256: {{ include "dot_config/karabiner.edn.tmpl" | sha256sum }}
+# render-keymap sha256: {{ include (printf "%s/../scripts/macos/render-keymap" .chezmoi.sourceDir) | sha256sum }}
 brew_shellenv
 have goku || { warn "karabiner-goku: goku not found; skipping (brew install yqrashawn/goku/goku)"; exit 0; }
 have jq   || { warn "karabiner-goku: jq not found; skipping"; exit 0; }
@@ -45,3 +49,11 @@ fi
 
 goku >/dev/null
 log "karabiner-goku: compiled karabiner.json"
+
+render="{{ .chezmoi.sourceDir }}/../scripts/macos/render-keymap"
+sheet="${HOME}/.local/share/dotfiles/keymap/nav-layer.svg"
+if "$render" "$kbjson" "$sheet"; then
+  log "karabiner-goku: rendered $sheet"
+else
+  warn "karabiner-goku: could not render the nav-layer cheatsheet"
+fi

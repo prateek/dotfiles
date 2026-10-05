@@ -472,12 +472,13 @@ class PluginReconcileTests(PackageTestCase):
     def test_scoped_chezmoi_apply_converges_the_complete_agent_layout_and_hashes_source_changes(self):
         templates = self.repo / "home/.chezmoitemplates"
         templates.mkdir()
-        for name in ("script_lib.sh", "features.tmpl", "agent-marketplace-tree-hash.tmpl",
+        for name in ("script_lib.sh", "features.tmpl", "agents.tmpl", "agent-marketplace-tree-hash.tmpl",
                      "agent-claude-plugin-settings.json.tmpl", "agent-codex-plugin-config.toml.tmpl",
                      "claude-settings-managed.json.tmpl", "codex-config-managed.toml.tmpl",
                      "cursor-cli-config-managed.json.tmpl", "work-overlay.tmpl"):
             shutil.copy2(ROOT / "home/.chezmoitemplates" / name, templates / name)
-        shutil.copy2(ROOT / "home/.chezmoidata/machines.toml", self.policy.parent / "machines.toml")
+        for name in ("machines.toml", "agents.toml"):
+            shutil.copy2(ROOT / "home/.chezmoidata" / name, self.policy.parent / name)
         shutil.copytree(SCRIPTS, self.repo / ".agents/skills/agent-skill-management/scripts",
                         ignore=shutil.ignore_patterns("__pycache__"))
         scripts = self.repo / "home/.chezmoiscripts"

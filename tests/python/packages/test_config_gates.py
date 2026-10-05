@@ -1,7 +1,6 @@
 import json
 import os
 import tomllib
-from urllib.parse import unquote
 
 from tests.support.python import ROOT, RepoTestCase
 from .gate_examples import IGNORED, MANAGED, UNMANAGED
@@ -49,12 +48,13 @@ class PackageConfigGatesTests(RepoTestCase):
         binds = {binding["key"]: binding for binding in config["comboMode"]["bindings"]}
         self.assertEqual(set(binds), {"1", "a", "t", "s", "b", "c", "m", "f", "z"})
         self.assertEqual(binds["a"]["label"], "ai")
-        queue = {child["key"]: child for child in binds["a"]["children"]}["q"]
-        decoded = unquote(unquote(queue["url"]))
-        self.assertIn('"$HOME/bin/claude-queue-draft"', decoded)
-        self.assertTrue(decoded.endswith("Run Text as Shell Command"))
+        queue = {child["key"]: child for child in binds["a"]["destination"]["bindings"]}["q"]
+        command = queue["destination"]["command"]
+        self.assertEqual(command["subjectIdentifiers"], ['text:"$HOME/bin/claude-queue-draft"'])
+        self.assertEqual(command["actionIdentifier"], "tuna.common-actions/run-text-as-shell-command")
         self.assertEqual(binds["z"]["label"], "misc")
-        self.assertLessEqual({"d", "m", "z", "t", "r", "g"}, {child["key"] for child in binds["z"]["children"]})
+        self.assertLessEqual({"d", "m", "z", "t", "r", "g"},
+                             {child["key"] for child in binds["z"]["destination"]["bindings"]})
         self.assertEqual(config["hotkeys"]["app"]["comboMode"], {"carbonKeyCode": 79, "carbonModifiers": 0})
         self.assertTrue(os.access(ROOT / "bin/claude-queue-draft", os.X_OK))
         self.assertTrue((ROOT / "home/bin/symlink_claude-queue-draft.tmpl").is_file())

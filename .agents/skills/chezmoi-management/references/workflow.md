@@ -155,6 +155,7 @@ run_onchange_after_36-agent-plugins.sh.tmpl
 run_onchange_after_37-agent-slack-doc.sh.tmpl
 run_onchange_after_38-agent-session-wiki.sh.tmpl
 run_onchange_after_40-build-mic.sh.tmpl
+run_onchange_after_44-build-keymap-overlay.sh.tmpl
 run_onchange_after_45-karabiner-goku.sh.tmpl
 run_onchange_after_46-tuna-reload.sh.tmpl
 run_onchange_after_90-verify.sh.tmpl
