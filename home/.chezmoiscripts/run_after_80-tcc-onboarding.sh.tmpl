@@ -1,0 +1,37 @@
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- if and (eq .chezmoi.os "darwin") $f.run_install_scripts $f.tcc_onboarding -}}
+{{ template "script_lib.sh" . }}
+
+installer={{ printf "%s/../scripts/macos/install-tcc-onboarding" .chezmoi.sourceDir | quote }}
+manifest={{ printf "%s/.config/dotfiles/tcc.json" .chezmoi.homeDir | quote }}
+if app=$("$installer"); then
+  :
+else
+  status=$?
+  if [ "$status" = 75 ]; then
+    warn "Permission helper update deferred; close it and rerun chezmoi apply."
+    exit 0
+  fi
+  die "Permission helper installation failed (exit $status)."
+fi
+"$app/Contents/MacOS/DotfilesPermissions" --validate "$manifest" || die "Invalid permission manifest: $manifest"
+resume() { printf 'Review permissions later: open -a %q %q\n' "$app" "$manifest"; }
+if [ ! -t 0 ] || [ ! -t 1 ] || [ -n "${SSH_CONNECTION:-}${SSH_TTY:-}" ] || [ -n "${CI:-}" ] ||
+   [ "$(stat -f '%u' /dev/console)" != "$(id -u)" ]; then
+  resume
+  exit 0
+fi
+printf '[dotfiles] Review macOS app permissions now? [y/N] '
+response=''
+read -r response || true
+response="${response%$'\r'}"
+case "$response" in
+  y|Y|yes|YES)
+    if ! open -g -a "$app" "$manifest" --args --reconcile; then
+      warn "Could not open Dotfiles Permissions."
+      resume
+    fi
+    ;;
+  *) resume ;;
+esac
+{{- end -}}

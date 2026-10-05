@@ -2,7 +2,7 @@
 status: current
 doc_type: index
 created: 2026-05-12
-updated: 2026-09-28
+updated: 2026-10-05
 related:
   - document-lifecycle.md
   - ../agent-marketplace/packages/core/skills/code-gardening/SKILL.md
@@ -39,6 +39,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [Mise Tool Management](references/mise-tool-management.md) | Mise-native CLI and tool selection. |
 | [Tart Install Validation](runbooks/tart-mini-validation.md) | Local disposable-VM install validation on a Mac mini. |
 | [Tartelet Runner Setup](runbooks/tartelet-runner-setup.md) | Standing up a homelab mini as an ephemeral iOS/macOS GitHub Actions runner host. |
+| [TCC Onboarding](runbooks/tcc-onboarding.md) | Opt-in permission inventory, native helper, stale-grant recovery, and pending attended validation. |
 | [Session Archive Sync Permissions](runbooks/session-sync-permissions.md) | Building the dedicated sync app and validating its removable-volume access. |
 | [USB-C Cable Audit](runbooks/usb-c-cable-audit.md) | Auditing unlabeled USB-C cables for speed, power, generation, and TB5 capability. |
 
@@ -46,6 +47,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 
 | Doc | Status |
 | --- | --- |
+| [TCC Onboarding](plans/tcc-onboarding-plan.md) | Active; native helper and opt-in terminal prompt implemented. Attended E2E and mini/work audits pending; see the [runbook](runbooks/tcc-onboarding.md). |
 | [Self-help and Psychology Book Archive and Agent Tools](plans/psychology-book-archive-and-tools-plan.md) | Proposed; archive the full collection, extract source-linked lessons, and build practical agent workflows and learning tools. |
 | [Agent Friction Remediation](plans/agent-friction-remediation-plan.md) | Active; implemented and committed, not yet applied: bash-compatible glob parsing in zsh with non-interactive audit lanes, acpx/agent-slack/git-spice/retired-path fixes with validators, fake-HOME mise trust in the audit, an OpenSSL CA bundle for work shells, and five conventions. Global mise trust roots await a decision. |
 | [Periodic Session Review](plans/periodic-session-review-plan.md) | Proposed; completed-session retros, weekly incremental reviews, monthly historical sweeps, and a bounded backfill. No schedule enabled. |
@@ -127,6 +129,7 @@ for day-to-day implementation details.
 | [ADR 0041 - agent_clis is the single per-machine agent declaration](adr/0041-agent-clis-single-declaration.md) | Accepted; [agent_clis consolidation plan](plans/agent-clis-consolidation-plan.md). A catalogue plus one validated list replaces per-CLI gates. |
 | [ADR 0042 - Reconcile Orca settings through its profile-state store](adr/0042-orca-profile-state-reconcile.md) | Accepted; [Orca settings store plan](plans/orca-settings-store-plan.md). Revision-fenced SQLite write with Orca stopped, via the plist guard. |
 | [ADR 0043 - Gate the devbox by OS, not by an allowlist](adr/0043-devbox-os-gating.md) | Accepted; [Linux devbox plan](plans/linux-devbox-plan.md). The devbox takes the whole source state; macOS targets, `.chezmoiremove`, and synced agent asset directories are gated off it. |
+| [ADR 0044 - Declarative TCC onboarding with a native helper](adr/0044-tcc-onboarding.md) | Accepted; [TCC onboarding runbook](runbooks/tcc-onboarding.md). Read-only inventory with user-granted permissions and an opt-in terminal prompt. |
 
 ## Research
 

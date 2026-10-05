@@ -406,6 +406,23 @@ just test-python -k voiceink -k tuna
 
 Run `just test-shell tests/bats/hooks/plist-hooks.bats` and `just test-python -p test_config_gates.py` when hook or package ownership is also in scope. The separate `just test-python -p test_nvalt_colors.py` suite protects nvALT's color archive format.
 
+## Permission onboarding
+
+`just test-tcc-onboarding` builds the SwiftUI executable and runs native tests
+against temporary SQLite databases and locally signed disposable binaries. It
+covers exact grant/client matching, unknown and conflicting records, stale code
+requirements, manifest validation, and app/helper resolution. It never reads the
+host TCC databases or opens System Settings.
+
+`just test-shell tests/bats/hooks/tcc-onboarding.bats tests/bats/hooks/tcc-installer.bats`
+checks the opt-in hook, real PTY yes/no prompt, unattended paths, validation and
+launch failures, installer reuse, and deferred updates. External OS commands are
+substituted inside fixture directories. `just test-python -p test_tcc_manifest.py`
+checks the rendered inventory and its macOS/feature gates.
+
+Actual System Settings drag/toggle/refresh and rebuild reauthorization remain
+an attended lane in the [TCC runbook](../docs/runbooks/tcc-onboarding.md).
+
 ## Other validation lanes
 
 `just test-agent-skill-packages-native` runs the combined native client scenario,
