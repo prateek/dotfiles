@@ -415,8 +415,10 @@ requirements, manifest validation, and app/helper resolution. It never reads the
 host TCC databases or opens System Settings.
 
 Review tests also protect state-specific stale recovery, target-owned requests,
-unreadable-record bootstrap, retained selection after success, companion
-advancement, and visibility of Settings-launch errors. The model tests substitute
+unreadable-record bootstrap, app grouping, retained expansion after success,
+next-task advancement, and visibility of Settings-launch errors. Companion-only
+state assertions were removed with that UI; access loss, recovery selection,
+advancement, and unchanged grant states remain covered through the single-window model. The model tests substitute
 only the workspace Settings-opening boundary; no app or Settings is launched.
 
 `just test-shell tests/bats/hooks/tcc-onboarding.bats tests/bats/hooks/tcc-installer.bats`

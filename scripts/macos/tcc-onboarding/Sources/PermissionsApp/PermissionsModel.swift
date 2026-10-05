@@ -4,16 +4,13 @@ import PermissionsCore
 
 @MainActor
 final class PermissionsModel: ObservableObject {
-    enum CompanionTask: Equatable { case bootstrap, permission(String) }
+    enum SettingsTarget: Equatable { case bootstrap, permission(String) }
     @Published var snapshot: InventorySnapshot?
     @Published var error: String?
     @Published var busy = false
     @Published var showAll = false
     @Published var selectedID: String?
-    @Published var companionTask: CompanionTask?
     var onChange: (() -> Void)?
-    var onOpenCompanion: (() -> Void)?
-    var onFinishCompanion: (() -> Void)?
     private var manifestURL = defaultManifest
     private var manifest: Manifest?
     private var selections: [String: URL] = [:]
@@ -36,6 +33,10 @@ final class PermissionsModel: ObservableObject {
         guard let snapshot else { return [] }
         return ReviewSelection(selectedID: selectedID).visibleRows(snapshot, showAll: showAll)
     }
+    var visibleApps: [AppReviewGroup] {
+        guard let snapshot else { return [] }
+        return ReviewSelection(selectedID: selectedID).appGroups(snapshot, showAll: showAll)
+    }
     var hasNext: Bool { snapshot?.rows.contains { $0.id != selectedID && $0.status.state.needsAttention } == true }
 
     func load(_ url: URL) {
@@ -43,7 +44,6 @@ final class PermissionsModel: ObservableObject {
         manifestURL = url
         selections = [:]
         selectedID = nil
-        companionTask = nil
         snapshot = nil
         do {
             manifest = try Manifest.load(url)
@@ -104,7 +104,6 @@ final class PermissionsModel: ObservableObject {
         var selection = ReviewSelection(selectedID: selectedID)
         selection.reconcile(result)
         selectedID = selection.selectedID
-        if needsBootstrap, companionTask != nil { companionTask = .bootstrap }
         if let row = selectedRow, let previous, previous != row.status.state {
             NSAccessibility.post(element: NSApplication.shared, notification: .announcementRequested,
                 userInfo: [.announcement: "\(row.name): \(row.status.state.title)", .priority: NSAccessibilityPriorityLevel.medium.rawValue])
@@ -112,29 +111,17 @@ final class PermissionsModel: ObservableObject {
         onChange?()
     }
 
-    func nextPermission(from id: String? = nil) {
+    func nextPermission() {
         guard let snapshot else { return }
-        if let id { selectedID = id }
         var selection = ReviewSelection(selectedID: selectedID)
         selection.advance(snapshot)
         selectedID = selection.selectedID
-        if let selectedID, companionTask != nil { companionTask = .permission(selectedID) }
-        else { companionTask = nil; onFinishCompanion?() }
         onChange?()
     }
 
-    func continueAfterBootstrap() {
-        guard let snapshot else { return }
-        var selection = ReviewSelection()
-        selection.reconcile(snapshot)
-        selectedID = selection.selectedID
-        if let selectedID { companionTask = .permission(selectedID) }
-        else { companionTask = nil; onFinishCompanion?() }
-    }
-
-    func openSettings(for task: CompanionTask) {
+    func openSettings(for target: SettingsTarget) {
         let service: PermissionService
-        switch task {
+        switch target {
         case .bootstrap: service = .fullDiskAccess
         case .permission(let id):
             guard let row = snapshot?.rows.first(where: { $0.id == id }) else { return }
@@ -145,8 +132,7 @@ final class PermissionsModel: ObservableObject {
         if !openSettingsURL(service.settingsURL) {
             error = "Couldn’t open System Settings. Open Privacy & Security → \(service.title) manually, or try again."
         }
-        companionTask = task
-        onOpenCompanion?()
+        onChange?()
     }
 
     func chooseApp(for id: String) {

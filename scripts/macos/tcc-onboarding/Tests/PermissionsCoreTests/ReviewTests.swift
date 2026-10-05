@@ -11,7 +11,7 @@ final class ReviewTests: XCTestCase {
             status: GrantStatus(state, "Diagnostic details"))
     }
 
-    func testStaleRecoveryDiffersFromDenialAndSurvivesInEitherSurface() {
+    func testStaleRecoveryDiffersFromDenialAndAppOwnedRecovery() {
         let stale = PermissionTask(row("Example", state: .stale))
         XCTAssertEqual(stale.action, .settings)
         XCTAssertEqual(stale.summary, "The saved permission does not match this installed copy.")
@@ -46,4 +46,19 @@ final class ReviewTests: XCTestCase {
         selection.advance(complete)
         XCTAssertNil(selection.selectedID)
     }
+    func testChecklistGroupsPermissionsByAppAndRetainsSelectedSuccess() {
+        func permission(_ service: PermissionService, state: GrantState) -> InventoryRow {
+            let source = row("Example", state: state, service: service)
+            return InventoryRow(id: service.rawValue, appID: source.appID, name: source.name,
+                permission: source.permission, subject: source.subject, status: source.status)
+        }
+        let snapshot = InventorySnapshot(rows: [row("Other", state: .denied),
+            permission(.fullDiskAccess, state: .allowed), permission(.accessibility, state: .denied)], blockedDatabases: [])
+        let groups = ReviewSelection(selectedID: PermissionService.fullDiskAccess.rawValue).appGroups(snapshot, showAll: false)
+        XCTAssertEqual(groups.map(\.name), ["Example", "Other"])
+        XCTAssertEqual(groups[0].rows.map { $0.permission.service }, [.accessibility, .fullDiskAccess])
+        XCTAssertEqual(groups[0].rows.map { $0.status.state }, [.denied, .allowed])
+        XCTAssertEqual(ReviewSelection().appGroups(snapshot, showAll: false)[0].rows.count, 1)
+    }
+
 }

@@ -183,22 +183,23 @@ runtime probes can be added later if a demonstrated problem justifies them.
    helper's own Full Disk Access step. Open that pane and offer the installed
    helper bundle as a drag tile. Refresh after focus returns and provide a
    relaunch action if needed.
-2. Use a native main window with Dock/Cmd-Tab presence, menus, toolbar, and a
-   service-grouped sidebar. The selected task shows its app identity, reason,
-   status, and state-specific next steps. Bootstrap withholds target tasks
-   until the databases are readable. A compact companion keeps the exact
-   file tile accessible while Settings has focus; the main window stays open.
+2. Use one native window with Dock/Cmd-Tab presence, menus, and a compact
+   checklist grouped by app. Each permission row shows its state and expands
+   its reason, recovery steps, and exact file target inline. Bootstrap uses
+   the same window and withholds target tasks until records are readable.
 3. Open the selected pane and let the user drag the exact bundle or executable
    into its list, then enable the entry. Make the whole tile draggable. Offer
-   **Reveal in Finder**, **Copy Path**, and keyboard instructions as alternatives.
-   Stale recovery is prominent, not buried in technical details. Both surfaces
-   retain errors and required Relaunch/Open App actions.
+   **Show in Finder**, **Copy Path**, and keyboard instructions as alternatives.
+   The checklist floats above Settings without creating another window;
+   its normal window level returns when the user switches to another app.
+   Stale recovery and Settings errors stay visible. The footer keeps the
+   contextual action available while the checklist scrolls.
 4. Refresh on activation and periodically while a permission step is visible.
    Coalesce refreshes; stop polling when the helper closes. Show all expected
-   entries, including allowed ones, through the toolbar filter. Preserve the
-   selected task after a status change until the user explicitly advances.
+   entries, including allowed ones, through the checklist filter. Preserve the
+   expanded task after a status change until the user explicitly advances.
 5. Finish when all installed expectations are allowed, or let the user choose
-   **Finish Later**. Deferred entries are checked again on the next interactive apply;
+   **Later**. Deferred entries are checked again on the next interactive apply;
    no persistent suppression or user-confirmed “grant” cache is needed in v1.
 
 Drag support is a per-service capability established through live validation.
@@ -212,12 +213,11 @@ If macOS refuses a change because of policy or privileges, retain the unresolved
 state and explain the available manual step. The helper never automates Settings
 toggles, writes TCC, resets permissions, or installs a management profile.
 
-The visual pass uses system typography and surfaces, compact app rows, semantic
-symbols plus text, and a dedicated app icon. The main window starts at 760×560
-points and resizes. The companion preserves its placement and only floats
-while Settings or this helper is active. Closing it does not end the review.
-Keyboard, VoiceOver, contrast, and both appearances remain attended acceptance
-checks, alongside grant flows; source implementation alone does not prove them.
+The visual pass uses system typography and surfaces, compact permission rows,
+semantic symbols plus text, and a dedicated app icon. The single window starts
+at 640×650 points and resizes; there is no sidebar or companion. Keyboard,
+VoiceOver, contrast, and both appearances remain attended acceptance checks,
+alongside grant flows; source implementation alone does not prove them.
 
 ## Apply and app lifecycle
 

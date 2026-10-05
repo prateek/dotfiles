@@ -148,8 +148,8 @@ Reddit post draft:
 > permissions selected apps need, check the recorded state, and make it easier
 > to add the correct app or helper in System Settings.
 >
-> The main window keeps the inventory visible, and a small companion guides the
-> Settings step. It reads permission records; you make every grant change.
+> A single checklist groups permissions by app and expands the Settings guidance
+> inline. It reads permission records; you make every grant change.
 > Access to those records requires Full Disk Access for the helper, which the
 > setup screen explains.
 >

@@ -12,44 +12,26 @@ final class ReviewModelTests: XCTestCase {
     }
 
     @MainActor
-    func testSettingsFailureIsAvailableBeforeCompanionAppears() async {
+    func testSettingsFailurePreservesExpandedTaskAndIsVisibleOnUpdate() async {
         let model = PermissionsModel(openSettingsURL: { _ in false })
         model.snapshot = InventorySnapshot(rows: [row("A", state: .stale)], blockedDatabases: [])
         var visibleFailure: String?
-        model.onOpenCompanion = { visibleFailure = model.error }
+        model.onChange = { visibleFailure = model.error }
         model.openSettings(for: .permission("A"))
-        XCTAssertEqual(model.companionTask, .permission("A"))
         XCTAssertEqual(model.selectedID, "A")
         XCTAssertTrue(visibleFailure?.contains("Couldn’t open System Settings") == true)
     }
 
     @MainActor
-    func testBootstrapContinuesWithFirstUnresolvedTaskInsteadOfSkippingIt() async {
-        let model = PermissionsModel(openSettingsURL: { _ in true })
-        model.snapshot = InventorySnapshot(rows: [row("A", state: .denied), row("B", state: .denied)], blockedDatabases: [])
-        model.selectedID = "A"
-        model.companionTask = .bootstrap
-        model.continueAfterBootstrap()
-        XCTAssertEqual(model.companionTask, .permission("A"))
-        XCTAssertEqual(model.selectedID, "A")
-    }
-
-    @MainActor
-    func testCompanionAdvancesFromItsOwnTaskAndFinishesWithoutChangingGrants() async {
+    func testNextPermissionAdvancesAndFinishesWithoutChangingGrants() async {
         let model = PermissionsModel(openSettingsURL: { _ in true })
         model.snapshot = InventorySnapshot(rows: [row("A", state: .allowed), row("B", state: .denied)], blockedDatabases: [])
-        model.selectedID = "B"
-        model.companionTask = .permission("A")
-        model.nextPermission(from: "A")
+        model.selectedID = "A"
+        model.nextPermission()
         XCTAssertEqual(model.selectedID, "B")
-        XCTAssertEqual(model.companionTask, .permission("B"))
         model.snapshot = InventorySnapshot(rows: [row("A", state: .allowed), row("B", state: .allowed)], blockedDatabases: [])
-        var finished = false
-        model.onFinishCompanion = { finished = true }
-        model.nextPermission(from: "B")
+        model.nextPermission()
         XCTAssertNil(model.selectedID)
-        XCTAssertNil(model.companionTask)
-        XCTAssertTrue(finished)
         XCTAssertEqual(model.snapshot?.rows.map(\.status.state), [.allowed, .allowed])
     }
 
@@ -84,18 +66,15 @@ final class ReviewModelTests: XCTestCase {
     }
 
     @MainActor
-    func testAccessLossRoutesActiveCompanionBackToBootstrap() async {
+    func testAccessLossHidesTasksAndRecoverySelectsFirstUnresolvedPermission() async {
         let model = PermissionsModel(openSettingsURL: { _ in true })
         model.updateInventory(InventorySnapshot(rows: [row("A", state: .denied)], blockedDatabases: []))
-        model.companionTask = .permission("A")
+        XCTAssertEqual(model.selectedID, "A")
         model.updateInventory(InventorySnapshot(rows: [row("A", state: .unknown)], blockedDatabases: ["unreadable"]))
-        XCTAssertEqual(model.companionTask, .bootstrap)
         XCTAssertNil(model.selectedID)
         XCTAssertTrue(model.visibleRows.isEmpty)
-        model.updateInventory(InventorySnapshot(rows: [row("A", state: .denied)], blockedDatabases: []))
-        XCTAssertEqual(model.companionTask, .bootstrap)
-        model.continueAfterBootstrap()
-        XCTAssertEqual(model.companionTask, .permission("A"))
+        XCTAssertTrue(model.visibleApps.isEmpty)
+        model.updateInventory(InventorySnapshot(rows: [row("A", state: .denied), row("B", state: .denied)], blockedDatabases: []))
+        XCTAssertEqual(model.selectedID, "A")
     }
-
 }

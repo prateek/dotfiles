@@ -23,25 +23,11 @@ struct PermissionsView: View {
             if model.needsBootstrap {
                 BootstrapView(model: model)
             } else if let snapshot = model.snapshot {
-                HSplitView {
-                    sidebar(snapshot).frame(minWidth: 210, idealWidth: 230, maxWidth: 280)
-                    VStack(spacing: 0) {
-                        if let error = model.error { ActionError(message: error).padding([.top, .horizontal], 24) }
-                        if let row = model.selectedRow {
-                            ScrollView {
-                                PermissionDetail(row: row, model: model).padding(28)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                            }
-                            taskFooter(row)
-                        } else {
-                            completion(snapshot).frame(maxWidth: .infinity, maxHeight: .infinity)
-                        }
-                    }.frame(minWidth: 400, maxWidth: .infinity, maxHeight: .infinity)
-                }
+                checklist(snapshot)
             } else {
                 VStack(spacing: 16) {
                     if let error = model.error {
-                        Image(systemName: "exclamationmark.triangle").font(.system(size: 36)).foregroundStyle(.orange)
+                        Image(systemName: "exclamationmark.triangle").font(.system(size: 32)).foregroundStyle(.orange)
                         Text("Couldn’t load permissions").font(.title2.weight(.semibold))
                         Text(error).foregroundStyle(.secondary).textSelection(.enabled)
                         Button("Try Again") { model.retryLoad() }
@@ -54,79 +40,120 @@ struct PermissionsView: View {
         }.background(Color(nsColor: .windowBackgroundColor))
     }
 
-    private func sidebar(_ snapshot: InventorySnapshot) -> some View {
+    private func checklist(_ snapshot: InventorySnapshot) -> some View {
         VStack(spacing: 0) {
-            List(selection: $model.selectedID) {
-                ForEach(PermissionService.allCases, id: \.self) { service in
-                    let rows = model.visibleRows.filter { $0.permission.service == service }
-                    if !rows.isEmpty {
-                        Section {
-                            ForEach(rows) { row in
-                                HStack(spacing: 10) {
-                                    AppIcon(url: row.subject?.bundleURL, size: 28)
-                                    VStack(alignment: .leading, spacing: 3) {
-                                        Text(row.name).lineLimit(1)
-                                        Label(row.status.state.title, systemImage: row.status.state.symbol)
-                                            .font(.caption).labelStyle(.titleAndIcon)
-                                    }
-                                }.padding(.vertical, 3).tag(row.id)
-                                    .accessibilityElement(children: .ignore)
-                                    .accessibilityLabel("\(row.name), \(service.title), \(row.status.state.title)")
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(model.remainingCount == 0 ? "Your app permissions" : "\(model.remainingCount) permissions to review")
+                        .font(.title3.weight(.semibold))
+                    Text("You approve each permission in macOS.")
+                        .font(.callout).foregroundStyle(.secondary)
+                }
+                Spacer()
+                Menu {
+                    Button("Needs Attention") { model.showAll = false }
+                    Button("All Permissions") { model.showAll = true }
+                } label: { Text(model.showAll ? "All Permissions" : "Needs Attention").font(.callout) }
+                    .menuStyle(.borderlessButton).fixedSize()
+            }.padding(.horizontal, 24).padding(.top, 20).padding(.bottom, 18)
+            Divider()
+            if !snapshot.needsAttention, model.selectedID == nil, !model.showAll {
+                completion(snapshot).frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: 0) {
+                            ForEach(model.visibleApps) { app in
+                                AppPermissionSection(app: app, model: model).id("app:" + app.id)
                             }
-                        } header: {
-                            HStack {
-                                Text(service.title)
-                                Spacer()
-                                let count = snapshot.rows.filter { $0.permission.service == service && $0.status.state.needsAttention }.count
-                                if count > 0 { Text("\(count)").monospacedDigit() }
-                            }
-                        }
+                        }.padding(.horizontal, 24).padding(.vertical, 8)
+                    }
+                    .onAppear {
+                        if let target = selectedScrollTarget { proxy.scrollTo(target, anchor: .top) }
+                    }
+                    .onChange(of: model.selectedID) { _, id in
+                        if id != nil, let target = selectedScrollTarget { proxy.scrollTo(target, anchor: .top) }
                     }
                 }
-            }.listStyle(.sidebar)
+            }
+            if let error = model.error {
+                ActionError(message: error).frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 24).padding(.vertical, 12)
+            }
             Divider()
             HStack {
-                Text(model.remainingCount == 0 ? "Review complete" : "\(model.remainingCount) permissions remaining")
-                    .font(.caption).foregroundStyle(.secondary)
-                Spacer()
+                Button("Later") { NSApp.terminate(nil) }.keyboardShortcut(.cancelAction)
                 if model.busy { ProgressView().controlSize(.small) }
-            }.padding(14)
+                Spacer()
+                if let row = model.selectedRow {
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text(row.name).font(.caption.weight(.medium))
+                        Text(row.permission.service.title).font(.caption2).foregroundStyle(.secondary)
+                    }.lineLimit(1).frame(maxWidth: 150, alignment: .trailing)
+                }
+                if let row = model.selectedRow, row.status.state.needsAttention {
+                    TaskPrimaryAction(task: PermissionTask(row), model: model)
+                } else if model.hasNext {
+                    Button("Next Permission") { model.nextPermission() }.keyboardShortcut(.defaultAction)
+                } else {
+                    Button("Done") { NSApp.terminate(nil) }.keyboardShortcut(.defaultAction)
+                }
+            }.padding(.horizontal, 24).padding(.vertical, 14)
         }
     }
 
+    private var selectedScrollTarget: String? {
+        guard let row = model.selectedRow else { return nil }
+        let first = model.visibleApps.first { $0.id == row.appID }?.rows.first
+        return first?.id == row.id ? "app:" + row.appID : "permission:" + row.id
+    }
+
     private func completion(_ snapshot: InventorySnapshot) -> some View {
-        VStack(spacing: 16) {
-            Image(systemName: snapshot.needsAttention ? "sidebar.left" : "checkmark.seal")
-                .font(.system(size: 44, weight: .light)).foregroundStyle(.secondary)
-            Text(snapshot.needsAttention ? "Choose a permission" : "Permission review complete")
-                .font(.title2.weight(.semibold))
-            Text(snapshot.needsAttention ? "Select an app in the sidebar to review its access."
-                 : snapshot.rows.allSatisfy({ $0.status.state == .notInstalled })
+        VStack(spacing: 12) {
+            Image(systemName: "checkmark.circle").font(.system(size: 32, weight: .light)).foregroundStyle(.secondary)
+            Text("Permission review complete").font(.title3.weight(.semibold))
+            Text(snapshot.rows.allSatisfy({ $0.status.state == .notInstalled })
                  ? "None of the apps in this inventory are installed."
                  : "All installed apps in this inventory have recorded grants.")
                 .multilineTextAlignment(.center).foregroundStyle(.secondary)
-            if !snapshot.needsAttention {
-                Text("An app may need to restart before adopting a change.")
-                    .font(.caption).foregroundStyle(.secondary)
-                Button("Done") { NSApp.terminate(nil) }.keyboardShortcut(.defaultAction)
-            }
+            Text("An app may need to restart before adopting a change.").font(.caption).foregroundStyle(.secondary)
         }.padding(32).frame(maxWidth: 420)
     }
+}
 
-    private func taskFooter(_ row: InventoryRow) -> some View {
-        VStack(spacing: 0) {
-            Divider()
-            HStack {
-                Button("Finish Later") { NSApp.terminate(nil) }.keyboardShortcut(.cancelAction)
+struct AppPermissionSection: View {
+    let app: AppReviewGroup
+    @ObservedObject var model: PermissionsModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                AppIcon(url: app.rows.first?.subject?.bundleURL, size: 32)
+                Text(app.name).font(.system(size: 15, weight: .semibold))
                 Spacer()
-                if row.status.state.needsAttention {
-                    TaskPrimaryAction(task: PermissionTask(row), model: model)
-                } else {
-                    Button(model.hasNext ? "Next Permission" : "Done") {
-                        if model.hasNext { model.nextPermission() } else { NSApp.terminate(nil) }
-                    }.keyboardShortcut(.defaultAction)
+            }.padding(.top, 16)
+            ForEach(app.rows) { row in
+                VStack(alignment: .leading, spacing: 0) {
+                    Button { model.selectedID = row.id } label: {
+                        HStack(spacing: 10) {
+                            Text(row.permission.service.title).fontWeight(.medium)
+                            Spacer(minLength: 12)
+                            StatusLabel(state: row.status.state).font(.caption)
+                            Image(systemName: model.selectedID == row.id ? "chevron.down" : "chevron.right")
+                                .font(.system(size: 9, weight: .semibold)).foregroundStyle(.tertiary)
+                        }.padding(.vertical, 10).padding(.horizontal, 12).contentShape(Rectangle())
+                    }.buttonStyle(.plain)
+                        .accessibilityLabel("\(app.name), \(row.permission.service.title), \(row.status.state.title)")
+                        .accessibilityValue(model.selectedID == row.id ? "Expanded" : "Collapsed")
+                    if model.selectedID == row.id {
+                        PermissionDetail(row: row, model: model).padding(.horizontal, 12).padding(.bottom, 14)
+                    }
                 }
-            }.padding(16)
+                .background(model.selectedID == row.id ? Color.accentColor.opacity(0.045) : .clear,
+                            in: RoundedRectangle(cornerRadius: 10))
+                .id("permission:" + row.id)
+            }
+            Divider().padding(.top, 6)
         }
     }
 }
@@ -137,37 +164,39 @@ struct PermissionDetail: View {
 
     var body: some View {
         let task = PermissionTask(row)
-        VStack(alignment: .leading, spacing: 22) {
-            HStack(spacing: 16) {
-                AppIcon(url: row.subject?.bundleURL, size: 56)
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(row.name).font(.title2.weight(.semibold))
-                    Text(row.permission.service.title).foregroundStyle(.secondary)
-                }
-            }
-            Text(row.permission.reason).font(.body)
+        VStack(alignment: .leading, spacing: 12) {
+            Text(row.permission.reason).font(.callout).foregroundStyle(.secondary)
+            Text(task.summary).font(.callout)
             VStack(alignment: .leading, spacing: 10) {
-                StatusLabel(state: row.status.state)
-                Text(task.summary).foregroundStyle(.secondary)
-                TaskSteps(steps: task.steps)
-            }
-            if let subject = row.subject, row.status.state.needsAttention {
-                FileTile(url: subject.codeURL, service: row.permission.service,
-                         draggable: row.permission.service.supportsDrag)
+                ForEach(Array(task.steps.enumerated()), id: \.offset) { index, step in
+                    HStack(alignment: .top, spacing: 10) {
+                        Text("\(index + 1)").font(.caption).monospacedDigit().foregroundStyle(.secondary)
+                            .frame(width: 12, alignment: .leading).accessibilityHidden(true)
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(step).fixedSize(horizontal: false, vertical: true)
+                            if index == 1, row.permission.service.supportsDrag,
+                               row.status.state.needsAttention, let subject = row.subject {
+                                FileTile(url: subject.codeURL, service: row.permission.service, draggable: true)
+                                SubjectActions(url: subject.codeURL)
+                            }
+                        }
+                    }.accessibilityElement(children: .contain)
+                }
+            }.font(.callout)
+            if !row.permission.service.supportsDrag, let subject = row.subject {
                 SubjectActions(url: subject.codeURL)
             }
-            if row.subject != nil, row.status.state.needsAttention {
-                HStack {
-                    if task.action == .openApp {
+            HStack {
+                if let subject = row.subject, row.status.state.needsAttention {
+                    Menu("More") {
+                        Button("Open \(row.name)") { model.openApp(subject) }
                         Button("Open \(row.permission.service.title) Settings") { model.openSettings(for: .permission(row.id)) }
-                    } else if let subject = row.subject {
-                        Button("Open App") { model.openApp(subject) }
-                    }
-                }.font(.callout)
-            }
-            DisclosureGroup("Technical Details") {
-                Text(row.status.detail).font(.caption).textSelection(.enabled).padding(.top, 6)
-            }.font(.callout).foregroundStyle(.secondary)
+                    }.menuStyle(.borderlessButton).fixedSize()
+                }
+                DisclosureGroup("Details") {
+                    Text(row.status.detail).textSelection(.enabled).padding(.top, 6)
+                }
+            }.font(.caption).foregroundStyle(.secondary)
         }
     }
 }
@@ -177,36 +206,34 @@ struct BootstrapView: View {
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    HStack(alignment: .top, spacing: 16) {
-                        AppIcon(url: Bundle.main.bundleURL, size: 64)
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Allow permission checks").font(.title2.weight(.semibold))
-                            Text("Before reviewing your apps, this helper needs access to macOS permission records.")
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    Text("macOS grants Full Disk Access. This helper uses it to read permission records and never changes them.")
+                VStack(alignment: .leading, spacing: 20) {
+                    VStack(spacing: 10) {
+                        AppIcon(url: Bundle.main.bundleURL, size: 48)
+                        Text("Allow permission checks").font(.title2.weight(.semibold))
+                        Text("Full Disk Access lets this helper read macOS permission records. You approve each app’s access in System Settings.")
+                            .multilineTextAlignment(.center).foregroundStyle(.secondary)
+                    }.frame(maxWidth: .infinity)
                     TaskSteps(steps: ["Open Privacy & Security → Full Disk Access.",
-                                      "Drag Dotfiles Permissions into the list and enable it.",
-                                      "Relaunch this helper if the records are still unreadable."])
+                                      "Add this helper to the list and enable it."])
                     FileTile(url: Bundle.main.bundleURL, service: .fullDiskAccess, draggable: true)
                     SubjectActions(url: Bundle.main.bundleURL)
-                    if let error = model.error { ActionError(message: error) }
+                    Text("macOS grants broad disk access. This helper uses it to read permission records and never changes them.")
+                        .font(.caption).foregroundStyle(.secondary)
                     HStack {
+                        Text("Still can’t read the records?").font(.caption).foregroundStyle(.secondary)
                         Button("Relaunch Helper") { model.relaunch() }
-                        Button("Check Again") { model.refresh() }.disabled(model.busy)
-                    }.font(.callout)
-                }
-                .padding(28).frame(maxWidth: 560, alignment: .leading).frame(maxWidth: .infinity)
+                            .buttonStyle(.link).font(.caption)
+                    }
+                }.padding(28).frame(maxWidth: 460).frame(maxWidth: .infinity)
             }
+            if let error = model.error { ActionError(message: error).padding(.horizontal, 24).padding(.bottom, 12) }
             Divider()
             HStack {
-                Button("Finish Later") { NSApp.terminate(nil) }.keyboardShortcut(.cancelAction)
+                Button("Later") { NSApp.terminate(nil) }.keyboardShortcut(.cancelAction)
                 Spacer()
                 Button("Open Full Disk Access") { model.openSettings(for: .bootstrap) }
-                    .buttonStyle(.borderedProminent).keyboardShortcut(.defaultAction)
-            }.padding(16)
+                    .buttonStyle(.bordered).keyboardShortcut(.defaultAction)
+            }.padding(.horizontal, 24).padding(.vertical, 14)
         }
     }
 }
@@ -214,27 +241,21 @@ struct BootstrapView: View {
 struct TaskPrimaryAction: View {
     let task: PermissionTask
     @ObservedObject var model: PermissionsModel
-    var compact = false
     var body: some View {
-        if compact { buttons.buttonStyle(.bordered) }
-        else { buttons.buttonStyle(.borderedProminent) }
-    }
-
-    @ViewBuilder
-    private var buttons: some View {
         switch task.action {
         case .settings:
-            Button(compact ? "Open Settings" : "Open \(task.row.permission.service.title) Settings") { model.openSettings(for: .permission(task.row.id)) }
-                .keyboardShortcut(.defaultAction)
+            Button("Open Settings") { model.openSettings(for: .permission(task.row.id)) }
+                .buttonStyle(.bordered).keyboardShortcut(.defaultAction)
+                .accessibilityLabel("Open \(task.row.permission.service.title) Settings for \(task.row.name)")
         case .openApp:
             if let subject = task.row.subject {
                 Button("Open App") { model.openApp(subject) }
-                    .keyboardShortcut(.defaultAction)
-                    .help("Open \(task.row.name)")
+                    .buttonStyle(.bordered).keyboardShortcut(.defaultAction)
+                    .accessibilityLabel("Open \(task.row.name) to request \(task.row.permission.service.title)")
             }
         case .chooseApp:
             Button("Choose App…") { model.chooseApp(for: task.row.appID) }
-                .keyboardShortcut(.defaultAction)
+                .buttonStyle(.bordered).keyboardShortcut(.defaultAction)
         case .none: EmptyView()
         }
     }

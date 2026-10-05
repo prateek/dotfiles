@@ -62,27 +62,24 @@ are readable. Grant access and use **Relaunch Helper** if needed.
 The helper's launch context matters: terminal or SSH access to a database does
 not establish that the GUI app can read it.
 
-The main window has a service-grouped sidebar and one selected task. The toolbar
-switches between **Needs Attention** and **All**; **⌘R** refreshes. App icons,
-status symbols, remaining counts, and the selected detail show the current job.
-The app appears in the Dock and Cmd-Tab while attended, with standard App, Edit,
-View, Window, and Help menus. Quiet, satisfied reconciliation exits without
-promoting the helper to a foreground app.
+The app uses one window with a checklist grouped by app. Select a permission
+row to expand its reason, recovery steps, and exact target inline. The filter
+switches between **Needs Attention** and **All Permissions**. Standard menus
+provide Refresh (⌘R), Show All (⇧⌘A), Next Permission (⌘]), and Show Inventory
+(⌘1). No sidebar or companion window is used.
 
-Opening Settings displays a compact companion without hiding the main window.
-The entire file tile is draggable for Accessibility, Input Monitoring, or Full
-Disk Access. **All Permissions** returns to the inventory; **Reveal in Finder**
-and **Copy Path** provide alternatives. The information button shows the exact
-path and keyboard instructions. The companion preserves its position, stays
-above Settings or this app, and hides while an unrelated app is active. Closing
-it dismisses the companion; closing the main window quits. These native focus,
+Opening Settings keeps the checklist available above it. Move the window beside
+Settings and drag the whole file tile into the permission list. **Show in Finder**
+opens the exact subject. The **File** menu offers **Copy Path** and the exact
+path with keyboard instructions. The window returns to its normal level when
+an unrelated app becomes active. Closing it quits the helper. These native focus,
 keyboard, and drag interactions await attended validation.
 
-Stale-grant recovery is visible in both surfaces, with service-appropriate
-removal, re-add, and restart instructions. Bootstrap offers **Relaunch Helper**;
-app-owned requests offer **Open App**. Settings-opening errors remain visible
-in both surfaces. A selected task remains visible when its grant changes, with
-**Next Permission** or **Done** rather than disappearing during refresh.
+Stale-grant recovery stays inline, with service-appropriate removal, re-add,
+and restart instructions. Bootstrap offers **Relaunch Helper**; app-owned
+requests offer **Open App**. Settings-opening errors and the contextual action
+remain above or in the fixed footer. An expanded task remains visible when its
+grant changes, with **Next Permission** or **Done** rather than disappearing.
 
 Screen Recording currently opens its Settings pane with guidance; its drag
 instruction is withheld pending native validation. Microphone and Camera need
@@ -187,7 +184,7 @@ version and app identities:
 2. Grant the helper Full Disk Access through its tile. Relaunch and confirm it
    reads both databases independently of terminal permissions.
 3. For each supported drag service, drop a target, enable its entry, and confirm
-   refresh. Check that the panel remains accessible while Settings has focus.
+   refresh. Check that the checklist remains accessible while Settings has focus.
 4. Confirm missing, duplicate, denied, and stale targets are explained correctly.
    Verify stale-grant removal/re-add recovery for the service being tested.
 5. Choose Later, reopen, and complete the remaining grant. Manual launches,
@@ -198,9 +195,10 @@ version and app identities:
    whether its own access needs reauthorization. An unchanged build preserves it.
 7. Validate Screen Recording's manual flow before enabling a drag instruction.
    Verify Microphone/Camera requests originate in the target app.
-8. Verify Dock/Cmd-Tab, menus, minimize/close, companion dismissal, saved panel
-   placement, and switching between Settings and unrelated apps. The companion
-   must not obscure unrelated work or hide errors and required actions.
+8. Verify Dock/Cmd-Tab, menus, minimize/close, saved window placement, and
+   switching between Settings and unrelated apps. Confirm there is only one
+   helper window; its level returns to normal over unrelated work, and errors
+   and required actions remain visible while scrolling.
 9. Review light/dark appearance, Increase Contrast, Full Keyboard Access, and
    VoiceOver. Verify exact app/helper targets using the keyboard fallback,
    stable focus through refresh, and one announcement per meaningful change.

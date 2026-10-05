@@ -51,6 +51,12 @@ public struct PermissionTask: Sendable {
     }
 }
 
+public struct AppReviewGroup: Identifiable, Sendable {
+    public let id: String
+    public let name: String
+    public let rows: [InventoryRow]
+}
+
 public struct ReviewSelection: Sendable {
     public var selectedID: String?
     public init(selectedID: String? = nil) { self.selectedID = selectedID }
@@ -71,13 +77,25 @@ public struct ReviewSelection: Sendable {
         return Self.ordered(snapshot.rows).filter { showAll || $0.status.state.needsAttention || $0.id == selectedID }
     }
 
+    public func appGroups(_ snapshot: InventorySnapshot, showAll: Bool) -> [AppReviewGroup] {
+        let rows = visibleRows(snapshot, showAll: showAll)
+        var groups: [AppReviewGroup] = []
+        for row in rows {
+            if let last = groups.last, last.id == row.appID {
+                groups[groups.count - 1] = AppReviewGroup(id: last.id, name: last.name, rows: last.rows + [row])
+            } else { groups.append(AppReviewGroup(id: row.appID, name: row.name, rows: [row])) }
+        }
+        return groups
+    }
+
     private static func ordered(_ rows: [InventoryRow]) -> [InventoryRow] {
         rows.sorted {
+            if $0.name != $1.name { return $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+            if $0.appID != $1.appID { return $0.appID < $1.appID }
             let services = PermissionService.allCases
             let left = services.firstIndex(of: $0.permission.service)!
             let right = services.firstIndex(of: $1.permission.service)!
             if left != right { return left < right }
-            if $0.name != $1.name { return $0.name.localizedStandardCompare($1.name) == .orderedAscending }
             return $0.id < $1.id
         }
     }

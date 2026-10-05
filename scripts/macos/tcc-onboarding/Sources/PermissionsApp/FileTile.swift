@@ -8,7 +8,7 @@ struct FileTile: View {
     let draggable: Bool
     var body: some View {
         FileTileSurface(url: url, service: service, draggable: draggable)
-            .frame(height: 80)
+            .frame(height: 58)
             .help(url.path)
             .accessibilityLabel("\(url.lastPathComponent). \(draggable ? "Drag to " + service.title : "Permission target"). \(url.path)")
     }
@@ -20,17 +20,17 @@ private struct FileTileContent: View {
     let draggable: Bool
     var body: some View {
         HStack(spacing: 12) {
-            AppIcon(url: url, size: 48)
+            AppIcon(url: url, size: 32)
             VStack(alignment: .leading, spacing: 5) {
                 Text(url.lastPathComponent).fontWeight(.medium).lineLimit(1)
                 Text(draggable ? "Drag to \(service.title)" : "Permission target")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Spacer(minLength: 8)
-            Image(systemName: draggable ? "arrow.up.forward" : "app.badge.checkmark")
-                .foregroundStyle(.tertiary)
-        }.padding(14).background(.quaternary.opacity(0.45), in: RoundedRectangle(cornerRadius: 10))
-            .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(.separator.opacity(0.4), lineWidth: 0.5))
+            Image(systemName: draggable ? "line.3.horizontal" : "app.badge.checkmark")
+                .foregroundStyle(.secondary).frame(width: 12, height: 14)
+        }.frame(maxWidth: .infinity, maxHeight: .infinity).padding(10).background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 8))
+            .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(.separator.opacity(0.5), lineWidth: 0.5))
     }
 }
 
@@ -53,6 +53,7 @@ private final class DragSurface: NSView, NSDraggingSource {
         self.draggable = draggable
         host = NSHostingView(rootView: FileTileContent(url: url, service: service, draggable: draggable))
         super.init(frame: .zero)
+        host.sizingOptions = []
         host.translatesAutoresizingMaskIntoConstraints = false
         addSubview(host)
         NSLayoutConstraint.activate([host.leadingAnchor.constraint(equalTo: leadingAnchor),
@@ -69,7 +70,7 @@ private final class DragSurface: NSView, NSDraggingSource {
         setAccessibilityElement(true)
         setAccessibilityRole(.group)
         setAccessibilityLabel("\(url.lastPathComponent), \(draggable ? "drag to " + service.title : "permission target")")
-        setAccessibilityHelp("Use Reveal in Finder or Copy Path for a keyboard alternative.")
+        setAccessibilityHelp("Use Show in Finder or Copy Path for a keyboard alternative.")
     }
     override func hitTest(_ point: NSPoint) -> NSView? { bounds.contains(convert(point, from: superview)) ? self : nil }
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { draggable }
@@ -81,7 +82,7 @@ private final class DragSurface: NSView, NSDraggingSource {
         let point = convert(event.locationInWindow, from: nil)
         guard draggable, hypot(point.x - origin.x, point.y - origin.y) > 3 else { return }
         let item = NSDraggingItem(pasteboardWriter: url as NSURL)
-        item.setDraggingFrame(NSRect(x: 14, y: 16, width: 48, height: 48), contents: NSWorkspace.shared.icon(forFile: url.path))
+        item.setDraggingFrame(NSRect(x: 10, y: 13, width: 32, height: 32), contents: NSWorkspace.shared.icon(forFile: url.path))
         beginDraggingSession(with: [item], event: event, source: self)
     }
     func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation { .copy }
@@ -91,15 +92,16 @@ struct SubjectActions: View {
     let url: URL
     @State private var showPath = false
     var body: some View {
-        HStack(spacing: 16) {
-            Button("Reveal in Finder") { NSWorkspace.shared.activateFileViewerSelecting([url]) }
-            Button("Copy Path") {
-                NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(url.path, forType: .string)
-            }
-            Button { showPath.toggle() } label: { Image(systemName: "info.circle") }
-                .help("Exact path and keyboard instructions")
-                .accessibilityLabel("Show exact path and keyboard instructions")
+        HStack(spacing: 14) {
+            Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([url]) }
+                .buttonStyle(.link)
+            Menu("File") {
+                Button("Copy Path") {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(url.path, forType: .string)
+                }
+                Button("Exact Path and Keyboard Help") { showPath = true }
+            }.menuStyle(.borderlessButton).fixedSize()
                 .popover(isPresented: $showPath) {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Exact permission target").font(.headline)
