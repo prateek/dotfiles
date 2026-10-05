@@ -292,7 +292,7 @@ Source checks and fixture tests cannot establish native Settings behavior.
 Keep live validation in a disposable VM until a host apply is requested.
 Acceptance requires that native lane; a compiling app alone is insufficient.
 
-## Future follow-up: standalone tool and releases
+## Future follow-up: standalone tool, registry and launch
 
 Extract the native helper into its own repository after the initial onboarding
 flow is validated. Keep the expected-grant catalogue and chezmoi integration in
@@ -300,6 +300,14 @@ dotfiles. As part of that extraction, publish versioned macOS releases for
 Apple silicon and Intel, with artifact verification and an explicit signing
 and update policy. Dotfiles should install a pinned release so target hosts
 need no Swift or Xcode toolchain; local compilation remains a development path.
+
+Version public permission definitions independently per app. The standalone
+utility should fetch the latest compatible registry without a binary rebuild,
+retain verified offline data, and preserve local app selections and overrides.
+Use separate CI/CD workflows for registry publishing and signed utility releases.
+Build a product website and prepare marketing copy, Product Hunt materials and
+Reddit/community launch drafts. The deferred [product plan](permissions-product-plan.md)
+records the registry contract, release checks, launch deliverables and initial copy.
 
 This distribution work is deferred. The current installer builds locally and
 requires a compatible Swift toolchain and macOS SDK; enabling it on a host

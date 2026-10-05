@@ -48,6 +48,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | Doc | Status |
 | --- | --- |
 | [TCC Onboarding](plans/tcc-onboarding-plan.md) | Active; native helper and opt-in terminal prompt implemented. Attended E2E and mini/work audits pending; see the [runbook](runbooks/tcc-onboarding.md). |
+| [Permission Utility Product Follow-up](plans/permissions-product-plan.md) | Draft and deferred; standalone releases, app-versioned registry updates without rebuilding, separate publishing pipelines, website and launch copy. |
 | [Self-help and Psychology Book Archive and Agent Tools](plans/psychology-book-archive-and-tools-plan.md) | Proposed; archive the full collection, extract source-linked lessons, and build practical agent workflows and learning tools. |
 | [Agent Friction Remediation](plans/agent-friction-remediation-plan.md) | Active; implemented and committed, not yet applied: bash-compatible glob parsing in zsh with non-interactive audit lanes, acpx/agent-slack/git-spice/retired-path fixes with validators, fake-HOME mise trust in the audit, an OpenSSL CA bundle for work shells, and five conventions. Global mise trust roots await a decision. |
 | [Periodic Session Review](plans/periodic-session-review-plan.md) | Proposed; completed-session retros, weekly incremental reviews, monthly historical sweeps, and a bounded backfill. No schedule enabled. |
