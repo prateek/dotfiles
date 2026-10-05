@@ -183,16 +183,22 @@ runtime probes can be added later if a demonstrated problem justifies them.
    helper's own Full Disk Access step. Open that pane and offer the installed
    helper bundle as a drag tile. Refresh after focus returns and provide a
    relaunch action if needed.
-2. Group unresolved expectations by permission pane. Show each app's icon,
-   resolved path, and reason for access. A compact floating panel keeps the
-   drag tile accessible while Settings has focus.
+2. Use a native main window with Dock/Cmd-Tab presence, menus, toolbar, and a
+   service-grouped sidebar. The selected task shows its app identity, reason,
+   status, and state-specific next steps. Bootstrap withholds target tasks
+   until the databases are readable. A compact companion keeps the exact
+   file tile accessible while Settings has focus; the main window stays open.
 3. Open the selected pane and let the user drag the exact bundle or executable
-   into its list, then enable the entry. Offer **Reveal in Finder** as a fallback.
+   into its list, then enable the entry. Make the whole tile draggable. Offer
+   **Reveal in Finder**, **Copy Path**, and keyboard instructions as alternatives.
+   Stale recovery is prominent, not buried in technical details. Both surfaces
+   retain errors and required Relaunch/Open App actions.
 4. Refresh on activation and periodically while a permission step is visible.
    Coalesce refreshes; stop polling when the helper closes. Show all expected
-   entries, including allowed ones, in a secondary inventory view.
+   entries, including allowed ones, through the toolbar filter. Preserve the
+   selected task after a status change until the user explicitly advances.
 5. Finish when all installed expectations are allowed, or let the user choose
-   **Later**. Deferred entries are checked again on the next interactive apply;
+   **Finish Later**. Deferred entries are checked again on the next interactive apply;
    no persistent suppression or user-confirmed “grant” cache is needed in v1.
 
 Drag support is a per-service capability established through live validation.
@@ -205,6 +211,13 @@ and Files & Folders remain outside the first version's supported services.
 If macOS refuses a change because of policy or privileges, retain the unresolved
 state and explain the available manual step. The helper never automates Settings
 toggles, writes TCC, resets permissions, or installs a management profile.
+
+The visual pass uses system typography and surfaces, compact app rows, semantic
+symbols plus text, and a dedicated app icon. The main window starts at 760×560
+points and resizes. The companion preserves its placement and only floats
+while Settings or this helper is active. Closing it does not end the review.
+Keyboard, VoiceOver, contrast, and both appearances remain attended acceptance
+checks, alongside grant flows; source implementation alone does not prove them.
 
 ## Apply and app lifecycle
 

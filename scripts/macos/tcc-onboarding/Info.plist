@@ -4,6 +4,7 @@
 <key>CFBundleIdentifier</key><string>com.prateek.DotfilesPermissions</string>
 <key>CFBundleName</key><string>Dotfiles Permissions</string>
 <key>CFBundleExecutable</key><string>DotfilesPermissions</string>
+<key>CFBundleIconFile</key><string>Permissions.icns</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>CFBundleVersion</key><string>1</string>
 <key>CFBundleShortVersionString</key><string>1.0</string>

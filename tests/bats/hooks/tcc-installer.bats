@@ -17,6 +17,7 @@ case "$*" in
   'swift --version') printf 'Swift test toolchain\n' ;;
   *--show-bin-path*) printf '%s\n' "$compiled" ;;
   'swift build '*) printf 'compile\n' >> "$events" ;;
+  *make-icon.swift*) : > "${@: -1}" ;;
   *) exit 1 ;;
 esac
 SH

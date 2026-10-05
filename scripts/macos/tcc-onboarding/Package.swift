@@ -9,6 +9,7 @@ let package = Package(
         .target(name: "PermissionsCore", linkerSettings: [.linkedLibrary("sqlite3")]),
         .executableTarget(name: "PermissionsApp", dependencies: ["PermissionsCore"]),
         .testTarget(name: "PermissionsCoreTests", dependencies: ["PermissionsCore"]),
+        .testTarget(name: "PermissionsAppTests", dependencies: ["PermissionsApp", "PermissionsCore"]),
     ],
     swiftLanguageModes: [.v5]
 )

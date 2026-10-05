@@ -414,6 +414,11 @@ covers exact grant/client matching, unknown and conflicting records, stale code
 requirements, manifest validation, and app/helper resolution. It never reads the
 host TCC databases or opens System Settings.
 
+Review tests also protect state-specific stale recovery, target-owned requests,
+unreadable-record bootstrap, retained selection after success, companion
+advancement, and visibility of Settings-launch errors. The model tests substitute
+only the workspace Settings-opening boundary; no app or Settings is launched.
+
 `just test-shell tests/bats/hooks/tcc-onboarding.bats tests/bats/hooks/tcc-installer.bats`
 checks the opt-in hook, real PTY yes/no prompt, unattended paths, validation and
 launch failures, installer reuse, and deferred updates. External OS commands are

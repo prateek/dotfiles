@@ -57,16 +57,32 @@ onboarding and leaves the existing app and grants in place.
 ## Grant and refresh
 
 If the databases are unreadable, the first step offers the helper itself as a
-Full Disk Access drag tile. Grant access and use **Relaunch helper** if needed.
+Full Disk Access drag tile. Target tasks are withheld until permission records
+are readable. Grant access and use **Relaunch Helper** if needed.
 The helper's launch context matters: terminal or SSH access to a database does
 not establish that the GUI app can read it.
 
-Each permission group shows the exact resolved subject and its reason. Opening
-Settings displays a small floating companion panel near the lower right of the
-screen, with a draggable app icon for Accessibility, Input Monitoring, or Full
-Disk Access. **All permissions** returns to the inventory; **Reveal in Finder**
-is available as a fallback. The panel can be moved to keep the Settings list
-clear. These native interactions await attended validation.
+The main window has a service-grouped sidebar and one selected task. The toolbar
+switches between **Needs Attention** and **All**; **⌘R** refreshes. App icons,
+status symbols, remaining counts, and the selected detail show the current job.
+The app appears in the Dock and Cmd-Tab while attended, with standard App, Edit,
+View, Window, and Help menus. Quiet, satisfied reconciliation exits without
+promoting the helper to a foreground app.
+
+Opening Settings displays a compact companion without hiding the main window.
+The entire file tile is draggable for Accessibility, Input Monitoring, or Full
+Disk Access. **All Permissions** returns to the inventory; **Reveal in Finder**
+and **Copy Path** provide alternatives. The information button shows the exact
+path and keyboard instructions. The companion preserves its position, stays
+above Settings or this app, and hides while an unrelated app is active. Closing
+it dismisses the companion; closing the main window quits. These native focus,
+keyboard, and drag interactions await attended validation.
+
+Stale-grant recovery is visible in both surfaces, with service-appropriate
+removal, re-add, and restart instructions. Bootstrap offers **Relaunch Helper**;
+app-owned requests offer **Open App**. Settings-opening errors remain visible
+in both surfaces. A selected task remains visible when its grant changes, with
+**Next Permission** or **Done** rather than disappearing during refresh.
 
 Screen Recording currently opens its Settings pane with guidance; its drag
 instruction is withheld pending native validation. Microphone and Camera need
@@ -85,7 +101,7 @@ No data-access grant is requested through another app's identity.
 | Allowed in macOS | A recorded allow matches the installed code requirement. Restart the target if it has not adopted a change. |
 | Not allowed | A recorded denial; review the permission in Settings. |
 | Needs reauthorization | The app has a valid signature but fails the stored code requirement. Remove and re-add the exact app where Settings permits, then relaunch it. |
-| Needs review | Absent/unreadable/unsupported/conflicting evidence, or a code signature that cannot be verified. Expand Details. |
+| Needs review | Absent/unreadable/unsupported/conflicting evidence, or a code signature that cannot be verified. Expand Technical Details. |
 | Not installed | No matching bundle or helper exists; it does not trigger onboarding. |
 
 Both user and system databases must be readable for a conclusive grant. The
@@ -182,6 +198,13 @@ version and app identities:
    whether its own access needs reauthorization. An unchanged build preserves it.
 7. Validate Screen Recording's manual flow before enabling a drag instruction.
    Verify Microphone/Camera requests originate in the target app.
+8. Verify Dock/Cmd-Tab, menus, minimize/close, companion dismissal, saved panel
+   placement, and switching between Settings and unrelated apps. The companion
+   must not obscure unrelated work or hide errors and required actions.
+9. Review light/dark appearance, Increase Contrast, Full Keyboard Access, and
+   VoiceOver. Verify exact app/helper targets using the keyboard fallback,
+   stable focus through refresh, and one announcement per meaningful change.
+   Check minimum-size windows, long names, and long helper paths.
 
 Attended E2E is explicitly pending. Do not treat fixture success or a signed
 build as evidence that Settings accepted a drag or that a grant survived rebuild.

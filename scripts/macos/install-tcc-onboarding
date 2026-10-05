@@ -26,7 +26,7 @@ trap cleanup EXIT
 
 digest=$(
   {
-    (cd "$source_dir" && { printf '%s\n' Package.swift Info.plist; find Sources -name '*.swift' -type f; } | LC_ALL=C sort | while IFS= read -r file; do shasum -a 256 "$file"; done)
+    (cd "$source_dir" && { printf '%s\n' Package.swift Info.plist make-icon.swift; find Sources Resources -type f; } | LC_ALL=C sort | while IFS= read -r file; do shasum -a 256 "$file"; done)
     shasum -a 256 < "$0"
     xcrun swift --version 2>&1
   } | shasum -a 256 | awk '{print $1}'
@@ -57,6 +57,8 @@ xcrun swift build --package-path "$source_dir" --scratch-path "$cache/build" \
 bin_dir=$(xcrun swift build --package-path "$source_dir" --scratch-path "$cache/build" --configuration release --show-bin-path)
 cp "$bin_dir/DotfilesPermissions" "$bundle/Contents/MacOS/DotfilesPermissions"
 cp "$source_dir/Info.plist" "$bundle/Contents/Info.plist"
+cp "$source_dir/Resources/Help.html" "$bundle/Contents/Resources/Help.html"
+xcrun swift "$source_dir/make-icon.swift" "$bundle/Contents/Resources/Permissions.icns" >&2
 printf '%s\n' "$digest" > "$bundle/Contents/Resources/source.sha256"
 codesign --force --sign - --identifier com.prateek.DotfilesPermissions "$bundle" >&2
 codesign --verify --strict "$bundle"
