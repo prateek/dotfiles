@@ -1,9 +1,4 @@
 [[skills]]
-name = "ask-matt"
-dependency = "mattpocock/skills"
-path = ".apm/skills/ask-matt"
-
-[[skills]]
 name = "code-review"
 dependency = "mattpocock/skills"
 path = ".apm/skills/code-review"
