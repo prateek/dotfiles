@@ -163,6 +163,9 @@ Library/Application Support/Yojam/config.json
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "ghostty")) "true" }}
 .config/ghostty
 {{- end }}
+{{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "prateek/tap/winmux")) "true" }}
+.config/winmux
+{{- end }}
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "bettertouchtool")) "true" }}
 Library/Preferences/com.hegenberg.BetterTouchTool.plist
 {{- end }}

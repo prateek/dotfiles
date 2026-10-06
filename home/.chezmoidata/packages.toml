@@ -37,7 +37,7 @@ gh_extensions = [
 description = "Shared GUI apps and Mac control tools for daily-driver laptops"
 taps = [
   { name = "yqrashawn/goku" },
-  { name = "nikitabobko/tap" },
+  { name = "prateek/tap" },
 ]
 brews = [
   # Keyboard and display control.
@@ -69,7 +69,7 @@ casks = [
   # Input, window, launcher, and browser-routing tools.
   { name = "bettertouchtool" },
   { name = "karabiner-elements" },
-  { name = "nikitabobko/tap/aerospace" },
+  { name = "prateek/tap/winmux" },
   { name = "bentobox" },
   { name = "tuna" },
   { name = "moom", appdir = "/Applications" },
@@ -466,4 +466,5 @@ brews = [
 casks = [
   { name = "codex" },  # the CLI installs standalone (run_after_07-codex-standalone.sh)
   { name = "periphery" },
+  { name = "nikitabobko/tap/aerospace" },  # replaced by prateek/tap/winmux; the two must not run together
 ]
