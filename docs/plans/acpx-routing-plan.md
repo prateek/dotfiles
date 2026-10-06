@@ -1,9 +1,11 @@
 ---
-status: accepted
+status: superseded
 doc_type: plan
 created: 2026-09-22
-updated: 2026-09-22
-status_detail: "Implemented and locally validated; not applied to the host. Work-machine and inference validation remain deployment checks."
+updated: 2026-10-05
+closed: 2026-10-05
+superseded_by: acpx-explicit-profiles-plan.md
+status_detail: "Historical generation-based implementation; explicit profiles supersede its selection rules. See current guidance for routing and ownership."
 current_guidance: ../references/acpx-routing.md
 related:
   - ../adr/0032-acpx-model-routing.md

@@ -24,7 +24,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | --- | --- |
 | [Documentation Index](index.md) | Routing to current guidance, proposed work, decisions, and history. |
 | [Document Lifecycle](document-lifecycle.md) | Frontmatter, status transitions, and index rules for `docs/`. |
-| [acpx Routing](references/acpx-routing.md) | Model shortcuts, machine route declarations, catalog resolution, and diagnostics. |
+| [acpx Routing](references/acpx-routing.md) | Explicit model/effort profiles, machine route declarations, catalog resolution, and diagnostics. |
 | [acpx Skill Rewrite](runbooks/acpx-skill-rewrite.md) | Balanced native flows; five-skill live pilot completed at peak concurrency two with one afablex review and a validated unapplied patch. Includes required runtime overrides. |
 | [Agent Marketplace](references/agent-marketplace.md) | Isolated APM source/build project, host activation, recovery, and validation lanes. |
 | [G95NC Display](runbooks/g95nc-display.md) | Sharp 60 Hz and butter 120 Hz HiDPI setup, preconditions, logs, and recovery. |
@@ -51,7 +51,6 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [Periodic Session Review](plans/periodic-session-review-plan.md) | Proposed; completed-session retros, weekly incremental reviews, monthly historical sweeps, and a bounded backfill. No schedule enabled. |
 | [acpx Skill Packaging](plans/acpx-skill-packaging-plan.md) | Active; the acpx conventions are now a trigger-owning skill next to the vendored `acpx-cli` command surface, the conventions doc and its AGENTS.md pointer are deleted. See [ADR 0028](adr/0028-router-skill-over-vendor-remap.md). Trigger arbitration measured 2026-09-08 (no cross-listing steals; 16/18 after one relabel); nothing open. |
 | [ACPX Shared Pane](plans/acpx-shared-pane-plan.md) | Accepted and implemented in source; one compact Herdr view per Orca caller, with an ordered tab per invocation. Live Orca terminal preview verified; host activation is a separate follow-up. |
-| [acpx Routing](plans/acpx-routing-plan.md) | Accepted and implemented; model/harness separation and apply-time resolution validated locally. Not yet applied to the host. See [current guidance](references/acpx-routing.md) and [ADR 0032](adr/0032-acpx-model-routing.md). |
 | [Browser Skill](plans/browser-skill-plan.md) | Active; landed and applied on personal-mbp, follow-ups open. One `browser` router skill in `utils-agent` replaces `managed-chrome-cdp`, with Orca routing inside Orca (browser-harness for live Chrome) and `agent-browser` elsewhere. |
 | [Jev Deterministic Preparation](plans/jev-deterministic-preparation-plan.md) | Active; the separate `browser-jev` skill owns dynamic control discovery and deterministic field execution. Two synthetic Cloudflare trials passed; end-to-end comparison remains open. |
 | [Agent Session Wiki](plans/agent-session-wiki-plan.md) | Active; hourly launchd archive sync, QMD history index, AgentsView wiring, and daily Claude wiki ingest on m4mini. See [ADR 0017](adr/0017-agent-session-archive.md). |
@@ -114,7 +113,7 @@ for day-to-day implementation details.
 | [ADR 0029 - Claude Code CLI installs natively](adr/0029-claude-code-native-installer.md) | Accepted; `run_after_06-claude-native.sh` installs the CLI through Anthropic's installer and retires the npm copies, because npm updates rewrite the package tree under running sessions. See [Mise Tool Management](references/mise-tool-management.md) > Claude Code workflow. |
 | [ADR 0030 - Touch ID for sudo](adr/0030-touchid-sudo.md) | Exact-payload ownership superseded by [ADR 0038](adr/0038-touchid-sudo-adopts-existing-file.md); the machine flag and apply hook remain. |
 | [ADR 0031 - Discover landing workflows](adr/0031-discovered-landing-workflows.md) | [Land-changes skill](../agent-marketplace/packages/review/skills/land-changes/SKILL.md) and [dotfiles landing](runbooks/dotfiles-landing.md). |
-| [ADR 0032 - acpx model routing](adr/0032-acpx-model-routing.md) | [acpx Routing](references/acpx-routing.md); separate model intent, harness capabilities, and machine policy. |
+| [ADR 0032 - acpx model routing](adr/0032-acpx-model-routing.md) | Superseded by [ADR 0045](adr/0045-acpx-explicit-model-profiles.md); original routing and ownership architecture. |
 | [ADR 0033 - Skill-owned Jev browser runner](adr/0033-skill-owned-jev-browser-runner.md) | Placement superseded by ADR 0035; the shared JSON runner and borrowed browser ownership remain. The [completed experiment](plans/jev-browser-runner-plan.md) rejected adoption. |
 | [ADR 0034 - Discover Jev controls in the browser skill](adr/0034-discover-jev-controls-in-the-browser-skill.md) | Accepted; dynamic preparation now lives in the separate experimental skill. The [follow-up experiment](plans/jev-deterministic-preparation-plan.md) remains active. |
 | [ADR 0035 - Separate experimental Jev browser skill](adr/0035-separate-experimental-jev-browser-skill.md) | Accepted; `browser-jev` links to the regular `browser` skill for policy and routing while owning the Jev runner. |
@@ -127,6 +126,7 @@ for day-to-day implementation details.
 | [ADR 0042 - Reconcile Orca settings through its profile-state store](adr/0042-orca-profile-state-reconcile.md) | Accepted; [Orca settings store plan](plans/orca-settings-store-plan.md). Revision-fenced SQLite write with Orca stopped, via the plist guard. |
 | [ADR 0043 - Gate the devbox by OS, not by an allowlist](adr/0043-devbox-os-gating.md) | Accepted; [Linux devbox plan](plans/linux-devbox-plan.md). The devbox takes the whole source state; macOS targets, `.chezmoiremove`, and synced agent asset directories are gated off it. |
 | [ADR 0044 - Karabiner is the only keyboard remapper](adr/0044-karabiner-sole-remapper.md) | Accepted; kanata removed, closing the open item in [ADR 0009](adr/0009-goku-karabiner-codegen.md). Layers the Mac must know about are Karabiner variables. |
+| [ADR 0045 - ACPX explicit model profiles](adr/0045-acpx-explicit-model-profiles.md) | Accepted; pin workhorse, writing, previous, and escalation profiles while preserving machine routing. |
 
 ## Research
 
@@ -145,7 +145,7 @@ for day-to-day implementation details.
 | [Skill Invocation-Control Frontmatter](research/skill-invocation-frontmatter-research.md) | Which harnesses honor `disable-model-invocation` and `user-invocable`, with per-harness evidence and citations. |
 | [Self-Improving Agents](research/self-improving-agents.md) | Pattern reference for durable agent feedback loops. |
 | [macOS Defaults: Sources And Verified Facts](research/macos-defaults-sources.md) | Sources to mine for the next rework of the macOS defaults layer, plus key encodings and Apple Silicon power facts verified on hardware. |
-| [acpx Rewrite Model Bake-Off](research/acpx-rewrite-model-bakeoff.md) | Superseded historical quality experiment; `agptw` now follows the generation/tier policy in [acpx Routing](references/acpx-routing.md). |
+| [acpx Rewrite Model Bake-Off](research/acpx-rewrite-model-bakeoff.md) | Superseded historical quality experiment; `agptw` now follows the explicit writing profile in [acpx Routing](references/acpx-routing.md). |
 | [acpx Visual Workflow Authoring](research/acpx-visual-workflow-authoring.md) | Native authoring limits, replay viewer capabilities, current release verification, and visual workflow alternatives. |
 | [acpx Flow Capabilities](research/acpx-flow-capabilities.md) | Native flow control, orchestration gaps, and the fit with historical workflow discussions. |
 | [Nix Migration Research](research/nix-migration-research.md) | Why the repo stays on chezmoi, what a package-only nix spike would look like, and the work-Mac MDM check that gates nix-darwin. |
@@ -163,6 +163,8 @@ or `superseded_by` frontmatter before using them.
 | [Leader Key to Tuna Migration](plans/leader-key-to-tuna-migration-plan.md) | Archived cutover record; the live binds are `home/dot_config/tuna/config.toml` and the left-Cmd trigger is in `home/dot_config/karabiner.edn.tmpl`. |
 | [G95NC Preconditions and Diagnostics](plans/g95nc-diagnostics-plan.md) | Completed command hardening; use the [runbook](runbooks/g95nc-display.md). |
 | [Jev Browser Runner](plans/jev-browser-runner-plan.md) | Completed implementation and development experiment; adoption rejected. Use the [experimental skill reference](../agent-marketplace/packages/utils-agent/skills/browser-jev/references/jev.md) and [research findings](research/jev-browser-integrations.md). |
+| [ACPX Explicit Profiles](plans/acpx-explicit-profiles-plan.md) | Archived implementation record; pinned model/effort defaults and independent review. See [current guidance](references/acpx-routing.md). |
+| [acpx Routing](plans/acpx-routing-plan.md) | Superseded generation-based implementation; see [explicit profiles](plans/acpx-explicit-profiles-plan.md). |
 | [Native acpx Skill Rewrite](plans/acpx-native-skill-rewrite-plan.md) | Archived implementation record for native ACP nodes and bounded child flows; current operation and live-pilot results are in the [runbook](runbooks/acpx-skill-rewrite.md). |
 | [acpx Skill Rewrite](plans/acpx-skill-rewrite-plan.md) | Archived authoring and fixture-validation record; current operation and live-pilot results are in the [runbook](runbooks/acpx-skill-rewrite.md). |
 | [acpx Claude Code Streaming PoC](plans/acpx-claude-streaming-poc-plan.md) | Completed; the relay loop it proved now lives in the acpx skill's [harness lanes](../agent-marketplace/packages/utils-agent/skills/acpx/references/harness-lanes.md), and the packaging follow-up went to [ADR 0028](adr/0028-router-skill-over-vendor-remap.md). |

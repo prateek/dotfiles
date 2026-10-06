@@ -46,8 +46,22 @@ def validate(policy):
         pattern = re.compile(rule["pattern"])
         if "generation" not in pattern.groupindex or not rule["tiers"]:
             raise RoutingError(f"{family}: require a generation capture and ordered tiers")
-    if policy["models"]["base_effort"] not in policy["models"]["efforts"]:
-        raise RoutingError("base effort is absent from the effort ladder")
+    spec = policy["models"]
+    for alias, profile in spec["profiles"].items():
+        family = profile["family"]
+        if family not in spec["families"]:
+            raise RoutingError(f"{alias}: unknown model family: {family}")
+        if profile["effort"] not in spec["efforts"]:
+            raise RoutingError(f"{alias}: unknown effort: {profile['effort']}")
+        if ("model" in profile) == ("previous_of" in profile):
+            raise RoutingError(f"{alias}: require exactly one of model or previous_of")
+        target = profile
+        if "previous_of" in profile:
+            target = spec["profiles"].get(profile["previous_of"], {})
+            if target.get("family") != family or "model" not in target:
+                raise RoutingError(f"{alias}: previous_of must name a pinned profile in the same family")
+        if model_identity(spec["families"][family], target["model"]) is None:
+            raise RoutingError(f"{alias}: unrecognized model target: {target['model']}")
 
 
 def route_environment(route):
@@ -220,6 +234,19 @@ def discover(policy):
     return catalogs
 
 
+def model_identity(rule, identifier):
+    identifier = identifier.split("/")[-1]
+    identifier = re.sub(r"\[(?:1m|200k)\]$", "", identifier)
+    match = re.fullmatch(rule["pattern"], identifier)
+    if not match:
+        return None
+    tier = match.groupdict().get("tier") or ""
+    if tier not in rule["tiers"]:
+        return None
+    generation = tuple(int(part) for part in re.split(r"[.-]", match["generation"]))
+    return generation, rule["tiers"].index(tier)
+
+
 def candidates(policy, route, catalog, family):
     capability = policy["routes"][route]
     if family not in capability["families"] and "*" not in capability["families"]:
@@ -227,16 +254,10 @@ def candidates(policy, route, catalog, family):
     rule = policy["models"]["families"][family]
     result = []
     for row in catalog.get("models", []):
-        identifier = row["id"].split("/")[-1]
-        identifier = re.sub(r"\[(?:1m|200k)\]$", "", identifier)
-        match = re.fullmatch(rule["pattern"], identifier)
-        if not match:
-            continue
-        tier = match.groupdict().get("tier") or ""
-        if tier not in rule["tiers"]:
-            continue
-        generation = tuple(int(part) for part in re.split(r"[.-]", match["generation"]))
-        result.append(dict(row, generation=generation, tier=rule["tiers"].index(tier)))
+        identity = model_identity(rule, row["id"])
+        if identity is not None:
+            generation, tier = identity
+            result.append(dict(row, generation=generation, tier=tier))
     return result
 
 
@@ -281,10 +302,8 @@ def resolve(policy, catalogs):
                 for name in policy["declared"]}
     problems = {name: error for name, error in problems.items() if error}
     spec = policy["models"]
-    ladder = spec["efforts"]
-    max_steps = len(ladder) - ladder.index(spec["base_effort"]) - 1
-
-    def add(alias, family, previous, steps, smallest=False):
+    for alias, profile in spec["profiles"].items() if policy["declared"] else ():
+        family, effort = profile["family"], profile["effort"]
         try:
             ordered = policy["preferences"].get(family, policy["declared"])
             route, models = None, []
@@ -296,32 +315,26 @@ def resolve(policy, catalogs):
                         break
             if route is None:
                 raise RoutingError(f"no declared, usable route advertises {family}")
-            generations = sorted({model["generation"] for model in models}, reverse=True)
-            if previous and len(generations) < 2:
-                raise RoutingError(f"{route} has no preceding {family} generation")
-            generation = generations[1 if previous else 0]
-            models = [model for model in models if model["generation"] == generation]
-            tier = (min if smallest else max)(model["tier"] for model in models)
-            model = sorted((model for model in models if model["tier"] == tier), key=lambda row: row["id"])[-1]
-            supported = [level for level in ladder if level in model["efforts"]]
-            if spec["base_effort"] not in supported:
-                raise RoutingError(f"{route}/{model['id']} does not support high effort")
-            index = supported.index(spec["base_effort"]) + steps
-            if index >= len(supported):
-                raise RoutingError(f"{route}/{model['id']} has no effort {steps} step(s) above high")
-            effort = supported[index]
+            target = profile if "model" in profile else spec["profiles"][profile["previous_of"]]
+            generation, tier = model_identity(spec["families"][family], target["model"])
+            if "previous_of" in profile:
+                generations = {model["generation"] for model in models if model["generation"] < generation}
+                if not generations:
+                    raise RoutingError(f"{route} has no preceding {family} generation below {target['model']}")
+                generation = max(generations)
+                tier = max(model["tier"] for model in models if model["generation"] == generation)
+            matches = [model for model in models if (model["generation"], model["tier"]) == (generation, tier)]
+            if not matches:
+                raise RoutingError(f"{route} does not advertise {target['model']}")
+            model = sorted(matches, key=lambda row: row["id"])[-1]
+            if effort not in model["efforts"]:
+                raise RoutingError(f"{route}/{model['id']} does not support {effort} effort")
             shortcuts[alias] = {"route": route, "model": model["id"], "effort": effort,
                                 "argv": launch(policy, route, model, effort, family)}
         except RoutingError as error:
             message = f"{alias}: {error}"
             shortcuts[alias] = {"error": str(error), "argv": [policy["launcher"], "reject", message]}
 
-    if policy["declared"]:
-        for family in spec["families"]:
-            for prefix, previous in ((spec["latest_prefix"], False), (spec["previous_prefix"], True)):
-                for steps in range(max_steps + 1):
-                    add(prefix + family + "x" * steps, family, previous, steps)
-        add(spec["writing_alias"], "gpt", True, 0, smallest=True)
     return {"version": 1, "shortcuts": shortcuts, "problems": problems,
             "catalogs": {key: value for key, value in catalogs.items() if key in policy["declared"]}}
 
