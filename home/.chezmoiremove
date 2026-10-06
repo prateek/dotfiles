@@ -44,4 +44,7 @@ bin/grmrepo-refresh
 
 # browser CDP convention replaced by the utils-agent browser skill and docs/browser.md
 .agents/docs/browser-cdp.md
+
+# kanata config, dropped in favor of Karabiner (ADR 0044)
+.config/kanata
 {{- end }}

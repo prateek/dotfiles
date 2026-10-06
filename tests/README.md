@@ -149,10 +149,9 @@ preservation, or security changes. Apply-time hooks have their own PTY lane.
 `just test-shell tests/bats/hooks/tartelet-settings.bats tests/bats/hooks/tartelet-softnet.bats` uses fake external
 app commands and a temporary Homebrew tree to check settings convergence,
 credential exclusion, and network flag forwarding. `just test-python -p test_finder.py`
-also requires macOS's native plist and service tools. `BATS_TAGS=host just test-shell tests/bats/config/kanata.bats`
-selects an explicit host case and requires an installed Kanata parser.
-`BATS_TAGS=host just test-shell tests/bats/config/karabiner.bats` likewise selects the installed Goku compiler, using
-a temporary Default profile and checking its mapping semantics without writing
+also requires macOS's native plist and service tools.
+`BATS_TAGS=host just test-shell tests/bats/config/karabiner.bats` selects an explicit host case and requires the
+installed Goku compiler, using a temporary Default profile and checking its mapping semantics without writing
 the live Karabiner config.
 
 Agentsview's comparison with the separate wiki producer is explicit:
@@ -362,7 +361,7 @@ arguments their runners already understand, so a new case needs no recipe:
 just test-shell tests/bats/hooks/drift-banner.bats   # one file
 just test-shell tests/bats/packages                  # one subsystem
 just test-shell tests/bats --filter 'drift'          # one case
-BATS_TAGS=host just test-shell tests/bats/config/kanata.bats
+BATS_TAGS=host just test-shell tests/bats/config/karabiner.bats
 just test-python -p test_brewfile.py                 # one file
 just test-python -k moom                             # one plist scenario
 just test-python -k Plist                            # the whole plist suite

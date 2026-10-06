@@ -2,10 +2,11 @@
 status: active
 doc_type: plan
 created: 2026-06-21
-updated: 2026-06-22
+updated: 2026-10-05
 owner: Prateek
 related:
   - ../adr/0009-goku-karabiner-codegen.md
+  - ../adr/0044-karabiner-sole-remapper.md
 status_detail: "Implemented in this checkout; on-device pad verification is the remaining step."
 ---
 
@@ -60,8 +61,3 @@ verification trail.
   cleared on exit). Mouse layer: face diamond moves the cursor (A=up, B=right, Y=down,
   X=left), d-pad scrolls, R = left click, L = right click. Base layer: d-pad arrows, A
   dictation, X backspace, B enter, Y escape, bumpers/select inert.
-
-## Follow-ups
-
-- Resolve the kanata/Karabiner overlap on the built-in keyboard (see ADR 0009 → Future
-  work). Out of scope here.

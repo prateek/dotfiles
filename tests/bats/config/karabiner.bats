@@ -8,7 +8,7 @@ setup() {
 }
 
 # bats test_tags=host
-@test "Installed Goku compiles device-scoped overlays, sticky mouse mode, and real Shift with F18 taps" {
+@test "Installed Goku compiles device-scoped overlays, sticky mouse mode, real left Command with F18 taps, and the modal nav layer" {
   [ -n "$goku_cli" ] || skip 'requires the installed Goku toolchain'
   mkdir -p "$XDG_CONFIG_HOME/karabiner"
   printf '{"profiles":[{"name":"Default","complex_modifications":{"rules":[]}}]}\n' > "$FIXTURE/input.json"

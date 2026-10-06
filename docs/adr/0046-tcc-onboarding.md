@@ -9,7 +9,7 @@ related:
 status_detail: "Implemented in source; opt-in terminal prompt. Attended native validation is deferred."
 ---
 
-# ADR 0044 — Declarative TCC onboarding with a native helper
+# ADR 0046 — Declarative TCC onboarding with a native helper
 
 ## Decision
 

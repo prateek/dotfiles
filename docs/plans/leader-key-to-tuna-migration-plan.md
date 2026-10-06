@@ -1,13 +1,17 @@
 ---
-status: active
+status: archived
 doc_type: plan
 owner: Prateek
 created: 2026-07-04
-updated: 2026-09-07
+updated: 2026-10-05
+closed: 2026-10-05
+current_guidance:
+  - ../../home/dot_config/tuna/config.toml
+  - ../../home/dot_config/karabiner.edn.tmpl
 related:
   - ../adr/0009-goku-karabiner-codegen.md
   - ../adr/0010-machine-type-package-selection.md
-status_detail: "Applied on the migrate-tuna branch: repo swapped, files materialized to $HOME, config synced. Remaining: grant Tuna Accessibility, verify shell/URL bind execution, exercise fresh-machine bootstrap. Leader Key kept installed as fallback."
+status_detail: "Cutover complete on the personal Mac: Tuna 0.104 runs the binds, left-Cmd tap opens combo mode, Leader Key is uninstalled. The body predates Tuna's destination-based bind schema and the Shift-to-Cmd trigger change, so its bind table and URLs are stale. Fresh-machine first-launch import was never exercised."
 ---
 
 # Leader Key to Tuna Migration Plan

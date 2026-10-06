@@ -29,11 +29,11 @@ files, and quoted examples do not.
 
 ## Select and verify a shortcut
 
-Each shortcut selects a model independently of its harness. `a` means the
-latest generation in the preferred declared harness's catalog; `p` means the
-previous generation in that catalog. Both start at high effort. Each trailing
-`x` advances effort by one supported level; an unsupported step fails. Fast
-mode is disabled.
+Each shortcut selects an explicit model and effort independently of its
+harness. Profiles remain pinned until their configuration changes; catalog
+refreshes resolve provider spelling and availability. Unsupported targets or
+efforts fail. Fast mode is disabled. `agptx` switches from Sol to Astra at the
+same medium effort; other suffixes select the explicit efforts below.
 
 Before launch, run `~/.agents/bin/acpx-routing show <shortcut>`. Continue only
 when it succeeds and reports an available route. `acpx config show` lists
@@ -42,19 +42,25 @@ and unavailable-request diagnostics. Shortcut selections stay fixed until the
 next `chezmoi apply`. An installed executable alone does not make its harness
 eligible.
 
-| Shortcut | Job |
-| --- | --- |
-| `agpt`, `pgpt` | Latest or previous GPT generation |
-| `agptx`, `pgptx` | One effort step above high; add another `x` for another step |
-| `agptw` | Prose: previous GPT generation, smallest available tier, high effort |
-| `aopus`, `popus` | Latest or previous Opus generation |
-| `afable`, `pfable` | Latest or previous Fable generation |
-| `agemini`, `pgemini` | Latest or previous Gemini generation |
+| Shortcut | Model / effort | Job |
+| --- | --- | --- |
+| `agpt` | GPT-6.1 Sol / medium | Everyday coding and general work |
+| `agptx`, `agptxx`, `agptxxx` | GPT-6 Astra / medium, high, xhigh | Difficult debugging, design, and deeper reviews |
+| `pgpt`, `pgptx`, `pgptxx`, `pgptxxx` | GPT-6 Sol / medium, high, xhigh, max | Previous-workhorse comparisons |
+| `agptw` | GPT-6.1 Sol / medium | Prose and skill authoring |
+| `aopus`, `aopusx`, `aopusxx`, `aopusxxx` | Claude Opus 5.5 / medium, high, xhigh, max | Claude coding and review |
+| `popus`, `popusx`, `popusxx`, `popusxxx` | Claude Opus 5 / medium, high, xhigh, max | Previous-Opus comparisons |
+| `afable`, `afablex`, `afablexx`, `afablexxx` | Claude Fable 5.1 / medium, high, xhigh, max | Long-running research and complex work |
+| `pfable`, `pfablex`, `pfablexx`, `pfablexxx` | Claude Fable 5 / medium, high, xhigh, max | Previous-Fable comparisons |
+| `agemini`, `ageminix`, `ageminixx`, `ageminixxx` | Gemini 3.8 Flash / high, xhigh, max, ultra | Alternative perspective and research |
+| `pgemini`, `pgeminix`, `pgeminixx`, `pgeminixxx` | Highest accessible Gemini generation below 3.8 / high, xhigh, max, ultra | Previous-Gemini comparisons |
 
 Use `agptw` for prose edits. Give it the draft and
-`~/.agents/plugins/plugins/core/skills/writing-for-humans/SKILL.md`. First
-confirm the resolved model: this preset fails if its preferred harness has no
-previous generation available.
+`~/.agents/plugins/plugins/core/skills/writing-for-humans/SKILL.md`.
+The preferred route is selected by family before checking the profile target;
+a missing target rejects even if a later route advertises it. Previous-Gemini
+profiles choose the highest tier in the generation below the pinned target.
+Confirm every selection with `acpx-routing show` before launch.
 
 ## Treat permission flags as request handling
 

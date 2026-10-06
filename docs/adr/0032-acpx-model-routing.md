@@ -1,8 +1,11 @@
 ---
-status: accepted
+status: superseded
 doc_type: adr
 created: 2026-09-22
-updated: 2026-09-22
+updated: 2026-10-05
+closed: 2026-10-05
+superseded_by: 0045-acpx-explicit-model-profiles.md
+status_detail: "ADR 0045 retains routing and ownership contracts and replaces automatic generation/effort selection with explicit profiles."
 current_guidance: ../references/acpx-routing.md
 related:
   - ../plans/acpx-routing-plan.md

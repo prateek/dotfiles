@@ -5,7 +5,7 @@ created: 2026-10-05
 updated: 2026-10-06
 related:
   - ../plans/tcc-onboarding-plan.md
-  - ../adr/0044-tcc-onboarding.md
+  - ../adr/0046-tcc-onboarding.md
 status_detail: "Source implementation and automated checks; attended native grant flow remains unverified."
 ---
 

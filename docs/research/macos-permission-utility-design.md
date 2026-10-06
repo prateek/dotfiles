@@ -383,4 +383,3 @@ Things, Radio Silence, TripMode, DaisyDisk, Little Snitch, Screen Studio, Dropov
 [67] [Moom 4](https://manytricks.com/moom/). Retrieved 2026-10-05.
 
 [68] [Bloom](https://bloomapp.club/). Retrieved 2026-10-05.
-

@@ -6,7 +6,7 @@ updated: 2026-10-05
 related:
   - ../research/macos-permission-utility-design.md
   - tcc-onboarding-plan.md
-  - ../adr/0044-tcc-onboarding.md
+  - ../adr/0046-tcc-onboarding.md
 superseded_by: permissions-hybrid-ui-plan.md
 closed: 2026-10-05
 status_detail: "Comparative prototypes informed the approved hybrid production design."

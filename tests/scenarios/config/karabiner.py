@@ -75,10 +75,66 @@ assert any(from_key(item, "caps_lock") and item.get("to_if_alone", [{}])[0].get(
                    for identifier in condition.get("identifiers", [])) for condition in item.get("conditions", []))
            for item in manipulators)
 
-for key in ("left_shift", "right_shift"):
-    matches = [item for item in manipulators if from_key(item, key) and item["to"][0].get("key_code") == key
-               and "lazy" not in item["to"][0] and item.get("to_if_alone", [{}])[0].get("key_code") == "f18"]
-    assert matches, key
-    if key == "left_shift":
-        assert any(item.get("parameters", {}).get("basic.to_if_alone_timeout_milliseconds") == 100
-                   and "conditions" not in item for item in matches)
+matches = [item for item in manipulators if from_key(item, "left_command")
+           and item["to"][0].get("key_code") == "left_command" and "lazy" not in item["to"][0]
+           and item.get("to_if_alone", [{}])[0].get("key_code") == "f18"]
+assert any(item.get("parameters", {}).get("basic.to_if_alone_timeout_milliseconds") == 200
+           and "conditions" not in item for item in matches)
+assert not any(event.get("key_code") == "f18" for item in manipulators
+               if not from_key(item, "left_command") for event in item.get("to_if_alone", []))
+
+
+def gated_on(item, *names):
+    return {condition["name"] for condition in item.get("conditions", [])
+            if condition["type"] == "variable_if" and condition["value"] == 1} == set(names)
+
+
+def sets(item, name, value, field="to"):
+    return any(event.get("set_variable") == {"name": name, "value": value} for event in item.get(field, []))
+
+
+def chord(item):
+    event = item["to"][0]
+    return event.get("key_code"), sorted(event.get("modifiers", []))
+
+
+toggles = [item for item in manipulators if from_key(item, "spacebar")
+           and item["from"].get("modifiers", {}).get("mandatory") == ["left_control"]]
+assert any(sets(item, "nav_mode", 1) and not gated_on(item, "nav_mode") for item in toggles)
+assert any(sets(item, "nav_mode", 0) and sets(item, "nav_select", 0) and gated_on(item, "nav_mode") for item in toggles)
+assert any(from_key(item, "escape") and sets(item, "nav_mode", 0) and gated_on(item, "nav_mode") for item in manipulators)
+
+nav = [item for item in manipulators if gated_on(item, "nav_mode")]
+select = [item for item in manipulators if gated_on(item, "nav_mode", "nav_select")]
+for key, plain in (("w", ("up_arrow", [])), ("a", ("left_arrow", [])), ("e", ("right_arrow", ["left_option"])),
+                   ("1", ("left_arrow", ["left_command"])), ("f", ("page_down", []))):
+    assert any(from_key(item, key) and chord(item) == plain for item in nav), key
+    assert any(from_key(item, key) and chord(item) == (plain[0], sorted(plain[1] + ["left_shift"]))
+               for item in select), key
+for key, plain in (("v", ("v", ["left_command"])), ("g", ("delete_or_backspace", []))):
+    assert any(from_key(item, key) and chord(item) == plain for item in nav), key
+for item in nav + select:
+    allowed = set(item["from"].get("modifiers", {}).get("optional", []))
+    assert allowed <= {"shift", "option"} or item["from"]["key_code"] in ("caps_lock", "left_command"), item["from"]
+assert any(from_key(item, "left_shift") and sets(item, "nav_select", 1, "to_if_alone") for item in nav)
+assert any(from_key(item, "left_shift") and sets(item, "nav_select", 0, "to_if_alone") for item in select)
+assert any(from_key(item, "x") and chord(item) == ("x", ["left_command"]) and sets(item, "nav_select", 0)
+           for item in select)
+copies = [item for item in manipulators if from_key(item, "c") and "nav_mode" in str(item.get("conditions"))]
+assert copies and all(chord(item) == ("c", ["left_command"]) and sets(item, "nav_mode", 0)
+                      and sets(item, "nav_select", 0) and gated_on(item, "nav_mode") for item in copies)
+assert not any(event.get("key_code") == "vk_none" for item in nav + select for event in item["to"])
+first_select = manipulators.index(select[0])
+assert first_select < manipulators.index(next(item for item in nav if from_key(item, "w"))), \
+    "select-mode rules must precede the plain nav layer"
+
+leader = [item for item in manipulators if from_key(item, "left_command") and gated_on(item, "nav_mode")]
+assert any(sets(item, "nav_mode", 0, "to_if_alone") and item["to_if_alone"][-1].get("key_code") == "f18"
+           for item in leader), "a leader tap inside the layer must leave it before opening combo mode"
+assert manipulators.index(leader[0]) < next(i for i, item in enumerate(manipulators)
+                                            if from_key(item, "left_command") and "conditions" not in item)
+for item in nav + select:
+    if from_key(item, "left_shift"):
+        assert item["parameters"]["basic.to_if_alone_timeout_milliseconds"] == 200
+for key in ("x", "v", "g", "b"):
+    assert any(from_key(item, key) and sets(item, "nav_select", 0) for item in select), key

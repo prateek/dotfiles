@@ -5,7 +5,7 @@ owner: Prateek
 created: 2026-10-05
 updated: 2026-10-05
 related:
-  - ../adr/0044-tcc-onboarding.md
+  - ../adr/0046-tcc-onboarding.md
   - ../references/chezmoi-hook-lifecycle.md
   - ../references/chezmoi-architecture.md
   - ../runbooks/tcc-onboarding.md
@@ -37,7 +37,7 @@ declared expectations with recorded grants and explains unresolved entries.
   end-to-end testing until they are available; native behavior remains unverified.
 
 The [operator runbook](../runbooks/tcc-onboarding.md) owns current setup commands,
-validation coverage, and audit status. [ADR 0044](../adr/0044-tcc-onboarding.md)
+validation coverage, and audit status. [ADR 0046](../adr/0046-tcc-onboarding.md)
 records the architecture.
 
 ## Evidence and simplification

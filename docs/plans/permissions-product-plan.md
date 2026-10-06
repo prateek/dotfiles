@@ -6,7 +6,7 @@ created: 2026-10-05
 updated: 2026-10-05
 related:
   - tcc-onboarding-plan.md
-  - ../adr/0044-tcc-onboarding.md
+  - ../adr/0046-tcc-onboarding.md
 status_detail: "Deferred follow-up: standalone utility, independently published app registry, release automation, website and launch materials."
 ---
 

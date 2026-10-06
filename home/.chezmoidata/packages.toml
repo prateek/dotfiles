@@ -14,6 +14,7 @@ brews = [
   { name = "gitleaks" },
   { name = "direnv" },
   { name = "mise" },
+  { name = "usage" },  # mise generates its shell completions with it
   { name = "fd" },
   { name = "fzf" },
   { name = "ripgrep" },
@@ -40,7 +41,6 @@ taps = [
 ]
 brews = [
   # Keyboard and display control.
-  { name = "kanata" },
   { name = "yqrashawn/goku/goku" },
   { name = "brightness" },
   { name = "ddcctl" },
