@@ -20,7 +20,6 @@ capture_mackup_candidates() {
   local mackup_cache="$CAPTURE_ROOT/mackup-cache"
   local mackup_state="$CAPTURE_ROOT/mackup-state.boltdb"
   local apps=(
-    aerospace
     bettertouchtool
     caffeine
     codex
@@ -114,7 +113,6 @@ capture_mackup_candidates
 
 for domain in \
   com.brnbw.Tuna \
-  bobko.aerospace \
   com.cmuxterm.app \
   com.electron.ollama \
   com.helftone.monodraw \

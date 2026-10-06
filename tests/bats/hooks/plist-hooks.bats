@@ -174,6 +174,39 @@ STUB
   assert_regex "$(cat "$FIXTURE/transcript")" 'com.example.bar did not quit'
 }
 
+@test "inside Orca the pre-hook leaves Orca open, names the Terminal helper, and still quits other apps" {
+  orca_source 1
+  pending_apps com.example.foo
+  printf 'com.example.foo\ncom.stablyai.orca\n' > "$FIXTURE/running"
+  export TERM_PROGRAM=Orca
+  hook_dialogue ''
+  assert_success
+  assert_equal "$(grep '^quit ' "$events")" 'quit com.example.foo'
+  assert_equal "$(cat "$quit_list")" com.example.foo
+  assert_regex "$(cat "$FIXTURE/transcript")" 'open .*/\.local/bin/chezmoi-apply\.command'
+  assert_equal "$(cat "$pending")" $'com.example.foo\ncom.stablyai.orca'
+}
+
+@test "inside Orca with only Orca pending the pre-hook proceeds noninteractively with the hint" {
+  orca_source 1
+  printf 'com.stablyai.orca\n' > "$FIXTURE/running"
+  export ORCA_AGENT_PANE=pane-1
+  run -0 bash "$hook" pre
+  assert_success
+  assert_output --partial 'running inside Orca'
+  assert_output --regexp 'open .*/\.local/bin/chezmoi-apply\.command'
+  ! grep -q '^quit ' "$events"
+  assert_equal "$(cat "$pending")" com.stablyai.orca
+}
+
+@test "noninteractive refusal points scripts at the Terminal helper" {
+  pending_apps com.example.foo
+  printf 'com.example.foo\n' > "$FIXTURE/running"
+  run -1 bash "$hook" pre
+  assert_failure 1
+  assert_output --regexp 'open .*/\.local/bin/chezmoi-apply\.command'
+}
+
 @test "post-hook relaunches successfully quit apps and removes both state files" {
   printf 'com.example.foo\ncom.example.bar\n' > "$pending"
   printf 'com.example.foo\n' > "$quit_list"

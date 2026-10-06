@@ -84,14 +84,17 @@ _dotfiles_elevate_jamf_self_service() {
     warn "Failed to open Self Service URL for policy ${policy_id}"
     return 1
   fi
-  local _attempt
-  for _attempt in $(seq 1 30); do
+  # The policy signs in through the browser (one FastPass click), which can
+  # take well over the old 30s.
+  local _attempt _timeout="${DOTFILES_JAMF_ADMIN_TIMEOUT_SECS:-120}"
+  log "Finish the Self Service sign-in in the browser; waiting up to ${_timeout}s for admin."
+  for _attempt in $(seq 1 "$_timeout"); do
     sleep 1
     if id -Gn 2>/dev/null | tr ' ' '\n' | grep -qx admin; then
       return 0
     fi
   done
-  warn "Timed out waiting for admin group membership after Self Service trigger (policy ${policy_id})."
+  warn "Timed out after ${_timeout}s waiting for admin group membership after Self Service trigger (policy ${policy_id}); set DOTFILES_JAMF_ADMIN_TIMEOUT_SECS to wait longer."
   return 1
 }
 

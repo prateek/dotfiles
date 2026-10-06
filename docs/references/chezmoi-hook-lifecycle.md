@@ -3,7 +3,7 @@ status: current
 doc_type: reference
 owner: Prateek
 created: 2026-09-02
-updated: 2026-09-23
+updated: 2026-10-06
 related:
   - chezmoi-architecture.md
 status_detail: "Execution order and design rules for chezmoi config hooks, source scripts, init, apply, and modify targets."
@@ -97,6 +97,14 @@ then the host-mount script, which reconciles any required code volume.
 These templates read the layered machine facts without computing file targets
 or running modifiers. The mount is ready before the plist guard's recursive
 `chezmoi status` and the parent apply's target computation.
+
+The guard never quits Orca when the apply itself runs inside an Orca pane
+(`TERM_PROGRAM=Orca` or an `ORCA_*` pane variable), since that would end the
+shell running the apply. Orca stays open, `run_after_47-orca-settings` skips
+with a warning, and the guard prints `open ~/.local/bin/chezmoi-apply.command`:
+a managed helper that macOS opens in Terminal.app, so the apply runs outside
+Orca with a real TTY for prompts and sudo. The same hint appears when the
+guard refuses a non-interactive apply.
 
 The mount template lives in `.chezmoitemplates/host-mounts.sh.tmpl`; it is
 not a source script. The pre-hook runs on every apply without leaving a

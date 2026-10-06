@@ -1,5 +1,7 @@
 setup_hooks() {
   setup_fixture
+  # The suite itself may run in an Orca pane; cases opt into the inside-Orca branch.
+  unset TERM_PROGRAM ORCA_AGENT_PANE ORCA_WORKTREE_ID
   hook="$FIXTURE/plist-hooks.sh"
   # Shared paths are consumed by the Bats cases.
   # shellcheck disable=SC2034

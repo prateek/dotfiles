@@ -2,7 +2,7 @@
 status: current
 doc_type: reference
 created: 2026-05-12
-updated: 2026-06-29
+updated: 2026-10-06
 related:
   - ../adr/0008-sudo-askpass-1password.md
   - ../plans/sudo-askpass-1password-plan.md
@@ -41,7 +41,9 @@ otherwise fail because the user isn't yet admin.
    - Otherwise opens
      `jamfselfservice://content?entity=policy&action=execute&id=<id>`,
      which auto-runs the policy (no extra click required).
-   - Polls `id -Gn` every second for up to 30s for `admin` to appear.
+   - Polls `id -Gn` every second for `admin` to appear, for up to 120s by
+     default (`DOTFILES_JAMF_ADMIN_TIMEOUT_SECS`); the browser sign-in step
+     routinely takes longer than the old 30s.
    - Returns 0 on success, non-zero (and aborts the apply) on timeout.
 5. Control returns to the keepalive's normal `sudo -v` path.
 
@@ -57,7 +59,8 @@ time without an apply, there is a Raycast Script Command, **Temp Admin**, at
 `raycast` cask). It does the same thing as
 `_dotfiles_elevate_jamf_self_service`: returns early if already `admin`,
 otherwise sources `~/.config/dotfiles/elevation.sh` for the method and policy
-ID, opens the Self Service deep-link, and polls `id -Gn` for up to 30s. The
+ID, opens the Self Service deep-link, and polls `id -Gn` for up to 120s
+(`DOTFILES_JAMF_ADMIN_TIMEOUT_SECS`). The
 policy ID is read at runtime, so nothing org-specific is committed.
 
 One-time setup per machine (Raycast does not persist script directories in its
@@ -121,7 +124,8 @@ repo. To recover it:
 If your org renames the policy, replaces it with a new one, or changes its
 ID, the deep-link will silently no-op. Symptoms:
 
-- `chezmoi apply` stalls at the elevation hook for 30s and then aborts
+- `chezmoi apply` stalls at the elevation hook for the full timeout (120s by
+  default) and then aborts
   with `Could not elevate to administrator.`
 - No new `Executing Policy <name>` line appears in `/var/log/jamf.log`.
 

@@ -29,8 +29,14 @@ printf '%s\t%s\n' {{ .name | quote }} "cask" >>"$entries_file"
 {{- end }}
 {{- if $casks }}
 
+# Only removing an app can need administrator access, so ask for it only when
+# a retired cask is still installed; most applies have nothing to remove.
 if [ "$(uname -s)" = "Darwin" ]; then
-  dotfiles_sudo_start "Removing retired apps may need administrator access. Enter your macOS password if prompted."
+  still_installed="$("$cleaner" --entries-file "$entries_file" --check || true)"
+  case "$still_installed" in
+    *$'\tcask'*)
+      dotfiles_sudo_start "Removing retired apps may need administrator access. Enter your macOS password if prompted." ;;
+  esac
 fi
 {{- end }}
 

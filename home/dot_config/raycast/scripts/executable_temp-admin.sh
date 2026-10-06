@@ -56,7 +56,9 @@ if ! open "jamfselfservice://content?entity=policy&action=execute&id=${policy_id
   exit 1
 fi
 
-for _ in $(seq 1 30); do
+timeout="${DOTFILES_JAMF_ADMIN_TIMEOUT_SECS:-120}"
+echo "⏳ Finish the sign-in in the browser; waiting up to ${timeout}s…"
+for _ in $(seq 1 "$timeout"); do
   sleep 1
   if is_admin; then
     echo "✅ You are now an administrator (~1h)."
@@ -64,5 +66,5 @@ for _ in $(seq 1 30); do
   fi
 done
 
-echo "❌ Timed out after 30s waiting for admin. Check Self Service / Jamf logs."
+echo "❌ Timed out after ${timeout}s waiting for admin. Check Self Service / Jamf logs, or raise DOTFILES_JAMF_ADMIN_TIMEOUT_SECS."
 exit 1

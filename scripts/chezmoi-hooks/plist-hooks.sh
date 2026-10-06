@@ -35,6 +35,12 @@ contains() {
   return 1
 }
 
+# True when this apply's shell lives in an Orca pane; quitting Orca from
+# there would end the apply itself.
+inside_orca() {
+  [[ "${TERM_PROGRAM:-}" == Orca || -n "${ORCA_AGENT_PANE:-}" || -n "${ORCA_WORKTREE_ID:-}" ]]
+}
+
 # Orca keeps its settings in a SQLite store that run_after_47-orca-settings
 # writes only while Orca is closed (ADR 0042). True when the tracked settings
 # differ from that store, so Orca can join the quit/relaunch prompt below.
@@ -138,6 +144,28 @@ pre)
     exit 0
   fi
 
+  # ~/.local/bin/chezmoi-apply.command runs the apply in a fresh Terminal.app
+  # window, outside Orca and outside whatever script hit this guard.
+  helper="${CHEZMOI_DEST_DIR:-$HOME}/.local/bin/chezmoi-apply.command"
+
+  # Orca stays open when the apply runs inside it: run_after_47-orca-settings
+  # then skips with a warning, and the hint below is how to finish the job.
+  if contains com.stablyai.orca "${running[@]}" && inside_orca; then
+    printf 'plist-hooks: Orca settings changed, but this apply is running inside Orca, so Orca\n' >&2
+    printf 'stays open and its settings step will skip. To apply with Orca closed, run the\n' >&2
+    printf 'apply from outside Orca (Terminal.app opens it):\n' >&2
+    printf '  open %s\n' "$helper" >&2
+    printf '  file://%s\n\n' "$helper" >&2
+    kept=()
+    for id in "${running[@]}"; do
+      [[ "$id" == com.stablyai.orca ]] || kept+=("$id")
+    done
+    running=("${kept[@]+"${kept[@]}"}")
+    if (( ${#running[@]} == 0 )); then
+      exit 0
+    fi
+  fi
+
   printf 'plist-hooks: pending plist changes for these running apps:\n' >&2
   printf '  - %s\n' "${running[@]}" >&2
   printf '\n' >&2
@@ -150,7 +178,8 @@ pre)
   # same `[ -t 0 ] && [ -t 1 ]` idiom).
   if ! { [ -t 0 ] && [ -t 1 ]; }; then
     printf 'These apps will overwrite our writes when they quit. Quit them, or\n' >&2
-    printf 'set DOTFILES_SKIP_PLIST_HOOKS=1 to apply anyway.\n' >&2
+    printf 'set DOTFILES_SKIP_PLIST_HOOKS=1 to apply anyway. From a script or an agent,\n' >&2
+    printf 'run the apply in a terminal instead: open %s\n' "$helper" >&2
     exit 1
   fi
 

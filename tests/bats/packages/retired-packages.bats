@@ -31,6 +31,30 @@ setup() {
   [[ $'\n'"$(cat "$FIXTURE/brew.calls")" != *$'\nuninstall '* ]]
 }
 
+@test "Retired-package check lists installed entries without uninstalling and fails when none remain" {
+  printf 'gogstub\tformula\nappstub\tcask\nghost\tcask\n' > "$FIXTURE/entries"
+  run_bash 0 "$cleaner" --entries-file "$FIXTURE/entries" --check
+  assert_success
+  assert_output $'gogstub\tformula\nappstub\tcask'
+  [[ $'\n'"$(cat "$FIXTURE/brew.calls")" != *$'\nuninstall '* ]]
+  : > "$FIXTURE/brew.formulas"
+  : > "$FIXTURE/brew.casks"
+  run_bash 1 "$cleaner" --entries-file "$FIXTURE/entries" --check
+  assert_failure 1
+  [ -z "$output" ]
+}
+
+@test "Retired-package hook skips administrator setup when no retired cask is installed" {
+  : > "$FIXTURE/brew.casks"
+  render_template "$template" personal "$data" > "$FIXTURE/hook.sh"
+  run_bash 0 "$FIXTURE/hook.sh"
+  assert_success
+  [ -z "$stderr" ]
+  [[ "$(cat "$FIXTURE/brew.calls")" == *'uninstall --formula gogstub'* ]]
+  [[ "$(cat "$FIXTURE/brew.calls")" != *'uninstall --cask'* ]]
+  [ ! -s "$FIXTURE/id.calls" ]
+}
+
 @test "Retired-package hook hands off both package kinds and requests administrator setup only for casks" {
   render_template "$template" personal "$data" > "$FIXTURE/hook.sh"
   run_bash 0 "$FIXTURE/hook.sh"

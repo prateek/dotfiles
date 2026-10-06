@@ -22,7 +22,7 @@ if "$reconcile" apply --desired-b64 "$desired"; then
 fi
 status=$?
 if [ "$status" = 2 ]; then
-  warn "Orca settings were not reconciled; with Orca closed, run: just orca-settings apply"
+  warn "Orca settings were not reconciled; with Orca closed, run: just orca-settings apply (or, for the whole apply outside Orca: open ~/.local/bin/chezmoi-apply.command)"
 else
   warn "Orca settings reconcile failed (exit $status); run: just orca-settings apply"
 fi

@@ -10,6 +10,7 @@ Library
 .config/karabiner.edn
 .config/raycast
 .config/tuna
+.local/bin/chezmoi-apply.command
 .local/bin/dictation-sidekick
 bin/g95nc
 bin/orca-agent-session
