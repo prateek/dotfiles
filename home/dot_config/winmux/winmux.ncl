@@ -23,7 +23,23 @@ let work-mode = {
     overflow = 'tab-group,
   },
 } in
-((import "winmux/defaults.ncl") & {
+# WinMux's shipped defaults put workspaces 11-15, workspace prev/next and the
+# sidebar on plain Control chords, and its event tap consumes a bound chord in
+# every app, even one whose command list is empty. That kills shell and Claude
+# Code editing (Ctrl-W kill-word, Ctrl-R history, Ctrl-L clear, Ctrl-E end of
+# line, Ctrl-T fzf, Ctrl-F/H), so remove those chords from the table outright.
+# cmd-ctrl-h/l and ctrl-0..9 still switch workspaces.
+let released = ["ctrl-q", "ctrl-w", "ctrl-e", "ctrl-r", "ctrl-t", "ctrl-f", "ctrl-h", "ctrl-l"] in
+let defaults = import "winmux/defaults.ncl" in
+let main-bindings =
+  std.array.fold_left (fun acc chord => std.record.remove chord acc) defaults.mode.main.binding released
+in
+let base = std.record.update "mode" (
+  std.record.update "main" (
+    std.record.update "binding" main-bindings defaults.mode.main
+  ) defaults.mode
+) defaults in
+(base & {
   columns = work-mode,
   # Only reached with Columns off (`column-count off`); the Column invariant forces tiles otherwise.
   default-root-container-layout = 'tab-group,
