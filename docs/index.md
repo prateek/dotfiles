@@ -159,6 +159,7 @@ for day-to-day implementation details.
 | [Nix Migration Research](research/nix-migration-research.md) | Why the repo stays on chezmoi, what a package-only nix spike would look like, and the work-Mac MDM check that gates nix-darwin. |
 | [Ralph Loop Workflow](research/ralph-loop-workflow.md) | Build log for an unattended plan/implement/review loop that commits and fast-forwards a real branch: what the design has to get right, the blockers an adversarial review caught before first run, and the guardrail that is still too strict. |
 | [NocFree Lite Firmware](research/nocfree-lite-firmware.md) | What the Lite's stock Vial firmware allows for layer keys, RGB, and host-visible layer state; its USB IDs for Karabiner; why custom firmware is not a practical path; and the checks that need the keyboard attached. |
+| [NocFree Community Usage](research/nocfree-community-usage.md) | Survey of vendor pages, GitHub, Reddit, and reviews for the Lite, Lite V2, and &: shared layouts and nav layers, macOS notes, 2.4G reliability reports, the Lite dongle's UF2 firmware, mods, complaints with vendor replies, and ranked ideas for Prateek's setup. |
 | [Go60 Layout Patterns](research/go60-layout-patterns.md) | Sweep of 2,023 public MoErgo Go60 layouts: where navigation layers put arrows, how layers are activated and left, selection without holding Shift, layer indication, and ranked options for leaving the Karabiner nav layer. |
 
 ## Historical Records
