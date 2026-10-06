@@ -1,0 +1,77 @@
+# Baseline: supported, allowed records observed on personal-mbp, 2026-10-05.
+# This is desired access adopted from that audit, not a complete requirement list.
+# Private capture: ~/.local/state/dotfiles/captures/tcc/2026-10-05-personal-mbp.json
+# Denied/unknown records are not promoted to expectations. Mini/work audits pending.
+[tcc]
+version = 1
+
+[tcc.apps.ghostpepper]
+name = "GhostPepper"
+bundle_id = "com.github.matthartman.ghostpepper"
+sources = ["local-audit:personal-mbp:2026-10-05", "https://github.com/matthartman/ghost-pepper/blob/5a5b53aadbc1c1f76968cd1c8a9aff690d076887/GhostPepper/PermissionChecker.swift"]
+permissions = [
+  { service = "microphone", reason = "Record speech for local transcription." },
+  { service = "accessibility", reason = "Use global shortcuts and insert dictated text." },
+  { service = "inputMonitoring", reason = "Listen for the dictation hotkey." },
+  { service = "screenRecording", reason = "Read on-screen context for the enabled capture features." },
+]
+
+[tcc.apps.winmux]
+name = "WinMux"
+bundle_id = "com.zimengxiong.winmux"
+sources = ["local-audit:personal-mbp:2026-10-05", "https://github.com/prateek/winmux/blob/73370c99ac9d6fde28e7d7d8863fd33351ff2506/Sources/AppBundle/command/impl/DoctorCommand.swift"]
+permissions = [
+  { service = "accessibility", reason = "Move, resize, and focus application windows." },
+  { service = "screenRecording", reason = "Capture window previews and estimate window corner radii." },
+]
+
+[tcc.apps.betterdisplay]
+name = "BetterDisplay"
+bundle_id = "pro.betterdisplay.BetterDisplay"
+sources = ["local-audit:personal-mbp:2026-10-05"]
+permissions = [{ service = "accessibility", reason = "Preserve the Accessibility access used by the display-control setup." }]
+
+[tcc.apps.bettertouchtool]
+name = "BetterTouchTool"
+bundle_id = "com.hegenberg.BetterTouchTool"
+sources = ["local-audit:personal-mbp:2026-10-05"]
+permissions = [{ service = "screenRecording", reason = "Preserve screen capture access for the configured automation features." }]
+
+[tcc.apps.orca]
+name = "Orca"
+bundle_id = "com.stablyai.orca"
+sources = ["local-audit:personal-mbp:2026-10-05"]
+permissions = [
+  { service = "accessibility", reason = "Preserve desktop interaction access for agent workflows." },
+  { service = "screenRecording", reason = "Allow agent workflows to inspect the desktop." },
+  { service = "microphone", reason = "Preserve access for voice input." },
+  { service = "fullDiskAccess", reason = "Preserve the existing grant for workflows that read protected files." },
+]
+
+[tcc.apps.arq]
+name = "Arq"
+bundle_id = "com.haystacksoftware.Arq"
+sources = ["local-audit:personal-mbp:2026-10-05"]
+permissions = [{ service = "fullDiskAccess", reason = "Allow backups to include protected files." }]
+
+[tcc.apps.radix]
+name = "Radix"
+bundle_id = "com.colinkim.Radix"
+sources = ["local-audit:personal-mbp:2026-10-05"]
+permissions = [{ service = "fullDiskAccess", reason = "Preserve the existing access for inspecting protected storage." }]
+
+[tcc.apps.jump_desktop_connect]
+name = "Jump Desktop Connect"
+bundle_id = "com.p5sys.jump.connect"
+sources = ["local-audit:personal-mbp:2026-10-05"]
+permissions = [
+  { service = "accessibility", reason = "Control this Mac during a remote desktop session." },
+  { service = "screenRecording", reason = "Share this Mac's display with a remote desktop client." },
+  { service = "microphone", reason = "Preserve the existing microphone access for remote sessions." },
+]
+
+[tcc.apps.orbstack]
+name = "OrbStack"
+bundle_id = "dev.kdrag0n.MacVirt"
+sources = ["local-audit:personal-mbp:2026-10-05"]
+permissions = [{ service = "microphone", reason = "Preserve the existing microphone access for virtualized workloads." }]

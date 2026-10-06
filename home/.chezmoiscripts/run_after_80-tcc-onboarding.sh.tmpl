@@ -1,0 +1,62 @@
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- if and (eq .chezmoi.os "darwin") $f.run_install_scripts $f.tcc_onboarding -}}
+{{ template "script_lib.sh" . }}
+
+installer={{ printf "%s/../scripts/macos/install-tcc-onboarding" .chezmoi.sourceDir | quote }}
+manifest={{ printf "%s/.config/dotfiles/tcc.json" .chezmoi.homeDir | quote }}
+if app=$("$installer"); then
+  :
+else
+  status=$?
+  if [ "$status" = 75 ]; then
+    warn "Permission helper update deferred; quit it (⌘Q) and rerun chezmoi apply to update."
+    [ -n "$app" ] || exit 0
+  elif [ "$status" = 73 ]; then
+    warn "Permission helper installation is already in progress; retry chezmoi apply later."
+    exit 0
+  elif [ "$status" = 69 ]; then
+    warn "Permission helper unavailable without a Swift toolchain; review expected grants from $manifest in System Settings → Privacy & Security."
+    exit 0
+  else
+    die "Permission helper installation failed (exit $status)."
+  fi
+fi
+"$app/Contents/MacOS/DotfilesPermissions" --validate "$manifest" || die "Invalid permission manifest: $manifest"
+resume() { printf 'Review permissions later: open -a %q %q\n' "$app" "$manifest"; }
+if [ ! -t 0 ] || [ ! -t 1 ] || [ -n "${SSH_CONNECTION:-}${SSH_TTY:-}" ] || [ -n "${CI:-}" ] ||
+   [ "$(stat -f '%u' /dev/console)" != "$(id -u)" ]; then
+  resume
+  exit 0
+fi
+printf '[dotfiles] Review macOS app permissions now? [y/N] '
+response=''
+read -r response || true
+response="${response%$'\r'}"
+case "$response" in
+  y|Y|yes|YES)
+    request="$manifest"
+    protocol=$(plutil -extract CFBundleURLTypes.0.CFBundleURLSchemes.0 raw "$app/Contents/Info.plist" 2>/dev/null || true)
+    if [ "$protocol" = dotfiles-permissions ]; then
+      request='dotfiles-permissions://reconcile?manifest='
+      encode_path() {
+        local LC_ALL=C index byte encoded
+        for ((index=0; index<${#manifest}; index++)); do
+          byte="${manifest:index:1}"
+          case "$byte" in
+            [a-zA-Z0-9._~/-]) request+="$byte" ;;
+            *) printf -v encoded '%%%02X' "'$byte"; request+="$encoded" ;;
+          esac
+        done
+      }
+      encode_path
+    else
+      warn "The installed helper needs an update for background reconciliation; opening its inventory."
+    fi
+    if ! open -g -a "$app" "$request" --args --reconcile --manifest "$manifest"; then
+      warn "Could not open Dotfiles Permissions."
+      resume
+    fi
+    ;;
+  *) resume ;;
+esac
+{{- end -}}

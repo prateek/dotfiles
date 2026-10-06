@@ -33,7 +33,7 @@ test-ci:
       just _test-ci-suites
 
 [private]
-_test-ci-suites: test-agent-marketplace test-static test-shell test-python test-node test-chezmoi-apply
+_test-ci-suites: test-agent-marketplace test-static test-shell test-python test-node test-tcc-onboarding test-chezmoi-apply
 
 # Bats cases. Focus with a path and/or flags, and BATS_TAGS= to select tagged lanes.
 [group('suite')]
@@ -49,6 +49,11 @@ test-python *args:
 [group('suite')]
 test-node *args:
     {{ mise_env }} bash scripts/tests/node {{ node_tests }} {{ args }}
+
+# Native permission reader, identity checks, and manifest validation; no live TCC access.
+[group('suite')]
+test-tcc-onboarding:
+    xcrun swift test --package-path scripts/macos/tcc-onboarding --scratch-path build/tcc-onboarding
 
 # Syntax and docs checks that need no behaviour fixtures.
 [group('suite')]

@@ -1,0 +1,85 @@
+#!/bin/bash
+set -euo pipefail
+
+source_dir="$(cd "$(dirname "$0")/tcc-onboarding" && pwd)"
+app="$HOME/Applications/Dotfiles Permissions.app"
+if [ "$#" -gt 0 ]; then
+  if [ "$#" -ne 2 ] || [ "$1" != --destination ]; then
+    echo 'Usage: install-tcc-onboarding [--destination /path/to/Dotfiles Permissions.app]' >&2
+    exit 1
+  fi
+  app="$2"
+fi
+case "$app" in /*.app) ;; *) echo 'Destination must be an absolute .app path.' >&2; exit 1 ;; esac
+cache="${XDG_CACHE_HOME:-$HOME/.cache}/dotfiles/tcc-onboarding"
+mkdir -p "$cache" "$(dirname "$app")"
+if ! mkdir "$cache/install.lock" 2>/dev/null; then
+  echo "Permission helper install already in progress; retry apply later. Lock: $cache/install.lock" >&2
+  exit 73
+fi
+stage=''
+cleanup() {
+  [ -z "$stage" ] || rm -rf -- "$stage"
+  rmdir "$cache/install.lock"
+}
+trap cleanup EXIT
+
+if [ -e "$app" ]; then
+  identity=$(plutil -extract CFBundleIdentifier raw "$app/Contents/Info.plist" 2>/dev/null || true)
+  if [ "$identity" != com.prateek.DotfilesPermissions ]; then
+    echo "Refusing to replace an unrelated app: $app" >&2
+    exit 1
+  fi
+fi
+if ! xcrun swift --version >/dev/null 2>&1; then
+  if [ -x "$app/Contents/MacOS/DotfilesPermissions" ] && codesign --verify --strict "$app" 2>/dev/null; then
+    echo 'Swift toolchain unavailable; reusing the installed permission helper without updating it.' >&2
+    printf '%s\n' "$app"
+    exit 0
+  fi
+  echo 'Swift toolchain unavailable. Review expected grants in System Settings → Privacy & Security, or install Command Line Tools and rerun apply.' >&2
+  exit 69
+fi
+digest=$(
+  {
+    (cd "$source_dir" && { printf '%s\n' Package.swift Info.plist make-icon.swift; find Sources Resources -type f; } | LC_ALL=C sort | while IFS= read -r file; do shasum -a 256 "$file"; done)
+    shasum -a 256 < "$0"
+    xcrun swift --version 2>&1
+  } | shasum -a 256 | awk '{print $1}'
+)
+binary="$app/Contents/MacOS/DotfilesPermissions"
+if [ -f "$app/Contents/Resources/source.sha256" ] &&
+   [ "$(cat "$app/Contents/Resources/source.sha256")" = "$digest" ] &&
+   codesign --verify --strict "$app" 2>/dev/null; then
+  printf '%s\n' "$app"
+  exit 0
+fi
+if [ -x "$binary" ] && "$binary" --is-running; then
+  echo 'Quit Dotfiles Permissions (⌘Q) and rerun apply to update it.' >&2
+  if codesign --verify --strict "$app" 2>/dev/null; then printf '%s\n' "$app"; fi
+  exit 75
+fi
+stage=$(mktemp -d "$(dirname "$app")/.dotfiles-permissions.XXXXXX")
+bundle="$stage/Dotfiles Permissions.app"
+mkdir -p "$bundle/Contents/MacOS" "$bundle/Contents/Resources"
+xcrun swift build --package-path "$source_dir" --scratch-path "$cache/build" \
+  --configuration release --product DotfilesPermissions >&2
+bin_dir=$(xcrun swift build --package-path "$source_dir" --scratch-path "$cache/build" --configuration release --show-bin-path)
+cp "$bin_dir/DotfilesPermissions" "$bundle/Contents/MacOS/DotfilesPermissions"
+cp "$source_dir/Info.plist" "$bundle/Contents/Info.plist"
+cp "$source_dir/Resources/Help.html" "$bundle/Contents/Resources/Help.html"
+xcrun swift "$source_dir/make-icon.swift" "$bundle/Contents/Resources/Permissions.icns" >&2
+printf '%s\n' "$digest" > "$bundle/Contents/Resources/source.sha256"
+codesign --force --sign - --identifier com.prateek.DotfilesPermissions "$bundle" >&2
+codesign --verify --strict "$bundle"
+if "$bundle/Contents/MacOS/DotfilesPermissions" --is-running; then
+  echo 'Dotfiles Permissions opened during the build; quit it (⌘Q) and rerun apply.' >&2
+  if [ -x "$binary" ] && codesign --verify --strict "$app" 2>/dev/null; then printf '%s\n' "$app"; fi
+  exit 75
+fi
+if [ -e "$app" ]; then mv "$app" "$stage/previous.app"; fi
+if ! mv "$bundle" "$app"; then
+  if [ -d "$stage/previous.app" ]; then mv "$stage/previous.app" "$app"; fi
+  exit 1
+fi
+printf '%s\n' "$app"

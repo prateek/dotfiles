@@ -1,0 +1,79 @@
+#!/usr/bin/env python3
+"""Export normalized permission observations; never export TCC blobs or raw rows."""
+import argparse
+import datetime
+import json
+import os
+from pathlib import Path
+import plistlib
+import sqlite3
+import sys
+
+
+def audit():
+    apps = {}
+    for root in (Path('/Applications'), Path.home() / 'Applications'):
+        for directory, subdirs, _ in os.walk(root):
+            for name in list(subdirs):
+                if not name.endswith('.app'):
+                    continue
+                subdirs.remove(name)
+                app = Path(directory) / name
+                try:
+                    info = plistlib.loads((app / 'Contents/Info.plist').read_bytes())
+                    apps.setdefault(info['CFBundleIdentifier'], []).append(str(app))
+                except (OSError, ValueError, KeyError, plistlib.InvalidFileException):
+                    pass
+    report = {'captured_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+              'apps': apps, 'databases': []}
+    for scope, path in [('user', Path.home() / 'Library/Application Support/com.apple.TCC/TCC.db'),
+                        ('system', Path('/Library/Application Support/com.apple.TCC/TCC.db'))]:
+        result = {'scope': scope, 'observations': []}
+        connection = None
+        try:
+            connection = sqlite3.connect(path.as_uri() + '?mode=ro', uri=True, timeout=1)
+            columns = {row[1] for row in connection.execute('PRAGMA table_info(access)')}
+            result['columns'] = sorted(columns)
+            required = {'service', 'client', 'client_type', 'auth_value', 'csreq'}
+            if not required <= columns:
+                result['error'] = 'unsupported_schema'
+            else:
+                for service, client, client_type, value, has_requirement in connection.execute(
+                    'SELECT service, client, client_type, auth_value, csreq IS NOT NULL FROM access'
+                ):
+                    result['observations'].append({
+                        'service': service, 'client': client,
+                        'client_kind': 'bundle' if client_type == 0 else 'path' if client_type == 1 else 'unknown',
+                        'status': {0: 'denied', 1: 'unknown', 2: 'allowed', 3: 'limited'}.get(value, 'unknown'),
+                        'has_code_requirement': bool(has_requirement),
+                    })
+        except sqlite3.Error as error:
+            result['error'] = str(error)
+        finally:
+            if connection is not None:
+                connection.close()
+        report['databases'].append(result)
+    return report
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--output', required=True, help='Private JSON file, or - for a protected SSH pipe')
+    args = parser.parse_args()
+    report = audit()
+    data = json.dumps(report, indent=2) + '\n'
+    if args.output == '-':
+        sys.stdout.write(data)
+    else:
+        path = Path(args.output).expanduser()
+        path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(fd, 'w') as stream:
+            stream.write(data)
+        print(path)
+    for database in report['databases']:
+        print(f"{database['scope']}: {database.get('error', str(len(database['observations'])) + ' observations')}", file=sys.stderr)
+
+
+if __name__ == '__main__':
+    main()
