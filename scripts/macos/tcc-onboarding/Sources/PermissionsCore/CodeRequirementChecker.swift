@@ -33,7 +33,7 @@ public final class CodeRequirementChecker: RequirementChecking {
         status = SecStaticCodeCreateWithPath(url as CFURL, flags, &code)
         guard status == errSecSuccess, let code else { return failure("Cannot inspect the installed code", status) }
         // Check integrity separately so a damaged signature is not called a stale grant.
-        status = SecStaticCodeCheckValidity(code, flags, nil)
+        status = SecStaticCodeCheckValidity(code, SecCSFlags(rawValue: kSecCSCheckAllArchitectures), nil)
         guard status == errSecSuccess else { return failure("The installed code signature cannot be validated", status) }
         status = SecStaticCodeCheckValidity(code, flags, requirement)
         if status == errSecSuccess { return .matches }

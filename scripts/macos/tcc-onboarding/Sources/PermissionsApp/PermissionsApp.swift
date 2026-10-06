@@ -28,13 +28,12 @@ enum PermissionsApp {
 }
 
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSToolbarDelegate, NSMenuItemValidation {
-    let model = PermissionsModel()
+final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItemValidation {
+    let model = PermissionsModel(preferences: .standard)
     private var window: NSWindow?
     private var started = false
-    private var visible = false
-    private var launchReconcile = CommandLine.arguments.contains("--reconcile")
-    private let refreshID = NSToolbarItem.Identifier("refresh")
+    private var launch = LaunchReview()
+    private var statusItem: NSStatusItem?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         model.onChange = { [weak self] in self?.scanFinished() }
@@ -47,7 +46,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSTo
             let manifest = args.firstIndex(of: "--manifest").flatMap { index in
                 args.indices.contains(index + 1) ? URL(fileURLWithPath: args[index + 1]) : nil
             } ?? PermissionsModel.defaultManifest
-            request(manifest, reconcile: args.contains("--reconcile"))
+            requestReview(manifest, reconcile: args.contains("--reconcile"))
         }
     }
 
@@ -58,10 +57,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSTo
             sender.reply(toOpenOrPrint: .failure)
             return
         }
-        let reconcile = launchReconcile
-        launchReconcile = false
-        request(URL(fileURLWithPath: filename), reconcile: reconcile)
+        let reconcile = !started && CommandLine.arguments.contains("--reconcile")
+        requestReview(URL(fileURLWithPath: filename), reconcile: reconcile)
         sender.reply(toOpenOrPrint: .success)
+    }
+
+    func application(_ application: NSApplication, open urls: [URL]) {
+        if urls.count == 1, let file = urls.first, file.isFileURL {
+            requestReview(file, reconcile: !started && CommandLine.arguments.contains("--reconcile"))
+            return
+        }
+        guard urls.count == 1, let request = ReconcileRequest(url: urls[0]) else {
+            model.error = "Invalid permission review request. Open a local permission manifest instead."
+            showWindow()
+            return
+        }
+        requestReview(request.manifestURL, reconcile: true)
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
@@ -70,43 +81,51 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSTo
         return true
     }
 
-    private func request(_ url: URL, reconcile: Bool) {
+    private func requestReview(_ url: URL, reconcile: Bool) {
         started = true
         model.onChange = { [weak self] in self?.scanFinished() }
-        if !reconcile { showWindow() }
+        perform(launch.request(reconcile: reconcile))
         model.load(url)
     }
 
     private func scanFinished() {
-        if !visible && (model.error != nil || model.snapshot?.needsAttention == true) { showWindow() }
-        else if !visible { NSApp.terminate(nil); return }
-        window?.subtitle = model.snapshot == nil ? "Couldn’t load inventory" : model.needsBootstrap ? "Allow permission checks"
-            : model.remainingCount == 0 ? "Review complete" : "\(model.remainingCount) permissions remaining"
+        if !model.busy && (model.snapshot != nil || model.error != nil) {
+            let visible = window?.isVisible == true && window?.isMiniaturized == false && !NSApp.isHidden
+            perform(launch.scanFinished(needsAttention: model.error != nil || model.snapshot?.needsAttention == true,
+                                        windowIsVisible: visible))
+        }
+        updateWindowLevel()
+        updateStatusItem()
+    }
+
+    private func perform(_ effect: LaunchReview.Effect) {
+        switch effect {
+        case .none: break
+        case .show: showWindow()
+        case .terminate: NSApp.terminate(nil)
+        }
     }
 
     private func showWindow() {
         NSApp.setActivationPolicy(.regular)
         if window == nil {
             installMenus()
-            let main = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 640, height: 650),
-                                styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
-            main.title = "App Permissions"
+            let main = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 460, height: 620),
+                                styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView], backing: .buffered, defer: false)
+            main.title = "Dotfiles Permissions"
+            main.titleVisibility = .hidden
+            main.titlebarAppearsTransparent = true
             let content = NSHostingView(rootView: PermissionsView(model: model))
             content.sizingOptions = []
             main.contentView = content
-            main.minSize = NSSize(width: 540, height: 480)
+            main.minSize = NSSize(width: 420, height: 520)
             main.isReleasedWhenClosed = false
             main.delegate = self
-            main.setFrameAutosaveName("PermissionChecklist")
-            if !main.setFrameUsingName("PermissionChecklist") { main.center() }
-            let toolbar = NSToolbar(identifier: "PermissionToolbar")
-            toolbar.delegate = self
-            toolbar.displayMode = .iconOnly
-            main.toolbar = toolbar
-            main.toolbarStyle = .unified
+            main.setFrameAutosaveName("PermissionsWorkbench")
+            if !main.setFrameUsingName("PermissionsWorkbench") { main.center() }
             window = main
         }
-        visible = true
+        launch.hasPresentedWindow = true
         window?.deminiaturize(nil)
         window?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
@@ -114,28 +133,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSTo
     }
 
     private func updateWindowLevel() {
-        let settingsIsFront = NSWorkspace.shared.frontmostApplication?.bundleIdentifier == "com.apple.systempreferences"
-        window?.level = settingsIsFront ? .floating : .normal
-        if settingsIsFront, visible, !NSApp.isHidden, window?.isMiniaturized == false {
-            window?.orderFrontRegardless()
-        }
+        window?.level = model.pinned ? .floating : .normal
     }
 
-    func windowWillClose(_ notification: Notification) { NSApp.terminate(nil) }
+    func windowWillClose(_ notification: Notification) {
+        model.stopPolling()
+    }
 
-    func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] { [.flexibleSpace, refreshID] }
-    func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] { [.flexibleSpace, refreshID] }
-    func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier id: NSToolbarItem.Identifier,
-                 willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
-        let item = NSToolbarItem(itemIdentifier: id)
-        if id == refreshID {
-            item.label = "Refresh"
-            item.toolTip = "Check permissions again (⌘R)"
-            item.image = NSImage(systemSymbolName: "arrow.clockwise", accessibilityDescription: "Refresh permissions")
-            item.target = self
-            item.action = #selector(refresh)
-        } else { return nil }
-        return item
+    func windowDidMiniaturize(_ notification: Notification) { model.stopPolling() }
+    func windowDidDeminiaturize(_ notification: Notification) { model.startPolling(); model.refresh() }
+
+    private func updateStatusItem() {
+        if !model.menuBarEnabled {
+            if let item = statusItem { NSStatusBar.system.removeStatusItem(item); statusItem = nil }
+            return
+        }
+        if statusItem == nil {
+            let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+            item.button?.image = NSImage(systemSymbolName: "lock.shield", accessibilityDescription: "Dotfiles Permissions")
+            item.button?.image?.isTemplate = true
+            let menu = NSMenu()
+            let open = NSMenuItem(title: "Open Dotfiles Permissions", action: #selector(showInventory), keyEquivalent: "")
+            open.target = self
+            menu.addItem(open)
+            menu.addItem(.separator())
+            menu.addItem(NSMenuItem(title: "Quit Dotfiles Permissions", action: #selector(NSApplication.terminate(_:)), keyEquivalent: ""))
+            item.menu = menu
+            statusItem = item
+        }
+        statusItem?.button?.toolTip = model.needsBootstrap ? "Permission checks are unavailable" : "Review app permission records"
     }
 
     private func installMenus() {
@@ -176,7 +202,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSTo
         add(view, "Show All Permissions", #selector(toggleAll), "a", target: self)
         view.items.last?.keyEquivalentModifierMask = [.command, .shift]
         add(view, "Next Permission", #selector(nextPermission), "]", target: self)
-        add(view, "Show Permission Inventory", #selector(showInventory), "1", target: self)
+        add(view, "Open Permission Inventory", #selector(showInventory), "0", target: self)
+        add(view, "By Permission", #selector(permissionPresentation), "1", target: self)
+        add(view, "By App", #selector(appPresentation), "2", target: self)
+        add(view, "Drag Shelf", #selector(shelfPresentation), "3", target: self)
+        add(view, "Larger Text", #selector(toggleLargeText), "+", target: self)
+        add(view, "Show Menu Bar Icon", #selector(toggleMenuBar), target: self)
+        add(view, "Keep Window Above Others", #selector(togglePin), target: self)
         let windows = addMenu("Window")
         add(windows, "Close", #selector(NSWindow.performClose(_:)), "w")
         add(windows, "Minimize", #selector(NSWindow.performMiniaturize(_:)), "m")
@@ -190,7 +222,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSTo
     }
 
     @objc private func refresh() { model.refresh() }
-    @objc private func toggleAll() { model.showAll.toggle() }
+    @objc private func toggleAll() { model.showAll.toggle(); model.showSummary = false }
+    @objc private func permissionPresentation() { model.presentation = .permissions }
+    @objc private func appPresentation() { model.presentation = .apps }
+    @objc private func shelfPresentation() { model.presentation = .shelf }
+    @objc private func toggleLargeText() { model.largeText.toggle() }
+    @objc private func toggleMenuBar() { model.menuBarEnabled.toggle() }
+    @objc private func togglePin() { model.pinned.toggle() }
     @objc private func nextPermission() { model.nextPermission() }
     @objc private func showInventory() { showWindow() }
     @objc private func showHelp() { model.showHelp() }
@@ -201,7 +239,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSTo
             menuItem.state = model.showAll ? .on : .off
             return !model.needsBootstrap && model.snapshot != nil
         }
-        if menuItem.action == #selector(nextPermission) { return !model.needsBootstrap && model.remainingCount > 0 }
+        if menuItem.action == #selector(nextPermission) { return !model.needsBootstrap && model.hasNext }
+        if menuItem.action == #selector(toggleLargeText) { menuItem.state = model.largeText ? .on : .off }
+        if menuItem.action == #selector(toggleMenuBar) { menuItem.state = model.menuBarEnabled ? .on : .off }
+        if menuItem.action == #selector(togglePin) { menuItem.state = model.pinned ? .on : .off }
         return true
     }
 }

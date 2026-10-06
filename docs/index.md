@@ -48,6 +48,8 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | Doc | Status |
 | --- | --- |
 | [TCC Onboarding](plans/tcc-onboarding-plan.md) | Active; native helper and opt-in terminal prompt implemented. Attended E2E and mini/work audits pending; see the [runbook](runbooks/tcc-onboarding.md). |
+| [Permissions UI Prototype Brief](plans/permissions-ui-prototype-brief.md) | Superseded by the hybrid plan; records the Astra and Fable comparative brief. |
+| [Permissions Hybrid UI Plan](plans/permissions-hybrid-ui-plan.md) | Active; approved hybrid implemented with compact chrome, permission-first batching, stale identity evidence, and exact file handoff. Attended native validation remains. |
 | [Permission Utility Product Follow-up](plans/permissions-product-plan.md) | Draft and deferred; standalone releases, app-versioned registry updates without rebuilding, separate publishing pipelines, website and launch copy. |
 | [Self-help and Psychology Book Archive and Agent Tools](plans/psychology-book-archive-and-tools-plan.md) | Proposed; archive the full collection, extract source-linked lessons, and build practical agent workflows and learning tools. |
 | [Agent Friction Remediation](plans/agent-friction-remediation-plan.md) | Active; implemented and committed, not yet applied: bash-compatible glob parsing in zsh with non-interactive audit lanes, acpx/agent-slack/git-spice/retired-path fixes with validators, fake-HOME mise trust in the audit, an OpenSSL CA bundle for work shells, and five conventions. Global mise trust roots await a decision. |
@@ -133,6 +135,8 @@ for day-to-day implementation details.
 | [ADR 0044 - Declarative TCC onboarding with a native helper](adr/0044-tcc-onboarding.md) | Accepted; [TCC onboarding runbook](runbooks/tcc-onboarding.md). Read-only inventory with user-granted permissions and an opt-in terminal prompt. |
 
 ## Research
+
+- [Mac utility design precedents, 2016–2026](research/macos-permission-utility-design.md): award census, inspected desktop interfaces, editorial utility reviews, and proposed permission-helper visual directions.
 
 | Doc | Use it for |
 | --- | --- |

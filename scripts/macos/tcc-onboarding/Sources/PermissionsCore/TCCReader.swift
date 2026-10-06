@@ -86,7 +86,7 @@ public final class TCCSnapshot {
             for snapshot in snapshots {
                 evidence += try snapshot.records(service: service, subject: subject).map { ($0, snapshot.url.path) }
             }
-            guard let first = evidence.first else { return GrantStatus(.unknown, "No recorded decision for this client. Open the app or review System Settings.") }
+            guard let first = evidence.first else { return GrantStatus(.missing, "No recorded decision for this client. Open the app or review System Settings.") }
             guard evidence.allSatisfy({ $0.record == first.record }) else {
                 return GrantStatus(.unknown, "Conflicting TCC records. Review System Settings; no permissive record was preferred.")
             }

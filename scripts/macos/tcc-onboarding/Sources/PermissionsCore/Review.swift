@@ -8,7 +8,7 @@ public struct PermissionTask: Sendable {
     public var action: Action {
         guard row.status.state.needsAttention else { return .none }
         guard row.subject != nil else { return .chooseApp }
-        return row.permission.service.requiresAppRequest && row.status.state != .denied ? .openApp : .settings
+        return row.permission.service.requiresAppRequest && row.status.state == .missing ? .openApp : .settings
     }
 
     public var summary: String {
@@ -16,6 +16,7 @@ public struct PermissionTask: Sendable {
         case .allowed: return "The recorded permission matches this installed app."
         case .stale: return "The saved permission does not match this installed copy."
         case .denied: return "macOS records this permission as off."
+        case .missing: return "No permission decision is recorded for this installed copy."
         case .unknown:
             return row.subject == nil ? "Choose the installed copy you use before reviewing its access."
                 : "We couldn’t confirm this permission. Review the app’s entry in System Settings."
@@ -23,10 +24,24 @@ public struct PermissionTask: Sendable {
         }
     }
 
+    public var offersFileHandoff: Bool {
+        row.subject != nil && row.permission.service.supportsDrag && [.missing, .stale].contains(row.status.state)
+    }
+
     public var steps: [String] {
         let service = row.permission.service
         if row.status.state == .allowed { return ["Quit and reopen \(row.name) if it hasn’t adopted the change."] }
         guard row.status.state.needsAttention, row.subject != nil else { return [] }
+        if row.status.state == .unknown {
+            return ["Check Evidence to understand why this permission cannot be confirmed.",
+                    "Review the existing entry in \(service.title) before deciding whether to change access.",
+                    "Recheck after resolving the uncertainty."]
+        }
+        if row.status.state == .denied {
+            return ["Review the existing entry in \(service.title).",
+                    "If you want this app to have the declared access, turn on that entry.",
+                    "Quit and reopen \(row.name) after changing access, then recheck."]
+        }
         if row.status.state == .stale {
             if service.supportsDrag {
                 return ["Remove the old entry from \(service.title).",
@@ -57,30 +72,48 @@ public struct AppReviewGroup: Identifiable, Sendable {
     public let rows: [InventoryRow]
 }
 
+public enum ReviewGrouping: String, Sendable { case app, permission }
+
+public struct PermissionReviewGroup: Identifiable, Sendable {
+    public let service: PermissionService
+    public let rows: [InventoryRow]
+    public var id: String { service.rawValue }
+}
+
 public struct ReviewSelection: Sendable {
     public var selectedID: String?
-    public init(selectedID: String? = nil) { self.selectedID = selectedID }
+    public var grouping: ReviewGrouping
+    public var deferredIDs: Set<String>
+
+    public init(selectedID: String? = nil, grouping: ReviewGrouping = .app, deferredIDs: Set<String> = []) {
+        self.selectedID = selectedID
+        self.grouping = grouping
+        self.deferredIDs = deferredIDs
+    }
 
     public mutating func reconcile(_ snapshot: InventorySnapshot) {
         guard snapshot.blockedDatabases.isEmpty else { selectedID = nil; return }
         if let selectedID, snapshot.rows.contains(where: { $0.id == selectedID }) { return }
-        selectedID = Self.ordered(snapshot.rows).first { $0.status.state.needsAttention }?.id
+        selectedID = ordered(snapshot.rows).first { pending($0) }?.id
     }
 
     public mutating func advance(_ snapshot: InventorySnapshot) {
         guard snapshot.blockedDatabases.isEmpty else { selectedID = nil; return }
-        selectedID = Self.ordered(snapshot.rows).first { $0.id != selectedID && $0.status.state.needsAttention }?.id
+        let rows = ordered(snapshot.rows)
+        let index = rows.firstIndex { $0.id == selectedID } ?? -1
+        let rotated = Array(rows.dropFirst(index + 1)) + Array(rows.prefix(index + 1))
+        selectedID = rotated.first { pending($0) }?.id
     }
 
     public func visibleRows(_ snapshot: InventorySnapshot, showAll: Bool) -> [InventoryRow] {
         guard snapshot.blockedDatabases.isEmpty else { return [] }
-        return Self.ordered(snapshot.rows).filter { showAll || $0.status.state.needsAttention || $0.id == selectedID }
+        return ordered(snapshot.rows).filter { showAll || $0.status.state.needsAttention || $0.id == selectedID }
     }
 
     public func appGroups(_ snapshot: InventorySnapshot, showAll: Bool) -> [AppReviewGroup] {
-        let rows = visibleRows(snapshot, showAll: showAll)
+        let appSelection = ReviewSelection(selectedID: selectedID, grouping: .app, deferredIDs: deferredIDs)
         var groups: [AppReviewGroup] = []
-        for row in rows {
+        for row in appSelection.visibleRows(snapshot, showAll: showAll) {
             if let last = groups.last, last.id == row.appID {
                 groups[groups.count - 1] = AppReviewGroup(id: last.id, name: last.name, rows: last.rows + [row])
             } else { groups.append(AppReviewGroup(id: row.appID, name: row.name, rows: [row])) }
@@ -88,13 +121,26 @@ public struct ReviewSelection: Sendable {
         return groups
     }
 
-    private static func ordered(_ rows: [InventoryRow]) -> [InventoryRow] {
-        rows.sorted {
+    public func permissionGroups(_ snapshot: InventorySnapshot, showAll: Bool) -> [PermissionReviewGroup] {
+        let rows = visibleRows(snapshot, showAll: showAll)
+        return PermissionService.allCases.compactMap { service in
+            let matching = rows.filter { $0.permission.service == service }
+            return matching.isEmpty ? nil : PermissionReviewGroup(service: service, rows: matching)
+        }
+    }
+
+    private func pending(_ row: InventoryRow) -> Bool {
+        row.status.state.needsAttention && !deferredIDs.contains(row.id)
+    }
+
+    private func ordered(_ rows: [InventoryRow]) -> [InventoryRow] {
+        let rank = Dictionary(uniqueKeysWithValues: PermissionService.allCases.enumerated().map { ($1, $0) })
+        return rows.sorted {
+            let left = rank[$0.permission.service]!
+            let right = rank[$1.permission.service]!
+            if grouping == .permission && left != right { return left < right }
             if $0.name != $1.name { return $0.name.localizedStandardCompare($1.name) == .orderedAscending }
             if $0.appID != $1.appID { return $0.appID < $1.appID }
-            let services = PermissionService.allCases
-            let left = services.firstIndex(of: $0.permission.service)!
-            let right = services.firstIndex(of: $1.permission.service)!
             if left != right { return left < right }
             return $0.id < $1.id
         }

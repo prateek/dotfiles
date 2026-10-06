@@ -42,7 +42,7 @@ public enum PermissionService: String, Codable, CaseIterable, Sendable {
         [.accessibility, .inputMonitoring, .fullDiskAccess].contains(self)
     }
 
-    public var requiresAppRequest: Bool { self == .microphone || self == .camera }
+    public var requiresAppRequest: Bool { self == .microphone || self == .camera || self == .screenRecording }
 }
 
 public struct Permission: Codable, Sendable {

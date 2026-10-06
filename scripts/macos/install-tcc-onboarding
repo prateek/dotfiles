@@ -15,7 +15,7 @@ cache="${XDG_CACHE_HOME:-$HOME/.cache}/dotfiles/tcc-onboarding"
 mkdir -p "$cache" "$(dirname "$app")"
 if ! mkdir "$cache/install.lock" 2>/dev/null; then
   echo "Permission helper install already in progress; retry apply later. Lock: $cache/install.lock" >&2
-  exit 75
+  exit 73
 fi
 stage=''
 cleanup() {
@@ -24,13 +24,6 @@ cleanup() {
 }
 trap cleanup EXIT
 
-digest=$(
-  {
-    (cd "$source_dir" && { printf '%s\n' Package.swift Info.plist make-icon.swift; find Sources Resources -type f; } | LC_ALL=C sort | while IFS= read -r file; do shasum -a 256 "$file"; done)
-    shasum -a 256 < "$0"
-    xcrun swift --version 2>&1
-  } | shasum -a 256 | awk '{print $1}'
-)
 if [ -e "$app" ]; then
   identity=$(plutil -extract CFBundleIdentifier raw "$app/Contents/Info.plist" 2>/dev/null || true)
   if [ "$identity" != com.prateek.DotfilesPermissions ]; then
@@ -38,6 +31,22 @@ if [ -e "$app" ]; then
     exit 1
   fi
 fi
+if ! xcrun swift --version >/dev/null 2>&1; then
+  if [ -x "$app/Contents/MacOS/DotfilesPermissions" ] && codesign --verify --strict "$app" 2>/dev/null; then
+    echo 'Swift toolchain unavailable; reusing the installed permission helper without updating it.' >&2
+    printf '%s\n' "$app"
+    exit 0
+  fi
+  echo 'Swift toolchain unavailable. Review expected grants in System Settings → Privacy & Security, or install Command Line Tools and rerun apply.' >&2
+  exit 69
+fi
+digest=$(
+  {
+    (cd "$source_dir" && { printf '%s\n' Package.swift Info.plist make-icon.swift; find Sources Resources -type f; } | LC_ALL=C sort | while IFS= read -r file; do shasum -a 256 "$file"; done)
+    shasum -a 256 < "$0"
+    xcrun swift --version 2>&1
+  } | shasum -a 256 | awk '{print $1}'
+)
 binary="$app/Contents/MacOS/DotfilesPermissions"
 if [ -f "$app/Contents/Resources/source.sha256" ] &&
    [ "$(cat "$app/Contents/Resources/source.sha256")" = "$digest" ] &&
@@ -46,7 +55,8 @@ if [ -f "$app/Contents/Resources/source.sha256" ] &&
   exit 0
 fi
 if [ -x "$binary" ] && "$binary" --is-running; then
-  echo 'Close Dotfiles Permissions and rerun apply to update it.' >&2
+  echo 'Quit Dotfiles Permissions (⌘Q) and rerun apply to update it.' >&2
+  if codesign --verify --strict "$app" 2>/dev/null; then printf '%s\n' "$app"; fi
   exit 75
 fi
 stage=$(mktemp -d "$(dirname "$app")/.dotfiles-permissions.XXXXXX")
@@ -63,7 +73,8 @@ printf '%s\n' "$digest" > "$bundle/Contents/Resources/source.sha256"
 codesign --force --sign - --identifier com.prateek.DotfilesPermissions "$bundle" >&2
 codesign --verify --strict "$bundle"
 if "$bundle/Contents/MacOS/DotfilesPermissions" --is-running; then
-  echo 'Dotfiles Permissions opened during the build; close it and rerun apply.' >&2
+  echo 'Dotfiles Permissions opened during the build; quit it (⌘Q) and rerun apply.' >&2
+  if [ -x "$binary" ] && codesign --verify --strict "$app" 2>/dev/null; then printf '%s\n' "$app"; fi
   exit 75
 fi
 if [ -e "$app" ]; then mv "$app" "$stage/previous.app"; fi

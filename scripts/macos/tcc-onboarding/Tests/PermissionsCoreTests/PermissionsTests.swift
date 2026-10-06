@@ -75,10 +75,10 @@ final class PermissionsTests: XCTestCase {
         XCTAssertEqual(status([allowed], result: .unverifiable("invalid code")).state, .unknown)
     }
 
-    func testAbsentAndConflictingEvidenceRemainUnknown() throws {
+    func testMissingDecisionIsDistinctFromConflictingEvidence() throws {
         let user = try database("user.db")
         let system = try database("system.db", value: 2)
-        XCTAssertEqual(status([user]).state, .unknown)
+        XCTAssertEqual(status([user]).state, .missing)
         XCTAssertEqual(status([user, system]).state, .allowed)
         try insert(user, value: 0)
         XCTAssertEqual(status([user, system]).state, .unknown)
@@ -122,7 +122,7 @@ final class PermissionsTests: XCTestCase {
 
     func testRefreshObservesChangesInsteadOfCachingGrants() throws {
         let url = try database()
-        XCTAssertEqual(status([url]).state, .unknown)
+        XCTAssertEqual(status([url]).state, .missing)
         try insert(url, value: 2)
         XCTAssertEqual(status([url]).state, .allowed)
     }
@@ -190,6 +190,12 @@ final class PermissionsTests: XCTestCase {
         XCTAssertEqual(CodeRequirementChecker().check(code, requirement: data), .matches)
         try run("/usr/bin/codesign", ["--force", "--sign", "-", "--identifier", "com.example.changed", code.path])
         XCTAssertEqual(CodeRequirementChecker().check(code, requirement: data), .mismatch)
+        var damaged = try Data(contentsOf: code)
+        damaged[4096] ^= 1
+        try damaged.write(to: code)
+        if case .unverifiable = CodeRequirementChecker().check(code, requirement: data) {} else {
+            XCTFail("Damaged code must not be called a stale identity")
+        }
         for requirement in [nil, Data([0, 1, 2])] {
             if case .unverifiable = CodeRequirementChecker().check(code, requirement: requirement) {} else { XCTFail("Missing/corrupt requirements must remain unknown") }
         }

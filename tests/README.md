@@ -414,16 +414,22 @@ covers exact grant/client matching, unknown and conflicting records, stale code
 requirements, manifest validation, and app/helper resolution. It never reads the
 host TCC databases or opens System Settings.
 
-Review tests also protect state-specific stale recovery, target-owned requests,
-unreadable-record bootstrap, app grouping, retained expansion after success,
-next-task advancement, and visibility of Settings-launch errors. Companion-only
-state assertions were removed with that UI; access loss, recovery selection,
-advancement, and unchanged grant states remain covered through the single-window model. The model tests substitute
-only the workspace Settings-opening boundary; no app or Settings is launched.
+Review tests protect service-specific stale recovery, target-owned requests,
+unreadable-record bootstrap, permission-first batching, app grouping, retained
+selection after success, and visible Settings-launch errors. Model coverage
+protects session deferral (paused rather than falsely complete), external grant
+changes, preference persistence, and grouping without losing evidence. Signed
+universal-binary fixtures distinguish damaged signatures from changed identity.
+Launch tests cover URL-event reconciliation, cold-start completion, repeated
+requests with a closed window, and manual opening without inherited reconcile
+mode. Same-registry reloads retain the review session while adopting changed
+reasons. Unknown and denied recovery never offers missing-grant drag instructions.
+The model substitutes the Settings-opening boundary; no app or Settings is launched.
 
 `just test-shell tests/bats/hooks/tcc-onboarding.bats tests/bats/hooks/tcc-installer.bats`
 checks the opt-in hook, real PTY yes/no prompt, unattended paths, validation and
-launch failures, installer reuse, and deferred updates. External OS commands are
+launch failures, installer reuse, deferred updates with continued onboarding, separate install-lock
+recovery, legacy-helper compatibility, encoded request paths, and missing-toolchain recovery. External OS commands are
 substituted inside fixture directories. `just test-python -p test_tcc_manifest.py`
 checks the rendered inventory and its macOS/feature gates.
 

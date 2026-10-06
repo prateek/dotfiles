@@ -35,6 +35,7 @@ import sys
 source, target, real, fixture = sys.argv[1:]
 Path(target).write_text(Path(source).read_text().replace(real + '/home/../scripts/macos', fixture + '/scripts/macos'))
 PY
+  cp "$DOTFILES_ROOT/scripts/macos/tcc-onboarding/Info.plist" "$HOME/Applications/Dotfiles Permissions.app/Contents/Info.plist"
   hook="$FIXTURE/hook"
 }
 
@@ -60,7 +61,14 @@ PY
   run -0 "$TEST_ZSH" -f "$DOTFILES_ROOT/tests/support/pty-dialogue.zsh" "$FIXTURE/pty" '[y/N]' 'y' bash "$hook"
   assert_success
   run -0 rg '^open ' "$events"
-  assert_output "open -g -a $HOME/Applications/Dotfiles Permissions.app $HOME/.config/dotfiles/tcc.json --args --reconcile"
+  local encoded_manifest
+  encoded_manifest=$("$TEST_PYTHON" - "$HOME/.config/dotfiles/tcc.json" <<'PYTEST'
+from urllib.parse import quote
+import sys
+print(quote(sys.argv[1], safe='/'))
+PYTEST
+)
+  assert_output "open -g -a $HOME/Applications/Dotfiles Permissions.app dotfiles-permissions://reconcile?manifest=$encoded_manifest --args --reconcile --manifest $HOME/.config/dotfiles/tcc.json"
 }
 
 @test "terminal permission prompt defaults to later and never launches on no" {
@@ -93,11 +101,53 @@ PY
   assert_failure 1
   : > "$events"
   run -0 env INSTALL_STATUS=75 bash "$hook"
-  assert_equal "$(cat "$events")" install
+  assert_equal "$(cat "$events")" $'install\nvalidate --validate '"$HOME/.config/dotfiles/tcc.json"
 }
 
 @test "permission GUI launch failure gives recovery without failing apply" {
   run -0 env OPEN_STATUS=1 "$TEST_ZSH" -f "$DOTFILES_ROOT/tests/support/pty-dialogue.zsh" "$FIXTURE/pty" '[y/N]' 'y' bash "$hook"
   run -0 rg 'Could not open|Review permissions later' "$FIXTURE/pty"
   assert_success
+}
+
+@test "missing toolchain skips helper without failing apply or launching" {
+  run -0 env INSTALL_STATUS=69 bash "$hook"
+  assert_output --partial 'System Settings'
+  assert_equal "$(cat "$events")" install
+}
+
+@test "deferred update still offers onboarding with the existing app" {
+  run -0 env INSTALL_STATUS=75 "$TEST_ZSH" -f "$DOTFILES_ROOT/tests/support/pty-dialogue.zsh" "$FIXTURE/pty" '[y/N]' 'y' bash "$hook"
+  run -0 rg '^open ' "$events"
+  assert_output --partial 'dotfiles-permissions://reconcile?manifest='
+  run -0 rg 'quit it' "$FIXTURE/pty"
+}
+
+@test "concurrent install reports retry without prompting or validating" {
+  run -0 env INSTALL_STATUS=73 bash "$hook"
+  assert_output --partial 'already in progress'
+  assert_equal "$(cat "$events")" install
+}
+
+@test "reconcile URL encodes path separators independently of reserved characters" {
+  local previous_home="$HOME"
+  export HOME="$FIXTURE/User Space & ✓"
+  mkdir -p "$HOME/Applications"
+  cp -R "$previous_home/Applications/Dotfiles Permissions.app" "$HOME/Applications/"
+  "$TEST_PYTHON" - "$hook" "$previous_home" "$HOME" <<'PYTEST'
+from pathlib import Path
+import sys
+p=Path(sys.argv[1]); p.write_text(p.read_text().replace(sys.argv[2], sys.argv[3]))
+PYTEST
+  run -0 "$TEST_ZSH" -f "$DOTFILES_ROOT/tests/support/pty-dialogue.zsh" "$FIXTURE/pty" '[y/N]' 'y' bash "$hook"
+  run -0 rg '^open ' "$events"
+  assert_output --partial 'User%20Space%20%26%20%E2%9C%93/.config/dotfiles/tcc.json'
+}
+
+@test "older helper still opens inventory when its update is deferred" {
+  plutil -remove CFBundleURLTypes "$HOME/Applications/Dotfiles Permissions.app/Contents/Info.plist"
+  run -0 env INSTALL_STATUS=75 "$TEST_ZSH" -f "$DOTFILES_ROOT/tests/support/pty-dialogue.zsh" "$FIXTURE/pty" '[y/N]' 'y' bash "$hook"
+  run -0 rg '^open ' "$events"
+  assert_output --partial "$HOME/.config/dotfiles/tcc.json --args --reconcile --manifest"
+  run -0 rg 'needs an update for background reconciliation' "$FIXTURE/pty"
 }

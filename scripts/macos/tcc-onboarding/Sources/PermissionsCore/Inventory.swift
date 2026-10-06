@@ -1,14 +1,15 @@
 import Foundation
 
 public enum GrantState: String, Sendable {
-    case allowed, denied, stale, unknown, notInstalled
+    case allowed, denied, stale, missing, unknown, notInstalled
 
     public var title: String {
         switch self {
-        case .allowed: return "Allowed in macOS"
+        case .allowed: return "Recorded allow"
         case .denied: return "Not allowed"
-        case .stale: return "Needs reauthorization"
-        case .unknown: return "Needs review"
+        case .stale: return "Identity changed"
+        case .missing: return "Needs a grant"
+        case .unknown: return "Cannot check"
         case .notInstalled: return "Not installed"
         }
     }
