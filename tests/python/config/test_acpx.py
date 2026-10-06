@@ -39,19 +39,20 @@ class AcpxRoutingTests(RepoTestCase):
             with self.subTest(machine=machine):
                 self.render("home/dot_config/acpx/routing.json.tmpl", machine)
 
-    def test_native_gpt_effort_and_model_are_explicit_and_harness_precedes_generation(self):
+    def test_native_gpt_profiles_set_exact_model_effort_and_service_tier(self):
         report = self.resolve({
             "codex": {"models": [
-                {"id": "gpt-5.6-sol", "efforts": ["low", "high", "xhigh", "max"]},
-                {"id": "gpt-5.5", "efforts": ["low", "high", "xhigh"]},
+                {"id": "gpt-6.1-sol", "efforts": ["low", "medium", "high", "xhigh", "max"]},
+                {"id": "gpt-6-astra", "efforts": ["medium", "high", "xhigh"]},
+                {"id": "gpt-6-sol", "efforts": ["low", "medium", "high", "xhigh"]},
             ]},
             "openrouter": {"models": [
-                {"id": "openai/gpt-6-astra", "efforts": ["high", "xhigh"], "provider": "openrouter"},
+                {"id": "openai/gpt-6.1-sol", "efforts": ["medium", "high", "xhigh"], "provider": "openrouter"},
             ]},
         })
-        for alias, model, effort in (("agpt", "gpt-5.6-sol", "high"),
-                                     ("agptx", "gpt-5.6-sol", "xhigh"),
-                                     ("pgpt", "gpt-5.5", "high")):
+        for alias, model, effort in (("agpt", "gpt-6.1-sol", "medium"),
+                                     ("agptx", "gpt-6-astra", "medium"),
+                                     ("pgpt", "gpt-6-sol", "medium")):
             selected = report["shortcuts"][alias]
             self.assertEqual((selected["route"], selected["model"], selected["effort"]),
                              ("codex", model, effort))
@@ -61,48 +62,85 @@ class AcpxRoutingTests(RepoTestCase):
             })
             self.assertNotIn("-c", selected["argv"])
 
-    def test_generation_order_tiers_writing_and_effort_overflow(self):
+    def test_explicit_profiles_exclude_newer_generations_fast_and_wrong_tiers(self):
         report = self.resolve({"codex": {"models": [
-            {"id": model, "efforts": ["low", "high", "max"]}
-            for model in ("gpt-5.9-sol", "gpt-5.9-luna", "gpt-5.10-sol", "gpt-5.8", "gpt-6-astra-fast")
+            {"id": model, "efforts": ["low", "medium", "high", "xhigh"]}
+            for model in ("gpt-6.1-sol", "gpt-6-sol", "gpt-6-astra", "gpt-7-astra",
+                          "gpt-6.1-luna", "gpt-6-astra-fast", "gpt-6.1-sol-2026-09-29")
         ]}})
         selected = report["shortcuts"]
-        self.assertEqual(selected["agpt"]["model"], "gpt-5.10-sol")
-        self.assertEqual(selected["pgpt"]["model"], "gpt-5.9-sol")
-        self.assertEqual((selected["agptw"]["model"], selected["agptw"]["effort"]), ("gpt-5.9-luna", "high"))
-        self.assertEqual(selected["agptx"]["effort"], "max")
-        self.assertIn("no effort 2 step(s) above high", selected["agptxx"]["error"])
+        for alias, model, effort in (
+            ("agpt", "gpt-6.1-sol-2026-09-29", "medium"),
+            ("agptw", "gpt-6.1-sol-2026-09-29", "medium"),
+            ("agptx", "gpt-6-astra", "medium"),
+            ("agptxx", "gpt-6-astra", "high"),
+            ("agptxxx", "gpt-6-astra", "xhigh"),
+            ("pgpt", "gpt-6-sol", "medium"),
+            ("pgptx", "gpt-6-sol", "high"),
+        ):
+            self.assertEqual((selected[alias]["model"], selected[alias]["effort"]), (model, effort))
+        self.assertIn("does not support max effort", selected["pgptxxx"]["error"])
         rejected = self.command([sys.executable, str(ROOT / "scripts/acpx/reconcile"),
-                                 *selected["agptxx"]["argv"][1:]], expected_status=2)
-        self.assertIn(b"agptxx", rejected.stderr)
+                                 *selected["pgptxxx"]["argv"][1:]], expected_status=2)
+        self.assertIn(b"pgptxxx", rejected.stderr)
 
-    def test_preferred_harness_does_not_borrow_previous_generation_from_another_catalog(self):
+    def test_preferred_harness_does_not_borrow_pinned_model_from_another_catalog(self):
         report = self.resolve({
-            "claude": {"models": [{"id": "claude-opus-5[1m]", "efforts": ["high", "xhigh"]}]},
-            "openrouter": {"models": [{"id": "anthropic/claude-opus-4.6", "provider": "openrouter", "efforts": ["high"]}]},
+            "claude": {"models": [{"id": "claude-opus-5.5[1m]", "efforts": ["medium", "high"]}]},
+            "openrouter": {"models": [{"id": "anthropic/claude-opus-5", "provider": "openrouter", "efforts": ["medium"]}]},
         })
-        self.assertEqual(report["shortcuts"]["aopus"]["model"], "claude-opus-5[1m]")
-        self.assertIn("claude has no preceding opus generation", report["shortcuts"]["popus"]["error"])
+        self.assertEqual(report["shortcuts"]["aopus"]["model"], "claude-opus-5.5[1m]")
+        self.assertIn("claude does not advertise claude-opus-5", report["shortcuts"]["popus"]["error"])
         self.assertIn("CLAUDE_CODE_DISABLE_FAST_MODE=1", report["shortcuts"]["aopus"]["argv"])
-        self.assertIn("ANTHROPIC_DEFAULT_OPUS_MODEL=claude-opus-5[1m]", report["shortcuts"]["aopus"]["argv"])
+        self.assertIn("ANTHROPIC_DEFAULT_OPUS_MODEL=claude-opus-5.5[1m]", report["shortcuts"]["aopus"]["argv"])
+
+    def test_claude_profiles_accept_provider_generation_spelling_and_pin_aliases(self):
+        report = self.resolve({"claude": {"models": [
+            {"id": model, "efforts": ["medium", "high", "xhigh", "max"]}
+            for model in ("claude-opus-5-5@20260923", "claude-opus-5", "claude-fable-5-1", "claude-fable-5")
+        ]}})
+        for alias, model, effort in (
+            ("aopus", "claude-opus-5-5@20260923", "medium"),
+            ("aopusx", "claude-opus-5-5@20260923", "high"),
+            ("popus", "claude-opus-5", "medium"),
+            ("afable", "claude-fable-5-1", "medium"),
+            ("afablex", "claude-fable-5-1", "high"),
+            ("pfable", "claude-fable-5", "medium"),
+        ):
+            selected = report["shortcuts"][alias]
+            self.assertEqual((selected["model"], selected["effort"]), (model, effort))
+            self.assertIn("ANTHROPIC_MODEL=" + model, selected["argv"])
+            self.assertIn("CLAUDE_CODE_EFFORT_LEVEL=" + effort, selected["argv"])
+
+    def test_previous_gemini_is_numeric_below_the_pinned_generation(self):
+        catalogs = {"openrouter": {"models": [
+            {"id": "google/" + model, "provider": "openrouter", "efforts": ["high"]}
+            for model in ("gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-pro",
+                          "gemini-3.10-pro", "gemini-3.7-pro", "gemini-3.7-flash-lite")
+        ]}}
+        report = self.resolve(catalogs)
+        self.assertEqual(report["shortcuts"]["agemini"]["model"], "google/gemini-3.8-flash")
+        self.assertEqual(report["shortcuts"]["pgemini"]["model"], "google/gemini-3.7-pro")
+        catalogs["openrouter"]["models"] = catalogs["openrouter"]["models"][:1]
+        self.assertIn("no preceding gemini generation", self.resolve(catalogs)["shortcuts"]["pgemini"]["error"])
 
     def test_local_preference_preserves_family_and_machine_declarations_exclude_cursor(self):
         catalogs = {
-            "local": {"models": [{"id": "qwen3", "provider": "ollama", "efforts": ["high"]}]},
-            "codex": {"models": [{"id": "gpt-5.6-sol", "efforts": ["high"]}]},
-            "cursor": {"models": [{"id": "gpt-6-astra", "efforts": ["high"], "variants": {"high": "gpt-6-astra-high"}}]},
+            "local": {"models": [{"id": "qwen3", "provider": "ollama", "efforts": ["medium", "high"]}]},
+            "codex": {"models": [{"id": "gpt-6.1-sol", "efforts": ["medium", "high"]}]},
+            "cursor": {"models": [{"id": "gpt-6-astra", "efforts": ["medium", "high"], "variants": {"high": "gpt-6-astra-high"}}]},
         }
         report = self.resolve(catalogs)
         self.assertEqual(report["shortcuts"]["agpt"]["route"], "codex")
         self.assertNotIn("cursor", report["catalogs"])
-        catalogs["local"]["models"] = [{"id": "gpt-5.5", "provider": "ollama", "efforts": ["high"]}]
+        catalogs["local"]["models"] = [{"id": "gpt-6.1-sol", "provider": "ollama", "efforts": ["medium", "high"]}]
         self.assertEqual(self.resolve(catalogs)["shortcuts"]["agpt"]["route"], "local")
 
     def test_work_routes_native_claude_through_vertex_and_gpt_through_cursor(self):
         catalogs = {
-            "claude-vertex": {"models": [{"id": "claude-fable-5-1", "efforts": ["high", "max"]}]},
-            "cursor": {"models": [{"id": "gpt-5.6-sol", "efforts": ["high"], "variants": {"high": "gpt-5.6-sol-high"}}]},
-            "codex": {"models": [{"id": "gpt-6-astra", "efforts": ["high"]}]},
+            "claude-vertex": {"models": [{"id": "claude-fable-5-1", "efforts": ["medium", "high", "max"]}]},
+            "cursor": {"models": [{"id": "gpt-6.1-sol", "efforts": ["medium", "high"], "variants": {"medium": "gpt-6.1-sol-medium", "high": "gpt-6.1-sol-high"}}]},
+            "codex": {"models": [{"id": "gpt-6-astra", "efforts": ["medium", "high"]}]},
         }
         plugins = self.home / ".agents/plugins"
         plugins.mkdir(parents=True)
@@ -111,10 +149,10 @@ class AcpxRoutingTests(RepoTestCase):
         self.assertEqual(claude["route"], "claude-vertex")
         self.assertIn("CLAUDE_CODE_USE_VERTEX=1", claude["argv"])
         self.assertIn("ANTHROPIC_MODEL=claude-fable-5-1", claude["argv"])
-        self.assertIn("CLAUDE_CODE_EFFORT_LEVEL=high", claude["argv"])
+        self.assertIn("CLAUDE_CODE_EFFORT_LEVEL=medium", claude["argv"])
         gpt = report["shortcuts"]["agpt"]
         self.assertEqual(gpt["route"], "cursor")
-        self.assertEqual(gpt["argv"], ["cursor-agent", "--model", "gpt-5.6-sol-high", "--add-dir", str(plugins), "acp"])
+        self.assertEqual(gpt["argv"], ["cursor-agent", "--model", "gpt-6.1-sol-medium", "--add-dir", str(plugins), "acp"])
         marketplace = self.home / ".claude/plugins/marketplaces"
         marketplace.mkdir(parents=True)
         argv = self.resolve(catalogs, machine="work")["shortcuts"]["agpt"]["argv"]
@@ -125,13 +163,13 @@ class AcpxRoutingTests(RepoTestCase):
 
     def test_host_family_preference_reorders_only_declared_routes(self):
         catalogs = {
-            "codex": {"models": [{"id": "gpt-5.5", "efforts": ["high"]}]},
-            "openrouter": {"models": [{"id": "openai/gpt-6-astra", "provider": "openrouter", "efforts": ["high"]}]},
+            "codex": {"models": [{"id": "gpt-6-sol", "efforts": ["medium", "high"]}]},
+            "openrouter": {"models": [{"id": "openai/gpt-6.1-sol", "provider": "openrouter", "efforts": ["medium", "high"]}]},
         }
         report = self.resolve(catalogs, data={"machines_local": {"acpx_order_gpt": ["openrouter", "codex"]}})
         self.assertEqual(report["shortcuts"]["agpt"]["route"], "openrouter")
         self.assertEqual(report["shortcuts"]["agpt"]["argv"], [
-            "omp", "acp", "--provider", "openrouter", "--model", "openai/gpt-6-astra", "--thinking", "high",
+            "omp", "acp", "--provider", "openrouter", "--model", "openai/gpt-6.1-sol", "--thinking", "medium",
         ])
         policy = json.loads(self.policy.read_text())
         policy["preferences"]["gpt"] = ["cursor"]
@@ -147,7 +185,7 @@ class AcpxRoutingTests(RepoTestCase):
         ], expected_status=expected_status)
 
     def test_regeneration_preserves_custom_state_retires_owned_aliases_and_is_idempotent(self):
-        self.resolve({"codex": {"models": [{"id": "gpt-5.5", "efforts": ["high"]}]}})
+        self.resolve({"codex": {"models": [{"id": "gpt-6.1-sol", "efforts": ["medium", "high"]}]}})
         directory = self.home / ".acpx"
         directory.mkdir()
         config = directory / "config.json"
@@ -191,7 +229,7 @@ class AcpxRoutingTests(RepoTestCase):
 
     def test_refresh_summarizes_shortcuts_and_groups_route_problems(self):
         self.resolve({
-            "codex": {"models": [{"id": "gpt-5.5", "efforts": ["high"]}]},
+            "codex": {"models": [{"id": "gpt-6-sol", "efforts": ["medium", "high"]}]},
             "local": {"error": "no accessible models"},
             "cerebras": {"error": "no accessible models"},
         })
@@ -204,30 +242,57 @@ class AcpxRoutingTests(RepoTestCase):
         self.assertIn(b"acpx: local, cerebras: no accessible models\n", result.stderr)
 
     def test_show_validates_resolved_unavailable_and_unknown_shortcuts(self):
-        self.resolve({"codex": {"models": [{"id": "gpt-5.5", "efforts": ["high"]}]}})
+        self.resolve({"codex": {"models": [{"id": "gpt-6.1-sol", "efforts": ["medium", "high"]}]}})
         self.run_cli("refresh")
         argv = [sys.executable, str(ROOT / "scripts/acpx/reconcile"), "show",
                 "--report", str(self.home / ".acpx/routing.json")]
         result = self.command([*argv, "agpt"])
-        self.assertEqual(json.loads(result.stdout)["model"], "gpt-5.5")
+        self.assertEqual(json.loads(result.stdout)["model"], "gpt-6.1-sol")
         result = self.command([*argv, "agptx"], expected_status=2)
-        self.assertIn(b"no effort 1 step(s) above high", result.stderr)
+        self.assertIn(b"does not advertise gpt-6-astra", result.stderr)
         result = self.command([*argv, "agptxxxx"], expected_status=2)
         self.assertIn(b"unknown shortcut", result.stderr)
 
     def test_openai_route_accepts_the_chatgpt_subscription_login(self):
         report = self.resolve({
             "codex": {"error": "missing dependencies: codex-acp"},
-            "openai": {"models": [{"id": "gpt-5.5", "provider": "openai-codex", "efforts": ["high"]}]},
+            "openai": {"models": [{"id": "gpt-6.1-sol", "provider": "openai-codex", "efforts": ["medium", "high"]}]},
         })
         self.assertEqual(report["shortcuts"]["agpt"]["route"], "openai")
         self.assertEqual(report["shortcuts"]["agpt"]["argv"], [
-            "omp", "acp", "--provider", "openai-codex", "--model", "gpt-5.5", "--thinking", "high",
+            "omp", "acp", "--provider", "openai-codex", "--model", "gpt-6.1-sol", "--thinking", "medium",
         ])
 
+    def test_missing_target_and_effort_do_not_substitute_another_model_or_route(self):
+        catalogs = {
+            "codex": {"models": [{"id": "gpt-6-sol", "efforts": ["medium", "high"]}]},
+            "openrouter": {"models": [{"id": "openai/gpt-6.1-sol", "provider": "openrouter", "efforts": ["medium"]}]},
+        }
+        self.assertIn("codex does not advertise gpt-6.1-sol", self.resolve(catalogs)["shortcuts"]["agpt"]["error"])
+        catalogs["codex"]["models"] = [{"id": "gpt-6.1-sol", "efforts": ["low", "high"]}]
+        self.assertIn("does not support medium effort", self.resolve(catalogs)["shortcuts"]["agpt"]["error"])
+
+    def test_invalid_profiles_fail_before_publication(self):
+        self.resolve({})
+        original = json.loads(self.policy.read_text())
+        for changes, error in (
+            ({"family": "unknown"}, "unknown model family"),
+            ({"effort": "unknown"}, "unknown effort"),
+            ({"model": "gpt-6.1-sol-fast"}, "unrecognized model target"),
+            ({"previous_of": "agpt"}, "require exactly one"),
+        ):
+            with self.subTest(changes=changes):
+                policy = json.loads(json.dumps(original))
+                policy["models"]["profiles"]["agpt"].update(changes)
+                self.policy.write_text(json.dumps(policy))
+                result = self.run_cli("refresh", expected_status=2)
+                self.assertIn(error.encode(), result.stderr)
+                self.assertFalse((self.home / ".acpx/config.json").exists())
+                self.assertFalse((self.home / ".acpx/routing.json").exists())
+
     def test_configuration_does_not_invent_effort_for_nonreasoning_models(self):
-        report = self.resolve({"codex": {"models": [{"id": "gpt-5.6-sol", "efforts": []}]}})
-        self.assertIn("does not support high effort", report["shortcuts"]["agpt"]["error"])
+        report = self.resolve({"codex": {"models": [{"id": "gpt-6.1-sol", "efforts": []}]}})
+        self.assertIn("does not support medium effort", report["shortcuts"]["agpt"]["error"])
 
     def test_live_discovery_uses_acp_catalog_and_snapshots_omp_once_without_prompting(self):
         self.policy.write_bytes(self.render("home/dot_config/acpx/routing.json.tmpl", data={
@@ -245,7 +310,7 @@ for line in sys.stdin:
     assert req['method'] in ('initialize', 'session/new')
     result = {} if req['method'] == 'initialize' else {
         'models': {'availableModels': [
-            {'modelId': 'gpt-5.6-sol[high]'}, {'modelId': 'gpt-5.6-sol[xhigh]'}
+            {'modelId': 'gpt-6.1-sol[medium]'}, {'modelId': 'gpt-6.1-sol[high]'}
         ], 'currentModelId': 'gpt-6-astra[high]'},
         'configOptions': [{'id': 'model', 'options': [{'value': 'gpt-6-astra'}]}],
     }
@@ -268,8 +333,8 @@ print(json.dumps({'models': [
             sys.executable, str(ROOT / "scripts/acpx/reconcile"), "resolve", "--policy", str(self.policy),
         ], env={"PATH": str(bin_dir) + os.pathsep + self.env["PATH"], "CALLS": str(calls), "CODEX_CONFIG": "bad inherited config"})
         report = json.loads(result.stdout)
-        self.assertEqual(report["shortcuts"]["agpt"]["model"], "gpt-5.6-sol")
-        self.assertEqual(report["shortcuts"]["agptx"]["effort"], "xhigh")
+        self.assertEqual(report["shortcuts"]["agpt"]["model"], "gpt-6.1-sol")
+        self.assertIn("does not advertise gpt-6-astra", report["shortcuts"]["agptx"]["error"])
         self.assertIn("no accessible models", report["problems"]["openai"])
         self.assertEqual(calls.read_text().splitlines(), ["omp catalog", "initialize", "session/new"])
 
@@ -285,13 +350,15 @@ import sys
 assert sys.argv[1:] == ['--list-models']
 print("""Available models
 gpt-7-astra-high-fast - Fast
-gpt-6-astra-high - Latest
+gpt-6.1-sol-medium - Workhorse
+gpt-6-astra-medium - Stronger
+gpt-6-astra-high - More reasoning
 gpt-6-astra-max - More reasoning
-gpt-5.6-sol-high - Previous
-claude-opus-5-thinking-high - Opus
-claude-opus-4-6-thinking-high - Previous Opus
+gpt-6-sol-medium - Previous
+claude-opus-5-5-thinking-medium - Opus
+claude-opus-5-thinking-medium - Previous Opus
 gemini-3.1-pro - No advertised effort
-gemini-4.0-pro[effort=high,fast=false] - Gemini
+gemini-3.8-flash[effort=high,fast=false] - Gemini
 gemini-5.0-pro[effort=high,fast=true] - Fast Gemini
 Tip: choose a model""")
 ''')
@@ -299,11 +366,11 @@ Tip: choose a model""")
         result = self.command([sys.executable, str(ROOT / "scripts/acpx/reconcile"), "resolve",
                                "--policy", str(self.policy)], env={"PATH": str(bin_dir) + os.pathsep + self.env["PATH"]})
         report = json.loads(result.stdout)
-        for alias, model in (("agpt", "gpt-6-astra"), ("pgpt", "gpt-5.6-sol"),
-                             ("aopus", "claude-opus-5"), ("popus", "claude-opus-4-6"),
-                             ("agemini", "gemini-4.0-pro")):
+        for alias, model in (("agpt", "gpt-6.1-sol"), ("pgpt", "gpt-6-sol"),
+                             ("aopus", "claude-opus-5-5"), ("popus", "claude-opus-5"),
+                             ("agemini", "gemini-3.8-flash")):
             self.assertEqual(report["shortcuts"][alias]["model"], model)
-        self.assertEqual(report["shortcuts"]["agptx"]["effort"], "max")
+        self.assertEqual(report["shortcuts"]["agptx"]["effort"], "medium")
         self.assertIn("no preceding gemini", report["shortcuts"]["pgemini"]["error"])
 
     def test_missing_actual_adapter_is_reported_even_when_harness_is_declared(self):

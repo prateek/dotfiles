@@ -20,6 +20,15 @@ if [[ "$*" == 'automations list --json' ]]; then
   printf '{"ok":true,"result":{"automations":[]}}\n'
   exit 0
 fi
+if [[ "$*" == 'repo list --json' ]]; then
+  printf '{"ok":true,"result":{"repos":[]}}\n'
+  exit 0
+fi
+if [[ $# -eq 5 && "$1" == repo && "$2" == add && "$3" == --path &&
+      "$4" == "$HOME/code/scratch" && "$5" == --json && -d "$4/.git" ]]; then
+  printf '%s\n' "$4" >> "$FIXTURE/scratch-registrations"
+  exit 0
+fi
 printf 'orca %s\n' "$*" >> "$FIXTURE/unexpected.calls"
 exit 64
 STUB
@@ -34,7 +43,7 @@ STUB
     --override-data '{"chezmoi":{"hostname":"dotfiles-test-host"},"machines_local":{"run_install_scripts":false}}')
 }
 
-@test "Chezmoi CI apply converges including empty scripts and only exercises disabled-wiki service cleanup" {
+@test "Chezmoi CI apply converges with managed scratch registration and disabled-wiki service cleanup" {
   run_without_reporting_fds 0 chezmoi "${chezmoi_args[@]}" init --promptDefaults --promptChoice machine_type=ci --source "$DOTFILES_ROOT"
   assert_success
   run_without_reporting_fds 0 chezmoi "${chezmoi_args[@]}" apply --exclude=externals
@@ -51,6 +60,7 @@ STUB
   assert_success
   assert_output ''
   [ -z "$stderr" ]
+  [ "$(cat "$FIXTURE/scratch-registrations")" = "$HOME/code/scratch" ]
   [ ! -s "$FIXTURE/unexpected.calls" ]
   [ -s "$FIXTURE/launchctl.calls" ]
   [ -s "$FIXTURE/orca.calls" ]

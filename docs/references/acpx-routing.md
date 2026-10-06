@@ -2,55 +2,89 @@
 status: current
 doc_type: reference
 created: 2026-09-22
-updated: 2026-09-22
+updated: 2026-10-05
 related:
   - ../adr/0032-acpx-model-routing.md
+  - ../adr/0045-acpx-explicit-model-profiles.md
   - ../plans/acpx-routing-plan.md
   - ../../agent-marketplace/packages/utils-agent/skills/acpx/SKILL.md
 ---
 
 # acpx model routing
 
-Model shortcuts select a family, generation, and effort. Machine policy chooses
-the ACP harness and provider. `chezmoi apply` resolves exact IDs after tool
-installation and plugin materialization; invocation uses that frozen selection.
+Shortcuts select an explicit model profile and effort. Machine policy chooses
+the ACP harness and provider. `chezmoi apply` resolves the provider's exact
+advertised ID after tool installation and plugin materialization; invocation
+uses that frozen selection. [ADR 0045](../adr/0045-acpx-explicit-model-profiles.md)
+replaces the automatic latest/previous-generation selection in ADR 0032.
 
-## Names
+## Profiles
 
-| Name | Selection |
-| --- | --- |
-| `agpt` | Latest GPT generation, highest configured tier, high effort |
-| `pgpt` | Preceding GPT generation, highest configured tier, high effort |
-| `agptx`, `agptxx`, `agptxxx` | Latest GPT, one/two/three supported effort steps above high |
-| `pgptx`, `pgptxx`, `pgptxxx` | Same effort progression for the preceding generation |
-| `agptw` | Preceding GPT generation, smallest available tier, high effort |
-| `aopus`, `popus` | Latest/preceding Opus; the same `x` suffixes apply |
-| `afable`, `pfable` | Latest/preceding Fable; the same `x` suffixes apply |
-| `agemini`, `pgemini` | Latest/preceding Gemini; the same `x` suffixes apply |
+| Shortcut | Model target | Effort |
+| --- | --- | --- |
+| `agpt`, `agptw` | GPT-6.1 Sol | medium |
+| `agptx` | GPT-6 Astra | medium |
+| `agptxx`, `agptxxx` | GPT-6 Astra | high, xhigh |
+| `pgpt`, `pgptx`, `pgptxx`, `pgptxxx` | GPT-6 Sol | medium, high, xhigh, max |
+| `aopus`, `aopusx`, `aopusxx`, `aopusxxx` | Claude Opus 5.5 | medium, high, xhigh, max |
+| `popus`, `popusx`, `popusxx`, `popusxxx` | Claude Opus 5 | medium, high, xhigh, max |
+| `afable`, `afablex`, `afablexx`, `afablexxx` | Claude Fable 5.1 | medium, high, xhigh, max |
+| `pfable`, `pfablex`, `pfablexx`, `pfablexxx` | Claude Fable 5 | medium, high, xhigh, max |
+| `agemini`, `ageminix`, `ageminixx`, `ageminixxx` | Gemini 3.8 Flash | high, xhigh, max, ultra |
+| `pgemini`, `pgeminix`, `pgeminixx`, `pgeminixxx` | Highest accessible Gemini generation below 3.8 | high, xhigh, max, ultra |
 
-Each `x` follows the selected model's supported ladder. If a model advertises
-`high, max`, its first step is `max`. Missing high effort, a missing preceding
-generation, and effort overflow create explicit rejection commands. They do not
-borrow a generation from a lower-priority route or reduce effort.
-Check `~/.agents/bin/acpx-routing show <shortcut>` before delegating. It also
-rejects unknown names; acpx itself can interpret an unknown name as prompt text
-for its default agent.
+The prefixes identify the chosen current and previous profiles; a new catalog
+release does not move the pinned targets. Each suffix names an explicit
+profile, rather than advancing a universal effort ladder. In particular,
+`agptx` changes model to Astra while keeping medium effort. `agptw` is the
+preferred writing profile, shared with `agpt`.
 
-Fast variants are excluded. Generation comparison is numeric; model snapshots
-and context-window decorations do not count as extra generations. Tier order
-and accepted ID formats are explicit model data. Extend that data when providers
-introduce a new naming convention; unrecognized IDs are not eligible.
+Gemini's previous profiles are the exception: `previous_of = "agemini"`
+selects the numerically highest generation below its pinned 3.8 target in the
+preferred route's catalog, then the highest configured tier in that generation.
+It does not require 3.8 itself to be advertised, and it never selects 3.8 or a
+newer generation for the previous profile.
 
-The preferred harness is selected before generation: an older model in Codex's
-catalog wins over a newer model in OpenRouter's catalog when Codex is preferred.
-If Claude's catalog contains only current Opus/Fable, their `p` shortcuts reject.
-If the preceding GPT generation has one tier, `pgpt` and `agptw` select it.
+Missing models, missing preceding Gemini generations, and unsupported exact
+efforts create explicit rejection commands. Effort support is checked on the
+selected advertised ID; a profile never lowers effort or borrows a target from
+a lower-priority route. Check `~/.agents/bin/acpx-routing show <shortcut>` before
+delegating. It rejects unknown names; acpx itself can interpret an unknown name
+as prompt text for its default agent.
+
+Fast variants are excluded. Numeric generation, tier, and family matching
+accepts provider prefixes, supported date snapshots, Claude's dot/hyphen
+spelling, and context-window decorations. These forms do not add generations.
+Launch retains the full advertised ID. Accepted formats and tier order are
+explicit model data; unrecognized IDs are ineligible. Multiple matching IDs
+are selected deterministically by their full ID, as before.
+
+The preferred harness is selected before the model target: the first eligible
+route with recognized models in the requested family wins. If Codex advertises
+GPT-6 Sol but lacks GPT-6.1 Sol, `agpt` rejects even if OpenRouter advertises
+6.1 Sol. A broken route or a catalog without that family permits selection
+from another declared route; a missing target or effort inside the selected
+route does not. Family-specific machine preferences can change that order.
+
+## Why these defaults
+
+Sol 6.1 medium is the everyday coding and writing profile; Astra medium is the
+explicit escalation for difficult debugging, architecture, and review. OpenAI
+positions Sol as a balance of intelligence and cost and Astra for demanding
+work ([model catalog](https://developers.openai.com/api/docs/models)).
+Opus 5.5 medium follows Anthropic's default; Fable 5.1 medium starts long-running
+work with bounded reasoning cost ([Opus 5.5](https://www.anthropic.com/claude-opus-5-5),
+[Fable 5.1](https://www.anthropic.com/claude-fable-and-mythos-5-1)).
+Gemini 3.8 Flash high retains the alternative-provider research profile
+([Google guidance](https://ai.google.dev/gemini-api/docs/latest-model)).
+These are chosen defaults, not results of a local model-quality comparison.
+Catalog discovery still determines availability on each machine.
 
 ## Inputs and ownership
 
 | Source | Responsibility |
 | --- | --- |
-| [acpx_models.toml](../../home/.chezmoidata/acpx_models.toml) | Families, generation grammar, tier order, effort ladder, naming |
+| [acpx_models.toml](../../home/.chezmoidata/acpx_models.toml) | Explicit profiles, family grammar, tier order, and recognized efforts |
 | [acpx_harnesses.toml](../../home/.chezmoidata/acpx_harnesses.toml) | Supported families, dependencies, catalog adapter, provider, and environment for each route |
 | [machines.toml](../../home/.chezmoidata/machines.toml) | Eligible routes in preference order; host and local overrides |
 | [routing.json.tmpl](../../home/dot_config/acpx/routing.json.tmpl) | Renders the combined policy to `~/.config/acpx/routing.json` |
@@ -160,5 +194,6 @@ git diff --check
 The former template and pin-drift Bats checks are replaced by the reconciliation
 CLI checks: exact adapter configuration, model/effort selection, catalog change,
 exclusions, plugin-directory validity, and machine gates remain covered. Pin
-extraction is retired because there are no hardcoded pins. New checks cover
-ownership/preservation, repeatability, local-family constraints, and diagnostics.
+extraction is retired because profile targets live in model data rather than
+launch templates. Checks cover ownership/preservation, repeatability,
+local-family constraints, and diagnostics.
