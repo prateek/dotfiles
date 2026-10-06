@@ -62,3 +62,7 @@ ASK_HOME = "{{ "{{" }} get_env(name='XDG_CACHE_HOME', default='~/.cache') {{ "}}
 # crit: integrations are APM-vendored (ADR 0013); silence the startup tip that
 # tells agents to run `crit install`, which would clobber renderer-owned roots.
 CRIT_NO_INTEGRATION_CHECK = "1"
+
+[settings.github]
+# gh stores its token in the OS keyring, outside mise's hosts.yml reader.
+credential_command = "gh auth token --hostname github.com"
