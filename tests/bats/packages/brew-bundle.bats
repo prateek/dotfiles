@@ -86,7 +86,7 @@ render_bundle() {
   brewfile="$(cat "$FIXTURE/Brewfile")"
   for entry in 'tap "eugene1g/safehouse", trusted: true' 'brew "eugene1g/safehouse/agent-safehouse"' \
     'tap "dagger/tap", trusted: true' 'cask "dagger/tap/container-use"' 'tap "mattt/tap", trusted: true' \
-    'cask "mattt/tap/imcp"' 'tap "nikitabobko/tap", trusted: true' 'cask "nikitabobko/tap/aerospace"' \
+    'cask "mattt/tap/imcp"' 'tap "prateek/tap", trusted: true' 'cask "prateek/tap/winmux"' \
     'tap "stablyai/orca", trusted: true' 'cask "stablyai/orca/orca"'; do
     [[ "$brewfile" == *"$entry"* ]]
   done
