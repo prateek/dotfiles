@@ -1,0 +1,95 @@
+#!/usr/bin/env -S uv run --quiet --script
+# /// script
+# requires-python = ">=3.14"
+# dependencies = []
+# ///
+"""Print the land-changes discovery JSON for landing on dotfiles master.
+
+The choices saved in .agents/land-changes.json are fingerprinted over each
+item's kind, source, scope and meaning. Every meaning here comes from its
+canonical source (this repo's landing runbook, the justfile recipe, or the live
+protect-master ruleset), so the skill can verify the saved choices in any
+session instead of reporting them stale:
+
+  python3 "$SKILL_DIR/scripts/options.py" --checkout . \\
+      --repo-id github.com/prateek/dotfiles --target master \\
+      --discovery <(.agents/land-discovery)
+
+When a source changes, the affected choice goes stale until it is re-saved with
+the same command plus its selector and --save-defaults.
+"""
+import json
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+REPO = "prateek/dotfiles"
+RULESET = 18469973  # protect-master
+RUNBOOK = "docs/runbooks/dotfiles-landing.md"
+
+
+def fail(message):
+    raise SystemExit(f"land-discovery: {message}")
+
+
+def runbook_sentence(start):
+    flat = re.sub(r"\s+", " ", (ROOT / RUNBOOK).read_text())
+    match = re.search(re.escape(start) + r".*?\.(?= |$)", flat)
+    return match.group(0) if match else fail(f"{RUNBOOK}: no sentence starts with {start!r}")
+
+
+def runbook_effect(name):
+    match = re.search(rf"^\| `{re.escape(name)}` \| (.+?) \|$", (ROOT / RUNBOOK).read_text(), re.MULTILINE)
+    return match.group(1) if match else fail(f"{RUNBOOK}: no follow-up row for {name}")
+
+
+def just_recipe(name):
+    result = subprocess.run(["just", "--show", name], cwd=ROOT, capture_output=True, text=True)
+    # Meanings must be single-line: the skill rejects control characters.
+    return re.sub(r"\s+", " ", result.stdout).strip() if result.returncode == 0 else fail(result.stderr.strip())
+
+
+def ruleset():
+    result = subprocess.run(["gh", "api", f"repos/{REPO}/rulesets/{RULESET}"], capture_output=True, text=True)
+    if result.returncode != 0:
+        fail(result.stderr.strip() or "gh api failed")
+    data = json.loads(result.stdout)
+    admin = {"actor_type": "RepositoryRole", "actor_id": 5, "bypass_mode": "always"}
+    if not any(admin.items() <= actor.items() for actor in data["bypass_actors"]):
+        fail("protect-master no longer grants repository admins an always-bypass")
+    return data
+
+
+def rule_meaning(data, rule_type):
+    rule = next((r for r in data["rules"] if r["type"] == rule_type), None) or fail(f"ruleset has no {rule_type} rule")
+    signature = {k: data[k] for k in ("enforcement", "conditions", "bypass_actors")} | {"parameters": rule["parameters"]}
+    return json.dumps(signature, sort_keys=True, separators=(",", ":"))
+
+
+def main():
+    policy = ruleset()
+    items = [
+        {"id": "direct-push", "kind": "method", "source": RUNBOOK,
+         "scope": {"remote": f"github.com/{REPO}", "target": "master"},
+         "meaning": runbook_sentence("Dotfiles normally lands")},
+        {"id": "test-chezmoi-apply", "kind": "action", "source": "justfile:test-chezmoi-apply",
+         "scope": {"execution": "local", "category": "test"},
+         "meaning": just_recipe("test-chezmoi-apply")},
+        {"id": "pull_request", "kind": "gate", "source": f"github-ruleset:{RULESET}:pull_request",
+         "scope": {"policy": "protect-master", "caller": "repository-admin-bypass"},
+         "meaning": rule_meaning(policy, "pull_request")},
+        {"id": "required_status_checks", "kind": "gate", "source": f"github-ruleset:{RULESET}:required_status_checks",
+         "scope": {"policy": "protect-master", "caller": "repository-admin-bypass"},
+         "meaning": rule_meaning(policy, "required_status_checks")},
+        {"id": "apply-full", "kind": "action", "source": f"{RUNBOOK}:apply-full",
+         "scope": {"host": "work-mbp", "checkout": "~/dotfiles", "effect": "chezmoi-apply-full"},
+         "meaning": runbook_effect("apply-full")},
+    ]
+    json.dump({"items": items}, sys.stdout, indent=1)
+    print()
+
+
+if __name__ == "__main__":
+    main()

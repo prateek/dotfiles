@@ -13,7 +13,7 @@
             "remote": "github.com/prateek/dotfiles",
             "target": "master"
           },
-          "fingerprint": "9e6777af5c3196bc7e1822bdfd2d02451f4d41f2e93725f9b46b28e4cc10b5e7",
+          "fingerprint": "d93a4afbc52d9a87188f306e1d39b0c4cd8cc8af08cf89f3848e510a540055cd",
           "operation": "via",
           "dynamic": false
         },
@@ -25,7 +25,7 @@
             "execution": "local",
             "category": "test"
           },
-          "fingerprint": "7de102d9270ddccbc4b4def224ce5ba77ea6161a7b0277145cde64cfcfa97468",
+          "fingerprint": "aab82bdea1c9af4e36d364fe54387ac100307664f2a5b854e12c68944372ab99",
           "operation": "skip",
           "dynamic": false
         },
@@ -37,7 +37,7 @@
             "policy": "protect-master",
             "caller": "repository-admin-bypass"
           },
-          "fingerprint": "2f1fc51b995b0f5da20728afd91b774af32ef9107a0cef57bd7a11c069ebc150",
+          "fingerprint": "1f18cf32736337bc1c0ad8edd39871c15d13c708df274f17945e4d2675b0f2f6",
           "operation": "bypass",
           "dynamic": false
         },
@@ -49,7 +49,7 @@
             "policy": "protect-master",
             "caller": "repository-admin-bypass"
           },
-          "fingerprint": "dd17ed2be8bb1ec9bf3a6c2b08b19c54ef1741cc7d5c90b79950cd8f7a852396",
+          "fingerprint": "6e1a2d74ec72996d1b4c7a6253faa319c87d3bdd2fb909c2e0f0d2c90387a1e3",
           "operation": "bypass",
           "dynamic": false
         },
@@ -62,7 +62,7 @@
             "checkout": "~/dotfiles",
             "effect": "chezmoi-apply-full"
           },
-          "fingerprint": "7ba460ee6e62f9f20143365e56ea3cb102bc9fe7ccfb04ec31d9834bb43379b0",
+          "fingerprint": "409f8f21eb2f12d63f357fb2b6788097f898a3587623587e938d664276c64a0d",
           "operation": "after",
           "dynamic": false
         }

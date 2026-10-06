@@ -2,7 +2,7 @@
 status: current
 doc_type: runbook
 created: 2026-09-07
-updated: 2026-09-22
+updated: 2026-10-06
 related:
   - ../../agent-marketplace/packages/review/skills/land-changes/SKILL.md
   - ../../.agents/skills/agent-skill-management/SKILL.md
@@ -16,6 +16,12 @@ checkout is `~/dotfiles`. Verify its branch and local state before synchronizati
 Inspect live hosting rules and the actual caller's capabilities. Direct landing
 can require an explicitly authorized bypass; a history waiver does not supply it.
 Task-specific workflows such as fork adoption can select a PR instead.
+
+`.agents/land-discovery` prints the discovery JSON the skill's `options.py`
+needs to verify or re-save the choices in `.agents/land-changes.json`. Each
+meaning comes from this runbook, the `justfile`, or the live `protect-master`
+ruleset, so editing one of those makes its saved choice stale until the choice
+is re-saved.
 
 ## Checks for the diff
 
