@@ -9,18 +9,26 @@
 ;;
 ;; Nav layer (every keyboard): ⌃Space toggles a sticky left-hand navigation layer and shows a
 ;; "NAV" notification; ⌃Space again, Esc, or a copy leaves it. On the internal keyboard ⌃ is
-;; Caps held, so the toggle is Caps+Space and a Caps tap (normally Esc) also leaves. Layer keys:
+;; Caps held, so the toggle is Caps+Space and a Caps tap (normally Esc) also leaves. The NocFree
+;; gets the same Caps behavior from its Vial keymap (MT(Ctrl, Esc)) on both the cable and the
+;; 2.4G dongle, which keep separate keymaps. Layer keys:
 ;;
 ;;     1 line start   2 line end
-;;     q word left    w ↑           e word right   r page up     t tab
-;;     a ←            s ↓           d →            f page down   g backspace
-;;     z undo         x cut         c copy         v paste       b forward delete
+;;     q word left    w ↑           e word right   r tab         t page up
+;;     a ←            s ↓           d →            f backspace   g page down
+;;     z undo         x cut         c copy         v paste
 ;;     space = return; ` shows or hides the generated cheatsheet; every other key types normally
 ;;
 ;; ⇧ and ⌥ held with a layer key pass through (⇧+d extends the selection, ⌥+a moves a word);
 ;; ⌘ or ⌃ held bypasses the layer, so ⌘A / ⌘W / ⌃C keep their normal meaning. Tapping left ⇧
 ;; inside the layer toggles select mode ("NAV · SELECT"): moves are sent with ⇧ until ⇧ is
 ;; tapped again, or a cut, paste or delete ends it.
+;;
+;; NocFree Lite: its Vial keymap (scripts/keyboard/nocfree-lite.vil, applied with
+;; scripts/keyboard/nocfree-keymap) carries a firmware copy of this layer on layer 1, held with
+;; right ⌃ (MO(1)), for Macs without this config. Its left ⇧ taps F20, which the
+;; "NocFree firmware layer select mode" rule below turns into the same select mode. ` in the
+;; Karabiner layer opens a NocFree-shaped cheatsheet when pressed on the NocFree.
 ;;
 ;; NOTE to future agents: don't guess goku or Karabiner syntax/behavior from memory — use
 ;; the `ask` skill against the real sources. `ask src github:yqrashawn/GokuRakuJoudo@master`
@@ -82,7 +90,9 @@
 ;;   Arc   ⌘⇧[ previous tab        ⌘⇧] next tab
 
 {:devices {:zero2    [{:vendor_id 11720 :product_id 36888}]
-           :internal [{:is_built_in_keyboard true}]}
+           :internal [{:is_built_in_keyboard true}]
+           ;; NocFree Lite: cable, then 2.4G dongle.
+           :nocfree  [{:vendor_id 19269 :product_id 13877} {:vendor_id 19269 :product_id 13876}]}
 
  :applications {:orca ["^com\\.stablyai\\.orca$"]
                 :arc  ["^company\\.thebrowser\\.Browser$"]}
@@ -90,7 +100,8 @@
  ;; Named action sequences. Every way out of the nav layer runs :nav_off, so none can leave
  ;; the banner or the cheatsheet overlay behind.
  :tos {:nav_off        [{:set ["nav_mode" 0]} {:set ["nav_select" 0]} {:noti {:id :nav_mode :text ""}} {:shell "pkill -x keymap-overlay"}]
-       :nav_select_off [{:set ["nav_select" 0]} {:noti {:id :nav_mode :text "NAV"}}]}
+       :nav_select_off [{:set ["nav_select" 0]} {:noti {:id :nav_mode :text "NAV"}}]
+       :fw_select_off  [{:set ["fw_select" 0]} {:noti {:id :fw_select :text ""}}]}
 
  :main
  [{:des "8BitDo: Start toggles the mouse layer (with notification)"
@@ -155,14 +166,13 @@
            [{:key :d :modi {:optional [:shift :option]}} {:key :right_arrow :modi [:left_shift]}]
            [{:key :q :modi {:optional [:shift :option]}} {:key :left_arrow :modi [:left_option :left_shift]}]
            [{:key :e :modi {:optional [:shift :option]}} {:key :right_arrow :modi [:left_option :left_shift]}]
-           [{:key :r :modi {:optional [:shift :option]}} {:key :page_up :modi [:left_shift]}]
-           [{:key :f :modi {:optional [:shift :option]}} {:key :page_down :modi [:left_shift]}]
+           [{:key :t :modi {:optional [:shift :option]}} {:key :page_up :modi [:left_shift]}]
+           [{:key :g :modi {:optional [:shift :option]}} {:key :page_down :modi [:left_shift]}]
            [{:key :1 :modi {:optional [:shift :option]}} {:key :left_arrow :modi [:left_command :left_shift]}]
            [{:key :2 :modi {:optional [:shift :option]}} {:key :right_arrow :modi [:left_command :left_shift]}]
            [:x [{:key :x :modi [:left_command]} :nav_select_off]]
            [:v [{:key :v :modi [:left_command]} :nav_select_off]]
-           [{:key :g :modi {:optional [:shift :option]}} [:delete_or_backspace :nav_select_off]]
-           [{:key :b :modi {:optional [:shift :option]}} [:delete_forward :nav_select_off]]]}
+           [{:key :f :modi {:optional [:shift :option]}} [:delete_or_backspace :nav_select_off]]]}
 
   {:des "Nav layer (toggle on): left-hand arrows, word/line/page moves, clipboard, editing keys"
    ;; ⇧/⌥ are optional on the moves so they pass through; no rule here accepts ⌘ or ⌃, so
@@ -176,21 +186,41 @@
            [{:key :d :modi {:optional [:shift :option]}} :right_arrow]
            [{:key :q :modi {:optional [:shift :option]}} {:key :left_arrow :modi [:left_option]}]
            [{:key :e :modi {:optional [:shift :option]}} {:key :right_arrow :modi [:left_option]}]
-           [{:key :r :modi {:optional [:shift :option]}} :page_up]
-           [{:key :f :modi {:optional [:shift :option]}} :page_down]
+           [{:key :t :modi {:optional [:shift :option]}} :page_up]
+           [{:key :g :modi {:optional [:shift :option]}} :page_down]
            [{:key :1 :modi {:optional [:shift :option]}} {:key :left_arrow :modi [:left_command]}]
            [{:key :2 :modi {:optional [:shift :option]}} {:key :right_arrow :modi [:left_command]}]
            [{:key :z :modi {:optional [:shift]}} {:key :z :modi [:left_command]}]
            [:x {:key :x :modi [:left_command]}]
            [:c [{:key :c :modi [:left_command]} :nav_off]]
            [:v {:key :v :modi [:left_command]}]
-           [{:key :g :modi {:optional [:shift :option]}} :delete_or_backspace]
-           [{:key :b :modi {:optional [:shift :option]}} :delete_forward]
-           [{:key :t :modi {:optional [:shift]}} :tab]
+           [{:key :f :modi {:optional [:shift :option]}} :delete_or_backspace]
+           [{:key :r :modi {:optional [:shift]}} :tab]
            [:spacebar :return_or_enter]
            ;; Float the sheet scripts/macos/render-keymap draws from the compiled rules; a second
            ;; press closes it, and so does leaving the layer. --opacity sets how see-through it is.
+           [:grave_accent_and_tilde {:shell "pkill -x keymap-overlay || '{{ .chezmoi.homeDir }}/.local/bin/keymap-overlay' --opacity 0.85 '{{ .chezmoi.homeDir }}/.local/share/dotfiles/keymap/nav-layer-nocfree.svg' >/dev/null 2>&1 &"} :nocfree]
            [:grave_accent_and_tilde {:shell "pkill -x keymap-overlay || '{{ .chezmoi.homeDir }}/.local/bin/keymap-overlay' --opacity 0.85 '{{ .chezmoi.homeDir }}/.local/share/dotfiles/keymap/nav-layer.svg' >/dev/null 2>&1 &"}]]}
+
+  {:des "NocFree firmware layer select mode: F20 (left ⇧ tap on layer 1) toggles; moves extend the selection"
+   ;; The firmware layer already sends arrows and ⌥/⌘ moves, so select mode only adds ⇧. Cut,
+   ;; paste and delete end it, as in the Karabiner layer; Esc or F20 leaves without typing.
+   :rules [[:f20 [{:set ["fw_select" 1]} {:noti {:id :fw_select :text "SELECT"}}] [:nocfree :!fw_select]]
+           [:condi :nocfree :fw_select]
+           [:f20 :fw_select_off]
+           [:escape :fw_select_off]
+           [{:key :up_arrow    :modi {:optional [:shift :option :command]}} {:key :up_arrow    :modi [:left_shift]}]
+           [{:key :down_arrow  :modi {:optional [:shift :option :command]}} {:key :down_arrow  :modi [:left_shift]}]
+           [{:key :left_arrow  :modi {:optional [:shift :option :command]}} {:key :left_arrow  :modi [:left_shift]}]
+           [{:key :right_arrow :modi {:optional [:shift :option :command]}} {:key :right_arrow :modi [:left_shift]}]
+           [{:key :page_up     :modi {:optional [:shift]}} {:key :page_up   :modi [:left_shift]}]
+           [{:key :page_down   :modi {:optional [:shift]}} {:key :page_down :modi [:left_shift]}]
+           [{:key :home        :modi {:optional [:shift]}} {:key :home      :modi [:left_shift]}]
+           [{:key :end         :modi {:optional [:shift]}} {:key :end       :modi [:left_shift]}]
+           [:!Cx [:!Cx :fw_select_off]]
+           [:!Cv [:!Cv :fw_select_off]]
+           [:delete_or_backspace [:delete_or_backspace :fw_select_off]]
+           [:delete_forward [:delete_forward :fw_select_off]]]}
 
   {:des "Tap left ⌘ opens Tuna combo mode (F18); hold ⌘ + key/click stays ⌘"
    ;; Ungated (every keyboard), left hand only. ⌘ is sent as a REAL held modifier

@@ -3,8 +3,8 @@ status: active
 doc_type: research
 owner: Prateek
 created: 2026-10-05
-updated: 2026-10-05
-status_detail: "Desk research plus earlier captures from Prateek's own keyboard; the device was not attached on 2026-10-05, so the items in the last section are still open."
+updated: 2026-10-06
+status_detail: "Desk research plus captures from Prateek's own keyboard. A raw HID read on 2026-10-06 settled the USB IDs, lighting, and the embedded definition; the remaining checks in the last section are still open."
 ---
 
 # NocFree Lite Firmware: What It Allows
@@ -38,8 +38,10 @@ owns it. Three kinds of evidence appear, and they are labelled:
    until tried once.
 3. **Per-layer RGB.** No source shows any layer-linked lighting on stock
    firmware, and Vial's lighting protocol has no such setting. RGB is an
-   optional add-on that works in wired mode only. Confidence: high that
-   wireless mode has no RGB; medium that wired mode has no layer indication.
+   optional add-on that works in wired mode only. The wired definition
+   declares VialRGB and the dongle's declares no lighting (device read,
+   2026-10-06). Confidence: high that wireless mode has no RGB; medium that
+   wired mode has no layer indication.
 4. **Custom firmware.** No source for the Lite is published anywhere I could
    find, the MCU and bootloader are unidentified, and the 2.4G link is
    proprietary. A custom build is not a practical path today. Confidence: high
@@ -51,9 +53,9 @@ owns it. Three kinds of evidence appear, and they are labelled:
 6. **Raw HID from macOS.** Both the cable and the receiver expose the VIA/Vial
    raw HID interface (usage page `0xFF60`, usage `0x61`). Neither protocol has
    a command that returns the active layer. A host can read and write the
-   keymap, and can set lighting if the build enables VialRGB, which is
-   unverified. Confidence: high for the interface and the missing layer query;
-   unknown for lighting control.
+   keymap, and can set lighting over the cable, where the build enables
+   VialRGB. Confidence: high for the interface, the missing layer query, and
+   VialRGB on the cable.
 
 Two facts shape the design more than any other:
 
@@ -190,10 +192,12 @@ medium for `LT`, `TT`, mod-tap, and QMK Settings.
   ([`vialrgb.h`](https://github.com/vial-kb/vial-qmk/blob/dd43959ae5c08d8a28d38a1acf7b04e86b14a344/quantum/vialrgb.h#L11-L22)).
   So per-layer RGB on stock firmware would require the vendor to have built it
   in, and nothing suggests they did.
-- Whether Vial shows a Lighting tab for the Lite is not recorded in any source
-  I found, including the vendor guide and earlier sessions. The tab appears
-  only when the firmware's definition declares `lighting`
+- Vial shows a Lighting tab only when the firmware's definition declares
+  `lighting`
   ([`keyboard_comm.py`](https://github.com/vial-kb/vial-gui/blob/aef8222a2d0429a183b2ed692d5f9efcfd383f08/src/main/python/protocol/keyboard_comm.py#L236-L239)).
+  The definitions read from Prateek's unit on 2026-10-06 declare
+  `"lighting": "vialrgb"` on the cable and `"lighting": "none"` on the
+  dongle, so the tab appears wired and is hidden wireless.
 
 Confidence: high that RGB is wired-only and an add-on; medium that stock
 firmware has no layer indication (absence of evidence, plus how QMK works).
@@ -317,10 +321,56 @@ Confidence: high.
 Confidence: high that the raw HID interface exists and that there is no layer
 query; unknown for lighting control until the device is probed.
 
+## Device read, 2026-10-06
+
+With both the cable and the receiver attached, a throwaway hidapi script read
+each device's Vial UID, embedded definition (`FE 01`/`FE 02`), and full
+keymap (`0x11`, `0x12`) without unlocking, and the cable's VialRGB state
+(`0x08` with `0x40` to `0x44`). It answers checks 1, 2, 3, 7, and 9 below:
+
+- USB IDs and the `0xFF60`/`0x61` interface are unchanged on both devices.
+- Vial UIDs are `7369517445122672664` (cable) and `8481673586147325631`
+  (receiver), matching the public exports' wired and 2.4G IDs.
+- Both definitions are a 5 × 13 matrix with no `customKeycodes`. The cable's
+  declares `"lighting": "vialrgb"`; the receiver's declares `"lighting":
+  "none"`.
+- The receiver's layer 0 was the stock keymap while the cable carried
+  Prateek's: `MT(Ctrl, Esc)` on Caps, `` ` `` in place of Grave-Escape, the
+  meh-tap-F19 and Hyper keys from the internal keyboard's Karabiner rules on
+  the bottom row, and an IJKL arrow cluster on layer 1. On the receiver, Caps
+  could not toggle or leave the Karabiner navigation layer, and Grave-Escape
+  sent Esc, which left the layer instead of opening its cheatsheet. The 19
+  differing keys were copied from the cable keymap to the receiver with
+  `0x05` (set keycode), and a full read-back matched. Both keymaps are now
+  kept in the repo and applied together
+  ([ADR 0048](../adr/0048-repo-managed-nocfree-keymap.md)).
+- VialRGB on the cable answers protocol version 1, a maximum brightness of
+  130, 32 effects including Direct, and 65 LEDs, one per key, each mapped to
+  its matrix position. The saved mode was Off. Painting the nav-layer keys in
+  Direct mode lit them on Prateek's unit, so the RGB add-on is fitted. Mode and
+  colour changes over raw HID are not saved (`vialrgb.c` calls the `_noeeprom`
+  setters; only `0x09` saves), so a power cycle returns the board to its saved
+  mode. Host-painted keys can follow Karabiner layers on the cable; nothing can
+  follow a firmware layer, since stock firmware has no layer lighting and
+  cannot report its layer.
+- The dongle cannot report battery level. Its HID descriptors cover keyboard,
+  mouse, system and consumer control, and the Vial channel, with no Battery
+  System (`0x85`) or Generic Device Controls (`0x06`) page, so macOS shows no
+  battery; neither VIA nor Vial has a battery query. The only indicator is the
+  Tab and `]` charging light. The vendor agrees: "The battery level cannot be
+  checked directly. However, a full charge can last up to six months of use"
+  ([troubleshooting](https://www.nocfree.com/pages/nocfree-lite-troubleshooting)).
+- In 2.4G mode the halves work without the cable between them: Prateek
+  unplugged it and typed on both halves, including a chord across them. The
+  cable still matters for charging: the vendor says to connect it between the
+  halves first, then the USB-C cable to the left half, and to avoid fast
+  chargers ([troubleshooting](https://www.nocfree.com/pages/nocfree-lite-troubleshooting)).
+
 ## Open questions that need the physical keyboard
 
 Run each check twice where it applies: once on the cable (both mode switches
-on Wired) and once through the 2.4G receiver.
+on Wired) and once through the 2.4G receiver. Checks 1, 2, 3, 7, and 9 were
+answered by the 2026-10-06 device read above.
 
 1. **Confirm the USB IDs and interfaces are unchanged.**
 

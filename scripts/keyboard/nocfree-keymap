@@ -1,0 +1,219 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.14"
+# dependencies = ["hidapi==0.14.0.post4"]
+# ///
+"""Keep the NocFree Lite's Vial keymap in sync with the copy in this repo.
+
+Usage:
+  nocfree-keymap apply [--dry-run] [--keymap FILE]
+  nocfree-keymap dump [--connection wired|2.4G] [--keymap FILE]
+  nocfree-keymap check [--keymap FILE]
+
+The keyboard keeps two keymaps: one on the halves for the cable, one on the
+2.4G dongle. `apply` writes the stored keymap to every connection that is
+attached, then reads each key back. `--dry-run` prints the keys that would
+change and writes nothing. `dump` prints the keymap of one connection in the
+stored format, to capture a change made in the Vial app. `check` parses the
+stored keymap without a keyboard. `apply` and `dump` fail when no NocFree is
+attached. Only the keymap is touched: lighting, macros, tap dances and combos
+are left as they are.
+"""
+import argparse
+import json
+import re
+import sys
+from pathlib import Path
+
+VENDOR_ID = 0x4B45
+CONNECTIONS = {"wired": 0x3635, "2.4G": 0x3634}
+RAW_USAGE_PAGE, RAW_USAGE = 0xFF60, 0x61
+LAYERS, ROWS, COLS = 4, 5, 13
+DEFAULT_KEYMAP = Path(__file__).with_name("nocfree-lite.vil")
+
+# QMK keycode names (protocol 6 numbering), spelled as Vial writes them in a .vil.
+BASIC = {"KC_NO": 0x00, "KC_TRNS": 0x01}
+BASIC |= {f"KC_{c}": 0x04 + i for i, c in enumerate("ABCDEFGHIJKLMNOPQRSTUVWXYZ")}
+BASIC |= {f"KC_{c}": 0x1E + i for i, c in enumerate("1234567890")}
+BASIC |= {f"KC_F{n}": 0x3A + n - 1 for n in range(1, 13)}
+BASIC |= {f"KC_F{n}": 0x68 + n - 13 for n in range(13, 25)}
+BASIC |= {
+    "KC_ENTER": 0x28, "KC_ESCAPE": 0x29, "KC_BSPACE": 0x2A, "KC_TAB": 0x2B, "KC_SPACE": 0x2C,
+    "KC_MINUS": 0x2D, "KC_EQUAL": 0x2E, "KC_LBRACKET": 0x2F, "KC_RBRACKET": 0x30, "KC_BSLASH": 0x31,
+    "KC_SCOLON": 0x33, "KC_QUOTE": 0x34, "KC_GRAVE": 0x35, "KC_COMMA": 0x36, "KC_DOT": 0x37,
+    "KC_SLASH": 0x38, "KC_CAPSLOCK": 0x39, "KC_INSERT": 0x49, "KC_HOME": 0x4A, "KC_PGUP": 0x4B,
+    "KC_DELETE": 0x4C, "KC_END": 0x4D, "KC_PGDOWN": 0x4E, "KC_RIGHT": 0x4F, "KC_LEFT": 0x50,
+    "KC_DOWN": 0x51, "KC_UP": 0x52,
+    "KC_LCTRL": 0xE0, "KC_LSHIFT": 0xE1, "KC_LALT": 0xE2, "KC_LGUI": 0xE3,
+    "KC_RCTRL": 0xE4, "KC_RSHIFT": 0xE5, "KC_RALT": 0xE6, "KC_RGUI": 0xE7,
+}
+SPECIAL = {"KC_GESC": 0x7C16, "QK_BOOT": 0x7C00}
+# Modifier bits as QMK packs them into bits 8-12: C S A G, plus bit 12 for right-hand.
+MODS = {
+    "LCTL": 0x01, "LSFT": 0x02, "LALT": 0x04, "LGUI": 0x08, "C_S": 0x03, "LCA": 0x05, "LSA": 0x06,
+    "MEH": 0x07, "LCG": 0x09, "LAG": 0x0C, "LCAG": 0x0D, "HYPR": 0x0F,
+    "RCTL": 0x11, "RSFT": 0x12, "RALT": 0x14, "RGUI": 0x18,
+}
+MOD_TAP_NAMES = {"HYPR": "ALL"}  # QMK spells the hyper mod-tap ALL_T
+LAYER_OPS = {"TO": 0x5200, "MO": 0x5220, "DF": 0x5240, "TG": 0x5260, "OSL": 0x5280, "TT": 0x52C0}
+
+NAME_OF = {code: name for name, code in (BASIC | SPECIAL).items()}
+ALIASES = {"KC_TRANSPARENT": "KC_TRNS", "KC_ESC": "KC_ESCAPE", "KC_BSPC": "KC_BSPACE", "KC_ENT": "KC_ENTER",
+           "KC_GRV": "KC_GRAVE", "KC_DEL": "KC_DELETE", "KC_PGDN": "KC_PGDOWN", "KC_CAPS": "KC_CAPSLOCK",
+           "KC_LSFT": "KC_LSHIFT", "KC_RSFT": "KC_RSHIFT", "KC_LCTL": "KC_LCTRL", "KC_RCTL": "KC_RCTRL",
+           "KC_SCLN": "KC_SCOLON", "KC_QUOT": "KC_QUOTE", "KC_BSLS": "KC_BSLASH", "KC_SPC": "KC_SPACE",
+           "KC_LBRC": "KC_LBRACKET", "KC_RBRC": "KC_RBRACKET", "KC_COMM": "KC_COMMA", "KC_SLSH": "KC_SLASH",
+           "KC_MINS": "KC_MINUS", "KC_EQL": "KC_EQUAL", "KC_INS": "KC_INSERT", "QK_GRAVE_ESCAPE": "KC_GESC"}
+
+
+def keycode(name):
+    name = ALIASES.get(name.strip(), name.strip())
+    if name in BASIC or name in SPECIAL:
+        return (BASIC | SPECIAL)[name]
+    if re.fullmatch(r"0x[0-9a-fA-F]{1,4}", name):
+        return int(name, 16)
+    if m := re.fullmatch(r"(\w+)\((.*)\)", name):
+        outer, inner = m.groups()
+        if outer in LAYER_OPS and inner.isdigit() and int(inner) < LAYERS:
+            return LAYER_OPS[outer] | int(inner)
+        if outer == "LT" and (lt := re.fullmatch(r"(\d+),\s*(\w+)", inner)):
+            return 0x4000 | int(lt[1]) << 8 | _basic(lt[2], name)
+        if (lt := re.fullmatch(r"LT(\d+)", outer)):
+            return 0x4000 | int(lt[1]) << 8 | _basic(inner, name)
+        if outer.endswith("_T"):
+            base = {v: k for k, v in MOD_TAP_NAMES.items()}.get(outer[:-2], outer[:-2])
+            if base in MODS:
+                return 0x2000 | MODS[base] << 8 | _basic(inner, name)
+        if outer in MODS:
+            return MODS[outer] << 8 | _basic(inner, name)
+    raise ValueError(f"unknown keycode {name!r}")
+
+
+def _basic(name, whole):
+    code = keycode(name)
+    if code > 0xFF:
+        raise ValueError(f"{whole!r} wraps a keycode that is not a basic key")
+    return code
+
+
+def keyname(code):
+    if code in NAME_OF:
+        return NAME_OF[code]
+    inner = NAME_OF.get(code & 0xFF)
+    for op, base in LAYER_OPS.items():
+        if base <= code < base + 0x20:
+            return f"{op}({code - base})"
+    mods = {v: k for k, v in MODS.items()}.get(code >> 8 & 0x1F)
+    if inner and 0x0100 <= code < 0x2000 and mods:
+        return f"{mods}({inner})"
+    if inner and 0x2000 <= code < 0x4000 and mods:
+        return f"{MOD_TAP_NAMES.get(mods, mods)}_T({inner})"
+    if inner and 0x4000 <= code < 0x5000:
+        return f"LT{code >> 8 & 0xF}({inner})"
+    return f"0x{code:04x}"
+
+
+def load(path):
+    layout = json.loads(Path(path).read_text())["layout"]
+    shape = [len(layout)] + sorted({len(layer) for layer in layout}) + sorted({len(r) for l in layout for r in l})
+    if shape != [LAYERS, ROWS, COLS]:
+        raise SystemExit(f"nocfree-keymap: {path}: expected {LAYERS} layers of {ROWS}x{COLS} keys")
+    try:
+        return [[[keycode(k) for k in row] for row in layer] for layer in layout]
+    except ValueError as err:
+        raise SystemExit(f"nocfree-keymap: {path}: {err}")
+
+
+def dumps(codes):
+    rows = (f'      [{", ".join(json.dumps(keyname(k)) for k in row)}]' for layer in codes for row in layer)
+    rows = list(rows)
+    layers = (",\n".join(rows[i:i + ROWS]) for i in range(0, len(rows), ROWS))
+    return '{\n  "version": 1,\n  "layout": [\n    [\n' + "\n    ],\n    [\n".join(layers) + "\n    ]\n  ]\n}\n"
+
+
+class Keyboard:
+    def __init__(self, label, path):
+        import hid
+        self.label = label
+        self.dev = hid.device()
+        self.dev.open_path(path)
+
+    def _xfer(self, *payload):
+        self.dev.write(b"\0" + bytes(payload).ljust(32, b"\0"))
+        reply = bytes(self.dev.read(32, 1000))
+        if len(reply) != 32:
+            raise SystemExit(f"nocfree-keymap: {self.label}: no reply from the keyboard")
+        return reply
+
+    def get(self, layer, row, col):
+        reply = self._xfer(0x04, layer, row, col)
+        return reply[4] << 8 | reply[5]
+
+    def set(self, layer, row, col, code):
+        self._xfer(0x05, layer, row, col, code >> 8, code & 0xFF)
+
+    def read(self):
+        return [[[self.get(l, r, c) for c in range(COLS)] for r in range(ROWS)] for l in range(LAYERS)]
+
+
+def attached(only=None):
+    import hid
+    found = {}
+    for info in hid.enumerate(VENDOR_ID):
+        for label, product in CONNECTIONS.items():
+            if info["product_id"] == product and (info["usage_page"], info["usage"]) == (RAW_USAGE_PAGE, RAW_USAGE):
+                found.setdefault(label, info["path"])
+    if only:
+        found = {k: v for k, v in found.items() if k == only}
+    if not found:
+        wanted = f"the {only} connection of a NocFree" if only else "a NocFree (cable or 2.4G dongle)"
+        raise SystemExit(f"nocfree-keymap: {wanted} is not attached")
+    return [Keyboard(label, path) for label, path in found.items()]
+
+
+def apply(args):
+    want = load(args.keymap)
+    failed = False
+    for kb in attached():
+        have = kb.read()
+        diff = [(l, r, c) for l in range(LAYERS) for r in range(ROWS) for c in range(COLS) if have[l][r][c] != want[l][r][c]]
+        for l, r, c in diff:
+            print(f"{kb.label}: layer {l} r{r}c{c}: {keyname(have[l][r][c])} -> {keyname(want[l][r][c])}")
+        if args.dry_run:
+            print(f"{kb.label}: {len(diff)} keys would change")
+            continue
+        for l, r, c in diff:
+            kb.set(l, r, c, want[l][r][c])
+        left = [(l, r, c) for l, r, c in diff if kb.get(l, r, c) != want[l][r][c]]
+        print(f"{kb.label}: {len(diff) - len(left)} of {len(diff)} keys written")
+        if left:
+            failed = True
+            print(f"nocfree-keymap: {kb.label}: read-back mismatch at {left}", file=sys.stderr)
+    return 1 if failed else 0
+
+
+def main():
+    parser = argparse.ArgumentParser(prog="nocfree-keymap", description=__doc__.split("\n\n")[0])
+    sub = parser.add_subparsers(dest="command", required=True)
+    for name in ("apply", "dump", "check"):
+        cmd = sub.add_parser(name)
+        cmd.add_argument("--keymap", type=Path, default=DEFAULT_KEYMAP)
+    sub.choices["apply"].add_argument("--dry-run", action="store_true")
+    sub.choices["dump"].add_argument("--connection", choices=CONNECTIONS)
+    args = parser.parse_args()
+
+    if args.command == "check":
+        codes = load(args.keymap)
+        print(f"{args.keymap}: {LAYERS} layers, {sum(k != 0x01 for l in codes for r in l for k in r)} non-transparent keys")
+        return 0
+    if args.command == "dump":
+        boards = attached(args.connection)
+        if len(boards) > 1:
+            raise SystemExit("nocfree-keymap: both connections are attached; pick one with --connection")
+        sys.stdout.write(dumps(boards[0].read()))
+        return 0
+    return apply(args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

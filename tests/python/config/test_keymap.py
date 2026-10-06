@@ -22,11 +22,11 @@ def profile(manipulators):
 
 
 class KeymapCheatsheetTests(RepoTestCase):
-    def sheet(self, config):
+    def sheet(self, config, *flags):
         with tempfile.TemporaryDirectory() as tmp:
             source, target = Path(tmp, "karabiner.json"), Path(tmp, "out/nav.svg")
             source.write_text(json.dumps(config))
-            result = subprocess.run([RENDER, source, target], capture_output=True, text=True, timeout=120)
+            result = subprocess.run([RENDER, *flags, source, target], capture_output=True, text=True, timeout=120)
             return result, target.read_text() if target.exists() else None
 
     def test_sheet_labels_layer_keys_from_the_compiled_rules_and_ignores_ungated_ones(self):
@@ -51,4 +51,23 @@ class KeymapCheatsheetTests(RepoTestCase):
         result, svg = self.sheet(profile([manipulator("j", [{"key_code": "down_arrow"}], gated=False)]))
         self.assertEqual(result.returncode, 1)
         self.assertIn("no nav layer", result.stderr)
+        self.assertIsNone(svg)
+
+    def test_nocfree_layout_draws_the_same_layer_on_the_split_with_its_firmware_keys(self):
+        layer = profile([
+            manipulator("spacebar", [{"set_variable": {"name": "nav_mode", "value": 1}}],
+                        mandatory=["left_control"], gated=False),
+            manipulator("w", [{"key_code": "up_arrow"}]),
+            manipulator("caps_lock", [{"key_code": "left_control"}]),
+        ])
+        result, svg = self.sheet(layer, "--layout", "nocfree")
+        self.assertEqual((result.returncode, result.stderr), (0, ""))
+        for label in ("Navigation layer · NocFree", ">↑<", ">⌃ / esc<", ">layer 1<", "Firmware layer 1"):
+            self.assertIn(label, svg)
+        self.assertNotIn(">⇪<", svg)  # the NocFree's Caps key never reaches Karabiner as caps_lock
+
+    def test_unknown_layout_is_rejected(self):
+        result, svg = self.sheet(profile([]), "--layout", "iso")
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("invalid choice: 'iso'", result.stderr)
         self.assertIsNone(svg)

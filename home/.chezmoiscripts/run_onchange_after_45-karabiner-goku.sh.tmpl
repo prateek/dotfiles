@@ -8,8 +8,8 @@
 # machine before brew bundle, or a profile without karabiner-elements; ordered after the
 # brew step so the toolchain is present on a normal apply).
 #
-# The compiled profile is then drawn as the nav-layer cheatsheet (scripts/macos/render-keymap),
-# which the layer's ` key opens.
+# The compiled profile is then drawn as the nav-layer cheatsheets (scripts/macos/render-keymap),
+# one for the Mac keyboard and one for the NocFree, which the layer's ` key opens.
 #
 # karabiner.edn sha256: {{ include "dot_config/karabiner.edn.tmpl" | sha256sum }}
 # render-keymap sha256: {{ include (printf "%s/../scripts/macos/render-keymap" .chezmoi.sourceDir) | sha256sum }}
@@ -51,9 +51,13 @@ goku >/dev/null
 log "karabiner-goku: compiled karabiner.json"
 
 render="{{ .chezmoi.sourceDir }}/../scripts/macos/render-keymap"
-sheet="${HOME}/.local/share/dotfiles/keymap/nav-layer.svg"
-if "$render" "$kbjson" "$sheet"; then
-  log "karabiner-goku: rendered $sheet"
-else
-  warn "karabiner-goku: could not render the nav-layer cheatsheet"
-fi
+sheets="${HOME}/.local/share/dotfiles/keymap"
+for layout in ansi nocfree; do
+  sheet="${sheets}/nav-layer.svg"
+  [ "$layout" = ansi ] || sheet="${sheets}/nav-layer-${layout}.svg"
+  if "$render" --layout "$layout" "$kbjson" "$sheet"; then
+    log "karabiner-goku: rendered $sheet"
+  else
+    warn "karabiner-goku: could not render the $layout nav-layer cheatsheet"
+  fi
+done

@@ -107,12 +107,14 @@ assert any(from_key(item, "escape") and sets(item, "nav_mode", 0) and gated_on(i
 nav = [item for item in manipulators if gated_on(item, "nav_mode")]
 select = [item for item in manipulators if gated_on(item, "nav_mode", "nav_select")]
 for key, plain in (("w", ("up_arrow", [])), ("a", ("left_arrow", [])), ("e", ("right_arrow", ["left_option"])),
-                   ("1", ("left_arrow", ["left_command"])), ("f", ("page_down", []))):
+                   ("1", ("left_arrow", ["left_command"])), ("t", ("page_up", [])),
+                   ("g", ("page_down", []))):
     assert any(from_key(item, key) and chord(item) == plain for item in nav), key
     assert any(from_key(item, key) and chord(item) == (plain[0], sorted(plain[1] + ["left_shift"]))
                for item in select), key
-for key, plain in (("v", ("v", ["left_command"])), ("g", ("delete_or_backspace", []))):
+for key, plain in (("v", ("v", ["left_command"])), ("f", ("delete_or_backspace", [])), ("r", ("tab", []))):
     assert any(from_key(item, key) and chord(item) == plain for item in nav), key
+assert not any(from_key(item, "b") for item in nav + select), "b has no nav binding (no forward delete)"
 for item in nav + select:
     allowed = set(item["from"].get("modifiers", {}).get("optional", []))
     assert allowed <= {"shift", "option"} or item["from"]["key_code"] in ("caps_lock", "left_command"), item["from"]
@@ -136,5 +138,28 @@ assert manipulators.index(leader[0]) < next(i for i, item in enumerate(manipulat
 for item in nav + select:
     if from_key(item, "left_shift"):
         assert item["parameters"]["basic.to_if_alone_timeout_milliseconds"] == 200
-for key in ("x", "v", "g", "b"):
+for key in ("x", "v", "f"):
     assert any(from_key(item, key) and sets(item, "nav_select", 0) for item in select), key
+
+
+def nocfree_scoped(item):
+    return any(condition.get("type") == "device_if" and {
+        (identifier.get("vendor_id"), identifier.get("product_id")) for identifier in condition.get("identifiers", [])
+    } == {(19269, 13877), (19269, 13876)} for condition in item.get("conditions", []))
+
+
+# The NocFree's firmware layer 1 taps F20 for select mode; Karabiner owns that state.
+assert any(from_key(item, "f20") and sets(item, "fw_select", 1) and nocfree_scoped(item)
+           and not gated_on(item, "fw_select") for item in manipulators)
+fw_select = [item for item in manipulators if gated_on(item, "fw_select")]
+assert fw_select and all(nocfree_scoped(item) for item in fw_select)
+for key in ("up_arrow", "left_arrow", "page_down"):
+    assert any(from_key(item, key) and chord(item) == (key, ["left_shift"]) for item in fw_select), key
+assert any(from_key(item, "left_arrow") and {"option", "command"} <= set(item["from"]["modifiers"]["optional"])
+           for item in fw_select), "firmware word and line moves must keep their ⌥/⌘ in select mode"
+for key in ("x", "v", "delete_or_backspace", "escape", "f20"):
+    assert any(from_key(item, key) and sets(item, "fw_select", 0) for item in fw_select), key
+
+sheets = [item for item in nav if from_key(item, "grave_accent_and_tilde")]
+assert len(sheets) == 2 and nocfree_scoped(sheets[0]) and "nav-layer-nocfree.svg" in sheets[0]["to"][0]["shell_command"]
+assert not nocfree_scoped(sheets[1]) and "nav-layer.svg" in sheets[1]["to"][0]["shell_command"]

@@ -5,14 +5,15 @@
 # ///
 """Render the Karabiner nav layer as an SVG cheatsheet.
 
-Usage: render-keymap <karabiner.json> <output.svg>
+Usage: render-keymap [--layout ansi|nocfree] <karabiner.json> <output.svg>
 
 Reads the compiled Default profile, so the picture cannot drift from the rules
 Karabiner is actually running: every key gated on the nav_mode variable is drawn
-with the action it sends.
+with the action it sends. --layout picks the keyboard drawn: the Mac's ANSI
+block (the default) or the NocFree Lite split.
 """
+import argparse
 import json
-import sys
 from html import escape
 from pathlib import Path
 
@@ -31,6 +32,34 @@ ROWS = [
     [("fn", "fn", 1), ("left_control", "⌃", 1), ("left_option", "⌥", 1), ("left_command", "⌘", 1.25),
      ("spacebar", "", 5), ("right_command", "⌘", 1.25), ("right_option", "⌥", 1), (None, "", 3)],
 ]
+
+# The NocFree Lite as its Vial keymap (scripts/keyboard/nocfree-lite.vil) presents it to the Mac.
+# Keys whose code no nav rule matches, such as the firmware's tap-hold keys, are drawn by name
+# only. SPLIT starts the right half at a fixed column, so its rows line up.
+SPLIT = (None, "|", 0)
+NOCFREE_ROWS = [
+    [("grave_accent_and_tilde", "`", 1), *[(c, c, 1) for c in "123456"], SPLIT,
+     *[(c, c, 1) for c in "7890"], ("hyphen", "-", 1), ("equal_sign", "=", 1), ("delete_or_backspace", "⌫", 2.5)],
+    [("tab", "⇥", 1.5), *[(c, c.upper(), 1) for c in "qwert"], SPLIT,
+     *[(c, c.upper(), 1) for c in "yuiop"], ("open_bracket", "[", 1), ("close_bracket", "]", 1), ("backslash", "\\", 1.5)],
+    [("nocfree_caps", "⌃ / esc", 1.75), *[(c, c.upper(), 1) for c in "asdfg"], SPLIT,
+     *[(c, c.upper(), 1) for c in "hjkl"], ("semicolon", ";", 1), ("quote", "'", 1), ("return_or_enter", "⏎", 2.5)],
+    [("left_shift", "⇧", 2.25), *[(c, c.upper(), 1) for c in "zxcvb"], SPLIT,
+     *[(c, c.upper(), 1) for c in "nm"], ("comma", ",", 1), ("period", ".", 1),
+     ("nocfree_rshift", "⇧ / /", 2.5), ("up_arrow", "↑", 1), ("slash", "/", 1)],
+    [("left_option", "⌥", 1), ("nocfree_meh", "meh F19", 1), ("nocfree_hyper", "hyper", 1),
+     ("left_command", "⌘", 1), ("spacebar", "", 3.25), SPLIT,
+     ("nocfree_space", "", 3.5), ("right_command", "⌘", 1), ("nocfree_layer", "layer 1", 1),
+     ("left_arrow", "←", 1), ("down_arrow", "↓", 1), ("right_arrow", "→", 1)],
+]
+
+LAYOUTS = {
+    "ansi": ("Navigation layer", ROWS, None, []),
+    "nocfree": ("Navigation layer · NocFree", NOCFREE_ROWS, 8.25, [
+        "Firmware layer 1 (hold the layer 1 key) has the same left-hand keys without Karabiner; "
+        "tap left ⇧ there for select mode",
+    ]),
+}
 
 MODIFIERS = {"command": "⌘", "option": "⌥", "control": "⌃", "shift": "⇧"}
 ARROWS = {"up_arrow": "↑", "down_arrow": "↓", "left_arrow": "←", "right_arrow": "→"}
@@ -97,21 +126,31 @@ def read_layer(config):
     return keys, enter, leave, select
 
 
-def render(keys, enter, leave, select):
+def render(keys, enter, leave, select, layout="ansi"):
+    title, rows, split, extra = LAYOUTS[layout]
     unit, gap, pad, top = 64, 6, 28, 76
-    width = int(pad * 2 + 14.5 * unit) - gap
-    height = top + len(ROWS) * unit + 96
+
+    def row_width(row):
+        if SPLIT in row:
+            return split + sum(span for _, _, span in row[row.index(SPLIT):])
+        return sum(span for _, _, span in row)
+
+    width = int(pad * 2 + max(map(row_width, rows)) * unit) - gap
+    height = top + len(rows) * unit + 72 + 24 * (len(extra) + 1)
     out = [
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" width="{width}" height="{height}" '
         'font-family="-apple-system, Helvetica, Arial, sans-serif">',
         f'<rect width="{width}" height="{height}" rx="18" fill="#17191d"/>',
-        f'<text x="{pad}" y="46" font-size="24" font-weight="600" fill="#f2f3f5">Navigation layer</text>',
+        f'<text x="{pad}" y="46" font-size="24" font-weight="600" fill="#f2f3f5">{escape(title)}</text>',
         f'<text x="{width - pad}" y="46" font-size="15" fill="#9aa1ac" text-anchor="end">'
         f'{escape(" or ".join(enter))} to enter</text>',
     ]
-    for r, row in enumerate(ROWS):
+    for r, row in enumerate(rows):
         x = pad
         for code, cap, span in row:
+            if (code, cap, span) == SPLIT:
+                x = pad + split * unit
+                continue
             w, y = span * unit - gap, top + r * unit
             if code is not None:
                 label, exits = keys.get(code, (None, False))
@@ -131,18 +170,22 @@ def render(keys, enter, leave, select):
         f"Leave: {', '.join(dict.fromkeys(enter + leave))}",
         f"Select mode: {', '.join(select)} — moves extend the selection" if select else "",
         "⇧ and ⌥ pass through the move keys; ⌘ and ⌃ chords keep their normal meaning",
+        *extra,
     ]
     for i, note in enumerate(n for n in notes if n):
-        out.append(f'<text x="{pad}" y="{top + len(ROWS) * unit + 28 + i * 24}" font-size="15" '
+        out.append(f'<text x="{pad}" y="{top + len(rows) * unit + 28 + i * 24}" font-size="15" '
                    f'fill="#c9ced6">{escape(note)}</text>')
     return "\n".join(out) + "\n</svg>\n"
 
 
 def main():
-    if len(sys.argv) != 3:
-        raise SystemExit(__doc__.strip().splitlines()[2])
-    svg = render(*read_layer(json.loads(Path(sys.argv[1]).read_text())))
-    target = Path(sys.argv[2])
+    parser = argparse.ArgumentParser(prog="render-keymap", usage=__doc__.strip().splitlines()[2].removeprefix("Usage: "))
+    parser.add_argument("--layout", choices=LAYOUTS, default="ansi")
+    parser.add_argument("config", type=Path)
+    parser.add_argument("output", type=Path)
+    args = parser.parse_args()
+    svg = render(*read_layer(json.loads(args.config.read_text())), layout=args.layout)
+    target = args.output
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(svg)
 

@@ -134,6 +134,7 @@ for day-to-day implementation details.
 | [ADR 0045 - ACPX explicit model profiles](adr/0045-acpx-explicit-model-profiles.md) | Accepted; pin workhorse, writing, previous, and escalation profiles while preserving machine routing. |
 | [ADR 0046 - Declarative TCC onboarding with a native helper](adr/0046-tcc-onboarding.md) | Superseded by [ADR 0047](adr/0047-tcc-cli-first-apply.md); original native helper and opt-in prompt decision. |
 | [ADR 0047 - CLI-first permission auditing during apply](adr/0047-tcc-cli-first-apply.md) | Accepted; default desktop-role read-only auditing with manual native review. [Runbook](runbooks/tcc-onboarding.md). |
+| [ADR 0048 - The repo owns the NocFree keymap](adr/0048-repo-managed-nocfree-keymap.md) | Accepted; one stored Vial keymap applied to the cable and dongle by `scripts/keyboard/nocfree-keymap`, a firmware copy of the nav layer, and Karabiner-owned select mode through F20. |
 
 ## Research
 
@@ -159,7 +160,7 @@ for day-to-day implementation details.
 | [acpx Flow Capabilities](research/acpx-flow-capabilities.md) | Native flow control, orchestration gaps, and the fit with historical workflow discussions. |
 | [Nix Migration Research](research/nix-migration-research.md) | Why the repo stays on chezmoi, what a package-only nix spike would look like, and the work-Mac MDM check that gates nix-darwin. |
 | [Ralph Loop Workflow](research/ralph-loop-workflow.md) | Build log for an unattended plan/implement/review loop that commits and fast-forwards a real branch: what the design has to get right, the blockers an adversarial review caught before first run, and the guardrail that is still too strict. |
-| [NocFree Lite Firmware](research/nocfree-lite-firmware.md) | What the Lite's stock Vial firmware allows for layer keys, RGB, and host-visible layer state; its USB IDs for Karabiner; why custom firmware is not a practical path; and the checks that need the keyboard attached. |
+| [NocFree Lite Firmware](research/nocfree-lite-firmware.md) | What the Lite's stock Vial firmware allows for layer keys, RGB, and host-visible layer state; its USB IDs for Karabiner; why custom firmware is not a practical path; the 2026-10-06 device read (per-key VialRGB on the cable, none on the dongle); and the checks still open. |
 | [NocFree Community Usage](research/nocfree-community-usage.md) | Survey of vendor pages, GitHub, Reddit, and reviews for the Lite, Lite V2, and &: shared layouts and nav layers, macOS notes, 2.4G reliability reports, the Lite dongle's UF2 firmware, mods, complaints with vendor replies, and ranked ideas for Prateek's setup. |
 | [Go60 Layout Patterns](research/go60-layout-patterns.md) | Sweep of 2,023 public MoErgo Go60 layouts: where navigation layers put arrows, how layers are activated and left, selection without holding Shift, layer indication, and ranked options for leaving the Karabiner nav layer. |
 
