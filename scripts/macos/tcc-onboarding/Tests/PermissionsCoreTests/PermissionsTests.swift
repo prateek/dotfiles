@@ -111,6 +111,31 @@ final class PermissionsTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: url), before)
     }
 
+    func testAuditUsesReadOnlyInventoryAndPreservesUnknownEvidence() throws {
+        let declaration = try manifest()
+        let manifestURL = directory.appendingPathComponent("manifest.json")
+        try JSONEncoder().encode(declaration).write(to: manifestURL)
+        let allowed = try database(value: 2)
+        let before = try Data(contentsOf: allowed)
+        let missing = directory.appendingPathComponent("unreadable.db")
+        for (databases, requirement, expected, text) in [
+            ([allowed], RequirementResult.matches, Int32(0), ""),
+            ([allowed], .mismatch, 2, "stale"),
+            ([allowed], .unverifiable("Damaged code"), 3, "unknown"),
+            ([allowed, missing], .matches, 3, "unknown"),
+        ] {
+            let result = AuditCommand.run(["--audit", manifestURL.path]) { manifest in
+                Inventory.scan([Expectation(id: "test", app: manifest.apps["test"]!, resolution: .found(subject))],
+                               databases: databases, checker: Checker(result: requirement))
+            }
+            XCTAssertEqual(result.status, expected)
+            if expected == 0 { XCTAssertEqual(result.output, "") }
+            else { XCTAssertTrue(result.output.contains(text)) }
+            XCTAssertEqual(try Data(contentsOf: allowed), before)
+            XCTAssertFalse(FileManager.default.fileExists(atPath: missing.path))
+        }
+    }
+
     func testInventoryDoesNotOpenDatabasesWhenNoTargetsAreInstalled() throws {
         let manifest = try manifest()
         let missing = directory.appendingPathComponent("missing.db")
@@ -144,6 +169,25 @@ final class PermissionsTests: XCTestCase {
         let plist = try PropertyListSerialization.data(fromPropertyList: ["CFBundleIdentifier": id, "CFBundlePackageType": "APPL"], format: .xml, options: 0)
         try plist.write(to: contents.appendingPathComponent("Info.plist"))
         return app
+    }
+
+    func testUnreadableCandidateIdentityCannotProduceQuietAuditSuccess() throws {
+        let app = try manifest().apps["test"]!
+        let broken = try makeApp("Broken", id: subject.client)
+        let valid = try makeApp("Valid", id: subject.client)
+        let plist = broken.appendingPathComponent("Contents/Info.plist")
+        for contents in [Data("not a plist".utf8), try PropertyListSerialization.data(fromPropertyList: ["CFBundleName": "Broken"], format: .xml, options: 0)] {
+            try contents.write(to: plist)
+            for candidates in [[broken], [valid, broken]] {
+                let resolution = SubjectResolver.resolve(app, candidates: candidates)
+                let unavailable = directory.appendingPathComponent("never-open.db")
+                let report = AuditReport(Inventory.scan([Expectation(id: "test", app: app, resolution: resolution)], databases: [unavailable]))
+                XCTAssertEqual(report.exitStatus, 3)
+                XCTAssertTrue(report.output.contains("unknown"))
+                XCTAssertTrue(report.output.contains("identity"))
+                XCTAssertFalse(FileManager.default.fileExists(atPath: unavailable.path))
+            }
+        }
     }
 
     func testResolverRequiresUniqueVerifiedIdentityAndConfinesHelpers() throws {

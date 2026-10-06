@@ -44,7 +44,14 @@ public enum SubjectResolver {
         let urls = explicit.map { [$0] } ?? candidates
         let existing = Set(urls.map { $0.resolvingSymlinksInPath().standardizedFileURL })
             .filter { FileManager.default.fileExists(atPath: $0.path) }
-        let matching = existing.filter { Bundle(url: $0)?.bundleIdentifier == app.bundleID }
+        var identities: [URL: String] = [:]
+        for url in existing.sorted(by: { $0.path < $1.path }) {
+            guard let identity = Bundle(url: url)?.bundleIdentifier, !identity.isEmpty else {
+                return .ambiguous("Cannot read a valid bundle identity at \(url.path). Repair the app or choose a verified copy.")
+            }
+            identities[url] = identity
+        }
+        let matching = existing.filter { identities[$0] == app.bundleID }
         if let explicit, !existing.isEmpty, matching.isEmpty {
             return .ambiguous("The bundle at \(explicit.path) does not match \(app.bundleID).")
         }

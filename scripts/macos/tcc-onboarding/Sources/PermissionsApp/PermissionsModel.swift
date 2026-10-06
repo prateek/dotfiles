@@ -170,14 +170,8 @@ final class PermissionsModel: ObservableObject {
         guard !busy else { queuedRefresh = true; return }
         busy = true
         let currentGeneration = generation
-        let expectations = manifest.apps.sorted { $0.key < $1.key }.map { id, app in
-            Expectation(id: id, app: app, resolution: SubjectResolver.resolve(app,
-                candidates: NSWorkspace.shared.urlsForApplications(withBundleIdentifier: app.bundleID), selected: selections[id]))
-        }
-        let databases = [
-            FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support/com.apple.TCC/TCC.db"),
-            URL(fileURLWithPath: "/Library/Application Support/com.apple.TCC/TCC.db"),
-        ]
+        let expectations = NativeInventory.expectations(manifest, selections: selections)
+        let databases = NativeInventory.databases
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             let result = Inventory.scan(expectations, databases: databases)
             DispatchQueue.main.async {

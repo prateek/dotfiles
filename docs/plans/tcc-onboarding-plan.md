@@ -5,11 +5,11 @@ owner: Prateek
 created: 2026-10-05
 updated: 2026-10-05
 related:
-  - ../adr/0046-tcc-onboarding.md
+  - ../adr/0047-tcc-cli-first-apply.md
   - ../references/chezmoi-hook-lifecycle.md
   - ../references/chezmoi-architecture.md
   - ../runbooks/tcc-onboarding.md
-status_detail: "Implemented in source with automated checks; opt-in. Attended E2E and mini/work audits remain pending."
+status_detail: "Implemented in source with automated checks; CLI-first apply audit. Attended E2E and mini/work audits remain pending."
 ---
 
 # TCC onboarding during chezmoi apply
@@ -26,18 +26,18 @@ declared expectations with recorded grants and explains unresolved entries.
 
 - Read-only TCC inventory is the primary status source, including stored code
   requirement checks for stale grants.
-- An enabled interactive apply asks in the terminal before opening the helper.
-  The default answer is no. After yes, the helper checks recorded grants and
-  shows a window only when attention is needed; apply does not wait for grants.
+- An enabled apply audits headlessly and prints a manual GUI command for
+  deviations or unknown evidence. Matching audits are quiet.
 - Start the expected-grant inventory from audits of this Mac and the mini.
   The work Mac will follow later. Observations do not automatically become
   expectations, and denied grants are not requests to broaden access.
-- `tcc_onboarding` is opt-in on every machine through the existing feature layers.
+- `tcc_onboarding` defaults on for personal, work, and homelab Mac roles,
+  with host/local overrides through the existing feature layers.
 - Implement and run automated checks now. The user explicitly deferred attended
   end-to-end testing until they are available; native behavior remains unverified.
 
 The [operator runbook](../runbooks/tcc-onboarding.md) owns current setup commands,
-validation coverage, and audit status. [ADR 0046](../adr/0046-tcc-onboarding.md)
+validation coverage, and audit status. [ADR 0047](../adr/0047-tcc-cli-first-apply.md)
 records the architecture.
 
 ## Evidence and simplification
@@ -85,7 +85,7 @@ native-validation items:
    Rebuild it with a source change and determine whether Full Disk Access
    survives; document reauthorization if it does not.
 5. Exercise the implemented renderer and gated apply hook through the same
-   flow, including Later and a second apply. Validate the other declared
+   flow, including a manual review and a second apply. Validate the other declared
    services individually before claiming their native grant flows work.
 
 Keep disposable spike files in ignored scratch storage. Preserve the OS
@@ -199,7 +199,7 @@ runtime probes can be added later if a demonstrated problem justifies them.
    entries, including allowed ones, through the checklist filter. Preserve the
    expanded task after a status change until the user explicitly advances.
 5. Finish when all installed expectations are allowed, or let the user choose
-   **Later**. Deferred entries are checked again on the next interactive apply;
+   **Later**. Deferred entries are checked again on the next enabled apply;
    no persistent suppression or user-confirmed “grant” cache is needed in v1.
 
 Drag support is a per-service capability established through live validation.
@@ -234,31 +234,19 @@ grants across ad-hoc rebuilds. The first slice determines the supported update
 and reauthorization procedure; stable certificate signing is a follow-up choice
 if local rebuilds prove too disruptive.
 
-For an interactive apply owned by the logged-in console user, ask
-`Review macOS app permissions now? [y/N]` using the existing stdin/stdout TTY
-convention. Prompt before scanning, even on a repeat apply; this keeps a hidden
-GUI preflight or terminal-context permission probe out of the hook. On yes,
-launch through LaunchServices with a reconcile argument and the manifest path.
-The app reads
-its own status and exits without a window when all installed expectations are
-allowed. The hook returns after launch; it does not wait for human action.
-Opening the app manually shows the inventory and permits refresh at any time.
-Reuse an existing instance and refresh its manifest instead of creating duplicate
-windows. If an update is needed while the helper is open, defer replacement and
-reconciliation with a message to close it and rerun apply. Never wait indefinitely
-or terminate an attended permission step.
+The follow-up integration uses the CLI by default for personal, work, and
+homelab Mac roles, with host/local overrides; CI and devbox remain disabled.
+The headless audit shares app resolution, SQLite reads, and identity validation
+with the GUI. Matching records are quiet; known deviations and unknown evidence
+print reasons and a shell-safe manual command opening the registry document.
+No apply context launches the GUI or changes grants automatically. CLI database
+access does not establish the GUI helper's access. Dry runs never access TCC.
 
-SSH, CI, noninteractive, or non-console-user applies do not launch GUI or wait.
-Print a command to open the installed app in the user's desktop session. They
-must not present a terminal-context TCC read as the GUI helper's result.
-Dry runs never build, launch, or access permission databases.
-
-Before launching, run a synchronous validation-only mode sharing the app's
-manifest decoder. This mode needs no GUI or TCC access. Malformed manifests and
-build failures fail the enabled hook with an actionable error. Missing grants,
-unreadable TCC, a failed GUI launch, and Later produce
-guidance without failing the rest of apply. The helper reports schema problems
-as unresolved status rather than silently marking the machine reconciled.
+The [runbook](../runbooks/tcc-onboarding.md#audit-and-open) specifies exit codes,
+bootstrap, legacy-helper capability detection, toolchain reuse, and failure
+behavior. Updates preserve running helpers rather than terminating a review.
+The fixture lane covers CLI output and status alongside hook and reader behavior;
+attended Settings and rebuild-authorization verification remain outstanding.
 
 ## Critical path and acceptance
 
@@ -275,7 +263,7 @@ Validation must protect these observable guarantees:
   scope are exercised. Tests never access the host's TCC databases.
 - Rendering preserves reasons and exact subjects, rejects malformed data, and
   respects machine/OS gates. Uninstalled entries do not open onboarding.
-- Hook tests cover dry-run, headless operation, unchanged-build reuse, launch
+- Hook tests cover dry-run, headless operation, unchanged-build reuse, audit
   failure, and a repeat apply. Use the existing Bats and render-test seams in
   the [tests index](../../tests/README.md).
 - Attended VM evidence demonstrates the actual drag, toggle, refresh, Later,
@@ -310,8 +298,9 @@ Reddit/community launch drafts. The deferred [product plan](permissions-product-
 records the registry contract, release checks, launch deliverables and initial copy.
 
 This distribution work is deferred. The current installer builds locally and
-requires a compatible Swift toolchain and macOS SDK; enabling it on a host
-without those tools currently fails the hook.
+requires a compatible Swift toolchain and macOS SDK. Without those tools, a
+verified existing helper is reused or manual recovery guidance reports that
+auditing is unavailable.
 
 [ghostpepper]: https://github.com/matthartman/ghost-pepper/blob/5a5b53aadbc1c1f76968cd1c8a9aff690d076887/GhostPepper/PermissionChecker.swift
 [keypath-drag]: https://github.com/malpern/KeyPath/blob/d5581754c143914727dca827f96439246138fcef/Sources/KeyPathInstallationWizard/UI/Helpers/DragToAuthorize/DragToAuthorizeController.swift

@@ -39,7 +39,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [Mise Tool Management](references/mise-tool-management.md) | Mise-native CLI and tool selection. |
 | [Tart Install Validation](runbooks/tart-mini-validation.md) | Local disposable-VM install validation on a Mac mini. |
 | [Tartelet Runner Setup](runbooks/tartelet-runner-setup.md) | Standing up a homelab mini as an ephemeral iOS/macOS GitHub Actions runner host. |
-| [TCC Onboarding](runbooks/tcc-onboarding.md) | Opt-in permission inventory, native helper, stale-grant recovery, and pending attended validation. |
+| [TCC Onboarding](runbooks/tcc-onboarding.md) | Default desktop-role CLI audit, manual native review, stale-grant recovery, and pending attended validation. |
 | [Session Archive Sync Permissions](runbooks/session-sync-permissions.md) | Building the dedicated sync app and validating its removable-volume access. |
 | [USB-C Cable Audit](runbooks/usb-c-cable-audit.md) | Auditing unlabeled USB-C cables for speed, power, generation, and TB5 capability. |
 
@@ -47,7 +47,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 
 | Doc | Status |
 | --- | --- |
-| [TCC Onboarding](plans/tcc-onboarding-plan.md) | Active; native helper and opt-in terminal prompt implemented. Attended E2E and mini/work audits pending; see the [runbook](runbooks/tcc-onboarding.md). |
+| [TCC Onboarding](plans/tcc-onboarding-plan.md) | Active; native helper and CLI-first apply audit implemented. Attended E2E and mini/work audits pending; see the [runbook](runbooks/tcc-onboarding.md). |
 | [Permissions UI Prototype Brief](plans/permissions-ui-prototype-brief.md) | Superseded by the hybrid plan; records the Astra and Fable comparative brief. |
 | [Permissions Hybrid UI Plan](plans/permissions-hybrid-ui-plan.md) | Active; approved hybrid implemented with compact chrome, permission-first batching, stale identity evidence, and exact file handoff. Attended native validation remains. |
 | [Permission Utility Product Follow-up](plans/permissions-product-plan.md) | Draft and deferred; standalone releases, app-versioned registry updates without rebuilding, separate publishing pipelines, website and launch copy. |
@@ -132,7 +132,8 @@ for day-to-day implementation details.
 | [ADR 0043 - Gate the devbox by OS, not by an allowlist](adr/0043-devbox-os-gating.md) | Accepted; [Linux devbox plan](plans/linux-devbox-plan.md). The devbox takes the whole source state; macOS targets, `.chezmoiremove`, and synced agent asset directories are gated off it. |
 | [ADR 0044 - Karabiner is the only keyboard remapper](adr/0044-karabiner-sole-remapper.md) | Accepted; kanata removed, closing the open item in [ADR 0009](adr/0009-goku-karabiner-codegen.md). Layers the Mac must know about are Karabiner variables. |
 | [ADR 0045 - ACPX explicit model profiles](adr/0045-acpx-explicit-model-profiles.md) | Accepted; pin workhorse, writing, previous, and escalation profiles while preserving machine routing. |
-| [ADR 0046 - Declarative TCC onboarding with a native helper](adr/0046-tcc-onboarding.md) | Accepted; [TCC onboarding runbook](runbooks/tcc-onboarding.md). Read-only inventory with user-granted permissions and an opt-in terminal prompt. |
+| [ADR 0046 - Declarative TCC onboarding with a native helper](adr/0046-tcc-onboarding.md) | Superseded by [ADR 0047](adr/0047-tcc-cli-first-apply.md); original native helper and opt-in prompt decision. |
+| [ADR 0047 - CLI-first permission auditing during apply](adr/0047-tcc-cli-first-apply.md) | Accepted; default desktop-role read-only auditing with manual native review. [Runbook](runbooks/tcc-onboarding.md). |
 
 ## Research
 
