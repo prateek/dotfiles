@@ -6,6 +6,11 @@ import SwiftUI
 enum PermissionsApp {
     static func main() {
         let args = Array(CommandLine.arguments.dropFirst())
+        if args.first == "--audit" {
+            let result = AuditCommand.run(args, scan: NativeInventory.scan)
+            FileHandle.standardOutput.write(Data(result.output.utf8))
+            exit(result.status)
+        }
         if args.first == "--validate" {
             guard args.count == 2 else { fail("Usage: DotfilesPermissions --validate <manifest.json>") }
             do { _ = try Manifest.load(URL(fileURLWithPath: args[1])); return }
@@ -14,6 +19,9 @@ enum PermissionsApp {
         if args.first == "--is-running" {
             exit(NSRunningApplication.runningApplications(withBundleIdentifier: "com.prateek.DotfilesPermissions")
                 .contains { $0.processIdentifier != ProcessInfo.processInfo.processIdentifier } ? 0 : 1)
+        }
+        if let first = args.first, first.hasPrefix("--"), !["--manifest", "--reconcile"].contains(first) {
+            fail("Unknown option: \(first)")
         }
         let application = NSApplication.shared
         let delegate = AppDelegate()

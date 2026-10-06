@@ -23,7 +23,7 @@
 groups = ["core"]
 run_install_scripts = true
 apply_macos_defaults = true
-# Opt in after reviewing the expected grants in tcc.toml.
+# Read-only auditing defaults on for desktop Mac roles below.
 tcc_onboarding = false
 # The OS image activates mise from its system shell rc files, so nested shells
 # inherit a session; the zsh profile undoes it before setting its own PATH.
@@ -99,6 +99,7 @@ groups = ["core"]
 
 # Personal daily-driver Mac.
 [machines.type.personal]
+tcc_onboarding = true
 os = "darwin"
 groups = ["core", "mac-desktop", "ai-agent-apps", "developer-tools", "mac-developer-tools", "personal-apps", "forks"]
 touchid_sudo = true
@@ -113,6 +114,7 @@ agent_session_wiki = true
 # AI agent apps (agentsview + Orca need each other to be useful), without the
 # full interactive personal desktop surface.
 [machines.type.homelab]
+tcc_onboarding = true
 os = "darwin"
 groups = ["core", "ai-agent-apps", "developer-tools", "mac-developer-tools", "apple-development", "homelab-overlay"]
 pin_hostname = true
@@ -138,6 +140,7 @@ agent_session_wiki = true
 # kill the terminal. Leaving it out of agent_clis keeps mise from installing it
 # and removes a copy an earlier apply left behind; it is not an acpx route either.
 [machines.type.work]
+tcc_onboarding = true
 os = "darwin"
 groups = ["core", "mac-desktop", "ai-agent-apps", "developer-tools", "mac-developer-tools", "work-apps", "forks"]
 touchid_sudo = true

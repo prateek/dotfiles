@@ -112,7 +112,7 @@ settles the question, before production adoption.
    prototype. Confirm that users can identify all needed apps without opening
    each task, and that the active task's purpose and action remain obvious.
 2. Move the selected layout into the existing app, retaining the read-only
-   inventory, service-specific actions, stable selection, terminal opt-in,
+   inventory, service-specific actions, stable selection, CLI-first apply auditing,
    and toolchain fallback. Use current core semantics rather than copying
    fixture classifiers into production.
 3. Validate rechecks after actual app replacement, code requirement mismatch,
@@ -121,7 +121,7 @@ settles the question, before production adoption.
    no new tests are needed for this disposable prototype.
 4. During attended E2E, verify real pane navigation, cross-app dragging of the
    exact resolved subject, keyboard alternatives, stale repair, bootstrap,
-   relaunch guidance, and opt-in chezmoi behavior. Audit this Mac first, then
+   relaunch guidance, and CLI-first chezmoi behavior. Audit this Mac first, then
    the mini and eventually the work Mac within the previously agreed scope.
 5. Review keyboard focus, VoiceOver, text scaling, light/dark, Increase Contrast,
    Reduce Transparency, and Reduce Motion on the actual app. Source-linked HIG

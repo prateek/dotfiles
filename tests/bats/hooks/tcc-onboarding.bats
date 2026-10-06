@@ -15,8 +15,8 @@ exit "${INSTALL_STATUS:-0}"
 SH
   cat > "$HOME/Applications/Dotfiles Permissions.app/Contents/MacOS/DotfilesPermissions" <<'SH'
 #!/bin/bash
-printf 'validate %s\n' "$*" >> "$events"
-exit "${VALIDATE_STATUS:-0}"
+printf 'audit %s\n' "$*" >> "$events"
+exit "${AUDIT_STATUS:-0}"
 SH
   cat > "$FIXTURE/bin/open" <<'SH'
 #!/bin/bash
@@ -39,115 +39,107 @@ PY
   hook="$FIXTURE/hook"
 }
 
-@test "permission hook is opt-in and respects install and OS gates" {
+@test "permission audit defaults to desktop Mac roles and respects overrides" {
   local machine
-  for machine in personal work homelab ci devbox; do
+  for machine in personal work homelab; do
+    run -0 render_template home/.chezmoiscripts/run_after_80-tcc-onboarding.sh.tmpl "$machine"
+    assert_output --partial '--audit'
+    run -0 render_template home/.chezmoiscripts/run_after_80-tcc-onboarding.sh.tmpl "$machine" '{"machines_local":{"tcc_onboarding":false}}'
+    assert_output ''
+  done
+  for machine in ci devbox; do
     run -0 render_template home/.chezmoiscripts/run_after_80-tcc-onboarding.sh.tmpl "$machine"
     assert_output ''
   done
-  run -0 render_template home/.chezmoiscripts/run_after_80-tcc-onboarding.sh.tmpl personal '{"machines_local":{"tcc_onboarding":true,"run_install_scripts":false}}'
+  run -0 render_template home/.chezmoiscripts/run_after_80-tcc-onboarding.sh.tmpl personal '{"machines_local":{"run_install_scripts":false}}'
   assert_output ''
   run -0 render_template home/.chezmoiscripts/run_after_80-tcc-onboarding.sh.tmpl devbox '{"machines_local":{"tcc_onboarding":true}}'
   assert_output ''
 }
 
-@test "headless permission apply validates and prints resume without launching" {
+@test "matching audit is quiet and never launches" {
   run_bash 0 "$hook"
-  assert_output --partial 'Review permissions later:'
-  assert_equal "$(cat "$events")" $'install\nvalidate --validate '"$HOME/.config/dotfiles/tcc.json"
+  assert_output ''
+  assert_equal "$(cat "$events")" $'install\naudit --audit '"$HOME/.config/dotfiles/tcc.json"
 }
 
-@test "terminal permission prompt accepts yes and preserves paths with spaces" {
-  run -0 "$TEST_ZSH" -f "$DOTFILES_ROOT/tests/support/pty-dialogue.zsh" "$FIXTURE/pty" '[y/N]' 'y' bash "$hook"
-  assert_success
-  run -0 rg '^open ' "$events"
-  local encoded_manifest
-  encoded_manifest=$("$TEST_PYTHON" - "$HOME/.config/dotfiles/tcc.json" <<'PYTEST'
-from urllib.parse import quote
-import sys
-print(quote(sys.argv[1], safe='/'))
-PYTEST
-)
-  assert_output "open -g -a $HOME/Applications/Dotfiles Permissions.app dotfiles-permissions://reconcile?manifest=$encoded_manifest --args --reconcile --manifest $HOME/.config/dotfiles/tcc.json"
-}
-
-@test "terminal permission prompt defaults to later and never launches on no" {
-  local answer
-  for answer in '' n; do
+@test "deviations and unknown evidence print a shell-safe manual command without launching" {
+  local status
+  for status in 2 3; do
     : > "$events"
-    run -0 "$TEST_ZSH" -f "$DOTFILES_ROOT/tests/support/pty-dialogue.zsh" "$FIXTURE/pty" '[y/N]' "$answer" bash "$hook"
-    assert_success
-    run -1 rg '^open ' "$events"
-    assert_failure 1
+    run -0 env AUDIT_STATUS="$status" bash "$hook"
+    assert_output --partial 'Review permissions: open -a '
+    local command="${output#Review permissions: }"
+    run -0 bash -c "$command"
+    assert_equal "$(tail -1 "$events")" "open -a $HOME/Applications/Dotfiles Permissions.app $HOME/.config/dotfiles/tcc.json"
   done
 }
 
-@test "permission hook keeps unattended contexts silent even with a terminal" {
+@test "SSH and CI still audit without GUI or prompt" {
   local setting
-  for setting in 'CI=true' 'SSH_CONNECTION=remote' 'CONSOLE_UID=99999'; do
+  for setting in CI=true SSH_CONNECTION=remote; do
     : > "$events"
-    run -0 env "$setting" "$TEST_ZSH" -f "$DOTFILES_ROOT/tests/support/pty-dialogue.zsh" "$FIXTURE/pty" '[complete]' '' bash -c 'bash "$1"; printf "[complete]"; read -r answer' _ "$hook"
-    assert_success
-    run -0 rg 'Review permissions later:' "$FIXTURE/pty"
-    run -1 rg '^open ' "$events"
-    assert_failure 1
+    run -0 env "$setting" AUDIT_STATUS=3 bash "$hook"
+    assert_output --partial 'Review permissions:'
+    assert_equal "$(cat "$events")" $'install\naudit --audit '"$HOME/.config/dotfiles/tcc.json"
   done
 }
 
-@test "permission hook reports installation and manifest errors but tolerates deferred updates" {
+@test "manifest and unexpected audit failures fail apply with unknown evidence" {
+  run -1 env AUDIT_STATUS=64 bash "$hook"
+  assert_output --partial 'Invalid or unreadable permission manifest'
+  run -1 env AUDIT_STATUS=1 bash "$hook"
+  assert_output --partial 'recorded access remains unknown'
   run -1 env INSTALL_STATUS=1 bash "$hook"
-  assert_failure 1
-  run -1 env VALIDATE_STATUS=1 bash "$hook"
-  assert_failure 1
-  : > "$events"
+  assert_output --partial 'installation failed'
+}
+
+@test "deferred update audits verified existing helper" {
+  run -0 env INSTALL_STATUS=75 AUDIT_STATUS=2 bash "$hook"
+  assert_output --partial 'quit it'
+  assert_output --partial 'Review permissions:'
+  assert_equal "$(cat "$events")" $'install\naudit --audit '"$HOME/.config/dotfiles/tcc.json"
+}
+
+@test "legacy helper is never called with audit flag" {
+  plutil -remove DotfilesPermissionsAuditVersion "$HOME/Applications/Dotfiles Permissions.app/Contents/Info.plist"
   run -0 env INSTALL_STATUS=75 bash "$hook"
-  assert_equal "$(cat "$events")" $'install\nvalidate --validate '"$HOME/.config/dotfiles/tcc.json"
+  assert_output --partial 'Permission audit unavailable'
+  assert_output --partial 'Review permissions:'
+  assert_equal "$(cat "$events")" install
 }
 
-@test "permission GUI launch failure gives recovery without failing apply" {
-  run -0 env OPEN_STATUS=1 "$TEST_ZSH" -f "$DOTFILES_ROOT/tests/support/pty-dialogue.zsh" "$FIXTURE/pty" '[y/N]' 'y' bash "$hook"
-  run -0 rg 'Could not open|Review permissions later' "$FIXTURE/pty"
-  assert_success
-}
-
-@test "missing toolchain skips helper without failing apply or launching" {
+@test "missing toolchain reports unavailability without scanning or launching" {
   run -0 env INSTALL_STATUS=69 bash "$hook"
+  assert_output --partial 'unavailable'
   assert_output --partial 'System Settings'
   assert_equal "$(cat "$events")" install
 }
 
-@test "deferred update still offers onboarding with the existing app" {
-  run -0 env INSTALL_STATUS=75 "$TEST_ZSH" -f "$DOTFILES_ROOT/tests/support/pty-dialogue.zsh" "$FIXTURE/pty" '[y/N]' 'y' bash "$hook"
-  run -0 rg '^open ' "$events"
-  assert_output --partial 'dotfiles-permissions://reconcile?manifest='
-  run -0 rg 'quit it' "$FIXTURE/pty"
-}
-
-@test "concurrent install reports retry without prompting or validating" {
+@test "install lock reports retry without scanning or launching" {
   run -0 env INSTALL_STATUS=73 bash "$hook"
   assert_output --partial 'already in progress'
   assert_equal "$(cat "$events")" install
 }
 
-@test "reconcile URL encodes path separators independently of reserved characters" {
+@test "rendered paths and manual command preserve shell metacharacters without execution" {
   local previous_home="$HOME"
-  export HOME="$FIXTURE/User Space & ✓"
-  mkdir -p "$HOME/Applications"
+  local special='User '\'' Space & ✓ $(printf substituted)`printf substituted`'
+  export HOME="$FIXTURE/$special"
+  local source_dir="$FIXTURE/Checkout $special/home"
+  mkdir -p "$HOME/Applications" "$source_dir" "$source_dir/../scripts/macos"
   cp -R "$previous_home/Applications/Dotfiles Permissions.app" "$HOME/Applications/"
-  "$TEST_PYTHON" - "$hook" "$previous_home" "$HOME" <<'PYTEST'
-from pathlib import Path
-import sys
-p=Path(sys.argv[1]); p.write_text(p.read_text().replace(sys.argv[2], sys.argv[3]))
+  cp "$FIXTURE/repo/scripts/macos/install-tcc-onboarding" "$source_dir/../scripts/macos/"
+  local data
+  data=$("$TEST_PYTHON" - "$source_dir" <<'PYTEST'
+import json, sys
+print(json.dumps({"chezmoi": {"sourceDir": sys.argv[1]}}))
 PYTEST
-  run -0 "$TEST_ZSH" -f "$DOTFILES_ROOT/tests/support/pty-dialogue.zsh" "$FIXTURE/pty" '[y/N]' 'y' bash "$hook"
-  run -0 rg '^open ' "$events"
-  assert_output --partial 'User%20Space%20%26%20%E2%9C%93/.config/dotfiles/tcc.json'
-}
-
-@test "older helper still opens inventory when its update is deferred" {
-  plutil -remove CFBundleURLTypes "$HOME/Applications/Dotfiles Permissions.app/Contents/Info.plist"
-  run -0 env INSTALL_STATUS=75 "$TEST_ZSH" -f "$DOTFILES_ROOT/tests/support/pty-dialogue.zsh" "$FIXTURE/pty" '[y/N]' 'y' bash "$hook"
-  run -0 rg '^open ' "$events"
-  assert_output --partial "$HOME/.config/dotfiles/tcc.json --args --reconcile --manifest"
-  run -0 rg 'needs an update for background reconciliation' "$FIXTURE/pty"
+)
+  render_template home/.chezmoiscripts/run_after_80-tcc-onboarding.sh.tmpl personal "$data" > "$hook"
+  run -0 env AUDIT_STATUS=3 bash "$hook"
+  local command="${output#Review permissions: }"
+  assert_equal "$(cat "$events")" $'install\naudit --audit '"$HOME/.config/dotfiles/tcc.json"
+  run -0 bash -c "$command"
+  assert_equal "$(tail -1 "$events")" "open -a $HOME/Applications/Dotfiles Permissions.app $HOME/.config/dotfiles/tcc.json"
 }

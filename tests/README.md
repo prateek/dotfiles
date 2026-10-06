@@ -426,9 +426,12 @@ reasons. Unknown and denied recovery never offers missing-grant drag instruction
 The model substitutes the Settings-opening boundary; no app or Settings is launched.
 
 `just test-shell tests/bats/hooks/tcc-onboarding.bats tests/bats/hooks/tcc-installer.bats`
-checks the opt-in hook, real PTY yes/no prompt, unattended paths, validation and
-launch failures, installer reuse, deferred updates with continued onboarding, separate install-lock
-recovery, legacy-helper compatibility, encoded request paths, and missing-toolchain recovery. External OS commands are
+checks default desktop-role auditing and overrides, quiet matched output, unattended
+audits, unknown/deviation recovery commands, manifest and unexpected failures,
+installer reuse, deferred updates, install-lock recovery, legacy-helper capability
+detection, and missing-toolchain recovery. Shell-safe command replay replaces
+the former PTY prompt and automatic-launch assertions because apply no longer
+prompts or launches. GUI URL-event tests retain encoded-path coverage. External OS commands are
 substituted inside fixture directories. `just test-python -p test_tcc_manifest.py`
 checks the rendered inventory and its macOS/feature gates.
 

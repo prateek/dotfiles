@@ -5,7 +5,7 @@ created: 2026-10-05
 updated: 2026-10-06
 related:
   - ../plans/tcc-onboarding-plan.md
-  - ../adr/0046-tcc-onboarding.md
+  - ../adr/0047-tcc-cli-first-apply.md
 status_detail: "Source implementation and automated checks; attended native grant flow remains unverified."
 ---
 
@@ -13,41 +13,55 @@ status_detail: "Source implementation and automated checks; attended native gran
 
 Dotfiles Permissions compares declared access with read-only TCC records and
 checks whether stored code requirements still match installed apps. The user
-changes grants in System Settings. This feature is disabled on every machine
-until explicitly enabled.
+changes grants in System Settings. Read-only auditing defaults on for personal,
+work, and homelab Macs; CI and devbox roles remain disabled. Host and local
+`tcc_onboarding` overrides still take precedence.
 
-## Enable and open
+## Audit and open
 
-Review [the manifest](../../home/.chezmoidata/tcc.toml) first. Add this to the
-existing chezmoi configuration file under its machine-local feature overrides:
+Review [the manifest](../../home/.chezmoidata/tcc.toml), then preview with
+`chezmoi diff` and `chezmoi apply --dry-run --verbose`. An enabled apply builds
+or reuses `~/Applications/Dotfiles Permissions.app` and runs its headless
+`--audit` mode against `~/.config/dotfiles/tcc.json`. It never prompts, launches
+the GUI, or changes grants. Matching installed expectations produce no audit
+output. Uninstalled apps are excluded from deviations; no installed targets
+means there is nothing to reconcile, not proof that any grant exists.
+
+Deviations print each app, permission, state, and evidence reason, followed by
+one shell-safe command opening the registry as a document in the native helper.
+The document reaches an already-running helper too. SSH and noninteractive
+applies use the same CLI path. Dry runs do not build or read TCC.
+
+CLI evidence belongs to the calling process context. If either database is
+unreadable, installed targets remain unknown; the CLI identifies possible
+Full Disk Access bootstrap and the GUI checks its own access independently.
+Unsupported schemas, ambiguous app copies, conflicting records, and damaged
+or unverifiable signatures also remain unknown. Only a valid signature that
+fails the stored requirement is stale. The audit does not request access.
+
+For direct use:
+
+```sh
+"$HOME/Applications/Dotfiles Permissions.app/Contents/MacOS/DotfilesPermissions" --audit "$HOME/.config/dotfiles/tcc.json"
+```
+
+Exit codes are 0 for no deviations, 2 for known deviations, 3 for inconclusive
+evidence (including mixed known/unknown results), and 64 for invalid arguments
+or an invalid/unreadable manifest. The hook tolerates 2 and 3 with guidance;
+invalid manifests and unexpected failures fail the hook. A deferred update or
+missing toolchain can reuse a verified installed helper. A legacy helper without
+the advertised audit version is never sent `--audit`; it produces an explicit
+unavailable message and a manual review command. No helper/toolchain or an
+installation lock produces recovery guidance, never a successful audit claim.
+Build errors still fail apply; the installed bundle is preserved.
+
+To disable apply-time auditing while preserving the installed app and grants,
+set this in the existing local feature overrides:
 
 ```toml
 [data.machines_local]
-tcc_onboarding = true
+tcc_onboarding = false
 ```
-
-Alternatively set the feature in the appropriate committed host layer of
-`home/.chezmoidata/machines.toml`. Preserve any other local feature overrides.
-
-Preview with `chezmoi diff` and `chezmoi apply --dry-run --verbose`, then apply
-when ready. The enabled hook builds `~/Applications/Dotfiles Permissions.app`
-and validates `~/.config/dotfiles/tcc.json`. An interactive console-user apply
-asks `Review macOS app permissions now? [y/N]`. No is the default. The question
-appears on each enabled interactive apply, before any permission scan.
-
-Yes sends a reconciliation URL event through LaunchServices, so its intent
-reaches an already-running helper as well as a new process. Cold-start arguments
-supply the manifest before the URL event arrives. Reopening the same registry
-reloads declarations while preserving selected tasks, deferred tasks, evidence,
-and chosen app copies. All recorded grants
-matching the installed identities means the helper exits without a window.
-Otherwise it shows unresolved entries if its window is closed; it does not
-reactivate an already-visible review. Apply returns after launch; Later or
-closing the helper leaves unresolved grants for the next review.
-
-SSH, CI, non-console-user, and noninteractive applies print a resume command
-without prompting or launching the GUI. Build or manifest errors fail the
-hook; missing grants and GUI launch failures do not. Dry runs execute no hook.
 
 Open the installed app manually to see the full inventory:
 
@@ -144,7 +158,7 @@ permissions, writes TCC, or toggles Settings controls automatically.
 Building or updating requires a compatible Swift toolchain and macOS SDK.
 Without Swift, the installer reuses an existing bundle only if its identity and
 signature verify, with a warning that it was not updated. If none is usable, the
-opt-in hook warns and leaves a manual Settings review instead of failing apply.
+enabled hook warns and leaves a manual Settings review instead of failing apply.
 Toolchain-free installation through published releases is
 deferred to the [standalone-tool follow-up](../plans/tcc-onboarding-plan.md#future-follow-up-standalone-tool-and-releases).
 
@@ -152,11 +166,11 @@ The installer hashes app sources and toolchain inputs. Unchanged applies reuse
 the signed bundle, and manifest edits do not rebuild it. A changed app is staged
 and signature-checked before replacement. If the helper is open, the update is
 deferred: quit the app (⌘Q) and rerun apply. Closing its window keeps the
-process alive. The enabled hook can still validate and review the existing
-verified bundle while the update is deferred. An older bundle without the URL
-protocol opens its inventory with an explicit compatibility warning until it
-is updated. A concurrent installer uses a separate exit status and only advises
-retrying; it does not claim quitting the helper will resolve an install lock.
+process alive. The enabled hook can still audit a verified existing bundle
+that advertises CLI support while the update is deferred. An older bundle
+without CLI support prints an unavailable message and a manual review command
+until it is updated. A concurrent installer advises retrying; quitting the
+helper does not resolve an install lock.
 
 Local builds use ad-hoc signing. A new build can require Full Disk Access again;
 a stable bundle ID alone does not promise grant retention. Reauthorization is
@@ -212,7 +226,10 @@ rendering, and terminal/installer behavior. Build artifacts stay under ignored
 When the user is available, start in a disposable Mac VM and record its macOS
 version and app identities:
 
-1. Enable the feature and verify the terminal no/yes flow through a real apply.
+1. Verify an enabled apply audits without a terminal prompt or GUI activation.
+   Matching installed expectations must produce no audit output; deviations and
+   unknown evidence must print reasons and one manual review command. Execute
+   that command explicitly and confirm the registry opens in the native helper.
 2. Grant the helper Full Disk Access through its tile. Relaunch and confirm it
    reads both databases independently of terminal permissions.
 3. For each supported drag service, drop a target, enable its entry, and confirm
@@ -221,8 +238,8 @@ version and app identities:
    Verify stale-grant removal/re-add recovery for the service being tested.
 5. Choose Later, reopen, and complete the remaining grant. Manual launches,
    including opening the manifest file, must show the inventory even when it
-   is reconciled. A repeat apply may ask in the terminal, but after yes a
-   reconciled inventory opens no window.
+   is reconciled. A repeat apply with matching installed expectations must be
+   quiet and leave the helper's window state unchanged.
 6. Revoke a grant and verify a new scan notices it. Rebuild the helper and check
    whether its own access needs reauthorization. An unchanged build preserves it.
 7. Validate Screen Recording's manual flow before enabling a drag instruction.

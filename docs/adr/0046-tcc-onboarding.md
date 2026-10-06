@@ -1,12 +1,14 @@
 ---
-status: accepted
+status: superseded
 doc_type: adr
 owner: Prateek
 created: 2026-10-05
-updated: 2026-10-05
+updated: 2026-10-06
+closed: 2026-10-06
+superseded_by: 0047-tcc-cli-first-apply.md
 related:
   - ../plans/tcc-onboarding-plan.md
-status_detail: "Implemented in source; opt-in terminal prompt. Attended native validation is deferred."
+status_detail: "CLI-first apply replaces the opt-in terminal prompt; permission core remains read-only."
 ---
 
 # ADR 0046 — Declarative TCC onboarding with a native helper
