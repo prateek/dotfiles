@@ -32,22 +32,31 @@
 #   orca-agent-session --worktree ~/code/worktrees/dotfiles/foo --json
 #
 # Session identity uses Orca's private session.tabs.list providerSession
-# metadata and aiVault.listSessions. Without a pane binding, only a unique
-# local session is accepted; timestamps cannot identify a focused conversation.
+# binding. The runtime vault scans only its own host, so remote panes must
+# resolve from their binding rather than a similarly named local session.
 
 import argparse
 import json
 import os
 import re
 import shlex
+import shutil
 import socket
+import sqlite3
 import subprocess
 import sys
 import urllib.parse
 import uuid
 
-ORCA_USER_DATA = os.path.expanduser("~/Library/Application Support/orca")
+ORCA_USER_DATA = os.environ.get("ORCA_USER_DATA_PATH") or os.path.join(
+    os.path.expanduser("~/Library/Application Support") if sys.platform == "darwin"
+    else os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config")), "orca"
+)
 ORCA_BUNDLE_ID = "com.stablyai.orca"
+ORCA_CLI = os.environ.get("ORCA_CLI_COMMAND") or (
+    "orca-dev" if os.environ.get("ORCA_DEV_REPO_ROOT") else
+    "orca-ide" if sys.platform == "linux" else "orca"
+)
 
 # Orca reports the pane's foreground process; the AI vault keys sessions by
 # agent name. These differ for a handful of agents (from Orca's
@@ -68,6 +77,7 @@ VAULT_AGENT_BY_PROCESS = {
 GENERIC_PROCESSES = {"zsh", "bash", "fish", "sh", "login", "nu", "tcsh", "node", "bun"}
 
 JSON_MODE = False
+SELECTED_ENVIRONMENT = None
 
 
 def fail(message, benign=False):
@@ -80,9 +90,12 @@ def fail(message, benign=False):
 
 def orca_cli(*args):
     try:
-        proc = subprocess.run(["orca", *args, "--json"], capture_output=True, text=True)
+        routing = ["--environment", SELECTED_ENVIRONMENT] if SELECTED_ENVIRONMENT else []
+        env = {k: v for k, v in os.environ.items()
+               if k not in {"ORCA_ENVIRONMENT", "ORCA_PAIRING_CODE", "ORCA_REMOTE_PAIRING"}}
+        proc = subprocess.run([ORCA_CLI, *args, *routing, "--json"], capture_output=True, text=True, env=env)
     except FileNotFoundError:
-        fail("orca CLI not found on PATH")
+        fail(f"{ORCA_CLI} CLI not found on PATH")
     try:
         envelope = json.loads(proc.stdout)
     except json.JSONDecodeError:
@@ -92,10 +105,35 @@ def orca_cli(*args):
     return envelope["result"]
 
 
+def paired_rpc(method, params, timeout, fatal):
+    launcher = shutil.which(ORCA_CLI)
+    if not launcher:
+        fail(f"{ORCA_CLI} CLI not found on PATH")
+    resources = os.path.dirname(os.path.dirname(os.path.realpath(launcher)))
+    executable = (os.path.join(os.path.dirname(resources), "MacOS", "Orca") if sys.platform == "darwin"
+                  else os.path.join(os.path.dirname(resources), "orca-ide"))
+    helper = os.path.join(os.path.dirname(os.path.realpath(__file__)), "orca-agent-rpc.cjs")
+    request = {"resources": resources, "userData": ORCA_USER_DATA, "environment": SELECTED_ENVIRONMENT,
+               "method": method, "params": params, "timeoutMs": timeout * 1000}
+    try:
+        proc = subprocess.run([executable, helper], input=json.dumps(request), capture_output=True, text=True,
+                              timeout=timeout + 5, env=dict(os.environ, ELECTRON_RUN_AS_NODE="1"))
+        frame = json.loads(proc.stdout)
+    except (OSError, subprocess.TimeoutExpired, json.JSONDecodeError):
+        fail("Could not reach the selected paired Orca server through its packaged runtime client")
+    if not frame.get("ok"):
+        if not fatal and not frame.get("transportError"):
+            return None
+        fail(f"Orca RPC {method} failed: {frame.get('error', {}).get('message', 'paired server unavailable')}")
+    return frame["result"]
+
+
 def rpc(method, params, timeout=15, fatal=True):
     """One runtime RPC round-trip. fatal=False returns None on a method-level
     error (e.g. terminal_gone for a half-dead pane) so per-pane probes can
     skip instead of aborting; transport-level failures always abort."""
+    if SELECTED_ENVIRONMENT:
+        return paired_rpc(method, params, timeout, fatal)
     try:
         with open(os.path.join(ORCA_USER_DATA, "orca-runtime.json")) as f:
             meta = json.load(f)
@@ -153,6 +191,20 @@ def frontmost_is_orca():
     return ORCA_BUNDLE_ID in info.stdout
 
 
+def selected_environment():
+    try:
+        with open(os.path.join(ORCA_USER_DATA, "orca-profile-index.json")) as source:
+            profile = json.load(source)["activeProfileId"]
+        if not isinstance(profile, str) or not re.fullmatch(r"[A-Za-z0-9_-]+", profile):
+            fail("Orca returned an invalid active profile")
+        database = os.path.join(ORCA_USER_DATA, "profiles", profile, "profile-state.db")
+        with sqlite3.connect(f"file:{urllib.parse.quote(database)}?mode=ro", uri=True) as connection:
+            row = connection.execute("SELECT payload FROM profile_state_documents WHERE domain = 'settings'").fetchone()
+        return json.loads(row[0]).get("activeRuntimeEnvironmentId") or None
+    except (OSError, KeyError, TypeError, sqlite3.Error, json.JSONDecodeError):
+        fail("Could not read Orca's active profile and server selection; update or restart Orca")
+
+
 def focused_worktree():
     worktrees = orca_cli("worktree", "ps")["worktrees"]
     active = next((w for w in worktrees if w.get("isActive")), None)
@@ -168,6 +220,39 @@ def focused_pane(worktree_id):
     if not pane or pane.get("type") != "terminal" or not pane.get("terminal"):
         fail("Focus an Orca agent terminal first")
     return pane
+
+
+def pane_host(pane, worktree):
+    terminal = rpc("terminal.show", {"terminal": pane["terminal"]})["terminal"]
+    if not terminal.get("connected"):
+        fail("The focused terminal is disconnected")
+    host = terminal.get("executionHostId") or worktree.get("hostId")
+    if not host:
+        fail("Orca could not identify the focused terminal's execution host; update Orca")
+    if host == "local" and SELECTED_ENVIRONMENT:
+        host = f"runtime:{SELECTED_ENVIRONMENT}"
+    if host != "local" and not re.fullmatch(r"(?:ssh|runtime):[^|\s]+", host):
+        fail("Orca returned an invalid execution host")
+    if host.startswith("ssh:"):
+        state = rpc("ssh.getState", {"targetId": urllib.parse.unquote(host[4:])}).get("state")
+        if not state or state.get("status") != "connected":
+            fail("The focused terminal's SSH host is disconnected")
+    return host
+
+
+def bound_remote_session(agent, worktree_path, provider_session, host):
+    sid = provider_session.get("id")
+    if not sid:
+        fail(f"Orca has not bound the focused {agent} conversation on {host}; no local fallback")
+    transcript = provider_session.get("transcriptPath")
+    session = {"agent": agent, "sessionId": sid, "cwd": worktree_path,
+               "filePath": transcript, "executionHostId": host}
+    if agent == "codex" and transcript:
+        # Rollouts live at <CODEX_HOME>/sessions/<date>/<filename>.
+        home, separator, _ = transcript.rpartition("/sessions/")
+        if separator and home.startswith("/"):
+            session["codexHome"] = home
+    return session
 
 
 def pane_agent(handle):
@@ -258,10 +343,15 @@ def fork_argv(agent, session):
     if agent == "claude":
         return ["claude", "--dangerously-skip-permissions", "--resume", sid, "--fork-session"]
     if agent == "codex":
-        home = session.get("codexHome") or os.path.expanduser("~/.codex")
+        home = session.get("codexHome")
+        if not home and session.get("executionHostId", "local") != "local":
+            fail("The remote Codex account home is unknown; Orca must report its transcript path")
+        home = home or os.path.expanduser("~/.codex")
         return ["env", f"CODEX_HOME={home}", "codex", "--dangerously-bypass-approvals-and-sandbox", "fork", sid]
     if agent in {"pi", "omp"}:
-        return [agent, "--fork", session.get("filePath") or sid]
+        if not session.get("filePath"):
+            fail(f"The focused {agent} transcript path is unknown; refusing an ambiguous fork")
+        return [agent, "--fork", session["filePath"]]
     if agent == "droid":
         return ["droid", "--fork", sid]
     return None
@@ -291,7 +381,7 @@ def reveal_in_agentsview(session_id):
 
 
 def main():
-    global JSON_MODE
+    global JSON_MODE, SELECTED_ENVIRONMENT
     parser = argparse.ArgumentParser(
         description="Resolve the agent session in Orca's focused terminal."
     )
@@ -305,16 +395,19 @@ def main():
     args = parser.parse_args()
     JSON_MODE = args.json
 
+    hud_mode = not args.json
+    if hud_mode and not args.worktree and not args.list_agents and not frontmost_is_orca():
+        fail("Not in Orca", benign=True)
+
+    SELECTED_ENVIRONMENT = None
+    SELECTED_ENVIRONMENT = selected_environment()
+
     if args.list_agents:
         agents = rpc("preflight.detectAgents", {})
         if not isinstance(agents, list) or any(not isinstance(agent, str) for agent in agents):
             fail("Orca returned an invalid agent list")
         print(json.dumps({"agents": agents}) if args.json else "\n".join(agents))
         return
-
-    hud_mode = not args.json
-    if hud_mode and not args.worktree and not frontmost_is_orca():
-        fail("Not in Orca", benign=True)
 
     if args.worktree:
         path = os.path.abspath(os.path.expanduser(args.worktree))
@@ -326,6 +419,7 @@ def main():
         active = focused_worktree()
 
     pane = focused_pane(active["worktreeId"])
+    host = pane_host(pane, active)
     running, agent = pane_agent(pane["terminal"])
     if not running:
         fail("No agent running in the focused terminal")
@@ -342,7 +436,8 @@ def main():
     if status.get("agentType") != agent:
         provider_session = {}
 
-    session = vault_session(agent, active["path"], provider_session)
+    session = (vault_session(agent, active["path"], provider_session) if host == "local"
+               else bound_remote_session(agent, active["path"], provider_session, host))
     if session is None:
         fail(f"Agent {agent or '(unknown)'} is running but no session found on disk yet")
 
@@ -362,7 +457,8 @@ def main():
             )
         command = f"cd {shlex.quote(session.get('cwd') or active['path'])} && {shlex.join(argv)}"
         if args.dry_run:
-            print(json.dumps({"agent": agent_name, "sessionId": session_id, "forkCommand": command})
+            print(json.dumps({"agent": agent_name, "sessionId": session_id, "forkCommand": command,
+                              "executionHostId": host})
                   if args.json else f"would fork {agent_name} {session_id[:8]}: {command}")
             return
         split = orca_cli(
@@ -375,6 +471,7 @@ def main():
                 "sessionId": session_id,
                 "forkCommand": command,
                 "newTerminal": new_handle,
+                "executionHostId": host,
             }))
         else:
             print(f"forked {agent_name} {session_id[:8]} → new split")
@@ -397,6 +494,7 @@ def main():
         json.dumps(
             {
                 "agent": session.get("agent"),
+                "executionHostId": host,
                 "sessionId": session_id,
                 "title": session.get("title"),
                 "cwd": session.get("cwd"),

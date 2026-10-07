@@ -34,6 +34,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [Chezmoi Hook Lifecycle](references/chezmoi-hook-lifecycle.md) | Ordering and design rules for config hooks, apply scripts, init, and modify targets. |
 | [Corporate TLS Inspection](runbooks/corp-tls-inspection.md) | Corporate CA trust for Node clients in shells and GUI apps behind a decrypting proxy. |
 | [Private Service Certificate in Orca](../agent-marketplace/packages/utils-agent/skills/browser/references/certificate.md) | Host-scoped trust preference and pinned loopback recovery for an owned private HTTPS service. |
+| [Orca Shortcut Validation](runbooks/orca-shortcut-validation.md) | Fast regressions and isolated packaged-Orca integration tests for SSH and paired servers. |
 | [Host Storage](runbooks/host-storage.md) | Required SSD mounts before apply computes targets or installs packages. |
 | [Jamf Self Service Elevation](references/jamf-self-service-elevation.md) | Temporary admin elevation on Jamf-managed work Macs. |
 | [Mise Tool Management](references/mise-tool-management.md) | Mise-native CLI and tool selection. |
@@ -65,7 +66,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [Decomment Skill](plans/decomment-skill-plan.md) | Active; decomment core skill, trigger-channel fixes, and evals under implementation. |
 | [Justfile Migration](plans/justfile-migration-plan.md) | Accepted and executed; both Makefiles replaced by justfiles, per-file test targets deleted, and selection moved into the runners. See [ADR 0026](adr/0026-just-task-runner.md). |
 | [Orcactl](plans/orcactl-plan.md) | Draft for a separate Go repo/tool; dotfiles integration is future install/skill wiring. |
-| [Orca Shortcut Repair](plans/orca-shortcuts-plan.md) | Source fixes and focused validation complete; activation and attended hotkey checks remain. |
+| [Orca Shortcut Repair](plans/orca-shortcuts-plan.md) | Active; remote host resolution and container integration tests pass. Activation and attended hotkey checks remain; see the [validation runbook](runbooks/orca-shortcut-validation.md). |
 | [Downstream Fork](plans/downstream-fork-plan.md) | Active; thin assembly-repo forks as daily drivers on the `prateek/forks` fleet monorepo — engine, three-job template, harness, security review, monorepo scaffold, and fleet digest done; dotfiles gardening landed bar the retoken; provisioning + ghost-pepper migration pending Prateek. |
 | [Goku Karabiner Migration](plans/goku-karabiner-migration-plan.md) | Active; Karabiner config now compiles from `karabiner.edn` via goku — on-device pad verification pending. |
 | [Raycast Config Automation](plans/raycast-config-automation-plan.md) | Proposed; deferred backlog of Raycast preference keys worth porting into the managed plist, plus what the encrypted extension store puts out of reach. |

@@ -2,6 +2,9 @@ import contextlib
 import importlib.util
 import io
 import json
+import pathlib
+import sqlite3
+import tempfile
 import shlex
 import unittest
 from unittest.mock import patch
@@ -26,6 +29,11 @@ class OrcaShortcutTests(unittest.TestCase):
         self.running = True
         self.sessions = [self.session("claude")]
         self.calls = []
+        self.rpc_calls = []
+        self.terminal_host = None
+        self.connected = True
+        self.ssh_connected = True
+        self.environment = None
 
     def session(self, agent, sid="source", **extra):
         return {"agent": agent, "sessionId": sid, "cwd": "/project",
@@ -46,6 +54,7 @@ class OrcaShortcutTests(unittest.TestCase):
         self.fail(f"Unexpected CLI call: {args}")
 
     def rpc(self, method, params, **kwargs):
+        self.rpc_calls.append((method, params))
         if method == "preflight.detectAgents":
             return ["claude", "codex", "pi", "omp"]
         if method == "terminal.agentStatus":
@@ -54,13 +63,19 @@ class OrcaShortcutTests(unittest.TestCase):
             return {"process": {"foregroundProcess": self.process}}
         if method == "session.tabs.list":
             return {"activeTabId": self.pane["id"], "tabs": self.tabs}
+        if method == "terminal.show":
+            return {"terminal": {"executionHostId": self.terminal_host or self.worktree.get("hostId", "local"),
+                                 "connected": self.connected, "writable": self.connected}}
+        if method == "ssh.getState":
+            return {"state": {"status": "connected" if self.ssh_connected else "disconnected"}}
         if method == "aiVault.listSessions":
             return {"sessions": self.sessions if params.get("unlimited") else self.sessions[:100]}
         self.fail(f"Unexpected RPC: {method}")
 
     def run_cli(self, *args):
         output = io.StringIO()
-        with (patch.object(self.app, "orca_cli", side_effect=self.cli),
+        with (patch.object(self.app, "selected_environment", return_value=self.environment),
+              patch.object(self.app, "orca_cli", side_effect=self.cli),
               patch.object(self.app, "rpc", side_effect=self.rpc),
               patch.object(self.app, "agentsview_base_url", return_value=None),
               patch("sys.argv", [str(SCRIPT), "--json", *args]),
@@ -71,6 +86,29 @@ class OrcaShortcutTests(unittest.TestCase):
             except SystemExit as error:
                 code = error.code
         return code, json.loads(output.getvalue())
+
+    def test_server_selection_reads_the_active_profile_readonly(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            (root / "orca-profile-index.json").write_text(json.dumps({"activeProfileId": "second"}))
+            for profile, environment in [("first", None), ("second", "paired-server")]:
+                folder = root / "profiles" / profile
+                folder.mkdir(parents=True)
+                with sqlite3.connect(folder / "profile-state.db") as connection:
+                    connection.execute("CREATE TABLE profile_state_documents (domain TEXT, payload TEXT)")
+                    connection.execute("INSERT INTO profile_state_documents VALUES (?, ?)",
+                                       ("settings", json.dumps({"activeRuntimeEnvironmentId": environment})))
+            with patch.object(self.app, "ORCA_USER_DATA", directory):
+                self.assertEqual(self.app.selected_environment(), "paired-server")
+
+    def test_missing_profile_database_refuses_local_fallback_without_creating_state(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            (root / "orca-profile-index.json").write_text(json.dumps({"activeProfileId": "missing"}))
+            with patch.object(self.app, "ORCA_USER_DATA", directory), contextlib.redirect_stdout(io.StringIO()):
+                with self.assertRaises(SystemExit):
+                    self.app.selected_environment()
+            self.assertFalse((root / "profiles").exists())
 
     def test_fork_commands_use_native_fork_and_explicit_source(self):
         for agent, expected in [
@@ -147,6 +185,83 @@ class OrcaShortcutTests(unittest.TestCase):
         self.sessions = [self.session("claude", executionHostId="ssh:other")]
         code, output = self.run_cli("--fork")
         self.assertNotEqual(code, 0, output)
+
+    def test_remote_bound_session_does_not_require_a_local_vault_copy(self):
+        for host in ["ssh:devbox", "runtime:server"]:
+            with self.subTest(host=host):
+                self.worktree["hostId"] = host
+                self.pane["agentStatus"] = {"agentType": "claude", "providerSession": {
+                    "id": "remote-source", "transcriptPath": "/remote/source.jsonl"}}
+                code, output = self.run_cli("--fork", "--dry-run")
+                self.assertEqual(code, 0, output)
+                self.assertEqual(output["sessionId"], "remote-source")
+                self.assertEqual(output["executionHostId"], host)
+                self.assertIn("remote-source", shlex.split(output["forkCommand"]))
+                self.assertFalse(any(method == "aiVault.listSessions" for method, _ in self.rpc_calls))
+
+    def test_selected_paired_server_owns_its_local_terminal_and_session(self):
+        self.environment = "server"
+        self.terminal_host = "local"
+        self.pane["agentStatus"] = {"agentType": "claude", "providerSession": {"id": "paired-source"}}
+        code, output = self.run_cli("--fork", "--dry-run")
+        self.assertEqual(code, 0, output)
+        self.assertEqual(output["sessionId"], "paired-source")
+        self.assertEqual(output["executionHostId"], "runtime:server")
+        self.assertFalse(any(method == "aiVault.listSessions" for method, _ in self.rpc_calls))
+
+    def test_remote_cursor_binding_resolves_but_fork_is_refused(self):
+        self.process = "cursor-agent"
+        self.terminal_host = "ssh:devbox"
+        self.pane["agentStatus"] = {"agentType": "cursor", "providerSession": {"id": "cursor-source"}}
+        code, output = self.run_cli()
+        self.assertEqual(code, 0, output)
+        self.assertEqual((output["agent"], output["sessionId"]), ("cursor", "cursor-source"))
+        code, output = self.run_cli("--fork")
+        self.assertNotEqual(code, 0, output)
+        self.assertIn("can't fork", output["error"])
+        self.assertFalse(any(call[:2] == ("terminal", "split") for call in self.calls))
+
+    def test_remote_codex_fork_keeps_remote_account_home_with_spaces(self):
+        self.process = "codex"
+        self.terminal_host = "runtime:server"
+        self.pane["agentStatus"] = {"agentType": "codex", "providerSession": {
+            "id": "remote", "transcriptPath": "/remote/account home/sessions/2026/10/07/rollout.jsonl"}}
+        with patch.dict("os.environ", {"CODEX_HOME": "/wrong-local-account"}):
+            code, output = self.run_cli("--fork", "--dry-run")
+        self.assertEqual(code, 0, output)
+        self.assertIn("CODEX_HOME=/remote/account home", shlex.split(output["forkCommand"]))
+
+    def test_unbound_remote_pane_never_uses_unique_local_session(self):
+        self.terminal_host = "ssh:devbox"
+        code, output = self.run_cli("--fork")
+        self.assertNotEqual(code, 0, output)
+        self.assertIn("no local fallback", output["error"])
+        self.assertFalse(any(call[:2] == ("terminal", "split") for call in self.calls))
+
+    def test_remote_codex_without_account_evidence_refuses_to_fork(self):
+        self.process = "codex"
+        self.terminal_host = "ssh:devbox"
+        self.pane["agentStatus"] = {"agentType": "codex", "providerSession": {"id": "remote"}}
+        code, output = self.run_cli("--fork")
+        self.assertNotEqual(code, 0, output)
+        self.assertIn("account home", output["error"])
+        self.assertFalse(any(call[:2] == ("terminal", "split") for call in self.calls))
+
+    def test_disconnected_pane_never_forks_retained_hook_identity(self):
+        self.connected = False
+        code, output = self.run_cli("--fork")
+        self.assertNotEqual(code, 0, output)
+        self.assertIn("disconnected", output["error"])
+        self.assertFalse(any(call[:2] == ("terminal", "split") for call in self.calls))
+
+    def test_disconnected_ssh_host_overrides_retained_terminal_connected_flag(self):
+        self.terminal_host = "ssh:devbox"
+        self.ssh_connected = False
+        self.pane["agentStatus"] = {"agentType": "claude", "providerSession": {"id": "remote"}}
+        code, output = self.run_cli("--fork")
+        self.assertNotEqual(code, 0, output)
+        self.assertIn("disconnected", output["error"])
+        self.assertFalse(any(call[:2] == ("terminal", "split") for call in self.calls))
 
     def test_unsupported_agent_never_resumes_as_a_second_writer(self):
         self.process = "gemini"

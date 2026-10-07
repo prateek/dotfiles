@@ -45,6 +45,10 @@ test-shell *args:
 test-python *args:
     DOTFILES_SKIP_LAUNCHCTL_SYNC=1 {{ mise_env }} python3 -B scripts/tests/python {{ python_roots }} {{ args }}
 
+# Packaged Orca desktop + disposable SSH/server hosts; requires ARM64 Docker.
+test-orca-shortcuts-docker *args:
+    {{ mise_env }} python3 -B scripts/tests/orca-shortcuts-docker {{ args }}
+
 # Native Node cases from explicit application and browser-runner roots.
 [group('suite')]
 test-node *args:

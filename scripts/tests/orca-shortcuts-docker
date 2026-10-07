@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+"""Run the shortcuts against isolated packaged Orca and an SSH execution host."""
+import argparse
+import hashlib
+import pathlib
+import shutil
+import subprocess
+import tempfile
+import urllib.request
+import uuid
+
+ROOT = pathlib.Path(__file__).resolve().parents[2]
+VERSION = "1.4.222"
+ARM64_SHA256 = "fc36305c09c6942adb7fbf42ba01cee58fed17de9c618db42d76f3fa02110444"
+
+
+def run(*args, **kwargs):
+    kwargs.setdefault("timeout", 90)
+    return subprocess.run(args, check=True, **kwargs)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--appimage", type=pathlib.Path)
+    args = parser.parse_args()
+    run("docker", "info", stdout=subprocess.DEVNULL)
+    machine = subprocess.check_output(["docker", "info", "--format", "{{.Architecture}}"], text=True).strip()
+    if machine not in {"aarch64", "arm64"}:
+        parser.error("This pinned lane requires an ARM64 Docker engine")
+    cache = ROOT / "build/orca-shortcut"
+    cache.mkdir(parents=True, exist_ok=True)
+    artifact = args.appimage or cache / "orca-linux-arm64.AppImage"
+    if not artifact.exists():
+        print(f"Downloading Orca {VERSION} ARM64", flush=True)
+        urllib.request.urlretrieve(
+            f"https://github.com/stablyai/orca/releases/download/v{VERSION}/orca-linux-arm64.AppImage",
+            artifact,
+        )
+    with artifact.open("rb") as source:
+        digest = hashlib.file_digest(source, "sha256").hexdigest()
+    if digest != ARM64_SHA256:
+        parser.error(f"AppImage does not match the pinned Orca {VERSION} SHA256")
+    image = f"dotfiles-orca-shortcuts:{VERSION}"
+    with tempfile.TemporaryDirectory(prefix="orca-shortcut-build-") as context:
+        shutil.copyfile(artifact, pathlib.Path(context) / "orca.AppImage")
+        shutil.copyfile(ROOT / "tests/fixtures/orca-shortcuts/Dockerfile", pathlib.Path(context) / "Dockerfile")
+        run("docker", "build", "-t", image, context, timeout=600)
+    suffix = uuid.uuid4().hex[:12]
+    network, client, remote = (f"orca-shortcut-{suffix}-{kind}" for kind in ["net", "client", "remote"])
+    containers = []
+    try:
+        run("docker", "network", "create", network, stdout=subprocess.DEVNULL)
+        for name, alias, command in [
+            (remote, "remote", ["/usr/sbin/sshd", "-D", "-e"]),
+            (client, "client", ["sleep", "infinity"]),
+        ]:
+            run("docker", "run", "-d", "--name", name, "--network", network,
+                "--network-alias", alias, "--shm-size", "512m",
+                "-v", f"{ROOT}:/dotfiles:ro", image, *command, stdout=subprocess.DEVNULL)
+            containers.append(name)
+        run("docker", "exec", client, "ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-f", "/root/.ssh/id_ed25519")
+        key = subprocess.check_output(["docker", "exec", client, "cat", "/root/.ssh/id_ed25519.pub"])
+        run("docker", "exec", "-i", remote, "sh", "-c", "cat > /root/.ssh/authorized_keys && chmod 600 /root/.ssh/authorized_keys", input=key)
+        for agent in ["claude", "codex", "pi", "omp"]:
+            for container in [client, remote]:
+                run("docker", "exec", container, "cp", "/dotfiles/tests/fixtures/orca-shortcuts/agent.cjs", f"/usr/local/bin/{agent}")
+                run("docker", "exec", container, "chmod", "+x", f"/usr/local/bin/{agent}")
+        try:
+            run("docker", "exec", client, "python3", "/dotfiles/tests/fixtures/orca-shortcuts/scenarios.py", timeout=600)
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            subprocess.run(["docker", "cp", f"{client}:/tmp/orca-desktop.log", str(cache / "desktop.log")], check=False)
+            raise
+    finally:
+        for name in reversed(containers):
+            subprocess.run(["docker", "rm", "-f", name], stdout=subprocess.DEVNULL, check=False)
+        subprocess.run(["docker", "network", "rm", network], stdout=subprocess.DEVNULL, check=False)
+
+
+if __name__ == "__main__":
+    main()
