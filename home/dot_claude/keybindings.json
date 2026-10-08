@@ -1,6 +1,6 @@
 {
   "$schema": "https://www.schemastore.org/claude-code-keybindings.json",
-  "$docs": "Pins chat:queueSubmit to its current default chord. The Tuna combo bind a q (~/bin/claude-queue-draft) types this chord to defer a draft as /q; an unpinned Claude Code default could change silently and break the macro with no diff anywhere.",
+  "$docs": "Pins chat:queueSubmit to its current default chord. The ~/bin/claude-queue-draft macro types this chord to defer a draft as /q; an unpinned Claude Code default could change silently and break the macro with no diff anywhere.",
   "bindings": [
     {
       "context": "Chat",

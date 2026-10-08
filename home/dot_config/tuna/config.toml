@@ -1,106 +1,114 @@
 [[comboMode.bindings]]
-key = "t"
-
-    [comboMode.bindings.destination]
-    type = "command"
-
-        [comboMode.bindings.destination.command]
-        actionIdentifier = "tuna.common-actions/open"
-        behavior = "run"
-        presentation = "automatic"
-        subjectIdentifiers = ["path:/Applications/Orca.app"]
-        type = "savedCommand"
-
-[[comboMode.bindings]]
-key = "b"
-
-    [comboMode.bindings.destination]
-    type = "command"
-
-        [comboMode.bindings.destination.command]
-        actionIdentifier = "tuna.common-actions/open"
-        behavior = "run"
-        presentation = "automatic"
-        subjectIdentifiers = ["path:/Applications/Arc.app"]
-        type = "savedCommand"
-
-[[comboMode.bindings]]
-key = "c"
-
-    [comboMode.bindings.destination]
-    type = "command"
-
-        [comboMode.bindings.destination.command]
-        actionIdentifier = "tuna.common-actions/open"
-        behavior = "run"
-        presentation = "automatic"
-        subjectIdentifiers = ["path:/Applications/Cursor.app"]
-        type = "savedCommand"
-
-[[comboMode.bindings]]
-key = "s"
-
-    [comboMode.bindings.destination]
-    type = "command"
-
-        [comboMode.bindings.destination.command]
-        actionIdentifier = "tuna.common-actions/open"
-        behavior = "run"
-        presentation = "automatic"
-        subjectIdentifiers = ["path:/Applications/Slack.app"]
-        type = "savedCommand"
-
-[[comboMode.bindings]]
-key = "m"
-
-    [comboMode.bindings.destination]
-    type = "command"
-
-        [comboMode.bindings.destination.command]
-        actionIdentifier = "tuna.common-actions/open"
-        behavior = "run"
-        presentation = "automatic"
-        subjectIdentifiers = ["path:/Applications/Spotify.app"]
-        type = "savedCommand"
-
-[[comboMode.bindings]]
-key = "f"
-
-    [comboMode.bindings.destination]
-    type = "command"
-
-        [comboMode.bindings.destination.command]
-        actionIdentifier = "tuna.common-actions/open"
-        behavior = "run"
-        presentation = "automatic"
-        subjectIdentifiers = ["path:/System/Library/CoreServices/Finder.app"]
-        type = "savedCommand"
-
-[[comboMode.bindings]]
-key = "1"
-
-    [comboMode.bindings.destination]
-    type = "command"
-
-        [comboMode.bindings.destination.command]
-        actionIdentifier = "tuna.common-actions/open"
-        behavior = "run"
-        presentation = "automatic"
-        subjectIdentifiers = ["path:/Applications/1Password.app"]
-        type = "savedCommand"
-
-[[comboMode.bindings]]
-iconPath = "sparkles"
+iconPath = "square.grid.2x2"
 key = "a"
-label = "ai"
+label = "apps"
 
     [comboMode.bindings.destination]
     type = "group"
 
         [[comboMode.bindings.destination.bindings]]
-        iconPath = "text.append"
-        key = "q"
-        label = "queue → claude"
+        key = "t"
+
+            [comboMode.bindings.destination.bindings.destination]
+            type = "command"
+
+                [comboMode.bindings.destination.bindings.destination.command]
+                actionIdentifier = "tuna.common-actions/open"
+                behavior = "run"
+                presentation = "automatic"
+                subjectIdentifiers = ["path:/Applications/Orca.app"]
+                type = "savedCommand"
+
+        [[comboMode.bindings.destination.bindings]]
+        key = "b"
+
+            [comboMode.bindings.destination.bindings.destination]
+            type = "command"
+
+                [comboMode.bindings.destination.bindings.destination.command]
+                actionIdentifier = "tuna.common-actions/open"
+                behavior = "run"
+                presentation = "automatic"
+                subjectIdentifiers = ["path:/Applications/Arc.app"]
+                type = "savedCommand"
+
+        [[comboMode.bindings.destination.bindings]]
+        key = "c"
+
+            [comboMode.bindings.destination.bindings.destination]
+            type = "command"
+
+                [comboMode.bindings.destination.bindings.destination.command]
+                actionIdentifier = "tuna.common-actions/open"
+                behavior = "run"
+                presentation = "automatic"
+                subjectIdentifiers = ["path:/Applications/Cursor.app"]
+                type = "savedCommand"
+
+        [[comboMode.bindings.destination.bindings]]
+        key = "s"
+
+            [comboMode.bindings.destination.bindings.destination]
+            type = "command"
+
+                [comboMode.bindings.destination.bindings.destination.command]
+                actionIdentifier = "tuna.common-actions/open"
+                behavior = "run"
+                presentation = "automatic"
+                subjectIdentifiers = ["path:/Applications/Slack.app"]
+                type = "savedCommand"
+
+        [[comboMode.bindings.destination.bindings]]
+        key = "m"
+
+            [comboMode.bindings.destination.bindings.destination]
+            type = "command"
+
+                [comboMode.bindings.destination.bindings.destination.command]
+                actionIdentifier = "tuna.common-actions/open"
+                behavior = "run"
+                presentation = "automatic"
+                subjectIdentifiers = ["path:/Applications/Spotify.app"]
+                type = "savedCommand"
+
+        [[comboMode.bindings.destination.bindings]]
+        key = "f"
+
+            [comboMode.bindings.destination.bindings.destination]
+            type = "command"
+
+                [comboMode.bindings.destination.bindings.destination.command]
+                actionIdentifier = "tuna.common-actions/open"
+                behavior = "run"
+                presentation = "automatic"
+                subjectIdentifiers = ["path:/System/Library/CoreServices/Finder.app"]
+                type = "savedCommand"
+
+        [[comboMode.bindings.destination.bindings]]
+        key = "1"
+
+            [comboMode.bindings.destination.bindings.destination]
+            type = "command"
+
+                [comboMode.bindings.destination.bindings.destination.command]
+                actionIdentifier = "tuna.common-actions/open"
+                behavior = "run"
+                presentation = "automatic"
+                subjectIdentifiers = ["path:/Applications/1Password.app"]
+                type = "savedCommand"
+
+[[comboMode.bindings]]
+iconPath = "macwindow.on.rectangle"
+key = "w"
+label = "winmux"
+
+    [comboMode.bindings.destination]
+    type = "group"
+
+        [[comboMode.bindings.destination.bindings]]
+        iconPath = "arrow.left.to.line"
+        key = "h"
+        label = "move left"
 
             [comboMode.bindings.destination.bindings.destination]
             type = "command"
@@ -109,7 +117,67 @@ label = "ai"
                 actionIdentifier = "tuna.common-actions/run-text-as-shell-command"
                 behavior = "run"
                 presentation = "automatic"
-                subjectIdentifiers = ["text:\"$HOME/bin/claude-queue-draft\""]
+                subjectIdentifiers = ["text:PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"; winmux move left"]
+                type = "savedCommand"
+
+        [[comboMode.bindings.destination.bindings]]
+        iconPath = "arrow.right.to.line"
+        key = "l"
+        label = "move right"
+
+            [comboMode.bindings.destination.bindings.destination]
+            type = "command"
+
+                [comboMode.bindings.destination.bindings.destination.command]
+                actionIdentifier = "tuna.common-actions/run-text-as-shell-command"
+                behavior = "run"
+                presentation = "automatic"
+                subjectIdentifiers = ["text:PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"; winmux move right"]
+                type = "savedCommand"
+
+        [[comboMode.bindings.destination.bindings]]
+        iconPath = "rectangle"
+        key = "c"
+        label = "columns off"
+
+            [comboMode.bindings.destination.bindings.destination]
+            type = "command"
+
+                [comboMode.bindings.destination.bindings.destination.command]
+                actionIdentifier = "tuna.common-actions/run-text-as-shell-command"
+                behavior = "run"
+                presentation = "automatic"
+                subjectIdentifiers = ["text:PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"; winmux column-count off"]
+                type = "savedCommand"
+
+        [[comboMode.bindings.destination.bindings]]
+        iconPath = "rectangle.split.3x1"
+        key = "3"
+        label = "columns 3"
+
+            [comboMode.bindings.destination.bindings.destination]
+            type = "command"
+
+                [comboMode.bindings.destination.bindings.destination.command]
+                actionIdentifier = "tuna.common-actions/run-text-as-shell-command"
+                behavior = "run"
+                presentation = "automatic"
+                subjectIdentifiers = ["text:PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"; winmux column-count 3"]
+                type = "savedCommand"
+
+        [[comboMode.bindings.destination.bindings]]
+        iconPath = "sidebar.left"
+        key = "s"
+        label = "sidebar"
+
+            [comboMode.bindings.destination.bindings.destination]
+            type = "command"
+
+                [comboMode.bindings.destination.bindings.destination.command]
+                actionIdentifier = "tuna.common-actions/run-text-as-shell-command"
+                behavior = "run"
+                presentation = "automatic"
+                subjectIdentifiers = ["text:PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"; winmux open-sidebar"]
                 type = "savedCommand"
 
 [[comboMode.bindings]]

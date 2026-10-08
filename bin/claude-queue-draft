@@ -2,9 +2,9 @@
 # claude-queue-draft — convert the Claude Code draft in the frontmost
 # terminal into a deferred /q submission (Codex-style queue).
 #
-# Triggered from Tuna combo mode (tap-⇧, a, q). Tuna shell actions cannot
-# type, so the keystrokes are injected via System Events — Tuna needs a
-# one-time Accessibility grant. Ctrl+X Enter is chat:queueSubmit (pinned
+# Meant to run from a launcher or hotkey bind. Launcher shell actions
+# cannot type, so the keystrokes are injected via System Events — the
+# launcher needs a one-time Accessibility grant. Ctrl+X Enter is chat:queueSubmit (pinned
 # in ~/.claude/keybindings.json); it submits the literal draft even with
 # the slash-command popup open. Claude Code holds queued slash commands
 # until the turn truly ends (plain messages absorb mid-turn), so /q

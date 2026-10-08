@@ -43,19 +43,31 @@ class PackageConfigGatesTests(RepoTestCase):
         result = self.paths("bogus", "ignored", expected_status=1)
         self.assertIn(b"unknown machine type", result.stderr)
 
-    def test_tuna_combo_queue_action_matches_its_script_claude_chord_and_command(self):
+    def test_tuna_combo_layout_apps_winmux_misc_and_leader_hotkey(self):
         config = tomllib.loads((ROOT / "home/dot_config/tuna/config.toml").read_text())
         binds = {binding["key"]: binding for binding in config["comboMode"]["bindings"]}
-        self.assertEqual(set(binds), {"1", "a", "t", "s", "b", "c", "m", "f", "z"})
-        self.assertEqual(binds["a"]["label"], "ai")
-        queue = {child["key"]: child for child in binds["a"]["destination"]["bindings"]}["q"]
-        command = queue["destination"]["command"]
-        self.assertEqual(command["subjectIdentifiers"], ['text:"$HOME/bin/claude-queue-draft"'])
-        self.assertEqual(command["actionIdentifier"], "tuna.common-actions/run-text-as-shell-command")
+        self.assertEqual(set(binds), {"a", "w", "z"})
+        self.assertEqual(binds["a"]["label"], "apps")
+        apps = {child["key"]: child["destination"]["command"] for child in binds["a"]["destination"]["bindings"]}
+        self.assertEqual(set(apps), {"1", "t", "s", "b", "c", "m", "f"})
+        for app in apps.values():
+            self.assertEqual(app["actionIdentifier"], "tuna.common-actions/open")
+            self.assertRegex(app["subjectIdentifiers"][0], r"^path:/.+\.app$")
+        self.assertEqual(binds["w"]["label"], "winmux")
+        winmux = {child["key"]: child["destination"]["command"] for child in binds["w"]["destination"]["bindings"]}
+        self.assertEqual(
+            {key: cmd["subjectIdentifiers"][0].split("; winmux ", 1)[1] for key, cmd in winmux.items()},
+            {"h": "move left", "l": "move right", "c": "column-count off", "3": "column-count 3", "s": "open-sidebar"},
+        )
+        for cmd in winmux.values():
+            self.assertEqual(cmd["actionIdentifier"], "tuna.common-actions/run-text-as-shell-command")
+            self.assertTrue(cmd["subjectIdentifiers"][0].startswith('text:PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"; winmux '))
         self.assertEqual(binds["z"]["label"], "misc")
         self.assertLessEqual({"d", "m", "z", "t", "r", "g"},
                              {child["key"] for child in binds["z"]["destination"]["bindings"]})
         self.assertEqual(config["hotkeys"]["app"]["comboMode"], {"carbonKeyCode": 79, "carbonModifiers": 0})
+
+    def test_claude_queue_draft_script_symlink_chord_pin_and_command(self):
         self.assertTrue(os.access(ROOT / "bin/claude-queue-draft", os.X_OK))
         self.assertTrue((ROOT / "home/bin/symlink_claude-queue-draft.tmpl").is_file())
         keys = json.loads((ROOT / "home/dot_claude/keybindings.json").read_text())

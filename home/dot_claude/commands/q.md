@@ -1,5 +1,5 @@
 ---
-description: Queue a follow-up for after the current turn ends (Codex-style deferred send; typed by the tap-⇧ a q Tuna combo in Orca/Ghostty)
+description: Queue a follow-up for after the current turn ends (Codex-style deferred send; ~/bin/claude-queue-draft types it into Orca/Ghostty)
 argument-hint: <message>
 disable-model-invocation: true
 ---

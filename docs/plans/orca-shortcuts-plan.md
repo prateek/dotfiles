@@ -37,9 +37,9 @@ for assumptions specific to Claude.
 | --- | --- |
 | Alt-F, Fork Orca Agent Session | OMP was unsupported; Codex lost `codexHome`. Both now use native fork commands with the explicit source. |
 | Alt-A, Reveal Orca Agent Session | Shared lookup could miss older sessions or select another pane's newer session. The same identity repair covers reveal and fork. |
-| Tuna tap-Shift, A, Q | Labeled Claude-only, but previously typed `/q` into any Orca agent. Now requires a positively identified Claude pane. Ghostty behavior remains the existing attended Claude workflow. |
+| `~/bin/claude-queue-draft` (formerly the Tuna A, Q bind) | Labeled Claude-only, but previously typed `/q` into any Orca agent. Now requires a positively identified Claude pane. Ghostty behavior remains the existing attended Claude workflow. |
 | Create Orca Worktree in Raycast | Help examples yielded only Claude, Codex, and Gemini. The picker now reads `preflight.detectAgents` through the shared helper. |
-| Tuna tap-Shift, T | Opens Orca; no agent-specific behavior. |
+| Tuna ⌘-tap, A, T | Opens Orca; no agent-specific behavior. |
 | 8BitDo bumpers in Orca | Send Command-Shift-Up/Down for worktree navigation; no agent-specific behavior. |
 | Orca custom keybindings | The managed and live files contain no overrides; native defaults own these controls. |
 
