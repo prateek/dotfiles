@@ -91,6 +91,12 @@ Library/LaunchAgents/com.prateek.gui-corp-ca.plist
 Library/LaunchAgents/com.prateek.devbox-orca-tunnel.plist
 {{- end }}
 
+{{/* Prolo Ring profile, labels, and overlay toggle: only hosts the ring pairs with. */}}
+{{- if not $f.prolo_ring }}
+.config/prolo-ring
+.local/bin/prolo-cheatsheet
+{{- end }}
+
 {{/* Install the direnv whitelist only where the work monorepo is present. */}}
 {{- if not $f.direnv_trust_monorepo }}
 .config/direnv/direnv.toml

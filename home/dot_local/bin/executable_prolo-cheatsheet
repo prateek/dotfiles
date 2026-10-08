@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+# prolo-cheatsheet [cursor|navigation|touch|air|system|all|html|off] [--print]
+#
+# Toggle the Prolo Ring cheat sheet as a floating overlay, the way the keyboard nav-layer
+# sheet works: keymap-overlay shows the card without taking focus; click it, or run this
+# again, to dismiss. With no argument it shows the card for the ring's current mode, read
+# from the state file that `prolo-ring watch` keeps; before that exists, Cursor. `all`
+# tiles the four modes, `system` is the Modstrip tap ladder, `html` opens the two-page
+# reference, `off` dismisses. The cards are rendered by chezmoi apply
+# (run_after_48-prolo-ring-cheatsheet) from ~/.config/prolo-ring.
+set -euo pipefail
+
+data="${XDG_DATA_HOME:-$HOME/.local/share}/prolo-ring"
+state="${XDG_STATE_HOME:-$HOME/.local/state}/prolo-ring"
+overlay="$HOME/.local/bin/keymap-overlay"
+modes="cursor navigation touch air system all"
+
+want=""
+print=0
+for arg in "$@"; do
+  case "$arg" in
+    --print) print=1 ;;
+    -h|--help) sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    *) want="$arg" ;;
+  esac
+done
+
+case "$want" in
+  html)
+    [ "$print" = 1 ] && { echo "open $data/cheatsheet.html"; exit 0; }
+    exec open "$data/cheatsheet.html"
+    ;;
+  off)
+    [ "$print" = 1 ] && { echo "dismiss"; exit 0; }
+    pkill -f "keymap-overlay .*prolo-ring/card-" || true
+    exit 0
+    ;;
+  "")
+    want=cursor
+    if [ -f "$state/mode" ]; then
+      current="$(tr -d '[:space:]' < "$state/mode")"
+      case " $modes " in *" $current "*) want="$current" ;; esac
+    fi
+    ;;
+esac
+
+case " $modes " in
+  *" $want "*) ;;
+  *) echo "prolo-cheatsheet: unknown view '$want' (cursor, navigation, touch, air, system, all, html, off)" >&2; exit 64 ;;
+esac
+
+card="$data/card-$want.svg"
+if [ ! -f "$card" ]; then
+  echo "prolo-cheatsheet: $card is missing; run chezmoi apply to render the cards." >&2
+  exit 1
+fi
+if [ "$print" = 1 ]; then
+  echo "$overlay --opacity 0.92 $card"
+  exit 0
+fi
+# Same card already up: this call is the dismiss. A different card: swap it in.
+if pkill -f "keymap-overlay .*prolo-ring/card-$want\\.svg" 2>/dev/null; then
+  exit 0
+fi
+pkill -f "keymap-overlay .*prolo-ring/card-" 2>/dev/null || true
+if [ ! -x "$overlay" ]; then
+  echo "prolo-cheatsheet: $overlay is missing; chezmoi apply builds it." >&2
+  exit 1
+fi
+"$overlay" --opacity 0.92 "$card" >/dev/null 2>&1 &
+disown

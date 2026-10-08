@@ -45,6 +45,7 @@ Load the matching convention before acting:
 - Twitter/X or `bird`: `~/.agents/docs/twitter.md`
 - marimo notebooks: `~/.agents/docs/marimo.md`
 - iOS or Apple-platform work: `~/.agents/docs/ios.md`
+- Homelab hosts, home network, Home Assistant, or personal devices: `~/.agents/docs/infra.md`
 - Agent-session debugging or agentsview: `~/.agents/docs/agentsview.md`
 - Crit review behavior or stacked-branch scope: `~/.agents/docs/crit.md`
 

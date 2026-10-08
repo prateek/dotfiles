@@ -1,0 +1,63 @@
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- if and $f.run_install_scripts $f.prolo_ring -}}
+{{ template "script_lib.sh" . }}
+
+# Render the Prolo Ring cheat sheets from the managed profile and labels under
+# ~/.config/prolo-ring: one overlay card per mode (shown by prolo-cheatsheet through
+# keymap-overlay, like the keyboard nav-layer sheet), the Modstrip ladder, the four-mode
+# tile, and the two-page HTML reference. run_after_ rather than run_onchange_: the
+# preconditions below exit 0 when uvx is missing, and chezmoi would record that as a
+# completed run, so the script keeps its own input hash and re-renders only when the
+# inputs changed. The ring itself is flashed from Prolo Studio (Import profile.json, then
+# Flash); this only reports when the managed profile differs from the one last recorded as
+# flashed with `just prolo-flashed`.
+config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/prolo-ring"
+data_dir="${XDG_DATA_HOME:-$HOME/.local/share}/prolo-ring"
+state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/prolo-ring"
+profile="$config_dir/profile.json"
+labels="$config_dir/labels.toml"
+cli_ref="git+https://github.com/prateek/prolo-ring@v0.3.0"
+views="cursor navigation touch air system all"
+
+[ -f "$profile" ] || { warn "prolo-ring: $profile missing; skipping the cheat sheets."; exit 0; }
+uvx_bin="$HOME/.local/share/mise/shims/uvx"
+if have uvx; then uvx_bin="$(command -v uvx)"; fi
+if [ ! -x "$uvx_bin" ]; then
+  warn "prolo-ring: uvx not found; skipping the cheat sheets until mise has installed uv."
+  exit 0
+fi
+
+mkdir -p "$data_dir" "$state_dir"
+# The CLI pin is part of the input: a new release re-renders with the same profile.
+input_hash="$( { cat "$profile" "$labels" 2>/dev/null; printf '%s\n' "$cli_ref"; } | shasum -a 256 | cut -c1-16)"
+rendered_hash="$(cat "$state_dir/rendered-hash" 2>/dev/null || true)"
+complete=1
+for view in $views; do [ -s "$data_dir/card-$view.svg" ] || complete=0; done
+[ -s "$data_dir/cheatsheet.html" ] || complete=0
+
+if [ "$input_hash" = "$rendered_hash" ] && [ "$complete" = 1 ]; then
+  log "ok: prolo-ring cheat sheets are current ($data_dir)."
+else
+  set -- --profile "$profile"
+  [ -f "$labels" ] && set -- "$@" --labels "$labels"
+  ok=1
+  for view in $views; do
+    "$uvx_bin" --from "$cli_ref" prolo-ring cheatsheet render "$@" --format svg --mode "$view" \
+      --out "$data_dir/card-$view.svg" >/dev/null || ok=0
+  done
+  "$uvx_bin" --from "$cli_ref" prolo-ring cheatsheet render "$@" --format html \
+    --out "$data_dir/cheatsheet.html" >/dev/null || ok=0
+  if [ "$ok" = 1 ]; then
+    printf '%s\n' "$input_hash" > "$state_dir/rendered-hash"
+    log "rendered the prolo-ring cards and reference into $data_dir (toggle: prolo-cheatsheet)"
+  else
+    warn "prolo-ring: a cheat sheet render failed; it retries on the next apply."
+  fi
+fi
+
+profile_hash="$(shasum -a 256 "$profile" | cut -c1-16)"
+flashed_hash="$(cat "$state_dir/flashed-hash" 2>/dev/null || true)"
+if [ "$profile_hash" != "$flashed_hash" ]; then
+  warn "prolo-ring: profile.json is not the profile last flashed to the ring. In Prolo Studio: Profile Library > Import $profile, then Flash; afterwards run: just prolo-flashed"
+fi
+{{- end -}}

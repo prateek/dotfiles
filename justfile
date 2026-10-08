@@ -129,3 +129,13 @@ test-install-tart lane="smoke" *flags:
 # Long-lived VM for the inner loop. verb: apply, create, bootstrap, refresh, destroy.
 warm-tart verb="apply":
     ./scripts/vm/warm-tart {{ verb }}
+
+# Toggle the Prolo Ring overlay for the current mode; or a view: cursor, navigation, touch, air, system, all, html, off.
+prolo-cheatsheet *view:
+    "$HOME/.local/bin/prolo-cheatsheet" {{ view }}
+
+# Record that ~/.config/prolo-ring/profile.json was flashed from Prolo Studio, silencing the apply reminder.
+prolo-flashed:
+    mkdir -p "${XDG_STATE_HOME:-$HOME/.local/state}/prolo-ring"
+    shasum -a 256 "${XDG_CONFIG_HOME:-$HOME/.config}/prolo-ring/profile.json" | cut -c1-16 > "${XDG_STATE_HOME:-$HOME/.local/state}/prolo-ring/flashed-hash"
+    echo "recorded the current profile as flashed"

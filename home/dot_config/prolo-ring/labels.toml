@@ -1,0 +1,14 @@
+# Labels for the Prolo Ring cheat sheet: what each gesture does on this machine, plus a memory
+# hook per gesture. `chezmoi apply` renders profile.json and this file into
+# ~/.local/share/prolo-ring/cheatsheet.html (run_after_48-prolo-ring-cheatsheet); `just
+# prolo-cheatsheet` opens it. Gesture names are the ones `prolo-ring profile read` reports,
+# for example cursor.two_finger_tap or navigation.long_hold.
+#
+# A plain string is a label; a table adds a mnemonic:
+#   "cursor.two_finger_tap" = "Raycast"
+#   "navigation.long_hold" = { label = "Push to talk", mnemonic = "hold to speak" }
+# [modes.<cursor|navigation|touch|air|system>] mnemonic = "..." overrides a mode's one-liner.
+
+title = "Prolo Ring"
+
+[gestures]

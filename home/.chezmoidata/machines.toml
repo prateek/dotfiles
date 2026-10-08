@@ -48,6 +48,9 @@ agent_clis = []
 # reorder a subset for one family without admitting an undeclared route.
 acpx_routes = []
 acpx_local_providers = ["local", "ollama", "lmstudio"]
+# Prolo Ring profile, labels, and cheat sheet (run_after_48). On for hosts the
+# ring pairs with; the ring itself is flashed from Prolo Studio by hand.
+prolo_ring = false
 # Cross-machine agent-session archive (prateek/wiki-agent-sessions): hourly raw
 # sync via a launchd agent, agentsview session_sources wiring, obsidian-wiki
 # vault config. Hosts with this on MUST also set wiki_host_alias in their
@@ -174,6 +177,7 @@ agent_clis = ["claude", "cursor-agent", "omp", "pi"]
 # Personal daily-driver MacBook.
 [machines.host.prateek-personal-mbp]
 wiki_host_alias = "personal-mbp"
+prolo_ring = true
 
 # The code volume is reconciled before apply reads destination state.
 # See docs/runbooks/host-storage.md. Tart's separate storage path is exported by
@@ -195,3 +199,4 @@ agent_session_wiki_ingest = true
 # type, so it cannot own the ingest role.
 [machines.host.M-D2N572TGQN]
 wiki_host_alias = "work-mbp"
+prolo_ring = true
