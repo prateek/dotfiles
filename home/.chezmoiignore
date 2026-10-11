@@ -191,9 +191,8 @@ Library/Preferences/io.tailscale.ipn.macsys.plist
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "setapp")) "true" }}
 Library/Preferences/com.setapp.DesktopClient.plist
 {{- end }}
-{{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "betterdisplay")) "true" }}
+{{/* g95nc owns BetterDisplay preferences, including app-wide reset. */}}
 Library/Preferences/pro.betterdisplay.BetterDisplay.plist
-{{- end }}
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "visual-studio-code")) "true" }}
 Library/Application Support/Code/User
 {{- end }}

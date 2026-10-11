@@ -7,7 +7,6 @@ MANAGED = {
         '.config/raycast/scripts/temp-admin.sh',
         '.local/share/raycast-extensions/orca-worktree/package.json',
         'Library/Preferences/com.setapp.DesktopClient.plist',
-        'Library/Preferences/pro.betterdisplay.BetterDisplay.plist',
         '.config/zed',
         '.config/tuna/config.toml',
         'Library/Preferences/com.brnbw.Tuna.plist',
@@ -32,7 +31,6 @@ MANAGED = {
     ),
     'work': (
         '.config/ghostty',
-        'Library/Preferences/pro.betterdisplay.BetterDisplay.plist',
         '.config/zed',
         '.orca/keybindings.json',
         'Library/Preferences/com.cmuxterm.app.plist',
@@ -63,6 +61,7 @@ MANAGED = {
 
 UNMANAGED = {
     'personal': (
+        'Library/Preferences/pro.betterdisplay.BetterDisplay.plist',
         'Library/Preferences/io.tailscale.ipn.macsys.plist',
         '.local/bin/corp-ca-gui-env',
         'Library/LaunchAgents/com.prateek.gui-corp-ca.plist',
@@ -103,6 +102,7 @@ UNMANAGED = {
         'Library/LaunchAgents/com.prateek.devbox-orca-tunnel.plist',
     ),
     'work': (
+        'Library/Preferences/pro.betterdisplay.BetterDisplay.plist',
         'Library/Colors/nvALT.clr',
         'Library/Preferences/net.elasticthreads.nv.plist',
         'Library/Preferences/io.tailscale.ipn.macsys.plist',
@@ -163,7 +163,6 @@ IGNORED = {
         'Library/Colors/nvALT.clr',
         'Library/Preferences/com.cmuxterm.app.plist',
         'Library/Preferences/net.elasticthreads.nv.plist',
-        'Library/Preferences/pro.betterdisplay.BetterDisplay.plist',
         'Library/Preferences/io.tailscale.ipn.macsys.plist',
         'Library/Preferences/com.prakashjoshipax.VoiceInk.plist',
         'Library/Preferences/com.stonerl.Thaw.plist',

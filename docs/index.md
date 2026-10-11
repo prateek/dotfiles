@@ -27,7 +27,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [acpx Routing](references/acpx-routing.md) | Explicit model/effort profiles, machine route declarations, catalog resolution, and diagnostics. |
 | [acpx Skill Rewrite](runbooks/acpx-skill-rewrite.md) | Balanced native flows; five-skill live pilot completed at peak concurrency two with one afablex review and a validated unapplied patch. Includes required runtime overrides. |
 | [Agent Marketplace](references/agent-marketplace.md) | Isolated APM source/build project, host activation, recovery, and validation lanes. |
-| [G95NC Display](runbooks/g95nc-display.md) | Sharp 60 Hz and butter 120 Hz HiDPI setup, preconditions, logs, and recovery. |
+| [G95NC Display](runbooks/g95nc-display.md) | Verified native-output Sharp/Butter setup, app-wide BetterDisplay reset, private backups, logs, and recovery. |
 | [Dotfiles Landing](runbooks/dotfiles-landing.md) | Repo-specific checks and chezmoi preview for the published land-changes skill. |
 | [Chezmoi Architecture](references/chezmoi-architecture.md) | Dotfiles source-state architecture and validation entrypoints. |
 | [Chezmoi Drift Banner](../home/dot_config/dotfiles/chezmoi-drift/README.md) | Cached shell banner for managed chezmoi drift. |
@@ -175,6 +175,7 @@ or `superseded_by` frontmatter before using them.
 | --- | --- |
 | [Leader Key to Tuna Migration](plans/leader-key-to-tuna-migration-plan.md) | Archived cutover record; the live binds are `home/dot_config/tuna/config.toml` and the left-Cmd trigger is in `home/dot_config/karabiner.edn.tmpl`. |
 | [G95NC Preconditions and Diagnostics](plans/g95nc-diagnostics-plan.md) | Completed command hardening; use the [runbook](runbooks/g95nc-display.md). |
+| [Complete G95NC Modes](plans/g95nc-complete-modes-plan.md) | Implemented app-wide reset and native-output verification; local installation and hardware limits recorded. Use the [runbook](runbooks/g95nc-display.md). |
 | [Jev Browser Runner](plans/jev-browser-runner-plan.md) | Completed implementation and development experiment; adoption rejected. Use the [experimental skill reference](../agent-marketplace/packages/utils-agent/skills/browser-jev/references/jev.md) and [research findings](research/jev-browser-integrations.md). |
 | [ACPX Explicit Profiles](plans/acpx-explicit-profiles-plan.md) | Archived implementation record; pinned model/effort defaults and independent review. See [current guidance](references/acpx-routing.md). |
 | [acpx Routing](plans/acpx-routing-plan.md) | Superseded generation-based implementation; see [explicit profiles](plans/acpx-explicit-profiles-plan.md). |

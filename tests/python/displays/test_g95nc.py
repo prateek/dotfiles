@@ -10,7 +10,7 @@ from tests.support.python import ROOT
 
 SCRIPT = ROOT / 'home/dot_config/raycast/scripts/executable_g95nc.sh'
 TOOLS = r'''
-import json, os, pathlib, sys, time
+import json, os, pathlib, plistlib, sys, time
 root=pathlib.Path(os.environ['G95_TEST_ROOT'])
 state_path=root/'state.json'
 s=json.loads(state_path.read_text())
@@ -26,7 +26,7 @@ elif name=='sw_vers': print('macOS test version')
 elif name=='system_profiler':
     displays=[]
     for d in s['devices']:
-        if d['UUID']=='unrelated': continue
+        if d['UUID']=='unrelated' or d.get('displayID')=='0': continue
         width,height=map(int,d['resolution'].split('x'))
         displays.append(dict(_spdisplays_displayID=format(int(d['displayID']),'x'),
             _spdisplays_resolution=f"{width} x {height} @ {s.get('native_refresh_override',d['refreshRate'])}",
@@ -35,12 +35,27 @@ elif name=='system_profiler':
             spdisplays_mirror_status='spdisplays_master_mirror' if d['UUID']=='managed' else 'spdisplays_hardware_mirror'))
     print(json.dumps({'SPDisplaysDataType':[{'spdisplays_ndrvs':displays}]}))
 elif name=='defaults':
-    if args[0]=='read':
+    if args[0]=='domains':
+        print('pro.betterdisplay.BetterDisplay' if s.get('domain_exists',True) else '')
+    elif args[0]=='export':
+        if s.get('backup_failure'): sys.exit(1)
+        data={'enable16K':s['enable16K'], **s.get('preferences',{})} if s.get('domain_exists',True) and not s.get('preferences_cleared') else {}
+        pathlib.Path(args[2]).write_bytes(plistlib.dumps(data))
+    elif args[0]=='delete':
+        if s['running'] or s.get('delete_failure'): sys.exit(1)
+        s.update(enable16K=False,preferences={},domain_exists=True,preferences_cleared=True)
+        s['devices']=[d for d in s['devices'] if d['deviceType']=='Display']
+        for d in s['devices']: d.update(mirror='off',hiDPI='off')
+        save()
+    elif args[0]=='read':
         if args[2]!='enable16K':
-            print(s.get('preferences',{}).get(args[2],'')); sys.exit()
+            value=s.get('preferences',{}).get(args[2],'')
+            print({'true':'1','false':'0'}.get(value,value)); sys.exit()
         if not s['enable16K']: print('missing preference',file=sys.stderr); sys.exit(1)
         print('1')
     else:
+        s['domain_exists']=True
+        s['preferences_cleared']=False
         if args[2]=='enable16K': s['enable16K']=True
         else: s.setdefault('preferences',{})[args[2]]=args[4]
         save()
@@ -57,16 +72,38 @@ elif name=='bd':
     if 'type' in flags: selected=[d for d in selected if d['deviceType']==flags['type']]
     if op=='get':
         if 'identifiers' in flags:
-            if not selected: print('Failed.'); sys.exit(1)
             print(','.join(json.dumps(d) for d in [*selected,dict(deviceType='DisplayGroup',name='Default Group',tagID='-1001')])); sys.exit()
         if not selected: sys.exit(1)
+        if 'i2cEDID' in flags:
+            if s.get('unreadable_edid'): sys.exit(1)
+            print('factory-edid'); sys.exit()
+        if 'osEDID' in flags: print(s.get('active_edid','factory-edid')); sys.exit()
         if 'displayModeList' in flags:
+            if selected[0]['deviceType']=='Display':
+                print('1 - 7680x2160 60Hz 10bpc Default Native')
+                print('2 - 3840x1080 HiDPI '+s.get('fractional_60','60Hz')+' 10bpc')
             rates=s.get('preferences',{}).get('refreshRates@VirtualScreen:44')=='[60,120]'
             if not s.get('missing_120') and (selected[0]['deviceType']=='Display' or rates):
-                print('10 - 3840x1080 HiDPI 120Hz 8bpc\n20 - 4096x1152 HiDPI 120Hz 8bpc\n30 - 4480x1260 HiDPI 120Hz 8bpc\n40 - 4608x1296 HiDPI 120Hz 8bpc')
+                print(('10 - 3840x1080 HiDPI 120Hz 8bpc\n20 - 4096x1152 HiDPI 120Hz 8bpc\n30 - 4480x1260 HiDPI 120Hz 8bpc\n40 - 4608x1296 HiDPI 120Hz 8bpc').replace('120Hz',s.get('fractional_120','120Hz')))
+            sys.exit()
+        if 'connectionModeListAll' in flags or 'connectionModeList' in flags:
+            if not s.get('unsupported_link') and not ('connectionModeList' in flags and s.get('downscaled_link')):
+                print('600 - 7680x2160 '+s.get('fractional_60','60Hz')+' Fixed 10bit SDR RGB Full SRGB')
+                if not s.get('missing_120'):
+                    print('1200 - 7680x2160 '+s.get('fractional_120','120Hz')+' Fixed 10bit SDR RGB Full SRGB')
+            print('100 - 3840x1080 59.97Hz Fixed 10bit SDR RGB Full SRGB')
+            sys.exit()
+        if 'connectionMode' in flags:
+            size='3840x1080' if s.get('unsupported_link') or s.get('downscaled_link') else '7680x2160'
+            color='HDR10 RGB Full' if selected[0].get('hdr')=='on' else 'SDR '+s.get('encoding','RGB Full')
+            print('600 - '+size+' '+selected[0]['refreshRate']+' Fixed 10bit '+color+' SRGB')
             sys.exit()
         keys=[k for k in flags if k not in ('UUID','type','nameLike')]
         print(','.join(('true' if selected[0].get(k)=='on' else 'false') if k=='main' else ('on,on' if k=='connected' else ('3840x1080' if k=='resolution' and selected[0]['UUID']=='panel' and s.get('stale_physical_resolution') else str(selected[0].get(k,'on')))) for k in keys))
+    elif op=='perform':
+        if 'applyFactoryEDID' in flags and not s.get('ignore_factory_edid'):
+            s['active_edid']='factory-edid'
+        save()
     elif op=='discard':
         s['devices']=[d for d in devices if d not in selected]; save()
     elif op=='create':
@@ -77,11 +114,15 @@ elif name=='bd':
     elif op=='set':
         if not selected: sys.exit(1)
         for d in selected:
+            if 'connectionMode' in flags: s['encoding']='RGB Full'
             if 'displayModeNumber' in flags:
-                resolution={'10':'3840x1080','20':'4096x1152','30':'4480x1260','40':'4608x1296'}[flags['displayModeNumber']]
-                d.update(resolution=resolution,hiDPI='on',refreshRate='120Hz')
+                number=flags['displayModeNumber']
+                resolution={'1':'7680x2160','2':'3840x1080','10':'3840x1080','20':'4096x1152','30':'4480x1260','40':'4608x1296'}[number]
+                rate=s.get('fractional_60','60Hz') if number in ('1','2') else s.get('fractional_120','120Hz')
+                if not s.get('ignore_default') or number!='1':
+                    d.update(resolution=resolution,hiDPI='off' if number=='1' else 'on',refreshRate=rate)
                 if d['deviceType']=='VirtualScreen' and d.get('mirror')=='on':
-                    next(x for x in devices if x['UUID']=='panel').update(resolution=resolution,hiDPI='on',refreshRate='120Hz')
+                    next(x for x in devices if x['UUID']=='panel').update(resolution=resolution,hiDPI='on',refreshRate=rate)
             for k,v in flags.items():
                 if k not in ('UUID','targetUUID'):
                     if k=='resolution' and d['UUID']=='managed' and (not s['enable16K'] or s.get('reject_resolution')):
@@ -91,7 +132,10 @@ elif name=='bd':
                 d.update(UUID='managed',displayID='3')
             if flags.get('mirror')=='on':
                 target=next(d for d in devices if d['UUID']==flags['targetUUID'])
-                target.update(resolution=d['resolution'],hiDPI=d['hiDPI'],refreshRate=d['refreshRate'],mirror='on')
+                rate=s.get('fractional_60',d['refreshRate']) if d['refreshRate']=='60Hz' else s.get('fractional_120',d['refreshRate'])
+                target.update(resolution=d['resolution'],hiDPI=d['hiDPI'],refreshRate=rate,mirror='on')
+        if s.get('ignore_default') and flags.get('displayModeNumber')=='1':
+            selected[0]['displayModeNumber']='99'
         save()
 '''
 
@@ -171,7 +215,7 @@ class G95Tests(unittest.TestCase):
         result=self.invoke('butter')
         self.assertEqual(result.returncode,1,result.stdout+result.stderr)
         panel=next(d for d in self.state['devices'] if d['UUID']=='panel')
-        self.assertEqual(panel['refreshRate'],'60Hz')
+        self.assertEqual((panel['resolution'],panel['hiDPI']),('3840x1080','on'))
         self.assertIn('Setup failed',result.stdout)
 
     def test_butter_requires_an_advertised_120hz_mode(self):
@@ -206,8 +250,8 @@ class G95Tests(unittest.TestCase):
         result=self.invoke('set')
         self.assertEqual(result.returncode,1,result.stdout+result.stderr)
         panel=next(d for d in self.state['devices'] if d['UUID']=='panel')
-        self.assertEqual((panel['resolution'],panel['hiDPI'],panel['refreshRate']),('3840x1080','on','60Hz'))
-        self.assertIn('unrelated',[d['UUID'] for d in self.state['devices']])
+        self.assertEqual((panel['resolution'],panel['hiDPI'],panel['refreshRate']),('3840x1080','on','120Hz'))
+        self.assertNotIn('unrelated',[d['UUID'] for d in self.state['devices']])
         self.assertNotIn('managed',[d['UUID'] for d in self.state['devices']])
         self.assertIn('resolution refused',next((self.root/'state/g95nc').glob('*.log')).read_text())
 
@@ -241,13 +285,13 @@ class G95Tests(unittest.TestCase):
         self.assertIn('exactly one',result.stderr)
         self.assertFalse([e for e in self.events() if e[0]=='bd' and e[1] in ('set','create','discard')])
 
-    def test_disconnected_reset_only_discards_owned_virtual_screen(self):
+    def test_disconnected_reset_removes_all_virtual_screens(self):
         self.assertEqual(self.invoke('set').returncode,0)
         self.state['devices']=[d for d in self.state['devices'] if d['UUID']!='panel']
         self.save()
         result=self.invoke('reset')
         self.assertEqual(result.returncode,0,result.stdout+result.stderr)
-        self.assertEqual([d['UUID'] for d in self.state['devices']],['unrelated'])
+        self.assertEqual(self.state['devices'],[])
 
     def test_hung_cli_has_a_deadline_and_diagnostic(self):
         self.state['hang']=True
@@ -282,12 +326,12 @@ class G95Tests(unittest.TestCase):
         self.assertIn('macOS mirror/framebuffer verification failed',
                       next((self.root/'state/g95nc').glob('*.log')).read_text())
 
-    def test_matching_name_with_different_identity_survives_reset(self):
+    def test_reset_removes_every_virtual_identity(self):
         self.state['devices'][1]['name']='G95-HiDPI'
         self.save()
         result=self.invoke('reset')
         self.assertEqual(result.returncode,0,result.stdout+result.stderr)
-        self.assertIn('unrelated',[d['UUID'] for d in self.state['devices']])
+        self.assertEqual([d['UUID'] for d in self.state['devices']],['panel'])
 
     def test_duplicate_owned_identity_stops_before_mutation(self):
         self.assertEqual(self.invoke('set').returncode,0)
@@ -306,10 +350,150 @@ class G95Tests(unittest.TestCase):
         del owned['tagID']
         self.save()
         (self.root/'events').write_text('')
-        result=self.invoke('reset')
+        result=self.invoke('set')
         self.assertEqual(result.returncode,1,result.stdout+result.stderr)
         self.assertFalse([e for e in self.events() if e[0]=='bd' and e[1]=='discard'])
         self.assertIn('unrelated',[d['UUID'] for d in self.state['devices']])
+
+    def test_reset_clears_all_preferences_with_private_backup_and_repeats(self):
+        self.state['preferences']={'hideMenuIcon':'true','oldSetting':'sentinel-private-value'}
+        self.save()
+        for _ in range(2):
+            result=self.invoke('reset')
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            self.assertFalse(self.state['enable16K'])
+            self.assertEqual(self.state['preferences'],{})
+            self.assertEqual([d['UUID'] for d in self.state['devices']],['panel'])
+            panel=self.state['devices'][0]
+            self.assertEqual((panel['resolution'],panel['hiDPI'],panel['refreshRate']),
+                             ('3840x1080','on','120Hz'))
+            self.assertEqual(panel['mirror'],'off')
+            self.assertEqual(panel['main'],'on')
+        backups=list((self.root/'state/g95nc/backups').glob('*.plist'))
+        self.assertEqual(len(backups),1)
+        self.assertIn(b'sentinel-private-value',backups[0].read_bytes())
+        self.assertEqual(backups[0].stat().st_mode & 0o777,0o600)
+        for log in (self.root/'state/g95nc').glob('*.log'):
+            self.assertNotIn('sentinel-private-value',log.read_text())
+
+    def test_reset_restores_factory_edid_and_hidpi_without_native_signal(self):
+        self.state.update(active_edid='custom-edid',unsupported_link=True)
+        self.save()
+        result=self.invoke('reset')
+        self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+        self.assertEqual(self.state['active_edid'],'factory-edid')
+        panel=self.state['devices'][0]
+        self.assertEqual((panel['resolution'],panel['hiDPI'],panel['refreshRate']),
+                         ('3840x1080','on','120Hz'))
+
+    def test_reset_rejects_an_edid_override_that_did_not_clear(self):
+        self.state.update(active_edid='custom-edid',ignore_factory_edid=True)
+        self.save()
+        result=self.invoke('reset')
+        self.assertEqual(result.returncode,1,result.stdout+result.stderr)
+        self.assertIn('factory EDID',result.stderr)
+
+    def test_reset_requires_readable_factory_edid_on_odyssey(self):
+        self.state['unreadable_edid']=True
+        self.save()
+        result=self.invoke('reset')
+        self.assertEqual(result.returncode,1,result.stdout+result.stderr)
+        self.assertIn('factory EDID',result.stderr)
+
+    def test_reset_accepts_fractional_120_refresh(self):
+        self.state['fractional_120']='119.88Hz'
+        self.save()
+        result=self.invoke('reset')
+        self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+        self.assertEqual(self.state['devices'][0]['refreshRate'],'119.88Hz')
+
+    def test_reset_reports_unavailable_hidpi_120_mode(self):
+        self.state['missing_120']=True
+        self.save()
+        result=self.invoke('reset')
+        self.assertEqual(result.returncode,1,result.stdout+result.stderr)
+        self.assertIn('3840x1080 HiDPI at 120 Hz',result.stderr)
+
+    def test_reset_works_when_app_stopped_or_preferences_missing(self):
+        self.state.update(running=False,domain_exists=False,enable16K=False)
+        self.state['devices']=[]
+        self.save()
+        result=self.invoke('reset')
+        self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+        self.assertTrue(self.state['running'])
+
+    def test_reset_accepts_an_empty_domain_still_listed_by_macos(self):
+        self.state.update(running=False,domain_exists=True,preferences_cleared=True,enable16K=False,preferences={})
+        self.state['devices']=[]
+        self.save()
+        result=self.invoke('reset')
+        self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+        self.assertTrue(self.state['running'])
+
+    def test_failed_backup_does_not_clear_configuration(self):
+        self.state['backup_failure']=True
+        self.save()
+        result=self.invoke('reset')
+        self.assertEqual(result.returncode,1,result.stdout+result.stderr)
+        self.assertTrue(self.state['enable16K'])
+        self.assertFalse([e for e in self.events() if e[:2]==['defaults','delete']])
+
+    def test_failed_preference_deletion_is_not_success(self):
+        self.state['delete_failure']=True
+        self.save()
+        self.assertEqual(self.invoke('reset').returncode,1)
+        self.assertTrue(self.state['enable16K'])
+
+    def test_reset_verifies_the_default_mode_was_applied(self):
+        self.state['devices'][0]['name']='Other monitor'
+        self.state['ignore_default']=True
+        self.save()
+        self.assertEqual(self.invoke('reset').returncode,1)
+
+    def test_unsupported_output_is_rejected_before_any_mutation(self):
+        self.state.update(unsupported_link=True,enable16K=False)
+        self.save()
+        for mode in ('set','butter'):
+            result=self.invoke(mode)
+            self.assertEqual(result.returncode,1,result.stdout+result.stderr)
+            self.assertIn('7680x2160',result.stderr)
+        self.assertFalse([e for e in self.events() if e[0]=='bd' and e[1] in ('set','create','discard')])
+        self.assertFalse([e for e in self.events() if e[0] in ('osascript','open') or e[:2]==['defaults','write']])
+
+    def test_fractional_refresh_is_accepted_and_repeat_setup_is_read_only(self):
+        self.state.update(fractional_60='59.97Hz',fractional_120='119.88Hz',native_refresh_override='59.97Hz')
+        self.save()
+        for mode,rate in (('set','59.97Hz'),('butter','119.88Hz')):
+            self.state['native_refresh_override']=rate
+            self.save()
+            result=self.invoke(mode)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            (self.root/'events').write_text('')
+            result=self.invoke(mode)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            self.assertFalse([e for e in self.events() if e[0]=='bd' and e[1] in ('set','create','discard')])
+
+    def test_sharp_alias_and_setup_after_full_reset(self):
+        for mode in ('reset','sharp','reset','butter','sharp'):
+            result=self.invoke(mode)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+
+    def test_setup_establishes_sdr_full_chroma_output(self):
+        self.state['devices'][0]['hdr']='on'
+        self.state['encoding']='YCbCr 4:2:2 Limited'
+        self.save()
+        result=self.invoke('sharp')
+        self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+        self.assertEqual(self.state['devices'][0]['hdr'],'off')
+        self.assertEqual(self.state['encoding'],'RGB Full')
+
+    def test_hidpi_framebuffer_on_low_resolution_signal_is_failure(self):
+        self.state['downscaled_link']=True
+        self.save()
+        result=self.invoke('set')
+        self.assertEqual(result.returncode,1,result.stdout+result.stderr)
+        self.assertIn('Setup failed',result.stdout)
+        self.assertFalse([d for d in self.state['devices'] if d['deviceType']=='VirtualScreen'])
 
     def test_optimized_python_does_not_disable_native_verification(self):
         self.env['PYTHONOPTIMIZE']='1'

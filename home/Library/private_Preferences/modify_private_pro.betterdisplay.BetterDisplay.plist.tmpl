@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-exec '{{ .chezmoi.sourceDir }}/../scripts/macos/plist-merge' \
-  --bundle-id 'pro.betterdisplay.BetterDisplay' \
-  --desired-b64 '{{ includeTemplate "pro.betterdisplay.BetterDisplay.plist.tmpl" . | b64enc }}'

@@ -181,16 +181,6 @@ SCENARIOS = {
         },
         expected={"EnableLauncher": False},
     ),
-    "betterdisplay": Scenario(
-        bundle_id="pro.betterdisplay.BetterDisplay",
-        overrides={"menuLevelContrast": "more"},
-        local={
-            "Paddle-BetterDisplay-762421-SD": b"local-license",
-            "displayTagIDs": [2, 4, 5],
-            "currentColorProfileURL@Display:2": "local-profile",
-        },
-        expected={"menuLevelContrast": "hide", "SUSendProfileInfo": False},
-    ),
     "cmux": Scenario(
         bundle_id="com.cmuxterm.app",
         overrides={
