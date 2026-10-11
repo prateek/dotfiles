@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+exec mise exec go@latest go:github.com/jgalea/amz/cmd/amz@latest -- amz "$@"

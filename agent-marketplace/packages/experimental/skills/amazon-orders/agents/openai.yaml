@@ -1,0 +1,3 @@
+interface:
+  display_name: "Amazon Orders"
+  short_description: "Sync and query a private local Amazon order archive"
