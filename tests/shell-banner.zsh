@@ -65,8 +65,19 @@ DOTFILES_SKIP_LAUNCHCTL_SYNC=1 \
     apply --force --exclude=scripts --parent-dirs \
     "$render_home/.config/dotfiles/shell-banner" \
     "$render_home/.config/zsh/extra/shell-banner.zsh" \
-    "$render_home/.config/fastfetch/config.jsonc" >/dev/null
+    "$render_home/.config/fastfetch/config.jsonc" \
+    "$render_home/.local/bin/dotpkgs" \
+    "$render_home/.local/lib/dotpkgs" >/dev/null
 
+# Run the installed implementation with the provisioned Python, avoiding a
+# dependency download inside the deliberately empty fixture environment.
+helper_python="${TEST_PYTHON:-$(whence -p python3)}"
+helper_entry="$render_home/.local/bin/dotpkgs"
+cat > "$tmp_root/dotpkgs" <<EOF
+#!/bin/sh
+exec "$helper_python" "$helper_entry" "\$@"
+EOF
+chmod +x "$tmp_root/dotpkgs"
 BANNER_ROOT="$render_home/.config/dotfiles/shell-banner"
 LOADER="$render_home/.config/zsh/extra/shell-banner.zsh"
 REFRESH="$BANNER_ROOT/bin/refresh"
@@ -134,10 +145,8 @@ make_fake_brew() {
 #!/usr/bin/env zsh
 print -r -- "$*" >> "${BANNER_FAKE_LOG:-/dev/null}"
 case "$1" in
-  list)
-    print -r -- 'fa'; print -r -- 'fb'; print -r -- 'fc'; print -r -- 'fd'
-    print -r -- 'ca'; print -r -- 'cb'
-    exit 0
+  info)
+    print -r -- '{"formulae":[{"name":"ripgrep","installed":[{"version":"1"}],"versions":{"stable":"2"}},{"name":"jq","installed":[{"version":"1"}],"versions":{"stable":"2"}},{"name":"fc","installed":[{"version":"1"}],"versions":{"stable":"1"}},{"name":"fd","installed":[{"version":"1"}],"versions":{"stable":"1"}}],"casks":[{"token":"iterm2","installed":"1","version":"2"},{"token":"cb","installed":"1","version":"1"}]}'
     ;;
   outdated)
     if [[ "${BANNER_FAKE_FAIL:-0}" == 1 ]]; then
@@ -145,12 +154,10 @@ case "$1" in
       exit 1
     fi
     if [[ "${BANNER_FAKE_CLEAN:-0}" == 1 ]]; then
-      exit 0
+      print -r -- '{"formulae":[],"casks":[]}'
+    else
+      print -r -- '{"formulae":[{"name":"ripgrep"},{"name":"jq"}],"casks":[{"name":"iterm2"}]}'
     fi
-    print -r -- 'ripgrep'
-    print -r -- 'jq'
-    print -r -- 'iterm2'
-    exit 0
     ;;
 esac
 exit 0
@@ -171,15 +178,13 @@ case "$1" in
       exit 1
     fi
     if [[ "${BANNER_FAKE_CLEAN:-0}" == 1 ]]; then
-      exit 0
+      print -r -- '{}'
+    else
+      print -r -- '{"node":{"current":"24.12.0","latest":"24.13.0"}}'
     fi
-    print -r -- 'node 24.12.0 -> 24.13.0'
-    exit 0
     ;;
   ls)
-    print -r -- 'one'; print -r -- 'two'; print -r -- 'three'
-    print -r -- 'four'; print -r -- 'five'
-    exit 0
+    print -r -- '{"node":[{"version":"24.12.0","requested_version":"latest","installed":true}],"two":[{"version":"1","installed":true}],"three":[{"version":"1","installed":true}],"four":[{"version":"1","installed":true}],"five":[{"version":"1","installed":true}]}'
     ;;
 esac
 exit 0
@@ -191,42 +196,15 @@ make_fake_apm() {
   local dir="$1"
   mkdir -p "$dir"
   cat >"$dir/apm" <<'EOF'
-#!/usr/bin/env zsh
-print -r -- "$*" >> "${BANNER_FAKE_LOG:-/dev/null}"
-case "$1" in
-  --version)
-    print -r -- 'apm 0.13.0 (fake)'
-    exit 0
-    ;;
-  outdated)
-    # Refuse JSON to exercise text fallback.
-    if [[ "$2" == '--format' && "$3" == 'json' ]]; then
-      print -u2 -- 'unknown flag --format'
-      exit 2
-    fi
-    if [[ "${BANNER_FAKE_FAIL:-0}" == 1 ]]; then
-      print -u2 -- 'fake apm failure'
-      exit 1
-    fi
-    if [[ "${BANNER_FAKE_CLEAN:-0}" == 1 ]]; then
-      print -r -- 'Package Current Latest Status Source'
-      exit 0
-    fi
-    print -r -- 'Package         Current  Latest  Status     Source'
-    print -r -- 'github/foo/bar  abc123   def456  outdated   marketplace: foo'
-    print -r -- 'github/baz/qux  111      111     up-to-date marketplace: baz'
-    exit 0
-    ;;
-  list)
-    print -r -- 'github/foo/bar'
-    print -r -- 'github/baz/qux'
-    print -r -- 'github/extra/one'
-    exit 0
-    ;;
-esac
+#!/bin/sh
 exit 0
 EOF
   chmod +x "$dir/apm"
+  cat >"$dir/dotpkgs" <<'EOF'
+#!/bin/sh
+printf '1\t3\t0\t0\n[{"name":"github/foo/bar","status":"update_available"}]\n'
+EOF
+  chmod +x "$dir/dotpkgs"
 }
 
 run_refresh_one() {
@@ -234,11 +212,13 @@ run_refresh_one() {
   local fake_dir="$2"
   local state_root="$3"
   local extra_env="${4:-}"
+  [[ -x "$fake_dir/dotpkgs" ]] || /bin/cp "$tmp_root/dotpkgs" "$fake_dir/dotpkgs"
   /usr/bin/env -i \
     HOME="$render_home" \
     XDG_CONFIG_HOME="$render_home/.config" \
     XDG_STATE_HOME="$render_home/.local/state" \
     DOTFILES_BANNER_STATE_DIR="$state_root" \
+    DOTFILES_BANNER_DOTPKGS_BIN="${fake_dir}/dotpkgs" \
     BANNER_FAKE_LOG="$tmp_root/fake.log" \
     PATH="$fake_dir:/usr/bin:/bin:/usr/sbin:/sbin" \
     ${=extra_env} \
@@ -293,6 +273,7 @@ run_refresh_if_stale() {
     XDG_CONFIG_HOME="$render_home/.config" \
     XDG_STATE_HOME="$render_home/.local/state" \
     DOTFILES_BANNER_STATE_DIR="$state_root" \
+    DOTFILES_BANNER_DOTPKGS_BIN="${fake_dir}/dotpkgs" \
     BANNER_FAKE_LOG="$log" \
     BANNER_FAKE_FAIL=1 \
     PATH="$fake_dir:/usr/bin:/bin:/usr/sbin:/sbin" \
@@ -365,7 +346,7 @@ assert_file_contains "$state_mise/sources/mise/state.env" 'DOTFILES_BANNER_OUTDA
 assert_file_contains "$state_mise/sources/mise/state.env" 'DOTFILES_BANNER_TOTAL_COUNT=5'
 assert_file_contains "$state_mise/sources/mise/module.txt" '1 / 5 outdated'
 
-# apm outdated (text fallback after json refused)
+# apm consumes the same package-summary protocol
 state_apm="$tmp_root/state-apm"
 fake_apm="$tmp_root/fake-apm"
 make_fake_apm "$fake_apm"

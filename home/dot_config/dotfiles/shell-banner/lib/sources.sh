@@ -86,7 +86,7 @@ banner_source_ttl() {
 
 banner_source_params() {
   local source="$1"
-  [[ "$source" == mise ]] && { print -r -- scope=home-v1; return 0; }
+  [[ "$source" == (brew|mise|apm) ]] && { print -r -- scope=dotpkgs-v1; return 0; }
   local var="${BANNER_SOURCE_PARAMS_VAR[$source]:-}"
   [[ -n "$var" ]] || { print -r -- ''; return 0; }
   local value="${(P)var:-}"

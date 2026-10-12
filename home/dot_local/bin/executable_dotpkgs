@@ -1,0 +1,15 @@
+#!/usr/bin/env -S uv run --quiet --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = ["tomlkit==0.13.3", "PyYAML==6.0.3"]
+# ///
+"""Machine package operations; implementation is installed alongside this entrypoint."""
+from pathlib import Path
+import sys
+
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'lib/dotpkgs'))
+from cli import main
+
+if __name__ == '__main__':
+    raise SystemExit(main())

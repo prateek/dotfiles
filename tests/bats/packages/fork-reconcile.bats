@@ -5,6 +5,12 @@ load '../../support/brew'
 setup() {
   setup_fixture
   setup_brew_state
+  cat > "$FIXTURE/bin/dotpkgs" <<EOF
+#!/bin/sh
+exec "$DOTFILES_ROOT/scripts/packages/dotpkgs/.venv/bin/python" "$DOTFILES_ROOT/home/dot_local/bin/executable_dotpkgs" "\$@"
+EOF
+  chmod +x "$FIXTURE/bin/dotpkgs"
+  export DOTPKGS_BIN="$FIXTURE/bin/dotpkgs"
   reconciler="$DOTFILES_ROOT/scripts/packages/reconcile-fork-installs"
   printf 'prateek/forks/forkstub-fork\tformula\tforkstub\nprateek/forks/forkstub-app-fork\tcask\tforkstub-app\n' > "$FIXTURE/entries"
 }
@@ -46,7 +52,7 @@ PY
   run_bash 0 "$reconciler" --entries-file "$FIXTURE/entries"
   assert_success
   assert_output --partial 'outdated fork: forkstub-app-fork (20260704.13.1) != 20260705.14.1'
-  assert_output --partial 'brew upgrade --cask forkstub-app-fork'
+  assert_output --partial 'dotpkgs update brew:prateek/forks/forkstub-app-fork'
   refute_output --partial 'outdated fork: forkstub-fork'
   [ -z "$stderr" ]
   calls=$'\n'"$(cat "$FIXTURE/brew.calls")"

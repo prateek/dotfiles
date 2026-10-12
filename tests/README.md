@@ -165,6 +165,21 @@ agentsview and qmd stores live on another volume: linking, config
 reconciliation through the link, refusal to hide existing data, and an
 unavailable volume. A fake `uv` stands in for the modifier.
 
+### Package helper checks
+
+`just test-python -p test_dotpkgs.py` exercises the installed command shape,
+policy-aware status, declaration edits, dry-run isolation, shared-file merging,
+native failures, and build receipts. `just test-tools` provisions its pinned
+Python dependencies from `scripts/packages/dotpkgs/pyproject.toml`.
+Brew/app audit projections and fork freshness share this implementation; run
+`just test-shell tests/bats/packages/brew-inventory.bats tests/bats/packages/fork-reconcile.bats`
+with the banner suites after changing its output contract.
+
+The old APM banner text/JSON fallback assertion targeted a retired CLI interface.
+The banner now tests the shared summary protocol; the Python suite independently
+checks the shared lock and upstream-ref comparisons. Brew/mise banner fixtures
+exercise real dotpkgs parsing through external command substitutes.
+
 ### Chezmoi workflow checks
 
 `just test-python -p test_chezmoi.py` covers initialization and

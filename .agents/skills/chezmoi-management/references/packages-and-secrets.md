@@ -2,6 +2,33 @@
 
 Managing data files under `home/.chezmoidata/`, rendering Brewfiles, gating installs via `DOTFILES_INSTALL_*` env vars, wiring 1Password `op://` references.
 
+## Package Operations
+
+1. Verify `command -v dotpkgs`, then run `dotpkgs --json doctor` and
+   `dotpkgs managers`. Missing commands are chezmoi installation problems;
+   source lives in `home/dot_local/bin/executable_dotpkgs` with sibling lib modules.
+2. Use `dotpkgs --json list --manager <name>` for exact package IDs, then
+   `status` for installed/requested/latest comparisons. `pinned_outdated` is an
+   intentional policy distinction; unknown and failed checks are not current.
+3. Preview the requested write with `--dry-run`. Pass `--source <checkout>` for
+   worktree source changes. Normal updates preserve pins; `update --all --latest`
+   explicitly changes policies across managers. Execute within the user's
+   requested scope; creating the helper or inspecting status does not authorize
+   running a real bulk upgrade.
+4. Inspect every result, including manual steps and partial execution. APM
+   acquisition still requires source/patch/version review before materialization.
+   Native credentials remain with their managers. `exec` is a runtime-only
+   escape hatch and may mutate; it does not synchronize declarations or caches.
+
+```sh
+dotpkgs --json status --manager mise
+dotpkgs pin mise:node --version 24.12.0 --dry-run
+dotpkgs update --all --latest --dry-run
+```
+
+Read the [dotpkgs reference](../../../../docs/references/dotpkgs.md) for provider
+capabilities, failure recovery, JSON fields, installation, and validation.
+
 ## Files Owned By This Mode
 
 ```text

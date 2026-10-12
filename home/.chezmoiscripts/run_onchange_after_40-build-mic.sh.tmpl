@@ -1,3 +1,4 @@
+{{- if dig "package_policy" "swift" "mic" true . -}}
 {{ template "script_lib.sh" . }}
 
 # Build the `mic` CoreAudio input-mute CLI from Swift source into ~/.local/bin/mic.
@@ -5,3 +6,5 @@
 # recompiles it whenever mic.swift changes. Ordered after the Xcode step so the
 # toolchain is present on a normal apply.
 {{ includeTemplate "swift-cli-build.sh" (dict "name" "mic" "source" (include ".chezmoiassets/mic.swift")) }}
+
+{{- end }}

@@ -2,6 +2,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
+source "$REPO_ROOT/scripts/packages/lib.sh"
 BREWFILE="${BREWFILE:-}"
 BREWFILE_MACHINE_TYPE="${BREWFILE_MACHINE_TYPE:-personal}"
 
@@ -49,8 +50,9 @@ render_brewfile | sed -n 's/^tap "\([^"]*\)".*/\1/p' | LC_ALL=C sort -u >"$brewf
 brew tap 2>/dev/null | LC_ALL=C sort -u >"$installed_taps" || true
 
 render_brewfile | sed -n 's/^brew "\([^"]*\)".*/\1/p' | normalize_formula_names >"$brewfile_formulae"
-brew list --formula --full-name 2>/dev/null | normalize_formula_names >"$installed_formulae_all" || true
-brew list --formula --installed-on-request --full-name 2>/dev/null | normalize_formula_names >"$installed_formulae_requested" || true
+dotpkgs_command list --manager brew --format tsv >"$tmp_dir/packages.tsv"
+awk -F '\t' '$4 == "formula" {print $1}' "$tmp_dir/packages.tsv" | normalize_formula_names >"$installed_formulae_all"
+awk -F '\t' '$4 == "formula" && $5 == "true" {print $1}' "$tmp_dir/packages.tsv" | normalize_formula_names >"$installed_formulae_requested"
 
 echo "# Brew inventory"
 echo "# Source: $(brewfile_label)"

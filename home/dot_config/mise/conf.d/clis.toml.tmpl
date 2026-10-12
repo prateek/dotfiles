@@ -28,7 +28,7 @@
 # CLI installs from run_after_06-claude-native.sh (ADR 0029), not here.
 {{- range $id, $agent := $a.selected }}
 {{- if eq $agent.install "mise" }}
-{{ $agent.mise | quote }} = "latest"  # {{ $id }}
+{{ $agent.mise | quote }} = {{ default "latest" (dig "version" "latest" $agent) | quote }}  # {{ $id }}
 {{- end }}
 {{- range default (list) (dig "adapters" (list) $agent) }}
 {{- if hasPrefix "mise:" . }}

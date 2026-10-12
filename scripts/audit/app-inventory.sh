@@ -2,6 +2,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
+source "$REPO_ROOT/scripts/packages/lib.sh"
 BREWFILE="${BREWFILE:-}"
 BREWFILE_MACHINE_TYPE="${BREWFILE_MACHINE_TYPE:-personal}"
 
@@ -47,7 +48,8 @@ brewfile_casks="$tmp_dir/brewfile_casks.txt"
 installed_casks="$tmp_dir/installed_casks.txt"
 
 extract_casks >"$brewfile_casks"
-brew list --cask 2>/dev/null | LC_ALL=C sort -u >"$installed_casks" || true
+dotpkgs_command list --manager brew --format tsv >"$tmp_dir/packages.tsv"
+awk -F '\t' '$4 == "cask" {n=$1; sub(/^.*\//, "", n); print n}' "$tmp_dir/packages.tsv" | LC_ALL=C sort -u >"$installed_casks"
 
 echo "# App inventory"
 echo "# Source: $(brewfile_label)"
@@ -66,7 +68,7 @@ installed_mas_ids="$tmp_dir/installed_mas_ids.txt"
 render_brewfile | sed -n 's/^mas ".*", id: \([0-9][0-9]*\).*/\1/p' | LC_ALL=C sort -u >"$brewfile_mas_ids" || true
 
 if command -v mas >/dev/null 2>&1; then
-  mas list 2>/dev/null | awk '{print $1}' | LC_ALL=C sort -u >"$installed_mas_ids" || true
+  dotpkgs_command list --manager mas --format tsv | cut -f1 | LC_ALL=C sort -u >"$installed_mas_ids"
 
   echo "## Mac App Store apps: in package data but not installed"
   comm -23 "$brewfile_mas_ids" "$installed_mas_ids" | sed 's/^/- /' || true

@@ -25,21 +25,23 @@ small per-source cache so the shell never blocks on the underlying check.
 | Source  | Outdated check                                                                | Total                                       | Default TTL |
 |---------|-------------------------------------------------------------------------------|---------------------------------------------|-------------|
 | chezmoi | `chezmoi status [--exclude=scripts]`                                          | `chezmoi managed --include=dirs,files,symlinks` | 1h      |
-| brew    | `brew outdated --quiet` (formulae + casks)                                    | `brew list -1`                              | 24h         |
-| mise    | `mise outdated --no-header`                                                   | `mise ls --current --installed --no-header`           | 12h         |
+| brew    | `dotpkgs summary --manager brew` | shared package inventory | 24h |
+| mise    | `dotpkgs summary --manager mise` | shared package inventory | 12h |
 
-The mise check and denominator run from `$HOME`, so a shell opened in a
-project cannot replace the shared row with that project's tools. The cache
-scope token invalidates results produced by the previous directory-dependent
-check.
+Package checks belong to `dotpkgs`, installed in `~/.local/bin`. Brew compares
+its catalog and receipts; mise checks both permitted versions and newer releases
+beyond pins. Rows include pinned-outdated and unknown counts when present.
+The helper runs machine operations from the home directory. The banner keeps
+its own display cache, TTLs, locks, and background refresh.
 
-**apm is deferred.** The source script (`bin/sources/executable_apm`) and
-library wiring still exist and pass tests, but `apm` is excluded from
-`DOTFILES_BANNER_SOURCES` by default because Prateek's apm setup uses
-per-package lockfiles under `~/.agents/packages/<name>/apm.lock.yaml`
-rather than a single root lockfile, so a single `apm outdated` from
-`$HOME` always reports "no lockfile." Re-enabling will require the
-per-package iteration described in `docs/plans/shell-banner-plan.md`.
+APM remains opt-in. Its adapter now uses `dotpkgs` to read the repository's shared
+root lock and compare upstream commits; it does not use the retired per-package
+lock layout. Enable it in both `DOTFILES_BANNER_SOURCES` and fastfetch's module
+configuration when wanted. `DOTFILES_BANNER_DOTPKGS_BIN` can override the helper
+path, including for isolated tests.
+
+See `dotpkgs --help` and `docs/references/dotpkgs.md` in the source repository for
+operations, JSON output, and provider limits.
 
 If a source's binary isn't on `PATH`, that row reads `unavailable (… not
 installed)` and the source skips its underlying check until the binary appears.

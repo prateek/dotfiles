@@ -27,7 +27,7 @@
 # Brew state is snapshotted once at startup and mutations are tracked
 # in-memory: two brew-list spawns per run regardless of entry count, and one
 # consistent view of install state for the whole reconciliation. The freshness
-# report adds at most two `brew outdated` probes.
+# report uses one shared dotpkgs inventory/check snapshot.
 #
 # Usage:
 #   scripts/packages/reconcile-fork-installs [--entries-file <path>] [--tap <user/repo>]
@@ -209,21 +209,19 @@ fi
 # as current as the local tap clone, and the probe stays offline
 # (HOMEBREW_NO_AUTO_UPDATE) to keep the reconciler cheap.
 if [[ ${#names[@]} -gt 0 ]]; then
-  outdated=""
-  if printf '%s\n' "${kinds[@]}" | grep -qx formula; then
-    outdated+="$(HOMEBREW_NO_AUTO_UPDATE=1 brew outdated --formula --verbose 2>/dev/null || true)"$'\n'
-  fi
-  if printf '%s\n' "${kinds[@]}" | grep -qx cask; then
-    outdated+="$(HOMEBREW_NO_AUTO_UPDATE=1 brew outdated --cask --verbose 2>/dev/null || true)"$'\n'
-  fi
+  helper="${DOTPKGS_BIN:-$(cd "$(dirname "$0")/../.." && pwd)/home/dot_local/bin/executable_dotpkgs}"
+  outdated="$("$helper" outdated --manager brew --format tsv 2>/dev/null)" || {
+    log "package freshness unavailable; run dotpkgs status --manager brew for details"
+    outdated=""
+  }
   i=0
   while [[ $i -lt ${#names[@]} ]]; do
     kind="${kinds[$i]}" token="${tokens[$i]}"
     i=$((i + 1))
     installed "$kind" "$token" || continue
-    line="$(printf '%s\n' "$outdated" | awk -v t="$token" '$1 == t { print; exit }')"
+    line="$(printf '%s\n' "$outdated" | awk -F '\t' -v t="$token" '{ n=$1; sub(/^.*\//, "", n); if (n == t) { print n " (" $2 ") != " $3; exit } }')"
     [[ -n "$line" ]] || continue
-    log "outdated fork: $line (report-only; run 'brew upgrade $(brew_flag "$kind") $token' to update)"
+    log "outdated fork: $line (report-only; run 'dotpkgs update brew:${names[$((i - 1))]}' to update)"
   done
 fi
 

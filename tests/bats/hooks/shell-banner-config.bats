@@ -13,8 +13,14 @@ setup() {
     --config "$FIXTURE/chezmoi.toml" --destination "$HOME" \
     --cache "$XDG_CACHE_HOME/chezmoi" --persistent-state "$FIXTURE/chezmoi.db" \
     --override-data '{"machine_type":"ci","chezmoi":{"hostname":"dotfiles-test-host"}}' \
-    apply --force --exclude=scripts --parent-dirs "$BANNER_ROOT" "$BANNER_CONFIG"
+    apply --force --exclude=scripts --parent-dirs "$BANNER_ROOT" "$BANNER_CONFIG" "$HOME/.local/bin/dotpkgs" "$HOME/.local/lib/dotpkgs"
   assert_success
+  cat > "$FIXTURE/bin/dotpkgs" <<EOF
+#!/bin/sh
+exec "$TEST_PYTHON" "$HOME/.local/bin/dotpkgs" "\$@"
+EOF
+  chmod +x "$FIXTURE/bin/dotpkgs"
+  export DOTFILES_BANNER_DOTPKGS_BIN="$FIXTURE/bin/dotpkgs"
   cat > "$FIXTURE/bin/chezmoi-probe" <<'FAKE'
 #!/bin/sh
 for arg do
@@ -88,8 +94,8 @@ PY
 #!/bin/sh
 printf '%s|%s\n' "$PWD" "$*" >> "$BANNER_PROBES"
 case "$1" in
-  outdated) [ "$PWD" = "$HOME" ] || echo 'project-tool 1 2' ;;
-  ls) printf 'global-tool 1\n' ;;
+  outdated) if [ "$PWD" = "$HOME" ]; then echo '{}'; else echo '{"global-tool":{"latest":"2"}}'; fi ;;
+  ls) echo '{"global-tool":[{"version":"1","installed":true,"requested_version":"latest"}]}' ;;
   *) exit 2 ;;
 esac
 exit 0
@@ -104,7 +110,7 @@ FAKE
   run_zsh 0 "$BANNER_ROOT/bin/module" mise
   assert_success
   assert_output --partial '0 / 1 outdated'
-  printf '%s|outdated --no-header\n%s|ls --current --installed --no-header\n' "$HOME" "$HOME" > "$FIXTURE/expected-probes"
+  printf '%s|ls --global --json\n%s|outdated --json\n%s|outdated --bump --json\n' "$HOME" "$HOME" "$HOME" > "$FIXTURE/expected-probes"
   cmp "$FIXTURE/expected-probes" "$BANNER_PROBES"
   cd "$FIXTURE/project-b"
   run_zsh 0 "$BANNER_ROOT/bin/refresh" --if-stale

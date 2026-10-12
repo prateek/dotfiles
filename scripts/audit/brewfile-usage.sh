@@ -2,6 +2,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
+source "$REPO_ROOT/scripts/packages/lib.sh"
 BREWFILE="${BREWFILE:-}"
 BREWFILE_MACHINE_TYPE="${BREWFILE_MACHINE_TYPE:-personal}"
 
@@ -90,25 +91,26 @@ if [ -f "$HISTORY_FILE" ]; then
   )
 fi
 
-# Installed sets (avoid calling `brew list` in a tight loop).
+# One package snapshot for all installed sets and install reasons.
+package_snapshot="$(dotpkgs_command list --manager brew --format tsv)"
 declare -A INSTALLED_CASKS=()
 while IFS= read -r c; do
   [ -n "$c" ] || continue
   INSTALLED_CASKS["$c"]=1
-done < <(brew list --cask 2>/dev/null || true)
+done < <(printf '%s\n' "$package_snapshot" | awk -F '\t' '$4 == "cask" {n=$1; sub(/^.*\//, "", n); print n}' )
 
 declare -A INSTALLED_FORMULAE=()
 while IFS= read -r f; do
   [ -n "$f" ] || continue
   INSTALLED_FORMULAE["$f"]=1
-done < <(brew list --formula 2>/dev/null || true)
+done < <(printf '%s\n' "$package_snapshot" | awk -F '\t' '$4 == "formula" {n=$1; sub(/^.*\//, "", n); print n}' )
 
 # Install reasons / dependency graph hints
 declare -A ON_REQUEST=()
 while IFS= read -r f; do
   [ -n "$f" ] || continue
   ON_REQUEST["$f"]=1
-done < <(brew list --formula --installed-on-request 2>/dev/null || true)
+done < <(printf '%s\n' "$package_snapshot" | awk -F '\t' '$4 == "formula" && $5 == "true" {n=$1; sub(/^.*\//, "", n); print n}' )
 
 declare -A LEAVES=()
 while IFS= read -r f; do

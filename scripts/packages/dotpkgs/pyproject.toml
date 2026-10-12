@@ -1,0 +1,8 @@
+[project]
+name = "dotpkgs-tools"
+version = "1.0.0"
+requires-python = ">=3.11"
+dependencies = ["tomlkit==0.13.3", "PyYAML==6.0.3"]
+
+[tool.uv]
+package = false

@@ -18,6 +18,7 @@
 # machine's own Codex home, so pin it rather than inherit whichever one
 # launched chezmoi.
 export CODEX_HOME="$HOME/.codex"
+export CODEX_RELEASE={{ dig "package_policy" "native" "codex" "latest" . | quote }}
 
 standalone_codex="$CODEX_HOME/packages/standalone/current/codex"
 visible_codex="$HOME/.local/bin/codex"

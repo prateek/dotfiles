@@ -1,6 +1,6 @@
 ---
 name: chezmoi-management
-description: Chezmoi workflow skill for Prateek's dotfiles repo. Use for `chezmoi` apply/diff/verify/merge/edit/re-add/forget/status/managed/unmanaged/data/execute-template/doctor; source-target drift; files under `home/.chezmoitemplates/`, `.chezmoiassets/`, `.chezmoiscripts/`, `.chezmoidata/`, or `.chezmoiexternal.*`; package, secret, and license data; Brewfile rendering; app plist capture or modify stubs; chezmoi-owned `DOTFILES_*` gates; 1Password `op://` refs; and mapping `~/.foo` targets to `home/dot_*` sources. Do not use for unrelated dotfile edits, pure shell-startup debugging, or test/VM/harness env vars.
+description: Dotpkgs package operations and chezmoi workflow skill for Prateek's dotfiles repo. Use for `chezmoi` apply/diff/verify/merge/edit/re-add/forget/status/managed/unmanaged/data/execute-template/doctor; source-target drift; files under `home/.chezmoitemplates/`, `.chezmoiassets/`, `.chezmoiscripts/`, `.chezmoidata/`, or `.chezmoiexternal.*`; package, secret, and license data; Brewfile rendering; app plist capture or modify stubs; chezmoi-owned `DOTFILES_*` gates; 1Password `op://` refs; and mapping `~/.foo` targets to `home/dot_*` sources. Do not use for unrelated dotfile edits, pure shell-startup debugging, or test/VM/harness env vars.
 ---
 
 # Chezmoi Management
@@ -54,6 +54,13 @@ These apply across every mode. Do not skip them.
 3. **Destructive command discipline.** `forget` stops managing (safe). `destroy` removes source AND target AND state (never use unless the user explicitly asks). `add` on a `.tmpl` clobbers the template with rendered output (never). `re-add` is the right tool for already-managed plain/`encrypted_` files but **SKIPS `.tmpl` sources** — pre-check with `chezmoi source-path <target>`; if it ends in `.tmpl`, skip `re-add` and edit by hand. Full command semantics in `references/chezmoi-cheatsheet.md`.
 4. **Files under `home/.chezmoidata/` cannot be templates.** They load before the template engine starts. Dynamic data goes in `home/.chezmoi.<format>.tmpl` or via template functions (`output`, `fromJson`, `fromYaml`).
 5. **Validate after editing this skill.** Frontmatter/parser drift has bitten this repo before. See `references/meta-skill-maintenance.md` for the post-edit checklist.
+
+## Package Operations
+
+For package inventory, available updates, pin changes, or install/remove requests,
+use `dotpkgs` and read [package operations](references/packages-and-secrets.md#package-operations).
+The helper owns package comparisons consumed by the shell banner and audits;
+chezmoi remains the configuration/apply surface.
 
 ## Mode Router
 

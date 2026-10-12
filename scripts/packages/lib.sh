@@ -88,3 +88,15 @@ render_chezmoi_template() {
     fi
   )
 }
+
+# Machine-readable installed state shared with the banner and interactive CLI.
+dotpkgs_command() {
+  local repo_root
+  repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
+  local result=0
+  "${DOTPKGS_BIN:-$repo_root/home/dot_local/bin/executable_dotpkgs}" "$@" || result=$?
+  if [[ $result -ne 0 ]]; then
+    printf 'Package inventory unavailable: dotpkgs failed (exit %s). Check uv and native-manager diagnostics above; retry before interpreting missing packages.\n' "$result" >&2
+  fi
+  return "$result"
+}

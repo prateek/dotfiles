@@ -22,6 +22,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 
 | Doc | Use it for |
 | --- | --- |
+| [Package helper](references/dotpkgs.md) | Shared package status, pin-aware operations, bulk latest, and banner/audit integration. |
 | [Documentation Index](index.md) | Routing to current guidance, proposed work, decisions, and history. |
 | [Document Lifecycle](document-lifecycle.md) | Frontmatter, status transitions, and index rules for `docs/`. |
 | [acpx Routing](references/acpx-routing.md) | Explicit model/effort profiles, machine route declarations, catalog resolution, and diagnostics. |
@@ -167,6 +168,11 @@ for day-to-day implementation details.
 | [NocFree Lite Firmware](research/nocfree-lite-firmware.md) | What the Lite's stock Vial firmware allows for layer keys, RGB, and host-visible layer state; its USB IDs for Karabiner; why custom firmware is not a practical path; the 2026-10-06 device read (per-key VialRGB on the cable, none on the dongle); and the checks still open. |
 | [NocFree Community Usage](research/nocfree-community-usage.md) | Survey of vendor pages, GitHub, Reddit, and reviews for the Lite, Lite V2, and &: shared layouts and nav layers, macOS notes, 2.4G reliability reports, the Lite dongle's UF2 firmware, mods, complaints with vendor replies, and ranked ideas for Prateek's setup. |
 | [Go60 Layout Patterns](research/go60-layout-patterns.md) | Sweep of 2,023 public MoErgo Go60 layouts: where navigation layers put arrows, how layers are activated and left, selection without holding Shift, layer indication, and ranked options for leaving the Karabiner nav layer. |
+
+## Package Helper
+
+- [Archived implementation plan](plans/package-helper-plan.md)
+- [Shared package operations ADR](adr/0049-shared-package-operations.md)
 
 ## Historical Records
 

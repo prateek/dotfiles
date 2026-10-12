@@ -70,6 +70,7 @@ banner_source_runner() {
   typeset -g BANNER_SOURCE_RAW=''
   typeset -g BANNER_SOURCE_DISABLED_REASON=''
   typeset -g BANNER_SOURCE_ERROR=''
+  typeset -g BANNER_SOURCE_DETAIL=''
 
   # chezmoi derives its target file modes from the umask, so probing under the
   # 077 the cache writes want reports every managed entry as drifted.
@@ -91,6 +92,12 @@ banner_source_runner() {
         >| "$state_dir/module.txt"
       banner_format_row_ansi ok "$BANNER_SOURCE_OUTDATED" "$BANNER_SOURCE_TOTAL" "$verb" "$checked_label" \
         >| "$state_dir/module.ansi"
+      if [[ -n "$BANNER_SOURCE_DETAIL" ]]; then
+        local row
+        for row in module.txt module.ansi; do
+          print -r -- "$(<"$state_dir/$row")$BANNER_SOURCE_DETAIL" >| "$state_dir/$row"
+        done
+      fi
       banner_write_state_env "$state_dir" "$source" ok "$BANNER_SOURCE_OUTDATED" "$BANNER_SOURCE_TOTAL" \
         "$now" "$checked_label" "$params"
       /bin/rm -f "$state_dir/last_error"
