@@ -36,7 +36,7 @@ class DotpkgsTests(RepoTestCase):
         self.save('brew-info', {'formulae': [dict(name='one', full_name='one', installed=[{'version':'1'}], versions={'stable':'2'}, pinned=True)], 'casks': []})
         self.save('brew-outdated', {'formulae': [dict(name='one', installed_versions=['1'], current_version='2')], 'casks': []})
         script = f'''#!{PYTHON}
-import json, os, pathlib, sys
+import json, os, pathlib, sys, tomllib
 root = pathlib.Path(os.environ['FIXTURE'])
 name = pathlib.Path(sys.argv[0]).name
 args = sys.argv[1:]
@@ -56,7 +56,12 @@ elif name == 'chezmoi':
     if 'source-path' in args:
         print(root / 'source/home/dot_config/mise/conf.d/runtimes.toml')
     elif 'execute-template' in args:
-        print(json.dumps({{'groups':['core'], 'agent_clis': []}}))
+        if 'brewfile.tmpl' in args[-1]:
+            data = tomllib.loads((root / 'source/home/.chezmoidata/packages.toml').read_text())['packages']['groups']['core']
+            for kind, section in [('brew', 'brews'), ('cask', 'casks')]:
+                for item in data.get(section, []): print(kind + ' ' + json.dumps(item['name']))
+        else:
+            print(json.dumps({{'groups':['core'], 'agent_clis': []}}))
     raise SystemExit(0)
 elif name == 'gh':
     if args == ['extension', 'list']: print('gh example\\towner/gh-example\\tv1.0.0')
@@ -120,6 +125,7 @@ print((root / (key + '.json')).read_text())
         self.assertFalse(any(c[1][0] in ('upgrade','unpin','update') for c in self.calls()))
 
     def test_brew_normal_policy_excludes_self_managed_casks_but_retains_catalog_versions(self):
+        (self.source / '.chezmoidata/packages.toml').write_text('[packages.groups.core]\n')
         self.save('brew-info', {'formulae': [], 'casks': [
             dict(token='ordinary', installed='1', version='2'),
             dict(token='autoapp', installed='1', version='2', auto_updates=True),
@@ -170,8 +176,13 @@ print((root / (key + '.json')).read_text())
                   ('unpin', 'codex:codex'), ('update', 'xcode:Xcode'), ('unpin', 'xcode:Xcode')]
         for action, package in cases:
             with self.subTest(action=action, package=package):
-                result = self.cli(action, package, '--version', '9.9', '--group', 'core', '--dry-run', status=1)
-                self.assertIn('does not support --version', result['results'][0]['error'])
+                code = 2 if action in ('update', 'unpin') else 1
+                result = self.cli(action, package, '--version', '9.9', '--dry-run', status=code)
+                error = result['error'] if code == 2 else result['results'][0]['error']
+                if code == 2:
+                    self.assertIn('unrecognized arguments: --version', error)
+                else:
+                    self.assertEqual(error, package.split(':')[0] + ' ' + action + ' does not support --version')
         self.assertEqual(self.calls(), [])
         rejected = self.cli('install', 'mise:node', '--version', '9.9', '--dry-run', status=1)
         self.assertIn('use pin', rejected['results'][0]['error'])
@@ -535,3 +546,184 @@ else: raise SystemExit(99)
         self.assertEqual(self.calls(), [])
         self.cli('exec', 'brew', '--', 'services', '--dry-run', '--json')
         self.assertEqual(self.calls()[0][1], ['services', '--dry-run', '--json'])
+
+    def test_explicit_unavailable_inventory_fails_in_every_format(self):
+        env = {'DOTPKGS_MISE_BIN': str(self.work / 'absent')}
+        data = self.cli('status', 'mise:node', status=1, env=env)
+        self.assertFalse(data['ok'])
+        self.assertEqual(data['results'][0]['status'], 'unavailable')
+        result = self.command([str(PYTHON), str(ENTRY), 'list', '--manager', 'mise', '--format', 'tsv'], expected_status=1, env=env)
+        self.assertEqual(result.stdout, b'')
+        self.assertIn(b'not installed', result.stderr)
+        data = self.cli('summary', '--manager', 'mise', status=3, env=env)
+        self.assertFalse(data['ok'])
+
+    def test_outdated_preserves_unresolved_coverage(self):
+        self.inventory['rust'] = [{'version':'stable', 'requested_version':'latest', 'installed':True}]
+        self.inventory['ruby'][0]['installed'] = False
+        self.save('mise-ls', self.inventory)
+        result = self.cli('outdated', '--manager', 'mise')['results'][0]
+        self.assertEqual(result['summary']['unknown'], 1)
+        self.assertEqual(result['summary']['missing'], 1)
+        self.assertEqual({r['name'] for r in result['unresolved']}, {'rust', 'ruby'})
+
+    def test_inventory_tracks_desired_absence_and_disabled_native_agents(self):
+        (self.source / '.chezmoidata/packages.toml').write_text('[packages.groups.core]\nbrews = [{name="one"}, {name="absent"}]\n')
+        rows = self.cli('list', '--manager', 'brew')['results'][0]['packages']
+        self.assertEqual({r['name']:r['status'] for r in rows}, {'one':'unknown', 'absent':'missing'})
+        row = self.cli('list', 'cursor:cursor-agent')['results'][0]['packages'][0]
+        self.assertEqual(row['status'], 'disabled')
+
+    def test_selected_update_ignores_unrelated_multiple_versions(self):
+        self.inventory['ruby'].append(self.inventory['ruby'][0] | {'version':'2.0.0'})
+        self.save('mise-ls', self.inventory)
+        plan = self.cli('update', 'mise:node', '--dry-run')['results'][0]['plan']
+        self.assertEqual([s['argv'] for s in plan['steps']], [['mise','upgrade','--no-prune','node']])
+
+    def test_text_inventory_and_status_have_distinct_presentations(self):
+        result = self.command([str(PYTHON), str(ENTRY), 'list', '--manager', 'mise'])
+        self.assertIn(b'mise:node', result.stdout)
+        self.assertNotIn(b'unknown', result.stdout)
+        self.assertNotIn(b'latest=?', result.stdout)
+        result = self.command([str(PYTHON), str(ENTRY), 'status', '--manager', 'mise'])
+        self.assertIn(b'2 packages', result.stdout)
+        self.assertNotIn(b'cached check:', result.stdout)
+        cached = self.command([str(PYTHON), str(ENTRY), 'status', '--manager', 'mise', '--cached'])
+        self.assertIn(b'Cached', cached.stdout)
+
+    def test_wrong_shape_is_a_provider_error_and_keeps_other_results(self):
+        self.save('mise-ls', [])
+        data = self.cli('status', '--manager', 'brew', '--manager', 'mise', status=1)
+        self.assertEqual([r['status'] for r in data['results']], ['ok','error'])
+        self.assertIn('shape', data['results'][1]['error'])
+
+    def test_doctor_validates_source_configuration(self):
+        (self.source / '.chezmoidata/packages.toml').write_text('invalid toml')
+        data = self.cli('doctor', status=1)
+        self.assertFalse(data['ok'])
+        self.assertIn('configuration', data['error'])
+
+    def test_partial_failure_reports_applied_sources_and_unstarted_operations(self):
+        binary = self.bin / 'brew'
+        binary.write_text(binary.read_text().replace("if name == 'mise':", "if name == 'brew' and args[0] == 'uninstall': raise SystemExit(7)\nif name == 'mise':"))
+        data = self.cli('remove', 'brew:one', 'mise:node', status=1)
+        self.assertNotIn('node', tomllib.loads(self.manifest.read_text())['tools'])
+        first, later = data['results']
+        self.assertEqual(later['status'], 'not_started')
+        self.assertEqual(later['source_status'], 'applied')
+        self.assertEqual(first['execution'][0]['status'], 'failed')
+        self.assertEqual(later['execution'][0]['status'], 'not_started')
+
+    def test_irrelevant_options_are_rejected_before_probing(self):
+        for args in [('pin','--all'), ('update','mise:node','--version','22.0.0'),
+                     ('unpin','mise:node','--kind','cask'), ('install','mise:new','--group','core')]:
+            with self.subTest(args=args):
+                self.cli(*args, '--dry-run', status=2)
+        self.assertEqual(self.calls(), [])
+
+    def test_xcode_validates_ids_and_rejects_unpin(self):
+        self.cli('install', 'xcode:typo', '--dry-run', status=1)
+        result = self.cli('unpin', 'xcode:Xcode', '--dry-run', status=1)
+        self.assertIn('unpin', result['results'][0]['error'])
+        self.assertEqual(self.calls(), [])
+
+    def test_exec_preserves_native_streams_and_exit_status(self):
+        self.binary('mise', "print('native stdout')\nprint('native stderr', file=sys.stderr)\nraise SystemExit(7)\n")
+        result = self.command([str(PYTHON), str(ENTRY), 'exec', 'mise', '--', 'ls'], expected_status=7)
+        self.assertEqual(result.stdout, b'native stdout\n')
+        self.assertEqual(result.stderr, b'native stderr\n')
+        data = self.cli('exec', 'mise', '--', 'ls', status=7)
+        self.assertEqual(data['stdout'], 'native stdout\n')
+        self.assertEqual(data['exit_code'], 7)
+
+    def test_scoped_git_check_skips_broken_unselected_plugin(self):
+        root = Path(self.env['XDG_DATA_HOME']) / 'zinit/plugins'
+        for name in ('good', 'bad'):
+            (root / ('owner---' + name) / '.git').mkdir(parents=True)
+        self.binary('zsh', '')
+        self.binary('git', """args = sys.argv[1:]
+if 'owner---bad' in args[1]: raise SystemExit(7)
+if 'ls-remote' in args: print('new-commit\\trefs/heads/main')
+elif '--abbrev-ref' in args: print('main')
+elif 'rev-parse' in args: print('old-commit')
+elif 'status' in args: print('')
+""")
+        rows = self.cli('status', 'zinit:owner/good')['results'][0]['packages']
+        self.assertEqual([(r['id'], r['status']) for r in rows], [('zinit:owner/good', 'update_available')])
+
+    def test_selected_check_and_banner_do_not_replace_complete_cached_inventory(self):
+        complete = self.cli('status', '--manager', 'mise')['results'][0]['packages']
+        self.cli('status', 'mise:node')
+        self.cli('summary', '--manager', 'mise')
+        self.assertEqual(self.cli('status', '--manager', 'mise', '--cached')['results'][0]['packages'], complete)
+
+    def test_disabled_swift_and_text_recovery_destination(self):
+        assets = self.source / '.chezmoiassets'
+        assets.mkdir()
+        for name in ('mic', 'keymap-overlay'):
+            (assets / (name + '.swift')).write_text('print("fixture")')
+        self.binary('swiftc', "pathlib.Path(sys.argv[-1]).write_bytes(b'compiled fixture')\n")
+        self.cli('install', 'swift:mic')
+        removed = self.cli('remove', 'swift:mic')['results'][0]
+        destination = Path(removed['execution'][0]['destination'])
+        self.assertEqual(destination.read_bytes(), b'compiled fixture')
+        self.assertEqual(self.cli('list', 'swift:mic')['results'][0]['packages'][0]['status'], 'disabled')
+
+    def test_tsv_keeps_installed_projection_while_text_omits_dependencies(self):
+        self.save('brew-info', {'formulae': [
+            dict(name='one', installed=[{'version':'1', 'installed_on_request':True}], versions={'stable':'1'}),
+            dict(name='dependency', installed=[{'version':'1', 'installed_on_request':False}], versions={'stable':'1'}),
+        ], 'casks': []})
+        result = self.command([str(PYTHON), str(ENTRY), 'list', '--manager', 'brew'])
+        self.assertIn(b'brew:one', result.stdout)
+        self.assertNotIn(b'brew:dependency', result.stdout)
+        all_rows = self.command([str(PYTHON), str(ENTRY), 'list', '--manager', 'brew', '--all'])
+        self.assertIn(b'brew:dependency', all_rows.stdout)
+        tsv = self.command([str(PYTHON), str(ENTRY), 'list', '--manager', 'brew', '--format', 'tsv'])
+        self.assertEqual(tsv.stdout, b'one\t1\t\tformula\ttrue\ndependency\t1\t\tformula\tfalse\n')
+
+    def test_partial_source_write_failure_preserves_applied_file_receipt(self):
+        parent = self.manifest.parent
+        parent.chmod(0o555)
+        try:
+            data = self.cli('remove', 'brew:one', 'mise:node', status=1)
+        finally:
+            parent.chmod(0o755)
+        brew, mise = data['results']
+        self.assertEqual((brew['status'], brew['source_status']), ('not_started', 'applied'))
+        self.assertEqual((mise['status'], mise['source_status']), ('not_started', 'unchanged'))
+        self.assertEqual(tomllib.loads((self.source / '.chezmoidata/packages.toml').read_text())['packages']['groups']['core']['brews'], [])
+        self.assertIn('node', tomllib.loads(self.manifest.read_text())['tools'])
+        self.assertFalse(any(call[1][0] == 'uninstall' for call in self.calls()))
+
+    def test_tsv_requires_one_provider_and_json_remains_unambiguous(self):
+        (self.source / '.chezmoidata/packages.toml').write_text('[packages.groups.core]\nbrews = [{name="missing"}]\n')
+        data = self.cli('list', '--manager', 'mise', '--manager', 'brew', '--format', 'tsv')
+        self.assertEqual({row['name'] for row in data['results'][1]['packages']}, {'one', 'missing'})
+        result = self.command([str(PYTHON), str(ENTRY), 'list', '--format', 'tsv'], expected_status=2)
+        self.assertIn(b'one selected provider', result.stderr)
+
+    def test_doctor_does_not_call_an_executable_an_installed_provider(self):
+        self.binary('open', '')
+        result = self.cli('doctor')
+        rows = {row['manager']:row for row in result['results']}
+        self.assertEqual(rows['zinit']['status'], 'not_configured')
+        self.assertFalse(rows['zinit']['configured'])
+        self.assertEqual(rows['zinit']['network'], 'not probed')
+
+    def test_observation_reloads_declarations_after_successful_removal(self):
+        binary = self.bin / 'brew'
+        binary.write_text(binary.read_text().replace("if name == 'mise':", "if name == 'brew' and args[0] == 'uninstall':\n    (root / 'brew-info.json').write_text(json.dumps({'formulae':[], 'casks':[]}))\nif name == 'mise':"))
+        result = self.cli('remove', 'brew:one')['results'][0]
+        self.assertEqual(result['status'], 'completed')
+        self.assertEqual(result['observed'], [])
+
+    def test_desired_brew_and_mas_inventory_uses_rendered_policy(self):
+        (self.source / '.chezmoidata/packages.toml').write_text('[packages.groups.core]\nbrews = [{name="excluded-by-policy"}]\n')
+        self.binary('chezmoi', "print('brew \"adapter\"\\ncask \"fork\"\\nmas \"Example App\", id: 123')\n")
+        self.binary('mas', '')
+        results = self.cli('list', '--manager', 'brew', '--manager', 'mas')['results']
+        brew = {r['name']: r['status'] for r in results[0]['packages']}
+        self.assertEqual(brew, {'one':'unknown', 'adapter':'missing', 'fork':'missing'})
+        app = results[1]['packages'][0]
+        self.assertEqual((app['id'], app['title'], app['status']), ('mas:123', 'Example App', 'missing'))

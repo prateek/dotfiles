@@ -14,6 +14,7 @@ import tomllib
 from core import Problem, apm_identity, atomic_write, digest
 from providers import MANAGERS, inventory, tree_digest
 from privileges import privilege
+from contracts import validate_operation
 
 
 class Plan:
@@ -23,6 +24,9 @@ class Plan:
         self.edits = {}
         self.edited_paths = set()
         self.notes = []
+        self.outcomes = []
+        self.source_outcomes = {}
+        self.names = []
 
     def command(self, *argv, cwd=None, env=None):
         self.steps.append(dict(type='command', argv=[str(x) for x in argv],
@@ -62,32 +66,43 @@ class Plan:
         for path, change in self.edits.items():
             if not change['exists'] or change['before'] != change['after']:
                 atomic_write(path, change['after'])
+                self.source_outcomes[path] = 'applied'
 
     def execute(self, ctx):
         (ctx.state / f'{self.manager}.json').unlink(missing_ok=True)
-        for step in self.steps:
-            if step['type'] == 'command':
-                ctx.run(step['argv'], cwd=step['cwd'], env=step['env'], write=True)
-            elif step['type'] == 'quarantine':
-                source = Path(step['path'])
-                if source.exists() or source.is_symlink():
-                    destination = ctx.state / 'removed' / f'{time.time_ns()}-{source.name}'
-                    destination.parent.mkdir(parents=True, exist_ok=True)
-                    shutil.move(str(source), destination)
-            elif step['type'] == 'installer':
-                with tempfile.TemporaryDirectory(prefix='dotpkgs-installer-') as scratch:
-                    path = Path(scratch) / 'install.sh'
-                    ctx.run(['curl', '-fsSL', '--max-time', '60', step['url'], '-o', path], write=True)
-                    ctx.run([step['shell'], path, *step.get('args', [])], env=step['env'], write=True)
-            elif step['type'] == 'manual':
-                continue
-            elif step['type'] == 'receipt':
-                path = Path(step['source'])
-                value = tree_digest(path) if path.is_dir() else digest(path)
-                data = {'digest': value}
-                if step.get('binary'):
-                    data['binary'] = digest(step['binary'])
-                atomic_write(ctx.state / 'builds' / step['name'], json.dumps(data) + '\n')
+        self.outcomes = [dict(status='not_started') for _ in self.steps]
+        for step, outcome in zip(self.steps, self.outcomes):
+            try:
+                self.execute_step(ctx, step, outcome)
+                outcome['status'] = 'manual' if step['type'] == 'manual' else 'completed'
+            except (Problem, OSError, ValueError, KeyError, TypeError) as exc:
+                outcome.update(status='failed', error=str(exc))
+                raise
+
+    def execute_step(self, ctx, step, outcome):
+        if step['type'] == 'command':
+            ctx.run(step['argv'], cwd=step['cwd'], env=step['env'], write=True)
+        elif step['type'] == 'quarantine':
+            source = Path(step['path'])
+            if source.exists() or source.is_symlink():
+                destination = ctx.state / 'removed' / f'{time.time_ns()}-{source.name}'
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                shutil.move(str(source), destination)
+                outcome['destination'] = str(destination)
+        elif step['type'] == 'installer':
+            with tempfile.TemporaryDirectory(prefix='dotpkgs-installer-') as scratch:
+                path = Path(scratch) / 'install.sh'
+                ctx.run(['curl', '-fsSL', '--max-time', '60', step['url'], '-o', path], write=True)
+                ctx.run([step['shell'], path, *step.get('args', [])], env=step['env'], write=True)
+        elif step['type'] == 'manual':
+            return
+        elif step['type'] == 'receipt':
+            path = Path(step['source'])
+            value = tree_digest(path) if path.is_dir() else digest(path)
+            data = {'digest': value}
+            if step.get('binary'):
+                data['binary'] = digest(step['binary'])
+            atomic_write(ctx.state / 'builds' / step['name'], json.dumps(data) + '\n')
 
 
 def apply_target(plan, ctx, path, *, directory=False):
@@ -199,6 +214,9 @@ def brew_plan(plan, ctx, action, names, latest, version, group, rows):
         selected = [by_name[n] for n in names]
         batches = {'formula': [], 'cask': []}
         for row in selected:
+            if row['status'] == 'missing':
+                plan.notes.append(f'{row["name"]}: missing; use dotpkgs install brew:{row["name"]} to install it')
+                continue
             if row['pinned'] and not latest:
                 plan.notes.append(f'{row["name"]}: held by Homebrew pin')
                 continue
@@ -534,7 +552,7 @@ def xcode_plan(plan, ctx, action, names, latest, version, group, rows):
             raise Problem('Xcode removal requires --version; the selected policy is unchanged')
         plan.command('xcodes', 'uninstall', version)
         return
-    if action in ('unpin',) or latest:
+    if latest:
         data = inventory(ctx, 'xcode')
         version = data[0]['latest']
         if not version:
@@ -554,19 +572,13 @@ def xcode_plan(plan, ctx, action, names, latest, version, group, rows):
 
 
 def make_plan(ctx, manager, action, names, *, latest=False, version=None, group=None, kind=None, edits=None, all_packages=False):
-    if version is not None:
-        if not version or version.startswith('-') or any(c in version for c in '\n\r\t'):
-            raise Problem('invalid version')
-        version_actions = {'mise': ('install', 'pin'), 'codex': ('pin',), 'gh': ('pin',),
-                           'zinit': ('pin',), 'apm': ('pin',), 'xcode': ('install', 'pin', 'remove')}
-        if action not in version_actions.get(manager, ()):
-            raise Problem(f'{manager} {action} does not support --version')
+    validate_operation(manager, action, names, version)
     plan = Plan(manager, action)
     plan.edits = dict(edits or {})
     plan.kind = kind
     if manager == 'apm':
         names = [apm_identity(name) for name in names]
-    rows = inventory(ctx, manager, check=False)
+    rows = inventory(ctx, manager, check=False, names=None if manager == 'apm' else names or None)
     if len({r['name'] for r in rows}) != len(rows):
         raise Problem('multiple active versions of one package; select/edit its native configuration explicitly')
     if not names:
@@ -576,6 +588,7 @@ def make_plan(ctx, manager, action, names, *, latest=False, version=None, group=
     if not names:
         plan.notes.append('No installed or configured packages.')
         return plan
+    plan.names = names
     if any(not name or name.startswith('-') or any(c in name for c in '\n\r\t') for name in names):
         raise Problem('invalid package name')
     if action not in ('install',) and manager not in ('xcode',) and any(n not in {r['name'] for r in rows} for n in names):

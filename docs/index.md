@@ -22,7 +22,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 
 | Doc | Use it for |
 | --- | --- |
-| [Package helper](references/dotpkgs.md) | Shared package status, pin-aware operations, bulk latest, and banner/audit integration. |
+| [Package helper](references/dotpkgs.md) | Shared package status, pin-aware operations, bulk latest, and banner/audit integration. [Command surface repair](plans/dotpkgs-surface-plan.md) records the completed audit fixes. |
 | [Documentation Index](index.md) | Routing to current guidance, proposed work, decisions, and history. |
 | [Document Lifecycle](document-lifecycle.md) | Frontmatter, status transitions, and index rules for `docs/`. |
 | [acpx Routing](references/acpx-routing.md) | Explicit model/effort profiles, machine route declarations, catalog resolution, and diagnostics. |

@@ -44,7 +44,25 @@ LIMITS = {
 }
 
 
-def brew(ctx, check):
+def add_declarations(rows, declarations, manager, **extra):
+    by_name = {row['name']: row for row in rows}
+    for name, item in declarations.items():
+        lookup = name.removeprefix('homebrew/core/').removeprefix('homebrew/cask/') if manager == 'brew' else name
+        row = by_name.get(lookup)
+        if row is not None and extra.get('kind') and row.get('kind') != extra['kind']:
+            row = None
+        if row is None:
+            matches = [candidate for candidate in rows if candidate['name'].split('/')[-1] == lookup
+                       and (not extra.get('kind') or candidate.get('kind') == extra['kind'])]
+            row = matches[0] if len(matches) == 1 else None
+        if row is not None:
+            row['declared'] = True
+        else:
+            rows.append(record(manager, lookup, requested='latest', declared=True,
+                               note='Declared for this machine but not installed.', **extra))
+
+
+def brew(ctx, check, names=None, include_declared=True):
     info = ctx.json(['brew', 'info', '--json=v2', '--installed'])
     changes = ctx.json(['brew', 'outdated', '--json=v2']) if check else {}
     outdated = {p['name']: p for kind in ('formulae', 'casks') for p in changes.get(kind, [])}
@@ -70,15 +88,22 @@ def brew(ctx, check):
                                version_latest=item.get('version') == 'latest',
                                installed_on_request=any(v.get('installed_on_request', False) for v in item.get('installed', [])) if kind == 'formulae' else False,
                                note='Homebrew receipt/catalog versions; an app may self-update separately.' if kind == 'casks' else None))
+    if include_declared:
+        for section, kind in (('brews', 'formula'), ('casks', 'cask')):
+            declared = ctx.brew_declarations()[section]
+            add_declarations(rows, declared, 'brew', kind=kind, installed_on_request=True,
+                             auto_updates=False, version_latest=False)
     return rows
 
 
-def mise(ctx, check):
+def mise(ctx, check, names=None, include_declared=True):
     inventory = ctx.json(['mise', 'ls', '--global', '--json'])
     allowed = ctx.json(['mise', 'outdated', '--json']) if check else {}
     latest = ctx.json(['mise', 'outdated', '--bump', '--json']) if check else {}
     rows = []
     for name, versions in inventory.items():
+        if names is not None and name not in names:
+            continue
         for item in versions:
             requested = item.get('requested_version', 'unknown')
             installed = item['version'] if item.get('installed') else None
@@ -94,9 +119,13 @@ def mise(ctx, check):
     return rows
 
 
-def native(ctx, check, manager):
+def native(ctx, check, manager, names=None, include_declared=True):
     binary = MANAGERS[manager][0]
     installed = version(ctx.run([binary, '--version'])) if ctx.available(binary) else None
+    enabled = binary in ctx.features()['agent_clis']
+    if not installed and not enabled:
+        return [record(manager, binary, requested=None, status='disabled', enabled=False, declared=False,
+                       note='Not selected for this machine.')]
     latest = None
     requested = 'latest'
     note = None
@@ -132,10 +161,11 @@ def native(ctx, check, manager):
                 raise Problem('Cursor installer no longer exposes a release version')
         allowed = latest
     pinned = requested not in ('latest', 'stable')
-    return [record(manager, binary, installed, requested, latest, installed if pinned else allowed, pinned=pinned, note=note)]
+    return [record(manager, binary, installed, requested, latest, installed if pinned else allowed, pinned=pinned, note=note,
+                   enabled=enabled or bool(installed), declared=enabled)]
 
 
-def gh(ctx, check):
+def gh(ctx, check, names=None, include_declared=True):
     import yaml
     rows = []
     for line in ctx.run(['gh', 'extension', 'list']).splitlines():
@@ -143,6 +173,8 @@ def gh(ctx, check):
         if len(parts) < 3:
             raise Problem('gh extension list returned an unrecognized row')
         _, name, installed, *_ = parts
+        if names is not None and name not in names:
+            continue
         root = ctx.data / 'gh/extensions' / name.rsplit('/', 1)[-1]
         manifest = root / 'manifest.yml'
         script = (root / '.git').exists() and not manifest.exists()
@@ -160,6 +192,8 @@ def gh(ctx, check):
                 latest = ctx.json(['gh', 'api', f'repos/{name}/releases/latest'])['tag_name']
         rows.append(record('gh', name, installed, installed if pinned else 'latest', latest,
                            installed if pinned else latest, pinned=pinned))
+    if include_declared:
+        add_declarations(rows, ctx.declared('gh_extensions'), 'gh')
     return rows
 
 
@@ -184,19 +218,42 @@ def git_row(ctx, manager, name, path, check):
                   path=str(path), dirty=dirty)
 
 
-def zinit(ctx, check):
+def zinit(ctx, check, names=None, include_declared=True):
     root = ctx.data / 'zinit/plugins'
-    return [git_row(ctx, 'zinit', path.name.replace('---', '/'), path, check)
-            for path in sorted(root.iterdir()) if path.is_dir() and not path.name.startswith('_local') and (path / '.git').exists()] if root.exists() else []
+    paths = {path.name.replace('---', '/'): path for path in root.iterdir()
+             if path.is_dir() and not path.name.startswith('_local') and (path / '.git').exists()} if root.exists() else {}
+    declarations = set()
+    if include_declared:
+        source = ctx.source / 'dot_config/zsh/zinit-init.zsh'
+        if source.exists():
+            declarations = set(re.findall(r'^zinit light ([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)\s*$', source.read_text(), re.M))
+        for name in declarations:
+            paths.setdefault(name, root / name.replace('/', '---'))
+    rows = []
+    for name, path in sorted(paths.items()):
+        if names is not None and name not in names:
+            continue
+        try:
+            rows.append(git_row(ctx, 'zinit', name, path, check) | {'declared': name in declarations})
+        except Problem as exc:
+            raise Problem(f'zinit:{name}: {exc}') from exc
+    return rows
 
 
-def externals(ctx, check):
+def externals(ctx, check, names=None, include_declared=True):
     data = tomllib.loads(ctx.render('{{ includeTemplate ".chezmoiexternal.toml.tmpl" . }}'))
-    return [git_row(ctx, 'externals', name, ctx.home / name, check)
-            for name, item in data.items() if item.get('type') == 'git-repo']
+    rows = []
+    for name, item in data.items():
+        if item.get('type') != 'git-repo' or (names is not None and name not in names):
+            continue
+        try:
+            rows.append(git_row(ctx, 'externals', name, ctx.home / name, check) | {'declared': True})
+        except Problem as exc:
+            raise Problem(f'externals:{name}: {exc}') from exc
+    return rows
 
 
-def apm(ctx, check):
+def apm(ctx, check, names=None, include_declared=True):
     import yaml
     root = ctx.repo / 'agent-marketplace'
     manifest = yaml.safe_load((root / 'apm.yml').read_text())
@@ -207,6 +264,8 @@ def apm(ctx, check):
     for item in lock.get('dependencies', []):
         repo = apm_identity(item['repo_url'])
         identity = repo + ('/' + item['virtual_path'] if item.get('virtual_path') else '')
+        if names is not None and identity not in names:
+            continue
         declaration = declarations.get(identity, identity)
         requested = declaration.partition('#')[2] or 'HEAD'
         latest = None
@@ -225,7 +284,7 @@ def apm(ctx, check):
     return rows
 
 
-def mas(ctx, check):
+def mas(ctx, check, names=None, include_declared=True):
     inventory = ctx.run(['mas', 'list'])
     changes = ctx.run(['mas', 'outdated']) if check else ''
     updates = {}
@@ -246,10 +305,15 @@ def mas(ctx, check):
         latest = updates.get(name, installed) if check else None
         rows.append(record('mas', name, installed, 'latest compatible', latest, latest, title=title.strip(),
                            note='App Store compatible release, not necessarily newest on a newer macOS.'))
+    if include_declared:
+        declarations = ctx.brew_declarations()['mas']
+        add_declarations(rows, declarations, 'mas')
+        for row in rows:
+            row.setdefault('title', declarations.get(row['name'], {}).get('name', row['name']))
     return rows
 
 
-def setapp(ctx, check):
+def setapp(ctx, check, names=None, include_declared=True):
     catalog = {}
     if check:
         data = ctx.fetch('https://store.setapp.com/store/api/v8/en')
@@ -261,8 +325,10 @@ def setapp(ctx, check):
                     catalog[app['attributes']['name']] = attrs.get('marketing_version')
     rows = []
     roots = (Path('/Applications/Setapp'), ctx.home / 'Applications/Setapp')
-    names = set(ctx.declared('setapp_apps')) | {p.stem for root in roots for p in root.glob('*.app')}
-    for name in sorted(names):
+    app_names = set(ctx.declared('setapp_apps')) | {p.stem for root in roots for p in root.glob('*.app')}
+    for name in sorted(app_names):
+        if names is not None and name not in names:
+            continue
         if '/' in name or name in ('.', '..'):
             raise Problem('invalid Setapp app name')
         path = next((p for p in (Path('/Applications/Setapp') / f'{name}.app',
@@ -278,7 +344,7 @@ def setapp(ctx, check):
     return rows
 
 
-def xcode(ctx, check):
+def xcode(ctx, check, names=None, include_declared=True):
     pin = json.loads((ctx.source / 'dot_agents/state/ios-triple.json').read_text())['xcode_version']
     installed = ctx.run(['xcodes', 'installed']).strip()
     selected = None
@@ -295,7 +361,7 @@ def xcode(ctx, check):
         if candidates:
             latest = max(candidates, key=lambda v: tuple(map(int, v.split('.'))))
     return [record('xcode', 'Xcode', selected if installed else None, pin, latest, pin,
-                   pinned=True, status='unknown' if installed and not selected else 'policy_mismatch' if selected and selected != pin else None,
+                   pinned=True, present=bool(installed), status='unknown' if installed and not selected else 'policy_mismatch' if selected and selected != pin else None,
                    note='Xcode bundles are installed, but the active selection could not be determined.' if installed and not selected
                    else 'Latest stable in xcodes catalog; OS compatibility is checked by the installer.')]
 
@@ -311,12 +377,14 @@ def tree_digest(path):
     return result.hexdigest()
 
 
-def raycast(ctx, check):
+def raycast(ctx, check, names=None, include_declared=True):
     root = ctx.data / 'raycast-extensions'
     source = ctx.source / 'dot_local/share/raycast-extensions'
-    names = {p.parent.name for directory in (source, root) for p in directory.glob('*/package.json')}
+    app_names = {p.parent.name for directory in (source, root) for p in directory.glob('*/package.json')}
     rows = []
-    for name in sorted(names):
+    for name in sorted(app_names):
+        if names is not None and name not in names:
+            continue
         path = root / name
         deployed = (path / 'package.json').is_file()
         manifest = (path if deployed else source / name) / 'package.json'
@@ -334,17 +402,19 @@ def raycast(ctx, check):
                 dependencies.append(dict(name=dependency, installed=info.get('current'), requested=requested, latest_allowed=info.get('wanted'), latest=info.get('latest')))
         build_status = 'missing' if not deployed else 'unknown' if built is None else 'current' if built == desired else 'update_available'
         rows.append(record('raycast', path.name, built, 'package-lock.json', desired if check else None,
-                           desired if check else None, pinned=True, path=str(path), dependencies=dependencies, build_status=build_status,
+                           desired if check else None, pinned=True, path=str(path), present=deployed, dependencies=dependencies, build_status=build_status,
                            status='pinned_outdated' if dependencies else build_status,
                            note='Build source digest; dependency updates use npm and require rebuilding.'))
     return rows
 
 
-def swift(ctx, check):
+def swift(ctx, check, names=None, include_declared=True):
     rows = []
     policy_path = ctx.source / '.chezmoidata/package_policy.toml'
     policy = tomllib.loads(policy_path.read_text()).get('package_policy', {}).get('swift', {}) if policy_path.exists() else {}
     for name in ('mic', 'keymap-overlay'):
+        if names is not None and name not in names:
+            continue
         source = ctx.source / f'.chezmoiassets/{name}.swift'
         desired = hashlib.sha256(source.read_bytes()).hexdigest()
         target = ctx.home / '.local/bin' / name
@@ -352,15 +422,20 @@ def swift(ctx, check):
         receipt = json.loads(stamp.read_text()) if stamp.exists() else {}
         built = receipt.get('digest') if target.exists() and receipt.get('binary') == hashlib.sha256(target.read_bytes()).hexdigest() else None
         rows.append(record('swift', name, built, 'dotfiles source', desired if check else None,
-                           desired if check else None, path=str(target), enabled=policy.get(name, True),
-                           status='missing' if not target.exists() else 'unknown' if built is None else 'current' if built == desired else 'update_available',
+                           desired if check else None, path=str(target), enabled=policy.get(name, True), declared=policy.get(name, True), present=target.exists(),
+                           status='disabled' if not policy.get(name, True) and not target.exists() else 'missing' if not target.exists() else 'unknown' if built is None else 'current' if built == desired else 'update_available',
                            note='Source/binary receipt; pre-existing binaries without a receipt are unknown.'))
     return rows
 
 
-def inventory(ctx, manager, check=True):
-    if manager in ('claude', 'codex', 'cursor'):
-        return native(ctx, check, manager)
-    providers = {'brew': brew, 'mise': mise, 'gh': gh, 'zinit': zinit, 'externals': externals,
-                 'apm': apm, 'mas': mas, 'setapp': setapp, 'xcode': xcode, 'raycast': raycast, 'swift': swift}
-    return providers[manager](ctx, check)
+def inventory(ctx, manager, check=True, names=None, include_declared=True):
+    try:
+        if manager in ('claude', 'codex', 'cursor'):
+            rows = native(ctx, check, manager, names, include_declared)
+        else:
+            providers = {'brew': brew, 'mise': mise, 'gh': gh, 'zinit': zinit, 'externals': externals,
+                         'apm': apm, 'mas': mas, 'setapp': setapp, 'xcode': xcode, 'raycast': raycast, 'swift': swift}
+            rows = providers[manager](ctx, check, names, include_declared)
+        return [row for row in rows if names is None or row['name'] in names]
+    except (AttributeError, IndexError, KeyError, TypeError) as exc:
+        raise Problem(f'{manager}: unexpected inventory response or configuration shape ({type(exc).__name__}); run the native inventory command to inspect it') from exc

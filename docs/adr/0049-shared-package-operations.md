@@ -6,6 +6,7 @@ updated: 2026-10-12
 related:
   - ../plans/package-helper-plan.md
   - ../references/dotpkgs.md
+  - ../plans/dotpkgs-surface-plan.md
 ---
 
 # Shared package status and operations

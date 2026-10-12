@@ -169,7 +169,9 @@ unavailable volume. A fake `uv` stands in for the modifier.
 
 `just test-python -p test_dotpkgs.py` exercises the installed command shape,
 policy-aware status, declaration edits, dry-run isolation, shared-file merging,
-native failures, and build receipts. `just test-tools` provisions its pinned
+native failures, build receipts, human views, truthful missing/disabled states,
+selection isolation, partial-write outcomes, and native stream passthrough.
+`just test-tools` provisions its pinned
 Python dependencies from `scripts/packages/dotpkgs/pyproject.toml`.
 Brew/app audit projections and fork freshness share this implementation; run
 `just test-shell tests/bats/packages/brew-inventory.bats tests/bats/packages/fork-reconcile.bats`

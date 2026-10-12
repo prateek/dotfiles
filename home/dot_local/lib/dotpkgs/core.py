@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -43,6 +44,8 @@ def record(manager, name, installed=None, requested=None, latest=None, allowed=N
             status = 'pinned_outdated'
         else:
             status = 'update_available'
+    if status == 'unknown' and note is None:
+        note = 'A comparable version or build receipt is unavailable; this is not a current-version verdict.'
     return dict(id=f'{manager}:{name}', manager=manager, name=name,
                 installed=installed, requested=requested, latest=latest,
                 latest_allowed=allowed, pinned=pinned, status=status, note=note, **extra)
@@ -78,6 +81,12 @@ class Context:
         self._source = None
         self._features = None
         self._groups = None
+        self._brew_declarations = None
+
+    def refresh_configuration(self):
+        self._features = None
+        self._groups = None
+        self._brew_declarations = None
 
     def lock_writes(self):
         self.state.mkdir(parents=True, exist_ok=True)
@@ -113,8 +122,13 @@ class Context:
             raise Problem(f'{argv[0]}: {type(exc).__name__}') from exc
         if result.returncode not in allowed_exit:
             # Do not echo arbitrary native diagnostics into JSON: they may contain auth.
-            raise Problem(f'{Path(argv[0]).name} {argv[1] if len(argv) > 1 else ""} exited {result.returncode}')
+            safe = [arg if not arg.startswith(('http:', 'https:')) else '<remote>' for arg in argv]
+            raise Problem(f'{Path(argv[0]).name} exited {result.returncode}; run {shlex.join(safe)} directly to inspect its native diagnostic')
         return result.stdout or ''
+
+    def passthrough(self, argv, capture=False):
+        argv = [self.binary(argv[0]), *argv[1:]]
+        return subprocess.run(argv, cwd=self.home, text=True, capture_output=capture, check=False)
 
     def json(self, argv, **kwargs):
         try:
@@ -158,6 +172,28 @@ class Context:
     def declared(self, section):
         return {str(item.get('id', item['name'])): item for group in self.groups().values()
                 for item in group.get(section, [])}
+
+    def brew_declarations(self):
+        if self._brew_declarations is None:
+            self._brew_declarations = {'brews': {}, 'casks': {}, 'mas': {}}
+            text = self.render('{{ includeTemplate "brewfile.tmpl" . }}')
+            for line in text.splitlines():
+                match = re.match(r'^(brew|cask|mas) ("(?:[^"\\]|\\.)*")(.*)$', line)
+                if not match:
+                    if line.startswith(('brew ', 'cask ', 'mas ')):
+                        raise Problem('cannot parse rendered Brewfile declaration')
+                    continue
+                kind, quoted, options = match.groups()
+                name = json.loads(quoted)
+                section = {'brew': 'brews', 'cask': 'casks', 'mas': 'mas'}[kind]
+                item = {'name': name}
+                if kind == 'mas':
+                    app_id = re.search(r'\bid: (\d+)', options)
+                    if app_id is None:
+                        raise Problem('rendered MAS declaration has no numeric id')
+                    item['id'] = app_id[1]
+                self._brew_declarations[section][str(item.get('id', name))] = item
+        return self._brew_declarations
 
     def source_path(self, target):
         return Path(self.run(['chezmoi', '-S', self.source, 'source-path', target]).strip())
