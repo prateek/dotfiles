@@ -1,0 +1,10 @@
+{
+  "name": "ui-ux-pro-max",
+  "version": "1.0.0",
+  "description": "UI/UX Pro Max compatibility skills",
+  "license": "UNLICENSED",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "UI/UX Pro Max compatibility skills"
+  }
+}

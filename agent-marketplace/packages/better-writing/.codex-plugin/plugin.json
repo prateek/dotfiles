@@ -1,0 +1,10 @@
+{
+  "name": "better-writing",
+  "version": "1.0.0",
+  "description": "Better Writing compatibility skill",
+  "license": "UNLICENSED",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Better Writing compatibility skill"
+  }
+}

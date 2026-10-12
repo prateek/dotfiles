@@ -5,6 +5,12 @@
 {{- end -}}
 {{- end -}}
 {{- $markets := dict "prateek-local" (dict "source" (dict "source" "directory" "path" (printf "%s/.agents/plugins" .chezmoi.homeDir))) -}}
+{{- range (get . "agent_upstream_plugins" | default (list)) -}}
+{{- if .claude -}}
+{{- $_ := set $markets .marketplace (dict "source" (dict "source" "git" "url" (printf "https://github.com/%s.git" .repository) "ref" .ref)) -}}
+{{- $_ := set $plugins (printf "%s@%s" .plugin .marketplace) .default_loaded -}}
+{{- end -}}
+{{- end -}}
 {{- $wo := includeTemplate "work-overlay.tmpl" . | fromJson -}}
 {{- if $wo.marketplace -}}
 {{-   $_ := set $markets $wo.marketplace (dict "source" (dict "source" "directory" "path" $wo.plugins)) -}}

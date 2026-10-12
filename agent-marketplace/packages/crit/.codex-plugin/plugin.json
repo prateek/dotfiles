@@ -1,0 +1,11 @@
+{
+  "name": "crit",
+  "version": "1.0.0",
+  "description": "crit compatibility skills",
+  "license": "UNLICENSED",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "crit compatibility skills"
+  },
+  "hooks": {}
+}

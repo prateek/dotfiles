@@ -9,6 +9,11 @@ Organization:
 - idb_utils: IDB-specific operations (accessibility tree, element manipulation)
 - cache_utils: Progressive disclosure caching for large outputs
 - screenshot_utils: Screenshot capture with file and inline modes
+
+Importing this package has no side effects. Xcode 27 compatibility is a
+dependency requirement, not something this package patches at runtime:
+idb-companion 1.5.1+ resolves SimulatorKit under the Xcode 27 layout itself.
+Run scripts/sim_health_check.sh if `idb ui` calls misbehave.
 """
 
 from .cache_utils import ProgressiveCache, get_cache
@@ -36,14 +41,10 @@ from .screenshot_utils import (
 )
 
 __all__ = [
-    # cache_utils
     "ProgressiveCache",
-    # device_utils
     "build_idb_command",
     "build_simctl_command",
-    # screenshot_utils
     "capture_screenshot",
-    # idb_utils
     "count_elements",
     "flatten_tree",
     "format_screenshot_result",

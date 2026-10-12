@@ -9,9 +9,9 @@ Use this skill for prose people will read: replies, docs, READMEs, PRs, commits,
 issues, email, Slack, and reports. Leave code, config, data, quoted text, front
 matter, and structured output unchanged. Keep a format the user requested.
 
-This skill routes to three user-invoked references. Read them as files; do not
-try to invoke them through the Skill tool. They sit beside this skill in the
-same plugin:
+This skill routes to three references. Read them as files rather than invoking
+them through the Skill tool. Strunk and the anti-slop rules sit beside this
+skill in the core plugin:
 
 - [`../writing-clearly-and-concisely/`](../writing-clearly-and-concisely/):
   Strunk's *Elements of Style*, for sentence and paragraph structure. Its full
@@ -19,9 +19,14 @@ same plugin:
 - [`../write-for-humans/`](../write-for-humans/): the seven anti-slop rules,
   voice preservation, a pattern catalog in `REFERENCE.md`, and a
   `prose-humanizer` subagent for long rewrites.
-- [`../better-writing/`](../better-writing/): audience and genre fit, voice
-  dials, genre tells and exemptions, an anti-slop audit, and a delivery
-  preflight.
+
+Better Writing provides audience and genre fit, voice dials, genre tells and
+exemptions, an anti-slop audit, and a delivery preflight. It comes from a separate
+plugin. Resolve `better-writing` through the client's current skill catalog and
+read its `SKILL.md`; resolve its reference files relative to that skill. Do not
+assume its cache directory or plugin namespace. If it is unavailable, complete
+the structure and register passes; identify the missing fit pass when it matters
+to the requested edit.
 
 Relative paths beginning with `../` start at this file. A bare filename in a
 step is relative to the sibling skill that step names.
@@ -65,9 +70,10 @@ publish. Finish each pass before moving to the next.
    the draft when context is tight.
 3. **Fit.** When audience, channel, or genre matters, or the user asks to
    “humanize,” “de-AI,” or make text sound less like a bot, read
-   `../better-writing/SKILL.md`. Set the read (genre, audience, tone, outcome)
-   with `../better-writing/references/voice-and-context.md`; check genre
-   exemptions in `genre-tells.md`; finish with `preflight.md`.
+   Better Writing's `SKILL.md` at the location found in the client catalog. Set
+   the read (genre, audience, tone, outcome) with its
+   `references/voice-and-context.md`; check genre exemptions in
+   `references/genre-tells.md`; finish with `references/preflight.md`.
 
 For rewrite mode, read the whole draft, judge whether the slop is light or
 heavy, cut first, then rewrite. Compare the result with the original and revert

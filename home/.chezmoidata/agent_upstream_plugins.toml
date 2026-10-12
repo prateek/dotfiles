@@ -1,0 +1,127 @@
+# Official marketplace registrations. Native clients own their fetched payloads.
+
+[[agent_upstream_plugins]]
+marketplace = "last30days-skill"
+plugin = "last30days"
+repository = "mvanhorn/last30days-skill"
+ref = "main"
+claude = true
+codex = true
+default_loaded = true
+
+[[agent_upstream_plugins]]
+marketplace = "superpowers-marketplace"
+plugin = "superpowers"
+repository = "obra/superpowers-marketplace"
+ref = "main"
+claude = true
+codex = false
+default_loaded = false
+
+[[agent_upstream_plugins]]
+marketplace = "mattpocock"
+plugin = "mattpocock-skills"
+repository = "mattpocock/skills"
+ref = "main"
+claude = true
+codex = false
+default_loaded = true
+
+[[agent_upstream_plugins]]
+marketplace = "obsidian-skills"
+plugin = "obsidian"
+repository = "kepano/obsidian-skills"
+ref = "main"
+claude = true
+codex = false
+default_loaded = false
+
+[[agent_upstream_plugins]]
+marketplace = "obsidian-wiki"
+plugin = "obsidian-wiki"
+repository = "ar9av/obsidian-wiki"
+ref = "main"
+claude = true
+codex = false
+default_loaded = false
+
+[[agent_upstream_plugins]]
+marketplace = "swiftui-expert-skill"
+plugin = "swiftui-expert"
+repository = "AvdLee/SwiftUI-Agent-Skill"
+ref = "main"
+claude = true
+codex = false
+default_loaded = false
+
+[[agent_upstream_plugins]]
+marketplace = "swift-patterns-skill"
+plugin = "swift-patterns"
+repository = "efremidze/swift-patterns-skill"
+ref = "main"
+claude = true
+codex = false
+default_loaded = false
+
+[[agent_upstream_plugins]]
+marketplace = "conorluddy"
+plugin = "ios-simulator-skill"
+repository = "conorluddy/ios-simulator-skill"
+ref = "main"
+claude = true
+codex = false
+default_loaded = false
+
+[[agent_upstream_plugins]]
+marketplace = "crit"
+plugin = "crit"
+repository = "tomasz-tomczyk/crit"
+ref = "main"
+claude = true
+codex = false
+default_loaded = true
+
+[[agent_upstream_plugins]]
+marketplace = "apple-hig-skills"
+plugin = "apple-hig-skills"
+repository = "raintree-technology/apple-hig-skills"
+ref = "main"
+claude = true
+codex = false
+default_loaded = false
+
+[[agent_upstream_plugins]]
+marketplace = "skills"
+plugin = "shortcut"
+repository = "hefgi/skills"
+ref = "main"
+claude = true
+codex = false
+default_loaded = false
+
+[[agent_upstream_plugins]]
+marketplace = "superpowers-dev"
+plugin = "superpowers"
+repository = "obra/superpowers"
+ref = "main"
+claude = false
+codex = true
+default_loaded = false
+
+[[agent_upstream_plugins]]
+marketplace = "forjd"
+plugin = "better-writing"
+repository = "forjd/better-writing"
+ref = "main"
+claude = true
+codex = false
+default_loaded = true
+
+[[agent_upstream_plugins]]
+marketplace = "ui-ux-pro-max-skill"
+plugin = "ui-ux-pro-max"
+repository = "nextlevelbuilder/ui-ux-pro-max-skill"
+ref = "main"
+claude = true
+codex = false
+default_loaded = false

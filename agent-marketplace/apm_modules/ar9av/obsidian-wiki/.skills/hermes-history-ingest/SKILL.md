@@ -1,11 +1,7 @@
 ---
 name: hermes-history-ingest
 description: >
-  Ingest Hermes agent history into the Obsidian wiki. Use this skill when the user wants to mine
-  their past Hermes sessions for knowledge, import their ~/.hermes folder, extract insights from
-  previous Hermes conversations, or says things like "process my Hermes history", "add my Hermes
-  memories to the wiki", "ingest ~/.hermes", or "what have I worked on in Hermes". Also triggers
-  when the user mentions Hermes memories, Hermes sessions, ~/.hermes/memories, or Hermes skill logs.
+  Ingest Hermes agent history into Obsidian as distilled knowledge. Use for importing or mining ~/.hermes sessions, memories, or logs; use wiki-agent for targeted topic-only cross-agent recall.
 ---
 
 # Hermes History Ingest — Conversation & Memory Mining
@@ -184,13 +180,19 @@ Add/update a top-level summary block:
 
 ### Update special files
 
-Update `index.md` and `log.md`:
+Update `index.md`, `log.md`, and `hot.md` with one locked call:
 
-```
-- [TIMESTAMP] HERMES_HISTORY_INGEST memories=N sessions=M pages_updated=X pages_created=Y mode=append|full
+```bash
+obsidian-wiki memory sync HERMES_HISTORY_INGEST \
+  memories=<memories> sessions=<sessions> pages_updated=<pages_updated> \
+  pages_created=<pages_created> mode=<mode> \
+  --takeaways "Ingested 42 Hermes memories and 7 sessions; dominant themes: reasoning strategies, tool use patterns."
 ```
 
-**`hot.md`** — Read `$OBSIDIAN_VAULT_PATH/hot.md` (create from the template in `wiki-ingest` if missing). Update **Recent Activity** with a one-line summary — e.g. "Ingested 42 Hermes memories and 7 sessions; dominant themes: reasoning strategies, tool use patterns." Keep the last 3 operations. Update `updated` timestamp.
+Never hand-edit `index.md`, `log.md`, or `hot.md` — the command takes the lock that keeps a parallel writer from dropping your update. `--takeaways` is the one-line conceptual summary that used to go in Recent Activity;
+omit it to leave the previous takeaways untouched.
+
+See `.skills/llm-wiki/references/MEMORY.md` for the full procedure.
 
 ## Privacy and Compliance
 

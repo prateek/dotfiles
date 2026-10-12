@@ -1,0 +1,217 @@
+#!/usr/bin/env python3
+"""Install declared official plugins through native marketplace commands."""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+from pathlib import Path
+import re
+import subprocess
+import sys
+import tomllib
+
+from agent_skill_lib import REPO_ROOT
+from codex_rpc import enabled_edit, requests
+
+
+def load_policy(path: Path) -> list[dict]:
+    entries = tomllib.loads(path.read_text()).get("agent_upstream_plugins", [])
+    identities = set()
+    for entry in entries:
+        if set(entry) != {"marketplace", "plugin", "repository", "ref", "claude", "codex", "default_loaded"}:
+            raise ValueError("upstream plugin policy requires explicit identity, source, ref, and client defaults")
+        for key in ("marketplace", "plugin"):
+            if not isinstance(entry[key], str) or not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9._-]*", entry[key]):
+                raise ValueError(f"invalid upstream {key}")
+        if entry["marketplace"] == "prateek-local":
+            raise ValueError("upstream marketplaces cannot own prateek-local")
+        if not isinstance(entry["repository"], str) or not re.fullmatch(r"[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+", entry["repository"]):
+            raise ValueError("upstream repository must be a GitHub owner/repo")
+        if entry["ref"] != "main":
+            raise ValueError("official plugins follow main; all native clients must agree on the ref")
+        if any(type(entry[key]) is not bool for key in ("claude", "codex", "default_loaded")):
+            raise ValueError("upstream client policy must use explicit booleans")
+        identity = (entry["marketplace"], entry["plugin"])
+        if identity in identities:
+            raise ValueError("duplicate upstream plugin identity")
+        identities.add(identity)
+    sources = {}
+    for entry in entries:
+        source = (entry["repository"], entry["ref"])
+        if entry["marketplace"] in sources and sources[entry["marketplace"]] != source:
+            raise ValueError("one marketplace cannot have different upstream sources")
+        sources[entry["marketplace"]] = source
+    return entries
+
+
+class NativeClient:
+    def __init__(self, agent: str, *, dry_run: bool):
+        self.agent = agent
+        self.dry_run = dry_run
+
+    def command(self, *args: str, read: bool = False, text: bool = False):
+        command = [self.agent, "plugin", *args]
+        if not read:
+            print(("[dry-run] " if self.dry_run else "") + " ".join(command), flush=True)
+            if self.dry_run:
+                return None
+        result = subprocess.run(command, cwd=Path.home(), capture_output=True, text=True, timeout=300)
+        if result.returncode:
+            raise RuntimeError(f"{' '.join(command)} failed: {(result.stdout + result.stderr).strip()}")
+        if read:
+            return result.stdout if text else json.loads(result.stdout)
+
+    def inventory(self):
+        if self.agent == "omp":
+            listing = self.command("marketplace", "list", read=True, text=True)
+            if not (listing.startswith("Configured Marketplaces:") or "No marketplaces configured" in listing):
+                raise ValueError("unrecognized omp marketplace inventory")
+            registry = Path.home() / ".omp/marketplaces.json"
+            markets = {entry["name"]: entry for entry in json.loads(registry.read_text())["marketplaces"]} if registry.exists() else {}
+            installed = {}
+            for plugin in self.command("list", "--json", read=True)["marketplace"]:
+                entries = [entry for entry in plugin["entries"] if entry.get("scope") == "user"]
+                if len(entries) > 1:
+                    raise ValueError(f"ambiguous omp user install: {plugin['id']}")
+                if entries:
+                    installed[plugin["id"]] = entries[0]
+            return markets, installed
+        markets = self.command("marketplace", "list", "--json", read=True)
+        plugins = self.command("list", "--json", read=True)
+        if self.agent == "claude":
+            return {entry["name"]: entry for entry in markets}, {entry["id"]: entry for entry in plugins if entry.get("scope") == "user"}
+        config = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex"))) / "config.toml"
+        refs = tomllib.loads(config.read_text()).get("marketplaces", {}) if config.exists() else {}
+        registered = {entry["name"]: {**entry, "ref": refs.get(entry["name"], {}).get("ref", entry.get("ref"))}
+                      for entry in markets["marketplaces"]}
+        return registered, {entry["pluginId"]: entry for entry in plugins["installed"]}
+
+    def set_enabled(self, identity: str, enabled: bool):
+        if self.agent != "codex":
+            self.command("enable" if enabled else "disable", identity, "--scope", "user")
+        elif self.dry_run:
+            print(f"[dry-run] codex config/value/write {identity}.enabled = {enabled}")
+        else:
+            requests([enabled_edit(identity, enabled)])
+
+    def bootstrap_codex_snapshots(self, policy: list[dict]) -> bool:
+        if self.agent != "codex":
+            return False
+        home = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex")))
+        config = home / "config.toml"
+        registered = tomllib.loads(config.read_text()).get("marketplaces", {}) if config.exists() else {}
+        missing = []
+        for entry in policy:
+            if entry["marketplace"] not in registered:
+                continue
+            current = registered[entry["marketplace"]]
+            expected = f"https://github.com/{entry['repository']}.git"
+            if current.get("source_type") != "git" or current.get("source", "").removesuffix(".git").lower() != expected.removesuffix(".git").lower():
+                raise ValueError(f"marketplace source conflict: {entry['marketplace']}")
+            if (current.get("ref") or "main") != entry["ref"]:
+                raise ValueError(f"marketplace ref conflict: {entry['marketplace']}")
+            root = home / ".tmp/marketplaces" / entry["marketplace"]
+            if not (root / ".agents/plugins/marketplace.json").is_file():
+                missing.append(entry)
+        for entry in missing:
+            self.command("marketplace", "add", f"https://github.com/{entry['repository']}.git", "--ref", entry["ref"])
+        return bool(missing)
+
+    def reconcile(self, policy: list[dict], *, update: bool):
+        eligible = [entry for entry in policy if entry["claude" if self.agent == "omp" else self.agent]]
+        if not eligible:
+            return
+        if self.bootstrap_codex_snapshots(eligible) and self.dry_run:
+            print("[dry-run] refresh the missing Codex snapshots before reading the remaining install plan")
+            return
+        markets, installed = self.inventory()
+        for entry in eligible:
+            registered = markets.get(entry["marketplace"])
+            if registered is None:
+                continue
+            source = registered.get("marketplaceSource", {})
+            actual = registered.get("url") or registered.get("sourceUri") or source.get("source")
+            if registered.get("source") == "github":
+                actual = f"https://github.com/{registered['repo']}.git"
+            expected = f"https://github.com/{entry['repository']}.git"
+            if not actual or actual.removesuffix(".git").lower() != expected.removesuffix(".git").lower():
+                raise ValueError(f"marketplace source conflict: {entry['marketplace']}")
+            if self.agent in ("claude", "codex") and (registered.get("ref") or "main") != entry["ref"]:
+                raise ValueError(f"marketplace ref conflict: {entry['marketplace']}")
+        refreshed = set()
+        for entry in eligible:
+            market = entry["marketplace"]
+            if market not in markets:
+                url = f"https://github.com/{entry['repository']}.git"
+                args = ["marketplace", "add", url]
+                if self.agent == "claude":
+                    args[2] += "#" + entry["ref"]
+                    args += ["--scope", "user"]
+                elif self.agent == "codex":
+                    args += ["--ref", entry["ref"]]
+                self.command(*args)
+                markets[market] = entry
+                refreshed.add(market)
+            elif update and market not in refreshed:
+                self.command("marketplace", "upgrade" if self.agent == "codex" else "update", market)
+                refreshed.add(market)
+            identity = f"{entry['plugin']}@{market}"
+            prior = installed.get(identity)
+            enabled = bool(prior and prior.get("enabled", True))
+            if prior is None or market in refreshed:
+                if self.agent == "codex":
+                    try:
+                        self.command("add", identity)
+                    finally:
+                        if not entry["default_loaded"]:
+                            self.set_enabled(identity, False)
+                    enabled = entry["default_loaded"]
+                elif self.agent == "omp":
+                    old_identity = f"{entry['plugin']}@prateek-local"
+                    old = installed.get(old_identity) if prior is None else None
+                    if old:
+                        self.command("uninstall", old_identity, "--scope", "user")
+                    try:
+                        self.command("install", identity, "--scope", "user", "--force")
+                    except (RuntimeError, OSError, subprocess.TimeoutExpired):
+                        if old:
+                            self.command("install", old_identity, "--scope", "user", "--force")
+                            if not old.get("enabled", True):
+                                self.set_enabled(old_identity, False)
+                        raise
+                    if old:
+                        installed.pop(old_identity)
+                    enabled = enabled if prior else True
+                else:
+                    self.command("update" if prior else "install", identity, "--scope", "user")
+                    enabled = True if prior is None else enabled
+            if enabled != entry["default_loaded"]:
+                self.set_enabled(identity, entry["default_loaded"])
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--policy", type=Path, default=REPO_ROOT / "home/.chezmoidata/agent_upstream_plugins.toml")
+    parser.add_argument("--agent", action="append", choices=("claude", "codex", "omp"), default=[])
+    parser.add_argument("--apply", action="store_true")
+    parser.add_argument("--update", action="store_true")
+    parser.add_argument("--dry-run", action="store_true")
+    args = parser.parse_args()
+    try:
+        policy = load_policy(args.policy)
+        if not args.apply:
+            print(json.dumps(policy, indent=2))
+        else:
+            if not args.agent:
+                parser.error("--apply needs at least one --agent")
+            for agent in dict.fromkeys(args.agent):
+                NativeClient(agent, dry_run=args.dry_run).reconcile(policy, update=args.update)
+    except (OSError, ValueError, KeyError, RuntimeError, subprocess.TimeoutExpired) as error:
+        print(f"reconcile-upstream-agent-plugins: {error}", file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

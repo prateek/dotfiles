@@ -11,6 +11,7 @@ import shutil
 import subprocess
 import sys
 import threading
+import tomllib
 from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -19,9 +20,6 @@ sys.path.insert(0, str(SCRIPTS))
 sys.path.insert(0, str(ROOT / 'agent-marketplace/scripts'))
 from artifact import tree_files, validate_artifact
 from codex_rpc import enabled_edit, requests
-
-DEFAULTS = {'core', 'last30days', 'mattpocock', 'review', 'utils-agent'}
-DISABLED = {'design', 'experimental', 'ios', 'obsidian-wiki', 'pstack', 'superpowers', 'utils-human'}
 
 
 @contextmanager
@@ -99,7 +97,11 @@ def main():
     original = scratch / 'original'
     shutil.copytree(ROOT / 'agent-marketplace/build/marketplace', original)
     names = sorted(path.name for path in (original / 'plugins').iterdir())
-    assert set(names) == DEFAULTS | DISABLED
+    policy = ROOT / 'home/.chezmoidata/agent_plugins.toml'
+    policies = tomllib.loads(policy.read_text())['agent_plugins']
+    assert set(names) == set(policies), (names, sorted(policies))
+    selected = {client: {name: entry['default_loaded'] for name, entry in policies.items()
+                         if entry[client]} for client in ('claude', 'codex')}
     for name in names:
         plugin = original / 'plugins' / name
         (plugin / 'release-probe.txt').write_text('original\n')
@@ -143,31 +145,32 @@ def main():
     rpc([enabled_edit('other@unrelated', False)])
 
     live = scratch / 'live'
-    policy = ROOT / 'home/.chezmoidata/agent_plugins.toml'
-
     def materialize(artifact, target):
         run(sys.executable, SCRIPTS / 'materialize-agent-plugins', '--artifact-root', artifact, '--plugins-root', target)
 
     def reconcile(target):
         run(sys.executable, SCRIPTS / 'reconcile-agent-plugins', '--apply', '--agent', 'claude', '--agent', 'codex',
             '--plugins-root', target, '--policy', policy,
-            *[part for name in names if name not in DEFAULTS for part in ('--refresh-disabled', name)])
+            *[part for name, enabled in selected['codex'].items() if not enabled
+              for part in ('--refresh-disabled', name)])
 
     def verify(artifact, marker):
         installed = {'claude': run('claude', 'plugin', 'list', '--json'),
                      'codex': run('codex', 'plugin', 'list', '--json')['installed']}
         for client, entries in installed.items():
-            assert len(entries) == len(names) + 1, (client, entries)
+            identity_key = 'id' if client == 'claude' else 'pluginId'
+            expected_ids = {f'{name}@prateek-local' for name in selected[client]} | {'other@unrelated'}
+            assert {entry[identity_key] for entry in entries} == expected_ids, (client, entries)
             for entry in entries:
                 identity = entry['id' if client == 'claude' else 'pluginId']
                 name, marketplace = identity.split('@')
                 if marketplace == 'unrelated':
                     assert entry['version'] == '9.0.0' and entry['enabled'] == (client == 'claude'), entry
                     continue
-                assert marketplace == 'prateek-local' and name in names, entry
+                assert marketplace == 'prateek-local' and name in selected[client], entry
                 plugin = artifact / 'plugins' / name
                 expected = json.loads((plugin / f'.{client}-plugin/plugin.json').read_text())['version']
-                assert entry['version'] == expected and entry['enabled'] == (name in DEFAULTS), entry
+                assert entry['version'] == expected and entry['enabled'] == selected[client][name], entry
                 cache = Path(entry['installPath']) if client == 'claude' else home / '.codex/plugins/cache/prateek-local' / name / expected
                 assert (cache / 'release-probe.txt').read_text() == marker + '\n', (client, name, cache)
                 assert (cache / 'stale-probe.txt').exists() == (marker == 'original'), (client, name)
@@ -185,8 +188,8 @@ def main():
 
     materialize(original, live)
     run('codex', 'plugin', 'marketplace', 'add', str(live))
-    for name in names:
-        if name not in DEFAULTS:
+    for name, enabled in selected['codex'].items():
+        if not enabled:
             run('codex', 'plugin', 'add', f'{name}@prateek-local')
     reconcile(live)
     print('install and discovery:', verify(live, 'original'), flush=True)
@@ -216,14 +219,14 @@ def main():
         for client in ('claude', 'codex'):
             run(client, 'plugin', 'marketplace', 'remove', 'prateek-local')
             run(client, 'plugin', 'marketplace', 'add', url)
-            for name in names:
+            for name, enabled in selected[client].items():
                 if client == 'claude':
                     run(client, 'plugin', 'install', f'{name}@prateek-local', '--scope', 'user')
-                    if name not in DEFAULTS:
+                    if not enabled:
                         run(client, 'plugin', 'disable', f'{name}@prateek-local', '--scope', 'user')
                 else:
                     run(client, 'plugin', 'add', f'{name}@prateek-local')
-        rpc([enabled_edit(f'{name}@prateek-local', False) for name in names if name not in DEFAULTS])
+        rpc([enabled_edit(f'{name}@prateek-local', False) for name, enabled in selected['codex'].items() if not enabled])
         verify(original, 'original')
     print('artifact-root Git distribution passed over local smart HTTP', flush=True)
     print(run('claude', '--version').strip(), run('codex', '--version').strip(), flush=True)

@@ -1,11 +1,7 @@
 ---
 name: wiki-update
 description: >
-  Sync the current project's knowledge into the Obsidian wiki. Use this skill from any project
-  when the user says "update wiki", "sync to wiki", "save this to my wiki", "update obsidian",
-  or wants to distill what they've been working on into their knowledge base. This is the
-  cross-project skill that lets you push knowledge from wherever you are into the vault. Accepts
-  inline named-vault routing like "@work update wiki" via the shared Config Resolution Protocol.
+  Sync knowledge from the current project into the Obsidian wiki. Use when work already in the current project should be distilled into the vault; named-vault routing includes @work update wiki. wiki-capture saves the current conversation and wiki-ingest handles external/new sources.
 ---
 
 # Wiki Update — Sync Any Project to Your Wiki
@@ -193,13 +189,14 @@ After creating/updating pages:
 
 ### Update `.manifest.json`
 
-Add or update this project's entry:
+Add or update this project's entry. The project identity must be portable across machines: record the repository URL in `source_repo` (from `git remote get-url origin`, normalised to `host/owner/name`), and only an optional `source_cwd_hint` for where this machine happens to have it checked out. Never write a machine absolute path — see `llm-wiki/SKILL.md` → `.manifest.json` (Source key contract v2).
 
 ```json
 {
   "projects": {
     "<project-name>": {
-      "source_cwd": "/absolute/path/to/project",
+      "source_repo": "github.com/owner/<project-name>",
+      "source_cwd_hint": "~/code/<project-name>",
       "last_synced": "TIMESTAMP",
       "last_commit_synced": "abc123f",
       "pages_in_vault": ["projects/<project-name>/<project-name>.md", "..."]
@@ -208,22 +205,35 @@ Add or update this project's entry:
 }
 ```
 
+If the project is not a git repository, use a `repo:<stable-name>` pseudo-key for `source_repo` and keep `source_cwd_hint` as the only location field.
+
 ### Update `index.md`
 
 Add entries for any new pages created.
 
-### Update `log.md`
+### Update `index.md`, `log.md`, and `hot.md`
 
-Append:
+One locked call, not three hand edits:
+
+```bash
+obsidian-wiki memory sync WIKI_UPDATE project=<project-name> \
+  pages_created=X pages_updated=Y \
+  source_repo=github.com/owner/<project-name> \
+  --takeaways "Synced obsidian-wiki — wiki-capture and wiki-research added; the new capabilities are autonomous web research and conversation capture."
 ```
-- [TIMESTAMP] WIKI_UPDATE project=<project-name> pages_updated=X pages_created=Y source_cwd=/path/to/project
+
+`--takeaways` should carry the most important architectural insight or decision
+surfaced during this sync, written conceptually rather than as a file list. Omit
+it to leave the previous takeaways untouched.
+
+If this project is an ongoing focus, record the thread so the next session picks
+it up:
+
+```bash
+obsidian-wiki memory todo add "<the open thread>" --origin projects/<project-name>.md
 ```
 
-### Update `hot.md`
-
-Read `$OBSIDIAN_VAULT_PATH/hot.md` (create from the template in `wiki-ingest` if missing). Rewrite **Recent Activity** with what was just synced — last 3 operations max. Update **Active Threads** if this project is an ongoing focus. Update **Key Takeaways** with the most important architectural insight or decision surfaced during this sync. Update `updated` timestamp.
-
-Write conceptually: "Synced obsidian-wiki — added wiki-capture and wiki-research skills, core new capabilities are autonomous web research and conversation capture."
+See `.skills/llm-wiki/references/MEMORY.md` for the full procedure.
 
 ## Step 7: Refresh QMD Wiki Index (optional — requires `QMD_WIKI_COLLECTION`)
 

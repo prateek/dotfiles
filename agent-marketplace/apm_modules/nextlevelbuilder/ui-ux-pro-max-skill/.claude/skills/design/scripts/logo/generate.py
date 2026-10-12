@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
-"""Logo generation with Gemini or Atlas Cloud.
+"""Logo generation with Gemini, Atlas Cloud, or MuAPI.
 
 Gemini remains the default provider. Atlas Cloud is opt-in with
-``--provider atlas`` and uses its asynchronous image generation API.
+``--provider atlas`` and uses its asynchronous image generation API. MuAPI is
+opt-in with ``--provider muapi`` and uses its asynchronous image generation API
+with the selected model's prompt/aspect-ratio contract.
 
 Models:
 - Nano Banana (default): gemini-2.5-flash-image - fast, high-volume, low-latency
 - Nano Banana Pro (--pro): gemini-3-pro-image-preview - professional quality, advanced reasoning
+- MuAPI Nano Banana (--provider muapi): nano-banana - hosted asynchronous image generation
 
 Usage:
     python generate.py --prompt "tech startup logo minimalist blue"
@@ -14,6 +17,8 @@ Usage:
     python generate.py --brand "TechFlow" --industry tech --style minimalist
     python generate.py --brand "TechFlow" --pro  # Use Nano Banana Pro model
     python generate.py --brand "TechFlow" --provider atlas
+    python generate.py --brand "TechFlow" --provider muapi
+    python generate.py --brand "TechFlow" --provider muapi --muapi-model nano-banana-pro
 
 Batch mode (generates multiple variants):
     python generate.py --brand "Unikorn" --batch 9 --output-dir ./logos --pro
@@ -57,6 +62,7 @@ load_env()
 # ============ CONFIGURATION ============
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 ATLASCLOUD_API_KEY = os.environ.get("ATLASCLOUD_API_KEY")
+MUAPI_API_KEY = os.environ.get("MUAPI_API_KEY")
 
 # Gemini "Nano Banana" model configurations for image generation
 GEMINI_FLASH = "gemini-2.5-flash-image"  # Nano Banana: fast, high-volume, low-latency
@@ -65,9 +71,14 @@ GEMINI_PRO = "gemini-3-pro-image-preview"  # Nano Banana Pro: professional quali
 # Atlas Cloud model validated against the live model catalog and schema.
 ATLAS_MODEL = "google/nano-banana-2-lite/text-to-image"
 ATLAS_API_BASE = "https://api.atlascloud.ai/api/v1"
-HTTP_USER_AGENT = "ui-ux-pro-max/2.5 (Atlas Cloud logo provider)"
+MUAPI_MODEL = "nano-banana"
+MUAPI_MODELS = ("nano-banana", "nano-banana-pro")
+MUAPI_API_BASE = "https://api.muapi.ai/api/v1"
+HTTP_USER_AGENT = "ui-ux-pro-max/2.5 (logo generation)"
 ATLAS_POLL_INTERVAL = 2
 ATLAS_MAX_POLLS = 90
+MUAPI_POLL_INTERVAL = 2
+MUAPI_MAX_POLLS = 90
 
 # Supported aspect ratios
 ASPECT_RATIOS = ["1:1", "16:9", "9:16", "4:3", "3:4"]
@@ -156,13 +167,13 @@ def _validate_public_https_url(url):
         or parsed.username
         or parsed.password
     ):
-        raise ValueError("Atlas Cloud returned an invalid media URL")
+        raise ValueError("Provider returned an invalid media URL")
 
     hostname = parsed.hostname.lower().rstrip(".")
     if hostname == "localhost" or hostname.endswith(
         (".localhost", ".local", ".internal")
     ):
-        raise ValueError("Atlas Cloud media URL used a local hostname")
+        raise ValueError("Provider media URL used a local hostname")
 
     try:
         ip = ipaddress.ip_address(hostname)
@@ -170,17 +181,26 @@ def _validate_public_https_url(url):
         return
     else:
         if not ip.is_global:
-            raise ValueError("Atlas Cloud media URL used a non-public address")
+            raise ValueError("Provider media URL used a non-public address")
 
 
-def _json_request(url, api_key, method="GET", payload=None):
+def _json_request(
+    url, api_key, method="GET", payload=None, api_key_header="Authorization"
+):
+    if api_key_header == "Authorization":
+        auth_value = f"Bearer {api_key}"
+    elif api_key_header == "x-api-key":
+        auth_value = api_key
+    else:
+        raise ValueError("Unsupported API key header")
+
     body = json.dumps(payload).encode("utf-8") if payload is not None else None
     request = Request(
         url,
         data=body,
         method=method,
         headers={
-            "Authorization": f"Bearer {api_key}",
+            api_key_header: auth_value,
             "Accept": "application/json",
             "User-Agent": HTTP_USER_AGENT,
             **({"Content-Type": "application/json"} if body is not None else {}),
@@ -192,10 +212,10 @@ def _json_request(url, api_key, method="GET", payload=None):
     except HTTPError as exc:
         detail = exc.read().decode("utf-8", errors="replace")
         raise RuntimeError(
-            f"Atlas Cloud request failed ({exc.code}): {detail[:300]}"
+            f"Provider request failed ({exc.code}): {detail[:300]}"
         ) from exc
     except (URLError, TimeoutError, json.JSONDecodeError) as exc:
-        raise RuntimeError(f"Atlas Cloud request failed: {exc}") from exc
+        raise RuntimeError(f"Provider request failed: {exc}") from exc
 
 
 def _atlas_prediction_data(response):
@@ -210,6 +230,10 @@ def _atlas_prediction_data(response):
 
 
 def _download_atlas_image(url, output_path):
+    _download_image(url, output_path, "image provider")
+
+
+def _download_image(url, output_path, provider_name):
     _validate_public_https_url(url)
     request = Request(
         url,
@@ -222,14 +246,14 @@ def _download_atlas_image(url, output_path):
             content_type = response.headers.get_content_type()
             if not content_type.startswith("image/"):
                 raise RuntimeError(
-                    f"Atlas Cloud output is not an image ({content_type})"
+                    f"{provider_name} output is not an image ({content_type})"
                 )
             image_data = response.read()
     except (HTTPError, URLError, TimeoutError) as exc:
-        raise RuntimeError(f"Unable to download Atlas Cloud image: {exc}") from exc
+        raise RuntimeError(f"Unable to download {provider_name} image: {exc}") from exc
 
     if not image_data:
-        raise RuntimeError("Atlas Cloud returned an empty image")
+        raise RuntimeError(f"{provider_name} returned an empty image")
     with open(output_path, "wb") as output_file:
         output_file.write(image_data)
 
@@ -279,6 +303,132 @@ def _generate_with_atlas(prompt, output_path, aspect_ratio, api_key, model):
         )
 
     raise RuntimeError("Atlas Cloud prediction timed out while polling")
+
+
+def _muapi_response_objects(response):
+    """Return the response and common MuAPI envelopes without guessing fields."""
+    if not isinstance(response, dict):
+        raise TypeError("MuAPI returned an invalid response")
+
+    objects = [response]
+    for key in ("data", "output", "result"):
+        value = response.get(key)
+        if isinstance(value, dict) and value not in objects:
+            objects.append(value)
+    return objects
+
+
+def _muapi_response_value(response, keys):
+    for item in _muapi_response_objects(response):
+        for key in keys:
+            value = item.get(key)
+            if value not in (None, ""):
+                return value
+    return None
+
+
+def _muapi_error(response):
+    value = _muapi_response_value(response, ("error", "message", "detail"))
+    if isinstance(value, str):
+        return value[:300]
+    return "MuAPI request failed"
+
+
+def _muapi_result_url(response):
+    """Return the documented result URL from the creation response."""
+    for item in _muapi_response_objects(response):
+        urls = item.get("urls")
+        if not isinstance(urls, dict) or "get" not in urls:
+            continue
+
+        result_url = urls.get("get")
+        if not isinstance(result_url, str) or not result_url:
+            raise RuntimeError(
+                "MuAPI creation response did not include a valid HTTPS result URL"
+            )
+        try:
+            _validate_public_https_url(result_url)
+        except ValueError as exc:
+            raise RuntimeError(
+                "MuAPI creation response did not include a valid HTTPS result URL"
+            ) from exc
+        return result_url
+
+    raise RuntimeError(
+        "MuAPI creation response did not include a valid HTTPS result URL"
+    )
+
+
+def _muapi_output_url(response):
+    for item in _muapi_response_objects(response):
+        outputs = item.get("outputs")
+        if isinstance(outputs, list):
+            for output in outputs:
+                if isinstance(output, str) and output.startswith("https://"):
+                    return output
+                if isinstance(output, dict):
+                    for key in ("url", "image_url"):
+                        value = output.get(key)
+                        if isinstance(value, str) and value.startswith("https://"):
+                            return value
+    raise RuntimeError("MuAPI completed without an HTTPS image URL")
+
+
+def _download_muapi_image(url, output_path):
+    _download_image(url, output_path, "MuAPI")
+
+
+def _generate_with_muapi(prompt, output_path, aspect_ratio, api_key, model):
+    if not api_key:
+        raise RuntimeError("MUAPI_API_KEY not set")
+    if model not in MUAPI_MODELS:
+        raise RuntimeError(
+            f"Unsupported MuAPI logo model: {model}. "
+            f"Choose one of: {', '.join(MUAPI_MODELS)}"
+        )
+
+    payload = {
+        "prompt": prompt,
+        "aspect_ratio": aspect_ratio,
+    }
+    response = _json_request(
+        f"{MUAPI_API_BASE}/{model}",
+        api_key,
+        method="POST",
+        payload=payload,
+        api_key_header="x-api-key",
+    )
+    request_id = _muapi_response_value(response, ("request_id", "id"))
+    if not isinstance(request_id, str) or not request_id:
+        raise RuntimeError("MuAPI did not return a request ID")
+    result_url = _muapi_result_url(response)
+
+    data = response
+    for poll_number in range(MUAPI_MAX_POLLS + 1):
+        status = _muapi_response_value(data, ("status",))
+        normalized_status = str(status or "").lower()
+        if normalized_status in {"completed", "succeeded", "success"}:
+            _download_muapi_image(_muapi_output_url(data), output_path)
+            return
+        if normalized_status in {
+            "failed",
+            "error",
+            "timeout",
+            "canceled",
+            "cancelled",
+        }:
+            raise RuntimeError(f"MuAPI generation {normalized_status}: {_muapi_error(data)}")
+        if poll_number == MUAPI_MAX_POLLS:
+            break
+
+        time.sleep(MUAPI_POLL_INTERVAL)
+        data = _json_request(
+            result_url,
+            api_key,
+            api_key_header="x-api-key",
+        )
+
+    raise RuntimeError("MuAPI prediction timed out while polling")
 
 
 def _generate_with_gemini(prompt, output_path, aspect_ratio, use_pro):
@@ -344,8 +494,9 @@ def generate_logo(
     aspect_ratio=None,
     provider="gemini",
     atlas_model=ATLAS_MODEL,
+    muapi_model=MUAPI_MODEL,
 ):
-    """Generate a logo using Gemini or Atlas Cloud image generation.
+    """Generate a logo using Gemini, Atlas Cloud, or MuAPI image generation.
 
     Args:
         aspect_ratio: Image aspect ratio. Options: "1:1", "16:9", "9:16", "4:3", "3:4"
@@ -365,6 +516,8 @@ def generate_logo(
 
     if provider == "atlas":
         model_label = f"Atlas Cloud ({atlas_model})"
+    elif provider == "muapi":
+        model_label = f"MuAPI ({muapi_model})"
     else:
         model_label = (
             "Nano Banana Pro (gemini-3-pro-image-preview)"
@@ -385,6 +538,14 @@ def generate_logo(
                 ratio,
                 ATLASCLOUD_API_KEY,
                 atlas_model,
+            )
+        elif provider == "muapi":
+            _generate_with_muapi(
+                full_prompt,
+                output_path,
+                ratio,
+                MUAPI_API_KEY,
+                muapi_model,
             )
         else:
             _generate_with_gemini(full_prompt, output_path, ratio, use_pro)
@@ -407,6 +568,7 @@ def generate_batch(
     aspect_ratio=None,
     provider="gemini",
     atlas_model=ATLAS_MODEL,
+    muapi_model=MUAPI_MODEL,
 ):
     """Generate multiple logo variants with different styles"""
 
@@ -430,6 +592,8 @@ def generate_batch(
     model_label = (
         f"Atlas Cloud ({atlas_model})"
         if provider == "atlas"
+        else f"MuAPI ({muapi_model})"
+        if provider == "muapi"
         else f"Nano Banana {'Pro' if use_pro else 'Flash'}"
     )
     ratio = aspect_ratio if aspect_ratio in ASPECT_RATIOS else DEFAULT_ASPECT_RATIO
@@ -466,6 +630,7 @@ def generate_batch(
             aspect_ratio=aspect_ratio,
             provider=provider,
             atlas_model=atlas_model,
+            muapi_model=muapi_model,
         )
 
         if result:
@@ -487,7 +652,7 @@ def generate_batch(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Generate logos using Gemini or Atlas Cloud"
+        description="Generate logos using Gemini, Atlas Cloud, or MuAPI"
     )
     parser.add_argument("--prompt", "-p", type=str, help="Logo description prompt")
     parser.add_argument("--brand", "-b", type=str, help="Brand name")
@@ -514,7 +679,7 @@ def main():
     )
     parser.add_argument(
         "--provider",
-        choices=["gemini", "atlas"],
+        choices=["gemini", "atlas", "muapi"],
         default="gemini",
         help="Image provider (default: gemini)",
     )
@@ -522,6 +687,12 @@ def main():
         "--atlas-model",
         default=ATLAS_MODEL,
         help=f"Atlas Cloud image model (default: {ATLAS_MODEL})",
+    )
+    parser.add_argument(
+        "--muapi-model",
+        choices=MUAPI_MODELS,
+        default=MUAPI_MODEL,
+        help=f"MuAPI image model (default: {MUAPI_MODEL})",
     )
     parser.add_argument(
         "--aspect-ratio",
@@ -539,8 +710,11 @@ def main():
 
     args = parser.parse_args()
 
-    if args.provider == "atlas" and args.pro:
-        parser.error("--pro is only available with --provider gemini")
+    if args.provider != "gemini" and args.pro:
+        parser.error(
+            "--pro is only available with --provider gemini; "
+            "use --muapi-model nano-banana-pro for MuAPI"
+        )
 
     if args.list_styles:
         print("Available styles:")
@@ -574,6 +748,7 @@ def main():
             aspect_ratio=args.aspect_ratio,
             provider=args.provider,
             atlas_model=args.atlas_model,
+            muapi_model=args.muapi_model,
         )
     else:
         generate_logo(
@@ -586,6 +761,7 @@ def main():
             aspect_ratio=args.aspect_ratio,
             provider=args.provider,
             atlas_model=args.atlas_model,
+            muapi_model=args.muapi_model,
         )
 
 

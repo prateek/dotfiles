@@ -1,6 +1,6 @@
 # Genre tells
 
-Concrete AI-writing fingerprints by genre, plus the exemptions that stop the general lists from over-editing a genre where a "tell" is actually correct. Apply the bank that matches the text. For dials, audience, and voice calibration, see `voice-and-context.md`.
+Concrete AI-writing fingerprints by genre, plus the exemptions that stop the general lists from over-editing a genre where a "tell" is actually correct. Apply the bank that matches the text. For dials, audience, and voice calibration, see Dials and Voice calibration in `voice-and-context.md`.
 
 ## Email and business messages
 
@@ -16,13 +16,14 @@ Fix by leading with the reason for the message, the ask, the owner, and the date
 ## LinkedIn and social
 
 - broetry: one-line paragraphs stacked for drama, each on its own line.
-- engagement bait: "Agree?", "Thoughts?", "Who's with me?". See `structures-and-phrases.md`.
+- engagement bait: "Agree?", "Thoughts?", "Who's with me?". See Engagement bait in `structures-and-phrases.md`.
 - manufactured-insight hooks: "Here's what nobody tells you about", "Unpopular opinion:". See Engagement bait in `structures-and-phrases.md`.
 - themed-emoji bookending and emoji bullet markers.
 - "As a [role], I..." openers that borrow authority from a job title.
 - hashtag stacks, thread markers such as "🧵" or "1/", and exclamation marks on every line. One exclamation mark in a long post is a person; one per sentence is a template.
 - ellipses that do not trail off, used as a beat.
 - markdown headings and bold labels in a post the platform renders as plain text.
+- "Read that again.", "Every. Single. Day.", and arrow chains (→) used as a mock flow chart.
 
 Fix by making one real claim and ending on it. Cut the performance.
 
@@ -30,7 +31,7 @@ Fix by making one real claim and ending on it. Cut the performance.
 
 Replace booster verbs and reveal framing with proof, usage, and outcomes:
 
-- booster verbs: "supercharge", "elevate your", "unlock the power / potential / secrets of", "harness the power of", "take it to the next level", "revolutionise the way"
+- booster verbs (canonical bank): "supercharge", "elevate your", "unlock the power / potential / secrets of", "harness the power of", "take it to the next level", "revolutionise the way"
 - urgency: "stay ahead of the curve", "future-proof your", "look no further", "now more than ever"
 - SEO scaffolding: "Welcome to our comprehensive guide", "The Ultimate Guide to", "Everything You Need to Know About", "Here's a breakdown of everything you need to know", keyword-stuffed headings, padded FAQ sections
 - corporate data-speak: "deliver actionable insights", "drive data-driven decisions", "leverage complex datasets"
@@ -62,7 +63,7 @@ The vocabulary tells here are the strongest in any genre. A 2026 study measured 
 - body-metaphor emotion: "heart hammered against her ribs", "a tightening in the chest", "let out a breath she didn't know she was holding", "felt a profound sense of"
 - scene furniture: "the air was thick with", "a testament to", "dust motes danced", "the weight of"
 
-Structural tells from a 61,000-story corpus:
+Structural tells from a corpus of about 61,600 stories:
 
 - stating the theme: AI stories end with the moral 77% of the time, humans 52%
 - emotion through the body instead of through events and their cost (81% vs 38%). Humans more often name the fact and the consequence: "two of the five resigned the same day"
@@ -73,15 +74,43 @@ Fix by cutting the over-represented phrase for the plain one, ending on the last
 
 Exemptions: a writer's deliberate voice, including ornate or mannered prose, is theirs to keep. Flag it, do not strip it.
 
+## Conversational replies: PR and issue comments, review replies, chat threads
+
+The failure here is usually shape, not vocabulary: a cleaned-up reply that still reads as a generated technical memo. It explains the diagnosis, proves the diagnosis, explains the backfill, and only then gets to the point. Humans in a thread rely on shared context instead: if the other person already understands the bug, there is no need to re-establish the root cause.
+
+Rule: the "new information" test reaches the surrounding conversation, not just the text being rewritten. Every sentence must add information this reader, in this thread, did not already have.
+
+Tells:
+
+- re-stating the problem the thread already established: "As you reported, the export fails when…", "To recap the issue…"
+- diagnosis-proof-backfill-point ordering: explanation before the verdict. The verdict goes first.
+- closing summaries of what a short thread just decided: "To summarise, we agreed…", "In summary, the plan is…"
+- markdown scaffolding the venue does not render or expect: headings, bold-label bullets, and tables in a three-line review reply. Exempt venues that do render markdown and expect structure (a PR description, a long issue).
+- chatbot-adjacent courtesy openers with no content: "Great question!", "Thanks for raising this!" followed by the memo.
+
+Fix by leading with the verdict, decision, or action, then only what is new: what changes, who owns it, and when. One thing per message in chat. Keep identifiers, filenames, and version numbers exact, and keep enough warmth for the relationship; direct does not mean curt.
+
+## Commit messages
+
+Tells:
+
+- vague subjects that say a change happened without saying which: "fix bug", "update stuff", "address comments", "minor tweaks"
+- commit-speak preambles: a summary that opens "Major refactor:" or "Comprehensive update:", or leads with "Rebuilt X" and "Upgraded X". Tier 2.
+- bodies that narrate the diff line by line instead of stating what changed and why
+- gitmoji or emoji where the project does not use them
+- change notes that list what was left alone: "while preserving the original meaning", "retained all key points", "ensured consistency throughout". A person reports what they changed; the reader assumes the rest stayed.
+
+Fix with an imperative subject naming what and, where the diff cannot show it, why ("Retry the export once on lock timeout, not three times"). Keep the subject short enough to scan (about 50 characters, hard limit 72), keep identifiers, flags, filenames, and version numbers exact, and match the project's existing convention for trailers and scopes.
+
 ## Code, pull requests, and documentation
 
 Tells:
 
 - comments that restate the obvious: "// loop over the items", "This function is responsible for"
 - diff-anchored prose in docs and PRs: "we added", "now we handle", "this was changed to". Documentation should describe how the system works in the present tense.
-- verbose PR descriptions that narrate the diff line by line instead of stating intent and risk
-- gitmoji or emoji in commit messages where the project does not use them
+- verbose PR descriptions that narrate the diff line by line instead of stating intent and risk. State the intent, the risk, and how to verify; see Commit messages above for the analogous rule at commit scale.
 - over-defensive caveats and reimplementation of code that already exists
+- spec-sheet negation ("No configuration is required") and verbs that give code a home or an owner ("the config lives in", "this module owns", "the fix lands in"). Tier 3: both are normal in developer writing, so flag them only inside a cluster.
 
 Fix by deleting comments that repeat the code, describing behaviour in the present tense, and keeping identifiers, flags, filenames, version numbers, and exit codes exact.
 
@@ -89,4 +118,4 @@ Exemptions:
 
 - Bullet lists, tables, and headers are correct in reference docs and release notes.
 - Markdown is correct where the destination renders it.
-- "robust", "scalable", and similar words have precise technical meaning; keep them when used accurately.
+- "robust", "scalable", and any other Tier 2 term have precise technical meaning; keep them when used accurately. See Overused AI vocabulary in `ai-writing-patterns.md`.

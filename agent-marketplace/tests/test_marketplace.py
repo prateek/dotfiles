@@ -171,6 +171,59 @@ class MarketplaceTests(unittest.TestCase):
         self.assertFalse((published / "upstream").exists())
         self.assertFalse((published / "curated/.apm-pin").exists())
 
+    def test_whole_collection_tracks_upstream_additions_and_retirements(self):
+        module = self.imported_skill()
+        shutil.rmtree(self.package / "skills")
+        collection = module / ".apm/skills"
+        first = collection / "first"
+        first.mkdir(parents=True)
+        first.joinpath("SKILL.md").write_text("---\nname: first\ndescription: First.\n---\n")
+        first.joinpath("reference.md").write_text("Supporting content.\n")
+        (self.package / "publish.toml").write_text(
+            '[[payloads]]\ndependency = "example/upstream"\npath = ".apm/skills"\ntarget = "skills"\n'
+        )
+
+        def accept_cache():
+            path = self.root / "apm.lock.yaml"
+            lock = yaml.safe_load(path.read_text())
+            lock["dependencies"][0]["content_hash"] = compute_package_hash(module)
+            path.write_text(yaml.safe_dump(lock))
+
+        accept_cache()
+        self.recipe("build")
+        published = self.root / "build/marketplace/plugins/example/skills"
+        self.assertEqual({p.name for p in published.iterdir()}, {"first"})
+        self.assertEqual((published / "first/reference.md").read_text(), "Supporting content.\n")
+        shutil.rmtree(first)
+        second = collection / "second"
+        second.mkdir()
+        second.joinpath("SKILL.md").write_text("---\nname: second\ndescription: Second.\n---\n")
+        accept_cache()
+        self.recipe("build")
+        self.assertEqual({p.name for p in published.iterdir()}, {"second"})
+        self.assertEqual((published / "second/SKILL.md").read_bytes(), second.joinpath("SKILL.md").read_bytes())
+
+    def test_adapter_preserves_human_only_controls_and_sidecar_metadata(self):
+        module = self.imported_skill()
+        original = module / "SKILL.md"
+        original.write_text(original.read_text().replace("\n---\n\n", "\ndisable-model-invocation: true\n---\n\n"))
+        sidecar = module / "agents/openai.yaml"
+        sidecar.parent.mkdir()
+        sidecar.write_text('interface:\n  display_name: "Upstream Name"\n')
+        lock_path = self.root / "apm.lock.yaml"
+        lock = yaml.safe_load(lock_path.read_text())
+        lock["dependencies"][0]["content_hash"] = compute_package_hash(module)
+        lock_path.write_text(yaml.safe_dump(lock))
+        selection = self.package / "publish.toml"
+        selection.write_text("mirror_invocation_controls = true\n\n" + selection.read_text())
+        self.recipe("build")
+        output = self.root / "build/marketplace/plugins/example/skills/curated"
+        self.assertEqual((output / "SKILL.md").read_bytes(), original.read_bytes())
+        self.assertEqual(yaml.safe_load((output / "agents/openai.yaml").read_text()), {
+            "interface": {"display_name": "Upstream Name"}, "policy": {"allow_implicit_invocation": False},
+        })
+        self.assertNotIn("policy", yaml.safe_load(sidecar.read_text()))
+
     def test_shared_root_cache_publishes_independent_plugins_without_package_manifests(self):
         self.imported_skill()
         peer = self.root / "packages/peer"

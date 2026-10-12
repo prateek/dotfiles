@@ -1,0 +1,10 @@
+{
+  "name": "ios-tools",
+  "version": "1.0.0",
+  "description": "ios-tools compatibility skills",
+  "license": "UNLICENSED",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "ios-tools compatibility skills"
+  }
+}

@@ -147,6 +147,7 @@ for day-to-day implementation details.
 | --- | --- |
 | [Jev Browser Integrations](research/jev-browser-integrations.md) | Source assessment, isolated headless Orca proof, the completed development comparison that rejected adoption, and the dynamic follow-up boundary. |
 | [Shell Testing Framework Comparison](research/shell-testing-framework-comparison.md) | Alternatives, decision history, and experiment/upstream evidence supporting the [Test Refactoring plan](plans/test-suite-rebuild-plan.md). |
+| [Agent Skill Collection Audit](research/agent-skill-collection-audit.md) | Remaining manual collection lists, native marketplace candidates, intentional subsets, and customized upstream copies. |
 | [Agent Skill Management Research](research/agent-skill-management-research.md) | Background on skill context pressure, package layout, and plugin defaults. |
 | [Public Dotfiles Skill Packaging](research/public-dotfiles-skills-packaging-research.md) | Eight public examples of skill source ownership, installation, and updates, with pinned source links and a comparison to this repo. |
 | [Nix Agent Skill Packaging](research/nix-agent-skills-packaging-research.md) | Five public Nix configurations, Home Manager skill and plugin options, source catalogs, dependency packaging, and deployment ownership. |
@@ -174,6 +175,8 @@ or `superseded_by` frontmatter before using them.
 
 | Doc | Current guidance |
 | --- | --- |
+| [Additional Upstream Agent Plugins](plans/additional-upstream-agent-plugins-plan.md) | Verified UI/UX Pro Max, Crit, and Better Writing marketplace adoption and Codex collection adapters; use the [marketplace reference](references/agent-marketplace.md). |
+| [Upstream Agent Plugins](plans/upstream-agent-plugins-plan.md) | Verified native marketplace migration and refreshed compatibility adapters; use the [marketplace reference](references/agent-marketplace.md) and [ADR 0049](adr/0049-official-agent-plugin-marketplaces.md). |
 | [Leader Key to Tuna Migration](plans/leader-key-to-tuna-migration-plan.md) | Archived cutover record; the live binds are `home/dot_config/tuna/config.toml` and the left-Cmd trigger is in `home/dot_config/karabiner.edn.tmpl`. |
 | [G95NC Preconditions and Diagnostics](plans/g95nc-diagnostics-plan.md) | Completed command hardening; use the [runbook](runbooks/g95nc-display.md). |
 | [Complete G95NC Modes](plans/g95nc-complete-modes-plan.md) | Implemented app-wide reset and native-output verification; local installation and hardware limits recorded. Use the [runbook](runbooks/g95nc-display.md). |

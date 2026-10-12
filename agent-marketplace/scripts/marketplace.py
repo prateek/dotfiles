@@ -154,6 +154,34 @@ def copy_selection(source: Path, target: Path, excluded: list[str]) -> None:
     shutil.copytree(source, target, symlinks=True, ignore=ignore)
 
 
+def mirror_invocation_controls(package: Path, plugin: Path) -> None:
+    selection = package / "publish.toml"
+    if not selection.exists():
+        return
+    enabled = tomllib.loads(selection.read_text()).get("mirror_invocation_controls", False)
+    if type(enabled) is not bool:
+        raise ValueError(f"mirror_invocation_controls requires a boolean: {selection}")
+    if not enabled:
+        return
+    for path in (plugin / "skills").rglob("SKILL.md"):
+        text = path.read_text()
+        parts = text.split("---", 2)
+        if len(parts) != 3:
+            raise ValueError(f"missing skill frontmatter: {path}")
+        meta = yaml.safe_load(parts[1])
+        sidecar = path.parent / "agents/openai.yaml"
+        data = yaml.safe_load(sidecar.read_text()) if sidecar.exists() else {}
+        if not isinstance(meta, dict) or not isinstance(data, dict):
+            raise ValueError(f"invalid invocation metadata: {path}")
+        if meta.get("disable-model-invocation") is True or data.get("policy", {}).get("allow_implicit_invocation") is False:
+            if meta.get("disable-model-invocation") is not True:
+                parts[1] += "disable-model-invocation: true\n"
+                path.write_text("---".join(parts))
+            data.setdefault("policy", {})["allow_implicit_invocation"] = False
+            sidecar.parent.mkdir(exist_ok=True)
+            sidecar.write_text(yaml.safe_dump(data, sort_keys=False))
+
+
 def apply_patches(package: Path, plugin: Path) -> None:
     patches = sorted(path for path in (package / "patches").glob("*.patch") if path.read_bytes().strip())
     if not patches:
@@ -301,6 +329,7 @@ def build(root: Path) -> Path:
             expected_skills = {skill.name for skill in skills.iterdir()} if skills.is_dir() else set()
             apply_patches(package, plugin)
             apply_overlays(package, plugin)
+            mirror_invocation_controls(package, plugin)
             tree_files(plugin)
             validate_plugin(plugin, expected_skills)
             write_publication_manifest(plugin)

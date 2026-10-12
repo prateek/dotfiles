@@ -1,0 +1,10 @@
+name: obsidian-wiki
+version: df54595
+description: 'Grow an Obsidian second brain with your AI agent: ingest docs, chat
+  history and URLs into interlinked markdown, then query it with citations. Karpathy''s
+  LLM Wiki pattern as Claude Code skills.'
+author: Ar9av
+license: MIT
+repository: https://github.com/Ar9av/obsidian-wiki
+homepage: https://github.com/Ar9av/obsidian-wiki
+type: hybrid

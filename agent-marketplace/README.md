@@ -1,7 +1,8 @@
 # Agent marketplace
 
-This folder builds Prateek's Claude and Codex plugins from authored skills and
-reviewed APM dependencies. Copy the whole folder to another directory to use it
+This folder builds authored plugins and compatibility adapters for Claude and
+Codex from authored skills and reviewed APM dependencies. The dotfiles consumer
+installs compatible upstream plugins directly from official marketplaces. Copy the whole folder to another directory to use it
 without dotfiles or chezmoi.
 
 APM owns acquisition, locks, Claude manifests, and both marketplace catalogs.
@@ -73,7 +74,7 @@ manifest, lock, or cache:
 | Input | Ownership |
 | --- | --- |
 | `skills/<name>/` | Authored skills, edited directly |
-| `publish.toml` | Selected cached paths, curated directory aliases, extra payloads |
+| `publish.toml` | Selected cached paths, collection payloads, curated aliases, extra payloads |
 | `patches/*.patch` | Reviewed edits applied in filename order to temporary plugin trees |
 | `overlays/` | Local additions at their published relative paths |
 | `.codex-plugin/plugin.json` | Plugin identity, version, shared metadata, and Codex interface fields |
@@ -104,6 +105,19 @@ target = "licenses/owner/repo/LICENSE"
 ```
 
 `exclude = ["skills"]` can omit a top-level child of a selected directory.
+Whole compatibility collections use a single payload selection with
+`target = "skills"`, such as `.apm/skills` for Matt Pocock or `skills` for
+Pstack. Their packages contain no authored skill directory at that same target.
+Upstream additions and retirements then flow through the collection, including
+supporting files, without an individual skill list. Root notices still need
+explicit payload selections.
+
+An adapter can set `mirror_invocation_controls = true` in `publish.toml`. After
+patches and overlays, the build mirrors a human-only restriction from either
+frontmatter or a Codex sidecar into both controls, preserving sidecar metadata.
+It never changes the accepted cache or relaxes a restriction. Ordinary packages
+still fail validation for an unpaired restriction.
+
 Aliases describe published directories; frontmatter skill names remain intact.
 Unused cache directories never become publication inputs automatically.
 Each selected path must be a skill directory containing its own `SKILL.md`.
@@ -137,6 +151,11 @@ availability independently of a machine's activation policy. Do not add
 per-plugin APM projects or duplicate dependency declarations in `publish.toml`.
 
 ## Acquire or update upstream inputs
+
+Prefer the upstream maintainer's repository or native marketplace over a
+curated mirror or third-party aggregator. Use native plugins directly when the
+client supports their catalog and activation controls. Keep reviewed local
+adapters for compatibility and intentional customization.
 
 Start with an accepted, clean cache and lock. Both commands refuse tracked,
 staged, untracked, and ignored pending cache/lock changes before calling APM:

@@ -1,0 +1,4 @@
+[[skills]]
+name = "shortcut"
+dependency = "hefgi/skills/shortcut"
+path = "."

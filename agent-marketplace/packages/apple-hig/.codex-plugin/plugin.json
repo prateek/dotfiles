@@ -1,0 +1,10 @@
+{
+  "name": "apple-hig",
+  "version": "1.0.0",
+  "description": "apple-hig compatibility skills",
+  "license": "UNLICENSED",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "apple-hig compatibility skills"
+  }
+}

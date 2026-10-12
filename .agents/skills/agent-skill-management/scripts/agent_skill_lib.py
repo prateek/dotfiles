@@ -185,8 +185,11 @@ def iter_package_skills(package_path: Path) -> Iterable[SkillSource]:
     package_id = package_path.name
     published = package_path.parents[1] / "build/marketplace/plugins" / package_id / "skills"
     selection_path = package_path / "publish.toml"
-    selections = tomllib.loads(selection_path.read_text()).get("skills", []) if selection_path.exists() else []
-    imports = {item["name"]: item["dependency"] for item in selections}
+    selection = tomllib.loads(selection_path.read_text()) if selection_path.exists() else {}
+    imports = {item["name"]: item["dependency"] for item in selection.get("skills", [])}
+    for item in selection.get("payloads", []):
+        if item["target"] == "skills":
+            imports.update({path.name: item["dependency"] for path in published.iterdir()})
     for path in sorted(published.iterdir()):
         if (path / "SKILL.md").is_file():
             dependency = imports.get(path.name)

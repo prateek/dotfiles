@@ -1,10 +1,7 @@
 ---
 name: wiki-research
 description: >
-  Autonomously research a topic via multi-round web search, synthesize findings, and file structured
-  results into the Obsidian wiki. Use this skill when the user says "/wiki-research [topic]",
-  "research X", "find everything about Y", "do a deep dive on Z", "autonomous research on X",
-  or wants comprehensive, web-sourced knowledge on a topic filed directly into their wiki.
+  Perform multi-round web research on a topic, synthesize the findings, and file structured results into the Obsidian wiki. Use for comprehensive web-sourced research intended to become wiki knowledge.
 ---
 
 # Wiki Research — Autonomous Multi-Round Research
@@ -263,14 +260,20 @@ Check `index.md` for existing pages on the same topics — merge into existing p
 }
 ```
 
-**`index.md`** — Add all new pages under their respective sections.
+One locked call updates the index, the log, and the hot cache:
 
-**`log.md`** — Append:
-```
-- [TIMESTAMP] WIKI_RESEARCH topic="<topic>" rounds=N sources_fetched=N pages_created=M backends_used=[<name,...>|none]
+```bash
+obsidian-wiki memory sync WIKI_RESEARCH \
+  topic="<topic>" rounds=<N> sources_fetched=<N> \
+  pages_created=<M> backends_used="<name,...|none>" \
+  --takeaways "<the research topic and its core finding, in one line>"
 ```
 
-**`hot.md`** — Update **Recent Activity** with the research topic and core finding. Update **Active Threads** if this is ongoing. Update `updated` timestamp.
+Do **not** list every page you created in a log field — `memory sync` reconciles the index from disk, and a huge field only crowds the hot cache. If the research is ongoing, record it: `obsidian-wiki memory todo add "<open question>" --origin synthesis/<page>.md`.
+
+Never hand-edit `index.md`, `log.md`, or `hot.md` — the command takes the lock that keeps a parallel writer from dropping your update.
+
+See `.skills/llm-wiki/references/MEMORY.md` for the full procedure.
 
 ## Quality Checklist
 

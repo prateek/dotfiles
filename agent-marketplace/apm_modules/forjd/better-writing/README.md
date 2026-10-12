@@ -4,18 +4,43 @@
 
 An agent skill for prose that sounds clear, specific, and human.
 
-[![Agent Skill](https://img.shields.io/badge/agent%20skill-better--writing-2563eb?style=for-the-badge)](./SKILL.md)
+[![Agent Skill](https://img.shields.io/badge/agent%20skill-better--writing-2563eb?style=for-the-badge)](./skills/better-writing/SKILL.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-111827?style=for-the-badge)](./LICENSE)
 [![skills.sh](https://skills.sh/b/forjd/better-writing)](https://skills.sh/forjd/better-writing)
 
+<img src="./docs/before-after.gif" alt="A 90-word launch email is audited: filler phrases are struck out in red, facts are highlighted in green, and the 47-word rewrite keeps every fact." width="820">
+
 </div>
+
+## Quick install
+
+Any agent that reads skills (Claude Code, Codex, Cursor, and others):
+
+```bash
+npx skills add forjd/better-writing
+```
+
+Claude Code plugin:
+
+```text
+/plugin marketplace add forjd/better-writing
+/plugin install better-writing@forjd
+```
+
+More options are under [Installation](#installation).
+
+## What it will not do
+
+**Beating AI detectors is explicitly a non-goal.** Better Writing improves clarity, specificity, and voice fit. It does not lower AI-detector scores, and no edit can guarantee one. Detector scores are deliberately not a check in the [evaluation harness](./evals/) — see [why detector scores are not a check](./evals/README.md#why-detector-scores-are-not-a-check).
+
+If you ask it to pass a detector, it runs the strict pass and says so in the change note, without evasion tricks such as synonym swaps, inserted typos, look-alike characters, or translation round-trips. They make the prose worse, and leading detectors are now trained on humaniser output. See [Guardrails](./skills/better-writing/SKILL.md#guardrails).
 
 ## What it is
 
 Better Writing is an agent skill for rewriting, drafting, and reviewing prose. Most de-slop skills delete AI tells and converge everything toward one generic "casual human" register. This one adds what those skip:
 
 1. **The writer's voice.** A user-provided writing sample is the style source of truth, and per-genre dials (directness, warmth, density, polish) replace blanket rules. A board memo and a personal essay get different treatment.
-2. **Specificity without invention.** "Make it concrete" prompts tempt models into fabricating numbers, anecdotes, and named experts. The guardrails and pre-flight preservation check forbid that: missing facts become placeholders or questions, never inventions.
+2. **Specificity without invention.** "Make it concrete" prompts tempt models into fabricating numbers, anecdotes, and named experts. The guardrails and the preflight preservation check forbid that: missing facts become placeholders or questions, never inventions.
 3. **Context beats blanket rules.** The same dash, hedge, or formal phrase can be a tell in one genre and correct in another. The audit looks for clusters of tells, with an explicit false-positive list so polished human writing survives the pass.
 
 On top of that, it does the expected job well:
@@ -23,13 +48,13 @@ On top of that, it does the expected job well:
 - AI-sounding patterns such as significance inflation, vague attribution, promotional padding, and formulaic conclusions
 - slop structures such as throat-clearing, binary contrast, false agency, over-signposting, and manufactured drama
 - confidence tiers and a near-conclusive-artefact check, so a single quirk never triggers an edit but leaked tool markup or an unfilled `[Your Name]` placeholder does
-- a final pre-flight check before delivery
+- a final preflight check before delivery
 
 It also ships with an [evaluation harness](./evals/): fixtures seeded with known tells and known facts, a checker, and a runner that sends each fixture through a real model with the skill loaded.
 
 ## Before and after
 
-Real input, real output, no cherry-picked single sentences. These pairs double as test fixtures in [evals/fixtures/](./evals/fixtures/).
+Each "after" is a hand-written target rewrite that passes the checker for its fixture. The inputs are in [evals/fixtures/](./evals/fixtures/) and the rewrites in [evals/examples/](./evals/examples/).
 
 ### A launch email, de-slopped
 
@@ -39,9 +64,9 @@ Before:
 
 After:
 
-> The new analytics dashboard goes live on Monday 15 June. It replaces the weekly CSV export. Data refreshes every hour instead of every seven days, and you can filter by team, project, or date range. Log in and open the Reports tab to try it.
+> Our new analytics dashboard goes live on Monday 15 June. It replaces the weekly CSV export. Data refreshes every hour instead of every seven days, and you can view it across teams, projects, and date ranges. To start using it, log in and open the Reports tab.
 
-Every fact survived (the date, the CSV export, the hourly refresh, the Reports tab). Everything else went.
+Every fact survived: the date, the CSV export, the hourly refresh, the teams, projects, and date ranges, and the Reports tab. Everything else went.
 
 ### A report paragraph, made specific without inventing anything
 
@@ -51,7 +76,7 @@ Before:
 
 After:
 
-> Churn rose for the second quarter in a row [figure needed from the Q1 report]. Two causes have been flagged internally: the March pricing change and onboarding drop-off. Both point to the need for a retention plan.
+> Churn rose for the second quarter in a row [churn figure needed]. It has been suggested internally that the March pricing change and onboarding drop-off may have contributed. Both point to the need for a retention plan.
 
 Note the placeholder. The skill will not invent a churn figure to make the paragraph sound concrete. If the figure exists in the source material, it goes in; if not, the gap is marked honestly.
 
@@ -116,7 +141,52 @@ DISABLE_TELEMETRY=1 npx skills add forjd/better-writing
 DISABLE_TELEMETRY=1 bunx skills add forjd/better-writing
 ```
 
-You can also copy the folder into your agent skills directory if your agent runtime supports local skill discovery.
+### Claude Code plugin
+
+The repo is also a Claude Code plugin marketplace. In Claude Code:
+
+```text
+/plugin marketplace add forjd/better-writing
+/plugin install better-writing@forjd
+```
+
+Or from a shell:
+
+```bash
+claude plugin marketplace add forjd/better-writing
+claude plugin install better-writing@forjd
+```
+
+Run `/plugin marketplace update forjd` to pick up new releases.
+
+Use one method, not both. Claude Code loads each install separately, so with both you get the skill twice.
+
+### Manual install
+
+You can also copy [`skills/better-writing/`](./skills/better-writing/) into your agent skills directory if your agent runtime supports local skill discovery. Copy that folder only, not the whole repo.
+
+To pin a release rather than track `main`, clone its tag and copy that folder from the checkout. Tags before v2.0.0 keep the skill at the repo root, so for those, copy the root instead:
+
+```bash
+git clone --branch v2.0.0 https://github.com/forjd/better-writing.git # x-release-please-version
+```
+
+The installed version is `metadata.version` in the `SKILL.md` frontmatter.
+
+### Install with your agent
+
+Paste this into your coding agent and it will do the install for you:
+
+```text
+Install the better-writing agent skill from https://github.com/forjd/better-writing.
+
+1. If Node or Bun is available, run `npx skills add forjd/better-writing` (or `bunx skills add forjd/better-writing`) and follow its prompts.
+2. If that is not possible, clone the repo and copy its skills/better-writing folder (the one containing SKILL.md, references/, and agents/) into the skills directory your runtime reads. Copy that folder only, not the whole repo, and keep its name, better-writing.
+3. Confirm the installed folder contains SKILL.md with `name: better-writing` in its frontmatter, and that references/ sits next to it.
+4. Tell me where you installed it and whether I need to restart the agent before it can use the skill.
+
+Do not use sudo, and ask before overwriting an existing better-writing install.
+```
 
 ## Usage
 
@@ -144,18 +214,22 @@ Use my writing sample below as the voice reference, then rewrite the article int
 
 | Path | Purpose |
 | --- | --- |
-| [SKILL.md](./SKILL.md) | Core skill instructions and metadata. |
-| [agents/openai.yaml](./agents/openai.yaml) | UI metadata for compatible agent clients. |
-| [references/ai-writing-patterns.md](./references/ai-writing-patterns.md) | AI-writing tells, confidence tiers, near-conclusive artefacts, and false-positive checks. |
-| [references/preflight.md](./references/preflight.md) | Final quality checks before delivery. |
-| [references/sources.md](./references/sources.md) | Source projects and attribution notes. |
-| [references/structures-and-phrases.md](./references/structures-and-phrases.md) | Slop phrase and structure audit. |
-| [references/genre-tells.md](./references/genre-tells.md) | Genre-specific phrase banks for email, social, marketing, academic, fiction, and code. |
-| [references/voice-and-context.md](./references/voice-and-context.md) | Audience, genre, dials, voice calibration, and genre exemptions. |
-| [evals/](./evals/) | Fixture texts, a checker with voice-drift metrics, a model runner with an added-claims judge, and a pairwise comparison against a no-skill baseline. |
-| [skills/better-writing/](./skills/better-writing/) | Tap layout for managers that expect `skills/<name>/`; relative symlinks back to the root files. |
-| [scripts/validate.py](./scripts/validate.py) | Repo checks run by CI: frontmatter, fixtures, symlinks. |
+| [skills/better-writing/](./skills/better-writing/) | The skill. skills.sh and manual installs copy this folder only. |
+| [skills/better-writing/SKILL.md](./skills/better-writing/SKILL.md) | Core skill instructions and metadata. |
+| [skills/better-writing/agents/openai.yaml](./skills/better-writing/agents/openai.yaml) | UI metadata for compatible agent clients. |
+| [skills/better-writing/references/ai-writing-patterns.md](./skills/better-writing/references/ai-writing-patterns.md) | AI-writing tells, confidence tiers, near-conclusive artefacts, and false-positive checks. |
+| [skills/better-writing/references/genre-tells.md](./skills/better-writing/references/genre-tells.md) | Genre-specific phrase banks for email, social, marketing, academic, fiction, and code. |
+| [skills/better-writing/references/preflight.md](./skills/better-writing/references/preflight.md) | Final quality checks before delivery. |
+| [skills/better-writing/references/sources.md](./skills/better-writing/references/sources.md) | Source projects and attribution notes. |
+| [skills/better-writing/references/structures-and-phrases.md](./skills/better-writing/references/structures-and-phrases.md) | Slop phrase and structure audit. |
+| [skills/better-writing/references/voice-and-context.md](./skills/better-writing/references/voice-and-context.md) | Audience, genre, dials, voice calibration, and genre exemptions. |
+| [.claude-plugin/](./.claude-plugin/) | Claude Code plugin and marketplace manifests. |
+| [evals/](./evals/) | Fixture texts, a checker with voice-drift metrics, a pre-ChatGPT human corpus for false-positive reports, a model runner with an added-claims judge, and a pairwise comparison against a no-skill baseline. |
+| [scripts/validate.py](./scripts/validate.py) | Repo checks run by CI: frontmatter, fixtures, layout, symlinks, and agent config. |
+| [scripts/lint_prose.py](./scripts/lint_prose.py) | Prose lint run by CI: the repo docs pass the skill's own audit. |
 | [CHANGELOG.md](./CHANGELOG.md) | Dated history of the pattern catalogue. |
+| [CONTRIBUTING.md](./CONTRIBUTING.md) | How to change the skill, check the change, and open a pull request. |
+| [SECURITY.md](./SECURITY.md) | How to report a vulnerability privately. |
 
 `SKILL.md` stays concise so agents can load it quickly. The detailed audit material lives in `references/` and is loaded only when needed. The `evals/` directory is repo tooling; agents do not load it.
 
@@ -167,23 +241,25 @@ Use my writing sample below as the voice reference, then rewrite the article int
 - Voice beats cleanliness.
 - Evidence beats authority theatre.
 - Trust the reader.
+- Flat is a tell too.
 
 ## Validation
 
-CI runs two dependency-free checks on every push and pull request:
+CI runs three checks on every push to main and every pull request:
 
 ```bash
-python3 scripts/validate.py                      # frontmatter, fixture, and symlink checks
+python3 scripts/validate.py                      # frontmatter, version, fixture, layout, symlink, and agent config checks
+python3 scripts/lint_prose.py                    # repo docs pass the skill's own audit, with measured exclusions
 python3 evals/run_evals.py --all evals/examples  # checker self-test
 ```
 
-Neither exercises a model. The self-test proves the checker agrees with the hand-written known-good outputs, nothing more. To test the skill itself, run the model runner described under Evaluation; it needs credentials, so it is not part of CI.
+Neither exercises a model. The self-test proves the checker agrees with the hand-written known-good outputs, nothing more. The prose lint proves the repo's own docs contain no live slop: it skips code fences, blockquotes, inline code and quoted mentions, then asserts zero violations. To test the skill itself, run the model runner described under [Evaluation](#evaluation). It needs credentials, so it is not part of CI.
 
 You can also validate the skill with the checker from Anthropic's [skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator) skill:
 
 ```bash
-git clone https://github.com/anthropics/skills.git
-python3 skills/skills/skill-creator/scripts/quick_validate.py /path/to/better-writing
+git clone https://github.com/anthropics/skills.git anthropic-skills
+python3 anthropic-skills/skills/skill-creator/scripts/quick_validate.py /path/to/better-writing/skills/better-writing
 ```
 
 This checks the required skill metadata and naming rules.
@@ -199,31 +275,32 @@ Better Writing started as a synthesis of three skills and one reference page. Ea
 | [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) | Context-first brief reading and explicit quality dials. | Added factual guardrails and a preservation check, so taste decisions never license invented specifics. |
 | [Wikipedia:Signs of AI writing](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing) | The observed-in-the-wild pattern catalogue. | Reorganised for agent use and dated in the [changelog](./CHANGELOG.md) so the list can drift as models do. |
 
-See [references/sources.md](./references/sources.md) for fuller source notes.
+See [references/sources.md](./skills/better-writing/references/sources.md) for fuller source notes.
 
 ## Evaluation
 
-Pattern lists are easy to break: one well-meaning edit and the skill starts flagging human writing or missing a new tell. The [evals/](./evals/) directory holds ten fixture texts seeded with known tells and known facts, a dependency-free checker that verifies a rewrite removed the tells *and* kept the facts, and a runner that produces the rewrites with a real model.
+Pattern lists are easy to break: one well-meaning edit and the skill starts flagging human writing or missing a new tell. The [evals/](./evals/) directory holds twenty-two fixture texts seeded with known tells and known facts, a dependency-free checker that verifies a rewrite removed the tells *and* kept the facts, and a runner that produces the rewrites with a real model.
 
 ```bash
 python3 evals/run_skill.py                                          # run every fixture through claude-opus-5, check, then judge for added claims
 python3 evals/run_evals.py evals/fixtures/launch-email my-rewrite.md  # check a rewrite you produced some other way
 python3 evals/run_skill.py --no-skill --no-judge --out evals/baseline # the same briefs with no skill loaded
 python3 evals/compare_outputs.py evals/baseline evals/outputs         # pairwise judge, both orders, unlabelled
+python3 evals/run_triggers.py --repeats 3                           # does the description load the skill on prose tasks, and only those?
 ```
 
-The runner needs the Claude Code CLI on PATH with working credentials. Run it before and after any change to `SKILL.md` or the references and compare the two reports. The added-claims judge exists because the substring checker cannot see invention; a rewrite that added "nobody has asked to bring the stand-up back" to the LinkedIn fixture passed every substring check. The baseline and pairwise comparison exist because a pass count cannot show the skill beat the unaided model.
+The runner needs the Claude Code CLI on PATH with working credentials. Run it before and after any change to `SKILL.md` or the references and compare the two reports, or compare one run against the committed reference summary with `--baseline evals/baselines/claude-opus-5.summary.json`. The added-claims judge exists because the substring checker cannot see invention; a rewrite that added "nobody has asked to bring the stand-up back" to the LinkedIn fixture passed every substring check. The baseline and pairwise comparison exist because a pass count cannot show the skill beat the unaided model.
 
-The checker is a smoke test, not a judge. It matches substrings, bounds the length, rejects the damage a search-and-replace leaves behind (doubled spaces, space before punctuation), catches binary-contrast scaffolds, and on keep-my-voice fixtures measures whether contractions, first person, hedges, and word length moved. A rewrite can pass it and still read badly, so read the outputs in `evals/outputs/` as well as the pass counts. Detector scores are deliberately not a check; `evals/README.md` says why. See [evals/README.md](./evals/README.md) for the fixture list and check format.
+The checker is a smoke test, not a judge. It matches whole words and phrases (allowing inflections such as "syncs" or "seamlessly"), bounds the length, rejects the damage a search-and-replace leaves behind (doubled spaces, space before punctuation), catches binary-contrast scaffolds, and on keep-my-voice fixtures measures whether contractions, first person, hedges, word length, lexical variety, and the spread of sentence lengths moved. `run_evals.py --corpus evals/human-corpus` runs the same checks over pre-ChatGPT human prose and reports what fires, so an over-broad check shows up before it misfires on a writer. A rewrite can pass it and still read badly, so read the outputs in `evals/outputs/` as well as the pass counts. Detector scores are deliberately not a check. [evals/README.md](./evals/README.md) explains why and lists the fixtures and the check format.
 
 ## A living pattern catalogue
 
-AI tells drift. "Delve" and "tapestry" marked 2023-era output; "it's not just X, it's Y" marks 2025-era output across vendors, while dash dependence now marks Claude and DeepSeek but not GPT-5. The pattern lists in `references/` are treated as a dated catalogue, not a fixed rulebook:
+AI tells drift. "Delve" and "tapestry" marked 2023-era output; "it's not just X, it's Y" marks 2025-era output across vendors. Per-model dash rates are diagnostic only (see Model fingerprints in `references/ai-writing-patterns.md`), not a reason to edit a writer's dash. The pattern lists in `references/` are treated as a dated catalogue, not a fixed rulebook:
 
-- The vocabulary list is era-stamped and tiered, so the skill leans on cluster density and structure rather than any single word. Distinctive markers, common-but-overused words, and ordinary English that only shows up across a corpus are flagged differently.
+- The vocabulary list is era-stamped and tiered, so the skill leans on cluster density and structure rather than any single word. Distinctive markers, common but overused words, and ordinary words that only stand out across a corpus are flagged differently.
 - Additions, changes, and retirements are dated in [CHANGELOG.md](./CHANGELOG.md).
 - Patterns that fade from current model output get marked as legacy rather than deleted, so the skill still catches older drafts.
-- The false-positive guardrails carry the detector-bias evidence (non-native over-flagging measured across 16 detectors in 2026; neurodivergent over-flagging widely reported but not yet measured), and the `plain-human`, `voice-preservation`, and `academic-hedge` evals fail if the skill over-edits clean prose. Detector-evasion is explicitly a non-goal.
+- The false-positive guardrails carry the detector-bias evidence: non-native writers over-flagged across 16 detectors in 2026; dialect, teen, and informal writing over-flagged in a 2025 benchmark; autistic writers' posts flagged 25 to 50% more often by one detector in a 2026 preprint. The `plain-human`, `voice-preservation`, and `academic-hedge` evals fail if the skill over-edits clean prose. Detector evasion is explicitly a non-goal.
 - Pull requests adding newly observed tells are welcome. Bring at least one real example and a false-positive note.
 
 ## Compatibility
@@ -231,23 +308,26 @@ AI tells drift. "Delve" and "tapestry" marked 2023-era output; "it's not just X,
 The skill follows the standard agent-skill layout (`SKILL.md` plus lazily loaded `references/`), so it works in any runtime that discovers skills by folder:
 
 - **Claude Code**: tested; install via skills.sh or copy into your skills directory.
-- **OpenAI-compatible clients**: [agents/openai.yaml](./agents/openai.yaml) provides display metadata and allows implicit invocation.
+- **OpenAI-compatible clients**: [agents/openai.yaml](./skills/better-writing/agents/openai.yaml) provides display metadata and allows implicit invocation.
 - **Other runtimes**: anything that reads `SKILL.md` frontmatter will pick it up; the references are plain Markdown loaded on demand.
 
-The `skills/better-writing/` directory is a tap layout for managers that expect `skills/<name>/`. It is built from relative symlinks back to the root files, which survive `git clone` but not GitHub's Download ZIP or a Windows checkout without symlink support. In those cases install from the repo root, which is the canonical copy.
+The skill lives in `skills/better-writing/`, the `skills/<name>/` layout that skills.sh and Claude Code plugins both read. skills.sh copies that folder only, so its installs never pick up the plugin manifests or the repo tooling. It holds real files only, including its own copy of LICENSE, so a plain copy, GitHub's Download ZIP and a Windows checkout all give a complete skill.
+
+## Releases
+
+Releases follow [semantic versioning](https://semver.org/) and are cut by [release-please](https://github.com/googleapis/release-please) from the conventional commit history. It keeps a release pull request open on `main` that collects merged commits, bumps `metadata.version` in `skills/better-writing/SKILL.md` and `version` in `skills/better-writing/agents/openai.yaml`, and drafts the notes. Merging that pull request tags `vX.Y.Z` and publishes a [GitHub Release](https://github.com/forjd/better-writing/releases). Watch the repo for releases to hear when the catalogue changes.
+
+The skill has no API, so a major version means one of these:
+
+- The install layout changes: what `skills/better-writing/` holds, or where the skill lives.
+- An eval CLI flag or fixture field is removed or renamed.
+- `SKILL.md` changes behaviour in a way that means people must change how they prompt it.
+
+New patterns, checks, and fixtures are minor versions. Corrections are patches. The GitHub Release lists the commits; [CHANGELOG.md](./CHANGELOG.md) stays the hand-written record of why the catalogue changed.
 
 ## Contributing
 
-Keep the skill lean. Put core workflow guidance in [SKILL.md](./SKILL.md), and move detailed pattern lists or examples into [references/](./references/).
-
-Before opening a pull request:
-
-1. Run `python3 scripts/validate.py`. CI runs it on every pull request as well.
-2. Run `python3 evals/run_skill.py` before and after the change if you touched the pattern lists or `SKILL.md`, and say in the pull request what changed in the two reports.
-3. Date any pattern addition, change, or retirement in [CHANGELOG.md](./CHANGELOG.md).
-4. Check that new prose uses British English and sentence-case headings. The repo's own docs follow the catalogue.
-5. Avoid adding bulky documentation that the agent does not need.
-6. Keep examples factual, concise, and easy to audit.
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for what to change where, the checks to run, and how to title a pull request. To report a security issue, follow [SECURITY.md](./SECURITY.md).
 
 ## Licence
 

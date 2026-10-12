@@ -3,6 +3,8 @@
 # materialize-agent-plugins sha256: {{ include (printf "%s/../.agents/skills/agent-skill-management/scripts/materialize-agent-plugins" .chezmoi.sourceDir) | sha256sum }}
 # reconcile-agent-plugins sha256: {{ include (printf "%s/../.agents/skills/agent-skill-management/scripts/reconcile-agent-plugins" .chezmoi.sourceDir) | sha256sum }}
 # agent_skill_lib.py sha256: {{ include (printf "%s/../.agents/skills/agent-skill-management/scripts/agent_skill_lib.py" .chezmoi.sourceDir) | sha256sum }}
+# upstream reconciler sha256: {{ include (printf "%s/../.agents/skills/agent-skill-management/scripts/reconcile-upstream-agent-plugins" .chezmoi.sourceDir) | sha256sum }}
+# upstream policy sha256: {{ include ".chezmoidata/agent_upstream_plugins.toml" | sha256sum }}
 # policy sha256: {{ include ".chezmoidata/agent_plugins.toml" | sha256sum }}
 # codex_rpc.py sha256: {{ include (printf "%s/../.agents/skills/agent-skill-management/scripts/codex_rpc.py" .chezmoi.sourceDir) | sha256sum }}
 # retire-legacy-agent-packages sha256: {{ include (printf "%s/../.agents/skills/agent-skill-management/scripts/retire-legacy-agent-packages" .chezmoi.sourceDir) | sha256sum }}
@@ -25,10 +27,6 @@ have just || die "just is required to build agent plugins. Install the core pack
 # without overriding a caller's; the consumer suite passes an empty one.
 export MARKETPLACE_RUN="${MARKETPLACE_RUN-uv run --frozen}"
 
-run_timed "materialize agent plugins" \
-  "$generator" \
-  --plugins-root "$HOME/.agents/plugins"
-
 {{- $a := includeTemplate "agents.tmpl" . | fromJson }}
 agents=""
 {{- range $id, $agent := $a.selected }}
@@ -37,6 +35,16 @@ have {{ $agent.binary }} || die "{{ $id }} is listed in agent_clis but not on PA
 agents="$agents --agent {{ $id }}"
 {{- end }}
 {{- end }}
+upstream_reconciler="{{ .chezmoi.sourceDir }}/../.agents/skills/agent-skill-management/scripts/reconcile-upstream-agent-plugins"
+if [ -n "$agents" ]; then
+  # shellcheck disable=SC2086
+  run_timed "reconcile official upstream plugins" "$upstream_reconciler" --apply $agents
+fi
+
+run_timed "materialize agent plugins" \
+  "$generator" \
+  --plugins-root "$HOME/.agents/plugins"
+
 if [ -z "$agents" ]; then
   log "no plugin-capable agent CLI in agent_clis for this machine; skipping plugin install reconcile."
 else

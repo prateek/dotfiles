@@ -1,14 +1,7 @@
 ---
 name: wiki-agent
 description: >
-  Query-driven targeted ingest from a specific AI agent's raw history. Use this skill when the user
-  invokes /wiki-claude, /wiki-codex, /wiki-hermes, /wiki-openclaw, /wiki-copilot, /wiki-pi — with or without a
-  search topic. Different from wiki-history-ingest (which bulk-ingests everything new): this skill finds
-  sessions about a SPECIFIC TOPIC in a specific agent's history and ingests just those, then returns a
-  synthesized answer immediately usable in the current session. Primary use case: you're working in
-  agent A and want to pull in how you solved X in agent B's history. Cross-referencing, not archiving.
-  Also trigger on: "what did I work on in codex about X", "search my claude sessions for Y",
-  "pull in hermes knowledge about Z", "find that conversation where I did X in codex".
+  Search one AI agent's raw history for a specific topic, ingest only matching sessions, and return a synthesized answer. Use for targeted cross-agent recall; use wiki-history-ingest for bulk archival ingestion.
 ---
 
 # Wiki Agent — Targeted Cross-Agent History Search + Ingest
@@ -255,12 +248,19 @@ Update `.manifest.json` for each session file processed:
 }
 ```
 
-Append to `log.md`:
-```
-- [TIMESTAMP] WIKI-AGENT agent=<agent> query="<query>" sessions_searched=N sessions_ingested=M pages_created=X pages_updated=Y
+One locked call updates the log, the index, and the hot cache:
+
+```bash
+obsidian-wiki memory sync WIKI-AGENT \
+  agent=<agent> query="<query>" \
+  sessions_searched=<N> sessions_ingested=<M> \
+  pages_created=<X> pages_updated=<Y> \
+  --takeaways "<one line: what was pulled in and what it changes>"
 ```
 
-Update `hot.md` with a one-line summary of what was ingested.
+Never hand-edit `index.md`, `log.md`, or `hot.md` — the command takes the lock that keeps a parallel writer from dropping your update.
+
+See `.skills/llm-wiki/references/MEMORY.md` for the full procedure.
 
 ---
 

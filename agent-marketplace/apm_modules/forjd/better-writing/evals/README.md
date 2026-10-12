@@ -1,6 +1,6 @@
 # Evals
 
-Regression tests for the skill. Each fixture is a text seeded with known AI tells and known facts. A passing rewrite removes the tells and keeps the facts. Both scripts are dependency-free Python.
+Regression tests for the skill. Each fixture is a text seeded with known AI tells and known facts. A passing rewrite removes the tells and keeps the facts. The checker (run_evals.py) is dependency-free Python.
 
 This directory is repo tooling. Agents using the skill do not load it.
 
@@ -13,9 +13,27 @@ python3 evals/run_skill.py                       # all fixtures, claude-opus-5
 python3 evals/run_skill.py --model claude-sonnet-5 launch-email plain-human
 ```
 
-The runner builds a system prompt from `SKILL.md` plus every file in `references/`, sends each fixture's `input.md` with its `brief` through `claude -p` with no tools, saves the rewrite to `evals/outputs/<fixture-name>.md` (gitignored), and runs the checker on it. It needs the Claude Code CLI on PATH with working credentials. Run it before and after any change to `SKILL.md` or the pattern lists and compare the reports, and read the outputs, since a pass count says nothing about whether the prose reads well. The report's first line names the model, because length and formatting defaults differ between models.
+The runner builds a system prompt from `SKILL.md` plus every file in `references/`, sends each fixture's `input.md` with its `brief` through `claude -p` with no tools and none of your own settings (`--setting-sources ""`, so your `~/.claude/CLAUDE.md`, memory, plugins, and MCP servers stay out of the run), saves the rewrite to `evals/outputs/<fixture-name>.md` (gitignored), and runs the checker on it. It needs the Claude Code CLI on PATH with working credentials. Run it before and after any change to `SKILL.md` or the pattern lists and compare the reports, and read the outputs, since a pass count says nothing about whether the prose reads well. The report's first line names the model, because length and formatting defaults differ between models.
 
-After the checker, the runner makes a second model call that lists every claim in the rewrite the input does not state or imply: a next step, a line about what has happened since, an opinion or joke the source lacks. One listed claim fails the fixture, and the list is saved next to the rewrite as `<fixture-name>.claims.json`. This exists because the substring checker cannot see invention: a rewrite that added "nobody has asked to bring the stand-up back" to the LinkedIn fixture passed every substring check. Read a flagged claim before acting on it. With `claude-opus-5` as judge, the ten known-good examples pass and the three inventions seen in real runs are all listed. A smaller judge over-flags: `claude-sonnet-5` listed changes in attribution strength that the prompt tells it to ignore, so keep the judge on the default model. Pass `--no-judge` to skip the call and `--judge-model` to override it.
+That default is the **always-on** arm: the whole skill sits in the system prompt at once. No real harness works that way — they announce the skill by its ~100-token plugin description, load `SKILL.md` on trigger, and read individual references on demand — so the always-on pass rate is an upper bound, and it cannot see description or progressive-disclosure changes at all. The **progressive** arm measures the real config instead: its system prompt carries only the plugin description plus `SKILL.md`, and the model gets the Read tool so it fetches the `references/` files the skill points at, and only those. It runs with its working directory set to a staging copy holding only `SKILL.md` and `references/` (rebuilt under `<out>/_skill_root` on every run), so the Read tool cannot wander into the grading rubric (`checks.json`, `examples/`):
+
+```bash
+python3 evals/run_skill.py --arm progressive
+python3 evals/run_skill.py --arm both --repeats 5
+```
+
+`--arm both` keeps the always-on arm for comparison and reports the paired per-fixture difference (progressive minus always-on) with an interval. A skill change that only rewords the description or restructures references should move the progressive arm and leave always-on flat; if both move together, the change is in `SKILL.md` body text both arms share.
+
+After the checker, the runner makes a second model call that lists every claim in the rewrite that neither the input nor the brief states or implies: a next step, a line about what has happened since, an opinion, verdict, thanks, or joke the source lacks. It also lists claims whose strength changed on the way, such as a hope restated as something that has happened ("paving the way for a rollout" becoming "the rollout continues") or an emphasis restated as a cause. One listed claim fails the fixture, and the list is saved next to the rewrite as `<fixture-name>.claims.json`. This exists because the substring checker cannot see invention: a rewrite that added "nobody has asked to bring the stand-up back" to the LinkedIn fixture passed every substring check. Read a flagged claim before acting on it. Review-mode fixtures skip the judge, because every finding is a verdict on the source; see `mode` under [Check format](#check-format).
+
+The judge sees the brief, so a fact the brief supplies ("the churn numbers are not available") is not listed. Its answer is the last JSON array of strings in the reply, since a judge sometimes answers, second-guesses itself, and answers again. A reply with no such array is asked once more, and if that fails too the fixture fails as a judge error, not as an invented claim.
+
+Calibration, with `claude-opus-5` as judge, against saved outputs labelled by reading them: all 11 known-good examples pass, the 13 clean model rewrites pass (including one that restates a fact from the brief), and all 6 inventions are listed, including three hope-to-fact endings the previous prompt missed. The first pass also flagged three known-good examples, and each flag was right ("minor" performance improvements the source never sized, a verdict on one meeting the source only made about meetings in general, and hedges dropped from "may have contributed"), so those examples were corrected. To re-check the judge after changing its prompt, re-run it on saved rewrites without generating new ones:
+
+```bash
+python3 evals/run_skill.py --judge-only evals/outputs
+```
+ A smaller judge over-flags: `claude-sonnet-5` listed changes in attribution strength that the prompt tells it to ignore, so keep the judge on the default model. Pass `--no-judge` to skip the call and `--judge-model` to override it.
 
 To check rewrites you produced some other way, save them as `<fixture-name>.md` and run the checker directly:
 
@@ -25,6 +43,45 @@ python3 evals/run_evals.py --all my-outputs
 ```
 
 The checker exits non-zero on any failure.
+
+## Sampling: repeats and intervals
+
+One unrepeated generation per fixture cannot resolve small changes: with 22 binary fixtures, an exact McNemar test needs at least 6 of 22 to flip in the same direction before p < 0.05. Pass `--repeats K` (use 5 or more when sizing a skill change, and more if a fixture's pass rate swings between runs) to generate K independent rewrites per fixture per arm. The CLI exposes no temperature setting, so repeats are independent default-sampling generations:
+
+```bash
+python3 evals/run_skill.py --arm both --repeats 5 --no-judge  # cheap sweep
+python3 evals/run_skill.py --arm both --repeats 5             # with the claim judge
+```
+
+Multi-arm or multi-repeat runs land in `<out>/<arm>/` as `<fixture>.r<k>.md` (plus `<fixture>.r<k>.claims.json` when judged); the first repeat is also copied to the legacy `<fixture>.md` name so `run_evals.py --all` and `compare_outputs.py` work on each arm directory unchanged. The default single run keeps the historical flat layout exactly, plus a new `summary.json`.
+
+Every run writes `<out>/summary.json`: per-fixture pass rates with Wilson 95% intervals, the per-fixture progressive-minus-always-on difference with a Newcombe 95% interval, and the paired mean difference over fixtures with a t interval. The same numbers print to stdout. Read the interval before claiming a win: with K=5 a single fixture at progressive 4/5 vs always-on 5/5 is still a [-0.62, +0.26] wash.
+
+## Reference summary
+
+`evals/baselines/` holds a committed `summary.json` for each model, recorded with `--arm both --repeats 5` and the judge. Each summary also records the skill version, the commit, and the date. Compare a new run against the reference instead of re-running the old skill first:
+
+```bash
+python3 evals/run_skill.py --arm both --repeats 5 --baseline evals/baselines/claude-opus-5.summary.json
+python3 evals/run_skill.py --baseline evals/baselines/claude-opus-5.summary.json --compare-summary evals/outputs/summary.json
+```
+
+The second form compares a saved run without generating anything. For each arm the two runs share, the report prints each fixture's pass count before and after, the change with a Newcombe 95% interval, and an overall change computed over the fixtures both runs contain, so a fixture added since the reference does not move the total. It warns first when the model, judge, repeat count, or split differs, since those make the numbers incomparable.
+
+The first reference (skill 1.2.1, 28 September 2026) passes 93/110 always-on and 77/110 progressive, a paired difference of -0.15 [-0.24, -0.05]. The progressive arm loses most on `chatbot-artefacts` (1/5 against 5/5; four rewrites keep the unfilled `[Your Name]`) and `marketing-copy` (1/5 against 4/5; three keep "whether you're"). `detector-request` fails 0/5 in both arms: each always-on rewrite puts a claim about detectors, such as "no edit can guarantee a score", into the text, where the judge counts it as added. `ui-microcopy` passes 2/5 in both, because the judge counts "try a smaller file" as a next step the source never gave. The recorded commit is the parent of the one that adds the file, and the fixtures and checker it ran against are the ones committed beside it.
+
+This is not the `--no-skill` baseline below. That one measures the skill against the unaided model; the reference summary measures the skill against its own earlier version. Re-record the reference when a skill change lands, the default model changes, or fixtures are added or edited, and say which in the commit.
+
+## Dev and held-out fixtures
+
+`evals/splits.json` partitions the 22 fixtures into a 13-fixture tuned **dev** set and a 9-fixture never-read **held-out** set (`chat-reply`, `detector-request`, `docs-page`, `incident-update`, `marketing-copy`, `plain-human`, `ranking-claims`, `review-findings`, `thank-you-note` — spanning conversational register, strict-pass, reference docs, no-invention under pressure, booster/template, false-positive, scope-word, review, and warmth behaviour). The fixtures' banned lists were written by the same hand as the skill's phrase catalogue, so tuning against all 22 overfits to the author's own tells; the split is the guardrail:
+
+```bash
+python3 evals/run_skill.py --split dev --arm both --repeats 5    # tune here
+python3 evals/run_skill.py --split heldout --arm both            # confirm once
+```
+
+Tune on dev. Read the held-out fixtures (and their outputs) once, for confirmation, not iteration: a second look makes them dev fixtures. `scripts/validate.py` fails if the split stops covering every fixture exactly once or the held-out set drops below 8, so add new fixtures to one side explicitly. Grow the held-out set with new fixtures rather than by moving dev ones, so earlier dev and held-out numbers stay comparable.
 
 ## Baseline and pairwise comparison
 
@@ -38,47 +95,95 @@ python3 evals/compare_outputs.py evals/baseline evals/outputs
 
 The comparison shows the judge the brief, the source, and both rewrites, unlabelled and in both orders, and counts a win only when the same rewrite wins both ways. Judges prefer low-perplexity text and the first item shown, and they agree with human writing preferences only about three quarters of the time, so treat a loss as a flag to read both outputs, not a verdict. Never label which output came from the skill: labelled authorship shifts judge preference by tens of points.
 
+## Trigger eval
+
+Both arms above load the skill unconditionally, so neither can tell whether a real harness would load it at all. That decision rests on the `description` line in `SKILL.md`, which is all the model sees until it calls the Skill tool. `run_triggers.py` measures it:
+
+```bash
+python3 evals/run_triggers.py --repeats 3
+python3 evals/run_triggers.py tighten-email write-unit-test   # a subset, by id
+```
+
+It stages the skill as a plugin (manifest, `SKILL.md`, `references/`) under `<out>/_plugin`, then sends each prompt in `triggers.json` through `claude -p --plugin-dir` with the same isolation flags as the rewrite runner, the read-only tools `Skill,Read,Glob,Grep`, and an empty working directory. The model sees better-writing in the skill listing next to the built-in skills. A run counts as a trigger when the model calls the Skill tool for better-writing, and the run is stopped at that call, so no prompt goes on to do the work.
+
+`triggers.json` holds two sets. `should_trigger` covers rewriting, drafting, reviewing, and copy editing across genres; its trigger rate is recall. `should_not_trigger` holds near misses that mention a typo, an email, or a log but are code, data, or translation tasks; its trigger rate is the false-trigger rate. The runner prints both with Wilson 95% intervals and writes them, with per-prompt counts and any other skills the model called, to `<out>/summary.json` (default `evals/outputs/triggers/`).
+
+Run it before and after any change to the `description` line. The first run, on `claude-opus-5` with three repeats, triggered on 30 of 30 should-trigger runs and 0 of 30 should-not runs. Swapping the description for an unrelated one (CSV conversion) dropped recall to 0 of 6, so the measurement does respond to the description. With both sets at their limits, a change can only show up as a regression; add harder near misses if you need to see an improvement.
+
 ## Why detector scores are not a check
 
-Do not add an AI-detector score to this harness. Three reasons. First, the target is wrong: Pangram's own analysis of humaniser output found that the more readable and fluent the text, the more likely it is to be detected, so optimising against a detector rewards worse prose. Second, the signal is unstable: a 2026 study found light AI edits flagged between 38% and 80% of the time while unmodified human abstracts were flagged 9% to 15% of the time, and adversarial paraphrasing cuts detection by around 88%. Third, the bias is real: a 2026 ACL study across 16 detectors found essays by English language learners over-flagged, and non-white learners more so. The skill's stated goal is fit and clarity, and the false-positive fixtures exist to keep it from behaving like a detector in reverse.
+Do not add an AI-detector score to this harness.
+
+The target is wrong: Pangram's own analysis of humaniser output found that the more readable and fluent the text, the more likely it is to be detected, so optimising against a detector rewards worse prose.
+
+The signal is unstable: a 2026 study found light AI edits flagged between 38% and 80% of the time while unmodified human abstracts were flagged 9% to 15% of the time, and adversarial paraphrasing cuts detection by around 88%.
+
+The bias is real: a 2026 ACL study across 16 detectors found essays by English language learners over-flagged, and non-white learners more so, and a 2025 benchmark found dialect, teen, and informal writing scored worst.
+
+A detector cannot separate a human draft a model lightly polished from generated text, which is exactly the output this skill produces. The skill's stated goal is fit and clarity, and the false-positive fixtures exist to keep it from behaving like a detector in reverse.
+
+## Human corpus
+
+`human-corpus/` holds about 1,900 words of human prose written long before ChatGPT: a PEP, Strunk, Twain, and Jerome K. Jerome, all public domain, with provenance in its README. Run every check over it:
+
+```bash
+python3 evals/run_evals.py --corpus evals/human-corpus
+```
+
+The report lists each check that fires, with a snippet. It is not a gate and CI does not run it; a human can write a contrast scaffold, and the check still belongs on rewrites. Read it when you add or widen a banned phrase or a regex: a new hit on human prose means the check is broader than the tell. The first run showed three things worth knowing. The doubled-space check fires on the two spaces after a full stop that older technical prose uses, so a rewrite of such a source will fail it. The em-dash ban in `launch-email` fires on Jerome eleven times, which is why it stays a fixture-level ban for a strict brief and not a global check. And "be able to" and "clearly" occur in Twain, which is fine for fixtures whose ideal rewrite has no use for them, but they should never become global.
 
 ## Known-good outputs
 
-`examples/` contains one passing rewrite per fixture (the same texts shown in the main README). They double as a self-test for the checker:
+`examples/` contains one passing rewrite per fixture (three of them appear in the main README). They double as a self-test for the checker:
 
 ```bash
 python3 evals/run_evals.py --all evals/examples
 ```
 
-CI runs this self-test, together with `scripts/validate.py`, on every push and pull request.
+CI runs this self-test, together with `scripts/validate.py` and `scripts/lint_prose.py`, on every push to main and every pull request.
 
 ## What each fixture tests
 
 | Fixture | Tests |
 | --- | --- |
 | `launch-email` | Slop removal with full fact preservation: date, feature names, and the UI label must survive. |
-| `quarterly-report` | Specificity without invention: the rewrite must keep the named causes and must not contain any percentage, because none was given. |
+| `quarterly-report` | Specificity without invention: the rewrite must keep the named causes and must not contain any percentage, because none was given, or a deadline ("before the next quarter closes"), because the source only says "moving forward". |
 | `release-notes` | Technical register: flags, filenames, version numbers, and exit codes stay exact while hype and diff-anchored wording go. |
 | `voice-preservation` | The inverse test: a quirky human draft must come back with its quirks intact, not flattened into a house style. Contraction, first-person, and hedge rates must not move. |
 | `chatbot-artefacts` | Near-conclusive cleanup: pasted chatbot scaffolding, an unfilled `[Your Name]` placeholder, and a decorative emoji must go while the steps and link survive. |
 | `over-signposting` | Structural slop: ordinal signposting, stacked connectives, list-itis, and bold-label bullets go; all four facts survive. |
 | `plain-human` | The false-positive regression: a plain human note with a single `delve` and one em dash must come back essentially unchanged, not over-edited. Voice markers must not move. |
 | `marketing-copy` | Booster verbs, "isn't just", and template hooks go; the product name, the two features, and the price survive; no invented percentages, user counts, or awards appear. |
-| `academic-hedge` | Genre exemption: the passive methods sentence and the hedges ("suggest", "may inhibit", "sample size was small") must survive while "it is important to note" and the "future research" closer go. |
+| `academic-hedge` | Genre exemption: the passive methods sentence and the hedges ("suggest", "may inhibit", "sample size was small") must survive while "it is important to note" goes. The brief is a copy edit, so the "future research" closer, a real recommendation, stays. |
+| `ranking-claims` | Scope-word preservation: the slop goes, and "first site", "only office", and "most payslips of any site" survive attached to their claims. Trimming a flourish or a qualifier often takes a ranking word with it, and each one is a claim. |
 | `linkedin-post` | Social-post habits: the hook, the rhetorical self-answer, the aphorism, and the engagement bait go, and the one-line broetry paragraphs collapse into prose; the facts and the opinion survive. |
+| `light-edit-contrast` | The single-contrast exemption: a copy edit fixes two typos and must keep the writer's one "the disk, not the query" contrast. The contrast budget applies to text the skill writes, not to a writer's own. Voice markers must not move. |
+| `detector-request` | A request to pass AI detectors gets the strict pass and nothing else: the tells go, the facts survive, and no invisible format characters or Greek and Cyrillic look-alikes appear. The "no edit guarantees a score" caveat belongs in a change note, so the added-claims judge fails a rewrite that puts it in the text. The runner suppresses change notes, so the fixture cannot check that the note carries the caveat; only that the text does not. |
+| `pr-review-reply` | Conversational venue: a review reply shaped like a memo (courtesy opener, headings, recap of the reported bug, diagnosis before verdict, closing summary) must lead with the fix and drop what the thread already knows. The commit, batch size, timing, backfill, and re-review request survive. |
+| `chat-reply` | Chat register: the answer to Sam's question comes first, with no recap, bold labels, bullets, or sign-off; the owner, migration number, timeout, and time survive. |
+| `commit-message` | Commit convention: a `fix(export):` subject of at most 72 characters, no emoji or commit-speak preamble, no diff narration or "preserving" note, and the why (90 seconds, the blocked backup) kept. |
+| `ui-microcopy` | UI strings: a button of three words or fewer, an error with no apology, "oops", or "try again" that keeps the 25 MB limit, and an empty state with no exclamation or journey. |
+| `docs-page` | Reference docs: diff-anchored wording ("we added", "now", "new", "was changed to") becomes present tense while the flags, path, default, date format, and exit code stay exact. |
+| `draft-from-notes` | Drafting: bullet notes become a short all-staff email in prose. Every date, name, extension, and the car park survive, with no invented thanks, apology, "reach out", or signature placeholder; the added-claims judge catches any other addition. |
+| `review-findings` | Review mode: the output names the five planted tells (stock opener, "game-changer", the unsourced 90%, the not-X-but-Y line, the unfilled sign-off) by quoting them, and does not rewrite the draft: no run of more than 15 input words, and no "revised version". |
+| `incident-update` | No invention under pressure: a status-page update loses the apology, "rest assured", and commitment boilerplate, keeps the times, region, and unaffected services, and still says the cause is not known. Naming a cause ("due to", "caused by") fails. |
+| `thank-you-note` | Warmth without gush: "heartfelt gratitude", "above and beyond", and "means the world" go, the thanks and every specific (the two weeks of on-call, the Monday deploy script) stay, and there is no exclamation mark. |
 
 ## Check format
 
 `checks.json` fields:
 
-- `brief`: the rewrite instruction to give the skill.
-- `required`: case-insensitive substrings that must appear in the rewrite (preserved facts).
-- `banned`: case-insensitive substrings that must not appear (tells and slop).
-- `banned_regex`: regular expressions that must not match (for example invented percentages).
+- `brief`: the instruction to give the skill.
+- `mode`: `rewrite` (the default), `draft`, or `review`. A review fixture asks for findings, not new text: its output quotes the tells it finds, so the structure checks below are skipped and the added-claims judge does not run, since every finding is a verdict the source does not carry. `draft` changes no check; it labels a fixture whose input is notes rather than prose.
+- `required`: case-insensitive words or phrases that must appear in the rewrite (preserved facts). Matching is whole-word, treats spaces, hyphens, and dashes between words as equivalent, and allows a trailing inflection ("sync" matches "syncs", "profile" matches "profiling"). Leading dashes are literal, so `--dry-run` needs the flag, not "dry run".
+- `required_regex`: regular expressions that must match, for a fact with more than one acceptable wording (for example "every hour" or "hourly"). Matching is case-insensitive.
+- `banned`: case-insensitive words or phrases that must not appear (tells and slop). Matching works like `required` and also catches an `-ly` form, so `seamless` catches "seamlessly" and `empower` catches "empowering". List the base word, not a stem.
+- `banned_regex`: regular expressions that must not match (for example invented percentages). Matching is case-insensitive.
 - `max_words_ratio` / `min_words_ratio`: rewrite length bounds relative to the input, to catch padding and over-cutting.
-- `voice_drift`: for keep-my-voice briefs, the largest change allowed per marker between input and rewrite. Markers are `contraction_rate`, `first_person_rate`, and `hedge_rate` (all per 100 words) and `mean_word_length`. These are the four markers rewrites move even under a voice-preserving prompt (van Nuenen, "Voice Under Revision", 2026): contractions, first person, and hedges fall, word length rises. The counts are rough (a possessive counts as a contraction), but only the change matters. A rewrite of `voice-preservation` that turned "I have" and "I am" into contractions passed every other check and fails this one.
+- `max_copied_words`: the longest run of consecutive input words the output may reproduce outside quotation marks, compared case-insensitively. Spans in double quotes or backticks are dropped first, because a review quotes what it discusses, sometimes a whole sentence it praises; a rewrite restates the source as its own text. `review-findings` sets 15, below its 29-word plain sentence that a rewrite would keep.
+- `voice_drift`: for keep-my-voice briefs, the largest change allowed per marker between input and rewrite. Markers are `contraction_rate`, `first_person_rate`, and `hedge_rate` (all per 100 words), `mean_word_length`, `mattr` (moving-average type-token ratio over a 25-word window, plain type-token ratio below that), and `sentence_length_sd` (the standard deviation of sentence lengths in words). The last two are the lexical-richness and style-variance signals that held up across models and domains in 2026 work (El Attar et al.; Sourati et al.); a rewrite that evens out every sentence or swaps repeated plain words for synonyms moves them. The first four are the markers rewrites move even under a voice-preserving prompt (van Nuenen, "Voice Under Revision", 2026: contractions and first person fall, word length rises; Jiang and Hyland, 2025: model text carries fewer hedges). The counts are rough (a possessive counts as a contraction), but only the change matters. A rewrite of `voice-preservation` that turned "I have" and "I am" into contractions passed every other check and fails this one.
 
-Every fixture also gets three well-formedness checks the checker applies itself: no doubled spaces inside a line, no space before punctuation, and no empty clause between punctuation marks. These catch a rewrite that only deleted the banned phrases and left the wreckage. Four structure checks run on every rewrite as well: the binary-contrast scaffolds ("not just X but Y", "isn't just", "it's not about X, it's Y", "not because X but because Y"), which sam-paech's slop-score weights at a quarter of its total and which no fixture's ideal output needs.
+Every fixture also gets three well-formedness checks the checker applies itself: no doubled spaces inside a line, no space before punctuation (a dotfile, decimal, or ellipsis is fine), and no empty clause between punctuation marks. These catch a rewrite that only deleted the banned phrases and left the wreckage. Six structure checks run on every rewrite and draft as well: the binary-contrast scaffolds ("not just X but Y", "isn't just", "it's not about X, it's Y", "not because X but because Y", and the split forms "This doesn't mean X. It means Y." and "This isn't about X. It's about Y."), which sam-paech's slop-score weights at a quarter of its total and which no fixture's ideal output needs.
 
 ## Adding a fixture
 

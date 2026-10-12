@@ -1,36 +1,29 @@
 diff --git a/skills/acpx-cli/SKILL.md b/skills/acpx-cli/SKILL.md
-index bccefb618285594ba349cf4fc544715b4206054d..b38afa5a6ac3765a961bd45479a81baa56c1f28b 100644
+index c54dec2..37367b1 100644
 --- a/skills/acpx-cli/SKILL.md
 +++ b/skills/acpx-cli/SKILL.md
 @@ -1,5 +1,5 @@
  ---
 -name: acpx
 +name: acpx-cli
- description: Use acpx as a headless ACP CLI for agent-to-agent communication, including prompt/exec/sessions workflows, session scoping, queueing, permissions, output formats, system-prompt overrides, and multi-agent flows authored with defineFlow/decision/decisionEdge.
+ description: Use acpx as a headless ACP CLI for agent-to-agent communication, including installed-agent inspection, prompt/exec/sessions workflows, session scoping, queueing, permissions, output formats, system-prompt overrides, and multi-agent flows authored with defineFlow/decision/decisionEdge.
  ---
  
 diff --git a/skills/orca-stration/SKILL.md b/skills/orca-stration/SKILL.md
-index 85a0ff8c4b081feb744dbf14979678c080241fec..defe8678553f4a2dafc0bc52cf02a8f4b9398e06 100644
+index 4ecd426..d896c47 100644
 --- a/skills/orca-stration/SKILL.md
 +++ b/skills/orca-stration/SKILL.md
-@@ -1,20 +1,9 @@
+@@ -1,13 +1,9 @@
  ---
  name: orchestration
  description: >-
--  Use Orca orchestration for structured multi-agent coordination: threaded
--  messages, blocking ask/reply flows, task dispatch, worker_done/escalation
--  waits, task DAGs, decision gates, coordinator loops, or decomposing work
--  across agents. Use `orca-cli` instead for full ownership handoffs, including
--  requests phrased as "hand off", "handoff", "handover", "give this to another
--  agent", or "another worktree" when the user did not explicitly ask to
--  supervise, monitor, wait for results, or coordinate a DAG. Use `orca-cli` for
--  terminal control, lightweight terminal prompts, shell commands, Orca
--  worktree management, reading or waiting on terminals, and automation of the
--  browser embedded inside Orca. Use Computer Use for external browser windows,
--  webviews, Orca app UI, or desktop UI outside Orca's embedded browser only when
--  the task requires OS/window-level control such as focus, menus, dialogs,
--  coordinates, or screenshots. Use `orca-cli` for Orca's embedded pages and a
--  page-automation tool such as Playwright or CDP for external pages.
+-  Coordinate supervised Orca workers: threaded messages, blocking ask/reply,
+-  task dispatch, worker_done/escalation waits, task DAGs, decision gates,
+-  coordinator loops, and decomposing work across agents. Use `orca-cli` for full
+-  ownership handoffs — "hand off", "handoff", "handover", "give this to another
+-  agent", "another worktree" — unless asked to supervise, monitor, or coordinate
+-  a DAG, and for terminal control, lightweight terminal prompts, shell commands,
+-  Orca worktree management, and reading or waiting on terminals.
 +  Structured multi-agent coordination in Orca: task dispatch, DAGs, decision
 +  gates, and coordinator loops. Use only when the user asks for orchestration
 +  by name; use `orca-cli` for handoffs, terminals, and worktrees.

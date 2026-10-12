@@ -48,10 +48,17 @@ Claude selection; Cursor's marketplace/ACP policy is separate.
 
 ## Roll back a release with a receipt
 
-Retain the matching host policy with each release. Restore that reviewed policy to
-`home/.chezmoidata/agent_plugins.toml`, preserving any current local edits first.
-The following commands assume `~/.agents/plugins.previous/release.json` exists and
-use the current library's six disabled packages:
+Retain both policy files with each release. Restore its reviewed
+`home/.chezmoidata/agent_plugins.toml` and
+`home/.chezmoidata/agent_upstream_plugins.toml`, preserving current local edits
+first. For a release predating official marketplace adoption, the upstream
+policy is `agent_upstream_plugins = []`. Disable/remove newly adopted official
+plugins through each native client before re-enabling restored local wrappers;
+restoring the artifact does not undo their installations. Reapply Pi's matching
+desired-state file and reload its extension as well.
+
+The following commands assume `~/.agents/plugins.previous/release.json` exists.
+Derive the disabled refresh list from the restored local policy:
 
 ```sh
 plugin_tools=.agents/skills/agent-skill-management/scripts
@@ -66,10 +73,19 @@ chezmoi --source "$PWD" apply --exclude=scripts -- \
   "$HOME/.claude/settings.json" "$HOME/.codex/config.toml" \
   "$HOME/.pi/agent/claude-plugins.json"
 
-"$plugin_tools/reconcile-agent-plugins" --apply --agent claude --agent codex \
-  --refresh-disabled design --refresh-disabled experimental \
-  --refresh-disabled ios --refresh-disabled obsidian-wiki \
-  --refresh-disabled superpowers --refresh-disabled utils-human
+refresh_args=()
+while IFS= read -r package; do
+  refresh_args+=(--refresh-disabled "$package")
+done < <(python3 - <<'PYTHON'
+import tomllib
+from pathlib import Path
+policy = tomllib.loads(Path("home/.chezmoidata/agent_plugins.toml").read_text())["agent_plugins"]
+for name, entry in policy.items():
+    if entry["codex"] and not entry["default_loaded"]:
+        print(name)
+PYTHON
+)
+"$plugin_tools/reconcile-agent-plugins" --apply --agent claude --agent codex "${refresh_args[@]}"
 
 claude plugin list --json
 codex plugin list --json

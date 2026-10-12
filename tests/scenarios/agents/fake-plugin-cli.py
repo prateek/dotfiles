@@ -2,6 +2,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import sys
 
 cli, args = os.environ["FAKE_PLUGIN_CLI"], sys.argv[1:]
@@ -30,7 +31,8 @@ def catalog_name(root):
 
 def manifest_path(key, kind):
     name, marketplace = key.split("@")
-    return Path(marketplaces[marketplace]) / "plugins" / name / kind / "plugin.json"
+    root = marketplaces[marketplace]
+    return Path(root) / "plugins" / name / kind / "plugin.json"
 omp_installed = state.setdefault("omp", {})
 if args[0] == "app-server":
     for line in sys.stdin:
@@ -59,6 +61,8 @@ elif args[:2] == ["plugin", "install"] and cli == "omp" and "--force" in args:
     if os.environ.get("FAKE_PLUGIN_FAIL") in ("install", key):
         fail("simulated install failure")
     name, marketplace = key.split("@")
+    if any(other != key and other.split("@", 1)[0] == name for other in omp_installed):
+        fail(f'Runtime package name "{name}" conflicts with an installed plugin')
     if "omp_catalog" in state and name not in state["omp_catalog"]:
         fail(f'Plugin "{name}" not found in marketplace "{marketplace}"')
     manifest = manifest_path(key, ".claude-plugin")
@@ -78,27 +82,58 @@ elif args[:2] == ["plugin", "uninstall"] and cli == "omp":
     save()
 elif args[:3] == ["plugin", "marketplace", "list"]:
     entries = [{"name": name, "root": root, "installLocation": root} for name, root in marketplaces.items()]
+    for entry in entries:
+        source = state.get(cli + "_marketplace_sources", {}).get(entry["name"])
+        if source:
+            entry.update(source="git", url=source, ref="main", marketplaceSource={"sourceType": "git", "source": source})
     print(json.dumps(entries if cli == "claude" else {"marketplaces": entries}))
 elif args[:3] == ["plugin", "marketplace", "add"]:
-    marketplaces[catalog_name(args[3])] = args[3]
+    source = args[3].split("#", 1)[0]
+    root = state.get("upstream_sources", {}).get(source, args[3])
+    name = catalog_name(root)
+    if cli == "codex" and root != args[3]:
+        cache = Path(os.environ["CODEX_HOME"]) / ".tmp/marketplaces" / name
+        if cache.exists():
+            shutil.rmtree(cache)
+        shutil.copytree(root, cache)
+        root = str(cache)
+    marketplaces[name] = root
+    if root != args[3]:
+        state.setdefault(cli + "_marketplace_sources", {})[name] = source
+    if cli == "omp":
+        registry = Path(os.environ["HOME"]) / ".omp/marketplaces.json"
+        registry.parent.mkdir(parents=True, exist_ok=True)
+        sources = state.get("omp_marketplace_sources", {})
+        registry.write_text(json.dumps({"marketplaces": [
+            {"name": name, "sourceUri": sources.get(name, root)} for name, root in marketplaces.items()
+        ]}))
     save()
 elif args[:3] == ["plugin", "marketplace", "remove"]:
     del marketplaces[args[3]]
     save()
-elif args[:3] == ["plugin", "marketplace", "update"]:
+elif args[:3] in (["plugin", "marketplace", "update"], ["plugin", "marketplace", "upgrade"]):
     if cli == "omp":
         catalog = Path(marketplaces[args[3]]) / ".claude-plugin/marketplace.json"
         state["omp_catalog"] = [entry["name"] for entry in json.loads(catalog.read_text())["plugins"]]
         save()
+    elif cli == "codex" and (source := state.get("codex_marketplace_sources", {}).get(args[3])):
+        root = Path(marketplaces[args[3]])
+        shutil.rmtree(root)
+        shutil.copytree(state["upstream_sources"][source], root)
 elif args[:2] == ["plugin", "list"]:
     entries = [{("id" if cli == "claude" else "pluginId"): key, "scope": "user", **value}
                for key, value in state[cli].items()]
     print(json.dumps(entries if cli == "claude" else {"installed": entries, "available": []}))
 elif args[:2] in (["plugin", "install"], ["plugin", "add"], ["plugin", "update"]):
-    if os.environ.get("FAKE_PLUGIN_FAIL") in ("install", args[2]):
+    if os.environ.get("FAKE_PLUGIN_FAIL") in ("install", args[2]) and os.environ.get("FAKE_PLUGIN_FAIL_CLI", cli) == cli:
+        if os.environ.get("FAKE_PLUGIN_ENABLE_BEFORE_FAILURE"):
+            state[cli][args[2]]["enabled"] = True
+            save()
         fail("simulated install failure")
     manifest = manifest_path(args[2], f".{cli}-plugin")
-    state[cli][args[2]] = {"enabled": True, "version": json.loads(manifest.read_text())["version"]}
+    prior = state[cli].get(args[2])
+    enabled = prior["enabled"] if args[1] == "update" and prior else True
+    state[cli][args[2]] = {"enabled": enabled, "version": json.loads(manifest.read_text())["version"]}
     save()
 elif args[:2] in (["plugin", "enable"], ["plugin", "disable"]):
     target = args[1] == "enable"

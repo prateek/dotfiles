@@ -2,6 +2,45 @@
 
 Use this reference for the stricter "anti-slop" pass. Apply it with judgement. The point is to cut generic scaffolding, not to sand off every trace of style.
 
+## Contents
+
+- [Phrases to cut or replace](#phrases-to-cut-or-replace)
+  - [Throat-clearing](#throat-clearing)
+  - [Stock openers](#stock-openers)
+  - [Mechanical transitions](#mechanical-transitions)
+  - [Essay-scaffold closers](#essay-scaffold-closers)
+  - [Emphasis crutches](#emphasis-crutches)
+  - [Business jargon](#business-jargon)
+  - [Abstract metaphor nouns](#abstract-metaphor-nouns)
+  - [Posture adverbs](#posture-adverbs)
+  - [Empty importance](#empty-importance)
+  - [Mood instead of mechanism](#mood-instead-of-mechanism)
+- [Structures to avoid](#structures-to-avoid)
+  - [Binary contrast](#binary-contrast)
+  - [Negative listing](#negative-listing)
+  - [Dramatic fragmentation](#dramatic-fragmentation)
+  - [Rhetorical setups](#rhetorical-setups)
+  - [False agency](#false-agency)
+  - [Narrator from a distance](#narrator-from-a-distance)
+  - [Question-answer habit](#question-answer-habit)
+  - [Repetitive paragraph endings](#repetitive-paragraph-endings)
+  - [Stating the moral](#stating-the-moral)
+  - [Shadowboxing](#shadowboxing)
+  - [Phantom alternatives](#phantom-alternatives)
+  - [Editorial scar tissue](#editorial-scar-tissue)
+  - [Countdown and tail negation](#countdown-and-tail-negation)
+  - [Rhetorical self-answer](#rhetorical-self-answer)
+  - [Over-signposting](#over-signposting)
+  - [False balance](#false-balance)
+  - [List-itis](#list-itis)
+  - [Fractal recap](#fractal-recap)
+  - [Invented compound jargon](#invented-compound-jargon)
+  - [Aphorism formula](#aphorism-formula)
+  - [Meta-commentary joiners](#meta-commentary-joiners)
+  - [Engagement bait](#engagement-bait)
+  - [Announced counts and framing clauses](#announced-counts-and-framing-clauses)
+- [Quick rewrite moves](#quick-rewrite-moves)
+
 ## Phrases to cut or replace
 
 ### Throat-clearing
@@ -44,6 +83,8 @@ These connectives appear more often in LLM prose and tend to stack across consec
 
 Keep a transition only when it marks a real turn in the argument.
 
+Logic-carrying connectives are not on this list. "however", "therefore", "but", "so", "yet", "still", "instead", and "then" are how a writer marks the logic tying one clause to the next, and cutting them does not tighten the writing. It flattens it. A word can carry information, carry the logic between clauses, or carry the narrator, and a filter that only looks for information flags the second two as slop. Thin these only when they stack as scaffolding across consecutive sentences. "However" is slop when it is reflexive throat-clearing in front of a sentence that never turned, and it is the hinge of the paragraph when the writer genuinely changes direction. Same word, opposite verdict, and the sentence around it decides rather than the word on its own.
+
 ### Essay-scaffold closers
 
 Cut the tell-them-what-you-told-them ending unless the genre genuinely needs a summary (a long report, a spec):
@@ -52,7 +93,7 @@ Cut the tell-them-what-you-told-them ending unless the genre genuinely needs a s
 - "Overall", "Ultimately"
 - "At the end of the day"
 
-End on the real point, the next step, or the strongest detail.
+End on the real point, a next step the source gives, or the strongest detail.
 
 ### Emphasis crutches
 
@@ -67,7 +108,7 @@ Cut manufactured emphasis:
 
 ### Business jargon
 
-Prefer plain alternatives when the word is filler. Some entries below (leverage, utilise, streamline, optimise) are Tier 2 in `ai-writing-patterns.md`: swap them when they cluster as jargon, not on sight, and keep them where they carry real meaning.
+Prefer plain alternatives when the word is filler. Some entries below (leverage, utilise, streamline) are Tier 2 in Overused AI vocabulary in `ai-writing-patterns.md`: swap them when they cluster as jargon, not on sight, and keep them where they carry real meaning.
 
 | Avoid | Prefer |
 | --- | --- |
@@ -79,11 +120,11 @@ Prefer plain alternatives when the word is filler. Some entries below (leverage,
 | deep dive | analysis, review |
 | moving forward | next, from now on |
 | circle back | return to |
-| on the same page | agreed, aligned |
+| on the same page | agreed |
 | leverage | use |
 | utilise | use |
 | streamline | simplify, speed up |
-| optimise | improve, tune |
+| optimise | tune, or the measured change |
 | actionable | usable, specific |
 | move the needle | make a difference |
 | low-hanging fruit | easy wins |
@@ -117,6 +158,9 @@ A technical-sounding register that reads as precision but usually has a plainer 
 | north star | the goal, the main measure |
 | flywheel | the loop that compounds |
 | load-bearing | essential, what the argument rests on |
+| framework (for a loose idea) | the named method, plan, or rules |
+| ecosystem (outside biology) | the named products, partners, or tools |
+| dynamic (as a noun) | the named behaviour: who does what to whom |
 
 ### Posture adverbs
 
@@ -124,11 +168,11 @@ Remove adverbs that add posture rather than meaning:
 
 - deeply, truly, fundamentally, inherently, inevitably
 - interestingly, importantly, crucially, notably
-- genuinely, honestly, straightforward, and "to be honest" when they vouch for the sentence rather than describe anything. Anthropic's own system prompt bans these for the same reason: a writer who is honest by default does not need to say so, and the modifier reads as the opposite.
+- genuinely, honestly, and "to be honest" when they vouch for the sentence rather than describe anything. Anthropic's own system prompt bans these for the same reason: a writer who is honest by default does not need to say so, and the modifier reads as the opposite.
 
 An adverb propping up a weak verb usually means the verb is wrong: "runs quickly" becomes "is fast" or the measured number, "significantly improves" becomes the delta. Try the stronger verb before deleting the adverb.
 
-Stance adverbs are not on this list. "really", "just", "actually", "very", "probably", "perhaps", and "I think" are how a person marks how much they mean something, and corpus work finds LLM prose has fewer of them than human prose, not more. Thin them only when they cluster as filler in formal copy. In personal, conversational, or voice-sample writing they stay, and on a keep-my-voice brief every one of them stays.
+Stance adverbs are not on this list. "really", "just", "actually", "very", "probably", "perhaps", and "I think" are how a person marks how much they mean something, and corpus work finds LLM prose has fewer of them than human prose, not more. Thin them only when they cluster as filler in formal copy. In personal, conversational, or voice-sample writing they stay, and on a keep-my-voice brief every one of them stays. Exempt academic adverbs where the discipline expects them.
 
 ### Empty importance
 
@@ -170,9 +214,11 @@ These patterns feel pre-baked:
 - "Not just X, but Y."
 - "Not only X but Y."
 - "This is not about X, it is about Y."
+- "This does not mean X. It means Y." The same contrast split across two sentences.
+- A clipped negative tail after the claim: "Deploys run on every merge, no guessing."
 - "X rather than Y" and "rather than X, Y" used as a reflex (common in Grok output).
 
-Fix by stating the point directly. This is a Tier 1 structure when it repeats: see Negative parallelism in `ai-writing-patterns.md`.
+Fix by stating the point directly. This is a Tier 1 structure when it repeats: see Negative parallelism in `ai-writing-patterns.md`. In text you write, budget one per piece, and use it only where the source or brief names the misconception it corrects. When editing, the writer's single contrast stays; see False positives in `ai-writing-patterns.md`.
 
 A specific escalating variant climbs from a modest claim to a grand abstraction, often carried by an em dash: "Support isn't just a department, it's the heartbeat of the company." Watch for the jump to a lofty noun such as "paradigm", "engine", "revolution", or "heartbeat". Fix by making the plain claim and cutting the inflation.
 
@@ -189,8 +235,11 @@ Watch for:
 - "X. That's it."
 - "X. And Y. And Z."
 - "This unlocks something. [Single abstract word]."
+- full stops between words for emphasis: "Every. Single. Day."
+- one word in capitals for emphasis: "This is NOT optional."
+- "Read that again."
 
-Fix with complete sentences unless the fragment is clearly part of the writer's voice.
+Fix with complete sentences unless the fragment is clearly part of the writer's voice. Exempt speech and fiction where fragments are voice.
 
 ### Rhetorical setups
 
@@ -200,6 +249,8 @@ Cut prompts that pretend to discover an insight:
 - "Think about it"
 - "Here's what I mean"
 - "And that's okay"
+- "What if I told you"
+- disclaimer openers that stage a hot take: "I'm no expert, but", "This might be controversial, but"
 
 Make the point. Let the reader react.
 
@@ -232,7 +283,7 @@ Fix by putting the reader, actor, or specific situation in the sentence. Keep th
 
 Repeated questions followed by immediate answers feel like a script.
 
-Fix by turning the answer into a statement, or keep the question only when it creates real tension. The tell is the scripted pairing, not the question: humans ask rhetorical questions at more than double the LLM rate, so a lone question that the paragraph then explores is a human signal, and it stays.
+Fix by turning the answer into a statement, or keep the question only when it creates real tension. The tell is the scripted pairing, not the question: humans ask rhetorical questions at more than double the LLM rate, so a lone question that the paragraph then explores is a human signal, and it stays. Exempt FAQ, help, and support pages where the question-answer form is the genre.
 
 ### Repetitive paragraph endings
 
@@ -245,7 +296,7 @@ Fix by varying paragraph length, ending on details, and letting some paragraphs 
 
 ### Stating the moral
 
-The paragraph ends by explaining what it meant, the section ends with its lesson, the story ends with its theme. A 2026 study of 61,000 stories found AI-written ones stated the moral 77% of the time against 52% for humans, and the habit carries into non-fiction as a closing "which is why X matters".
+The paragraph ends by explaining what it meant, the section ends with its lesson, the story ends with its theme. A 2026 study of about 61,600 stories found AI-written ones stated the moral 77% of the time against 52% for humans, and the habit carries into non-fiction as a closing "which is why X matters".
 
 Fix by ending on the last fact or event and trusting the reader.
 
@@ -272,7 +323,7 @@ A fixed marketing rhythm that lists negations before a payoff:
 - "No setup. No friction. Just results."
 - "Not X. Not Y. Just Z."
 
-Fix by naming the benefit plainly. Keep the rhythm only when it is clearly part of the writer's voice, the same caution as Dramatic fragmentation.
+Fix by naming the benefit plainly. Keep the rhythm only when it is clearly part of the writer's voice, the same caution as Dramatic fragmentation above.
 
 ### Rhetorical self-answer
 
@@ -300,7 +351,7 @@ Reflexive both-sidesing that never resolves, plus stacked hedges:
 - "On one hand X, on the other hand Y... ultimately it is complex and multifaceted."
 - "may potentially in some cases"
 
-Fix by taking a position where the genre allows confidence. Note the opposite duty in academic, legal, and medical prose, where a genuine hedge protects accuracy and should be kept or even added.
+Fix by stating the position the source already leans towards, where the genre allows confidence. If the source holds no position, cut the stacked hedges down to one and do not choose a side for the writer. Note the opposite duty in academic, legal, and medical prose, where a genuine hedge protects accuracy and should be kept; where one is missing, flag it rather than adding it.
 
 ### List-itis
 
@@ -320,7 +371,7 @@ The model coins official-sounding terms to manufacture authority:
 
 - "the supervision paradox", "the acceleration trap", "workload creep", "what I call the productivity paradox"
 
-Fix by describing the thing in plain words rather than naming a fake concept.
+Fix by describing the thing in plain words rather than naming a fake concept. Exempt a defined term the piece uses consistently.
 
 ### Aphorism formula
 
@@ -349,17 +400,28 @@ Social-post habits that fish for a reaction:
 
 Fix by making a claim worth reacting to and ending on it.
 
+### Announced counts and framing clauses
+
+Constructions that frame a point before making it. Each is ordinary English, so treat them as Tier 3: act on a habit across a piece, never on one sentence.
+
+- a count announced before the list: "Three pillars support this strategy", "There are two reasons this matters". Name the items.
+- a pseudo-cleft that delays the subject: "What changed is the retry logic" for "The retry logic changed".
+- a shell noun and a copula: "The problem is that the cache expires early", "The reality is that". Write "The cache expires early".
+- an abstraction as subject: "That asymmetry is the point".
+- a comparison with no second term: "significantly faster", "more reliable". Faster than what? Name the baseline if the source has it; otherwise cut the comparison or mark the gap. Do not invent one; see Fact safety in `voice-and-context.md`.
+- a universal object: "handles all edge cases", "works everywhere". Name the cases it handles, or narrow the claim.
+
 ## Quick rewrite moves
 
 - Delete the first sentence if it only introduces the topic.
 - Replace abstract nouns with the object or action.
-- Replace three-item lists with the strongest one or two items.
-- Replace "can help" with the actual outcome.
-- Replace "is designed to" with what it does.
+- When threes repeat across a piece, merge list items that overlap in meaning. Keep every item that carries a distinct fact.
+- Replace "can help" with the actual outcome if the source states it, keeping any hedge the source put on it.
+- Replace "is designed to" with what it does only when the source says it does it; otherwise the design intent is the true claim and stays.
 - Replace "users are able to" with "users can".
 - Replace "there are" openings with a stronger subject.
 - Merge duplicate sentences rather than cycling synonyms.
 - Move the actor to the front of the sentence.
 - Split any sentence you have to backtrack to parse. One idea per sentence.
 - Replace a sentence that names a feeling with the mechanism, a number, or a date.
-- End on the concrete next step, not a flourish.
+- End on the concrete next step the source already gives, or on its strongest fact. Never write a new next step to replace a flourish.

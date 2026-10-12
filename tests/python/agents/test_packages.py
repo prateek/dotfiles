@@ -479,6 +479,7 @@ class PluginReconcileTests(PackageTestCase):
             shutil.copy2(ROOT / "home/.chezmoitemplates" / name, templates / name)
         for name in ("machines.toml", "agents.toml"):
             shutil.copy2(ROOT / "home/.chezmoidata" / name, self.policy.parent / name)
+        (self.policy.parent / "agent_upstream_plugins.toml").write_text("agent_upstream_plugins = []\n")
         shutil.copytree(SCRIPTS, self.repo / ".agents/skills/agent-skill-management/scripts",
                         ignore=shutil.ignore_patterns("__pycache__"))
         scripts = self.repo / "home/.chezmoiscripts"

@@ -1,8 +1,18 @@
-# Host activation policy. Availability is defined by the published catalogs.
+# Authored plugins and compatibility adapters. Official plugins are in agent_upstream_plugins.toml.
+
+[agent_plugins.apple-hig]
+default_loaded = false
+claude = false
+codex = true
 
 [agent_plugins.core]
 default_loaded = true
 claude = true
+codex = true
+
+[agent_plugins.crit]
+default_loaded = true
+claude = false
 codex = true
 
 [agent_plugins.design]
@@ -20,19 +30,24 @@ default_loaded = false
 claude = true
 codex = true
 
-[agent_plugins.last30days]
-default_loaded = true
-claude = true
+[agent_plugins.ios-tools]
+default_loaded = false
+claude = false
 codex = true
 
 [agent_plugins.mattpocock]
 default_loaded = true
-claude = true
+claude = false
+codex = true
+
+[agent_plugins.obsidian]
+default_loaded = false
+claude = false
 codex = true
 
 [agent_plugins.obsidian-wiki]
 default_loaded = false
-claude = true
+claude = false
 codex = true
 
 [agent_plugins.pstack]
@@ -45,9 +60,9 @@ default_loaded = true
 claude = true
 codex = true
 
-[agent_plugins.superpowers]
+[agent_plugins.shortcut]
 default_loaded = false
-claude = true
+claude = false
 codex = true
 
 [agent_plugins.utils-agent]
@@ -58,4 +73,14 @@ codex = true
 [agent_plugins.utils-human]
 default_loaded = false
 claude = true
+codex = true
+
+[agent_plugins.better-writing]
+default_loaded = true
+claude = false
+codex = true
+
+[agent_plugins.ui-ux-pro-max]
+default_loaded = false
+claude = false
 codex = true

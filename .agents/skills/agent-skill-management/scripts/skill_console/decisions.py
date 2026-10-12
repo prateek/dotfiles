@@ -431,8 +431,11 @@ def _apm_dependency_of(skill_dir: Path) -> str | None:
     selection = _selection_of(skill_dir)
     if not selection.is_file():
         return None
-    return next((entry["dependency"] for entry in tomllib.loads(selection.read_text()).get("skills", [])
-                 if entry["name"] == skill_dir.name), None)
+    data = tomllib.loads(selection.read_text())
+    named = next((entry["dependency"] for entry in data.get("skills", [])
+                  if entry["name"] == skill_dir.name), None)
+    return named or next((entry["dependency"] for entry in data.get("payloads", [])
+                          if entry["target"] == "skills"), None)
 
 
 def _dependency_uses(skill_dir: Path, dependency: str, surface: str) -> int:

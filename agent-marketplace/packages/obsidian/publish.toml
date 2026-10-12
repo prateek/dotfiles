@@ -1,0 +1,9 @@
+[[payloads]]
+dependency = "kepano/obsidian-skills"
+path = ".apm/skills"
+target = "skills"
+
+[[payloads]]
+dependency = "kepano/obsidian-skills"
+path = "LICENSE"
+target = "licenses/kepano/obsidian-skills/LICENSE"

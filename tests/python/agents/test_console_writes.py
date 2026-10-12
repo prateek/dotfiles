@@ -6,6 +6,35 @@ from agent_skill_lib import marketplace_build_command
 
 class ConsoleWriteTests(ConsoleRepoCase):
 
+    def test_whole_collection_imported_edit_stays_a_patch(self):
+        from tests.python.agents.console_documents import decisions, describe, row
+        from skill_console import Origin
+        from skill_console.decisions import plan, stage
+        from skill_console.frontmatter import parse
+
+        self.add_synthetic_vendor()
+        project = self.repo / "agent-marketplace"
+        package = project / "packages/synth"
+        (package / "publish.toml").write_text(
+            '[[payloads]]\n'
+            f'dependency = "example/repo/skills/{self.synth_skill}"\n'
+            'path = "skills"\ntarget = "skills"\n'
+        )
+        self.command(marketplace_build_command(project))
+        published = project / "build/marketplace/plugins/synth/skills" / self.synth_skill
+        source = project / "apm_modules/example/repo/skills" / self.synth_skill / "skills" / self.synth_skill / "SKILL.md"
+        before = source.read_bytes()
+        identity = f"synth:{self.synth_skill}"
+        planned = plan(decisions(describe(identity, "Collection edit.")),
+                       [row(identity, "synth", self.synth_skill, Origin.REPO_VENDOR, str(published))], self.repo)
+        batch = stage(planned, self.repo, self.work / "collection-edit")
+        self.command(marketplace_build_command(batch.root / "agent-marketplace"))
+        result = batch.root / published.relative_to(self.repo) / "SKILL.md"
+        self.assertEqual(parse(result).values["description"], "Collection edit.")
+        self.assertEqual(source.read_bytes(), before)
+        self.assertFalse((batch.root / package.relative_to(self.repo) / "skills" / self.synth_skill).exists())
+        self.assertTrue(list((batch.root / package.relative_to(self.repo) / "patches").glob("*.patch")))
+
     def test_imported_edits_apply_after_arbitrary_patch_names_and_preserve_missing_final_newlines(self):
         from tests.python.agents.console_documents import decisions, describe, row
         from skill_console import Origin

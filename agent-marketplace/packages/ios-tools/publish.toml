@@ -1,0 +1,14 @@
+[[skills]]
+name = "ios-simulator-skill"
+dependency = "conorluddy/ios-simulator-skill/ios-simulator-skill/skills/ios-simulator-skill"
+path = "."
+
+[[skills]]
+name = "swift-patterns"
+dependency = "efremidze/swift-patterns-skill"
+path = ".apm/skills/swift-patterns"
+
+[[skills]]
+name = "swiftui-expert"
+dependency = "avdlee/swiftui-agent-skill"
+path = "swiftui-expert-skill"

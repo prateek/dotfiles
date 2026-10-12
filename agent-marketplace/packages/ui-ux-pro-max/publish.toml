@@ -1,0 +1,9 @@
+[[payloads]]
+dependency = "nextlevelbuilder/ui-ux-pro-max-skill"
+path = ".apm/skills"
+target = "skills"
+
+[[payloads]]
+dependency = "nextlevelbuilder/ui-ux-pro-max-skill"
+path = "LICENSE"
+target = "licenses/nextlevelbuilder/ui-ux-pro-max-skill/LICENSE"

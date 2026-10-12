@@ -50,7 +50,7 @@ claim of complete HIG conformance.
 | --- | --- | --- |
 | Audit CLI | Source scans and CI gates | `npx hig-doctor .` |
 | MCP server | Search, lookup, file audits, and explanations | `npx -y hig-mcp` |
-| Agent skills | Design and implementation guidance | `/plugin marketplace add raintree-technology/hig-doctor` |
+| Agent skills | Design guidance and source audits | [Canonical agent skills](skills/) |
 | Core package | Embed the rule engine | `npm install @raintree-technology/hig-doctor-core` |
 
 The MCP server works over stdio or streamable HTTP. Its six tools list skills, look up

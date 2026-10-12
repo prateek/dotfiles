@@ -1,0 +1,10 @@
+{
+  "name": "obsidian",
+  "version": "1.0.0",
+  "description": "Obsidian compatibility skills",
+  "license": "UNLICENSED",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Obsidian compatibility skills"
+  }
+}

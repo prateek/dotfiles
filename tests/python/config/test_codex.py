@@ -26,7 +26,7 @@ page_down = "old"
 close = "old"
 [projects."/tmp/live-project"]
 trust_level = "trusted"
-[marketplaces.last30days-skill]
+[marketplaces.unmanaged-example]
 last_updated = "live"
 last_revision = "live-revision"
 source_type = "git"
@@ -60,7 +60,7 @@ trusted_hash = "sha256:live"
         })
         self.assertEqual(data["projects"], current["projects"])
         self.assertEqual(data["hooks"], current["hooks"])
-        self.assertEqual(data["marketplaces"]["last30days-skill"], current["marketplaces"]["last30days-skill"])
+        self.assertEqual(data["marketplaces"]["unmanaged-example"], current["marketplaces"]["unmanaged-example"])
         self.assertEqual(data["marketplaces"]["prateek-local"]["source_type"], "local")
         self.assertEqual(data["marketplaces"]["prateek-local"]["source"], str(self.home / ".agents/plugins"))
         for name, enabled in package_policy("codex").items():

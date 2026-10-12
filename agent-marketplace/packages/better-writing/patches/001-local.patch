@@ -1,0 +1,22 @@
+diff --git a/skills/better-writing/SKILL.md b/skills/better-writing/SKILL.md
+index 98e156d..9f22bd8 100644
+--- a/skills/better-writing/SKILL.md
++++ b/skills/better-writing/SKILL.md
+@@ -1,6 +1,7 @@
+ ---
+ name: better-writing
+ description: Rewrite, draft, and review prose so it is clear, specific, human, and fits its context. Use when improving emails, reports, documentation, marketing copy, UI text, or posts that sound generic, AI-written, verbose, salesy, or formulaic, and when the user asks to humanise/humanize, de-AI, fix text that sounds like ChatGPT, light edit, copy edit, proofread, or keep my voice. Covers voice calibration, anti-slop audits, and preflight checks.
++disable-model-invocation: true
+ license: MIT
+ metadata:
+   version: "2.0.0" # x-release-please-version
+diff --git a/skills/better-writing/agents/openai.yaml b/skills/better-writing/agents/openai.yaml
+index 63cc16a..918bc86 100644
+--- a/skills/better-writing/agents/openai.yaml
++++ b/skills/better-writing/agents/openai.yaml
+@@ -13,4 +13,4 @@ interface:
+   default_prompt: "Use $better-writing to rewrite this draft so it sounds clear, specific, and natural."
+ 
+ policy:
+-  allow_implicit_invocation: true
++  allow_implicit_invocation: false

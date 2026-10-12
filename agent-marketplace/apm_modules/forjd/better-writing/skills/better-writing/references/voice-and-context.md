@@ -2,6 +2,26 @@
 
 Use this reference when the request is not just "fix grammar". It helps choose the right kind of good.
 
+## Contents
+
+- [Brief read](#brief-read)
+- [Dials](#dials)
+- [Genre defaults](#genre-defaults)
+  - [Emails](#emails)
+  - [Chat and short messages](#chat-and-short-messages)
+  - [Documentation and technical writing](#documentation-and-technical-writing)
+  - [Product and marketing copy](#product-and-marketing-copy)
+  - [Essays, posts, and opinion](#essays-posts-and-opinion)
+  - [Reference, legal, medical, financial, and policy text](#reference-legal-medical-financial-and-policy-text)
+- [Voice calibration](#voice-calibration)
+  - [Before editing](#before-editing)
+  - [While editing](#while-editing)
+  - [After editing](#after-editing)
+- [Sentence craft](#sentence-craft)
+- [Flatness is also a tell](#flatness-is-also-a-tell)
+- [Specificity ladder](#specificity-ladder)
+- [Fact safety](#fact-safety)
+
 ## Brief read
 
 Before rewriting, identify:
@@ -42,17 +62,17 @@ The dials have measurable markers. Register studies (Biber) separate involved pr
 | Documentation | present tense, no first person unless the house style has it, identifiers exact |
 | Essay and opinion | first person, hedges as voice, at most one emphasised sentence per paragraph |
 
-Second person is a human marker the models under-use: a 2026 story corpus found humans address the reader in 28% of texts against 7% for AI. Where the genre allows it, keep it.
+Second person is a human marker the models under-use: one 2026 story corpus reported humans address the reader more often than AI, figures unverified here. Where the genre allows it, keep it.
 
 ## Genre defaults
 
-This section sets the dials for each genre. A tell in one genre is correct in another, so before applying the general lists check the exemptions listed per genre in `genre-tells.md`, which also holds the concrete phrase banks.
+This section sets the dials for each genre. A tell in one genre is correct in another, so before applying the general lists check the per-genre Exemptions in `genre-tells.md`, which also holds the concrete phrase banks.
 
 ### Emails
 
 - Lead with the action or decision.
 - Keep goodwill, but cut servility.
-- Use concrete asks, owners, dates, and next steps.
+- Put the concrete asks, owners, dates, and next steps the source gives up front. Do not add ones it lacks.
 - Preserve relationship context. Direct does not mean blunt.
 
 ### Chat and short messages
@@ -60,20 +80,21 @@ This section sets the dials for each genre. A tell in one genre is correct in an
 - Writing solidifies and chat dissolves, so a chat message carries one thing: a question, an answer, a decision, or a link.
 - Contractions, second person, and fragments are the register. Headings, bold labels, and bullet lists are not, unless the platform is used that way.
 - If the words can be read two ways, they will be read the worse way. Say the thing, not the softened version.
+- In a thread, do not re-establish what the thread already knows; the new-information test reaches the surrounding conversation. See Conversational replies in `genre-tells.md`.
 
 ### Documentation and technical writing
 
-- Prefer present-tense descriptions of how the system works. The tells, including diff-anchored wording, are in `genre-tells.md`.
+- Prefer present-tense descriptions of how the system works. The tells, including diff-anchored wording, are under Code, pull requests, and documentation in `genre-tells.md`.
 - Keep identifiers exact.
 - Use active voice where it clarifies ownership, but do not force a human actor where the system is the true actor.
 
 ### Product and marketing copy
 
 - Replace hype with proof, usage, contrast, and concrete outcomes.
-- Avoid "elevate", "seamless", "unlock", "next-gen", and vague "transform your workflow" language.
+- Avoid booster verbs and vague "transform your workflow" language. See the canonical bank under Marketing and SEO in `genre-tells.md`.
 - Do not invent social proof, customer names, usage metrics, awards, or benchmarks.
 - Use one clear promise rather than a pile of benefits.
-- See `genre-tells.md` for the fuller bank of booster verbs and SEO scaffolding.
+- See Marketing and SEO in `genre-tells.md` for SEO scaffolding.
 
 ### Essays, posts, and opinion
 
@@ -113,11 +134,12 @@ Imitation from a sample has limits, and the procedure below is built around them
 
 - Hedges, first-person markers, and idiosyncratic word choices from the sample survive unless one fails a clarity test you can quote. An unusual word that appears twice in the sample is the writer's, not a tell.
 - Match the sample's punctuation and openers rather than replacing them with generic "good writing". Preserve recurring quirks when they feel intentional and do not hurt clarity.
+- When drafting from a sample, reuse its recurring words and openers at the rate the sample uses them, never all at once. A phrase the writer uses once per piece appears once. Do not add asides in the writer's manner, and do not cut the writer's own repetitions to hit a rate.
 - In informal genres (blog, forum, chat, personal email) edit less. The safer strategy is subtraction, because imitation fails there.
 
 ### After editing
 
-Recompute the profile on the rewrite. Any figure that moved by more than a third is a voice break: either justify it from the brief or put the original back. Contractions, first person, and hedges falling while word length rises is the documented direction of drift, and it happens even under a "keep my voice" instruction, so check those four first.
+Recompute the profile on the rewrite. Any figure that moved by more than a third is a voice break: either justify it from the brief or put the original back. Contractions, first person, and hedges falling while word length rises is the documented direction of drift, and it happens even under a "keep my voice" instruction, so check those four first. Recompute rather than judging by ear: in a 2026 preregistered study, participants who post-edited model text said it sounded like them while it measured closer to the model than to their own writing, and a 2026 Nature Human Behaviour study found LLM revision narrowed the variation in writing style between people by 21 to 50%.
 
 On outputs over about 600 words, or across several turns of editing, re-read the first paragraph and the last together. Drift toward formal, hedged, contraction-free prose is the failure to look for.
 
@@ -130,7 +152,7 @@ The checks that make a rewrite read as written rather than assembled. Each is a 
 - Cohesion. Read the grammatical subjects of a paragraph's sentences in order. They should name a small set of recurring topics. If every sentence has a fresh subject, the paragraph is not about anything.
 - Proportion. At most one emphasised sentence per paragraph: a figure of speech, an intensifier, a tricolon, or a short punchline. AI prose deploys the same level of special effects to every sentence regardless of importance. The last sentence is not automatically the emphasised one.
 - Connectors only where order fails. If the paragraphs already hold their order, "however", "therefore", and "in addition" are scaffolding. AI-assisted prose converges hardest on connective structure, so removing a connector is usually safe and adding one rarely is.
-- The talk test with a named reader. For any sentence the swap test flags, ask whether this writer would say it aloud to the audience in the brief. If not, write what they would say. For a draft from scratch, write the two-sentence spoken version first and build the draft from it.
+- The talk test with a named reader. For any sentence the swap test flags, ask whether this writer would say it aloud to the audience in the brief. If not, return to the writer's own wording from the source, or ask. For a draft from scratch, write the two-sentence spoken version first and build the draft from it.
 - Curse of knowledge. List every term, acronym, and internal name the text does not define. For each, decide whether the brief's audience knows it. Define or cut the ones they do not.
 - A stock phrase marks where the writer stopped thinking. The fix is to find the thought that was skipped, not to swap in a synonym.
 
@@ -147,7 +169,7 @@ The fix is to surface what the source and brief already contain, never to manufa
 - Keep the specific observation over the general one: not "this is concerning" but the thing that is concerning.
 - Leave a defendable rough edge rather than polishing the piece flat.
 
-Never invent an opinion, an anecdote, a feeling, or a quirk the writer did not have. Where the source holds no position, state what is true plainly rather than performing conviction. See the friction-free-tone check in `preflight.md`.
+Never invent an opinion, an anecdote, a feeling, or a quirk the writer did not have. Where the source holds no position, state what is true plainly rather than performing conviction. See Friction-free tone under Structure check in `preflight.md`.
 
 The failure this section causes when read too eagerly is a rewrite that adds material to sound alive: a next step the source never proposed, a line about what has or has not happened since, a joke in the writer's manner, a sensory detail. Each of these is a fabricated claim, and a joke in the writer's manner is a fabricated quote. The test for any sentence in the rewrite is whether the source states or directly implies it. If not, cut it, mark the gap, or ask.
 
@@ -160,7 +182,7 @@ When a sentence feels vague, climb this ladder until it becomes useful:
 1. Name the actor.
 2. Name the object or system.
 3. Name the action.
-4. Add a number, date, place, example, source, or consequence.
+4. If the source gives one, use its number, date, place, example, source, or consequence. If it gives none, mark the gap (see Fact safety below); never supply one.
 5. Apply the swap test: if the sentence could sit unchanged in another company's or project's copy, it says nothing about this one.
 6. Cut the sentence if it still only says "this is important".
 
@@ -168,7 +190,7 @@ When a sentence feels vague, climb this ladder until it becomes useful:
 
 Concrete prose can tempt an agent to fabricate. Do not do that.
 
-- If a fact is missing, ask for it, mark the gap with a clear placeholder such as `[figure needed from the Q1 report]`, or write around it honestly. Never fill the gap with an invented specific.
+- If a fact is missing, ask for it, mark the gap with a clear placeholder such as `[churn figure needed]`, or write around it honestly. Never fill the gap with an invented specific.
 - Mark uncertain claims as uncertain without using filler.
 - Do not turn "some people say" into named experts unless the source is available.
 - Do not add invented anecdotes to make a piece sound human.

@@ -1,11 +1,7 @@
 ---
 name: openclaw-history-ingest
 description: >
-  Ingest OpenClaw agent history into the Obsidian wiki. Use this skill when the user wants to mine
-  their past OpenClaw sessions for knowledge, import their ~/.openclaw folder, extract insights from
-  previous OpenClaw conversations, or says things like "process my OpenClaw history", "add my OpenClaw
-  sessions to the wiki", "ingest ~/.openclaw", or "what have I worked on in OpenClaw". Also triggers
-  when the user mentions OpenClaw session logs, MEMORY.md, daily notes, or ~/.openclaw/workspace.
+  Ingest OpenClaw session/history data into Obsidian as distilled knowledge. Use for importing or mining ~/.openclaw sessions, memory files, or logs; use wiki-agent for targeted topic-only cross-agent recall.
 ---
 
 # OpenClaw History Ingest — Session & Memory Mining
@@ -202,13 +198,20 @@ Add/update a top-level summary block:
 
 ### Update special files
 
-Update `index.md` and `log.md`:
+Update `index.md`, `log.md`, and `hot.md` with one locked call:
 
-```
-- [TIMESTAMP] OPENCLAW_HISTORY_INGEST memory=updated daily_notes=N sessions=M pages_updated=X pages_created=Y mode=append|full
+```bash
+obsidian-wiki memory sync OPENCLAW_HISTORY_INGEST \
+  memory=<memory> daily_notes=<daily_notes> sessions=<sessions> \
+  pages_updated=<pages_updated> pages_created=<pages_created> \
+  mode=<mode> \
+  --takeaways "Ingested OpenClaw MEMORY.md and 14 daily notes; surfaced automation patterns and multi-agent coordination knowledge."
 ```
 
-**`hot.md`** — Read `$OBSIDIAN_VAULT_PATH/hot.md` (create from the template in `wiki-ingest` if missing). Update **Recent Activity** with a one-line summary — e.g. "Ingested OpenClaw MEMORY.md and 14 daily notes; surfaced automation patterns and multi-agent coordination knowledge." Keep the last 3 operations. Update `updated` timestamp.
+Never hand-edit `index.md`, `log.md`, or `hot.md` — the command takes the lock that keeps a parallel writer from dropping your update. `--takeaways` is the one-line conceptual summary that used to go in Recent Activity;
+omit it to leave the previous takeaways untouched.
+
+See `.skills/llm-wiki/references/MEMORY.md` for the full procedure.
 
 ## Privacy and Compliance
 

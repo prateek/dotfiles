@@ -5,6 +5,14 @@ source = "{{ .chezmoi.homeDir }}/.agents/plugins"
 [plugins."{{ $name }}@prateek-local"]
 enabled = {{ $policy.default_loaded }}
 {{ end }}{{ end }}
+{{ range (get . "agent_upstream_plugins" | default (list)) }}{{ if .codex }}
+[marketplaces.{{ .marketplace }}]
+source_type = "git"
+source = "https://github.com/{{ .repository }}.git"
+ref = "{{ .ref }}"
+[plugins."{{ .plugin }}@{{ .marketplace }}"]
+enabled = {{ .default_loaded }}
+{{ end }}{{ end }}
 {{- $wo := includeTemplate "work-overlay.tmpl" . | fromJson }}{{ if $wo.marketplace }}
 [marketplaces.{{ $wo.marketplace | quote }}]
 source_type = "local"

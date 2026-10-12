@@ -2,6 +2,132 @@
 
 The pattern lists in `references/` are a living catalogue, not a fixed rulebook. AI writing tells drift as models change, so additions, changes, and retirements are dated here. When a tell fades from current model output, mark it as legacy in the reference rather than deleting it, so the skill still catches older drafts.
 
+## 2026-10-07, one skill folder
+
+- Layout: the skill lives only in `skills/better-writing/`, as real files. The root `SKILL.md`, `references/` and `agents/` are gone. A root `SKILL.md` made skills.sh install the whole repo, `.claude-plugin/` included, and Claude Code then loaded that copy twice: as `better-writing` and as the skills-directory plugin `better-writing:better-writing`. A skills.sh install now copies 140 KB instead of 1.1 MB, with no tests, evals or CI files.
+- Existing skills.sh installs move to the new folder on the next `npx skills update`. Manual installs copy `skills/better-writing/` instead of the repo root. The Claude Code plugin is unchanged.
+- The skill folder holds no symlinks, so a plain copy, Download ZIP or Windows checkout gives a complete skill. It ships its own copy of LICENSE; README.md and CHANGELOG.md stay at the root only.
+- `scripts/validate.py`: fails if `SKILL.md`, `references/` or `agents/` appears at the repo root, if anything under `skills/` is a symlink, or if the skill's LICENSE differs from the root one.
+
+## 2026-09-29, CI on release PRs
+
+- Release: the release workflow now starts CI on the release PR branch with `workflow_dispatch`, the one event the default `GITHUB_TOKEN` can trigger. Release PRs get checks without a stored token, so the `RELEASE_PLEASE_TOKEN` fallback is gone.
+
+## 2026-09-28, reference summary
+
+- `evals/baselines/claude-opus-5.summary.json`: a committed `--arm both --repeats 5` run with the judge, over all 22 fixtures. Always-on passes 93/110 (0.85) and progressive 77/110 (0.70); the paired difference is -0.15 [-0.24, -0.05].
+- `evals/run_skill.py`: summaries record the skill version, commit, and date. `--baseline SUMMARY` prints per-fixture changes against a saved summary with Newcombe intervals, and `--compare-summary FILE` does the same for a saved run without generating one.
+- `evals/run_skill.py`: `--out` is resolved to an absolute path. A relative `--out` made every progressive-arm call fail, because the progressive arm runs `claude` from the staging directory, where the relative system-prompt path does not exist.
+
+## 2026-09-28, larger held-out split
+
+- `evals/fixtures/`: `incident-update` (no invented cause in a status update) and `thank-you-note` (warmth without gush), both held out. The held-out set grows from 4 to 9 of 22 fixtures without moving any dev fixture, so earlier dev numbers stay comparable.
+- `scripts/validate.py`: fails if the held-out set has fewer than 8 fixtures.
+
+## 2026-09-28, drafting and review fixtures
+
+- `evals/fixtures/`: `draft-from-notes` turns bullet notes into an email, and `review-findings` asks for findings without a rewrite. Before these, every fixture was a rewrite or copy edit, although the skill also drafts and reviews. `review-findings` joins the held-out split.
+- `evals/run_evals.py`: a `mode` field (`rewrite`, `draft`, `review`) and a `max_copied_words` check, which ignores quoted spans. Review mode skips the structure checks, since a review quotes the tells it finds.
+- `evals/run_skill.py`: the output rule asks for what the brief asks for, which is findings alone for a review, and review fixtures skip the added-claims judge. The rule is one constant shared by both arms and the baseline.
+
+## 2026-09-28, venue fixtures
+
+- `evals/fixtures/`: five fixtures for the venues the skill claims but the harness never measured. `pr-review-reply` and `chat-reply` test the conversational-replies rule (lead with the verdict, do not re-establish what the thread knows), `commit-message` the commit-message rule, and `ui-microcopy` and `docs-page` the UI and reference-docs registers. `chat-reply` and `docs-page` join the held-out split.
+
+## 2026-09-25, CI and release hardening
+
+- CI validates the plugin and marketplace manifests with `claude plugin validate`, and only cancels superseded runs on pull requests.
+- Release: write permissions move to the release-please job, and a `RELEASE_PLEASE_TOKEN` secret, when set, lets release PRs trigger CI.
+- Dependabot keeps the pinned actions current.
+
+## 2026-09-25, review fixes
+
+### Added
+
+- `references/ai-writing-patterns.md`: impersonal hedges ("one might argue", "it could be said", "some would say") under performed hedging; framework, ecosystem, and dynamic (as a noun) join Tier 2 when they name no specific thing, with swaps in the abstract nouns table in `references/structures-and-phrases.md`.
+- `scripts/validate.py`: unknown `checks.json` keys and empty pattern strings fail validation.
+
+### Changed
+
+- Rules that invited additions now say "from the source": the specificity ladder, "Specific beats impressive", the "can help" and "is designed to" swaps, the next-step ending, taking a position in false balance, and the email genre default. A missing genre hedge is flagged, not added.
+- `references/preflight.md`: in light-edit mode only the Preservation and Voice checks can trigger changes.
+- `SKILL.md`: no edit on a single feature of any tier. Rule-of-three and list moves merge overlapping items instead of dropping facts.
+- Gap-marker example is now `[churn figure needed]`, which names no source the text lacks. README examples no longer add a filter feature or a Q1 report, and are described as hand-written target rewrites.
+- `evals/`: model calls run without the user's settings, CLAUDE.md, or MCP servers, and the judge gets its own system prompt. A failed rewrite deletes the previous run's output. The contrast check no longer fails "It's not ready yet, but it will ship"; it now catches "doesn't just". Markdown table rows and images pass the spacing check. "15 May" no longer counts as a hedge. Invented-metric checks catch "40 percent", "10k users", and "next quarter".
+- release-please bumps the pinned tag in the README.
+
+## 2026-09-25, 1.1.0: Claude Code plugin
+
+- `.claude-plugin/`: install as a Claude Code plugin from the `forjd` marketplace. `skills/better-writing/` links to the root files so the plugin and `npx skills add` read the same skill.
+- README: a before/after GIF.
+
+## 2026-09-22, versioned releases
+
+- release-please cuts semver releases from the conventional commit history (`.github/workflows/release.yml`, `release-please-config.json`). It writes GitHub Release notes and leaves this file hand-written.
+- `SKILL.md` carries the version in `metadata.version`, kept in step with `agents/openai.yaml`; `scripts/validate.py` fails if they differ from each other or from the release manifest.
+- README: a Releases section defines what counts as a major version, and Installation shows how to pin a tag.
+
+## 2026-09-22, added-claims judge
+
+- `evals/run_skill.py`: the judge sees the brief, lists hopes restated as facts and emphases restated as causes, takes the last JSON array in a self-correcting reply, retries once, and reports an unusable reply as a judge error instead of an invented claim. New `--judge-only DIR` re-judges saved rewrites.
+- `evals/examples/`: three known-good outputs corrected after the new judge flagged real overstatements in them (`linkedin-post`, `quarterly-report`, `release-notes`); the README's quarterly-report example follows.
+
+## 2026-09-22, detection research refresh
+
+A survey of 2026 detection and stylometry research, current-model system prompts and leaks, Wikipedia's changes since 2026-09-01, and practitioner tools. Sources are in `references/sources.md` under the 2026-09-22 refresh. Leaked prompts and second-hand reports are marked as such and used for diagnosis only.
+
+### Added
+
+- `references/ai-writing-patterns.md`: new near-conclusive artefacts (`citeturn…` tokens, invisible private-use characters, Grok's citation-card markup, Perplexity's `[web:1]`, ChatGPT's `Example+1` chip, more tracking parameters, markdown pipe tables, `<thinking>` tags written as text, "Claude responded:" labels). Over-compression as a formatting tell. Dated fingerprints for GPT-5.5 and GPT-6 Astra, Claude Opus 5, Fable 5.1, and Opus 5.5, Gemini 3.x, Grok 4.7, and Meta AI, with a caution on leaked prompts and on web-article corpora. False positives for mixed register and for any text under about 200 words. Human signals for parentheses, exclamation marks, concessives and discourse particles, and the writer's own contraction rate.
+- `references/structures-and-phrases.md`: the split and clipped forms of binary contrast; "Every. Single. Day.", a capitalised word for emphasis, "Read that again"; "What if I told you" and hot-take disclaimers; a Tier 3 section on announced counts, pseudo-clefts, shell nouns, abstract subjects, comparisons with no second term, and universal objects.
+- `references/genre-tells.md`: change notes that list what was preserved, commit-speak preambles, spec-sheet negation and personified placement verbs (Tier 3), and social-post gravity markers.
+- `SKILL.md`: a change note says what changed, not what was kept.
+- `references/preflight.md`: scope words ("only", "first", "most") must survive; voice is judged by the counts, not by feel; no change note lists what was preserved.
+- `evals/`: contrast checks for the split forms "This doesn't mean X. It means Y." and "This isn't about X. It's about Y."; `mattr` and `sentence_length_sd` voice-drift markers, gated on the two keep-my-voice fixtures; a `ranking-claims` fixture; a `--corpus` report mode and a public-domain pre-ChatGPT `human-corpus/`.
+
+### Changed
+
+- Dash entries: the Claude rate is disputed for Opus 5 (about human in articles, up on Opus 4.5 in chat), a one-line instruction removes dashes from Claude and Gemini, and Wikipedia has proposed moving the dash to its historical indicators. A dash-free text proves nothing.
+- Lenticular-bracket citations are attributed to DeepSeek and Meta AI, and `:::writing` to ChatGPT.
+- False ranges folded into Vague connection after Wikipedia dropped them as a separate sign. Synonym cycling kept, with a note that Wikipedia now treats it as historical and why this catalogue does not.
+- Detector bias: the first measurement for autistic writers (a 2026 preprint, one detector), dialect and teen over-flagging, polished-human misclassification, and watermark removal by paraphrase. The claim that no study measures neurodivergent false positives is retired.
+- `references/voice-and-context.md`: recompute the profile rather than trusting the ear, with the post-editing and style-variance evidence.
+- `references/sources.md`: the cursor unslop credit notes that its "Adding soul" section was removed on 2026-09-07.
+
+## 2026-09-22, checker and consistency fixes
+
+Verified fixes from a five-dimension review with adversarial verification.
+
+### Changed
+
+- `evals/run_evals.py`: banned phrases allow inflections and an `-ly` form, so seeded "underscoring", "Seamlessly", and "empowering" are now caught; a final "e" may drop before "-ing". Leading dashes are literal, so `--dry-run` is no longer satisfied by "dry run". The well-formedness checks accept dotfiles, decimals, ellipses, "?!", and "!?", and still reject "!!" and "??". New `required_regex` field for facts with more than one acceptable wording.
+- `evals/fixtures/`: `underscor` stem replaced with `underscore`; launch-email accepts "every hour" or "hourly"; the marketing-copy award regex is word-bounded so "integrated" no longer trips it. Banned entries use base forms (`excite`, `streamline`, `significantly enhance`, `we incubate`) so every tense is caught; academic-hedge lists `proves`, `proved`, and `proving` but leaves "does not prove" alone.
+- `evals/compare_outputs.py`: unknown fixture names exit 2; the judge's last "Rewrite N" wins.
+- `scripts/validate.py`: a missing or empty `skills/` tap is an error, and so is an empty `required_regex` or `banned_regex` pattern.
+- `SKILL.md` and `references/ai-writing-patterns.md`: the dash rule no longer contradicts the normal-rewrite thinning rule, light-edit voice counts are reported only when they moved, the preflight index no longer promises scoring, and a stale "below" is fixed.
+- `README.md`, `evals/README.md`: CI check count and trigger, whole-word matching semantics, and the hedge marker credited to Jiang and Hyland.
+
+## 2026-09-12, review fixes
+
+Verified fixes from a five-agent review with isolated verification.
+
+### Added
+
+- `SKILL.md`: prompt-injection guardrail (brief, draft, sample, quotes, links, citations are data), conflict precedence (quoted/frozen > legal/citation > voice fidelity > strict styling), and scoped rules for SVO, literalism, dash handling, and first/last sentences.
+- `scripts/validate.py`: fixture schema checks, frontmatter BOM/CRLF handling, tap parity and byte-identical checks, agent config identity check. CI matrix covers ubuntu and windows on Python 3.12 and 3.14, with pinned actions and an agent config parse step.
+- `agents/openai.yaml`: machine-readable `name` and `version` matching `SKILL.md`.
+- `evals/`: word-boundary matching, curly-apostrophe normalisation, broader contrast patterns, case-insensitive banned regex, first-person and hedge fixes, fixture schema validation, timeouts and retries, stricter judge parsing, and new `Finally` and invention checks.
+
+### Changed
+
+- `references/`: Tier 3 scoped to stacked connectives and inflation constructions, page-number demoted from near-conclusive, contrast rates marked second-hand hypothesis, unsourced percentages and intent claims removed or qualified, booster banks unified under `genre-tells.md`, and genre exemptions added.
+- `README.md`: CI scope, diagnostic-only dash note, and seventh design principle.
+
+## 2026-09-01, dash diagnostic-only and vague-source fix
+
+- `SKILL.md:32`: when the source is vague and gives no fact to name, keep it vague or mark the gap. A concrete-sounding claim the source does not contain is worse than a vague one.
+- `references/ai-writing-patterns.md`: per-model dash rates moved under Model fingerprints for diagnosis only. None of this is an instruction about the writer's dashes.
+
 ## 2026-09-01, research refresh
 
 Eight commits from a survey of the 2026 humaniser and anti-slop skills, the 2025 to 2026 corpus and detector research, writing-craft sources, and vendor prompting guidance. Sources are listed in `references/sources.md`. The trigger was reading the skill's own eval outputs: two rewrites had invented content and one had contracted a writer's "I have" on a keep-my-voice brief, and the checker saw none of it.
@@ -29,7 +155,7 @@ Eight commits from a survey of the 2026 humaniser and anti-slop skills, the 2025
 
 - Nothing retired. The 2023 vocabulary list stays legacy; it is losing power faster as humans adopt the words.
 
-## 2026-09-01
+## 2026-09-01, eval runner and checker hardening
 
 ### Added
 
@@ -68,7 +194,7 @@ Additions drawn from `cursor/plugins` (`pstack/skills/unslop`), recorded in `ref
 
 ### Added
 
-- CI (`.github/workflows/ci.yml`): every push and pull request runs `scripts/validate.py` (frontmatter, fixture, and symlink checks) plus the checker self-test against `evals/examples/`.
+- CI (`.github/workflows/ci.yml`): every push to main and every pull request runs `scripts/validate.py` (frontmatter, fixture, and symlink checks) plus the checker self-test against `evals/examples/`.
 - `agents/openai.yaml` is now linked into the `skills/better-writing/` tap, and the README documents the tap's symlink caveat for Windows checkouts and ZIP downloads.
 
 ### Changed

@@ -9,447 +9,57 @@ dependencies:
   package_type: claude_skill
   content_hash: sha256:ea1e3a0f58097c73f41654a9934b92c74c05a866e26a89d1947fb27e7eaab325
   is_dev: true
-- repo_url: aiskillstore/marketplace
-  name: writing-clearly-and-concisely
-  host: github.com
-  resolved_commit: f7130a5b2c8c16873aa67d8d2a1f957bdf079b8b
-  version: unknown
-  virtual_path: skills/cygnusfear/writing-clearly-and-concisely
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:469feab7ebcd7b7d5f637cee186d3cd68f83d0c387e248db189000dfe8f687da
-  is_dev: true
 - repo_url: ar9av/obsidian-wiki
-  name: claude-history-ingest
+  name: obsidian-wiki
   host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/claude-history-ingest
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:fe68a568fba5b480577e70732beb8083c28205d4dbc2e1a117ef3f1f12a4ca64
+  resolved_commit: df5459599a33579506b771173fdb462b0b48e553
+  version: df54595
+  package_type: apm_package
+  content_hash: sha256:291ecfbbb8c024deb9f27d179ac9ebda7e65a08c7380fca9cb77448b3967b435
   is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: code-understand
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/code-understand
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:ebcb0449b7f2a2dc8b4eedb7ace66cb1c9100339400ab9dff9e371e9c73364e2
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: codex-history-ingest
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/codex-history-ingest
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:99c08d75a1b8297eb05b92a5543c48e1b1b5da8bddee0c84038993e7eb86b0e8
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: copilot-history-ingest
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/copilot-history-ingest
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:c231ed68c347eb917f96b7c28124335a0371849ae2a84483c6b4384f3dc19100
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: cross-linker
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/cross-linker
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:4eedc1c770f9163be17844a006556ef3562d7c999553ffae8c0083e3ed3f4fc7
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: daily-update
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/daily-update
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:f73db6ed7d0d2ba87a83a07053fb6353442cb9d1e82ea489f8b6e0f60a332834
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: graph-colorize
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/graph-colorize
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:398c6ebe6bb5f1c0811eb878e909fa0ea0480a3a255270aa0ac6a21dac774f98
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: hermes-history-ingest
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/hermes-history-ingest
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:ff43dc6f40326498de18ba96920dcca8a5c793185ceb4f72b4441e8283423505
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: impl-validator
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/impl-validator
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:383de88490404b4eb7e28ce184702c46bab4ea8bf54928eb296df6cbdb286ce2
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: llm-wiki
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/llm-wiki
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:d383c1b40ffb3400241af81b75dbaf9ea7c0219a948dfa1a62d8b45fab280d69
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: memory-bridge
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/memory-bridge
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:c3c582dc61ed7e239e860b2b1fe5b0ee66aa49b601454128e7a8c467654aabcb
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: obsidian-layout-adjustment
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/obsidian-layout-adjustment
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:5f92e16bc2e3c90197957f1a88bccd54b77c2c2f7a23d0d45cb1e44131e20a27
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: openclaw-history-ingest
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/openclaw-history-ingest
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:63ffda0c89520d7588d9bb649420500a3eaea47c56e62ff38a3cc3bf784c0a6c
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: pi-history-ingest
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/pi-history-ingest
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:89a2c1ff99b7676bd96c704faa843ed5bda3d8214d01863e757f4a9e616d193d
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: session-brain
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/session-brain
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:91dc0b5d6020035fb48448e1b1a3abc43de363e953306302637ec33bae6482a2
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: session-search
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/session-search
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:9811c5e5be4d1edbcbd3da15aab9c59c33cae2cd79c01da0b9f337e790777b04
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: skill-creator
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/skill-creator
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:ad480cdd4a4b5886cb7d35c2055d4b9005babe15d80ace54d90f4259f3bf3257
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: tag-taxonomy
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/tag-taxonomy
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:8c8e0a8de83dd7004fa014b5a47d10a1541b428b28b6e81cf4595e97b7eca21b
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: vault-skill-factory
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/vault-skill-factory
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:56bea5ac6476b3f963ea9b02d5937694d716d60d93b36f3ed70e6f7fbfb220cb
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: wiki-agent
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/wiki-agent
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:cf55a9000ab33d91fd22e50ba1432e71461f2839b889afc196a16c29fb0bf967
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: wiki-capture
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/wiki-capture
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:1fe72341c22515101dd24583986adb3a9305b2ae2a33b08d0f3011edda83a98e
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: wiki-context-pack
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/wiki-context-pack
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:49355e120b6e76c4f1561b033d9ec7b9dff50f038d12cfd45029fee98130f780
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: wiki-dashboard
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/wiki-dashboard
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:a0f16aed2d9c86f67e65355c6193e75e5ef96ed879afe6230cf97785db3a8022
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: wiki-dedup
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/wiki-dedup
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:944bd08fb847e8d3d67751347689aed743bc1e11cdef941d2280ac8763a3239a
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: wiki-digest
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/wiki-digest
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:961d575d3ba9f1c066512cd66b6cd559cbc76540482b21b62bdad2d17c2e26dc
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: wiki-export
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/wiki-export
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:3d3d13d4463b828cdcc91275121b50522de010446d571f52a98a5dbba76d591e
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: wiki-history-ingest
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/wiki-history-ingest
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:f5fa71e200547f7af2e35e57523330d2eab274a17c727c02de8f73261a390fbe
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: wiki-import
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/wiki-import
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:032e1276ec7458e14a02ac99c88ccd6006ad0283c25d823183fb3e3394fc3af1
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: wiki-ingest
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/wiki-ingest
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:e925b126b3ffc676a9d61257aac9d270ede6dc9d9e95ae0a301fb37682580cf9
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: wiki-lint
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/wiki-lint
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:2309dee8cc4a905009f4ea8827793376340fde92d76046879507f8c094b2cfcb
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: wiki-narrate
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/wiki-narrate
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:a503108745872934ab7497602f33083aac12ef96c5923aad355562ff3facbd6a
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: wiki-query
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/wiki-query
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:851684f50165a72758abe5cbf7d198422ae28e92b11bdbd2cba8f794dc7237a2
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: wiki-rebuild
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/wiki-rebuild
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:4ff2971f31e5a5587dffa8a97435d52e3ca98f9eeecd0db61eb410ac15ea8639
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: wiki-research
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/wiki-research
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:f7d0f44df8641201b4448231eea403592b13d99a6af31b025f4117a2506fc14c
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: wiki-setup
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/wiki-setup
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:21ee3564f48725b6ad4bfea145696e5697e97f78f3862e057a558acf4859bb7a
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: wiki-stage-commit
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/wiki-stage-commit
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:3e759bb763162c118e1ffb01237cff65938b67f495d3645d681760f9553009db
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: wiki-status
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/wiki-status
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:8e7e056a5155ae195f4bbf2e77b57cbd75cc376d7b321271cab34ce14a35cee6
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: wiki-switch
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/wiki-switch
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:060cc649f23e8a07b4897e40664bad80c749d0ece45d6c451e4da32934a29010
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: wiki-synthesize
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/wiki-synthesize
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:2a307384eaeec6e3e687f7f461f8437b326afe29ab556b91f7d684b6d8883640
-  is_dev: true
-- repo_url: ar9av/obsidian-wiki
-  name: wiki-update
-  host: github.com
-  resolved_commit: 3f29e56d0ba9a175d7c87b3bb2e99b9cddd2b11a
-  version: unknown
-  virtual_path: .skills/wiki-update
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:b631730c6f947016a1d0757cb2195e59c7ed69ac352acbfb26202279cb26487c
-  is_dev: true
+  declared_license: MIT
 - repo_url: avdlee/swiftui-agent-skill
   materialization_repo_url: AvdLee/SwiftUI-Agent-Skill
   name: swiftui-expert
   host: github.com
-  resolved_commit: 4c6a97d15aa5e023538c3cb06b5192f241dd451d
-  version: 4.2.0
+  resolved_commit: 204dba7c67256a8b707ee3fbc5759a824191974f
+  version: 5.2.1
   package_type: agent_plugin
-  content_hash: sha256:71ea858cc76105eadf1720a712390e0eca7ac2da7ac6b398b57835f654311193
+  content_hash: sha256:c3dc62ea263426fe05563d0159f0aa8bc8a19ac7b53e344ab31ca94491eb8aa5
   is_dev: true
   declared_license: MIT
 - repo_url: conorluddy/ios-simulator-skill
   name: ios-simulator-skill
   host: github.com
-  resolved_commit: e0ee87a884b438632238ef8ab42139797f8638a8
+  resolved_commit: c535422ab4ee550c8994c179583f805cb0cb01b1
   version: unknown
   virtual_path: ios-simulator-skill/skills/ios-simulator-skill
   is_virtual: true
   package_type: claude_skill
-  content_hash: sha256:4d6c14e18411bbe29620b158c178dbdfd1622ab513857abc8d7578b6aed88f9f
+  content_hash: sha256:519b1ad3b564a390dffe8ad60ccdb68419a02e3b0b74759c9e76279ba3c21ffa
   is_dev: true
 - repo_url: cursor/plugins
   name: pstack
   host: github.com
-  resolved_commit: ecc249f1e306fc64ddf83c7bed16cacf7c2239db
-  version: 0.15.5
+  resolved_commit: ea32d9562a1c9f077d7cdd3be53d07383eb18866
+  version: 0.15.18
   virtual_path: pstack
   is_virtual: true
-  package_type: skill_bundle
-  content_hash: sha256:1a0724c21afeeae377fc33f7d2ceb13b7d65e0fded25742c44100661ea000bed
+  package_type: marketplace_plugin
+  content_hash: sha256:ce19d602bd246620be893ffeb91971e0cf3ac2b6ae2bf8e1ced22c6ebe353548
   is_dev: true
   declared_license: MIT
+- repo_url: cygnusfear/claude-stuff
+  materialization_repo_url: Cygnusfear/claude-stuff
+  name: writing-clearly-and-concisely
+  host: github.com
+  resolved_commit: 32efa59eb5d65383dfcb859f35e7638d7c289e4c
+  version: unknown
+  virtual_path: skills/writing-clearly-and-concisely
+  is_virtual: true
+  package_type: claude_skill
+  content_hash: sha256:d2ba718b757f9550425af170329c86066ed74f27c5c4609c13180ff90afb79b6
+  is_dev: true
 - repo_url: danshapiro/trycycle
   name: trycycle
   host: github.com
@@ -470,11 +80,12 @@ dependencies:
 - repo_url: forjd/better-writing
   name: better-writing
   host: github.com
-  resolved_commit: dd9d0a50581a7652fb38f03b7b751741ed917993
-  version: unknown
-  package_type: claude_skill
-  content_hash: sha256:3afb9a0560ec72bd7b89664ae3b812fd5d54863bf6ae870528b65935ae5e3794
+  resolved_commit: 8e45d0b241fc042d39444f499bbce4cfdb7a6c86
+  version: 2.0.0
+  package_type: marketplace_plugin
+  content_hash: sha256:fb68ee0a31f94609b05b649417bef250896075ba444a959a6ebfca10cc7592a8
   is_dev: true
+  declared_license: MIT
 - repo_url: hefgi/skills
   name: shortcut
   host: github.com
@@ -488,48 +99,28 @@ dependencies:
 - repo_url: kepano/obsidian-skills
   name: obsidian
   host: github.com
-  resolved_commit: a1dc48e68138490d522c04cbf5822214c6eb1202
+  resolved_commit: 3ccff5338ea700537839b21900aa5358a0402c98
   version: 1.0.1
-  package_type: skill_bundle
-  content_hash: sha256:7864d9126eb160d9a653ba2e81d2d10f26962ddd2bb632d6e26c93311b63235f
+  package_type: marketplace_plugin
+  content_hash: sha256:5e30e734e5ac4fb3e257283bde51ea0fdd9759126364fe17fa8384109846db77
   is_dev: true
   declared_license: MIT
 - repo_url: mattpocock/skills
   name: mattpocock-skills
   host: github.com
-  resolved_commit: 6654f6b60cd9d5be8b54c6fafe44346dabeb3b76
-  version: 1.2.3
-  package_type: apm_package
-  content_hash: sha256:22de78eb0eca8ad3f1830f955999ff588650e1f6bbb1f436236eff4fb0296eda
+  resolved_commit: 49dd158d1076134a641b33efb035946536778336
+  version: 1.3.1
+  package_type: marketplace_plugin
+  content_hash: sha256:049d4dfaaf2d783feedaf677626385d0dee10a47734f7d86cd006b7258c79aa3
   is_dev: true
   declared_license: MIT
-- repo_url: mvanhorn/last30days-skill
-  name: last30days
-  host: github.com
-  resolved_commit: 1f378527b229ffcb00102b6440e49fa06c582443
-  resolved_ref: v3.23.0
-  version: unknown
-  virtual_path: skills/last30days
-  is_virtual: true
-  package_type: claude_skill
-  content_hash: sha256:a7ed84aebfd849fdf056a5c7d437b1f9fb50199b61ad58f7a264bf559aad4bb8
-  is_dev: true
 - repo_url: nextlevelbuilder/ui-ux-pro-max-skill
   name: ui-ux-pro-max
   host: github.com
-  resolved_commit: 58c220ff9d02be80523b06c03471925c52e8ab5d
+  resolved_commit: 67803eac81607188194aea9842a723b89326d90d
   version: 2.13.0
-  package_type: apm_package
-  content_hash: sha256:a07b91470b5a5123f07221a5d00538bca64fb9bfb75f4d09fcdc8a16382c94cd
-  is_dev: true
-  declared_license: MIT
-- repo_url: obra/superpowers
-  name: superpowers
-  host: github.com
-  resolved_commit: b36e0829c6d0140e93cfef2ca599b1b07d4a7797
-  version: 6.3.0
-  package_type: skill_bundle
-  content_hash: sha256:680dd955e1b2ae42486a354278e0780eed4b268e26e2450e6cd61414e206ae3d
+  package_type: marketplace_plugin
+  content_hash: sha256:08f0fe3cfe1499779b1a18ced3c777b55408bed6098827543bffad0589b204cd
   is_dev: true
   declared_license: MIT
 - repo_url: openai/skills
@@ -545,65 +136,65 @@ dependencies:
 - repo_url: openclaw/acpx
   name: acpx
   host: github.com
-  resolved_commit: 95a9466b9b80603198cd448c62c80c08bb0c5558
+  resolved_commit: 95adbc569fb6aa2e8c021c4f352ffee05cc835ad
   version: unknown
   virtual_path: skills/acpx
   is_virtual: true
   package_type: claude_skill
-  content_hash: sha256:b264a4358e5fa79a994439cc10feeffdd70e8c833999117fc88186acaaf6a889
+  content_hash: sha256:bc44a76084fb82a8adc33867b785de527076cd40c44be95abf7f862c60b208c1
   is_dev: true
 - repo_url: raintree-technology/apple-hig-skills
-  name: 74c74f57bb5e57bffe13b27be1fff37c97e7d63bab9cde9131d2c5204d0619dc
+  name: apple-hig-skills
   host: github.com
-  resolved_commit: 307eafc70736f27664bcdca3d55ed9ed6c1210ab
-  version: 307eafc
-  package_type: skill_bundle
-  content_hash: sha256:1ef1a859f17cecac1cf7010f6cfe2a772bbf7f65e6339cf3db8ee3488a2b3402
+  resolved_commit: 5e2055877b83ec23930f4db7b062d0d3f725fa5a
+  version: 5e20558
+  package_type: marketplace_plugin
+  content_hash: sha256:eab9cebad1973fee8813d5e04d9716be447421f6a08753a08002ad5fbec73ef8
   is_dev: true
 - repo_url: stablyai/agent-slack
   name: agent-slack
   host: github.com
-  resolved_commit: dba40572624ef0b81a325fe8b876c7649aa7895f
+  resolved_commit: adda22908cecb3fbb53be7b44b8c1e0876d6688b
   version: unknown
   virtual_path: skills/agent-slack
   is_virtual: true
   package_type: claude_skill
-  content_hash: sha256:200245b9c3a868a39999a85de7c0b05a4dd7c33498552b745b3b01b4a8da2e47
+  content_hash: sha256:9b86d87c149fcab254e74e9bc9a9688b917dc348e71b954a5a5daaaa5548f9f0
   is_dev: true
 - repo_url: stablyai/orca
   name: orca-cli
   host: github.com
-  resolved_commit: 9cda5a9dc01fedeb5aaa90ea68f572f1a9db3606
+  resolved_commit: 8d113f5ceb1c71995e5fc6f509e0550006d4747a
   version: unknown
   virtual_path: skills/orca-cli
   is_virtual: true
   package_type: claude_skill
-  content_hash: sha256:83ece910d035d0684195095bb9df5911a028002b2efba1ebbeb4ae66de5e0903
+  content_hash: sha256:ccd717aed7b9866a059b0b31d9a009641a28f6db3201749943fbbb797af4a317
   is_dev: true
 - repo_url: stablyai/orca
   name: orchestration
   host: github.com
-  resolved_commit: 9cda5a9dc01fedeb5aaa90ea68f572f1a9db3606
+  resolved_commit: 8d113f5ceb1c71995e5fc6f509e0550006d4747a
   version: unknown
   virtual_path: skills/orchestration
   is_virtual: true
   package_type: claude_skill
-  content_hash: sha256:e611e8065f08f308823d063bb3cd8d4e283242202456b8a3e80058b2f59f0c3a
+  content_hash: sha256:0dc04a0a354974eed5c15115fc6cb7461d7423e95a5b19ee995796cf1383e7ed
   is_dev: true
 - repo_url: tomasz-tomczyk/crit
   name: crit
   host: github.com
-  resolved_commit: 31d6a6a9195bdda735c1e8f68a75359839f8d3c8
-  version: 1.8.7
+  resolved_commit: e48627e9602fcc704b6483890754d8a48cbdb2ef
+  version: 1.8.14
   virtual_path: integrations/claude-code
   is_virtual: true
-  package_type: skill_bundle
-  content_hash: sha256:3543075b4a3ba247e404f43ae36473b9f57846436d378d98534777558ac9beb9
+  package_type: marketplace_plugin
+  content_hash: sha256:54ee635870f221b322251240563683aae10946507d8f381c99212150422dda17
   is_dev: true
 - repo_url: wiseiodev/skills
   name: code-principles
   host: github.com
-  resolved_commit: ae79570be5fce303716025fa0a70d18459ae2f97
+  resolved_commit: 25fac09888151cfa0dc59cdc00e985cf87b1b0ef
   version: unknown
   virtual_path: code-principles
   is_virtual: true

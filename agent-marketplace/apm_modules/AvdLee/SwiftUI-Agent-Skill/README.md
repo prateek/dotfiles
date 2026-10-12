@@ -1,10 +1,10 @@
 # SwiftUI Expert Skill
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/AvdLee/SwiftUI-Agent-Skill/blob/main/LICENSE)
-[![Weekly Installs](https://img.shields.io/badge/weekly%20installs-16.6k-brightgreen)](https://skills.sh/avdlee/swiftui-agent-skill/swiftui-expert-skill)
+[![Weekly Installs](https://img.shields.io/badge/weekly%20installs-31.4k-brightgreen)](https://skills.sh/avdlee/swiftui-agent-skill/swiftui-expert-skill)
 [![GitHub Release](https://img.shields.io/github/v/release/AvdLee/SwiftUI-Agent-Skill)](https://github.com/AvdLee/SwiftUI-Agent-Skill/releases)
 [![GitHub Stars](https://img.shields.io/github/stars/AvdLee/SwiftUI-Agent-Skill?style=flat)](https://github.com/AvdLee/SwiftUI-Agent-Skill/stargazers)
 
-Expert guidance for any AI coding tool that supports the [Agent Skills open format](https://agentskills.io/home) — SwiftUI state management, view composition, performance, and iOS 26+ Liquid Glass adoption.
+Expert guidance for any AI coding tool that supports the [Agent Skills open format](https://agentskills.io/home) — SwiftUI state management, view composition, performance, SDK 27 changes, and Liquid Glass adoption.
 
 This repository distills practical SwiftUI best practices into actionable, concise references for agents and code review workflows.
 
@@ -28,10 +28,12 @@ This repository is packaged as a portable [Agent Plugin](https://agent-plugins.o
 Install this skill with a single command:
 
 ```bash
-npx skills add https://github.com/avdlee/swiftui-agent-skill --skill swiftui-expert-skill
+npx skills@latest add https://github.com/avdlee/swiftui-agent-skill --skill swiftui-expert-skill
 ```
 
 For more information, [visit the skills.sh platform page](https://skills.sh/avdlee/swiftui-agent-skill/swiftui-expert-skill).
+
+Installed before the Agent Plugins migration? Run `npx skills@latest update` using skills CLI 1.5.24 or newer. It migrates the saved skill path without treating the skill as deleted.
 
 Then use the skill in your AI agent, for example:
 > Use the swiftui expert skill and review the current SwiftUI code for state-management and performance improvements
@@ -96,10 +98,12 @@ Your agent should reference the workflow/checklists in `skills/swiftui-expert-sk
 
 ## What's Inside
 
-This skill covers the full surface of SwiftUI development -- from state management and view composition to Swift Charts, macOS multi-window scenes, animations, and iOS 26+ Liquid Glass -- without bloating your agent's task context. Reference files load on demand, so your agent gets deep guidance only for the topic at hand.
+This skill covers the full surface of SwiftUI development -- from state management and view composition to Swift Charts, macOS multi-window scenes, animations, SDK 27 changes, and Liquid Glass -- without bloating your agent's task context. Reference files load on demand, so your agent gets deep guidance only for the topic at hand.
 
 - **State management** -- property wrapper selection, `@Observable`, data flow patterns
+- **Environment** -- `@Entry`, stable defaults, and invalidation-aware propagation
 - **View composition** -- extraction patterns, container views, identity stability
+- **Modifiers** -- conditional identity, no-effect values, and `AnyShapeStyle`
 - **Performance** -- hot-path optimization, lazy loading, `@Observable` granularity
 - **Lists & ForEach** -- stable identity, Table, inline filtering pitfalls
 - **Navigation & sheets** -- NavigationStack, NavigationSplitView, Inspector, enum-based sheets
@@ -107,9 +111,10 @@ This skill covers the full surface of SwiftUI development -- from state manageme
 - **Animations** -- implicit/explicit, transitions, phase/keyframe, `@Animatable` macro
 - **macOS** -- scenes, window styling, Table, HSplitView, AppKit interop
 - **Liquid Glass** -- iOS 26+ glass effects, containers, fallback patterns
+- **SDK 27** -- `@State` and `@ContentBuilder` migrations, reordering, AsyncImage caching, swipe actions, dialogs, and toolbars
 - **Accessibility** -- VoiceOver, Dynamic Type, grouping, traits
 - **Image optimization** -- AsyncImage, downsampling, caching
-- **Latest APIs** -- deprecated-to-modern migration guide (iOS 15+ through iOS 26+)
+- **Latest APIs** -- deprecated-to-modern migration guide (iOS 15+ through iOS 27+)
 - **Instruments trace recording & analysis** -- bundled `xctrace` toolchain for diagnosing hangs, hitches, and expensive SwiftUI view updates (see below)
 
 Non-opinionated: focuses on correctness and performance, not architecture or code style.
@@ -145,6 +150,8 @@ Record a new trace: attach to MyApp on my iPhone — I'll tell you when I'm done
 
 Full guidance: [`skills/swiftui-expert-skill/references/trace-analysis.md`](skills/swiftui-expert-skill/references/trace-analysis.md) and [`skills/swiftui-expert-skill/references/trace-recording.md`](skills/swiftui-expert-skill/references/trace-recording.md).
 
+Looking for a visual way to explore Instruments traces? [RocketTrace](https://rockettrace.app/?utm_source=github&utm_medium=referral&utm_campaign=swiftui-agent-skill&utm_content=readme-trace-section) is a companion app created by this repository's author for inspecting and understanding trace data.
+
 ## Skill Structure
 <!-- BEGIN REFERENCE STRUCTURE -->
 ```text
@@ -157,8 +164,11 @@ skills/swiftui-expert-skill/
     animation-transitions.md - View transitions, matchedGeometryEffect, and state changes
     charts-accessibility.md - Charts accessibility, fallback strategies, and WWDC sessions
     charts.md - Swift Charts marks, axes, selection, styling, composition, and Chart3D
+    document-apps.md - Document protocol, reading, writing, autosave, and FileDocument migration
+    environment-patterns.md - @Entry, stable defaults, custom actions, and environment invalidation
     focus-patterns.md
     image-optimization.md - AsyncImage usage, downsampling, caching
+    iphone-duo.md - Choosing a large-display technique by screen structure, Duo displays, fold regions, displacement, hinge effects, and scene accessories
     latest-apis.md
     layout-best-practices.md - Layout patterns and GeometryReader alternatives
     liquid-glass.md - iOS 26+ glass effects and fallback patterns
@@ -167,16 +177,20 @@ skills/swiftui-expert-skill/
     macos-scenes.md - Scene lifecycle, multi-window setups, and menu bar scenes on macOS
     macos-views.md - macOS-specific SwiftUI views and platform differences from iOS
     macos-window-styling.md - Window chrome, toolbar, and title bar styling in SwiftUI
+    modifier-patterns.md - Conditional modifiers, structural identity, and AnyShapeStyle
     performance-patterns.md - Hot-path optimizations and update control
     previews.md
     scroll-patterns.md - ScrollViewReader and programmatic scrolling
     sheet-navigation-patterns.md - Sheets and type-safe navigation
     soft-deprecation.md
     state-management.md - Property wrapper selection and data flow
+    styled-text-editing.md - AttributedString editing, selection, formatting, and Markdown
     text-patterns.md
+    toolbar-patterns.md - Customization, overflow, visibility, transitions, and minimization
     trace-analysis.md
     trace-recording.md
     view-structure.md - View extraction and composition patterns
+    webkit-integration.md - WebView, WebPage, navigation, JavaScript, and exports
 ```
 <!-- END REFERENCE STRUCTURE -->
 
@@ -217,7 +231,7 @@ Several SwiftUI guidelines in this skill were inspired by or derived from the fo
 Created by [Antoine van der Lee](https://www.avanderlee.com) and [Omar Elsayed](https://www.swiftdifferently.com). With years of experience in Swift & SwiftUI, this skill distills practical knowledge into actionable guidance for AI assistants. Antoine [published tens of articles on SwiftUI](https://www.avanderlee.com/category/swiftui/) on his blog called SwiftLee.
 
 ## Resources
-- [Story behind this skill](https://www.swiftdifferently.com/blog/swiftui/How%20I%20stopped-resisting-ai-and-atarted-teaching-it)
+- [Story behind this skill](https://www.swiftdifferently.com/blog/swiftui/How%20I%20stopped-resisting-ai-and-started-teaching-it)
 
 ## License
 

@@ -1,11 +1,7 @@
 ---
 name: wiki-setup
 description: >
-  Initialize a new Obsidian wiki vault with the correct structure, special files, and configuration.
-  Use this skill when the user wants to set up a new wiki from scratch, initialize the vault structure,
-  create the .env file, or says things like "set up my wiki", "initialize obsidian", "create a new vault",
-  "get started with the wiki". Also use when the user needs to reconfigure their existing vault or
-  fix a broken setup.
+  Initialize or repair an Obsidian wiki vault's required structure and configuration. Use for new-vault setup, .env/config creation, reconfiguration, or broken setup recovery.
 ---
 
 # Obsidian Setup — Vault Initialization
@@ -328,7 +324,8 @@ inconclusive sessions are skipped automatically.
    end of any session where you write files or run ≥ 4 shell commands."
 
 **To uninstall later:** remove the hook entry from `~/.claude/settings.json` or set
-`HIVEMIND_CAPTURE=false` in your shell to skip capture for a single session.
+`WIKI_STOP_CAPTURE=false` in your shell to skip capture for a single session
+(`HIVEMIND_CAPTURE=false` is still honoured).
 
 ## Optional: Configure GitHub Sync
 

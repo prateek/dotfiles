@@ -37,6 +37,11 @@ an empty stub for Codex runtime skills); do not commit source copies under
 `home/dot_agents/skills`, `home/dot_claude/skills`, or
 `home/dot_agents/plugins`.
 
+Prefer upstream maintainers' repositories and native marketplaces over curated
+mirrors or third-party aggregators for skills and plugins. Use the upstream
+plugin when its catalog and activation controls support the client; keep local
+adapters for compatibility needs and intentional customizations.
+
 ## Docs And Decisions
 
 - Non-trivial repo initiatives get a plan at `docs/plans/<slug>-plan.md`.
@@ -114,8 +119,8 @@ zshenv -> zprofile -> zshrc -> init.sh -> zinit-init.zsh -> lib/*.zsh -> extra/*
 
 When adding, migrating, replacing, or removing tests, read [tests/README.md](tests/README.md)
 for framework/seam selection, fixture isolation, execution lanes, and focused checks.
-Use `testing-philosophy` for test design and omission decisions, and `mattpocock:tdd`
-for test-first work.
+Use `testing-philosophy` for test design and omission decisions, and Matt Pocock's
+`tdd` skill for test-first work.
 
 - A useful test protects a named caller-visible guarantee, catches a plausible regression, and survives a behavior-preserving rewrite. Agree its public seam before adding coverage; reuse existing agreement.
 - Exercise real repo behavior with independent expected examples. Preserve transformation, ownership, security, and meaningful failure assertions when consolidating tests.

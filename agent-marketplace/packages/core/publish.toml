@@ -1,10 +1,4 @@
 [[skills]]
-name = "better-writing"
-dependency = "forjd/better-writing"
-path = "."
-exclude = ["skills"]
-
-[[skills]]
 name = "code-principles"
 dependency = "wiseiodev/skills/code-principles"
 path = "."
@@ -16,5 +10,5 @@ path = "."
 
 [[skills]]
 name = "writing-clearly-and-concisely"
-dependency = "aiskillstore/marketplace/skills/cygnusfear/writing-clearly-and-concisely"
+dependency = "cygnusfear/claude-stuff/skills/writing-clearly-and-concisely"
 path = "."

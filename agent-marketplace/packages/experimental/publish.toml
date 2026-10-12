@@ -4,11 +4,6 @@ dependency = "openai/skills/skills/.curated/cli-creator"
 path = "."
 
 [[skills]]
-name = "shortcut"
-dependency = "hefgi/skills/shortcut"
-path = "."
-
-[[skills]]
 name = "trycycle"
 dependency = "danshapiro/trycycle"
 path = "."

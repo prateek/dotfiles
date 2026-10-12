@@ -8,7 +8,13 @@ description: Manage agent-marketplace packages, reviewed APM caches and patches,
 Use `agent-marketplace/` for the portable source/build project. Its root owns the
 single `apm.yml`, lock, and committed `apm_modules/`; `packages/` defines separate
 plugins with their own selections, authored content, and native metadata. Host activation
-policy lives in `home/.chezmoidata/agent_plugins.toml`. Native clients own their
+policy lives in `home/.chezmoidata/agent_plugins.toml`. Official marketplace sources and client defaults live in
+`home/.chezmoidata/agent_upstream_plugins.toml`; prefer those direct native
+installs wherever the client supports the upstream catalog and enabled defaults.
+Choose the upstream maintainer's repository or marketplace ahead of curated
+mirrors and third-party aggregators. Use a whole
+collection payload for an adapter when the complete skill set is wanted, and
+retain individual selections only for intentional curation. Native clients own their
 install records and caches; `~/.agents/plugins` is the shared materialized
 artifact.
 
@@ -42,7 +48,11 @@ artifact.
    [the current reference](../../../docs/references/agent-marketplace.md) for
    paths and commands. Keep the previous artifact until native inventories and
    enabled states are verified. Source changes alone do not reload an existing
-   agent session.
+   agent session. `reconcile-upstream-agent-plugins --apply --update --agent ...`
+   refreshes official installations; normal apply only installs missing ones.
+   Install official replacements before reconciling away local wrappers. OMP
+   requires removing a matching local install first; the reconciler restores
+   that install and enabled state if replacement fails.
 
 For input recovery, restore missing committed files from Git or a complete source
 export. Acquisition refuses unaccepted cache/lock changes; it is not the repair
