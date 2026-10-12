@@ -1,0 +1,117 @@
+#!/usr/bin/env zsh
+
+set -euo pipefail
+
+usage() {
+  print -r -- 'Usage:'
+  print -r -- '  refresh [--if-stale] [--source <name>]'
+  print -r -- ''
+  print -r -- 'Refresh cached module rows for each enabled shell-banner source.'
+  print -r -- 'Without --source, walks every source in DOTFILES_BANNER_SOURCES.'
+}
+
+die() {
+  print -u2 -- "shell-banner refresh: $*"
+  exit 2
+}
+
+refresh_if_stale=0
+only_source=''
+while (( $# > 0 )); do
+  case "$1" in
+    --if-stale)  refresh_if_stale=1; shift ;;
+    --source)    only_source="$2"; shift 2 ;;
+    --help|-h)   usage; exit 0 ;;
+    *)           die "unknown argument: $1" ;;
+  esac
+done
+
+root="${DOTFILES_BANNER_ROOT:-${0:A:h:h}}"
+[[ -r "$root/lib/cache.sh"   ]] || die "missing lib/cache.sh under $root"
+[[ -r "$root/lib/sources.sh" ]] || die "missing lib/sources.sh under $root"
+
+source "$root/lib/cache.sh"
+source "$root/lib/sources.sh"
+banner_load_config "$root"
+[[ -r "$root/local.env" ]] && banner_load_local_config "$root/local.env"
+
+[[ "${DOTFILES_BANNER_ENABLED:-1}" == 1 ]] || exit 0
+
+state_root="$(banner_state_root)"
+login_umask="$(umask)"
+umask 077
+/bin/mkdir -p "$state_root/sources"
+/bin/chmod 700 "$state_root" 2>/dev/null || true
+
+if [[ -n "$only_source" ]]; then
+  banner_known_source "$only_source" || die "unknown source: $only_source"
+  enabled=("$only_source")
+else
+  enabled=()
+  while IFS= read -r source; do
+    [[ -n "$source" ]] && enabled+=("$source")
+  done < <(banner_enabled_sources)
+fi
+
+(( ${#enabled} > 0 )) || exit 0
+
+run_source() {
+  local source="$1"
+  local state_dir="$state_root/sources/$source"
+  local script="$root/bin/sources/$source"
+  [[ -x "$script" ]] || { print -u2 -- "shell-banner refresh: missing source script for $source"; return 1; }
+
+  /bin/mkdir -p "$state_dir"
+  /bin/chmod 700 "$state_dir" 2>/dev/null || true
+
+  local now token lock_dir ttl params
+  now="$(banner_now)"
+  ttl="$(banner_source_ttl "$source")"
+  params="$(banner_source_params "$source")"
+  token="$$:$now:${RANDOM:-0}:$source"
+  lock_dir="$state_dir/refresh.lock"
+
+  if (( refresh_if_stale )) && banner_source_is_fresh "$state_dir" "$source" "$ttl" "$params" "$now"; then
+    return 0
+  fi
+
+  if ! banner_acquire_lock "$lock_dir" "$now" "$token"; then
+    return 0
+  fi
+
+  # Run the actual check in a subshell so its traps die with the subshell
+  # and don't leak into the next iteration. The outer `set -e` is preserved.
+  (
+    trap 'banner_release_lock "$lock_dir" "$token"' EXIT
+    trap 'banner_release_lock "$lock_dir" "$token"; exit 130' INT
+    trap 'banner_release_lock "$lock_dir" "$token"; exit 143' TERM
+
+    if (( refresh_if_stale )); then
+      now="$(banner_now)"
+      if banner_source_is_fresh "$state_dir" "$source" "$ttl" "$params" "$now"; then
+        exit 0
+      fi
+    fi
+
+    # Probes run under the caller's umask, not our 077: chezmoi derives its
+    # target file modes from the umask, so a private one reports every managed
+    # entry as drifted.
+    umask "$login_umask"
+    "$script" --root "$root" --state-dir "$state_dir"
+  )
+}
+
+errored=()
+for source in "${enabled[@]}"; do
+  if ! run_source "$source"; then
+    errored+=("$source")
+  fi
+done
+
+if (( ${#errored} > 0 )); then
+  for source in "${errored[@]}"; do
+    print -u2 -- "shell-banner refresh: $source errored (see $state_root/sources/$source/last_error)"
+  done
+  exit 1
+fi
+exit 0

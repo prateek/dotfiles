@@ -1,5 +1,0 @@
-+-- dotfiles drift ---------------------------------------+
-| managed files differ from chezmoi source                |
-| run: chezmoi status --exclude=scripts                   |
-| details: chezmoi diff --exclude=scripts                 |
-+---------------------------------------------------------+

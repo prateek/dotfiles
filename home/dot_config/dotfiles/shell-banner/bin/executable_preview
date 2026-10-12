@@ -1,0 +1,47 @@
+#!/usr/bin/env zsh
+#
+# Run fastfetch with the shell-banner config so you can see what a fresh shell
+# would print without opening a new terminal. Refresh first by default so all
+# rows reflect the latest underlying state.
+
+set -u
+
+usage() {
+  print -r -- 'Usage: preview [--no-refresh] [--source <name>] [-- <fastfetch args>...]'
+}
+
+refresh=1
+only_source=''
+extra_args=()
+while (( $# > 0 )); do
+  case "$1" in
+    --no-refresh) refresh=0; shift ;;
+    --source)     only_source="$2"; shift 2 ;;
+    --help|-h)    usage; exit 0 ;;
+    --)           shift; extra_args=("$@"); break ;;
+    *)            extra_args+=("$1"); shift ;;
+  esac
+done
+
+root="${DOTFILES_BANNER_ROOT:-${0:A:h:h}}"
+config="${DOTFILES_BANNER_FASTFETCH_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/fastfetch/config.jsonc}"
+
+if (( refresh )); then
+  if [[ -n "$only_source" ]]; then
+    "$root/bin/refresh" --source "$only_source" >/dev/null 2>&1 || true
+  else
+    "$root/bin/refresh" >/dev/null 2>&1 || true
+  fi
+fi
+
+fastfetch_bin="${DOTFILES_BANNER_FASTFETCH_BIN:-fastfetch}"
+if ! whence -p "$fastfetch_bin" >/dev/null 2>&1; then
+  print -u2 -- "shell-banner preview: $fastfetch_bin not on PATH"
+  exit 1
+fi
+if [[ ! -r "$config" ]]; then
+  print -u2 -- "shell-banner preview: fastfetch config not found at $config"
+  exit 1
+fi
+
+exec "$fastfetch_bin" --config "$config" "${extra_args[@]}"

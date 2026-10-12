@@ -1,0 +1,48 @@
+#!/usr/bin/env zsh
+#
+# Tiny shim invoked by fastfetch `command` modules. Reads a per-source cached
+# row and prints it. Exits 0 even when the cache is missing/stale so the
+# fastfetch row stays present (it will say "? unavailable" instead).
+
+set -u
+
+if (( $# != 1 )); then
+  print -u2 -- 'Usage: module <source>'
+  exit 2
+fi
+
+source_name="$1"
+
+root="${DOTFILES_BANNER_ROOT:-${0:A:h:h}}"
+source "$root/lib/cache.sh"
+source "$root/lib/sources.sh"
+banner_load_config "$root"
+[[ -r "$root/local.env" ]] && banner_load_local_config "$root/local.env"
+banner_known_source "$source_name" || { print -u2 -- "Unknown source: $source_name"; exit 2; }
+if ! banner_source_enabled "$source_name"; then
+  print -r -- disabled
+  exit 0
+fi
+state_root="$(banner_state_root)"
+state_dir="$state_root/sources/$source_name"
+
+# fastfetch invokes us via /bin/sh -c, so [[ -t 1 ]] is always false. Honor
+# NO_COLOR; otherwise prefer the ANSI cache (fastfetch passes our output
+# through without re-coloring `command` module output).
+target=''
+if [[ -z "${NO_COLOR:-}" && -r "$state_dir/module.ansi" ]]; then
+  target="$state_dir/module.ansi"
+elif [[ -r "$state_dir/module.txt" ]]; then
+  target="$state_dir/module.txt"
+fi
+
+if [[ -z "$target" ]]; then
+  if [[ -n "${NO_COLOR:-}" ]]; then
+    print -r -- '? unavailable (no cache yet)'
+  else
+    print -r -- $'\033[2m? unavailable (no cache yet)\033[0m'
+  fi
+  exit 0
+fi
+
+/bin/cat -- "$target"

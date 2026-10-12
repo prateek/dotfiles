@@ -48,3 +48,17 @@ bin/grmrepo-refresh
 # kanata config, dropped in favor of Karabiner (ADR 0044)
 .config/kanata
 {{- end }}
+
+# Retired shell banner. Keep its local.env and any user-added files.
+.config/zsh/extra/chezmoi-drift.zsh
+.config/dotfiles/chezmoi-drift/README.md
+.config/dotfiles/chezmoi-drift/feature.env
+.config/dotfiles/chezmoi-drift/bin/refresh
+.config/dotfiles/chezmoi-drift/bin/preview
+.config/dotfiles/chezmoi-drift/lib/cache.sh
+.config/dotfiles/chezmoi-drift/shell/zsh.zsh
+.config/dotfiles/chezmoi-drift/art/alert.txt
+.config/dotfiles/chezmoi-drift/art/box.txt
+.config/dotfiles/chezmoi-drift/art/compact.txt
+.config/dotfiles/chezmoi-drift/art/images/amber-badge.png
+.config/dotfiles/chezmoi-drift/art/images/cyan-badge.png

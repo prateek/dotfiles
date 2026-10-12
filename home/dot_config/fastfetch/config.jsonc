@@ -1,0 +1,41 @@
+// Row keys below are hand-padded so the value column aligns across all
+// four sections. Shape: " <tree>(2)  <icon>(1)  <name>(padded to 9)".
+// If you rename or add a row, eyeball alignment against the others.
+{
+  "logo": { "type": "none", "padding": { "top": 0, "right": 0 } },
+  "display": { "separator": "  " },
+  "modules": [
+    "title",
+    { "type": "separator", "string": "─" },
+    { "type": "os", "key": " ╭─      os       ", "keyColor": "green" },
+    { "type": "shell", "key": " ├─      shell    ", "keyColor": "green" },
+    { "type": "terminal", "key": " ╰─      terminal ", "keyColor": "green" },
+
+    "break",
+
+    { "type": "host", "key": " ╭─      host     ", "keyColor": "yellow" },
+    { "type": "cpu", "key": " ├─    󰍛  cpu      ", "keyColor": "yellow" },
+    { "type": "gpu", "key": " ├─    󰍹  gpu      ", "keyColor": "yellow" },
+    { "type": "memory", "key": " ╰─      memory   ", "keyColor": "yellow" },
+
+    "break",
+
+    { "type": "display", "key": " ╭─      display  ", "keyColor": "blue" },
+    { "type": "disk", "key": " ├─      disk     ", "keyColor": "blue" },
+    { "type": "battery", "key": " ├─    󰁹  battery  ", "keyColor": "blue" },
+    { "type": "uptime", "key": " ├─    󰄉  uptime   ", "keyColor": "blue" },
+    { "type": "processes", "key": " ╰─      processes", "keyColor": "blue" },
+
+    "break",
+
+    // Keep the resolved feature path quoted for home and XDG paths with spaces.
+    { "type": "command", "key": " ╭─      chezmoi  ", "keyColor": "magenta",
+      "shell": "/bin/sh", "text": "\"${DOTFILES_BANNER_ROOT:-${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/shell-banner}\"/bin/module chezmoi" },
+    { "type": "command", "key": " ├─      brew     ", "keyColor": "magenta",
+      "shell": "/bin/sh", "text": "\"${DOTFILES_BANNER_ROOT:-${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/shell-banner}\"/bin/module brew" },
+    { "type": "command", "key": " ╰─      mise     ", "keyColor": "magenta",
+      "shell": "/bin/sh", "text": "\"${DOTFILES_BANNER_ROOT:-${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/shell-banner}\"/bin/module mise" },
+
+    "break"
+  ]
+}

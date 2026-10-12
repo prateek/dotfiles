@@ -1,0 +1,45 @@
+#!/usr/bin/env zsh
+
+set -uo pipefail
+
+source "${0:A:h:h:h}/lib/source_runner.sh"
+
+chezmoi_check() {
+  local bin="${DOTFILES_BANNER_CHEZMOI_BIN:-chezmoi}"
+  if ! whence -p "$bin" >/dev/null 2>&1; then
+    BANNER_SOURCE_DISABLED_REASON='chezmoi not installed'
+    return 1
+  fi
+
+  local scope="${DOTFILES_BANNER_CHEZMOI_SCOPE:-files}"
+  local -a status_cmd
+  case "$scope" in
+    apply) status_cmd=("$bin" --no-tty --no-pager --color=false --refresh-externals=never status) ;;
+    *)     status_cmd=("$bin" --no-tty --no-pager --color=false --refresh-externals=never status --exclude=scripts) ;;
+  esac
+
+  local stderr_file status_output
+  stderr_file="$(banner_mktemp banner-chezmoi)" || {
+    BANNER_SOURCE_ERROR='mktemp failed'
+    return 2
+  }
+  if ! status_output="$("${status_cmd[@]}" 2>"$stderr_file")"; then
+    BANNER_SOURCE_ERROR="${status_cmd[*]} failed: $(<"$stderr_file")"
+    /bin/rm -f "$stderr_file"
+    return 2
+  fi
+  /bin/rm -f "$stderr_file"
+
+  BANNER_SOURCE_OUTDATED="$(banner_count_lines "$status_output")"
+  BANNER_SOURCE_RAW="$status_output"
+
+  # Match what `chezmoi status` enumerates so OUTDATED <= TOTAL on a fresh
+  # apply: status reports directories alongside files, so include them here.
+  local managed_output
+  if managed_output="$("$bin" --no-tty --no-pager --color=false --refresh-externals=never managed --include=dirs,files,symlinks 2>/dev/null)"; then
+    BANNER_SOURCE_TOTAL="$(banner_count_lines "$managed_output")"
+  fi
+  return 0
+}
+
+banner_source_runner chezmoi drifted chezmoi_check "$@"

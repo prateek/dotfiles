@@ -3,13 +3,14 @@ status: archived
 doc_type: plan
 owner: Prateek
 created: 2026-05-11
-updated: 2026-05-15
+updated: 2026-08-31
 closed: 2026-05-15
 current_guidance:
-  - ../../home/dot_config/dotfiles/chezmoi-drift/README.md
+  - shell-banner-plan.md
+  - ../../home/dot_config/dotfiles/shell-banner/README.md
 related:
-  - ../../tests/bats/hooks/drift-banner.bats
-status_detail: "Implemented. Current behavior and configuration live with the managed source under home/dot_config/dotfiles/chezmoi-drift/."
+  - ../../tests/shell-banner.zsh
+status_detail: "Implemented, then generalized. shell-banner replaced this feature with a fastfetch renderer and multiple sources; current behavior lives under home/dot_config/dotfiles/shell-banner/."
 ---
 
 # Chezmoi Drift Banner Plan

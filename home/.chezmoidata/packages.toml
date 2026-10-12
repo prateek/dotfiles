@@ -19,6 +19,7 @@ brews = [
   { name = "fzf" },
   { name = "ripgrep" },
   { name = "zoxide" },
+  { name = "fastfetch" },
   { name = "neovim" },
   { name = "tmux" },
   { name = "just" },

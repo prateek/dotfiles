@@ -1,0 +1,36 @@
+#!/usr/bin/env zsh
+
+set -uo pipefail
+
+source "${0:A:h:h:h}/lib/source_runner.sh"
+
+brew_check() {
+  local bin="${DOTFILES_BANNER_BREW_BIN:-brew}"
+  if ! whence -p "$bin" >/dev/null 2>&1; then
+    BANNER_SOURCE_DISABLED_REASON='brew not installed'
+    return 1
+  fi
+
+  local stderr_file outdated_output list_output
+  stderr_file="$(banner_mktemp banner-brew)" || {
+    BANNER_SOURCE_ERROR='mktemp failed'
+    return 2
+  }
+
+  if ! outdated_output="$("$bin" outdated --quiet 2>"$stderr_file")"; then
+    BANNER_SOURCE_ERROR="brew outdated failed: $(<"$stderr_file")"
+    /bin/rm -f "$stderr_file"
+    return 2
+  fi
+  /bin/rm -f "$stderr_file"
+
+  BANNER_SOURCE_OUTDATED="$(banner_count_lines "$outdated_output")"
+  BANNER_SOURCE_RAW="$outdated_output"
+
+  if list_output="$("$bin" list -1 2>/dev/null)"; then
+    BANNER_SOURCE_TOTAL="$(banner_count_lines "$list_output")"
+  fi
+  return 0
+}
+
+banner_source_runner brew outdated brew_check "$@"

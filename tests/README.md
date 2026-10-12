@@ -172,10 +172,29 @@ source exclusions. `just test-shell tests/bats/hooks/chezmoi-status.bats` applie
 substitutes service commands, and verifies clean status. Use
 `just test-shell tests/bats/hooks/plist-hooks.bats tests/bats/hooks/sudo-keepalive.bats` for app prompts and privileged-phase
 lifecycle; these substitute external app and sudo commands. For drift reporting,
-use `just test-shell tests/bats/hooks/drift-banner.bats`. Its real PTY cases cover startup gating and
-cached output; a controlled external-status handshake verifies that background
-refresh does not block the prompt. The refresh CLI cases cover cache privacy,
-locking, invalidation, and failure cooldown.
+use `just test-shell tests/bats/hooks/shell-banner.bats`. Its real PTY cases cover startup gating and
+cached output. The Bats entrypoint runs the retained zsh regression scenario
+against a temporary chezmoi destination. It covers each source, cache privacy,
+locking, invalidation, failure cooldown, both SSH gates, future timestamps,
+live-PID stale locks, and config/cache injection.
+
+The retired drift suite's signature throttling, silent clean startup, renderer
+selection and fallback, and preservation of an old banner after an error belong
+to the removed feature. Fastfetch now renders on every eligible shell, and an
+error publishes an unavailable row. Its old fixture and status/concurrency
+helpers were removed with it. The branch scenario retains concurrency coverage.
+`tests/bats/hooks/shell-banner-background.bats` restores the blocked-refresh
+guarantee: a real PTY shell returns its cached row while the external check
+waits for an explicit release, then publishes the new row after release.
+`tests/bats/hooks/shell-banner-cache-repair.bats` verifies that either missing
+rendered row forces repair despite a fresh timestamp, preserves private modes,
+and leaves a complete fresh cache alone. Run all three with
+`just test-shell tests/bats/hooks/shell-banner*.bats`.
+The config suite exercises disabled/deselected rows, an empty enabled set,
+local cache overrides, XDG paths with spaces, and mise's home-scoped cache.
+The upgrade suite applies old then new source shapes and checks removal while
+preserving local overrides. The lock scenario injects a scheduling pause after
+stale metadata inspection to verify that two contenders cannot both acquire it.
 
 Keep script-aware diff/dry-run and rendered shellcheck checks for changed apply
 scripts. `just test-chezmoi-apply` previews `ci`, `personal`, `work`, and
@@ -359,7 +378,7 @@ Focus a run instead of naming a target. The three suite recipes take the
 arguments their runners already understand, so a new case needs no recipe:
 
 ```sh
-just test-shell tests/bats/hooks/drift-banner.bats   # one file
+just test-shell tests/bats/hooks/shell-banner.bats   # one file
 just test-shell tests/bats/packages                  # one subsystem
 just test-shell tests/bats --filter 'drift'          # one case
 BATS_TAGS=host just test-shell tests/bats/config/karabiner.bats

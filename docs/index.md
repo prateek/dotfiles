@@ -30,7 +30,6 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [G95NC Display](runbooks/g95nc-display.md) | Verified native-output Sharp/Butter setup, app-wide BetterDisplay reset, private backups, logs, and recovery. |
 | [Dotfiles Landing](runbooks/dotfiles-landing.md) | Repo-specific checks and chezmoi preview for the published land-changes skill. |
 | [Chezmoi Architecture](references/chezmoi-architecture.md) | Dotfiles source-state architecture and validation entrypoints. |
-| [Chezmoi Drift Banner](../home/dot_config/dotfiles/chezmoi-drift/README.md) | Cached shell banner for managed chezmoi drift. |
 | [Chezmoi Hook Lifecycle](references/chezmoi-hook-lifecycle.md) | Ordering and design rules for config hooks, apply scripts, init, and modify targets. |
 | [Corporate TLS Inspection](runbooks/corp-tls-inspection.md) | Corporate CA trust for Node clients in shells and GUI apps behind a decrypting proxy. |
 | [Private Service Certificate in Orca](../agent-marketplace/packages/utils-agent/skills/browser/references/certificate.md) | Host-scoped trust preference and pinned loopback recovery for an owned private HTTPS service. |
@@ -38,6 +37,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [Host Storage](runbooks/host-storage.md) | Required SSD mounts before apply computes targets or installs packages. |
 | [Jamf Self Service Elevation](references/jamf-self-service-elevation.md) | Temporary admin elevation on Jamf-managed work Macs. |
 | [Mise Tool Management](references/mise-tool-management.md) | Mise-native CLI and tool selection. |
+| [Shell Banner](../home/dot_config/dotfiles/shell-banner/README.md) | Cached fastfetch banner for chezmoi drift and stale brew/mise packages. |
 | [Tart Install Validation](runbooks/tart-mini-validation.md) | Local disposable-VM install validation on a Mac mini. |
 | [Tartelet Runner Setup](runbooks/tartelet-runner-setup.md) | Standing up a homelab mini as an ephemeral iOS/macOS GitHub Actions runner host. |
 | [TCC Onboarding](runbooks/tcc-onboarding.md) | Default desktop-role CLI audit, manual native review, stale-grant recovery, and pending attended validation. |
@@ -71,6 +71,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [Goku Karabiner Migration](plans/goku-karabiner-migration-plan.md) | Active; Karabiner config now compiles from `karabiner.edn` via goku — on-device pad verification pending. |
 | [Raycast Config Automation](plans/raycast-config-automation-plan.md) | Proposed; deferred backlog of Raycast preference keys worth porting into the managed plist, plus what the encrypted extension store puts out of reach. |
 | [Skill Management Console](plans/skill-management-console-plan.md) | Active; `skill-console` reproduces Claude Code's character-budgeted skill listing from live inputs, renders an HTML console over the repo's 142 skills plus third-party, user, and built-in rows, and applies exported decisions (description edits, frontmatter flags, vendored-skill deletion, package toggles, budget fraction) to the chezmoi source tree through a staged, validated, path-by-path commit. Phases 1-3 built; pi and Codex budget projection remains. |
+| [Shell Banner](plans/shell-banner-plan.md) | Active; fastfetch banner with cached chezmoi/brew/mise rows shipped and replaced `chezmoi-drift`. The `apm` row is deferred — script and lib wiring exist but it is out of the default source list. |
 | [Sudo Askpass 1Password](plans/sudo-askpass-1password-plan.md) | Accepted design; implementation pending, current code still uses sudo keepalive. |
 | [Tartelet Self-Hosted Runners](plans/tartelet-runner-plan.md) | Active; cask, managed plist, LaunchAgent, host data, VM-image builder, and runbook landed. On-mini end-to-end (golden VM build + first-run credential paste) still to be exercised. |
 | [Tartelet Runner Memory-Guard](plans/tartelet-runner-memory-guard-proposal.md) | Proposed; design for a circuit breaker that sheds the runner under host memory pressure after a 2026-07-03 jetsam wedge. Prototyped and validated, then dropped — no code in-tree. |
@@ -189,7 +190,7 @@ or `superseded_by` frontmatter before using them.
 | [Test Refactoring](plans/test-suite-rebuild-plan.md) | Completed Bats/native runner migration, local and remote CI validation, and scoped apply; [tests index](../tests/README.md) and [ADR 0022](adr/0022-bats-and-zsh-test-support.md). |
 | [Shared Config-Merge Verification](plans/config-merge-verification-plan.md) | Completed local implementation and validation; [tests index](../tests/README.md#plist-merge-verification) and [ADR 0021](adr/0021-shared-plist-verification.md). |
 | [Chezmoi Agent Skills Plan](plans/chezmoi-agent-skills-plan.md) | [Agent Skill Management](../.agents/skills/agent-skill-management/SKILL.md) and [ADR 0007](adr/0007-default-loaded-plugin-policy.md). |
-| [Chezmoi Drift Banner Plan](plans/chezmoi-drift-banner-plan.md) | [Chezmoi Drift Banner](../home/dot_config/dotfiles/chezmoi-drift/README.md). |
+| [Chezmoi Drift Banner Plan](plans/chezmoi-drift-banner-plan.md) | [Shell Banner Plan](plans/shell-banner-plan.md) and [Shell Banner](../home/dot_config/dotfiles/shell-banner/README.md), which generalized this feature to fastfetch and multiple sources. |
 | [Chezmoi Migration Plan](plans/chezmoi-migration-plan.md) | [Chezmoi Architecture](references/chezmoi-architecture.md). |
 | [Crit Agent Bridge](plans/crit-agent-bridge-plan.md) | Retired; crit's `agent_cmd` now runs full-access claude directly (`home/modify_private_dot_crit.config.json.tmpl`), and the acpx shortcuts remain for general use. |
 | [Crit Integration](plans/crit-integration-plan.md) | Live repo state ([Agent Skill Management](../.agents/skills/agent-skill-management/SKILL.md)); the superseding plannotator experiment was reverted. |
