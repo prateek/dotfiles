@@ -217,7 +217,6 @@ brews = [
   { name = "mcpm" },
   { name = "f/mcptools/mcp" },
   { name = "repomix" },
-  { name = "steipete/tap/peekaboo" },  # screenshots and UI driving for the browser and peekaboo-vm-app-audit skills
 
   # Source control and repository workflow.
   { name = "git-spice" },
@@ -410,6 +409,8 @@ taps = [
 brews = [
   # Personal AI agent integrations.
   { name = "steipete/tap/imsg" },
+  # Off work machines: the corp filter 503s its github.com/openclaw release asset.
+  { name = "steipete/tap/peekaboo" },  # screenshots and UI driving for the browser and peekaboo-vm-app-audit skills
 ]
 casks = [
   { name = "nvalt", appdir = "/Applications" },
@@ -434,6 +435,9 @@ mas = [
 # Applies to: homelab.
 [packages.groups.homelab-overlay]
 description = "Homelab-specific apps: remote access, administration, and CI runner host"
+brews = [
+  { name = "steipete/tap/peekaboo" },  # drives the peekaboo-vm-app-audit skill against Tart VMs
+]
 casks = [
   { name = "tailscale-app" },
   { name = "jump-desktop-connect" },
