@@ -1,8 +1,8 @@
 # Language runtimes and their ecosystem package managers.
 
 [tools]
-# Node: pinned (reproducible).
-node = "24.12.0"
+# Node: track latest.
+node = "latest"
 
 # Go / Ruby: track latest.
 go = "latest"
@@ -11,8 +11,8 @@ ruby = "latest"
 # Rust: track latest, on every machine type.
 rust = "latest"
 
-# Yarn: pinned, tied to the Node ecosystem.
-"npm:yarn" = "1.22.22"
+# Yarn: track latest, tied to the Node ecosystem.
+"npm:yarn" = "latest"
 
 # pnpm: track latest, tied to the Node ecosystem.
 "npm:pnpm" = "latest"

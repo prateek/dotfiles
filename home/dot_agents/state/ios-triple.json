@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "Prateek's canonical Xcode / iOS runtime / device triple for new iOS projects. Pinned to the latest stable Xcode that runs on the installed macOS, with the iOS runtime matching its SDK. Read by ios-project-scaffold and ios.md. Update on quarterly review.",
   "last_reviewed": "2026-09-17",
-  "xcode_version": "26.6",
+  "xcode_version": "27.0",
   "ios_runtime_primary": "iOS 26.5",
   "ios_runtime_primary_id": "com.apple.CoreSimulator.SimRuntime.iOS-26-5",
   "ios_runtime_compat": "iOS 26.5",
