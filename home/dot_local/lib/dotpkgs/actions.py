@@ -343,7 +343,7 @@ def gh_plan(plan, ctx, action, names, latest, version, group, rows):
             plan.command('gh', 'extension', 'remove', name)
             plan.command('gh', 'extension', 'install', name, '--pin', version)
             plan.notes.append(f'{name}: replacement removes the installed extension first; a failed installation leaves it uninstalled.')
-        elif action == 'unpin' or latest:
+        elif action == 'unpin' or (latest and by_name[name]['pinned']):
             plan.command('gh', 'extension', 'remove', name)
             plan.command('gh', 'extension', 'install', name)
         elif by_name[name]['pinned']:
@@ -474,11 +474,18 @@ def app_plan(plan, ctx, action, names, latest, version, group, rows):
     if action in ('pin', 'unpin'):
         raise Problem(f'{manager} does not support version pins')
     if manager == 'mas':
+        by_name = {r['name']: r for r in rows}
         for name in names:
             if not name.isdecimal():
                 raise Problem('MAS requires numeric app IDs')
             if action in ('install', 'remove'):
                 edit_package(plan, ctx, 'mas', name, action == 'remove', group)
+            elif by_name.get(name, {}).get('status') == 'missing':
+                plan.notes.append(f'{name}: missing; use dotpkgs install mas:{name} to install it')
+                continue
+            elif by_name.get(name, {}).get('status') != 'update_available':
+                plan.notes.append(f'{name}: no App Store update')
+                continue
             plan.command('mas', {'install': 'install', 'remove': 'uninstall', 'update': 'upgrade'}[action], name)
     else:
         if action == 'install':
@@ -495,6 +502,68 @@ def app_plan(plan, ctx, action, names, latest, version, group, rows):
             plan.steps.append(dict(type='manual', instruction='Open Setapp and update subscription apps. Its signed client owns updates; there is no supported unattended update API.'))
 
 
+def npm_json(ctx, argv, empty):
+    text = ctx.run(argv).strip()
+    if not text:
+        return empty
+    try:
+        return json.loads(text)
+    except ValueError as exc:
+        raise Problem('npm returned invalid JSON') from exc
+
+
+VERSION = r'[0-9]+\.[0-9]+\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?'
+
+
+def version_key(version):
+    return tuple(int(part) for part in re.match(r'(\d+)\.(\d+)\.(\d+)', version).groups())
+
+
+def latest_dependencies(ctx, data):
+    """Bump every manifest dependency to its latest release that siblings' required peer ranges permit, never below an exact pin."""
+    sections = ('dependencies', 'devDependencies', 'optionalDependencies')
+    candidates, pins = {}, {}
+    for section in sections:
+        for dependency, spec in data.get(section, {}).items():
+            if spec.startswith(('file:', 'link:', 'workspace:', 'git', 'npm:', 'http')):
+                raise Problem(f'{dependency}: source/alias dependency needs an explicit declaration change')
+            resolved = ctx.json(['npm', 'view', dependency, 'version', '--json'])
+            if not isinstance(resolved, str) or not re.fullmatch(VERSION, resolved):
+                raise Problem(f'{dependency}: npm returned an invalid latest version')
+            candidates[dependency] = resolved
+            if re.fullmatch(VERSION, spec):
+                pins[dependency] = spec
+    holders = {}
+    for dependency, resolved in candidates.items():
+        peers = npm_json(ctx, ['npm', 'view', f'{dependency}@{resolved}', 'peerDependencies', '--json'], {})
+        meta = npm_json(ctx, ['npm', 'view', f'{dependency}@{resolved}', 'peerDependenciesMeta', '--json'], {})
+        if not isinstance(peers, dict) or not isinstance(meta, dict):
+            raise Problem(f'{dependency}: npm returned an unexpected peerDependencies shape')
+        for peer, spec in peers.items():
+            optional = isinstance(meta.get(peer), dict) and meta[peer].get('optional') is True
+            if peer in candidates and isinstance(spec, str) and not optional:
+                holders.setdefault(peer, {})[dependency] = spec
+    notes = []
+    for peer, ranges in sorted(holders.items()):
+        permitted = npm_json(ctx, ['npm', 'view', f'{peer}@{" ".join(ranges.values())}', 'version', '--json'], [])
+        permitted = [permitted] if isinstance(permitted, str) else permitted
+        if not permitted:
+            raise Problem(f'{peer}: no release satisfies the peer ranges from {", ".join(sorted(ranges))}')
+        if candidates[peer] in permitted:
+            continue
+        chosen = max(permitted, key=version_key)
+        if peer in pins and version_key(chosen) < version_key(pins[peer]):
+            candidates[peer] = pins[peer]
+            notes.append(f'{peer}: kept at {pins[peer]}; peer ranges from {", ".join(sorted(ranges))} permit at most {chosen}')
+        else:
+            candidates[peer] = chosen
+            notes.append(f'{peer}: held at {chosen} by peer ranges from {", ".join(sorted(ranges))}')
+    for section in sections:
+        for dependency in data.get(section, {}):
+            data[section][dependency] = candidates[dependency]
+    return notes
+
+
 def build_plan(plan, ctx, action, names, latest, version, group, rows):
     if action in ('pin', 'unpin'):
         raise Problem('Build inputs are pinned by Git/package-lock.json; use source control to change the revision')
@@ -506,10 +575,14 @@ def build_plan(plan, ctx, action, names, latest, version, group, rows):
                       data.setdefault('package_policy', {}).setdefault('swift', {}).__setitem__(n, False))
             plan.steps.append(dict(type='quarantine', path=str(ctx.home / '.local/bin' / name)))
         return
+    by_name = {r['name']: r for r in rows}
     for name in names:
         if plan.manager == 'swift':
             if name not in ('mic', 'keymap-overlay'):
                 raise Problem('unknown Swift helper')
+            if action == 'update' and by_name.get(name, {}).get('status') == 'current':
+                plan.notes.append(f'{name}: binary matches its source receipt')
+                continue
             plan.toml(ctx.source / '.chezmoidata/package_policy.toml', lambda data, n=name:
                       data.setdefault('package_policy', {}).setdefault('swift', {}).__setitem__(n, True))
             source = ctx.source / f'.chezmoiassets/{name}.swift'
@@ -522,20 +595,21 @@ def build_plan(plan, ctx, action, names, latest, version, group, rows):
             if row is None:
                 raise Problem(f'unknown Raycast extension: {name}')
             path = Path(row['path'])
+            changed = False
             if latest:
                 source = ctx.source / 'dot_local/share/raycast-extensions' / name
                 manifest = source / 'package.json'
-                data = json.loads(plan.text(manifest))
-                for section in ('dependencies', 'devDependencies', 'optionalDependencies'):
-                    for dependency, spec in data.get(section, {}).items():
-                        if spec.startswith(('file:', 'link:', 'workspace:', 'git', 'npm:', 'http')):
-                            raise Problem(f'{dependency}: source/alias dependency needs an explicit declaration change')
-                        resolved = ctx.json(['npm', 'view', dependency, 'version', '--json'])
-                        if not isinstance(resolved, str) or not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?', resolved):
-                            raise Problem(f'{dependency}: npm returned an invalid latest version')
-                        data[section][dependency] = resolved
-                plan.edit(manifest, json.dumps(data, indent=2) + '\n')
-                plan.command('npm', 'install', '--package-lock-only', '--ignore-scripts', cwd=source)
+                before = plan.text(manifest)
+                data = json.loads(before)
+                plan.notes.extend(latest_dependencies(ctx, data))
+                after = json.dumps(data, indent=2) + '\n'
+                changed = after != before
+                if changed:
+                    plan.edit(manifest, after)
+                    plan.command('npm', 'install', '--package-lock-only', '--ignore-scripts', cwd=source)
+            if action == 'update' and not changed and row.get('build_status') == 'current':
+                plan.notes.append(f'{name}: build matches its source receipt')
+                continue
             if latest or not (path / 'package.json').is_file():
                 apply_target(plan, ctx, path, directory=True)
             plan.command('npm', 'ci', '--omit=dev', cwd=path)
@@ -578,7 +652,7 @@ def make_plan(ctx, manager, action, names, *, latest=False, version=None, group=
     plan.kind = kind
     if manager == 'apm':
         names = [apm_identity(name) for name in names]
-    rows = inventory(ctx, manager, check=False, names=None if manager == 'apm' else names or None)
+    rows = inventory(ctx, manager, check=manager == 'mas' and action == 'update', names=None if manager == 'apm' else names or None)
     if len({r['name'] for r in rows}) != len(rows):
         raise Problem('multiple active versions of one package; select/edit its native configuration explicitly')
     if not names:

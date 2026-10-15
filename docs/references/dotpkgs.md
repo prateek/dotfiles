@@ -2,7 +2,7 @@
 status: active
 doc_type: reference
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-15
 related:
   - ../plans/package-helper-plan.md
   - ../adr/0049-shared-package-operations.md
@@ -131,15 +131,15 @@ versions and the build's source digest.
 | `mise` | Install/remove, update, pin/unpin. Edits static owning source entries, generated agent version fields, or the established unmanaged `zz-local.toml`. Removing a host-local override requires manual review/removal of underlying declarations before uninstalling. Required adapters cannot be removed independently of their agent. |
 | `claude`, `cursor` | Native installation/update and machine-agent deselection plus reversible launcher removal. No integrated durable pin control; installing one version alone would not disable auto-update. |
 | `codex` | Native install/update/remove plus standalone pin/unpin. Pins go in `package_policy.native.codex` and disable the installer's latest-channel tracking. |
-| `gh` | Extension install/remove/update and native pin/unpin. Pins are read from native manifest/Git metadata, survive normal updates, and are not fresh-machine declarations. Pin changes may remove/reinstall the selected extension; an installation failure can leave it absent. |
+| `gh` | Extension install/remove/update and native pin/unpin. Pins are read from native manifest/Git metadata, survive normal updates, and are not fresh-machine declarations. Unpinned extensions update in place; pin changes and bulk latest on a pinned extension remove/reinstall it, and an installation failure can leave it absent. |
 | `zinit` | Install/remove simple `zinit light` declarations, update through zinit, and persist `ver` pins in the shell source. Tracked local edits block updates. |
 | `apm` | Shared-graph acquisition, declaration pin changes, guarded removal, and validation. Review acquired changes, repair patches, and bump affected plugin versions before installing accepted inputs. Installing an existing dependency validates/materializes the entire marketplace. |
-| `mas` | Install/remove declarations and native app operations. Authentication/admin access may be required. No version-pin API. |
+| `mas` | Install/remove declarations and native app operations. Updates run only for apps `mas outdated` reports. Authentication/admin access may be required. No version-pin API. |
 | `setapp` | Install missing declared apps and reversibly remove bundles/declarations. Updates require the signed Setapp client and are reported as manual steps. No version-pin API. |
 | `xcode` | Install/select the pin, change the pin, install latest stable, or remove an explicit version. The only ID is `xcode:Xcode`. Continuous latest tracking is unsupported, so `unpin` fails; `update --latest` selects a new exact pin. Review the related iOS runtime/device policy after version changes. |
-| `raycast` | Rebuild local extensions; bulk latest resolves dependency versions, updates source manifests/lockfiles, and rebuilds. Removal requires an explicit source change and removal of the imported bundle in Raycast; the helper refuses it before writes. Git and lockfiles own source version policy. |
+| `raycast` | Rebuild local extensions whose receipt no longer matches the source; bulk latest resolves dependency versions within siblings' required peer ranges (optional peers are ignored, and an exact pin never moves down), updates source manifests/lockfiles when a version moves, and rebuilds. Removal requires an explicit source change and removal of the imported bundle in Raycast; the helper refuses it before writes. Git and lockfiles own source version policy. |
 | `externals` | Refresh declared checkouts and fast-forward updates. Add/remove/ref changes require editing the owning chezmoi external declaration; no generic source editor is exposed. |
-| `swift` | Build declared helpers and record source/binary digests. Removal archives the binary and disables its owning hook through `package_policy.swift`. Git owns source version policy. |
+| `swift` | Build declared helpers and record source/binary digests; updates skip a helper whose receipt matches its source. Removal archives the binary and disables its owning hook through `package_policy.swift`. Git owns source version policy. |
 
 Unsupported operations fail before writes. `managers` repeats the relevant
 limits at the command line. `exec` is an explicit native escape hatch: it does

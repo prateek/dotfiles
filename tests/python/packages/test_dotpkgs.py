@@ -254,6 +254,22 @@ path.write_text(json.dumps(state))
         self.assertEqual([result['manager'] for result in selected['results']], ['brew'])
         self.assertEqual(self.manifest.read_bytes(), before)
 
+    def test_gh_latest_upgrades_unpinned_extensions_in_place_and_replaces_pinned_ones(self):
+        root = Path(self.env['XDG_DATA_HOME']) / 'gh/extensions/gh-binary'
+        root.mkdir(parents=True)
+        (root / 'manifest.yml').write_text('owner: owner\nname: gh-binary\ntag: v1.0.0\nispinned: true\n')
+        self.binary('gh', '''if sys.argv[1:] == ['extension', 'list']:
+ print('gh example\\towner/gh-example\\tv1.0.0\\ngh binary\\towner/gh-binary\\tv1.0.0')
+elif sys.argv[1] == 'api': print(json.dumps({'tag_name':'v2.0.0'}))
+else: raise SystemExit(99)
+''')
+        plan = self.cli('update', '--all', '--manager', 'gh', '--latest', '--dry-run')['results'][0]['plan']
+        self.assertEqual([step['argv'] for step in plan['steps']], [
+            ['gh', 'extension', 'upgrade', 'owner/gh-example'],
+            ['gh', 'extension', 'remove', 'owner/gh-binary'],
+            ['gh', 'extension', 'install', 'owner/gh-binary'],
+        ])
+
     def test_mise_remove_refuses_a_host_local_override_without_uninstalling(self):
         target = Path(self.env['XDG_CONFIG_HOME']) / 'mise/conf.d/zz-local.toml'
         target.parent.mkdir(parents=True)
@@ -366,11 +382,13 @@ else: print('DOWNLOAD_URL="https://downloads.cursor.com/lab/2026.02.01-bbb/${OS}
         self.assertEqual(declarations(), expected)
 
     def test_mas_inventory_and_setapp_manual_update_are_explicit(self):
-        self.binary('mas', '''if sys.argv[1] == 'list': print('123 Example App (1.0)')
+        self.binary('mas', '''if sys.argv[1] == 'list': print('123 Example App (1.0)\\n456 Current App (3.0)')
 elif sys.argv[1] == 'outdated': print('123 Example App (1.0 -> 2.0)')
 ''')
         row = self.cli('status', '--manager', 'mas')['results'][0]['packages'][0]
         self.assertEqual((row['name'],row['latest'],row['status']), ('123','2.0','update_available'))
+        plan = self.cli('update', '--all', '--manager', 'mas', '--dry-run')['results'][0]['plan']
+        self.assertEqual([step['argv'] for step in plan['steps']], [['mas', 'upgrade', '123']])
         self.cli('pin', 'mas:123', '--version', '1.0', '--dry-run', status=1)
         self.binary('open', '')
         (self.source / '.chezmoidata/packages.toml').write_text('[packages.groups.core]\nsetapp_apps = [{name="Dotpkgs Fixture App"}]\n')
@@ -389,9 +407,14 @@ elif sys.argv[1] == 'outdated': print('123 Example App (1.0 -> 2.0)')
         self.cli('install', 'swift:mic')
         row = self.cli('status', 'swift:mic')['results'][0]['packages'][0]
         self.assertEqual(row['status'], 'current')
+        plan = self.cli('update', 'swift:mic', '--latest', '--dry-run')['results'][0]['plan']
+        self.assertEqual(plan['steps'], [])
+        self.assertEqual(plan['notes'], ['mic: binary matches its source receipt'])
         (assets / 'mic.swift').write_text('print("changed")\n')
         row = self.cli('status', 'swift:mic')['results'][0]['packages'][0]
         self.assertEqual(row['status'], 'update_available')
+        plan = self.cli('update', 'swift:mic', '--dry-run')['results'][0]['plan']
+        self.assertEqual(plan['steps'][1]['argv'][0], 'swiftc')
         self.cli('remove', 'swift:mic')
         self.assertFalse((self.home / '.local/bin/mic').exists())
         policy = tomllib.loads((self.source / '.chezmoidata/package_policy.toml').read_text())
@@ -408,7 +431,7 @@ elif sys.argv[1] == 'outdated': print('123 Example App (1.0 -> 2.0)')
         self.binary('npm', '''if sys.argv[1] == 'outdated':
  print(json.dumps({'example':{'current':'1.0.0','wanted':'1.1.0','latest':'2.0.0'}}))
  raise SystemExit(1)
-if sys.argv[1] == 'view': print(json.dumps('2.0.0'))
+if sys.argv[1] == 'view' and not any(arg.startswith('peerDependencies') for arg in sys.argv): print(json.dumps('2.0.0'))
 ''')
         row = self.cli('status', '--manager', 'raycast')['results'][0]['packages'][0]
         self.assertEqual(row['status'], 'pinned_outdated')
@@ -416,6 +439,35 @@ if sys.argv[1] == 'view': print(json.dumps('2.0.0'))
         plan = self.cli('update', 'raycast:demo', '--latest', '--dry-run')['results'][0]['plan']
         self.assertIn('+    "example": "2.0.0"', plan['edits'][0]['diff'])
         self.assertIn('^1.0.0', (source / 'package.json').read_text())
+
+    def test_raycast_latest_holds_dependencies_inside_sibling_peer_ranges(self):
+        source = self.source / 'dot_local/share/raycast-extensions/demo'
+        source.mkdir(parents=True)
+        (source / 'package.json').write_text(json.dumps({'name': 'demo', 'dependencies': {'@raycast/api': '2.8.0'}, 'devDependencies': {
+            '@raycast/eslint-config': '2.2.0', '@types/node': '26.6.5', 'eslint': '10.12.0', 'prettier': '3.0.0', 'typescript': '6.0.3'}}, indent=2) + '\n')
+        (source / 'package-lock.json').write_text('{}\n')
+        self.binary('npm', '''spec = sys.argv[2]
+if 'peerDependenciesMeta' in sys.argv:
+ if spec == '@raycast/api@2.8.0': print(json.dumps({'@types/node': {'optional': True}}))
+elif 'peerDependencies' in sys.argv:
+ if spec == '@raycast/eslint-config@2.2.0': print(json.dumps({'eslint': '^9.0.0', 'prettier': '>=2', 'typescript': '>=4.8.4 <6.1.0'}))
+ if spec == '@raycast/api@2.8.0': print(json.dumps({'@types/node': '22.19.17'}))
+elif spec == 'typescript@>=4.8.4 <6.1.0': print(json.dumps(['5.9.3', '6.0.2', '6.0.3']))
+elif spec == 'prettier@>=2': print(json.dumps(['3.0.0', '3.9.10']))
+elif spec == 'eslint@^9.0.0': print(json.dumps('9.39.0'))
+else: print(json.dumps({'@raycast/api': '2.8.0', '@raycast/eslint-config': '2.2.0', '@types/node': '26.6.5',
+                        'eslint': '10.12.0', 'prettier': '3.9.10', 'typescript': '7.0.2'}[spec]))
+''')
+        plan = self.cli('update', 'raycast:demo', '--latest', '--dry-run')['results'][0]['plan']
+        diff = plan['edits'][0]['diff']
+        self.assertIn('+    "prettier": "3.9.10"', diff)
+        self.assertNotIn('7.0.2', diff)
+        self.assertNotIn('22.19.17', diff)
+        self.assertNotIn('9.39.0', diff)
+        self.assertEqual(plan['notes'], [
+            'eslint: kept at 10.12.0; peer ranges from @raycast/eslint-config permit at most 9.39.0',
+            'typescript: held at 6.0.3 by peer ranges from @raycast/eslint-config',
+        ])
 
     def test_raycast_installs_declared_sources_before_building_and_rejects_unknown_names(self):
         source = self.source / 'dot_local/share/raycast-extensions/demo'
@@ -440,6 +492,8 @@ if sys.argv[1] == 'outdated': print('{}')
         self.assertTrue((target / 'package.json').is_file())
         current = self.cli('status', 'raycast:demo')['results'][0]['packages'][0]
         self.assertEqual(current['status'], 'current')
+        plan = self.cli('update', 'raycast:demo', '--dry-run')['results'][0]['plan']
+        self.assertEqual(plan['steps'], [])
         rejected = self.cli('install', 'raycast:unknown', '--dry-run', status=1)
         self.assertIn('unknown Raycast extension', rejected['results'][0]['error'])
 
