@@ -25,6 +25,7 @@ uipro init --ai gemini      # Gemini CLI
 uipro init --ai trae        # Trae
 uipro init --ai opencode    # OpenCode
 uipro init --ai amazonq     # Amazon Q Developer
+uipro init --ai openclaw    # OpenClaw (.agents/skills/)
 uipro init --ai universal   # Universal / Agent Standard (.agents/skills/)
 uipro init --ai all         # All assistants
 

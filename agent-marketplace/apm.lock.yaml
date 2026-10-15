@@ -12,10 +12,10 @@ dependencies:
 - repo_url: ar9av/obsidian-wiki
   name: obsidian-wiki
   host: github.com
-  resolved_commit: df5459599a33579506b771173fdb462b0b48e553
-  version: df54595
-  package_type: apm_package
-  content_hash: sha256:291ecfbbb8c024deb9f27d179ac9ebda7e65a08c7380fca9cb77448b3967b435
+  resolved_commit: 7a3d143eb854840caf620dc91435ed87f1deb820
+  version: 7a3d143
+  package_type: marketplace_plugin
+  content_hash: sha256:dfdad3b7f7f37a68bf634944f67489819a1ec578d6c5e76e10d23bc13a4f0ad6
   is_dev: true
   declared_license: MIT
 - repo_url: avdlee/swiftui-agent-skill
@@ -41,12 +41,12 @@ dependencies:
 - repo_url: cursor/plugins
   name: pstack
   host: github.com
-  resolved_commit: ea32d9562a1c9f077d7cdd3be53d07383eb18866
-  version: 0.15.18
+  resolved_commit: 99743e9c151c8537cbbf1f98bb38f34ef3368453
+  version: 0.15.25
   virtual_path: pstack
   is_virtual: true
-  package_type: marketplace_plugin
-  content_hash: sha256:ce19d602bd246620be893ffeb91971e0cf3ac2b6ae2bf8e1ced22c6ebe353548
+  package_type: agent_plugin
+  content_hash: sha256:3a2f471dac6a0dbdbbfed3db0505571567eee417790e628f6f97152c0fb1e05f
   is_dev: true
   declared_license: MIT
 - repo_url: cygnusfear/claude-stuff
@@ -117,10 +117,10 @@ dependencies:
 - repo_url: nextlevelbuilder/ui-ux-pro-max-skill
   name: ui-ux-pro-max
   host: github.com
-  resolved_commit: 67803eac81607188194aea9842a723b89326d90d
-  version: 2.13.0
+  resolved_commit: 56ea9cf174ed86786187daa9de0e6247cb0747e4
+  version: 2.15.0
   package_type: marketplace_plugin
-  content_hash: sha256:08f0fe3cfe1499779b1a18ced3c777b55408bed6098827543bffad0589b204cd
+  content_hash: sha256:ab244e462a5061f53aa13e142eaafb47cef0eb8e88e372556121494d67d6e3a6
   is_dev: true
   declared_license: MIT
 - repo_url: openai/skills
@@ -136,7 +136,7 @@ dependencies:
 - repo_url: openclaw/acpx
   name: acpx
   host: github.com
-  resolved_commit: 95adbc569fb6aa2e8c021c4f352ffee05cc835ad
+  resolved_commit: 3df6a484c52748a1d3a00b6f606a24cbe4367cb9
   version: unknown
   virtual_path: skills/acpx
   is_virtual: true
@@ -146,10 +146,10 @@ dependencies:
 - repo_url: raintree-technology/apple-hig-skills
   name: apple-hig-skills
   host: github.com
-  resolved_commit: 5e2055877b83ec23930f4db7b062d0d3f725fa5a
-  version: 5e20558
+  resolved_commit: fdc35993d580730a60b827ed39adc6c9991ade41
+  version: fdc3599
   package_type: marketplace_plugin
-  content_hash: sha256:eab9cebad1973fee8813d5e04d9716be447421f6a08753a08002ad5fbec73ef8
+  content_hash: sha256:a252ed3f4f75906786f7ab397e7427cb2b50717b977add70a6245f22f008f280
   is_dev: true
 - repo_url: stablyai/agent-slack
   name: agent-slack
@@ -164,7 +164,7 @@ dependencies:
 - repo_url: stablyai/orca
   name: orca-cli
   host: github.com
-  resolved_commit: 8d113f5ceb1c71995e5fc6f509e0550006d4747a
+  resolved_commit: 7f492dc15b4bde2383697b596a835d8dae1008ec
   version: unknown
   virtual_path: skills/orca-cli
   is_virtual: true
@@ -174,7 +174,7 @@ dependencies:
 - repo_url: stablyai/orca
   name: orchestration
   host: github.com
-  resolved_commit: 8d113f5ceb1c71995e5fc6f509e0550006d4747a
+  resolved_commit: 7f492dc15b4bde2383697b596a835d8dae1008ec
   version: unknown
   virtual_path: skills/orchestration
   is_virtual: true
@@ -184,7 +184,7 @@ dependencies:
 - repo_url: tomasz-tomczyk/crit
   name: crit
   host: github.com
-  resolved_commit: e48627e9602fcc704b6483890754d8a48cbdb2ef
+  resolved_commit: b0118a49d918b1e1f0a7c023a0601109de73f3a4
   version: 1.8.14
   virtual_path: integrations/claude-code
   is_virtual: true

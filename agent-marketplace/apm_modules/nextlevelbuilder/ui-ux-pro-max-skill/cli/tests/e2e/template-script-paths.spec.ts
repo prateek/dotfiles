@@ -4,11 +4,11 @@ import { loadPlatformConfig, renderSkillFile } from '../../src/utils/template.js
 const cases = [
   ['claude', '.claude/skills/ui-ux-pro-max/scripts/search.py'],
   ['codex', '.agents/skills/ui-ux-pro-max/scripts/search.py'],
-  ['copilot', '.github/prompts/ui-ux-pro-max/scripts/search.py'],
   ['kiro', '.kiro/steering/ui-ux-pro-max/scripts/search.py'],
   ['droid', '.factory/skills/ui-ux-pro-max/scripts/search.py'],
   ['zcode', '.zcode/skills/ui-ux-pro-max/scripts/search.py'],
   ['amazonq', '.amazonq/skills/ui-ux-pro-max/scripts/search.py'],
+  ['openclaw', '.agents/skills/ui-ux-pro-max/scripts/search.py'],
 ] as const;
 const SEARCH_COMMAND_COUNT = 17;
 
@@ -33,3 +33,15 @@ for (const [platform, localPath] of cases) {
     expect(globalContent).not.toContain('{{SCRIPT_PATH}}');
   });
 }
+
+test('copilot renders .github/skills paths locally and ~/.copilot/skills globally', async () => {
+  const config = await loadPlatformConfig('copilot');
+
+  const localPaths = extractSearchScriptPaths(await renderSkillFile(config));
+  expect(localPaths).toHaveLength(SEARCH_COMMAND_COUNT);
+  expect(new Set(localPaths)).toEqual(new Set(['.github/skills/ui-ux-pro-max/scripts/search.py']));
+
+  const globalPaths = extractSearchScriptPaths(await renderSkillFile(config, true));
+  expect(globalPaths).toHaveLength(SEARCH_COMMAND_COUNT);
+  expect(new Set(globalPaths)).toEqual(new Set(['~/.copilot/skills/ui-ux-pro-max/scripts/search.py']));
+});

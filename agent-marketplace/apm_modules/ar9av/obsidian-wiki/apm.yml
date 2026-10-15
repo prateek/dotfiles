@@ -1,5 +1,5 @@
 name: obsidian-wiki
-version: df54595
+version: 7a3d143
 description: 'Grow an Obsidian second brain with your AI agent: ingest docs, chat
   history and URLs into interlinked markdown, then query it with citations. Karpathy''s
   LLM Wiki pattern as Claude Code skills.'

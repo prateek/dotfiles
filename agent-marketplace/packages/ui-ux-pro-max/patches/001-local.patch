@@ -22,10 +22,10 @@ index dad8bb1e649145fabe3923db8ad376887696a9da..00000000000000000000000000000000
 -animated-ready,Animated-ready,"SVG with named groups/IDs for CSS/JS animation",2px,varies,"Interactive UI, onboarding, micro-interactions","animation motion interactive css js"
 diff --git a/skills/design/scripts/icon/generate.py b/skills/design/scripts/icon/generate.py
 deleted file mode 100644
-index 5e00fa98f5f7f8c0ea071d967e63bd0d3f44ee44..0000000000000000000000000000000000000000
+index 375f7896e531be6ad0c5719052f4a5ba50eaf166..0000000000000000000000000000000000000000
 --- a/skills/design/scripts/icon/generate.py
 +++ /dev/null
-@@ -1,487 +0,0 @@
+@@ -1,535 +0,0 @@
 -#!/usr/bin/env python3
 -# -*- coding: utf-8 -*-
 -"""
@@ -202,16 +202,66 @@ index 5e00fa98f5f7f8c0ea071d967e63bd0d3f44ee44..00000000000000000000000000000000
 -    return svg_code
 -
 -
+-# Root <svg ...> opening tag; quoted attribute values may contain ">".
+-_SVG_ROOT_TAG = re.compile(r"""<svg\b(?:[^>"']|"[^"]*"|'[^']*')*>""")
+-
+-
+-# One token of an opening tag: name[=value], or a stray quoted string.
+-# Quoted values are consumed whole, so text inside them is never a name.
+-_TAG_ATTR = re.compile(
+-    r"""([^\s=/>"']+)(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>"']+))?|"[^"]*"|'[^']*'""")
+-
+-
+-def _set_root_attr(tag, attr, value):
+-    """Set attr on a single <svg ...> opening tag, whatever quote style it uses."""
+-    for m in _TAG_ATTR.finditer(tag, len('<svg')):
+-        if m.group(1) == attr:
+-            return tag[:m.start()] + f'{attr}="{value}"' + tag[m.end():]
+-    return tag.replace('<svg', f'<svg {attr}="{value}"', 1)
+-
+-
 -def apply_viewbox_size(svg_code, size):
--    """Adjust SVG viewBox to target size"""
+-    """Set width/height on the root <svg> tag only, leaving the viewBox alone"""
 -    if size:
--        # Update width/height attributes if present
--        svg_code = re.sub(r'width="[^"]*"', f'width="{size}"', svg_code)
--        svg_code = re.sub(r'height="[^"]*"', f'height="{size}"', svg_code)
--        # Add width/height if not present
--        if 'width=' not in svg_code:
--            svg_code = svg_code.replace('<svg', f'<svg width="{size}" height="{size}"', 1)
+-        match = _SVG_ROOT_TAG.search(svg_code)
+-        if match:
+-            tag = _set_root_attr(match.group(0), 'width', size)
+-            tag = _set_root_attr(tag, 'height', size)
+-            svg_code = svg_code[:match.start()] + tag + svg_code[match.end():]
 -    return svg_code
+-
+-
+-def _finish_reason(response):
+-    """Return the first candidate's finish reason as a string ('' if unknown)"""
+-    try:
+-        reason = response.candidates[0].finish_reason
+-    except (AttributeError, IndexError, TypeError):
+-        return ""
+-    return str(getattr(reason, "name", reason) or "")
+-
+-
+-def _response_text(response):
+-    """Collect the text of a response; '' when it has none (blocked, empty)"""
+-    text = getattr(response, 'text', None) or ""
+-    if not text:
+-        candidates = response.candidates or []
+-        content = candidates[0].content if candidates else None
+-        for part in (content.parts or []) if content else []:
+-            if getattr(part, 'text', None):
+-                text += part.text
+-    return text
+-
+-
+-def _report_no_svg(response, response_text, what="SVG"):
+-    """Say why no SVG came back: truncated, empty, or malformed output"""
+-    if "MAX_TOKENS" in _finish_reason(response):
+-        print("Error: output hit the token limit (finish_reason MAX_TOKENS) "
+-              "before the SVG was complete. Try a simpler prompt or style.")
+-    elif not response_text.strip():
+-        print("Error: model returned an empty response.")
+-    else:
+-        print(f"No valid {what} generated. Model response:")
+-        print(response_text[:500])
 -
 -
 -def generate_icon(prompt, style=None, category=None, name=None,
@@ -265,22 +315,17 @@ index 5e00fa98f5f7f8c0ea071d967e63bd0d3f44ee44..00000000000000000000000000000000
 -            contents=full_prompt,
 -            config=types.GenerateContentConfig(
 -                temperature=0.7,
--                max_output_tokens=4096,
+-                max_output_tokens=16384,
 -            )
 -        )
 -
 -        # Extract SVG from response
--        response_text = response.text if hasattr(response, 'text') else ""
--        if not response_text:
--            for part in response.candidates[0].content.parts:
--                if hasattr(part, 'text') and part.text:
--                    response_text += part.text
+-        response_text = _response_text(response)
 -
 -        svgs = extract_svgs(response_text)
 -
 -        if not svgs:
--            print("No valid SVG generated. Model response:")
--            print(response_text[:500])
+-            _report_no_svg(response, response_text)
 -            return None
 -
 -        svg_code = svgs[0]
@@ -357,17 +402,12 @@ index 5e00fa98f5f7f8c0ea071d967e63bd0d3f44ee44..00000000000000000000000000000000
 -            )
 -        )
 -
--        response_text = response.text if hasattr(response, 'text') else ""
--        if not response_text:
--            for part in response.candidates[0].content.parts:
--                if hasattr(part, 'text') and part.text:
--                    response_text += part.text
+-        response_text = _response_text(response)
 -
 -        svgs = extract_svgs(response_text)
 -
 -        if not svgs:
--            print("No valid SVGs generated.")
--            print(response_text[:500])
+-            _report_no_svg(response, response_text, "SVGs")
 -            return []
 -
 -        results = []
@@ -384,6 +424,10 @@ index 5e00fa98f5f7f8c0ea071d967e63bd0d3f44ee44..00000000000000000000000000000000
 -
 -            results.append(filepath)
 -            print(f"  [{i+1}/{len(svgs[:count])}] Saved: {filename}")
+-
+-        if len(results) < count and "MAX_TOKENS" in _finish_reason(response):
+-            print("Warning: output hit the token limit (finish_reason MAX_TOKENS); "
+-                  "the last icon was cut off. Try fewer variants or a simpler prompt.")
 -
 -        print(f"\n{'='*60}")
 -        print(f"  BATCH COMPLETE: {len(results)}/{count} icons generated")
@@ -477,7 +521,7 @@ index 5e00fa98f5f7f8c0ea071d967e63bd0d3f44ee44..00000000000000000000000000000000
 -    # Multi-size mode
 -    if args.sizes:
 -        sizes = [int(s.strip()) for s in args.sizes.split(",")]
--        generate_sizes(
+-        generated = generate_sizes(
 -            prompt=prompt,
 -            sizes=sizes,
 -            style=args.style,
@@ -488,7 +532,7 @@ index 5e00fa98f5f7f8c0ea071d967e63bd0d3f44ee44..00000000000000000000000000000000
 -    # Batch mode
 -    elif args.batch:
 -        output_dir = args.output_dir or "./icons"
--        generate_batch(
+-        generated = generate_batch(
 -            prompt=prompt,
 -            count=args.batch,
 -            output_dir=output_dir,
@@ -499,7 +543,7 @@ index 5e00fa98f5f7f8c0ea071d967e63bd0d3f44ee44..00000000000000000000000000000000
 -        )
 -    # Single icon
 -    else:
--        generate_icon(
+-        generated = generate_icon(
 -            prompt=prompt,
 -            style=args.style,
 -            category=args.category,
@@ -510,6 +554,194 @@ index 5e00fa98f5f7f8c0ea071d967e63bd0d3f44ee44..00000000000000000000000000000000
 -            viewbox=args.viewbox
 -        )
 -
+-    # Exit 1 when nothing was generated; a partly generated batch or size set exits 0
+-    if not generated:
+-        sys.exit(1)
+-
 -
 -if __name__ == "__main__":
 -    main()
+diff --git a/skills/design/scripts/tests/test_icon_generate.py b/skills/design/scripts/tests/test_icon_generate.py
+deleted file mode 100644
+index 7fb777ab85bec2493dcb93d067fa79318a8c5720..0000000000000000000000000000000000000000
+--- a/skills/design/scripts/tests/test_icon_generate.py
++++ /dev/null
+@@ -1,178 +0,0 @@
+-"""Offline regression tests for icon/generate.py (no network, mocked genai)."""
+-
+-import importlib.util
+-import sys
+-import types as pytypes
+-import xml.etree.ElementTree as ET
+-from pathlib import Path
+-from unittest import mock
+-
+-import pytest
+-
+-SCRIPT = Path(__file__).resolve().parent.parent / "icon" / "generate.py"
+-
+-
+-class _Config:
+-    def __init__(self, **kwargs):
+-        self.__dict__.update(kwargs)
+-
+-
+-@pytest.fixture
+-def gen(monkeypatch):
+-    google = pytypes.ModuleType("google")
+-    genai = pytypes.ModuleType("google.genai")
+-    types = pytypes.ModuleType("google.genai.types")
+-    types.GenerateContentConfig = _Config
+-    genai.Client = mock.MagicMock()
+-    genai.types = types
+-    google.genai = genai
+-    monkeypatch.setitem(sys.modules, "google", google)
+-    monkeypatch.setitem(sys.modules, "google.genai", genai)
+-    monkeypatch.setitem(sys.modules, "google.genai.types", types)
+-    spec = importlib.util.spec_from_file_location("icon_generate_under_test", SCRIPT)
+-    mod = importlib.util.module_from_spec(spec)
+-    spec.loader.exec_module(mod)
+-    mod.GEMINI_API_KEY = "test-key"
+-    return mod
+-
+-
+-def _response(text, finish_reason=None):
+-    cand = mock.Mock()
+-    cand.finish_reason = finish_reason
+-    cand.content = None
+-    return mock.Mock(text=text, candidates=[cand])
+-
+-
+-def test_viewbox_size_only_touches_root_tag(gen):
+-    src = '<svg viewBox="0 0 24 24" stroke-width="2"><rect width="10" height="8"/></svg>'
+-    out = gen.apply_viewbox_size(src, 48)
+-    assert 'stroke-width="2"' in out
+-    assert '<rect width="10" height="8"/>' in out
+-    assert 'viewBox="0 0 24 24"' in out
+-    root = out[: out.index(">") + 1]
+-    assert 'width="48"' in root and 'height="48"' in root
+-
+-
+-def test_viewbox_size_handles_width_and_height_independently(gen):
+-    out = gen.apply_viewbox_size("<svg width='10' viewBox='0 0 24 24'><path d='M0 0'/></svg>", 32)
+-    root = out[: out.index(">") + 1]
+-    assert "width=\"32\"" in root and "height=\"32\"" in root
+-    assert "width='10'" not in root
+-
+-
+-@pytest.mark.parametrize("src, kept", [
+-    ('<svg aria-label="height=\'2\'" viewBox="0 0 24 24"><path/></svg>',
+-     {"aria-label": "height='2'"}),
+-    ("<svg aria-label='width=\"2\" height=\"3\"' viewBox='0 0 24 24'><path/></svg>",
+-     {"aria-label": 'width="2" height="3"'}),
+-    ('<svg data-note="a > b width=\'1\'" height="5" viewBox="0 0 24 24"><path/></svg>',
+-     {"data-note": "a > b width='1'"}),
+-    ("<svg data-note='x>y height=\"2\"' width='7'><rect width='1' height='1'/></svg>",
+-     {"data-note": 'x>y height="2"'}),
+-])
+-def test_viewbox_size_ignores_attribute_text_inside_quoted_values(gen, src, kept):
+-    out = gen.apply_viewbox_size(src, 24)
+-    root = ET.fromstring(out)
+-    assert root.get("width") == "24" and root.get("height") == "24"
+-    for name, value in kept.items():
+-        assert root.get(name) == value
+-    for child in root:
+-        assert child.get("width") in (None, "1")
+-
+-
+-def test_generate_icon_uses_large_token_budget(gen, tmp_path):
+-    client = gen.genai.Client.return_value
+-    client.models.generate_content.return_value = _response(
+-        '<svg viewBox="0 0 24 24"><path d="M0 0"/></svg>')
+-    out = tmp_path / "a.svg"
+-    assert gen.generate_icon("crane", output_path=str(out)) == str(out)
+-    cfg = client.models.generate_content.call_args.kwargs["config"]
+-    assert cfg.max_output_tokens >= 16384
+-
+-
+-def test_generate_icon_reports_max_tokens(gen, capsys):
+-    client = gen.genai.Client.return_value
+-    client.models.generate_content.return_value = _response(
+-        '```svg\n<svg viewBox="0 0 24 24"><path d="M 15 14 H 19', "MAX_TOKENS")
+-    assert gen.generate_icon("crane") is None
+-    assert "MAX_TOKENS" in capsys.readouterr().out
+-    assert client.models.generate_content.call_count == 1
+-
+-
+-def test_generate_icon_reports_empty_output_separately(gen, capsys):
+-    client = gen.genai.Client.return_value
+-    client.models.generate_content.return_value = _response("", "STOP")
+-    assert gen.generate_icon("crane") is None
+-    out = capsys.readouterr().out
+-    assert "empty response" in out and "MAX_TOKENS" not in out
+-
+-
+-def test_generate_icon_handles_none_text(gen, capsys):
+-    client = gen.genai.Client.return_value
+-    client.models.generate_content.return_value = _response(None, "SAFETY")
+-    assert gen.generate_icon("crane") is None
+-    assert "empty response" in capsys.readouterr().out
+-
+-
+-def test_generate_batch_reports_max_tokens(gen, tmp_path, capsys):
+-    client = gen.genai.Client.return_value
+-    client.models.generate_content.return_value = _response(
+-        '<svg viewBox="0 0 24 24"><path d="M 15 14 H 19', "MAX_TOKENS")
+-    assert gen.generate_batch("crane", 2, str(tmp_path)) == []
+-    out = capsys.readouterr().out
+-    assert "MAX_TOKENS" in out and "Error generating icons" not in out
+-
+-
+-def test_generate_batch_handles_empty_response(gen, tmp_path, capsys):
+-    client = gen.genai.Client.return_value
+-    resp = _response(None, "SAFETY")
+-    resp.candidates = []
+-    client.models.generate_content.return_value = resp
+-    assert gen.generate_batch("crane", 2, str(tmp_path)) == []
+-    out = capsys.readouterr().out
+-    assert "empty response" in out and "Error generating icons" not in out
+-
+-
+-def test_generate_batch_warns_when_truncated_after_some_icons(gen, tmp_path, capsys):
+-    client = gen.genai.Client.return_value
+-    client.models.generate_content.return_value = _response(
+-        '<svg viewBox="0 0 24 24"><path d="M0 0"/></svg>\n'
+-        '<svg viewBox="0 0 24 24"><path d="M 15 14 H 19', "MAX_TOKENS")
+-    assert len(gen.generate_batch("crane", 2, str(tmp_path))) == 1
+-    assert "MAX_TOKENS" in capsys.readouterr().out
+-
+-
+-def _run_main(gen, monkeypatch, *args):
+-    monkeypatch.setattr(sys, "argv", ["generate.py", *args])
+-    gen.main()
+-
+-
+-def test_main_exits_1_when_icon_request_fails(gen, monkeypatch, tmp_path):
+-    client = gen.genai.Client.return_value
+-    client.models.generate_content.side_effect = RuntimeError("429 RESOURCE_EXHAUSTED")
+-    with pytest.raises(SystemExit) as raised:
+-        _run_main(gen, monkeypatch, "--prompt", "crane", "--output", str(tmp_path / "a.svg"))
+-    assert raised.value.code == 1
+-
+-
+-def test_main_exits_1_when_batch_generates_nothing(gen, monkeypatch, tmp_path):
+-    client = gen.genai.Client.return_value
+-    resp = _response(None, "SAFETY")
+-    resp.candidates = []
+-    client.models.generate_content.return_value = resp
+-    with pytest.raises(SystemExit) as raised:
+-        _run_main(gen, monkeypatch, "--prompt", "crane", "--batch", "2",
+-                  "--output-dir", str(tmp_path))
+-    assert raised.value.code == 1
+-
+-
+-def test_main_exits_0_when_icon_is_saved(gen, monkeypatch, tmp_path):
+-    client = gen.genai.Client.return_value
+-    client.models.generate_content.return_value = _response(
+-        '<svg viewBox="0 0 24 24"><path d="M0 0"/></svg>')
+-    _run_main(gen, monkeypatch, "--prompt", "crane", "--output", str(tmp_path / "a.svg"))
+-    assert (tmp_path / "a.svg").exists()
+-
+-
+-def test_main_list_styles_exits_0(gen, monkeypatch):
+-    _run_main(gen, monkeypatch, "--list-styles")
