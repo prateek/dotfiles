@@ -409,8 +409,7 @@ taps = [
 brews = [
   # Personal AI agent integrations.
   { name = "steipete/tap/imsg" },
-  # Off work machines: the corp filter 503s its github.com/openclaw release asset.
-  { name = "steipete/tap/peekaboo" },  # screenshots and UI driving for the browser and peekaboo-vm-app-audit skills
+  { name = "steipete/tap/peekaboo" },
 ]
 casks = [
   { name = "nvalt", appdir = "/Applications" },
@@ -426,23 +425,19 @@ casks = [
 ]
 mas = [
   { name = "1Password for Safari", id = 1569813296 },
-  { name = "Amphetamine", id = 937984704 },
-  { name = "Goodnotes", id = 1444383602 },
-  { name = "Lungo", id = 1263070803 },
-  { name = "Things", id = 904280696 },
 ]
 
 # Applies to: homelab.
 [packages.groups.homelab-overlay]
 description = "Homelab-specific apps: remote access, administration, and CI runner host"
 brews = [
-  { name = "steipete/tap/peekaboo" },  # drives the peekaboo-vm-app-audit skill against Tart VMs
+  { name = "steipete/tap/peekaboo" },
 ]
 casks = [
   { name = "tailscale-app" },
   { name = "jump-desktop-connect" },
   { name = "jump-desktop" },
-  { name = "tartelet" },  # ephemeral GitHub Actions runner host on Tart; see docs/plans/tartelet-runner-plan.md
+  { name = "tartelet" },
   { name = "radix" },
 ]
 

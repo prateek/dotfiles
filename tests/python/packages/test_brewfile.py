@@ -76,7 +76,7 @@ class BrewfileTests(RepoTestCase):
 
     def test_mac_app_store_requires_opt_in_and_keeps_shared_okta(self):
         self.assert_entries(self.brewfile("personal", "--include-mas"), present=(
-            'mas "Things", id: 904280696', 'mas "Okta Verify", id: 490179405',
+            'mas "1Password for Safari", id: 1569813296', 'mas "Okta Verify", id: 490179405',
         ))
         self.assertIn('mas "Okta Verify", id: 490179405', self.brewfile("work", "--include-mas"))
 
