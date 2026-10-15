@@ -11,8 +11,7 @@ New app config request
 │       Place at the native target path under home/.
 │       Add to home/.chezmoiignore if app is opt-in for some hosts.
 │       Two-way-sync GUI apps need a cask-presence gate and may have
-│       format-specific gotchas — defer to a focused skill if one
-│       exists (e.g., the `yojam-config` skill for Yojam's `config.json`).
+│       format-specific gotchas — defer to a focused skill if one exists.
 │
 ├── Nested macOS preference plist (com.<vendor>.<app>)?
 │       1. Capture current state to ${XDG_STATE_HOME:-~/.local/state}/dotfiles/captures/

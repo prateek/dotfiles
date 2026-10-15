@@ -47,6 +47,9 @@ bin/grmrepo-refresh
 
 # kanata config, dropped in favor of Karabiner (ADR 0044)
 .config/kanata
+
+# Yojam browser router retired; its cask left the mac-desktop group
+Library/Application Support/Yojam/config.json
 {{- end }}
 
 # Retired shell banner. Keep its local.env and any user-added files.

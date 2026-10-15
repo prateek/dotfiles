@@ -90,7 +90,6 @@ These are short, high-stakes, and easy to violate. Keep them in working memory r
 - **Setapp apps are declared in `setapp_apps`, not `casks`.** Homebrew cannot install them; `run_after_22-setapp-apps` downloads each app's vendor archive from Setapp's store API and unpacks it (ADR 0024). Add the app there before adding chezmoi-managed config for it.
 - **`home/.chezmoiscripts/` numeric ordering is load-bearing.** Insert new scripts at unused gap numbers; do not renumber existing ones. Current ordering listed in `references/workflow.md`.
 - **Raw app captures live under `${XDG_STATE_HOME:-~/.local/state}/dotfiles/captures/`, not in the repo.**
-- **Yojam's `~/Library/Application Support/Yojam/config.json` has a focused skill.** See the `yojam-config` skill for the deltas-only desired-fragment + JSON deep-merge flow, schema, and import-time security pass.
 
 ## Validation Lanes
 
