@@ -1,14 +1,17 @@
 ---
-status: active
+status: archived
+updated: 2026-10-16
+closed: 2026-10-16
+status_detail: "Historical evidence retained; Jev maintenance and trials are suspended. See ADR 0050 for current placement."
+current_guidance:
+  - ../adr/0050-suspend-jev-in-experimental-plugin.md
 doc_type: research
 created: 2026-09-26
-updated: 2026-09-27
 related:
   - ../plans/browser-skill-plan.md
   - ../plans/jev-browser-runner-plan.md
   - ../plans/jev-deterministic-preparation-plan.md
   - ../adr/0035-separate-experimental-jev-browser-skill.md
-status_detail: "Source assessment, isolated headless Orca qualification, and a completed development comparison that rejected adoption. The runner remains experimental."
 ---
 
 # Jev browser integrations

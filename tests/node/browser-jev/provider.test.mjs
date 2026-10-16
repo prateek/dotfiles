@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { decideWithCloudflare } from "../../../agent-marketplace/packages/utils-agent/skills/browser-jev/scripts/jev/cloudflare.mjs";
+import { decideWithCloudflare } from "../../../agent-marketplace/packages/experimental/skills/browser-jev/scripts/jev/cloudflare.mjs";
 
 const accountId = "0123456789abcdef0123456789abcdef";
 const token = "test-provider-secret";

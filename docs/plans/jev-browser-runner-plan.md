@@ -6,7 +6,7 @@ created: 2026-09-26
 updated: 2026-09-26
 closed: 2026-09-26
 current_guidance:
-  - ../../agent-marketplace/packages/utils-agent/skills/browser-jev/references/jev.md
+  - ../../agent-marketplace/packages/experimental/skills/browser-jev/references/jev.md
   - ../research/jev-browser-integrations.md
 related:
   - ../adr/0033-skill-owned-jev-browser-runner.md

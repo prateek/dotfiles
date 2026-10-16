@@ -1,13 +1,17 @@
 ---
-status: accepted
+status: superseded
+updated: 2026-10-16
+closed: 2026-10-16
+status_detail: "ADR 0050 replaces sibling publication in utils-agent with the default-disabled experimental plugin."
+superseded_by: 0050-suspend-jev-in-experimental-plugin.md
+current_guidance:
+  - 0050-suspend-jev-in-experimental-plugin.md
 doc_type: adr
 created: 2026-09-27
-updated: 2026-09-27
 related:
   - ../plans/jev-deterministic-preparation-plan.md
   - 0033-skill-owned-jev-browser-runner.md
   - 0034-discover-jev-controls-in-the-browser-skill.md
-status_detail: "Jev lives in a separate experimental skill; the regular browser skill remains unchanged."
 ---
 
 # Keep Jev in a separate experimental browser skill

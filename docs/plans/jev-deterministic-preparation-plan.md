@@ -1,15 +1,18 @@
 ---
-status: active
+status: archived
+updated: 2026-10-16
+closed: 2026-10-16
+status_detail: "Experiment suspended; end-to-end performance and broader reliability remain unmeasured. Implementation retained in the default-disabled experimental plugin."
+current_guidance:
+  - ../adr/0050-suspend-jev-in-experimental-plugin.md
 doc_type: plan
 owner: Prateek
 created: 2026-09-27
-updated: 2026-09-27
 related:
   - ../adr/0035-separate-experimental-jev-browser-skill.md
   - ../adr/0034-discover-jev-controls-in-the-browser-skill.md
   - ../adr/0033-skill-owned-jev-browser-runner.md
   - ../research/jev-browser-integrations.md
-status_detail: "Dynamic setup and a small synthetic Cloudflare trial are complete; paired end-to-end performance and broader reliability remain unmeasured."
 ---
 
 # Remove parent-authored Jev browser manifests

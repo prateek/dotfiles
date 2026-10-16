@@ -1,14 +1,17 @@
 ---
-status: accepted
+status: archived
+updated: 2026-10-16
+closed: 2026-10-16
+status_detail: "Dynamic discovery is retained unchanged as a suspended experiment; see ADR 0050."
+current_guidance:
+  - 0050-suspend-jev-in-experimental-plugin.md
 doc_type: adr
 created: 2026-09-27
-updated: 2026-09-27
 related:
   - ../plans/jev-deterministic-preparation-plan.md
   - ../research/jev-browser-integrations.md
   - 0033-skill-owned-jev-browser-runner.md
   - 0035-separate-experimental-jev-browser-skill.md
-status_detail: "Dynamic discovery remains accepted; ADR 0035 places its implementation in a separate experimental skill."
 ---
 
 # Discover Jev controls in the browser skill

@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-const launcher = fileURLToPath(new URL('../../../agent-marketplace/packages/utils-agent/skills/browser-jev/scripts/run-jev', import.meta.url));
-const runnerUrl = new URL('../../../agent-marketplace/packages/utils-agent/skills/browser-jev/scripts/jev/runner.mjs', import.meta.url);
+const launcher = fileURLToPath(new URL('../../../agent-marketplace/packages/experimental/skills/browser-jev/scripts/run-jev', import.meta.url));
+const runnerUrl = new URL('../../../agent-marketplace/packages/experimental/skills/browser-jev/scripts/jev/runner.mjs', import.meta.url);
 
 function job() {
   return {

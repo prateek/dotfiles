@@ -82,7 +82,7 @@ trials do not establish reliability or a full-task speed advantage.
 ## Prepare an explicit-control job
 
 1. Follow the selected driver and
-   [shared policy](../../browser/references/policy.md). Inspect an owned page
+   [shared policy](../../../../utils-agent/skills/browser/references/policy.md). Inspect an owned page
    and confirm its exact origin. For Orca, resolve the worktree from the
    task's actual path and confirm that the page belongs to it; an inherited
    `ORCA_WORKTREE_ID` may name a different worktree.
@@ -95,7 +95,7 @@ trials do not establish reliability or a full-task speed advantage.
 3. Choose the applicable [Orca runtime](#orca-runtime-and-focus), or an isolated
    headless agent-browser session. A qualified headless runtime can use
    `scope.foregroundInput: false`. Desktop Orca requires an existing
-   [focus agreement](../../browser/references/policy.md#focus), `scope.foregroundInput: true`, and a
+   [focus agreement](../../../../utils-agent/skills/browser/references/policy.md#focus), `scope.foregroundInput: true`, and a
    fresh focused-page check before every mutation. Browser or API authorization
    alone does not grant focus permission.
 4. Supply `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` through the launcher

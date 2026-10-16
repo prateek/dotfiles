@@ -60,7 +60,6 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [acpx Skill Packaging](plans/acpx-skill-packaging-plan.md) | Active; the acpx conventions are now a trigger-owning skill next to the vendored `acpx-cli` command surface, the conventions doc and its AGENTS.md pointer are deleted. See [ADR 0028](adr/0028-router-skill-over-vendor-remap.md). Trigger arbitration measured 2026-09-08 (no cross-listing steals; 16/18 after one relabel); nothing open. |
 | [ACPX Shared Pane](plans/acpx-shared-pane-plan.md) | Accepted and implemented in source; one compact Herdr view per Orca caller, with an ordered tab per invocation. Live Orca terminal preview verified; host activation is a separate follow-up. |
 | [Browser Skill](plans/browser-skill-plan.md) | Active; landed and applied on personal-mbp, follow-ups open. One `browser` router skill in `utils-agent` replaces `managed-chrome-cdp`, with Orca routing inside Orca (browser-harness for live Chrome) and `agent-browser` elsewhere. |
-| [Jev Deterministic Preparation](plans/jev-deterministic-preparation-plan.md) | Active; the separate `browser-jev` skill owns dynamic control discovery and deterministic field execution. Two synthetic Cloudflare trials passed; end-to-end comparison remains open. |
 | [Agent Session Wiki](plans/agent-session-wiki-plan.md) | Active; hourly launchd archive sync, QMD history index, AgentsView wiring, and daily Claude wiki ingest on m4mini. See [ADR 0017](adr/0017-agent-session-archive.md). |
 | [Restore Wiki Ingestion](plans/wiki-ingest-revisit-plan.md) | Active; the m4mini schedule and Claude Sonnet 5/high configuration are live and passed an end-to-end ingest. |
 | [SSD Layout And Arq Coverage](plans/ssd-arq-layout-plan.md) | Active; Code, Tart, and WinMux storage migrated. Both SSD volumes retained for Code and GhostPepper; Arq selection and restore checks deferred. |
@@ -125,8 +124,8 @@ for day-to-day implementation details.
 | [ADR 0031 - Discover landing workflows](adr/0031-discovered-landing-workflows.md) | [Land-changes skill](../agent-marketplace/packages/review/skills/land-changes/SKILL.md) and [dotfiles landing](runbooks/dotfiles-landing.md). |
 | [ADR 0032 - acpx model routing](adr/0032-acpx-model-routing.md) | Superseded by [ADR 0045](adr/0045-acpx-explicit-model-profiles.md); original routing and ownership architecture. |
 | [ADR 0033 - Skill-owned Jev browser runner](adr/0033-skill-owned-jev-browser-runner.md) | Placement superseded by ADR 0035; the shared JSON runner and borrowed browser ownership remain. The [completed experiment](plans/jev-browser-runner-plan.md) rejected adoption. |
-| [ADR 0034 - Discover Jev controls in the browser skill](adr/0034-discover-jev-controls-in-the-browser-skill.md) | Accepted; dynamic preparation now lives in the separate experimental skill. The [follow-up experiment](plans/jev-deterministic-preparation-plan.md) remains active. |
-| [ADR 0035 - Separate experimental Jev browser skill](adr/0035-separate-experimental-jev-browser-skill.md) | Accepted; `browser-jev` links to the regular `browser` skill for policy and routing while owning the Jev runner. |
+| [ADR 0034 - Discover Jev controls in the browser skill](adr/0034-discover-jev-controls-in-the-browser-skill.md) | Archived; dynamic discovery retained unchanged in the suspended experiment. |
+| [ADR 0035 - Separate experimental Jev browser skill](adr/0035-separate-experimental-jev-browser-skill.md) | Superseded by [ADR 0050](adr/0050-suspend-jev-in-experimental-plugin.md); sibling publication in utils-agent retired. |
 | [ADR 0036 - ACPX shared Herdr pane](adr/0036-acpx-shared-herdr-pane.md) | [ACPX shared pane plan](plans/acpx-shared-pane-plan.md) and the [acpx skill](../agent-marketplace/packages/utils-agent/skills/acpx/SKILL.md). |
 | [ADR 0037 - Repo-tracked landing preferences](adr/0037-repo-tracked-landing-preferences.md) | [Land-changes preferences](../agent-marketplace/packages/review/skills/land-changes/references/preferences.md). |
 | [ADR 0038 - Touch ID for sudo adopts any existing sudo_local](adr/0038-touchid-sudo-adopts-existing-file.md) | [Chezmoi Architecture](references/chezmoi-architecture.md#touch-id-for-sudo); `sudo-touchid`'s adopt-and-remove model for the apply hook. |
@@ -140,6 +139,7 @@ for day-to-day implementation details.
 | [ADR 0046 - Declarative TCC onboarding with a native helper](adr/0046-tcc-onboarding.md) | Superseded by [ADR 0047](adr/0047-tcc-cli-first-apply.md); original native helper and opt-in prompt decision. |
 | [ADR 0047 - CLI-first permission auditing during apply](adr/0047-tcc-cli-first-apply.md) | Accepted; default desktop-role read-only auditing with manual native review. [Runbook](runbooks/tcc-onboarding.md). |
 | [ADR 0048 - The repo owns the NocFree keymap](adr/0048-repo-managed-nocfree-keymap.md) | Accepted; one stored Vial keymap applied to the cable and dongle by `scripts/keyboard/nocfree-keymap`, a firmware copy of the nav layer, and Karabiner-owned select mode through F20. |
+| [ADR 0050 - Suspend Jev in experimental](adr/0050-suspend-jev-in-experimental-plugin.md) | Accepted; default-disabled experimental plugin, explicit invocation, and optional offline checks. |
 
 ## Research
 
@@ -147,7 +147,7 @@ for day-to-day implementation details.
 
 | Doc | Use it for |
 | --- | --- |
-| [Jev Browser Integrations](research/jev-browser-integrations.md) | Source assessment, isolated headless Orca proof, the completed development comparison that rejected adoption, and the dynamic follow-up boundary. |
+| [Jev Browser Integrations](research/jev-browser-integrations.md) | Archived evidence from the suspended experiment; adoption was rejected and the dynamic follow-up remains unmeasured. |
 | [Shell Testing Framework Comparison](research/shell-testing-framework-comparison.md) | Alternatives, decision history, and experiment/upstream evidence supporting the [Test Refactoring plan](plans/test-suite-rebuild-plan.md). |
 | [Agent Skill Collection Audit](research/agent-skill-collection-audit.md) | Remaining manual collection lists, native marketplace candidates, intentional subsets, and customized upstream copies. |
 | [Agent Skill Management Research](research/agent-skill-management-research.md) | Background on skill context pressure, package layout, and plugin defaults. |
@@ -188,7 +188,8 @@ or `superseded_by` frontmatter before using them.
 | [Leader Key to Tuna Migration](plans/leader-key-to-tuna-migration-plan.md) | Archived cutover record; the live binds are `home/dot_config/tuna/config.toml` and the left-Cmd trigger is in `home/dot_config/karabiner.edn.tmpl`. |
 | [G95NC Preconditions and Diagnostics](plans/g95nc-diagnostics-plan.md) | Completed command hardening; use the [runbook](runbooks/g95nc-display.md). |
 | [Complete G95NC Modes](plans/g95nc-complete-modes-plan.md) | Implemented app-wide reset and native-output verification; local installation and hardware limits recorded. Use the [runbook](runbooks/g95nc-display.md). |
-| [Jev Browser Runner](plans/jev-browser-runner-plan.md) | Completed implementation and development experiment; adoption rejected. Use the [experimental skill reference](../agent-marketplace/packages/utils-agent/skills/browser-jev/references/jev.md) and [research findings](research/jev-browser-integrations.md). |
+| [Jev Browser Runner](plans/jev-browser-runner-plan.md) | Completed implementation and development experiment; adoption rejected. Use the [experimental skill reference](../agent-marketplace/packages/experimental/skills/browser-jev/references/jev.md) and [research findings](research/jev-browser-integrations.md). |
+| [Jev Deterministic Preparation](plans/jev-deterministic-preparation-plan.md) | Archived; experiment suspended with end-to-end comparison still unmeasured. See [ADR 0050](adr/0050-suspend-jev-in-experimental-plugin.md). |
 | [ACPX Explicit Profiles](plans/acpx-explicit-profiles-plan.md) | Archived implementation record; pinned model/effort defaults and independent review. See [current guidance](references/acpx-routing.md). |
 | [acpx Routing](plans/acpx-routing-plan.md) | Superseded generation-based implementation; see [explicit profiles](plans/acpx-explicit-profiles-plan.md). |
 | [Native acpx Skill Rewrite](plans/acpx-native-skill-rewrite-plan.md) | Archived implementation record for native ACP nodes and bounded child flows; current operation and live-pilot results are in the [runbook](runbooks/acpx-skill-rewrite.md). |

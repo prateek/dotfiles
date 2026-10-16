@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { setTimeout as delay } from "node:timers/promises";
 import test from "node:test";
 
-const source = fileURLToPath(new URL("../../../agent-marketplace/packages/utils-agent/skills/browser-jev/", import.meta.url));
+const source = fileURLToPath(new URL("../../../agent-marketplace/packages/experimental/skills/browser-jev/", import.meta.url));
 const regularBrowser = fileURLToPath(new URL("../../../agent-marketplace/packages/utils-agent/skills/browser/", import.meta.url));
 const token = "synthetic-provider-token-canary";
 const account = "0123456789abcdef0123456789abcdef";
@@ -22,12 +22,13 @@ async function fixture(t, { mutate = false, failCleanup = false, focused = true,
     } catch (error) { if (error.code !== "ENOENT") throw error; }
     await rm(root, { recursive: true, force: true });
   });
-  const skills = join(root, "exported-skills");
-  const skill = join(skills, "browser-jev");
+  const skills = join(root, "plugins");
+  const skill = join(skills, "experimental", "skills", "browser-jev");
   const temporary = join(root, "temporary");
-  await mkdir(skills);
+  await mkdir(join(skills, "experimental", "skills"), { recursive: true });
+  await mkdir(join(skills, "utils-agent", "skills"), { recursive: true });
   await cp(source, skill, { recursive: true });
-  await cp(regularBrowser, join(skills, "browser"), { recursive: true });
+  await cp(regularBrowser, join(skills, "utils-agent", "skills", "browser"), { recursive: true });
   await mkdir(temporary);
   const executable = join(root, "fake-orca.mjs");
   await writeFile(executable, `#!${process.execPath}
@@ -120,7 +121,7 @@ async function invoke(fixture, input = JSON.stringify(fixture.job), { splitAt } 
 
 test("copied skill runs outside the repository, emits one verified JSON result, and isolates browser credentials", async (t) => {
   const current = await fixture(t);
-  const linkedPolicy = await readFile(join(current.skill, "../browser/references/policy.md"), "utf8");
+  const linkedPolicy = await readFile(join(current.skill, "../../../utils-agent/skills/browser/references/policy.md"), "utf8");
   assert.match(linkedPolicy, /focus/i);
   const { code, result } = await invoke(current);
   assert.equal(code, 0);

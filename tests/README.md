@@ -108,8 +108,7 @@ selections fail.
 Every migrated shell harness has been retired. Raycast build hooks, macOS
 defaults, secret-backed files, and retired-package cleanup participate in
 ordinary Bats discovery. `just test-node` discovers the Raycast extension's
-source-owned `tests/*.test.mjs`, `tests/node/browser-jev/*.test.mjs`, and
-`tests/fixtures/browser-jev/fixture.test.mjs` with Node 24.12.0. Its TAP reporter requires a
+source-owned `tests/*.test.mjs` with Node 24.12.0. Its TAP reporter requires a
 passing registered test: Node's automatic success for an empty file does not
 count. Empty, skipped-only, missing-file, and failing selections are checked
 through Bats.
@@ -265,17 +264,20 @@ require a separate authenticated model run with expected answers withheld.
 environment, and the project check runs in the required macOS CI lane.
 
 The Jev browser runner's offline suite lives in `tests/node/browser-jev/` and
-runs with `just test-node`. It checks provider and runner contracts at external
+runs only with the optional `just test-browser-jev` lane. Jev is suspended in
+the default-disabled experimental plugin; ordinary CI deliberately no longer
+protects its runtime contracts. All existing assertions, fixtures, and the
+receipt evaluator are retained for explicit maintenance. It checks provider and runner contracts at external
 HTTP/process boundaries using synthetic inputs, plus benchmark receipt
 validation and reporting. The local fixture server in
 `tests/fixtures/browser-jev/` keeps an independent result and effect ledger;
-its `fixture.test.mjs` runs in the same suite.
+its `fixture.test.mjs` runs in that optional suite.
 Offline cases must not invoke an installed browser, read live credentials, or
 spend model tokens.
 
 Real Orca/Jev trials are a separate host/network lane requiring a task-owned
 page, the selected driver version, and the authorized Cloudflare credential.
-Use the [experimental skill reference](../agent-marketplace/packages/utils-agent/skills/browser-jev/references/jev.md)
+Use the [experimental skill reference](../agent-marketplace/packages/experimental/skills/browser-jev/references/jev.md)
 for current execution requirements, the [fixture guide](fixtures/browser-jev/README.md)
 for independent checks, and the [receipt evaluator](../scripts/eval/browser-jev.mjs)
 for paired development and holdout reporting. Report those results separately
@@ -348,7 +350,7 @@ Run `ghc`/`ohc` URL handling tests:
 just test-shell tests/bats/programs/github-checkout.bats
 ```
 
-Run Raycast Orca worktree and offline Jev browser-runner tests:
+Run Raycast Orca worktree tests:
 
 ```sh
 just test-node

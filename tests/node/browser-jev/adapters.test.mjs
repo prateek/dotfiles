@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createContext, runInContext } from "node:vm";
-import { createOrcaAdapter } from "../../../agent-marketplace/packages/utils-agent/skills/browser-jev/scripts/jev/orca.mjs";
-import { createAgentBrowserAdapter } from "../../../agent-marketplace/packages/utils-agent/skills/browser-jev/scripts/jev/agent-browser.mjs";
+import { createOrcaAdapter } from "../../../agent-marketplace/packages/experimental/skills/browser-jev/scripts/jev/orca.mjs";
+import { createAgentBrowserAdapter } from "../../../agent-marketplace/packages/experimental/skills/browser-jev/scripts/jev/agent-browser.mjs";
 
 const worktree = "repo::/task";
 const orcaBrowser = { driver: "orca", pageId: "page-1", worktree: `id:${worktree}` };

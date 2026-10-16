@@ -3,7 +3,7 @@ set quiet := true
 
 # agent-marketplace also holds vendored third-party suites, so roots stay explicit.
 python_roots := "tests/config_merge tests/python agent-marketplace/packages/ios/skills/ios-audit/tests"
-node_tests := "home/dot_local/share/raycast-extensions/orca-worktree/tests/*.test.mjs tests/node/browser-jev/*.test.mjs tests/fixtures/browser-jev/fixture.test.mjs"
+node_tests := "home/dot_local/share/raycast-extensions/orca-worktree/tests/*.test.mjs"
 test_bash := env("TEST_BASH", "bash")
 docs_base := env("DOCS_LIFECYCLE_BASE", "HEAD")
 tart_image := env("TART_IMAGE", "ghcr.io/cirruslabs/macos-tahoe-base:latest")
@@ -53,6 +53,10 @@ test-orca-shortcuts-docker *args:
 [group('suite')]
 test-node *args:
     {{ mise_env }} bash scripts/tests/node {{ node_tests }} {{ args }}
+
+# Optional suspended Jev experiment; excluded from test-ci.
+test-browser-jev:
+    {{ mise_env }} bash scripts/tests/node tests/node/browser-jev/*.test.mjs tests/fixtures/browser-jev/fixture.test.mjs
 
 # Native permission reader, identity checks, and manifest validation; no live TCC access.
 [group('suite')]

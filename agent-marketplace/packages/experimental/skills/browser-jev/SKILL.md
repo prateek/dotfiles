@@ -1,20 +1,27 @@
 ---
 name: browser-jev
-description: Run an explicitly requested Jev browser experiment on an owned Orca page or isolated agent-browser session. Use the regular browser skill for other browser work.
+description: Run an opt-in Jev browser experiment on an owned Orca page or isolated agent-browser session.
+disable-model-invocation: true
 ---
 
 # Experimental Jev browser
 
 Use this skill only when the user explicitly requests a Jev browser experiment.
-The regular [browser skill](../browser/SKILL.md) remains the default and owns
+The regular [browser skill](../../../utils-agent/skills/browser/SKILL.md) remains the default and owns
 harness, driver, identity, authorization, focus, and cleanup policy. Jev adds a
 bounded decision loop for an owned page in Orca or an isolated agent-browser
 session; it does not select or create the browser identity.
 
+This suspended experiment requires the `utils-agent` plugin and its `browser`
+skill. The links below resolve in the shared marketplace layout. If your client
+caches plugins separately, locate `utils-agent:browser` in its skill catalog and
+resolve policy references from that skill directory. Read that policy before
+running Jev; keep shared policy and helpers in utils-agent.
+
 ## Run a trial
 
 1. Read the regular browser skill and its
-   [policy](../browser/references/policy.md). Follow their rules for the chosen
+   [policy](../../../utils-agent/skills/browser/references/policy.md). Follow their rules for the chosen
    harness and driver. Use Jev only with Orca or standalone agent-browser; if
    the regular skill selects another driver, continue with that skill instead.
 2. Read the [Jev trial reference](references/jev.md). It defines job fields,
