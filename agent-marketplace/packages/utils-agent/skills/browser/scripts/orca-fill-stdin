@@ -53,9 +53,23 @@ def rpc(method, params):
 
 
 def evaluate(page, expression):
-    return json.loads(
-        rpc("browser.eval", {"page": page, "expression": expression})["result"]
-    )
+    result = rpc("browser.eval", {"page": page, "expression": expression})["result"]
+    # Older Orca releases return the value as JSON text; 1.4.224 returns it as is,
+    # so a string result arrives unquoted.
+    if isinstance(result, str):
+        try:
+            return json.loads(result)
+        except ValueError:
+            return result
+    return result
+
+
+def supported(version):
+    """Orca 1.4.212 and later keep the RPC contract this helper relies on."""
+    parts = version.split(".")
+    if len(parts) != 3 or not all(part.isdigit() for part in parts):
+        return False
+    return tuple(map(int, parts)) >= (1, 4, 212)
 
 
 def main():
@@ -102,7 +116,7 @@ def main():
         version = subprocess.run(
             ["orca", "--version"], capture_output=True, text=True, timeout=10
         )
-        if version.returncode or version.stdout.strip() not in ("1.4.212", "1.4.214"):
+        if version.returncode or not supported(version.stdout.strip()):
             raise Failure("unsupported Orca version; revalidate helper before use")
         source = (Path(__file__).with_name("fill-input.js")).read_text()
         def expression(name, *items):
@@ -110,9 +124,13 @@ def main():
                 json.dumps(item) for item in items
             ) + ")"
         target = (args.origin, args.selector, args.type)
+        # browser.fill focuses the selector's light-DOM match, then writes to whatever is
+        # document.activeElement; the digest check below catches a write that went elsewhere.
         if evaluate(args.page, expression("prepareInput", *target)) is not True:
             raise Failure("origin or unique editable input check failed")
-        rpc("browser.keyboardInsertText", {"page": args.page, "text": value})
+        # browser.fill hands the value to agent-browser on stdin, never argv, and needs
+        # no window focus; keyboard insertion does both and drops text in a background window.
+        rpc("browser.fill", {"page": args.page, "element": args.selector, "value": value})
         salt = uuid.uuid4().hex
         expected = hashlib.sha256((salt + value).encode("utf-8")).hexdigest()
         def retained():

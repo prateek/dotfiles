@@ -19,16 +19,18 @@ Orca's CDP input path can activate its window internally.
 
 For an authorized password fill, use
 [`orca-fill-stdin`](../../scripts/orca-fill-stdin). It keeps the password in
-stdin and local RPC, focuses and clears the field, inserts text through Orca's
-page-scoped keyboard RPC, and checks the exact field value with a salted digest.
-The value stays out of eval expressions. It leaves submission to the caller. For a
+stdin and local RPC, checks the field, sets it through Orca's page-scoped
+`browser.fill` RPC (which passes the value to agent-browser on stdin and works
+in a background window), and checks the exact field value with a salted digest.
+The helper's own page checks never contain the value; Orca embeds it in the
+script it hands agent-browser on stdin. It leaves submission to the caller. For a
 text search that needs Enter, use `--type text --enter`; inspect the resulting
 application state afterward.
 
 1. **Target.** Inspect the owned page and identify its exact origin and a CSS
    selector matching one editable password input. Read the helper's `--help`
-   for its arguments. It supports local macOS Orca 1.4.212 and 1.4.214;
-   other versions require revalidation before changing its version gate.
+   for its arguments. It supports local macOS Orca 1.4.212 and later;
+   an earlier version requires revalidation before changing its version gate.
 2. **Fill.** Pipe the approved secret reader directly into the helper. Set
    `BROWSER_SKILL_DIR` to the directory containing this browser skill's
    `SKILL.md`, then substitute the page ID, origin, and selector:
@@ -57,8 +59,11 @@ with the user's focus agreement.
 
 **Validation:** a synthetic DOM test covers nested open shadow roots, field
 focus, digest verification, event order, and a search result triggered by Enter keyup.
-The local RPC contract is version-gated to 1.4.212 and 1.4.214. Before a live
-secret fill on either release, repeat a dummy background test that checks
+Live entry is narrower: `browser.fill` resolves the selector outside shadow
+roots, so a field inside one fails closed and needs the
+[login hand-off](../auth.md#login-hand-off).
+The local RPC contract is version-gated to 1.4.212 and later. Before a live
+secret fill on a release not yet exercised, repeat a dummy background test that checks
 exact entry, foreground focus, and process arguments. A passing fixture does
 not establish live browser compatibility.
 

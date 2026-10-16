@@ -84,7 +84,7 @@ class OrcaFillStdinTests(unittest.TestCase):
                     result = {"result": json.dumps(reply)}
                 else:
                     result = {}
-                failed = method == "browser.keyboardInsertText" and self.fill_error
+                failed = method == "browser.fill" and self.fill_error
                 frames = [
                     {"_keepalive": True},
                     {
@@ -127,9 +127,10 @@ class OrcaFillStdinTests(unittest.TestCase):
         )
         self.assertEqual(len(self.calls), 5)
         self.assertTrue(all(self.secret not in c["params"]["expression"] for c in self.calls if c["method"] == "browser.eval"))
-        self.assertEqual(self.calls[1]["params"]["text"], self.secret)
+        self.assertEqual(self.calls[1]["params"]["value"], self.secret)
+        self.assertEqual(self.calls[1]["params"]["element"], "#password")
         self.assertTrue(all(c["params"]["page"] == "owned-page" for c in self.calls))
-        self.assertEqual([c["method"] for c in self.calls], ["browser.eval", "browser.keyboardInsertText", "browser.eval", "browser.eval", "browser.eval"])
+        self.assertEqual([c["method"] for c in self.calls], ["browser.eval", "browser.fill", "browser.eval", "browser.eval", "browser.eval"])
 
     def test_rejected_origin_or_field_never_receives_the_password(self):
         self.prepare = False
@@ -156,7 +157,7 @@ class OrcaFillStdinTests(unittest.TestCase):
         self.assertEqual(result.stdout, "")
 
     def test_unknown_version_stops_before_runtime_access(self):
-        self.env["FIXTURE_ORCA_VERSION"] = "1.4.213"
+        self.env["FIXTURE_ORCA_VERSION"] = "1.4.211"
         result = self.run_helper()
         self.assertEqual(result.returncode, 1)
         self.assertIn("unsupported Orca version", result.stderr)

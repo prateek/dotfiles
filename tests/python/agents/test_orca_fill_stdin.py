@@ -42,13 +42,18 @@ class OrcaFillTest(unittest.TestCase):
             self.assertEqual(MODULE.main(), 0)
         self.assertIn('"filled": true', out.getvalue())
         self.assertTrue(all('dummy-secret' not in expression for expression in expressions))
-        self.assertEqual(calls, [('browser.keyboardInsertText', {'page': 'page-1', 'text': 'dummy-secret'})])
+        self.assertEqual(calls, [('browser.fill', {'page': 'page-1', 'element': '#password', 'value': 'dummy-secret'})])
 
     def test_unknown_version_rejected_before_rpc(self):
-        with patch.object(sys, 'argv', ['orca-fill-stdin', '--page', 'page-1', '--origin', 'https://example.test', '--selector', '#password']), patch.object(sys, 'stdin', Input(b'dummy-secret')), patch.object(MODULE.subprocess, 'run', return_value=types.SimpleNamespace(returncode=0, stdout='1.4.215\n')), patch.object(MODULE, 'evaluate') as evaluate, contextlib.redirect_stderr(io.StringIO()):
+        with patch.object(sys, 'argv', ['orca-fill-stdin', '--page', 'page-1', '--origin', 'https://example.test', '--selector', '#password']), patch.object(sys, 'stdin', Input(b'dummy-secret')), patch.object(MODULE.subprocess, 'run', return_value=types.SimpleNamespace(returncode=0, stdout='1.4.211\n')), patch.object(MODULE, 'evaluate') as evaluate, contextlib.redirect_stderr(io.StringIO()):
             self.assertEqual(MODULE.main(), 1)
             evaluate.assert_not_called()
 
+
+    def test_evaluate_accepts_json_text_and_raw_values(self):
+        for raw, expected in (('true', True), ('"abc"', 'abc'), ('abc', 'abc'), (True, True)):
+            with patch.object(MODULE, 'rpc', return_value={'result': raw}):
+                self.assertEqual(MODULE.evaluate('page-1', 'x'), expected)
 
 if __name__ == '__main__':
     unittest.main()
