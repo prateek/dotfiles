@@ -39,7 +39,18 @@ test('nested shadow input checks focus and digest before Enter for app state', a
   assert.equal(vm.runInContext('finishInput("https://example.test", "#field", "text", true)', app.context), true);
   assert.equal(app.input.value, 'Kitchen');
   assert.equal(app.result, 'Kitchen selected');
-  assert.deepEqual(app.events, ['focus', 'input', 'change', 'keyup']);
+  assert.deepEqual(app.events, ['focus', 'keyup']);
+});
+
+test('scrub clears every element holding the value, including a shadow host expando', async () => {
+  const app = page();
+  app.input.value = 'secret';
+  vm.runInContext('document.querySelectorAll()[0].value = "secret"', app.context);
+  const expected = createHash('sha256').update('saltsecret').digest('hex');
+  assert.equal(await vm.runInContext(`scrubValue("salt", "${expected}")`, app.context), 2);
+  assert.equal(app.input.value, '');
+  assert.equal(vm.runInContext('document.querySelectorAll()[0].value', app.context), undefined);
+  assert.deepEqual(app.events, ['input', 'change']);
 });
 
 test('password preparation leaves submission to caller and checks origin and type', () => {

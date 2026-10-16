@@ -28,6 +28,8 @@ class OrcaFillStdinTests(unittest.TestCase):
         self.prepare = True
         self.verify = True
         self.fill_error = False
+        self.raw_eval = False
+        self.scrubbed = 0
         self.secret = 'dummy-"quote"-é-\\literal\n'
         self.server = socket.socket(socket.AF_UNIX)
         endpoint = str(self.root / "runtime.sock")
@@ -76,12 +78,15 @@ class OrcaFillStdinTests(unittest.TestCase):
                 if method == "browser.eval":
                     evals += 1
                     expression = request["params"]["expression"].splitlines()[-1]
-                    if expression.startswith("inputDigest("):
+                    if "inputDigest(" in expression:
                         salt = re.search(r'inputDigest\([^\n]*, "([0-9a-f]{32})"\)', expression).group(1)
                         reply = hashlib.sha256((salt + self.secret).encode()).hexdigest() if self.verify else None
+                    elif "scrubValue(" in expression:
+                        reply = self.scrubbed
                     else:
                         reply = self.prepare if evals == 1 else True
-                    result = {"result": json.dumps(reply)}
+                    marked = "orca-fill-stdin:" + json.dumps(reply)
+                    result = {"result": marked if self.raw_eval else json.dumps(marked)}
                 else:
                     result = {}
                 failed = method == "browser.fill" and self.fill_error
@@ -132,6 +137,13 @@ class OrcaFillStdinTests(unittest.TestCase):
         self.assertTrue(all(c["params"]["page"] == "owned-page" for c in self.calls))
         self.assertEqual([c["method"] for c in self.calls], ["browser.eval", "browser.fill", "browser.eval", "browser.eval", "browser.eval"])
 
+    def test_raw_eval_results_from_newer_orca_verify_the_same_way(self):
+        self.raw_eval = True
+        self.env["FIXTURE_ORCA_VERSION"] = "1.4.224"
+        result = self.run_helper()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)["verified"], True)
+
     def test_rejected_origin_or_field_never_receives_the_password(self):
         self.prepare = False
         result = self.run_helper()
@@ -145,15 +157,17 @@ class OrcaFillStdinTests(unittest.TestCase):
         result = self.run_helper()
         self.assertEqual(result.returncode, 1)
         self.assertIn("response withheld", result.stderr)
-        self.assertEqual(
-            len(self.calls), 2
-        )
+        self.assertEqual([c["method"] for c in self.calls], ["browser.eval", "browser.fill", "browser.eval"])
+        self.assertIn("scrubValue(", self.calls[2]["params"]["expression"].splitlines()[-1])
 
     def test_successful_fill_receipt_is_not_enough(self):
         self.verify = False
+        self.scrubbed = 1
         result = self.run_helper()
         self.assertEqual(result.returncode, 1)
         self.assertIn("did not retain the exact input", result.stderr)
+        self.assertIn("cleared the value from 1 page elements", result.stderr)
+        self.assertNotIn(self.secret, self.calls[-1]["params"]["expression"])
         self.assertEqual(result.stdout, "")
 
     def test_unknown_version_stops_before_runtime_access(self):

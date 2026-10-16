@@ -53,7 +53,11 @@ application state afterward.
    The fill receipt proves field entry only.
 
 **Failure:** inspect the page before retrying. The helper suppresses runtime
-error details and never retries uncertain writes. If its runtime or field
+error details and never retries uncertain writes. Orca writes to the page's
+focused element, so a page that moves focus mid-fill can redirect the value.
+After any failure past the field check, the helper clears every page element
+holding the exact value and reports how many it cleared; a report that it could
+not check means a copy may remain on the page. If its runtime or field
 requirements cannot be met, use the [login hand-off](../auth.md#login-hand-off)
 with the user's focus agreement.
 

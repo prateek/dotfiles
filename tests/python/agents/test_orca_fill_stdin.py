@@ -29,7 +29,7 @@ class OrcaFillTest(unittest.TestCase):
         def evaluate(_page, expression):
             expressions.append(expression)
             call = expression.splitlines()[-1]
-            if call.startswith('inputDigest('):
+            if 'inputDigest(' in call:
                 salt = re.search(r'inputDigest\([^\n]*, "([0-9a-f]{32})"\)', call).group(1)
                 return hashlib.sha256((salt + 'dummy-secret').encode()).hexdigest()
             return True
@@ -50,10 +50,18 @@ class OrcaFillTest(unittest.TestCase):
             evaluate.assert_not_called()
 
 
-    def test_evaluate_accepts_json_text_and_raw_values(self):
-        for raw, expected in (('true', True), ('"abc"', 'abc'), ('abc', 'abc'), (True, True)):
+    def test_evaluate_reads_marked_json_text_and_raw_results(self):
+        for raw, expected in (('orca-fill-stdin:true', True), ('"orca-fill-stdin:\\"true\\""', 'true'), ('orca-fill-stdin:"null"', 'null'), ('"orca-fill-stdin:null"', None)):
             with patch.object(MODULE, 'rpc', return_value={'result': raw}):
                 self.assertEqual(MODULE.evaluate('page-1', 'x'), expected)
+        for raw in ('true', True, '"abc"'):
+            with patch.object(MODULE, 'rpc', return_value={'result': raw}):
+                with self.assertRaises(MODULE.Failure):
+                    MODULE.evaluate('page-1', 'x')
+
+    def test_version_gate_accepts_later_numeric_releases_only(self):
+        for version, ok in (('1.4.212', True), ('1.4.224', True), ('1.5.0', True), ('2.0.0', True), ('1.4.211', False), ('1.4.224-beta', False), ('1.4', False), ('', False)):
+            self.assertEqual(MODULE.supported(version), ok, version)
 
 if __name__ == '__main__':
     unittest.main()

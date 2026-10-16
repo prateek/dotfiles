@@ -17,6 +17,9 @@ class Failure(Exception):
     pass
 
 
+MARK = "orca-fill-stdin:"
+
+
 def rpc(method, params):
     root = Path(
         os.environ.get(
@@ -54,14 +57,13 @@ def rpc(method, params):
 
 def evaluate(page, expression):
     result = rpc("browser.eval", {"page": page, "expression": expression})["result"]
-    # Older Orca releases return the value as JSON text; 1.4.224 returns it as is,
-    # so a string result arrives unquoted.
-    if isinstance(result, str):
-        try:
-            return json.loads(result)
-        except ValueError:
-            return result
-    return result
+    # Older Orca releases return the page value as JSON text; 1.4.224 returns it as is.
+    # Page calls return MARK + JSON, so the prefix tells the two shapes apart.
+    if isinstance(result, str) and not result.startswith(MARK):
+        result = json.loads(result)
+    if not isinstance(result, str) or not result.startswith(MARK):
+        raise Failure("unexpected browser.eval result")
+    return json.loads(result[len(MARK):])
 
 
 def supported(version):
@@ -120,27 +122,38 @@ def main():
             raise Failure("unsupported Orca version; revalidate helper before use")
         source = (Path(__file__).with_name("fill-input.js")).read_text()
         def expression(name, *items):
-            return source + "\n" + name + "(" + ", ".join(
-                json.dumps(item) for item in items
-            ) + ")"
+            call = name + "(" + ", ".join(json.dumps(item) for item in items) + ")"
+            return source + "\n" + (
+                f"Promise.resolve({call}).then(r => {json.dumps(MARK)} + JSON.stringify(r))"
+            )
         target = (args.origin, args.selector, args.type)
-        # browser.fill focuses the selector's light-DOM match, then writes to whatever is
-        # document.activeElement; the digest check below catches a write that went elsewhere.
         if evaluate(args.page, expression("prepareInput", *target)) is not True:
             raise Failure("origin or unique editable input check failed")
-        # browser.fill hands the value to agent-browser on stdin, never argv, and needs
-        # no window focus; keyboard insertion does both and drops text in a background window.
-        rpc("browser.fill", {"page": args.page, "element": args.selector, "value": value})
         salt = uuid.uuid4().hex
         expected = hashlib.sha256((salt + value).encode("utf-8")).hexdigest()
         def retained():
             return evaluate(args.page, expression("inputDigest", *target, salt)) == expected
-        if not retained():
-            raise Failure("field did not retain the exact input; no submission attempted")
-        if evaluate(args.page, expression("finishInput", *target, args.enter)) is not True:
-            raise Failure("field did not retain the exact input; no submission attempted")
-        if not args.enter and not retained():
-            raise Failure("field did not retain the exact input; no submission attempted")
+        try:
+            # browser.fill hands the value to agent-browser on stdin, never argv, and needs
+            # no window focus; keyboard insertion does both and drops text in a background
+            # window. It focuses the selector's light-DOM match, then writes to whatever is
+            # document.activeElement, so a page that moves focus can redirect the value.
+            rpc("browser.fill", {"page": args.page, "element": args.selector, "value": value})
+            if not retained():
+                raise Failure("field did not retain the exact input; no submission attempted")
+            if evaluate(args.page, expression("finishInput", *target, args.enter)) is not True:
+                raise Failure("field did not retain the exact input; no submission attempted")
+            if not args.enter and not retained():
+                raise Failure("field did not retain the exact input; no submission attempted")
+        except Exception as error:
+            try:
+                cleared = evaluate(args.page, expression("scrubValue", salt, expected))
+                note = f"; cleared the value from {cleared} page elements" if cleared else ""
+            except Exception:
+                note = "; could not check the page for copies of the value"
+            if isinstance(error, Failure):
+                raise Failure(f"{error}{note}") from None
+            raise Failure(f"operation failed; details withheld to protect stdin{note}") from None
         print(json.dumps({"filled": True, "verified": True, "submitted": False}))
         return 0
     except Failure as error:
