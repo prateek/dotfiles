@@ -84,7 +84,7 @@ def main():
          "scope": {"policy": "protect-master", "caller": "repository-admin-bypass"},
          "meaning": rule_meaning(policy, "required_status_checks")},
         {"id": "apply-full", "kind": "action", "source": f"{RUNBOOK}:apply-full",
-         "scope": {"host": "work-mbp", "checkout": "~/dotfiles", "effect": "chezmoi-apply-full"},
+         "scope": {"host": "landing-host", "checkout": "~/dotfiles", "effect": "chezmoi-apply-full"},
          "meaning": runbook_effect("apply-full")},
     ]
     json.dump({"items": items}, sys.stdout, indent=1)

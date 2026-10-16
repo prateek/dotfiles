@@ -58,11 +58,11 @@
           "kind": "action",
           "source": "docs/runbooks/dotfiles-landing.md:apply-full",
           "scope": {
-            "host": "work-mbp",
+            "host": "landing-host",
             "checkout": "~/dotfiles",
             "effect": "chezmoi-apply-full"
           },
-          "fingerprint": "409f8f21eb2f12d63f357fb2b6788097f898a3587623587e938d664276c64a0d",
+          "fingerprint": "e498b82fe9031a712371270437685144fbadf415551fc7d1e680bcaab133de35",
           "operation": "after",
           "dynamic": false
         }
