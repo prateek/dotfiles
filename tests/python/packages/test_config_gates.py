@@ -43,10 +43,10 @@ class PackageConfigGatesTests(RepoTestCase):
         result = self.paths("bogus", "ignored", expected_status=1)
         self.assertIn(b"unknown machine type", result.stderr)
 
-    def test_tuna_combo_layout_apps_winmux_misc_and_leader_hotkey(self):
+    def test_tuna_combo_layout_apps_orca_winmux_misc_and_leader_hotkey(self):
         config = tomllib.loads((ROOT / "home/dot_config/tuna/config.toml").read_text())
         binds = {binding["key"]: binding for binding in config["comboMode"]["bindings"]}
-        self.assertEqual(set(binds), {"a", "w", "z"})
+        self.assertEqual(set(binds), {"a", "o", "w", "z"})
         self.assertEqual(binds["a"]["label"], "apps")
         apps = {child["key"]: child["destination"]["command"] for child in binds["a"]["destination"]["bindings"]}
         self.assertEqual(set(apps), {"1", "t", "s", "b", "c", "m", "f"})

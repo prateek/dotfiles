@@ -98,6 +98,83 @@ label = "apps"
                 type = "savedCommand"
 
 [[comboMode.bindings]]
+iconPath = "terminal"
+key = "o"
+label = "orca"
+
+    [comboMode.bindings.destination]
+    type = "group"
+
+        [[comboMode.bindings.destination.bindings]]
+        iconPath = "app"
+        key = "o"
+        label = "open Orca"
+
+            [comboMode.bindings.destination.bindings.destination]
+            type = "command"
+
+                [comboMode.bindings.destination.bindings.destination.command]
+                actionIdentifier = "tuna.common-actions/open"
+                behavior = "run"
+                presentation = "automatic"
+                subjectIdentifiers = ["path:/Applications/Orca.app"]
+                type = "savedCommand"
+
+        [[comboMode.bindings.destination.bindings]]
+        iconPath = "plus"
+        key = "n"
+        label = "new worktree"
+
+            [comboMode.bindings.destination.bindings.destination]
+            type = "url"
+            url = "raycast://extensions/prateek/orca-worktree/create-worktree"
+
+        [[comboMode.bindings.destination.bindings]]
+        iconPath = "text.magnifyingglass"
+        key = "e"
+        label = "reveal agent session"
+
+            [comboMode.bindings.destination.bindings.destination]
+            type = "command"
+
+                [comboMode.bindings.destination.bindings.destination.command]
+                actionIdentifier = "tuna.common-actions/run-text-as-shell-command"
+                behavior = "run"
+                presentation = "automatic"
+                subjectIdentifiers = ["text:PATH=\"$HOME/bin:$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH\"; osascript -e 'tell application id \"com.stablyai.orca\" to activate' && \"$HOME/bin/orca-agent-session\""]
+                type = "savedCommand"
+
+        [[comboMode.bindings.destination.bindings]]
+        iconPath = "arrow.triangle.branch"
+        key = "f"
+        label = "fork agent session"
+
+            [comboMode.bindings.destination.bindings.destination]
+            type = "command"
+
+                [comboMode.bindings.destination.bindings.destination.command]
+                actionIdentifier = "tuna.common-actions/run-text-as-shell-command"
+                behavior = "run"
+                presentation = "automatic"
+                subjectIdentifiers = ["text:PATH=\"$HOME/bin:$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH\"; osascript -e 'tell application id \"com.stablyai.orca\" to activate' && \"$HOME/bin/orca-agent-session\" --fork"]
+                type = "savedCommand"
+
+        [[comboMode.bindings.destination.bindings]]
+        iconPath = "arrow.up.left.and.arrow.down.right"
+        key = "z"
+        label = "Zen mode"
+
+            [comboMode.bindings.destination.bindings.destination]
+            type = "command"
+
+                [comboMode.bindings.destination.bindings.destination.command]
+                actionIdentifier = "tuna.common-actions/run-text-as-shell-command"
+                behavior = "run"
+                presentation = "automatic"
+                subjectIdentifiers = ["text:PATH=\"$HOME/bin:$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH\"; osascript -e 'tell application id \"com.stablyai.orca\" to activate' && \"$HOME/.local/bin/orca-zen-mode\""]
+                type = "savedCommand"
+
+[[comboMode.bindings]]
 iconPath = "macwindow.on.rectangle"
 key = "w"
 label = "winmux"
