@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+#MISE description="Install or repair the browser skill's qualified Camofox runtime"
+set -euo pipefail
+
+skill_dir="${BROWSER_SKILL_DIR:-$HOME/.agents/plugins/plugins/utils-agent/skills/browser}"
+helper="$skill_dir/scripts/camofox-runtime.py"
+if [[ ! -f "$helper" ]]; then
+  echo "Camofox setup: browser skill helper not found at $helper" >&2
+  exit 1
+fi
+exec python3 "$helper" install "$@"

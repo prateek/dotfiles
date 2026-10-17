@@ -3,14 +3,20 @@ status: active
 doc_type: plan
 owner: Prateek
 created: 2026-09-23
-updated: 2026-09-26
+updated: 2026-10-17
 status_detail: "Landed and applied on personal-mbp; follow-ups remain open."
 related:
   - ../adr/0028-router-skill-over-vendor-remap.md
   - ../references/agent-marketplace.md
+  - browser-runtime-controller-plan.md
 ---
 
 # Browser skill
+
+The [Camofox adoption follow-up](browser-runtime-controller-plan.md) owns the
+current component vocabulary, explicit Camofox REST exception, runtime-scoped
+readiness, telemetry controls and controller-specific identity mechanics.
+The original design below records the initial migration and its follow-ups.
 
 Replace the coupled `managed-chrome-cdp` helper with one `browser` skill. The
 skill routes browser and desktop-UI work by harness and task. It keeps

@@ -4,6 +4,11 @@ Use for browser test suites, including Firefox and WebKit. Keep each task's
 browser state isolated and its traces or recordings in the task's scratch
 directory.
 
+Controller: the repository runner or Playwright CLI. Runtime: the actual
+Chromium, Firefox or WebKit engine selected for the test. A protocol endpoint
+or alternative runtime does not substitute for an engine a test requires.
+Identity: isolated contexts unless the repository explicitly supplies test state.
+
 ## Choose the runner
 
 - **Repository install:** use the repository's Playwright configuration and

@@ -1,0 +1,13 @@
+{
+  "name": "browser-skill-camofox-runtime",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@askjo/camofox-browser": "1.18.1"
+  },
+  "overrides": {
+    "playwright-core": "1.58.2",
+    "camoufox-js": "0.11.5"
+  }
+}

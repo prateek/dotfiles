@@ -49,14 +49,31 @@ for the task and delete temporary profiles created for it, except for logins
 Prateek asked to retain. Leave pre-existing browsers, tabs, profiles, and
 daemons running. Report resources that remain open and any cleanup that fails.
 
+## Tool privacy
+
+Before launching a task-owned tool or browser, disable its optional telemetry,
+analytics and crash uploads using its version-matched controls. Neutralize
+inherited reporting settings and verify the effective configuration. The
+selected recipe owns its concrete controls. Keep task diagnostics private and
+remove temporary logs with task state; this policy is not a claim that visited
+websites make no tracking requests.
+
 ## Interaction
 
-1. Inspect the current page or window snapshot and identify the target.
-2. Act through the target's ref or element ID. Use coordinates only when the
+1. Inspect the intended owned tab or window and identify the target from a
+   fresh observation. Serialize observation and action for that target.
+2. Act through the current ref, element ID or uniquely scoped semantic locator.
+   Refs are aliases from that observation, not durable node identities; some
+   controllers reuse them for different elements. Use coordinates only when the
    element tree omits the target and a current screenshot shows where it is.
 3. Wait for the expected text, URL, selector, load state, or app state. After
    navigation, tab switches, or other page-changing actions, refresh the
    snapshot. Continue once the expected result is visible.
+
+Verify application state independently of the tool's success flag. A timeout or
+transport error can occur after an action commits: inspect the current result
+before deciding whether to retry. A missing tab or restarted process ends that
+resource's continuity; report it instead of silently recreating and replaying.
 
 ## Secrets
 

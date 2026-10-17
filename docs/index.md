@@ -2,7 +2,7 @@
 status: current
 doc_type: index
 created: 2026-05-12
-updated: 2026-10-05
+updated: 2026-10-17
 related:
   - document-lifecycle.md
   - ../agent-marketplace/packages/core/skills/code-gardening/SKILL.md
@@ -60,6 +60,14 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [acpx Skill Packaging](plans/acpx-skill-packaging-plan.md) | Active; the acpx conventions are now a trigger-owning skill next to the vendored `acpx-cli` command surface, the conventions doc and its AGENTS.md pointer are deleted. See [ADR 0028](adr/0028-router-skill-over-vendor-remap.md). Trigger arbitration measured 2026-09-08 (no cross-listing steals; 16/18 after one relabel); nothing open. |
 | [ACPX Shared Pane](plans/acpx-shared-pane-plan.md) | Accepted and implemented in source; one compact Herdr view per Orca caller, with an ordered tab per invocation. Live Orca terminal preview verified; host activation is a separate follow-up. |
 | [Browser Skill](plans/browser-skill-plan.md) | Active; landed and applied on personal-mbp, follow-ups open. One `browser` router skill in `utils-agent` replaces `managed-chrome-cdp`, with Orca routing inside Orca (browser-harness for live Chrome) and `agent-browser` elsewhere. |
+| [Browser Runtime/Controller Plan Review](research/browser-runtime-controller-review.md) | 2026-10-16 adversarial review of the [runtime/controller plan](plans/browser-runtime-controller-plan.md) against agent-browser v0.38.2 and Obscura main/v0.2.4 source: CDP method gaps, release pinning, MCP client options, and the writing-for-agents gate. |
+| [Browser Runtime/Controller Fable Review](research/browser-runtime-controller-fable-review.md) | 2026-10-17 Fable review through Claude Code, with root source audit: Camofox interfaces, dependency pins, persisted state, reference lifetime, and implementation gates. |
+| [Browser Controller Qualification](research/browser-controller-qualification.md) | Executed client/lifecycle trials and Camofox REST adoption checks; pinned dependencies, telemetry suppression, task isolation and cleanup. Obscura evidence retained without adoption. |
+| [Local Browser Runtime Evaluation](research/local-browser-runtime-evaluation.md) | Lightpanda, Camofox, direct Camoufox/Playwright and browser-harness compatibility trials with a fresh headless Chrome control; runtime, controller and website outcomes separated. |
+| [Hermes Camofox Comparison](research/hermes-camofox-comparison.md) | Pinned source comparison of Hermes's structured tools, Camofox sessions and browser guidance against our proposed skill; integration code distinguished from instructions and local qualification. |
+| [Agent Browser Ecosystem](research/agent-browser-ecosystem.md) | Source survey of CLI controllers, existing-browser attachment, agent browsers and page-provided tools; comparison proposals for Orca and Obscura. |
+| [Obscura Browser Evaluation](research/obscura-browser-evaluation.md) | Retained local experiment evidence; adoption dropped by explicit user decision. |
+| [Browser Components and Camofox Adoption](plans/browser-runtime-controller-plan.md) | Camofox REST with explicit mise setup, repair, supervisor checks and automatic generic fallback; explicit runtime constraints preserved. Host activation pending; Obscura adoption dropped. |
 | [Agent Session Wiki](plans/agent-session-wiki-plan.md) | Active; hourly launchd archive sync, QMD history index, AgentsView wiring, and daily Claude wiki ingest on m4mini. See [ADR 0017](adr/0017-agent-session-archive.md). |
 | [Restore Wiki Ingestion](plans/wiki-ingest-revisit-plan.md) | Active; the m4mini schedule and Claude Sonnet 5/high configuration are live and passed an end-to-end ingest. |
 | [SSD Layout And Arq Coverage](plans/ssd-arq-layout-plan.md) | Active; Code, Tart, and WinMux storage migrated. Both SSD volumes retained for Code and GhostPepper; Arq selection and restore checks deferred. |
@@ -140,6 +148,7 @@ for day-to-day implementation details.
 | [ADR 0047 - CLI-first permission auditing during apply](adr/0047-tcc-cli-first-apply.md) | Accepted; default desktop-role read-only auditing with manual native review. [Runbook](runbooks/tcc-onboarding.md). |
 | [ADR 0048 - The repo owns the NocFree keymap](adr/0048-repo-managed-nocfree-keymap.md) | Accepted; one stored Vial keymap applied to the cable and dongle by `scripts/keyboard/nocfree-keymap`, a firmware copy of the nav layer, and Karabiner-owned select mode through F20. |
 | [ADR 0050 - Suspend Jev in experimental](adr/0050-suspend-jev-in-experimental-plugin.md) | Accepted; default-disabled experimental plugin, explicit invocation, and optional offline checks. |
+| [ADR 0051 - Camofox REST browser recipe](adr/0051-camofox-rest-browser-recipe.md) | Accepted; explicit task-owned Camofox REST, pinned Camoufox, tool telemetry disabled, ephemeral state and runtime/controller separation. Obscura adoption dropped. |
 
 ## Research
 

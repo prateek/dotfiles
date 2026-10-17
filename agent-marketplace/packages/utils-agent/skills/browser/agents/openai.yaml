@@ -1,4 +1,4 @@
 interface:
   display_name: "Browser"
-  short_description: "Choose a browser driver, identity, and workflow"
-  default_prompt: "Use $browser to complete this browser or desktop task with the appropriate driver and identity."
+  short_description: "Choose a browser runtime, controller, and identity"
+  default_prompt: "Use $browser to complete this browser or desktop task with the appropriate runtime, controller, and identity."

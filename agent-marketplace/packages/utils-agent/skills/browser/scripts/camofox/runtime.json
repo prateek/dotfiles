@@ -1,0 +1,11 @@
+{
+  "node": "24.12.0",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "browser_version": "152.0.4-beta.30",
+  "archive_url": "https://github.com/daijro/camoufox/releases/download/v152.0.4-beta.30/camoufox-152.0.4-beta.30-mac.arm64.zip",
+  "archive_sha256": "3b43e766574f286a6a63296cf58b660b7a3120952086c869b4df4c9a71604bc3",
+  "executable": "browser/Camoufox.app/Contents/MacOS/camoufox",
+  "executable_sha256": "e468f25acba5085624da4d1ac809fd5679fa281ed2b0265f82efe63904900b33",
+  "resources": "browser/Camoufox.app/Contents/Resources"
+}

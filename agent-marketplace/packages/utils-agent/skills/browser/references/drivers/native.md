@@ -3,6 +3,10 @@
 Use native automation for app windows, system dialogs, browser chrome, and
 webviews that the selected page driver cannot control.
 
+Controller: the harness's native automation. Runtime: the named app or browser
+window, independent of its engine. Identity: whatever that window already owns;
+native access does not grant permission to import or retain its login.
+
 1. **Driver.** Inside Orca, use `orca computer` through the
    [Orca guide](orca.md#native-ui-and-annotations). Outside Orca, use the
    harness's Computer Use tool, or installed `peekaboo` when none is offered.

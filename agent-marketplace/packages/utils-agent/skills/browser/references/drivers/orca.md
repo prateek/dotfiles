@@ -1,5 +1,16 @@
 # Orca driver
 
+Runtime: Orca's embedded browser. Controller: Orca CLI/local RPC; native windows
+use `orca computer`. Identity: isolated, explicitly imported, or an owned
+existing Orca tab. This controller does not attach to external Chrome/Camoufox.
+
+## Readiness
+
+Before page or native operations through Orca, poll `orca status --json` every
+ten seconds for at most one minute. Continue when `runtime.reachable` is true;
+otherwise report the unavailable runtime and follow the router's fallback rules.
+Other recipes do not depend on this check merely because the agent runs inside Orca.
+
 ## Page workflow
 
 1. Load the [orca-cli](../../../orca-cli/SKILL.md) skill and its browser

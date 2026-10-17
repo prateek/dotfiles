@@ -4,6 +4,11 @@ Use for an explicitly requested live attach to Prateek's running Chrome.
 Actions use his existing logins and permissions. This route applies in both
 Orca and terminal harnesses.
 
+Runtime: Prateek's running Chrome. Controller: browser-harness over its supported
+Chrome/CDP connection. Identity: live attach only in this recipe. Camoufox's
+Firefox/BiDi endpoint is not compatible with the evaluated release 0.1.13;
+use the [Camofox recipe](camofox.md) for explicitly requested Camoufox browsing.
+
 ## Workflow
 
 1. **Prepare.** Run the task-local tool through mise. Read its guide, check

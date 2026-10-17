@@ -28,6 +28,23 @@ Record baseline failures separately. For a regression fix, take one intended
 failing behavior to green at a time. Match `.github/workflows` locally where
 practical and report host, CI, Linux, and VM evidence separately.
 
+## Camofox adoption checks
+
+`just test-python -p test_camofox_runtime.py` checks the real runtime helper's
+child-environment isolation, dependency/browser/privacy preflight and process
+identity handling without a browser download in CI. On macOS it also drives the
+real CLI with an external fixture server: TERM/HUP, launching-parent loss, inherited
+settings, bounded private diagnostics, installation-free check/run, and cache
+repair/exclusion while running or while recovery state remains. It also covers
+parent loss during preflight, children created during shutdown, and a real Node
+detached-browser spawn through the ownership preload. Journal corruption and
+process-group generation reuse have explicit failure assertions. The mise setup task is exercised through that
+repair boundary. Actual browser and pinned telemetry-module probes are local
+qualification, recorded in
+[Browser Controller Qualification](../docs/research/browser-controller-qualification.md).
+Use the browser recipe for live tests; a green unit suite alone does not prove
+browser interoperability or native agent activation.
+
 ## Shell test authoring
 
 Trust the checkout with `mise trust`, then run `just test-tools` once to install Bats 1.14.0 through mise and checksum-verified
