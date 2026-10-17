@@ -79,6 +79,7 @@ Status and summary for each are in the [inventory](inventory.md#plans).
 - [TCC onboarding](plans/tcc-onboarding-plan.md)
 - [Touch ID for sudo](plans/touchid-sudo-plan.md)
 - [Using-git-spice skill](plans/using-git-spice-skill-plan.md)
+- [Voice OSS discovery](research/voice-oss/discovery-plan.md)
 
 ## Decisions, research, and history
 

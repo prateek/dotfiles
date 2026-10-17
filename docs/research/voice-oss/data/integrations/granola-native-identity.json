@@ -1,0 +1,18 @@
+{
+  "date": "2026-10-12",
+  "app_version": "Granola 7.637.0",
+  "official_dmg_sha256_parent_supplied": "9ca52082cd037259b58d457a215e91ec2d77a398f448abb5e0cf06ffe56b2623",
+  "original_bridge": "$WORKTREE/.agents/voice-research/integrations/granola/Granola.app/Contents/Resources/native/libThirdPartyMeetingAutomationBridge.dylib",
+  "original_bridge_sha256": "58cb4dfc12893dd28822a0ae6aeb29572dd73b5c3fcfc1d0a79f40aff4e6fdd8",
+  "derived_arm64": "$WORKTREE/.agents/voice-research/integrations/granola/meeting-bridge-arm64.dylib",
+  "derived_arm64_sha256": "fb0cada6053dabfa9369057e41eb5454004c93054926987f46170beee6b49c49",
+  "derivation": "Parent supplied arm64 lipo slice of official package member",
+  "target_execution": false,
+  "raw_evidence_directory": "$CAPTURE_ROOT/granola-native",
+  "original_bridge_retained_path": "$CAPTURE_ROOT/granola-native/artifacts/libThirdPartyMeetingAutomationBridge-universal.dylib",
+  "derived_arm64_retained_path": "$CAPTURE_ROOT/granola-native/artifacts/libThirdPartyMeetingAutomationBridge-arm64.dylib",
+  "rea_evidence_id": "ev_ccff1e7135fec7256956050712c0917566f8fc454eca07876ad146e04c13e950",
+  "rea_evidence_path": "$CAPTURE_ROOT/granola-native/inspect-macho.json",
+  "analysis_limitation": "Ghidra initial analysis exceeded 330000ms; first function returned provider_timeout; second was interrupted while starting. No successful decompilation.",
+  "session_closed_successfully": true
+}

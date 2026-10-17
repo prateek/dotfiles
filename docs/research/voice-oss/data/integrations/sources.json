@@ -1,0 +1,542 @@
+[
+  {
+    "id": "INT-DOC-01",
+    "title": "Speaker tags",
+    "url": "https://docs.granola.ai/help-center/taking-notes/speaker-attribution",
+    "accessed": "2026-10-12",
+    "kind": "official documentation",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "No live runtime verification; findings.md scopes the supported claims."
+  },
+  {
+    "id": "INT-DOC-02",
+    "title": "Zoom setup",
+    "url": "https://docs.granola.ai/help-center/taking-notes/speaker-attribution-zoom",
+    "accessed": "2026-10-12",
+    "kind": "official documentation",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "No live runtime verification; findings.md scopes the supported claims."
+  },
+  {
+    "id": "INT-DOC-03",
+    "title": "Meet setup",
+    "url": "https://docs.granola.ai/help-center/taking-notes/speaker-attribution-google-meet",
+    "accessed": "2026-10-12",
+    "kind": "official documentation",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "No live runtime verification; findings.md scopes the supported claims."
+  },
+  {
+    "id": "INT-DOC-04",
+    "title": "Granola Companion on Chrome Web Store",
+    "url": "https://chromewebstore.google.com/detail/granola-companion/opaadbjlebbbnmjjgdmdllingedoleml",
+    "accessed": "2026-10-12",
+    "kind": "official documentation",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "No live runtime verification; findings.md scopes the supported claims."
+  },
+  {
+    "id": "INT-DOC-05",
+    "title": "Notifications",
+    "url": "https://docs.granola.ai/help-center/taking-notes/notifications",
+    "accessed": "2026-10-12",
+    "kind": "official documentation",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "No live runtime verification; findings.md scopes the supported claims."
+  },
+  {
+    "id": "INT-DOC-06",
+    "title": "Transcription",
+    "url": "https://docs.granola.ai/help-center/taking-notes/transcription",
+    "accessed": "2026-10-12",
+    "kind": "official documentation",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "No live runtime verification; findings.md scopes the supported claims."
+  },
+  {
+    "id": "INT-DOC-07",
+    "title": "Record a Voice Note",
+    "url": "https://www.monologue.to/docs/voice-notes/record-a-note",
+    "accessed": "2026-10-12",
+    "kind": "official documentation",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "No live runtime verification; findings.md scopes the supported claims."
+  },
+  {
+    "id": "INT-DOC-08",
+    "title": "Organize, edit, share",
+    "url": "https://www.monologue.to/docs/voice-notes/organize-edit-and-share",
+    "accessed": "2026-10-12",
+    "kind": "official documentation",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "No live runtime verification; findings.md scopes the supported claims."
+  },
+  {
+    "id": "INT-DOC-09",
+    "title": "Recording a meeting",
+    "url": "https://docs.wisprflow.ai/articles/9238501024-recording-a-meeting-with-notetaker-beta",
+    "accessed": "2026-10-12",
+    "kind": "official documentation",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "No live runtime verification; findings.md scopes the supported claims."
+  },
+  {
+    "id": "INT-DOC-10",
+    "title": "Meeting editor",
+    "url": "https://docs.wisprflow.ai/articles/9406970664-Meeting-notes-and-the-editor-in-Notetaker",
+    "accessed": "2026-10-12",
+    "kind": "official documentation",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "No live runtime verification; findings.md scopes the supported claims."
+  },
+  {
+    "id": "INT-DOC-11",
+    "title": "Live transcript",
+    "url": "https://docs.wisprflow.ai/articles/4091106439-The-live-transcript-in-Notetaker",
+    "accessed": "2026-10-12",
+    "kind": "official documentation",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "No live runtime verification; findings.md scopes the supported claims."
+  },
+  {
+    "id": "INT-DOC-12",
+    "title": "v2.3.0",
+    "url": "https://github.com/matthartman/ghost-pepper/releases/tag/v2.3.0",
+    "accessed": "2026-10-12",
+    "kind": "official release notes",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "No live runtime verification; findings.md scopes the supported claims."
+  },
+  {
+    "id": "INT-DOC-13",
+    "title": "v2.2.0",
+    "url": "https://github.com/matthartman/ghost-pepper/releases/tag/v2.2.0",
+    "accessed": "2026-10-12",
+    "kind": "official release notes",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "No live runtime verification; findings.md scopes the supported claims."
+  },
+  {
+    "id": "INT-DOC-14",
+    "title": "File transcription",
+    "url": "https://tryvoiceink.com/docs/transcribe-audio-files",
+    "accessed": "2026-10-12",
+    "kind": "official documentation",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "No live runtime verification; findings.md scopes the supported claims."
+  },
+  {
+    "id": "INT-DOC-15",
+    "title": "SDK reference",
+    "url": "https://appssdk.zoom.us/classes/ZoomSdk.ZoomSdk.html#onActiveSpeakerChange",
+    "accessed": "2026-10-12",
+    "kind": "official documentation",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "No live runtime verification; findings.md scopes the supported claims."
+  },
+  {
+    "id": "INT-DOC-16",
+    "title": "Event type",
+    "url": "https://appssdk.zoom.us/types/ZoomSdkTypes.OnActiveSpeakerChangeEvent.html",
+    "accessed": "2026-10-12",
+    "kind": "official documentation",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "No live runtime verification; findings.md scopes the supported claims."
+  },
+  {
+    "id": "INT-DOC-17",
+    "title": "Meeting SDK overview",
+    "url": "https://developers.zoom.us/docs/meeting-sdk/macos/",
+    "accessed": "2026-10-12",
+    "kind": "official documentation",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "No live runtime verification; findings.md scopes the supported claims."
+  },
+  {
+    "id": "INT-DOC-18",
+    "title": "Render video",
+    "url": "https://developers.zoom.us/docs/meeting-sdk/macos/custom-ui/basic-features/render-user-video/",
+    "accessed": "2026-10-12",
+    "kind": "official documentation",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "No live runtime verification; findings.md scopes the supported claims."
+  },
+  {
+    "id": "INT-DOC-19",
+    "title": "Plugin SDK overview",
+    "url": "https://developers.zoom.us/docs/plugin-sdk/",
+    "accessed": "2026-10-12",
+    "kind": "official documentation",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "No live runtime verification; findings.md scopes the supported claims."
+  },
+  {
+    "id": "INT-DOC-20",
+    "title": "Download/setup",
+    "url": "https://developers.zoom.us/docs/plugin-sdk/macos/get-started/",
+    "accessed": "2026-10-12",
+    "kind": "official documentation",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "No live runtime verification; findings.md scopes the supported claims."
+  },
+  {
+    "id": "INT-DOC-21",
+    "title": "Authentication, official Markdown",
+    "url": "https://developers.zoom.us/docs/plugin-sdk/macos/start-join-mtg-webinar/authentication.md",
+    "accessed": "2026-10-12",
+    "kind": "official documentation",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "No live runtime verification; findings.md scopes the supported claims."
+  },
+  {
+    "id": "INT-DOC-22",
+    "title": "User information",
+    "url": "https://developers.zoom.us/docs/plugin-sdk/macos/add-features/in-meeting-user-info/",
+    "accessed": "2026-10-12",
+    "kind": "official documentation",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "No live runtime verification; findings.md scopes the supported claims."
+  },
+  {
+    "id": "INT-DOC-23",
+    "title": "Audio controls",
+    "url": "https://developers.zoom.us/docs/plugin-sdk/macos/add-features/in-meeting-audio/",
+    "accessed": "2026-10-12",
+    "kind": "official documentation",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "No live runtime verification; findings.md scopes the supported claims."
+  },
+  {
+    "id": "INT-DOC-24",
+    "title": "Session events",
+    "url": "https://developers.zoom.us/docs/rtms/event-reference/session-events/",
+    "accessed": "2026-10-12",
+    "kind": "official documentation",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "No live runtime verification; findings.md scopes the supported claims."
+  },
+  {
+    "id": "INT-DOC-25",
+    "title": "Data types",
+    "url": "https://developers.zoom.us/docs/rtms/data-types/",
+    "accessed": "2026-10-12",
+    "kind": "official documentation",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "No live runtime verification; findings.md scopes the supported claims."
+  },
+  {
+    "id": "INT-DOC-26",
+    "title": "Stream lifecycle",
+    "url": "https://developers.zoom.us/docs/rtms/meetings/work-with-streams/",
+    "accessed": "2026-10-12",
+    "kind": "official documentation",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "No live runtime verification; findings.md scopes the supported claims."
+  },
+  {
+    "id": "INT-DOC-27",
+    "title": "Add features",
+    "url": "https://developers.zoom.us/docs/rtms/meetings/add-features/",
+    "accessed": "2026-10-12",
+    "kind": "official documentation",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "No live runtime verification; findings.md scopes the supported claims."
+  },
+  {
+    "id": "INT-DOC-28",
+    "title": "Participant UX",
+    "url": "https://developers.zoom.us/docs/rtms/meetings/ux-participant/",
+    "accessed": "2026-10-12",
+    "kind": "official documentation",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "No live runtime verification; findings.md scopes the supported claims."
+  },
+  {
+    "id": "INT-DOC-29",
+    "title": "REST overview",
+    "url": "https://developers.google.com/workspace/meet/api/guides/overview",
+    "accessed": "2026-10-12",
+    "kind": "official documentation",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "No live runtime verification; findings.md scopes the supported claims."
+  },
+  {
+    "id": "INT-DOC-30",
+    "title": "TranscriptEntry",
+    "url": "https://developers.google.com/workspace/meet/api/reference/rest/v2/conferenceRecords.transcripts.entries",
+    "accessed": "2026-10-12",
+    "kind": "official documentation",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "No live runtime verification; findings.md scopes the supported claims."
+  },
+  {
+    "id": "INT-DOC-31",
+    "title": "Meet subscriptions",
+    "url": "https://developers.google.com/workspace/events/guides/events-meet",
+    "accessed": "2026-10-12",
+    "kind": "official documentation",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "No live runtime verification; findings.md scopes the supported claims."
+  },
+  {
+    "id": "INT-DOC-32",
+    "title": "Media overview",
+    "url": "https://developers.google.com/workspace/meet/media-api/guides/overview",
+    "accessed": "2026-10-12",
+    "kind": "official documentation",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "No live runtime verification; findings.md scopes the supported claims."
+  },
+  {
+    "id": "INT-DOC-33",
+    "title": "Concepts",
+    "url": "https://developers.google.com/workspace/meet/media-api/guides/concepts",
+    "accessed": "2026-10-12",
+    "kind": "official documentation",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "No live runtime verification; findings.md scopes the supported claims."
+  },
+  {
+    "id": "INT-DOC-34",
+    "title": "MediaEntry reference",
+    "url": "https://developers.google.com/workspace/meet/media-api/reference/dc/media_api.mediaentry",
+    "accessed": "2026-10-12",
+    "kind": "official documentation",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "No live runtime verification; findings.md scopes the supported claims."
+  },
+  {
+    "id": "OSS-INTEGRATION-S01",
+    "title": "Ghost Pepper: GhostPepper/Meeting/MeetingDetector.swift",
+    "url": "https://github.com/matthartman/ghost-pepper/blob/c212bcc108f178c4a0f184d9da4bdbcb9a205448/GhostPepper/Meeting/MeetingDetector.swift",
+    "accessed": "2026-10-12",
+    "kind": "primary-public-source-pinned-commit",
+    "commit": "c212bcc108f178c4a0f184d9da4bdbcb9a205448",
+    "path": "GhostPepper/Meeting/MeetingDetector.swift",
+    "evidence_status": "SOURCE-DERIVED",
+    "limitations": "Source read at matching version tag; no proof of reproducible identity to installed binary or live execution."
+  },
+  {
+    "id": "OSS-INTEGRATION-S02",
+    "title": "Ghost Pepper: GhostPepper/Meeting/AccessibilityWindowTitles.swift",
+    "url": "https://github.com/matthartman/ghost-pepper/blob/c212bcc108f178c4a0f184d9da4bdbcb9a205448/GhostPepper/Meeting/AccessibilityWindowTitles.swift",
+    "accessed": "2026-10-12",
+    "kind": "primary-public-source-pinned-commit",
+    "commit": "c212bcc108f178c4a0f184d9da4bdbcb9a205448",
+    "path": "GhostPepper/Meeting/AccessibilityWindowTitles.swift",
+    "evidence_status": "SOURCE-DERIVED",
+    "limitations": "Source read at matching version tag; no proof of reproducible identity to installed binary or live execution."
+  },
+  {
+    "id": "OSS-INTEGRATION-S03",
+    "title": "Ghost Pepper: GhostPepper/Audio/DualStreamCapture.swift",
+    "url": "https://github.com/matthartman/ghost-pepper/blob/c212bcc108f178c4a0f184d9da4bdbcb9a205448/GhostPepper/Audio/DualStreamCapture.swift",
+    "accessed": "2026-10-12",
+    "kind": "primary-public-source-pinned-commit",
+    "commit": "c212bcc108f178c4a0f184d9da4bdbcb9a205448",
+    "path": "GhostPepper/Audio/DualStreamCapture.swift",
+    "evidence_status": "SOURCE-DERIVED",
+    "limitations": "Source read at matching version tag; no proof of reproducible identity to installed binary or live execution."
+  },
+  {
+    "id": "OSS-INTEGRATION-S04",
+    "title": "Ghost Pepper: GhostPepper/Audio/SystemAudioRecorder.swift",
+    "url": "https://github.com/matthartman/ghost-pepper/blob/c212bcc108f178c4a0f184d9da4bdbcb9a205448/GhostPepper/Audio/SystemAudioRecorder.swift",
+    "accessed": "2026-10-12",
+    "kind": "primary-public-source-pinned-commit",
+    "commit": "c212bcc108f178c4a0f184d9da4bdbcb9a205448",
+    "path": "GhostPepper/Audio/SystemAudioRecorder.swift",
+    "evidence_status": "SOURCE-DERIVED",
+    "limitations": "Source read at matching version tag; no proof of reproducible identity to installed binary or live execution."
+  },
+  {
+    "id": "OSS-INTEGRATION-S05",
+    "title": "Ghost Pepper: GhostPepper/Meeting/MeetingSession.swift",
+    "url": "https://github.com/matthartman/ghost-pepper/blob/c212bcc108f178c4a0f184d9da4bdbcb9a205448/GhostPepper/Meeting/MeetingSession.swift",
+    "accessed": "2026-10-12",
+    "kind": "primary-public-source-pinned-commit",
+    "commit": "c212bcc108f178c4a0f184d9da4bdbcb9a205448",
+    "path": "GhostPepper/Meeting/MeetingSession.swift",
+    "evidence_status": "SOURCE-DERIVED",
+    "limitations": "Source read at matching version tag; no proof of reproducible identity to installed binary or live execution."
+  },
+  {
+    "id": "OSS-INTEGRATION-S06",
+    "title": "Ghost Pepper: GhostPepper/Transcription/ChunkedTranscriptionPipeline.swift",
+    "url": "https://github.com/matthartman/ghost-pepper/blob/c212bcc108f178c4a0f184d9da4bdbcb9a205448/GhostPepper/Transcription/ChunkedTranscriptionPipeline.swift",
+    "accessed": "2026-10-12",
+    "kind": "primary-public-source-pinned-commit",
+    "commit": "c212bcc108f178c4a0f184d9da4bdbcb9a205448",
+    "path": "GhostPepper/Transcription/ChunkedTranscriptionPipeline.swift",
+    "evidence_status": "SOURCE-DERIVED",
+    "limitations": "Source read at matching version tag; no proof of reproducible identity to installed binary or live execution."
+  },
+  {
+    "id": "OSS-INTEGRATION-S07",
+    "title": "Ghost Pepper: GhostPepper/AppState.swift",
+    "url": "https://github.com/matthartman/ghost-pepper/blob/c212bcc108f178c4a0f184d9da4bdbcb9a205448/GhostPepper/AppState.swift",
+    "accessed": "2026-10-12",
+    "kind": "primary-public-source-pinned-commit",
+    "commit": "c212bcc108f178c4a0f184d9da4bdbcb9a205448",
+    "path": "GhostPepper/AppState.swift",
+    "evidence_status": "SOURCE-DERIVED",
+    "limitations": "Source read at matching version tag; no proof of reproducible identity to installed binary or live execution."
+  },
+  {
+    "id": "OSS-INTEGRATION-S08",
+    "title": "Ghost Pepper: GhostPepper/Transcription/ModelManager.swift",
+    "url": "https://github.com/matthartman/ghost-pepper/blob/c212bcc108f178c4a0f184d9da4bdbcb9a205448/GhostPepper/Transcription/ModelManager.swift",
+    "accessed": "2026-10-12",
+    "kind": "primary-public-source-pinned-commit",
+    "commit": "c212bcc108f178c4a0f184d9da4bdbcb9a205448",
+    "path": "GhostPepper/Transcription/ModelManager.swift",
+    "evidence_status": "SOURCE-DERIVED",
+    "limitations": "Source read at matching version tag; no proof of reproducible identity to installed binary or live execution."
+  },
+  {
+    "id": "OSS-INTEGRATION-S09",
+    "title": "Ghost Pepper: GhostPepper/Transcription/SpeechModelCatalog.swift",
+    "url": "https://github.com/matthartman/ghost-pepper/blob/c212bcc108f178c4a0f184d9da4bdbcb9a205448/GhostPepper/Transcription/SpeechModelCatalog.swift",
+    "accessed": "2026-10-12",
+    "kind": "primary-public-source-pinned-commit",
+    "commit": "c212bcc108f178c4a0f184d9da4bdbcb9a205448",
+    "path": "GhostPepper/Transcription/SpeechModelCatalog.swift",
+    "evidence_status": "SOURCE-DERIVED",
+    "limitations": "Source read at matching version tag; no proof of reproducible identity to installed binary or live execution."
+  },
+  {
+    "id": "OSS-INTEGRATION-S10",
+    "title": "Ghost Pepper: GhostPepper/SpeakerIdentity/SpeakerIdentityResolver.swift",
+    "url": "https://github.com/matthartman/ghost-pepper/blob/c212bcc108f178c4a0f184d9da4bdbcb9a205448/GhostPepper/SpeakerIdentity/SpeakerIdentityResolver.swift",
+    "accessed": "2026-10-12",
+    "kind": "primary-public-source-pinned-commit",
+    "commit": "c212bcc108f178c4a0f184d9da4bdbcb9a205448",
+    "path": "GhostPepper/SpeakerIdentity/SpeakerIdentityResolver.swift",
+    "evidence_status": "SOURCE-DERIVED",
+    "limitations": "Source read at matching version tag; no proof of reproducible identity to installed binary or live execution."
+  },
+  {
+    "id": "OSS-INTEGRATION-S11",
+    "title": "Ghost Pepper: GhostPepper/Context/WindowCaptureService.swift",
+    "url": "https://github.com/matthartman/ghost-pepper/blob/c212bcc108f178c4a0f184d9da4bdbcb9a205448/GhostPepper/Context/WindowCaptureService.swift",
+    "accessed": "2026-10-12",
+    "kind": "primary-public-source-pinned-commit",
+    "commit": "c212bcc108f178c4a0f184d9da4bdbcb9a205448",
+    "path": "GhostPepper/Context/WindowCaptureService.swift",
+    "evidence_status": "SOURCE-DERIVED",
+    "limitations": "Source read at matching version tag; no proof of reproducible identity to installed binary or live execution."
+  },
+  {
+    "id": "OSS-INTEGRATION-S12",
+    "title": "Ghost Pepper: GhostPepper/Context/OCRRequestFactory.swift",
+    "url": "https://github.com/matthartman/ghost-pepper/blob/c212bcc108f178c4a0f184d9da4bdbcb9a205448/GhostPepper/Context/OCRRequestFactory.swift",
+    "accessed": "2026-10-12",
+    "kind": "primary-public-source-pinned-commit",
+    "commit": "c212bcc108f178c4a0f184d9da4bdbcb9a205448",
+    "path": "GhostPepper/Context/OCRRequestFactory.swift",
+    "evidence_status": "SOURCE-DERIVED",
+    "limitations": "Source read at matching version tag; no proof of reproducible identity to installed binary or live execution."
+  },
+  {
+    "id": "OSS-INTEGRATION-S13",
+    "title": "Ghost Pepper: GhostPepper/Meeting/MeetingWindowHeuristics.swift",
+    "url": "https://github.com/matthartman/ghost-pepper/blob/c212bcc108f178c4a0f184d9da4bdbcb9a205448/GhostPepper/Meeting/MeetingWindowHeuristics.swift",
+    "accessed": "2026-10-12",
+    "kind": "primary-public-source-pinned-commit",
+    "commit": "c212bcc108f178c4a0f184d9da4bdbcb9a205448",
+    "path": "GhostPepper/Meeting/MeetingWindowHeuristics.swift",
+    "evidence_status": "SOURCE-DERIVED",
+    "limitations": "Source read at matching version tag; no proof of reproducible identity to installed binary or live execution."
+  },
+  {
+    "id": "OSS-INTEGRATION-S14",
+    "title": "VoiceInk: VoiceInk/Recorder.swift",
+    "url": "https://github.com/Beingpax/VoiceInk/blob/68b871e79e2b1ec4c3b4914cccd2e0907d94237a/VoiceInk/Recorder.swift",
+    "accessed": "2026-10-12",
+    "kind": "primary-public-source-pinned-commit",
+    "commit": "68b871e79e2b1ec4c3b4914cccd2e0907d94237a",
+    "path": "VoiceInk/Recorder.swift",
+    "evidence_status": "SOURCE-DERIVED",
+    "limitations": "Source read at matching version tag; no proof of reproducible identity to installed binary or live execution."
+  },
+  {
+    "id": "OSS-INTEGRATION-S15",
+    "title": "VoiceInk: VoiceInk/CoreAudioRecorder.swift",
+    "url": "https://github.com/Beingpax/VoiceInk/blob/68b871e79e2b1ec4c3b4914cccd2e0907d94237a/VoiceInk/CoreAudioRecorder.swift",
+    "accessed": "2026-10-12",
+    "kind": "primary-public-source-pinned-commit",
+    "commit": "68b871e79e2b1ec4c3b4914cccd2e0907d94237a",
+    "path": "VoiceInk/CoreAudioRecorder.swift",
+    "evidence_status": "SOURCE-DERIVED",
+    "limitations": "Source read at matching version tag; no proof of reproducible identity to installed binary or live execution."
+  },
+  {
+    "id": "OSS-INTEGRATION-S16",
+    "title": "VoiceInk: VoiceInk/Services/RecordingContextSnapshot.swift",
+    "url": "https://github.com/Beingpax/VoiceInk/blob/68b871e79e2b1ec4c3b4914cccd2e0907d94237a/VoiceInk/Services/RecordingContextSnapshot.swift",
+    "accessed": "2026-10-12",
+    "kind": "primary-public-source-pinned-commit",
+    "commit": "68b871e79e2b1ec4c3b4914cccd2e0907d94237a",
+    "path": "VoiceInk/Services/RecordingContextSnapshot.swift",
+    "evidence_status": "SOURCE-DERIVED",
+    "limitations": "Source read at matching version tag; no proof of reproducible identity to installed binary or live execution."
+  },
+  {
+    "id": "OSS-INTEGRATION-S17",
+    "title": "VoiceInk: VoiceInk/Services/ScreenCaptureService.swift",
+    "url": "https://github.com/Beingpax/VoiceInk/blob/68b871e79e2b1ec4c3b4914cccd2e0907d94237a/VoiceInk/Services/ScreenCaptureService.swift",
+    "accessed": "2026-10-12",
+    "kind": "primary-public-source-pinned-commit",
+    "commit": "68b871e79e2b1ec4c3b4914cccd2e0907d94237a",
+    "path": "VoiceInk/Services/ScreenCaptureService.swift",
+    "evidence_status": "SOURCE-DERIVED",
+    "limitations": "Source read at matching version tag; no proof of reproducible identity to installed binary or live execution."
+  },
+  {
+    "id": "OSS-INTEGRATION-S18",
+    "title": "VoiceInk: VoiceInk/Models/Transcription.swift",
+    "url": "https://github.com/Beingpax/VoiceInk/blob/68b871e79e2b1ec4c3b4914cccd2e0907d94237a/VoiceInk/Models/Transcription.swift",
+    "accessed": "2026-10-12",
+    "kind": "primary-public-source-pinned-commit",
+    "commit": "68b871e79e2b1ec4c3b4914cccd2e0907d94237a",
+    "path": "VoiceInk/Models/Transcription.swift",
+    "evidence_status": "SOURCE-DERIVED",
+    "limitations": "Source read at matching version tag; no proof of reproducible identity to installed binary or live execution."
+  },
+  {
+    "id": "INT-ACQ-53",
+    "title": "Granola managed download documentation",
+    "url": "https://docs.granola.ai/help-center/getting-started/managed-installations",
+    "accessed": "2026-10-12",
+    "kind": "official acquisition documentation",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "Artifact retrieval/identity, not runtime behavior."
+  },
+  {
+    "id": "INT-ACQ-54",
+    "title": "Granola official download",
+    "url": "https://api.granola.ai/v1/download-latest",
+    "accessed": "2026-10-12",
+    "kind": "official acquisition documentation",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "Artifact retrieval/identity, not runtime behavior."
+  },
+  {
+    "id": "INT-ACQ-55",
+    "title": "Monologue official appcast",
+    "url": "https://updates.monologue.to/appcast.xml",
+    "accessed": "2026-10-12",
+    "kind": "official acquisition documentation",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "Artifact retrieval/identity, not runtime behavior."
+  },
+  {
+    "id": "INT-ACQ-56",
+    "title": "Wispr official download help",
+    "url": "https://docs.wisprflow.ai/articles/6203703148-redirect-loops-when-attempting-to-download-the-app-from-the-wispr-flow-website",
+    "accessed": "2026-10-12",
+    "kind": "official acquisition documentation",
+    "evidence_status": "DOCUMENTED",
+    "limitation": "Artifact retrieval/identity, not runtime behavior."
+  }
+]

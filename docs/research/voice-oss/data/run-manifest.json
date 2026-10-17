@@ -1,0 +1,141 @@
+{
+  "research_date": "2026-10-12",
+  "status": "public-source-discovery-with-static-integration-study-and-five-app-expansion",
+  "user_intent": "Capture requirements and flows for an OSS native Apple voice/knowledge product with custom iOS keyboard, transcribed outbound calls, composable interfaces/hooks/XDG, local/remote models, self-hosting, retained on-device history and optional iCloud sync. Chain actions through Tuna/Raycast and similar tools on macOS, with equivalent workflow composition on iOS.",
+  "confirmed_products": [
+    "Granola",
+    "Monologue by Every",
+    "Wispr Flow",
+    "matthartman/ghost-pepper",
+    "VoiceInk"
+  ],
+  "counts": {
+    "explicit_requirements": 33,
+    "competitor_flows": 328,
+    "distinct_primary_source_urls": 443,
+    "proposed_product_journeys": 62,
+    "apple_candidate_journeys": 8,
+    "hosting_candidate_journeys": 14,
+    "competitor_flows_by_product": {
+      "Ghost Pepper": 26,
+      "Granola": 56,
+      "Monologue by Every": 34,
+      "VoiceInk": 31,
+      "Wispr Flow": 41,
+      "Superwhisper": 30,
+      "MacWhisper": 30,
+      "Anarlog": 25,
+      "Reflect Open": 25,
+      "Fireflies": 30
+    }
+  },
+  "methodology": [
+    "Primary official documentation, help, release notes, App Store and first-party product material.",
+    "Public Ghost Pepper OSS source examined at cited revisions; SOURCE-DERIVED is distinct from runtime observation.",
+    "Stable source IDs retained in all flow records; source summaries are paraphrases.",
+    "Independent per-product research followed by a fresh-reader evidence/requirements review.",
+    "Separate version-pinned meeting integration appendix: REA artifact/AST/native evidence, manual inert code reading, LLVM disassembly, official platform docs; complete source preferred for OSS products.",
+    "Five additional references selected from sixteen candidates for fit to the brief; current primary documentation and pinned Anarlog/Reflect Open source, without new runtime or binary analysis."
+  ],
+  "boundaries": {
+    "competitor_runtime_walkthroughs": false,
+    "private_account_access": false,
+    "competitor_binary_decompilation": true,
+    "architecture_selected": false,
+    "implementation_scoped": false,
+    "product_implemented": false,
+    "deployment_verified": false
+  },
+  "artifacts": {
+    "entrypoint": "../README.md",
+    "requirements": "../requirements.md",
+    "flows": [
+      "flows.json",
+      "flows.csv"
+    ],
+    "sources": "sources.jsonl",
+    "viewer": "catalogue.html",
+    "product_behavior": "../product-behavior.md",
+    "meeting_integrations": "../meeting-integrations.md",
+    "integration_manifest": "integrations/manifest.json",
+    "additional_apps": "../additional-apps.md",
+    "expansion_manifest": "expansion-manifest.json",
+    "workflow_composition": "../workflow-composition.md"
+  },
+  "validation": {
+    "date": "2026-10-12",
+    "record_integrity": "PASS: 328 unique competitor flows, unchanged bytes in JSON/CSV during workflow follow-up; CSV fields and source joins agree. Requirement U01-U33 and proposed journey P-F01-P-F62 IDs are complete.",
+    "source_registry": "PASS: 443 unique source IDs and URLs; provenance fields present; preceding 434 source records preserved by value.",
+    "local_links": "PASS: 449 local Markdown links and catalogue navigation targets resolve; WC-S01-S09 links match the registry.",
+    "docs_lifecycle": "PASS: 189 documents validated against HEAD after workflow follow-up.",
+    "whitespace": "PASS: tracked git diff and all 52 plan/index/research artifacts checked.",
+    "catalogue": {
+      "javascript_syntax": "PASS: node --check on regenerated catalogue script",
+      "dom_smoke": "PASS: 328 records; all ten product counts; evidence filter; old/new ID searches; combined filters; empty state; reset; details expansion; source links; no script errors. Header counts and embedded data agree with canonical records.",
+      "method": "JSDOM against the generated HTML with no external resource loading.",
+      "visual_browser_review": "Not performed; DOM checks do not establish rendered layout or browser accessibility."
+    },
+    "independent_reader_review": {
+      "result": "No high- or medium-severity findings; explicit requirements and evidence boundaries are readable without conversation context.",
+      "source_checks": [
+        "Current Apple keyboard and App Review guidance",
+        "Monologue local transcription versus online cleanup",
+        "Monologue platform listing",
+        "Wispr Notetaker recording behavior",
+        "VoiceInk processing/privacy boundaries"
+      ],
+      "resolved_finding": "Updated AX-S08 to attribute microphone/speaker exclusion directly to current Apple documentation, retaining the archived guide for other keyboard restrictions.",
+      "scope": "Initial 22-requirement public-source capture; follow-up reviewed separately."
+    },
+    "followup_reader_review": {
+      "scope": "U23-U31, ordinary-number call clarification, candidate interactions, platform/hosting retention consistency, source/count/catalogue integrity.",
+      "result": "No material findings remain after focused recheck; explicit directions are discoverable and distinguishable from proposed implementation choices.",
+      "resolved_finding": "Apple study now requires retained on-device source/history and narrows open decisions to replication scope, capacity handling and deliberate purge.",
+      "call_clarification": "U25, P-F47, Q30, README and behavior study consistently require ordinary phone numbers; telephony provider and media path are unselected."
+    },
+    "meeting_integration_followup": {
+      "scope": "Historical static artifact/source pass for the original five: the then-current 188 base flows were unchanged. A later expansion appends new products.",
+      "result": "Independent review resolved substantive findings; 36 retained REA evidence files, static anchors, sources and local links validated.",
+      "manifest": "integrations/manifest.json",
+      "runtime_verified": false
+    },
+    "additional_apps_reader_review": {
+      "result": "No actionable findings in a bounded independent audit; not verification of every claim or runtime behavior.",
+      "scope": "Selection rationale, five new dossiers, 140 new flows, 178 additional sources, original record preservation and source pins.",
+      "primary_claim_checks": [
+        "Superwhisper local CLI/MCP and history retention/reprocessing",
+        "MacWhisper app-backed CLI and opt-in history persistence",
+        "Anarlog retention, encrypted sync versus cloud snapshots and Watch acknowledgement deletion",
+        "Reflect fixed cloud transcription provider paths and unfinished segment loss boundary",
+        "Fireflies desktop no-bot retention/naming and vendor processing with private storage"
+      ],
+      "source_pin_checks": "Four remotely fetched pinned source files matched scratch bytes across Reflect Open and Anarlog."
+    },
+    "workflow_followup": {
+      "scope": "U32-U33, P-F58-P-F62, nine new primary documentation sources, current counts and catalogue regeneration.",
+      "status": "PASS: requirement/journey coverage, source integrity, unchanged competitor data, links, JS syntax, DOM filters, counts, lifecycle and whitespace.",
+      "runtime_verified": false,
+      "independent_review": "Not performed for this bounded follow-up; previous independent audits retain their original scopes."
+    }
+  },
+  "sha256": {
+    "flows.json": "8a2773e82c2ee921dec48fb4142c569293b6ba6dc9f83983d9c69540dd248b73",
+    "flows.csv": "2335b5e6177322154f0312bdd8d541ac0d3dd3456898ddec45c227ed59e7fe10",
+    "sources.jsonl": "3e14f1733a742e59d92a0ec3854b1ecefe07c55e27be54bca87dab8b8e80d0d7",
+    "catalogue.html": "26a40ebad58d27acb414944251237d0d2233898c99523a4a3ca5a3c8d96d1cf6"
+  },
+  "requirement_provenance": {
+    "USER-2026-10-12-01": "U01-U22: original brief and confirmed product identities",
+    "USER-2026-10-12-02": "U23-U31: keyboard, notes, calls, composability, retention, iCloud follow-up",
+    "USER-2026-10-12-03": "U25 clarification: calls must reach ordinary phone numbers, not solely app-to-app VoIP.",
+    "USER-2026-10-12-04": "U32-U33: explicit action chaining and workflow composition through Tuna/Raycast/etc on macOS and equivalently on iOS; expands U26."
+  },
+  "counts_scope": "Current requirements and ten-product flow catalogue, including the five-app expansion. The original 188 flow and 256 source records are preserved by value. Static meeting-integration sources and Evidence IDs remain separate in integrations/manifest.json; URL overlap is possible. Workflow follow-up adds two explicit requirements, five proposed journeys and nine source URLs; competitor records are unchanged.",
+  "additional_research_products": [
+    "Superwhisper",
+    "MacWhisper",
+    "Anarlog",
+    "Reflect Open",
+    "Fireflies"
+  ]
+}

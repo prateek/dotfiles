@@ -1,0 +1,92 @@
+[
+  {
+    "id": "G-D01",
+    "subject": "dist-electron/main/index.js",
+    "sha256": "7f8f06319922f6f638752fb0ef4930fdda357678fdb51342447edb68f02d04b8",
+    "range_unit": "UTF-8 byte offsets, half-open",
+    "start": 4797502,
+    "end": 4799712,
+    "excerpt_sha256": "56004d17326c42b5aa4768e261b224fc79205ed25c23ab623f5edc072a9cd329",
+    "purpose": "child process and native monitor routing"
+  },
+  {
+    "id": "G-D02",
+    "subject": "dist-electron/main/index.js",
+    "sha256": "7f8f06319922f6f638752fb0ef4930fdda357678fdb51342447edb68f02d04b8",
+    "range_unit": "UTF-8 byte offsets, half-open",
+    "start": 4827462,
+    "end": 4835692,
+    "excerpt_sha256": "a8c66e072e74906d8a17f7779be52629207d9d9071fe2f2fbc5cd67591754339",
+    "purpose": "speaker event timeline and overlap mapping"
+  },
+  {
+    "id": "G-D03",
+    "subject": "dist-electron/main/index.js",
+    "sha256": "7f8f06319922f6f638752fb0ef4930fdda357678fdb51342447edb68f02d04b8",
+    "range_unit": "UTF-8 byte offsets, half-open",
+    "start": 5008916,
+    "end": 5009466,
+    "excerpt_sha256": "aa3c3c047a8ccebbccfbfba1c56b8199bd6b803c2c0421c6a5c5cc0cd0b864e5",
+    "purpose": "extension event schema and consumption"
+  },
+  {
+    "id": "G-D03b",
+    "subject": "dist-electron/main/index.js",
+    "sha256": "7f8f06319922f6f638752fb0ef4930fdda357678fdb51342447edb68f02d04b8",
+    "range_unit": "UTF-8 byte offsets, half-open",
+    "start": 5024096,
+    "end": 5024786,
+    "excerpt_sha256": "994e12d54162472ad9c7f6cdc3b4d243d354b971208fc218b22c3e7297779d13",
+    "purpose": "extension event consumption uses receiver time"
+  },
+  {
+    "id": "G-D04",
+    "subject": "dist-electron/main/index.js",
+    "sha256": "7f8f06319922f6f638752fb0ef4930fdda357678fdb51342447edb68f02d04b8",
+    "range_unit": "UTF-8 byte offsets, half-open",
+    "start": 5034616,
+    "end": 5038296,
+    "excerpt_sha256": "825bc1a48bc67ef408c066f3f10cec77b97c8cc9960f48c3b6aa00df9442ffdf",
+    "purpose": "Meet monitor gate, self filters and native time"
+  },
+  {
+    "id": "G-D05",
+    "subject": "dist-electron/main/index.js",
+    "sha256": "7f8f06319922f6f638752fb0ef4930fdda357678fdb51342447edb68f02d04b8",
+    "range_unit": "UTF-8 byte offsets, half-open",
+    "start": 5079006,
+    "end": 5081106,
+    "excerpt_sha256": "6f107fa6c0189e900df9b056a93586b3e949c9037069073ad631dd615c9c6cbd",
+    "purpose": "Zoom monitor gates and timeline handoff"
+  },
+  {
+    "id": "G-D06",
+    "subject": "dist-electron/main/index.js",
+    "sha256": "7f8f06319922f6f638752fb0ef4930fdda357678fdb51342447edb68f02d04b8",
+    "range_unit": "UTF-8 byte offsets, half-open",
+    "start": 5199016,
+    "end": 5202426,
+    "excerpt_sha256": "5fe8fef9540d0161e00e4bb5402a015cbe55646d5f362d5c9d686c6bbd06bcaf",
+    "purpose": "system transcript and per-word attribution"
+  },
+  {
+    "id": "G-D07",
+    "subject": "dist-electron/main/index.js",
+    "sha256": "7f8f06319922f6f638752fb0ef4930fdda357678fdb51342447edb68f02d04b8",
+    "range_unit": "UTF-8 byte offsets, half-open",
+    "start": 4864812,
+    "end": 4867542,
+    "excerpt_sha256": "0e2e94f6a7ac3e27dad245938401b4560e4fdfd44b3e4e7dc339011896d2c870",
+    "purpose": "separate microphone/system audio child-process buffers"
+  },
+  {
+    "id": "G-D01b",
+    "subject": "dist-electron/third_party_meeting_automation_process/index.js",
+    "sha256": "8c14d4e570c372fb8dc9c20d6c4ca8e8a034ecc49ddc355e000fb2a0dd1cfcb4",
+    "range_unit": "UTF-8 byte offsets, half-open",
+    "start": 0,
+    "end": 3885,
+    "excerpt_sha256": "8c14d4e570c372fb8dc9c20d6c4ca8e8a034ecc49ddc355e000fb2a0dd1cfcb4",
+    "purpose": "Child process command dispatch to actual native monitor methods"
+  }
+]

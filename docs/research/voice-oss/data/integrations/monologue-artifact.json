@@ -1,0 +1,29 @@
+{
+  "product": "Monologue by Every",
+  "date": "2026-10-12",
+  "version": "1.5.2",
+  "build": "105",
+  "bundle_id": "com.zeitalabs.jottleai",
+  "artifact_url": "https://updates.monologue.to/Monologue-1.5.2-105.dmg?v=1790872617",
+  "official_feed": "https://updates.monologue.to/appcast.xml",
+  "scope": "Offline static only; no install, launch, account, private data or backend access",
+  "hashes": {
+    "Monologue-1.5.2-105.dmg": "e2332e0787120d373050942e1bba039802345bab9544e8c3e5e5e2757b735277",
+    "current/Monologue.app/Contents/MacOS/Monologue": "c003965608dcb07a68287ab61fa0e98f583a319e9039ea0c1d6e8ea2081c91fe",
+    "current/Monologue.app/Contents/Info.plist": "71f91f8de352f0adc1f84fcbfce9e6df02d021d0c2956b2ca28491a789bc64cc",
+    "Monologue-arm64": "952e7bdf13ae4f4fd8e7416bdbc90a17c1b4dcd3165b0d25fa9d84e84e9c74d3",
+    "appcast.xml": "675cfa45c11d8c16d063eca860023fe24bdf84b80b22a57fc6391d1564ecb9ee"
+  },
+  "capture_dir": "$CAPTURE_ROOT/monologue",
+  "limitations": [
+    "Homebrew URL updates.jottle.ai/Monologue.dmg yielded stale1.5.1 build104; latest native analysis targets1.5.2 build105 from official appcast.",
+    "REA cannot open universal Mach-O with Ghidra; analyzed lipo arm64 slice and preserved parent hash.",
+    "REA DMG extraction unsupported; read-only hdiutil mount plus ditto copied bundle and mount detached."
+  ],
+  "retained_artifacts": {
+    "Monologue-1.5.2-105.dmg": "$CAPTURE_ROOT/monologue/artifacts/Monologue-1.5.2-105.dmg",
+    "Monologue-arm64": "$CAPTURE_ROOT/monologue/artifacts/Monologue-arm64",
+    "Info.plist": "$CAPTURE_ROOT/monologue/artifacts/Info.plist",
+    "appcast.xml": "$CAPTURE_ROOT/monologue/artifacts/appcast.xml"
+  }
+}

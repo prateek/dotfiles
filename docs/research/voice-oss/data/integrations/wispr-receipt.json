@@ -1,0 +1,148 @@
+{
+  "product": "Wispr Flow",
+  "retrieved": "2026-10-12",
+  "version": "1.6.1102",
+  "bundle_id": "com.electron.wispr-flow",
+  "official_link": "https://dl.wisprflow.ai/mac-apple/latest",
+  "official_link_page": "https://docs.wisprflow.ai/articles/6203703148-redirect-loops-when-attempting-to-download-the-app-from-the-wispr-flow-website",
+  "resolved_download": "https://dl.wisprflow.com/wispr-flow/darwin/arm64/dmgs/Flow-v1.6.1102.dmg",
+  "files": [
+    {
+      "path": ".agents/voice-research/integrations/wispr/official-mac.dmg",
+      "bytes": 302739762,
+      "sha256": "c8e4f24a3693c4d89debbfad2e43f1cb61743a2a8355c2d9e99b8b959110b0e7"
+    },
+    {
+      "path": ".agents/voice-research/integrations/wispr/mount/Wispr Flow.app/Contents/Resources/app.asar",
+      "bytes": 133406651,
+      "sha256": "da64ebcb3d1d48032ac0808b4734a3509596a6cc00a39d84ae0deaf921e9c11d"
+    },
+    {
+      "path": ".agents/voice-research/integrations/wispr/extracted/.webpack/main/index.js",
+      "bytes": 9771334,
+      "sha256": "24413a433e4cf159816d60f194ad32def76741d7a5e5bed9b27581bb74eebac2"
+    },
+    {
+      "path": ".agents/voice-research/integrations/wispr/extracted/.webpack/renderer/hub/index.js",
+      "bytes": 5376510,
+      "sha256": "cda5e67adc47f8bc92f58aba791457b96d9fb3166c389b8a8a2b8d2d94dd02bf"
+    },
+    {
+      "path": ".agents/voice-research/integrations/wispr/mount/Wispr Flow.app/Contents/Resources/swift-helper-app-dist/Wispr Flow.app/Contents/MacOS/Wispr Flow",
+      "bytes": 6032672,
+      "sha256": "21afb12c1c9edd28831358b8b03f8c8b43b716cf49858ec0be11d3a3f5859ca1"
+    }
+  ],
+  "evidence": [
+    {
+      "path": ".agents/voice-research/integrations/wispr/asar-evidence.json",
+      "evidence_id": "ev_4355e5d524252bf83bf6162689801ee09f50f724c5a1493ef990bea542fce258",
+      "operation": "analyze_javascript_application",
+      "sha256": "a955a1a701a738b52cb208c41736a3d8645f8e469317f10b58a460a9f77c679b"
+    },
+    {
+      "path": ".agents/voice-research/integrations/wispr/asar-summary.json",
+      "evidence_id": "ev_d663fb9d6d71291dbeb85f2d60f766014ae01d925d63747bbf7456d58e331e15",
+      "operation": "inspect_analysis_view",
+      "sha256": "ab1e57e9bcfb79fcf6d85d8fd3a85352293875887d22c637c5b244dbab7fca82"
+    },
+    {
+      "path": ".agents/voice-research/integrations/wispr/asar-main-view.json",
+      "evidence_id": "ev_9baa79f7349441630bb394ac59887ac5dc635ea04cb0a5081912c4889550143f",
+      "operation": "inspect_analysis_view",
+      "sha256": "d40afd4b4f21d06b94144cccda18c6e26aa68ecb656bf3a55706d6fe0cf41638"
+    },
+    {
+      "path": ".agents/voice-research/integrations/wispr/native-11-search_strings.json",
+      "evidence_id": "ev_be4e02fda70b14f171d6a86ca52d79c4d95645519db7beb0b4b0d16919943d5a",
+      "operation": "search_strings",
+      "sha256": "ad21da2fe365a868e32b86b362a3c55c8ca2cca94bd5195aadafd05572b97512"
+    },
+    {
+      "path": ".agents/voice-research/integrations/wispr/native-3-search_strings.json",
+      "evidence_id": "ev_943c607c77f7aca4cf4edc1e7f84e8d54251a012e7be262706b3a5526f0b1b20",
+      "operation": "search_strings",
+      "sha256": "d2b3e19ca42bf67069f983d8c43b44feef27adcc3fc8bd52da80bd08035368c2"
+    },
+    {
+      "path": ".agents/voice-research/integrations/wispr/native-15-xrefs.json",
+      "evidence_id": "ev_790c1ad6e7c049dbe73672bca8e12f4ab9988e8afe3b4fa51c495377c53b020a",
+      "operation": "xrefs",
+      "sha256": "b55c05e0ab15c55d76897a93cabecec90f95ba65c2b462477d71f950b9558c3f"
+    },
+    {
+      "path": ".agents/voice-research/integrations/wispr/native-10-search_strings.json",
+      "evidence_id": "ev_55fcec48cd7a196adf5c620f5026d03af17596dea4331d589dad6f16bfb25d75",
+      "operation": "search_strings",
+      "sha256": "3755f2a152327148692cad44fa65d47bd977551fa0f93c3f99c920fc66a5cf79"
+    },
+    {
+      "path": ".agents/voice-research/integrations/wispr/native-5-xrefs.json",
+      "evidence_id": "ev_3bae297a3fb839930bc64aab0e98e5682434a3a9522af691463157af7e55898d",
+      "operation": "xrefs",
+      "sha256": "40a6cf7578b10949d86d867f2d5e98468a525e6cefdd6b9d1f2597cd2933f98f"
+    },
+    {
+      "path": ".agents/voice-research/integrations/wispr/native-9-analyze_function.json",
+      "evidence_id": "ev_589c053feb904615808c86e04bc910d64b0bb2aad82bd0581ff46d42ec095089",
+      "operation": "analyze_function",
+      "sha256": "ccfb64a7ce4d946f11ef341a3739af7cc8467fddb63ee64e5306d168515b1371"
+    },
+    {
+      "path": ".agents/voice-research/integrations/wispr/native-4-search_procedures.json",
+      "evidence_id": "ev_9354b0a0e6f7fe8b21937745f8a4795da0f4f70aa2b69e2391ff5956ff3d3a12",
+      "operation": "search_procedures",
+      "sha256": "2c4e56d011e9ebb0acd47b9100cbd603de040ea7f96ba24b758788d6d1e36059"
+    },
+    {
+      "path": ".agents/voice-research/integrations/wispr/native-7-analyze_function.json",
+      "evidence_id": "ev_2dd037cbe5907d9bad4eff4e6dd0ad2ca11f45112b6cac5923893b21b9dae6ac",
+      "operation": "analyze_function",
+      "sha256": "c0709847082f13ae9509684e8eb92a128ea266f1f0ce838fd96c904e18aad1e4"
+    },
+    {
+      "path": ".agents/voice-research/integrations/wispr/native-12-xrefs.json",
+      "evidence_id": "ev_8ee323d8bc822c42e07ca6d24e049e09eacd16be5957dbc129c830bfd0dfdc67",
+      "operation": "xrefs",
+      "sha256": "4b6b0a4def422d4204bfd59443fb57213a4468e8932f9c14bc6ce2dd8d1cf30a"
+    },
+    {
+      "path": ".agents/voice-research/integrations/wispr/native-8-analyze_function.json",
+      "evidence_id": "ev_0618078ff92742ef2c9556e1225601606463aee9423657995357df6a7cb16c20",
+      "operation": "analyze_function",
+      "sha256": "2dc97c91d55cce2065d36600b4434dedef8b0657ef7c41033289cc02f1b24162"
+    },
+    {
+      "path": ".agents/voice-research/integrations/wispr/native-14-xrefs.json",
+      "evidence_id": "ev_e079fdd785d51a8ee38137291da83e99154cf8aeaac2a57326d086be044baf38",
+      "operation": "xrefs",
+      "sha256": "3a37085bc239fd51216b9d068b706601e960ef95f057a79d9f2e4aeb7cf4d03d"
+    },
+    {
+      "path": ".agents/voice-research/integrations/wispr/native-6-xrefs.json",
+      "evidence_id": "ev_cd4caf8e82ca084183c52411bd812db34f28576b85d1b4a0625e4730ae2678b0",
+      "operation": "xrefs",
+      "sha256": "d9ba143f6b541a5e9cd24e2b20e6c6b2f157f1888e9abd41fc7177e570d20881"
+    },
+    {
+      "path": ".agents/voice-research/integrations/wispr/native-13-xrefs.json",
+      "evidence_id": "ev_e27d23499dcf8f7d04a402968d32e5c0b77febd3562b2a86550cf942aa492b51",
+      "operation": "xrefs",
+      "sha256": "c67403673f6aa8a6d6558a57d7bf4e12c2eb1bb79553e9b2e70d3b014c9db6b5"
+    }
+  ],
+  "execution": "No target launched or installed; no accounts/audio/backend requests; static JS and ephemeral Ghidra only",
+  "limitations": [
+    "ASAR integrity contradiction for unpacked node_sqlite3 native member retained; codesign --verify --deep --strict passed",
+    "REA main JS semantic graph unavailable under result budget; artifact identity and static facts retained; manual code-path review is separately labeled",
+    "Live rollout flags, actual current Zoom/Meet selector compatibility, multilingual labels, overlapping speakers and server diarization/refinement are not observed"
+  ],
+  "cleanup": {
+    "native_session": "close_binary completed",
+    "read_only_dmg_mount": "detached after analysis",
+    "close_record": ".agents/voice-research/integrations/wispr/native-16-close_binary.json",
+    "close_sha256": "3b5be5db3d664f1e8b795f069730aed627bd051cd394917c90b183bebff1e276"
+  },
+  "custody_manifest": "$CAPTURE_ROOT/wispr/custody-manifest.json",
+  "outside_checkout_retention_root": "$CAPTURE_ROOT/wispr"
+}

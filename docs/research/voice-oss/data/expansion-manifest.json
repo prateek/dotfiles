@@ -1,0 +1,110 @@
+{
+  "research_date": "2026-10-12",
+  "scope": "Five additional reference apps selected for fit to the existing brief; primary documentation and pinned public source. No new runtime or binary analysis.",
+  "request": "Research the five best apps in this category not already named and include an analysis.",
+  "selection_basis": [
+    "Apple voice and notes relevance",
+    "Ownership, reprocessing and composability",
+    "Evidence depth and qualified maturity",
+    "Distinct learning beyond the original five"
+  ],
+  "screened_candidates": [
+    "Superwhisper",
+    "MacWhisper",
+    "Anarlog (formerly Hyprnote)",
+    "Reflect Open",
+    "Fireflies",
+    "Meetily",
+    "Handy",
+    "Amical",
+    "Voibe",
+    "Krisp",
+    "Otter",
+    "Fathom",
+    "Tana Outliner",
+    "Notion AI Meeting Notes",
+    "Just Press Record",
+    "Aiko"
+  ],
+  "selected_products": [
+    "Superwhisper",
+    "MacWhisper",
+    "Anarlog",
+    "Reflect Open",
+    "Fireflies"
+  ],
+  "selection_is_accuracy_or_market_ranking": false,
+  "counts": {
+    "added_flows": 140,
+    "added_product_sources": 162,
+    "selection_sources": 16,
+    "all_flows": 328,
+    "all_source_urls": 434
+  },
+  "original_snapshot": {
+    "flow_records": 188,
+    "source_records": 256,
+    "records_preserved_by_value": true,
+    "sha256": {
+      "flows.json": "c7447d35568dd68205c1aa2aa9fcc287a9c36dc4ee99922498d34420655f46d4",
+      "flows.csv": "47971ae4be84952a72494f680df7e526b5251b57d24e1925860a41c6d83f0b40",
+      "sources.jsonl": "603f11be666858c009b4eaa7cbbdee464076b12c0e2b2f1f2113016f697cc8c1",
+      "catalogue.html": "479e3be6b2ad87ec11209dc3566b747afb0089730ddb198519f726e3b5fe35cd"
+    }
+  },
+  "source_pins": {
+    "Anarlog": {
+      "repository": "https://github.com/fastrepl/anarlog",
+      "ref": "desktop_v1.4.30",
+      "commit": "fd841ca6b9d42f3c34a287a346726a7d1dd3805a"
+    },
+    "Reflect Open": {
+      "repository": "https://github.com/team-reflect/reflect-open",
+      "commit": "eb12782688b8bcec08125d27566b0616831f67fe",
+      "qualification": "Inspected source newer than observed release snapshots; no binary equivalence claimed."
+    }
+  },
+  "entrypoint": "../additional-apps.md",
+  "validation": {
+    "date": "2026-10-12",
+    "status": "PASS: record/source/link integrity, catalogue JS and DOM behavior, lifecycle, whitespace, and bounded independent source review.",
+    "integrity": "PASS: 328 unique flow IDs; JSON and CSV agree on every field; source IDs map to exact recorded URLs; original 188 records unchanged by value.",
+    "sources": "PASS: 434 unique IDs and URLs; provenance fields present; original 256 source records unchanged by value.",
+    "local_links": "PASS: 436 local Markdown links and catalogue navigation targets resolve; all five new dossier flow IDs and explicit source-ID links match the data.",
+    "catalogue": {
+      "javascript_syntax": "PASS: node --check on regenerated catalogue script",
+      "dom_smoke": "PASS: 328 records; all ten product counts; evidence filter; old/new ID searches; combined filters; empty state; reset; details expansion; source links; no script errors. Header counts and embedded data agree with canonical records.",
+      "method": "JSDOM against the generated HTML with no external resource loading.",
+      "visual_browser_review": "Not performed; DOM checks do not establish rendered layout or browser accessibility."
+    },
+    "docs_lifecycle": "PASS: 188 documents validated against HEAD after five-app expansion.",
+    "independent_review": {
+      "result": "No actionable findings in a bounded independent audit; not verification of every claim or runtime behavior.",
+      "scope": "Selection rationale, five new dossiers, 140 new flows, 178 additional sources, original record preservation and source pins.",
+      "primary_claim_checks": [
+        "Superwhisper local CLI/MCP and history retention/reprocessing",
+        "MacWhisper app-backed CLI and opt-in history persistence",
+        "Anarlog retention, encrypted sync versus cloud snapshots and Watch acknowledgement deletion",
+        "Reflect fixed cloud transcription provider paths and unfinished segment loss boundary",
+        "Fireflies desktop no-bot retention/naming and vendor processing with private storage"
+      ],
+      "source_pin_checks": "Four remotely fetched pinned source files matched scratch bytes across Reflect Open and Anarlog."
+    },
+    "runtime": "Not exercised",
+    "whitespace": "PASS: tracked git diff and all 51 plan/index/research artifacts checked; CSV uses LF line endings."
+  },
+  "boundaries": {
+    "runtime_verified": false,
+    "performance_benchmarked": false,
+    "new_binary_analysis": false,
+    "account_access": false,
+    "new_explicit_product_requirements": 0
+  },
+  "counts_scope": "Snapshot at completion of the five-app expansion; later requirement/source additions are reflected in run-manifest.json.",
+  "catalogue_sha256_at_completion": {
+    "flows.json": "8a2773e82c2ee921dec48fb4142c569293b6ba6dc9f83983d9c69540dd248b73",
+    "flows.csv": "2335b5e6177322154f0312bdd8d541ac0d3dd3456898ddec45c227ed59e7fe10",
+    "sources.jsonl": "d51109ece331a911fe5994f5b6c455f6f8f8f78450be32b6245150a13a5dd92e",
+    "catalogue.html": "2559995eef893b4cd77283834de36f9f0978eb39bda6e543a2b0898d3325046d"
+  }
+}

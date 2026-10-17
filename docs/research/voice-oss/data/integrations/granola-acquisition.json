@@ -1,0 +1,7 @@
+{
+  "source_url": "https://api.granola.ai/v1/download-latest",
+  "resolved_url": "https://dr2v7l5emb758.cloudfront.net/7.637.0/Granola-7.637.0-mac-universal.dmg",
+  "content_type": "application/x-apple-diskimage",
+  "size": 307058364,
+  "sha256": "9ca52082cd037259b58d457a215e91ec2d77a398f448abb5e0cf06ffe56b2623"
+}

@@ -1,0 +1,1887 @@
+[
+  {
+    "app": "GhostPepper",
+    "source_root": ".agents/voice-research/integrations/oss/ghost-pepper/GhostPepper",
+    "file_type": "*.swift",
+    "excluded": "Paths containing Secrets",
+    "file_count": 133,
+    "pattern": "active.?speaker",
+    "match_count": 0,
+    "match_locations": []
+  },
+  {
+    "app": "GhostPepper",
+    "source_root": ".agents/voice-research/integrations/oss/ghost-pepper/GhostPepper",
+    "file_type": "*.swift",
+    "excluded": "Paths containing Secrets",
+    "file_count": 133,
+    "pattern": "zoom\\.us|meet\\.google",
+    "match_count": 6,
+    "match_locations": [
+      {
+        "path": "GhostPepper/Calendar/GoogleCalendarService.swift",
+        "line": 521
+      },
+      {
+        "path": "GhostPepper/Meeting/MeetingDetector.swift",
+        "line": 43
+      },
+      {
+        "path": "GhostPepper/Meeting/MeetingDetector.swift",
+        "line": 46
+      },
+      {
+        "path": "GhostPepper/Meeting/MeetingDetector.swift",
+        "line": 47
+      },
+      {
+        "path": "GhostPepper/Meeting/MeetingDetector.swift",
+        "line": 227
+      },
+      {
+        "path": "GhostPepper/Meeting/MeetingDetector.swift",
+        "line": 228
+      }
+    ]
+  },
+  {
+    "app": "GhostPepper",
+    "source_root": ".agents/voice-research/integrations/oss/ghost-pepper/GhostPepper",
+    "file_type": "*.swift",
+    "excluded": "Paths containing Secrets",
+    "file_count": 133,
+    "pattern": "diariz",
+    "match_count": 190,
+    "match_locations": [
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 157
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 1062
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 1105
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 1132
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 1152
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 1153
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 1154
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 1155
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 1157
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 1158
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 1165
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 1176
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 1188
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 1197
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 1204
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 1941
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 2518
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 2555
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 2556
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 2853
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 2861
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 2886
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 2889
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 2900
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 2936
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 2937
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 2945
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 2949
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 2955
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 2968
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 3006
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 3011
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 1722
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 1823
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 1832
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 1923
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 1932
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 1933
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 1936
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 1952
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 1955
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 1956
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 1995
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 2002
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 2009
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 2010
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 2061
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 3537
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 3598
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 3994
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 4006
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 4138
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 4149
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 4196
+      },
+      {
+        "path": "GhostPepper/UI/ModelsSidebarView.swift",
+        "line": 87
+      },
+      {
+        "path": "GhostPepper/UI/ModelsSidebarView.swift",
+        "line": 88
+      },
+      {
+        "path": "GhostPepper/UI/ModelsSidebarView.swift",
+        "line": 90
+      },
+      {
+        "path": "GhostPepper/UI/ModelsSidebarView.swift",
+        "line": 313
+      },
+      {
+        "path": "GhostPepper/UI/ModelsSidebarView.swift",
+        "line": 320
+      },
+      {
+        "path": "GhostPepper/UI/ModelsSidebarView.swift",
+        "line": 327
+      },
+      {
+        "path": "GhostPepper/Transcription/RecordingSessionCoordinator.swift",
+        "line": 567
+      },
+      {
+        "path": "GhostPepper/Transcription/RecordingSessionCoordinator.swift",
+        "line": 571
+      },
+      {
+        "path": "GhostPepper/Transcription/RecordingSessionCoordinator.swift",
+        "line": 587
+      },
+      {
+        "path": "GhostPepper/Transcription/RecordingSessionCoordinator.swift",
+        "line": 619
+      },
+      {
+        "path": "GhostPepper/Transcription/RecordingSessionCoordinator.swift",
+        "line": 628
+      },
+      {
+        "path": "GhostPepper/Transcription/RecordingSessionCoordinator.swift",
+        "line": 645
+      },
+      {
+        "path": "GhostPepper/Transcription/RecordingSessionCoordinator.swift",
+        "line": 650
+      },
+      {
+        "path": "GhostPepper/Transcription/DiarizationSummary.swift",
+        "line": 3
+      },
+      {
+        "path": "GhostPepper/Transcription/ChunkedTranscriptionPipeline.swift",
+        "line": 20
+      },
+      {
+        "path": "GhostPepper/Transcription/ChunkedTranscriptionPipeline.swift",
+        "line": 183
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 6
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 12
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 57
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 68
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 87
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 104
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 119
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 139
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 154
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 172
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 186
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 199
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 212
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 225
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 252
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 265
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 305
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 322
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 332
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 353
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 359
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 368
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 374
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 385
+      },
+      {
+        "path": "GhostPepper/Transcription/SpeechModelCatalog.swift",
+        "line": 41
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 18
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 278
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 279
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 280
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 289
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 293
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 298
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 299
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 301
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 304
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 308
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 321
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 322
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 323
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 324
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 336
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 340
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 345
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 346
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 349
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 357
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 361
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 367
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 369
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 387
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 396
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 410
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 411
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 544
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 545
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 546
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 549
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 550
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 551
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 552
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 553
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 557
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 558
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 559
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 572
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 583
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 586
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 601
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabEntry.swift",
+        "line": 17
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabEntry.swift",
+        "line": 33
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabEntry.swift",
+        "line": 50
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabEntry.swift",
+        "line": 65
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabEntry.swift",
+        "line": 87
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabEntry.swift",
+        "line": 105
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 34
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 64
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 135
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 257
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 298
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 303
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 307
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 310
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 312
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 316
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 319
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 320
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 323
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 325
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 326
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 329
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 336
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 483
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 496
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 517
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 531
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 561
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 575
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 597
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 750
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 773
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 6
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 66
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 76
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 82
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 88
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 93
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 136
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 197
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 202
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 208
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 227
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 233
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 250
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 254
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 313
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 324
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 333
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 334
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 358
+      },
+      {
+        "path": "GhostPepper/Audio/DualStreamCapture.swift",
+        "line": 24
+      }
+    ]
+  },
+  {
+    "app": "GhostPepper",
+    "source_root": ".agents/voice-research/integrations/oss/ghost-pepper/GhostPepper",
+    "file_type": "*.swift",
+    "excluded": "Paths containing Secrets",
+    "file_count": 133,
+    "pattern": "CATapDescription",
+    "match_count": 0,
+    "match_locations": []
+  },
+  {
+    "app": "GhostPepper",
+    "source_root": ".agents/voice-research/integrations/oss/ghost-pepper/GhostPepper",
+    "file_type": "*.swift",
+    "excluded": "Paths containing Secrets",
+    "file_count": 133,
+    "pattern": "SCStream\\(",
+    "match_count": 1,
+    "match_locations": [
+      {
+        "path": "GhostPepper/Audio/SystemAudioRecorder.swift",
+        "line": 48
+      }
+    ]
+  },
+  {
+    "app": "GhostPepper",
+    "source_root": ".agents/voice-research/integrations/oss/ghost-pepper/GhostPepper",
+    "file_type": "*.swift",
+    "excluded": "Paths containing Secrets",
+    "file_count": 133,
+    "pattern": "capturesAudio",
+    "match_count": 1,
+    "match_locations": [
+      {
+        "path": "GhostPepper/Audio/SystemAudioRecorder.swift",
+        "line": 37
+      }
+    ]
+  },
+  {
+    "app": "GhostPepper",
+    "source_root": ".agents/voice-research/integrations/oss/ghost-pepper/GhostPepper",
+    "file_type": "*.swift",
+    "excluded": "Paths containing Secrets",
+    "file_count": 133,
+    "pattern": "ZoomSDK|MeetingSDK|VideoSDK|speaker.?id",
+    "match_count": 237,
+    "match_locations": [
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 305
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 1952
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 1955
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 1960
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 1965
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 1983
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 1984
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 1998
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 1999
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 2000
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 2004
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 2005
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 2010
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 2013
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 2859
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 2864
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 2884
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 2888
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 2889
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 2890
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 2891
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 2895
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 2896
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 2898
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 2900
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 2907
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 2915
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 2923
+      },
+      {
+        "path": "GhostPepper/AppState.swift",
+        "line": 2924
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 1964
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 2026
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 2029
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 2032
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 2035
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 2037
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 2041
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 2045
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 2050
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 2055
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 2814
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 3101
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 3134
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 4016
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 4018
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 4028
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 4029
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 4030
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 4033
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 4056
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 4078
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 4081
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 4084
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 4087
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 4089
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 4112
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 4115
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 4116
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 4154
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 4155
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 4156
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 4172
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 4173
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 4175
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 4181
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 4184
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 4186
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 4189
+      },
+      {
+        "path": "GhostPepper/UI/SettingsWindow.swift",
+        "line": 4193
+      },
+      {
+        "path": "GhostPepper/SpeakerIdentity/SpeakerIdentityResolver.swift",
+        "line": 4
+      },
+      {
+        "path": "GhostPepper/SpeakerIdentity/SpeakerIdentityResolver.swift",
+        "line": 5
+      },
+      {
+        "path": "GhostPepper/SpeakerIdentity/SpeakerIdentityResolver.swift",
+        "line": 11
+      },
+      {
+        "path": "GhostPepper/SpeakerIdentity/SpeakerIdentityResolver.swift",
+        "line": 16
+      },
+      {
+        "path": "GhostPepper/SpeakerIdentity/SpeakerIdentityResolver.swift",
+        "line": 30
+      },
+      {
+        "path": "GhostPepper/SpeakerIdentity/SpeakerIdentityResolver.swift",
+        "line": 34
+      },
+      {
+        "path": "GhostPepper/SpeakerIdentity/SpeakerIdentityResolver.swift",
+        "line": 39
+      },
+      {
+        "path": "GhostPepper/SpeakerIdentity/SpeakerIdentityResolver.swift",
+        "line": 40
+      },
+      {
+        "path": "GhostPepper/SpeakerIdentity/SpeakerIdentityResolver.swift",
+        "line": 47
+      },
+      {
+        "path": "GhostPepper/SpeakerIdentity/SpeakerIdentityResolver.swift",
+        "line": 50
+      },
+      {
+        "path": "GhostPepper/SpeakerIdentity/SpeakerIdentityResolver.swift",
+        "line": 51
+      },
+      {
+        "path": "GhostPepper/SpeakerIdentity/SpeakerIdentityResolver.swift",
+        "line": 126
+      },
+      {
+        "path": "GhostPepper/SpeakerIdentity/SpeakerIdentityResolver.swift",
+        "line": 129
+      },
+      {
+        "path": "GhostPepper/SpeakerIdentity/RecognizedVoiceStore.swift",
+        "line": 63
+      },
+      {
+        "path": "GhostPepper/SpeakerIdentity/RecognizedVoiceStore.swift",
+        "line": 88
+      },
+      {
+        "path": "GhostPepper/SpeakerIdentity/RecognizedVoiceStore.swift",
+        "line": 114
+      },
+      {
+        "path": "GhostPepper/SpeakerIdentity/RecognizedVoiceStore.swift",
+        "line": 120
+      },
+      {
+        "path": "GhostPepper/Transcription/RecordingSessionCoordinator.swift",
+        "line": 631
+      },
+      {
+        "path": "GhostPepper/Transcription/DiarizationSummary.swift",
+        "line": 5
+      },
+      {
+        "path": "GhostPepper/Transcription/DiarizationSummary.swift",
+        "line": 11
+      },
+      {
+        "path": "GhostPepper/Transcription/DiarizationSummary.swift",
+        "line": 16
+      },
+      {
+        "path": "GhostPepper/Transcription/DiarizationSummary.swift",
+        "line": 53
+      },
+      {
+        "path": "GhostPepper/Transcription/DiarizationSummary.swift",
+        "line": 62
+      },
+      {
+        "path": "GhostPepper/Transcription/DiarizationSummary.swift",
+        "line": 70
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 5
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 71
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 80
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 81
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 82
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 85
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 88
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 107
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 117
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 120
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 123
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 142
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 157
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 175
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 189
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 202
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 215
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 244
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 249
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 270
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 271
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 272
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 277
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 279
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 281
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 302
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 318
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 321
+      },
+      {
+        "path": "GhostPepper/Transcription/FluidAudioSpeechSession.swift",
+        "line": 331
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 370
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 560
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 573
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 587
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 600
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 603
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 604
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 605
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 608
+      },
+      {
+        "path": "GhostPepper/Transcription/ModelManager.swift",
+        "line": 611
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 36
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 44
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 51
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 52
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 61
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 67
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 68
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 69
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 71
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 72
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 75
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 78
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 79
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 80
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 82
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 83
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 86
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 99
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 100
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 104
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 108
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 257
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 259
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 261
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 275
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 327
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 331
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 337
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 338
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 342
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 361
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 362
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 372
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 373
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 376
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 377
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 384
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 386
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 402
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 403
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 411
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 412
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 420
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 421
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 439
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 440
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 700
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 722
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 747
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 750
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 752
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 753
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 756
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 773
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 774
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 777
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 780
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 782
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 783
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 785
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 788
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 789
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 790
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 796
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabController.swift",
+        "line": 803
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 11
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 19
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 26
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 35
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 45
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 52
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 58
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 63
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 200
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 248
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 254
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 259
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 260
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 263
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 268
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 284
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 285
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 288
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 289
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 292
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 296
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 302
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 306
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 324
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 325
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 326
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 329
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 342
+      },
+      {
+        "path": "GhostPepper/Lab/TranscriptionLabRunner.swift",
+        "line": 347
+      },
+      {
+        "path": "GhostPepper/Meeting/MeetingSession.swift",
+        "line": 319
+      },
+      {
+        "path": "GhostPepper/Meeting/MeetingSession.swift",
+        "line": 321
+      },
+      {
+        "path": "GhostPepper/Meeting/MeetingSession.swift",
+        "line": 322
+      },
+      {
+        "path": "GhostPepper/Meeting/MeetingSession.swift",
+        "line": 325
+      },
+      {
+        "path": "GhostPepper/Meeting/MeetingSession.swift",
+        "line": 326
+      },
+      {
+        "path": "GhostPepper/Meeting/MeetingSession.swift",
+        "line": 327
+      },
+      {
+        "path": "GhostPepper/Meeting/MeetingSession.swift",
+        "line": 339
+      },
+      {
+        "path": "GhostPepper/Meeting/GranolaImporter.swift",
+        "line": 687
+      },
+      {
+        "path": "GhostPepper/Meeting/GranolaImporter.swift",
+        "line": 689
+      },
+      {
+        "path": "GhostPepper/Meeting/GranolaImporter.swift",
+        "line": 691
+      },
+      {
+        "path": "GhostPepper/Meeting/GranolaImporter.swift",
+        "line": 831
+      },
+      {
+        "path": "GhostPepper/Meeting/GranolaImporter.swift",
+        "line": 832
+      }
+    ]
+  },
+  {
+    "app": "VoiceInk",
+    "source_root": ".agents/voice-research/integrations/oss/VoiceInk/VoiceInk",
+    "file_type": "*.swift",
+    "excluded": "Paths containing Secrets",
+    "file_count": 333,
+    "pattern": "active.?speaker",
+    "match_count": 0,
+    "match_locations": []
+  },
+  {
+    "app": "VoiceInk",
+    "source_root": ".agents/voice-research/integrations/oss/VoiceInk/VoiceInk",
+    "file_type": "*.swift",
+    "excluded": "Paths containing Secrets",
+    "file_count": 333,
+    "pattern": "zoom\\.us|meet\\.google",
+    "match_count": 0,
+    "match_locations": []
+  },
+  {
+    "app": "VoiceInk",
+    "source_root": ".agents/voice-research/integrations/oss/VoiceInk/VoiceInk",
+    "file_type": "*.swift",
+    "excluded": "Paths containing Secrets",
+    "file_count": 333,
+    "pattern": "diariz",
+    "match_count": 0,
+    "match_locations": []
+  },
+  {
+    "app": "VoiceInk",
+    "source_root": ".agents/voice-research/integrations/oss/VoiceInk/VoiceInk",
+    "file_type": "*.swift",
+    "excluded": "Paths containing Secrets",
+    "file_count": 333,
+    "pattern": "CATapDescription",
+    "match_count": 0,
+    "match_locations": []
+  },
+  {
+    "app": "VoiceInk",
+    "source_root": ".agents/voice-research/integrations/oss/VoiceInk/VoiceInk",
+    "file_type": "*.swift",
+    "excluded": "Paths containing Secrets",
+    "file_count": 333,
+    "pattern": "SCStream\\(",
+    "match_count": 0,
+    "match_locations": []
+  },
+  {
+    "app": "VoiceInk",
+    "source_root": ".agents/voice-research/integrations/oss/VoiceInk/VoiceInk",
+    "file_type": "*.swift",
+    "excluded": "Paths containing Secrets",
+    "file_count": 333,
+    "pattern": "capturesAudio",
+    "match_count": 0,
+    "match_locations": []
+  },
+  {
+    "app": "VoiceInk",
+    "source_root": ".agents/voice-research/integrations/oss/VoiceInk/VoiceInk",
+    "file_type": "*.swift",
+    "excluded": "Paths containing Secrets",
+    "file_count": 333,
+    "pattern": "ZoomSDK|MeetingSDK|VideoSDK|speaker.?id",
+    "match_count": 0,
+    "match_locations": []
+  }
+]

@@ -1,0 +1,195 @@
+[
+  {
+    "file": "granola/asar-analysis.json",
+    "file_sha256": "47e18d4e44dcb09aa596d5506d722fb9a6cfd9a4a4f0d973533c8ab0b6159abd",
+    "error": "JavaScript application analysis failed"
+  },
+  {
+    "file": "granola/asar-extraction.json",
+    "file_sha256": "77e9e7848f80ae366418887e21d9b756ee64de5e5d616ad6ee1c0d5646af67b0",
+    "error": "Analysis failed"
+  },
+  {
+    "file": "granola/dmg-inventory.json",
+    "file_sha256": "78d99e0769fa0f2c5be3464145a5b7c0b7681ab8b44a88be7541ca93467503cb",
+    "error": "Analysis failed"
+  },
+  {
+    "file": "granola-native/01-zoom-roster.json",
+    "file_sha256": "d9ba770527ee5a0be90a28c60f796655ec84b72f7783a67b78ce41c4a08d3d2b",
+    "error": {
+      "code": "provider_timeout",
+      "category": "timeout",
+      "message": "Analysis took too long. Try a smaller request, then run `rea doctor` if it continues.",
+      "retryable": true,
+      "remediation": {
+        "action": "Analysis took too long. Try a smaller request, then run `rea doctor` if it continues."
+      },
+      "details": {
+        "operation": "analyze_function",
+        "timeout_ms": 330000
+      }
+    }
+  },
+  {
+    "file": "monologue/001-open.json",
+    "file_sha256": "02640fc8348ae45faa75f285ca3048924a0955a5e0cde8e4de4d61a1102f4d80",
+    "error": {
+      "code": "capability_unavailable",
+      "category": "unsupported_provider",
+      "message": "The selected analysis provider does not support this target. Choose another provider or open a supported extracted binary.",
+      "retryable": false,
+      "remediation": {
+        "action": "The selected analysis provider does not support this target. Choose another provider or open a supported extracted binary."
+      },
+      "details": {
+        "operation": "open_binary",
+        "selection_reason": "target_unsupported",
+        "requested_provider_id": "ghidra",
+        "candidate_ids": [
+          "ghidra",
+          "hopper",
+          "ida"
+        ],
+        "rejections": [
+          {
+            "provider_id": "ghidra",
+            "code": "architecture_unsupported",
+            "reason": "Ghidra v1 cannot enforce the selected architecture when importing a universal Mach-O; analyze a thinned Mach-O slice instead.",
+            "diagnostics": {
+              "host_platform": "darwin",
+              "target_kind": "executable",
+              "target_format": "mach-o",
+              "architecture": "arm64",
+              "available_architectures": [
+                "x86_64",
+                "arm64"
+              ],
+              "executable_role": null,
+              "managed": null
+            }
+          },
+          {
+            "provider_id": "hopper",
+            "code": "executable_missing",
+            "reason": "Hopper launcher is missing or not executable: /Applications/Hopper Disassembler.app/Contents/MacOS/hopper",
+            "diagnostics": {
+              "launcher_path": "/Applications/Hopper Disassembler.app/Contents/MacOS/hopper",
+              "platform": "darwin"
+            }
+          },
+          {
+            "provider_id": "ida",
+            "code": "not_configured",
+            "reason": "Set REA_IDA_MCP_CONFIG to an upstream IDA MCP JSON registration; see docs/ida-provider.md.",
+            "diagnostics": {
+              "configured": false,
+              "live_connection_probed": false
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": "monologue/002-macho.json",
+    "file_sha256": "c8e32e5a444e67b40f11d5b5c53fd2e3950f696febee4e8505270ffdd580f9ef",
+    "error": {
+      "code": "target_unavailable",
+      "category": "unavailable",
+      "message": "No app is open. Ask the user which app to investigate, then call open_binary with its local path.",
+      "retryable": false,
+      "remediation": {
+        "action": "No app is open. Ask the user which app to investigate, then call open_binary with its local path."
+      }
+    }
+  },
+  {
+    "file": "monologue/003-search.json",
+    "file_sha256": "c8e32e5a444e67b40f11d5b5c53fd2e3950f696febee4e8505270ffdd580f9ef",
+    "error": {
+      "code": "target_unavailable",
+      "category": "unavailable",
+      "message": "No app is open. Ask the user which app to investigate, then call open_binary with its local path.",
+      "retryable": false,
+      "remediation": {
+        "action": "No app is open. Ask the user which app to investigate, then call open_binary with its local path."
+      }
+    }
+  },
+  {
+    "file": "monologue/004-procs.json",
+    "file_sha256": "c8e32e5a444e67b40f11d5b5c53fd2e3950f696febee4e8505270ffdd580f9ef",
+    "error": {
+      "code": "target_unavailable",
+      "category": "unavailable",
+      "message": "No app is open. Ask the user which app to investigate, then call open_binary with its local path.",
+      "retryable": false,
+      "remediation": {
+        "action": "No app is open. Ask the user which app to investigate, then call open_binary with its local path."
+      }
+    }
+  },
+  {
+    "file": "monologue/007-search.json",
+    "file_sha256": "bad1c03b2e919b2d0a38171b4a34a6209d02591485b73e5e17aacf5b98987b4e",
+    "error": {
+      "code": "provider_timeout",
+      "category": "timeout",
+      "message": "Analysis took too long. Try a smaller request, then run `rea doctor` if it continues.",
+      "retryable": true,
+      "remediation": {
+        "action": "Analysis took too long. Try a smaller request, then run `rea doctor` if it continues."
+      },
+      "details": {
+        "operation": "search_strings",
+        "timeout_ms": 330000
+      }
+    }
+  },
+  {
+    "file": "monologue/extract-dmg.json",
+    "file_sha256": "67e26b2719f89f4f011a61f450079885ad26decd8f346037ec7d35e5a15e5fce",
+    "error": "Analysis failed"
+  },
+  {
+    "file": "monologue/macho.json",
+    "file_sha256": "40a761856bb99f96b8abdf9cb99b0237da00492b3a0d3bed48a2bd92f45c903e",
+    "error": "Analysis failed"
+  },
+  {
+    "file": "monologue/plist-current.json",
+    "file_sha256": "0e224f021d53789d2749393cbe3b8142be1b163f2ab92b78cd00bc4a9db76d2e",
+    "error": "Analysis failed"
+  },
+  {
+    "file": "monologue/plist.json",
+    "file_sha256": "3add5a6de2fdeec955a563a318a51e2fa56ceb3f2296a2800f0c89fc28bda037",
+    "error": "Analysis failed"
+  },
+  {
+    "file": "monologue/signature-current.json",
+    "file_sha256": "40a761856bb99f96b8abdf9cb99b0237da00492b3a0d3bed48a2bd92f45c903e",
+    "error": "Analysis failed"
+  },
+  {
+    "file": "oss/VoiceInk-inspect-macho.json",
+    "file_sha256": "40a761856bb99f96b8abdf9cb99b0237da00492b3a0d3bed48a2bd92f45c903e",
+    "error": "Analysis failed"
+  },
+  {
+    "file": "oss/VoiceInk-inspect-plist.json",
+    "file_sha256": "40a761856bb99f96b8abdf9cb99b0237da00492b3a0d3bed48a2bd92f45c903e",
+    "error": "Analysis failed"
+  },
+  {
+    "file": "oss/VoiceInk-inspect-signature.json",
+    "file_sha256": "40a761856bb99f96b8abdf9cb99b0237da00492b3a0d3bed48a2bd92f45c903e",
+    "error": "Analysis failed"
+  },
+  {
+    "file": "wispr/analysis/dmg-evidence.json",
+    "file_sha256": "e9ffed3712fb5dc19d74c111939fa9fa247ada711f7ec59ba863fbf331958478",
+    "error": "Analysis failed"
+  }
+]

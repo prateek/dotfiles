@@ -206,12 +206,18 @@ def git_check_ignore(root: Path, path: Path) -> bool:
     return result.returncode == 0
 
 
+def is_research_data_file(docs_root: Path, path: Path) -> bool:
+    parts = path.relative_to(docs_root).parts
+    return len(parts) > 3 and parts[0] == "research" and parts[2] == "data"
+
+
 def non_markdown_content_files(root: Path, docs_root: Path) -> list[Path]:
     allowed = {docs_root / "validate-doc-lifecycle.py"}
     return sorted(
         path
         for path in docs_root.rglob("*")
         if path.is_file() and path.suffix != ".md" and path not in allowed
+        and not is_research_data_file(docs_root, path)
         and not git_check_ignore(root, path)
     )
 
@@ -1459,6 +1465,7 @@ def validate_current_tree(root: Path, docs_root: Path) -> list[str]:
         rel = path.relative_to(root)
         errors.append(
             f"{rel}: non-Markdown content is not allowed under docs/; "
+            "keep research datasets under docs/research/<topic>/data/ and "
             "store captures under ${XDG_STATE_HOME:-~/.local/state}/dotfiles/captures/"
         )
 

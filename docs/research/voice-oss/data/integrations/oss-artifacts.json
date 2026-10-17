@@ -1,0 +1,546 @@
+[
+  {
+    "app": "GhostPepper",
+    "operation": "inspect-macho",
+    "path": "$CAPTURE_ROOT/oss/GhostPepper-inspect-macho.json",
+    "evidence_id": "ev_e360275407a349a05d080b3b0e50b7651aaee7a898fd601343eacc6ec1a8b303",
+    "subject": {
+      "name": "GhostPepper",
+      "digest": {
+        "sha256": "c3ddf242bc8f435b97856e589c2e934227fca7da97aed1475f1dd4a1546386ed"
+      },
+      "format": "mach-o",
+      "architecture": "arm64",
+      "local_path": "/Applications/GhostPepper.app/Contents/MacOS/GhostPepper"
+    },
+    "file_sha256": "47cd0da94147662427e9a945fa0a45ecc82f3cda50d83913818fe1c31757fc64",
+    "limitations": [
+      "Imports and exports combine dyld_info and nm; stripped or toolchain-hidden symbols may be absent.",
+      "vtool output is retained as provenance but only otool build metadata is normalized."
+    ],
+    "frameworks": [
+      {
+        "path": "/System/Library/Frameworks/AVFoundation.framework/Versions/A/AVFoundation",
+        "kind": "LC_LOAD_DYLIB",
+        "current_version": "2.0.0",
+        "compatibility_version": "1.0.0"
+      },
+      {
+        "path": "/System/Library/Frameworks/ApplicationServices.framework/Versions/A/ApplicationServices",
+        "kind": "LC_LOAD_DYLIB",
+        "current_version": "66.0.0",
+        "compatibility_version": "1.0.0"
+      },
+      {
+        "path": "/System/Library/Frameworks/AudioToolbox.framework/Versions/A/AudioToolbox",
+        "kind": "LC_LOAD_DYLIB",
+        "current_version": "1000.0.0",
+        "compatibility_version": "1.0.0"
+      },
+      {
+        "path": "/System/Library/Frameworks/CoreAudio.framework/Versions/A/CoreAudio",
+        "kind": "LC_LOAD_DYLIB",
+        "current_version": "1.0.0",
+        "compatibility_version": "1.0.0"
+      },
+      {
+        "path": "/System/Library/Frameworks/ScreenCaptureKit.framework/Versions/A/ScreenCaptureKit",
+        "kind": "LC_LOAD_DYLIB",
+        "current_version": "1.0.0",
+        "compatibility_version": "1.0.0"
+      },
+      {
+        "path": "/System/Library/Frameworks/Vision.framework/Versions/A/Vision",
+        "kind": "LC_LOAD_DYLIB",
+        "current_version": "9.5.4",
+        "compatibility_version": "1.0.0"
+      },
+      {
+        "path": "/usr/lib/swift/libswiftAVFoundation.dylib",
+        "kind": "LC_LOAD_WEAK_DYLIB",
+        "current_version": "2420.7.1",
+        "compatibility_version": "1.0.0"
+      },
+      {
+        "path": "/usr/lib/swift/libswiftCoreAudio.dylib",
+        "kind": "LC_LOAD_DYLIB",
+        "current_version": "411.255.0",
+        "compatibility_version": "1.0.0"
+      }
+    ],
+    "selected_imports": [
+      {
+        "name": "_AXUIElementCopyAttributeValue",
+        "address": null,
+        "weak": null,
+        "reexport": null,
+        "source": "ApplicationServices"
+      },
+      {
+        "name": "_AXUIElementCopyParameterizedAttributeValue",
+        "address": null,
+        "weak": null,
+        "reexport": null,
+        "source": "ApplicationServices"
+      },
+      {
+        "name": "_AXUIElementCreateApplication",
+        "address": null,
+        "weak": null,
+        "reexport": null,
+        "source": "ApplicationServices"
+      },
+      {
+        "name": "_AXUIElementGetTypeID",
+        "address": null,
+        "weak": null,
+        "reexport": null,
+        "source": "ApplicationServices"
+      },
+      {
+        "name": "_AXUIElementIsAttributeSettable",
+        "address": null,
+        "weak": null,
+        "reexport": null,
+        "source": "ApplicationServices"
+      },
+      {
+        "name": "_AXUIElementSetAttributeValue",
+        "address": null,
+        "weak": null,
+        "reexport": null,
+        "source": "ApplicationServices"
+      },
+      {
+        "name": "_OBJC_CLASS_$_AVAudioEngine",
+        "address": null,
+        "weak": null,
+        "reexport": null,
+        "source": "AVFAudio"
+      },
+      {
+        "name": "_OBJC_CLASS_$_VNRecognizeTextRequest",
+        "address": null,
+        "weak": null,
+        "reexport": null,
+        "source": "Vision"
+      },
+      {
+        "name": "_OBJC_CLASS_$_VNRecognizedText",
+        "address": null,
+        "weak": null,
+        "reexport": null,
+        "source": "Vision"
+      },
+      {
+        "name": "_OBJC_CLASS_$_VNRecognizedTextObservation",
+        "address": null,
+        "weak": null,
+        "reexport": null,
+        "source": "Vision"
+      },
+      {
+        "name": "_OBJC_CLASS_$_SCStreamConfiguration",
+        "address": null,
+        "weak": null,
+        "reexport": null,
+        "source": "ScreenCaptureKit"
+      },
+      {
+        "name": "_OBJC_CLASS_$_SCStream",
+        "address": null,
+        "weak": null,
+        "reexport": null,
+        "source": "ScreenCaptureKit"
+      },
+      {
+        "name": "_OBJC_CLASS_$_SCScreenshotManager",
+        "address": null,
+        "weak": null,
+        "reexport": null,
+        "source": "ScreenCaptureKit"
+      }
+    ],
+    "symbol_inventory_exhaustive": false,
+    "sortformer_export_count": 305
+  },
+  {
+    "app": "GhostPepper",
+    "operation": "inspect-signature",
+    "path": "$CAPTURE_ROOT/oss/GhostPepper-inspect-signature.json",
+    "evidence_id": "ev_33970e33ab9f44e51cb7c7fa9823fb47d01edc5dc4c0ed6da268a1548de2a93e",
+    "subject": {
+      "name": "GhostPepper",
+      "digest": {
+        "sha256": "c3ddf242bc8f435b97856e589c2e934227fca7da97aed1475f1dd4a1546386ed"
+      },
+      "format": "mach-o",
+      "architecture": "arm64",
+      "local_path": "/Applications/GhostPepper.app/Contents/MacOS/GhostPepper"
+    },
+    "file_sha256": "8b25e6100280c7eeb19e52d1f59da9f617c0c113db0c1b1c55efb21a25b60ca3",
+    "limitations": [
+      "Entitlements and designated requirements require separate bounded commands.",
+      "Inspected a digest-verified Mach-O byte snapshot; filesystem-bound signing context and trust validation are not examined."
+    ],
+    "signature": {
+      "identifier": "com.github.matthartman.ghostpepper",
+      "team_identifier": "BBVMGXR9AY",
+      "authorities": [
+        "Developer ID Application: Matthew Hartman (BBVMGXR9AY)",
+        "Developer ID Certification Authority",
+        "Apple Root CA"
+      ],
+      "entitlements": {
+        "com.apple.security.device.audio-input": true,
+        "com.apple.security.files.user-selected.read-write": true,
+        "com.apple.security.network.client": true,
+        "com.apple.security.network.server": true,
+        "com.apple.security.temporary-exception.mach-lookup.global-name": [
+          "com.github.matthartman.ghostpepper-spks",
+          "com.github.matthartman.ghostpepper-spki"
+        ]
+      },
+      "hardened_runtime": true
+    }
+  },
+  {
+    "app": "GhostPepper",
+    "operation": "inspect-plist",
+    "path": "$CAPTURE_ROOT/oss/GhostPepper-inspect-plist.json",
+    "evidence_id": "ev_42e90c0c8aa00e3210ef76b9c7876ad026dd034cf930f538b7dc9ad3263f3dec",
+    "subject": {
+      "name": "GhostPepper",
+      "digest": {
+        "sha256": "c3ddf242bc8f435b97856e589c2e934227fca7da97aed1475f1dd4a1546386ed"
+      },
+      "format": "mach-o",
+      "architecture": "arm64",
+      "local_path": "/Applications/GhostPepper.app/Contents/MacOS/GhostPepper"
+    },
+    "file_sha256": "58116a7666b1b48febbb56a8969e44dd58e718cdc0ec5be2b61e8d202d802821",
+    "limitations": [],
+    "bundle": {
+      "identifier": "com.github.matthartman.ghostpepper",
+      "executable": "GhostPepper",
+      "name": "Ghost Pepper",
+      "version": "22",
+      "short_version": "2.4.4"
+    }
+  },
+  {
+    "app": "VoiceInk-arm64",
+    "operation": "inspect-macho",
+    "path": "$CAPTURE_ROOT/oss/VoiceInk-arm64-inspect-macho.json",
+    "evidence_id": "ev_e802394b8367efa43f3d61341a551980eed79486f5b957df54cd1196593daa4e",
+    "subject": {
+      "name": "VoiceInk-arm64",
+      "digest": {
+        "sha256": "9bc7044b40617014043042092c20a3632c0cbe7212e53371fc6aedd90a6fbb5a"
+      },
+      "format": "mach-o",
+      "architecture": "arm64",
+      "local_path": "$CAPTURE_ROOT/oss/VoiceInk-arm64"
+    },
+    "file_sha256": "949e13310b118c6c0c52f9094a1b3efd070a97f93ee7ca27645131824496e089",
+    "limitations": [
+      "Imports and exports combine dyld_info and nm; stripped or toolchain-hidden symbols may be absent.",
+      "vtool output is retained as provenance but only otool build metadata is normalized."
+    ],
+    "frameworks": [
+      {
+        "path": "/System/Library/Frameworks/AVFoundation.framework/Versions/A/AVFoundation",
+        "kind": "LC_LOAD_DYLIB",
+        "current_version": "2.0.0",
+        "compatibility_version": "1.0.0"
+      },
+      {
+        "path": "/System/Library/Frameworks/ApplicationServices.framework/Versions/A/ApplicationServices",
+        "kind": "LC_LOAD_DYLIB",
+        "current_version": "66.0.0",
+        "compatibility_version": "1.0.0"
+      },
+      {
+        "path": "/System/Library/Frameworks/AudioToolbox.framework/Versions/A/AudioToolbox",
+        "kind": "LC_LOAD_DYLIB",
+        "current_version": "1000.0.0",
+        "compatibility_version": "1.0.0"
+      },
+      {
+        "path": "/System/Library/Frameworks/CoreAudio.framework/Versions/A/CoreAudio",
+        "kind": "LC_LOAD_DYLIB",
+        "current_version": "1.0.0",
+        "compatibility_version": "1.0.0"
+      },
+      {
+        "path": "/System/Library/Frameworks/ScreenCaptureKit.framework/Versions/A/ScreenCaptureKit",
+        "kind": "LC_LOAD_DYLIB",
+        "current_version": "1.0.0",
+        "compatibility_version": "1.0.0"
+      },
+      {
+        "path": "/System/Library/Frameworks/Vision.framework/Versions/A/Vision",
+        "kind": "LC_LOAD_DYLIB",
+        "current_version": "9.5.4",
+        "compatibility_version": "1.0.0"
+      },
+      {
+        "path": "/usr/lib/swift/libswiftAVFoundation.dylib",
+        "kind": "LC_LOAD_DYLIB",
+        "current_version": "2420.7.1",
+        "compatibility_version": "1.0.0"
+      },
+      {
+        "path": "/usr/lib/swift/libswiftCoreAudio.dylib",
+        "kind": "LC_LOAD_DYLIB",
+        "current_version": "411.255.0",
+        "compatibility_version": "1.0.0"
+      }
+    ],
+    "selected_imports": [
+      {
+        "name": "_AXUIElementCopyActionDescription",
+        "address": null,
+        "weak": null,
+        "reexport": null,
+        "source": "ApplicationServices"
+      },
+      {
+        "name": "_AXUIElementCopyActionNames",
+        "address": null,
+        "weak": null,
+        "reexport": null,
+        "source": "ApplicationServices"
+      },
+      {
+        "name": "_AXUIElementCopyAttributeNames",
+        "address": null,
+        "weak": null,
+        "reexport": null,
+        "source": "ApplicationServices"
+      },
+      {
+        "name": "_AXUIElementCopyAttributeValue",
+        "address": null,
+        "weak": null,
+        "reexport": null,
+        "source": "ApplicationServices"
+      },
+      {
+        "name": "_AXUIElementCopyAttributeValues",
+        "address": null,
+        "weak": null,
+        "reexport": null,
+        "source": "ApplicationServices"
+      },
+      {
+        "name": "_AXUIElementCopyElementAtPosition",
+        "address": null,
+        "weak": null,
+        "reexport": null,
+        "source": "ApplicationServices"
+      },
+      {
+        "name": "_AXUIElementCopyMultipleAttributeValues",
+        "address": null,
+        "weak": null,
+        "reexport": null,
+        "source": "ApplicationServices"
+      },
+      {
+        "name": "_AXUIElementCopyParameterizedAttributeNames",
+        "address": null,
+        "weak": null,
+        "reexport": null,
+        "source": "ApplicationServices"
+      },
+      {
+        "name": "_AXUIElementCopyParameterizedAttributeValue",
+        "address": null,
+        "weak": null,
+        "reexport": null,
+        "source": "ApplicationServices"
+      },
+      {
+        "name": "_AXUIElementCreateApplication",
+        "address": null,
+        "weak": null,
+        "reexport": null,
+        "source": "ApplicationServices"
+      },
+      {
+        "name": "_AXUIElementCreateSystemWide",
+        "address": null,
+        "weak": null,
+        "reexport": null,
+        "source": "ApplicationServices"
+      },
+      {
+        "name": "_AXUIElementGetAttributeValueCount",
+        "address": null,
+        "weak": null,
+        "reexport": null,
+        "source": "ApplicationServices"
+      },
+      {
+        "name": "_AXUIElementGetPid",
+        "address": null,
+        "weak": null,
+        "reexport": null,
+        "source": "ApplicationServices"
+      },
+      {
+        "name": "_AXUIElementGetTypeID",
+        "address": null,
+        "weak": null,
+        "reexport": null,
+        "source": "ApplicationServices"
+      },
+      {
+        "name": "_AXUIElementIsAttributeSettable",
+        "address": null,
+        "weak": null,
+        "reexport": null,
+        "source": "ApplicationServices"
+      },
+      {
+        "name": "_AXUIElementPerformAction",
+        "address": null,
+        "weak": null,
+        "reexport": null,
+        "source": "ApplicationServices"
+      },
+      {
+        "name": "_AXUIElementSetAttributeValue",
+        "address": null,
+        "weak": null,
+        "reexport": null,
+        "source": "ApplicationServices"
+      },
+      {
+        "name": "_AXUIElementSetMessagingTimeout",
+        "address": null,
+        "weak": null,
+        "reexport": null,
+        "source": "ApplicationServices"
+      },
+      {
+        "name": "_OBJC_CLASS_$_SCStreamConfiguration",
+        "address": null,
+        "weak": null,
+        "reexport": null,
+        "source": "ScreenCaptureKit"
+      },
+      {
+        "name": "_OBJC_CLASS_$_SCScreenshotManager",
+        "address": null,
+        "weak": null,
+        "reexport": null,
+        "source": "ScreenCaptureKit"
+      },
+      {
+        "name": "_OBJC_CLASS_$_VNRecognizeTextRequest",
+        "address": null,
+        "weak": null,
+        "reexport": null,
+        "source": "Vision"
+      },
+      {
+        "name": "_OBJC_CLASS_$_VNRecognizedTextObservation",
+        "address": null,
+        "weak": null,
+        "reexport": null,
+        "source": "Vision"
+      },
+      {
+        "name": "_OBJC_CLASS_$_VNRecognizedText",
+        "address": null,
+        "weak": null,
+        "reexport": null,
+        "source": "Vision"
+      }
+    ],
+    "symbol_inventory_exhaustive": false,
+    "sortformer_export_count": 0
+  },
+  {
+    "app": "VoiceInk-arm64",
+    "operation": "inspect-signature",
+    "path": "$CAPTURE_ROOT/oss/VoiceInk-arm64-inspect-signature.json",
+    "evidence_id": "ev_fb0d8115bdd82b8e60c6a6b9c222100046dc367240caf82b6041faf6913ee227",
+    "subject": {
+      "name": "VoiceInk-arm64",
+      "digest": {
+        "sha256": "9bc7044b40617014043042092c20a3632c0cbe7212e53371fc6aedd90a6fbb5a"
+      },
+      "format": "mach-o",
+      "architecture": "arm64",
+      "local_path": "$CAPTURE_ROOT/oss/VoiceInk-arm64"
+    },
+    "file_sha256": "3d2847a4bcd7cf0fd300c64bfc3509606238ea2ceec6879e0bb38dd0f7e12d23",
+    "limitations": [
+      "Entitlements and designated requirements require separate bounded commands.",
+      "Inspected a digest-verified Mach-O byte snapshot; filesystem-bound signing context and trust validation are not examined."
+    ],
+    "signature": {
+      "identifier": "com.prakashjoshipax.VoiceInk",
+      "team_identifier": "V6J6A3VWY2",
+      "authorities": [
+        "Developer ID Application: Prakash Joshi (V6J6A3VWY2)",
+        "Developer ID Certification Authority",
+        "Apple Root CA"
+      ],
+      "entitlements": {
+        "com.apple.application-identifier": "V6J6A3VWY2.com.prakashjoshipax.VoiceInk",
+        "com.apple.developer.aps-environment": "production",
+        "com.apple.developer.icloud-container-environment": "Production",
+        "com.apple.developer.icloud-container-identifiers": [
+          "iCloud.com.prakashjoshipax.VoiceInk"
+        ],
+        "com.apple.developer.icloud-services": [
+          "CloudKit"
+        ],
+        "com.apple.developer.team-identifier": "V6J6A3VWY2",
+        "com.apple.security.app-sandbox": false,
+        "com.apple.security.automation.apple-events": true,
+        "com.apple.security.device.audio-input": true,
+        "com.apple.security.files.user-selected.read-only": true,
+        "com.apple.security.network.client": true,
+        "com.apple.security.network.server": true,
+        "com.apple.security.screen-capture": true,
+        "com.apple.security.temporary-exception.mach-lookup.global-name": [
+          "com.prakashjoshipax.VoiceInk-spks",
+          "com.prakashjoshipax.VoiceInk-spki"
+        ],
+        "keychain-access-groups": [
+          "V6J6A3VWY2.com.prakashjoshipax.VoiceInk"
+        ]
+      },
+      "hardened_runtime": true
+    }
+  },
+  {
+    "app": "VoiceInk-arm64",
+    "operation": "inspect-plist",
+    "path": "$CAPTURE_ROOT/oss/VoiceInk-arm64-inspect-plist.json",
+    "evidence_id": "ev_1dffe5beab92654a4f218936a5c9febe0c1038e9ff4a406e1ecb89724fa8a39b",
+    "subject": {
+      "name": "VoiceInk-arm64",
+      "digest": {
+        "sha256": "9bc7044b40617014043042092c20a3632c0cbe7212e53371fc6aedd90a6fbb5a"
+      },
+      "format": "mach-o",
+      "architecture": "arm64",
+      "local_path": "$CAPTURE_ROOT/oss/VoiceInk-arm64"
+    },
+    "file_sha256": "d93d5a2d2e1d8146a081f950ce8b8e9ba950149585e39d1844c8b815122b81fa",
+    "limitations": [],
+    "bundle": {
+      "identifier": "com.prakashjoshipax.VoiceInk",
+      "executable": "VoiceInk",
+      "name": "VoiceInk",
+      "version": "213",
+      "short_version": "2.13"
+    }
+  }
+]

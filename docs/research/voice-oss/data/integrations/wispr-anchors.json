@@ -1,0 +1,242 @@
+[
+  {
+    "id": "WF-IMPL-01",
+    "title": "Microphone holders and URL meeting detection",
+    "source": ".webpack/main/index.js",
+    "source_sha256": "24413a433e4cf159816d60f194ad32def76741d7a5e5bed9b27581bb74eebac2",
+    "character_start": 5170200,
+    "character_end": 5178200,
+    "start": {
+      "line": 8,
+      "column": 4490300
+    },
+    "end": {
+      "line": 8,
+      "column": 4498300
+    },
+    "excerpt_sha256": "8bb1beddb2e48398eae6c1e7ce34ab57466e09087cf28706fa2e25fd088a8ce8",
+    "local_excerpt": "WF-IMPL-01.js.txt",
+    "basis": "manual reading of shipped JavaScript; REA asset identity view retained",
+    "coordinate_unit": "Unicode code points; half-open character ranges; lines one-based, columns zero-based"
+  },
+  {
+    "id": "WF-IMPL-02",
+    "title": "Speaker polling helper request",
+    "source": ".webpack/main/index.js",
+    "source_sha256": "24413a433e4cf159816d60f194ad32def76741d7a5e5bed9b27581bb74eebac2",
+    "character_start": 5169800,
+    "character_end": 5172300,
+    "start": {
+      "line": 8,
+      "column": 4489900
+    },
+    "end": {
+      "line": 8,
+      "column": 4492400
+    },
+    "excerpt_sha256": "03da8c2ef1758875cf45aa785a449a9df2e0888502939bf928ccfdd1e65e0b8e",
+    "local_excerpt": "WF-IMPL-02.js.txt",
+    "basis": "manual reading of shipped JavaScript; REA asset identity view retained",
+    "coordinate_unit": "Unicode code points; half-open character ranges; lines one-based, columns zero-based"
+  },
+  {
+    "id": "WF-IMPL-03",
+    "title": "Helper speaker event ingestion",
+    "source": ".webpack/main/index.js",
+    "source_sha256": "24413a433e4cf159816d60f194ad32def76741d7a5e5bed9b27581bb74eebac2",
+    "character_start": 4416400,
+    "character_end": 4418150,
+    "start": {
+      "line": 8,
+      "column": 3736500
+    },
+    "end": {
+      "line": 8,
+      "column": 3738250
+    },
+    "excerpt_sha256": "2024a030dde5b0c9fd7ca916b8581529c54bade4f06e773c3c8ce8092a080c4d",
+    "local_excerpt": "WF-IMPL-03.js.txt",
+    "basis": "manual reading of shipped JavaScript; REA asset identity view retained",
+    "coordinate_unit": "Unicode code points; half-open character ranges; lines one-based, columns zero-based"
+  },
+  {
+    "id": "WF-IMPL-04",
+    "title": "Final token identity and 1500ms stale boundary",
+    "source": ".webpack/main/index.js",
+    "source_sha256": "24413a433e4cf159816d60f194ad32def76741d7a5e5bed9b27581bb74eebac2",
+    "character_start": 5294680,
+    "character_end": 5296140,
+    "start": {
+      "line": 8,
+      "column": 4614780
+    },
+    "end": {
+      "line": 8,
+      "column": 4616240
+    },
+    "excerpt_sha256": "a5940b1da9cffbd8b6e7cc47b777aacbdcf002bd992cf2c81d7a5c8ed2313164",
+    "local_excerpt": "WF-IMPL-04.js.txt",
+    "basis": "manual reading of shipped JavaScript; REA asset identity view retained",
+    "coordinate_unit": "Unicode code points; half-open character ranges; lines one-based, columns zero-based"
+  },
+  {
+    "id": "WF-IMPL-05",
+    "title": "Speaker ID name evidence accumulation",
+    "source": ".webpack/main/index.js",
+    "source_sha256": "24413a433e4cf159816d60f194ad32def76741d7a5e5bed9b27581bb74eebac2",
+    "character_start": 6126153,
+    "character_end": 6129058,
+    "start": {
+      "line": 8,
+      "column": 5446253
+    },
+    "end": {
+      "line": 8,
+      "column": 5449158
+    },
+    "excerpt_sha256": "785440486df74aa2fb159d343be683a61c8cbb2090148874c9095d75f7d160e5",
+    "local_excerpt": "WF-IMPL-05.js.txt",
+    "basis": "manual reading of shipped JavaScript; REA asset identity view retained",
+    "coordinate_unit": "Unicode code points; half-open character ranges; lines one-based, columns zero-based"
+  },
+  {
+    "id": "WF-IMPL-06",
+    "title": "Speaker observation log persistence and resume",
+    "source": ".webpack/main/index.js",
+    "source_sha256": "24413a433e4cf159816d60f194ad32def76741d7a5e5bed9b27581bb74eebac2",
+    "character_start": 6104330,
+    "character_end": 6114632,
+    "start": {
+      "line": 8,
+      "column": 5424430
+    },
+    "end": {
+      "line": 8,
+      "column": 5434732
+    },
+    "excerpt_sha256": "a1b00547931fd40a8952544025664679a39c78b1b849e5f80e8c6bdf316f3454",
+    "local_excerpt": "WF-IMPL-06.js.txt",
+    "basis": "manual reading of shipped JavaScript; REA asset identity view retained",
+    "coordinate_unit": "Unicode code points; half-open character ranges; lines one-based, columns zero-based"
+  },
+  {
+    "id": "WF-IMPL-07",
+    "title": "Meeting config/Meet CSS selectors",
+    "source": ".webpack/main/index.js",
+    "source_sha256": "24413a433e4cf159816d60f194ad32def76741d7a5e5bed9b27581bb74eebac2",
+    "character_start": 5672520,
+    "character_end": 5679280,
+    "start": {
+      "line": 8,
+      "column": 4992620
+    },
+    "end": {
+      "line": 8,
+      "column": 4999380
+    },
+    "excerpt_sha256": "9871c9a03e56ed3481c666e67441ff1b7955e656edf15a5c6e9b80c19aff1aa8",
+    "local_excerpt": "WF-IMPL-07.js.txt",
+    "basis": "manual reading of shipped JavaScript; REA asset identity view retained",
+    "coordinate_unit": "Unicode code points; half-open character ranges; lines one-based, columns zero-based"
+  },
+  {
+    "id": "WF-IMPL-08",
+    "title": "Mac system audio media handler",
+    "source": ".webpack/main/index.js",
+    "source_sha256": "24413a433e4cf159816d60f194ad32def76741d7a5e5bed9b27581bb74eebac2",
+    "character_start": 5837520,
+    "character_end": 5838740,
+    "start": {
+      "line": 8,
+      "column": 5157620
+    },
+    "end": {
+      "line": 8,
+      "column": 5158840
+    },
+    "excerpt_sha256": "1ead55889b41988293d7e30af525ee2136bde854b564ac097ce10e4eb4d153fd",
+    "local_excerpt": "WF-IMPL-08.js.txt",
+    "basis": "manual reading of shipped JavaScript; REA asset identity view retained",
+    "coordinate_unit": "Unicode code points; half-open character ranges; lines one-based, columns zero-based"
+  },
+  {
+    "id": "WF-IMPL-09",
+    "title": "Mac 14.4 process tap / 13 screen capture kit",
+    "source": ".webpack/main/index.js",
+    "source_sha256": "24413a433e4cf159816d60f194ad32def76741d7a5e5bed9b27581bb74eebac2",
+    "character_start": 6633700,
+    "character_end": 6634550,
+    "start": {
+      "line": 8,
+      "column": 5953800
+    },
+    "end": {
+      "line": 8,
+      "column": 5954650
+    },
+    "excerpt_sha256": "f446369b7393244b0a18859861addbdcbd96978e63706e0648c6068bf04a6579",
+    "local_excerpt": "WF-IMPL-09.js.txt",
+    "basis": "manual reading of shipped JavaScript; REA asset identity view retained",
+    "coordinate_unit": "Unicode code points; half-open character ranges; lines one-based, columns zero-based"
+  },
+  {
+    "id": "WF-IMPL-10",
+    "title": "Speaker observation refinement upload gates",
+    "source": ".webpack/main/index.js",
+    "source_sha256": "24413a433e4cf159816d60f194ad32def76741d7a5e5bed9b27581bb74eebac2",
+    "character_start": 6019300,
+    "character_end": 6022600,
+    "start": {
+      "line": 8,
+      "column": 5339400
+    },
+    "end": {
+      "line": 8,
+      "column": 5342700
+    },
+    "excerpt_sha256": "63081662a418970b22228bef6a83d7f4f76194d9c45599eed9a03db6520d1fb1",
+    "local_excerpt": "WF-IMPL-10.js.txt",
+    "basis": "manual reading of shipped JavaScript; REA asset identity view retained",
+    "coordinate_unit": "Unicode code points; half-open character ranges; lines one-based, columns zero-based"
+  },
+  {
+    "id": "WF-IMPL-11",
+    "title": "Renderer system capture and worklet acquisition",
+    "source": ".webpack/renderer/hub/index.js",
+    "source_sha256": "cda5e67adc47f8bc92f58aba791457b96d9fb3166c389b8a8a2b8d2d94dd02bf",
+    "character_start": 694500,
+    "character_end": 697200,
+    "start": {
+      "line": 1,
+      "column": 694500
+    },
+    "end": {
+      "line": 1,
+      "column": 697200
+    },
+    "excerpt_sha256": "eda198179aebc53148f564a381f0c1b48b26ea2200bb71e702e1897ff96aad16",
+    "local_excerpt": "WF-IMPL-11.js.txt",
+    "basis": "manual reading of shipped JavaScript",
+    "coordinate_unit": "Unicode code points; half-open character ranges; lines one-based, columns zero-based"
+  },
+  {
+    "id": "WF-IMPL-12",
+    "title": "Main IPC renderer listeners for capture",
+    "source": ".webpack/renderer/hub/index.js",
+    "source_sha256": "cda5e67adc47f8bc92f58aba791457b96d9fb3166c389b8a8a2b8d2d94dd02bf",
+    "character_start": 672200,
+    "character_end": 673100,
+    "start": {
+      "line": 1,
+      "column": 672200
+    },
+    "end": {
+      "line": 1,
+      "column": 673100
+    },
+    "excerpt_sha256": "96e0ea0d8b446ea3734aa4ed2a49ad483c2027f4fd46964a01590cb943804eb4",
+    "local_excerpt": "WF-IMPL-12.js.txt",
+    "basis": "manual reading of shipped JavaScript",
+    "coordinate_unit": "Unicode code points; half-open character ranges; lines one-based, columns zero-based"
+  }
+]

@@ -1,0 +1,14 @@
+[
+  {
+    "product": "GhostPepper",
+    "retained": "artifacts/GhostPepper-original",
+    "original_path": "/Applications/GhostPepper.app/Contents/MacOS/GhostPepper",
+    "sha256": "c3ddf242bc8f435b97856e589c2e934227fca7da97aed1475f1dd4a1546386ed"
+  },
+  {
+    "product": "VoiceInk",
+    "retained": "artifacts/VoiceInk-original",
+    "original_path": "/Applications/VoiceInk.app/Contents/MacOS/VoiceInk",
+    "sha256": "cb0c14d5e6cab348c8840541d8e29f31d411e6d9ef5f7d83b60d26b8adcb8ea1"
+  }
+]

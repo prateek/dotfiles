@@ -88,6 +88,16 @@ class CurrentTreeTests(DocsFixture):
         self.write("__pycache__/validate-doc-lifecycle.cpython-313.pyc", "ignored bytecode\n")
         self.validate()
 
+    def test_research_data_subfolders_may_hold_non_markdown_files(self):
+        self.write("research/topic/data/flows.json", "[]\n")
+        self.write("research/topic/data/integrations/manifest.json", "{}\n")
+        self.validate()
+        stray = self.write("research/topic/flows.json", "[]\n")
+        self.validate(error="research/topic/flows.json: non-Markdown content is not allowed under docs/")
+        stray.unlink()
+        self.write("plans/data/capture.html", "<html></html>\n")
+        self.validate(error="plans/data/capture.html: non-Markdown content is not allowed under docs/")
+
     def test_index_is_a_router_whose_links_must_resolve(self):
         self.doc("plans/unrouted.md", status="proposed")
         self.index()

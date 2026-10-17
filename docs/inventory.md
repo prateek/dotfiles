@@ -72,6 +72,7 @@ Retired documents are listed in the [retirement ledger](retired.md).
 | [TCC onboarding during chezmoi apply](plans/tcc-onboarding-plan.md) | active | Audits macOS TCC permission grants during chezmoi apply against a per-app manifest, with a SwiftUI helper that opens System Settings and offers the app file to drag |  |
 | [Touch ID for sudo](plans/touchid-sudo-plan.md) | active | Enables Touch ID for sudo through /etc/pam.d/sudo_local during chezmoi apply, adopting an existing file and gated by the touchid_sudo machine flag |  |
 | [Using-git-spice Skill Plan](plans/using-git-spice-skill-plan.md) | active | Replaces two overlapping git-spice skills with one evidence-driven using-git-spice skill in the review package, moves standing rules into git config, and adds evals |  |
+| [Voice OSS discovery plan](research/voice-oss/discovery-plan.md) | active | Scope, completed passes and boundary of the Voice OSS discovery initiative; implementation and architecture remain unselected. |  |
 
 ## Parked plans
 
@@ -164,6 +165,34 @@ Retired documents are listed in the [retirement ledger](retired.md).
 | [Public Dotfiles Skill Packaging](research/public-dotfiles-skills-packaging-research.md) | draft | Eight public examples of skill source ownership, installation, and updates, with pinned source links and a comparison to this repo. |  |
 | [Running a Ralph Loop as a Claude Code Workflow](research/ralph-loop-workflow.md) | active | Build log for an unattended plan/implement/review loop that commits and fast-forwards a real branch: what the design has to get right, the blockers an adversarial review caught before first run, and the guardrail that is still too strict. |  |
 | [Skill Invocation-Control Frontmatter Across Harnesses](research/skill-invocation-frontmatter-research.md) | current | Which harnesses honor `disable-model-invocation` and `user-invocable`, with per-harness evidence and citations. |  |
+| [Voice OSS: discovery corpus](research/voice-oss/README.md) | draft | Entry point for the Voice OSS discovery corpus: requirements, ten product dossiers, flow catalogue, studies, datasets, and evidence labels. |  |
+| [Five additional reference apps](research/voice-oss/additional-apps.md) | draft | Selection of Superwhisper, MacWhisper, Anarlog, Reflect Open and Fireflies from sixteen candidates, with analyses and screened alternatives. |  |
+| [Apple platforms and native voice UX](research/voice-oss/apple-platforms-and-ux.md) | draft | Apple platform constraints and native UX questions for Mac, iOS and Watch clients: keyboards, audio, accessibility and design quality. |  |
+| [Candidate journeys for the new product](research/voice-oss/candidate-journeys.md) | draft | Proposed end-to-end journeys P-F01–P-F62 across clients, models, hosting, CLI, MCP, hooks and workflows; all unapproved. |  |
+| [Cross-product map](research/voice-oss/comparison.md) | draft | Cross-product map of overlapping experiences, meaningful distinctions and conflicting claims across the ten reference products. |  |
+| [Granola desktop 7.637.0: meeting speaker attribution](research/voice-oss/integrations/granola-desktop.md) | draft | Static evidence ledger for Granola desktop 7.637.0 meeting detection and speaker attribution paths. |  |
+| [Granola Companion 0.4.18 — static Meet attribution findings](research/voice-oss/integrations/granola-extension.md) | draft | Static evidence ledger for the Granola Companion 0.4.18 Meet extension's attribution findings. |  |
+| [Granola native meeting bridge: focused static pass](research/voice-oss/integrations/granola-native.md) | draft | Focused static pass over Granola's native meeting bridge dylib with REA and bounded LLVM disassembly. |  |
+| [Monologue Zoom/Meet integration: offline REA investigation](research/voice-oss/integrations/monologue.md) | draft | Offline REA evidence ledger for Monologue's Zoom/Meet integration; speaker-naming path unresolved. |  |
+| [Ghost Pepper and VoiceInk: Zoom / Meet / speaker integration](research/voice-oss/integrations/oss.md) | draft | Evidence ledger for Ghost Pepper and VoiceInk Zoom/Meet and speaker handling from pinned OSS source and artifacts. |  |
+| [Zoom / Google Meet documentary evidence](research/voice-oss/integrations/platform-docs.md) | draft | Documentary evidence from Zoom and Google Meet platform documentation on rosters, active speakers and official APIs. |  |
+| [Wispr Flow 1.6.1102: Zoom / Google Meet integration static findings](research/voice-oss/integrations/wispr.md) | draft | Static evidence ledger for Wispr Flow 1.6.1102 Zoom/Meet integration, including focused Ghidra decompilation. |  |
+| [Zoom, Google Meet, and speaker identity](research/voice-oss/meeting-integrations.md) | draft | Static REA and pinned-source findings on how the original five apps detect Zoom/Meet meetings and attribute speakers, with evidence boundaries. |  |
+| [Open questions and further observation](research/voice-oss/open-questions.md) | draft | Unresolved product, platform, hosting and automation questions Q01–Q39 plus the capture sheet for later authorized walkthroughs. |  |
+| [Product behavior and durability](research/voice-oss/product-behavior.md) | draft | Candidate behavior and qualification questions for custom keyboards, second-brain notes, transcribed calls, hooks/XDG, retained history and optional iCloud. |  |
+| [Anarlog (formerly Hyprnote): documented product and flow inventory](research/voice-oss/products/anarlog.md) | draft | Anarlog flow inventory AN-F01–AN-F25 from current docs and pinned community source; Char, enterprise and mobile boundaries explicit. |  |
+| [Fireflies: documented product and flow inventory](research/voice-oss/products/fireflies.md) | draft | Fireflies flow inventory FF-F01–FF-F30 with bot, desktop, Meet extension, mobile and Talk capture modes kept separate. |  |
+| [Ghost Pepper: public user-flow research](research/voice-oss/products/ghost-pepper.md) | draft | Ghost Pepper flow inventory GP-F01–GP-F26 from public project material and version-pinned OSS source. |  |
+| [Granola: documented product and flow inventory](research/voice-oss/products/granola.md) | draft | Granola flow inventory GR-F01–GR-F56 from official help, integration guides and lifecycle documentation. |  |
+| [MacWhisper: native transcription workspace and automation reference](research/voice-oss/products/macwhisper.md) | draft | MacWhisper flow inventory MW-F01–MW-F30 with direct, Mac App Store and iOS edition differences retained. |  |
+| [Monologue by Every: public user-flow inventory](research/voice-oss/products/monologue.md) | draft | Monologue by Every flow inventory MO-F01–MO-F34 from official guides, public API, changelog and App Store material. |  |
+| [Reflect Open: local notes, voice capture and composability](research/voice-oss/products/reflect-open.md) | draft | Reflect Open flow inventory RF-F01–RF-F25 from official docs, releases and pinned OSS source; distinct from Reflect Classic. |  |
+| [Superwhisper: documented product and flow inventory](research/voice-oss/products/superwhisper.md) | draft | Superwhisper flow inventory SW-F01–SW-F30 from official documentation, release notes and the iPhone listing. |  |
+| [VoiceInk public workflow inventory](research/voice-oss/products/voiceink.md) | draft | VoiceInk flow inventory VI-F01–VI-F31 from product help, public repository documentation, appcast and App Store. |  |
+| [Wispr Flow: public user-flow evidence](research/voice-oss/products/wispr-flow.md) | draft | Wispr Flow flow inventory WF-F01–WF-F41 covering dictation and newer notes, meeting and agent workflows. |  |
+| [Voice OSS: requirements and intent](research/voice-oss/requirements.md) | draft | Ledger of Prateek's explicit requirements U01–U33 with provenance, derived candidates to validate, and decisions still open. |  |
+| [Self-hosting, model placement, and composability](research/voice-oss/self-hosting-and-models.md) | draft | Local, VPS and Unraid hosting topologies, model placement, pairing, updates, backup and operator journeys from primary sources. |  |
+| [Chain actions across Mac and iOS apps](research/voice-oss/workflow-composition.md) | draft | Action chaining through Tuna, Raycast and iOS automation: sourced integration surfaces, proposed action contracts, and recovery criteria. |  |
 
 ## Indexes
 

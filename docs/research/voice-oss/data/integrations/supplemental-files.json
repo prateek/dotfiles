@@ -1,0 +1,116 @@
+[
+  {
+    "file": "granola-native/meet-roster-llvm.txt",
+    "bytes": 37955,
+    "sha256": "8b0faf7f794d65c658ef81be8c45ad20955be1483304e89ab511fb455e340e4d",
+    "evidence_type": "supplemental static tools; not REA Evidence"
+  },
+  {
+    "file": "granola-native/meet-selectors-llvm.txt",
+    "bytes": 3902,
+    "sha256": "e79fccb75491660b6cbd2d39b6fee05c8200a262b21fe2a634206b8637d86821",
+    "evidence_type": "supplemental static tools; not REA Evidence"
+  },
+  {
+    "file": "granola-native/zoom-ordered-llvm.txt",
+    "bytes": 42335,
+    "sha256": "5f1525c9209a31a391e41e90c6c85b16a4affb0e3ff314dc5dd4b8c20aef00a9",
+    "evidence_type": "supplemental static tools; not REA Evidence"
+  },
+  {
+    "file": "granola-native/zoom-roster-llvm.txt",
+    "bytes": 28701,
+    "sha256": "39089a9c5503781c912563e84696b6cf4d36670adcb1d2c8276555740687112f",
+    "evidence_type": "supplemental static tools; not REA Evidence"
+  },
+  {
+    "file": "granola-native/selected-swift-fields.json",
+    "bytes": 7570,
+    "sha256": "6e7c32e5b90d9ac44aff3692cd64532773dda50db398bd4cd2afe2bb5a4f72ce",
+    "evidence_type": "supplemental static tools; not REA Evidence"
+  },
+  {
+    "file": "granola-native/speaker-symbols.json",
+    "bytes": 720299,
+    "sha256": "431577edafaf2fdaf1bd6c21061dd2d97bdd52d79dc74ee0a4dfc7fc510cfe17",
+    "evidence_type": "supplemental static tools; not REA Evidence"
+  },
+  {
+    "file": "granola-native/read-fields.py",
+    "bytes": 1729,
+    "sha256": "7324579be494d6cfda1a2f2e692d23af0374f66ee18dc21b778a68eaf9752661",
+    "evidence_type": "supplemental static tools; not REA Evidence"
+  },
+  {
+    "file": "monologue/arm64-disassembly.txt",
+    "bytes": 146302024,
+    "sha256": "0894711547f2020641a5d8fd54ecc432dcd13c5a691f4f6f07d5f7df4e6d5325",
+    "evidence_type": "supplemental static tools; not REA Evidence"
+  },
+  {
+    "file": "monologue/codesign-display.txt",
+    "bytes": 1185,
+    "sha256": "535e104f5b41334d69de5dceab25f35afba6d14284a6fe057c2a070591efa15b",
+    "evidence_type": "supplemental static tools; not REA Evidence"
+  },
+  {
+    "file": "monologue/codesign-verify.txt",
+    "bytes": 2928,
+    "sha256": "afa697edf27cc7fb940a7f05561a9577e72816ec751b6af1fe7d1ba5c50373ae",
+    "evidence_type": "supplemental static tools; not REA Evidence"
+  },
+  {
+    "file": "monologue/coreaudio-sdk-selector-excerpts.txt",
+    "bytes": 690,
+    "sha256": "8f557681b2764d1541297a1b9b2b7e3f0e26ac0d6c70fafff4f58a0131b6ba7f",
+    "evidence_type": "supplemental static tools; not REA Evidence"
+  },
+  {
+    "file": "monologue/dylibs.txt",
+    "bytes": 9153,
+    "sha256": "a1a31a6557c8071bb129a1acc0702273d84c87345e6a739ab7be02e41460bef0",
+    "evidence_type": "supplemental static tools; not REA Evidence"
+  },
+  {
+    "file": "monologue/focused-native-excerpts.txt",
+    "bytes": 204563,
+    "sha256": "af0e5a24f97e2fb5e7538ed2093a910a7fb47973de6e2f1645a940535c56981d",
+    "evidence_type": "supplemental static tools; not REA Evidence"
+  },
+  {
+    "file": "monologue/function-starts.txt",
+    "bytes": 1499786,
+    "sha256": "ce89c33b15541230e6cdf2304f03ad7f770b8bac86c82f3afe348939e082d531",
+    "evidence_type": "supplemental static tools; not REA Evidence"
+  },
+  {
+    "file": "monologue/nm.txt",
+    "bytes": 349582,
+    "sha256": "1a62819c9a7642ddae97f89fac5f01962a914d5ec032e4324baabc733349b2b1",
+    "evidence_type": "supplemental static tools; not REA Evidence"
+  },
+  {
+    "file": "monologue/objc-stubs.txt",
+    "bytes": 146996826,
+    "sha256": "957b30653e626555b5dcb763f88828d14740db318dfb66cb47fd6e3552573a6c",
+    "evidence_type": "supplemental static tools; not REA Evidence"
+  },
+  {
+    "file": "monologue/strings-current.txt",
+    "bytes": 1211229,
+    "sha256": "31195e21894c67baffb0baaaab9200b3508634a125ca86b78b32de22df202534",
+    "evidence_type": "supplemental static tools; not REA Evidence"
+  },
+  {
+    "file": "monologue/strings.txt",
+    "bytes": 3578760,
+    "sha256": "4d9268f5032c2e221b59e0eba3923df3194ef6c76dfeb65633d5e863c9eb8cde",
+    "evidence_type": "supplemental static tools; not REA Evidence"
+  },
+  {
+    "file": "monologue/findings.json",
+    "bytes": 15543,
+    "sha256": "aab828ab38b86b59015031515b914c64d1c500609b4b77c936065be43f203d56",
+    "evidence_type": "supplemental static tools; not REA Evidence"
+  }
+]
