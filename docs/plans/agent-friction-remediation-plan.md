@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: plan
+summary: "Fixes the top causes of agent tool failures found in a 90-day transcript review: zsh nomatch, stale paths, CLI drift, output truncation, TLS, mise trust, and auth"
 owner: Prateek
 created: 2026-09-26
 updated: 2026-09-27

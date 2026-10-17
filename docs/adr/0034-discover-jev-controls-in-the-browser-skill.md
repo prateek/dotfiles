@@ -6,6 +6,7 @@ status_detail: "Dynamic discovery is retained unchanged as a suspended experimen
 current_guidance:
   - 0050-suspend-jev-in-experimental-plugin.md
 doc_type: adr
+summary: "The Jev runner gains an opt-in `scope.discover` mode that finds low-impact page controls, binds supplied values, and re-discovers after every action."
 created: 2026-09-27
 related:
   - ../plans/jev-deterministic-preparation-plan.md

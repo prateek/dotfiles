@@ -1,6 +1,7 @@
 ---
 status: superseded
 doc_type: plan
+summary: "Replaced by APM Agent Marketplace; current guidance."
 owner: Prateek
 created: 2026-07-02
 updated: 2026-09-06

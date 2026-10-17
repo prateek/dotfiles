@@ -3,7 +3,7 @@
 # requires-python = ">=3.14"
 # dependencies = []
 # ///
-"""Validate docs/ lifecycle frontmatter, index, and historical-doc edit rules."""
+"""Validate docs/ lifecycle frontmatter, retirement ledger, inventory, and locked-doc edit rules."""
 
 from __future__ import annotations
 
@@ -43,6 +43,7 @@ DOC_TYPES = set(ALLOWED_DOC_TYPE_STATUSES)
 ALLOWED_FRONTMATTER_KEYS = {
     "status",
     "doc_type",
+    "summary",
     "owner",
     "created",
     "updated",
@@ -52,19 +53,28 @@ ALLOWED_FRONTMATTER_KEYS = {
     "closed",
     "status_detail",
 }
-ALLOWED_TRANSITIONS = {
-    "draft": {"proposed", "active", "superseded", "rejected", "archived"},
-    "proposed": {"accepted", "active", "superseded", "rejected"},
-    "accepted": {"active", "current", "superseded", "archived"},
-    "active": {"accepted", "current", "superseded", "archived"},
-    "current": {"active", "superseded", "archived"},
-    "superseded": {"archived"},
-    "rejected": {"archived"},
-}
 ALLOWED_DOC_TYPE_TRANSITIONS = {
     ("plan", "reference"),
     ("plan", "runbook"),
 }
+LEDGER_NAME = "retired.md"
+INVENTORY_NAME = "inventory.md"
+INVENTORY_COMMAND = "just docs-inventory"
+LEDGER_COLUMNS = ("Closed", "Path", "Doc", "Status", "Where it went")
+INDEX_FILES = {"index.md", INVENTORY_NAME, LEDGER_NAME}
+PARKED_PREFIX = "parked"
+DUE_AFTER_DAYS = 90
+BANNER_PATTERN = re.compile(r"^> Superseded by \[[^\]]+\]\(([^)\s]+)\)\.?$")
+INVENTORY_GROUPS = (
+    ("convention", "Conventions", None),
+    ("reference", "References", None),
+    ("runbook", "Runbooks", None),
+    ("plan", "Plans", "open"),
+    ("plan", "Parked plans", "parked"),
+    ("adr", "Decision records", None),
+    ("research", "Research", None),
+    ("index", "Indexes", None),
+)
 
 
 def split_frontmatter(text: str) -> tuple[str | None, str]:
@@ -279,13 +289,12 @@ def git_base_markdown_paths(root: Path, docs_root: Path, base_ref: str) -> list[
     return sorted(line for line in result.stdout.splitlines() if line.endswith(".md"))
 
 
+
 def doc_identity_preserved(old_rel: str, new_rel: str) -> bool:
     if posixpath.basename(old_rel) == posixpath.basename(new_rel):
         return True
-
-    old_adr = re.search(r"(?:^|/)adr/(\d{4})-", old_rel)
-    new_adr = re.search(r"(?:^|/)adr/(\d{4})-", new_rel)
-    return bool(old_adr and new_adr and old_adr.group(1) == new_adr.group(1))
+    old_adr, new_adr = adr_number(old_rel), adr_number(new_rel)
+    return bool(old_adr and new_adr and old_adr == new_adr)
 
 
 def infer_identity_renames(
@@ -443,6 +452,284 @@ def non_empty_string(value: object) -> bool:
     return isinstance(value, str) and bool(value.strip())
 
 
+def adr_number(rel: str) -> str | None:
+    match = re.search(r"(?:^|/)adr/(\d{4})-[^/]+\.md$", rel)
+    return match.group(1) if match else None
+
+
+def is_parked(meta: dict[str, object]) -> bool:
+    detail = scalar(meta.get("status_detail")) or ""
+    return (
+        meta.get("doc_type") == "plan"
+        and meta.get("status") == "draft"
+        and detail.strip().lower().startswith(PARKED_PREFIX)
+    )
+
+
+def table_cells(line: str) -> list[str] | None:
+    stripped = line.strip()
+    if not (stripped.startswith("|") and stripped.endswith("|")):
+        return None
+    return [cell.strip() for cell in stripped[1:-1].split("|")]
+
+
+
+def ledger_rows(body: str) -> tuple[list[dict[str, str]], list[str]]:
+    rows: list[dict[str, str]] = []
+    errors: list[str] = []
+    header_seen = False
+    keys = tuple(column.split()[0].lower() for column in LEDGER_COLUMNS)
+    for line_number, line in enumerate(body.splitlines(), start=1):
+        cells = table_cells(line)
+        if cells is None:
+            continue
+        if not header_seen:
+            if tuple(cells) != LEDGER_COLUMNS:
+                errors.append(
+                    f"line {line_number}: ledger table must have columns "
+                    + " | ".join(LEDGER_COLUMNS)
+                )
+                return rows, errors
+            header_seen = True
+            continue
+        if all(set(cell) <= {"-", ":"} for cell in cells):
+            continue
+        if len(cells) != len(LEDGER_COLUMNS):
+            errors.append(f"line {line_number}: ledger row must have {len(LEDGER_COLUMNS)} cells")
+            continue
+        row = dict(zip(keys, cells))
+        if not valid_iso_date(row["closed"]):
+            errors.append(f"line {line_number}: ledger Closed must be an ISO date: YYYY-MM-DD")
+        if row["status"] not in CLOSED_STATUSES:
+            errors.append(
+                f"line {line_number}: ledger Status must be one of {', '.join(sorted(CLOSED_STATUSES))}"
+            )
+        path = row["path"].strip("`")
+        if not path.endswith(".md") or path.startswith(("/", "../", "docs/")):
+            errors.append(f"line {line_number}: ledger Path must be relative to docs/: {row['path']}")
+        row["path"] = path
+        rows.append(row)
+    if not header_seen:
+        errors.append("ledger must contain a table with columns " + " | ".join(LEDGER_COLUMNS))
+    return rows, errors
+
+
+
+def ledger_rel(root: Path, docs_root: Path) -> str:
+    return (docs_root / LEDGER_NAME).relative_to(root).as_posix()
+
+
+def ledger_state(root: Path, docs_root: Path, ref: str | None) -> tuple[list[dict[str, str]], list[str]]:
+    """Rows and row errors of the ledger at a git ref, or in the worktree when ref is None."""
+    state = doc_state_for_ref(root, ref, ledger_rel(root, docs_root))
+    if state is None:
+        return [], []
+    _meta, body, _errors = state
+    return ledger_rows(body)
+
+
+def ledger_paths(rows: list[dict[str, str]]) -> set[str]:
+    return {row["path"] for row in rows}
+
+
+
+def docs_relative(root: Path, docs_root: Path, rel: str) -> str | None:
+    docs_rel = docs_root.relative_to(root).as_posix()
+    return rel[len(docs_rel) + 1 :] if rel.startswith(docs_rel + "/") else None
+
+
+
+def retired_link_target(root: Path, docs_root: Path, doc_path: Path, target: str, retired: set[str]) -> bool:
+    repo_rel = repo_relative_link_path(doc_path.relative_to(root).as_posix(), target)
+    return repo_rel is not None and docs_relative(root, docs_root, repo_rel) in retired
+
+
+
+def deletion_errors(
+    root: Path,
+    docs_root: Path,
+    old_rel: str,
+    retired: set[str],
+) -> list[str]:
+    if adr_number(old_rel):
+        return [f"{old_rel}: ADRs cannot be deleted; supersede or archive them instead"]
+    docs_path = docs_relative(root, docs_root, old_rel) or old_rel
+    if docs_path not in retired:
+        return [f"{old_rel}: deleted doc needs a retirement row in {ledger_rel(root, docs_root)} for {docs_path}"]
+    return []
+
+
+def strip_supersession_banner(
+    old_body: str,
+    new_body: str,
+    new_meta: dict[str, object],
+) -> str:
+    """Drop a newly inserted banner under the H1 whose target matches superseded_by; any other edit stays for the body comparison to reject."""
+    if new_meta.get("status") != "superseded":
+        return new_body
+    successors = non_empty_targets(new_meta.get("superseded_by"))
+    old_lines = old_body.splitlines(keepends=True)
+    new_lines = new_body.splitlines(keepends=True)
+    h1 = next((index for index, line in enumerate(new_lines) if line.startswith("# ")), None)
+    if h1 is None or h1 + 2 >= len(new_lines) or new_lines[h1 + 1].strip():
+        return new_body
+    banner_index = h1 + 2
+    match = BANNER_PATTERN.match(new_lines[banner_index].rstrip("\n"))
+    if not match or match.group(1) not in successors or new_lines[banner_index] in old_lines:
+        return new_body
+    stripped = new_lines[:banner_index] + new_lines[banner_index + 1 :]
+    if banner_index < len(stripped) and not stripped[banner_index].strip():
+        del stripped[banner_index]
+    return "".join(stripped)
+
+
+def doc_title(body: str) -> str:
+    for line in body.splitlines():
+        if line.startswith("# "):
+            return line[2:].strip()
+    return ""
+
+
+def inventory_cell(text: str) -> str:
+    return " ".join(text.split()).replace("|", "\\|")
+
+
+
+def inventory_links(doc_rel: str, docs_rel: str, targets: list[str]) -> str:
+    rendered: list[str] = []
+    for target in targets:
+        _path_part, anchor = split_link_target(target)
+        repo_rel = repo_relative_link_path(doc_rel, target)
+        if repo_rel is None:
+            rendered.append(f"[{target}]({target})")
+            continue
+        rendered.append(f"[{repo_rel}]({posixpath.relpath(repo_rel, docs_rel)}{anchor})")
+    return ", ".join(rendered)
+
+
+
+def read_docs(root: Path, docs_root: Path) -> list[tuple[Path, dict[str, object], str | None, str, list[str]]]:
+    return [(path, *read_doc(path)) for path in markdown_files(docs_root)]
+
+
+def render_inventory(root: Path, docs_root: Path, docs: list[tuple[Path, dict[str, object], str | None, str, list[str]]]) -> str:
+    docs_rel = docs_root.relative_to(root).as_posix()
+    lines = [
+        "---",
+        "status: current",
+        "doc_type: index",
+        f'summary: "Every document under docs/ with its status and summary, generated from frontmatter by {INVENTORY_COMMAND}."',
+        "---",
+        "",
+        "# Documentation Inventory",
+        "",
+        f"Generated by `{INVENTORY_COMMAND}` from each document's frontmatter and title; do not edit by hand.",
+    ]
+    if (docs_root / LEDGER_NAME).is_file():
+        lines.append(f"Retired documents are listed in the [retirement ledger]({LEDGER_NAME}).")
+
+    entries: list[tuple[str, str, dict[str, object], str, str]] = []
+    for path, meta, _frontmatter, body, _errors in docs:
+        rel = path.relative_to(docs_root).as_posix()
+        if rel == INVENTORY_NAME:
+            continue
+        doc_type = scalar(meta.get("doc_type")) or ""
+        bucket = "parked" if is_parked(meta) else "open"
+        entries.append((rel, doc_type, meta, bucket, doc_title(body) or rel))
+
+    for doc_type, heading, subset in INVENTORY_GROUPS:
+        rows = []
+        for rel, entry_type, meta, bucket, title in entries:
+            if entry_type != doc_type or subset not in (None, bucket):
+                continue
+            successors = non_empty_targets(meta.get("superseded_by")) + non_empty_targets(meta.get("current_guidance"))
+            cells = (
+                f"[{inventory_cell(title)}]({rel})",
+                scalar(meta.get("status")) or "",
+                inventory_cell(scalar(meta.get("summary")) or ""),
+                inventory_links(posixpath.join(docs_rel, rel), docs_rel, successors),
+            )
+            rows.append("| " + " | ".join(cells) + " |")
+        if rows:
+            lines.extend(["", f"## {heading}", "", "| Doc | Status | Summary | Successor or guidance |", "| --- | --- | --- | --- |", *rows])
+    untyped = [rel for rel, entry_type, *_rest in entries if entry_type not in DOC_TYPES]
+    if untyped:
+        lines.extend(["", "## Untyped", "", *(f"- [{rel}]({rel})" for rel in untyped)])
+    return "\n".join(lines) + "\n"
+
+
+
+def git_commit_dates(root: Path, docs_root: Path) -> dict[str, tuple[dt.date, dt.date]]:
+    """Per repo-relative path: (date first added, date last changed), from one git log walk."""
+    result = subprocess.run(
+        ["git", "-C", str(root), "log", "--format=%cs", "--name-only", "--diff-filter=AM", "--no-renames",
+         "--", docs_root.relative_to(root).as_posix()],
+        check=False,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        text=True,
+    )
+    dates: dict[str, tuple[dt.date, dt.date]] = {}
+    current: dt.date | None = None
+    for line in result.stdout.splitlines():
+        if valid_iso_date(line):
+            current = dt.date.fromisoformat(line)
+        elif line and current:
+            last = dates[line][1] if line in dates else current
+            dates[line] = (current, last)
+    return dates
+
+
+
+def due_report(root: Path, docs_root: Path, today: dt.date | None = None) -> list[str]:
+    today = today or dt.date.today()
+    cutoff = today - dt.timedelta(days=DUE_AFTER_DAYS)
+    dates = git_commit_dates(root, docs_root)
+    states = {path.relative_to(root).as_posix(): meta for path, meta, *_rest in read_docs(root, docs_root)}
+
+    def settled(meta: dict[str, object]) -> bool:
+        return meta.get("status") in CLOSED_STATUSES or (
+            meta.get("doc_type") == "adr" and meta.get("status") == "accepted"
+        )
+
+    parked: list[str] = []
+    stale: list[str] = []
+    research: list[str] = []
+    for rel, meta in sorted(states.items()):
+        if meta.get("status") in CLOSED_STATUSES or rel not in dates:
+            continue
+        added, changed = dates[rel]
+        doc_type = scalar(meta.get("doc_type"))
+        if doc_type == "plan" and changed <= cutoff:
+            if is_parked(meta):
+                parked.append(f"{rel}: parked, last commit {changed}; resume it or close it as rejected and retire it")
+            else:
+                stale.append(f"{rel}: open, last commit {changed}; finish it, park it, or close it")
+        elif doc_type == "research":
+            consumers = [
+                target_rel
+                for target in non_empty_targets(meta.get("related"))
+                if (target_rel := repo_relative_link_path(rel, target)) in states
+                and states[target_rel].get("doc_type") in {"plan", "adr"}
+            ]
+            if not consumers and added <= cutoff:
+                research.append(f"{rel}: no plan or ADR consumer in related, added {added}; name one or retire it")
+            elif consumers and all(settled(states[target_rel]) for target_rel in consumers):
+                research.append(
+                    f"{rel}: every consumer is settled ({', '.join(consumers)}); retire it once they cite what they used"
+                )
+
+    lines: list[str] = []
+    for heading, items in (
+        ("Parked plans past a quarter", parked),
+        ("Open plans with no commit in a quarter", stale),
+        ("Research due for a decision", research),
+    ):
+        lines.append(f"{heading}: {len(items)}")
+        lines.extend(f"- {item}" for item in items)
+    return lines
+
+
 def target_exists(root: Path, doc_path: Path, value: str) -> bool:
     target = value.split("#", 1)[0].strip()
     if not target:
@@ -530,14 +817,6 @@ def repo_relative_link_path(doc_rel: str, target: str) -> str | None:
     if not path_part or not should_validate_repo_link(target):
         return None
     return posixpath.normpath(posixpath.join(posixpath.dirname(doc_rel), path_part))
-
-
-def markdown_link_repo_paths(doc_rel: str, text: str) -> list[str]:
-    return [
-        repo_path
-        for target in markdown_link_targets(text)
-        if (repo_path := repo_relative_link_path(doc_rel, target))
-    ]
 
 
 def markdown_link_label(body: str, link: dict[str, object]) -> str | None:
@@ -793,17 +1072,6 @@ def validate_doc_type_status(rel: str, status: object, doc_type: object) -> list
     ]
 
 
-def status_transition_allowed(
-    old_status: str,
-    new_status: str,
-    old_doc_type: object,
-) -> bool:
-    if old_status == new_status:
-        return True
-    if old_doc_type == "adr" and old_status == "accepted":
-        return new_status in {"superseded", "archived"}
-    return new_status in ALLOWED_TRANSITIONS.get(old_status, set())
-
 
 def scalar(value: object) -> str | None:
     return value if isinstance(value, str) else None
@@ -964,15 +1232,10 @@ def validate_historical_doc_change(
     old_doc_type = scalar(old_meta.get("doc_type"))
     new_doc_type = scalar(new_meta.get("doc_type"))
 
-    if (
-        isinstance(old_status, str)
-        and isinstance(new_status, str)
-        and not status_transition_allowed(old_status, new_status, old_doc_type)
-    ):
-        if old_doc_type == "adr" and old_status == "accepted":
-            errors.append(f"{new_rel}: accepted ADRs can only remain accepted or close")
-        else:
-            errors.append(f"{new_rel}: invalid status transition {old_status!r} -> {new_status!r}")
+    if old_status != new_status and old_status in CLOSED_STATUSES and new_status not in CLOSED_STATUSES:
+        errors.append(f"{new_rel}: closed docs stay closed; revived work gets a new doc")
+    elif old_doc_type == "adr" and old_status == "accepted" and new_status not in {"accepted", *CLOSED_STATUSES}:
+        errors.append(f"{new_rel}: accepted ADRs can only remain accepted or close")
 
     if (
         old_doc_type != new_doc_type
@@ -985,6 +1248,8 @@ def validate_historical_doc_change(
         )
 
     locked_body = body_locked(old_meta) or new_status in CLOSED_STATUSES
+    if locked_body:
+        new_body = strip_supersession_banner(old_body, new_body, new_meta)
     if (
         locked_body
         and old_body == new_body
@@ -1083,19 +1348,13 @@ def validate_commit_against_parent(
             )
             continue
 
-        if (
+        if new_state is None or (
             old_rel
             and new_rel
             and old_rel != new_rel
             and body_locked(old_meta)
             and not doc_identity_preserved(old_rel, new_rel)
         ):
-            errors.append(f"{old_rel}: locked historical doc cannot be deleted")
-            continue
-
-        if new_state is None:
-            if body_locked(old_meta):
-                errors.append(f"{old_rel}: locked historical doc cannot be deleted")
             continue
 
         if new_rel is None:
@@ -1126,6 +1385,43 @@ def validate_commit_against_parent(
             )
         )
 
+    return errors
+
+
+
+def ledger_row_key(row: dict[str, str]) -> tuple[str, str, str]:
+    return row["closed"], row["path"], row["status"]
+
+
+def validate_ledger_append_only(
+    root: Path,
+    docs_root: Path,
+    old_rows: list[dict[str, str]],
+    new_rows: list[dict[str, str]],
+) -> list[str]:
+    kept = {ledger_row_key(row) for row in new_rows}
+    return [
+        f"{ledger_rel(root, docs_root)}: retirement rows are append-only; restore the row for {row['path']}"
+        for row in old_rows
+        if ledger_row_key(row) not in kept
+    ]
+
+
+
+def validate_adr_numbers(base_paths: set[str], head_paths: set[str], renamed_paths: dict[str, str]) -> list[str]:
+    taken: dict[str, str] = {}
+    for rel in sorted(base_paths - set(renamed_paths)):
+        if number := adr_number(rel):
+            taken.setdefault(number, rel)
+    errors: list[str] = []
+    for rel in sorted(head_paths - base_paths - set(renamed_paths.values())):
+        number = adr_number(rel)
+        if not number:
+            continue
+        if number in taken:
+            errors.append(f"{rel}: ADR number {number} is already used by {taken[number]}")
+        else:
+            taken[number] = rel
     return errors
 
 
@@ -1166,9 +1462,27 @@ def validate_current_tree(root: Path, docs_root: Path) -> list[str]:
             "store captures under ${XDG_STATE_HOME:-~/.local/state}/dotfiles/captures/"
         )
 
-    for path in markdown_files(docs_root):
+    docs = read_docs(root, docs_root)
+    ledger_path = docs_root / LEDGER_NAME
+    rows, row_errors = ledger_state(root, docs_root, None)
+    errors.extend(f"{ledger_rel(root, docs_root)}: {error}" for error in row_errors)
+    for row in rows:
+        if (docs_root / row["path"]).is_file():
+            errors.append(
+                f"{ledger_rel(root, docs_root)}: retired path still exists; retired docs come back under a new name: {row['path']}"
+            )
+    retired = ledger_paths(rows)
+
+    inventory_path = docs_root / INVENTORY_NAME
+    inventory_rel = inventory_path.relative_to(root)
+    expected_inventory = render_inventory(root, docs_root, docs)
+    if not inventory_path.is_file():
+        errors.append(f"{inventory_rel}: inventory is missing; run {INVENTORY_COMMAND}")
+    elif inventory_path.read_text(encoding="utf-8") != expected_inventory:
+        errors.append(f"{inventory_rel}: inventory is stale; run {INVENTORY_COMMAND}")
+
+    for path, meta, frontmatter, body, parse_errors in docs:
         rel = path.relative_to(root)
-        meta, frontmatter, body, parse_errors = read_doc(path)
         status = scalar(meta.get("status"))
         doc_type = scalar(meta.get("doc_type"))
         rel_to_docs = path.relative_to(docs_root).as_posix()
@@ -1196,8 +1510,14 @@ def validate_current_tree(root: Path, docs_root: Path) -> list[str]:
         if "doc_type" in meta and doc_type not in DOC_TYPES:
             errors.append(f"{rel}: doc_type must be one of {', '.join(sorted(DOC_TYPES))}")
 
-        if path == index_path and doc_type != "index":
-            errors.append(f"{rel}: docs root index must use doc_type index")
+        if (doc_type == "index") != (path.parent == docs_root and path.name in INDEX_FILES):
+            errors.append(f"{rel}: doc_type index is for exactly {', '.join(sorted(INDEX_FILES))} at the docs root")
+
+        if (doc_type == "adr") != bool(adr_number(rel_to_docs)):
+            errors.append(f"{rel}: doc_type adr is for exactly the adr/NNNN-slug.md files")
+
+        if not non_empty_string(meta.get("summary")):
+            errors.append(f"{rel}: summary is required: one line saying what the doc covers")
 
         errors.extend(validate_doc_type_status(rel.as_posix(), status, doc_type))
 
@@ -1232,12 +1552,18 @@ def validate_current_tree(root: Path, docs_root: Path) -> list[str]:
                 f"{rel}: status 'rejected' requires current_guidance or status_detail"
             )
 
+        # Locked docs cannot repair what they point at, so a retired target is
+        # accepted in their frontmatter and body links; everything else repoints.
+        retired_ok = body_locked(meta)
         for key in ("related", "superseded_by", "current_guidance"):
             for target in non_empty_targets(meta.get(key)):
-                if not target_exists(root, path, target):
-                    errors.append(
-                        f"{rel}: {key} target must be a repo-local relative path that exists: {target}"
-                    )
+                if target_exists(root, path, target):
+                    continue
+                if retired_ok and retired_link_target(root, docs_root, path, target, retired):
+                    continue
+                errors.append(
+                    f"{rel}: {key} target must be a repo-local relative path that exists: {target}"
+                )
 
         if not body.lstrip().startswith("# "):
             errors.append(f"{rel}: Markdown body must start with an H1 after frontmatter")
@@ -1251,29 +1577,16 @@ def validate_current_tree(root: Path, docs_root: Path) -> list[str]:
 
         # A closed doc is not maintained and may go stale, links included;
         # checking its links would make anything it ever linked undeletable.
+        # The ledger's rows are append-only, so its links rot the same way.
         # Accepted ADRs are locked too, but they are live direction and keep
-        # the check: close the ADR before removing what it points at.
-        status = meta.get("status")
-        if not (isinstance(status, str) and status in CLOSED_STATUSES):
+        # the check, with the retired-target allowance above.
+        if status not in CLOSED_STATUSES and path != ledger_path:
             for target in markdown_link_targets(without_fenced_code_blocks(body)):
-                if should_validate_repo_link(target) and not target_exists(root, path, target):
-                    errors.append(f"{rel}: Markdown link target must exist: {target}")
-
-    if index_path.is_file():
-        # A link in index frontmatter is not a routing entry.
-        index_text = index_path.read_text(encoding="utf-8")
-        _index_frontmatter, index_body = split_frontmatter(index_text)
-        index_rel = index_path.relative_to(root)
-        index_targets = set(markdown_link_repo_paths(index_rel.as_posix(), index_body))
-        for path in markdown_files(docs_root):
-            rel_to_docs = path.relative_to(docs_root).as_posix()
-            rel_to_root = path.relative_to(root).as_posix()
-            if rel_to_root not in index_targets:
-                errors.append(f"{index_rel}: missing docs index entry for {rel_to_docs}")
-
-        for target in markdown_link_targets(index_body):
-            if should_validate_repo_link(target) and not target_exists(root, index_path, target):
-                errors.append(f"{index_rel}: index link target must exist: {target}")
+                if not should_validate_repo_link(target) or target_exists(root, path, target):
+                    continue
+                if retired_ok and retired_link_target(root, docs_root, path, target, retired):
+                    continue
+                errors.append(f"{rel}: Markdown link target must exist: {target}")
 
     return errors
 
@@ -1300,6 +1613,12 @@ def validate_locked_body_edits(
     current_refs = set() if compare_worktree else set(git_base_markdown_paths(root, docs_root, head_ref))
     base_paths = set(git_base_markdown_paths(root, docs_root, base_ref))
     renamed_paths = git_renamed_markdown_paths(root, docs_root, base_ref, new_ref)
+    base_rows, _base_errors = ledger_state(root, docs_root, base_ref)
+    head_rows, _head_errors = ledger_state(root, docs_root, new_ref)
+    retired = ledger_paths(head_rows)
+    errors.extend(validate_ledger_append_only(root, docs_root, base_rows, head_rows))
+    head_paths = set(current_paths) if compare_worktree else current_refs
+    errors.extend(validate_adr_numbers(base_paths, head_paths, renamed_paths))
 
     for old_rel in sorted(base_paths):
         old_text = git_show(root, base_ref, old_rel)
@@ -1322,9 +1641,10 @@ def validate_locked_body_edits(
             ):
                 new_rel = None
             path = current_paths.get(new_rel) if compare_worktree and new_rel else None
+            if new_rel and docs_relative(root, docs_root, new_rel) is None and not body_locked(old_meta):
+                continue  # an open doc moved out of docs/ keeps living elsewhere
             if new_rel is None or (compare_worktree and path is None):
-                if body_locked(old_meta):
-                    errors.append(f"{old_rel}: locked historical doc cannot be deleted")
+                errors.extend(deletion_errors(root, docs_root, old_rel, retired))
                 continue
 
         if compare_worktree:
@@ -1335,8 +1655,7 @@ def validate_locked_body_edits(
         else:
             new_state = git_doc_state(root, head_ref, new_rel)
             if new_state is None:
-                if body_locked(old_meta):
-                    errors.append(f"{old_rel}: locked historical doc cannot be deleted")
+                errors.extend(deletion_errors(root, docs_root, old_rel, retired))
                 continue
             new_meta, new_body, _new_errors = new_state
 
@@ -1363,7 +1682,7 @@ def validate_locked_body_edits(
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Validate docs/ lifecycle frontmatter, index, and historical-doc edit rules.",
+        description="Validate docs/ lifecycle frontmatter, retirement ledger, inventory, and locked-doc edit rules.",
         epilog=(
             "Frontmatter supports scalar key: value entries, inline lists, and "
             "two-space list items only; nested maps and block scalars are rejected."
@@ -1389,9 +1708,34 @@ def main() -> int:
         type=Path,
         help="Docs root to validate. Defaults to <repo-root>/docs.",
     )
+    parser.add_argument(
+        "--write-inventory",
+        action="store_true",
+        help=f"Regenerate <docs-root>/{INVENTORY_NAME} from frontmatter instead of validating.",
+    )
+    parser.add_argument(
+        "--due",
+        action="store_true",
+        help=(
+            "Report docs that need a decision instead of validating: parked plans "
+            f"and open plans with no commit in {DUE_AFTER_DAYS} days, and research whose "
+            "consumer is settled or missing."
+        ),
+    )
     args = parser.parse_args()
     root = args.repo_root.resolve()
     docs_root = (args.docs_root or root / "docs").resolve()
+
+    if args.write_inventory:
+        inventory_path = docs_root / INVENTORY_NAME
+        inventory_path.write_text(render_inventory(root, docs_root, read_docs(root, docs_root)), encoding="utf-8")
+        print(f"wrote {inventory_path.relative_to(root)}")
+        return 0
+
+    if args.due:
+        for line in due_report(root, docs_root):
+            print(line)
+        return 0
 
     errors = validate_current_tree(root, docs_root)
     if args.base:

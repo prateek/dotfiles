@@ -1,6 +1,7 @@
 ---
 status: proposed
 doc_type: plan
+summary: "Archives the self-help and psychology book collection, extracts sourced lessons into a knowledge base, and prototypes agent tools that apply them daily"
 owner: Prateek
 created: 2026-09-26
 updated: 2026-09-26

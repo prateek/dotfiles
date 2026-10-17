@@ -1,6 +1,7 @@
 ---
 status: archived
 doc_type: plan
+summary: "Verified native marketplace migration and refreshed compatibility adapters; use the marketplace reference and ADR 0049."
 created: 2026-10-11
 updated: 2026-10-12
 related:

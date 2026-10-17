@@ -1,6 +1,7 @@
 ---
 status: archived
 doc_type: plan
+summary: "Verified UI/UX Pro Max, Crit, and Better Writing marketplace adoption and Codex collection adapters; use the marketplace reference."
 created: 2026-10-12
 updated: 2026-10-12
 related:

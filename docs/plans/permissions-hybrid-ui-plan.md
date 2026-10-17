@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: plan
+summary: "UI layout for the TCC permission helper: a warm card workbench grouped by permission and Settings destination, with by-app and drag-shelf variants"
 owner: Prateek
 created: 2026-10-05
 updated: 2026-10-06

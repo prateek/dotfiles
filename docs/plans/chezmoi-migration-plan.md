@@ -1,6 +1,7 @@
 ---
 status: archived
 doc_type: plan
+summary: "Chezmoi Architecture."
 created: 2026-04-27
 updated: 2026-05-15
 closed: 2026-05-15

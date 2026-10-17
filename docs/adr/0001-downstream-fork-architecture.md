@@ -1,6 +1,7 @@
 ---
 status: superseded
 doc_type: adr
+summary: "Downstream forks are clone-as-base repos with an inverted `.fork/` subdir, a patch-stack model via `Fork-Patch:` trailers, and short-lived sync branches."
 created: 2026-04-17
 updated: 2026-07-03
 closed: 2026-07-03

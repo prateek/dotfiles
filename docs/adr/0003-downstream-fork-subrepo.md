@@ -1,6 +1,7 @@
 ---
 status: superseded
 doc_type: adr
+summary: "A git-subrepo-managed `src/` subdir for downstream forks is rejected because it squashes upstream commits and offsets build paths."
 created: 2026-04-17
 closed: 2026-04-17
 superseded_by: 0001-downstream-fork-architecture.md

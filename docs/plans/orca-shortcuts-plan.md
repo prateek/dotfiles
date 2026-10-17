@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: plan
+summary: "Repairs the Orca session fork and reveal shortcuts to resolve the focused agent across Claude, Codex, pi, OMP, and Droid, including remote sessions, and audits related controls"
 created: 2026-09-26
 updated: 2026-10-17
 status_detail: "Remote-session source repair and container validation complete; activation remains separate."

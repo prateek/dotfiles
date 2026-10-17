@@ -1,6 +1,7 @@
 ---
 status: superseded
 doc_type: adr
+summary: "acpx model shortcuts resolve through machine route declarations separate from `agent_clis`, ordered by local inference, subscription, direct API, then aggregator, frozen at apply."
 created: 2026-09-22
 updated: 2026-10-05
 closed: 2026-10-05

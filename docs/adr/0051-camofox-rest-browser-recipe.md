@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "Browser automation runs an explicit task-owned Camofox REST runtime with pinned Camoufox, tool telemetry disabled, ephemeral state, and the runtime separated from the controller."
 created: 2026-10-17
 updated: 2026-10-17
 current_guidance: ../../agent-marketplace/packages/utils-agent/skills/browser/SKILL.md

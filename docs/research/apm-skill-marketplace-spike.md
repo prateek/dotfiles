@@ -1,6 +1,7 @@
 ---
 status: draft
 doc_type: research
+summary: "Executed APM source publication, native Claude/Codex inventory parity, offline updates, bundle limitations, and the Mise setup incident."
 owner: Prateek
 created: 2026-09-06
 updated: 2026-09-06

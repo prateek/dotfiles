@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: runbook
+summary: "Building the dedicated sync app and validating its removable-volume access."
 owner: Prateek
 created: 2026-09-05
 updated: 2026-09-07

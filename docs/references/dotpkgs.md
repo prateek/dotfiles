@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: reference
+summary: "Shared package status, pin-aware operations, bulk latest, and banner/audit integration."
 created: 2026-10-12
 updated: 2026-10-15
 related:

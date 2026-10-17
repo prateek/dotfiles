@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: research
+summary: "Pinned pstack package contents, default-disabled and human-only controls, Claude/Codex context projections, native discovery checks, and Cursor-specific compatibility limits."
 owner: Prateek
 created: 2026-09-28
 updated: 2026-09-28

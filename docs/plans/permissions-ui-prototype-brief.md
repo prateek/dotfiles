@@ -1,6 +1,7 @@
 ---
 status: superseded
 doc_type: plan
+summary: "Superseded by the hybrid plan; records the Astra and Fable comparative brief."
 created: 2026-10-05
 updated: 2026-10-05
 related:

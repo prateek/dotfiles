@@ -1,13 +1,14 @@
 ---
 status: accepted
 doc_type: adr
+summary: "Upstream agent plugins install directly from official marketplaces declared in `agent_upstream_plugins.toml`; `agent-marketplace/` keeps only authored skills and compatibility adapters."
 created: 2026-10-11
 updated: 2026-10-12
 related:
   - ../plans/upstream-agent-plugins-plan.md
   - ../references/agent-marketplace.md
   - 0023-apm-agent-marketplace-packaging.md
-status_detail: "User chose official marketplaces wherever the client supports them."
+status_detail: "User chose official marketplaces wherever the client supports them. Number 0049 is shared with 0049-shared-package-operations.md; neither is renumbered."
 ---
 
 # ADR 0049: Prefer official agent plugin marketplaces

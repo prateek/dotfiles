@@ -1,6 +1,7 @@
 ---
 status: current
 doc_type: research
+summary: "Background on skill context pressure, package layout, and plugin defaults."
 created: 2026-05-10
 updated: 2026-05-11
 related:

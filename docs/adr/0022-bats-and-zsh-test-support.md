@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "Bats owns shell test discovery and reporting, with small repo-owned zsh scenario and PTY support, while Python keeps structured-data verification."
 created: 2026-09-05
 owner: Prateek
 related:

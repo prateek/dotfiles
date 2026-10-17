@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "Raw agent sessions from every host sync into the private `wiki-agent-sessions` git repo, each host writing only its own path, with one designated ingest host writing `wiki/`."
 created: 2026-08-30
 owner: Prateek
 related:

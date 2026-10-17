@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: plan
+summary: "Audits macOS TCC permission grants during chezmoi apply against a per-app manifest, with a SwiftUI helper that opens System Settings and offers the app file to drag"
 owner: Prateek
 created: 2026-10-05
 updated: 2026-10-05

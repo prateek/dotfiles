@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: plan
+summary: "Runs the dotfiles and headless Orca on the work-provisioned Linux devbox, defining ownership between the devbox bootstrap, agent sync, image, and chezmoi"
 owner: Prateek
 created: 2026-09-24
 updated: 2026-10-02

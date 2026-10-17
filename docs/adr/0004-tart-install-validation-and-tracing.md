@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "Tart VMs are the local end-to-end install validation lane, owned by `scripts/vm/test-install-tart.sh`, with Perfetto traces and timing summaries as diagnostics; CI never boots Tart."
 created: 2026-04-27
 owner: Prateek
 related:

@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: plan
+summary: "Sets up a homelab Mac mini as an ephemeral iOS and macOS GitHub Actions runner host with Tartelet, a golden VM, seeded settings, and LAN isolation"
 owner: Prateek
 created: 2026-07-03
 updated: 2026-07-04

@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "`chezmoi apply` runs `reconcile-agent-plugins --apply` to converge each agent CLI's plugin install records through its native CLI, which remains the only writer."
 created: 2026-09-02
 owner: Prateek
 related:

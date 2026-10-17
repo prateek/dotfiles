@@ -1,6 +1,7 @@
 ---
 status: archived
 doc_type: plan
+summary: "Review plugin's published skill source and dotfiles landing."
 created: 2026-09-07
 updated: 2026-09-07
 closed: 2026-09-07

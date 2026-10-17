@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: plan
+summary: "Replaces one Orca split per acpx run with a shared Herdr tab view per calling terminal, covering tab naming, logging, close behavior, and verification"
 owner: Prateek
 created: 2026-09-27
 updated: 2026-09-27

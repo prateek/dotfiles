@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: research
+summary: "2026-10-15 reuse audit: llm-agents.nix and other package sets, skill/plugin frameworks, upstream Home Manager Claude/Codex modules (#9906, mutableSettings), and personal configs; feeds the agent-skills split plan."
 owner: Prateek
 created: 2026-10-15
 updated: 2026-10-15

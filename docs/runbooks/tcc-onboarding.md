@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: runbook
+summary: "Default desktop-role CLI audit, manual native review, stale-grant recovery, and pending attended validation."
 created: 2026-10-05
 updated: 2026-10-06
 related:

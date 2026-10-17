@@ -1,6 +1,7 @@
 ---
 status: superseded
 doc_type: adr
+summary: "Work overlay content lives in a private `dotfiles-private` repo, fetched as a chezmoi external gated on `machine_type == work` and composed at apply time."
 created: 2026-06-26
 updated: 2026-09-29
 closed: 2026-09-29

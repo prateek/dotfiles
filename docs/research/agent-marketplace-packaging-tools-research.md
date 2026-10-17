@@ -1,6 +1,7 @@
 ---
 status: draft
 doc_type: research
+summary: "Packaging tools and reusable compilers for reviewed local skill sources, separate plugins, and Claude/Codex marketplace output."
 owner: Prateek
 created: 2026-09-06
 updated: 2026-09-06

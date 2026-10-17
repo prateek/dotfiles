@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: plan
+summary: "Replaces the managed-chrome-cdp helper with one browser skill that routes browser and desktop-UI work by harness and task, separating auth, driver choice, and safety policy"
 owner: Prateek
 created: 2026-09-23
 updated: 2026-10-17

@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: runbook
+summary: "Balanced native flows; five-skill live pilot completed at peak concurrency two with one afablex review and a validated unapplied patch. Includes required runtime overrides."
 created: 2026-09-26
 updated: 2026-09-27
 related:

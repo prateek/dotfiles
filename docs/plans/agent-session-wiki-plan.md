@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: plan
+summary: "Architecture for a private cross-machine archive of coding-agent sessions with an Obsidian wiki, agentsview indexing, hourly raw sync, and daily ingest via Orca automations"
 owner: Prateek
 created: 2026-08-30
 updated: 2026-10-17

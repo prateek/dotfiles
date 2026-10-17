@@ -1,6 +1,7 @@
 ---
 status: current
 doc_type: reference
+summary: "Mise-native CLI and tool selection."
 related:
   - ../adr/0005-mise-tool-management.md
   - ../adr/0027-codex-standalone-installer.md

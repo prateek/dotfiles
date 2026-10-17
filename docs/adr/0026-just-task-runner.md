@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "Repo tasks run through `just` justfiles at the root and in `agent-marketplace/`, with test selection delegated to the runners instead of per-file recipes."
 owner: Prateek
 created: 2026-09-07
 updated: 2026-09-07

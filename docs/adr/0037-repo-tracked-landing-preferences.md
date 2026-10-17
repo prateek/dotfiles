@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "Saved land-changes choices live in the tracked `.agents/land-changes.json` at the destination checkout, and that committed file is the standing authorization."
 owner: Prateek
 created: 2026-09-28
 updated: 2026-09-28

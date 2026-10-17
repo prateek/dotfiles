@@ -7,6 +7,7 @@ superseded_by: 0050-suspend-jev-in-experimental-plugin.md
 current_guidance:
   - 0050-suspend-jev-in-experimental-plugin.md
 doc_type: adr
+summary: "Jev moves into a `browser-jev` skill published beside `browser` in `utils-agent`, restoring the regular skill and linking to its references."
 created: 2026-09-27
 related:
   - ../plans/jev-deterministic-preparation-plan.md

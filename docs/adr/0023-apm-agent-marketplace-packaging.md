@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "A portable `agent-marketplace/` project at the repo root acquires dependencies with native APM, commits `apm_modules/` trees, and builds native plugins and catalogs."
 owner: Prateek
 created: 2026-09-06
 updated: 2026-09-06

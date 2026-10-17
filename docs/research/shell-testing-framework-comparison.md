@@ -1,6 +1,7 @@
 ---
 status: current
 doc_type: research
+summary: "Alternatives, decision history, and experiment/upstream evidence supporting the Test Refactoring plan."
 created: 2026-09-05
 updated: 2026-09-05
 owner: Prateek

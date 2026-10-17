@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: research
+summary: "Pinned source comparison of Hermes structured tools, Camofox sessions, and browser guidance against the proposed browser skill."
 created: 2026-10-17
 updated: 2026-10-17
 related:

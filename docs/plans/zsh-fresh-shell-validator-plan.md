@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: plan
+summary: "One harness for fresh-shell correctness and startup performance using real PTY login shells and zsh-bench, with a live-shell doctor mode"
 owner: Prateek
 related:
   - ../adr/0002-zsh-fresh-shell-validator.md

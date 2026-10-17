@@ -1,6 +1,7 @@
 ---
 status: archived
 doc_type: plan
+summary: "Completed; the relay loop it proved now lives in the acpx skill's harness lanes, and the packaging follow-up went to ADR 0028."
 owner: Prateek
 created: 2026-08-28
 updated: 2026-09-08

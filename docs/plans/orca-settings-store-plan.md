@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: plan
+summary: "Writes tracked Orca settings into its SQLite profile-state store, derives agent and editor entries from agent_clis and casks, and retires the dead orca-data.json modify"
 owner: Prateek
 created: 2026-09-30
 updated: 2026-09-30

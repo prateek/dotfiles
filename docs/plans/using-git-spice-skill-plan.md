@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: plan
+summary: "Replaces two overlapping git-spice skills with one evidence-driven using-git-spice skill in the review package, moves standing rules into git config, and adds evals"
 owner: Prateek
 created: 2026-09-02
 updated: 2026-09-29

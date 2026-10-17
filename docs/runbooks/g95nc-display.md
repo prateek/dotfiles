@@ -1,6 +1,7 @@
 ---
 status: current
 doc_type: runbook
+summary: "Verified native-output Sharp/Butter setup, app-wide BetterDisplay reset, private backups, logs, and recovery."
 created: 2026-10-03
 updated: 2026-10-11
 related:

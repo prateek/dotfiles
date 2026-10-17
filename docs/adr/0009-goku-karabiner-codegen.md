@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "Karabiner config is authored as Goku EDN in `karabiner.edn` and compiled to `karabiner.json` by `goku` at apply time."
 created: 2026-06-21
 updated: 2026-06-21
 owner: Prateek

@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: plan
+summary: "Runs upstream-plus-open-PR forks of macOS apps and CLIs as zero-maintenance daily drivers through the prateek/forks monorepo, tap, and dotfiles fork-lifecycle wiring"
 owner: Prateek
 created: 2026-07-03
 updated: 2026-07-04

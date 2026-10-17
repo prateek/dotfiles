@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "`machine_type` is the only package selection axis; reusable package groups compose each machine type, replacing `install_profile` and the core/full split."
 created: 2026-06-23
 owner: Prateek
 related:

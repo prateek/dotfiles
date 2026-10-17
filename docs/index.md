@@ -1,19 +1,23 @@
 ---
 status: current
 doc_type: index
+summary: "Router to current guidance and open plans; the inventory and the retirement ledger hold everything else."
 created: 2026-05-12
 updated: 2026-10-17
 related:
   - document-lifecycle.md
+  - inventory.md
+  - retired.md
   - ../agent-marketplace/packages/core/skills/code-gardening/SKILL.md
-status_detail: "Entry point for docs routing. Update when docs are added, moved, closed, or reclassified."
+status_detail: "Keep rows free of status prose; a doc's state lives in its frontmatter and the generated inventory."
 ---
 
 # Documentation Index
 
-Use this file first when looking for repo guidance. Lifecycle status in each
-document's frontmatter decides whether it is current guidance, active work, a
-proposal, or history.
+Start here for repo guidance. This file routes; it does not describe
+progress. For every document with its status and summary, read the generated
+[inventory](inventory.md). For documents that have left the tree, read the
+[retirement ledger](retired.md). Terms are in the [glossary](../GLOSSARY.md).
 
 When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 [code-gardening workflow](../agent-marketplace/packages/core/skills/code-gardening/SKILL.md).
@@ -22,206 +26,73 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 
 | Doc | Use it for |
 | --- | --- |
-| [Package helper](references/dotpkgs.md) | Shared package status, pin-aware operations, bulk latest, and banner/audit integration. [Command surface repair](plans/dotpkgs-surface-plan.md) records the completed audit fixes. |
-| [Documentation Index](index.md) | Routing to current guidance, proposed work, decisions, and history. |
-| [Document Lifecycle](document-lifecycle.md) | Frontmatter, status transitions, and index rules for `docs/`. |
-| [acpx Routing](references/acpx-routing.md) | Explicit model/effort profiles, machine route declarations, catalog resolution, and diagnostics. |
-| [acpx Skill Rewrite](runbooks/acpx-skill-rewrite.md) | Balanced native flows; five-skill live pilot completed at peak concurrency two with one afablex review and a validated unapplied patch. Includes required runtime overrides. |
-| [Agent Marketplace](references/agent-marketplace.md) | Isolated APM source/build project, host activation, recovery, and validation lanes. |
-| [G95NC Display](runbooks/g95nc-display.md) | Verified native-output Sharp/Butter setup, app-wide BetterDisplay reset, private backups, logs, and recovery. |
-| [Dotfiles Landing](runbooks/dotfiles-landing.md) | Repo-specific checks and chezmoi preview for the published land-changes skill. |
+| [Document Lifecycle](document-lifecycle.md) | Frontmatter, statuses, retirement, and validator rules for `docs/`. |
 | [Chezmoi Architecture](references/chezmoi-architecture.md) | Dotfiles source-state architecture and validation entrypoints. |
 | [Chezmoi Hook Lifecycle](references/chezmoi-hook-lifecycle.md) | Ordering and design rules for config hooks, apply scripts, init, and modify targets. |
-| [Corporate TLS Inspection](runbooks/corp-tls-inspection.md) | Corporate CA trust for Node clients in shells and GUI apps behind a decrypting proxy. |
-| [Private Service Certificate in Orca](../agent-marketplace/packages/utils-agent/skills/browser/references/certificate.md) | Host-scoped trust preference and pinned loopback recovery for an owned private HTTPS service. |
-| [Orca Shortcut Validation](runbooks/orca-shortcut-validation.md) | Local, SSH, and paired-server fork comparisons, sidebar focus regression, and release-specific integration limits. |
-| [Host Storage](runbooks/host-storage.md) | Required SSD mounts before apply computes targets or installs packages. |
-| [Jamf Self Service Elevation](references/jamf-self-service-elevation.md) | Temporary admin elevation on Jamf-managed work Macs. |
+| [Agent Marketplace](references/agent-marketplace.md) | Isolated APM source/build project, host activation, recovery, and validation lanes. |
+| [acpx Routing](references/acpx-routing.md) | Explicit model/effort profiles, machine route declarations, catalog resolution, and diagnostics. |
+| [Package helper](references/dotpkgs.md) | Shared package status, pin-aware operations, bulk latest, and banner/audit integration. |
 | [Mise Tool Management](references/mise-tool-management.md) | Mise-native CLI and tool selection. |
+| [Jamf Self Service Elevation](references/jamf-self-service-elevation.md) | Temporary admin elevation on Jamf-managed work Macs. |
 | [Shell Banner](../home/dot_config/dotfiles/shell-banner/README.md) | Cached fastfetch banner for chezmoi drift and stale brew/mise packages. |
+| [Private Service Certificate in Orca](../agent-marketplace/packages/utils-agent/skills/browser/references/certificate.md) | Host-scoped trust preference and pinned loopback recovery for an owned private HTTPS service. |
+| [Dotfiles Landing](runbooks/dotfiles-landing.md) | Repo-specific checks and chezmoi preview for the published land-changes skill. |
+| [Quarterly Review](runbooks/quarterly-review.md) | Docs that need a decision and the manual session-friction pass. |
+| [acpx Skill Rewrite](runbooks/acpx-skill-rewrite.md) | Rewriting authored skills through acpx native flows, with the required runtime overrides. |
+| [Corporate TLS Inspection](runbooks/corp-tls-inspection.md) | Corporate CA trust for Node clients in shells and GUI apps behind a decrypting proxy. |
+| [G95NC Display](runbooks/g95nc-display.md) | Native-output Sharp/Butter setup, app-wide BetterDisplay reset, private backups, logs, and recovery. |
+| [Host Storage](runbooks/host-storage.md) | Required SSD mounts before apply computes targets or installs packages. |
+| [Orca Shortcut Validation](runbooks/orca-shortcut-validation.md) | Local, SSH, and paired-server fork comparisons, sidebar focus regression, and release-specific integration limits. |
+| [Session Archive Sync Permissions](runbooks/session-sync-permissions.md) | Building the dedicated sync app and validating its removable-volume access. |
 | [Tart Install Validation](runbooks/tart-mini-validation.md) | Local disposable-VM install validation on a Mac mini. |
 | [Tartelet Runner Setup](runbooks/tartelet-runner-setup.md) | Standing up a homelab mini as an ephemeral iOS/macOS GitHub Actions runner host. |
-| [TCC Onboarding](runbooks/tcc-onboarding.md) | Default desktop-role CLI audit, manual native review, stale-grant recovery, and pending attended validation. |
-| [Session Archive Sync Permissions](runbooks/session-sync-permissions.md) | Building the dedicated sync app and validating its removable-volume access. |
+| [TCC Onboarding](runbooks/tcc-onboarding.md) | Default desktop-role CLI audit, manual native review, and stale-grant recovery. |
 | [USB-C Cable Audit](runbooks/usb-c-cable-audit.md) | Auditing unlabeled USB-C cables for speed, power, generation, and TB5 capability. |
 
-## Open And Proposed Work
+## Open Plans
 
-| Doc | Status |
-| --- | --- |
-| [TCC Onboarding](plans/tcc-onboarding-plan.md) | Active; native helper and CLI-first apply audit implemented. Attended E2E and mini/work audits pending; see the [runbook](runbooks/tcc-onboarding.md). |
-| [Permissions UI Prototype Brief](plans/permissions-ui-prototype-brief.md) | Superseded by the hybrid plan; records the Astra and Fable comparative brief. |
-| [Permissions Hybrid UI Plan](plans/permissions-hybrid-ui-plan.md) | Active; approved hybrid implemented with compact chrome, permission-first batching, stale identity evidence, and exact file handoff. Attended native validation remains. |
-| [Permission Utility Product Follow-up](plans/permissions-product-plan.md) | Draft and deferred; standalone releases, app-versioned registry updates without rebuilding, separate publishing pipelines, website and launch copy. |
-| [Self-help and Psychology Book Archive and Agent Tools](plans/psychology-book-archive-and-tools-plan.md) | Proposed; archive the full collection, extract source-linked lessons, and build practical agent workflows and learning tools. |
-| [Agent Friction Remediation](plans/agent-friction-remediation-plan.md) | Active; implemented and committed, not yet applied: bash-compatible glob parsing in zsh with non-interactive audit lanes, acpx/agent-slack/git-spice/retired-path fixes with validators, fake-HOME mise trust in the audit, an OpenSSL CA bundle for work shells, and five conventions. Global mise trust roots await a decision. |
-| [Periodic Session Review](plans/periodic-session-review-plan.md) | Proposed; completed-session retros, weekly incremental reviews, monthly historical sweeps, and a bounded backfill. No schedule enabled. |
-| [Agent Skills Repo Split](plans/agent-skills-repo-split-plan.md) | Proposed, nothing decided; move skills, `AGENTS.md`, plugin policy, and skill CLIs to a public all-Nix `agent-skills` repo activated by Home Manager, with per-repo plugin profiles and official plugins left on native marketplaces. Phase 0 Nix gates come before any decision. |
-| [acpx Skill Packaging](plans/acpx-skill-packaging-plan.md) | Active; the acpx conventions are now a trigger-owning skill next to the vendored `acpx-cli` command surface, the conventions doc and its AGENTS.md pointer are deleted. See [ADR 0028](adr/0028-router-skill-over-vendor-remap.md). Trigger arbitration measured 2026-09-08 (no cross-listing steals; 16/18 after one relabel); nothing open. |
-| [ACPX Shared Pane](plans/acpx-shared-pane-plan.md) | Accepted and implemented in source; one compact Herdr view per Orca caller, with an ordered tab per invocation. Live Orca terminal preview verified; host activation is a separate follow-up. |
-| [Browser Skill](plans/browser-skill-plan.md) | Active; landed and applied on personal-mbp, follow-ups open. One `browser` router skill in `utils-agent` replaces `managed-chrome-cdp`, with Orca routing inside Orca (browser-harness for live Chrome) and `agent-browser` elsewhere. |
-| [Browser Runtime/Controller Plan Review](research/browser-runtime-controller-review.md) | 2026-10-16 adversarial review of the [runtime/controller plan](plans/browser-runtime-controller-plan.md) against agent-browser v0.38.2 and Obscura main/v0.2.4 source: CDP method gaps, release pinning, MCP client options, and the writing-for-agents gate. |
-| [Browser Runtime/Controller Fable Review](research/browser-runtime-controller-fable-review.md) | 2026-10-17 Fable review through Claude Code, with root source audit: Camofox interfaces, dependency pins, persisted state, reference lifetime, and implementation gates. |
-| [Browser Controller Qualification](research/browser-controller-qualification.md) | Executed client/lifecycle trials and Camofox REST adoption checks; pinned dependencies, telemetry suppression, task isolation and cleanup. Obscura evidence retained without adoption. |
-| [Local Browser Runtime Evaluation](research/local-browser-runtime-evaluation.md) | Lightpanda, Camofox, direct Camoufox/Playwright and browser-harness compatibility trials with a fresh headless Chrome control; runtime, controller and website outcomes separated. |
-| [Hermes Camofox Comparison](research/hermes-camofox-comparison.md) | Pinned source comparison of Hermes's structured tools, Camofox sessions and browser guidance against our proposed skill; integration code distinguished from instructions and local qualification. |
-| [Agent Browser Ecosystem](research/agent-browser-ecosystem.md) | Source survey of CLI controllers, existing-browser attachment, agent browsers and page-provided tools; comparison proposals for Orca and Obscura. |
-| [Obscura Browser Evaluation](research/obscura-browser-evaluation.md) | Retained local experiment evidence; adoption dropped by explicit user decision. |
-| [Browser Components and Camofox Adoption](plans/browser-runtime-controller-plan.md) | Camofox REST with explicit mise setup, repair, supervisor checks and automatic generic fallback; explicit runtime constraints preserved. Host activation pending; Obscura adoption dropped. |
-| [Agent Session Wiki](plans/agent-session-wiki-plan.md) | Active; hourly launchd archive sync, QMD history index, AgentsView wiring, and daily Claude wiki ingest on m4mini. See [ADR 0017](adr/0017-agent-session-archive.md). |
-| [Restore Wiki Ingestion](plans/wiki-ingest-revisit-plan.md) | Active; the m4mini schedule and Claude Sonnet 5/high configuration are live and passed an end-to-end ingest. |
-| [SSD Layout And Arq Coverage](plans/ssd-arq-layout-plan.md) | Active; Code, Tart, and WinMux storage migrated. Both SSD volumes retained for Code and GhostPepper; Arq selection and restore checks deferred. |
-| [BetterDisplay Display Modes](plans/betterdisplay-display-modes-plan.md) | Proposed only; no `displayctl` implementation exists in this checkout. |
-| [Decomment Skill](plans/decomment-skill-plan.md) | Active; decomment core skill, trigger-channel fixes, and evals under implementation. |
-| [Justfile Migration](plans/justfile-migration-plan.md) | Accepted and executed; both Makefiles replaced by justfiles, per-file test targets deleted, and selection moved into the runners. See [ADR 0026](adr/0026-just-task-runner.md). |
-| [Orcactl](plans/orcactl-plan.md) | Draft for a separate Go repo/tool; dotfiles integration is future install/skill wiring. |
-| [Orca Shortcut Repair](plans/orca-shortcuts-plan.md) | Active; remote host resolution and container integration tests pass. Activation and attended hotkey checks remain; see the [validation runbook](runbooks/orca-shortcut-validation.md). |
-| [Downstream Fork](plans/downstream-fork-plan.md) | Active; thin assembly-repo forks as daily drivers on the `prateek/forks` fleet monorepo — engine, three-job template, harness, security review, monorepo scaffold, and fleet digest done; dotfiles gardening landed bar the retoken; provisioning + ghost-pepper migration pending Prateek. |
-| [Goku Karabiner Migration](plans/goku-karabiner-migration-plan.md) | Active; Karabiner config now compiles from `karabiner.edn` via goku — on-device pad verification pending. |
-| [Raycast Config Automation](plans/raycast-config-automation-plan.md) | Proposed; deferred backlog of Raycast preference keys worth porting into the managed plist, plus what the encrypted extension store puts out of reach. |
-| [Skill Management Console](plans/skill-management-console-plan.md) | Active; `skill-console` reproduces Claude Code's character-budgeted skill listing from live inputs, renders an HTML console over the repo's 142 skills plus third-party, user, and built-in rows, and applies exported decisions (description edits, frontmatter flags, vendored-skill deletion, package toggles, budget fraction) to the chezmoi source tree through a staged, validated, path-by-path commit. Phases 1-3 built; pi and Codex budget projection remains. |
-| [Shell Banner](plans/shell-banner-plan.md) | Active; fastfetch banner with cached chezmoi/brew/mise rows shipped and replaced `chezmoi-drift`. The `apm` row is deferred — script and lib wiring exist but it is out of the default source list. |
-| [Sudo Askpass 1Password](plans/sudo-askpass-1password-plan.md) | Accepted design; implementation pending, current code still uses sudo keepalive. |
-| [Tartelet Self-Hosted Runners](plans/tartelet-runner-plan.md) | Active; cask, managed plist, LaunchAgent, host data, VM-image builder, and runbook landed. On-mini end-to-end (golden VM build + first-run credential paste) still to be exercised. |
-| [Tartelet Runner Memory-Guard](plans/tartelet-runner-memory-guard-proposal.md) | Proposed; design for a circuit breaker that sheds the runner under host memory pressure after a 2026-07-03 jetsam wedge. Prototyped and validated, then dropped — no code in-tree. |
-| [Using-git-spice Skill](plans/using-git-spice-skill-plan.md) | Active; the replacement skill and config are applied, the duplicate is disabled, and the Orca smoke passed. Only the disruptive manual logged-out auth check remains. |
-| [Touch ID for sudo](plans/touchid-sudo-plan.md) | Active; focused `sudo_local` configuration and fixture checks. Live authentication remains an attended check. |
-| [Prolo Ring Cheat Sheet](plans/prolo-ring-cheatsheet-plan.md) | Draft; a cheat sheet rendered from the ring profile we flash, labelled with what each gesture does on this machine, regenerated by `chezmoi apply`, with a live mode view once the Device Status telemetry question is settled. Renderer lives in `prateek/prolo-ring`. |
-| [Linux Devbox](plans/linux-devbox-plan.md) | Active; dotfiles and headless Orca on the Linux Cloud Workstation, one live-verified increment at a time. See [ADR 0040](adr/0040-devbox-machine-type.md). |
-| [agent_clis Consolidation](plans/agent-clis-consolidation-plan.md) | Active; one validated per-machine agent list plus a catalogue drives mise entries, install hooks, config gates, plugin reconcile, the acpx route check, and Orca. Implemented in source; live applies pending. See [ADR 0041](adr/0041-agent-clis-single-declaration.md). |
-| [Orca Settings Store](plans/orca-settings-store-plan.md) | Active; tracked Orca settings are written into its profile-state SQLite store with a quit-and-relaunch guard, agent and editor entries derive from `agent_clis` and casks, the dead `orca-data.json` modify is gone. Implemented in source; live write pending. See [ADR 0042](adr/0042-orca-profile-state-reconcile.md). |
-| [Zsh Fresh-Shell Validator](plans/zsh-fresh-shell-validator-plan.md) | Active plan for shell correctness and startup checks. |
+Status and summary for each are in the [inventory](inventory.md#plans).
 
-## Decision Records
+- [ACPX shared pane](plans/acpx-shared-pane-plan.md)
+- [acpx skill packaging](plans/acpx-skill-packaging-plan.md)
+- [agent_clis consolidation](plans/agent-clis-consolidation-plan.md)
+- [Agent friction remediation](plans/agent-friction-remediation-plan.md)
+- [Agent session wiki](plans/agent-session-wiki-plan.md)
+- [Agent skills repo split](plans/agent-skills-repo-split-plan.md)
+- [BetterDisplay display modes](plans/betterdisplay-display-modes-plan.md)
+- [Browser skill](plans/browser-skill-plan.md)
+- [Browser components and Camofox adoption](plans/browser-runtime-controller-plan.md)
+- [Decomment skill](plans/decomment-skill-plan.md)
+- [Downstream fork](plans/downstream-fork-plan.md)
+- [Goku Karabiner migration](plans/goku-karabiner-migration-plan.md)
+- [Justfile migration](plans/justfile-migration-plan.md)
+- [Linux devbox](plans/linux-devbox-plan.md)
+- [Orca settings store](plans/orca-settings-store-plan.md)
+- [Orca shortcut repair](plans/orca-shortcuts-plan.md)
+- [orcactl](plans/orcactl-plan.md)
+- [Periodic session review](plans/periodic-session-review-plan.md)
+- [Permissions hybrid UI](plans/permissions-hybrid-ui-plan.md)
+- [Permission utility product follow-up](plans/permissions-product-plan.md)
+- [Prolo Ring cheat sheet](plans/prolo-ring-cheatsheet-plan.md)
+- [Psychology book archive and tools](plans/psychology-book-archive-and-tools-plan.md)
+- [Raycast config automation](plans/raycast-config-automation-plan.md)
+- [Shell banner](plans/shell-banner-plan.md)
+- [Skill management console](plans/skill-management-console-plan.md)
+- [SSD layout and Arq coverage](plans/ssd-arq-layout-plan.md)
+- [Sudo askpass via 1Password](plans/sudo-askpass-1password-plan.md)
+- [Tartelet runner memory guard](plans/tartelet-runner-memory-guard-proposal.md)
+- [Tartelet self-hosted runners](plans/tartelet-runner-plan.md)
+- [TCC onboarding](plans/tcc-onboarding-plan.md)
+- [Touch ID for sudo](plans/touchid-sudo-plan.md)
+- [Using-git-spice skill](plans/using-git-spice-skill-plan.md)
+- [Wiki ingest revisit](plans/wiki-ingest-revisit-plan.md)
+- [zsh fresh-shell validator](plans/zsh-fresh-shell-validator-plan.md)
 
-Accepted ADRs explain why a decision was made. Use the current guidance above
-for day-to-day implementation details.
+## Decisions, research, and history
 
-| ADR | Current guidance |
-| --- | --- |
-| [ADR 0001 - Downstream fork repo architecture](adr/0001-downstream-fork-architecture.md) | Superseded by [ADR 0015](adr/0015-downstream-fork-daily-driver.md). |
-| [ADR 0002 - Fresh-shell validator architecture](adr/0002-zsh-fresh-shell-validator.md) | `scripts/audit/zsh-fresh-shells.zsh` and [tests index](../tests/README.md). |
-| [ADR 0003 - git-subrepo-managed `src/`](adr/0003-downstream-fork-subrepo.md) | Superseded by [ADR 0001](adr/0001-downstream-fork-architecture.md). |
-| [ADR 0004 - Tart install validation and tracing](adr/0004-tart-install-validation-and-tracing.md) | [Tart Install Validation](runbooks/tart-mini-validation.md). |
-| [ADR 0005 - Mise-managed tool selection](adr/0005-mise-tool-management.md) | [Mise Tool Management](references/mise-tool-management.md); its Codex Homebrew channel is superseded by [ADR 0027](adr/0027-codex-standalone-installer.md). |
-| [ADR 0006 - Chezmoi migration target architecture](adr/0006-chezmoi-migration-prototype.md) | [Chezmoi Architecture](references/chezmoi-architecture.md). |
-| [ADR 0007 - Default-loaded plugin policy](adr/0007-default-loaded-plugin-policy.md) | [Agent Skill Management](../.agents/skills/agent-skill-management/SKILL.md). |
-| [ADR 0008 - Sudo askpass via 1Password](adr/0008-sudo-askpass-1password.md) | Current behavior remains [Jamf Self Service Elevation](references/jamf-self-service-elevation.md); accepted askpass design is tracked in [Sudo Askpass 1Password](plans/sudo-askpass-1password-plan.md). |
-| [ADR 0009 - Karabiner config via Goku codegen](adr/0009-goku-karabiner-codegen.md) | [Goku Karabiner Migration](plans/goku-karabiner-migration-plan.md); edit `karabiner.edn`, never `karabiner.json`. |
-| [ADR 0010 - Single machine_type axis for package selection](adr/0010-machine-type-package-selection.md) | [Chezmoi Architecture](references/chezmoi-architecture.md) > Packages And Tools. |
-| [ADR 0011 - Private repo for config overlays](adr/0011-private-repo-config-overlays.md) | Superseded by [ADR 0039](adr/0039-work-overlay-in-work-repo.md); the private repo is a dormant placeholder. |
-| [ADR 0012 - Config-gating convention](adr/0012-config-gating-convention.md) | chezmoi toggle convention (render-time vs init-time), implemented as one identity prompt + a layered `machines.toml` resolved by `features.tmpl`. Current guidance: [Chezmoi Architecture](references/chezmoi-architecture.md) > Config Gating. |
-| [ADR 0013 - Agent tool integrations stay APM-vendored](adr/0013-apm-vendored-tool-integrations.md) | [Agent Skill Management](../.agents/skills/agent-skill-management/SKILL.md). |
-| [ADR 0014 - Tartelet self-hosted runners](adr/0014-tartelet-self-hosted-runners.md) | [Tartelet Self-Hosted Runners](plans/tartelet-runner-plan.md). |
-| [ADR 0015 - Downstream forks as thin assembly repos](adr/0015-downstream-fork-daily-driver.md) | [Downstream Fork plan](plans/downstream-fork-plan.md) and the [`fork-lifecycle` skill](../.agents/skills/fork-lifecycle/SKILL.md) (fleet ops live in the `fork-ops` skill in `prateek/forks`). |
-| [ADR 0016 - Vendored dependency content may land inside a local skill](adr/0016-vendor-into-skill-references.md) | Never implemented; superseded by [ADR 0028](adr/0028-router-skill-over-vendor-remap.md). |
-| [ADR 0017 - Cross-machine agent-session archive](adr/0017-agent-session-archive.md) | [Agent Session Wiki plan](plans/agent-session-wiki-plan.md) and the `agent-session-wiki` operator skill (utils-agent package). |
-| [ADR 0018 - Sparse, blobless archive clones on work machines](adr/0018-sparse-work-archive-clones.md) | `agent_session_wiki_sparse` in `machines.toml`, reconciled by `scripts/agent-sessions/reconcile-wiki-clone`; the ingest host stays a full clone. |
-| [ADR 0019 - Plugin hooks ship in the vendored plugin payload](adr/0019-plugin-hooks-in-vendored-payload.md) | [Agent Skill Management](../.agents/skills/agent-skill-management/SKILL.md); first consumers are the superpowers package and crit's plan-review hook. |
-| [ADR 0020 - chezmoi apply reconciles plugin install records](adr/0020-apply-reconciles-plugin-installs.md) | `reconcile-agent-plugins --apply`, run by `run_onchange_after_36-agent-plugins`; see [Plugin Reconcile](../.agents/skills/agent-skill-management/references/plugin-reconcile.md). |
-| [ADR 0021 - Shared plist verification](adr/0021-shared-plist-verification.md) | [Tests index](../tests/README.md#plist-merge-verification) and [Chezmoi Architecture](references/chezmoi-architecture.md). |
-| [ADR 0022 - Bats with repo-owned zsh test support](adr/0022-bats-and-zsh-test-support.md) | [Test Refactoring](plans/test-suite-rebuild-plan.md); implemented and validated locally and in remote CI. |
-| [ADR 0023 - Isolate marketplace packaging and commit APM module inputs](adr/0023-apm-agent-marketplace-packaging.md) | Accepted; [APM Agent Marketplace plan](plans/apm-agent-marketplace-plan.md). Current operations are in the [marketplace reference](references/agent-marketplace.md) and [management skill](../.agents/skills/agent-skill-management/SKILL.md). |
-| [ADR 0024 - Setapp subscription apps install from packages.toml](adr/0024-setapp-subscription-app-installs.md) | `setapp_apps` groups in `packages.toml`, rendered by `scripts/packages/render-setapp-applist` and installed by `run_after_22-setapp-apps` via Setapp's store API. |
-| [ADR 0025 - Share APM acquisition across native plugins](adr/0025-shared-apm-acquisition.md) | One root manifest, lock, and committed cache; per-plugin native metadata remains. See the [marketplace reference](references/agent-marketplace.md). |
-| [ADR 0026 - just as the task runner](adr/0026-just-task-runner.md) | Accepted; [justfile migration plan](plans/justfile-migration-plan.md). Both Makefiles replaced and per-file test targets deleted; selection moves to the runners. See the [tests index](../tests/README.md). |
-| [ADR 0027 - Codex CLI installs standalone](adr/0027-codex-standalone-installer.md) | Accepted; `run_after_07-codex-standalone.sh` installs the CLI through OpenAI's installer and `[packages.retired]` drops the cask, because `/agents` and the app-server daemon need the standalone layout. See [Mise Tool Management](references/mise-tool-management.md) > Codex workflow. |
-| [ADR 0028 - Sibling router skill over vendored remap](adr/0028-router-skill-over-vendor-remap.md) | Accepted; when local conventions and a vendored skill share a subject, publish both as siblings in one package and split the trigger between their descriptions. First customer: the `acpx` / `acpx-cli` pair ([plan](plans/acpx-skill-packaging-plan.md)). |
-| [ADR 0029 - Claude Code CLI installs natively](adr/0029-claude-code-native-installer.md) | Accepted; `run_after_06-claude-native.sh` installs the CLI through Anthropic's installer and retires the npm copies, because npm updates rewrite the package tree under running sessions. See [Mise Tool Management](references/mise-tool-management.md) > Claude Code workflow. |
-| [ADR 0030 - Touch ID for sudo](adr/0030-touchid-sudo.md) | Exact-payload ownership superseded by [ADR 0038](adr/0038-touchid-sudo-adopts-existing-file.md); the machine flag and apply hook remain. |
-| [ADR 0031 - Discover landing workflows](adr/0031-discovered-landing-workflows.md) | [Land-changes skill](../agent-marketplace/packages/review/skills/land-changes/SKILL.md) and [dotfiles landing](runbooks/dotfiles-landing.md). |
-| [ADR 0032 - acpx model routing](adr/0032-acpx-model-routing.md) | Superseded by [ADR 0045](adr/0045-acpx-explicit-model-profiles.md); original routing and ownership architecture. |
-| [ADR 0033 - Skill-owned Jev browser runner](adr/0033-skill-owned-jev-browser-runner.md) | Placement superseded by ADR 0035; the shared JSON runner and borrowed browser ownership remain. The [completed experiment](plans/jev-browser-runner-plan.md) rejected adoption. |
-| [ADR 0034 - Discover Jev controls in the browser skill](adr/0034-discover-jev-controls-in-the-browser-skill.md) | Archived; dynamic discovery retained unchanged in the suspended experiment. |
-| [ADR 0035 - Separate experimental Jev browser skill](adr/0035-separate-experimental-jev-browser-skill.md) | Superseded by [ADR 0050](adr/0050-suspend-jev-in-experimental-plugin.md); sibling publication in utils-agent retired. |
-| [ADR 0036 - ACPX shared Herdr pane](adr/0036-acpx-shared-herdr-pane.md) | [ACPX shared pane plan](plans/acpx-shared-pane-plan.md) and the [acpx skill](../agent-marketplace/packages/utils-agent/skills/acpx/SKILL.md). |
-| [ADR 0037 - Repo-tracked landing preferences](adr/0037-repo-tracked-landing-preferences.md) | [Land-changes preferences](../agent-marketplace/packages/review/skills/land-changes/references/preferences.md). |
-| [ADR 0038 - Touch ID for sudo adopts any existing sudo_local](adr/0038-touchid-sudo-adopts-existing-file.md) | [Chezmoi Architecture](references/chezmoi-architecture.md#touch-id-for-sudo); `sudo-touchid`'s adopt-and-remove model for the apply hook. |
-| [ADR 0039 - Work overlay lives in the work repo](adr/0039-work-overlay-in-work-repo.md) | Accepted; a prompted, shallow git-repo external brings the work overlay's Slack fragments and its `work-overlay` native marketplace, installed by the reconciler's `--overlay` mode. [Agent Marketplace](references/agent-marketplace.md). |
-| [ADR 0040 - Devbox machine type](adr/0040-devbox-machine-type.md) | Allowlist superseded by [ADR 0043](adr/0043-devbox-os-gating.md); the `devbox` type, declared `os`, and Homebrew group remain. [Linux devbox plan](plans/linux-devbox-plan.md). |
-| [ADR 0041 - agent_clis is the single per-machine agent declaration](adr/0041-agent-clis-single-declaration.md) | Accepted; [agent_clis consolidation plan](plans/agent-clis-consolidation-plan.md). A catalogue plus one validated list replaces per-CLI gates. |
-| [ADR 0042 - Reconcile Orca settings through its profile-state store](adr/0042-orca-profile-state-reconcile.md) | Accepted; [Orca settings store plan](plans/orca-settings-store-plan.md). Revision-fenced SQLite write with Orca stopped, via the plist guard. |
-| [ADR 0043 - Gate the devbox by OS, not by an allowlist](adr/0043-devbox-os-gating.md) | Accepted; [Linux devbox plan](plans/linux-devbox-plan.md). The devbox takes the whole source state; macOS targets, `.chezmoiremove`, and synced agent asset directories are gated off it. |
-| [ADR 0044 - Karabiner is the only keyboard remapper](adr/0044-karabiner-sole-remapper.md) | Accepted; kanata removed, closing the open item in [ADR 0009](adr/0009-goku-karabiner-codegen.md). Layers the Mac must know about are Karabiner variables. |
-| [ADR 0045 - ACPX explicit model profiles](adr/0045-acpx-explicit-model-profiles.md) | Accepted; pin workhorse, writing, previous, and escalation profiles while preserving machine routing. |
-| [ADR 0046 - Declarative TCC onboarding with a native helper](adr/0046-tcc-onboarding.md) | Superseded by [ADR 0047](adr/0047-tcc-cli-first-apply.md); original native helper and opt-in prompt decision. |
-| [ADR 0047 - CLI-first permission auditing during apply](adr/0047-tcc-cli-first-apply.md) | Accepted; default desktop-role read-only auditing with manual native review. [Runbook](runbooks/tcc-onboarding.md). |
-| [ADR 0048 - The repo owns the NocFree keymap](adr/0048-repo-managed-nocfree-keymap.md) | Accepted; one stored Vial keymap applied to the cable and dongle by `scripts/keyboard/nocfree-keymap`, a firmware copy of the nav layer, and Karabiner-owned select mode through F20. |
-| [ADR 0050 - Suspend Jev in experimental](adr/0050-suspend-jev-in-experimental-plugin.md) | Accepted; default-disabled experimental plugin, explicit invocation, and optional offline checks. |
-| [ADR 0051 - Camofox REST browser recipe](adr/0051-camofox-rest-browser-recipe.md) | Accepted; explicit task-owned Camofox REST, pinned Camoufox, tool telemetry disabled, ephemeral state and runtime/controller separation. Obscura adoption dropped. |
-
-## Research
-
-- [Mac utility design precedents, 2016–2026](research/macos-permission-utility-design.md): award census, inspected desktop interfaces, editorial utility reviews, and proposed permission-helper visual directions.
-
-| Doc | Use it for |
-| --- | --- |
-| [Jev Browser Integrations](research/jev-browser-integrations.md) | Archived evidence from the suspended experiment; adoption was rejected and the dynamic follow-up remains unmeasured. |
-| [Shell Testing Framework Comparison](research/shell-testing-framework-comparison.md) | Alternatives, decision history, and experiment/upstream evidence supporting the [Test Refactoring plan](plans/test-suite-rebuild-plan.md). |
-| [Agent Skill Collection Audit](research/agent-skill-collection-audit.md) | Remaining manual collection lists, native marketplace candidates, intentional subsets, and customized upstream copies. |
-| [Agent Skill Management Research](research/agent-skill-management-research.md) | Background on skill context pressure, package layout, and plugin defaults. |
-| [Public Dotfiles Skill Packaging](research/public-dotfiles-skills-packaging-research.md) | Eight public examples of skill source ownership, installation, and updates, with pinned source links and a comparison to this repo. |
-| [Nix Agent Skill Packaging](research/nix-agent-skills-packaging-research.md) | Five public Nix configurations, Home Manager skill and plugin options, source catalogs, dependency packaging, and deployment ownership. |
-| [Nix Agent Tooling Audit](research/nix-agent-tooling-audit.md) | 2026-10-15 reuse audit: llm-agents.nix and other package sets, skill/plugin frameworks, upstream Home Manager Claude/Codex modules (#9906, mutableSettings), and personal configs; feeds the agent-skills split plan. |
-| [Agent Marketplace Packaging Tools](research/agent-marketplace-packaging-tools-research.md) | Packaging tools and reusable compilers for reviewed local skill sources, separate plugins, and Claude/Codex marketplace output. |
-| [APM Skill Marketplace Spike](research/apm-skill-marketplace-spike.md) | Executed APM source publication, native Claude/Codex inventory parity, offline updates, bundle limitations, and the Mise setup incident. |
-| [pstack Context Impact](research/pstack-context-impact.md) | Pinned pstack package contents, default-disabled and human-only controls, Claude/Codex context projections, native discovery checks, and Cursor-specific compatibility limits. |
-| [APM Migration Verification](research/apm-marketplace-migration-verification.md) | Executed acquisition, source transport, native recovery, changed-source plain apply, fresh skill invocation, authored/imported edit and restore, and legacy backup review. |
-| [APM Module Vendoring](research/apm-modules-vendoring-research.md) | Pinned source findings for committing APM caches, native lock-only acquisition, local patches, Git round-trip checks, and deferred registry/mirror options. |
-| [Skill Invocation-Control Frontmatter](research/skill-invocation-frontmatter-research.md) | Which harnesses honor `disable-model-invocation` and `user-invocable`, with per-harness evidence and citations. |
-| [Self-Improving Agents](research/self-improving-agents.md) | Pattern reference for durable agent feedback loops. |
-| [macOS Defaults: Sources And Verified Facts](research/macos-defaults-sources.md) | Sources to mine for the next rework of the macOS defaults layer, plus key encodings and Apple Silicon power facts verified on hardware. |
-| [acpx Rewrite Model Bake-Off](research/acpx-rewrite-model-bakeoff.md) | Superseded historical quality experiment; `agptw` now follows the explicit writing profile in [acpx Routing](references/acpx-routing.md). |
-| [acpx Visual Workflow Authoring](research/acpx-visual-workflow-authoring.md) | Native authoring limits, replay viewer capabilities, current release verification, and visual workflow alternatives. |
-| [acpx Flow Capabilities](research/acpx-flow-capabilities.md) | Native flow control, orchestration gaps, and the fit with historical workflow discussions. |
-| [Nix Migration Research](research/nix-migration-research.md) | Why the repo stays on chezmoi, what a package-only nix spike would look like, and the work-Mac MDM check that gates nix-darwin. |
-| [Ralph Loop Workflow](research/ralph-loop-workflow.md) | Build log for an unattended plan/implement/review loop that commits and fast-forwards a real branch: what the design has to get right, the blockers an adversarial review caught before first run, and the guardrail that is still too strict. |
-| [NocFree Lite Firmware](research/nocfree-lite-firmware.md) | What the Lite's stock Vial firmware allows for layer keys, RGB, and host-visible layer state; its USB IDs for Karabiner; why custom firmware is not a practical path; the 2026-10-06 device read (per-key VialRGB on the cable, none on the dongle); and the checks still open. |
-| [NocFree Community Usage](research/nocfree-community-usage.md) | Survey of vendor pages, GitHub, Reddit, and reviews for the Lite, Lite V2, and &: shared layouts and nav layers, macOS notes, 2.4G reliability reports, the Lite dongle's UF2 firmware, mods, complaints with vendor replies, and ranked ideas for Prateek's setup. |
-| [Go60 Layout Patterns](research/go60-layout-patterns.md) | Sweep of 2,023 public MoErgo Go60 layouts: where navigation layers put arrows, how layers are activated and left, selection without holding Shift, layer indication, and ranked options for leaving the Karabiner nav layer. |
-
-## Package Helper
-
-- [Archived implementation plan](plans/package-helper-plan.md)
-- [Shared package operations ADR](adr/0049-shared-package-operations.md)
-
-## Historical Records
-
-These documents are retained for archaeology. Follow their `current_guidance`
-or `superseded_by` frontmatter before using them.
-
-| Doc | Current guidance |
-| --- | --- |
-| [Additional Upstream Agent Plugins](plans/additional-upstream-agent-plugins-plan.md) | Verified UI/UX Pro Max, Crit, and Better Writing marketplace adoption and Codex collection adapters; use the [marketplace reference](references/agent-marketplace.md). |
-| [Upstream Agent Plugins](plans/upstream-agent-plugins-plan.md) | Verified native marketplace migration and refreshed compatibility adapters; use the [marketplace reference](references/agent-marketplace.md) and [ADR 0049](adr/0049-official-agent-plugin-marketplaces.md). |
-| [Leader Key to Tuna Migration](plans/leader-key-to-tuna-migration-plan.md) | Archived cutover record; the live binds are `home/dot_config/tuna/config.toml` and the left-Cmd trigger is in `home/dot_config/karabiner.edn.tmpl`. |
-| [G95NC Preconditions and Diagnostics](plans/g95nc-diagnostics-plan.md) | Completed command hardening; use the [runbook](runbooks/g95nc-display.md). |
-| [Complete G95NC Modes](plans/g95nc-complete-modes-plan.md) | Implemented app-wide reset and native-output verification; local installation and hardware limits recorded. Use the [runbook](runbooks/g95nc-display.md). |
-| [Jev Browser Runner](plans/jev-browser-runner-plan.md) | Completed implementation and development experiment; adoption rejected. Use the [experimental skill reference](../agent-marketplace/packages/experimental/skills/browser-jev/references/jev.md) and [research findings](research/jev-browser-integrations.md). |
-| [Jev Deterministic Preparation](plans/jev-deterministic-preparation-plan.md) | Archived; experiment suspended with end-to-end comparison still unmeasured. See [ADR 0050](adr/0050-suspend-jev-in-experimental-plugin.md). |
-| [ACPX Explicit Profiles](plans/acpx-explicit-profiles-plan.md) | Archived implementation record; pinned model/effort defaults and independent review. See [current guidance](references/acpx-routing.md). |
-| [acpx Routing](plans/acpx-routing-plan.md) | Superseded generation-based implementation; see [explicit profiles](plans/acpx-explicit-profiles-plan.md). |
-| [Native acpx Skill Rewrite](plans/acpx-native-skill-rewrite-plan.md) | Archived implementation record for native ACP nodes and bounded child flows; current operation and live-pilot results are in the [runbook](runbooks/acpx-skill-rewrite.md). |
-| [acpx Skill Rewrite](plans/acpx-skill-rewrite-plan.md) | Archived authoring and fixture-validation record; current operation and live-pilot results are in the [runbook](runbooks/acpx-skill-rewrite.md). |
-| [acpx Claude Code Streaming PoC](plans/acpx-claude-streaming-poc-plan.md) | Completed; the relay loop it proved now lives in the acpx skill's [harness lanes](../agent-marketplace/packages/utils-agent/skills/acpx/references/harness-lanes.md), and the packaging follow-up went to [ADR 0028](adr/0028-router-skill-over-vendor-remap.md). |
-| [Portable land-changes](plans/portable-land-changes-plan.md) | Review plugin's [published skill source](../agent-marketplace/packages/review/skills/land-changes/SKILL.md) and [dotfiles landing](runbooks/dotfiles-landing.md). |
-| [Discovered Landing Workflows](plans/land-changes-workflow-plan.md) | Implemented in review 2.0.0; use the [skill](../agent-marketplace/packages/review/skills/land-changes/SKILL.md) and [dotfiles landing](runbooks/dotfiles-landing.md). |
-| [APM Agent Marketplace](plans/apm-agent-marketplace-plan.md) | Completed shared acquisition, just-based apply, native skill invocation, maintenance round trip, and CI verification. Use the [marketplace reference](references/agent-marketplace.md); see the [rollout evidence](research/apm-marketplace-migration-verification.md#rollout-completion). |
-| [Agent Plugin Renderer](plans/agent-plugin-renderer-plan.md) | Replaced by [APM Agent Marketplace](plans/apm-agent-marketplace-plan.md); [current guidance](references/agent-marketplace.md). |
-| [Test Refactoring](plans/test-suite-rebuild-plan.md) | Completed Bats/native runner migration, local and remote CI validation, and scoped apply; [tests index](../tests/README.md) and [ADR 0022](adr/0022-bats-and-zsh-test-support.md). |
-| [Shared Config-Merge Verification](plans/config-merge-verification-plan.md) | Completed local implementation and validation; [tests index](../tests/README.md#plist-merge-verification) and [ADR 0021](adr/0021-shared-plist-verification.md). |
-| [Chezmoi Agent Skills Plan](plans/chezmoi-agent-skills-plan.md) | [Agent Skill Management](../.agents/skills/agent-skill-management/SKILL.md) and [ADR 0007](adr/0007-default-loaded-plugin-policy.md). |
-| [Chezmoi Drift Banner Plan](plans/chezmoi-drift-banner-plan.md) | [Shell Banner Plan](plans/shell-banner-plan.md) and [Shell Banner](../home/dot_config/dotfiles/shell-banner/README.md), which generalized this feature to fastfetch and multiple sources. |
-| [Chezmoi Migration Plan](plans/chezmoi-migration-plan.md) | [Chezmoi Architecture](references/chezmoi-architecture.md). |
-| [Crit Agent Bridge](plans/crit-agent-bridge-plan.md) | Retired; crit's `agent_cmd` now runs full-access claude directly (`home/modify_private_dot_crit.config.json.tmpl`), and the acpx shortcuts remain for general use. |
-| [Crit Integration](plans/crit-integration-plan.md) | Live repo state ([Agent Skill Management](../.agents/skills/agent-skill-management/SKILL.md)); the superseding plannotator experiment was reverted. |
-| [Plannotator Experiment](plans/plannotator-experiment-plan.md) | [Crit Integration](plans/crit-integration-plan.md) setup restored; reverted 2026-08-25, reland from history if retried. |
-| [Config-Gating Simplification](plans/config-gating-simplification-plan.md) | [ADR 0012](adr/0012-config-gating-convention.md) and [Chezmoi Architecture](references/chezmoi-architecture.md). |
-| [Machine-Type Package Selection](plans/machine-type-package-selection-plan.md) | [ADR 0010](adr/0010-machine-type-package-selection.md) and [Chezmoi Architecture](references/chezmoi-architecture.md). |
-| [Linux Work DevPod Orca Pilot](plans/linux-work-devpod-orca-pilot-plan.md) | Reverted before final cold-start acceptance; no Linux profile is active. |
-| [Linux Work DevPod And Orca](runbooks/linux-work-devpod-orca.md) | Historical operating procedure for the reverted pilot. |
-| [Docs Reorg And Agent-Surface Refresh](plans/docs-reorg-plan.md) | `AGENTS.md`, [Documentation Index](index.md), and [Document Lifecycle](document-lifecycle.md). |
-| [GRM Repo](references/grmrepo.md) | [Git Conventions](../home/dot_agents/docs/git.md) for the `gh`/clone workflow; repos are cloned with `ghc`/`gh`. |
-| [Setup Downstream Fork Plan](plans/setup-downstream-fork-plan.md) | [ADR 0015](adr/0015-downstream-fork-daily-driver.md) and the [`fork-lifecycle` skill](../.agents/skills/fork-lifecycle/SKILL.md). |
-| [Setup Downstream Fork Secrets](plans/setup-downstream-fork-secrets-plan.md) | [ADR 0015](adr/0015-downstream-fork-daily-driver.md); credentials now flow through a 1Password service account. |
-| [Worktree Convention Cleanup](plans/worktree-convention-cleanup-plan.md) | [Worktrees](../home/dot_agents/docs/worktrees.md) and [Git Conventions](../home/dot_agents/docs/git.md) for the Orca worktree workflow; worktrunk and the custom `grm` integration were removed. |
+- [Decision records](inventory.md#decision-records): every ADR with its
+  successor or current guidance.
+- [Research](inventory.md#research): evidence documents and the decisions
+  they informed.
+- [Closed plans](inventory.md#closed-plans) still in the tree, and the
+  [retirement ledger](retired.md) for those that have left it.

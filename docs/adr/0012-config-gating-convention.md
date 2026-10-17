@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "Chezmoi toggles split into render-time auto-derived values and init-time declared data, implemented as one identity prompt plus a layered `machines.toml` resolved by `features.tmpl`."
 created: 2026-06-26
 owner: Prateek
 related:

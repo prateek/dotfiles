@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: runbook
+summary: "Corporate CA trust for Node clients in shells and GUI apps behind a decrypting proxy."
 owner: Prateek
 created: 2026-09-08
 updated: 2026-09-26

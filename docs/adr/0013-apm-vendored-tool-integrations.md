@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "Agent tool integrations such as crit are APM-vendored into reviewed packages and projected by the renderers, like every other agent-facing dependency."
 created: 2026-07-02
 owner: Prateek
 related:

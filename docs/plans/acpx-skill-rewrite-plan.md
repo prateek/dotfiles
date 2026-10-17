@@ -1,6 +1,7 @@
 ---
 status: archived
 doc_type: plan
+summary: "Archived authoring and fixture-validation record; current operation and live-pilot results are in the runbook."
 created: 2026-09-26
 updated: 2026-09-26
 closed: 2026-09-26

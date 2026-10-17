@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "Downstream forks are thin assembly repos holding intent (manifest, patches, rerere) rather than upstream code, consolidated in one `prateek/forks` monorepo that is also the tap."
 created: 2026-07-03
 updated: 2026-07-04
 owner: Prateek

@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: runbook
+summary: "Required SSD mounts before apply computes targets or installs packages."
 owner: Prateek
 created: 2026-09-05
 updated: 2026-09-17

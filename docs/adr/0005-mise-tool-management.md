@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "Mise is the tool selection layer for repo-owned CLI workflows, replacing the local `devtool` shims, using registry names, aqua or github backends, and `mise link` for one-offs."
 created: 2026-04-27
 owner: Prateek
 related:

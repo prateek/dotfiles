@@ -29,7 +29,7 @@ class DocsFixture(RepoTestCase):
         return path
 
     def doc(self, relative, body="# Document\n\nBody.", *, status="active", kind="plan", **metadata):
-        fields = {"status": status, "doc_type": kind} | metadata
+        fields = {"status": status, "doc_type": kind, "summary": "Fixture document."} | metadata
         frontmatter = "\n".join(f"{key}: {json.dumps(value)}" for key, value in fields.items())
         return self.write(relative, f"---\n{frontmatter}\n---\n\n{body}\n")
 
@@ -38,16 +38,29 @@ class DocsFixture(RepoTestCase):
         entries = sorted(item.relative_to(self.docs).as_posix() for item in self.docs.rglob("*.md"))
         with path.open("a") as stream:
             stream.write("\n" + "\n".join(f"- [{name}]({name})" for name in entries) + "\n")
+        self.inventory()
 
-    def validate(self, *, error=None, base=None, docs_root=None, refresh_index=True):
+    def validator(self, *args, expected_status=0):
+        argv = [str(ROOT / "docs/validate-doc-lifecycle.py"), "--repo-root", str(self.repo), *args]
+        return self.command(argv, expected_status=expected_status)
+
+    def inventory(self):
+        self.validator("--docs-root", str(self.docs), "--write-inventory")
+
+    def ledger(self, *rows):
+        body = "# Retirement Ledger\n\n| Closed | Path | Doc | Status | Where it went |\n| --- | --- | --- | --- | --- |\n"
+        body += "".join(f"| {closed} | {path} | {doc} | {status} | {where} |\n" for closed, path, doc, status, where in rows)
+        return self.doc("retired.md", body, status="current", kind="index")
+
+    def validate(self, *, error=None, base=None, docs_root=None, refresh_index=True, refresh_inventory=True):
         if refresh_index:
             self.index()
-        argv = [str(ROOT / "docs/validate-doc-lifecycle.py"), "--repo-root", str(self.repo)]
-        if base:
-            argv += ["--base", base]
+        elif refresh_inventory:
+            self.inventory()
+        args = ["--base", base] if base else []
         if docs_root:
-            argv += ["--docs-root", str(docs_root)]
-        result = self.command(argv, expected_status=1 if error else 0)
+            args += ["--docs-root", str(docs_root)]
+        result = self.validator(*args, expected_status=1 if error else 0)
         if error:
             self.assertIn(error, result.stderr.decode())
         else:
@@ -55,8 +68,8 @@ class DocsFixture(RepoTestCase):
             self.assertEqual(result.stderr, b"")
         return result
 
-    def git(self, *args, raw=b""):
-        return self.command(["git", "-C", str(self.repo), *args], raw, cwd=self.repo).stdout.decode().strip()
+    def git(self, *args, raw=b"", env=None):
+        return self.command(["git", "-C", str(self.repo), *args], raw, cwd=self.repo, env=env).stdout.decode().strip()
 
     def commit(self, message="fixture"):
         self.index()

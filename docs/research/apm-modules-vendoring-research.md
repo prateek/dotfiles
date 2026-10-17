@@ -1,6 +1,7 @@
 ---
 status: draft
 doc_type: research
+summary: "Pinned source findings for committing APM caches, native lock-only acquisition, local patches, Git round-trip checks, and deferred registry/mirror options."
 owner: Prateek
 created: 2026-09-06
 updated: 2026-09-06

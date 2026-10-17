@@ -94,4 +94,4 @@ class BranchHistoryTests(DocsFixture):
         path.unlink()
         self.doc("adr/0002-unrelated.md", "# Unrelated\n\nShared body.", status="accepted", kind="adr")
         self.commit("replace with unrelated duplicate body")
-        self.validate(base=base, error="locked historical doc cannot be deleted")
+        self.validate(base=base, error="ADRs cannot be deleted")

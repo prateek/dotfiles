@@ -1,6 +1,7 @@
 ---
 status: archived
 doc_type: plan
+summary: "ADR 0015 and the `fork-lifecycle` skill."
 owner: Prateek
 updated: 2026-07-03
 closed: 2026-05-15

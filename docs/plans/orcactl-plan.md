@@ -1,6 +1,7 @@
 ---
 status: draft
 doc_type: plan
+summary: "A kubectl-shaped Go CLI for Orca that packages fork, handoff, PR review, resume, pane reading, and layout flows as first-class commands, in its own repo"
 owner: Prateek
 created: 2026-05-13
 updated: 2026-09-07

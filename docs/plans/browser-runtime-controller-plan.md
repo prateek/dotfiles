@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: plan
+summary: "Camofox REST adoption for the browser skill with explicit mise setup, repair, supervisor checks, and automatic generic fallback under the existing runtime constraints."
 created: 2026-10-16
 updated: 2026-10-17
 related:

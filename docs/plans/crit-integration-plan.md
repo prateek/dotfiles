@@ -1,6 +1,7 @@
 ---
 status: superseded
 doc_type: plan
+summary: "Live repo state (Agent Skill Management); the superseding plannotator experiment was reverted."
 owner: Prateek
 created: 2026-07-02
 updated: 2026-08-25

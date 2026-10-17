@@ -1,6 +1,7 @@
 ---
 status: proposed
 doc_type: plan
+summary: "A host memory-pressure circuit breaker for the Tartelet runner mini that sheds the runner VM before macOS jetsam kills host processes"
 owner: Prateek
 created: 2026-07-04
 updated: 2026-07-04

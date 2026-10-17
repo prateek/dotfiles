@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: plan
+summary: "Moves acpx conventions out of the machine AGENTS.md into a router skill beside the vendored upstream skill, with trigger arbitration and permission-claim checks"
 owner: Prateek
 created: 2026-09-08
 updated: 2026-09-08

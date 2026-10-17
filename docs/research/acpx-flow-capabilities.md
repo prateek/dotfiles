@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: research
+summary: "Native flow control, orchestration gaps, and the fit with historical workflow discussions."
 owner: Prateek
 created: 2026-09-26
 updated: 2026-09-26

@@ -1,6 +1,7 @@
 ---
 status: archived
 doc_type: plan
+summary: "Worktrees and Git Conventions for the Orca worktree workflow; worktrunk and the custom `grm` integration were removed."
 owner: Prateek
 created: 2026-06-29
 updated: 2026-06-30

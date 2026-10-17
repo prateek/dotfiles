@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: plan
+summary: "Design for a SUDO_ASKPASS helper backed by the 1Password CLI so chezmoi apply needs one TouchID tap on work Macs with no sudo credential caching"
 owner: Prateek
 created: 2026-05-13
 updated: 2026-05-15

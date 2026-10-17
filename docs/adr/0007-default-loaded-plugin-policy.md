@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "A `default_loaded` field in `package.toml` sets each plugin's default enablement across Claude and Codex, with per-project settings files as the override path."
 created: 2026-05-13
 owner: Prateek
 related:

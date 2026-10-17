@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: runbook
+summary: "Standing up a homelab mini as an ephemeral iOS/macOS GitHub Actions runner host."
 owner: Prateek
 created: 2026-07-03
 updated: 2026-09-26

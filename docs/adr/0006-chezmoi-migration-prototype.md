@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "The canonical checkout stays at `~/dotfiles` with `.chezmoiroot` set to `home`, native chezmoi source naming, and repo tooling kept outside the source state."
 created: 2026-04-26
 owner: Prateek
 related:

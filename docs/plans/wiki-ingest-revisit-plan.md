@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: plan
+summary: "Daily agent-session wiki ingest on m4mini as the single host, run by Orca with a pinned Claude model and effort and a page limit per run"
 owner: Prateek
 created: 2026-09-05
 updated: 2026-09-07

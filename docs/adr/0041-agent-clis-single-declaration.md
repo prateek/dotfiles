@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "`agent_clis` in `machines.toml` is the single per-machine agent CLI declaration, validated against the `agents.toml` catalogue, from which every install and config gate derives."
 owner: Prateek
 created: 2026-09-30
 updated: 2026-09-30

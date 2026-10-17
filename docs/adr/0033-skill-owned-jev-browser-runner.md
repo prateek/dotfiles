@@ -1,6 +1,7 @@
 ---
 status: superseded
 doc_type: adr
+summary: "Jev execution lives in the shared `browser` skill as a Node runner with a versioned JSON job contract that borrows the skill's page and returns verified evidence."
 created: 2026-09-26
 updated: 2026-09-27
 closed: 2026-09-27

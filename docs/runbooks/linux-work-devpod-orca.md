@@ -1,6 +1,7 @@
 ---
 status: archived
 doc_type: runbook
+summary: "Historical operating procedure for the reverted pilot."
 owner: Prateek
 created: 2026-09-02
 updated: 2026-09-04

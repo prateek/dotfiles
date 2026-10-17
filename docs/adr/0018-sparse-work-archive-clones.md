@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "Work machines keep a blobless, sparse clone of the session archive limited to their own sessions, shaped by `agent_session_wiki_sparse` and `reconcile-wiki-clone`."
 created: 2026-09-01
 owner: Prateek
 related:

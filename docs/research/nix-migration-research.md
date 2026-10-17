@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: research
+summary: "Why the repo stays on chezmoi, what a package-only nix spike would look like, and the work-Mac MDM check that gates nix-darwin."
 owner: Prateek
 created: 2026-09-03
 updated: 2026-09-05

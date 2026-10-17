@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "Karabiner-Elements is the only keyboard remapper the repo manages; kanata is removed and layers the Mac must know about are Karabiner variables."
 owner: Prateek
 created: 2026-10-05
 updated: 2026-10-05

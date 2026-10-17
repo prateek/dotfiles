@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "The Claude Code CLI installs through Anthropic's native installer in `run_after_06-claude-native.sh`, retiring npm copies that rewrite the package tree under running sessions."
 owner: Prateek
 created: 2026-09-08
 updated: 2026-09-08

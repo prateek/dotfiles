@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: plan
+summary: "Adds a machine-wide decomment skill that strips AI-written comment slop from agent-authored code, with auto-triggering fixes and an eval suite"
 owner: Prateek
 created: 2026-07-01
 updated: 2026-08-23

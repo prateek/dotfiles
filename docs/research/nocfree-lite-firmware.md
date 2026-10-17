@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: research
+summary: "What the Lite's stock Vial firmware allows for layer keys, RGB, and host-visible layer state; its USB IDs for Karabiner; why custom firmware is not a practical path; the 2026-10-06 device read (per-key VialRGB on the cable, none on the dongle); and the checks still open."
 owner: Prateek
 created: 2026-10-05
 updated: 2026-10-06

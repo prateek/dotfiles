@@ -1,6 +1,7 @@
 ---
 status: archived
 doc_type: plan
+summary: "Completed Bats/native runner migration, local and remote CI validation, and scoped apply; tests index and ADR 0022."
 owner: Prateek
 created: 2026-07-04
 updated: 2026-09-06

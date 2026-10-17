@@ -1,6 +1,7 @@
 ---
 status: superseded
 doc_type: plan
+summary: "Superseded generation-based implementation; see explicit profiles."
 created: 2026-09-22
 updated: 2026-10-05
 closed: 2026-10-05

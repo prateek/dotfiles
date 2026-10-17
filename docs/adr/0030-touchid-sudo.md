@@ -1,6 +1,7 @@
 ---
 status: superseded
 doc_type: adr
+summary: "Touch ID for sudo is enabled by a chezmoi hook that owns an exact two-line `pam_tid` payload in `/etc/pam.d/sudo_local`, gated by the `touchid_sudo` machine flag."
 owner: Prateek
 created: 2026-08-30
 updated: 2026-09-28

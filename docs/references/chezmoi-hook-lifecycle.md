@@ -1,6 +1,7 @@
 ---
 status: current
 doc_type: reference
+summary: "Ordering and design rules for config hooks, apply scripts, init, and modify targets."
 owner: Prateek
 created: 2026-09-02
 updated: 2026-10-06

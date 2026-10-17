@@ -1,6 +1,7 @@
 ---
 status: current
 doc_type: runbook
+summary: "Local disposable-VM install validation on a Mac mini."
 related:
   - ../adr/0002-zsh-fresh-shell-validator.md
   - ../adr/0004-tart-install-validation-and-tracing.md

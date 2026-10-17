@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "The repo owns the NocFree keymap as one Vial `.vil` file applied to cable and dongle by `scripts/keyboard/nocfree-keymap`, with Karabiner owning select mode via F20."
 owner: Prateek
 created: 2026-10-06
 updated: 2026-10-06

@@ -1,6 +1,7 @@
 ---
 status: archived
 doc_type: plan
+summary: "Implemented app-wide reset and native-output verification; local installation and hardware limits recorded. Use the runbook."
 created: 2026-10-11
 closed: 2026-10-11
 current_guidance: ../runbooks/g95nc-display.md

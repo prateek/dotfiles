@@ -1,6 +1,7 @@
 ---
 status: archived
 doc_type: plan
+summary: "ADR 0010 and Chezmoi Architecture."
 owner: Prateek
 created: 2026-06-23
 updated: 2026-06-29

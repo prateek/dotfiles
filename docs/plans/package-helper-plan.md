@@ -1,6 +1,7 @@
 ---
 status: archived
 doc_type: plan
+summary: "Archived implementation plan"
 closed: 2026-10-12
 current_guidance: ../references/dotpkgs.md
 created: 2026-10-12

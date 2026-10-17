@@ -1,6 +1,7 @@
 ---
 status: current
 doc_type: reference
+summary: "Temporary admin elevation on Jamf-managed work Macs."
 created: 2026-05-12
 updated: 2026-10-06
 related:

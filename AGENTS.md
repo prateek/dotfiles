@@ -14,8 +14,8 @@ This is the repo-specific contract for coding agents working in Prateek's dotfil
 - `home/dot_claude/`: chezmoi-managed Claude config for this machine. Its `CLAUDE.md` target should symlink to `../.agents/AGENTS.md`.
 - `home/dot_codex/`: chezmoi-managed Codex config for this machine.
 - `scripts/`: focused helpers for packages, macOS/app config, Tart, traces, audits, and hooks.
-- `docs/index.md`: starting point for current guidance, active plans, ADRs, and historical records.
-- `docs/document-lifecycle.md`: canonical frontmatter statuses and transition rules for `docs/`.
+- `docs/index.md`: router to current guidance and open plans. `docs/inventory.md` is the generated list of every doc; `docs/retired.md` is the ledger of docs that left the tree.
+- `docs/document-lifecycle.md`: frontmatter contract, statuses, retirement rule, and validator rules for `docs/`.
 - `docs/plans/`: non-trivial repo change plans.
 - `docs/references/`: current operator-facing architecture and reference docs.
 - `docs/runbooks/`: current step-by-step operational procedures.
@@ -44,13 +44,13 @@ adapters for compatibility needs and intentional customizations.
 
 ## Docs And Decisions
 
-- Non-trivial repo initiatives get a plan at `docs/plans/<slug>-plan.md`.
-- Architectural decisions get the next numbered ADR at `docs/adr/<NNNN>-<slug>.md`; never renumber existing ADRs.
-- Markdown docs under `docs/` must use YAML frontmatter with a canonical `status`; follow [docs/document-lifecycle.md](docs/document-lifecycle.md) for states and transitions.
-- Update [docs/index.md](docs/index.md) when docs are added, moved, closed, or reclassified.
-- Current operational guidance belongs in `docs/references/` or `docs/runbooks/`. Completed plans should be archived or superseded and point to current guidance.
-- Plan docs reference their ADRs, and ADRs reference the plan docs that prompted them. Prefer Markdown-relative links for in-repo docs.
-- Small one-off fixes do not need a plan or ADR.
+- A plan at `docs/plans/<slug>-plan.md` exists only when the work spans more than one landing or must hand off between sessions. Smaller work describes itself in its commit or PR. Prototypes and spikes stay in ignored scratch directories.
+- An ADR at `docs/adr/<NNNN>-<slug>.md` exists only when a decision is hard to reverse, surprising without context, and the result of a real trade-off. Never renumber or reuse a number.
+- Markdown docs under `docs/` carry YAML frontmatter with a canonical `status` and a one-line `summary`; follow [docs/document-lifecycle.md](docs/document-lifecycle.md).
+- A plan closes in the change that lands its last step, and a closed doc that is not an ADR leaves the tree: move durable content to a reference, runbook, ADR, or the owning skill, add a row to [docs/retired.md](docs/retired.md), delete the file. ADRs stay.
+- [docs/index.md](docs/index.md) routes to current guidance and open plans; keep its rows free of status prose. `just docs-inventory` regenerates [docs/inventory.md](docs/inventory.md), which the validator checks. `just docs-due` lists docs that need a decision.
+- Plan docs reference their ADRs, and ADRs reference the plan docs that prompted them. Research names the plan or ADR it informs in `related`. Prefer Markdown-relative links for in-repo docs.
+- Repo terms live in [GLOSSARY.md](GLOSSARY.md); add a term there when a session settles one.
 - `README.md` is user-facing and intentionally tiny. Move coding-agent or maintenance details here or into focused docs instead.
 - `AGENTS.md` should contain durable conventions only. Do not add one-off session notes.
 - Keep disposable experiments in ignored scratch directories. Retain findings in research docs, promote only useful production code/tests, and remove experiment scaffolding when its question is resolved.
@@ -61,7 +61,7 @@ adapters for compatibility needs and intentional customizations.
 - Render package input: `scripts/packages/render-brewfile --machine-type <type>` (ci/personal/homelab/work).
 - Package/app audits: `scripts/audit/brew-inventory.sh`, `scripts/audit/brewfile-usage.sh`, `scripts/audit/app-inventory.sh`.
 - Fresh-shell checks: `scripts/audit/zsh-fresh-shells.zsh verify` and `bench`.
-- Docs lifecycle checks: `just test-docs-lifecycle` for the local diff and `DOCS_LIFECYCLE_BASE=origin/master just test-docs-lifecycle` for a full branch check.
+- Docs lifecycle checks: `just test-docs-lifecycle` for the local diff and `DOCS_LIFECYCLE_BASE=origin/master just test-docs-lifecycle` for a full branch check. `just docs-inventory` after frontmatter changes; `just docs-due` for docs needing a decision.
 - Task runner: `just` at the repo root and in `agent-marketplace/`. `just --list` is the current index of recipes.
 - Test index: `tests/README.md`.
 - Tart local install lane: `docs/runbooks/tart-mini-validation.md`.

@@ -1,6 +1,7 @@
 ---
 status: superseded
 doc_type: research
+summary: "Superseded historical quality experiment; `agptw` now follows the explicit writing profile in acpx Routing."
 owner: Prateek
 created: 2026-09-03
 updated: 2026-09-22

@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "ACPX runs share one named Herdr session in a single Orca split per calling terminal, one tab per invocation, with the helper owning tabs, logs, and cancellation."
 owner: Prateek
 created: 2026-09-27
 updated: 2026-09-27

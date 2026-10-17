@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: plan
+summary: "A skill-console CLI and HTML page that simulate Claude Code's skill-listing admission budget and apply curation decisions to the chezmoi source tree"
 owner: Prateek
 created: 2026-09-01
 updated: 2026-09-06

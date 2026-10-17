@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: plan
+summary: "Generalizes the chezmoi drift banner into one fastfetch-rendered shell banner with cached status rows for chezmoi, brew, mise, and apm"
 owner: Prateek
 created: 2026-05-13
 updated: 2026-08-31

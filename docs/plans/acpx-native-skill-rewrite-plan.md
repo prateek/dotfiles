@@ -1,6 +1,7 @@
 ---
 status: archived
 doc_type: plan
+summary: "Archived implementation record for native ACP nodes and bounded child flows; current operation and live-pilot results are in the runbook."
 created: 2026-09-26
 updated: 2026-09-26
 closed: 2026-09-26

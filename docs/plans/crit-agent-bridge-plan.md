@@ -1,6 +1,7 @@
 ---
 status: archived
 doc_type: plan
+summary: "Retired; crit's `agent_cmd` now runs full-access claude directly (`home/modify_private_dot_crit.config.json.tmpl`), and the acpx shortcuts remain for general use."
 owner: Prateek
 created: 2026-07-03
 updated: 2026-08-26

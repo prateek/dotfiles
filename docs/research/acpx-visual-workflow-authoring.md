@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: research
+summary: "Native authoring limits, replay viewer capabilities, current release verification, and visual workflow alternatives."
 owner: Prateek
 created: 2026-09-26
 updated: 2026-09-26

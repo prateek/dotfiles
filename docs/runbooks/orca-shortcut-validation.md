@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: runbook
+summary: "Local, SSH, and paired-server fork comparisons, sidebar focus regression, and release-specific integration limits."
 created: 2026-10-07
 updated: 2026-10-17
 related:

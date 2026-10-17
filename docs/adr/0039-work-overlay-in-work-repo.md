@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "Work overlay content lives in Prateek's user directory in the work repo, fetched by a prompted shallow sparse external and installed via the reconciler's `--overlay` mode."
 owner: Prateek
 created: 2026-09-29
 related:

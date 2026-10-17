@@ -1,6 +1,7 @@
 ---
 status: proposed
 doc_type: plan
+summary: "Proposal to move skills, agent conventions, plugin policy, and their CLIs out of dotfiles into a Nix-built prateek/agent-skills repo activated through Home Manager"
 owner: Prateek
 created: 2026-10-15
 updated: 2026-10-15

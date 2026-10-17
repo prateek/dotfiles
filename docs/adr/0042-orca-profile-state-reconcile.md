@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "Tracked Orca settings are written into its profile-state SQLite store by an apply hook using a revision-fenced merge while Orca is stopped via the plist guard."
 owner: Prateek
 created: 2026-09-30
 updated: 2026-09-30

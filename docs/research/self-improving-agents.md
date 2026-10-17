@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: research
+summary: "Pattern reference for durable agent feedback loops."
 owner: Prateek
 created: 2026-05-11
 updated: 2026-05-18

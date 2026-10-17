@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: research
+summary: "Remaining manual collection lists, native marketplace candidates, intentional subsets, and customized upstream copies."
 created: 2026-10-12
 updated: 2026-10-12
 related:

@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: plan
+summary: "Enables Touch ID for sudo through /etc/pam.d/sudo_local during chezmoi apply, adopting an existing file and gated by the touchid_sudo machine flag"
 owner: Prateek
 created: 2026-08-30
 updated: 2026-09-28

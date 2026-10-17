@@ -1,6 +1,7 @@
 ---
 status: archived
 doc_type: plan
+summary: "Completed shared acquisition, just-based apply, native skill invocation, maintenance round trip, and CI verification. Use the marketplace reference; see the rollout evidence."
 owner: Prateek
 created: 2026-09-06
 updated: 2026-09-07

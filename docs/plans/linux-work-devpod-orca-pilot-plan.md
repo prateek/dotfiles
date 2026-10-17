@@ -1,6 +1,7 @@
 ---
 status: archived
 doc_type: plan
+summary: "Reverted before final cold-start acceptance; no Linux profile is active."
 owner: Prateek
 created: 2026-09-01
 updated: 2026-09-04

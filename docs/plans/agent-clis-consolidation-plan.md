@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: plan
+summary: "Makes agent_clis in machines.toml the single per-machine declaration of AI agent CLIs, deriving every install, config gate, and consumer from it"
 owner: Prateek
 created: 2026-09-30
 updated: 2026-09-30

@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: research
+summary: "Build log for an unattended plan/implement/review loop that commits and fast-forwards a real branch: what the design has to get right, the blockers an adversarial review caught before first run, and the guardrail that is still too strict."
 owner: Prateek
 created: 2026-09-23
 updated: 2026-09-23

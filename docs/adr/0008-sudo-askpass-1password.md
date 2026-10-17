@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "Sudo caching uses a chezmoi-managed `SUDO_ASKPASS` helper that reads the password from 1Password via `op read`, replacing the keepalive subsystem on work Macs."
 created: 2026-05-13
 updated: 2026-05-14
 owner: Prateek

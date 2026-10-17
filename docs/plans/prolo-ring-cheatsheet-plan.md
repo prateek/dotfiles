@@ -1,6 +1,7 @@
 ---
 status: draft
 doc_type: plan
+summary: "Generates a printable Prolo Ring cheat sheet from the flashed profile and a labels file at chezmoi apply time, with a live mode and gesture view"
 owner: Prateek
 created: 2026-10-06
 updated: 2026-10-06

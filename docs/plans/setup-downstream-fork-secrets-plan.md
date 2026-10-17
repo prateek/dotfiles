@@ -1,6 +1,7 @@
 ---
 status: superseded
 doc_type: plan
+summary: "ADR 0015; credentials now flow through a 1Password service account."
 owner: Prateek
 updated: 2026-07-03
 closed: 2026-07-03

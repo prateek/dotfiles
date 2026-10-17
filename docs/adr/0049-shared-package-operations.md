@@ -1,12 +1,14 @@
 ---
 status: accepted
 doc_type: adr
+summary: "`dotpkgs` is the shared Python process boundary for package inventory, version comparison, and operation planning across managers, consumed by the banner and audits."
 created: 2026-10-12
 updated: 2026-10-12
 related:
   - ../plans/package-helper-plan.md
   - ../references/dotpkgs.md
   - ../plans/dotpkgs-surface-plan.md
+status_detail: "Number 0049 is shared with 0049-official-agent-plugin-marketplaces.md; neither is renumbered."
 ---
 
 # Shared package status and operations

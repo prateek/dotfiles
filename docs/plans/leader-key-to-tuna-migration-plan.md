@@ -1,6 +1,7 @@
 ---
 status: archived
 doc_type: plan
+summary: "Archived cutover record; the live binds are `home/dot_config/tuna/config.toml` and the left-Cmd trigger is in `home/dot_config/karabiner.edn.tmpl`."
 owner: Prateek
 created: 2026-07-04
 updated: 2026-10-05

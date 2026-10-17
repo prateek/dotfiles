@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "The Codex CLI installs through OpenAI's standalone installer in `run_after_07-codex-standalone.sh`, dropping the Homebrew cask, because `/agents` and the app-server need that layout."
 owner: Prateek
 created: 2026-09-07
 updated: 2026-09-07

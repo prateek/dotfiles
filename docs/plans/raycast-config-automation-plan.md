@@ -1,6 +1,7 @@
 ---
 status: proposed
 doc_type: plan
+summary: "Backlog of Raycast settings worth managing through chezmoi: plist keys, store-extension installs, and other state the defaults domain does not reach"
 owner: Prateek
 created: 2026-08-31
 updated: 2026-09-30

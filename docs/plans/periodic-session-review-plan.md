@@ -1,6 +1,7 @@
 ---
 status: proposed
 doc_type: plan
+summary: "Recurring review of completed agent sessions that groups friction patterns across sessions, turns each into a fix with an acceptance check, and rechecks them"
 owner: Prateek
 created: 2026-09-26
 updated: 2026-09-27

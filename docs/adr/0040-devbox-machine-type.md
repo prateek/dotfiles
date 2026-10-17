@@ -1,6 +1,7 @@
 ---
 status: superseded
 doc_type: adr
+summary: "A `devbox` machine type covers the Linux Cloud Workstation, declaring its OS, installing CLIs from one minimal Homebrew group, and taking only allowlisted targets."
 owner: Prateek
 created: 2026-09-24
 updated: 2026-09-30

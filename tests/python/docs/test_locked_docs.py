@@ -65,16 +65,24 @@ class LockedDocsTests(DocsFixture):
         self.doc("adr/0001-renamed-decision.md", "# Decision\n\nEdited accepted decision body.", status="accepted", kind="adr")
         self.validate(base=self.base, error="body edits are blocked")
 
-    def test_accepted_and_archived_documents_cannot_be_deleted_or_edited(self):
+    def test_locked_documents_cannot_be_edited_and_only_non_adrs_can_retire(self):
         for name in ("adr/0001-decision.md", "plans/old-plan.md"):
             with self.subTest(name=name):
                 path = self.docs / name
                 original = path.read_text()
-                path.unlink()
-                self.validate(base=self.base, error="locked historical doc cannot be deleted")
                 path.write_text(original + "\nEdited body.\n")
                 self.validate(base=self.base, error="body edits are blocked")
                 path.write_text(original)
+        self.validate(base=self.base)
+        adr = self.docs / "adr/0001-decision.md"
+        original = adr.read_text()
+        adr.unlink()
+        self.validate(base=self.base, error="ADRs cannot be deleted")
+        adr.write_text(original)
+        plan = self.docs / "plans/old-plan.md"
+        plan.unlink()
+        self.validate(base=self.base, error="deleted doc needs a retirement row in docs/retired.md for plans/old-plan.md")
+        self.ledger(("2026-05-11", "plans/old-plan.md", "Old Plan", "archived", "Nothing durable; see [the guide](current-guide.md)."))
         self.validate(base=self.base)
 
     def test_metadata_only_edits_are_allowed_and_missing_base_is_diagnosed(self):
@@ -88,8 +96,8 @@ class LockedDocsTests(DocsFixture):
             ("adr", "accepted", "adr", "active", "accepted ADRs can only remain accepted or close"),
             ("adr", "accepted", "adr", "current", "accepted ADRs can only remain accepted or close"),
             ("adr", "active", "adr", "current", "ADRs must not use status 'current'"),
-            ("research", "draft", "research", "current", "invalid status transition"),
-            ("plan", "proposed", "plan", "archived", "invalid status transition"),
+            ("research", "draft", "research", "current", None),
+            ("plan", "proposed", "plan", "archived", None),
             ("plan", "accepted", "plan", "active", None),
             ("reference", "current", "research", "current", "invalid doc_type transition"),
             ("adr", "active", "adr", "accepted", None),
@@ -97,14 +105,20 @@ class LockedDocsTests(DocsFixture):
             ("plan", "active", "runbook", "current", None),
             ("plan", "rejected", "plan", "archived", None),
             ("plan", "superseded", "plan", "archived", None),
+            ("plan", "archived", "plan", "active", "closed docs stay closed; revived work gets a new doc"),
+            ("adr", "superseded", "adr", "active", "closed docs stay closed; revived work gets a new doc"),
+            ("research", "superseded", "research", "draft", "closed docs stay closed; revived work gets a new doc"),
         )
         closed = {"archived": ARCHIVED, "rejected": REJECTED, "superseded": SUPERSEDED}
         for before_kind, before_status, after_kind, after_status, error in cases:
             with self.subTest(before=(before_kind, before_status), after=(after_kind, after_status)):
-                self.doc("plans/transition.md", kind=before_kind, status=before_status, **closed.get(before_status, {}))
+                name = "adr/0002-transition.md" if before_kind == "adr" else "plans/transition.md"
+                self.doc(name, kind=before_kind, status=before_status, **closed.get(before_status, {}))
                 base = self.commit()
-                self.doc("plans/transition.md", kind=after_kind, status=after_status, **closed.get(after_status, {}))
+                self.doc(name, kind=after_kind, status=after_status, **closed.get(after_status, {}))
                 self.validate(base=base, error=error)
+                (self.docs / name).unlink()
+                self.index()
 
     def test_closing_a_draft_allows_metadata_changes_but_no_body_edit(self):
         self.doc("plans/open-plan.md", "# Open Plan\n\nDraft body.", status="draft")

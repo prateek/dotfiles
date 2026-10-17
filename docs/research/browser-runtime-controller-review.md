@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: research
+summary: "Adversarial review of the runtime and controller plan against agent-browser and Obscura source: CDP method gaps, release pinning, MCP client options, and the writing-for-agents gate."
 created: 2026-10-16
 updated: 2026-10-16
 related:

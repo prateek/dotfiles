@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "acpx model selection uses explicit workhorse, writing, previous, and escalation profiles pinned in `acpx_models.toml`, keeping machine routing and harness separation."
 created: 2026-10-05
 updated: 2026-10-05
 current_guidance: ../references/acpx-routing.md

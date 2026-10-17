@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: research
+summary: "Sweep of 2,023 public MoErgo Go60 layouts: where navigation layers put arrows, how layers are activated and left, selection without holding Shift, layer indication, and ranked options for leaving the Karabiner nav layer."
 owner: Prateek
 created: 2026-10-05
 updated: 2026-10-05

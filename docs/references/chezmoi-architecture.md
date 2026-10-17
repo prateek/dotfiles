@@ -1,6 +1,7 @@
 ---
 status: current
 doc_type: reference
+summary: "Dotfiles source-state architecture and validation entrypoints."
 created: 2026-04-27
 updated: 2026-09-29
 related:

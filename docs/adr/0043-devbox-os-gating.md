@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "The devbox takes the whole chezmoi source state; macOS-only targets, `.chezmoiremove`, and synced agent asset directories are gated off by OS instead of an allowlist."
 owner: Prateek
 created: 2026-09-30
 updated: 2026-09-30

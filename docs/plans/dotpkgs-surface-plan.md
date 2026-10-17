@@ -1,6 +1,7 @@
 ---
 status: archived
 doc_type: plan
+summary: "Repair the audited inventory, selection, reporting, and command contracts of the shared package helper."
 created: 2026-10-12
 updated: 2026-10-12
 closed: 2026-10-12

@@ -1,6 +1,7 @@
 ---
 status: superseded
 doc_type: plan
+summary: "ADR 0012 and Chezmoi Architecture."
 owner: Prateek
 created: 2026-06-26
 updated: 2026-06-29

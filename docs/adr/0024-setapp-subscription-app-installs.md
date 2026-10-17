@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "Setapp apps are declared as `setapp_apps` in `packages.toml` and installed by downloading vendor archives from Setapp's store API at apply time."
 created: 2026-09-07
 owner: Prateek
 related:

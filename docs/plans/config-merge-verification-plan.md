@@ -1,6 +1,7 @@
 ---
 status: archived
 doc_type: plan
+summary: "Completed local implementation and validation; tests index and ADR 0021."
 owner: Prateek
 created: 2026-09-05
 updated: 2026-09-05

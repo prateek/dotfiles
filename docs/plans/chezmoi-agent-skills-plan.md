@@ -1,6 +1,7 @@
 ---
 status: archived
 doc_type: plan
+summary: "Agent Skill Management and ADR 0007."
 created: 2026-05-10
 updated: 2026-05-15
 closed: 2026-05-15

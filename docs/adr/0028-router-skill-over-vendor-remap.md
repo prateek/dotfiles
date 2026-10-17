@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "When local conventions and a vendored skill share a subject, publish both as sibling skills in one package and split the trigger between their descriptions."
 owner: Prateek
 created: 2026-09-08
 updated: 2026-09-08

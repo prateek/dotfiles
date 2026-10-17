@@ -1,6 +1,7 @@
 ---
 status: draft
 doc_type: research
+summary: "Eight public examples of skill source ownership, installation, and updates, with pinned source links and a comparison to this repo."
 owner: Prateek
 created: 2026-09-06
 updated: 2026-09-06

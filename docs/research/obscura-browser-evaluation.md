@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: research
+summary: "Local Obscura browser experiment: installation, control paths, and the limits found."
 created: 2026-10-16
 updated: 2026-10-17
 related:

@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "One root `apm.yml`, lockfile, and committed `apm_modules/` cache serve every native plugin, while `packages/<name>/` keeps per-plugin skills, selections, patches, and metadata."
 owner: Prateek
 created: 2026-09-07
 updated: 2026-09-07

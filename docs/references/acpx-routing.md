@@ -1,6 +1,7 @@
 ---
 status: current
 doc_type: reference
+summary: "Explicit model/effort profiles, machine route declarations, catalog resolution, and diagnostics."
 created: 2026-09-22
 updated: 2026-10-05
 related:

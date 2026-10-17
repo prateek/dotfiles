@@ -1,6 +1,7 @@
 ---
 status: archived
 doc_type: reference
+summary: "Git Conventions for the `gh`/clone workflow; repos are cloned with `ghc`/`gh`."
 updated: 2026-06-25
 closed: 2026-06-29
 current_guidance: ../../home/dot_agents/docs/git.md

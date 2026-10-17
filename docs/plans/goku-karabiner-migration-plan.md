@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: plan
+summary: "Moves the Karabiner config from a hand-written karabiner.json to a Goku EDN source compiled at chezmoi apply time, including the game pad mouse-mode layer"
 created: 2026-06-21
 updated: 2026-10-05
 owner: Prateek

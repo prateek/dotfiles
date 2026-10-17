@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: research
+summary: "Executed acquisition, source transport, native recovery, changed-source plain apply, fresh skill invocation, authored/imported edit and restore, and legacy backup review."
 owner: Prateek
 created: 2026-09-07
 updated: 2026-09-07

@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "An enabled `chezmoi apply` audits recorded TCC access headlessly after installing apps, prints deviations with a helper command, and never changes grants itself."
 owner: Prateek
 created: 2026-10-06
 updated: 2026-10-06

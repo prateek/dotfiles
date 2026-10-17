@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: research
+summary: "Award census, inspected desktop interfaces, editorial utility reviews, and proposed permission-helper visual directions."
 created: 2026-10-05
 updated: 2026-10-05
 related:

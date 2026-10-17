@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: research
+summary: "Survey of vendor pages, GitHub, Reddit, and reviews for the Lite, Lite V2, and &: shared layouts and nav layers, macOS notes, 2.4G reliability reports, the Lite dongle's UF2 firmware, mods, complaints with vendor replies, and ranked ideas for Prateek's setup."
 owner: Prateek
 created: 2026-10-05
 updated: 2026-10-05

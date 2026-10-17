@@ -1,6 +1,7 @@
 ---
 status: draft
 doc_type: research
+summary: "Five public Nix configurations, Home Manager skill and plugin options, source catalogs, dependency packaging, and deployment ownership."
 owner: Prateek
 created: 2026-09-06
 updated: 2026-09-06

@@ -1,6 +1,7 @@
 ---
 status: archived
 doc_type: plan
+summary: "`AGENTS.md`, Documentation Index, and Document Lifecycle."
 owner: Prateek
 created: 2026-05-11
 updated: 2026-05-12

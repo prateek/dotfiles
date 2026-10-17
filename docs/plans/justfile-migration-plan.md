@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: plan
+summary: "Replaces the root and agent-marketplace Makefiles with justfiles, drops per-file test targets, and the runner and test-discovery changes it depends on"
 owner: Prateek
 created: 2026-09-07
 updated: 2026-09-07

@@ -1,6 +1,7 @@
 ---
 status: archived
 doc_type: plan
+summary: "Implemented in review 2.0.0; use the skill and dotfiles landing."
 created: 2026-09-22
 updated: 2026-09-22
 closed: 2026-09-22

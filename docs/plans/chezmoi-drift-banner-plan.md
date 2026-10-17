@@ -1,6 +1,7 @@
 ---
 status: archived
 doc_type: plan
+summary: "Shell Banner Plan and Shell Banner, which generalized this feature to fastfetch and multiple sources."
 owner: Prateek
 created: 2026-05-11
 updated: 2026-08-31

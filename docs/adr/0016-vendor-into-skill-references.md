@@ -1,6 +1,7 @@
 ---
 status: superseded
 doc_type: adr
+summary: "`package.toml` gains a per-skill vendor destination so vendored dependency content can land inside a local skill's references directory."
 created: 2026-08-28
 updated: 2026-09-08
 closed: 2026-09-08

@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "Plugin packages may carry a `hooks/` payload, vendored from upstream or hand-authored, that the renderer copies verbatim into the Claude plugin tree."
 created: 2026-09-02
 owner: Prateek
 related:

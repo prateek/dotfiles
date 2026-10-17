@@ -1,6 +1,7 @@
 ---
 status: archived
 doc_type: plan
+summary: "Crit Integration setup restored; reverted 2026-08-25, reland from history if retried."
 owner: Prateek
 created: 2026-08-25
 updated: 2026-08-25

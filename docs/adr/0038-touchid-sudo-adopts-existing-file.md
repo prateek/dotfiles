@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "The Touch ID sudo hook follows `sudo-touchid`'s model: any existing `sudo_local` counts as installed, and disabling the flag removes the file outright."
 owner: Prateek
 created: 2026-09-28
 updated: 2026-09-28

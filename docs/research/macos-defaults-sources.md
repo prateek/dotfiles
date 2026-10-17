@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: research
+summary: "Sources to mine for the next rework of the macOS defaults layer, plus key encodings and Apple Silicon power facts verified on hardware."
 created: 2026-09-03
 updated: 2026-09-03
 related:

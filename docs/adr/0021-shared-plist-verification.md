@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "A shared Python test module under `tests/config_merge/` runs the real plist merge CLI against scenarios and requires every shipped plist modifier to have one."
 owner: Prateek
 created: 2026-09-05
 related:

@@ -1,6 +1,7 @@
 ---
 status: draft
 doc_type: plan
+summary: "Extracts the TCC permission helper into a standalone Mac utility with an independently versioned app registry, release pipeline, website, and launch materials"
 owner: Prateek
 created: 2026-10-05
 updated: 2026-10-05

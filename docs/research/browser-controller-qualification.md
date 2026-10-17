@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: research
+summary: "Executed client and lifecycle trials and Camofox REST adoption checks: pinned dependencies, telemetry suppression, task isolation, and cleanup, with Obscura evidence retained."
 created: 2026-10-17
 updated: 2026-10-17
 related:

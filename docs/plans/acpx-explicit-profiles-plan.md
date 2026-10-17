@@ -1,6 +1,7 @@
 ---
 status: archived
 doc_type: plan
+summary: "Archived implementation record; pinned model/effort defaults and independent review. See current guidance."
 created: 2026-10-05
 updated: 2026-10-05
 closed: 2026-10-05

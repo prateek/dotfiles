@@ -1,6 +1,7 @@
 ---
 status: current
 doc_type: research
+summary: "Which harnesses honor `disable-model-invocation` and `user-invocable`, with per-harness evidence and citations."
 created: 2026-09-01
 updated: 2026-09-09
 related:

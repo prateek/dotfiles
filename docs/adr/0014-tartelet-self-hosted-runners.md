@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "Tartelet hosts GitHub self-hosted runners on homelab minis, installed via the `homelab-overlay` package group with a repo-owned VM provisioning script and documented manual steps."
 created: 2026-07-03
 owner: Prateek
 related:

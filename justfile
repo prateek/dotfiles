@@ -93,6 +93,14 @@ check-docs-lifecycle:
       exit 1
     fi
 
+# Regenerate docs/inventory.md from frontmatter; the validator fails when it is stale.
+docs-inventory:
+    {{ mise_env }} python3 -B docs/validate-doc-lifecycle.py --write-inventory
+
+# Docs that need a decision: parked or idle plans and research with no live consumer.
+docs-due:
+    {{ mise_env }} python3 -B docs/validate-doc-lifecycle.py --due
+
 # The validator's own fixtures plus this checkout.
 test-docs-lifecycle: && check-docs-lifecycle
     {{ mise_env }} python3 -B scripts/tests/python tests/python/docs -t tests/python

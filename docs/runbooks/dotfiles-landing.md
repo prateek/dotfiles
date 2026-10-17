@@ -1,6 +1,7 @@
 ---
 status: current
 doc_type: runbook
+summary: "Repo-specific checks and chezmoi preview for the published land-changes skill."
 created: 2026-09-07
 updated: 2026-10-06
 related:
@@ -37,6 +38,11 @@ for changed shell scripts where appropriate. For changed `home/` files, run
 use [agent-skill-management](../../.agents/skills/agent-skill-management/SKILL.md)
 to select package, consumer, and config checks. Marketplace-only changes can alter
 rendered scripts even without changing a `home/` source file.
+
+Before landing to master, run `just docs-due` and report its output to the user.
+It lists parked plans and open plans with no commit in a quarter and research
+with no live consumer; see the [quarterly review](quarterly-review.md). It
+never blocks a landing.
 
 ## Follow-up effects
 

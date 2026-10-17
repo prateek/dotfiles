@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "Fresh-shell validation is one zsh harness, `scripts/audit/zsh-fresh-shells.zsh`, driving a real PTY login shell on the macOS host, with pinned `zsh-bench` for startup timing."
 created: 2026-04-17
 owner: Prateek
 related:

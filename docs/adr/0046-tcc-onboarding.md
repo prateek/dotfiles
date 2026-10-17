@@ -1,6 +1,7 @@
 ---
 status: superseded
 doc_type: adr
+summary: "Expected macOS TCC permissions are declared per app in one manifest, rendered for a read-only SwiftUI helper that an opt-in apply prompt launches."
 owner: Prateek
 created: 2026-10-05
 updated: 2026-10-06

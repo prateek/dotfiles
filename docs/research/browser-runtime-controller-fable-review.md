@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: research
+summary: "Fable review of the runtime and controller plan with a root source audit: Camofox interfaces, dependency pins, persisted state, reference lifetime, and implementation gates."
 created: 2026-10-17
 updated: 2026-10-17
 related:

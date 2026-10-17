@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: runbook
+summary: "Auditing unlabeled USB-C cables for speed, power, generation, and TB5 capability."
 owner: Prateek
 created: 2026-06-20
 updated: 2026-06-20

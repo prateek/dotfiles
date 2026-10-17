@@ -1,6 +1,7 @@
 ---
 status: active
 doc_type: research
+summary: "Source survey of CLI controllers, existing-browser attachment, agent browsers, and page-provided tools, with comparison proposals for Orca and Obscura."
 created: 2026-10-16
 updated: 2026-10-16
 related:

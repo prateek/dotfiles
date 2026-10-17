@@ -6,6 +6,7 @@ status_detail: "Historical evidence retained; Jev maintenance and trials are sus
 current_guidance:
   - ../adr/0050-suspend-jev-in-experimental-plugin.md
 doc_type: research
+summary: "Archived evidence from the suspended experiment; adoption was rejected and the dynamic follow-up remains unmeasured."
 created: 2026-09-26
 related:
   - ../plans/browser-skill-plan.md

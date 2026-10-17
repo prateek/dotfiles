@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "The land-changes skill discovers a destination's publication methods and gates at run time and persists explicit user choices separately, scoped and fingerprinted."
 created: 2026-09-22
 updated: 2026-09-22
 related:

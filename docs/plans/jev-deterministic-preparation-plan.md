@@ -6,6 +6,7 @@ status_detail: "Experiment suspended; end-to-end performance and broader reliabi
 current_guidance:
   - ../adr/0050-suspend-jev-in-experimental-plugin.md
 doc_type: plan
+summary: "Archived; experiment suspended with end-to-end comparison still unmeasured. See ADR 0050."
 owner: Prateek
 created: 2026-09-27
 related:

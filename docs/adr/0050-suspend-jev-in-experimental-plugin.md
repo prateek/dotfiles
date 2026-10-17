@@ -1,6 +1,7 @@
 ---
 status: accepted
 doc_type: adr
+summary: "`browser-jev` moves into the default-disabled `experimental` plugin, requiring explicit invocation, with the runner preserved and trials suspended."
 created: 2026-10-16
 updated: 2026-10-16
 related:

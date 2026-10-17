@@ -1,6 +1,7 @@
 ---
 status: archived
 doc_type: plan
+summary: "Completed command hardening; use the runbook."
 created: 2026-10-03
 closed: 2026-10-03
 related:
