@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 const agent = path.basename(process.argv[1]);
 if (process.argv.includes('--version') || process.argv.includes('--help')) {
@@ -13,18 +14,35 @@ const id = fork ? 'fixture-fork' : 'fixture-source';
 const home = agent === 'codex' ? '/root/account home' : '/root';
 const transcript = agent === 'codex'
   ? `${home}/sessions/2026/10/07/${id}.jsonl`
-  : `/root/.${agent}/projects/workspace/${id}.jsonl`;
+  : agent === 'droid'
+    ? `/root/.factory/sessions/${id}.jsonl`
+  : ['pi', 'omp'].includes(agent)
+    ? `/root/.${agent}/agent/sessions/--workspace--/${id}.jsonl`
+    : `/root/.${agent}/projects/-workspace/${id}.jsonl`;
 if (fork) {
   const marker = agent === 'claude' ? '--resume' : agent === 'codex' ? 'fork' : '--fork';
   const source = process.argv[process.argv.indexOf(marker) + 1];
   const expected = ['pi', 'omp'].includes(agent) ? transcript.replace('fixture-fork', 'fixture-source') : 'fixture-source';
   if (source !== expected) throw new Error('Fork addressed the wrong conversation');
   if (agent === 'codex' && process.env.CODEX_HOME !== home) throw new Error('Fork used the wrong account home');
+  fs.readFileSync(transcript.replace('fixture-fork', 'fixture-source'));
+  fs.appendFileSync('/tmp/fork-receipts.jsonl', JSON.stringify({
+    agent, source, hostname: os.hostname(), cwd: process.cwd(), pid: process.pid,
+    codexHome: process.env.CODEX_HOME || null
+  }) + '\n');
 }
 fs.mkdirSync(path.dirname(transcript), {recursive: true});
 const rows = agent === 'codex' ? [
   {type: 'session_meta', timestamp: '2026-10-07T12:00:00Z', payload: {id, cwd: process.cwd()}},
   {type: 'response_item', payload: {type: 'message', role: 'assistant', content: [{type: 'output_text', text: 'Fixture response'}]}}
+] : agent === 'droid' ? [
+  {type: 'session_start', id, cwd: process.cwd(), timestamp: '2026-10-07T12:00:00Z'},
+  {type: 'message', role: 'user', text: 'Fixture prompt', timestamp: '2026-10-07T12:00:01Z'},
+  {type: 'completion', finalText: 'Fixture response', timestamp: '2026-10-07T12:00:02Z'}
+] : ['pi', 'omp'].includes(agent) ? [
+  {type: 'session', version: 3, id, cwd: process.cwd(), timestamp: '2026-10-07T12:00:00Z'},
+  {type: 'message', timestamp: '2026-10-07T12:00:01Z', message: {role: 'user', content: [{type: 'text', text: 'Fixture prompt'}]}},
+  {type: 'message', timestamp: '2026-10-07T12:00:02Z', message: {role: 'assistant', content: [{type: 'text', text: 'Fixture response'}]}}
 ] : [
   {type: 'user', sessionId: id, cwd: process.cwd(), timestamp: '2026-10-07T12:00:00Z', message: {role: 'user', content: 'Fixture prompt'}},
   {type: 'assistant', sessionId: id, timestamp: '2026-10-07T12:00:01Z', message: {role: 'assistant', content: [{type: 'text', text: 'Fixture response'}]}}

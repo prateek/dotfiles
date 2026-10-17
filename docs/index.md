@@ -34,7 +34,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [Chezmoi Hook Lifecycle](references/chezmoi-hook-lifecycle.md) | Ordering and design rules for config hooks, apply scripts, init, and modify targets. |
 | [Corporate TLS Inspection](runbooks/corp-tls-inspection.md) | Corporate CA trust for Node clients in shells and GUI apps behind a decrypting proxy. |
 | [Private Service Certificate in Orca](../agent-marketplace/packages/utils-agent/skills/browser/references/certificate.md) | Host-scoped trust preference and pinned loopback recovery for an owned private HTTPS service. |
-| [Orca Shortcut Validation](runbooks/orca-shortcut-validation.md) | Fast regressions and isolated packaged-Orca integration tests for SSH and paired servers. |
+| [Orca Shortcut Validation](runbooks/orca-shortcut-validation.md) | Local, SSH, and paired-server fork comparisons, sidebar focus regression, and release-specific integration limits. |
 | [Host Storage](runbooks/host-storage.md) | Required SSD mounts before apply computes targets or installs packages. |
 | [Jamf Self Service Elevation](references/jamf-self-service-elevation.md) | Temporary admin elevation on Jamf-managed work Macs. |
 | [Mise Tool Management](references/mise-tool-management.md) | Mise-native CLI and tool selection. |

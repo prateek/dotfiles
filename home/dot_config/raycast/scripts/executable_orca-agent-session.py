@@ -199,9 +199,19 @@ def selected_environment():
             fail("Orca returned an invalid active profile")
         database = os.path.join(ORCA_USER_DATA, "profiles", profile, "profile-state.db")
         with sqlite3.connect(f"file:{urllib.parse.quote(database)}?mode=ro", uri=True) as connection:
-            row = connection.execute("SELECT payload FROM profile_state_documents WHERE domain = 'settings'").fetchone()
-        return json.loads(row[0]).get("activeRuntimeEnvironmentId") or None
-    except (OSError, KeyError, TypeError, sqlite3.Error, json.JSONDecodeError):
+            rows = connection.execute("SELECT domain, payload FROM profile_state_documents "
+                                      "WHERE domain IN ('settings', 'workspaceSession')").fetchall()
+        documents = {domain: json.loads(payload) for domain, payload in rows}
+        session = documents.get("workspaceSession", {})
+        host = session.get("activeWorkspaceExecutionHostId")
+        if session.get("activeWorktreeId") and host is not None:
+            if host.startswith("runtime:") and re.fullmatch(r"runtime:[^|\s]+", host):
+                return host.removeprefix("runtime:")
+            if host == "local" or re.fullmatch(r"ssh:[^|\s]+", host):
+                return None
+            fail("Orca returned an invalid focused workspace host")
+        return documents["settings"].get("activeRuntimeEnvironmentId") or None
+    except (OSError, KeyError, TypeError, AttributeError, sqlite3.Error, json.JSONDecodeError):
         fail("Could not read Orca's active profile and server selection; update or restart Orca")
 
 

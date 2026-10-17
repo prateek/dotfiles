@@ -110,12 +110,36 @@ class OrcaShortcutTests(unittest.TestCase):
                     self.app.selected_environment()
             self.assertFalse((root / "profiles").exists())
 
+    def test_focused_workspace_host_overrides_default_server(self):
+        for host, default, expected in [
+            ("runtime:remote", None, "remote"),
+            ("runtime:remote", "different-server", "remote"),
+            ("local", "remote", None),
+            ("ssh:fixture", "remote", None),
+            (None, "remote", "remote"),
+        ]:
+            with self.subTest(host=host, default=default), tempfile.TemporaryDirectory() as directory:
+                root = pathlib.Path(directory)
+                (root / "orca-profile-index.json").write_text(json.dumps({"activeProfileId": "test"}))
+                folder = root / "profiles/test"
+                folder.mkdir(parents=True)
+                with sqlite3.connect(folder / "profile-state.db") as connection:
+                    connection.execute("CREATE TABLE profile_state_documents (domain TEXT, payload TEXT)")
+                    connection.executemany("INSERT INTO profile_state_documents VALUES (?, ?)", [
+                        ("settings", json.dumps({"activeRuntimeEnvironmentId": default})),
+                        ("workspaceSession", json.dumps({"activeWorktreeId": "repo::/project",
+                                                         "activeWorkspaceExecutionHostId": host})),
+                    ])
+                with patch.object(self.app, "ORCA_USER_DATA", directory):
+                    self.assertEqual(self.app.selected_environment(), expected)
+
     def test_fork_commands_use_native_fork_and_explicit_source(self):
         for agent, expected in [
             ("claude", ["claude", "--dangerously-skip-permissions", "--resume", "source", "--fork-session"]),
             ("codex", ["env", "CODEX_HOME=/account home", "codex", "--dangerously-bypass-approvals-and-sandbox", "fork", "source"]),
             ("pi", ["pi", "--fork", "/store/source.jsonl"]),
             ("omp", ["omp", "--fork", "/store/source.jsonl"]),
+            ("droid", ["droid", "--fork", "source"]),
         ]:
             with self.subTest(agent=agent):
                 self.process = agent

@@ -11,12 +11,15 @@ Stop the current work at a safe boundary, record a checkpoint, and hand it to a
 fresh agent through Orca. The receiver resumes the work; this session stops
 after Orca accepts the prompt.
 
-Read [ho](../ho/SKILL.md) for argument parsing, target selection, transport,
+Read [ho](../../../utils-agent/skills/ho/SKILL.md) for argument parsing, target selection, transport,
 launch, and retry. Follow those sections in order. Replace its "Write the brief"
 and "Authorization" sections with the instructions below. Use its `ho/<id>`
 state directory and transport branch so both skills share one delivery method.
-Read [remote transport](../ho/references/remote-transport.md) only for a remote
+Read [remote transport](../../../utils-agent/skills/ho/references/remote-transport.md) only for a remote
 target.
+
+This skill requires `utils-agent:ho`. If your client caches plugins separately,
+locate that skill in its catalog and resolve its references from its directory.
 
 ## Pause and checkpoint
 
