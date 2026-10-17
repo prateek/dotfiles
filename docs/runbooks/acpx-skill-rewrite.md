@@ -5,8 +5,7 @@ summary: "Balanced native flows; five-skill live pilot completed at peak concurr
 created: 2026-09-26
 updated: 2026-09-27
 related:
-  - ../plans/acpx-skill-rewrite-plan.md
-  - ../plans/acpx-native-skill-rewrite-plan.md
+  - ../retired.md
   - ../references/acpx-routing.md
   - ../../scripts/acpx/rewrite-skills.flow.mjs
 status_detail: "Five-skill live pilot completed with peak concurrency two, one afablex review, and a validated unapplied patch; runtime overrides were required."

@@ -7,7 +7,7 @@ created: 2026-09-05
 updated: 2026-09-17
 status_detail: "Code, Tart, WinMux, agentsview, and qmd storage migrated; GhostPepper retained in place. Arq configuration deferred by Prateek."
 related:
-  - wiki-ingest-revisit-plan.md
+  - ../retired.md
   - ../runbooks/session-sync-permissions.md
 ---
 

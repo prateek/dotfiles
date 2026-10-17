@@ -5,9 +5,10 @@ discovery. Raycast and browser-runner checks use Node's native runner. `just` an
 `just test-ci` compose the same local macOS lane; `just --list` is the recipe
 index.
 
-Read the [archived test refactoring plan](../docs/plans/test-suite-rebuild-plan.md)
-for migration evidence and the completed CI receipt.
-For alternatives and decision history, read the [framework comparison](../docs/research/shell-testing-framework-comparison.md).
+The test refactoring plan and the shell framework comparison that drove this
+layout are retired; the [retirement ledger](../docs/retired.md) names them and
+`git log --diff-filter=D` recovers them. [ADR 0022](../docs/adr/0022-bats-and-zsh-test-support.md)
+holds the decision.
 
 ## Choosing useful checks
 
@@ -318,7 +319,8 @@ again before writes; accepted cache content stays unchanged.
 Temporary Git repositories disable automatic
 maintenance and carry the pinned assertion libraries for staged validation.
 
-The [assertion migration record](../docs/research/apm-marketplace-migration-verification.md#replaced-assertions)
+The assertion migration record, retired as
+`research/apm-marketplace-migration-verification.md` in the [ledger](../docs/retired.md),
 accounts for retired renderer and vendoring tests. SOURCE metadata generation,
 chezmoi filename escaping, upstream-shaped patch paths, and catalog filtering by
 local eligibility changed deliberately; their old assertions do not apply.

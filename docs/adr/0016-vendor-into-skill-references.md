@@ -17,6 +17,8 @@ status_detail: "Never implemented. Its own scope note was the refutation: acpx's
 
 # ADR 0016 — Vendored dependency content may land inside a local skill
 
+> Superseded by [ADR 0028](0028-router-skill-over-vendor-remap.md).
+
 ## Context
 
 Packages vendor whole upstream skills into `skills/vendor/<id>/`, and every

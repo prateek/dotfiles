@@ -6,7 +6,7 @@ owner: Prateek
 created: 2026-09-06
 updated: 2026-09-06
 related:
-  - agent-skill-management-research.md
+  - ../retired.md
   - nix-agent-skills-packaging-research.md
   - ../../.agents/skills/agent-skill-management/SKILL.md
 status_detail: "Public source survey; packaging patterns verified in repository files, without running installers or selecting a migration."

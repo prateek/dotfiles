@@ -5,8 +5,8 @@ summary: "Verified native-output Sharp/Butter setup, app-wide BetterDisplay rese
 created: 2026-10-03
 updated: 2026-10-11
 related:
-  - ../plans/g95nc-diagnostics-plan.md
-  - ../plans/g95nc-complete-modes-plan.md
+  - ../retired.md
+
 ---
 
 # G95NC Display Command

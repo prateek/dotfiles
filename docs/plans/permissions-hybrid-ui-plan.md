@@ -6,7 +6,7 @@ owner: Prateek
 created: 2026-10-05
 updated: 2026-10-06
 related:
-  - permissions-ui-prototype-brief.md
+  - ../retired.md
   - tcc-onboarding-plan.md
   - ../research/macos-permission-utility-design.md
 status_detail: "Hybrid layout approved and implemented in the production app; attended Settings and accessibility validation remain."

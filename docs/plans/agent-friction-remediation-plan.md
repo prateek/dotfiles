@@ -7,7 +7,7 @@ created: 2026-09-26
 updated: 2026-09-27
 related:
   - using-git-spice-skill-plan.md
-  - acpx-skill-packaging-plan.md
+  - ../retired.md
   - ../runbooks/corp-tls-inspection.md
   - ../references/agent-marketplace.md
   - ../references/mise-tool-management.md

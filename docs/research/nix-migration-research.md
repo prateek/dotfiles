@@ -10,8 +10,8 @@ related:
   - ../adr/0006-chezmoi-migration-prototype.md
   - ../adr/0010-machine-type-package-selection.md
   - ../adr/0012-config-gating-convention.md
-  - ../plans/chezmoi-migration-plan.md
-  - ../plans/test-suite-rebuild-plan.md
+  - ../plans/agent-skills-repo-split-plan.md
+  - ../retired.md
 status_detail: "Survey plus adversarial cross-model review. Conclusion: no wholesale migration. A package-only nix spike is the open option; nix-darwin waits on a work-Mac MDM test."
 ---
 
@@ -82,7 +82,7 @@ The hard parts are:
   ([reference](../references/jamf-self-service-elevation.md)).
 - **A Linux profile that owns almost nothing.** The work×linux DevPod runs one
   apply script; DAYJOB owns the image
-  ([runbook](../runbooks/linux-work-devpod-orca.md)).
+  (its runbook is retired; see `runbooks/linux-work-devpod-orca.md` in the [ledger](../retired.md)).
 
 ## How Each Piece Maps To Nix
 
@@ -103,7 +103,7 @@ The hard parts are:
 | zsh startup with custom `ZDOTDIR` | `programs.zsh.dotDir` plus ordered `initContent`, or `home.file` verbatim | Fine either way. |
 | `chezmoi diff` and `status` | `nix build` plus `nvd`; activation repairs managed links | Narrower drift surface, not none. |
 | Tart lane and CI dry-run | `nix build .#darwinConfigurations.<host>.system` on an arm64 `macos-latest` runner | Better for evaluation and closure failures. Does not exercise defaults, app writes, or activation. |
-| Tests, two repo skills, ADRs 0006/0010/0012 | Rewrite the harness calls; keep the behavioral assertions | Moderate. The [test refactoring plan](../plans/test-suite-rebuild-plan.md) requires preserving useful behavioral guarantees; it does not prescribe a surviving test count. |
+| Tests, two repo skills, ADRs 0006/0010/0012 | Rewrite the harness calls; keep the behavioral assertions | Moderate. The retired test refactoring plan (`plans/test-suite-rebuild-plan.md`) required preserving useful behavioral guarantees; it does not prescribe a surviving test count. |
 
 ## What Nix Would Fix Here
 
@@ -114,8 +114,8 @@ The survey first claimed package drift was not a live pain. It is.
 - The `[packages.retired]` block in
   [`packages.toml`](../../home/.chezmoidata/packages.toml) and its apply
   script exist because `brew bundle` never uninstalls.
-- The [migration plan](../plans/chezmoi-migration-plan.md) Rollback section
-  states that package and runtime changes are not generally rollbackable.
+- The [chezmoi architecture](../references/chezmoi-architecture.md) rollback
+  model states that package and runtime changes are not generally rollbackable.
 - The machine-role resolver is hand-rolled and duplicated across consumers.
 - zinit updates itself weekly from a mutable checkout rather than through a
   reviewed lock bump.

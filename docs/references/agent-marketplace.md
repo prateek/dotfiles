@@ -11,7 +11,8 @@ related:
   - ../adr/0023-apm-agent-marketplace-packaging.md
   - ../adr/0025-shared-apm-acquisition.md
   - ../adr/0039-work-overlay-in-work-repo.md
-  - ../plans/apm-agent-marketplace-plan.md
+  - ../retired.md
+
 ---
 
 # Agent Marketplace
@@ -19,7 +20,7 @@ related:
 [The isolated project](../../agent-marketplace/README.md) owns authored skills,
 reviewed APM inputs, patches, native plugin metadata, build checks, and export.
 It can build outside dotfiles after tool provisioning. The
-[verification record](../research/apm-marketplace-migration-verification.md#rollout-completion)
+retired [verification record](../retired.md) (`research/apm-marketplace-migration-verification.md`)
 records the earlier local-artifact migration. It does not establish completion
 of the official-plugin rollout. A changed checkout does not by itself change the
 live marketplace.
@@ -28,7 +29,7 @@ Official sources, plugin identities, and enabled defaults are declared in
 `home/.chezmoidata/agent_upstream_plugins.toml`. Native clients install those
 plugins directly; the local project builds authored skills and compatibility
 adapters. See [ADR 0049](../adr/0049-official-agent-plugin-marketplaces.md) and
-the [migration plan](../plans/upstream-agent-plugins-plan.md).
+the retired migration plan (`plans/upstream-agent-plugins-plan.md` in the [ledger](../retired.md)).
 
 Refresh official installs from the repository root:
 
@@ -54,7 +55,7 @@ adapters serve Codex. UI/UX and Crit adapters import whole published collections
 Codex retains the UI/UX icon fixes and Better Writing's explicit-only controls;
 native installs use upstream behavior. The writing router resolves Better
 Writing through the client skill catalog instead of a sibling-directory link.
-See the [follow-up plan](../plans/additional-upstream-agent-plugins-plan.md).
+The follow-up plan is retired (`plans/additional-upstream-agent-plugins-plan.md` in the [ledger](../retired.md)).
 
 The consumer boundary is:
 

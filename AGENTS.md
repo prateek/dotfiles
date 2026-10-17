@@ -31,7 +31,7 @@ This repo is public, so place content by audience. Portable config and the plumb
 Use the `agent-skill-management` skill for changes to `agent-marketplace/`,
 apply-time skill/plugin render scripts, Codex or Claude rendered plugin
 activation, and the related docs (`docs/references/agent-marketplace.md`,
-`docs/plans/apm-agent-marketplace-plan.md`, `docs/adr/0023-apm-agent-marketplace-packaging.md`, `docs/adr/0025-shared-apm-acquisition.md`). Packages build as plugins and materialize into
+`docs/adr/0023-apm-agent-marketplace-packaging.md`, `docs/adr/0025-shared-apm-acquisition.md`). Packages build as plugins and materialize into
 `~/.agents/plugins` (the only skill projection; `~/.agents/skills` survives as
 an empty stub for Codex runtime skills); do not commit source copies under
 `home/dot_agents/skills`, `home/dot_claude/skills`, or

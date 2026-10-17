@@ -5,7 +5,7 @@ summary: "Which harnesses honor `disable-model-invocation` and `user-invocable`,
 created: 2026-09-01
 updated: 2026-09-09
 related:
-  - agent-skill-management-research.md
+  - ../retired.md
   - ../plans/skill-management-console-plan.md
   - ../adr/0007-default-loaded-plugin-policy.md
 ---
@@ -160,7 +160,7 @@ Codex has no invocation-control frontmatter in `SKILL.md`. Controls live in
 two Codex-native places (see
 [Codex config reference](https://developers.openai.com/codex/config-reference)
 and the Codex sections of
-[agent-skill-management-research.md](agent-skill-management-research.md),
+the retired agent skill management research (`research/agent-skill-management-research.md` in the [ledger](../retired.md)),
 locally verified 2026-05-10):
 
 - `agents/openai.yaml` next to the skill:

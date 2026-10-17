@@ -6,7 +6,7 @@ owner: Prateek
 created: 2026-05-13
 updated: 2026-08-31
 related:
-  - chezmoi-drift-banner-plan.md
+  - ../retired.md
   - ../../home/dot_config/dotfiles/shell-banner/README.md
   - ../../tests/shell-banner.zsh
 status_detail: "Replaces chezmoi-drift-banner-plan.md. Implementation shipped on prateek/banner-fastfetch; see Deviations section at the bottom for what changed during review, and Deferred for the apm row."

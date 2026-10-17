@@ -7,9 +7,8 @@ created: 2026-09-02
 updated: 2026-09-29
 related:
   - ../adr/0007-default-loaded-plugin-policy.md
-  - ../plans/crit-integration-plan.md
+  - ../retired.md
   - ../plans/decomment-skill-plan.md
-  - ../research/agent-skill-management-research.md
 status_detail: "Replacement skill and config applied, duplicate disabled, and Orca smoke passed; only the disruptive manual E8 logged-out auth check remains."
 ---
 

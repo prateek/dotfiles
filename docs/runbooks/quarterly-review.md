@@ -8,7 +8,7 @@ updated: 2026-10-17
 related:
   - ../document-lifecycle.md
   - ../adr/0052-retire-closed-docs-through-a-ledger.md
-  - ../plans/periodic-session-review-plan.md
+  - ../retired.md
   - ../plans/agent-friction-remediation-plan.md
   - ../../home/dot_agents/docs/agentsview.md
 ---
@@ -46,7 +46,7 @@ just test-docs-lifecycle
 ## Session friction
 
 Agent sessions record every failed command, retry, and repeated prompt, and
-nobody reads them in aggregate. The [periodic session review plan](../plans/periodic-session-review-plan.md)
+nobody reads them in aggregate. The retired periodic session review plan (`plans/periodic-session-review-plan.md` in the [ledger](../retired.md))
 proposed scheduled retrospectives with promoted scripts; none of that is
 built or scheduled. Until it is, the quarterly pass is manual and bounded:
 

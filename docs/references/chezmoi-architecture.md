@@ -3,7 +3,7 @@ status: current
 doc_type: reference
 summary: "Dotfiles source-state architecture and validation entrypoints."
 created: 2026-04-27
-updated: 2026-09-29
+updated: 2026-10-17
 related:
   - ../index.md
   - ../adr/0006-chezmoi-migration-prototype.md
@@ -17,7 +17,13 @@ status_detail: "Current architecture reference. Historical migration detail live
 
 This document describes the steady-state dotfiles architecture. It is not a
 migration log. Use [ADR 0006](../adr/0006-chezmoi-migration-prototype.md) for the
-decision record and git history for implementation archaeology.
+decision record and git history for implementation archaeology. Source-state
+terms (`home/`, bootstrap, `.chezmoidata/`, captures) are defined in the
+[glossary](../../GLOSSARY.md#chezmoi-source-state). Day-to-day chezmoi
+commands, rollback, the Homebrew tuning variables, and readable `op://`
+reference handling live in the
+[chezmoi-management skill](../../.agents/skills/chezmoi-management/SKILL.md)
+and its references.
 
 ## Operating Model
 
@@ -32,6 +38,14 @@ decision record and git history for implementation archaeology.
   `home/dot_claude/`.
 - Local observations, captures, accounts, app runtime state, and machine-only
   overrides stay out of git.
+- Per-machine identity lives only in the rendered
+  `~/.config/chezmoi/chezmoi.toml`: the resolved `dotfiles_dir`,
+  `[data.machines_local]` overrides, the work overlay's repo and branch, and
+  readable `[data.secrets.refs]`. `.chezmoiignore` keeps that file unmanaged
+  and `chezmoi init` carries those blocks across a re-render. The work
+  overlay identity and readable `op://` refs are the items that never reach
+  this public repo; host layers in `home/.chezmoidata/machines.toml` are
+  keyed by hostname and are committed by design.
 
 ## Source Layout
 
@@ -74,6 +88,20 @@ post-apply verification. Use `run_once_before_` for prerequisites and
 changes.
 
 Scripts must be idempotent. A rerun should converge or report a clear blocker.
+
+- Scripts resolve paths from explicit XDG variables with their defaults
+  (`${XDG_STATE_HOME:-$HOME/.local/state}`), from `.chezmoi.sourceDir`, or
+  from the rendered `dotfiles_dir` value. None infers the repo from the
+  process working directory.
+- A script that needs secrets, a GUI session, a TCC grant, or administrator
+  access is gated by the layered machine facts. When the gate is open but the
+  prerequisite is missing, it stops or warns with the exact manual step (the
+  apply preflight's keychain command, `launchctl bootstrap gui/$(id -u)
+  <plist>`), never a guess.
+- A dependency that is only a repository comes in through
+  `home/.chezmoiexternal.toml.tmpl`, not a script's `git clone`. zinit is
+  acquired that way as a `git-repo` external with `refreshPeriod = "168h"`;
+  without a refresh period chezmoi leaves an existing checkout alone.
 
 ## Packages And Tools
 
@@ -118,6 +146,11 @@ Scripts must be idempotent. A rerun should converge or report a clear blocker.
   `--include-mas` is used.
 - Mise owns active tool selection and shims. See
   [Mise Tool Management](mise-tool-management.md).
+- Mise installs Ruby from precompiled builds with `github_attestations =
+  false` (`home/dot_config/mise/conf.d/runtimes.toml`). A fresh bootstrap
+  usually runs before GitHub auth exists, and unauthenticated attestation
+  checks exhaust the public API rate limit mid-install. The Tart install-log
+  scanner flags that failure signature.
 
 ## Config Gating
 
@@ -222,12 +255,51 @@ Equality preserves native types throughout nested values: integer `1`, boolean `
 
 Shared verification runs through these real stdin/stdout interfaces. [ADR 0021](../adr/0021-shared-plist-verification.md) records the design. Add app scenarios with independent known values and ownership rules as described in the [tests index](../../tests/README.md#plist-merge-verification). No live preferences are read or written by this suite.
 
+Apply-time plist handling lives in `scripts/chezmoi-hooks/plist-hooks.sh`,
+wired as `hooks.apply.pre` and `hooks.apply.post`; ordering and the Orca case
+are in [Chezmoi hook lifecycle](chezmoi-hook-lifecycle.md).
+
+- The pre mode reads `chezmoi status` for managed plists that would change,
+  under `Library/Preferences/` or a sandboxed app's
+  `Library/Containers/<bundle-id>/Data/Library/Preferences/`, and checks each
+  matching app with `/usr/bin/lsappinfo` by absolute path so a hostile `PATH`
+  cannot fake the answer. At a terminal it offers to quit those apps through
+  an Apple Event and waits up to `DOTFILES_PLIST_QUIT_TIMEOUT_SECS` (default
+  20) for them to exit; declining leaves them running. A non-interactive
+  apply refuses, because a running app overwrites the write when it quits.
+- The pre mode writes the pending bundle IDs to
+  `${XDG_STATE_HOME:-~/.local/state}/dotfiles/plist-pending.txt` and the ones
+  it quit to `plist-quit-by-guard.txt` beside it. That pair is the contract
+  the post mode reads, and the post mode deletes both.
+- The post mode exits when nothing was pending. Otherwise it kills the user's
+  `cfprefsd` once so the next read sees the new files, relaunches what the
+  pre mode quit, and relaunches the rest of the pending list only with
+  `DOTFILES_RELAUNCH_AFTER_APPLY=1`.
+- A sandboxed app's modify stub mirrors its container path under
+  `home/Library/Containers/<bundle-id>/Data/Library/Preferences/`. The hooks
+  recognize that path; no flag is needed.
+- `[[textconv]]` in `home/.chezmoi.toml.tmpl` runs `plutil -convert xml1`
+  over `**/Library/Preferences/*.plist`, so `chezmoi diff` shows binary
+  plists as XML. Apply still writes binary.
+
 Optional app config is gated in `home/.chezmoiignore`. Do not render empty
 placeholder config for absent apps.
 
 Raw app captures live under
 `${XDG_STATE_HOME:-~/.local/state}/dotfiles/captures/`. A capture becomes
 desired state only through an explicit adoption step.
+
+- `scripts/macos/capture.sh` is discovery only. It runs `chezmoi mackup add
+  --secrets ignore` into a throwaway source under the capture root and
+  exports selected `defaults` domains with their volatile keys stripped.
+  Mackup is a catalogue of candidate paths, never the policy engine.
+- Never use Mackup link mode, whole-domain `defaults import`, wholesale
+  folder adoption, writes to the TCC database, or a PPPC profile. Permission
+  tooling opens TCC read-only; see
+  [macOS permission onboarding](../runbooks/tcc-onboarding.md).
+- Alfred installs as a cask and its license is a secret-backed template.
+  Its preferences and workflows stay with Alfred's own sync and have no
+  source under `home/`.
 
 ## Secrets And Licenses
 
@@ -244,6 +316,12 @@ chezmoi reads refs as a 1Password service account. `[onepassword] command` in
 which takes the token from the login keychain item `op-devland-sa` and
 gives it to that `op` process only.
 
+macOS permissions are granted by hand in System Settings. The apply-time
+audit reads the TCC database read-only and reports service, app ID, and a
+status enum, never raw rows or code-requirement blobs. PPPC profiles are out
+of scope. See [macOS permission onboarding](../runbooks/tcc-onboarding.md)
+and [ADR 0046](../adr/0046-tcc-onboarding.md).
+
 ## Agent Surfaces
 
 - Repo guidance for this checkout stays in root `AGENTS.md` and repo-local
@@ -255,7 +333,9 @@ gives it to that `op` process only.
   does not read files under `.agents/`.
 - Codex machine config materializes from `home/dot_codex/` on machines whose
   groups include the `codex` package group (personal/homelab); elsewhere
-  `~/.codex` is ignored.
+  `~/.codex` is ignored. Only `config.toml` (deep-merged, so local keys
+  survive) and the skills link are managed. Codex's own trust, auth, and
+  session state under `~/.codex` stays machine-local.
 
 Live links are reserved for repo-local executable wrappers and tool-adapter
 pointers that prevent duplicated instruction files. Everything else should be

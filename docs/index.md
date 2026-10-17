@@ -54,7 +54,6 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 Status and summary for each are in the [inventory](inventory.md#plans).
 
 - [ACPX shared pane](plans/acpx-shared-pane-plan.md)
-- [acpx skill packaging](plans/acpx-skill-packaging-plan.md)
 - [agent_clis consolidation](plans/agent-clis-consolidation-plan.md)
 - [Agent friction remediation](plans/agent-friction-remediation-plan.md)
 - [Agent session wiki](plans/agent-session-wiki-plan.md)
@@ -65,12 +64,10 @@ Status and summary for each are in the [inventory](inventory.md#plans).
 - [Decomment skill](plans/decomment-skill-plan.md)
 - [Downstream fork](plans/downstream-fork-plan.md)
 - [Goku Karabiner migration](plans/goku-karabiner-migration-plan.md)
-- [Justfile migration](plans/justfile-migration-plan.md)
 - [Linux devbox](plans/linux-devbox-plan.md)
 - [Orca settings store](plans/orca-settings-store-plan.md)
 - [Orca shortcut repair](plans/orca-shortcuts-plan.md)
 - [orcactl](plans/orcactl-plan.md)
-- [Periodic session review](plans/periodic-session-review-plan.md)
 - [Permissions hybrid UI](plans/permissions-hybrid-ui-plan.md)
 - [Permission utility product follow-up](plans/permissions-product-plan.md)
 - [Prolo Ring cheat sheet](plans/prolo-ring-cheatsheet-plan.md)
@@ -85,7 +82,6 @@ Status and summary for each are in the [inventory](inventory.md#plans).
 - [TCC onboarding](plans/tcc-onboarding-plan.md)
 - [Touch ID for sudo](plans/touchid-sudo-plan.md)
 - [Using-git-spice skill](plans/using-git-spice-skill-plan.md)
-- [Wiki ingest revisit](plans/wiki-ingest-revisit-plan.md)
 - [zsh fresh-shell validator](plans/zsh-fresh-shell-validator-plan.md)
 
 ## Decisions, research, and history
@@ -94,5 +90,5 @@ Status and summary for each are in the [inventory](inventory.md#plans).
   successor or current guidance.
 - [Research](inventory.md#research): evidence documents and the decisions
   they informed.
-- [Closed plans](inventory.md#closed-plans) still in the tree, and the
-  [retirement ledger](retired.md) for those that have left it.
+- [Retirement ledger](retired.md): every plan, research doc, reference, or
+  runbook that has left the tree, and where its content went.

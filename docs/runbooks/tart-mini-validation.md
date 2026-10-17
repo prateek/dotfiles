@@ -2,6 +2,7 @@
 status: current
 doc_type: runbook
 summary: "Local disposable-VM install validation on a Mac mini."
+updated: 2026-10-17
 related:
   - ../adr/0002-zsh-fresh-shell-validator.md
   - ../adr/0004-tart-install-validation-and-tracing.md
@@ -18,7 +19,8 @@ The lane runs locally on a Mac mini with a dedicated external SSD. Tart storage 
 - VM runner: `scripts/vm/test-install-tart.sh`
 - Contract test: `just test-shell tests/bats/vm/install-helper.bats`
 - Trace tests: `just test-python -p test_perfetto.py`
-- Make targets: `test-tart-install-helper`, `test-trace-perfetto`, `test-install-tart-dry-run`, `test-install-tart-smoke`, `test-install-tart-full`
+- Task runner: `just test-install-tart <lane> [flags]` (`smoke` by default, `full`, or `smoke --dry-run`) and `just warm-tart <verb>`
+- Install log scanner: `scripts/vm/check-install-log.sh`, tested by `just test-shell tests/bats/vm/install-log.bats`
 - Guest shell oracle: `scripts/audit/zsh-fresh-shells.zsh verify`
 
 `scripts/vm/test-install-tart.sh` owns the Tart lifecycle:
@@ -66,6 +68,8 @@ Dev machine types run `brew update` before `brew bundle`. Prebuilt Tart images c
 Mac App Store entries are omitted from generated Brewfiles by default because disposable Tart guests are not signed in to the App Store. Set `DOTFILES_INSTALL_MAS_APPS=true` only on a signed-in machine where MAS installs are intended.
 
 Every Tart run prints a slowest-phase timing summary before cleanup exits. The guest package scripts also emit `TIMING|...` log lines around expensive setup steps, so a slow run can usually be diagnosed from the plain log before opening a Perfetto trace.
+
+`just warm-tart <verb>` keeps one long-lived VM for the inner edit-test loop. `create` and `bootstrap` run once (about three minutes); after that `apply` pushes the current checkout through `chezmoi apply` in seconds, and `refresh` rebuilds the VM after a change that will not apply incrementally, such as a package group bump or a script reorder. The cold lanes above stay the checkpoint: run a disposable `smoke` or `full` VM for clean-machine proof before merging a change to bootstrap, package groups, defaults, or plist handling.
 
 Dry-run is a mode layered on top of the smoke lane. `just test-install-tart smoke --dry-run` boots Tart, downloads chezmoi via `get.chezmoi.io`, runs `chezmoi init --promptDefaults --promptChoice 'machine_type=ci' --source ~/dotfiles`, and then `chezmoi apply --dry-run --verbose`; it can continue past missing Xcode Command Line Tools because the point is to validate the bootstrap path, not install tools.
 
@@ -154,7 +158,7 @@ Open a captured trace with:
 ./scripts/trace/open-perfetto /Volumes/TartVMs/dotfiles-tart-smoke.trace.json --print-url
 ```
 
-The helper also scans the captured install log for macOS command failures that older defaults scripts can hide.
+After install and before guest postflight, the runner scans the captured log with `scripts/vm/check-install-log.sh`. A missing log or a known macOS failure signature fails the run: removed LaunchServices flags, sealed-system writes, unsupported Spotlight, Universal Access, or Safari defaults writes, missing clean-VM Dock paths, dyld load failures, mise's GitHub attestation rate limit, and unfiltered `systemsetup` InternetServices noise. When a new hidden failure surfaces, add its signature to the scanner and a case to `tests/bats/vm/install-log.bats`.
 
 ## Extending this lane
 

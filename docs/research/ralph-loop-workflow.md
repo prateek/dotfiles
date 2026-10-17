@@ -7,7 +7,7 @@ created: 2026-09-23
 updated: 2026-09-23
 related:
   - skill-invocation-frontmatter-research.md
-  - self-improving-agents.md
+  - ../retired.md
 status_detail: "Build log and handoff for the ralph-architecture workflow, an unattended plan/implement/review loop that commits and fast-forwards a real branch. Self-contained: the adversarial review that shaped it is reproduced in Appendix A and the whole script in Appendix B. One round has run. Covers what the design has to get right, the fourteen defects the review caught before first run, and the one guardrail that is currently too strict."
 ---
 

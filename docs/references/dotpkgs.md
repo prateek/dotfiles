@@ -5,7 +5,7 @@ summary: "Shared package status, pin-aware operations, bulk latest, and banner/a
 created: 2026-10-12
 updated: 2026-10-15
 related:
-  - ../plans/package-helper-plan.md
+  - ../retired.md
   - ../adr/0049-shared-package-operations.md
 ---
 

@@ -7,7 +7,7 @@ updated: 2026-10-05
 related:
   - ../adr/0032-acpx-model-routing.md
   - ../adr/0045-acpx-explicit-model-profiles.md
-  - ../plans/acpx-routing-plan.md
+  - ../retired.md
   - ../../agent-marketplace/packages/utils-agent/skills/acpx/SKILL.md
 ---
 

@@ -8,7 +8,7 @@ updated: 2026-09-06
 related:
   - public-dotfiles-skills-packaging-research.md
   - nix-agent-skills-packaging-research.md
-  - apm-skill-marketplace-spike.md
+  - ../retired.md
 status_detail: "Source survey of packaging alternatives; subsequent APM execution is recorded in the linked spike."
 ---
 
@@ -34,7 +34,7 @@ dates below are commit dates. No downloaded code was executed, no dependency
 was installed, and no marketplace was loaded into an agent. The installed APM
 CLI was queried for its version. Artifact generation is source-level evidence;
 successful native installation was untested at this survey stage. The subsequent
-[APM spike](apm-skill-marketplace-spike.md) records native execution and supersedes
+APM spike (retired; `research/apm-skill-marketplace-spike.md` in the [ledger](../retired.md)) records native execution and supersedes
 the source-only compatibility inferences below for that candidate.
 
 | Candidate and snapshot | Verified output | Fit for this requirement |
@@ -169,7 +169,7 @@ come from lockfile-attested `deployed_files` and their recorded hashes. A local
 edit to an attested dependency file therefore fails verification. Our reviewed
 vendor copies would need to enter the packaging project as local owned content,
 with provenance retained separately, rather than as local dependency references.
-The subsequent [APM spike](apm-skill-marketplace-spike.md) demonstrated a simpler
+The subsequent APM spike (retired; `research/apm-skill-marketplace-spike.md` in the [ledger](../retired.md)) demonstrated a simpler
 source-publication route that generates native manifests and catalogs without
 using the bundle exporter. Codex accepted APM's Claude manifest as a fallback;
 two static Codex manifests preserved the existing hook suppression policy.

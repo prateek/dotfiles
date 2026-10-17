@@ -16,6 +16,8 @@ status_detail: "Replaced by ADR 0039: the work overlay moved into the work repo 
 
 # ADR 0011 — Private repo for config overlays
 
+> Superseded by [ADR 0039](0039-work-overlay-in-work-repo.md).
+
 ## Context
 
 `prateek/dotfiles` is a **public** repo. Some managed config needs internal or
