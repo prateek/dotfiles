@@ -12,6 +12,8 @@ Library
 .config/tuna
 .local/bin/chezmoi-apply.command
 .local/bin/dictation-sidekick
+.local/bin/orca-zen-mode
+.local/libexec/orca-zen-mode.js
 bin/g95nc
 bin/orca-agent-session
 {{/* ~/.zshrc and the .chezmoiremove orphans are Mac history; elsewhere a

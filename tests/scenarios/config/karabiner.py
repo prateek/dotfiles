@@ -19,6 +19,14 @@ def from_key(item, key):
     return item.get("from", {}).get("key_code") == key
 
 
+zen = [item for item in manipulators if from_key(item, "z")
+       and item["from"].get("modifiers", {}).get("mandatory") == ["option"]]
+assert len(zen) == 1
+assert zen[0]["conditions"] == [{"type": "frontmost_application_if", "bundle_identifiers": [r"^com\.stablyai\.orca$"]}]
+assert zen[0]["to"][0]["shell_command"].endswith("/.local/bin/orca-zen-mode'")
+assert zen[0]["to"][0]["repeat"] is False
+
+
 def mode_condition(item, kind):
     return any(condition.get("type") == kind and condition.get("name") == "pad_mouse_mode"
                for condition in item.get("conditions", []))

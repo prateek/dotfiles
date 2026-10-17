@@ -146,6 +146,10 @@
            [:k :vk_none]
            [:n :vk_none]]}
 
+  {:des "Orca: Option-Z toggles Zen mode (focus project, hide sidebars, restore previous view)"
+   :rules [[{:key :z :modi {:mandatory [:option]}}
+            {:shell "'{{ .chezmoi.homeDir }}/.local/bin/orca-zen-mode'" :repeat false} :orca]]}
+
   {:des "Nav layer: ⌃Space toggles (with notification); Esc or a Caps tap leaves"
    :rules [[:!Tspacebar :nav_off :nav_mode]
            [:!Tspacebar [{:set ["nav_mode" 1]} {:noti {:id :nav_mode :text "NAV"}}] :!nav_mode]

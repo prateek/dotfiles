@@ -1,0 +1,148 @@
+#!/usr/bin/python3
+"""Focus Orca on the current project, then restore the previous filters and layout."""
+
+import argparse
+import fcntl
+import json
+import os
+from pathlib import Path
+import re
+import socket
+import sqlite3
+import subprocess
+import sys
+import uuid
+
+
+BRIDGE = Path(__file__).resolve().parent.parent / "libexec/orca-zen-mode.js"
+
+
+def profile_context(root):
+    profile = json.loads((root / "orca-profile-index.json").read_text())["activeProfileId"]
+    if not isinstance(profile, str) or not re.fullmatch(r"[A-Za-z0-9_-]+", profile):
+        raise RuntimeError("Invalid Orca profile")
+    database = root / "profiles" / profile / "profile-state.db"
+    with sqlite3.connect(database.as_uri() + "?mode=ro", uri=True) as connection:
+        row = connection.execute(
+            "SELECT payload FROM profile_state_documents WHERE domain = 'workspaceSession'"
+        ).fetchone()
+    return profile, json.loads(row[0]).get("activeRepoId") if row else None
+
+
+def rpc(root, pid, method, params=None):
+    # Always address this desktop's UI, including when its selected workspace is remote.
+    metadata = json.loads((root / "orca-runtime.json").read_text())
+    if metadata.get("pid") != pid:
+        raise RuntimeError("Orca restarted during the toggle")
+    endpoint = next((t["endpoint"] for t in metadata["transports"] if t["kind"] == "unix"), None)
+    if not endpoint:
+        raise RuntimeError("Orca's local runtime socket is unavailable")
+    request = dict(id=str(uuid.uuid4()), authToken=metadata["authToken"], method=method, params=params)
+    with socket.socket(socket.AF_UNIX) as connection:
+        connection.settimeout(5)
+        connection.connect(endpoint)
+        connection.sendall((json.dumps(request) + "\n").encode())
+        with connection.makefile("rb") as stream:
+            for _ in range(100):
+                line = stream.readline(4 * 1024 * 1024)
+                if not line.endswith(b"\n"):
+                    raise RuntimeError("Incomplete Orca RPC response")
+                frame = json.loads(line)
+                if frame.get("_keepalive") or frame.get("id") != request["id"]:
+                    continue
+                if not frame.get("ok"):
+                    raise RuntimeError("Orca RPC " + method + " failed: "
+                                       + frame.get("error", {}).get("message", "unknown error"))
+                return frame["result"]["ui"]
+    raise RuntimeError("Orca RPC returned no matching response")
+
+
+def project_filter(ui):
+    ids = ui.get("filterRepoIds")
+    if not isinstance(ids, list) or any(not isinstance(item, str) for item in ids):
+        raise RuntimeError("Invalid Orca project filter")
+    return ids
+
+
+def inspect_or_set(*args):
+    result = subprocess.run(
+        ["/usr/bin/osascript", "-l", "JavaScript", str(BRIDGE), *args],
+        capture_output=True, text=True, timeout=8,
+    )
+    if result.returncode:
+        raise RuntimeError(result.stderr.strip() or "Orca accessibility request failed")
+    state = json.loads(result.stdout)
+    if (type(state.get("pid")) is not int
+            or any(type(state.get(side)) is not bool for side in ("left", "right", "frontmost"))):
+        raise RuntimeError("Unexpected Orca sidebar state")
+    return state
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--status", action="store_true", help="inspect without changing the view")
+    args = parser.parse_args()
+    if sys.platform != "darwin":
+        raise RuntimeError("Orca Zen mode requires macOS")
+    root = Path.home() / "Library/Application Support/orca"
+    if args.status:
+        current = inspect_or_set()
+        profile, repo = profile_context(root)
+        filters = project_filter(rpc(root, current["pid"], "ui.get"))
+        print(json.dumps(dict(current, profile=profile, project=repo, filterRepoIds=filters)))
+        return
+
+    directory = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "orca-zen-mode"
+    directory.mkdir(parents=True, exist_ok=True, mode=0o700)
+    with (directory / "lock").open("w") as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            return
+        current = inspect_or_set()
+        if not current["frontmost"]:
+            raise RuntimeError("Orca must be frontmost; focus was left unchanged")
+        profile, repo = profile_context(root)
+        state_file = directory / ("restore-" + profile + ".json")
+        restoring = state_file.exists()
+        if restoring:
+            target = json.loads(state_file.read_text())
+            if (not isinstance(target, dict) or target.get("profile") != profile
+                    or any(type(target.get(side)) is not bool for side in ("left", "right"))):
+                raise RuntimeError("Invalid saved layout; inspect " + str(state_file))
+            project_filter(target)
+        else:
+            if not isinstance(repo, str) or not repo:
+                raise RuntimeError("Select an Orca project before entering Zen mode")
+            filters = project_filter(rpc(root, current["pid"], "ui.get"))
+            temporary = state_file.with_suffix(".tmp")
+            temporary.write_text(json.dumps(dict(current, profile=profile, filterRepoIds=filters)))
+            temporary.replace(state_file)
+            target = {"left": False, "right": False, "filterRepoIds": [repo]}
+
+        before = inspect_or_set()
+        active_profile, active_repo = profile_context(root)
+        if (not before["frontmost"] or before["pid"] != current["pid"]
+                or active_profile != profile or (not restoring and active_repo != repo)):
+            raise RuntimeError("Orca focus or project changed; toggle again to restore")
+        rpc(root, current["pid"], "ui.set", {"filterRepoIds": target["filterRepoIds"]})
+        if project_filter(rpc(root, current["pid"], "ui.get")) != target["filterRepoIds"]:
+            raise RuntimeError("Project filter change was not verified; toggle again to restore")
+        if profile_context(root)[0] != profile:
+            raise RuntimeError("Orca profile changed; return to the original profile to restore")
+
+        actual = inspect_or_set(str(current["pid"]),
+                                json.dumps(target["left"]), json.dumps(target["right"]))
+        if actual["pid"] != current["pid"] or any(actual[s] != target[s] for s in ("left", "right")):
+            raise RuntimeError("Sidebar change was not verified; press Option-Z again to restore")
+        if restoring:
+            state_file.unlink()
+        print(json.dumps(dict(actual, zen=not restoring, filterRepoIds=target["filterRepoIds"])))
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except (OSError, ValueError, KeyError, RuntimeError, sqlite3.Error, subprocess.TimeoutExpired) as error:
+        print("orca-zen-mode: " + str(error), file=sys.stderr)
+        sys.exit(1)

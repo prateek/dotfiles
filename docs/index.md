@@ -66,6 +66,7 @@ Status and summary for each are in the [inventory](inventory.md#plans).
 - [Linux devbox](plans/linux-devbox-plan.md)
 - [Orca settings store](plans/orca-settings-store-plan.md)
 - [Orca shortcut repair](plans/orca-shortcuts-plan.md)
+- [Orca Zen mode](plans/orca-zen-mode-plan.md)
 - [orcactl](plans/orcactl-plan.md)
 - [Permissions hybrid UI](plans/permissions-hybrid-ui-plan.md)
 - [Permission utility product follow-up](plans/permissions-product-plan.md)
