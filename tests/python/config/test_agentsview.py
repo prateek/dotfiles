@@ -95,3 +95,31 @@ homes = ["/srv/codex-home", "{stale}"]
         shutil.rmtree(self.support)
         result = self.command(self.modify, env={"WIKI_SESSIONS_CLONE": str(self.work / "no-clone")})
         self.assertEqual(tomllib.loads(result.stdout.decode()), {"agents": {"codex": {"dirs": self.stock_dirs}}})
+
+    def test_non_generated_homes_keep_order_and_comments(self):
+        backup = self.support / "orca/codex-accounts-old/x/home"
+        staging = self.support / "orca/codex-accounts/.staging/home"
+        current = f'''[agents.codex]
+homes = [
+  "/srv/codex-home", # work profile
+  "{self.support}/orca/codex-accounts/signed-out/home", # stale
+  "{backup}", # backup copy
+  "{staging}",
+]
+'''.encode()
+        result = self.command(self.modify, current)
+        self.assertEqual(tomllib.loads(result.stdout.decode())["agents"]["codex"]["homes"],
+                         ["/srv/codex-home", str(backup), str(staging), *self.orca_homes])
+        self.assertIn(b"# work profile", result.stdout)
+        self.assertIn(b"# backup copy", result.stdout)
+        self.assertNotIn(b"signed-out", result.stdout)
+
+    def test_single_string_home_becomes_an_array(self):
+        result = self.command(self.modify, b'[agents.codex]\nhomes = "/srv/codex-home"\n')
+        self.assertEqual(tomllib.loads(result.stdout.decode())["agents"]["codex"]["homes"],
+                         ["/srv/codex-home", *self.orca_homes])
+
+    def test_print_flags_without_arguments_report_usage(self):
+        for flag in ("--print-codex-homes", "--reconcile-codex-homes", "--print-session-sources"):
+            result = self.command([*self.modify, flag], expected_status=1)
+            self.assertIn(f"usage: modify_private_config.toml {flag}".encode(), result.stderr)

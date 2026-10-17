@@ -48,3 +48,32 @@ setup() {
   run -0 jq -r 'map(sub(".*/support/"; "")) | join(" ")' "$FIXTURE/actual.json"
   assert_output 'orca/codex-runtime-home/home orca/codex-accounts/acct-a/home orca/codex-accounts/acct-b/home orca-dev/codex-accounts/acct-d/home'
 }
+
+# bats test_tags=host
+@test "Agentsview Orca Codex homes reconcile identically in the separate wiki sync producer" {
+  [ -x "$wiki_script" ] || skip 'requires wiki-agent-sessions sync-sessions; set WIKI_SESSION_SYNC_SCRIPT to its path'
+  grep -q -- '--reconcile-codex-homes' "$wiki_script" || skip 'wiki sync-sessions predates --reconcile-codex-homes'
+  local support="$FIXTURE/support" config
+  mkdir -p "$support/orca/codex-runtime-home/home" "$support/orca/codex-accounts/acct-a/home"
+  render_template home/private_dot_agentsview/modify_private_config.toml.tmpl personal > "$FIXTURE/modifier.py"
+  chmod +x "$FIXTURE/modifier.py"
+  for config in \
+    "[agents.codex]
+homes = [
+  \"/srv/codex-home\", # work profile
+  \"$support/orca/codex-accounts/gone/home\", # stale
+  \"$support/orca/codex-accounts-old/x/home\",
+  \"$support/orca/codex-accounts/.staging/home\",
+]" \
+    "[agents.codex]
+homes = \"/srv/codex-home\"" \
+    'auth_token = "keep"'; do
+    printf '%s\n' "$config" > "$FIXTURE/input.toml"
+    run -0 bash -c '"$1" --reconcile-codex-homes "$2" < "$3" > "$4"' _ "$FIXTURE/modifier.py" "$support" "$FIXTURE/input.toml" "$FIXTURE/actual.toml"
+    assert_success
+    run -0 bash -c '"$1" --reconcile-codex-homes "$2" < "$3" > "$4"' _ "$wiki_script" "$support" "$FIXTURE/input.toml" "$FIXTURE/expected.toml"
+    assert_success
+    run -0 cmp "$FIXTURE/actual.toml" "$FIXTURE/expected.toml"
+    assert_success
+  done
+}

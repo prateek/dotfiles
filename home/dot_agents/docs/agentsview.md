@@ -37,12 +37,15 @@ agentsview's default Codex roots (`~/.codex/sessions` +
 The fix is agentsview's alternate homes, `[agents.codex] homes` in
 `~/.agentsview/config.toml`. Each home adds its `sessions/` and
 `archived_sessions/` and reads its `session_index.jsonl` and `history.jsonl`
-sidecars. Homes are additive to `dirs`, which stays pinned to the stock
-`~/.codex` roots: without it agentsview derives those roots from `CODEX_HOME`,
-and Orca exports `CODEX_HOME` (pointing at its account home) into every
-terminal it launches, Claude ones included. A daemon started from an Orca
-terminal would otherwise drop `~/.codex` entirely. agentsview 0.43 renamed the old top-level `codex_sessions_dirs` key to this
-table and refuses to load a config that sets both.
+sidecars. agentsview 0.43 moved Codex settings from the old top-level
+`codex_sessions_dirs` key into this `[agents.codex]` table and refuses to load
+a config that sets both.
+
+Homes are additive to `dirs`, which stays pinned to the stock `~/.codex` roots.
+Without the pin, agentsview derives those roots from `CODEX_HOME`, and Orca
+exports `CODEX_HOME` (pointing at its account home) into every terminal it
+launches, Claude ones included. A daemon started from an Orca terminal would
+then drop `~/.codex` entirely.
 
 ```toml
 [agents.codex]
@@ -67,12 +70,18 @@ them identical:
   list changes. A newly signed-in account is indexed within the hour on hosts
   in the archive, and at the next apply elsewhere.
 
-Both reconcile only homes under an Orca build directory. Homes added by hand or
-on the agentsview Settings page are kept. The modify script also manages the
-generated `[[session_sources]]` entries for the cross-machine session archive
-(see below), and pins `[agents.codex] dirs` to the stock roots. Everything
-else in the file, including the `auth_token` and `cursor_secret` that agentsview
-generates itself, round-trips untouched, preserved verbatim by `tomlkit`.
+Both own only the paths the generator produces: each build's
+`codex-runtime-home/home` and its non-hidden `codex-accounts/<id>/home`. Every
+other home, whether added by hand, on the agentsview Settings page, or elsewhere
+under the Orca tree, keeps its place and comments; a single-string `homes`
+value becomes an array. The fixture test runs both producers' full reconcile on
+the same configs and compares the output byte for byte.
+
+The modify script also manages the generated `[[session_sources]]` entries for
+the cross-machine session archive (see below), and pins `[agents.codex] dirs` to
+the stock roots. Everything else in the file, including the `auth_token` and
+`cursor_secret` that agentsview generates itself, round-trips untouched,
+preserved verbatim by `tomlkit`.
 
 ## Cross-machine sessions via the archive
 

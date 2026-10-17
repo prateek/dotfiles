@@ -3,7 +3,7 @@ status: active
 doc_type: plan
 owner: Prateek
 created: 2026-08-30
-updated: 2026-09-07
+updated: 2026-10-17
 status_detail: "Accepted; implementation landing on the av-history branch. See ADR 0017."
 related:
   - ../adr/0017-agent-session-archive.md
@@ -86,7 +86,7 @@ Install agentsview v0.41.1 or later. The following facts were verified against v
 
 `[[session_sources]]` tables, added in 0.40.0, describe the required topology. `docs/filesystem-sync.md` documents native agent layouts transported through Git, rsync, file-copy jobs, or shared filesystems and scanned as labeled roots. Each entry has `agent`, `dir`, and `machine` fields. Entries extend agentsview's local defaults, and `machine` becomes a session-filter label.
 
-Per-agent directory settings replace their defaults. Repository roots therefore belong in additive `[[session_sources]]` entries. The existing dotfiles-managed `codex_sessions_dirs` setting remains responsible for local Orca `CODEX_HOME` directories.
+Per-agent directory settings replace their defaults. Repository roots therefore belong in additive `[[session_sources]]` entries. Local Orca `CODEX_HOME` directories are registered separately as `[agents.codex] homes`, which are also additive; see [agentsview conventions](../../home/dot_agents/docs/agentsview.md#orca-launched-codex-sessions-live-outside-codex).
 
 Duplicate roots cannot create duplicate session rows. A Claude session ID is the filename UUID (`internal/parser/claude.go:87`), and `sessions.id` is the TEXT PRIMARY KEY written through `UpsertSession` (`internal/db/sessions.go:1475`). Generated repository sources will still exclude the current host to avoid parsing each local session twice.
 
@@ -137,7 +137,7 @@ Archive filters must recurse into subdirectories to retain subagent logs.
 |---|---|---|
 | Claude Code | `~/.claude/projects/` and `~/.claude/history.jsonl` | Mirror JSONL recursively, including memories |
 | pi | `~/.pi/agent/sessions/` | Mirror recursively |
-| Codex | `~/.codex/sessions/`, `~/.codex/archived_sessions/`, and Orca's private `CODEX_HOME` sessions directory | Auto-detect when present; none exist on the current machine |
+| Codex | `~/.codex/sessions/`, `~/.codex/archived_sessions/`, and the `sessions/` and `archived_sessions/` of each Orca `CODEX_HOME` (`codex-runtime-home/home` and per-account `codex-accounts/<id>/home`) | Auto-detect when present |
 | cursor-agent | `~/.cursor/projects/*/agent-transcripts/` and `~/.cursor/chats/<hash>/<uuid>/store.db` | Mirror only `agent-transcripts/**` (`.jsonl` and `.txt` — the parser accepts both layouts); snapshot SQLite stores with `sqlite3`. **Never mirror the wider `projects/` tree**: it holds `mcp-auth.json` MCP OAuth files (177 here), `worker.log`, and `canvases/`. `agent-tools/` and `terminals/` output logs stay out until a consumer reads them |
 | Gemini CLI | `~/.gemini/` | Deferred; no transcripts exist here, and the directory contains `oauth_creds.json`. Never mirror it wholesale |
 | Copilot CLI | `~/.copilot/session-state/` | Deferred; the current machine contains 28 KB. Add it when needed |
@@ -148,7 +148,7 @@ The wiki repository's `AGENTS.md` will record deferred harnesses and this consum
 |---|---|---|---|
 | Claude Code | Yes | Yes, through `[[session_sources]]` | Yes |
 | pi | Yes | No pi parser in v0.41.1 | Yes, through `PI_HISTORY_PATH` |
-| Codex | When present | Yes, through `[[session_sources]]`; `codex_sessions_dirs` covers local Orca `CODEX_HOME` directories | Yes |
+| Codex | When present | Yes, through `[[session_sources]]`; `[agents.codex] homes` covers local Orca `CODEX_HOME` directories | Yes |
 | cursor-agent `chats/store.db` | Yes, as a consistent snapshot | No; v0.41.1 reads only `<project>/agent-transcripts/*.{txt,jsonl}` (`internal/parser/cursor_provider.go:166`) | No |
 | cursor-agent `projects/` | Yes | Yes, through `[[session_sources]]` | No |
 
@@ -487,7 +487,7 @@ dir = "/Users/prungta/code/github.com/prateek/wiki-agent-sessions/sessions/<host
 machine = "<host>"
 ```
 
-Local defaults remain active because `session_sources` entries are additive. Leave the existing `codex_sessions_dirs` setting for local Orca `CODEX_HOME` directories unchanged.
+Local defaults remain active because `session_sources` entries are additive. Local Orca `CODEX_HOME` directories stay in `[agents.codex] homes`, reconciled by both the modify script and the hourly sync.
 
 Reconcile only generated entries whose `dir` is under the wiki clone. Preserve hand-written `session_sources`, unrelated settings, and secrets. Continue using `tomlkit` so all preserved content round-trips unchanged.
 
@@ -506,7 +506,7 @@ Use the current private source path and environment overrides that redirect runt
 - Every other-host root produces an entry with the correct `agent` and `machine`.
 - Entries are sorted, and the current host is absent.
 - Hand-written `session_sources` entries survive unchanged.
-- The existing `codex_sessions_dirs` setting survives unchanged.
+- The Orca `[agents.codex] homes` entries and the pinned stock `[agents.codex] dirs` survive unchanged.
 
 CI does not currently run this test. Add `make test-agentsview-config` to `.github/workflows/install-smoke.yml`.
 

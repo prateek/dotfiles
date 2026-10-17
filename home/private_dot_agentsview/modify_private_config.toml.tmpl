@@ -16,11 +16,12 @@ cursor_secret, hand-written entries) preserved verbatim by tomlkit:
   stays pinned to the stock ~/.codex roots: without it agentsview derives
   them from CODEX_HOME, which Orca exports into every terminal it launches,
   so a daemon started from one would drop ~/.codex. agentsview does not glob
-  homes, so they are enumerated at script runtime. Only homes under an Orca
-  build are reconciled; hand-written and Settings-page homes are kept.
-  Generation must stay identical to orca_codex_homes() in the wiki repo's
-  sync-sessions script, which reconciles the same list hourly between
-  applies; a fixture test enforces parity. agentsview 0.43 refuses to load a
+  homes, so they are enumerated at script runtime. Only paths this generator
+  produces are reconciled; every other home, including hand-added ones
+  elsewhere under the Orca tree, keeps its place and comments. Generation and
+  reconciliation must stay identical to the wiki repo's sync-sessions, which
+  reconciles the same list hourly between applies; a fixture test enforces
+  parity. agentsview 0.43 refuses to load a
   config that also sets the legacy top-level codex_sessions_dirs, so that key
   is removed.
 
@@ -86,8 +87,54 @@ def orca_codex_homes(app_support: Path) -> list[str]:
     return homes
 
 
-def is_orca_home(home) -> bool:
-    return any(Path(str(home)).expanduser().is_relative_to(APP_SUPPORT / build) for build in ORCA_BUILDS)
+def is_orca_home(home, app_support: Path) -> bool:
+    path = Path(str(home)).expanduser()
+    for build in ORCA_BUILDS:
+        if path == app_support / build / "codex-runtime-home/home":
+            return True
+        account = path.parent
+        if (path.name == "home" and account.parent == app_support / build / "codex-accounts"
+                and not account.name.startswith(".")):
+            return True
+    return False
+
+
+def reconcile_codex_homes(doc, app_support: Path) -> bool:
+    desired = orca_codex_homes(app_support)
+    raw = doc.get("agents", {}).get("codex", {}).get("homes")
+    current = [raw] if isinstance(raw, str) else [str(h) for h in raw or []]
+    kept = [h for h in current if not is_orca_home(h, app_support)]
+    if isinstance(raw, tomlkit.items.Array):
+        if kept + desired == current:
+            return False
+        # Edit in place so the other entries keep their order and comments.
+        for i in reversed(range(len(raw))):
+            if is_orca_home(raw[i], app_support):
+                del raw[i]
+        for home in desired:
+            raw.append(home)
+    elif raw is None and not desired:
+        return False
+    else:
+        if "agents" not in doc:
+            doc["agents"] = tomlkit.table(is_super_table=True)
+        if "codex" not in doc["agents"]:
+            doc["agents"]["codex"] = tomlkit.table()
+        doc["agents"]["codex"]["homes"] = kept + desired
+    codex = doc["agents"]["codex"]
+    if not codex["homes"]:
+        del codex["homes"]
+    return True
+
+
+def flag_args(flag: str, usage: str) -> list[str] | None:
+    if flag not in sys.argv:
+        return None
+    count = len(usage.split())
+    args = sys.argv[sys.argv.index(flag) + 1:][:count]
+    if len(args) < count:
+        sys.exit(f"usage: {Path(sys.argv[0]).name} {flag} {usage}")
+    return args
 
 
 def semantic_equal(left: str, right: str) -> bool:
@@ -104,14 +151,18 @@ def is_repo_entry(entry) -> bool:
         return False
 
 
-if "--print-codex-homes" in sys.argv:
-    idx = sys.argv.index("--print-codex-homes")
-    print(json.dumps(orca_codex_homes(Path(sys.argv[idx + 1]))))
+if (args := flag_args("--print-codex-homes", "<app-support-dir>")) is not None:
+    print(json.dumps(orca_codex_homes(Path(args[0]))))
     sys.exit(0)
 
-if "--print-session-sources" in sys.argv:
-    idx = sys.argv.index("--print-session-sources")
-    print(json.dumps(repo_session_sources(Path(sys.argv[idx + 1]), sys.argv[idx + 2])))
+if (args := flag_args("--reconcile-codex-homes", "<app-support-dir>")) is not None:
+    doc = tomlkit.loads(sys.stdin.read())
+    reconcile_codex_homes(doc, Path(args[0]))
+    sys.stdout.write(tomlkit.dumps(doc))
+    sys.exit(0)
+
+if (args := flag_args("--print-session-sources", "<clone> <self-host>")) is not None:
+    print(json.dumps(repo_session_sources(Path(args[0]), args[1])))
     sys.exit(0)
 
 current_text = sys.stdin.read()
@@ -120,13 +171,9 @@ doc.pop("codex_sessions_dirs", None)
 agents = doc.get("agents") or tomlkit.table(is_super_table=True)
 codex = agents.get("codex") or tomlkit.table()
 codex["dirs"] = STOCK_CODEX_DIRS
-homes = [h for h in codex.get("homes", []) if not is_orca_home(h)] + orca_codex_homes(APP_SUPPORT)
-if homes:
-    codex["homes"] = homes
-else:
-    codex.pop("homes", None)
 agents["codex"] = codex
 doc["agents"] = agents
+reconcile_codex_homes(doc, APP_SUPPORT)
 
 desired = repo_session_sources(CLONE, SELF_HOST)
 existing = doc.get("session_sources")
