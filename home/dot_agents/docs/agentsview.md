@@ -27,8 +27,12 @@ The store is read-only ground truth about past agent behavior. Treat it as evide
 Orca gives Codex processes it launches their own private `CODEX_HOME` at
 `<ORCA_USER_DATA_PATH>/codex-runtime-home/home` instead of the real `~/.codex`
 (`~/Library/Application Support/orca/codex-runtime-home/home` on macOS, or
-`orca-dev` for the dev build). This keeps Orca's own automation hooks out of
-your real Codex profile, but it also means agentsview's default Codex root
+`orca-dev` for the dev build). Since late September 2026 Orca also gives each
+signed-in Codex account its own home at
+`<ORCA_USER_DATA_PATH>/codex-accounts/<account-id>/home`, and that is where
+current Orca-launched sessions, including relay builder passes, write their
+rollouts. This keeps Orca's own automation hooks out of your real Codex
+profile, but it also means agentsview's default Codex root
 (`~/.codex/sessions` + `~/.codex/archived_sessions`) silently misses every
 session Orca launched.
 
@@ -45,8 +49,15 @@ dirs = [
   "~/.codex/archived_sessions",
   "~/Library/Application Support/orca/codex-runtime-home/home/sessions",
   "~/Library/Application Support/orca-dev/codex-runtime-home/home/sessions",
+  # one entry per account present at apply time:
+  "~/Library/Application Support/orca/codex-accounts/<account-id>/home/sessions",
 ]
 ```
+
+agentsview does not expand globs in `dirs` (only `~`), so the modify script
+below enumerates `{orca,orca-dev}/codex-accounts/*/home/sessions` on each
+apply. A newly signed-in account is picked up on the next `chezmoi apply`
+plus daemon restart.
 
 This repo keeps that key in sync via
 `home/private_dot_agentsview/modify_private_config.toml.tmpl`, a chezmoi

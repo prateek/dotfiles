@@ -12,9 +12,11 @@ cursor_secret, hand-written entries) preserved verbatim by tomlkit:
   runtime-home dir instead of ~/.codex (see home/dot_agents/docs/agentsview.md),
   so agentsview's default Codex scan misses those sessions. The key replaces
   agentsview's defaults rather than extending them, so the stock paths are
-  listed alongside both Orca builds' paths. agentsview 0.43 refuses to load a
-  config that also sets the legacy top-level codex_sessions_dirs, so that key
-  is removed.
+  listed alongside both Orca builds' paths. Orca also gives each signed-in
+  Codex account its own home under codex-accounts/<id>; agentsview does not
+  glob dirs entries, so those are globbed at script runtime and a new account
+  lands on the next apply. agentsview 0.43 refuses to load a config that also
+  sets the legacy top-level codex_sessions_dirs, so that key is removed.
 
 - [[session_sources]]: cross-host roots from the wiki-agent-sessions clone
   (agentsview's documented topology for git-transported native layouts, with
@@ -38,6 +40,9 @@ DESIRED_DIRS = [
     "{{ .chezmoi.homeDir }}/Library/Application Support/orca/codex-runtime-home/home/sessions",
     "{{ .chezmoi.homeDir }}/Library/Application Support/orca-dev/codex-runtime-home/home/sessions",
 ]
+for build in ("orca", "orca-dev"):
+    accounts = Path("{{ .chezmoi.homeDir }}/Library/Application Support", build, "codex-accounts")
+    DESIRED_DIRS += [str(d) for d in sorted(accounts.glob("*/home/sessions")) if d.is_dir()]
 
 CLONE = Path(os.environ.get(
     "WIKI_SESSIONS_CLONE",

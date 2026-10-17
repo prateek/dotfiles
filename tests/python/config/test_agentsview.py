@@ -14,10 +14,14 @@ class AgentsviewConfigTests(RepoTestCase):
         for root in ("alpha/claude/projects", "alpha/cursor/projects", "beta/claude/projects",
                      "beta/codex/sessions", "selfhost/claude/projects"):
             (self.clone / "sessions" / root).mkdir(parents=True)
+        self.accounts = self.home / "Library/Application Support/orca/codex-accounts"
+        (self.accounts / "acct-b/home/sessions").mkdir(parents=True)
+        (self.accounts / "signed-out/home").mkdir(parents=True)
         self.local_dirs = [str(self.home / suffix) for suffix in (
             ".codex/sessions", ".codex/archived_sessions",
             "Library/Application Support/orca/codex-runtime-home/home/sessions",
             "Library/Application Support/orca-dev/codex-runtime-home/home/sessions",
+            "Library/Application Support/orca/codex-accounts/acct-b/home/sessions",
         )]
 
     def test_archive_sources_reconcile_while_preserving_auth_custom_entries_and_comments(self):
@@ -71,3 +75,14 @@ homes = ["/srv/codex-home"]
             "claude": {"dirs": ["/srv/claude"]},
             "codex": {"homes": ["/srv/codex-home"], "dirs": self.local_dirs},
         })
+
+    def test_orca_codex_account_added_after_apply_lands_on_next_run(self):
+        first = self.command(self.modify)
+        (self.accounts / "acct-a/home/sessions").mkdir(parents=True)
+        second = self.command(self.modify, first.stdout)
+        self.assertEqual(tomllib.loads(second.stdout.decode())["agents"]["codex"]["dirs"], [
+            *self.local_dirs[:4],
+            str(self.accounts / "acct-a/home/sessions"),
+            str(self.accounts / "acct-b/home/sessions"),
+        ])
+        self.assertEqual(self.command(self.modify, second.stdout).stdout, second.stdout)
