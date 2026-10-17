@@ -6,7 +6,7 @@ owner: Prateek
 created: 2026-07-03
 updated: 2026-09-26
 related:
-  - ../plans/tartelet-runner-plan.md
+  - ../retired.md
   - ../adr/0014-tartelet-self-hosted-runners.md
   - tart-mini-validation.md
 ---
@@ -14,6 +14,10 @@ related:
 # Tartelet Runner Setup
 
 Set up a homelab Mac mini to run ephemeral iOS/macOS GitHub Actions jobs.
+
+The golden VM build followed by the first-run credential paste has not been
+exercised end to end on the mini; the plan that set this up retired with that
+check still open.
 
 ## What chezmoi manages
 
@@ -178,4 +182,4 @@ For a Tartelet upgrade, check the keys and encodings in the
 [settings hook](../../home/.chezmoiscripts/run_onchange_after_17-tartelet-settings.sh.tmpl)
 against Tartelet source using its lookup instructions. For design rationale,
 read [ADR 0014](../adr/0014-tartelet-self-hosted-runners.md) and the
-[runner plan](../plans/tartelet-runner-plan.md).
+retired runner plan (`plans/tartelet-runner-plan.md` in the [ledger](../retired.md)).

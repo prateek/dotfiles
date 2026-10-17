@@ -62,7 +62,6 @@ Status and summary for each are in the [inventory](inventory.md#plans).
 - [Browser skill](plans/browser-skill-plan.md)
 - [Browser components and Camofox adoption](plans/browser-runtime-controller-plan.md)
 - [Decomment skill](plans/decomment-skill-plan.md)
-- [Downstream fork](plans/downstream-fork-plan.md)
 - [Goku Karabiner migration](plans/goku-karabiner-migration-plan.md)
 - [Linux devbox](plans/linux-devbox-plan.md)
 - [Orca settings store](plans/orca-settings-store-plan.md)
@@ -76,13 +75,10 @@ Status and summary for each are in the [inventory](inventory.md#plans).
 - [Shell banner](plans/shell-banner-plan.md)
 - [Skill management console](plans/skill-management-console-plan.md)
 - [SSD layout and Arq coverage](plans/ssd-arq-layout-plan.md)
-- [Sudo askpass via 1Password](plans/sudo-askpass-1password-plan.md)
 - [Tartelet runner memory guard](plans/tartelet-runner-memory-guard-proposal.md)
-- [Tartelet self-hosted runners](plans/tartelet-runner-plan.md)
 - [TCC onboarding](plans/tcc-onboarding-plan.md)
 - [Touch ID for sudo](plans/touchid-sudo-plan.md)
 - [Using-git-spice skill](plans/using-git-spice-skill-plan.md)
-- [zsh fresh-shell validator](plans/zsh-fresh-shell-validator-plan.md)
 
 ## Decisions, research, and history
 

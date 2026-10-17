@@ -1,10 +1,10 @@
 ---
-status: proposed
+status: draft
 doc_type: plan
 summary: "A small config and idempotent apply for BetterDisplay virtual screens on the Samsung Odyssey Neo G9: full-width HiDPI, two-column, and optional three-column modes"
 created: 2026-04-30
 related: []
-status_detail: "Proposal only; no displayctl code, config, apply script, or tests exist in this checkout yet."
+status_detail: "Parked: trying g95nc plus WinMux to cover these layouts before building displayctl."
 ---
 
 # BetterDisplay Display Modes Plan

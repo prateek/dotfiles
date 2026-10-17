@@ -1,15 +1,15 @@
 ---
-status: proposed
+status: draft
 doc_type: plan
 summary: "A host memory-pressure circuit breaker for the Tartelet runner mini that sheds the runner VM before macOS jetsam kills host processes"
 owner: Prateek
 created: 2026-07-04
 updated: 2026-07-04
 related:
-  - tartelet-runner-plan.md
+  - ../retired.md
   - ../runbooks/tartelet-runner-setup.md
   - ../adr/0014-tartelet-self-hosted-runners.md
-status_detail: "Design proposal. A prototype was built and validated on 2026-07-04 (all checks passed) but not kept in-tree; this branch carries docs only. Implement from the design here. The m4mini is unprotected until this is built and applied."
+status_detail: "Parked: the design is kept; the mini has run without another jetsam wedge since the prototype. Build from this design if it recurs."
 ---
 
 # Tartelet Runner Memory-Guard Proposal
@@ -21,7 +21,7 @@ the runner before that happens again. A prototype was built and validated during
 investigation, then dropped so this branch carries only the design — this doc is the
 spec to implement from when you pick it back up.
 
-The parent initiative is the [Tartelet runner plan](tartelet-runner-plan.md) and
+The parent initiative is the retired Tartelet runner plan (`plans/tartelet-runner-plan.md` in the [ledger](../retired.md)) and
 [ADR 0014](../adr/0014-tartelet-self-hosted-runners.md); the operator guide is the
 [runner setup runbook](../runbooks/tartelet-runner-setup.md).
 

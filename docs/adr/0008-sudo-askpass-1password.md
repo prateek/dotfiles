@@ -1,18 +1,22 @@
 ---
-status: accepted
+status: superseded
 doc_type: adr
 summary: "Sudo caching uses a chezmoi-managed `SUDO_ASKPASS` helper that reads the password from 1Password via `op read`, replacing the keepalive subsystem on work Macs."
 created: 2026-05-13
-updated: 2026-05-14
+updated: 2026-10-17
 owner: Prateek
 related:
   - ../plans/sudo-askpass-1password-plan.md
   - 0006-chezmoi-migration-prototype.md
   - ../references/jamf-self-service-elevation.md
-status_detail: "Accepted decision; implementation is pending in this checkout. Current operational behavior still uses dotfiles_sudo_start and the sudo-keepalive tests."
+status_detail: "Never implemented. Touch ID for sudo (ADR 0030, ADR 0038) and Jamf Self Service elevation cover the need; ADR 0053 records the replacement."
+closed: 2026-10-17
+superseded_by: 0053-touchid-and-jamf-replace-askpass.md
 ---
 
 # ADR 0008 — Sudo askpass via 1Password
+
+> Superseded by [ADR 0053](0053-touchid-and-jamf-replace-askpass.md).
 
 ## Context
 
