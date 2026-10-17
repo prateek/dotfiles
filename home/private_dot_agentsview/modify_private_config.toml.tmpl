@@ -8,15 +8,21 @@
 Two managed surfaces, everything else round-trips untouched (auth_token,
 cursor_secret, hand-written entries) preserved verbatim by tomlkit:
 
-- [agents.codex] dirs: Orca launches Codex with its own CODEX_HOME under its
-  runtime-home dir instead of ~/.codex (see home/dot_agents/docs/agentsview.md),
-  so agentsview's default Codex scan misses those sessions. The key replaces
-  agentsview's defaults rather than extending them, so the stock paths are
-  listed alongside both Orca builds' paths. Orca also gives each signed-in
-  Codex account its own home under codex-accounts/<id>; agentsview does not
-  glob dirs entries, so those are globbed at script runtime and a new account
-  lands on the next apply. agentsview 0.43 refuses to load a config that also
-  sets the legacy top-level codex_sessions_dirs, so that key is removed.
+- [agents.codex] homes: Orca launches Codex with its own CODEX_HOME instead of
+  ~/.codex (see home/dot_agents/docs/agentsview.md): codex-runtime-home/home,
+  plus one codex-accounts/<id>/home per signed-in account. Each is registered
+  as an agentsview alternate home, which scans sessions/ and
+  archived_sessions/ and reads the home's title and history sidecars. dirs
+  stays pinned to the stock ~/.codex roots: without it agentsview derives
+  them from CODEX_HOME, which Orca exports into every terminal it launches,
+  so a daemon started from one would drop ~/.codex. agentsview does not glob
+  homes, so they are enumerated at script runtime. Only homes under an Orca
+  build are reconciled; hand-written and Settings-page homes are kept.
+  Generation must stay identical to orca_codex_homes() in the wiki repo's
+  sync-sessions script, which reconciles the same list hourly between
+  applies; a fixture test enforces parity. agentsview 0.43 refuses to load a
+  config that also sets the legacy top-level codex_sessions_dirs, so that key
+  is removed.
 
 - [[session_sources]]: cross-host roots from the wiki-agent-sessions clone
   (agentsview's documented topology for git-transported native layouts, with
@@ -34,16 +40,12 @@ from pathlib import Path
 
 import tomlkit
 
-DESIRED_DIRS = [
+STOCK_CODEX_DIRS = [
     "{{ .chezmoi.homeDir }}/.codex/sessions",
     "{{ .chezmoi.homeDir }}/.codex/archived_sessions",
-    "{{ .chezmoi.homeDir }}/Library/Application Support/orca/codex-runtime-home/home/sessions",
-    "{{ .chezmoi.homeDir }}/Library/Application Support/orca-dev/codex-runtime-home/home/sessions",
 ]
-for build in ("orca", "orca-dev"):
-    accounts = Path("{{ .chezmoi.homeDir }}/Library/Application Support", build, "codex-accounts")
-    DESIRED_DIRS += [str(d) for d in sorted(accounts.glob("*/home/sessions")) if d.is_dir()]
-
+APP_SUPPORT = Path("{{ .chezmoi.homeDir }}/Library/Application Support")
+ORCA_BUILDS = ("orca", "orca-dev")
 CLONE = Path(os.environ.get(
     "WIKI_SESSIONS_CLONE",
     "{{ .chezmoi.homeDir }}/code/github.com/prateek/wiki-agent-sessions",
@@ -73,6 +75,21 @@ def repo_session_sources(clone: Path, self_host: str) -> list[dict]:
     return entries
 
 
+def orca_codex_homes(app_support: Path) -> list[str]:
+    homes = []
+    for build in ORCA_BUILDS:
+        candidates = [app_support / build / "codex-runtime-home/home"]
+        accounts = app_support / build / "codex-accounts"
+        if accounts.is_dir():
+            candidates += [d / "home" for d in sorted(accounts.iterdir()) if not d.name.startswith(".")]
+        homes += [str(home) for home in candidates if home.is_dir()]
+    return homes
+
+
+def is_orca_home(home) -> bool:
+    return any(Path(str(home)).expanduser().is_relative_to(APP_SUPPORT / build) for build in ORCA_BUILDS)
+
+
 def semantic_equal(left: str, right: str) -> bool:
     try:
         return tomlkit.loads(left).unwrap() == tomlkit.loads(right).unwrap()
@@ -87,6 +104,11 @@ def is_repo_entry(entry) -> bool:
         return False
 
 
+if "--print-codex-homes" in sys.argv:
+    idx = sys.argv.index("--print-codex-homes")
+    print(json.dumps(orca_codex_homes(Path(sys.argv[idx + 1]))))
+    sys.exit(0)
+
 if "--print-session-sources" in sys.argv:
     idx = sys.argv.index("--print-session-sources")
     print(json.dumps(repo_session_sources(Path(sys.argv[idx + 1]), sys.argv[idx + 2])))
@@ -97,7 +119,12 @@ doc = tomlkit.loads(current_text) if current_text.strip() else tomlkit.document(
 doc.pop("codex_sessions_dirs", None)
 agents = doc.get("agents") or tomlkit.table(is_super_table=True)
 codex = agents.get("codex") or tomlkit.table()
-codex["dirs"] = DESIRED_DIRS
+codex["dirs"] = STOCK_CODEX_DIRS
+homes = [h for h in codex.get("homes", []) if not is_orca_home(h)] + orca_codex_homes(APP_SUPPORT)
+if homes:
+    codex["homes"] = homes
+else:
+    codex.pop("homes", None)
 agents["codex"] = codex
 doc["agents"] = agents
 
@@ -106,7 +133,6 @@ existing = doc.get("session_sources")
 # Hand-written entries are re-appended as their original tomlkit items so
 # comments and formatting survive; only clone-owned entries are regenerated.
 kept = [e for e in existing or [] if not is_repo_entry(e)]
-current_repo = [dict(e) for e in existing or [] if is_repo_entry(e)]
 if kept or desired:
     aot = tomlkit.aot()
     for entry in kept:

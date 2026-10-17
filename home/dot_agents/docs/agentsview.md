@@ -24,49 +24,55 @@ The store is read-only ground truth about past agent behavior. Treat it as evide
 
 ## Orca-launched Codex sessions live outside ~/.codex
 
-Orca gives Codex processes it launches their own private `CODEX_HOME` at
-`<ORCA_USER_DATA_PATH>/codex-runtime-home/home` instead of the real `~/.codex`
-(`~/Library/Application Support/orca/codex-runtime-home/home` on macOS, or
-`orca-dev` for the dev build). Since late September 2026 Orca also gives each
-signed-in Codex account its own home at
-`<ORCA_USER_DATA_PATH>/codex-accounts/<account-id>/home`, and that is where
-current Orca-launched sessions, including relay builder passes, write their
-rollouts. This keeps Orca's own automation hooks out of your real Codex
-profile, but it also means agentsview's default Codex root
-(`~/.codex/sessions` + `~/.codex/archived_sessions`) silently misses every
-session Orca launched.
+Orca gives Codex processes it launches their own private `CODEX_HOME` instead
+of the real `~/.codex`: `<ORCA_USER_DATA_PATH>/codex-runtime-home/home`, plus
+one `<ORCA_USER_DATA_PATH>/codex-accounts/<account-id>/home` per signed-in
+Codex account, where current Orca-launched sessions (including relay builder
+passes) write their rollouts. On macOS `<ORCA_USER_DATA_PATH>` is
+`~/Library/Application Support/orca`, or `orca-dev` for the dev build. This
+keeps Orca's own automation hooks out of your real Codex profile, but
+agentsview's default Codex roots (`~/.codex/sessions` +
+`~/.codex/archived_sessions`) miss every session Orca launched.
 
-The fix is `[agents.codex] dirs` in `~/.agentsview/config.toml`. Setting it
-**replaces** agentsview's built-in defaults rather than extending them, so the
-stock paths must be listed explicitly alongside the Orca one(s). agentsview
-0.43 renamed the old top-level `codex_sessions_dirs` key to this table and
-refuses to load a config that sets both.
+The fix is agentsview's alternate homes, `[agents.codex] homes` in
+`~/.agentsview/config.toml`. Each home adds its `sessions/` and
+`archived_sessions/` and reads its `session_index.jsonl` and `history.jsonl`
+sidecars. Homes are additive to `dirs`, which stays pinned to the stock
+`~/.codex` roots: without it agentsview derives those roots from `CODEX_HOME`,
+and Orca exports `CODEX_HOME` (pointing at its account home) into every
+terminal it launches, Claude ones included. A daemon started from an Orca
+terminal would otherwise drop `~/.codex` entirely. agentsview 0.43 renamed the old top-level `codex_sessions_dirs` key to this
+table and refuses to load a config that sets both.
 
 ```toml
 [agents.codex]
-dirs = [
-  "~/.codex/sessions",
-  "~/.codex/archived_sessions",
-  "~/Library/Application Support/orca/codex-runtime-home/home/sessions",
-  "~/Library/Application Support/orca-dev/codex-runtime-home/home/sessions",
-  # one entry per account present at apply time:
-  "~/Library/Application Support/orca/codex-accounts/<account-id>/home/sessions",
+dirs = ["~/.codex/sessions", "~/.codex/archived_sessions"]
+homes = [
+  "~/Library/Application Support/orca/codex-runtime-home/home",
+  "~/Library/Application Support/orca/codex-accounts/<account-id>/home",
+  "~/Library/Application Support/orca-dev/codex-accounts/<account-id>/home",
 ]
 ```
 
-agentsview does not expand globs in `dirs` (only `~`), so the modify script
-below enumerates `{orca,orca-dev}/codex-accounts/*/home/sessions` on each
-apply. A newly signed-in account is picked up on the next `chezmoi apply`
-plus daemon restart.
+agentsview has no glob or filesystem discovery for homes (checked v0.45.0), so
+the list is generated: only homes that exist are listed, and hidden staging
+directories are skipped. Two producers keep it current, and a fixture test holds
+them identical:
 
-This repo keeps that key in sync via
-`home/private_dot_agentsview/modify_private_config.toml.tmpl`, a chezmoi
-`modify_` script (same pattern as `home/dot_codex/modify_private_config.toml.tmpl`).
-It manages two surfaces: `[agents.codex] dirs`, and the generated
-`[[session_sources]]` entries for the cross-machine session archive (see
-below). Everything else in the file, including the `auth_token` and
-`cursor_secret` that agentsview generates itself, round-trips untouched,
-preserved verbatim by `tomlkit`.
+- `home/private_dot_agentsview/modify_private_config.toml.tmpl`, a chezmoi
+  `modify_` script (same pattern as `home/dot_codex/modify_private_config.toml.tmpl`),
+  on every apply.
+- The session archive's hourly sync (`reconcile_agentsview` in
+  `wiki-agent-sessions`), between applies, which restarts the daemon when the
+  list changes. A newly signed-in account is indexed within the hour on hosts
+  in the archive, and at the next apply elsewhere.
+
+Both reconcile only homes under an Orca build directory. Homes added by hand or
+on the agentsview Settings page are kept. The modify script also manages the
+generated `[[session_sources]]` entries for the cross-machine session archive
+(see below), and pins `[agents.codex] dirs` to the stock roots. Everything
+else in the file, including the `auth_token` and `cursor_secret` that agentsview
+generates itself, round-trips untouched, preserved verbatim by `tomlkit`.
 
 ## Cross-machine sessions via the archive
 
@@ -88,10 +94,9 @@ initial sync — no explicit `agentsview sync` after it).
 
 agentsview has no config-layering or include mechanism to keep those
 secrets in a separate file (checked the source at v0.35.2), and no env var
-that can express more than one Codex directory (`CODEX_SESSIONS_DIR` sets
-exactly one path, and env always wins over the config-file array wholesale
-rather than merging) — the config-file array plus a narrowly-scoped
-`modify_` script is the least-risk way to keep this durable.
+that can express more than one Codex home (`CODEX_HOME` and
+`CODEX_SESSIONS_DIR` each take exactly one path) — the config-file array plus
+a narrowly-scoped `modify_` script is the least-risk way to keep this durable.
 
 After the config changes, an already-running daemon needs a restart to pick
 it up: `agentsview serve --background --replace`. `agentsview sync` alone
