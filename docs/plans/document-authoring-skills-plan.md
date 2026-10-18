@@ -278,7 +278,7 @@ discovery; they do not enforce execution. Demonstrate both routes separately.
 
 There is no new universal CI authoring gate. Existing document validators enforce
 mechanical policy. Behavioral evals assess authoring quality. If lifecycle tooling
-is also adopted, its canonical pinned validator remains the command owner. The
+is also adopted, its resolved validator remains the command owner. The
 authoring skill does not wrap or duplicate it.
 
 ## Deliver U1 as a complete authoring workflow

@@ -12,10 +12,13 @@ change as the work they describe.
 ## Choose the boundary
 
 Read the repository's agent instructions and documentation conventions first.
-Existing policy wins. In an adopted repo, use its pinned skill version,
-contract, lifecycle commands, and paths. If this installed skill differs from
-the pinned copy, continue from that copy. Shared policy and tooling live in the
-skill folder; local guidance records only configuration and exceptions.
+Existing policy wins. In an adopted repo, use this skill as available in your
+environment with the repo's lifecycle commands and paths. If the repo selects a
+folder with `DOCUMENT_LIFECYCLE_SKILL`, continue from that folder. Only when no
+copy is available, run the repo's docs setup command and continue from its
+repo-local fallback. A repo that authors this skill uses its own source folder.
+Shared policy and tooling live in the skill folder; local guidance records only
+configuration and exceptions.
 For explicit adoption or migration, read [adoption](references/adoption.md).
 In a repo without a lifecycle contract, keep ordinary edits within its existing
 structure; do not turn a writing task into a repo-wide migration.

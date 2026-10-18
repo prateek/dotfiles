@@ -3,7 +3,7 @@ status: current
 doc_type: convention
 summary: "Frontmatter contract, statuses, retirement rule, ledger, inventory, and validator rules for every Markdown document under docs/."
 created: 2026-05-10
-updated: 2026-10-17
+updated: 2026-10-18
 related:
   - adr/0052-retire-closed-docs-through-a-ledger.md
   - retired.md
@@ -22,9 +22,12 @@ this page owns dotfiles paths, commands, and exceptions.
 
 The complete skill lives at
 `agent-marketplace/packages/core/skills/document-lifecycle/`. This repo authors
-it, so the checkout's Git revision pins both policy and tooling. There is no
-second copy to synchronize. Installed plugins are discovery surfaces; this
-checkout's source is authoritative for work here.
+it, so work here uses the checkout's source for both policy and tooling, and
+changes are validated with the version being written. There is no second copy
+to synchronize. Installed plugins are discovery surfaces; this checkout's source
+is authoritative for work here. Other repos follow the skill's
+[adoption guide](../agent-marketplace/packages/core/skills/document-lifecycle/references/adoption.md):
+they use the environment's copy first and otherwise install the latest fallback.
 
 The contract covers Markdown under `docs/`. The [index](index.md) routes to
 current guidance, the [inventory](inventory.md) is generated, and the

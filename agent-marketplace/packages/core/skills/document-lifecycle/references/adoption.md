@@ -15,60 +15,152 @@ navigation without resolving every stale plan; park uncertain work and report
 it. Keep unrelated files and user edits intact.
 
 Reference [contract.md](contract.md) as the shared policy. The repo-owned lifecycle
-page records only its documentation root, command names, pinned dependency,
-and deliberate exceptions; it links the pinned contract instead of restating
-it. Put docs in `docs/` by default; `--docs-root` supports another directory
-within the repository. A dedicated subtree can avoid applying this strict
-schema to unrelated product documentation.
+page records only its documentation root, command names, skill discovery and
+setup commands, and deliberate exceptions; it links the contract instead of
+restating it. Put docs in `docs/` by default; `--docs-root` supports another
+directory within the repository. A dedicated subtree can avoid applying this
+strict schema to unrelated product documentation.
 
 Create a small `index.md` router and `retired.md` ledger. Add frontmatter to
 in-scope Markdown docs, keeping accepted ADR bodies unchanged. Build an accurate
 inventory. Empty category directories are unnecessary. Retire only documents
 whose closure is established, using the skill's retirement procedure.
 
-## Pin one complete skill dependency
+## Use the environment's skill first
 
 The skill folder is the distribution unit: `SKILL.md`, `references/`, `scripts/`,
 and `agents/` travel together. It has no runtime dependency on the repository
 that publishes it. Reading the adopting repo's agent instructions and documents
 is task input, not a dependency on the publisher.
 
-Use the repo's existing dependency mechanism to pin the complete folder to an
-immutable source revision or verified artifact. If it has no suitable mechanism,
-vendor that folder under `vendor/document-lifecycle/` and record its upstream
-source, immutable revision, and file checksums outside the vendored folder.
-Treat it as a dependency: update the whole folder from upstream, verify the
-receipt, and review the diff. Local edits to vendored policy or scripts are
-forks; keep customizations in an adapter and document exceptions instead.
+Do not vendor, pin, or checksum the skill in an adopting repo. Resolve it in
+this order:
 
-Both agents and CI use this pinned folder. An installed plugin may discover
-the workflow, but must defer to the repo's pinned skill and contract when they
-differ. Never silently substitute the globally installed version or fetch a
-moving branch during validation. Contributors without a plugin can read the
-same pinned files and run the same commands.
+1. An explicit `DOCUMENT_LIFECYCLE_SKILL` path to a complete skill folder. Fail
+   when that path lacks the validator; do not fall through.
+2. A copy already available in the environment: a `document-lifecycle` folder
+   in a user skill directory such as `.agents/skills`, `.claude/skills`, or
+   `.codex/skills` under the home directory, or in the skill folder of an
+   installed plugin that ships it. Use that version as is; its installer or
+   plugin manager owns updates.
+3. The repo-local fallback at `.agents/skills/document-lifecycle`, installed by
+   the setup step below.
+
+Agents apply the same rule: when the repo sets `DOCUMENT_LIFECYCLE_SKILL`, they
+read that folder; otherwise, when their skill catalog already offers
+`document-lifecycle`, they use it and do not install another copy. Versions may
+differ between machines and CI, so validation output names the resolved folder.
+
+### Install the latest fallback
+
+Give the repo an explicit setup command for machines without an environment
+copy. It installs the complete folder from the publisher's default branch into
+`.agents/skills/document-lifecycle` and makes it visible to Claude Code at
+`.claude/skills/document-lifecycle`. Add both paths to `.gitignore`; the
+fallback follows upstream and is never committed. If the repo already links
+`.claude/skills` to `../.agents/skills`, that link covers the skill. Otherwise
+link only the skill folder, and leave an existing `.claude` path from another
+installation alone.
+
+Setup asks the adapter below whether an environment copy resolves; when one
+does, setup reports it and installs nothing, so agents never see two catalog
+entries with the same name. GitHub CLI's `gh skill install` (preview) records
+the source ref in the installed `SKILL.md` frontmatter. It prefers a repository's
+latest GitHub release and otherwise uses the default branch head; prateek/dotfiles
+publishes no release, so the install follows its default branch:
+
+```sh
+python3 scripts/docs-lifecycle.py --environment || {
+  gh skill install prateek/dotfiles \
+    agent-marketplace/packages/core/skills/document-lifecycle \
+    --dir .agents/skills --force
+  mkdir -p .claude/skills
+  [ -e .claude/skills/document-lifecycle ] ||
+    ln -s ../../.agents/skills/document-lifecycle .claude/skills/document-lifecycle
+}
+```
+
+Re-running setup refreshes only the repo-local fallback; `gh skill update --dir
+.agents/skills --all` also refreshes it in place. An environment copy keeps the
+version its installer or plugin manager provides, even when it is older; set
+`DOCUMENT_LIFECYCLE_SKILL` to select a different folder deliberately. Use the
+repo's existing skill installer instead of `gh` when it can target the default
+branch and these paths. A plain sparse `git clone --depth=1` of the default
+branch, copying the folder, is an equivalent fallback without `gh`. Nothing
+refreshes the fallback in the background.
+
+Checks never install or fetch implicitly. When no skill resolves, they fail and
+name the setup command. CI runs setup as its own step before validation, so each
+run uses the publisher's current default branch: an upstream change can fail an
+unchanged PR, and the resolved path in the log identifies the version used.
+Setup runs upstream code, so give the CI job a read-only token, such as
+`permissions: contents: read` with `GH_TOKEN: ${{ github.token }}` for `gh`.
+
+Treat local edits to the fallback as forks. Keep customizations in the adapter
+and document exceptions instead; setup overwrites the fallback folder.
 
 A repo that authors this skill already has its dependency in the source tree;
-reference that folder directly instead of making a second vendored copy.
-Keep tests for the producer wherever its normal test runner discovers them;
-the distributed skill must execute without those tests or producer files.
+reference that folder directly instead of resolving another copy, so changes are
+validated with the version being written. Keep tests for the producer wherever
+its normal test runner discovers them; the distributed skill must execute
+without those tests or producer files.
 
-## Wire the pinned tooling
+## Wire the resolved tooling
 
 The validator uses Python 3.14+ and Git, with no Python package dependencies.
 Expose it through the repo's existing task runner or a thin adapter. Keep the
-adapter to paths and supported options; shared policy logic belongs upstream.
-For example, with the dependency at `vendor/document-lifecycle`, put this shim
-at `scripts/docs-lifecycle.py`:
+adapter to skill resolution, paths, and supported options; shared policy logic
+belongs upstream. For example, put this adapter at `scripts/docs-lifecycle.py`.
+It checks user skill folders and Claude Code's installed-plugin registry; add
+any other plugin location your environment materializes.
 
 ```python
+import json
+import os
 import runpy
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-validator = runpy.run_path(str(
-    ROOT / "vendor/document-lifecycle/scripts/validate-doc-lifecycle.py"
-))
+SKILL = "skills/document-lifecycle"
+VALIDATOR = "scripts/validate-doc-lifecycle.py"
+
+
+def plugin_skills(home):
+    registry = home / ".claude/plugins/installed_plugins.json"
+    if not registry.is_file():
+        return []
+    entries = json.loads(registry.read_text()).get("plugins", {}).values()
+    return [Path(entry["installPath"]) / SKILL
+            for installs in entries for entry in installs
+            if entry.get("projectPath") in (None, str(ROOT))]
+
+
+def find_skill(include_local=True):
+    override = os.environ.get("DOCUMENT_LIFECYCLE_SKILL")
+    if override:
+        skill = ROOT / Path(override).expanduser()
+        if not (skill / VALIDATOR).is_file():
+            raise SystemExit(f"Invalid DOCUMENT_LIFECYCLE_SKILL: {skill}")
+        return skill
+    home = Path.home()
+    candidates = [home / folder / SKILL for folder in (".agents", ".claude", ".codex")]
+    candidates += plugin_skills(home)
+    if include_local:
+        candidates.append(ROOT / ".agents" / SKILL)
+    return next((p for p in candidates if (p / VALIDATOR).is_file()), None)
+
+
 if __name__ == "__main__":
+    if sys.argv[1:] == ["--environment"]:
+        skill = find_skill(include_local=False)
+        print(skill or "no environment copy of document-lifecycle", file=sys.stderr)
+        raise SystemExit(0 if skill else 1)
+    skill = find_skill()
+    if skill is None:
+        raise SystemExit("document-lifecycle skill unavailable; run docs setup")
+    print(f"Lifecycle skill: {skill}", file=sys.stderr, flush=True)
+    validator = runpy.run_path(str(skill / VALIDATOR))
     raise SystemExit(validator["main"](
         default_repo_root=ROOT,
         inventory_command="python3 scripts/docs-lifecycle.py --write-inventory",
@@ -97,11 +189,12 @@ Git history and the target ref available; the checker walks commits since their
 merge base. `--base HEAD` checks local changes against HEAD, not a whole PR.
 An unborn repo uses the current-tree check until its first commit.
 
-Wire the current-tree and appropriate base checks into existing CI. Add the
-local check to an existing pre-commit mechanism if the repo has one; preserve
-unrelated hooks. Verify with a temporary stale inventory and an illegal locked
-body edit, then restore them. Do not claim enforcement until that check is wired
-and exercised. No background scheduling is needed for ordinary document work.
+Wire setup, the current-tree check, and the appropriate base check into existing
+CI. Add the local check to an existing pre-commit mechanism if the repo has one;
+preserve unrelated hooks. Verify with a temporary stale inventory and an illegal
+locked body edit, then restore them. Do not claim enforcement until that check
+is wired and exercised. No background scheduling is needed for ordinary
+document work.
 
 ## Make agents reach it
 
@@ -109,12 +202,15 @@ Add a short pointer to the repo's existing agent instruction surface, adjusting
 paths and command names. For example:
 
 > When creating or changing plans, ADRs, or research, or completing documented
-> work, read vendor/document-lifecycle/SKILL.md and follow the pinned contract.
-> Repository paths, commands, and exceptions are in docs/document-lifecycle.md. Update the affected docs in the same change;
-> regenerate the inventory and run lifecycle validation before handoff.
+> work, use the `document-lifecycle` skill available in your environment; if
+> none is available, run the docs setup command and read
+> .agents/skills/document-lifecycle/SKILL.md. Repository paths, commands, and
+> exceptions are in docs/document-lifecycle.md. Update the affected docs in the
+> same change; regenerate the inventory and run lifecycle validation before
+> handoff.
 
-Preserve the repo's existing `AGENTS.md`/`CLAUDE.md` relationship. The pinned
-skill remains readable when the plugin is unavailable. Keep this pointer
+Preserve the repo's existing `AGENTS.md`/`CLAUDE.md` relationship. The fallback
+remains readable as plain files when no plugin is available. Keep this pointer
 about behavior; one-off migration results belong in the change description.
 
 ## Review due work
