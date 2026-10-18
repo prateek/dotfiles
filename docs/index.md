@@ -73,6 +73,7 @@ Status and summary for each are in the [inventory](inventory.md#plans).
 - [Prolo Ring cheat sheet](plans/prolo-ring-cheatsheet-plan.md)
 - [Psychology book archive and tools](plans/psychology-book-archive-and-tools-plan.md)
 - [Raycast config automation](plans/raycast-config-automation-plan.md)
+- [Search skill](plans/search-skill-plan.md)
 - [Shell banner](plans/shell-banner-plan.md)
 - [Skill management console](plans/skill-management-console-plan.md)
 - [SSD layout and Arq coverage](plans/ssd-arq-layout-plan.md)

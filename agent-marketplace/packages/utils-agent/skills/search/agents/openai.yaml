@@ -1,0 +1,4 @@
+interface:
+  display_name: "Search"
+  short_description: "Retrieve web, code, social and shopping evidence"
+  default_prompt: "Use $search to find and verify evidence through available sources."

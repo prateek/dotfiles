@@ -269,6 +269,14 @@ CI formula installation step and Tart lanes validate actual installation.
 
 ### Agent-package checks
 
+The authored search engine's public-contract suite is included in marketplace
+checks. Run it directly with `python3 -m unittest discover -s agent-marketplace/packages/utils-agent/skills/search/tests`.
+The separate `zsh agent-marketplace/packages/utils-agent/skills/skills-searcher/tests/skill-search.zsh`
+checks consumer output compatibility, missing/rate-limited results, no-enrich,
+run-wide call caps and safe preview/install argument quoting. Public trigger/task
+prompts live in the search skill's `evals/evals.json`; live access and model
+qualification are recorded in [search implementation qualification](../docs/research/search-skill-implementation.md).
+
 The portable project owns packaging tests: `just -f agent-marketplace/justfile -d agent-marketplace check`
 validates cached inputs, patches/overlays, skill entrypoints, cache exclusion, paths, critical content scanning,
 versions, invocation pairs, shared root acquisition, independent plugin publication,

@@ -1,0 +1,9 @@
+{"case_id":"PLATFORM-001","platform":"reddit","web_query":"site:reddit.com SearXNG paid search API coding agents discussion","semantic_query":"Reddit discussions comparing SearXNG and paid web search APIs for coding agents"}
+{"case_id":"PLATFORM-003","platform":"hackernews","web_query":"site:news.ycombinator.com search API AI agents discussion","semantic_query":"Hacker News discussion threads about search APIs used by AI agents"}
+{"case_id":"PLATFORM-005","platform":"youtube","web_query":"site:youtube.com/watch SearXNG setup troubleshooting video","semantic_query":"YouTube videos demonstrating SearXNG setup or troubleshooting"}
+{"case_id":"PLATFORM-007","platform":"x","web_query":"site:x.com SearXNG Google CAPTCHA search","semantic_query":"Public X posts discussing SearXNG Google CAPTCHA issues"}
+{"case_id":"PLATFORM-009","platform":"facebook_marketplace","web_query":"site:facebook.com/marketplace/item Herman Miller Aeron chair New York","semantic_query":"Facebook Marketplace listings near New York for used Herman Miller Aeron chairs"}
+{"case_id":"PLATFORM-011","platform":"amazon","web_query":"site:amazon.com/dp Logitech MX Master 3S graphite","semantic_query":"Amazon.com product listing for Logitech MX Master 3S graphite mouse"}
+{"case_id":"PLATFORM-013","platform":"alibaba","web_query":"site:alibaba.com custom printed 12 oz insulated stainless steel bottles MOQ","semantic_query":"Alibaba.com suppliers of custom printed 12 oz insulated stainless steel bottles with minimum order quantity"}
+{"case_id":"PLATFORM-015","platform":"uber_eats","web_query":"site:ubereats.com vegetarian ramen New York delivery","semantic_query":"Uber Eats restaurant menus offering vegetarian ramen for delivery in New York"}
+{"case_id":"PLATFORM-017","platform":"instacart","web_query":"site:instacart.com Oatly Full Fat Oatmilk 64 fl oz New York","semantic_query":"Instacart stores and product listings for Oatly Full Fat Oatmilk 64 fl oz in New York"}

@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <link rel="icon" href="data:,">
+  <title>Search provider landscape · October 2026</title>
+  <style>
+    :root {
+      --page: #f5f7f6;
+      --surface: #ffffff;
+      --ink: #17252b;
+      --subtle: #53636a;
+      --line: #dce5e2;
+      --teal: #087d71;
+      --teal-soft: #e3f4ef;
+      --blue: #355ba3;
+      --blue-soft: #e9effb;
+      --amber: #966016;
+      --amber-soft: #fff1da;
+      --purple: #6e4ea0;
+      --purple-soft: #f0eafa;
+      --gray-soft: #edf1f0;
+      --shadow: 0 18px 50px rgb(22 54 50 / 7%);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --page: #111a1d;
+        --surface: #182428;
+        --ink: #edf4f2;
+        --subtle: #afbfbd;
+        --line: #344548;
+        --teal: #6ad4bc;
+        --teal-soft: #153c37;
+        --blue: #a9c3ff;
+        --blue-soft: #263650;
+        --amber: #f0c17a;
+        --amber-soft: #43321c;
+        --purple: #d0b6ff;
+        --purple-soft: #382d4b;
+        --gray-soft: #273538;
+        --shadow: 0 18px 50px rgb(0 0 0 / 18%);
+      }
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: var(--page); color: var(--ink); font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    a { color: inherit; text-underline-offset: 3px; }
+    a:hover { color: var(--teal); }
+    a:focus-visible { outline: 3px solid var(--teal); outline-offset: 4px; border-radius: 3px; }
+    .wrap { width: min(1160px, calc(100% - 36px)); margin-inline: auto; }
+    .hero { padding: clamp(42px, 7vw, 88px) 0 38px; background: radial-gradient(circle at 89% 8%, var(--teal-soft), transparent 31%), var(--surface); border-bottom: 1px solid var(--line); }
+    .eyebrow { margin: 0 0 12px; color: var(--teal); font-size: .79rem; font-weight: 750; letter-spacing: .11em; text-transform: uppercase; }
+    h1 { max-width: 850px; margin: 0; font-size: clamp(2.55rem, 6vw, 5.15rem); line-height: 1.07; letter-spacing: -.055em; }
+    .lead { max-width: 720px; margin: 22px 0 0; color: var(--subtle); font-size: clamp(1.05rem, 2vw, 1.23rem); }
+    .hero-bottom { display: flex; flex-wrap: wrap; align-items: center; gap: 18px 32px; margin-top: 34px; }
+    .stats { display: flex; flex-wrap: wrap; gap: 12px; }
+    .stat { min-width: 124px; padding: 10px 16px; border-left: 2px solid var(--line); }
+    .stat strong { display: block; font-size: 1.35rem; line-height: 1.2; }
+    .stat span { color: var(--subtle); font-size: .79rem; }
+    .jump { display: flex; flex-wrap: wrap; gap: 8px; }
+    .jump a { padding: 8px 13px; border: 1px solid var(--line); border-radius: 999px; font-size: .86rem; font-weight: 650; text-decoration: none; }
+    main { padding: 50px 0 90px; }
+    section + section { margin-top: 72px; }
+    .section-head { max-width: 810px; margin-bottom: 22px; }
+    h2 { margin: 0 0 8px; font-size: clamp(1.7rem, 3vw, 2.35rem); line-height: 1.16; letter-spacing: -.035em; }
+    .section-head p, .note { margin: 0; color: var(--subtle); }
+    .architecture { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+    .route { min-height: 213px; padding: 22px; border: 1px solid var(--line); border-top: 4px solid var(--route-color); border-radius: 17px; background: var(--surface); box-shadow: var(--shadow); }
+    .route.own { --route-color: var(--teal); --route-soft: var(--teal-soft); }
+    .route.mixed { --route-color: var(--purple); --route-soft: var(--purple-soft); }
+    .route.serp { --route-color: var(--blue); --route-soft: var(--blue-soft); }
+    .route.meta { --route-color: var(--amber); --route-soft: var(--amber-soft); }
+    .route.native { --route-color: var(--teal); --route-soft: var(--teal-soft); }
+    .route.unknown { --route-color: var(--subtle); --route-soft: var(--gray-soft); }
+    .route .type { display: inline-block; padding: 3px 9px; border-radius: 999px; background: var(--route-soft); color: var(--route-color); font-size: .7rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+    .route h3 { margin: 13px 0 5px; font-size: 1.14rem; letter-spacing: -.02em; }
+    .route .path { margin: 0 0 13px; color: var(--subtle); font-size: .89rem; }
+    .names { display: flex; flex-wrap: wrap; gap: 7px; }
+    .names span, .names a { display: inline-block; padding: 5px 9px; border: 1px solid var(--line); border-radius: 7px; font-size: .8rem; font-weight: 650; text-decoration: none; }
+    .insight { display: flex; gap: 15px; align-items: baseline; margin-top: 17px; padding: 17px 20px; border-radius: 12px; background: var(--blue-soft); }
+    .insight strong { flex: none; color: var(--blue); }
+    .insight span { font-size: .92rem; }
+    .price-head { display: grid; grid-template-columns: 220px minmax(0, 1fr) 112px 100px; gap: 14px; padding: 0 14px 8px; color: var(--subtle); font-size: .73rem; font-weight: 750; letter-spacing: .06em; text-transform: uppercase; }
+    .price-head span:nth-child(3), .price-head span:nth-child(4) { text-align: right; }
+    .prices { overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); box-shadow: var(--shadow); }
+    .price-row { display: grid; grid-template-columns: 220px minmax(0, 1fr) 112px 100px; gap: 14px; align-items: center; min-height: 62px; padding: 10px 14px; border-top: 1px solid var(--line); }
+    .price-row:first-child { border-top: 0; }
+    .provider { min-width: 0; }
+    .provider strong { display: block; line-height: 1.2; }
+    .provider small { display: block; margin-top: 4px; color: var(--subtle); font-size: .75rem; }
+    .track { position: relative; height: 10px; border-radius: 999px; background: var(--gray-soft); }
+    .fill { display: block; height: 10px; min-width: 3px; width: var(--width); border-radius: inherit; background: var(--teal); }
+    .fill.blue { background: var(--blue); }
+    .fill.purple { background: var(--purple); }
+    .fill.amber { background: var(--amber); }
+    .fill.free { min-width: 0; width: 0; }
+    .price, .hits { text-align: right; font-variant-numeric: tabular-nums; }
+    .price strong { display: block; font-size: .99rem; }
+    .price small { display: block; color: var(--subtle); font-size: .73rem; }
+    .hits { font-weight: 700; }
+    .hits.multi { font-size: .79rem; white-space: nowrap; }
+    .axis { display: grid; grid-template-columns: 220px minmax(0, 1fr) 112px 100px; gap: 14px; margin: 6px 14px 0; color: var(--subtle); font-size: .73rem; }
+    .ticks { display: flex; justify-content: space-between; }
+    .caption { margin: 15px 0 0; color: var(--subtle); font-size: .85rem; }
+    .allowance { margin-top: 20px; padding: 18px 20px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+    .allowance strong { display: block; margin-bottom: 5px; }
+    .allowance p { margin: 0; color: var(--subtle); font-size: .88rem; }
+    .website-table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); box-shadow: var(--shadow); }
+    .website-table { width: 100%; border-collapse: collapse; min-width: 590px; }
+    .website-table th, .website-table td { padding: 13px 16px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; }
+    .website-table tr:last-child td { border-bottom: 0; }
+    .website-table th { color: var(--subtle); font-size: .73rem; letter-spacing: .06em; text-transform: uppercase; }
+    .website-table td:nth-child(2) { font-variant-numeric: tabular-nums; font-weight: 700; }
+    .website-table small { display: block; color: var(--subtle); font-size: .78rem; }
+    .mini-bar { display: inline-block; width: 108px; height: 9px; margin-right: 10px; border-radius: 999px; background: var(--gray-soft); vertical-align: middle; overflow: hidden; }
+    .mini-bar span { display: block; width: var(--coverage); height: 100%; border-radius: inherit; background: var(--teal); }
+    .site-caveat { margin: 16px 0 0; color: var(--subtle); font-size: .86rem; }
+    .blocked { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+    .blocked article { padding: 18px 20px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+    .blocked h3 { margin: 0 0 5px; font-size: 1rem; }
+    .blocked .amount { margin: 0 0 6px; color: var(--amber); font-size: 1.36rem; font-weight: 750; font-variant-numeric: tabular-nums; }
+    .blocked p:last-child { margin: 0; color: var(--subtle); font-size: .83rem; }
+    .decision { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .decision article { padding: 24px; border: 1px solid var(--line); border-radius: 15px; background: var(--surface); }
+    .decision h3 { margin: 0 0 7px; font-size: 1.05rem; }
+    .decision p { margin: 0; color: var(--subtle); font-size: .92rem; }
+    .formula { margin: 20px 0; padding: 18px 22px; border-left: 4px solid var(--teal); border-radius: 0 10px 10px 0; background: var(--teal-soft); font-size: clamp(.96rem, 2vw, 1.09rem); }
+    .formula strong { color: var(--teal); }
+    .sources { margin-top: 55px; padding-top: 24px; border-top: 1px solid var(--line); color: var(--subtle); font-size: .82rem; }
+    .sources p { margin: 0 0 9px; }
+    .sources a { color: var(--ink); }
+    @media (max-width: 880px) {
+      .architecture { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .price-head, .price-row, .axis { grid-template-columns: 180px minmax(0, 1fr) 105px 100px; gap: 9px; }
+    }
+    @media (max-width: 630px) {
+      .architecture, .blocked, .decision { grid-template-columns: 1fr; }
+      .route { min-height: 0; }
+      .insight { display: block; }
+      .insight strong { display: block; margin-bottom: 5px; }
+      .price-head, .axis { display: none; }
+      .price-row { grid-template-columns: minmax(0, 1fr) auto; gap: 7px 12px; padding: 13px 15px; }
+      .provider { grid-column: 1; }
+      .price { grid-column: 2; grid-row: 1; }
+      .track { grid-column: 1 / -1; grid-row: 2; }
+      .hits { grid-column: 1 / -1; grid-row: 3; text-align: left; color: var(--subtle); font-size: .75rem; }
+      .hits::before { content: "Returned URLs in core: "; font-weight: 400; }
+    }
+    @media print {
+      :root { --page: #fff; --surface: #fff; --ink: #111; --subtle: #333; --line: #aaa; --shadow: none; }
+      body { font-size: 11pt; }
+      .hero { padding: 22px 0; }
+      main { padding: 25px 0; }
+      section + section { margin-top: 32px; }
+      .jump { display: none; }
+      .route, .blocked article, .decision article, .price-row { break-inside: avoid; }
+    }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap">
+      <p class="eyebrow">Search API evaluation · 27 September–17 October 2026</p>
+      <h1>Where the results come from. What each search costs.</h1>
+      <p class="lead">A map of the providers on our shortlist, their underlying sources, and the first tests against your web, GitHub, social, and shopping tasks.</p>
+      <div class="hero-bottom">
+        <div class="stats" aria-label="Evaluation size">
+          <div class="stat"><strong>12</strong><span>providers tested</span></div>
+          <div class="stat"><strong>18</strong><span>search modes tested</span></div>
+          <div class="stat"><strong>27</strong><span>core queries per mode</span></div>
+        </div>
+        <nav class="jump" aria-label="Page sections"><a href="#sources">How they work</a><a href="#prices">Cost comparison</a><a href="#websites">Website trial</a><a href="#gated">Not yet runnable</a><a href="#decision">What remains</a></nav>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section id="sources" aria-labelledby="sources-title">
+      <div class="section-head">
+        <h2 id="sources-title">Six paths to a result</h2>
+        <p>“Own index” means the provider maintains it. We do not run an index. An API that packages Google or Bing results can be useful, but it does not add a new independent web index.</p>
+      </div>
+      <div class="architecture">
+        <article class="route own"><span class="type">Provider-run index</span><h3>Independent web search</h3><p class="path">Open web → provider crawl and index → ranked links</p><div class="names"><a href="https://brave.com/search/api/">Brave</a><a href="https://exa.ai/pricing?tab=api">Exa</a><a href="https://parallel.ai/">Parallel</a><a href="https://octen.ai/blog/introducing-octen-extract">Octen</a><a href="https://www.perplexity.ai/en-GB/hub/blog/architecting-and-evaluating-an-ai-first-search-api">Perplexity</a></div></article>
+        <article class="route mixed"><span class="type">Mixed sources</span><h3>Kagi combines indexes</h3><p class="path">Own Teclis/TinyGem indexes + outside search sources → Kagi ranking</p><div class="names"><a href="https://help.kagi.com/kagi/search-details/search-sources.html">Kagi</a></div></article>
+        <article class="route serp"><span class="type">Search-result APIs</span><h3>Other engines’ results</h3><p class="path">Google or another search engine → provider API → structured results</p><div class="names"><a href="https://serper.dev/">Serper</a><a href="https://www.searchapi.io/pricing">SearchAPI.io</a><a href="https://serpapi.com/pricing">SerpApi</a><a href="https://openserp.dev/">OpenSerp.dev</a></div></article>
+        <article class="route meta"><span class="type">Metasearch / scraping</span><h3>Several engine queries</h3><p class="path">Bing, Yahoo, Startpage, etc. → aggregation or scraping → links</p><div class="names"><a href="https://github.com/searxng/searxng">SearXNG</a><a href="https://github.com/degoog-org/degoog">Degoog</a><a href="https://openserp.org/docs/oss-vs-cloud/">OpenSERP OSS / Cloud</a></div></article>
+        <article class="route native"><span class="type">Source-specific</span><h3>Search the source itself</h3><p class="path">GitHub or Hacker News → dedicated search → code, issues, or threads</p><div class="names"><a href="https://docs.github.com/en/search-github">GitHub</a><a href="https://vercel.com/blog/grep-a-million-github-repositories-via-mcp">grep.app</a><a href="https://hn.algolia.com/api">HN Algolia</a></div></article>
+        <article class="route unknown"><span class="type">Source mix unclear</span><h3>Managed web retrieval</h3><p class="path">The public Tavily material checked does not specify its full upstream index mix.</p><div class="names"><a href="https://www.tavily.com/pricing">Tavily</a></div></article>
+      </div>
+      <div class="insight"><strong>Why this matters</strong><span>Serper and SearchAPI.io both expose Google results. Paying for both may improve reliability or special features, but it does not buy two independent web indexes. GitHub code search needs its own route.</span></div>
+    </section>
+
+    <section id="prices" aria-labelledby="prices-title">
+      <div class="section-head">
+        <h2 id="prices-title">Price per search, side by side</h2>
+        <p>Bars show the published USD price for 1,000 requests on a linear $0–$16 scale. The first number at right is the price of <em>one</em> search. Prices exclude free credits, local compute, model tokens, tax, and any extra fetching. Evaluation considers the first ten returned results; some providers are asked for more.</p>
+      </div>
+      <div class="price-head" aria-hidden="true"><span>Tested mode</span><span>Relative price per 1,000 searches</span><span>Per search</span><span>URL found</span></div>
+      <div class="prices" role="list" aria-label="Tested search modes sorted by published price">
+        <div class="price-row" role="listitem"><div class="provider"><strong>SearXNG</strong><small>Local · Bing/Yahoo baseline</small></div><div class="track"><span class="fill free"></span></div><div class="price"><strong>No API fee</strong><small>local compute</small></div><div class="hits">27/27</div></div>
+        <div class="price-row" role="listitem"><div class="provider"><strong>Degoog · Bing/DDG/Reddit</strong><small>Local · 0/9 source-domain probes</small></div><div class="track"><span class="fill free"></span></div><div class="price"><strong>No API fee</strong><small>local compute</small></div><div class="hits">27/27</div></div>
+        <div class="price-row" role="listitem"><div class="provider"><strong>Degoog · Startpage</strong><small>Local · 8/9 source-domain probes</small></div><div class="track"><span class="fill free"></span></div><div class="price"><strong>No API fee</strong><small>local compute</small></div><div class="hits">23/27</div></div>
+        <div class="price-row" role="listitem"><div class="provider"><strong>Degoog · Startpage/Bing</strong><small>Local · 8/9 source-domain probes</small></div><div class="track"><span class="fill free"></span></div><div class="price"><strong>No API fee</strong><small>local compute</small></div><div class="hits">27/27</div></div>
+        <div class="price-row" role="listitem"><div class="provider"><strong>OpenSERP OSS</strong><small>Local · Bing / DDG / Google</small></div><div class="track"><span class="fill free"></span></div><div class="price"><strong>No API fee</strong><small>local compute</small></div><div class="hits multi" aria-label="Bing 27 of 27, DuckDuckGo 25 of 27, Google 20 of 27">B27 · D25 · G20</div></div>
+        <div class="price-row" role="listitem"><div class="provider"><strong>Serper Google</strong><small>$50 minimum top-up</small></div><div class="track"><span class="fill blue" style="--width:6.25%"></span></div><div class="price"><strong>$0.001</strong><small>$1 / 1k</small></div><div class="hits">25/27</div></div>
+        <div class="price-row" role="listitem"><div class="provider"><strong>Parallel Fast</strong><small>Ten results included</small></div><div class="track"><span class="fill" style="--width:6.25%"></span></div><div class="price"><strong>$0.001</strong><small>$1 / 1k</small></div><div class="hits">27/27</div></div>
+        <div class="price-row" role="listitem"><div class="provider"><strong>Octen Search</strong><small>Promotional rate; standard $0.005</small></div><div class="track"><span class="fill" style="--width:6.25%"></span></div><div class="price"><strong>$0.001</strong><small>$1 / 1k</small></div><div class="hits">27/27</div></div>
+        <div class="price-row" role="listitem"><div class="provider"><strong>SearchAPI.io Google</strong><small>$40/month Developer plan</small></div><div class="track"><span class="fill blue" style="--width:25%"></span></div><div class="price"><strong>$0.004</strong><small>$4 / 1k</small></div><div class="hits">25/27</div></div>
+        <div class="price-row" role="listitem"><div class="provider"><strong>Brave Web Search</strong><small>$5 monthly credits</small></div><div class="track"><span class="fill" style="--width:31.25%"></span></div><div class="price"><strong>$0.005</strong><small>$5 / 1k</small></div><div class="hits">26/27</div></div>
+        <div class="price-row" role="listitem"><div class="provider"><strong>Degoog · Startpage + Brave API</strong><small>Local bundle · 9/9 source-domain probes</small></div><div class="track"><span class="fill" style="--width:31.25%"></span></div><div class="price"><strong>$0.005</strong><small>$5 / 1k + local</small></div><div class="hits">26/27</div></div>
+        <div class="price-row" role="listitem"><div class="provider"><strong>Parallel Advanced</strong><small>Ten results included</small></div><div class="track"><span class="fill" style="--width:31.25%"></span></div><div class="price"><strong>$0.005</strong><small>$5 / 1k</small></div><div class="hits">27/27</div></div>
+        <div class="price-row" role="listitem"><div class="provider"><strong>Perplexity Search</strong><small>Ranked-result API</small></div><div class="track"><span class="fill" style="--width:31.25%"></span></div><div class="price"><strong>$0.005</strong><small>$5 / 1k</small></div><div class="hits">27/27</div></div>
+        <div class="price-row" role="listitem"><div class="provider"><strong>Exa Auto</strong><small>Up to ten results at base rate</small></div><div class="track"><span class="fill" style="--width:43.75%"></span></div><div class="price"><strong>$0.007</strong><small>$7 / 1k</small></div><div class="hits">27/27</div></div>
+        <div class="price-row" role="listitem"><div class="provider"><strong>Tavily Basic</strong><small>One $0.008 credit</small></div><div class="track"><span class="fill purple" style="--width:50%"></span></div><div class="price"><strong>$0.008</strong><small>$8 / 1k</small></div><div class="hits">27/27</div></div>
+        <div class="price-row" role="listitem"><div class="provider"><strong>Kagi Search</strong><small>$5 API usage limit set</small></div><div class="track"><span class="fill purple" style="--width:75%"></span></div><div class="price"><strong>$0.012</strong><small>$12 / 1k</small></div><div class="hits">26/27</div></div>
+        <div class="price-row" role="listitem"><div class="provider"><strong>Tavily Advanced</strong><small>Two $0.008 credits</small></div><div class="track"><span class="fill purple" style="--width:100%"></span></div><div class="price"><strong>$0.016</strong><small>$16 / 1k</small></div><div class="hits">27/27</div></div>
+      </div>
+      <div class="axis" aria-hidden="true"><span></span><div class="ticks"><span>$0</span><span>$4</span><span>$8</span><span>$12</span><span>$16</span></div><span></span><span></span></div>
+      <p class="caption">“URL found” counts core queries with at least one returned URL. It does not say whether the link works or helps answer the question. Degoog's Bing/DDG/Reddit mix returned URLs for every core query but missed all nine requested platform domains; Startpage supplied eight. Its Startpage + Brave API bundle found the requested URL shape in 9/9 platform probes, but sends every search to the same paid Brave index as the direct API. Brave HTML scraping found 3/9 before upstream 429. OpenSERP OSS counts are B = Bing, D = DuckDuckGo, G = Google, each out of 27.</p>
+      <div class="allowance"><strong>Free starting allowance</strong><p>Published offers include $5/month from Brave and Parallel, $10/month from Exa, 1,000 Tavily credits/month, $5 once from Octen, 2,500 starter queries from Serper, and 100 starter requests from SearchAPI.io. These are offer terms, not verified remaining account balances.</p></div>
+    </section>
+
+    <section id="websites" aria-labelledby="websites-title">
+      <div class="section-head">
+        <h2 id="websites-title">What the search websites returned</h2>
+        <p>On 17 October, isolated Camoufox opened each public site's search page with the same 27 core and nine platform queries. These browser figures measure displayed links; the API prices above apply to separate API calls.</p>
+      </div>
+      <div class="website-table-wrap">
+        <table class="website-table">
+          <thead><tr><th scope="col">Website</th><th scope="col">Core with links</th><th scope="col">Platform URL shape</th></tr></thead>
+          <tbody>
+            <tr><td>Google Search<small>Opaque <code>/goto</code> links</small></td><td>26/27</td><td>Unscorable<small>Expected domain displayed in 1/9</small></td></tr>
+            <tr><td>Bing Search</td><td>27/27</td><td><span class="mini-bar" aria-hidden="true"><span style="--coverage:0%"></span></span>0/9</td></tr>
+            <tr><td>DuckDuckGo</td><td>25/27</td><td><span class="mini-bar" aria-hidden="true"><span style="--coverage:88.9%"></span></span>8/9</td></tr>
+            <tr><td>Startpage</td><td>24/27</td><td><span class="mini-bar" aria-hidden="true"><span style="--coverage:100%"></span></span>9/9</td></tr>
+            <tr><td>Yahoo Search</td><td>25/27</td><td><span class="mini-bar" aria-hidden="true"><span style="--coverage:88.9%"></span></span>8/9</td></tr>
+            <tr><td>Brave Search<small>First four core queries: ten links each</small></td><td>4 tested</td><td>HTTP 429 on fifth query</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="site-caveat">A matching URL shape can still be wrong: Startpage's first Amazon product hit was an unrelated monitor, and Yahoo's was a book. X hits were old. GitHub's website showed repository and issue results anonymously but required sign-in for code search. <a href="../../docs/research/search-index-website-run.md">Method, source-site probes, and limits</a>.</p>
+    </section>
+
+    <section id="gated" aria-labelledby="gated-title">
+      <div class="section-head"><h2 id="gated-title">Advertised prices, but not yet testable here</h2><p>These services are still candidates. Account or access problems stopped a comparable 27-query run.</p></div>
+      <div class="blocked">
+        <article><h3><a href="https://openserp.dev/">OpenSerp.dev</a></h3><p class="amount">$0.0002 / search</p><p>Google/Yahoo/Bing/Brave SERP service. Our API probe received HTTP 403 and the account had zero balance.</p></article>
+        <article><h3><a href="https://openserp.org/pricing/">OpenSERP Cloud</a></h3><p class="amount">$0.009 / first page</p><p>$0.0078 with its advertised credit bonus. Account activation failed; the local OSS run is separate.</p></article>
+        <article><h3><a href="https://serpapi.com/pricing">SerpApi</a></h3><p class="amount">$0.025 / search</p><p>Starter plan: $25/month for 1,000 searches; 250/month on its free plan. Phone verification stopped before a key was issued.</p></article>
+      </div>
+    </section>
+
+    <section id="decision" aria-labelledby="decision-title">
+      <div class="section-head"><h2 id="decision-title">What price cannot tell us yet</h2><p>We have measured access, returned URLs, and some latency. We have not completed blinded relevance grades or full agent tasks.</p></div>
+      <div class="formula"><strong>Cost per useful result</strong> = search cost ÷ links that actually help the task. A $0.005 search with ten links costs $0.0005 per returned link. If only one is useful, it costs $0.005 per useful link.</div>
+      <div class="decision">
+        <article><h3>GitHub is its own lane</h3><p><a href="https://docs.github.com/en/search-github">Native GitHub search</a> and <a href="https://vercel.com/blog/grep-a-million-github-repositories-via-mcp">grep.app MCP</a> passed focused repo/code probes. We still need to score exact files, revisions, issues, and comment links.</p></article>
+        <article><h3>Social and shopping need source checks</h3><p>A web result can find a Reddit thread or Amazon URL. It cannot prove a full comment, current offer, or address-specific delivery. These checks are documented in the <a href="../../docs/research/social-shopping-search-sources.md">source-access matrix</a>.</p></article>
+      </div>
+      <div class="sources">
+        <p><strong>Test evidence:</strong> <a href="../../docs/research/search-index-eval.md">case set and method</a> · <a href="../../docs/research/search-index-first-run.md">first run</a> · <a href="../../docs/research/search-index-second-run.md">added providers</a> · <a href="../../docs/research/search-index-third-run.md">Kagi run</a> · <a href="../../docs/research/search-index-fourth-run.md">Degoog run</a> · <a href="../../docs/research/search-index-website-run.md">website run</a> · <a href="../../docs/research/degoog-metasearch-reliability.md">Degoog reliability</a>. The historical corpus has 78 cases; shopping platform probes are synthetic.</p>
+        <p><strong>Price sources:</strong> <a href="https://serper.dev/">Serper</a> · <a href="https://parallel.ai/pricing">Parallel</a> · <a href="https://octen.ai/pricing">Octen</a> · <a href="https://www.searchapi.io/pricing">SearchAPI.io</a> · <a href="https://brave.com/search/api/">Brave</a> · <a href="https://community.perplexity.ai/t/introducing-the-perplexity-search-api/4738">Perplexity</a> · <a href="https://exa.ai/pricing?tab=api">Exa</a> · <a href="https://www.tavily.com/pricing">Tavily</a> (<a href="https://help.tavily.com/articles/6938147944-basic-vs-advanced-search-what-s-the-difference">credit use</a>) · <a href="https://kagi.com/api/pricing">Kagi</a>. Most prices and account terms were checked on 27 September 2026; Brave was rechecked on 13 October. Recheck before buying or scaling.</p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

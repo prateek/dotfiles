@@ -1,0 +1,433 @@
+{
+  "schema_version": 1,
+  "exposure": "Public development cases authored for this implementation; not a held-out corpus.",
+  "trigger_cases": [
+    {
+      "id": "trigger-positive-01",
+      "prompt": "Find the official Python asyncio cancellation rules for the current release.",
+      "should_trigger": true,
+      "areas": [
+        "web"
+      ]
+    },
+    {
+      "id": "trigger-positive-02",
+      "prompt": "Find GitHub repositories implementing a small SQLite replication server.",
+      "should_trigger": true,
+      "areas": [
+        "code"
+      ]
+    },
+    {
+      "id": "trigger-positive-03",
+      "prompt": "Find production Go call sites of runtime.GC, excluding tests.",
+      "should_trigger": true,
+      "areas": [
+        "code"
+      ]
+    },
+    {
+      "id": "trigger-positive-04",
+      "prompt": "Find the issue discussing async context cancellation in an open source database.",
+      "should_trigger": true,
+      "areas": [
+        "code"
+      ]
+    },
+    {
+      "id": "trigger-positive-05",
+      "prompt": "What do Reddit owners report about the reliability of split keyboards?",
+      "should_trigger": true,
+      "areas": [
+        "social"
+      ]
+    },
+    {
+      "id": "trigger-positive-06",
+      "prompt": "Find Hacker News discussions of SQLite backups.",
+      "should_trigger": true,
+      "areas": [
+        "social"
+      ]
+    },
+    {
+      "id": "trigger-positive-07",
+      "prompt": "Find videos from the official Python channel about free threading.",
+      "should_trigger": true,
+      "areas": [
+        "social"
+      ]
+    },
+    {
+      "id": "trigger-positive-08",
+      "prompt": "Find recent X posts linking an original paper about storage engines.",
+      "should_trigger": true,
+      "areas": [
+        "social"
+      ]
+    },
+    {
+      "id": "trigger-positive-09",
+      "prompt": "Find current Amazon offers for a wired ergonomic mouse.",
+      "should_trigger": true,
+      "areas": [
+        "shopping"
+      ]
+    },
+    {
+      "id": "trigger-positive-10",
+      "prompt": "Find Alibaba suppliers for USB-C cables, including MOQ and shipping basis.",
+      "should_trigger": true,
+      "areas": [
+        "shopping"
+      ]
+    },
+    {
+      "id": "trigger-positive-11",
+      "prompt": "Find used standing desks near Boston on Facebook Marketplace.",
+      "should_trigger": true,
+      "areas": [
+        "shopping"
+      ]
+    },
+    {
+      "id": "trigger-positive-12",
+      "prompt": "Check whether a listed grocery item is available for delivery in my authorized Instacart session.",
+      "should_trigger": true,
+      "areas": [
+        "shopping"
+      ]
+    },
+    {
+      "id": "trigger-positive-13",
+      "prompt": "Find current Uber Eats restaurant listings near Cambridge.",
+      "should_trigger": true,
+      "areas": [
+        "shopping"
+      ]
+    },
+    {
+      "id": "trigger-positive-14",
+      "prompt": "Compare owner reliability reports and current prices for compact keyboards.",
+      "should_trigger": true,
+      "areas": [
+        "social",
+        "shopping"
+      ]
+    },
+    {
+      "id": "trigger-positive-15",
+      "prompt": "Find documentation and production code examples of Python task groups.",
+      "should_trigger": true,
+      "areas": [
+        "web",
+        "code"
+      ]
+    },
+    {
+      "id": "trigger-positive-16",
+      "prompt": "Search public pages for portable monitors using Camofox only.",
+      "should_trigger": true,
+      "areas": [
+        "web"
+      ]
+    },
+    {
+      "id": "trigger-positive-17",
+      "prompt": "Use Serper to find official release notes; do not substitute a provider.",
+      "should_trigger": true,
+      "areas": [
+        "web"
+      ]
+    },
+    {
+      "id": "trigger-positive-18",
+      "prompt": "Try Exa first for semantic discovery of papers about database compaction.",
+      "should_trigger": true,
+      "areas": [
+        "web"
+      ]
+    },
+    {
+      "id": "trigger-positive-19",
+      "prompt": "Find Reddit threads about public transit, but report if comments cannot be read.",
+      "should_trigger": true,
+      "areas": [
+        "social"
+      ]
+    },
+    {
+      "id": "trigger-positive-20",
+      "prompt": "Search the web for the official source, using only free routes.",
+      "should_trigger": true,
+      "areas": [
+        "web"
+      ]
+    },
+    {
+      "id": "trigger-negative-01",
+      "prompt": "Explain what a hash table is without looking anything up.",
+      "should_trigger": false
+    },
+    {
+      "id": "trigger-negative-02",
+      "prompt": "Fix the syntax error in this pasted Python function.",
+      "should_trigger": false
+    },
+    {
+      "id": "trigger-negative-03",
+      "prompt": "Search this local checkout for TODO comments using rg.",
+      "should_trigger": false
+    },
+    {
+      "id": "trigger-negative-04",
+      "prompt": "List files in the current working directory.",
+      "should_trigger": false
+    },
+    {
+      "id": "trigger-negative-05",
+      "prompt": "Rename a variable in the local parser.",
+      "should_trigger": false
+    },
+    {
+      "id": "trigger-negative-06",
+      "prompt": "Write a unit test for this pure function.",
+      "should_trigger": false
+    },
+    {
+      "id": "trigger-negative-07",
+      "prompt": "Summarize the text pasted below.",
+      "should_trigger": false
+    },
+    {
+      "id": "trigger-negative-08",
+      "prompt": "Translate this sentence into Spanish.",
+      "should_trigger": false
+    },
+    {
+      "id": "trigger-negative-09",
+      "prompt": "Rewrite this paragraph more concisely.",
+      "should_trigger": false
+    },
+    {
+      "id": "trigger-negative-10",
+      "prompt": "Calculate 17 times 23.",
+      "should_trigger": false
+    },
+    {
+      "id": "trigger-negative-11",
+      "prompt": "Create an illustration of a forest.",
+      "should_trigger": false
+    },
+    {
+      "id": "trigger-negative-12",
+      "prompt": "Format this provided CSV as a Markdown table.",
+      "should_trigger": false
+    },
+    {
+      "id": "trigger-negative-13",
+      "prompt": "Open this already selected page and click the settings button.",
+      "should_trigger": false
+    },
+    {
+      "id": "trigger-negative-14",
+      "prompt": "Sign in to my existing email account.",
+      "should_trigger": false
+    },
+    {
+      "id": "trigger-negative-15",
+      "prompt": "Create a provider account and add my payment card.",
+      "should_trigger": false
+    },
+    {
+      "id": "trigger-negative-16",
+      "prompt": "Install the specific agent skill I have already selected.",
+      "should_trigger": false
+    },
+    {
+      "id": "trigger-negative-17",
+      "prompt": "Commit the staged code changes.",
+      "should_trigger": false
+    },
+    {
+      "id": "trigger-negative-18",
+      "prompt": "Run the local test suite.",
+      "should_trigger": false
+    },
+    {
+      "id": "trigger-negative-19",
+      "prompt": "Explain the output of this supplied stack trace.",
+      "should_trigger": false
+    },
+    {
+      "id": "trigger-negative-20",
+      "prompt": "Compare these two supplied JSON objects.",
+      "should_trigger": false
+    }
+  ],
+  "task_cases": [
+    {
+      "id": "dev-01",
+      "prompt": "Find the official Python asyncio cancellation rules for the current release.",
+      "areas": [
+        "web"
+      ],
+      "criteria": [
+        "Preserve explicit choices",
+        "Report unavailable or discovery-only coverage",
+        "Cite inspected evidence before verification claims",
+        "Do not exceed budget or mutate external state"
+      ]
+    },
+    {
+      "id": "dev-02",
+      "prompt": "Use Serper to find official release notes; do not substitute a provider.",
+      "areas": [
+        "web"
+      ],
+      "criteria": [
+        "Preserve explicit choices",
+        "Report unavailable or discovery-only coverage",
+        "Cite inspected evidence before verification claims",
+        "Do not exceed budget or mutate external state"
+      ]
+    },
+    {
+      "id": "dev-03",
+      "prompt": "Search the web for the official source, using only free routes.",
+      "areas": [
+        "web"
+      ],
+      "criteria": [
+        "Preserve explicit choices",
+        "Report unavailable or discovery-only coverage",
+        "Cite inspected evidence before verification claims",
+        "Do not exceed budget or mutate external state"
+      ]
+    },
+    {
+      "id": "dev-04",
+      "prompt": "Find GitHub repositories implementing a small SQLite replication server.",
+      "areas": [
+        "code"
+      ],
+      "criteria": [
+        "Preserve explicit choices",
+        "Report unavailable or discovery-only coverage",
+        "Cite inspected evidence before verification claims",
+        "Do not exceed budget or mutate external state"
+      ]
+    },
+    {
+      "id": "dev-05",
+      "prompt": "Find production Go call sites of runtime.GC, excluding tests.",
+      "areas": [
+        "code"
+      ],
+      "criteria": [
+        "Preserve explicit choices",
+        "Report unavailable or discovery-only coverage",
+        "Cite inspected evidence before verification claims",
+        "Do not exceed budget or mutate external state"
+      ]
+    },
+    {
+      "id": "dev-06",
+      "prompt": "Find the issue discussing async context cancellation in an open source database.",
+      "areas": [
+        "code"
+      ],
+      "criteria": [
+        "Preserve explicit choices",
+        "Report unavailable or discovery-only coverage",
+        "Cite inspected evidence before verification claims",
+        "Do not exceed budget or mutate external state"
+      ]
+    },
+    {
+      "id": "dev-07",
+      "prompt": "What do Reddit owners report about the reliability of split keyboards?",
+      "areas": [
+        "social"
+      ],
+      "criteria": [
+        "Preserve explicit choices",
+        "Report unavailable or discovery-only coverage",
+        "Cite inspected evidence before verification claims",
+        "Do not exceed budget or mutate external state"
+      ]
+    },
+    {
+      "id": "dev-08",
+      "prompt": "Find Hacker News discussions of SQLite backups.",
+      "areas": [
+        "social"
+      ],
+      "criteria": [
+        "Preserve explicit choices",
+        "Report unavailable or discovery-only coverage",
+        "Cite inspected evidence before verification claims",
+        "Do not exceed budget or mutate external state"
+      ]
+    },
+    {
+      "id": "dev-09",
+      "prompt": "Find videos from the official Python channel about free threading.",
+      "areas": [
+        "social"
+      ],
+      "criteria": [
+        "Preserve explicit choices",
+        "Report unavailable or discovery-only coverage",
+        "Cite inspected evidence before verification claims",
+        "Do not exceed budget or mutate external state"
+      ]
+    },
+    {
+      "id": "dev-10",
+      "prompt": "Find current Amazon offers for a wired ergonomic mouse.",
+      "areas": [
+        "shopping"
+      ],
+      "criteria": [
+        "Preserve explicit choices",
+        "Report unavailable or discovery-only coverage",
+        "Cite inspected evidence before verification claims",
+        "Do not exceed budget or mutate external state"
+      ]
+    },
+    {
+      "id": "dev-11",
+      "prompt": "Find Alibaba suppliers for USB-C cables, including MOQ and shipping basis.",
+      "areas": [
+        "shopping"
+      ],
+      "criteria": [
+        "Preserve explicit choices",
+        "Report unavailable or discovery-only coverage",
+        "Cite inspected evidence before verification claims",
+        "Do not exceed budget or mutate external state"
+      ]
+    },
+    {
+      "id": "dev-12",
+      "prompt": "Find used standing desks near Boston on Facebook Marketplace.",
+      "areas": [
+        "shopping"
+      ],
+      "criteria": [
+        "Preserve explicit choices",
+        "Report unavailable or discovery-only coverage",
+        "Cite inspected evidence before verification claims",
+        "Do not exceed budget or mutate external state"
+      ]
+    }
+  ],
+  "agent_protocol": {
+    "repeats": 3,
+    "instruction_comparison": "same engine, tools, model and access with versus without skill",
+    "stack_comparison": "full stack versus native baseline; tools differ",
+    "holdout": "No independent custodian; generalization remains unmeasured",
+    "terms": "Brave excluded from pooled/model task benchmarks pending applicable permission"
+  }
+}

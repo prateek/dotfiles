@@ -311,3 +311,30 @@ assert_contains "$rate_limited_json" '"repo": "owner-mid/repo"'
 echo "• skill-search raw prints backend-native output"
 raw_output="$(run_cli raw sourcegraph chezmoi --limit 2)"
 assert_contains "$raw_output" '"Results"'
+
+
+echo "• skill-search no-enrich spends no metadata calls"
+: >"$STUB_LOG"
+no_enrich_output="$(run_cli --json search chezmoi --limit 5 --no-enrich --no-progress)"
+assert_contains "$no_enrich_output" '"file_commits": null'
+if grep -q '^commits' "$STUB_LOG"; then die "no-enrich invoked metadata transport"; fi
+
+echo "• skill-search max-calls caps discovery and enrichment together"
+: >"$STUB_LOG"
+bounded_output="$(run_cli --json search chezmoi --limit 5 --max-calls 1 --no-progress)"
+assert_contains "$bounded_output" '"repo": "owner-high/repo"'
+assert_contains "$bounded_output" '"file_commits": null'
+assert_contains "$bounded_output" '"status": "partial"'
+assert_eq "$(wc -l <"$STUB_LOG" | tr -d ' ')" "1"
+
+
+echo "• skill-search generated commands quote untrusted file paths"
+python3 - "$CLI" <<'PYTEST'
+import runpy, shlex, sys
+module = runpy.run_path(sys.argv[1])
+path = 'skills/$(touch NEVER_EXECUTE); spaced/SKILL.md'
+row = {'repo': 'example/repo', 'path': path, 'skill_name': 'sample'}
+module['fill_commands'](row)
+assert shlex.split(row['preview_command']) == ['gh', 'skill', 'preview', 'example/repo', path]
+assert shlex.split(row['install_command'])[:5] == ['gh', 'skill', 'install', 'example/repo', path]
+PYTEST

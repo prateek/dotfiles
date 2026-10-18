@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "publication": "normalized public tasks; private provenance retained locally",
+  "cases": 78,
+  "source_families": 61,
+  "selection": {
+    "core": 27,
+    "extended": 47,
+    "control": 4
+  },
+  "evaluation_groups": {
+    "github_discovery": 14,
+    "technical_docs": 17,
+    "local_services": 2,
+    "software_comparison": 7,
+    "social_forums": 8,
+    "github_code_and_issues": 20,
+    "hardware_and_models": 3,
+    "youtube": 2,
+    "general_web": 1,
+    "controls": 4
+  },
+  "historical_answers_are_ground_truth": false,
+  "split_policy": "Group source_family, related_source_families and related topics together; core and extended are cost tiers, not train/test splits."
+}

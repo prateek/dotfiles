@@ -5,15 +5,9 @@ description: Search for installable agent skills across GitHub and skills.sh. Us
 
 # Skills Searcher
 
-Use the bundled CLI to search all backends together. Its script is self-contained and uses only Python's standard library through a `uv run --script` shebang. Paths in this skill are relative to its base directory.
+Use the bundled CLI to search all backends together. It requires the sibling `search` skill from the same utils-agent package and uses Python's standard library through a `uv run --script` shebang. Paths in this skill are relative to its base directory.
 
-Use the short command when it is installed:
-
-```bash
-~/bin/skill-search search <query> --limit 10 --progress
-```
-
-Otherwise run the bundled script:
+Run this package's bundled script so it uses the matching sibling search engine:
 
 ```bash
 scripts/skill-search search <query> --limit 10 --progress
@@ -21,10 +15,10 @@ scripts/skill-search search <query> --limit 10 --progress
 
 ## Search and rank candidates
 
-1. In a new environment, run `skill-search doctor` first to check local tools and backend connectivity.
-2. Search with `skill-search search <query> --limit 10 --progress`. The CLI queries all available backends in parallel; do not ask the user to choose one.
+1. Use sibling `search/scripts/agent-search capabilities --json` for a local check. Run `skill-search doctor` only when live connectivity diagnostics are useful; it spends calls.
+2. Search with `skill-search search <query> --limit 10 --progress`. The CLI sends four prepared discovery jobs to the shared search engine; unavailable backends produce partial coverage. The engine caps independent concurrency at two and serializes GitHub operations.
 3. Use `--sort-by installs --direction desc` as a second view when popularity is likely to help decide among skills for a mainstream framework, language, or tool. Installs come only from the skills.sh backend.
-4. Compare stars, installs, and source count as signals. Agreement from at least two independent backends is the strongest precision signal because each indexes a different part of the ecosystem.
+4. Compare stars, installs, and source count as signals. Agreement can help, but gh skill and GitHub code share GitHub provenance; multiple transports are not automatically independent evidence.
 5. Check authorship before choosing a winner. Prefer the framework vendor, platform owner, or a widely cited domain educator when they authored a candidate. Authorship can outweigh a third-party collection's stronger raw counts; use multi-source agreement to break ties between peers.
 
 ## Inspect finalists
@@ -54,7 +48,7 @@ The `--json` option emits structured JSON for search and doctor. The search outp
 
 Sort fields are `stars`, `installs`, `sources`, `file-commits`, `repo-commits`, and `skill-name`.
 
-Use `--no-enrich` when GitHub enrichment is slow or rate-limited. Use `--github-concurrency <n>` to tune parallel GitHub API calls during enrichment; the default is conservative.
+Use `--no-enrich` when GitHub enrichment is slow or rate-limited. `--github-concurrency <n>` remains accepted as an upper bound for compatibility; the shared engine currently serializes GitHub calls. Discovery reserves pagination calls. Enrichment declares two calls per unique repository plus one per file before final ranking, with missing metadata left unknown. `--max-calls N` caps discovery plus enrichment across the invocation; exhausted enrichment remains partial, with unknown counts.
 
 ## Backends
 
@@ -95,8 +89,11 @@ python3 -m py_compile scripts/skill-search
 zsh tests/skill-search.zsh
 ```
 
-From the dotfiles checkout, run:
+## Shared retrieval boundary
 
-```bash
-zsh agent-marketplace/packages/utils-agent/skills/skills-searcher/tests/skill-search.zsh
-```
+The sibling [search skill](../search/SKILL.md) owns adapters, failure classification,
+budgets and provenance. This skill owns its query builders, frontmatter parsing,
+legacy result grouping/metric merge, ranking and preview/install fields. Preview
+and install commands are output only; this workflow never executes them. General
+transport improvements belong in search; read its [extension guide](../search/references/extending.md)
+when adding a provider or deciding whether another domain workflow needs a skill.
