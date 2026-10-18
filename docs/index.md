@@ -30,7 +30,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [Chezmoi Architecture](references/chezmoi-architecture.md) | Dotfiles source-state architecture and validation entrypoints. |
 | [Chezmoi Hook Lifecycle](references/chezmoi-hook-lifecycle.md) | Ordering and design rules for config hooks, apply scripts, init, and modify targets. |
 | [Agent Marketplace](references/agent-marketplace.md) | Isolated APM source/build project, host activation, recovery, and validation lanes. |
-| [acpx Routing](references/acpx-routing.md) | Explicit model/effort profiles, machine route declarations, catalog resolution, and diagnostics. |
+| [acpx Routing](references/acpx-routing.md) | Machine model discovery, cached capability selection, and native delegation. |
 | [Package helper](references/dotpkgs.md) | Shared package status, pin-aware operations, bulk latest, and banner/audit integration. |
 | [Mise Tool Management](references/mise-tool-management.md) | Mise-native CLI and tool selection. |
 | [Jamf Self Service Elevation](references/jamf-self-service-elevation.md) | Temporary admin elevation on Jamf-managed work Macs. |

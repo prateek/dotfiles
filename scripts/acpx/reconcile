@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
-"""Resolve declared ACP routes during apply; runtime shortcuts use frozen selections."""
+"""Discover machine model catalogs and validate selections supplied by the calling agent."""
 
 import argparse
 import fcntl
+import hashlib
 import json
 import os
 from pathlib import Path
 import re
 import selectors
 import shutil
+import shlex
 import signal
 import subprocess
 import sys
@@ -34,34 +36,26 @@ def validate(policy):
     declared = policy["declared"]
     if len(declared) != len(set(declared)):
         raise RoutingError("duplicate acpx route declaration")
-    for route in declared:
-        if route not in policy["routes"]:
-            raise RoutingError(f"unknown declared route: {route}")
-    for family, order in policy["preferences"].items():
-        if family not in policy["models"]["families"]:
-            raise RoutingError(f"unknown family preference: {family}")
-        if len(order) != len(set(order)) or not set(order) <= set(declared):
-            raise RoutingError(f"{family}: preference must contain unique declared routes only")
-    for family, rule in policy["models"]["families"].items():
-        pattern = re.compile(rule["pattern"])
-        if "generation" not in pattern.groupindex or not rule["tiers"]:
-            raise RoutingError(f"{family}: require a generation capture and ordered tiers")
+    for name in declared:
+        route = policy["routes"][name]
+        if route["agent"] not in policy["agent_clis"]:
+            raise RoutingError(f"{name}: agent is not selected in agent_clis")
     spec = policy["models"]
+    if not 0 < spec["ttl_seconds"] <= spec["stale_seconds"]:
+        raise RoutingError("invalid cache lifetime")
+    for family, rule in spec["families"].items():
+        re.compile(rule["pattern"])
     for alias, profile in spec["profiles"].items():
-        family = profile["family"]
-        if family not in spec["families"]:
-            raise RoutingError(f"{alias}: unknown model family: {family}")
-        if profile["effort"] not in spec["efforts"]:
-            raise RoutingError(f"{alias}: unknown effort: {profile['effort']}")
-        if ("model" in profile) == ("previous_of" in profile):
-            raise RoutingError(f"{alias}: require exactly one of model or previous_of")
-        target = profile
-        if "previous_of" in profile:
-            target = spec["profiles"].get(profile["previous_of"], {})
-            if target.get("family") != family or "model" not in target:
-                raise RoutingError(f"{alias}: previous_of must name a pinned profile in the same family")
-        if model_identity(spec["families"][family], target["model"]) is None:
-            raise RoutingError(f"{alias}: unrecognized model target: {target['model']}")
+        if profile["family"] not in spec["families"]:
+            raise RoutingError(f"{alias}: unknown model family")
+        if profile["selection"] not in ("current", "previous"):
+            raise RoutingError(f"{alias}: invalid selection")
+        if type(profile["steps"]) is not int or not 0 <= profile["steps"] <= 3:
+            raise RoutingError(f"{alias}: invalid thinking increment")
+
+
+def digest(value):
+    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 
 def route_environment(route):
@@ -72,9 +66,9 @@ def route_environment(route):
     return env
 
 
-def command(argv, *, env=None, timeout=60):
-    with tempfile.TemporaryDirectory(prefix="acpx-catalog-") as cwd:
-        proc = subprocess.Popen(argv, cwd=cwd, env=env, stdin=subprocess.DEVNULL,
+def command(argv, *, env=None, timeout=60, cwd=None):
+    with tempfile.TemporaryDirectory(prefix="acpx-catalog-") as temporary:
+        proc = subprocess.Popen(argv, cwd=cwd or temporary, env=env, stdin=subprocess.DEVNULL,
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True)
         try:
             stdout, _ = proc.communicate(timeout=timeout)
@@ -146,28 +140,68 @@ def acp_catalog(argv, env):
             stop(proc)
 
 
+def codex_home():
+    return Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex")))
+
+
+def codex_access():
+    path = codex_home() / "auth.json"
+    auth = read_json(path) if path.exists() else {}
+    if auth.get("auth_mode") == "chatgpt" and auth.get("tokens"):
+        return "included"
+    if auth.get("OPENAI_API_KEY") or auth.get("auth_mode") == "apikey":
+        return "paid"
+    return "unknown"
+
+
 def codex_models(route):
-    session = acp_catalog(["codex-acp"], route_environment(route))
+    env = route_environment(route)
+    env["CODEX_CONFIG"] = json.dumps({"model_provider": "openai", "service_tier": "default"})
+    session = acp_catalog(["codex-acp"], env)
+    cache = codex_home() / "models_cache.json"
+    producer_models = read_json(cache).get("models", []) if cache.exists() else []
+    advertised_ids = {item["slug"] for item in producer_models}
     models = {}
-    # The model picker also includes an unadvertised configured default.
     for item in session.get("models", {}).get("availableModels", []):
-        match = re.fullmatch(r"(.+)\[([a-z]+)\]", item["modelId"])
-        if match:
-            model, effort = match.groups()
-            models.setdefault(model, {"id": model, "efforts": []})["efforts"].append(effort)
-    return list(models.values())
+        identifier = item["modelId"]
+        match = re.fullmatch(r"(.+)\[([a-z]+)\]", identifier)
+        if not match and identifier not in advertised_ids:
+            continue
+        base, effort = match.groups() if match else (identifier, None)
+        row = models.setdefault(base, {"id": base, "efforts": []})
+        row["description"] = item.get("description", row.get("description", ""))
+        if effort:
+            row["efforts"].append(effort)
+    if producer_models:
+        for item in producer_models:
+            if item["slug"] in models:
+                row = models[item["slug"]]
+                row.update(description=item.get("description", row.get("description", "")),
+                           default_effort=item.get("default_reasoning_level"),
+                           preference_notice=item.get("availability_nux"),
+                           upgrade=item.get("upgrade"), priority=item.get("priority"))
+    access = codex_access()
+    if access == "unknown":
+        raise RoutingError("Codex authentication source is unknown; routing requires credential metadata")
+    return [dict(row, access=access) for row in models.values()]
 
 
-def claude_models(route):
+def claude_models(route, account_only=False):
     executable = Path(shutil.which("claude-agent-acp")).resolve()
-    if "shims" in executable.parts:
+    if executable.name == "mise" or "shims" in executable.parts:
         executable = Path(command(["mise", "which", "claude-agent-acp"]).strip()).resolve()
     helper = Path(__file__).with_name("claude-models.mjs")
     if not helper.exists():
         helper = Path(__file__).resolve().parents[1] / "lib/acpx/claude-models.mjs"
     env = route_environment(route)
     env["ACPX_CLAUDE_INCLUDE_USER_SETTINGS"] = "1"
-    return json.loads(command(["node", str(helper), str(executable)], env=env))["models"]
+    argv = ["node", str(helper), str(executable)]
+    if account_only:
+        argv.append("--account-only")
+    result = json.loads(command(argv, env=env, cwd=Path.cwd() if account_only else None))
+    if not account_only and result["access"] == "unknown":
+        raise RoutingError("Claude SDK could not establish the account access source")
+    return result["access"] if account_only else result["models"]
 
 
 def cursor_models(route):
@@ -176,25 +210,75 @@ def cursor_models(route):
     for line in text.splitlines():
         if " - " not in line:
             continue
-        identifier = line.split(" - ", 1)[0].strip()
-        if re.search(r"(?:-fast(?:$|\[)|fast=true)", identifier):
+        identifier, description = (part.strip() for part in line.split(" - ", 1))
+        if re.search(r"(?:-fast(?:$|[-\[])|fast=true)", identifier):
             continue
         match = re.fullmatch(r"(.+?)(?:-thinking)?-(low|medium|high|xhigh|max|ultra)", identifier)
+        effort = None
+        base = identifier
         if match:
             base, effort = match.groups()
-        else:
+        elif "[" in identifier:
             match = re.fullmatch(r"([^\[]+)\[([^]]+)\]", identifier)
             if not match:
                 continue
             base, parameters = match.groups()
             params = dict(part.split("=", 1) for part in parameters.split(",") if "=" in part)
             effort = params.get("effort", params.get("reasoning"))
-            if not effort:
-                continue
-        model = models.setdefault(base, {"id": base, "efforts": [], "variants": {}})
-        model["efforts"].append(effort)
-        model["variants"][effort] = identifier
+        row = models.setdefault(base, {"id": base, "efforts": [], "variants": {}})
+        row.setdefault("descriptions", []).append(description)
+        if effort:
+            row["efforts"].append(effort)
+            row["variants"][effort] = identifier
+        else:
+            row["default_variant"] = identifier
+        if "(default)" in description or "(current)" in description:
+            row["picker_default"] = "(default)" in description
+            if "(default)" in description and effort:
+                row["default_effort"] = effort
     return list(models.values())
+
+
+def pi_models(route):
+    executable = Path(shutil.which("pi")).resolve()
+    if executable.name == "mise":
+        executable = Path(command(["mise", "which", "pi"]).strip()).resolve()
+    helper = Path(__file__).with_name("pi-models.mjs")
+    if not helper.exists():
+        helper = Path(__file__).resolve().parents[1] / "lib/acpx/pi-models.mjs"
+    env = route_environment(route)
+    env.update(PI_TELEMETRY="0", PI_OFFLINE="1")
+    return json.loads(command(["node", str(helper), str(executable)], env=env))["models"]
+
+
+def check_gemini_access(cwd=None):
+    settings_path = Path(os.environ.get("GEMINI_CLI_HOME") or Path.home()) / ".gemini/settings.json"
+    settings = read_json(settings_path) if settings_path.exists() else {}
+    if settings.get("privacy", {}).get("usageStatisticsEnabled") is not False:
+        raise RoutingError("Gemini discovery and launch require privacy.usageStatisticsEnabled=false")
+    if settings.get("security", {}).get("auth", {}).get("selectedType") != "oauth-personal":
+        raise RoutingError("Gemini included route requires an oauth-personal login")
+    system_directory = ("/Library/Application Support/GeminiCli" if sys.platform == "darwin"
+                        else "C:/ProgramData/gemini-cli" if sys.platform == "win32" else "/etc/gemini-cli")
+    system_path = Path(os.environ.get("GEMINI_CLI_SYSTEM_SETTINGS_PATH") or
+                       str(Path(system_directory) / "settings.json"))
+    defaults_path = Path(os.environ.get("GEMINI_CLI_SYSTEM_DEFAULTS_PATH") or
+                         str(system_path.with_name("system-defaults.json")))
+    paths = [defaults_path, settings_path, system_path]
+    if cwd is not None:
+        paths.append(Path(cwd) / ".gemini/settings.json")
+    # Reject conflicting layers even when precedence or workspace trust would ignore them.
+    for path in paths:
+        override = read_json(path) if path.exists() else {}
+        privacy = override.get("privacy", {})
+        if "usageStatisticsEnabled" in privacy and privacy["usageStatisticsEnabled"] is not False:
+            raise RoutingError(f"{path}: Gemini requires privacy.usageStatisticsEnabled=false")
+        auth = override.get("security", {}).get("auth", {})
+        if (("selectedType" in auth and auth["selectedType"] != "oauth-personal") or
+                auth.get("enforcedType") not in (None, "oauth-personal")):
+            raise RoutingError(f"{path}: Gemini included route requires oauth-personal authentication")
+        if auth.get("useExternal"):
+            raise RoutingError(f"{path}: Gemini external authentication cannot establish included access")
 
 
 def discover(policy):
@@ -216,7 +300,10 @@ def discover(policy):
                         omp = str(error)
                 if isinstance(omp, str):
                     raise RoutingError(omp)
-                models = [{"id": row["id"], "provider": row["provider"], "efforts": row.get("thinking") or []}
+                models = [{"id": row["id"], "provider": row["provider"],
+                           "description": row.get("description", row.get("name", "")),
+                           "efforts": row.get("thinking") or [],
+                           "default_effort": row.get("defaultThinkingLevel")}
                           for row in omp if row["provider"] in route["providers"]]
             elif source == "codex":
                 models = codex_models(route)
@@ -224,6 +311,13 @@ def discover(policy):
                 models = claude_models(route)
             elif source == "cursor":
                 models = cursor_models(route)
+            elif source == "pi":
+                models = pi_models(route)
+            elif source == "gemini":
+                check_gemini_access()
+                session = acp_catalog(["gemini", "--acp"], route_environment(route))
+                models = [{"id": row["modelId"], "description": row.get("description", ""), "efforts": []}
+                          for row in session.get("models", {}).get("availableModels", [])]
             else:
                 raise RoutingError(f"unknown catalog source: {source}")
             if not models:
@@ -234,109 +328,180 @@ def discover(policy):
     return catalogs
 
 
-def model_identity(rule, identifier):
-    identifier = identifier.split("/")[-1]
-    identifier = re.sub(r"\[(?:1m|200k)\]$", "", identifier)
-    match = re.fullmatch(rule["pattern"], identifier)
-    if not match:
-        return None
-    tier = match.groupdict().get("tier") or ""
-    if tier not in rule["tiers"]:
-        return None
-    generation = tuple(int(part) for part in re.split(r"[.-]", match["generation"]))
-    return generation, rule["tiers"].index(tier)
-
-
-def candidates(policy, route, catalog, family):
-    capability = policy["routes"][route]
-    if family not in capability["families"] and "*" not in capability["families"]:
-        return []
-    rule = policy["models"]["families"][family]
-    result = []
-    for row in catalog.get("models", []):
-        identity = model_identity(rule, row["id"])
-        if identity is not None:
-            generation, tier = identity
-            result.append(dict(row, generation=generation, tier=tier))
+def snapshot(policy, catalogs, allow_paid=False):
+    validate(policy)
+    choices = {}
+    for name in policy["declared"]:
+        route = policy["routes"][name]
+        for row in catalogs.get(name, {}).get("models", []):
+            identifier = row["id"].split("/")[-1]
+            if re.search(r"(?:-fast(?:$|[-\[])|fast=true)", identifier):
+                continue
+            if route.get("providers") and row.get("provider") not in route["providers"]:
+                raise RoutingError(f"{name}: catalog model has an undeclared provider")
+            access = route.get("provider_access", {}).get(row.get("provider"), route["access"])
+            if route["catalog"] in ("pi", "codex", "claude"):
+                access = row.get("access", "unknown" if route["catalog"] == "pi" else route["access"])
+            if access not in ("included", "local", "paid") or (access == "paid" and not allow_paid):
+                continue
+            for family, rule in policy["models"]["families"].items():
+                if family not in route["families"] and "*" not in route["families"]:
+                    continue
+                if re.fullmatch(rule["pattern"], identifier):
+                    key = digest([name, row.get("provider"), row["id"]])[:24]
+                    choices[key] = dict(row, key=key, route=name, harness=route["harness"],
+                                        family=family, access=access,
+                                        native_only=route.get("native_only", False))
+    result = {"version": 2, "policy_digest": digest(policy), "created_at": time.time(),
+              "allow_paid": allow_paid, "candidates": choices,
+              "problems": {name: catalogs.get(name, {"error": "catalog missing"})["error"]
+                           for name in policy["declared"] if "error" in catalogs.get(name, {"error": "catalog missing"})}}
+    result["snapshot_id"] = digest(result)
     return result
 
 
-def launch(policy, route_name, model, effort, family):
+def launch(policy, model, effort, family):
+    route_name = model["route"]
     route = policy["routes"][route_name]
+    if route.get("native_only"):
+        return None
     env = dict(route.get("env", {}))
     argv = ["env"]
-    for name in route.get("unset_env", []):
-        argv += ["-u", name]
+    unset = set(route.get("unset_env", []))
     harness = route["harness"]
     if harness == "codex":
-        env["CODEX_CONFIG"] = json.dumps({"model": model["id"], "model_reasoning_effort": effort,
-                                        "service_tier": "default"}, separators=(",", ":"))
+        config = {"model": model["id"], "model_provider": "openai", "service_tier": "default"}
+        if effort:
+            config["model_reasoning_effort"] = effort
+        env["CODEX_CONFIG"] = json.dumps(config, separators=(",", ":"))
         command_argv = ["codex-acp"]
     elif harness == "claude":
-        env.update(ANTHROPIC_MODEL=model["id"], CLAUDE_CODE_EFFORT_LEVEL=effort,
-                   CLAUDE_CODE_DISABLE_FAST_MODE="1", ACPX_CLAUDE_INCLUDE_USER_SETTINGS="1")
-        # The adapter may normalize a concrete ID back to its moving alias.
+        env.update(ANTHROPIC_MODEL=model["id"], CLAUDE_CODE_DISABLE_FAST_MODE="1",
+                   ACPX_CLAUDE_INCLUDE_USER_SETTINGS="1")
+        unset.add("CLAUDE_CODE_EFFORT_LEVEL")
+        if effort:
+            env["CLAUDE_CODE_EFFORT_LEVEL"] = effort
         env[route["model_alias_env"][family]] = model["id"]
         command_argv = ["claude-agent-acp"]
     elif harness == "cursor":
-        command_argv = ["cursor-agent", "--model", model["variants"][effort]]
+        identifier = model.get("variants", {}).get(effort) if effort else model.get("default_variant")
+        if not identifier and effort == model.get("default_effort"):
+            identifier = model.get("default_variant")
+        if not identifier and not effort and model.get("default_effort"):
+            identifier = model.get("variants", {}).get(model["default_effort"])
+        if not identifier:
+            raise RoutingError(f"{route_name}/{model['id']}: no advertised default or effort variant")
+        command_argv = ["cursor-agent", "--model", identifier]
         for relative in (".agents/plugins", ".claude/plugins/marketplaces"):
             directory = Path(policy["home"]) / relative
             if directory.is_dir():
                 command_argv += ["--add-dir", str(directory)]
         command_argv += ["acp"]
     elif harness == "omp":
-        if model.get("provider") not in route["providers"]:
-            raise RoutingError(f"{route_name}: catalog model has an undeclared provider")
-        command_argv = ["omp", "acp", "--provider", model["provider"], "--model", model["id"], "--thinking", effort]
+        command_argv = ["omp", "acp", "--provider", model["provider"], "--model", model["id"]]
+        if effort:
+            command_argv += ["--thinking", effort]
+    elif harness == "gemini":
+        if effort:
+            raise RoutingError("Gemini ACP does not advertise an effort override")
+        command_argv = ["gemini", "--model", model["id"], "--acp"]
     else:
         raise RoutingError(f"unknown harness: {harness}")
+    for name in sorted(unset):
+        argv += ["-u", name]
     argv += [f"{key}={value}" for key, value in sorted(env.items())]
     return argv + command_argv if len(argv) > 1 else command_argv
 
 
-def resolve(policy, catalogs):
+def resolve(policy, catalog, decision):
     validate(policy)
+    if catalog["policy_digest"] != digest(policy):
+        raise RoutingError("catalog belongs to a different machine or routing configuration; refresh")
+    content = {key: value for key, value in catalog.items() if key != "snapshot_id"}
+    if digest(content) != catalog["snapshot_id"]:
+        raise RoutingError("catalog snapshot digest mismatch")
+    if decision.get("snapshot_id") != catalog["snapshot_id"]:
+        raise RoutingError("selection does not match the catalog snapshot")
+    age = time.time() - catalog["created_at"]
+    if not 0 <= age <= policy["models"]["ttl_seconds"]:
+        raise RoutingError("catalog expired; refresh before selecting")
+    choices = catalog["candidates"]
+    families = decision.get("families", {})
+    for family, selected in families.items():
+        if family not in policy["models"]["families"]:
+            raise RoutingError(f"unknown selected family: {family}")
+        if not selected.get("reason") or not selected.get("sources") or not all(
+                isinstance(source, str) and source for source in selected["sources"]):
+            raise RoutingError(f"{family}: selection needs a reason and evidence sources")
+        for slot in ("current", "previous"):
+            key = selected.get(slot)
+            if key is not None and (key not in choices or choices[key]["family"] != family):
+                raise RoutingError(f"{family}/{slot}: model is not an eligible catalog candidate")
+            if key is None and not selected.get(slot + "_error"):
+                raise RoutingError(f"{family}/{slot}: provide a candidate or an explicit error")
+            default = selected.get(slot + "_default_effort")
+            if default is not None and (key is None or default not in choices[key].get("efforts", [])):
+                raise RoutingError(f"{family}/{slot}: default effort is not advertised as supported")
+            if key and choices[key].get("default_effort") and default not in (None, choices[key]["default_effort"]):
+                raise RoutingError(f"{family}/{slot}: supplied default contradicts catalog")
+        if selected.get("current") and selected.get("previous"):
+            first, second = (choices[selected[slot]] for slot in ("current", "previous"))
+            if first["id"].split("/")[-1] == second["id"].split("/")[-1]:
+                raise RoutingError(f"{family}: current and previous must be different models")
     shortcuts = {}
-    problems = {name: catalogs.get(name, {"error": "catalog missing"}).get("error")
-                for name in policy["declared"]}
-    problems = {name: error for name, error in problems.items() if error}
     spec = policy["models"]
     for alias, profile in spec["profiles"].items() if policy["declared"] else ():
-        family, effort = profile["family"], profile["effort"]
+        family, slot, steps = profile["family"], profile["selection"], profile["steps"]
         try:
-            ordered = policy["preferences"].get(family, policy["declared"])
-            route, models = None, []
-            for name in ordered:
-                if name not in problems:
-                    models = candidates(policy, name, catalogs[name], family)
-                    if models:
-                        route = name
+            selected = families.get(family, {})
+            key = selected.get(slot)
+            if key is None:
+                raise RoutingError(selected.get(slot + "_error", f"{family}/{slot}: selection required from calling agent"))
+            model = choices[key]
+            supported = [level for level in spec["efforts"] if level in model.get("efforts", [])]
+            default = model.get("default_effort") or selected.get(slot + "_default_effort")
+            if default is not None and default not in supported:
+                raise RoutingError(f"{model['route']}/{model['id']}: advertised default thinking is not supported")
+            effort = None
+            if steps:
+                if default not in supported:
+                    raise RoutingError(f"{model['route']}/{model['id']}: default thinking level is unknown")
+                index = supported.index(default) + steps
+                if index >= len(supported):
+                    raise RoutingError(f"{model['route']}/{model['id']}: thinking increment exceeds supported maximum")
+                effort = supported[index]
+            argv = launch(policy, dict(model, default_effort=default), effort or default, family)
+            external = model
+            effective = effort or default
+            if argv is None and effective:
+                alternatives = sorted(choices.values(), key=lambda row: (
+                    row["access"] == "paid", row["harness"] == "omp", policy["declared"].index(row["route"])))
+                for alternative in alternatives:
+                    if (alternative["family"] != family or alternative["native_only"] or
+                            alternative["id"].split("/")[-1] != model["id"].split("/")[-1] or
+                            effective not in alternative.get("efforts", []) or
+                            (model["access"] != "paid" and alternative["access"] == "paid")):
+                        continue
+                    try:
+                        argv = launch(policy, alternative, effective, family)
+                        external = alternative
                         break
-            if route is None:
-                raise RoutingError(f"no declared, usable route advertises {family}")
-            target = profile if "model" in profile else spec["profiles"][profile["previous_of"]]
-            generation, tier = model_identity(spec["families"][family], target["model"])
-            if "previous_of" in profile:
-                generations = {model["generation"] for model in models if model["generation"] < generation}
-                if not generations:
-                    raise RoutingError(f"{route} has no preceding {family} generation below {target['model']}")
-                generation = max(generations)
-                tier = max(model["tier"] for model in models if model["generation"] == generation)
-            matches = [model for model in models if (model["generation"], model["tier"]) == (generation, tier)]
-            if not matches:
-                raise RoutingError(f"{route} does not advertise {target['model']}")
-            model = sorted(matches, key=lambda row: row["id"])[-1]
-            if effort not in model["efforts"]:
-                raise RoutingError(f"{route}/{model['id']} does not support {effort} effort")
-            shortcuts[alias] = {"route": route, "model": model["id"], "effort": effort,
-                                "argv": launch(policy, route, model, effort, family)}
+                    except RoutingError:
+                        continue
+            shortcuts[alias] = {"route": model["route"], "harness": model["harness"], "model": model["id"],
+                                "provider": model.get("provider"), "access": model["access"],
+                                "effort": effort or "default", "default_effort": default,
+                                "effective_effort": effort or default, "steps": steps,
+                                "native_only": argv is None, "argv": argv,
+                                "external_route": external["route"] if argv else None,
+                                "external_model": external["id"] if argv else None,
+                                "external_access": external["access"] if argv else None,
+                                "reason": selected["reason"], "sources": selected["sources"]}
         except RoutingError as error:
-            message = f"{alias}: {error}"
-            shortcuts[alias] = {"error": str(error), "argv": [policy["launcher"], "reject", message]}
-
-    return {"version": 1, "shortcuts": shortcuts, "problems": problems,
-            "catalogs": {key: value for key, value in catalogs.items() if key in policy["declared"]}}
+            shortcuts[alias] = {"error": str(error)}
+    return {"version": 2, "policy_digest": digest(policy), "selected_at": catalog["created_at"],
+            "snapshot_id": catalog["snapshot_id"], "allow_paid": catalog["allow_paid"],
+            "shortcuts": shortcuts, "problems": catalog["problems"]}
 
 
 def atomic_json(path, value):
@@ -358,14 +523,15 @@ def atomic_json(path, value):
             os.unlink(temporary)
 
 
-def publish(report, config_path, report_path):
+def publish(report, config_path, report_path, legacy_report=None):
     if config_path.resolve() == report_path.resolve():
         raise RoutingError("configuration and report must be different files")
     for path in (config_path, report_path):
         if path.is_symlink():
             raise RoutingError(f"refusing to replace symlink: {path}")
     current = read_json(config_path) if config_path.exists() else {}
-    previous = read_json(report_path) if report_path.exists() else {}
+    previous = read_json(report_path) if report_path.exists() else (
+        read_json(legacy_report) if legacy_report and legacy_report.exists() else {})
     owned = LEGACY_ALIASES | set(previous.get("managed_aliases", []))
     agents = current.setdefault("agents", {})
     if not isinstance(agents, dict):
@@ -382,50 +548,128 @@ def publish(report, config_path, report_path):
     atomic_json(config_path, current)
 
 
+def paths_for_guard(args, alias, selected):
+    argv = [str(args.policy_launcher), "run", alias, "--expected-selection", digest(selected)]
+    for name in ("policy", "report"):
+        argv += ["--" + name, str(getattr(args, name))]
+    if args.allow_paid:
+        argv.append("--allow-paid")
+    if args.allow_stale:
+        argv.append("--allow-stale")
+    return argv
+
+
+def selection_for_run(policy, report, args):
+    if report.get("version") != 2 or report.get("policy_digest") != digest(policy):
+        raise RoutingError("routing configuration changed; refresh and select through the acpx skill")
+    age = time.time() - report["selected_at"]
+    limit = policy["models"]["stale_seconds"] if args.allow_stale else policy["models"]["ttl_seconds"]
+    if age < 0 or age > limit:
+        raise RoutingError("selection cache expired; refresh and select through the acpx skill")
+    if report.get("allow_paid") != args.allow_paid:
+        raise RoutingError("cache access mode for paid API candidates differs; refresh with the requested --allow-paid mode")
+    selected = report["shortcuts"].get(args.message)
+    if selected is None:
+        raise RoutingError(f"unknown shortcut: {args.message}")
+    if "error" in selected:
+        raise RoutingError(f"{args.message}: {selected['error']}")
+    if args.expected_selection and digest(selected) != args.expected_selection:
+        raise RoutingError("selection changed after inspection; run show again before launching")
+    result = dict(selected, cache_age_seconds=int(age), stale=age > policy["models"]["ttl_seconds"])
+    if result["stale"]:
+        print(f"acpx: using last successful selection, {int(age / 3600)} hours old", file=sys.stderr)
+    result["guard_argv"] = paths_for_guard(args, args.message, selected)
+    result["acpx_agent"] = shlex.join(result["guard_argv"])
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=["refresh", "resolve", "show", "reject"])
+    parser.add_argument("action", choices=["setup", "refresh", "resolve", "commit", "show", "run", "reject"])
     parser.add_argument("message", nargs="?")
     parser.add_argument("--policy", type=Path, default=Path.home() / ".config/acpx/routing.json")
-    parser.add_argument("--catalogs", type=Path, help="replay a captured catalog JSON object without network")
+    parser.add_argument("--catalogs", type=Path, help="replay catalog rows without external discovery")
+    parser.add_argument("--snapshot", type=Path, default=Path.home() / ".acpx/catalogs.json")
+    parser.add_argument("--selection", type=Path, help="calling agent's evidence-backed selections")
+    parser.add_argument("--expected-selection", help="reject a selection changed since show")
     parser.add_argument("--config", type=Path, default=Path.home() / ".acpx/config.json")
     parser.add_argument("--report", type=Path, default=Path.home() / ".acpx/routing.json")
+    parser.add_argument("--allow-paid", action="store_true", help="explicitly include metered API access")
+    parser.add_argument("--allow-stale", action="store_true", help="use up to seven-day-old selection after a refresh failure")
     args = parser.parse_args()
     if args.action == "reject":
         raise RoutingError(args.message or "unsupported model request")
-    if args.action == "show":
-        report = read_json(args.report)
-        if args.message:
-            selected = report["shortcuts"].get(args.message)
-            if selected is None:
-                raise RoutingError(f"unknown shortcut: {args.message}")
-            if "error" in selected:
-                raise RoutingError(f"{args.message}: {selected['error']}")
-            print(json.dumps(selected, indent=2))
-        else:
-            print(json.dumps(report, indent=2))
-        return
     policy = read_json(args.policy)
     validate(policy)
-    catalogs = read_json(args.catalogs) if args.catalogs else discover(policy)
-    report = resolve(policy, catalogs)
-    if args.action == "resolve":
-        print(json.dumps(report, indent=2))
+    args.policy_launcher = policy["launcher"]
+    if args.action in ("show", "run"):
+        report = read_json(args.report)
+        if not args.message and args.action == "show":
+            print(json.dumps(report, indent=2))
+            return
+        selected = selection_for_run(policy, report, args)
+        if args.action == "show":
+            print(json.dumps(selected, indent=2))
+            return
+        if selected["argv"] is None:
+            raise RoutingError("selected harness supports native delegation only; no ACP adapter is installed")
+        external = policy["routes"][selected["external_route"]]
+        current_access = None
+        if external["harness"] == "codex":
+            current_access = codex_access()
+        elif external["harness"] == "claude":
+            current_access = claude_models(external, account_only=True)
+        elif external["harness"] == "gemini":
+            check_gemini_access(Path.cwd())
+        if current_access is not None and current_access != selected["external_access"]:
+            raise RoutingError("authentication access source changed; refresh before launching")
+        os.execvp(selected["argv"][0], selected["argv"])
+    if args.action == "refresh":
+        catalogs = read_json(args.catalogs) if args.catalogs else discover(policy)
+        result = snapshot(policy, catalogs, args.allow_paid)
+        atomic_json(args.snapshot, result)
+        print(json.dumps(result, indent=2))
+        if not result["candidates"]:
+            raise RoutingError("no eligible models discovered; inspect catalog problems")
         return
+    if args.action == "setup":
+        report = {"shortcuts": {name: {"argv": [policy["launcher"], "run", name]}
+                               for name in policy["models"]["profiles"] if policy["declared"]}}
+    else:
+        if not args.selection:
+            raise RoutingError("--selection is required; the acpx skill's calling model chooses from refresh output")
+        catalog = read_json(args.snapshot)
+        if catalog["allow_paid"] != args.allow_paid:
+            raise RoutingError("selection access mode differs from --allow-paid")
+        report = resolve(policy, catalog, read_json(args.selection))
+        if args.action == "resolve":
+            print(json.dumps(report, indent=2))
+            return
     args.config.parent.mkdir(parents=True, exist_ok=True)
     with (args.config.parent / ".routing.lock").open("w") as lock:
         try:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
             raise RoutingError("another acpx routing publication is running") from None
-        publish(report, args.config, args.report)
-    routes_by_problem = {}
-    for route, problem in report["problems"].items():
-        routes_by_problem.setdefault(problem, []).append(route)
-    for problem, routes in routes_by_problem.items():
-        print(f"acpx: {', '.join(routes)}: {problem}", file=sys.stderr)
-    resolved = sum("error" not in selected for selected in report["shortcuts"].values())
-    print(f"acpx: {resolved}/{len(report['shortcuts'])} shortcuts resolved; details: acpx-routing show")
+        if args.action == "setup":
+            ledger = args.config.parent / "routing-managed.json"
+            publish(report, args.config, ledger, args.report)
+        else:
+            previous = read_json(args.report) if args.report.exists() else {}
+            if (previous.get("policy_digest") == report["policy_digest"] and
+                    previous.get("allow_paid") == report["allow_paid"]):
+                for alias, old in previous.get("shortcuts", {}).items():
+                    if (policy["models"]["profiles"][alias]["steps"] or
+                            old.get("route") not in report["problems"]):
+                        continue
+                    new = report["shortcuts"].get(alias, {})
+                    if old["model"].split("/")[-1] != new.get("model", "").split("/")[-1]:
+                        raise RoutingError(f"{alias}: catalog failed for previously selected model; "
+                                           "retain the last selection and retry discovery")
+            if previous.get("managed_aliases"):
+                report["managed_aliases"] = previous["managed_aliases"]
+            atomic_json(args.report, report)
+    print(f"acpx: {args.action} complete")
 
 
 if __name__ == "__main__":

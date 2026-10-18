@@ -1,17 +1,17 @@
 {
   "skill_name": "acpx",
-  "context": "Triggering and invocation-shape evaluation. Assume the machine's acpx routing report contains successful resolutions for the shortcuts used here. Ask the model what it would do and show the exact acpx invocation it would run; nothing here authorizes actually spawning a delegate. For should-trigger cases, judge whether the acpx delegation skill is loaded and whether the invocation it builds matches the expectations. For should-not-trigger cases, judge whether the model stays out of the delegation skill; reaching the separate acpx-cli command-surface skill is correct where noted.",
+  "context": "Behavior evaluation only. Assume fresh successful routing selections unless a case says otherwise. Describe the chosen native or external execution path and tool arguments; no case authorizes launching delegates. Evaluate model, thinking, access, permissions, and cache handling. External examples must use the guarded acpx_agent command from show.",
   "evals": [
     {
       "id": 1,
       "name": "named-shortcut-triggers",
       "should_trigger": true,
       "prompt": "agptx - take a look at the retry logic in internal/queue/dispatch.go and tell me whether the backoff can starve the DLQ writer",
-      "expected_output": "The delegation skill loads on the bare shortcut name, runs agptx one-shot against a prompt file, and treats the run as read-only because no write flag was given.",
+      "expected_output": "Load the skill, resolve agptx, and use a matching native child when available; otherwise use guarded external acpx exec.",
       "files": [],
       "expectations": [
         "Loads the acpx delegation skill from the shortcut token 'agptx' alone, without the user naming acpx",
-        "Builds an `acpx ... agptx exec -f <prompt file>` invocation, not a persistent session",
+        "Uses the resolved model with one thinking increment, preferring a compatible native child; external fallback uses acpx --agent <guarded command> exec -f <prompt file>",
         "Writes the read-only constraint into the prompt text rather than relying on --non-interactive-permissions deny to enforce it",
         "Names internal/queue/dispatch.go explicitly in the prompt instead of expecting the delegate to glob for it",
         "Plans to audit the run's tool calls afterward and report any write"
@@ -33,13 +33,13 @@
     },
     {
       "id": 3,
-      "name": "prose-rewrite-routes-to-agptw",
+      "name": "prose-rewrite-routes-to-pgpt",
       "should_trigger": true,
       "prompt": "this README intro reads like a press release, can you get it cleaned up properly rather than doing it yourself",
-      "expected_output": "The skill triggers, routes to agptw as the prose lane, and hands the delegate the writing-for-humans skill file alongside the draft.",
+      "expected_output": "Select pgpt or its alias agptw for prose and provide the writing-for-humans guidance.",
       "files": [],
       "expectations": [
-        "Selects agptw rather than agpt for prose editing",
+        "Selects pgpt or agptw for prose; both resolve to the next lower capability tier at default thinking",
         "Passes ~/.agents/plugins/plugins/core/skills/writing-for-humans/SKILL.md to the delegate along with the draft",
         "Names the writing-for-humans path explicitly, because --add-dir roots are readable by exact path but not discoverable by glob"
       ]
@@ -49,7 +49,7 @@
       "name": "write-flag-authorizes-edits",
       "should_trigger": true,
       "prompt": "/utils-agent:acpx -m aopus -w port the remaining callers in cmd/ off the deprecated NewClient signature",
-      "expected_output": "The write flag is honored: the prompt carries no read-only constraint and the run is not audited for writes.",
+      "expected_output": "The explicit write flag authorizes the delegate to edit; permission flags do not grant that authority.",
       "files": [],
       "expectations": [
         "Parses -m aopus and -w from the invocation",
@@ -68,14 +68,14 @@
       "expectations": [
         "Uses a named session because follow-up prompts must preserve context",
         "Passes -s review and --timeout 1800 (or equivalent) through to acpx rather than inventing --session or --timeout skill flags",
-        "Keeps acpx global flags before the shortcut name and -f after exec"
+        "Uses external acpx for named-session semantics; global flags precede the agent request and prompt-file flags follow the exec subcommand when exec is used"
       ]
     },
     {
       "id": 6,
       "name": "read-only-claim-is-honest",
       "should_trigger": true,
-      "prompt": "have agpt review the diff on this branch. it must not touch any files - this checkout has uncommitted work i can't lose",
+      "prompt": "have agpt review the diff on this branch. it must not touch any files - this checkout has uncommitted work i can't lose No compatible native subagent is available.",
       "expected_output": "The model states that acpx permission flags do not prevent writes for these adapters, offers a disposable worktree to narrow the blast radius, and does not call that containment.",
       "files": [],
       "expectations": [
@@ -109,6 +109,61 @@
         "Selects aopus for the question rather than answering it in the current session",
         "Keeps the delegation read-only: the delegate answers, it does not edit the migration",
         "Plans to make the migration change locally after the delegate's answer, not to hand the edit to the delegate"
+      ]
+    },
+    {
+      "id": 9,
+      "name": "native-fable-review",
+      "should_trigger": true,
+      "prompt": "Get a Fable review of this diff. This Claude session exposes a native Agent tool whose Fable alias is verified to match the resolved afable concrete model and default thinking under our subscription.",
+      "expected_output": "Use the native Agent tool with task guidance and read-only constraint; no acpx launch or pane.",
+      "files": [],
+      "expectations": [
+        "Resolves afable before launch",
+        "Uses native Agent with the matched model/default and task packet",
+        "Does not start acpx or a shared pane",
+        "Waits for the result and verifies the selected model"
+      ]
+    },
+    {
+      "id": 10,
+      "name": "native-inheritance-is-not-default",
+      "should_trigger": true,
+      "prompt": "agpt: review this patch. The cache selects Astra at its medium default. The parent is running high; native child tools can select Astra but always inherit high and cannot override effort.",
+      "expected_output": "Use guarded external acpx because the available native tool cannot honor default thinking.",
+      "files": [],
+      "expectations": [
+        "Does not treat inherited high as the medium default",
+        "Uses the same cached Astra model via external acpx",
+        "Does not downgrade model or select a paid API"
+      ]
+    },
+    {
+      "id": 11,
+      "name": "machine-cache-refresh",
+      "should_trigger": true,
+      "prompt": "pgpt: review this patch. The machine cache expired. agent_clis includes only cursor-agent. Its catalog descriptions clearly identify a strongest GPT and a newer workhorse in the next lower capability tier.",
+      "expected_output": "Refresh through the calling model, select both from Cursor evidence, commit snapshot-bound choices, then resolve pgpt.",
+      "files": [],
+      "expectations": [
+        "Uses the declared Cursor catalog, not an installed undeclared Codex",
+        "Interprets capability descriptions without a maintained model ranking",
+        "Commits snapshot-bound decision with reason and sources",
+        "Uses default thinking for pgpt and no metered API"
+      ]
+    },
+    {
+      "id": 12,
+      "name": "stale-cache-no-paid-fallback",
+      "should_trigger": true,
+      "prompt": "agpt: review this patch. Refresh failed temporarily; the last successful same-configuration selection is three days old. OpenRouter advertises a stronger paid model but no paid override was given.",
+      "expected_output": "Use the last successful selection with --allow-stale, report its age, and carry the guard flag into launch.",
+      "files": [],
+      "expectations": [
+        "Reports three-day stale selection",
+        "Uses --allow-stale within seven-day grace",
+        "Does not select or launch the paid OpenRouter model",
+        "Stops if the cached route cannot run"
       ]
     }
   ]

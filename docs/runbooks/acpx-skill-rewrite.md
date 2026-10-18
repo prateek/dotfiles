@@ -3,7 +3,7 @@ status: active
 doc_type: runbook
 summary: "Balanced native flows; five-skill live pilot completed at peak concurrency two with one afablex review and a validated unapplied patch. Includes required runtime overrides."
 created: 2026-09-26
-updated: 2026-09-27
+updated: 2026-10-18
 related:
   - ../retired.md
   - ../references/acpx-routing.md
@@ -77,32 +77,23 @@ requires all jobs to succeed.
 
 ## Models and permissions
 
-The balanced cost configuration uses Sol for the two writing passes per skill,
-with Opus and afablex for review. As checked on 2026-09-26, Sol's standard API
-input/output rates are $2/$10 per million tokens, compared with Astra's $10/$50.
-That is 80% lower per-token pricing for the writing stages at equal token use;
-total cost depends on token usage and the review calls. These API rates do not
-predict Codex subscription usage. Sources: [Sol](https://developers.openai.com/api/docs/models/gpt-6-sol)
-and [Astra](https://developers.openai.com/api/docs/models/gpt-6-astra).
+Prepare the machine cache through the acpx skill before starting the flow.
+The writer uses `pgpt` (also exposed as `agptw`), review uses `aopus`, and the
+parent final review uses `afablex`. These are the machine's current evidence-backed
+selections, with subscription or employer access preferred. There are no model
+or generation pins in the flow.
 
-At prepare time an action reads `~/.agents/bin/acpx-routing show` for `agpt`,
-`aopus`, and `afablex`. It preserves native route environment and credentials,
-pins the Codex route to `gpt-6-sol` / `high`, and pins the Claude or Claude Vertex
-route to `claude-opus-5-5` / `high`. The child profiles are saved as argv arrays
-under `skill-writer` and `skill-opus` in each job's `.acpxrc.json`, outside its
-editable checkout. The parent's native
-`afablex` node uses the profile acpx resolved when the parent command started;
-the action also checks that the host routing report recognizes that shortcut.
-
-This is deliberate: the inspected aliases resolved to older GPT and Opus
-generations when the flow was authored. Exact pins express the requested models;
-they do not prove the host account can run them. A provider rejection fails the
-job without substituting another model.
+At prepare time an action reads `~/.agents/bin/acpx-routing show` for `pgpt`,
+`aopus`, and `afablex`. It stores guarded argv arrays for the writer and Opus
+profiles in each job's `.acpxrc.json`, outside its editable checkout. Each
+launch rechecks the cache and configuration. Refresh expired selections through
+the skill before rerunning; the flow does not invoke a model to bootstrap routing.
+A provider rejection fails the job without substituting another model.
 
 For another harness, provide `writerCommand` or `opusCommand` as an explicit
 adapter **argv array**, including the exact model and effort flags that harness
-supports. The action rejects unsupported default routes instead of guessing their
-model IDs. Overrides are operator-owned: argv structure is checked, and executable
+supports. The action rejects native-only selections because acpx flow nodes require
+an external ACP adapter. Overrides are operator-owned: argv structure is checked, and executable
 or model rejection fails the native ACP node. Their model semantics are not inferred.
 Avoid project overrides of `afablex` if the host's routing report should select it.
 Resolved child commands and their launch argv are saved with the run.

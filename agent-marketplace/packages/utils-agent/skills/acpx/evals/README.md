@@ -1,13 +1,15 @@
 # acpx delegation evaluations
 
-Two files, two lanes.
+Two files, two lanes. The behavior fixtures cover native-first execution,
+semantic selection from machine catalogs, subscription gating, default thinking,
+and stale recovery. Historical results below predate those routing semantics.
 
 `trigger-evals.json` is the trigger lane: does the description make the model
 reach for this skill, and stay out of it when the request belongs elsewhere? It
 is a flat `{query, should_trigger}` list and runs unattended.
 
 `evals.json` is the behavior lane: given that the skill loaded, does the
-invocation it builds match what the skill says — shortcut choice, flag
+native or external invocation it builds match what the skill says — shortcut choice, flag
 placement, the passthrough, and an honest account of what the permission flags
 do not do? Run those by asking for the intended action and the exact
 invocation, keep `expectations` hidden until grading, and grade behavior, not

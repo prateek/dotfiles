@@ -101,7 +101,7 @@ function modelFixture(journal, { mutateReview = false } = {}) {
 function contextFixture(journal, options = {}) {
   const model = modelFixture(journal, options);
   const ctx = { state: { runId: "fixture-parent" }, runShell: async (execution) => {
-    if (execution.command.endsWith("acpx-routing")) return result(JSON.stringify({ argv: ["fixture-afablex"], route: "fixture" }));
+    if (execution.command.endsWith("acpx-routing")) return result(JSON.stringify({ argv: ["fixture-afablex"], guard_argv: ["fixture-guard"], route: "fixture" }));
     if (execution.args[0] === "--version") return result("fixture version");
     if (execution.command === "just") return result("fixture validation", options.failValidation ? 1 : 0);
     if (execution.command !== "acpx") return shell(execution);
@@ -126,16 +126,13 @@ test("native graph owns all four model steps and keeps each skill ordered", () =
   assert.equal(parent.permissions.requireExplicitGrant, true);
 });
 
-test("exact model pins retain provider environment and reject unknown routes", () => {
-  const writer = work.pinNativeRoute({ route: "codex", argv: ["env", "-u", "OPENAI_API_KEY",
-    'CODEX_CONFIG={"model":"old","service_tier":"default"}', "codex-acp"] }, "writer");
-  assert.deepEqual(JSON.parse(writer[3].slice("CODEX_CONFIG=".length)),
-    { model: "gpt-6-sol", service_tier: "default", model_reasoning_effort: "high" });
-  assert.deepEqual(writer.slice(1, 3), ["-u", "OPENAI_API_KEY"]);
-  const opus = work.pinNativeRoute({ route: "claude-vertex", argv: ["env", "CLAUDE_CODE_USE_VERTEX=1",
-    "ANTHROPIC_MODEL=old", "ANTHROPIC_DEFAULT_OPUS_MODEL=old", "CLAUDE_CODE_EFFORT_LEVEL=low", "claude-agent-acp"] }, "opus");
-  for (const expected of ["ANTHROPIC_MODEL=claude-opus-5-5", "CLAUDE_CODE_EFFORT_LEVEL=high", "CLAUDE_CODE_USE_VERTEX=1"]) assert.ok(opus.includes(expected));
-  assert.throws(() => work.pinNativeRoute({ route: "cursor", argv: ["cursor"] }, "writer"), /supply writerCommand/);
+test("resolved flow routes retain the guarded command without rewriting model selections", () => {
+  const selected = { route: "cursor", argv: ["cursor-agent", "--model", "new-model", "acp"],
+    guard_argv: ["acpx-routing", "run", "pgpt"] };
+  assert.deepEqual(work.resolvedRoute(selected, "writer"), ["acpx-routing", "run", "pgpt"]);
+  assert.deepEqual(selected.argv, ["cursor-agent", "--model", "new-model", "acp"]);
+  assert.throws(() => work.resolvedRoute({ native_only: true, argv: null }, "writer"), /supply writerCommand/);
+  assert.throws(() => work.resolvedRoute({ argv: ["adapter"] }, "opus"), /nonempty argv/);
 });
 
 test("pool bounds active jobs, collects failures, and stops dequeuing on cancellation", async () => {

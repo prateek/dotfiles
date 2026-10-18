@@ -12,7 +12,7 @@
 #   config_paths  chezmoi targets to ignore on a machine that lacks the agent
 #   orca          Orca's TUI agent id, for the agent picker (empty = not an Orca agent)
 #   plugins       the agent takes the rendered agent plugins (hooks 36/39)
-#   harness       acpx harness this agent provides; a declared route needs one
+#   harness       ACP harness provided by this agent (when supported)
 
 [agents.claude]
 binary = "claude"

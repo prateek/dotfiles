@@ -1,9 +1,11 @@
 ---
-status: accepted
+status: superseded
 doc_type: adr
 summary: "acpx model selection uses explicit workhorse, writing, previous, and escalation profiles pinned in `acpx_models.toml`, keeping machine routing and harness separation."
 created: 2026-10-05
-updated: 2026-10-05
+updated: 2026-10-18
+closed: 2026-10-18
+superseded_by: 0056-agent-selected-model-routing.md
 current_guidance: ../references/acpx-routing.md
 related:
   - ../plans/acpx-explicit-profiles-plan.md
@@ -11,6 +13,8 @@ related:
 ---
 
 # Explicit ACPX model profiles
+
+> Superseded by [ADR 0056](0056-agent-selected-model-routing.md).
 
 ## Decision
 

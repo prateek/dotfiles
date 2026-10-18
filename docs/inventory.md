@@ -19,7 +19,7 @@ Retired documents are listed in the [retirement ledger](retired.md).
 
 | Doc | Status | Summary | Successor or guidance |
 | --- | --- | --- | --- |
-| [acpx model routing](references/acpx-routing.md) | current | Explicit model/effort profiles, machine route declarations, catalog resolution, and diagnostics. |  |
+| [acpx model routing](references/acpx-routing.md) | current | Machine model discovery, agent-selected capability shortcuts, native delegation, access policy, and cache diagnostics. |  |
 | [Agent Marketplace](references/agent-marketplace.md) | current | Isolated APM source/build project, host activation, recovery, and validation lanes. |  |
 | [Chezmoi Architecture](references/chezmoi-architecture.md) | current | Dotfiles source-state architecture and validation entrypoints. |  |
 | [Chezmoi hook lifecycle](references/chezmoi-hook-lifecycle.md) | current | Ordering and design rules for config hooks, apply scripts, init, and modify targets. |  |
@@ -133,7 +133,7 @@ Retired documents are listed in the [retirement ledger](retired.md).
 | [ADR 0042 — Reconcile Orca settings through its profile-state store](adr/0042-orca-profile-state-reconcile.md) | accepted | Tracked Orca settings are written into its profile-state SQLite store by an apply hook using a revision-fenced merge while Orca is stopped via the plist guard. |  |
 | [ADR 0043 — Gate the devbox by OS, not by an allowlist](adr/0043-devbox-os-gating.md) | accepted | The devbox takes the whole chezmoi source state; macOS-only targets, `.chezmoiremove`, and synced agent asset directories are gated off by OS instead of an allowlist. |  |
 | [ADR 0044 — Karabiner is the only keyboard remapper](adr/0044-karabiner-sole-remapper.md) | accepted | Karabiner-Elements is the only keyboard remapper the repo manages; kanata is removed and layers the Mac must know about are Karabiner variables. |  |
-| [Explicit ACPX model profiles](adr/0045-acpx-explicit-model-profiles.md) | accepted | acpx model selection uses explicit workhorse, writing, previous, and escalation profiles pinned in `acpx_models.toml`, keeping machine routing and harness separation. | [docs/references/acpx-routing.md](references/acpx-routing.md) |
+| [Explicit ACPX model profiles](adr/0045-acpx-explicit-model-profiles.md) | superseded | acpx model selection uses explicit workhorse, writing, previous, and escalation profiles pinned in `acpx_models.toml`, keeping machine routing and harness separation. | [docs/adr/0056-agent-selected-model-routing.md](adr/0056-agent-selected-model-routing.md), [docs/references/acpx-routing.md](references/acpx-routing.md) |
 | [ADR 0046 — Declarative TCC onboarding with a native helper](adr/0046-tcc-onboarding.md) | superseded | Expected macOS TCC permissions are declared per app in one manifest, rendered for a read-only SwiftUI helper that an opt-in apply prompt launches. | [docs/adr/0047-tcc-cli-first-apply.md](adr/0047-tcc-cli-first-apply.md) |
 | [ADR 0047 — CLI-first permission auditing during apply](adr/0047-tcc-cli-first-apply.md) | accepted | An enabled `chezmoi apply` audits recorded TCC access headlessly after installing apps, prints deviations with a helper command, and never changes grants itself. |  |
 | [ADR 0048 — The repo owns the NocFree keymap](adr/0048-repo-managed-nocfree-keymap.md) | accepted | The repo owns the NocFree keymap as one Vial `.vil` file applied to cable and dongle by `scripts/keyboard/nocfree-keymap`, with Karabiner owning select mode via F20. |  |
@@ -145,6 +145,7 @@ Retired documents are listed in the [retirement ledger](retired.md).
 | [Touch ID and Jamf elevation replace the askpass helper](adr/0053-touchid-and-jamf-replace-askpass.md) | accepted | Sudo during chezmoi apply authenticates with Touch ID on personal Macs and Jamf Self Service elevation on work Macs; the 1Password askpass helper is not built. | [docs/references/jamf-self-service-elevation.md](references/jamf-self-service-elevation.md), [docs/references/chezmoi-architecture.md](references/chezmoi-architecture.md) |
 | [Share retrieval through a portable search engine](adr/0054-shared-search-engine.md) | accepted | Shared retrieval adapters, budgets and provenance for search and specialized consumers. | [agent-marketplace/packages/utils-agent/skills/search/SKILL.md](../agent-marketplace/packages/utils-agent/skills/search/SKILL.md) |
 | [Separate search sources from provider capabilities](adr/0055-search-sources-independent-of-providers.md) | accepted | Separate evidence sources and areas from executable providers while admitting explicit public site scopes. |  |
+| [Agent-selected machine model routing](adr/0056-agent-selected-model-routing.md) | accepted | Calling agents select capability-ranked models from machine harness catalogs, cache evidence, and prefer included native delegation. |  |
 
 ## Research
 

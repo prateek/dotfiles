@@ -38,26 +38,11 @@ export async function command(ctx, cwd, executable, args, options = {}) {
 
 export const git = (ctx, cwd, args, options) => command(ctx, cwd, "git", ["-c", "core.hooksPath=/dev/null", ...args], options);
 
-export function pinNativeRoute(selection, family) {
-  const argv = [...selection.argv];
-  const replace = (key, transform) => {
-    const positions = argv.flatMap((part, index) => part.startsWith(`${key}=`) ? [index] : []);
-    if (positions.length !== 1) throw new Error(`Route needs exactly one ${key} assignment`);
-    const index = positions[0];
-    argv[index] = `${key}=${transform(argv[index].slice(key.length + 1))}`;
-  };
-  if (family === "writer" && selection.route === "codex") {
-    replace("CODEX_CONFIG", (value) => JSON.stringify({
-      ...JSON.parse(value), model: "gpt-6-sol", model_reasoning_effort: "high",
-    }));
-  } else if (family === "opus" && ["claude", "claude-vertex"].includes(selection.route)) {
-    replace("ANTHROPIC_MODEL", () => "claude-opus-5-5");
-    replace("ANTHROPIC_DEFAULT_OPUS_MODEL", () => "claude-opus-5-5");
-    replace("CLAUDE_CODE_EFFORT_LEVEL", () => "high");
-  } else {
-    throw new Error(`Cannot pin ${family} through ${selection.route}; supply ${family}Command argv explicitly`);
+export function resolvedRoute(selection, family) {
+  if (!Array.isArray(selection.argv)) {
+    throw new Error(`No external route for ${family}; supply ${family}Command argv explicitly`);
   }
-  return validateArgv(argv);
+  return validateArgv(selection.guard_argv);
 }
 
 function validateArgv(argv) {
@@ -140,9 +125,9 @@ export async function prepare(ctx, options) {
     throw new Error("agentTimeoutSeconds must be 1–21600");
   }
   const agents = {};
-  for (const [family, shortcut] of [["writer", "agpt"], ["opus", "aopus"]]) {
+  for (const [family, shortcut] of [["writer", "pgpt"], ["opus", "aopus"]]) {
     agents[family] = options[`${family}Command`] === undefined
-      ? pinNativeRoute(JSON.parse(await command(ctx, repo, path.join(os.homedir(), ".agents/bin/acpx-routing"), ["show", shortcut])), family)
+      ? resolvedRoute(JSON.parse(await command(ctx, repo, path.join(os.homedir(), ".agents/bin/acpx-routing"), ["show", shortcut])), family)
       : validateArgv(options[`${family}Command`]);
   }
   await command(ctx, repo, path.join(os.homedir(), ".agents/bin/acpx-routing"), ["show", "afablex"]);

@@ -1,6 +1,8 @@
-# A route combines a harness with its provider/account access. Machine policy
-# declares eligible route IDs separately; this table never enables a route.
+# Routes describe provider contracts. agent_clis selects their owning agent.
+# Access marks included subscriptions/employer access, local inference, or paid APIs.
 [acpx_harnesses.routes.local]
+agent = "omp"
+access = "local"
 harness = "omp"
 providers = ["local", "ollama", "lmstudio"]
 families = ["*"]
@@ -8,38 +10,52 @@ requires = ["omp"]
 catalog = "omp"
 
 [acpx_harnesses.routes.codex]
+agent = "codex"
+access = "included"
 harness = "codex"
 families = ["gpt"]
 requires = ["codex-acp"]
 catalog = "codex"
-unset_env = ["CODEX_PATH", "CODEX_CONFIG", "MODEL_PROVIDER", "CODEX_API_KEY", "OPENAI_API_KEY"]
+unset_env = ["CODEX_PATH", "CODEX_CONFIG", "MODEL_PROVIDER", "CODEX_API_KEY", "OPENAI_API_KEY", "OPENAI_BASE_URL"]
 
 [acpx_harnesses.routes.claude]
+agent = "claude"
+access = "included"
+machine = "non-work"
 harness = "claude"
 families = ["opus", "fable"]
 requires = ["claude-agent-acp", "node"]
 catalog = "claude"
+env = { DISABLE_TELEMETRY = "1", DISABLE_ERROR_REPORTING = "1", CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC = "1" }
 model_alias_env = { opus = "ANTHROPIC_DEFAULT_OPUS_MODEL", fable = "ANTHROPIC_DEFAULT_FABLE_MODEL" }
 unset_env = ["ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "CLAUDE_CODE_USE_VERTEX", "CLAUDE_CODE_USE_BEDROCK", "CLAUDE_CODE_USE_FOUNDRY"]
 
 [acpx_harnesses.routes.claude-vertex]
+agent = "claude"
+access = "included"
+machine = "work"
 harness = "claude"
 families = ["opus", "fable"]
 requires = ["claude-agent-acp", "node", "gcloud"]
 catalog = "claude"
 model_alias_env = { opus = "ANTHROPIC_DEFAULT_OPUS_MODEL", fable = "ANTHROPIC_DEFAULT_FABLE_MODEL" }
 unset_env = ["ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "CLAUDE_CODE_USE_BEDROCK", "CLAUDE_CODE_USE_FOUNDRY"]
-env = { CLAUDE_CODE_USE_VERTEX = "1" }
+env = { CLAUDE_CODE_USE_VERTEX = "1", DISABLE_TELEMETRY = "1", DISABLE_ERROR_REPORTING = "1", CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC = "1" }
 
 [acpx_harnesses.routes.openai]
+agent = "omp"
+access = "provider"
 harness = "omp"
 # openai-codex is omp's ChatGPT-subscription login; openai is an API key.
 providers = ["openai-codex", "openai"]
+provider_access = { openai-codex = "included", openai = "paid" }
 families = ["gpt"]
 requires = ["omp"]
 catalog = "omp"
 
 [acpx_harnesses.routes.anthropic]
+agent = "omp"
+access = "paid"
 harness = "omp"
 providers = ["anthropic"]
 families = ["opus", "fable"]
@@ -47,6 +63,8 @@ requires = ["omp"]
 catalog = "omp"
 
 [acpx_harnesses.routes.cerebras]
+agent = "omp"
+access = "paid"
 harness = "omp"
 providers = ["cerebras"]
 families = ["*"]
@@ -54,6 +72,8 @@ requires = ["omp"]
 catalog = "omp"
 
 [acpx_harnesses.routes.openrouter]
+agent = "omp"
+access = "paid"
 harness = "omp"
 providers = ["openrouter"]
 families = ["*"]
@@ -61,7 +81,28 @@ requires = ["omp"]
 catalog = "omp"
 
 [acpx_harnesses.routes.cursor]
+agent = "cursor-agent"
+access = "included"
 harness = "cursor"
 families = ["gpt", "opus", "fable", "gemini"]
 requires = ["cursor-agent"]
 catalog = "cursor"
+
+[acpx_harnesses.routes.pi]
+agent = "pi"
+harness = "pi"
+access = "provider"
+families = ["*"]
+requires = ["pi", "node"]
+catalog = "pi"
+native_only = true
+
+[acpx_harnesses.routes.gemini]
+agent = "gemini"
+harness = "gemini"
+access = "included"
+families = ["gemini"]
+requires = ["gemini"]
+catalog = "gemini"
+env = { GEMINI_TELEMETRY_ENABLED = "false", GEMINI_TELEMETRY_TRACES_ENABLED = "false" }
+unset_env = ["GEMINI_API_KEY", "GOOGLE_API_KEY"]

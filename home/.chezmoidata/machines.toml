@@ -43,11 +43,6 @@ pin_hostname = false
 # agent picker all derive from this list (ADR 0041). crit's agent_cmd is set
 # only when claude is listed. Empty by default so a machine opts in explicitly.
 agent_clis = []
-# ACP eligibility and preference are independent of installed/plugin clients.
-# Lists replace wholesale in host/local overrides. acpx_order_<family> can
-# reorder a subset for one family without admitting an undeclared route.
-acpx_routes = []
-acpx_local_providers = ["local", "ollama", "lmstudio"]
 # Prolo Ring profile, labels, and cheat sheet (run_after_48). On for hosts the
 # ring pairs with; the ring itself is flashed from Prolo Studio by hand.
 prolo_ring = false
@@ -109,7 +104,6 @@ touchid_sudo = true
 pin_hostname = true
 secrets_enabled = true
 agent_clis = ["claude", "codex", "omp", "pi", "gemini"]
-acpx_routes = ["local", "codex", "claude", "openai", "anthropic", "cerebras", "openrouter"]
 granola_mcp = true
 agent_session_wiki = true
 
@@ -130,7 +124,6 @@ runner_labels = "tartelet,homelab"
 runner_scope = "repo"                  # GitHubRunnerScope rawValue: "organization" | "repo"; repo = one runner per repo
 runner_start_on_launch = true
 agent_clis = ["claude", "codex", "omp", "pi", "gemini"]
-acpx_routes = ["local", "codex", "claude", "openai", "anthropic", "cerebras", "openrouter"]
 granola_mcp = true
 agent_session_wiki = true
 
@@ -141,7 +134,7 @@ agent_session_wiki = true
 # rooted at the terminal's login session, so a plugin reconcile
 # (see docs/adr/0020-apply-reconciles-plugin-installs.md) and a manual launch both
 # kill the terminal. Leaving it out of agent_clis keeps mise from installing it
-# and removes a copy an earlier apply left behind; it is not an acpx route either.
+# and removes a copy an earlier apply left behind; acpx eligibility follows that list too.
 [machines.type.work]
 tcc_onboarding = true
 os = "darwin"
@@ -150,7 +143,6 @@ touchid_sudo = true
 private_overlay = true
 elevation = "jamf-self-service"
 agent_clis = ["claude", "cursor-agent", "pi"]
-acpx_routes = ["claude-vertex", "cursor"]
 agent_session_wiki = true
 agent_session_wiki_sparse = true
 tls_inspection = true

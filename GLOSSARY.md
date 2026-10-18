@@ -50,6 +50,12 @@ Chezmoi-owned acquisition of a dependency that is only a repository or archive, 
 A local observation of live machine state, such as an exported preference domain, a Mackup candidate list, or a TCC audit, written under XDG state. It never becomes desired state without a hand edit.
 _Avoid_: Snapshot, export, dump
 
+## Agent delegation
+
+**Model shortcut**:
+A stable name for a model family, capability tier, and thinking increment, resolved against the access available on a machine.
+_Avoid_: Model ID, harness, fixed pin
+
 ## Search selection
 
 **Evidence area**:

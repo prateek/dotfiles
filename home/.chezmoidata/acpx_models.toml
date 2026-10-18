@@ -1,53 +1,51 @@
 [acpx_models]
-efforts = ["low", "medium", "high", "xhigh", "max", "ultra"]
+efforts = ["off", "minimal", "low", "medium", "high", "xhigh", "max", "ultra"]
+ttl_seconds = 86400
+stale_seconds = 604800
+
 [acpx_models.families.gpt]
-pattern = '^gpt-(?P<generation>\d+(?:\.\d+)*)(?:-(?P<tier>astra|sol|terra|luna|mini|nano))?(?:-\d{4}-\d{2}-\d{2})?$'
-tiers = ["nano", "mini", "luna", "terra", "", "sol", "astra"]
+pattern = '^gpt-[A-Za-z0-9][A-Za-z0-9.\[\]@_-]*$'
 
 [acpx_models.families.opus]
-pattern = '^claude-opus-(?P<generation>\d+(?:[.-]\d{1,2})*)(?:-\d{8})?(?:@\d{8})?$'
-tiers = [""]
+pattern = '^claude-opus-[A-Za-z0-9][A-Za-z0-9.\[\]@_-]*$'
 
 [acpx_models.families.fable]
-pattern = '^claude-fable-(?P<generation>\d+(?:[.-]\d{1,2})*)(?:-\d{8})?(?:@\d{8})?$'
-tiers = [""]
+pattern = '^claude-fable-[A-Za-z0-9][A-Za-z0-9.\[\]@_-]*$'
 
 [acpx_models.families.gemini]
-pattern = '^gemini-(?P<generation>\d+(?:\.\d+)*)(?:-(?P<tier>flash-lite|flash|pro))?(?:-preview(?:-\d{2}-\d{2})?)?$'
-tiers = ["flash-lite", "flash", "", "pro"]
+pattern = '^gemini-[A-Za-z0-9][A-Za-z0-9.\[\]@_-]*$'
 
-# Profiles pin model intent; catalogs supply the provider's exact advertised ID.
 [acpx_models.profiles]
-agpt = { family = "gpt", model = "gpt-6.1-sol", effort = "medium" }
-agptx = { family = "gpt", model = "gpt-6-astra", effort = "medium" }
-agptxx = { family = "gpt", model = "gpt-6-astra", effort = "high" }
-agptxxx = { family = "gpt", model = "gpt-6-astra", effort = "xhigh" }
-pgpt = { family = "gpt", model = "gpt-6-sol", effort = "medium" }
-pgptx = { family = "gpt", model = "gpt-6-sol", effort = "high" }
-pgptxx = { family = "gpt", model = "gpt-6-sol", effort = "xhigh" }
-pgptxxx = { family = "gpt", model = "gpt-6-sol", effort = "max" }
-agptw = { family = "gpt", model = "gpt-6.1-sol", effort = "medium" }
-aopus = { family = "opus", model = "claude-opus-5.5", effort = "medium" }
-aopusx = { family = "opus", model = "claude-opus-5.5", effort = "high" }
-aopusxx = { family = "opus", model = "claude-opus-5.5", effort = "xhigh" }
-aopusxxx = { family = "opus", model = "claude-opus-5.5", effort = "max" }
-popus = { family = "opus", model = "claude-opus-5", effort = "medium" }
-popusx = { family = "opus", model = "claude-opus-5", effort = "high" }
-popusxx = { family = "opus", model = "claude-opus-5", effort = "xhigh" }
-popusxxx = { family = "opus", model = "claude-opus-5", effort = "max" }
-afable = { family = "fable", model = "claude-fable-5.1", effort = "medium" }
-afablex = { family = "fable", model = "claude-fable-5.1", effort = "high" }
-afablexx = { family = "fable", model = "claude-fable-5.1", effort = "xhigh" }
-afablexxx = { family = "fable", model = "claude-fable-5.1", effort = "max" }
-pfable = { family = "fable", model = "claude-fable-5", effort = "medium" }
-pfablex = { family = "fable", model = "claude-fable-5", effort = "high" }
-pfablexx = { family = "fable", model = "claude-fable-5", effort = "xhigh" }
-pfablexxx = { family = "fable", model = "claude-fable-5", effort = "max" }
-agemini = { family = "gemini", model = "gemini-3.8-flash", effort = "high" }
-ageminix = { family = "gemini", model = "gemini-3.8-flash", effort = "xhigh" }
-ageminixx = { family = "gemini", model = "gemini-3.8-flash", effort = "max" }
-ageminixxx = { family = "gemini", model = "gemini-3.8-flash", effort = "ultra" }
-pgemini = { family = "gemini", previous_of = "agemini", effort = "high" }
-pgeminix = { family = "gemini", previous_of = "agemini", effort = "xhigh" }
-pgeminixx = { family = "gemini", previous_of = "agemini", effort = "max" }
-pgeminixxx = { family = "gemini", previous_of = "agemini", effort = "ultra" }
+agpt = { family = "gpt", selection = "current", steps = 0 }
+agptx = { family = "gpt", selection = "current", steps = 1 }
+agptxx = { family = "gpt", selection = "current", steps = 2 }
+agptxxx = { family = "gpt", selection = "current", steps = 3 }
+pgpt = { family = "gpt", selection = "previous", steps = 0 }
+pgptx = { family = "gpt", selection = "previous", steps = 1 }
+pgptxx = { family = "gpt", selection = "previous", steps = 2 }
+pgptxxx = { family = "gpt", selection = "previous", steps = 3 }
+aopus = { family = "opus", selection = "current", steps = 0 }
+aopusx = { family = "opus", selection = "current", steps = 1 }
+aopusxx = { family = "opus", selection = "current", steps = 2 }
+aopusxxx = { family = "opus", selection = "current", steps = 3 }
+popus = { family = "opus", selection = "previous", steps = 0 }
+popusx = { family = "opus", selection = "previous", steps = 1 }
+popusxx = { family = "opus", selection = "previous", steps = 2 }
+popusxxx = { family = "opus", selection = "previous", steps = 3 }
+afable = { family = "fable", selection = "current", steps = 0 }
+afablex = { family = "fable", selection = "current", steps = 1 }
+afablexx = { family = "fable", selection = "current", steps = 2 }
+afablexxx = { family = "fable", selection = "current", steps = 3 }
+pfable = { family = "fable", selection = "previous", steps = 0 }
+pfablex = { family = "fable", selection = "previous", steps = 1 }
+pfablexx = { family = "fable", selection = "previous", steps = 2 }
+pfablexxx = { family = "fable", selection = "previous", steps = 3 }
+agemini = { family = "gemini", selection = "current", steps = 0 }
+ageminix = { family = "gemini", selection = "current", steps = 1 }
+ageminixx = { family = "gemini", selection = "current", steps = 2 }
+ageminixxx = { family = "gemini", selection = "current", steps = 3 }
+pgemini = { family = "gemini", selection = "previous", steps = 0 }
+pgeminix = { family = "gemini", selection = "previous", steps = 1 }
+pgeminixx = { family = "gemini", selection = "previous", steps = 2 }
+pgeminixxx = { family = "gemini", selection = "previous", steps = 3 }
+agptw = { family = "gpt", selection = "previous", steps = 0 }
