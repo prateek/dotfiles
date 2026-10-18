@@ -44,16 +44,23 @@ adapters for compatibility needs and intentional customizations.
 
 ## Docs And Decisions
 
-- A plan at `docs/plans/<slug>-plan.md` exists only when the work spans more than one landing or must hand off between sessions. Smaller work describes itself in its commit or PR. Prototypes and spikes stay in ignored scratch directories.
-- An ADR at `docs/adr/<NNNN>-<slug>.md` exists only when a decision is hard to reverse, surprising without context, and the result of a real trade-off. Never renumber or reuse a number.
-- Markdown docs under `docs/` carry YAML frontmatter with a canonical `status` and a one-line `summary`; follow [docs/document-lifecycle.md](docs/document-lifecycle.md).
-- A plan closes in the change that lands its last step, and a closed doc that is not an ADR leaves the tree: move durable content to a reference, runbook, ADR, or the owning skill, add a row to [docs/retired.md](docs/retired.md), delete the file. ADRs stay.
-- [docs/index.md](docs/index.md) routes to current guidance and open plans; keep its rows free of status prose. `just docs-inventory` regenerates [docs/inventory.md](docs/inventory.md), which the validator checks. `just docs-due` lists docs that need a decision.
-- Plan docs reference their ADRs, and ADRs reference the plan docs that prompted them. Research names the plan or ADR it informs in `related`. Prefer Markdown-relative links for in-repo docs.
-- Repo terms live in [GLOSSARY.md](GLOSSARY.md); add a term there when a session settles one.
-- `README.md` is user-facing and intentionally tiny. Move coding-agent or maintenance details here or into focused docs instead.
-- `AGENTS.md` should contain durable conventions only. Do not add one-off session notes.
-- Keep disposable experiments in ignored scratch directories. Retain findings in research docs, promote only useful production code/tests, and remove experiment scaffolding when its question is resolved.
+When creating plans or ADRs, updating documented progress, settling research,
+or completing documented work, read the checkout's
+[document-lifecycle skill](agent-marketplace/packages/core/skills/document-lifecycle/SKILL.md).
+Its contract owns the shared rules; [Document Lifecycle](docs/document-lifecycle.md)
+owns this repo's paths, commands, and exceptions. Use this checkout's version
+when an installed plugin differs.
+
+[docs/index.md](docs/index.md) routes to current guidance and open plans.
+`just docs-inventory` regenerates [docs/inventory.md](docs/inventory.md);
+`just docs-due` lists docs needing a decision. Validate changes with
+`just test-docs-lifecycle`.
+
+Repo terms live in [GLOSSARY.md](GLOSSARY.md); add a term there when a session
+settles one. `README.md` stays user-facing and tiny. Keep durable repo conventions
+here or in focused docs, and one-off session notes in the task report.
+Disposable experiments belong in ignored scratch directories; retain useful
+findings in the appropriate document and remove resolved experiment scaffolding.
 
 ## Common Commands
 

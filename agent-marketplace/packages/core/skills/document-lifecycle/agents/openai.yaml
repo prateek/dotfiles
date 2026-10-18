@@ -1,0 +1,4 @@
+interface:
+  display_name: "Document Lifecycle"
+  short_description: "Keep repo docs current and retire completed work"
+  default_prompt: "Use $document-lifecycle to maintain affected docs as work progresses, or adopt the lifecycle in this repository when requested."

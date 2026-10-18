@@ -29,7 +29,7 @@ When local evidence is inconclusive, follow [archaeology](references/archaeology
 
 ### 4. Synchronize durable state
 
-Update the nearest code, tests, comments, examples, docs, plans, specs, config, build inputs, generated-file policy, and agent guidance affected by a changed fact, vocabulary, workflow, or invariant. For `AGENTS.md`, `CLAUDE.md`, `README`, `SKILL.md`, and long-lived guides, follow [durable-doc editing](references/durable-docs.md). For human-facing prose, apply `writing-for-humans`.
+Update the nearest code, tests, comments, examples, docs, plans, specs, config, build inputs, generated-file policy, and agent guidance affected by a changed fact, vocabulary, workflow, or invariant. For `AGENTS.md`, `CLAUDE.md`, `README`, `SKILL.md`, and long-lived guides, follow [durable-doc editing](references/durable-docs.md). When creating plans or ADRs, changing documented progress, or completing work, use the [document-lifecycle skill](../document-lifecycle/SKILL.md) to reconcile state and retirement under the repo's policy. For human-facing prose, apply `writing-for-humans`.
 
 Finish when every affected surface agrees with the chosen authority, or each remaining mismatch is recorded.
 

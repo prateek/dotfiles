@@ -359,7 +359,11 @@ just test-docs-lifecycle
 ```
 
 That command runs the validator's native fixture suite and validates this
-checkout. `just check-docs-lifecycle` validates only the checkout. CI discovers
+checkout. The implementation lives in the portable `document-lifecycle` skill;
+`docs/validate-doc-lifecycle.py` preserves this repo's defaults. Portability
+fixtures run a standalone copy in a separate Git repo, including inventory,
+locked-body, and retirement checks. `just check-docs-lifecycle` validates only
+the checkout. CI discovers
 the fixture cases with the other Python tests and runs the checkout check in
 its static lane, so the fixtures execute once. The checkout check also fails
 when `docs/inventory.md` is stale; `just docs-inventory` regenerates it.
