@@ -1,0 +1,148 @@
+{
+  "skill_name": "doc-coauthoring",
+  "evals": [
+    {
+      "id": 1,
+      "name": "create-plan",
+      "prompt": "Plan opt-in JSON output via `--format json` for this catalog reporter. Preserve the default text output exactly. JSON must contain each row’s integer id and string name, including an empty array for no rows. Use no new dependencies. Write docs/plans/export-plan.md; do not implement it.",
+      "expected_output": "Preserves opt-in JSON and existing default text behavior; Finds parser, renderer, and actual unittest command in the fixture; Chooses a mechanism connecting producer and consumer and explains an alternative; Defines a useful first deliverable, prerequisites, and independent acceptance evidence.",
+      "files": [
+        "evals/files/repository"
+      ],
+      "expectations": [
+        "Preserves opt-in JSON and existing default text behavior",
+        "Finds parser, renderer, and actual unittest command in the fixture",
+        "Chooses a mechanism connecting producer and consumer and explains an alternative",
+        "Defines a useful first deliverable, prerequisites, and independent acceptance evidence"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "revise-plan",
+      "prompt": "Revise docs/plans/export-plan.md. The requirement changed: retain text as the default and support JSON only through --format json. Keep the owner and accessibility note. Update the entire plan so implementation order, migration, acceptance, and open decisions agree. Do not implement code.",
+      "expected_output": "Preserves the owner and accessibility note; Removes instructions to replace the default or remove text; Reconciles dependent deliverables, migration, acceptance, and the resolved question.",
+      "files": [
+        "evals/files/repository",
+        "evals/files/revision"
+      ],
+      "expectations": [
+        "Preserves the owner and accessibility note",
+        "Removes instructions to replace the default or remove text",
+        "Reconciles dependent deliverables, migration, acceptance, and the resolved question"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "ask-preference",
+      "prompt": "Plan opt-in JSON output in docs/plans/export-plan.md. A legacy --text alias is also proposed, but its compatibility policy has not been chosen. Inspect the existing checks yourself, ask for the material policy choice, and continue any independent drafting you can. Do not implement code.",
+      "expected_output": "Discovers the unittest command without asking the user to recite it; Asks about legacy alias support before treating it as decided; Integrates the scripted policy answer into mechanism and acceptance.",
+      "files": [
+        "evals/files/repository"
+      ],
+      "expectations": [
+        "Discovers the unittest command without asking the user to recite it",
+        "Asks about legacy alias support before treating it as decided",
+        "Integrates the scripted policy answer into mechanism and acceptance"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "choose-with-grant",
+      "prompt": "Plan opt-in JSON output and decide whether to offer a legacy --text alias. You may choose the compatibility policy; state your assumption and rationale. Inspect the existing checks yourself. Save docs/plans/export-plan.md; do not implement code.",
+      "expected_output": "Uses the explicit grant to select and explain a compatibility policy; Inspects existing checks and keeps default text compatibility.",
+      "files": [
+        "evals/files/repository"
+      ],
+      "expectations": [
+        "Uses the explicit grant to select and explain a compatibility policy",
+        "Inspects existing checks and keeps default text compatibility"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "reuse-plan",
+      "prompt": "Continue the existing export work. Resolve the remaining choice: JSON output for no rows must be an empty array. Update the current plan with implementation details and acceptance evidence. Keep its owner and the retirement record. Do not implement code.",
+      "expected_output": "Finds and revises the current export plan instead of creating a duplicate; Keeps the retirement entry and owner; Integrates the empty-array decision and closes the open question.",
+      "files": [
+        "evals/files/repository",
+        "evals/files/reuse"
+      ],
+      "expectations": [
+        "Finds and revises the current export plan instead of creating a duplicate",
+        "Keeps the retirement entry and owner",
+        "Integrates the empty-array decision and closes the open question"
+      ]
+    },
+    {
+      "id": 6,
+      "name": "interactive-draft",
+      "prompt": "Help me develop proposal.md section by section. Start with Goals, save that section, then pause for my feedback. Keep Audience and its USER_NOTE marker intact. Draft Approach only after I reply. The initial idea is a catalog viewer for maintainers; choose a few concrete goals.",
+      "expected_output": "Honors Goals then Approach order and requested pause; Preserves the direct user edit and incorporates offline/account constraints throughout; Uses targeted interaction without mandatory unrelated questionnaires.",
+      "files": [
+        "evals/files/repository",
+        "evals/files/interactive/proposal.md"
+      ],
+      "expectations": [
+        "Honors Goals then Approach order and requested pause",
+        "Preserves the direct user edit and incorporates offline/account constraints throughout",
+        "Uses targeted interaction without mandatory unrelated questionnaires"
+      ]
+    },
+    {
+      "id": 7,
+      "name": "small-copyedit",
+      "prompt": "Fix the misspelling in note.md and preserve the rest exactly.",
+      "expected_output": "Only changes recieve to receive; Does not start a substantial authoring workflow.",
+      "files": [
+        "evals/files/copyedit"
+      ],
+      "expectations": [
+        "Only changes recieve to receive",
+        "Does not start a substantial authoring workflow"
+      ]
+    },
+    {
+      "id": 8,
+      "name": "research-only",
+      "prompt": "Report which output formats this repository currently supports and how to run its checks. Cite the local source files. Answer in chat; do not write a plan or change any files.",
+      "expected_output": "Reports only currently supported text and cites producer/consumer evidence; Reports the existing unittest command; Creates no plan or other file.",
+      "files": [
+        "evals/files/repository"
+      ],
+      "expectations": [
+        "Reports only currently supported text and cites producer/consumer evidence",
+        "Reports the existing unittest command",
+        "Creates no plan or other file"
+      ]
+    },
+    {
+      "id": 9,
+      "name": "clean-adopter",
+      "prompt": "Create notes/export-plan.md for opt-in JSON catalog output while keeping default text output. Follow this repository’s authoring authority and format. Do not implement code. Save the plan and pause for a follow-up revision.",
+      "expected_output": "Reads the declared docs/authoring/SKILL.md and required in-folder references; Creates a useful plain-Markdown plan under notes/ without external skill dependencies; Handles the later revision and records progress in its own section when no location is declared.",
+      "files": [
+        "evals/files/repository",
+        "evals/files/adopter"
+      ],
+      "expectations": [
+        "Reads the declared docs/authoring/SKILL.md and required in-folder references",
+        "Creates a useful plain-Markdown plan under notes/ without external skill dependencies",
+        "Handles the later revision and records progress in its own section when no location is declared"
+      ]
+    },
+    {
+      "id": 10,
+      "name": "unseen-creation",
+      "prompt": "Plan opt-in TSV output via --format tsv in docs/plans/tsv-plan.md. Keep text as the default. Use id then name columns, a header row, and tab-separated values. Explicitly choose an escaping policy for tabs and newlines in names. Do not implement code.",
+      "expected_output": "Inspects actual producer and consumer; Specifies escaping and preserves text compatibility; Defines acceptance for headers, empty rows, and embedded tabs/newlines.",
+      "files": [
+        "evals/files/repository"
+      ],
+      "expectations": [
+        "Inspects actual producer and consumer",
+        "Specifies escaping and preserves text compatibility",
+        "Defines acceptance for headers, empty rows, and embedded tabs/newlines"
+      ]
+    }
+  ]
+}

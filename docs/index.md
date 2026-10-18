@@ -62,6 +62,7 @@ Status and summary for each are in the [inventory](inventory.md#plans).
 - [Browser skill](plans/browser-skill-plan.md)
 - [Browser components and Camofox adoption](plans/browser-runtime-controller-plan.md)
 - [Decomment skill](plans/decomment-skill-plan.md)
+- [Document authoring skills](plans/document-authoring-skills-plan.md)
 - [Goku Karabiner migration](plans/goku-karabiner-migration-plan.md)
 - [Linux devbox](plans/linux-devbox-plan.md)
 - [Orca settings store](plans/orca-settings-store-plan.md)

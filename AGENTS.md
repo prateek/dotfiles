@@ -44,6 +44,16 @@ adapters for compatibility needs and intentional customizations.
 
 ## Docs And Decisions
 
+For substantial document creation, implementation planning, or revision that
+changes what a reader should do, the pinned authoring owner is the checkout's
+[doc-coauthoring skill](agent-marketplace/packages/core/skills/doc-coauthoring/SKILL.md).
+Resolve conflicting declarations using the client's instruction precedence; if
+none wins, report the conflict and leave authoring pending. Read the selected
+entrypoint and wait for its complete result. On a failed read, stop tool use and
+report the declared path with authoring pending. Then follow that copy, resolving each
+reference from the file that links it. Repository formats and document ownership
+remain local.
+
 When creating plans or ADRs, updating documented progress, settling research,
 or completing documented work, read the checkout's
 [document-lifecycle skill](agent-marketplace/packages/core/skills/document-lifecycle/SKILL.md).

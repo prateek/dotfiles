@@ -289,6 +289,12 @@ require a separate authenticated model run with expected answers withheld.
 `just test-agent-marketplace` delegates to it. `just test-tools` provisions its frozen APM 0.29.1
 environment, and the project check runs in the required macOS CI lane.
 
+The [document-authoring scenarios](../agent-marketplace/packages/core/skills/doc-coauthoring/evals/README.md)
+use separate authenticated model runs for creation, revision, interaction, portable
+adoption, and isolated catalog discovery. Follow the scripted replies and keep
+expected observations out of agent inputs. Packaging checks do not establish
+authoring behavior or discovery.
+
 The Jev browser runner's offline suite lives in `tests/node/browser-jev/` and
 runs only with the optional `just test-browser-jev` lane. Jev is suspended in
 the default-disabled experimental plugin; ordinary CI deliberately no longer
