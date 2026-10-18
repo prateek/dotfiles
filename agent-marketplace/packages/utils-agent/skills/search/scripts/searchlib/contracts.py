@@ -48,6 +48,7 @@ CHOICES = {
     "location",
     "limit",
     "total_limit",
+    "result_limit",
     "max_calls",
     "max_opens",
     "timeout",
@@ -160,7 +161,7 @@ def choices(value):
         elif k == "free_only":
             if type(v) is not bool:
                 raise Invalid("free_only must be boolean")
-        elif k in {"limit", "total_limit", "max_calls"}:
+        elif k in {"limit", "total_limit", "result_limit", "max_calls"}:
             integer(v, k, 1)
         elif k == "max_opens":
             integer(v, k)
@@ -215,9 +216,20 @@ def request(value):
             "budget",
             "authorized_paid",
             "prepared_jobs",
+            "intent",
         ),
         label="request",
     )
+    if "intent" in value:
+        intent = obj(
+            value["intent"],
+            ("request", "requirements", "hard_constraints"),
+            ("request",),
+            "intent",
+        )
+        string(intent["request"], "original request")
+        for key in ("requirements", "hard_constraints"):
+            strings(intent.get(key, []), key)
     choices(value.get("choices", {}))
     choices(value.get("conversation_choices", {}))
     if "terms" in value:

@@ -398,6 +398,39 @@ def build_parser() -> argparse.ArgumentParser:
         help="Maximum merged results to print.",
     )
     search.add_argument(
+        "--fetch-limit",
+        type=positive_int,
+        help="Per-backend fetch budget, independent of --limit (default 25).",
+    )
+    search.add_argument(
+        "--candidate-limit",
+        type=positive_int,
+        default=30,
+        help="Candidate page size in relevance mode (maximum 100).",
+    )
+    search.add_argument(
+        "--relevance",
+        action="store_true",
+        help="Return candidates for host assessment; --limit sets final shortlist size.",
+    )
+    search.add_argument(
+        "--max-opens",
+        type=positive_int,
+        default=8,
+        help="Content inspection allowance in relevance mode.",
+    )
+    search.add_argument(
+        "--intent",
+        help="JSON object with original request, requirements and hard_constraints.",
+    )
+    search.add_argument(
+        "--capabilities",
+        help="Host manifest for later content inspections in this run.",
+    )
+    search.add_argument(
+        "--state", help="Explicit private state path; default is automatic XDG storage."
+    )
+    search.add_argument(
         "--max-calls",
         type=positive_int,
         help="Cap discovery plus enrichment operations across this invocation.",
@@ -508,19 +541,33 @@ def main(argv: list[str] | None = None) -> int:
 ENGINE = Path(__file__).resolve().parents[2] / "search/scripts/agent-search"
 
 
-def engine_run(jobs, *, discovery, enrichment=0, timeout=20):
+def engine_run(
+    jobs,
+    *,
+    discovery,
+    enrichment=0,
+    timeout=20,
+    state=None,
+    choices=None,
+    intent=None,
+    opens=None,
+    capabilities=None,
+):
     req = {
         "schema_version": 1,
         "prepared_jobs": jobs,
-        "choices": {"total_limit": sum(j.get("limit", 1) for j in jobs) or 1},
+        "choices": choices
+        or {"total_limit": sum(j.get("limit", 1) for j in jobs) or 1},
         "budget": {
             "calls": discovery + enrichment,
             "discovery": discovery,
             "enrichment": enrichment,
-            "opens": enrichment,
-            "wall_seconds": timeout * max(1, len(jobs)) + 10,
+            "opens": enrichment if opens is None else opens,
+            "wall_seconds": timeout * max(1, len(jobs) + enrichment) + 10,
         },
     }
+    if intent:
+        req["intent"] = intent
     response = subprocess.run(
         [
             sys.executable,
@@ -530,6 +577,8 @@ def engine_run(jobs, *, discovery, enrichment=0, timeout=20):
             "-",
             "--no-defaults",
             "--json",
+            *(["--state", str(state)] if state else []),
+            *(["--capabilities", str(capabilities)] if capabilities else []),
         ],
         input=json.dumps(req),
         capture_output=True,
@@ -539,6 +588,26 @@ def engine_run(jobs, *, discovery, enrichment=0, timeout=20):
         raise RuntimeError(
             "Shared search engine rejected request: " + response.stderr[:500]
         )
+    return json.loads(response.stdout)
+
+
+def engine_extend(report, jobs):
+    response = subprocess.run(
+        [
+            sys.executable,
+            str(ENGINE),
+            "extend",
+            "--state",
+            report["trace"]["state"],
+            "--request",
+            "-",
+        ],
+        input=json.dumps({"schema_version": 1, "prepared_jobs": jobs}),
+        capture_output=True,
+        text=True,
+    )
+    if response.returncode:
+        raise RuntimeError("Shared search extension failed: " + response.stderr[:500])
     return json.loads(response.stdout)
 
 
@@ -613,14 +682,43 @@ def command_search(args):
     enabled = (
         args.progress == "always" or args.progress == "auto" and sys.stderr.isatty()
     )
+    if args.candidate_limit > 100:
+        raise RuntimeError(
+            "--candidate-limit must be <= 100; page through the saved run for more"
+        )
     limit = 1000 if args.all else args.limit
-    jobs = [discovery_job(name, query, limit, args.timeout) for name in BACKENDS]
+    fetch_limit = args.fetch_limit or (1000 if args.all else 25)
+    jobs = [discovery_job(name, query, fetch_limit, args.timeout) for name in BACKENDS]
     for name in BACKENDS:
         progress(enabled, f"backend\tname={name}\tstatus=started")
-    discovery = 3 + math.ceil(limit / 100)
+    discovery = 3 + math.ceil(fetch_limit / 100)
     if args.max_calls is not None:
         discovery = min(discovery, args.max_calls)
-    report = engine_run(jobs, discovery=discovery, timeout=args.timeout)
+    candidate_limit = (
+        args.candidate_limit if args.relevance else fetch_limit * len(BACKENDS)
+    )
+    metadata_calls = 3 * candidate_limit if args.enrich else 0
+    inspection_calls = args.max_opens if args.relevance else 0
+    enrichment = metadata_calls + inspection_calls
+    if args.max_calls is not None:
+        enrichment = min(enrichment, max(0, args.max_calls - discovery))
+    report = engine_run(
+        jobs,
+        discovery=discovery,
+        enrichment=enrichment,
+        timeout=args.timeout,
+        state=args.state,
+        choices={"total_limit": candidate_limit, "result_limit": limit},
+        intent=json.loads(Path(args.intent).read_text())
+        if args.intent
+        else {
+            "request": query,
+            "requirements": ["Installable skill with narrow task fit"],
+            "hard_constraints": [],
+        },
+        opens=metadata_calls + inspection_calls,
+        capabilities=args.capabilities,
+    )
     gathered, statuses = [], {}
     for name in BACKENDS:
         rows = skill_rows(name, report["outcomes"].get(name, {}))
@@ -636,7 +734,23 @@ def command_search(args):
         for row in rows:
             progress_result(enabled, name, row)
         gathered.extend(rows)
-    merged = merge_results(gathered)
+    if args.relevance:
+        merged = []
+        for candidate in report["candidates"]:
+            name = candidate["observations"][0]["provider"]
+            row = skill_rows(name, {"results": [candidate]})[0]
+            row.update(
+                candidate_id=candidate["candidate_id"],
+                evidence_digest=candidate["evidence_digest"],
+                observations=candidate["observations"],
+                assessment=candidate["assessment"],
+            )
+            row["sources"] = ordered_sources(
+                [o["provider"] for o in candidate["observations"]]
+            )
+            merged.append(row)
+    else:
+        merged = merge_results(gathered)
     if args.enrich:
         jobs, targets = [], []
         repos = sorted({r["repo"] for r in merged if r.get("repo")})
@@ -669,14 +783,12 @@ def command_search(args):
                 }
             )
         if jobs:
-            allowance = (
-                len(jobs)
-                if args.max_calls is None
-                else min(len(jobs), max(0, args.max_calls - report["usage"]["calls"]))
-            )
-            enriched = engine_run(
-                jobs, discovery=0, enrichment=allowance, timeout=args.timeout
-            )
+            # Keep inspection calls available after optional popularity enrichment.
+            remaining = max(0, enrichment - inspection_calls)
+            jobs = jobs[:remaining]
+            targets = targets[:remaining]
+            enriched = engine_extend(report, jobs) if jobs else report
+            report = enriched
             failures, files = set(), 0
             for i, (repo, index, metric) in enumerate(targets):
                 out = enriched["outcomes"].get(f"e{i}", {})
@@ -703,13 +815,29 @@ def command_search(args):
                 count=files,
                 detail=", ".join(sorted(failures)) or None,
             )
-    rows = sort_results(merged, args.sort_by, args.direction)[:limit]
+    rows = (
+        merged
+        if args.relevance
+        else sort_results(merged, args.sort_by, args.direction)[:limit]
+    )
     if args.json:
         print(
             json.dumps(
                 {
                     "query": query,
-                    "sort_by": args.sort_by,
+                    "sort_by": "host-relevance-pending"
+                    if args.relevance
+                    else args.sort_by,
+                    "run_id": report["run_id"],
+                    "trace": report["trace"],
+                    "diagnostics": report["diagnostics"],
+                    "receipt": report["receipt"],
+                    "fetch_limit": fetch_limit,
+                    "result_limit": limit,
+                    "view": "candidates" if args.relevance else "legacy-metric-sort",
+                    "display_omitted": report["diagnostics"]["counts"]["not_visible"]
+                    if args.relevance
+                    else max(0, len(merged) - len(rows)),
                     "direction": args.direction,
                     "backends": statuses,
                     "results": rows,
@@ -720,6 +848,7 @@ def command_search(args):
         )
     else:
         print_tsv(rows, include_header=not args.no_header)
+        print(report["receipt"], file=sys.stderr)
     return 0 if {s["status"] for s in statuses.values()} & {"ok", "partial"} else 1
 
 
@@ -795,6 +924,6 @@ def command_doctor(args):
 if __name__ == "__main__":
     try:
         raise SystemExit(main())
-    except RuntimeError as exc:
+    except (RuntimeError, OSError, ValueError) as exc:
         print(str(exc), file=sys.stderr)
         raise SystemExit(2)

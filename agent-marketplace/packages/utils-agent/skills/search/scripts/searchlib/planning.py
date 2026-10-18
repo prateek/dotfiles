@@ -10,6 +10,7 @@ BUILTINS = {
     "strategy": "free-first",
     "limit": 10,
     "total_limit": 30,
+    "result_limit": 5,
     "free_only": False,
     "via": "auto",
 }
@@ -260,7 +261,16 @@ def plan(req, manifest=None, saved=True):
             if k in choices:
                 if "native_query" in f:
                     raise c.Invalid("Native queries cannot receive automatic filters")
+                if k in f["filters"] and f["filters"][k] != choices[k]:
+                    raise c.Invalid(f"Conflicting {k} constraints for facet {f['id']}")
                 f["filters"][k] = choices[k]
+        c.choices(
+            {
+                k: f["filters"][k]
+                for k in ("since", "until", "location")
+                if k in f["filters"]
+            }
+        )
         f.setdefault("limit", choices["limit"])
         f.setdefault("needs", ["relevance"])
         if (
@@ -291,15 +301,26 @@ def plan(req, manifest=None, saved=True):
             reason = "excluded" if excluded else supports(p, f, choices)
             if reason is None and p["readiness"] == "configured_unverified":
                 eligible.append(p)
-            elif reason is None:
+            elif reason is None or (
+                f["source"] in p["sources"] and f["operation"] in p["operations"]
+            ):
                 skipped.append(
                     {
                         "provider": p["id"],
-                        "reason": p["readiness"],
-                        "detail": p["detail"],
+                        "reason": reason or p["readiness"],
+                        "detail": reason or p["detail"],
                     }
                 )
         eligible.sort(key=lambda p: score(p, choices))
+        skipped.sort(
+            key=lambda row: row["reason"]
+            not in {
+                "requires_host",
+                "missing_credential",
+                "missing_tool",
+                "unauthorized",
+            }
+        )
         jobs.append(
             {
                 "facet": f,

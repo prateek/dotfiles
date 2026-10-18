@@ -1,6 +1,6 @@
-# Dotfiles Documentation
+# Dotfiles Vocabulary
 
-The shared vocabulary for this repo: how a Markdown document under `docs/` is classified, when it stops being guidance, and what remains once it is gone; and the chezmoi source state that materializes into `$HOME`.
+The shared vocabulary for documentation, chezmoi source state, and the portable agent workflows maintained in this repo.
 
 ## Language
 
@@ -49,3 +49,21 @@ Chezmoi-owned acquisition of a dependency that is only a repository or archive, 
 **Capture**:
 A local observation of live machine state, such as an exported preference domain, a Mackup candidate list, or a TCC audit, written under XDG state. It never becomes desired state without a hand edit.
 _Avoid_: Snapshot, export, dump
+
+## Search selection
+
+**Search run**:
+One logical search spanning query expansion, discovery, enrichment, content inspection and final selection within a shared budget.
+_Avoid_: Provider call, query
+
+**Candidate pool**:
+The distinct candidates returned by discovery after canonical duplicate grouping, with their original observations preserved. Membership does not imply relevance or verification.
+_Avoid_: Shortlist, recommendations
+
+**Shortlist**:
+The ordered candidates selected for the answer after assessing task fit, hard constraints and supporting evidence.
+_Avoid_: Top hits, most popular results
+
+**Search receipt**:
+The compact account of a run's retrieval, inspection, selection, gaps and durable trace accompanying the answer.
+_Avoid_: Quality score, success score

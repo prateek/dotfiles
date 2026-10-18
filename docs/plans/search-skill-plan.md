@@ -2,7 +2,7 @@
 status: active
 doc_type: plan
 created: 2026-10-17
-updated: 2026-10-17
+updated: 2026-10-18
 related:
   - ../adr/0054-shared-search-engine.md
   - ../research/search-skill-implementation.md
@@ -10,7 +10,7 @@ related:
   - ../research/search-index-website-run.md
   - ../research/search-skill-plan-review.md
   - ../research/search-skill-second-review.md
-status_detail: "Implementation accepted; engine and skill authored, contract/live qualification recorded separately. Task-quality evaluation remains open."
+status_detail: "Implementation accepted; engine and skill authored, contract/live qualification recorded separately. Relevance selection and private diagnostics follow-up implemented; adversarial qualification passed; live task-quality evaluation remains open."
 summary: "Shared search skill, retrieval engine and skills-searcher integration."
 ---
 
@@ -30,8 +30,12 @@ contract tests, current live access, packaging, activation and unmeasured task q
 
 Inspection URLs become known after discovery. The implementation adds `extend`
 to append prepared inspection jobs without resetting the run's budget/deadline,
-and `assess` to record the host's evidence checks. This keeps discovery and
-verification explicit while using the same run. No provider ranking is claimed.
+and `assess` to record the host's facet evidence checks. `select` records candidate
+fit, verification, shortlist reasons and omissions using the shared
+[selection contract](../../agent-marketplace/packages/utils-agent/skills/search/references/selection.md). Automatic private XDG checkpoints and transport events span discovery, enrichment,
+inspection and selection, including skills-searcher. Candidate pages and fetch
+budgets are separate from the final result limit. Provider routing is not a
+semantic relevance ranking.
 
 ## Evidence behind the design
 
@@ -253,3 +257,21 @@ Publish only audited public prompts, criteria and new public IDs. Keep original 
 Run two agent comparisons: skill instructions versus no skill with the **same engine/tools/access**, and the full stack versus the host-native baseline. The first isolates instruction value; the second measures practical improvement with an explicit tooling confound. Keep query-rewriting task trials separate from unchanged-query retrieval. Use fixture host manifests for sparse-capability tests; live tests record model, revision, access, filters, date/location, budgets, cost and latency. Ties pass the small smoke gate; they do not prove equivalence.
 
 Critical failures are private-data leakage, credential exposure, unauthorized/out-of-budget calls, or fabricated verification. Test them through public seams and independent fixtures under the repository's testing guidance. Run marketplace package checks, selected adapter/consumer tests, docs lifecycle checks and `git diff --check`. Packaging success, task quality and host activation are separate evidence.
+
+## Relevance and diagnostics follow-up
+
+The approved follow-up adds evidence-backed `direct`, `partial`, `adjacent`,
+`irrelevant` and `unassessed` labels owned by the executing agent. Mechanical
+identity and observation merging remain in the engine. The parent selection
+reference owns the common procedure and receipt; skills-searcher adds content,
+authorship and installability checks. Its legacy metric display remains available,
+while `--relevance` returns an unassessed pool before any popularity cutoff.
+
+The versioned run stores effective queries/constraints, considered routes and
+skips, attempt timing/usage, transport starts/finishes, provider positions,
+observations, selection and a compact receipt. Restricted retention and unknown
+measurements remain explicit. `--state` remains an optional path override.
+The [qualification record](../research/search-skill-implementation.md) tracks
+regressions, offline replays and adversarial review. Source implementation does
+not establish deployment or improved task quality; the latter evaluation remains
+an open acceptance gate.

@@ -61,7 +61,12 @@ class SearchTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.home = Path(self.temp.name)
         self.env = patch.dict(
-            os.environ, {"XDG_CONFIG_HOME": str(self.home / "config")}, clear=False
+            os.environ,
+            {
+                "XDG_CONFIG_HOME": str(self.home / "config"),
+                "XDG_STATE_HOME": str(self.home / "state"),
+            },
+            clear=False,
         )
         self.env.start()
         self.addCleanup(self.env.stop)

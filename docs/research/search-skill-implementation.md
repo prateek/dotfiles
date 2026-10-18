@@ -2,7 +2,7 @@
 status: active
 doc_type: research
 created: 2026-10-17
-updated: 2026-10-17
+updated: 2026-10-18
 related:
   - ../plans/search-skill-plan.md
   - ../adr/0054-shared-search-engine.md
@@ -163,7 +163,7 @@ earlier activation and live canaries do not qualify these new source bytes.
 
 ## Additional full review
 
-A subsequent fresh-context Opus 5.5 pass found three still-open defects despite
+A subsequent fresh-context Opus 5.5 pass found three defects at that checkpoint despite
 46 passing portable tests and a passing consumer suite: run-level dates silently
 overwrite facet dates; pending host retries can retain stale unavailable coverage;
 and later facets lose the cause when a shared route is suppressed after a rate
@@ -172,7 +172,67 @@ changes. The earlier clean verdict applies only to its reviewed final diff.
 
 Opus also flagged inspection under global pins. Independent checks confirmed that
 same-source inspections and discovery-only facet pins work; run-level pins retain
-their documented constraints. The follow-up should clarify that distinction in
-the usage guide. Location-aware discovery remains an unsupported capability.
+their documented constraints. The relevance follow-up clarifies that distinction in the usage guide. Location-aware discovery remains an unsupported capability.
 The full report, validated dispositions and source fingerprints are retained in
 ignored `build/search-skill/opus-review-additional/`.
+
+## Relevance selection and durable diagnostics follow-up
+
+The source follow-up in utils-agent 1.15.0 implements the approved
+[selection and diagnostics contract](../../agent-marketplace/packages/utils-agent/skills/search/references/selection.md).
+It adds automatic private XDG runs, redacted transport events, candidate pages,
+host-authored relevance assessments, evidence digests and final shortlist receipts.
+Skills-searcher separates fetch and display/shortlist limits and uses one engine
+run for discovery and enrichment. Legacy metric presentation remains available;
+the skill now directs agents to relevance mode and actual content inspection.
+
+All three additional-review defects were reproduced as failing regression tests
+before their fixes: conflicting discovery dates now fail, pending retries report
+unverified coverage, and provider suppression retains its originating failure.
+Global source/provider pins still constrain inspection; facet pins allow separate
+read routes.
+
+Current offline evidence: 66 portable engine/selection tests and the extended
+consumer shell suite pass; marketplace validation passes 104 tests and compares
+two fresh builds. Docs validation passes 54 fixtures and checks 167 documents
+against origin/master. The seven archived discovery-pool replays preserve all
+167 recorded observations and make each candidate reachable in bounded pages,
+with zero candidates automatically selected. The original saved query snapshots,
+not current provider responses, supplied those replay pools. Replays and summaries
+are retained privately in `build/search-skill/relevance-replay/`.
+
+The code-simplifier pass extracted shared assessment defaults and content-evidence
+lookup, removed a redundant temporary, and pruned a redundant transport comment.
+It also found and fixed two assessment defects: unrelated content could support a
+candidate inspection, and changed evidence could leave answer completeness stale.
+
+Claude Code Opus 5.5 completed an adversarial review and focused closeout. Its six
+findings were fixed or resolved by an explicit retention policy: ordinary auth
+queries remain searchable; redaction happens before evidence digests; whole-selection
+retention omission is disclosed with preserved aggregate counts; relevance display
+omissions use the full saved pool; rejected rows appear in the receipt; and suppressed
+facets name their originating provider. The closeout passed 65 portable tests and
+reported no blockers. Its remaining URL-list redaction note was fixed with the 66th
+test. The code-simplifier and writing-for-agents passes covered the changed code and
+skill references. Review logs and dispositions remain in ignored
+`build/search-skill/relevance-review/`.
+
+The first review attempt through OpenRouter returned insufficient credits. At the
+user's direction, review continued through Claude Code; a caller timeout was
+recovered using the same native session. The review's first query reproduction
+was flawed; the closeout corrected it and verified all three literal queries plus
+rejection of a configured credential value. Review assertions are distinct from
+independently passing regressions.
+
+Known operational bounds: checkpoints reject payloads over 8 MiB while preserving
+the prior checkpoint; interrupted or unrecorded direct work requires reconciliation
+and is never replayed automatically. Host elapsed time includes time between dispatch
+and settlement. Legacy enrichment can reserve a long deadline; relevance mode has a
+bounded candidate page and explicit call/open budgets. These are not proof of live
+provider quality or attended host/browser execution.
+
+Offline replay validates
+accounting and selection boundaries, not a measured improvement in task quality.
+The seven historical comparisons retain their original interpretation. This
+qualification preceded publication and activation; those outcomes require a
+separate landing receipt. The earlier landing receipt applies to 1.14.1 only.

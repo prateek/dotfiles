@@ -252,7 +252,7 @@ def parse(p, f, data):
             raise io.Failure("failed", "Octen error code")
         items = select(data, path)
     rows = []
-    for item in items[: f["limit"]]:
+    for item in items:
         if not isinstance(item, dict):
             rows.append(item)
             continue

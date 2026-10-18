@@ -7,7 +7,7 @@ import datetime as dt
 import time
 import uuid
 from urllib.parse import urlsplit
-from . import contracts as c, io, registry, planning, identity
+from . import contracts as c, io, registry, planning, identity, diagnostics, selection
 from .adapters import native, host
 
 COUNTERS = ("calls", "discovery", "enrichment", "opens")
@@ -30,6 +30,7 @@ def new_state(plan):
         "attempts": [],
         "assessments": {},
         "started_at": now(),
+        "redactions": [],
     }
 
 
@@ -47,6 +48,10 @@ def validate_state(s):
             "attempts",
             "assessments",
             "started_at",
+            "trace",
+            "selection",
+            "inline_receipt",
+            "redactions",
         ),
         (
             "run_id",
@@ -62,6 +67,13 @@ def validate_state(s):
         ),
         "state",
     )
+    c.strings(s.get("redactions", []), "redactions")
+    if "selection" in s:
+        selection.validate_saved(s["selection"])
+    if "trace" in s:
+        c.version(s["trace"], ("state", "events"), ("state", "events"), "trace")
+        c.string(s["trace"]["state"], "state path")
+        c.string(s["trace"]["events"], "events path")
     # Readiness may change after dispatch. Validate syntax/identity without re-planning pending work.
     p = s["plan"]
     c.version(p, planning.PLAN_FIELDS, planning.PLAN_FIELDS, "state plan")
@@ -87,7 +99,25 @@ def validate_state(s):
         raise c.Invalid("attempts must be a list")
     for attempt in s["attempts"]:
         fields = ("facet_id", "provider", "status", "count", "observed_at")
-        c.obj(attempt, fields, fields, "attempt")
+        c.obj(
+            attempt,
+            (
+                *fields,
+                "attempt_id",
+                "started_at",
+                "elapsed_seconds",
+                "detail",
+                "usage",
+                "usage_basis",
+                "fetched_count",
+                "rejected_schema",
+                "rejected_source",
+                "fetch_limit",
+                "pagination",
+            ),
+            fields,
+            "attempt",
+        )
         registry.validate_provider(attempt["provider"])
         if attempt["status"] not in c.STATUSES:
             raise c.Invalid("Unknown attempt status")
@@ -102,7 +132,21 @@ def validate_state(s):
             "detail",
             "results",
         )
-        c.obj(outcome, (*fields, "raw", "retention_omitted"), fields, "outcome")
+        c.obj(
+            outcome,
+            (
+                *fields,
+                "raw",
+                "retention_omitted",
+                "fetched_count",
+                "rejected_schema",
+                "rejected_source",
+                "fetch_limit",
+                "pagination",
+            ),
+            fields,
+            "outcome",
+        )
         registry.validate_provider(outcome["provider"])
         if outcome["status"] not in c.STATUSES:
             raise c.Invalid("Unknown outcome status")
@@ -167,6 +211,7 @@ def validate_state(s):
                 "facet_id",
                 "provider",
                 "kind",
+                "started_at",
             ),
             (
                 "run_id",
@@ -199,12 +244,48 @@ def persisted(s):
             if facet_id in copy["assessments"]:
                 copy["assessments"][facet_id]["references"] = []
                 copy["assessments"][facet_id].pop("note", None)
-    return copy
+    if any(out.get("retention_omitted") for out in copy["outcomes"].values()):
+        # Host decisions can quote restricted observations. Keep only aggregate status.
+        if "selection" in copy:
+            original = copy["selection"]
+            counts = original.get(
+                "omitted_counts",
+                {
+                    "selected": len(original.get("selected", [])),
+                    "inspected": sum(
+                        a["inspected"] for a in original.get("assessments", {}).values()
+                    ),
+                },
+            )
+            copy["selection"] = {
+                "answer_status": original.get("answer_status", "pending"),
+                "omitted_counts": counts,
+                "assessments": {},
+                "selected": [],
+                "criteria": "Selection omitted under provider retention policy",
+                "gaps": ["Restricted provider evidence is unavailable on resume"],
+            }
+    for attempt in copy["attempts"]:
+        if registry.REGISTRY[attempt["provider"]]["retention"] == "derived-only":
+            attempt["detail"] = "Provider content omitted under retention policy"
+    for out in copy["outcomes"].values():
+        out.pop("raw", None)
+        if out.get("retention_omitted"):
+            out["detail"] = "Provider content omitted under retention policy"
+    return diagnostics.redact(copy)
 
 
 def checkpoint(s, path):
     if path:
-        io.atomic(path, persisted(s))
+        s["trace"] = diagnostics.trace_info(path)
+        durable = persisted(s)
+        durable["inline_receipt"] = report(durable)["receipt"]
+        try:
+            io.atomic(path, durable)
+        except OSError as exc:
+            raise OSError(
+                f"Trace write failed at {path}; an earlier checkpoint may remain: {exc}"
+            ) from exc
 
 
 def available(s, reservation):
@@ -247,6 +328,7 @@ def reserve(s, f, p, path):
         "reserved_budget": reservation,
         "kind": "host" if p.get("host") else "direct",
         "payload": host.work(p, f, binding) if binding else {},
+        "started_at": now(),
     }
     s["pending"][work["work_item_id"]] = work
     checkpoint(s, path)
@@ -279,7 +361,12 @@ def settle(s, work, outcome, usage=None, observed_at=None):
     )
     p = registry.REGISTRY[work["provider"]]
     stamp = observed_at or now()
-    rows = outcome.get("results", [])
+    original_rows = outcome.get("results", [])
+    rows = diagnostics.redact(original_rows)
+    if rows != original_rows:
+        s.setdefault("redactions", []).append(
+            f"{f['id']}: credentials removed from provider rows before normalization"
+        )
     normalized, rejected_schema, rejected_source = [], 0, 0
     for rank, row in enumerate(rows, 1):
         try:
@@ -296,10 +383,12 @@ def settle(s, work, outcome, usage=None, observed_at=None):
             ):
                 rejected_source += 1
                 continue
+            candidate["observations"][0]["observation_id"] = (
+                f"{work['attempt_id']}:{rank}"
+            )
             normalized.append(candidate)
         except (c.Invalid, TypeError, ValueError, AttributeError):
             rejected_schema += 1
-    normalized = normalized[: f["limit"]]
     status = outcome.get("status", "schema_error")
     if rejected_schema or rejected_source:
         if normalized:
@@ -336,8 +425,15 @@ def settle(s, work, outcome, usage=None, observed_at=None):
         "status": status,
         "results": normalized,
         "count": len(normalized),
-        "detail": outcome.get("detail", ""),
+        "detail": diagnostics.redact(outcome.get("detail", "")),
         "observed_at": stamp,
+        "fetched_count": len(rows),
+        "rejected_schema": rejected_schema,
+        "rejected_source": rejected_source,
+        "fetch_limit": f["limit"],
+        "pagination": outcome.get(
+            "pagination", {"known": False, "unfetched_count": None}
+        ),
     }
     if f.get("raw") and "raw" in outcome:
         record["raw"] = outcome["raw"]
@@ -349,8 +445,34 @@ def settle(s, work, outcome, usage=None, observed_at=None):
     s["outcomes"][f["id"]] = record
     s["attempts"].append(
         {
-            k: record[k]
-            for k in ("facet_id", "provider", "status", "count", "observed_at")
+            **{
+                k: record[k]
+                for k in (
+                    "facet_id",
+                    "provider",
+                    "status",
+                    "count",
+                    "observed_at",
+                    "detail",
+                    "fetched_count",
+                    "rejected_schema",
+                    "rejected_source",
+                    "fetch_limit",
+                    "pagination",
+                )
+            },
+            "attempt_id": work["attempt_id"],
+            "started_at": work.get("started_at"),
+            "elapsed_seconds": max(
+                0,
+                time.time() - dt.datetime.fromisoformat(work["started_at"]).timestamp(),
+            )
+            if work.get("started_at")
+            else None,
+            "usage": used,
+            "usage_basis": "reported"
+            if usage is not None or "calls" in outcome
+            else "reservation (measurement unknown)",
         }
     )
     s["receipts"][work["work_item_id"]] = {
@@ -360,9 +482,10 @@ def settle(s, work, outcome, usage=None, observed_at=None):
     del s["pending"][work["work_item_id"]]
 
 
-def call(p, f, timeout):
+def call(p, f, timeout, trace=None, work=None):
     try:
-        return registry.execute(p, f, timeout)
+        with diagnostics.attempt(trace, work):
+            return registry.execute(p, f, timeout)
     except io.Failure as exc:
         return {"status": exc.status, "detail": exc.detail, "results": []}
     except (ValueError, KeyError, TypeError, AttributeError):
@@ -371,6 +494,8 @@ def call(p, f, timeout):
             "detail": "Unexpected provider response",
             "results": [],
         }
+    except OSError:
+        raise
     except Exception:
         return {
             "status": "failed",
@@ -465,6 +590,8 @@ def drive(s, path=None):
                                 f.get("timeout", 120),
                                 max(0.01, s["deadline"] - time.time()),
                             ),
+                            s.get("trace"),
+                            work,
                         ),
                         work,
                     )
@@ -475,6 +602,7 @@ def drive(s, path=None):
             for future in as_completed(work_by_future):
                 settle(s, work_by_future[future], future.result())
                 checkpoint(s, path)
+    checkpoint(s, path)
     return report(s)
 
 
@@ -558,6 +686,10 @@ def host_results(s, data):
 
 
 def extend(s, data):
+    if diagnostics.redact(data) != data:
+        raise c.Invalid(
+            "Extension contains credential data; remove it before searching"
+        )
     c.version(data, ("prepared_jobs",), ("prepared_jobs",), "extension")
     c.request(data)
     old = s["plan"]
@@ -579,6 +711,7 @@ def extend(s, data):
 
 
 def assess(s, data):
+    data = diagnostics.redact(data)
     c.version(data, ("run_id", "assessments"), ("run_id", "assessments"), "assessment")
     if data["run_id"] != s["run_id"]:
         raise c.Invalid("Wrong assessment run_id")
@@ -633,10 +766,20 @@ def report(s):
             s["assessments"].get(f["id"], {}).get("checks", [])
         )
         pending = any(w["facet_id"] == f["id"] for w in s["pending"].values())
-        if out:
-            outcome = out["status"]
-        elif pending:
+        suppressed = [
+            a
+            for a in s["attempts"]
+            if a["provider"] in job["routes"]
+            and a["status"] in ("rate_limited", "challenge", "auth_failed")
+        ]
+        if pending:
             outcome = "pending"
+        elif out:
+            outcome = out["status"]
+        elif job["routes"] and all(
+            p in {a["provider"] for a in suppressed} for p in job["routes"]
+        ):
+            outcome = suppressed[-1]["status"]
         elif job["routes"]:
             if s["pending"] and time.time() < s["deadline"]:
                 outcome = "deferred"
@@ -669,6 +812,7 @@ def report(s):
                 "count": out.get("count", 0),
                 "returned_count": outcomes.get(f["id"], {}).get("returned_count", 0),
                 "skipped": job["skipped"],
+                "suppressed": suppressed,
                 "retention_omitted": out.get("retention_omitted", False),
             }
         )
@@ -685,7 +829,9 @@ def report(s):
                     "gap": outcome,
                     "benefit": "Restore this configured route",
                     "next_step": "Inspect the reported provider; respect reset/login/challenge before retrying",
-                    "prerequisites": [out.get("provider")],
+                    "prerequisites": [out["provider"]]
+                    if out.get("provider")
+                    else list(dict.fromkeys(a["provider"] for a in suppressed)),
                 }
             )
         elif not job["routes"] and not job["excluded"]:
@@ -701,8 +847,23 @@ def report(s):
                     "prerequisites": [k["detail"] for k in known],
                 }
             )
+    pool = selection.candidates(s)
+    facts = selection.summary(s, pool)
+    selected = s.get("selection", {}).get("selected", [])
+    by_id = {r["candidate_id"]: r for r in pool}
+    grouped = [by_id.get(planning.fingerprint(row["identity"]), row) for row in grouped]
     return {
         "schema_version": 1,
+        "trace": s.get("trace"),
+        "diagnostics": facts,
+        "receipt": selection.receipt(s, facts, coverage),
+        "candidates": pool[: s["plan"]["total_limit"]],
+        "selected": [
+            {**by_id[r["candidate_id"]], "selection_reason": r["reason"]}
+            for r in selected
+            if r["candidate_id"] in by_id
+            and by_id[r["candidate_id"]]["disposition"] == "selected"
+        ],
         "run_id": s["run_id"],
         "plan_id": s["plan"]["plan_id"],
         "results": grouped,

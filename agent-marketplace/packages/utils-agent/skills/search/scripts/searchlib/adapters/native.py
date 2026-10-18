@@ -187,7 +187,7 @@ def rows(p, f, output):
                     "fields": {"repo": repo, "name": name, "installs": count},
                 }
             )
-        return found[: f["limit"]]
+        return found
     data = json_data(output)
     if id == "sourcegraph":
         items = data.get("Results") if isinstance(data, dict) else None
@@ -280,7 +280,7 @@ def rows(p, f, output):
                 "fields": fields,
             }
         )
-    return result[: f["limit"]]
+    return result
 
 
 def max_calls(p, f):
@@ -294,6 +294,8 @@ def max_calls(p, f):
 
 def execute(p, f, timeout):
     result, count, deadline = [], 0, time.monotonic() + timeout
+    total = None
+    pages = []
     for page in range(1, max_calls(p, f) + 1):
         try:
             args = argv(p, f, page)
@@ -317,10 +319,13 @@ def execute(p, f, timeout):
                     status,
                     detail,
                 )
-            result.extend(rows(p, f, output["stdout"]))
+            page_rows = rows(p, f, output["stdout"])
+            result.extend(page_rows)
+            pages.append({"page": page, "returned": len(page_rows)})
             if p["id"] not in ("github-code", "github-repos", "github-issues"):
                 break
             data = json_data(output["stdout"])
+            total = data.get("total_count")
             if len(result) >= data.get("total_count", 0) or len(data["items"]) < min(
                 f["limit"], 100
             ):
@@ -331,9 +336,26 @@ def execute(p, f, timeout):
                 "detail": exc.detail,
                 "results": result,
                 "calls": max(count, 1),
+                "pagination": {
+                    "known": True,
+                    "pages": pages,
+                    "failed_page": page,
+                    "provider_total": total,
+                    "unfetched_count": max(0, total - len(result))
+                    if isinstance(total, int)
+                    else None,
+                },
             }
     return {
         "status": "success" if result else "empty",
-        "results": result[: f["limit"]],
+        "results": result,
         "calls": count,
+        "pagination": {
+            "known": True,
+            "pages": pages,
+            "provider_total": total,
+            "unfetched_count": max(0, total - len(result))
+            if isinstance(total, int)
+            else None,
+        },
     }

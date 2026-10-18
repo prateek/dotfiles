@@ -43,6 +43,8 @@ REPO_ROOT="$(cd "$SKILL_ROOT/../../../../.." && pwd)"
 tmp_root="$(mktemp -d)"
 trap 'rm -rf "$tmp_root"' EXIT
 
+export XDG_STATE_HOME="$tmp_root/state"
+
 stub_bin="$tmp_root/bin"
 mkdir -p "$stub_bin"
 export STUB_LOG="$tmp_root/stub.log"
@@ -337,4 +339,43 @@ row = {'repo': 'example/repo', 'path': path, 'skill_name': 'sample'}
 module['fill_commands'](row)
 assert shlex.split(row['preview_command']) == ['gh', 'skill', 'preview', 'example/repo', path]
 assert shlex.split(row['install_command'])[:5] == ['gh', 'skill', 'install', 'example/repo', path]
+PYTEST
+
+echo "• relevance candidates remain available past the requested shortlist size"
+run_cli --json search chezmoi --relevance --limit 1 --fetch-limit 25 --candidate-limit 10 --no-enrich --no-progress >"$tmp_root/relevance.json"
+python3 - "$tmp_root/relevance.json" <<'PYTEST'
+import json, pathlib, sys
+report = json.loads(pathlib.Path(sys.argv[1]).read_text())
+assert len(report['results']) > 1
+assert report['view'] == 'candidates'
+assert all(row['assessment']['fit'] == 'unassessed' for row in report['results'])
+assert all(row['candidate_id'] and row['observations'] for row in report['results'])
+state = json.loads(pathlib.Path(report['trace']['state']).read_text())
+assert state['run_id'] == report['run_id']
+assert state['plan']['request']['choices']['result_limit'] == 1
+assert all(job['facet']['limit'] == 25 for job in state['plan']['jobs'])
+assert report['diagnostics']['counts']['selected'] == 0
+PYTEST
+
+echo "• enrichment shares the discovery run and budget"
+run_cli --json search chezmoi --relevance --limit 2 --no-progress >"$tmp_root/enriched.json"
+python3 - "$tmp_root/enriched.json" <<'PYTEST'
+import json, pathlib, sys
+report = json.loads(pathlib.Path(sys.argv[1]).read_text())
+state = json.loads(pathlib.Path(report['trace']['state']).read_text())
+assert len({a['facet_id'] for a in state['attempts'] if a['provider'] != 'github-meta'}) == 4
+assert any(a['provider'] == 'github-meta' for a in state['attempts'])
+assert state['usage']['calls'] == sum(a['usage']['calls'] for a in state['attempts'])
+assert state['inline_receipt'].count('github-meta') == 1
+PYTEST
+
+
+echo "• relevance display omissions count the saved pool beyond its page"
+run_cli --json search chezmoi --relevance --limit 1 --candidate-limit 1 --no-enrich --no-progress >"$tmp_root/one-candidate.json"
+python3 - "$tmp_root/one-candidate.json" <<'PYTEST'
+import json, pathlib, sys
+report = json.loads(pathlib.Path(sys.argv[1]).read_text())
+assert len(report['results']) == 1
+assert report['display_omitted'] > 0
+assert report['display_omitted'] == report['diagnostics']['counts']['not_visible']
 PYTEST

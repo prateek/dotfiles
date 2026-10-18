@@ -15,14 +15,18 @@ the method open. `--prefer-provider` / `--prefer-via` allow fallback.
 chargeable and unknown-cost routes, including trials that can accrue charges.
 
 `--since` / `--until` use YYYY-MM-DD; until is exclusive. These run-level
-choices filter discovery. Inspection jobs retain their explicit filters, while
+choices filter discovery. Conflicting run/facet values fail before execution;
+combined date bounds are revalidated. Inspection jobs retain their explicit filters, while
 the host checks the original date window when assessing the discovered facet. `--location` is public
 geographic context, supported only by routes that declare it. Unsupported filters
 block a route rather than disappearing. `--limit` caps candidates per facet;
-`--total-limit` caps grouped candidates, interleaved across facets. Coverage `count`
+`--total-limit` caps the displayed grouped candidates, interleaved across facets;
+the full fetched pool remains in state and is accessible through `candidates`.
+`--result-limit` caps the final host-selected shortlist (default five). Coverage `count`
 is the retrieved count; `returned_count` records candidates retained in this report.
 A cap smaller than the number of nonempty facets can omit some facets' candidates.
-Missing values are not zeros.
+A provider may return more than its requested limit; retain those observations
+and record the actual count. Missing values are not zeros.
 
 Default calls: three, or five when code is selected; each additional area adds
 two up to eight. Runs with discovery reserve one enrichment call, or two when
@@ -118,7 +122,8 @@ illustrative tool name with the actual callable binding):
 
 Other capability IDs: `web.search`, `web.fetch`, `mcp:grep.app`. Discovery does not
 imply authentication. Unknown host cost is ineligible without authorization and
-always excluded by free-only. Host runs require `--state` in private scratch.
+always excluded by free-only. All executing runs receive automatic private XDG
+state; `--state` overrides its location. Use the returned `trace.state` for continuation.
 The returned pending work includes run/work/attempt IDs, operation, tool payload,
 provider, facet, kind and reserved budget. The reservation bounds the work.
 
@@ -141,7 +146,8 @@ success, empty, partial, timeout, transient, rate_limited, challenge, auth_faile
 schema_error, failed, constraint_failed, unavailable, budget_exhausted and
 interrupted. For Startpage/DDG, payload may contain `html` instead of parsed
 results. Never label an unrecognized generic page empty. Each result may include
-kind and native fields; the engine adds identity, provenance and observation time.
+kind and native fields; the engine adds identity, provenance, provider positions,
+observation IDs and observation time.
 
 Duplicates must be identical and are idempotent. Unknown/stale/conflicting
 submissions fail atomically. No automatic replay of pending direct calls after a
@@ -176,3 +182,22 @@ completion and optional suggestions. Discovery-only is useful partial coverage.
 Missing required-source evidence makes completion false. Numeric conflicts remain
 separate observations. Inspect the record's `retention_omitted` when a provider's
 results could not be persisted; a later report cannot reconstruct those candidates.
+
+## Relevance and durable diagnostics
+
+Read [selection and diagnostics](selection.md) for candidate labels, selection
+input, receipt, retention and recovery. `intent` is an optional request object
+with `request` (original wording), `requirements` and `hard_constraints` (string
+lists). Expanded terms belong in individual facets. Every search answer uses
+this contract, even when a consumer retains a legacy presentation.
+
+`candidates --state PATH --offset 0 --limit 30` returns a bounded page (maximum
+100) without provider calls. `select --state PATH --selection decision.json`
+saves relevance judgments and the final ordered shortlist. `assess` remains facet
+evidence attestation. Each candidate carries provenance and an assessment; run
+diagnostics appear once. `results` and filtered `outcomes` retain their old display
+semantics; use `candidates` and the saved state for selection beyond that display.
+
+Global provider/source/method pins apply to extension jobs too. Facet-level pins
+apply only to their facet, so discovery can pin one provider while later inspection
+uses another eligible route. Location-aware discovery is currently unsupported.

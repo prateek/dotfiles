@@ -2,7 +2,7 @@ import argparse
 import json
 from pathlib import Path
 import sys
-from . import contracts as c, engine, io, planning, registry
+from . import contracts as c, engine, io, planning, registry, diagnostics, selection
 
 
 def options(parser):
@@ -10,7 +10,7 @@ def options(parser):
         flag = "--" + key.replace("_", "-")
         if key == "free_only":
             parser.add_argument(flag, action="store_true", default=None)
-        elif key in ("limit", "total_limit", "max_calls", "max_opens"):
+        elif key in ("limit", "total_limit", "result_limit", "max_calls", "max_opens"):
             parser.add_argument(flag, type=int)
         elif key == "timeout":
             parser.add_argument(flag, type=float)
@@ -57,9 +57,14 @@ def parser():
     a.add_argument("--request")
     a.add_argument("--state")
     options(a)
-    for cmd in ("continue", "assess", "report", "extend"):
+    for cmd in ("continue", "assess", "report", "extend", "select", "candidates"):
         a = sub.add_parser(cmd)
         a.add_argument("--state", required=True)
+        if cmd == "select":
+            a.add_argument("--selection", required=True)
+        if cmd == "candidates":
+            a.add_argument("--offset", type=int, default=0)
+            a.add_argument("--limit", type=int, default=30)
         if cmd == "continue":
             a.add_argument("--host-results", required=True)
         if cmd == "assess":
@@ -97,9 +102,30 @@ def execute(args):
                 "Set execution options when creating the plan; run --plan accepts only --state and --json"
             )
         return run(planning.validate_plan(read_input(args.plan)), args.state)
-    if args.command in ("continue", "assess", "report", "extend"):
-        if args.command == "report":
-            return engine.report(engine.validate_state(io.read(args.state)))
+    if args.command in (
+        "continue",
+        "assess",
+        "report",
+        "extend",
+        "select",
+        "candidates",
+    ):
+        if args.command in ("report", "candidates"):
+            s = engine.validate_state(io.read(args.state))
+            if args.command == "report":
+                return engine.report(s)
+            c.integer(args.offset, "offset")
+            c.integer(args.limit, "limit", 1)
+            if args.limit > 100:
+                raise c.Invalid("Candidate pages are limited to 100")
+            rows = selection.candidates(s)
+            return {
+                "schema_version": 1,
+                "run_id": s["run_id"],
+                "total": len(rows),
+                "offset": args.offset,
+                "candidates": rows[args.offset : args.offset + args.limit],
+            }
         with io.lock(args.state):
             s = engine.validate_state(io.read(args.state))
             if args.command == "extend":
@@ -110,7 +136,10 @@ def execute(args):
                 s = engine.host_results(s, read_input(args.host_results))
                 engine.checkpoint(s, args.state)
                 return engine.drive(s, args.state)
-            engine.assess(s, read_input(args.assessment))
+            if args.command == "select":
+                selection.apply(s, read_input(args.selection))
+            else:
+                engine.assess(s, read_input(args.assessment))
             engine.checkpoint(s, args.state)
             return engine.report(s)
     manifest = (
@@ -211,23 +240,17 @@ def execute(args):
 
 
 def run(plan, state_path):
-    if (
-        any(registry.REGISTRY[p].get("host") for j in plan["jobs"] for p in j["routes"])
-        and not state_path
-    ):
+    if diagnostics.redact(plan) != plan:
         raise c.Invalid(
-            "Host-capable runs require --state for resumable work; choose a private scratch path"
+            "Request contains credential-like data; remove it before searching"
         )
-    if state_path:
-        with io.lock(state_path):
-            if Path(state_path).exists():
-                raise c.Invalid(
-                    "State already exists; use continue/report or a new path"
-                )
-            s = engine.new_state(plan)
-            engine.checkpoint(s, state_path)
-            return engine.drive(s, state_path)
-    return engine.drive(engine.new_state(plan))
+    s = engine.new_state(plan)
+    state_path = state_path or diagnostics.default_path(s["run_id"])
+    with io.lock(state_path):
+        if Path(state_path).exists():
+            raise c.Invalid("State already exists; use continue/report or a new path")
+        engine.checkpoint(s, state_path)
+        return engine.drive(s, state_path)
 
 
 def main(argv=None):

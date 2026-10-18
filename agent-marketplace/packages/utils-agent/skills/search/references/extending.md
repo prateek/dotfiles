@@ -29,8 +29,8 @@ plan with `--inspect`; registration alone does not grant route priority.
 
 A specialized skill owns its trigger, query policy, domain ranking, output and
 task evals. Parent search owns retrieval, failure handling, budgets, provenance
-and reusable evidence checks. `skills-searcher`, for example, supplies SKILL.md
-queries and interprets frontmatter/popularity. A literature-review skill could
+reusable evidence checks, common relevance selection and durable diagnostics. `skills-searcher`, for example, supplies SKILL.md
+queries and interprets frontmatter, narrow task fit, authorship and installability. A literature-review skill could
 add paper-selection criteria and synthesis while reusing retrieval. A provider
 name, site filter or saved query alone does not justify a skill.
 

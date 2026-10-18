@@ -10,28 +10,39 @@ Use the bundled CLI to search all backends together. It requires the sibling `se
 Run this package's bundled script so it uses the matching sibling search engine:
 
 ```bash
-scripts/skill-search search <query> --limit 10 --progress
+scripts/skill-search --json search <query> --relevance --fetch-limit 25 --limit 5 --no-enrich
 ```
 
-## Search and rank candidates
+## Search and select candidates
 
-1. Use sibling `search/scripts/agent-search capabilities --json` for a local check. Run `skill-search doctor` only when live connectivity diagnostics are useful; it spends calls.
-2. Search with `skill-search search <query> --limit 10 --progress`. The CLI sends four prepared discovery jobs to the shared search engine; unavailable backends produce partial coverage. The engine caps independent concurrency at two and serializes GitHub operations.
-3. Use `--sort-by installs --direction desc` as a second view when popularity is likely to help decide among skills for a mainstream framework, language, or tool. Installs come only from the skills.sh backend.
-4. Compare stars, installs, and source count as signals. Agreement can help, but gh skill and GitHub code share GitHub provenance; multiple transports are not automatically independent evidence.
-5. Check authorship before choosing a winner. Prefer the framework vendor, platform owner, or a widely cited domain educator when they authored a candidate. Authorship can outweigh a third-party collection's stronger raw counts; use multi-source agreement to break ties between peers.
+1. Read the parent [selection and diagnostics procedure](../search/references/selection.md).
+   It owns task fit, hard constraints, inspection, ordering, omissions and receipts.
+   Use `agent-search capabilities --json` for local readiness; `skill-search doctor`
+   spends calls and is reserved for connectivity diagnosis.
+2. Search with `skill-search --json search <query> --relevance --fetch-limit 25
+   --candidate-limit 30 --limit 5 --no-enrich`. Supply `--intent intent.json` for the
+   original request and constraints and `--capabilities host.json` for later reads.
+   The wrapper returns an unassessed pool without a popularity cutoff. Finish when
+   each discovery backend has results or an explicit failure/skip.
+3. Check actual `SKILL.md` contents for narrow task fit, authorship and installability.
+   For example, a general writing guide may be adjacent to an anti-slop workflow.
+   Prefer upstream authors or appropriate domain educators among similarly relevant
+   candidates. Confirm the file/path, supported client and installation method;
+   generated install commands alone establish none of these facts. Finish when each
+   finalist has content evidence and its remaining uncertainties are recorded.
+4. Use the returned `trace.state` with the parent engine's `extend`, `continue`,
+   `assess` and `select` commands. Keep query expansions and inspections in that run.
+   Discovery and optional metadata enrichment already share it. Finish with the
+   selected shortlist and compact receipt required by the parent procedure.
 
-## Inspect finalists
+Stars and installs may distinguish peers after task fit and evidence quality.
+Missing metrics are unknown; small counts are normal for niche topics. Repository
+stars describe a repository, not necessarily this skill. GitHub skill and code
+transports share an upstream. A registry entry without a file path remains a
+separate candidate until its identity can be established.
 
-Read each finalist's `SKILL.md` before recommending it. Say in one sentence whether its scope matches the query's narrow meaning or covers only adjacent territory. For example, “anti-slop writing” is narrower than “writing quality,” and “React performance” is narrower than “React.” Drop adjacent-only matches even when their stars or install counts are higher.
-
-Treat these thresholds as caution signals, not hard gates:
-
-- Prefer skills with at least 1K installs; scrutinize counts below 100. A missing install count is neutral because only the skills.sh backend provides it.
-- Scrutinize skills from repositories with fewer than 100 stars unless agreement across sources compensates.
-- For niche topics such as chezmoi, plist merge engines, or Tart, mainstream thresholds can exclude every candidate. Recommend the strongest candidate confirmed by multiple sources with clear caveats, or say that none meets the usual thresholds and offer direct help. Suggest `npx skills init <name>` when scaffolding a local skill would help.
-
-When the user asks to install a skill, use the install command shown in that result row.
+When the user asks to install a skill, use the verified result's install command.
+The search workflow only prints commands.
 
 ## Commands
 
@@ -48,7 +59,16 @@ The `--json` option emits structured JSON for search and doctor. The search outp
 
 Sort fields are `stars`, `installs`, `sources`, `file-commits`, `repo-commits`, and `skill-name`.
 
-Use `--no-enrich` when GitHub enrichment is slow or rate-limited. `--github-concurrency <n>` remains accepted as an upper bound for compatibility; the shared engine currently serializes GitHub calls. Discovery reserves pagination calls. Enrichment declares two calls per unique repository plus one per file before final ranking, with missing metadata left unknown. `--max-calls N` caps discovery plus enrichment across the invocation; exhausted enrichment remains partial, with unknown counts.
+`--limit` remains the printed row cap in legacy metric mode; with `--relevance`
+it is the final shortlist cap, and `--candidate-limit` bounds the visible pool.
+`--fetch-limit` now independently controls each backend's requested fetch size
+(default 25). Previously `--limit` controlled both retrieval and output. `--all`
+retains its 1000-row legacy display/fetch defaults; an explicit `--fetch-limit`
+overrides retrieval. The legacy sort flags and TSV columns remain compatible.
+JSON exposes the run, trace, diagnostics and candidate provenance; TSV prints the
+receipt to stderr. Use parent candidate pages to inspect beyond the first page.
+
+Use `--no-enrich` when popularity is unnecessary or GitHub is slow or rate-limited. `--github-concurrency <n>` remains accepted as an upper bound for compatibility; the shared engine currently serializes GitHub calls. Discovery reserves pagination calls. Enrichment declares two calls per unique repository plus one per visible file, with missing metadata left unknown. Relevance mode reserves content inspection allowance via `--max-opens` before metadata calls. `--max-calls N` caps discovery plus enrichment across the invocation; exhausted enrichment remains partial, with unknown counts.
 
 ## Backends
 
@@ -78,7 +98,7 @@ gh api rate_limit
 skill-search search <query> --no-enrich
 ```
 
-While GitHub recovers, use Sourcegraph and `npx skills` results. Keep `--limit` small during exploration, and avoid tight retry loops against GitHub.
+While GitHub recovers, use Sourcegraph and `npx skills` results. Keep `--fetch-limit` bounded during exploration, and avoid tight retry loops against GitHub.
 
 ## Validation
 
@@ -93,7 +113,9 @@ zsh tests/skill-search.zsh
 
 The sibling [search skill](../search/SKILL.md) owns adapters, failure classification,
 budgets and provenance. This skill owns its query builders, frontmatter parsing,
-legacy result grouping/metric merge, ranking and preview/install fields. Preview
+legacy presentation/metric merging and preview/install fields. Relevance mode
+uses the engine's canonical candidates; the host applies the shared selection
+procedure plus this skill's domain checks. Preview
 and install commands are output only; this workflow never executes them. General
 transport improvements belong in search; read its [extension guide](../search/references/extending.md)
 when adding a provider or deciding whether another domain workflow needs a skill.

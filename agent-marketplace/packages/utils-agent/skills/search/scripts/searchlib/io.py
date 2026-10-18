@@ -65,6 +65,13 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 
 
 def http(url, timeout, headers=None, body=None):
+    from .diagnostics import transport
+
+    with transport("http", {"url": url, "body": body}):
+        return _http(url, timeout, headers, body)
+
+
+def _http(url, timeout, headers=None, body=None):
     req = urllib.request.Request(
         url,
         headers={"User-Agent": "agent-search/1", **(headers or {})},
@@ -100,6 +107,13 @@ def http(url, timeout, headers=None, body=None):
 
 
 def command(argv, timeout):
+    from .diagnostics import transport
+
+    with transport("command", {"argv": argv}):
+        return _command(argv, timeout)
+
+
+def _command(argv, timeout):
     # Files bound memory, including noisy third-party CLIs. Child output never becomes a command.
     env = {**os.environ, "DO_NOT_TRACK": "1", "DISABLE_TELEMETRY": "1"}
     try:
@@ -147,14 +161,28 @@ def read(path):
         raise Invalid(f"Cannot read JSON document: {path}") from exc
 
 
+def private_parent(path):
+    parent = Path(path).absolute().parent
+    missing = []
+    while not parent.exists():
+        missing.append(parent)
+        parent = parent.parent
+    for directory in reversed(missing):
+        directory.mkdir(mode=0o700, exist_ok=True)
+
+
 def atomic(path, value):
     path = Path(path)
-    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    private_parent(path)
+    encoded = json.dumps(value, indent=2, allow_nan=False) + "\n"
+    if len(encoded.encode()) > MAX_BYTES:
+        raise Invalid(
+            "Checkpoint exceeds byte limit; prior checkpoint remains recoverable"
+        )
     fd, tmp = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
     try:
         with os.fdopen(fd, "w") as f:
-            json.dump(value, f, indent=2, allow_nan=False)
-            f.write("\n")
+            f.write(encoded)
             f.flush()
             os.fsync(f.fileno())
         os.replace(tmp, path)
@@ -166,8 +194,8 @@ def atomic(path, value):
 @contextlib.contextmanager
 def lock(path):
     path = Path(path)
-    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-    fd = os.open(str(path) + ".lock", os.O_CREAT | os.O_RDWR, 0o600)
+    private_parent(path)
+    fd = os.open(str(path) + ".lock", os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
     try:
         fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
         yield
