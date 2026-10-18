@@ -68,6 +68,7 @@ Retired documents are listed in the [retirement ledger](retired.md).
 | [Self-help and psychology book archive and agent tools](plans/psychology-book-archive-and-tools-plan.md) | proposed | Archives the self-help and psychology book collection, extracts sourced lessons into a knowledge base, and prototypes agent tools that apply them daily |  |
 | [Raycast Config Automation](plans/raycast-config-automation-plan.md) | proposed | Backlog of Raycast settings worth managing through chezmoi: plist keys, store-extension installs, and other state the defaults domain does not reach |  |
 | [Search skill and shared retrieval engine](plans/search-skill-plan.md) | active | Shared search skill, retrieval engine and skills-searcher integration. |  |
+| [Search source selection and broad exploration](plans/search-source-selection-plan.md) | active | Context-aware source selection, multilingual exploration and broader buying channels for the shared search skill. |  |
 | [Shell Banner Plan](plans/shell-banner-plan.md) | active | Generalizes the chezmoi drift banner into one fastfetch-rendered shell banner with cached status rows for chezmoi, brew, mise, and apm |  |
 | [Skill Management Console](plans/skill-management-console-plan.md) | active | A skill-console CLI and HTML page that simulate Claude Code's skill-listing admission budget and apply curation decisions to the chezmoi source tree |  |
 | [SSD layout and Arq coverage](plans/ssd-arq-layout-plan.md) | active | Layout of the external SSD's Code and TartVMs volumes, which application storage moves there, and how Arq backups cover the new volumes |  |
@@ -142,6 +143,7 @@ Retired documents are listed in the [retirement ledger](retired.md).
 | [Retire closed docs through a ledger, keep ADRs, generate the inventory](adr/0052-retire-closed-docs-through-a-ledger.md) | accepted | Closed plans, research, references, and runbooks leave the tree through an append-only retirement ledger; ADRs stay; the index becomes a router over a generated inventory. | [docs/document-lifecycle.md](document-lifecycle.md), [docs/runbooks/quarterly-review.md](runbooks/quarterly-review.md) |
 | [Touch ID and Jamf elevation replace the askpass helper](adr/0053-touchid-and-jamf-replace-askpass.md) | accepted | Sudo during chezmoi apply authenticates with Touch ID on personal Macs and Jamf Self Service elevation on work Macs; the 1Password askpass helper is not built. | [docs/references/jamf-self-service-elevation.md](references/jamf-self-service-elevation.md), [docs/references/chezmoi-architecture.md](references/chezmoi-architecture.md) |
 | [Share retrieval through a portable search engine](adr/0054-shared-search-engine.md) | accepted | Shared retrieval adapters, budgets and provenance for search and specialized consumers. | [agent-marketplace/packages/utils-agent/skills/search/SKILL.md](../agent-marketplace/packages/utils-agent/skills/search/SKILL.md) |
+| [Separate search sources from provider capabilities](adr/0055-search-sources-independent-of-providers.md) | accepted | Separate evidence sources and areas from executable providers while admitting explicit public site scopes. |  |
 
 ## Research
 
@@ -177,6 +179,8 @@ Retired documents are listed in the [retirement ledger](retired.md).
 | [Search skill implementation qualification](research/search-skill-implementation.md) | active | Search implementation qualification, live canaries and remaining evidence gaps. |  |
 | [Search skill plan: independent review](research/search-skill-plan-review.md) | active | Initial search design review and dispositions informing the implementation plan. |  |
 | [Search skill: second Fable review](research/search-skill-second-review.md) | active | Follow-up search design review and accepted implementation boundaries. |  |
+| [Search source selection: implementation and qualification](research/search-source-selection-qualification.md) | active | Search 1.16 contracts, adversarial review, bounded live pilot, source canaries and activation evidence. |  |
+| [Search source selection: adversarial review](research/search-source-selection-review.md) | active | Fable review of source selection, adaptive exploration, capability contracts and the proposed evaluation. |  |
 | [Skill Invocation-Control Frontmatter Across Harnesses](research/skill-invocation-frontmatter-research.md) | current | Which harnesses honor `disable-model-invocation` and `user-invocable`, with per-harness evidence and citations. |  |
 | [Social and shopping search access](research/social-shopping-search-sources.md) | active | Native and web-mediated social and shopping discovery capabilities and access gates. |  |
 | [Voice OSS: discovery corpus](research/voice-oss/README.md) | draft | Entry point for the Voice OSS discovery corpus: requirements, ten product dossiers, flow catalogue, studies, datasets, and evidence labels. |  |

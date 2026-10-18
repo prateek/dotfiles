@@ -1,0 +1,347 @@
+{
+  "schema_version": 1,
+  "run_id": "0096f2b685b24c93875101c8302782d3",
+  "plan": {
+    "schema_version": 1,
+    "request": {
+      "schema_version": 1,
+      "facets": [
+        {
+          "id": "discovery",
+          "source": "web",
+          "area": "web",
+          "operation": "page.discover",
+          "terms": "repair guide",
+          "provider": "host-web"
+        },
+        {
+          "id": "read",
+          "source": "web",
+          "area": "web",
+          "operation": "page.inspect",
+          "filters": {
+            "url": "https://www.reddit.com/r/repair/comments/abc/thread"
+          },
+          "provider": "host-fetch"
+        }
+      ],
+      "choices": {
+        "strategy": "free-first",
+        "limit": 10,
+        "total_limit": 30,
+        "result_limit": 5,
+        "free_only": false,
+        "via": "auto"
+      },
+      "conversation_choices": {}
+    },
+    "host": {
+      "schema_version": 1,
+      "capabilities": [
+        {
+          "id": "web.search",
+          "tool": "fixture.search",
+          "cost": "free",
+          "operations": [
+            "page.discover"
+          ]
+        },
+        {
+          "id": "web.fetch",
+          "tool": "fixture.fetch",
+          "cost": "free",
+          "operations": [
+            "page.inspect"
+          ]
+        }
+      ]
+    },
+    "jobs": [
+      {
+        "facet": {
+          "id": "discovery",
+          "source": "web",
+          "area": "web",
+          "operation": "page.discover",
+          "terms": "repair guide",
+          "provider": "host-web",
+          "filters": {},
+          "limit": 10,
+          "needs": [
+            "relevance"
+          ]
+        },
+        "routes": [
+          "host-web"
+        ],
+        "skipped": [
+          {
+            "provider": "serper",
+            "reason": "provider constraint",
+            "detail": "provider constraint"
+          },
+          {
+            "provider": "brave",
+            "reason": "provider constraint",
+            "detail": "provider constraint"
+          },
+          {
+            "provider": "exa",
+            "reason": "provider constraint",
+            "detail": "provider constraint"
+          },
+          {
+            "provider": "parallel",
+            "reason": "provider constraint",
+            "detail": "provider constraint"
+          },
+          {
+            "provider": "tavily",
+            "reason": "provider constraint",
+            "detail": "provider constraint"
+          },
+          {
+            "provider": "perplexity",
+            "reason": "provider constraint",
+            "detail": "provider constraint"
+          },
+          {
+            "provider": "kagi",
+            "reason": "provider constraint",
+            "detail": "provider constraint"
+          },
+          {
+            "provider": "octen",
+            "reason": "provider constraint",
+            "detail": "provider constraint"
+          },
+          {
+            "provider": "searchapi",
+            "reason": "provider constraint",
+            "detail": "provider constraint"
+          },
+          {
+            "provider": "searxng",
+            "reason": "provider constraint",
+            "detail": "provider constraint"
+          },
+          {
+            "provider": "degoog",
+            "reason": "provider constraint",
+            "detail": "provider constraint"
+          },
+          {
+            "provider": "openserp",
+            "reason": "provider constraint",
+            "detail": "provider constraint"
+          },
+          {
+            "provider": "startpage",
+            "reason": "provider constraint",
+            "detail": "provider constraint"
+          },
+          {
+            "provider": "ddg",
+            "reason": "provider constraint",
+            "detail": "provider constraint"
+          }
+        ],
+        "excluded": false
+      },
+      {
+        "facet": {
+          "id": "read",
+          "source": "web",
+          "area": "web",
+          "operation": "page.inspect",
+          "filters": {
+            "url": "https://www.reddit.com/r/repair/comments/abc/thread"
+          },
+          "provider": "host-fetch",
+          "limit": 10,
+          "needs": [
+            "relevance"
+          ]
+        },
+        "routes": [
+          "host-fetch"
+        ],
+        "skipped": [
+          {
+            "provider": "native-page",
+            "reason": "provider constraint",
+            "detail": "provider constraint"
+          }
+        ],
+        "excluded": false
+      }
+    ],
+    "choices": {
+      "strategy": {
+        "value": "free-first",
+        "kind": "preference",
+        "scope": "builtin"
+      },
+      "limit": {
+        "value": 10,
+        "kind": "constraint",
+        "scope": "builtin"
+      },
+      "total_limit": {
+        "value": 30,
+        "kind": "constraint",
+        "scope": "builtin"
+      },
+      "result_limit": {
+        "value": 5,
+        "kind": "constraint",
+        "scope": "builtin"
+      },
+      "free_only": {
+        "value": false,
+        "kind": "constraint",
+        "scope": "builtin"
+      },
+      "via": {
+        "value": "auto",
+        "kind": "constraint",
+        "scope": "builtin"
+      }
+    },
+    "budget": {
+      "calls": 3,
+      "discovery": 2,
+      "enrichment": 1,
+      "opens": 6,
+      "wall_seconds": 120
+    },
+    "notices": [],
+    "total_limit": 30,
+    "plan_id": "8011d5575b694c577c00c6186ad8656a5f7c6c215c521c875c621b75adc29ab6"
+  },
+  "deadline": 10000000000,
+  "usage": {
+    "calls": 1,
+    "discovery": 1,
+    "enrichment": 0,
+    "opens": 0
+  },
+  "pending": {
+    "fac65b32e12f42b0b9dc82165e484c05": {
+      "run_id": "0096f2b685b24c93875101c8302782d3",
+      "work_item_id": "fac65b32e12f42b0b9dc82165e484c05",
+      "attempt_id": "c3d39f52d05a40868a9287acf2f99229",
+      "facet_id": "read",
+      "provider": "host-fetch",
+      "operation": "page.inspect",
+      "reserved_budget": {
+        "calls": 1,
+        "discovery": 0,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "kind": "host",
+      "payload": {
+        "tool": "fixture.fetch",
+        "provider": "host-fetch",
+        "source": "web",
+        "query": "",
+        "limit": 10,
+        "filters": {
+          "url": "https://www.reddit.com/r/repair/comments/abc/thread"
+        },
+        "identity": "unknown",
+        "runtime": null
+      },
+      "started_at": "2026-10-18T05:33:33.189009+00:00"
+    }
+  },
+  "receipts": {
+    "d34d3f35e9a34dbf944bcddcd965a1bf": {
+      "attempt_id": "5dbd3cd9c8bb4f80949a39574c24e539",
+      "status": "success"
+    }
+  },
+  "outcomes": {
+    "discovery": {
+      "facet_id": "discovery",
+      "provider": "host-web",
+      "status": "success",
+      "results": [
+        {
+          "kind": "page",
+          "source": "web",
+          "url": "https://www.reddit.com/r/repair/comments/abc/thread",
+          "title": "Repair guide",
+          "excerpt": "",
+          "fields": {},
+          "observed_at": "2026-10-18T00:00:00+00:00",
+          "evidence_level": "candidate",
+          "identity": [
+            "page",
+            "https://www.reddit.com/r/repair/comments/abc/thread"
+          ],
+          "observations": [
+            {
+              "provider": "host-web",
+              "upstream": "unknown",
+              "method": "host",
+              "facet_id": "discovery",
+              "operation": "page.discover",
+              "source": "web",
+              "title": "Repair guide",
+              "rank": 1,
+              "observed_at": "2026-10-18T00:00:00+00:00",
+              "url": "https://www.reddit.com/r/repair/comments/abc/thread",
+              "fields": {},
+              "excerpt": "",
+              "observation_id": "5dbd3cd9c8bb4f80949a39574c24e539:1"
+            }
+          ]
+        }
+      ],
+      "count": 1,
+      "detail": "",
+      "observed_at": "2026-10-18T00:00:00+00:00",
+      "fetched_count": 1,
+      "rejected_schema": 0,
+      "rejected_source": 0,
+      "fetch_limit": 10,
+      "pagination": {
+        "known": false,
+        "unfetched_count": null
+      }
+    }
+  },
+  "attempts": [
+    {
+      "facet_id": "discovery",
+      "provider": "host-web",
+      "status": "success",
+      "count": 1,
+      "observed_at": "2026-10-18T00:00:00+00:00",
+      "detail": "",
+      "fetched_count": 1,
+      "rejected_schema": 0,
+      "rejected_source": 0,
+      "fetch_limit": 10,
+      "pagination": {
+        "known": false,
+        "unfetched_count": null
+      },
+      "attempt_id": "5dbd3cd9c8bb4f80949a39574c24e539",
+      "started_at": "2026-10-18T05:33:33.188702+00:00",
+      "elapsed_seconds": 0.0002868175506591797,
+      "usage": {
+        "calls": 1,
+        "discovery": 1,
+        "enrichment": 0,
+        "opens": 0
+      },
+      "usage_basis": "reservation (measurement unknown)"
+    }
+  ],
+  "assessments": {},
+  "started_at": "2026-10-18T05:33:33.188469+00:00",
+  "redactions": []
+}

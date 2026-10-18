@@ -15,6 +15,7 @@ def cli(id, tool, operations, **kwargs):
         id,
         upstream="github" if tool == "gh" else "unknown",
         method="native",
+        scope_filter="native",
         tool=tool,
         rate_group="github" if tool == "gh" else id,
         sources=["github"],

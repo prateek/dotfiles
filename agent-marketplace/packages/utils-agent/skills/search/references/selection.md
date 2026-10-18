@@ -32,7 +32,8 @@ evidence checks, ordering and the final answer.
    only as a secondary signal; missing metrics remain unknown. Preserve useful
    alternatives and disagreements. Providers sharing an upstream do not establish
    independent corroboration. Apply the final result limit only after this step.
-6. Save the shortlist, reasons, criteria and gaps with `select`. Account separately
+6. Save the shortlist, reasons, criteria, gaps and optional `stopping_reason` with
+   `select`. Account separately
    for duplicate merging, uninspected candidates, inspected exclusions and relevant
    candidates outside the shortlist. A provider tail has unknown identities and
    often an unknown count; say so. Finish when the saved report matches the answer.
@@ -75,6 +76,8 @@ replaces the ordered shortlist. Send intermediate decisions with an empty shortl
 and `answer_status: pending`. `complete` requires no stated gaps or pending work and
 verified, inspected selections. Use `partial` for unresolved hard constraints.
 Record concise evidence explanations only; private reasoning is not part of the trace.
+`stopping_reason` is at most 512 characters: adequate inspected coverage, diminishing
+useful evidence, exhausted limits or a specific access gap. It does not change limits.
 
 ## Receipt in every answer
 
@@ -87,12 +90,21 @@ Selection: <criteria actually applied and any tie-breaker>
 Trace: <link to trace.state>
 ```
 
+When language, market or omitted channels materially affect the answer, add one
+optional line: `Coverage: <languages/markets actually examined; material omissions>`.
+Distinguish considered/deferred families from attempted sources and inspected
+evidence. The report's `exploration` joins source decisions to execution outcomes;
+the receipt counts remain execution facts. Do not enumerate an unused catalogue.
+
 The report supplies a factual `receipt` scaffold, and checkpoints retain its
 `inline_receipt`. Condense large provider sets while naming material exceptions.
 Include only considered sources and providers. Provider readiness, execution
 outcomes and answer completeness are separate facts; successful retrieval counts
 do not measure relevance. Legacy facet `complete` means declared evidence checks,
 while `diagnostics.answer_status` describes the host's answer assessment.
+If every content read failed, describe selection as provisional discovery fit;
+do not copy an inspected-support criterion from the example. A successful page
+read establishes only the returned content, not completeness of an entire thread.
 
 ## Storage, recovery and omissions
 

@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "exposure": "Public development cases; no independent hidden holdout.",
+  "conditions": [
+    "baseline-1.15",
+    "generalized-baseline-guidance",
+    "generalized-new-guidance"
+  ],
+  "repeats": 3,
+  "budget_per_case": {
+    "calls": 3,
+    "discovery": 2,
+    "enrichment": 1,
+    "opens": 1,
+    "wall_seconds": 240
+  },
+  "critical_failures": [
+    "fabricated inspection",
+    "lost hard constraint",
+    "unauthorized or out-of-budget execution",
+    "private data or retention leakage"
+  ],
+  "cases": [
+    {
+      "id": "used-ssd",
+      "prompt": "Find promising ways to buy four 1 TB 2.5-inch SATA SSDs for a home server in the United States, at most $200 delivered total. Used is acceptable, delivery within a month, shipping only, no untested lots. Compare feasible channels and explain remaining verification gaps; do not buy anything.",
+      "criteria": [
+        "Preserve four units, SATA 2.5-inch, delivered budget, shipping and tested condition",
+        "Consider retail/refurb/used and conditionally surplus; do not recommend unsuitable lots",
+        "Inspect at least one concrete page; distinguish stock/asking price/auction bid from a verified delivered offer"
+      ]
+    },
+    {
+      "id": "urgent-ssd",
+      "prompt": "Find a new 1 TB M.2 2280 PCIe NVMe SSD for delivery in Toronto, Canada within 48 hours, under CAD 150 delivered. One drive only, new only, local pickup unavailable. Do not claim address-specific delivery without evidence; do not buy anything.",
+      "criteria": [
+        "Preserve Canadian currency/market, interface/form factor, one/new/urgent constraints",
+        "Prefer stock and delivery evidence; avoid wholesale and auction fan-out",
+        "State postal-code-specific delivery and total price uncertainty if unverified"
+      ]
+    },
+    {
+      "id": "new-domain",
+      "prompt": "Use the public Codeberg documentation site docs.codeberg.org to find how to protect a branch from direct pushes. Inspect the relevant documentation and state which checks remain uncertain.",
+      "criteria": [
+        "Reach docs.codeberg.org without registering a source",
+        "Use primary documentation and inspect exact branch protection support",
+        "Keep domain restriction and cite the observed page"
+      ]
+    },
+    {
+      "id": "sparse-access",
+      "prompt": "Find public owner discussion of Keychron K2 reliability. Reddit comments and authenticated social access are unavailable. Use only available public web search and page reads, and report the coverage limits; no new accounts.",
+      "criteria": [
+        "Do not require Reddit credentials or claim to read unavailable comments",
+        "Use useful available alternatives within limits",
+        "Distinguish snippets, inspected firsthand evidence and missing discussion coverage"
+      ]
+    },
+    {
+      "id": "japanese-tech",
+      "prompt": "Find Japanese-language technical reports about SQLite WAL locking on Zenn or Qiita, and explain one concrete pitfall in English with a link to its original Japanese source. Keep SQLite/WAL identifiers intact and distinguish author reports from official guarantees.",
+      "criteria": [
+        "Use Japanese technical terms while preserving SQLite/WAL",
+        "Inspect an original Japanese article on the specified communities",
+        "Distinguish original observations from official guarantees and mark translation/version uncertainty"
+      ]
+    }
+  ],
+  "judging": "Separate observed task evidence from unmeasured generalization and qualified language correctness. Counts do not establish relevance."
+}

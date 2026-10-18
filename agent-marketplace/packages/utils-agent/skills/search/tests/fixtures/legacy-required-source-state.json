@@ -1,0 +1,325 @@
+{
+  "schema_version": 1,
+  "run_id": "ffa565e1744940f68ed3dc9664595542",
+  "plan": {
+    "schema_version": 1,
+    "request": {
+      "schema_version": 1,
+      "terms": "repair",
+      "choices": {
+        "strategy": "free-first",
+        "limit": 10,
+        "total_limit": 30,
+        "result_limit": 5,
+        "free_only": false,
+        "via": "host",
+        "source": [
+          "reddit"
+        ],
+        "require_source": [
+          "hn"
+        ]
+      },
+      "authorized_paid": [
+        "exa"
+      ],
+      "conversation_choices": {}
+    },
+    "host": {
+      "schema_version": 1,
+      "capabilities": [
+        {
+          "id": "web.search",
+          "tool": "fixture.search",
+          "cost": "free",
+          "operations": [
+            "post.discover"
+          ]
+        },
+        {
+          "id": "browser",
+          "tool": "fixture.read",
+          "cost": "free",
+          "runtime": "fixture",
+          "operations": [
+            "page.inspect"
+          ]
+        }
+      ]
+    },
+    "jobs": [
+      {
+        "facet": {
+          "id": "f1",
+          "area": "social",
+          "source": "reddit",
+          "operation": "post.discover",
+          "terms": "repair",
+          "filters": {},
+          "limit": 10,
+          "needs": [
+            "relevance"
+          ]
+        },
+        "routes": [
+          "host-web"
+        ],
+        "skipped": [
+          {
+            "provider": "serper",
+            "reason": "method constraint",
+            "detail": "method constraint"
+          },
+          {
+            "provider": "brave",
+            "reason": "method constraint",
+            "detail": "method constraint"
+          },
+          {
+            "provider": "exa",
+            "reason": "method constraint",
+            "detail": "method constraint"
+          },
+          {
+            "provider": "parallel",
+            "reason": "method constraint",
+            "detail": "method constraint"
+          },
+          {
+            "provider": "tavily",
+            "reason": "method constraint",
+            "detail": "method constraint"
+          },
+          {
+            "provider": "perplexity",
+            "reason": "method constraint",
+            "detail": "method constraint"
+          },
+          {
+            "provider": "kagi",
+            "reason": "method constraint",
+            "detail": "method constraint"
+          },
+          {
+            "provider": "octen",
+            "reason": "method constraint",
+            "detail": "method constraint"
+          },
+          {
+            "provider": "searchapi",
+            "reason": "method constraint",
+            "detail": "method constraint"
+          },
+          {
+            "provider": "searxng",
+            "reason": "method constraint",
+            "detail": "method constraint"
+          },
+          {
+            "provider": "degoog",
+            "reason": "method constraint",
+            "detail": "method constraint"
+          },
+          {
+            "provider": "startpage",
+            "reason": "method constraint",
+            "detail": "method constraint"
+          },
+          {
+            "provider": "ddg",
+            "reason": "method constraint",
+            "detail": "method constraint"
+          }
+        ],
+        "excluded": false
+      },
+      {
+        "facet": {
+          "id": "f2",
+          "area": "social",
+          "source": "hn",
+          "operation": "post.discover",
+          "terms": "repair",
+          "filters": {},
+          "limit": 10,
+          "needs": [
+            "relevance"
+          ]
+        },
+        "routes": [
+          "host-web"
+        ],
+        "skipped": [
+          {
+            "provider": "serper",
+            "reason": "method constraint",
+            "detail": "method constraint"
+          },
+          {
+            "provider": "brave",
+            "reason": "method constraint",
+            "detail": "method constraint"
+          },
+          {
+            "provider": "exa",
+            "reason": "method constraint",
+            "detail": "method constraint"
+          },
+          {
+            "provider": "parallel",
+            "reason": "method constraint",
+            "detail": "method constraint"
+          },
+          {
+            "provider": "tavily",
+            "reason": "method constraint",
+            "detail": "method constraint"
+          },
+          {
+            "provider": "perplexity",
+            "reason": "method constraint",
+            "detail": "method constraint"
+          },
+          {
+            "provider": "kagi",
+            "reason": "method constraint",
+            "detail": "method constraint"
+          },
+          {
+            "provider": "octen",
+            "reason": "method constraint",
+            "detail": "method constraint"
+          },
+          {
+            "provider": "searchapi",
+            "reason": "method constraint",
+            "detail": "method constraint"
+          },
+          {
+            "provider": "searxng",
+            "reason": "method constraint",
+            "detail": "method constraint"
+          },
+          {
+            "provider": "degoog",
+            "reason": "method constraint",
+            "detail": "method constraint"
+          },
+          {
+            "provider": "hn",
+            "reason": "method constraint",
+            "detail": "method constraint"
+          },
+          {
+            "provider": "startpage",
+            "reason": "method constraint",
+            "detail": "method constraint"
+          },
+          {
+            "provider": "ddg",
+            "reason": "method constraint",
+            "detail": "method constraint"
+          }
+        ],
+        "excluded": false
+      }
+    ],
+    "choices": {
+      "strategy": {
+        "value": "free-first",
+        "kind": "preference",
+        "scope": "builtin"
+      },
+      "limit": {
+        "value": 10,
+        "kind": "constraint",
+        "scope": "builtin"
+      },
+      "total_limit": {
+        "value": 30,
+        "kind": "constraint",
+        "scope": "builtin"
+      },
+      "result_limit": {
+        "value": 5,
+        "kind": "constraint",
+        "scope": "builtin"
+      },
+      "free_only": {
+        "value": false,
+        "kind": "constraint",
+        "scope": "builtin"
+      },
+      "via": {
+        "value": "host",
+        "kind": "constraint",
+        "scope": "explicit"
+      },
+      "source": {
+        "value": [
+          "reddit"
+        ],
+        "kind": "constraint",
+        "scope": "explicit"
+      },
+      "require_source": {
+        "value": [
+          "hn"
+        ],
+        "kind": "constraint",
+        "scope": "explicit"
+      }
+    },
+    "budget": {
+      "calls": 3,
+      "discovery": 2,
+      "enrichment": 1,
+      "opens": 6,
+      "wall_seconds": 120
+    },
+    "notices": [],
+    "total_limit": 30,
+    "plan_id": "b8f91e8720ac814ad5bed75ac736e49a55df75bdaeb48d6328a7322e77449128"
+  },
+  "deadline": 10000000000,
+  "usage": {
+    "calls": 0,
+    "discovery": 0,
+    "enrichment": 0,
+    "opens": 0
+  },
+  "pending": {
+    "d3044e01e72b4c869c88caf91adc4fc1": {
+      "run_id": "ffa565e1744940f68ed3dc9664595542",
+      "work_item_id": "d3044e01e72b4c869c88caf91adc4fc1",
+      "attempt_id": "657a32db6f1046ee95b71990c89fc9c5",
+      "facet_id": "f1",
+      "provider": "host-web",
+      "operation": "post.discover",
+      "reserved_budget": {
+        "calls": 1,
+        "discovery": 1,
+        "enrichment": 0,
+        "opens": 0
+      },
+      "kind": "host",
+      "payload": {
+        "tool": "fixture.search",
+        "provider": "host-web",
+        "source": "reddit",
+        "query": "repair (site:reddit.com)",
+        "limit": 10,
+        "filters": {},
+        "identity": "unknown",
+        "runtime": null
+      },
+      "started_at": "2026-10-18T17:54:01.935164+00:00"
+    }
+  },
+  "receipts": {},
+  "outcomes": {},
+  "attempts": [],
+  "assessments": {},
+  "started_at": "2026-10-18T17:54:01.934871+00:00",
+  "redactions": []
+}

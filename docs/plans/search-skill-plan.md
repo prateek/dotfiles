@@ -4,8 +4,10 @@ doc_type: plan
 created: 2026-10-17
 updated: 2026-10-18
 related:
+  - search-source-selection-plan.md
   - ../adr/0054-shared-search-engine.md
   - ../research/search-skill-implementation.md
+  - ../research/search-source-selection-qualification.md
   - ../research/search-index-eval.md
   - ../research/search-index-website-run.md
   - ../research/search-skill-plan-review.md
@@ -36,6 +38,14 @@ fit, verification, shortlist reasons and omissions using the shared
 inspection and selection, including skills-searcher. Candidate pages and fetch
 budgets are separate from the final result limit. Provider routing is not a
 semantic relevance ranking.
+
+The [source-selection follow-up](search-source-selection-plan.md) builds on the
+1.15.0 implementation with multilingual and regional guidance, broader shopping
+channels and explicit site scopes, implemented in 1.16.1. Its
+[qualification record](../research/search-source-selection-qualification.md)
+separates contract/review evidence, the 45-attempt development pilot and native
+activation. Both plans retain broader task-quality gates: the small pilot does not
+establish superiority, translation correctness or independent generalization.
 
 ## Evidence behind the design
 

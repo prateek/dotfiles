@@ -6,8 +6,16 @@ from itertools import zip_longest
 import datetime as dt
 import time
 import uuid
-from urllib.parse import urlsplit
-from . import contracts as c, io, registry, planning, identity, diagnostics, selection
+from . import (
+    contracts as c,
+    io,
+    registry,
+    planning,
+    identity,
+    diagnostics,
+    selection,
+    sources,
+)
 from .adapters import native, host
 
 COUNTERS = ("calls", "discovery", "enrichment", "opens")
@@ -20,6 +28,7 @@ def now():
 def new_state(plan):
     return {
         "schema_version": 1,
+        "identity_version": 2,
         "run_id": uuid.uuid4().hex,
         "plan": plan,
         "deadline": time.time() + plan["budget"]["wall_seconds"],
@@ -52,6 +61,8 @@ def validate_state(s):
             "selection",
             "inline_receipt",
             "redactions",
+            "identity_version",
+            "exploration_omitted",
         ),
         (
             "run_id",
@@ -67,6 +78,13 @@ def validate_state(s):
         ),
         "state",
     )
+    if type(s.get("identity_version", 1)) is not int or s.get(
+        "identity_version", 1
+    ) not in (1, 2):
+        raise c.Invalid("Unsupported run identity version")
+    legacy = s.get("identity_version", 1) == 1
+    if "exploration_omitted" in s and type(s["exploration_omitted"]) is not bool:
+        raise c.Invalid("exploration_omitted must be boolean")
     c.strings(s.get("redactions", []), "redactions")
     if "selection" in s:
         selection.validate_saved(s["selection"])
@@ -82,7 +100,7 @@ def validate_state(s):
         != p["plan_id"]
     ):
         raise c.Invalid("State plan fingerprint mismatch")
-    c.request(p["request"])
+    c.request(p["request"], legacy=legacy)
     c.host_manifest(p["host"])
     c.budget(p["budget"])
     c.integer(p["total_limit"], "total_limit", 1)
@@ -197,7 +215,7 @@ def validate_state(s):
         )
         for provider in job["routes"]:
             registry.validate_provider(provider)
-        c.request({"schema_version": 1, "facets": [job["facet"]]})
+        c.request({"schema_version": 1, "facets": [job["facet"]]}, legacy=legacy)
     for work in s["pending"].values():
         c.obj(
             work,
@@ -245,6 +263,11 @@ def persisted(s):
                 copy["assessments"][facet_id]["references"] = []
                 copy["assessments"][facet_id].pop("note", None)
     if any(out.get("retention_omitted") for out in copy["outcomes"].values()):
+        req = copy["plan"]["request"]
+        if req.get("source_decisions") or req.get("intent", {}).get("context"):
+            req.pop("source_decisions", None)
+            req.get("intent", {}).pop("context", None)
+            copy["exploration_omitted"] = True
         # Host decisions can quote restricted observations. Keep only aggregate status.
         if "selection" in copy:
             original = copy["selection"]
@@ -272,7 +295,11 @@ def persisted(s):
         out.pop("raw", None)
         if out.get("retention_omitted"):
             out["detail"] = "Provider content omitted under retention policy"
-    return diagnostics.redact(copy)
+    copy = diagnostics.redact(copy)
+    copy["plan"]["plan_id"] = planning.fingerprint(
+        {k: v for k, v in copy["plan"].items() if k != "plan_id"}
+    )
+    return copy
 
 
 def checkpoint(s, path):
@@ -336,23 +363,7 @@ def reserve(s, f, p, path):
 
 
 def source_matches(url, f):
-    p = urlsplit(url)
-
-    def matches(domain):
-        hostname, _, path = domain.partition("/")
-        aliases = {"youtube.com": ["youtu.be"], "x.com": ["twitter.com"]}.get(
-            hostname, []
-        )
-        return any(
-            p.hostname == h or (p.hostname or "").endswith("." + h)
-            for h in [hostname, *aliases]
-        ) and (not path or p.path.startswith("/" + path))
-
-    source_domain = c.SOURCES[f["source"]][1]
-    domains = f.get("filters", {}).get("domains", [])
-    return (not source_domain or matches(source_domain)) and (
-        not domains or any(matches(d) for d in domains)
-    )
+    return sources.destination_allowed(url, f)
 
 
 def settle(s, work, outcome, usage=None, observed_at=None):
@@ -370,16 +381,44 @@ def settle(s, work, outcome, usage=None, observed_at=None):
     normalized, rejected_schema, rejected_source = [], 0, 0
     for rank, row in enumerate(rows, 1):
         try:
-            candidate = identity.normalize([row], f, p, stamp, rank_start=rank)[0]
+            destination = row.get("url") if isinstance(row, dict) else None
+            if isinstance(row, dict) and isinstance(row.get("fields"), dict):
+                fields = dict(row["fields"])
+                fields.pop("inspection_requested_url", None)
+                if "final_url" in fields:
+                    destination = c.web_url(fields["final_url"])
+                    if s.get("identity_version", 1) >= 2:
+                        row = {**row, "url": destination}
+                        if f["operation"] in selection.CONTENT_OPERATIONS and f.get(
+                            "filters", {}
+                        ).get("url"):
+                            fields["inspection_requested_url"] = f["filters"]["url"]
+                row = {**row, "fields": fields}
+            candidate = identity.normalize(
+                [row],
+                f,
+                p,
+                stamp,
+                rank_start=rank,
+                identity_version=s.get("identity_version", 1),
+            )[0]
             native_repo = (
-                p["method"] == "native"
+                s.get("identity_version", 1) == 1
+                and p["method"] == "native"
                 and f["source"] == "github"
                 and candidate["fields"].get("repo")
             )
             if (
                 not f["operation"].endswith(".diagnose")
                 and not native_repo
-                and not source_matches(candidate["url"], f)
+                and not source_matches(destination, f)
+            ):
+                rejected_source += 1
+                continue
+            if sources.destination_excluded(
+                destination,
+                f["source"],
+                s["plan"]["request"]["choices"].get("exclude_source", []),
             ):
                 rejected_source += 1
                 continue
@@ -690,8 +729,26 @@ def extend(s, data):
         raise c.Invalid(
             "Extension contains credential data; remove it before searching"
         )
-    c.version(data, ("prepared_jobs",), ("prepared_jobs",), "extension")
-    c.request(data)
+    c.version(
+        data, ("prepared_jobs", "source_decisions"), ("prepared_jobs",), "extension"
+    )
+    if not isinstance(data["prepared_jobs"], list):
+        raise c.Invalid("prepared_jobs must be a list")
+    if not isinstance(data.get("source_decisions", []), list):
+        raise c.Invalid("source_decisions must be a list")
+    if data["prepared_jobs"]:
+        c.request(
+            {"schema_version": 1, "facets": data["prepared_jobs"]},
+            legacy=s.get("identity_version", 1) == 1,
+        )
+    if s.get("identity_version", 1) == 1:
+        for f in data["prepared_jobs"]:
+            if f.get("source") not in c.SOURCES or c.SOURCES[f["source"]][0] != f.get(
+                "area"
+            ):
+                raise c.Invalid(
+                    "Legacy run uses legacy source identity; settle it and explicitly plan new scope within the remaining authorized allowance"
+                )
     old = s["plan"]
     prior_ids = {j["facet"]["id"] for j in old["jobs"]}
     if prior_ids & {f["id"] for f in data["prepared_jobs"]}:
@@ -702,7 +759,15 @@ def extend(s, data):
         "budget": old["budget"],
     }
     req.pop("prepared_jobs", None)
-    resolved = planning.plan(req, old["host"], saved=False)
+    req.pop("operation", None)
+    decisions = old["request"].get("source_decisions", []) + data.get(
+        "source_decisions", []
+    )
+    if decisions:
+        req["source_decisions"] = decisions
+    resolved = planning.plan(
+        req, old["host"], saved=False, legacy=s.get("identity_version", 1) == 1
+    )
     resolved["jobs"] = old["jobs"] + resolved["jobs"][len(old["jobs"]) :]
     resolved["plan_id"] = planning.fingerprint(
         {k: v for k, v in resolved.items() if k != "plan_id"}
@@ -856,6 +921,28 @@ def report(s):
         "schema_version": 1,
         "trace": s.get("trace"),
         "diagnostics": facts,
+        "exploration": {
+            "context": s["plan"]["request"].get("intent", {}).get("context", []),
+            "breadth": s["plan"]["request"].get("intent", {}).get("breadth"),
+            "decisions": [
+                {
+                    **decision,
+                    "outcomes": [
+                        row
+                        for row in coverage
+                        if row["facet_id"] in decision["facet_ids"]
+                    ],
+                }
+                for decision in s["plan"]["request"].get("source_decisions", [])
+            ],
+            "query_languages": {
+                j["facet"]["id"]: j["facet"]["query_language"]
+                for j in s["plan"]["jobs"]
+                if j["facet"].get("query_language")
+            },
+            "stopping_reason": s.get("selection", {}).get("stopping_reason"),
+            "retention_omitted": s.get("exploration_omitted", False),
+        },
         "receipt": selection.receipt(s, facts, coverage),
         "candidates": pool[: s["plan"]["total_limit"]],
         "selected": [

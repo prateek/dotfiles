@@ -14,6 +14,7 @@ SPECS = [
         method="host",
         operations=("page.inspect",),
         filters=("url",),
+        scope_filter="destination",
     ),
     spec(
         "grep-app",
@@ -44,6 +45,7 @@ SPECS = [
             "transcript.read",
         ),
         filters=("url", "location"),
+        scope_filter="destination",
     ),
 ]
 
@@ -58,6 +60,7 @@ def work(p, f, binding):
         "filters": f.get("filters", {}),
         "identity": binding.get("identity", "unknown"),
         "runtime": binding.get("runtime"),
+        "query_language": f.get("query_language"),
     }
     if p["method"] == "browser":
         q = keywords(f)

@@ -4,6 +4,61 @@ from .adapters import web, native, host
 from .contracts import Invalid, string
 
 REGISTRY = {p["id"]: p for p in web.SPECS + native.SPECS + host.SPECS}
+ENGINE_VERSION = "1.16.1"
+FEATURES = [
+    "site-scopes",
+    "cross-area-sources",
+    "source-decisions",
+    "context",
+    "query-language",
+    "identity-v2",
+]
+PROBES = {
+    **{
+        p["id"]: {
+            "source": "web",
+            "area": "web",
+            "operation": "page.discover",
+            "terms": "Python documentation",
+        }
+        for p in web.SPECS + host.SPECS
+        if p.get("source_scope") == "public-web" and "page.discover" in p["operations"]
+    },
+    "hn": {
+        "source": "hn",
+        "area": "social",
+        "operation": "post.discover",
+        "terms": "Python",
+    },
+    **{
+        name: {
+            "source": "github",
+            "area": "code",
+            "operation": operation,
+            "terms": "python",
+        }
+        for name, operation in [
+            ("github-code", "code.discover"),
+            ("github-repos", "repo.discover"),
+            ("github-issues", "issue.discover"),
+            ("sourcegraph", "code.discover"),
+            ("grep-app", "code.discover"),
+            ("gh-skill", "code.discover"),
+        ]
+    },
+    "skills-cli": {
+        "source": "skills",
+        "area": "code",
+        "operation": "code.discover",
+        "terms": "python",
+    },
+    "openserp": {
+        "source": "web",
+        "area": "web",
+        "operation": "page.discover",
+        "terms": "Python documentation",
+    },
+}
 
 
 def capabilities(manifest, authorized=()):
@@ -33,6 +88,9 @@ def capabilities(manifest, authorized=()):
         rows.append(
             {
                 **p,
+                "source_scope": p.get("source_scope", "named"),
+                "scope_filter": p.get("scope_filter", "native"),
+                "probe": PROBES.get(p["id"]),
                 "readiness": readiness,
                 "detail": detail,
                 "cost": cost,

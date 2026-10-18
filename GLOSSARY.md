@@ -52,6 +52,30 @@ _Avoid_: Snapshot, export, dump
 
 ## Search selection
 
+**Evidence area**:
+The kind of evidence a request needs: web, code, social or shopping. It determines checks, not a mandatory platform.
+_Avoid_: Provider, source
+
+**Source**:
+The site, platform or scoped collection supplying evidence, expressed as an alias or `site:hostname[/path]`. One source can serve several evidence areas.
+_Avoid_: Search API, transport
+
+**Source family**:
+A group considered for a shared evidence purpose, such as owner forums, technical communities or institutional surplus. It guides selection without promising access.
+_Avoid_: Required source list
+
+**Search provider**:
+An executable route with declared operations, source scope, access, cost and retention rules. Its method is API, native, host or browser; its upstream identifies the index or service behind it.
+_Avoid_: Source, independent evidence
+
+**Search facet**:
+A bounded evidence question naming an area, source, operation, query or target, and required checks. Facets share one run's limits.
+_Avoid_: Global source pin
+
+**Source decision**:
+A recorded host judgment selecting, deferring, excluding or finding a source family irrelevant, linked to facets where applicable. Execution outcomes and semantic usefulness are separate facts.
+_Avoid_: Provider health, relevance score
+
 **Search run**:
 One logical search spanning query expansion, discovery, enrichment, content inspection and final selection within a shared budget.
 _Avoid_: Provider call, query

@@ -5,15 +5,19 @@ import json
 import re
 from urllib.parse import urlsplit, parse_qs, urlencode, urlunsplit, unquote
 from .contracts import web_url, Invalid
+from . import sources
 
 
-def identity(row):
+def identity(row, version=1):
     fields, kind, source = row.get("fields", {}), row.get("kind", "page"), row["source"]
     p = urlsplit(row["url"])
     host = (p.hostname or "").lower().removeprefix("www.")
     parts = p.path.strip("/").split("/")
     q = parse_qs(p.query)
     fields = dict(fields)
+    platform = sources.platform(row["url"]) if version >= 2 else source
+    if version >= 2:
+        source = platform or ""
     if host == "github.com" and len(parts) >= 2:
         fields.setdefault("repo", "/".join(parts[:2]))
         if len(parts) >= 5 and parts[2] == "blob":
@@ -54,9 +58,14 @@ def identity(row):
     ):
         fields["item_id"] = parts[parts.index("item") + 1]
         kind = "product" if kind != "offer" else kind
-    if kind == "repo" and fields.get("repo"):
+    if kind == "repo" and fields.get("repo") and (version == 1 or platform == "github"):
         return ["repo", host, fields["repo"].lower()]
-    if kind == "code" and fields.get("repo") and fields.get("path"):
+    if (
+        kind == "code"
+        and fields.get("repo")
+        and fields.get("path")
+        and (version == 1 or platform == "github")
+    ):
         return [
             "code",
             host,
@@ -64,7 +73,11 @@ def identity(row):
             fields["path"],
             fields.get("revision"),
         ]
-    if kind in ("issue", "comment") and fields.get("item_id"):
+    if (
+        kind in ("issue", "comment")
+        and fields.get("item_id")
+        and (version == 1 or platform)
+    ):
         return [
             kind,
             source,
@@ -82,8 +95,14 @@ def identity(row):
             return ["video", "youtube", native]
     if source == "hn" and (fields.get("item_id") or q.get("id")):
         return ["post", "hn", str((q.get("id") or [None])[0] or fields.get("item_id"))]
-    if kind in ("post", "video", "product", "offer") and fields.get("item_id"):
+    if (
+        kind in ("post", "video", "product", "offer")
+        and fields.get("item_id")
+        and (version == 1 or platform)
+    ):
         key = [kind, source, str(fields["item_id"])]
+        if version >= 2 and source == "amazon":
+            key.insert(2, host)
         if kind in ("product", "offer"):
             key += [fields.get("variant")]
         if kind == "offer":
@@ -106,7 +125,7 @@ def identity(row):
     ]
 
 
-def normalize(rows, facet, provider, observed_at, rank_start=1):
+def normalize(rows, facet, provider, observed_at, rank_start=1, identity_version=1):
     result = []
     for rank, r in enumerate(rows, rank_start):
         if not isinstance(r, dict):
@@ -145,7 +164,7 @@ def normalize(rows, facet, provider, observed_at, rank_start=1):
             "observed_at": observed_at,
             "evidence_level": "candidate",
         }
-        row["identity"] = identity(row)
+        row["identity"] = identity(row, identity_version)
         row["observations"] = [
             {
                 "provider": provider["id"],

@@ -3,7 +3,7 @@ status: current
 doc_type: index
 summary: "Router to current guidance and open plans; the inventory and the retirement ledger hold everything else."
 created: 2026-05-12
-updated: 2026-10-17
+updated: 2026-10-18
 related:
   - document-lifecycle.md
   - inventory.md
@@ -74,6 +74,7 @@ Status and summary for each are in the [inventory](inventory.md#plans).
 - [Psychology book archive and tools](plans/psychology-book-archive-and-tools-plan.md)
 - [Raycast config automation](plans/raycast-config-automation-plan.md)
 - [Search skill](plans/search-skill-plan.md)
+- [Search source selection and broad exploration](plans/search-source-selection-plan.md)
 - [Shell banner](plans/shell-banner-plan.md)
 - [Skill management console](plans/skill-management-console-plan.md)
 - [SSD layout and Arq coverage](plans/ssd-arq-layout-plan.md)
@@ -89,5 +90,7 @@ Status and summary for each are in the [inventory](inventory.md#plans).
   successor or current guidance.
 - [Research](inventory.md#research): evidence documents and the decisions
   they informed.
+- [Search source-selection qualification](research/search-source-selection-qualification.md):
+  contract checks, reviews, the development pilot and activation evidence.
 - [Retirement ledger](retired.md): every plan, research doc, reference, or
   runbook that has left the tree, and where its content went.

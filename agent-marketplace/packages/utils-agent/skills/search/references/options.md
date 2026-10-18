@@ -8,7 +8,11 @@ or permanent service are installed by the skill.
 ## Choices
 
 `--area`, `--source`, `--exclude-source` and `--require-source` take comma-separated
-IDs. `--provider` and `--via=api|native|browser|host` pin routes; `--via=auto` leaves
+aliases or `site:hostname[/path]` scopes. `--operation` selects a discovery operation
+for query shorthand; inspection operations use structured jobs. Bare queries use
+general web discovery. Non-web area-only queries require a source/facet or an
+unambiguous provider pin with one qualified named source. Multiple areas require explicit facets.
+`--provider` and `--via=api|native|browser|host` pin routes; `--via=auto` leaves
 the method open. `--prefer-provider` / `--prefer-via` allow fallback.
 `--browser=camofox` requires browser routes using that declared runtime; it excludes native/API routes too.
 `--strategy=free-first|balanced` orders eligible routes; `--free-only` excludes
@@ -46,7 +50,7 @@ or use `--no-defaults` to discard saved choices. Unknown saved constraints fail;
 invalid saved preferences are omitted with a notice. Unknown preferred provider
 IDs are also omitted; invalid explicit methods/strategies fail validation.
 A provider pin conflicting with a filter, method or cost constraint is an error.
-When an area's default source is excluded, select another source explicitly.
+When a shorthand source is excluded, select another source explicitly.
 `--inspect` resolves without calls/writes and cannot save/reset.
 
 ```sh
@@ -90,7 +94,7 @@ A structured request (public examples only):
 ```
 
 Facet fields: `id`, `area`, `source`, `operation`, optional `terms`, `filters`,
-`needs`, `limit`, `provider`, `via`, `timeout`. Filters: domains, since, until,
+`needs`, `limit`, `provider`, `via`, `timeout`, `query_language`. Filters: domains, since, until,
 location, repo, path, language, revision, url, item_id, subject to adapter support.
 For an inspection, supply URL or HN item ID. Omitted needs default to relevance;
 explicit `needs: []` means retrieval-only completion, intended for domain clients.
@@ -106,7 +110,9 @@ rechecks capability availability; changed capabilities require a new plan.
 Execution options belong in the plan: `run --plan` accepts only `--state` and
 `--json` alongside the plan path. Additional options are rejected.
 `run --request request.json` does both. `--request -` reads stdin. Every document
-uses schema_version 1; unknown fields and provider/source IDs are errors.
+uses schema_version 1; unknown fields/provider IDs and malformed source scopes are
+errors. [Source scopes and exploration](source-scopes.md) defines site normalization,
+context, decisions, cross-area operations and legacy checkpoint behavior.
 
 ## Host work and continuation
 
@@ -120,12 +126,18 @@ illustrative tool name with the actual callable binding):
 }
 ```
 
+Optional binding `sources` narrows a host tool to listed aliases/site scopes; omit
+it only when the tool supports the provider's full declared scope.
 Other capability IDs: `web.search`, `web.fetch`, `mcp:grep.app`. Discovery does not
 imply authentication. Unknown host cost is ineligible without authorization and
 always excluded by free-only. All executing runs receive automatic private XDG
 state; `--state` overrides its location. Use the returned `trace.state` for continuation.
 The returned pending work includes run/work/attempt IDs, operation, tool payload,
 provider, facet, kind and reserved budget. The reservation bounds the work.
+Inspect the successful CLI response before the external call; a validation error
+does not reserve anything. CLI choices use lists in JSON (`"source":["reddit"]`),
+although comma-separated strings are accepted by query flags. `--no-defaults`
+belongs on plan/run/query; continuation uses the saved plan and takes no such flag.
 
 Submit a `continue --state run.json --host-results results.json` document:
 
@@ -161,7 +173,9 @@ is untrusted. `report --state run.json` reads without launching calls.
 Reserve enrichment/open allowance in the original budget. Once a candidate URL
 is known, append inspection jobs with `extend --state run.json --request reads.json`.
 The document is `{"schema_version":1,"prepared_jobs":[...]}` with the same facet
-shape, new IDs, inspection operation and filters.url/item_id. This keeps the
+shape and new IDs. Inspection uses filters.url/item_id; additional discovery uses
+terms. Optional `source_decisions` appends new decision records and may accompany
+an empty jobs list to record a deferred/excluded branch. This keeps the
 run ID, deadline, usage and original budget; it cannot increase limits or change
 choices/authorization. The plan fingerprint changes to include the added jobs.
 It returns host work through the same continuation protocol. Do not start a new
@@ -188,7 +202,8 @@ results could not be persisted; a later report cannot reconstruct those candidat
 Read [selection and diagnostics](selection.md) for candidate labels, selection
 input, receipt, retention and recovery. `intent` is an optional request object
 with `request` (original wording), `requirements` and `hard_constraints` (string
-lists). Expanded terms belong in individual facets. Every search answer uses
+lists), optional bounded `context` records and `breadth`. Expanded terms belong
+in individual facets. Every search answer uses
 this contract, even when a consumer retains a legacy presentation.
 
 `candidates --state PATH --offset 0 --limit 30` returns a bounded page (maximum
@@ -201,3 +216,26 @@ semantics; use `candidates` and the saved state for selection beyond that displa
 Global provider/source/method pins apply to extension jobs too. Facet-level pins
 apply only to their facet, so discovery can pin one provider while later inspection
 uses another eligible route. Location-aware discovery is currently unsupported.
+
+`capabilities` exposes `engine_version`, `features`, provider `source_scope`,
+`scope_filter` and a bounded `probe` recipe where available. `public-web` with an
+empty `sources` list means generic public-site discovery, not zero sources or
+universal access. A `named` provider serves only its qualified source scopes.
+`doctor --live` uses the explicit recipe; inspection-only routes have no invented
+discovery probe. Inventory alone does not establish access.
+
+## Changes from 1.15
+
+Non-web area-only queries no longer silently choose HN, Amazon or GitHub. Select
+a source, explicit facets or a provider with one qualified named source (including
+HN's API). JSON choices are lists. If `source` is pinned, `require_source` must
+fit within it: `--source=reddit --require-source=hn` is now an explicit conflict,
+not permission to widen the pin. List both in `--source` or omit the pin when
+requiring HN alongside other exploratory facets.
+
+The `github` alias and its native adapters are qualified for github.com. Results
+from an Enterprise `GH_HOST` are rejected under that scope. Enterprise native
+host declaration is not implemented; use an explicit site-scoped web/browser
+route with appropriate authorized access, or report that gap. The old blanket
+trust of any native result carrying repository fields is removed for new runs.
+Legacy checkpoints retain their policy.

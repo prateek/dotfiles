@@ -4,7 +4,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
-from . import contracts as c, io, registry
+from . import contracts as c, io, registry, sources
 
 BUILTINS = {
     "strategy": "free-first",
@@ -115,7 +115,10 @@ def save_preferences(scope, selections, reset=False):
 
 
 def supports(p, f, choices):
-    if f["source"] not in p["sources"] or f["operation"] not in p["operations"]:
+    if (
+        not sources.provider_supports(p, f["source"])
+        or f["operation"] not in p["operations"]
+    ):
         return "unsupported operation/source"
     if set(f.get("filters", {})) - set(p["filters"]):
         return "unsupported filters"
@@ -132,6 +135,12 @@ def supports(p, f, choices):
     binding = p.get("host_binding")
     if binding and f["operation"] not in binding["operations"]:
         return "host operation unavailable"
+    if (
+        binding
+        and "sources" in binding
+        and not any(sources.contains(x, f["source"]) for x in binding["sources"])
+    ):
+        return "host source unavailable"
     if choices.get("browser"):
         if (
             p["method"] != "browser"
@@ -176,32 +185,55 @@ def fingerprint(value):
     ).hexdigest()
 
 
-def plan(req, manifest=None, saved=True):
-    c.request(req)
+def plan(req, manifest=None, saved=True, legacy=False):
+    c.request(req, legacy=legacy)
     manifest = c.host_manifest(manifest or {"schema_version": 1, "capabilities": []})
     for provider in req.get("authorized_paid", []):
         registry.validate_provider(provider)
     choices, origins, notices = resolve(req, saved)
     facets = req.get("facets", req.get("prepared_jobs"))
     if not facets:
-        areas = choices.get("area", ["web"])
-        sources = choices.get("source", []) or [c.DEFAULT_SOURCE[a] for a in areas]
-        if set(sources) & set(choices.get("exclude_source", [])):
+        areas = choices.get("area", [])
+        selected = list(
+            dict.fromkeys(choices.get("source", []) + choices.get("require_source", []))
+        )
+        if len(areas) > 1:
+            raise c.Invalid("Multiple areas require explicit source/operation facets")
+        if not selected:
+            pin = registry.REGISTRY.get(choices.get("provider"), {})
+            native_sources = (
+                pin.get("sources", []) if pin.get("source_scope") == "named" else []
+            )
+            if areas and areas != ["web"]:
+                if (
+                    len(native_sources) != 1
+                    or c.SOURCES[native_sources[0]][0] != areas[0]
+                ):
+                    raise c.Invalid(
+                        "Select a source or explicit facets for this area; inspect capabilities for eligible routes"
+                    )
+                selected = native_sources
+            else:
+                selected = ["web"]
+        if any(
+            sources.excluded(x, choices.get("exclude_source", [])) for x in selected
+        ):
             raise c.Invalid(
                 "Default source is excluded; select another source explicitly"
             )
-        sources = list(dict.fromkeys(sources + choices.get("require_source", [])))
-        facets = [
-            {
-                "id": f"f{i + 1}",
-                "area": c.SOURCES[s][0],
-                "source": s,
-                "operation": c.DISCOVERY[c.SOURCES[s][0]],
-            }
-            for i, s in enumerate(sources)
-        ]
+        facets = []
+        for index, source in enumerate(selected):
+            area = areas[0] if areas else c.SOURCES.get(source, ("web", None))[0]
+            facets.append(
+                {
+                    "id": f"f{index + 1}",
+                    "area": area,
+                    "source": source,
+                    "operation": req.get("operation", c.DISCOVERY[area]),
+                }
+            )
     facets = json.loads(json.dumps(facets))
-    c.request({"schema_version": 1, "facets": facets})
+    c.request({"schema_version": 1, "facets": facets}, legacy=legacy)
     areas = set(f["area"] for f in facets)
     count = choices.get(
         "max_calls", min(8, (5 if "code" in areas else 3) + 2 * (len(areas) - 1))
@@ -230,14 +262,15 @@ def plan(req, manifest=None, saved=True):
         if option in choices and allocation[counter] > choices[option]:
             raise c.Invalid(f"Explicit budget exceeds {option}")
     caps = registry.capabilities(manifest, req.get("authorized_paid", []))
+    selected_scopes = choices.get("source", []) + (
+        choices.get("require_source", []) if legacy else []
+    )
     jobs = []
     for f in facets:
         if "area" in choices and f["area"] not in choices["area"]:
             raise c.Invalid("Facet conflicts with selected areas")
-        if (
-            choices.get("source")
-            and f["source"] not in choices["source"]
-            and f["source"] not in choices.get("require_source", [])
+        if choices.get("source") and not any(
+            sources.contains(x, f["source"]) for x in selected_scopes
         ):
             raise c.Invalid("Facet conflicts with selected sources")
         if f.get("provider"):
@@ -289,7 +322,16 @@ def plan(req, manifest=None, saved=True):
         ):
             raise c.Invalid("Repository enrichment requires filters.repo")
         eligible, skipped = [], []
-        excluded = f["source"] in choices.get("exclude_source", [])
+        excluded = sources.excluded(f["source"], choices.get("exclude_source", []))
+        if "url" in f["filters"]:
+            target = f["filters"]["url"]
+            if not sources.destination_allowed(target, f):
+                raise c.Invalid(
+                    "Inspection URL is outside the facet source/domain scope"
+                )
+            excluded = excluded or sources.destination_excluded(
+                target, f["source"], choices.get("exclude_source", [])
+            )
         pin = f.get("provider", choices.get("provider"))
         if pin and not excluded:
             reason = supports(next(p for p in caps if p["id"] == pin), f, choices)
@@ -302,7 +344,8 @@ def plan(req, manifest=None, saved=True):
             if reason is None and p["readiness"] == "configured_unverified":
                 eligible.append(p)
             elif reason is None or (
-                f["source"] in p["sources"] and f["operation"] in p["operations"]
+                sources.provider_supports(p, f["source"])
+                and f["operation"] in p["operations"]
             ):
                 skipped.append(
                     {
@@ -329,9 +372,14 @@ def plan(req, manifest=None, saved=True):
                 "excluded": excluded,
             }
         )
-    missing = set(choices.get("require_source", [])) - {f["source"] for f in facets}
+    missing = {
+        required
+        for required in choices.get("require_source", [])
+        if not any(sources.contains(required, f["source"]) for f in facets)
+    }
     if missing:
         raise c.Invalid(f"Required sources have no facets: {sorted(missing)}")
+    c.source_decisions(req.get("source_decisions", []), facets)
     result = {
         "schema_version": 1,
         "request": {**req, "choices": choices, "conversation_choices": {}},
@@ -359,7 +407,12 @@ def validate_plan(value):
     ):
         raise c.Invalid("Plan fingerprint mismatch")
     # Re-resolve from trusted registry and current environment, never execute file-supplied commands.
-    fresh = plan(value["request"], value["host"], saved=False)
+    try:
+        fresh = plan(value["request"], value["host"], saved=False)
+    except c.Invalid as exc:
+        raise c.Invalid(
+            f"Saved plan needs re-planning; inspect and create a new plan: {exc}"
+        ) from exc
     if fresh["jobs"] != value["jobs"] or fresh["budget"] != value["budget"]:
         raise c.Invalid("Capabilities or plan changed; inspect and create a new plan")
     return value

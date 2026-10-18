@@ -47,12 +47,20 @@ def candidates(s):
     assessments = s.get("selection", {}).get("assessments", {})
     selected = {r["candidate_id"] for r in s.get("selection", {}).get("selected", [])}
     reads_by_id = {}
+    reads_by_request = {}
     for read in content_rows(s):
         reads_by_id.setdefault(planning.fingerprint(read["identity"]), []).append(read)
+        requested = read["fields"].get("inspection_requested_url")
+        if requested:
+            reads_by_request.setdefault(requested, []).append(read)
     for row in grouped:
         key = planning.fingerprint(row["identity"])
         row["candidate_id"] = key
-        reads = reads_by_id.get(key, [])
+        reads = list(reads_by_id.get(key, []))
+        for observation in row["observations"]:
+            for read in reads_by_request.get(observation["url"], []):
+                if read not in reads:
+                    reads.append(read)
         row["evidence_digest"] = planning.fingerprint(
             [row["observations"], [r["observations"] for r in reads]]
         )
@@ -92,6 +100,7 @@ def validate_saved(value):
             "gaps",
             "answer_status",
             "omitted_counts",
+            "stopping_reason",
         ),
         ("assessments", "selected", "criteria", "gaps", "answer_status"),
         "saved selection",
@@ -102,6 +111,8 @@ def validate_saved(value):
         raise c.Invalid("Invalid saved selection collections")
     c.string(value["criteria"], "criteria")
     c.strings(value["gaps"], "gaps")
+    if "stopping_reason" in value:
+        c.bounded(value["stopping_reason"], "stopping_reason")
     if value["answer_status"] not in ("pending", "partial", "complete"):
         raise c.Invalid("Invalid saved answer_status")
     if "omitted_counts" in value:
@@ -151,7 +162,9 @@ def apply(s, data):
     original_data = data
     data = diagnostics.redact(data)
     fields = ("run_id", "assessments", "selected", "criteria", "gaps", "answer_status")
-    c.version(data, fields, fields, "selection")
+    c.version(data, (*fields, "stopping_reason"), fields, "selection")
+    if "stopping_reason" in data:
+        c.bounded(data["stopping_reason"], "stopping_reason")
     if data["run_id"] != s["run_id"]:
         raise c.Invalid("Wrong selection run_id")
     if data["answer_status"] not in ("pending", "partial", "complete"):

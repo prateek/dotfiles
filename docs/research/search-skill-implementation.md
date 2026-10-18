@@ -5,6 +5,8 @@ created: 2026-10-17
 updated: 2026-10-18
 related:
   - ../plans/search-skill-plan.md
+  - ../plans/search-source-selection-plan.md
+  - search-source-selection-qualification.md
   - ../adr/0054-shared-search-engine.md
   - ../../agent-marketplace/packages/utils-agent/skills/search/SKILL.md
 status_detail: "Implementation qualification; source health, task quality and native activation are separate gates."
@@ -17,7 +19,11 @@ The authored [search skill](../../agent-marketplace/packages/utils-agent/skills/
 ships a shared retrieval CLI with four area references, optional adapters,
 constraint/preference resolution, private checkpoints and host continuation.
 `skills-searcher` now sends prepared jobs through this engine while retaining
-its query/ranking/output policy. The current source package version is 1.14.1; activation evidence below describes the earlier 1.14.0 build.
+its query/ranking/output policy. The current source package version is 1.16.1;
+the [source-selection qualification](search-source-selection-qualification.md)
+owns its new contract, pilot and activation evidence. The historical sections below
+describe 1.14.0 and the 1.15.0 relevance/diagnostics follow-up; their tests and activation
+observations are not claims about later builds.
 
 ## Verified behavior
 

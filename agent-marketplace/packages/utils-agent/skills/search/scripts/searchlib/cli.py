@@ -45,7 +45,16 @@ def parser():
     a.add_argument("terms", nargs="?")
     options(a)
     a.add_argument("--state")
-    a.add_argument("--inspect", action="store_true")
+    a.add_argument(
+        "--operation",
+        choices=sorted(c.DISCOVERY_OPERATIONS),
+        help="Discovery operation; use structured jobs for inspection/read",
+    )
+    a.add_argument(
+        "--inspect",
+        action="store_true",
+        help="Resolve without calls; non-web areas require sources or a provider pin with one named source",
+    )
     for name in ("show-defaults", "save-defaults", "reset-defaults"):
         a.add_argument("--" + name, action="store_true")
     a.add_argument("--scope", choices=("user", "repo"), default="user")
@@ -157,8 +166,20 @@ def execute(args):
         if args.provider:
             registry.validate_provider(args.provider)
             rows = [r for r in rows if r["id"] == args.provider]
-        return {"schema_version": 1, "providers": rows, "source_requests": 0}
+        return {
+            "schema_version": 1,
+            "engine_version": registry.ENGINE_VERSION,
+            "features": registry.FEATURES,
+            "providers": rows,
+            "source_requests": 0,
+        }
     if args.command == "query":
+        if args.operation and (
+            args.show_defaults or args.save_defaults or args.reset_defaults
+        ):
+            raise c.Invalid(
+                "--operation is a per-query control and cannot be combined with defaults operations"
+            )
         if args.inspect and (args.save_defaults or args.reset_defaults):
             raise c.Invalid("--inspect cannot save/reset defaults")
         if sum((args.show_defaults, args.save_defaults, args.reset_defaults)) > 1:
@@ -191,29 +212,20 @@ def execute(args):
             "choices": choice,
             "authorized_paid": paid,
         }
+        if args.operation:
+            req["operation"] = args.operation
     elif args.command == "doctor":
         if not args.provider:
             raise c.Invalid(
                 "doctor --live requires --provider; probes are opt-in and budgeted"
             )
         p = registry.REGISTRY[registry.validate_provider(args.provider)]
-        source = p["sources"][0]
-        operation = next(
-            (op for op in p["operations"] if op.endswith(".discover")), None
-        )
-        if not operation:
+        probe = registry.PROBES.get(p["id"])
+        if not probe:
             raise c.Invalid("Use an explicit request for this non-discovery provider")
         req = {
             "schema_version": 1,
-            "terms": "Python documentation",
-            "facets": [
-                {
-                    "id": "canary",
-                    "area": c.SOURCES[source][0],
-                    "source": source,
-                    "operation": operation,
-                }
-            ],
+            "facets": [{"id": "canary", **probe}],
             "choices": {**choice, "max_calls": 1, "limit": 1},
             "authorized_paid": paid,
         }

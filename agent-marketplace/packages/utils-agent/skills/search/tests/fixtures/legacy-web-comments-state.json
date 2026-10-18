@@ -1,0 +1,160 @@
+{
+  "schema_version": 1,
+  "run_id": "67917bdcca534b1a993286cf3cd86a18",
+  "plan": {
+    "schema_version": 1,
+    "request": {
+      "schema_version": 1,
+      "facets": [
+        {
+          "id": "old-read",
+          "area": "web",
+          "source": "web",
+          "operation": "comments.read",
+          "filters": {
+            "url": "https://www.youtube.com/watch?v=example"
+          }
+        }
+      ],
+      "budget": {
+        "calls": 3,
+        "discovery": 1,
+        "enrichment": 2,
+        "opens": 2,
+        "wall_seconds": 120
+      },
+      "choices": {
+        "strategy": "free-first",
+        "limit": 10,
+        "total_limit": 30,
+        "result_limit": 5,
+        "free_only": false,
+        "via": "auto"
+      },
+      "conversation_choices": {}
+    },
+    "host": {
+      "schema_version": 1,
+      "capabilities": [
+        {
+          "id": "browser",
+          "tool": "fixture.read",
+          "cost": "free",
+          "runtime": "fixture",
+          "operations": [
+            "comments.read"
+          ]
+        }
+      ]
+    },
+    "jobs": [
+      {
+        "facet": {
+          "id": "old-read",
+          "area": "web",
+          "source": "web",
+          "operation": "comments.read",
+          "filters": {
+            "url": "https://www.youtube.com/watch?v=example"
+          },
+          "limit": 10,
+          "needs": [
+            "relevance"
+          ]
+        },
+        "routes": [
+          "native-page"
+        ],
+        "skipped": [],
+        "excluded": false
+      }
+    ],
+    "choices": {
+      "strategy": {
+        "value": "free-first",
+        "kind": "preference",
+        "scope": "builtin"
+      },
+      "limit": {
+        "value": 10,
+        "kind": "constraint",
+        "scope": "builtin"
+      },
+      "total_limit": {
+        "value": 30,
+        "kind": "constraint",
+        "scope": "builtin"
+      },
+      "result_limit": {
+        "value": 5,
+        "kind": "constraint",
+        "scope": "builtin"
+      },
+      "free_only": {
+        "value": false,
+        "kind": "constraint",
+        "scope": "builtin"
+      },
+      "via": {
+        "value": "auto",
+        "kind": "constraint",
+        "scope": "builtin"
+      }
+    },
+    "budget": {
+      "calls": 3,
+      "discovery": 1,
+      "enrichment": 2,
+      "opens": 2,
+      "wall_seconds": 120
+    },
+    "notices": [],
+    "total_limit": 30,
+    "plan_id": "c1afe5d21ad864ccbd040db97f03183bac022f6d3b6ff9e8c6ddd64c797db265"
+  },
+  "deadline": 10000000000,
+  "usage": {
+    "calls": 0,
+    "discovery": 0,
+    "enrichment": 0,
+    "opens": 0
+  },
+  "pending": {
+    "4cf652e96cb349d68c6a7726cc3964ed": {
+      "run_id": "67917bdcca534b1a993286cf3cd86a18",
+      "work_item_id": "4cf652e96cb349d68c6a7726cc3964ed",
+      "attempt_id": "d64ec6170e4c42349547bbe1719aedd3",
+      "facet_id": "old-read",
+      "provider": "native-page",
+      "operation": "comments.read",
+      "reserved_budget": {
+        "calls": 1,
+        "discovery": 0,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "kind": "host",
+      "payload": {
+        "tool": "fixture.read",
+        "provider": "native-page",
+        "source": "web",
+        "query": "",
+        "limit": 10,
+        "filters": {
+          "url": "https://www.youtube.com/watch?v=example"
+        },
+        "identity": "unknown",
+        "runtime": "fixture",
+        "url": "https://www.youtube.com/watch?v=example",
+        "instruction": "Use the browser skill. Wait for recognized results or an explicit empty/block state before returning links or HTML; stop on challenge/login. Inspect requested evidence and clean up owned resources."
+      },
+      "started_at": "2026-10-18T06:06:37.701422+00:00"
+    }
+  },
+  "receipts": {},
+  "outcomes": {},
+  "attempts": [],
+  "assessments": {},
+  "started_at": "2026-10-18T06:06:37.699781+00:00",
+  "redactions": []
+}

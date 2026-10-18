@@ -93,7 +93,7 @@ class SearchTests(unittest.TestCase):
     def test_all_excluded_is_never_complete(self):
         with self.assertRaisesRegex(c.Invalid, "excluded"):
             planning.plan(
-                request(choices={"area": ["shopping"], "exclude_source": ["amazon"]}),
+                request(choices={"exclude_source": ["web"]}),
                 saved=False,
             )
         p = planning.plan(
@@ -115,10 +115,33 @@ class SearchTests(unittest.TestCase):
     def test_global_limit_preserves_each_facet_and_reports_truncation(self):
         p = planning.plan(
             request(
-                choices={
-                    "area": ["web", "code", "social", "shopping"],
-                    "total_limit": 6,
-                }
+                facets=[
+                    {
+                        "id": "f1",
+                        "area": "web",
+                        "source": "web",
+                        "operation": "page.discover",
+                    },
+                    {
+                        "id": "f2",
+                        "area": "code",
+                        "source": "github",
+                        "operation": "code.discover",
+                    },
+                    {
+                        "id": "f3",
+                        "area": "social",
+                        "source": "hn",
+                        "operation": "post.discover",
+                    },
+                    {
+                        "id": "f4",
+                        "area": "shopping",
+                        "source": "amazon",
+                        "operation": "product.discover",
+                    },
+                ],
+                choices={"total_limit": 6},
             ),
             saved=False,
         )
@@ -482,7 +505,24 @@ class SearchTests(unittest.TestCase):
 
     def test_shared_budget_and_runtime_constraint(self):
         p = planning.plan(
-            request(choices={"area": ["code", "social"], "max_calls": 4}), saved=False
+            request(
+                facets=[
+                    {
+                        "id": "code",
+                        "area": "code",
+                        "source": "github",
+                        "operation": "code.discover",
+                    },
+                    {
+                        "id": "social",
+                        "area": "social",
+                        "source": "hn",
+                        "operation": "post.discover",
+                    },
+                ],
+                choices={"max_calls": 4},
+            ),
+            saved=False,
         )
         self.assertEqual(
             p["budget"],

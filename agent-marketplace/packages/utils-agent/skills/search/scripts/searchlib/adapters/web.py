@@ -4,7 +4,8 @@ import datetime as dt
 import os
 from urllib.parse import urlencode, urlsplit
 from .. import io
-from ..contracts import SOURCES, Invalid, web_url
+from ..contracts import Invalid, web_url
+from .. import sources
 
 WEB_OPS = (
     "page.discover",
@@ -23,7 +24,9 @@ def spec(id, key=None, upstream="unknown", **extra):
         "method": "api",
         "upstream": upstream,
         "operations": WEB_OPS,
-        "sources": list(SOURCES),
+        "sources": [],
+        "source_scope": "named" if "sources" in extra else "public-web",
+        "scope_filter": "native-scope" if id == "exa" else "query",
         "filters": WEB_FILTERS,
         "credential": key,
         "cost": "chargeable" if key else "free",
@@ -66,10 +69,7 @@ def keywords(f):
     if "native_query" in f:
         return f["native_query"]["text"]
     q, filters = f.get("terms", ""), f.get("filters", {})
-    domains = filters.get("domains", [])
-    domain = SOURCES[f["source"]][1]
-    if domain:
-        domains = domains + [domain]
+    domains = sources.domains(f)
     if domains:
         q += " (" + " OR ".join("site:" + d for d in domains) + ")"
     for key, prefix in (("since", "after"), ("until", "before")):
@@ -112,9 +112,7 @@ def request_for(p, f):
             "contents": {"highlights": True},
         }
         filters = f.get("filters", {})
-        domains = filters.get("domains", []) + (
-            [SOURCES[f["source"]][1]] if SOURCES[f["source"]][1] else []
-        )
+        domains = sources.domains(f)
         if domains:
             body["includeDomains"] = domains
         for src, dest in (

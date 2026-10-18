@@ -1,5 +1,15 @@
 # Web evidence
 
+Choose the primary evidence family first: official documentation/changelogs for
+product behavior, original papers and research repositories for research claims,
+regulators/courts/public records for jurisdiction-specific facts, and original
+reporting for events. Secondary explainers help discover terms and opposing claims.
+Directories, maps and local-language institutions may be better discovery routes
+for local questions than an English general query. Inspect the original rather
+than treating a syndicated or translated copy as independent confirmation.
+Use [multilingual discovery](multilingual.md) when the question crosses languages;
+regional search engines are optional providers, subject to actual capabilities.
+
 Separate exact keyword discovery from semantic discovery. Start with entities,
 versions, error strings and primary domains; do not send provider query syntax to
 every adapter. Use structured filters, or a native query with its declared dialect.

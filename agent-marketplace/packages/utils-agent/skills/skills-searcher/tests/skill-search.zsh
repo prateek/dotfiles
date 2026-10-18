@@ -121,12 +121,12 @@ if [[ "$endpoint" == "/search/code" ]]; then
     {
       "repository": {"full_name": "owner-high/repo"},
       "path": ".agents/skills/chezmoi/SKILL.md",
-      "html_url": "https://github.test/owner-high/repo/skill"
+      "html_url": "https://github.com/owner-high/repo/skill"
     },
     {
       "repository": {"full_name": "owner-low/repo"},
       "path": "docs/chezmoi-skill.md",
-      "html_url": "https://github.test/owner-low/repo/skill"
+      "html_url": "https://github.com/owner-low/repo/skill"
     }
   ]
 }

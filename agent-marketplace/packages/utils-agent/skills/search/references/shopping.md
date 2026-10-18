@@ -1,5 +1,28 @@
 # Products and inventory
 
+Resolve material buyer context: specification/compatibility, quantity, delivery
+market and deadline, total budget, acceptable condition, warranty/returns, pickup
+and import tolerance. Reuse explicit context; ask only when a missing fact would
+change feasibility or source choice. Language does not establish delivery market.
+
+| Purchase need | Starting channels | Branch condition |
+| --- | --- | --- |
+| One new item or urgent replacement | Manufacturer, authorized/local retailers, relevant price comparison | Prefer verifiable stock and delivery; avoid unsuitable lots and long lead times |
+| Lower price with used acceptable | Manufacturer refurb, established refurb/ITAD sellers, eBay and local resale | Inspect condition, provenance and return terms |
+| Several units or flexible procurement | Institutional surplus, government sales, commercial auctions | Only when lot quantity, eligibility, testing and collection terms fit |
+| Cross-border or volume sourcing | AliExpress, Alibaba, 1688, Global Sources or specialist distributors | Compare quantity/MOQ, samples, quote basis and delivered usable cost |
+| Local grocery, meals or delivery | Store-direct service, Instacart, Uber Eats, DoorDash or local equivalents | Evidence must match the authorized service address, store and time window |
+| Collectibles or specialist equipment | Relevant auction houses, specialist dealers and classified communities | Check authenticity, grading, buyer premium and fulfillment |
+
+These names are seeds. Find local retailers/marketplaces and national surplus
+channels for the actual market; do not assume US sellers or shipping. Read
+[source scopes](source-scopes.md#scopes-and-operations) when selecting or excluding
+regional storefronts: the `amazon` alias covers only `amazon.com`. Read
+[used goods and auctions](shopping/used-and-auctions.md) for condition/lot questions,
+and [sourcing and delivery](shopping/sourcing-and-delivery.md) for quantity/import
+or address-dependent services. [Regional guidance](regions/global-discovery.md)
+helps discover alternatives when the catalogue does not fit.
+
 Discovery finds candidates. A supported shopping answer requires the requested
 product/variant, seller, condition, price/currency, location and observation time;
 include MOQ and shipping when applicable. `product.discover` never establishes

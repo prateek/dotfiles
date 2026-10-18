@@ -15,7 +15,9 @@ runtime selection, sessions, interactions and cleanup.
 ## 1. Define the evidence
 
 Split the request into a few independent facets sharing one budget. Each facet
-names its source, operation and required evidence checks. Read the relevant areas:
+names its source, operation and required evidence checks. Read
+[source selection](references/source-selection.md) to choose families, material
+context and exploration breadth; then read only the relevant areas:
 
 | Evidence needed | Reference |
 | --- | --- |
@@ -26,7 +28,10 @@ names its source, operation and required evidence checks. Read the relevant area
 
 Preserve the user's scope. Marketplace listings need shopping checks; owner
 experiences need social checks. Select sources that can supply those checks.
-Record the original request, requirements and hard constraints in `intent`.
+Use aliases or `site:hostname[/path]` for public sources; a platform can serve
+several areas. The host chooses facets; the engine checks routes and constraints.
+Record the original request, requirements, hard constraints and material context
+origins in `intent`, and considered families in `source_decisions`.
 Read [relevance selection and diagnostics](references/selection.md) for every run,
 including specialized consumers. This step is complete when every requested claim
 maps to a facet and its checks.
@@ -74,6 +79,8 @@ shortlist size are separate; keep candidates available until relevance assessmen
 When `pending` contains host work, execute each item through its named binding
 or the browser skill, within its reservation. Return its run/work/attempt IDs,
 status, observation time, parsed results and known usage using the protocol.
+Before every host call, check that the CLI succeeded and returned the matching
+pending reservation. Do not chain a network call after an unchecked CLI command.
 Startpage/DDG can return HTML; other sites require parsed results.
 
 ```sh
@@ -90,6 +97,10 @@ Use candidate destinations to check the requirements in the area references.
 Append inspection jobs for discovered URLs/IDs with
 `extend --state run.json --request reads.json`; the same budget and deadline apply.
 Allocate a larger inspection allowance up front when several candidates need reads.
+Expand discovery when a missing requirement or a useful lead justifies another
+source or language. Append jobs and decisions to the same run; explicit global
+pins remain restrictions. Read [scope and exploration fields](references/source-scopes.md)
+when constructing those records. Stop at adequate evidence or the original limits.
 
 Record checks and evidence references with `scripts/agent-search assess` using the
 protocol reference. Apply the original request's date, identity and availability
@@ -101,7 +112,7 @@ Apply the shared selection procedure and save candidate assessments, ordered
 shortlist, reasons and omissions with `select --state run.json --selection decision.json`.
 This step is complete when required facets have supported checks or explicit gaps,
 and the shortlist reflects task fit before popularity. The engine records host
-assessments; it does not judge semantic relevance.
+assessments; it does not judge semantic relevance. Save the stopping reason.
 
 ## 5. Answer and suggest improvements
 

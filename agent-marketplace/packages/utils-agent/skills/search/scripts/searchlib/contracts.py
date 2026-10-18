@@ -6,24 +6,11 @@ import datetime as dt
 import math
 import re
 from urllib.parse import urlsplit
+from . import sources
+from .sources import SOURCES as SOURCES, Invalid as Invalid
 
 VERSION = 1
 AREAS = ("web", "code", "social", "shopping")
-SOURCES = {
-    "web": ("web", None),
-    "github": ("code", "github.com"),
-    "hn": ("social", "news.ycombinator.com"),
-    "reddit": ("social", "reddit.com"),
-    "x": ("social", "x.com"),
-    "youtube": ("social", "youtube.com"),
-    "google-shopping": ("shopping", None),
-    "amazon": ("shopping", "amazon.com"),
-    "alibaba": ("shopping", "alibaba.com"),
-    "marketplace": ("shopping", "facebook.com/marketplace"),
-    "ubereats": ("shopping", "ubereats.com"),
-    "instacart": ("shopping", "instacart.com"),
-    "skills": ("code", "skills.sh"),
-}
 DEFAULT_SOURCE = dict(zip(AREAS, ("web", "github", "hn", "amazon")))
 DISCOVERY = {
     "web": "page.discover",
@@ -81,10 +68,6 @@ STATUSES = {
     "budget_exhausted",
     "interrupted",
 }
-
-
-class Invalid(ValueError):
-    pass
 
 
 def obj(value, allowed, required=(), label="document"):
@@ -155,9 +138,12 @@ def choices(value):
     for k, v in value.items():
         if k in {"area", "source", "exclude_source", "require_source"}:
             strings(v, k)
-            allowed = AREAS if k == "area" else SOURCES
-            if set(v) - set(allowed):
-                raise Invalid(f"unknown {k}: {sorted(set(v) - set(allowed))}")
+            if k == "area":
+                if set(v) - set(AREAS):
+                    raise Invalid(f"unknown area: {sorted(set(v) - set(AREAS))}")
+            else:
+                for source in v:
+                    sources.resolve(source)
         elif k == "free_only":
             if type(v) is not bool:
                 raise Invalid("free_only must be boolean")
@@ -174,8 +160,9 @@ def choices(value):
             raise Invalid(f"invalid {k}")
     if value.get("strategy", "free-first") not in ("free-first", "balanced"):
         raise Invalid("invalid strategy")
-    if set(value.get("source", []) + value.get("require_source", [])) & set(
-        value.get("exclude_source", [])
+    if any(
+        sources.excluded(s, value.get("exclude_source", []))
+        for s in value.get("source", []) + value.get("require_source", [])
     ):
         raise Invalid("source inclusion and exclusion conflict")
     for k in ("since", "until"):
@@ -205,7 +192,131 @@ def budget(value):
     return value
 
 
-def request(value):
+DISCOVERY_OPERATIONS = {
+    "page.discover",
+    "code.discover",
+    "repo.discover",
+    "issue.discover",
+    "post.discover",
+    "video.discover",
+    "product.discover",
+}
+AREA_OPERATIONS = {
+    "web": {
+        "page.discover",
+        "page.inspect",
+        "comments.read",
+        "transcript.read",
+        "offer.inspect",
+    },
+    "code": {
+        "code.discover",
+        "repo.discover",
+        "issue.discover",
+        "page.discover",
+        "page.inspect",
+        "repo.inspect",
+        "repo.commits",
+        "quota.diagnose",
+        "tool.diagnose",
+    },
+    "social": {
+        "post.discover",
+        "video.discover",
+        "issue.discover",
+        "page.discover",
+        "page.inspect",
+        "comments.read",
+        "transcript.read",
+        "item.read",
+    },
+    "shopping": {
+        "product.discover",
+        "page.discover",
+        "post.discover",
+        "video.discover",
+        "page.inspect",
+        "offer.inspect",
+        "comments.read",
+        "transcript.read",
+    },
+}
+
+
+def bounded(value, label, maximum=512):
+    string(value, label)
+    if len(value) > maximum:
+        raise Invalid(f"{label} exceeds {maximum} characters")
+
+
+def context(rows):
+    if not isinstance(rows, list) or len(rows) > 24:
+        raise Invalid("context must be a list of at most 24 facts")
+    names = set()
+    for row in rows:
+        obj(row, ("name", "value", "origin"), ("name", "value", "origin"), "context")
+        bounded(row["name"], "context name", 64)
+        if row["name"] in names:
+            raise Invalid("Duplicate context name")
+        names.add(row["name"])
+        if row["origin"] not in ("explicit", "conversation", "saved", "assumption"):
+            raise Invalid("Unknown context origin")
+        values = row["value"] if isinstance(row["value"], list) else [row["value"]]
+        if len(values) > 16:
+            raise Invalid("Context lists are limited to 16 scalars")
+        for value in values:
+            if isinstance(value, str):
+                bounded(value, "context value")
+            elif type(value) in (int, float):
+                if not math.isfinite(value):
+                    raise Invalid("Context numbers must be finite")
+            elif type(value) is not bool:
+                raise Invalid("Context values must be public scalars or scalar lists")
+
+
+def source_decisions(rows, facets):
+    if not isinstance(rows, list) or len(rows) > 64:
+        raise Invalid("source_decisions must be a list of at most 64 decisions")
+    ids = set()
+    by_id = {f["id"]: f for f in facets}
+    for row in rows:
+        fields = ("id", "family", "sources", "reason", "disposition", "facet_ids")
+        obj(row, fields, fields, "source decision")
+        for key in ("id", "family", "reason"):
+            bounded(row[key], "decision " + key, 512 if key == "reason" else 64)
+        if row["id"] in ids:
+            raise Invalid("Duplicate source decision id")
+        ids.add(row["id"])
+        if row["disposition"] not in (
+            "selected",
+            "not_relevant",
+            "excluded",
+            "deferred",
+        ):
+            raise Invalid("Unknown source decision disposition")
+        strings(row["sources"], "decision sources")
+        strings(row["facet_ids"], "decision facet_ids")
+        if len(row["sources"]) > 16 or len(row["facet_ids"]) > 32:
+            raise Invalid("Source decision exceeds source/facet limit")
+        for source in row["sources"]:
+            sources.resolve(source)
+        if set(row["facet_ids"]) - by_id.keys():
+            raise Invalid("Source decision links an unknown facet")
+        if row["disposition"] == "selected" and not row["facet_ids"]:
+            raise Invalid("Selected source decision requires a facet")
+        if row["disposition"] != "selected" and row["facet_ids"]:
+            raise Invalid("Only selected source decisions may link facets")
+        for facet_id in row["facet_ids"]:
+            facet = by_id[facet_id]
+            scopes = ["site:" + d for d in sources.domains(facet)] or [facet["source"]]
+            if not all(
+                any(sources.contains(source, scope) for source in row["sources"])
+                for scope in scopes
+            ):
+                raise Invalid("Source decision does not cover its linked facet scope")
+
+
+def request(value, legacy=False):
     version(
         value,
         (
@@ -217,19 +328,33 @@ def request(value):
             "authorized_paid",
             "prepared_jobs",
             "intent",
+            "source_decisions",
+            "operation",
         ),
         label="request",
     )
     if "intent" in value:
         intent = obj(
             value["intent"],
-            ("request", "requirements", "hard_constraints"),
+            ("request", "requirements", "hard_constraints", "context", "breadth"),
             ("request",),
             "intent",
         )
         string(intent["request"], "original request")
         for key in ("requirements", "hard_constraints"):
             strings(intent.get(key, []), key)
+        context(intent.get("context", []))
+        if "breadth" in intent and intent["breadth"] not in (
+            "focused",
+            "ordinary",
+            "wide",
+        ):
+            raise Invalid("Unknown exploration breadth")
+    if "operation" in value:
+        if value.get("facets") or value.get("prepared_jobs"):
+            raise Invalid("Set operations on facets when using a structured request")
+        if value["operation"] not in DISCOVERY_OPERATIONS:
+            raise Invalid("Query operation must be a discovery operation")
     choices(value.get("choices", {}))
     choices(value.get("conversation_choices", {}))
     if "terms" in value:
@@ -260,6 +385,7 @@ def request(value):
                 "via",
                 "raw",
                 "timeout",
+                "query_language",
             ),
             ("id", "area", "source", "operation"),
             "facet",
@@ -270,16 +396,36 @@ def request(value):
         ids.add(f["id"])
         for key in ("area", "source", "operation"):
             string(f[key], key)
-        if (
-            f["area"] not in AREAS
-            or f["source"] not in SOURCES
-            or SOURCES[f["source"]][0] != f["area"]
-        ):
-            raise Invalid("unknown or incompatible area/source")
+        if f["area"] not in AREAS:
+            raise Invalid("Unknown area")
+        sources.resolve(f["source"])
         if not re.fullmatch(
             r"[a-z]+\.(discover|inspect|read|commits|diagnose)", f["operation"]
         ):
             raise Invalid("invalid operation")
+        if not legacy and f["operation"] not in AREA_OPERATIONS[f["area"]]:
+            areas = [
+                area
+                for area, operations in AREA_OPERATIONS.items()
+                if f["operation"] in operations
+            ]
+            remedy = (
+                f"choose --area from {', '.join(areas)} or set an explicit facet area"
+                if areas
+                else "choose an operation listed by capabilities"
+            )
+            raise Invalid(
+                f"unsupported area/operation: {f['operation']} in {f['area']}; {remedy}"
+            )
+        if "query_language" in f:
+            if (
+                not isinstance(f["query_language"], str)
+                or len(f["query_language"]) > 64
+                or not re.fullmatch(
+                    r"[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*", f["query_language"]
+                )
+            ):
+                raise Invalid("query_language must be a language tag")
         if "timeout" in f:
             number(f["timeout"], "facet timeout", 0.01)
         if "raw" in f and type(f["raw"]) is not bool:
@@ -293,6 +439,8 @@ def request(value):
         flt = obj(f.get("filters", {}), FILTERS, label="filters")
         for k, v in flt.items():
             strings(v, k) if k == "domains" else string(v, k)
+        if not legacy:
+            sources.domains(f)
         if "url" in flt:
             web_url(flt["url"])
         choices({k: flt[k] for k in ("since", "until", "location") if k in flt})
@@ -309,6 +457,7 @@ def request(value):
                 raise Invalid("native_query cannot be combined with terms/filters")
     if not rows and not value.get("terms"):
         raise Invalid("terms or facets are required")
+    source_decisions(value.get("source_decisions", []), rows)
     return value
 
 
@@ -320,7 +469,7 @@ def host_manifest(value):
     for c in value["capabilities"]:
         obj(
             c,
-            ("id", "tool", "operations", "runtime", "identity", "cost"),
+            ("id", "tool", "operations", "runtime", "identity", "cost", "sources"),
             ("id", "tool", "operations"),
             "host capability",
         )
@@ -334,6 +483,10 @@ def host_manifest(value):
         strings(c["operations"], "host operations")
         if c.get("cost", "unknown") not in ("free", "chargeable", "unknown"):
             raise Invalid("invalid host cost")
+        if "sources" in c:
+            strings(c["sources"], "host sources")
+            for source in c["sources"]:
+                sources.resolve(source)
         for k in ("runtime", "identity"):
             if k in c:
                 string(c[k], k)

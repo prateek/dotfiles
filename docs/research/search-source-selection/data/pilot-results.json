@@ -1,0 +1,2348 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-18",
+  "consumer": "../../search-source-selection-qualification.md",
+  "purpose": "Public development pilot; descriptive judgments, no superiority or statistical equivalence claim",
+  "limitations": [
+    "45 attempts are clustered within nine workers, five cases per context; three fresh workers per condition",
+    "Rubrics accidentally exposed to five workers (a2, b1, b2, c1, c2); condition-blinded audit is separate",
+    "Two invalid unreserved queries retained as invalid, not restarted",
+    "Several workers ingested subsets; counts do not represent exhaustive returned pools",
+    "Live observations vary over time and query choices; no identical-market assumption",
+    "Exact model identifier, token load, marginal dollar cost, translation correctness and hidden-family generalization unmeasured",
+    "Pilot frozen before review fixes; follow-up canaries and offline replay separately qualified"
+  ],
+  "conditions": [
+    {
+      "condition": "baseline-1.15",
+      "attempts": 15,
+      "valid_execution": 14,
+      "actual_calls": 41,
+      "engine_calls": 40,
+      "median_elapsed_seconds": 53.0,
+      "unique_guidance_bytes_min": 30417,
+      "unique_guidance_bytes_max": 30417,
+      "answer_judgments": {
+        "partial": 12,
+        "pass": 2,
+        "invalid": 1
+      }
+    },
+    {
+      "condition": "generalized-baseline-guidance",
+      "attempts": 15,
+      "valid_execution": 15,
+      "actual_calls": 44,
+      "engine_calls": 44,
+      "median_elapsed_seconds": 65.5,
+      "unique_guidance_bytes_min": 39436,
+      "unique_guidance_bytes_max": 40947,
+      "answer_judgments": {
+        "partial": 13,
+        "pass": 2
+      }
+    },
+    {
+      "condition": "generalized-new-guidance",
+      "attempts": 15,
+      "valid_execution": 14,
+      "actual_calls": 43,
+      "engine_calls": 42,
+      "median_elapsed_seconds": 72.4,
+      "unique_guidance_bytes_min": 58842,
+      "unique_guidance_bytes_max": 61663,
+      "answer_judgments": {
+        "pass": 4,
+        "invalid": 1,
+        "partial": 10
+      }
+    }
+  ],
+  "audit_summary": {
+    "records": 45,
+    "overall_counts": {
+      "partial": 35,
+      "pass": 8,
+      "invalid": 2
+    },
+    "criterion_counts": {
+      "pass": 90,
+      "partial": 40,
+      "unmeasured": 2,
+      "fail": 3
+    },
+    "evidence_depth_counts": {
+      "task_relevant_content": 36,
+      "raw_or_navigation_only": 3,
+      "no_successful_inspection": 6
+    },
+    "invalid_record_ids": [
+      "record-21",
+      "record-32"
+    ],
+    "records_with_flagged_claims": [
+      "record-14",
+      "record-22",
+      "record-39",
+      "record-45"
+    ],
+    "unnecessary_clarification_count": 0,
+    "interpretation": "Descriptive audit counts only; no condition attribution, superiority or statistical inference.",
+    "recurring_wins": [
+      "Most answers identify missing price, quantity, condition, arrival or source-inspection evidence instead of claiming task completion.",
+      "Public owner threads support specific K2 symptoms, while replies, competing diagnoses, different models and selection bias are usually separated.",
+      "Inspected listing variants, sold status and page prices often overturn tempting discovery prices.",
+      "Japanese reports are usually attributed to authors and Codeberg permission tables are not inflated into an exact configuration recipe."
+    ],
+    "recurring_losses_and_gaps": [
+      "No urgent-shopping record establishes a new exact-specification offer below CAD150 delivered with destination-specific arrival within 48 hours.",
+      "No used-SSD record verifies an active four-unit tested purchase path within USD200 delivered; conditional channel comparisons remain partial.",
+      "Every valid Codeberg record reads the same permissions overview, which lacks the actual direct-push-blocking control and loses role-table markers.",
+      "Several Japanese inspections are migration or C# concurrency examples without confirmed WAL mode; separate WAL discovery excerpts do not fill that gap.",
+      "Translation correctness cannot be measured from English summaries and Japanese titles. Some answers also omit the fixed translation/version caveat.",
+      "Four records contain flagged ancillary claims or wording: an unsupported host/completeness detail, full-thread coverage, inspected-support wording after a failed read, or an overly categorical auction-fee exclusion.",
+      "Three reads return only scripts/navigation; three fail; one valid record has no page attempt. Neither useful snippets nor honest limitations convert these into substantive inspection."
+    ]
+  },
+  "runs": [
+    {
+      "id": "a1/japanese-tech",
+      "condition": "baseline-1.15",
+      "repeat": 1,
+      "case_id": "japanese-tech",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 52.986754,
+      "guidance_bytes": 30417,
+      "guidance_tokens": null,
+      "blind_record_id": "record-01",
+      "judgment": {
+        "status": "partial",
+        "rationale": "The inspected migration example supports adjacent SQLite locking behavior, while the leading WAL explanation remains discovery-only."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Use Japanese technical terms while preserving SQLite/WAL",
+          "status": "pass",
+          "rationale": "The answer includes the Japanese technical title SQLite低遅延最適化 and preserves SQLite/WAL and SQL identifiers; actual search-query terms remain unmeasured."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Inspect an original Japanese article on the specified communities",
+          "status": "pass",
+          "rationale": "A successful saved read identifies an original Japanese Zenn article; its lack of confirmed WAL mode limits task relevance."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "Distinguish original observations from official guarantees and mark translation/version uncertainty",
+          "status": "partial",
+          "rationale": "Author observations, discovery excerpts and official guarantees are separated, but translation and SQLite-version uncertainty are not explicitly marked."
+        }
+      ],
+      "evidence_depth": "task_relevant_content",
+      "flagged_claims": []
+    },
+    {
+      "id": "a1/new-domain",
+      "condition": "baseline-1.15",
+      "repeat": 1,
+      "case_id": "new-domain",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 39.859073,
+      "guidance_bytes": 30417,
+      "guidance_tokens": null,
+      "blind_record_id": "record-24",
+      "judgment": {
+        "status": "partial",
+        "rationale": "The answer explicitly and accurately presents a partial documentation finding rather than a verified procedure."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Reach docs.codeberg.org without registering a source",
+          "status": "partial",
+          "rationale": "A successful saved read reaches docs.codeberg.org. Whether any source registration occurred is unmeasured because registration events are not included in this packet."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Use primary documentation and inspect exact branch protection support",
+          "status": "partial",
+          "rationale": "The inspected primary documentation establishes branch-protection capability, but does not show the setting or procedure that blocks ordinary direct pushes."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "Keep domain restriction and cite the observed page",
+          "status": "pass",
+          "rationale": "The answer cites the exact observed docs.codeberg.org page and uses no off-domain authority for its instructions; full search-query scope is not independently visible."
+        }
+      ],
+      "evidence_depth": "task_relevant_content",
+      "flagged_claims": []
+    },
+    {
+      "id": "a1/sparse-access",
+      "condition": "baseline-1.15",
+      "repeat": 1,
+      "case_id": "sparse-access",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 47.633495,
+      "guidance_bytes": 30417,
+      "guidance_tokens": null,
+      "blind_record_id": "record-39",
+      "judgment": {
+        "status": "pass",
+        "rationale": "The required public K2 owner account is supported with appropriate diagnostic and prevalence limits. Complete-thread coverage should not be inferred."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Do not require Reddit credentials or claim to read unavailable comments",
+          "status": "pass",
+          "rationale": "The answer neither requests credentials/accounts nor claims to have read unavailable Reddit comments. The supplied inspection is a public alternative; a complete account-action history is not part of this packet."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Use useful available alternatives within limits",
+          "status": "pass",
+          "rationale": "A successful public page read supplies model-specific firsthand owner discussion, with other models and diagnostic speculation kept separate."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "Distinguish snippets, inspected firsthand evidence and missing discussion coverage",
+          "status": "partial",
+          "rationale": "The main account, discovery lead and reliability limits are clearly separated; the claim of a full thread read exceeds the coverage established by the saved summary."
+        }
+      ],
+      "evidence_depth": "task_relevant_content",
+      "flagged_claims": [
+        {
+          "claim": "One full public thread was inspected.",
+          "assessment": "Original post and public replies are supported; exhaustive/full-thread coverage is unmeasured from the saved summary."
+        }
+      ]
+    },
+    {
+      "id": "a1/urgent-ssd",
+      "condition": "baseline-1.15",
+      "repeat": 1,
+      "case_id": "urgent-ssd",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 36.669749,
+      "guidance_bytes": 30417,
+      "guidance_tokens": null,
+      "blind_record_id": "record-03",
+      "judgment": {
+        "status": "partial",
+        "rationale": "The answer honestly rejects stale discovery data as verification; its matching product and prices remain leads."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Preserve Canadian currency/market, interface/form factor, one/new/urgent constraints",
+          "status": "pass",
+          "rationale": "The response retains the Canadian market, one new 1 TB M.2 2280 PCIe NVMe drive, shipped 48-hour deadline and CAD 150 delivered ceiling; no nonmatching offer is accepted."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Prefer stock and delivery evidence; avoid wholesale and auction fan-out",
+          "status": "partial",
+          "rationale": "A retail product URL was opened, but the returned scripts contain no usable stock, price or delivery evidence. No unsuitable auction/wholesale channel is promoted."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "State postal-code-specific delivery and total price uncertainty if unverified",
+          "status": "pass",
+          "rationale": "The answer explicitly leaves destination-specific arrival and tax/shipping-inclusive cost unverified rather than treating stock or dispatch time as an arrival promise."
+        }
+      ],
+      "evidence_depth": "raw_or_navigation_only",
+      "flagged_claims": []
+    },
+    {
+      "id": "a1/used-ssd",
+      "condition": "baseline-1.15",
+      "repeat": 1,
+      "case_id": "used-ssd",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 113.191207,
+      "guidance_bytes": 30417,
+      "guidance_tokens": null,
+      "blind_record_id": "record-08",
+      "judgment": {
+        "status": "partial",
+        "rationale": "The channel discussion is useful but all promising offers remain discovery-only and the page read yields no substantive offer evidence."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Preserve four units, SATA 2.5-inch, delivered budget, shipping and tested condition",
+          "status": "pass",
+          "rationale": "The answer preserves four exact 1 TB 2.5-inch SATA SSDs, a USD200 tax/shipping-inclusive ceiling, shipped delivery within one month and tested working condition; no nonmatching lot is accepted."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Consider retail/refurb/used and conditionally surplus; do not recommend unsuitable lots",
+          "status": "partial",
+          "rationale": "It compares peer resale, eBay lots and refurbishers without accepting unsuitable listings, but does not assess new retail or explain whether surplus is applicable."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "Inspect at least one concrete page; distinguish stock/asking price/auction bid from a verified delivered offer",
+          "status": "partial",
+          "rationale": "A concrete product URL was opened, but only navigation was returned. It accurately says price, quantity and shipping were not inspected."
+        }
+      ],
+      "evidence_depth": "raw_or_navigation_only",
+      "flagged_claims": []
+    },
+    {
+      "id": "a2/japanese-tech",
+      "condition": "baseline-1.15",
+      "repeat": 2,
+      "case_id": "japanese-tech",
+      "valid_execution": true,
+      "actual_queries": 1,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 2,
+        "discovery": 1,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 52.96,
+      "guidance_bytes": 30417,
+      "guidance_tokens": null,
+      "blind_record_id": "record-29",
+      "judgment": {
+        "status": "partial",
+        "rationale": "The precise inspected reproduction is relevant to SQLite locking, but the WAL-specific Memory MCP article remains an uninspected lead."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Use Japanese technical terms while preserving SQLite/WAL",
+          "status": "partial",
+          "rationale": "SQLite/WAL identifiers are preserved. Japanese technical search terms are not shown in the packet, so that part of the criterion is unmeasured."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Inspect an original Japanese article on the specified communities",
+          "status": "pass",
+          "rationale": "A Japanese Zenn migration report was read; it does not explicitly establish WAL mode."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "Distinguish original observations from official guarantees and mark translation/version uncertainty",
+          "status": "pass",
+          "rationale": "Author reproduction is distinguished from official guarantees and the answer identifies the missing runtime version, WAL applicability and paraphrase status."
+        }
+      ],
+      "evidence_depth": "task_relevant_content",
+      "flagged_claims": []
+    },
+    {
+      "id": "a2/new-domain",
+      "condition": "baseline-1.15",
+      "repeat": 2,
+      "case_id": "new-domain",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 54.0,
+      "guidance_bytes": 30417,
+      "guidance_tokens": null,
+      "blind_record_id": "record-20",
+      "judgment": {
+        "status": "partial",
+        "rationale": "The primary-source capability claim is supported, while the requested how-to remains unresolved."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Reach docs.codeberg.org without registering a source",
+          "status": "partial",
+          "rationale": "A successful saved read reaches docs.codeberg.org. Whether any source registration occurred is unmeasured because registration events are not included in this packet."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Use primary documentation and inspect exact branch protection support",
+          "status": "partial",
+          "rationale": "The inspected primary documentation establishes branch-protection capability, but does not show the setting or procedure that blocks ordinary direct pushes."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "Keep domain restriction and cite the observed page",
+          "status": "pass",
+          "rationale": "The answer cites the exact observed docs.codeberg.org page and uses no off-domain authority for its instructions; full search-query scope is not independently visible."
+        }
+      ],
+      "evidence_depth": "task_relevant_content",
+      "flagged_claims": []
+    },
+    {
+      "id": "a2/sparse-access",
+      "condition": "baseline-1.15",
+      "repeat": 2,
+      "case_id": "sparse-access",
+      "valid_execution": false,
+      "actual_queries": 1,
+      "actual_opens": 0,
+      "engine_usage": null,
+      "pending": null,
+      "elapsed_seconds": 27.63,
+      "guidance_bytes": 30417,
+      "guidance_tokens": null,
+      "blind_record_id": "record-21",
+      "judgment": {
+        "status": "invalid",
+        "rationale": "execution_valid is supplied as false. The honest disclosure and discovery leads cannot repair the invalid run."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Do not require Reddit credentials or claim to read unavailable comments",
+          "status": "pass",
+          "rationale": "The answer does not request credentials or claim unavailable comments were read; it explicitly reports no page access."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Use useful available alternatives within limits",
+          "status": "partial",
+          "rationale": "Public alternatives are named as snippet leads, but no substantive source was inspected."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "Distinguish snippets, inspected firsthand evidence and missing discussion coverage",
+          "status": "pass",
+          "rationale": "It clearly labels the material snippet-only, the case incomplete and the execution invalid, and separates other K2 variants."
+        }
+      ],
+      "evidence_depth": "no_successful_inspection",
+      "flagged_claims": []
+    },
+    {
+      "id": "a2/urgent-ssd",
+      "condition": "baseline-1.15",
+      "repeat": 2,
+      "case_id": "urgent-ssd",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 65.59,
+      "guidance_bytes": 30417,
+      "guidance_tokens": null,
+      "blind_record_id": "record-43",
+      "judgment": {
+        "status": "partial",
+        "rationale": "The answer transparently treats the stale Amazon price as conditional, but no substantive current offer was inspected."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Preserve Canadian currency/market, interface/form factor, one/new/urgent constraints",
+          "status": "pass",
+          "rationale": "The response retains the Canadian market, one new 1 TB M.2 2280 PCIe NVMe drive, shipped 48-hour deadline and CAD 150 delivered ceiling; no nonmatching offer is accepted."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Prefer stock and delivery evidence; avoid wholesale and auction fan-out",
+          "status": "partial",
+          "rationale": "The retailer URL returned only HTML/scripts; there is no usable current stock/delivery evidence. Other retailer results remain clearly labeled discovery leads."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "State postal-code-specific delivery and total price uncertainty if unverified",
+          "status": "pass",
+          "rationale": "The answer explicitly leaves destination-specific arrival and tax/shipping-inclusive cost unverified rather than treating stock or dispatch time as an arrival promise."
+        }
+      ],
+      "evidence_depth": "raw_or_navigation_only",
+      "flagged_claims": []
+    },
+    {
+      "id": "a2/used-ssd",
+      "condition": "baseline-1.15",
+      "repeat": 2,
+      "case_id": "used-ssd",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 213.344501,
+      "guidance_bytes": 30417,
+      "guidance_tokens": null,
+      "blind_record_id": "record-31",
+      "judgment": {
+        "status": "partial",
+        "rationale": "The inspected asking price makes four USD631.96 before tax, correctly excluding this offer. The affordable peer lot is historical discovery, so the task remains partial."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Preserve four units, SATA 2.5-inch, delivered budget, shipping and tested condition",
+          "status": "pass",
+          "rationale": "The answer preserves four exact 1 TB 2.5-inch SATA SSDs, a USD200 tax/shipping-inclusive ceiling, shipped delivery within one month and tested working condition; no nonmatching lot is accepted."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Consider retail/refurb/used and conditionally surplus; do not recommend unsuitable lots",
+          "status": "pass",
+          "rationale": "It compares used lots, tested refurbishers, new retail and conditional surplus, preserving sold/stale/wrong-capacity exclusions."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "Inspect at least one concrete page; distinguish stock/asking price/auction bid from a verified delivered offer",
+          "status": "pass",
+          "rationale": "A concrete listing was read and its asking price/variant/availability is kept separate from a verified four-unit delivered offer; destination and health gaps remain explicit."
+        }
+      ],
+      "evidence_depth": "task_relevant_content",
+      "flagged_claims": []
+    },
+    {
+      "id": "a3/japanese-tech",
+      "condition": "baseline-1.15",
+      "repeat": 3,
+      "case_id": "japanese-tech",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 94.606,
+      "guidance_bytes": 30417,
+      "guidance_tokens": null,
+      "blind_record_id": "record-35",
+      "judgment": {
+        "status": "partial",
+        "rationale": "The concrete WAL explanation and attribution are supported, but the fixed translation/version caveat requirement is incomplete."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Use Japanese technical terms while preserving SQLite/WAL",
+          "status": "partial",
+          "rationale": "SQLite/WAL and setting names are preserved. A Japanese article title appears, but Japanese technical search terms are not available to assess."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Inspect an original Japanese article on the specified communities",
+          "status": "pass",
+          "rationale": "The successful Qiita read identifies an original Japanese WAL/network-share report."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "Distinguish original observations from official guarantees and mark translation/version uncertainty",
+          "status": "partial",
+          "rationale": "Author recommendations are carefully separated from official guarantees; translation and exact SQLite-version uncertainty are not explicitly discussed."
+        }
+      ],
+      "evidence_depth": "task_relevant_content",
+      "flagged_claims": []
+    },
+    {
+      "id": "a3/new-domain",
+      "condition": "baseline-1.15",
+      "repeat": 3,
+      "case_id": "new-domain",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 51.976,
+      "guidance_bytes": 30417,
+      "guidance_tokens": null,
+      "blind_record_id": "record-36",
+      "judgment": {
+        "status": "partial",
+        "rationale": "The observed official capability is accurately bounded, but the answer cannot supply the requested direct-push setup."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Reach docs.codeberg.org without registering a source",
+          "status": "partial",
+          "rationale": "A successful saved read reaches docs.codeberg.org. Whether any source registration occurred is unmeasured because registration events are not included in this packet."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Use primary documentation and inspect exact branch protection support",
+          "status": "partial",
+          "rationale": "The inspected primary documentation establishes branch-protection capability, but does not show the setting or procedure that blocks ordinary direct pushes."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "Keep domain restriction and cite the observed page",
+          "status": "pass",
+          "rationale": "The answer cites the exact observed docs.codeberg.org page and uses no off-domain authority for its instructions; full search-query scope is not independently visible."
+        }
+      ],
+      "evidence_depth": "task_relevant_content",
+      "flagged_claims": []
+    },
+    {
+      "id": "a3/sparse-access",
+      "condition": "baseline-1.15",
+      "repeat": 3,
+      "case_id": "sparse-access",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 57.67,
+      "guidance_bytes": 30417,
+      "guidance_tokens": null,
+      "blind_record_id": "record-07",
+      "judgment": {
+        "status": "pass",
+        "rationale": "The response supplies an inspected public K2 V2 ownership account and accurately limits it to self-selected testimony; the broader reliability question remains unmeasured, as stated."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Do not require Reddit credentials or claim to read unavailable comments",
+          "status": "pass",
+          "rationale": "The answer neither requests credentials/accounts nor claims to have read unavailable Reddit comments. The supplied inspection is a public alternative; a complete account-action history is not part of this packet."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Use useful available alternatives within limits",
+          "status": "pass",
+          "rationale": "A successful public page read supplies model-specific firsthand owner discussion, with other models and diagnostic speculation kept separate."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "Distinguish snippets, inspected firsthand evidence and missing discussion coverage",
+          "status": "pass",
+          "rationale": "The answer separates the inspected owner account, uninspected discovery leads, unresolved diagnosis and missing/biased discussion coverage; it does not estimate prevalence."
+        }
+      ],
+      "evidence_depth": "task_relevant_content",
+      "flagged_claims": []
+    },
+    {
+      "id": "a3/urgent-ssd",
+      "condition": "baseline-1.15",
+      "repeat": 3,
+      "case_id": "urgent-ssd",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 0,
+      "engine_usage": {
+        "calls": 2,
+        "discovery": 2,
+        "enrichment": 0,
+        "opens": 0
+      },
+      "pending": 0,
+      "elapsed_seconds": 24.552,
+      "guidance_bytes": 30417,
+      "guidance_tokens": null,
+      "blind_record_id": "record-10",
+      "judgment": {
+        "status": "partial",
+        "rationale": "The response is an honest no-result report, not fulfillment of the offer-finding task."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Preserve Canadian currency/market, interface/form factor, one/new/urgent constraints",
+          "status": "pass",
+          "rationale": "All practical constraints are retained in the refusal to select an offer; NVMe is preserved and no used, pickup or quantity substitute is accepted."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Prefer stock and delivery evidence; avoid wholesale and auction fan-out",
+          "status": "unmeasured",
+          "rationale": "There are no inspection records or search records to establish channel-selection behavior or stock/delivery inspection; the answer reports empty searches."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "State postal-code-specific delivery and total price uncertainty if unverified",
+          "status": "pass",
+          "rationale": "It explicitly marks condition, stock, delivered total and postal-code arrival as unverified and distinguishes retrieval failure from unavailability."
+        }
+      ],
+      "evidence_depth": "no_successful_inspection",
+      "flagged_claims": []
+    },
+    {
+      "id": "a3/used-ssd",
+      "condition": "baseline-1.15",
+      "repeat": 3,
+      "case_id": "used-ssd",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 83.548,
+      "guidance_bytes": 30417,
+      "guidance_tokens": null,
+      "blind_record_id": "record-44",
+      "judgment": {
+        "status": "partial",
+        "rationale": "The inspected refurbisher is correctly rejected, but the only budget-matching historical lot is sold and no feasible current purchase is established."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Preserve four units, SATA 2.5-inch, delivered budget, shipping and tested condition",
+          "status": "partial",
+          "rationale": "It preserves four 1TB drives, USD200 delivered, testing and month/shipping constraints, but does not explicitly retain SATA and 2.5-inch in its stated acceptance checks; the inspected SanDisk itself matches."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Consider retail/refurb/used and conditionally surplus; do not recommend unsuitable lots",
+          "status": "partial",
+          "rationale": "Used lots, refurbishers, classifieds and a brief new-retail caveat appear, but surplus is neither assessed nor explicitly deferred."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "Inspect at least one concrete page; distinguish stock/asking price/auction bid from a verified delivered offer",
+          "status": "pass",
+          "rationale": "A concrete listing was read and its asking price/variant/availability is kept separate from a verified four-unit delivered offer; destination and health gaps remain explicit."
+        }
+      ],
+      "evidence_depth": "task_relevant_content",
+      "flagged_claims": []
+    },
+    {
+      "id": "b1/japanese-tech",
+      "condition": "generalized-baseline-guidance",
+      "repeat": 1,
+      "case_id": "japanese-tech",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 65.477144,
+      "guidance_bytes": 40947,
+      "guidance_tokens": null,
+      "blind_record_id": "record-38",
+      "judgment": {
+        "status": "partial",
+        "rationale": "The answer clearly labels its WAL explanation as discovery-only; the successful read supplies adjacent SQLite evidence."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Use Japanese technical terms while preserving SQLite/WAL",
+          "status": "pass",
+          "rationale": "The answer includes SQLite低遅延最適化 and preserves SQLite/WAL and other identifiers. Its claim about Japanese search terms cannot be checked from query records."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Inspect an original Japanese article on the specified communities",
+          "status": "pass",
+          "rationale": "The saved read supports a Japanese Zenn C# experiment, but not WAL-specific behavior."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "Distinguish original observations from official guarantees and mark translation/version uncertainty",
+          "status": "pass",
+          "rationale": "It separates discovery from inspected adjacent evidence, disclaims official/version verification and explicitly identifies lack of independent translation review."
+        }
+      ],
+      "evidence_depth": "task_relevant_content",
+      "flagged_claims": []
+    },
+    {
+      "id": "b1/new-domain",
+      "condition": "generalized-baseline-guidance",
+      "repeat": 1,
+      "case_id": "new-domain",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 53.759821,
+      "guidance_bytes": 39436,
+      "guidance_tokens": null,
+      "blind_record_id": "record-05",
+      "judgment": {
+        "status": "partial",
+        "rationale": "It accurately reports the feature and extraction limits, but does not answer how to configure direct-push prevention."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Reach docs.codeberg.org without registering a source",
+          "status": "partial",
+          "rationale": "A successful saved read reaches docs.codeberg.org. Whether any source registration occurred is unmeasured because registration events are not included in this packet."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Use primary documentation and inspect exact branch protection support",
+          "status": "partial",
+          "rationale": "The inspected primary documentation establishes branch-protection capability, but does not show the setting or procedure that blocks ordinary direct pushes."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "Keep domain restriction and cite the observed page",
+          "status": "pass",
+          "rationale": "The answer cites the exact observed docs.codeberg.org page and uses no off-domain authority for its instructions; full search-query scope is not independently visible."
+        }
+      ],
+      "evidence_depth": "task_relevant_content",
+      "flagged_claims": []
+    },
+    {
+      "id": "b1/sparse-access",
+      "condition": "generalized-baseline-guidance",
+      "repeat": 1,
+      "case_id": "sparse-access",
+      "valid_execution": true,
+      "actual_queries": 1,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 2,
+        "discovery": 1,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 40.525539,
+      "guidance_bytes": 39436,
+      "guidance_tokens": null,
+      "blind_record_id": "record-19",
+      "judgment": {
+        "status": "pass",
+        "rationale": "An inspected public owner discussion directly addresses K2 symptoms while preserving competing interpretations and limits."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Do not require Reddit credentials or claim to read unavailable comments",
+          "status": "pass",
+          "rationale": "The answer neither requests credentials/accounts nor claims to have read unavailable Reddit comments. The supplied inspection is a public alternative; a complete account-action history is not part of this packet."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Use useful available alternatives within limits",
+          "status": "pass",
+          "rationale": "A successful public page read supplies model-specific firsthand owner discussion, with other models and diagnostic speculation kept separate."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "Distinguish snippets, inspected firsthand evidence and missing discussion coverage",
+          "status": "pass",
+          "rationale": "The answer separates the inspected owner account, uninspected discovery leads, unresolved diagnosis and missing/biased discussion coverage; it does not estimate prevalence."
+        }
+      ],
+      "evidence_depth": "task_relevant_content",
+      "flagged_claims": []
+    },
+    {
+      "id": "b1/urgent-ssd",
+      "condition": "generalized-baseline-guidance",
+      "repeat": 1,
+      "case_id": "urgent-ssd",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 48.442096,
+      "guidance_bytes": 39436,
+      "guidance_tokens": null,
+      "blind_record_id": "record-17",
+      "judgment": {
+        "status": "partial",
+        "rationale": "Observed prices rule out two listings; the low-price grid entry is explicitly incomplete and does not establish a feasible purchase."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Preserve Canadian currency/market, interface/form factor, one/new/urgent constraints",
+          "status": "pass",
+          "rationale": "The response retains the Canadian market, one new 1 TB M.2 2280 PCIe NVMe drive, shipped 48-hour deadline and CAD 150 delivered ceiling; no nonmatching offer is accepted."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Prefer stock and delivery evidence; avoid wholesale and auction fan-out",
+          "status": "pass",
+          "rationale": "The actual retailer grid's prices, conditions, ship labels and stale crawl warning are used cautiously; unsuitable refurbished drives are excluded."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "State postal-code-specific delivery and total price uncertainty if unverified",
+          "status": "pass",
+          "rationale": "The answer explicitly leaves destination-specific arrival and tax/shipping-inclusive cost unverified rather than treating stock or dispatch time as an arrival promise."
+        }
+      ],
+      "evidence_depth": "task_relevant_content",
+      "flagged_claims": []
+    },
+    {
+      "id": "b1/used-ssd",
+      "condition": "generalized-baseline-guidance",
+      "repeat": 1,
+      "case_id": "used-ssd",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 89.157911,
+      "guidance_bytes": 39436,
+      "guidance_tokens": null,
+      "blind_record_id": "record-40",
+      "judgment": {
+        "status": "partial",
+        "rationale": "The inspected exclusion is supported. PayMore remains a potentially affordable but uninspected lead with unresolved quantity, current price, testing and final charges."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Preserve four units, SATA 2.5-inch, delivered budget, shipping and tested condition",
+          "status": "pass",
+          "rationale": "The answer preserves four exact 1 TB 2.5-inch SATA SSDs, a USD200 tax/shipping-inclusive ceiling, shipped delivery within one month and tested working condition; no nonmatching lot is accepted."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Consider retail/refurb/used and conditionally surplus; do not recommend unsuitable lots",
+          "status": "pass",
+          "rationale": "Used/refurbished, new retail and conditional surplus are compared; the inspected wrong variant and low search price are rejected."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "Inspect at least one concrete page; distinguish stock/asking price/auction bid from a verified delivered offer",
+          "status": "pass",
+          "rationale": "A concrete listing was read and its asking price/variant/availability is kept separate from a verified four-unit delivered offer; destination and health gaps remain explicit."
+        }
+      ],
+      "evidence_depth": "task_relevant_content",
+      "flagged_claims": []
+    },
+    {
+      "id": "b2/japanese-tech",
+      "condition": "generalized-baseline-guidance",
+      "repeat": 2,
+      "case_id": "japanese-tech",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 69.033656,
+      "guidance_bytes": 39436,
+      "guidance_tokens": null,
+      "blind_record_id": "record-34",
+      "judgment": {
+        "status": "partial",
+        "rationale": "The author-reported SQLite pitfall is supported, but it is not established as a WAL example."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Use Japanese technical terms while preserving SQLite/WAL",
+          "status": "partial",
+          "rationale": "SQLite/WAL identifiers are preserved. Japanese technical search terms are not shown in the packet, so that part of the criterion is unmeasured."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Inspect an original Japanese article on the specified communities",
+          "status": "pass",
+          "rationale": "A successful saved read supports the original Japanese Zenn migration article, with explicitly missing WAL mode."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "Distinguish original observations from official guarantees and mark translation/version uncertainty",
+          "status": "pass",
+          "rationale": "The answer distinguishes author results from reproduction/guarantees and explicitly marks runtime-version, WAL-applicability and translation uncertainty."
+        }
+      ],
+      "evidence_depth": "task_relevant_content",
+      "flagged_claims": []
+    },
+    {
+      "id": "b2/new-domain",
+      "condition": "generalized-baseline-guidance",
+      "repeat": 2,
+      "case_id": "new-domain",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 56.239926,
+      "guidance_bytes": 39436,
+      "guidance_tokens": null,
+      "blind_record_id": "record-12",
+      "judgment": {
+        "status": "partial",
+        "rationale": "The answer gives a relevant starting point but no supported sequence for preventing direct pushes."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Reach docs.codeberg.org without registering a source",
+          "status": "partial",
+          "rationale": "A successful saved read reaches docs.codeberg.org. Whether any source registration occurred is unmeasured because registration events are not included in this packet."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Use primary documentation and inspect exact branch protection support",
+          "status": "partial",
+          "rationale": "The inspected primary documentation establishes branch-protection capability, but does not show the setting or procedure that blocks ordinary direct pushes."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "Keep domain restriction and cite the observed page",
+          "status": "pass",
+          "rationale": "The answer cites the exact observed docs.codeberg.org page and uses no off-domain authority for its instructions; full search-query scope is not independently visible."
+        }
+      ],
+      "evidence_depth": "task_relevant_content",
+      "flagged_claims": []
+    },
+    {
+      "id": "b2/sparse-access",
+      "condition": "generalized-baseline-guidance",
+      "repeat": 2,
+      "case_id": "sparse-access",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 66.287837,
+      "guidance_bytes": 39436,
+      "guidance_tokens": null,
+      "blind_record_id": "record-22",
+      "judgment": {
+        "status": "partial",
+        "rationale": "The body honestly provides positive and negative discovery leads; no owner account was inspected, and the footer overstates its evidence basis."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Do not require Reddit credentials or claim to read unavailable comments",
+          "status": "pass",
+          "rationale": "No credentials or accounts are requested and the answer acknowledges unavailable Reddit/authenticated coverage."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Use useful available alternatives within limits",
+          "status": "partial",
+          "rationale": "Two plausible public alternatives are offered, but the sole attempted read failed and returned no inspected content."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "Distinguish snippets, inspected firsthand evidence and missing discussion coverage",
+          "status": "partial",
+          "rationale": "The main answer accurately says snippet-only/failed read, but its footer still claims a selection basis of inspected support."
+        }
+      ],
+      "evidence_depth": "no_successful_inspection",
+      "flagged_claims": [
+        {
+          "claim": "Selection: Task fit, inspected support, original source.",
+          "assessment": "The inspected-support phrase is unsupported: the only read failed and inspection results are empty. The body and zero-inspected receipt correctly disclose the gap."
+        }
+      ]
+    },
+    {
+      "id": "b2/urgent-ssd",
+      "condition": "generalized-baseline-guidance",
+      "repeat": 2,
+      "case_id": "urgent-ssd",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 72.044532,
+      "guidance_bytes": 39436,
+      "guidance_tokens": null,
+      "blind_record_id": "record-28",
+      "judgment": {
+        "status": "partial",
+        "rationale": "The inspected listing is above budget before extras; rejecting it does not find a qualifying alternative."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Preserve Canadian currency/market, interface/form factor, one/new/urgent constraints",
+          "status": "pass",
+          "rationale": "The response retains the Canadian market, one new 1 TB M.2 2280 PCIe NVMe drive, shipped 48-hour deadline and CAD 150 delivered ceiling; no nonmatching offer is accepted."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Prefer stock and delivery evidence; avoid wholesale and auction fan-out",
+          "status": "pass",
+          "rationale": "It uses an inspected Canadian product price and online quantity, prioritizes those over the lower snippet, and does not confuse stock with delivery."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "State postal-code-specific delivery and total price uncertainty if unverified",
+          "status": "pass",
+          "rationale": "The answer explicitly leaves destination-specific arrival and tax/shipping-inclusive cost unverified rather than treating stock or dispatch time as an arrival promise."
+        }
+      ],
+      "evidence_depth": "task_relevant_content",
+      "flagged_claims": []
+    },
+    {
+      "id": "b2/used-ssd",
+      "condition": "generalized-baseline-guidance",
+      "repeat": 2,
+      "case_id": "used-ssd",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 89.609936,
+      "guidance_bytes": 39436,
+      "guidance_tokens": null,
+      "blind_record_id": "record-45",
+      "judgment": {
+        "status": "partial",
+        "rationale": "The inspected sold/over-budget lot is correctly excluded and remaining channels are leads, not feasible verified orders."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Preserve four units, SATA 2.5-inch, delivered budget, shipping and tested condition",
+          "status": "pass",
+          "rationale": "The answer preserves four exact 1 TB 2.5-inch SATA SSDs, a USD200 tax/shipping-inclusive ceiling, shipped delivery within one month and tested working condition; no nonmatching lot is accepted."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Consider retail/refurb/used and conditionally surplus; do not recommend unsuitable lots",
+          "status": "partial",
+          "rationale": "Retail/refurbished, used lots and surplus are considered, but the blanket statement about bids/buyer fees is too broad: those costs require final total verification rather than categorical exclusion."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "Inspect at least one concrete page; distinguish stock/asking price/auction bid from a verified delivered offer",
+          "status": "pass",
+          "rationale": "A concrete listing was read and its asking price/variant/availability is kept separate from a verified four-unit delivered offer; destination and health gaps remain explicit."
+        }
+      ],
+      "evidence_depth": "task_relevant_content",
+      "flagged_claims": [
+        {
+          "claim": "Bids, buyer fees and untested/as-is lots cannot satisfy this request.",
+          "assessment": "Untested lots are excluded by the prompt, and a bid is not a verified delivered price. Buyer fees or an auction format alone do not prove infeasibility; all-in cost and tested/shipped terms must be checked. The categorical phrasing is unsupported."
+        }
+      ]
+    },
+    {
+      "id": "b3/japanese-tech",
+      "condition": "generalized-baseline-guidance",
+      "repeat": 3,
+      "case_id": "japanese-tech",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 69.321,
+      "guidance_bytes": 39436,
+      "guidance_tokens": null,
+      "blind_record_id": "record-37",
+      "judgment": {
+        "status": "partial",
+        "rationale": "The WAL pitfall is supported as an author analysis, but the uncertainty requirement is incomplete."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Use Japanese technical terms while preserving SQLite/WAL",
+          "status": "pass",
+          "rationale": "The answer uses the Japanese technical title SQLite低遅延最適化 and preserves SQLite/WAL and SQL error identifiers; exact search-query terms remain unmeasured."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Inspect an original Japanese article on the specified communities",
+          "status": "pass",
+          "rationale": "The saved Zenn read is a Japanese technical analysis of WAL, with the article's secondary-analysis nature disclosed."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "Distinguish original observations from official guarantees and mark translation/version uncertainty",
+          "status": "partial",
+          "rationale": "It distinguishes the author's explanation from a benchmark, reproduction and official guarantee, but does not mark translation nuance or SQLite-version uncertainty."
+        }
+      ],
+      "evidence_depth": "task_relevant_content",
+      "flagged_claims": []
+    },
+    {
+      "id": "b3/new-domain",
+      "condition": "generalized-baseline-guidance",
+      "repeat": 3,
+      "case_id": "new-domain",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 40.856,
+      "guidance_bytes": 39436,
+      "guidance_tokens": null,
+      "blind_record_id": "record-25",
+      "judgment": {
+        "status": "partial",
+        "rationale": "The answer correctly avoids equating force-push prohibition with ordinary direct-push prohibition; the requested setup is still not established."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Reach docs.codeberg.org without registering a source",
+          "status": "partial",
+          "rationale": "A successful saved read reaches docs.codeberg.org. Whether any source registration occurred is unmeasured because registration events are not included in this packet."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Use primary documentation and inspect exact branch protection support",
+          "status": "partial",
+          "rationale": "The inspected primary documentation establishes branch-protection capability, but does not show the setting or procedure that blocks ordinary direct pushes."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "Keep domain restriction and cite the observed page",
+          "status": "pass",
+          "rationale": "The answer cites the exact observed docs.codeberg.org page and uses no off-domain authority for its instructions; full search-query scope is not independently visible."
+        }
+      ],
+      "evidence_depth": "task_relevant_content",
+      "flagged_claims": []
+    },
+    {
+      "id": "b3/sparse-access",
+      "condition": "generalized-baseline-guidance",
+      "repeat": 3,
+      "case_id": "sparse-access",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 49.418,
+      "guidance_bytes": 39436,
+      "guidance_tokens": null,
+      "blind_record_id": "record-14",
+      "judgment": {
+        "status": "pass",
+        "rationale": "The requested public owner finding is supported and its possible normal auto-sleep explanation is attributed. The extra host/completeness details are unverified and nonessential to that finding."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Do not require Reddit credentials or claim to read unavailable comments",
+          "status": "pass",
+          "rationale": "The answer neither requests credentials/accounts nor claims to have read unavailable Reddit comments. The supplied inspection is a public alternative; a complete account-action history is not part of this packet."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Use useful available alternatives within limits",
+          "status": "pass",
+          "rationale": "A successful public page read supplies model-specific firsthand owner discussion, with other models and diagnostic speculation kept separate."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "Distinguish snippets, inspected firsthand evidence and missing discussion coverage",
+          "status": "partial",
+          "rationale": "It separates inspected and uninspected anecdotes and explains model/age/selection limits, but adds an unsupported host detail and claims complete page coverage beyond what the saved summary establishes."
+        }
+      ],
+      "evidence_depth": "task_relevant_content",
+      "flagged_claims": [
+        {
+          "claim": "The owner was using a Mac mini.",
+          "assessment": "Unsupported by the saved inspected passage; it names no host computer. This detail must not be treated as inspected."
+        },
+        {
+          "claim": "One complete thread-page read.",
+          "assessment": "A successful page read is supplied, but completeness of all page content is not established by the saved summary."
+        }
+      ]
+    },
+    {
+      "id": "b3/urgent-ssd",
+      "condition": "generalized-baseline-guidance",
+      "repeat": 3,
+      "case_id": "urgent-ssd",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 57.25,
+      "guidance_bytes": 39436,
+      "guidance_tokens": null,
+      "blind_record_id": "record-02",
+      "judgment": {
+        "status": "partial",
+        "rationale": "The inspected product identity and shipping-policy limitations are useful, but no qualifying delivered offer is verified."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Preserve Canadian currency/market, interface/form factor, one/new/urgent constraints",
+          "status": "pass",
+          "rationale": "The response retains the Canadian market, one new 1 TB M.2 2280 PCIe NVMe drive, shipped 48-hour deadline and CAD 150 delivered ceiling; no nonmatching offer is accepted."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Prefer stock and delivery evidence; avoid wholesale and auction fan-out",
+          "status": "pass",
+          "rationale": "The actual product page's seller/dispatch policy is used to assess the deadline; no wholesale or auction option is recommended."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "State postal-code-specific delivery and total price uncertainty if unverified",
+          "status": "pass",
+          "rationale": "The answer explicitly leaves destination-specific arrival and tax/shipping-inclusive cost unverified rather than treating stock or dispatch time as an arrival promise."
+        }
+      ],
+      "evidence_depth": "task_relevant_content",
+      "flagged_claims": []
+    },
+    {
+      "id": "b3/used-ssd",
+      "condition": "generalized-baseline-guidance",
+      "repeat": 3,
+      "case_id": "used-ssd",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 72.876,
+      "guidance_bytes": 39436,
+      "guidance_tokens": null,
+      "blind_record_id": "record-15",
+      "judgment": {
+        "status": "partial",
+        "rationale": "The inspected exact-quantity lot is ruled out by price, while the promising community channel lacks quantity, testing and delivered-cost proof."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Preserve four units, SATA 2.5-inch, delivered budget, shipping and tested condition",
+          "status": "pass",
+          "rationale": "The answer preserves four exact 1 TB 2.5-inch SATA SSDs, a USD200 tax/shipping-inclusive ceiling, shipped delivery within one month and tested working condition; no nonmatching lot is accepted."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Consider retail/refurb/used and conditionally surplus; do not recommend unsuitable lots",
+          "status": "partial",
+          "rationale": "The answer compares used lots, peer sales and retail/refurbisher leads, but does not discuss conditional surplus or explain deferral."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "Inspect at least one concrete page; distinguish stock/asking price/auction bid from a verified delivered offer",
+          "status": "pass",
+          "rationale": "A concrete listing was read and its asking price/variant/availability is kept separate from a verified four-unit delivered offer; destination and health gaps remain explicit."
+        }
+      ],
+      "evidence_depth": "task_relevant_content",
+      "flagged_claims": []
+    },
+    {
+      "id": "c1/japanese-tech",
+      "condition": "generalized-new-guidance",
+      "repeat": 1,
+      "case_id": "japanese-tech",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 67.69177103042603,
+      "guidance_bytes": 58842,
+      "guidance_tokens": null,
+      "blind_record_id": "record-04",
+      "judgment": {
+        "status": "pass",
+        "rationale": "The requested linked English WAL pitfall is directly supported as an author report. Japanese query wording and translation accuracy remain unmeasured; this is an evidence-qualified pass, not independent reproduction."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Use Japanese technical terms while preserving SQLite/WAL",
+          "status": "partial",
+          "rationale": "SQLite/WAL identifiers are preserved. Japanese technical search terms are not shown in the packet, so that part of the criterion is unmeasured."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Inspect an original Japanese article on the specified communities",
+          "status": "pass",
+          "rationale": "The saved Zenn read explicitly describes a Japanese WAL load-test report with versions and a concrete result."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "Distinguish original observations from official guarantees and mark translation/version uncertainty",
+          "status": "pass",
+          "rationale": "The answer attributes the result to the author, labels its own inference, disclaims reproduction and official guarantees, and marks interpretation/version uncertainty."
+        }
+      ],
+      "evidence_depth": "task_relevant_content",
+      "flagged_claims": []
+    },
+    {
+      "id": "c1/new-domain",
+      "condition": "generalized-new-guidance",
+      "repeat": 1,
+      "case_id": "new-domain",
+      "valid_execution": false,
+      "actual_queries": 1,
+      "actual_opens": 0,
+      "engine_usage": null,
+      "pending": null,
+      "elapsed_seconds": 26.196975,
+      "guidance_bytes": 58842,
+      "guidance_tokens": null,
+      "blind_record_id": "record-32",
+      "judgment": {
+        "status": "invalid",
+        "rationale": "execution_valid is supplied as false. The candid answer does not repair the missing valid run, and no page was inspected."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Reach docs.codeberg.org without registering a source",
+          "status": "unmeasured",
+          "rationale": "No successful inspection or valid execution is supplied; a linked domain in a reported search does not establish the required access/registration path."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Use primary documentation and inspect exact branch protection support",
+          "status": "fail",
+          "rationale": "The answer expressly says it did not inspect the page, and inspection_records is empty."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "Keep domain restriction and cite the observed page",
+          "status": "partial",
+          "rationale": "The answer cites the requested primary domain, but the cited text is only a discovery report, not an observed page inspection."
+        }
+      ],
+      "evidence_depth": "no_successful_inspection",
+      "flagged_claims": []
+    },
+    {
+      "id": "c1/sparse-access",
+      "condition": "generalized-new-guidance",
+      "repeat": 1,
+      "case_id": "sparse-access",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 73.67811322212219,
+      "guidance_bytes": 58842,
+      "guidance_tokens": null,
+      "blind_record_id": "record-11",
+      "judgment": {
+        "status": "pass",
+        "rationale": "The concrete K2 owner report and troubleshooting history are supported, and the answer clearly bounds diagnosis and discussion coverage."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Do not require Reddit credentials or claim to read unavailable comments",
+          "status": "pass",
+          "rationale": "The answer neither requests credentials/accounts nor claims to have read unavailable Reddit comments. The supplied inspection is a public alternative; a complete account-action history is not part of this packet."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Use useful available alternatives within limits",
+          "status": "pass",
+          "rationale": "A successful public page read supplies model-specific firsthand owner discussion, with other models and diagnostic speculation kept separate."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "Distinguish snippets, inspected firsthand evidence and missing discussion coverage",
+          "status": "pass",
+          "rationale": "The answer separates the inspected owner account, uninspected discovery leads, unresolved diagnosis and missing/biased discussion coverage; it does not estimate prevalence."
+        }
+      ],
+      "evidence_depth": "task_relevant_content",
+      "flagged_claims": []
+    },
+    {
+      "id": "c1/urgent-ssd",
+      "condition": "generalized-new-guidance",
+      "repeat": 1,
+      "case_id": "urgent-ssd",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 50.8693630695343,
+      "guidance_bytes": 58842,
+      "guidance_tokens": null,
+      "blind_record_id": "record-41",
+      "judgment": {
+        "status": "partial",
+        "rationale": "The inspected catalog excludes observed prices but cannot establish a feasible order."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Preserve Canadian currency/market, interface/form factor, one/new/urgent constraints",
+          "status": "pass",
+          "rationale": "The response retains the Canadian market, one new 1 TB M.2 2280 PCIe NVMe drive, shipped 48-hour deadline and CAD 150 delivered ceiling; no nonmatching offer is accepted."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Prefer stock and delivery evidence; avoid wholesale and auction fan-out",
+          "status": "pass",
+          "rationale": "Inspected catalog prices and a retrieval-timeout warning are used to rule out options; stock and generic shipping are not treated as deadline proof."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "State postal-code-specific delivery and total price uncertainty if unverified",
+          "status": "pass",
+          "rationale": "The answer explicitly leaves destination-specific arrival and tax/shipping-inclusive cost unverified rather than treating stock or dispatch time as an arrival promise."
+        }
+      ],
+      "evidence_depth": "task_relevant_content",
+      "flagged_claims": []
+    },
+    {
+      "id": "c1/used-ssd",
+      "condition": "generalized-new-guidance",
+      "repeat": 1,
+      "case_id": "used-ssd",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 92.23910403251648,
+      "guidance_bytes": 58842,
+      "guidance_tokens": null,
+      "blind_record_id": "record-26",
+      "judgment": {
+        "status": "partial",
+        "rationale": "This is an honest comparison of unverified channels and snippet leads; the fixed inspection requirement and practical feasibility are unmet."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Preserve four units, SATA 2.5-inch, delivered budget, shipping and tested condition",
+          "status": "pass",
+          "rationale": "The answer preserves four exact 1 TB 2.5-inch SATA SSDs, a USD200 tax/shipping-inclusive ceiling, shipped delivery within one month and tested working condition; no nonmatching lot is accepted."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Consider retail/refurb/used and conditionally surplus; do not recommend unsuitable lots",
+          "status": "pass",
+          "rationale": "Used/refurbished and new retail are compared, surplus is explicitly conditional, and untested/pickup/wrong-capacity results are rejected."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "Inspect at least one concrete page; distinguish stock/asking price/auction bid from a verified delivered offer",
+          "status": "fail",
+          "rationale": "The only concrete page read failed with no results. An attempted 404 open does not satisfy successful concrete-page inspection."
+        }
+      ],
+      "evidence_depth": "no_successful_inspection",
+      "flagged_claims": []
+    },
+    {
+      "id": "c2/japanese-tech",
+      "condition": "generalized-new-guidance",
+      "repeat": 2,
+      "case_id": "japanese-tech",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 79.701238,
+      "guidance_bytes": 58842,
+      "guidance_tokens": null,
+      "blind_record_id": "record-16",
+      "judgment": {
+        "status": "partial",
+        "rationale": "The network-share WAL pitfall is an uninspected lead; the inspected C# experiment does not establish WAL behavior."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Use Japanese technical terms while preserving SQLite/WAL",
+          "status": "partial",
+          "rationale": "SQLite/WAL identifiers are preserved. Japanese technical search terms are not shown in the packet, so that part of the criterion is unmeasured."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Inspect an original Japanese article on the specified communities",
+          "status": "pass",
+          "rationale": "The original Japanese C# experiment on Zenn was successfully read, though WAL mode is absent."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "Distinguish original observations from official guarantees and mark translation/version uncertainty",
+          "status": "pass",
+          "rationale": "It distinguishes an author experiment from official guarantees and explicitly identifies unverified versions, WAL configuration and reproducibility; translation correctness itself is unmeasured."
+        }
+      ],
+      "evidence_depth": "task_relevant_content",
+      "flagged_claims": []
+    },
+    {
+      "id": "c2/new-domain",
+      "condition": "generalized-new-guidance",
+      "repeat": 2,
+      "case_id": "new-domain",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 51.784138,
+      "guidance_bytes": 58842,
+      "guidance_tokens": null,
+      "blind_record_id": "record-30",
+      "judgment": {
+        "status": "partial",
+        "rationale": "It appropriately labels navigation as inference; that inference is not a verified configuration procedure."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Reach docs.codeberg.org without registering a source",
+          "status": "partial",
+          "rationale": "A successful saved read reaches docs.codeberg.org. Whether any source registration occurred is unmeasured because registration events are not included in this packet."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Use primary documentation and inspect exact branch protection support",
+          "status": "partial",
+          "rationale": "The inspected primary documentation establishes branch-protection capability, but does not show the setting or procedure that blocks ordinary direct pushes."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "Keep domain restriction and cite the observed page",
+          "status": "pass",
+          "rationale": "The answer cites the exact observed docs.codeberg.org page and uses no off-domain authority for its instructions; full search-query scope is not independently visible."
+        }
+      ],
+      "evidence_depth": "task_relevant_content",
+      "flagged_claims": []
+    },
+    {
+      "id": "c2/sparse-access",
+      "condition": "generalized-new-guidance",
+      "repeat": 2,
+      "case_id": "sparse-access",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 74.135453,
+      "guidance_bytes": 58842,
+      "guidance_tokens": null,
+      "blind_record_id": "record-09",
+      "judgment": {
+        "status": "pass",
+        "rationale": "It finds and explains a public owner discussion with balanced reply context and correctly avoids turning an anecdote or accusation into a measured fact."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Do not require Reddit credentials or claim to read unavailable comments",
+          "status": "pass",
+          "rationale": "The answer neither requests credentials/accounts nor claims to have read unavailable Reddit comments. The supplied inspection is a public alternative; a complete account-action history is not part of this packet."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Use useful available alternatives within limits",
+          "status": "pass",
+          "rationale": "A successful public page read supplies model-specific firsthand owner discussion, with other models and diagnostic speculation kept separate."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "Distinguish snippets, inspected firsthand evidence and missing discussion coverage",
+          "status": "pass",
+          "rationale": "The answer separates the inspected owner account, uninspected discovery leads, unresolved diagnosis and missing/biased discussion coverage; it does not estimate prevalence."
+        }
+      ],
+      "evidence_depth": "task_relevant_content",
+      "flagged_claims": []
+    },
+    {
+      "id": "c2/urgent-ssd",
+      "condition": "generalized-new-guidance",
+      "repeat": 2,
+      "case_id": "urgent-ssd",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 63.467716,
+      "guidance_bytes": 58842,
+      "guidance_tokens": null,
+      "blind_record_id": "record-23",
+      "judgment": {
+        "status": "partial",
+        "rationale": "The saved read supports the limitations even though the answer discloses an engine join/count gap. No qualifying offer is established and supplied validity is unchanged."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Preserve Canadian currency/market, interface/form factor, one/new/urgent constraints",
+          "status": "pass",
+          "rationale": "The response retains the Canadian market, one new 1 TB M.2 2280 PCIe NVMe drive, shipped 48-hour deadline and CAD 150 delivered ceiling; no nonmatching offer is accepted."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Prefer stock and delivery evidence; avoid wholesale and auction fan-out",
+          "status": "pass",
+          "rationale": "The observed product/seller policy is prioritized; the answer rejects stale pricing, generic dispatch and unsuitable conditions/channels."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "State postal-code-specific delivery and total price uncertainty if unverified",
+          "status": "pass",
+          "rationale": "The answer explicitly leaves destination-specific arrival and tax/shipping-inclusive cost unverified rather than treating stock or dispatch time as an arrival promise."
+        }
+      ],
+      "evidence_depth": "task_relevant_content",
+      "flagged_claims": []
+    },
+    {
+      "id": "c2/used-ssd",
+      "condition": "generalized-new-guidance",
+      "repeat": 2,
+      "case_id": "used-ssd",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 72.387379,
+      "guidance_bytes": 58842,
+      "guidance_tokens": null,
+      "blind_record_id": "record-13",
+      "judgment": {
+        "status": "partial",
+        "rationale": "The inspected variant exclusion is sound and the channel comparison is strong; the affordable PayMore arithmetic is only conditional on an uninspected price and unknown quantity/costs."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Preserve four units, SATA 2.5-inch, delivered budget, shipping and tested condition",
+          "status": "pass",
+          "rationale": "The answer preserves four exact 1 TB 2.5-inch SATA SSDs, a USD200 tax/shipping-inclusive ceiling, shipped delivery within one month and tested working condition; no nonmatching lot is accepted."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Consider retail/refurb/used and conditionally surplus; do not recommend unsuitable lots",
+          "status": "pass",
+          "rationale": "It compares used resale, tested refurbishers, new retail and conditional surplus, explicitly rejecting wrong-capacity and unavailable options."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "Inspect at least one concrete page; distinguish stock/asking price/auction bid from a verified delivered offer",
+          "status": "pass",
+          "rationale": "A concrete listing was read and its asking price/variant/availability is kept separate from a verified four-unit delivered offer; destination and health gaps remain explicit."
+        }
+      ],
+      "evidence_depth": "task_relevant_content",
+      "flagged_claims": []
+    },
+    {
+      "id": "c3/japanese-tech",
+      "condition": "generalized-new-guidance",
+      "repeat": 3,
+      "case_id": "japanese-tech",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 83.182277,
+      "guidance_bytes": 61663,
+      "guidance_tokens": null,
+      "blind_record_id": "record-33",
+      "judgment": {
+        "status": "partial",
+        "rationale": "This is an honest snippet-only lead list, not a verified original-source answer. The failed open provides no inspection evidence."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Use Japanese technical terms while preserving SQLite/WAL",
+          "status": "partial",
+          "rationale": "The answer preserves SQLite/WAL and WAL_WRITE identifiers and a Japanese source title, but Japanese locking-search terms are not supplied."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Inspect an original Japanese article on the specified communities",
+          "status": "fail",
+          "rationale": "The only page.inspect failed and returned no results. A search excerpt is not an inspected Japanese article."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "Distinguish original observations from official guarantees and mark translation/version uncertainty",
+          "status": "pass",
+          "rationale": "The explanation is explicitly provisional and attributed to an author; failed inspection, unverified version and lack of an official guarantee are stated."
+        }
+      ],
+      "evidence_depth": "no_successful_inspection",
+      "flagged_claims": []
+    },
+    {
+      "id": "c3/new-domain",
+      "condition": "generalized-new-guidance",
+      "repeat": 3,
+      "case_id": "new-domain",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 51.57226,
+      "guidance_bytes": 61663,
+      "guidance_tokens": null,
+      "blind_record_id": "record-06",
+      "judgment": {
+        "status": "partial",
+        "rationale": "This is a supported permissions overview and useful gap list, not an established configuration recipe."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Reach docs.codeberg.org without registering a source",
+          "status": "partial",
+          "rationale": "A successful saved read reaches docs.codeberg.org. Whether any source registration occurred is unmeasured because registration events are not included in this packet."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Use primary documentation and inspect exact branch protection support",
+          "status": "partial",
+          "rationale": "The inspected primary documentation establishes branch-protection capability, but does not show the setting or procedure that blocks ordinary direct pushes."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "Keep domain restriction and cite the observed page",
+          "status": "pass",
+          "rationale": "The answer cites the exact observed docs.codeberg.org page and uses no off-domain authority for its instructions; full search-query scope is not independently visible."
+        }
+      ],
+      "evidence_depth": "task_relevant_content",
+      "flagged_claims": []
+    },
+    {
+      "id": "c3/sparse-access",
+      "condition": "generalized-new-guidance",
+      "repeat": 3,
+      "case_id": "sparse-access",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 73.489623,
+      "guidance_bytes": 61663,
+      "guidance_tokens": null,
+      "blind_record_id": "record-42",
+      "judgment": {
+        "status": "pass",
+        "rationale": "The inspected account and replies fulfill the public-owner-discussion request, with uninspected alternatives and modified/different-model evidence explicitly separated."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Do not require Reddit credentials or claim to read unavailable comments",
+          "status": "pass",
+          "rationale": "The answer neither requests credentials/accounts nor claims to have read unavailable Reddit comments. The supplied inspection is a public alternative; a complete account-action history is not part of this packet."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Use useful available alternatives within limits",
+          "status": "pass",
+          "rationale": "A successful public page read supplies model-specific firsthand owner discussion, with other models and diagnostic speculation kept separate."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "Distinguish snippets, inspected firsthand evidence and missing discussion coverage",
+          "status": "pass",
+          "rationale": "The answer separates the inspected owner account, uninspected discovery leads, unresolved diagnosis and missing/biased discussion coverage; it does not estimate prevalence."
+        }
+      ],
+      "evidence_depth": "task_relevant_content",
+      "flagged_claims": []
+    },
+    {
+      "id": "c3/urgent-ssd",
+      "condition": "generalized-new-guidance",
+      "repeat": 3,
+      "case_id": "urgent-ssd",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 63.523839,
+      "guidance_bytes": 61663,
+      "guidance_tokens": null,
+      "blind_record_id": "record-18",
+      "judgment": {
+        "status": "partial",
+        "rationale": "The supplied successful inspection supports the product and policy observations despite the disclosed zero-inspected engine receipt. Execution validity is accepted as supplied; this audit does not repair it."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Preserve Canadian currency/market, interface/form factor, one/new/urgent constraints",
+          "status": "pass",
+          "rationale": "The response retains the Canadian market, one new 1 TB M.2 2280 PCIe NVMe drive, shipped 48-hour deadline and CAD 150 delivered ceiling; no nonmatching offer is accepted."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Prefer stock and delivery evidence; avoid wholesale and auction fan-out",
+          "status": "pass",
+          "rationale": "The saved product read supports seller identity and dispatch/transit limits; the answer uses it without equating dispatch with arrival."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "State postal-code-specific delivery and total price uncertainty if unverified",
+          "status": "pass",
+          "rationale": "The answer explicitly leaves destination-specific arrival and tax/shipping-inclusive cost unverified rather than treating stock or dispatch time as an arrival promise."
+        }
+      ],
+      "evidence_depth": "task_relevant_content",
+      "flagged_claims": []
+    },
+    {
+      "id": "c3/used-ssd",
+      "condition": "generalized-new-guidance",
+      "repeat": 3,
+      "case_id": "used-ssd",
+      "valid_execution": true,
+      "actual_queries": 2,
+      "actual_opens": 1,
+      "engine_usage": {
+        "calls": 3,
+        "discovery": 2,
+        "enrichment": 1,
+        "opens": 1
+      },
+      "pending": 0,
+      "elapsed_seconds": 103.094114,
+      "guidance_bytes": 61663,
+      "guidance_tokens": null,
+      "blind_record_id": "record-27",
+      "judgment": {
+        "status": "partial",
+        "rationale": "The actual seller page fails quantity/budget and is properly rejected. A future-monitoring strategy does not establish a presently feasible offer."
+      },
+      "criteria": [
+        {
+          "criterion_index": 1,
+          "criterion": "Preserve four units, SATA 2.5-inch, delivered budget, shipping and tested condition",
+          "status": "pass",
+          "rationale": "The answer preserves four exact 1 TB 2.5-inch SATA SSDs, a USD200 tax/shipping-inclusive ceiling, shipped delivery within one month and tested working condition; no nonmatching lot is accepted."
+        },
+        {
+          "criterion_index": 2,
+          "criterion": "Consider retail/refurb/used and conditionally surplus; do not recommend unsuitable lots",
+          "status": "partial",
+          "rationale": "Used peer lots, eBay, refurbisher/ITAD and conditional surplus are considered; a distinct new-retail option is not assessed or explicitly deferred."
+        },
+        {
+          "criterion_index": 3,
+          "criterion": "Inspect at least one concrete page; distinguish stock/asking price/auction bid from a verified delivered offer",
+          "status": "pass",
+          "rationale": "A concrete listing was read and its asking price/variant/availability is kept separate from a verified four-unit delivered offer; destination and health gaps remain explicit."
+        }
+      ],
+      "evidence_depth": "task_relevant_content",
+      "flagged_claims": []
+    }
+  ],
+  "offline_redirect_replay": [
+    {
+      "pilot_run": "c2/urgent-ssd",
+      "discovery_url": "https://www.bestbuy.ca/en-ca/product/crucial-p310-1tb-2280-pcie-gen4-3d-nand-nvme-m-2-ssd-up-to-7-100-mb-s/19481755",
+      "content_evidence": [
+        "https://www.bestbuy.ca/en-ca/product/crucial-ssd-1tb-m-2-2280-p310-nvme-pcie-gen4-internal/19481755"
+      ],
+      "candidate_id_preserved": true,
+      "evidence_digest_changed": true,
+      "saved_state_valid": true,
+      "network_calls": 0,
+      "method": "Current resolver/settlement over identical saved public discovery and inspection rows; new offline run IDs, no provider execution"
+    },
+    {
+      "pilot_run": "c3/urgent-ssd",
+      "discovery_url": "https://www.bestbuy.ca/en-ca/product/crucial-p310-1tb-2280-pcie-gen4-3d-nand-nvme-m-2-ssd-up-to-7-100-mb-s/19481755",
+      "content_evidence": [
+        "https://www.bestbuy.ca/en-ca/product/crucial-ssd-1tb-m-2-2280-p310-nvme-pcie-gen4-internal/19481755?cmp=seo-19481755"
+      ],
+      "candidate_id_preserved": true,
+      "evidence_digest_changed": true,
+      "saved_state_valid": true,
+      "network_calls": 0,
+      "method": "Current resolver/settlement over identical saved public discovery and inspection rows; new offline run IDs, no provider execution"
+    }
+  ],
+  "frozen_bundle_hashes": {
+    "baseline/search/SKILL.md": "eb5fb222ff84f6e39922b0f01bff0dfd8fe0ba7322d910ce73e7a5c9a439857c",
+    "baseline/search/evals/evals.json": "af654cdc20d199f900d53ccb8ef9a3b46d1869bf377c819803b10cf066692d71",
+    "baseline/search/references/extending.md": "26a2051e9bc7feb5e5bae21522ec20a205a580301b623fe7f66782de60e033a9",
+    "baseline/search/references/selection.md": "ec84e6a03f8feff58fa6a37aa1cda8d1a14cd8b0cf0ce9b09e9dbbc22988964d",
+    "baseline/search/references/social.md": "7f12052485a943e0a2b137fe5c7646537f9815048716d5e64fcf16ab29c3153e",
+    "baseline/search/references/options.md": "8fed4275ee60d715ae2ee62e8d49cb9b69ec8532d35cd9b8bd101e7115c9a311",
+    "baseline/search/references/web.md": "565453f7316a0ec7595dffcd9826b350d9a21dc4c4d861fb4f8baec6e3475029",
+    "baseline/search/references/shopping.md": "32b0cc2e24407643946e1d93f43e5413af2c246b34f7fa97c026ff0311cdcb74",
+    "baseline/search/references/code.md": "9309931764e53c682601fd8bc35fb6c253cc96f49d61f21b6063e17e8bb0f928",
+    "baseline/search/tests/test_engine.py": "3ceac96099e3e850620c29ab1619caa62d6862fdcb3038851c008b353a23a07e",
+    "baseline/search/tests/test_selection.py": "b1bf9254dd877f4b0fb5a087c664d8cc92746b570e644b1dc873b527dc023435",
+    "baseline/search/agents/openai.yaml": "8ebbc82e539559b8663c35fbad52254e9029043ddacdb3b84900a981e2a20e44",
+    "baseline/search/scripts/agent-search": "96369a51efd7acabb843c0e5656326711b12d0374b878904bc5c149b6ddb4266",
+    "baseline/search/scripts/searchlib/registry.py": "5bb36a7a0812f7f0600cf7df1194cf1df1ed304177c6bb555b2facb022b25809",
+    "baseline/search/scripts/searchlib/diagnostics.py": "ab5e4ecc87f79de869e54096e1770b30ba4eed9b226d1620ac39ac43429486df",
+    "baseline/search/scripts/searchlib/io.py": "c5d9ea1b858715f8f31c3ce9b5a0648fa76d1e1e1347ee103de131fe8dbb8e2e",
+    "baseline/search/scripts/searchlib/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "baseline/search/scripts/searchlib/engine.py": "0b2e3e96a6698a4c45c7fb017f35a823c78b9a22cd346e003581ef36c06cf88b",
+    "baseline/search/scripts/searchlib/cli.py": "db8366312ba08ca088729de57e14040e75764940f87fe82a3d8697f1e0e7ac2a",
+    "baseline/search/scripts/searchlib/contracts.py": "6fcea416184e3d29c838a772f14c91661a31dd3a715d7ec86fb51598d9b41a23",
+    "baseline/search/scripts/searchlib/planning.py": "eb8ab6945fc058470dd0b989b19e558597b706b65380f85aced9ca8c0ce26c39",
+    "baseline/search/scripts/searchlib/selection.py": "a8166ef67422c3add2c2b3153e4eb2cf96741ef38b025b2f1984735c3636437d",
+    "baseline/search/scripts/searchlib/identity.py": "aef6fe5245762e6ef37b1acfff5556e7c7b50542a4e4c7e8e11192ade45194da",
+    "baseline/search/scripts/searchlib/adapters/web.py": "67fe0e009cebbc8aeaf63cbf326160fc560d8727af14ab74f9fa27e387426235",
+    "baseline/search/scripts/searchlib/adapters/host.py": "32035e16defc6053a383bc964e6b25e2ba6b30834a7f72112ad8d5cd15dcf6f8",
+    "baseline/search/scripts/searchlib/adapters/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "baseline/search/scripts/searchlib/adapters/native.py": "e672c3a120117a012700a9e0ea37a926fba0c7dad83df91e1736210edbb0b08a",
+    "bundles/generalized-baseline-guidance/search/SKILL.md": "b0a32cc5f49c8861c81fff8cfd559f5c30bc9cdb68bb1dfb8009dc3f3d5d6977",
+    "bundles/generalized-baseline-guidance/search/evals/source-selection.json": "0bbd2b66969c4e42ae167b88bf0f0c00333d04923dd3241e2031abacd994b4c1",
+    "bundles/generalized-baseline-guidance/search/evals/evals.json": "af654cdc20d199f900d53ccb8ef9a3b46d1869bf377c819803b10cf066692d71",
+    "bundles/generalized-baseline-guidance/search/references/extending.md": "26a2051e9bc7feb5e5bae21522ec20a205a580301b623fe7f66782de60e033a9",
+    "bundles/generalized-baseline-guidance/search/references/source-selection.md": "1bd7bf238237d48596073a41e1cd5e784389e5beaf7792591a0a649b7ced896e",
+    "bundles/generalized-baseline-guidance/search/references/selection.md": "30287d3054e4c634901b54ccb17b8c7671cc8857bfe46b4bf8907e03df49111c",
+    "bundles/generalized-baseline-guidance/search/references/source-scopes.md": "d093b4e9f4fa8a1a153a6094d152f922371e28580899055ca68354eeaac8b7e7",
+    "bundles/generalized-baseline-guidance/search/references/social.md": "7f12052485a943e0a2b137fe5c7646537f9815048716d5e64fcf16ab29c3153e",
+    "bundles/generalized-baseline-guidance/search/references/options.md": "bc4f7ddb33444fefbaeeb0863efea2a8ffdd5e84824c59414c02a30ccad568d8",
+    "bundles/generalized-baseline-guidance/search/references/web.md": "565453f7316a0ec7595dffcd9826b350d9a21dc4c4d861fb4f8baec6e3475029",
+    "bundles/generalized-baseline-guidance/search/references/shopping.md": "32b0cc2e24407643946e1d93f43e5413af2c246b34f7fa97c026ff0311cdcb74",
+    "bundles/generalized-baseline-guidance/search/references/code.md": "9309931764e53c682601fd8bc35fb6c253cc96f49d61f21b6063e17e8bb0f928",
+    "bundles/generalized-baseline-guidance/search/tests/test_engine.py": "8f2c946d197bdae0ae7cee361e25f2fd670ccfa470916da4d7133aaed0143310",
+    "bundles/generalized-baseline-guidance/search/tests/test_selection.py": "b1bf9254dd877f4b0fb5a087c664d8cc92746b570e644b1dc873b527dc023435",
+    "bundles/generalized-baseline-guidance/search/tests/test_sources.py": "a8ec33890057b67c987dd44703dae965f349297e3092d8b0fae92362a2025d12",
+    "bundles/generalized-baseline-guidance/search/agents/openai.yaml": "8ebbc82e539559b8663c35fbad52254e9029043ddacdb3b84900a981e2a20e44",
+    "bundles/generalized-baseline-guidance/search/scripts/agent-search": "96369a51efd7acabb843c0e5656326711b12d0374b878904bc5c149b6ddb4266",
+    "bundles/generalized-baseline-guidance/search/scripts/searchlib/registry.py": "cc344742700dfe3e85392cb1340de6f16b705d11192222517bfc613e19ce0efa",
+    "bundles/generalized-baseline-guidance/search/scripts/searchlib/diagnostics.py": "ab5e4ecc87f79de869e54096e1770b30ba4eed9b226d1620ac39ac43429486df",
+    "bundles/generalized-baseline-guidance/search/scripts/searchlib/io.py": "c5d9ea1b858715f8f31c3ce9b5a0648fa76d1e1e1347ee103de131fe8dbb8e2e",
+    "bundles/generalized-baseline-guidance/search/scripts/searchlib/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bundles/generalized-baseline-guidance/search/scripts/searchlib/sources.py": "dc20b1bb77ddc9565652828a0473496c1ffd916a56f636c9b07b92f36e77211a",
+    "bundles/generalized-baseline-guidance/search/scripts/searchlib/engine.py": "eb276f80ff05bafcef9a4ed381bde7babee87603b56bde384169680db2e2fb5d",
+    "bundles/generalized-baseline-guidance/search/scripts/searchlib/cli.py": "436fc0922f2444e561db7889b4e10bec9e73005015fcb0b9b6888cff1cbf758d",
+    "bundles/generalized-baseline-guidance/search/scripts/searchlib/contracts.py": "233f4b73a1776b069e6f675c5d289ab1a188028d702dbb21ae1bf512f1e82851",
+    "bundles/generalized-baseline-guidance/search/scripts/searchlib/planning.py": "5ce0abde95911b23774cb4752ac26658048e94c33d5f058c081aa885fde21352",
+    "bundles/generalized-baseline-guidance/search/scripts/searchlib/selection.py": "5f5e954f68fd384f0a77c8d12ebc0e42b3de3ea44e73d06dce024c65c285ba22",
+    "bundles/generalized-baseline-guidance/search/scripts/searchlib/identity.py": "0ab0971ea7a738fc71496afab9ffd144aeb4f8a0ce80db064a1886ab1df1c231",
+    "bundles/generalized-baseline-guidance/search/scripts/searchlib/adapters/web.py": "e8666104a2126517a43cfb2d00295b2aa3283e4f7c54ec24317f7631e029674e",
+    "bundles/generalized-baseline-guidance/search/scripts/searchlib/adapters/host.py": "3e9feb6034507062f61c05251d3260022549ffdb169bd1f4ade7043bbfde8f57",
+    "bundles/generalized-baseline-guidance/search/scripts/searchlib/adapters/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bundles/generalized-baseline-guidance/search/scripts/searchlib/adapters/native.py": "a950ef29b2c284e72071f21d5daa2588433b73ddff0f233b74c49b4e6a4194aa",
+    "bundles/generalized-baseline-guidance/search/tests/fixtures/source-selection-legacy-state.json": "400ce285d784a40fed0bbbc20cfcd9d0f70c5180bf3efe43e332d78d960bf5ef",
+    "bundles/generalized-new-guidance/search/SKILL.md": "b0a32cc5f49c8861c81fff8cfd559f5c30bc9cdb68bb1dfb8009dc3f3d5d6977",
+    "bundles/generalized-new-guidance/search/evals/source-selection.json": "0bbd2b66969c4e42ae167b88bf0f0c00333d04923dd3241e2031abacd994b4c1",
+    "bundles/generalized-new-guidance/search/evals/evals.json": "af654cdc20d199f900d53ccb8ef9a3b46d1869bf377c819803b10cf066692d71",
+    "bundles/generalized-new-guidance/search/references/extending.md": "0a26568456333358fd57001af963f133aeec51eb44e53fdf0b86b5bfef173835",
+    "bundles/generalized-new-guidance/search/references/source-selection.md": "96399997f613f7b40d54cf88fa1b935ef202e8b1e0e878a9121fbcc9e9f1b42d",
+    "bundles/generalized-new-guidance/search/references/selection.md": "30287d3054e4c634901b54ccb17b8c7671cc8857bfe46b4bf8907e03df49111c",
+    "bundles/generalized-new-guidance/search/references/source-scopes.md": "d093b4e9f4fa8a1a153a6094d152f922371e28580899055ca68354eeaac8b7e7",
+    "bundles/generalized-new-guidance/search/references/social.md": "51b30d0001257baba41e98c8aa38fa0e60f64bff7d3355d5a4be8602ff8273d8",
+    "bundles/generalized-new-guidance/search/references/options.md": "bc4f7ddb33444fefbaeeb0863efea2a8ffdd5e84824c59414c02a30ccad568d8",
+    "bundles/generalized-new-guidance/search/references/web.md": "cd4ab26af405b2affbd041bf9c8f8af1ad2b09e8dca4f9f8ad952c939f5b89b3",
+    "bundles/generalized-new-guidance/search/references/shopping.md": "1072acf6924dbeb3de8656824a3fcbf54578716526151fa9fb13d5d7889ce624",
+    "bundles/generalized-new-guidance/search/references/code.md": "9b377d42913e9f1f1ab72903c01d8436a1638e59d1c643b0241d5fdb0d964fc1",
+    "bundles/generalized-new-guidance/search/references/multilingual.md": "81be67f38bd8dc425323497e16d5cca33dda3919f98a47e28dff599937309261",
+    "bundles/generalized-new-guidance/search/tests/test_engine.py": "8f2c946d197bdae0ae7cee361e25f2fd670ccfa470916da4d7133aaed0143310",
+    "bundles/generalized-new-guidance/search/tests/test_selection.py": "b1bf9254dd877f4b0fb5a087c664d8cc92746b570e644b1dc873b527dc023435",
+    "bundles/generalized-new-guidance/search/tests/test_sources.py": "a8ec33890057b67c987dd44703dae965f349297e3092d8b0fae92362a2025d12",
+    "bundles/generalized-new-guidance/search/agents/openai.yaml": "8ebbc82e539559b8663c35fbad52254e9029043ddacdb3b84900a981e2a20e44",
+    "bundles/generalized-new-guidance/search/scripts/agent-search": "96369a51efd7acabb843c0e5656326711b12d0374b878904bc5c149b6ddb4266",
+    "bundles/generalized-new-guidance/search/scripts/searchlib/registry.py": "cc344742700dfe3e85392cb1340de6f16b705d11192222517bfc613e19ce0efa",
+    "bundles/generalized-new-guidance/search/scripts/searchlib/diagnostics.py": "ab5e4ecc87f79de869e54096e1770b30ba4eed9b226d1620ac39ac43429486df",
+    "bundles/generalized-new-guidance/search/scripts/searchlib/io.py": "c5d9ea1b858715f8f31c3ce9b5a0648fa76d1e1e1347ee103de131fe8dbb8e2e",
+    "bundles/generalized-new-guidance/search/scripts/searchlib/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bundles/generalized-new-guidance/search/scripts/searchlib/sources.py": "dc20b1bb77ddc9565652828a0473496c1ffd916a56f636c9b07b92f36e77211a",
+    "bundles/generalized-new-guidance/search/scripts/searchlib/engine.py": "eb276f80ff05bafcef9a4ed381bde7babee87603b56bde384169680db2e2fb5d",
+    "bundles/generalized-new-guidance/search/scripts/searchlib/cli.py": "436fc0922f2444e561db7889b4e10bec9e73005015fcb0b9b6888cff1cbf758d",
+    "bundles/generalized-new-guidance/search/scripts/searchlib/contracts.py": "233f4b73a1776b069e6f675c5d289ab1a188028d702dbb21ae1bf512f1e82851",
+    "bundles/generalized-new-guidance/search/scripts/searchlib/planning.py": "5ce0abde95911b23774cb4752ac26658048e94c33d5f058c081aa885fde21352",
+    "bundles/generalized-new-guidance/search/scripts/searchlib/selection.py": "5f5e954f68fd384f0a77c8d12ebc0e42b3de3ea44e73d06dce024c65c285ba22",
+    "bundles/generalized-new-guidance/search/scripts/searchlib/identity.py": "0ab0971ea7a738fc71496afab9ffd144aeb4f8a0ce80db064a1886ab1df1c231",
+    "bundles/generalized-new-guidance/search/scripts/searchlib/adapters/web.py": "e8666104a2126517a43cfb2d00295b2aa3283e4f7c54ec24317f7631e029674e",
+    "bundles/generalized-new-guidance/search/scripts/searchlib/adapters/host.py": "3e9feb6034507062f61c05251d3260022549ffdb169bd1f4ade7043bbfde8f57",
+    "bundles/generalized-new-guidance/search/scripts/searchlib/adapters/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bundles/generalized-new-guidance/search/scripts/searchlib/adapters/native.py": "a950ef29b2c284e72071f21d5daa2588433b73ddff0f233b74c49b4e6a4194aa",
+    "bundles/generalized-new-guidance/search/tests/fixtures/source-selection-legacy-state.json": "400ce285d784a40fed0bbbc20cfcd9d0f70c5180bf3efe43e332d78d960bf5ef",
+    "bundles/generalized-new-guidance/search/references/regions/east-asia.md": "ca3cf3d55c23ff098ffc1adf83cf2146e8f50c93ba959ee86bab5b294727ede3",
+    "bundles/generalized-new-guidance/search/references/regions/global-discovery.md": "3ae00117787e970b74e9cef2bf23d54329ad226856c61e1fba34d1aac22aaf0d",
+    "bundles/generalized-new-guidance/search/references/shopping/sourcing-and-delivery.md": "8bbf3925d4ab906c371535219f9ec58564b62bbe4cc2dddf8c39eef664eb6414",
+    "bundles/generalized-new-guidance/search/references/shopping/used-and-auctions.md": "b06b2ca962e0104376cc1d2da80c2aea811703df97432e91156eb31cbcc74133"
+  },
+  "qualification": {
+    "portable_tests": 91,
+    "consumer_suite": "passed",
+    "marketplace_tests": 104,
+    "marketplace_builds": "two identical builds; initial fixture timeout, unchanged retry passed",
+    "lifecycle_tests": 54,
+    "reviews": [
+      {
+        "model": "claude-opus-5-5",
+        "session_id": "f55dae55-c7d0-4cde-97d9-d7d97e101814",
+        "exit_code": 0
+      },
+      {
+        "model": "claude-opus-5-5",
+        "session_id": "3a8c716a-c5a9-4ed2-a2bd-7f5de00b2ae1",
+        "exit_code": 0
+      }
+    ],
+    "activation": {
+      "version": "1.16.0",
+      "claude": "enabled; native Skill invocation passed",
+      "codex_active_profile": "enabled; native inventory verified",
+      "codex_canonical": "enabled; targeted native install and cache checked; unrelated marketplace blocks full inventory",
+      "fresh_session_id": "d69f9d8e-6fa6-476b-a9a0-695ccdafb6b8",
+      "fresh_session_model": "claude-fable-5-1",
+      "fresh_session_provider_calls": 0,
+      "checked_artifact_source_digest": "67d8a5b2d6497fcac32bff53ceb969bd1d50fe2ab78acf4cb083d9293daff60d"
+    }
+  }
+}
