@@ -149,6 +149,12 @@ SCENARIOS = {
             "BTTRemoteEnabled": False,
         },
     ),
+    "winmux": Scenario(
+        bundle_id="com.zimengxiong.winmux",
+        overrides={"doubleSidedWindows": True},
+        local={"WinMux.symbolicHotkeyMarker.v1": b"{}", "SUHasLaunchedBefore": True},
+        expected={"doubleSidedWindows": False},
+    ),
     "raycast": Scenario(
         bundle_id="com.raycast.macos",
         overrides={"navigationCommandStyleIdentifierKey": "default"},

@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+exec '{{ .chezmoi.sourceDir }}/../scripts/macos/plist-merge' \
+  --bundle-id 'com.zimengxiong.winmux' \
+  --desired-b64 '{{ includeTemplate "com.zimengxiong.winmux.plist.tmpl" . | b64enc }}'
