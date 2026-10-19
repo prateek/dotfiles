@@ -235,7 +235,6 @@ brews = [
   { name = "ctags" },
   { name = "buildifier" },
   { name = "juxt/allium/allium" },
-  { name = "prek" },
 
   # Search, text processing, and shell ergonomics.
   { name = "ack" },
@@ -460,6 +459,7 @@ entries = [
 [packages.retired]
 brews = [
   { name = "gogcli" },  # gog is installed via mise (github:openclaw/gogcli)
+  { name = "prek" },  # prek is installed via mise (conf.d/clis.toml)
 ]
 casks = [
   { name = "codex" },  # the CLI installs standalone (run_after_07-codex-standalone.sh)

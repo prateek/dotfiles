@@ -17,7 +17,7 @@ repos:
         files: ^home/
       - id: docs-lifecycle
         name: docs lifecycle validation
-        entry: env DOCS_LIFECYCLE_BASE=HEAD just test-docs-lifecycle
+        entry: env DOCS_LIFECYCLE_BASE=HEAD just check-docs-lifecycle
         language: system
         always_run: true
         pass_filenames: false
