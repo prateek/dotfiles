@@ -1,5 +1,6 @@
 # Overrides on top of WinMux's shipped defaults (defaults.ncl in the app bundle).
 let W = import "winmux/winmux.ncl" in
+let defaults = import "winmux/defaults.ncl" in
 let is-app = fun ids w => std.array.elem w.app.bundleId ids in
 # Self Service's admin sign-in is an ephemeral ASWebAuthenticationSession window
 # in the default browser. At placement its title is "Untitled - … (Incognito)"
@@ -26,31 +27,7 @@ let work-mode = {
     overflow = 'tab-group,
   },
 } in
-# WinMux's event tap consumes a bound chord in every app, even one whose command
-# list is empty, so a shipped chord can only be given back by removing it from
-# the table outright. Two groups go:
-# - Plain Control chords (workspaces 11-15, workspace prev/next, the sidebar).
-#   They kill shell and Claude Code editing: Ctrl-W kill-word, Ctrl-R history,
-#   Ctrl-L clear, Ctrl-E end of line, Ctrl-T fzf, Ctrl-F/H.
-# - Every chord with the Command key (Cmd-Tab and Cmd-` app and window
-#   switching, Cmd-Shift-H/I/J/K/L, Cmd-Ctrl-H/L, the Alt-Cmd project set and
-#   the Ctrl-Cmd-Shift stacks). Apps and macOS own those; the Alt chords,
-#   ctrl-0..9 and the Tuna `w` group keep the window manager reachable.
-let defaults = import "winmux/defaults.ncl" in
-let has-cmd = fun chord => std.array.elem "cmd" (std.string.split "-" chord) in
-let released =
-  ["ctrl-q", "ctrl-w", "ctrl-e", "ctrl-r", "ctrl-t", "ctrl-f", "ctrl-h", "ctrl-l"]
-  @ std.array.filter has-cmd (std.record.fields defaults.mode.main.binding)
-in
-let main-bindings =
-  std.array.fold_left (fun acc chord => std.record.remove chord acc) defaults.mode.main.binding released
-in
-let base = std.record.update "mode" (
-  std.record.update "main" (
-    std.record.update "binding" main-bindings defaults.mode.main
-  ) defaults.mode
-) defaults in
-(base & {
+(defaults & {
   columns = work-mode,
   # Only reached with Columns off (`column-count off`); the Column invariant forces tiles otherwise.
   default-root-container-layout = 'tab-group,
