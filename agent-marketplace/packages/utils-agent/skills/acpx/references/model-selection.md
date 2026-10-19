@@ -30,7 +30,9 @@ Choose current and previous models for each family with sufficient evidence:
    identify the strongest model and the most recent model in the next lower
    capability tier. Compare across all eligible candidates, keeping the family.
    Distinct provider aliases, snapshots, context sizes, and thinking variants of
-   one model do not constitute separate capability tiers.
+   one model do not constitute separate capability tiers. Among those variants,
+   select the undecorated ID unless the task needs a larger context or a
+   specific snapshot.
 2. Without `--allow-paid`, API-only models are excluded even if stronger. With
    explicit `--allow-paid`, choose the strongest model across the expanded pool;
    a stronger API-only model may displace a weaker included model. Choose model

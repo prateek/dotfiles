@@ -76,7 +76,10 @@ when that tool can select the resolved Fable model. Do not assume a generic
 same rule applies to Codex, Cursor, pi, and Gemini. Use exposed runtime schemas,
 installed version-matched guidance, or tool metadata; do not invent tool arguments.
 Pi may expose a subagent loader before its full tool. Gemini's parent `--model`
-does not set its subagents' models.
+does not set its subagents' models. Cursor's headless CLI (2026.07.01) exposes
+no subagent tool, so a Cursor selection runs externally. Codex's `spawn_agent`
+takes an exact `model` and `reasoning_effort`; an "Unknown model" reply lists
+what that session can see and means run externally, not retry another model.
 
 A child that inherits the parent's effort may differ from the target model's
 default. Set the resolved effective effort explicitly when needed. If the default
@@ -261,6 +264,13 @@ final result, follow its [recovery procedure](references/harness-lanes.md#recove
 - Cursor shortcuts receive `--add-dir` paths for existing generated plugin
   roots. Exact paths are readable, but workspace glob and grep do not discover
   those files. Name each file the delegate needs.
+- Cursor shortcuts launch through `~/.agents/bin/cursor-acp`, which marks the
+  parameterized model picker on `initialize` (otherwise Cursor snaps the
+  requested thinking to its default) and gives each route its own
+  `CURSOR_CONFIG_DIR` under `${XDG_STATE_HOME:-~/.local/state}/dotfiles/acpx/cursor/`,
+  refreshing your `cli-config.json` settings (permissions, sandbox, network)
+  into it on every launch. Never pass acpx's own `--model` to a Cursor route:
+  it saves the pick globally and later runs inherit it.
 - Codex shortcuts set the exact model and resolved thinking through `CODEX_CONFIG` JSON.
   `codex-acp` ignores `-c` during ACP startup.
 - Claude shortcuts set exact model and effort in their environment, including
@@ -297,7 +307,12 @@ sessions.
 ## Completion
 
 Finish when the lane reaches its completion condition, the reply or session
-metadata confirms the resolved model and thinking ran. For external execution,
+metadata confirms the resolved model and thinking ran. Cursor's `session/new`
+metadata reports its last saved model, not the served one. After a Cursor run,
+take the newest directory under
+`${XDG_STATE_HOME:-~/.local/state}/dotfiles/acpx/cursor/<route>/acp-sessions/`
+and run `grep -a -o '"systemPromptFingerprint":{[^}]*' <dir>/store.db | grep -o '"model":"[^"]*"'`;
+it prints the served slug with its effort. For external execution,
 confirm the guarded command and routing report match
 the launched model and effort, and report the session name for follow-ups.
 If `-w` was absent, account for every logged

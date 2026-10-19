@@ -1,0 +1,112 @@
+#!/usr/bin/env python3
+"""Run `cursor-agent ... acp` for acpx so the requested model and thinking are served.
+
+acpx never advertises ACP's parameterized model picker, so cursor-agent answers
+in its "variants" mode and snaps the requested thinking to the server default.
+This shim marks that capability on the `initialize` request and passes every
+other byte through. With CURSOR_CONFIG_DIR set, it carries the user's Cursor
+settings (permissions, sandbox, network) into that directory on every launch
+while leaving the model keys Cursor rewrites per run alone; acp-config.json is
+never copied because a saved pick there overrides --model.
+"""
+
+import json
+import os
+from pathlib import Path
+import signal
+import subprocess
+import sys
+import tempfile
+import threading
+
+CURSOR_MANAGED_KEYS = {"model", "selectedModel", "modelParameters", "hasChangedDefaultModel",
+                       "privacyCache", "serverConfigCache"}
+
+
+def sync_config_dir():
+    target = os.environ.get("CURSOR_CONFIG_DIR")
+    if not target:
+        return
+    target = Path(target)
+    target.mkdir(parents=True, exist_ok=True)
+    config_home = Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config")
+    candidates = (config_home / "cursor/cli-config.json", Path.home() / ".cursor/cli-config.json")
+    source = next((path for path in candidates if path.is_file()), None)
+    if source is None:
+        return
+    destination = target / "cli-config.json"
+    try:
+        settings = json.loads(source.read_text())
+        current = json.loads(destination.read_text()) if destination.exists() else {}
+    except ValueError:
+        return
+    if not isinstance(settings, dict) or not isinstance(current, dict):
+        return
+    merged = dict(current)
+    merged.update({key: value for key, value in settings.items() if key not in CURSOR_MANAGED_KEYS})
+    if merged == current:
+        return
+    handle, temporary = tempfile.mkstemp(prefix=".cli-config-", dir=target)
+    with os.fdopen(handle, "w") as stream:
+        json.dump(merged, stream, indent=2)
+    os.replace(temporary, destination)
+
+
+def mark_initialize(line):
+    try:
+        message = json.loads(line)
+        if not isinstance(message, dict) or message.get("method") != "initialize":
+            return line
+        params = message.setdefault("params", {})
+        capabilities = params.setdefault("clientCapabilities", {})
+        meta = capabilities.setdefault("_meta", {})
+        if not all(isinstance(value, dict) for value in (params, capabilities, meta)):
+            return line
+        meta["parameterizedModelPicker"] = True
+        return (json.dumps(message, separators=(",", ":")) + "\n").encode()
+    except Exception:
+        return line
+
+
+def pump(source, sink):
+    try:
+        for line in source:
+            sink.write(mark_initialize(line))
+            sink.flush()
+    except (BrokenPipeError, OSError):
+        pass
+    finally:
+        try:
+            sink.close()
+        except OSError:
+            pass
+
+
+def main():
+    argv = sys.argv[1:]
+    if not argv:
+        sys.exit("usage: cursor-acp cursor-agent [options] acp")
+    sync_config_dir()
+    try:
+        child = subprocess.Popen(argv, stdin=subprocess.PIPE)
+    except OSError as error:
+        sys.exit(f"cursor-acp: {argv[0]}: {error.strerror}")
+
+    def forward(signum, _frame):
+        try:
+            child.send_signal(signum)
+        except ProcessLookupError:
+            pass
+
+    # A terminal's Ctrl-C already reaches the child through the shared process
+    # group; forwarding SIGINT would deliver it twice. SIGTERM and SIGHUP from a
+    # supervisor target this process alone, so those are passed on.
+    for signum in (signal.SIGTERM, signal.SIGHUP):
+        signal.signal(signum, forward)
+    threading.Thread(target=pump, args=(sys.stdin.buffer, child.stdin), daemon=True).start()
+    code = child.wait()
+    sys.exit(code if code >= 0 else 128 - code)
+
+
+if __name__ == "__main__":
+    main()

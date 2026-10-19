@@ -19,6 +19,9 @@ import time
 
 
 LEGACY_ALIASES = {"agpt", "agptx", "agptw", "aopus", "aopusx", "afable", "afablex", "agemini"}
+# Reports bake launch argv at commit time; bump this when launch() changes that
+# contract so an existing selection is re-made instead of executed as cached.
+LAUNCH_VERSION = 2
 
 
 class RoutingError(Exception):
@@ -204,8 +207,21 @@ def claude_models(route, account_only=False):
     return result["access"] if account_only else result["models"]
 
 
-def cursor_models(route):
-    text = command(["cursor-agent", "--list-models"], env=route_environment(route))
+def state_home():
+    return Path(os.environ.get("XDG_STATE_HOME") or Path.home() / ".local/state")
+
+
+def cursor_config_dir(route_name):
+    """Each Cursor route gets its own config directory, so a model pick saved by
+    another ACP client cannot override --model; discovery reads the same one."""
+    return state_home() / "dotfiles/acpx/cursor" / route_name
+
+
+def cursor_models(route, config_dir):
+    config_dir.mkdir(parents=True, exist_ok=True)
+    env = route_environment(route)
+    env["CURSOR_CONFIG_DIR"] = str(config_dir)
+    text = command(["cursor-agent", "--list-models"], env=env)
     models = {}
     for line in text.splitlines():
         if " - " not in line:
@@ -310,7 +326,7 @@ def discover(policy):
             elif source == "claude":
                 models = claude_models(route)
             elif source == "cursor":
-                models = cursor_models(route)
+                models = cursor_models(route, cursor_config_dir(name))
             elif source == "pi":
                 models = pi_models(route)
             elif source == "gemini":
@@ -391,7 +407,10 @@ def launch(policy, model, effort, family):
             identifier = model.get("variants", {}).get(model["default_effort"])
         if not identifier:
             raise RoutingError(f"{route_name}/{model['id']}: no advertised default or effort variant")
-        command_argv = ["cursor-agent", "--model", identifier]
+        # acpx never advertises the parameterized model picker, so cursor-agent would
+        # snap the requested thinking to its default; the shim marks that capability.
+        env["CURSOR_CONFIG_DIR"] = str(cursor_config_dir(route_name))
+        command_argv = [str(Path(policy["launcher"]).with_name("cursor-acp")), "cursor-agent", "--model", identifier]
         for relative in (".agents/plugins", ".claude/plugins/marketplaces"):
             directory = Path(policy["home"]) / relative
             if directory.is_dir():
@@ -499,9 +518,9 @@ def resolve(policy, catalog, decision):
                                 "reason": selected["reason"], "sources": selected["sources"]}
         except RoutingError as error:
             shortcuts[alias] = {"error": str(error)}
-    return {"version": 2, "policy_digest": digest(policy), "selected_at": catalog["created_at"],
-            "snapshot_id": catalog["snapshot_id"], "allow_paid": catalog["allow_paid"],
-            "shortcuts": shortcuts, "problems": catalog["problems"]}
+    return {"version": 2, "launch_version": LAUNCH_VERSION, "policy_digest": digest(policy),
+            "selected_at": catalog["created_at"], "snapshot_id": catalog["snapshot_id"],
+            "allow_paid": catalog["allow_paid"], "shortcuts": shortcuts, "problems": catalog["problems"]}
 
 
 def atomic_json(path, value):
@@ -562,6 +581,8 @@ def paths_for_guard(args, alias, selected):
 def selection_for_run(policy, report, args):
     if report.get("version") != 2 or report.get("policy_digest") != digest(policy):
         raise RoutingError("routing configuration changed; refresh and select through the acpx skill")
+    if report.get("launch_version") != LAUNCH_VERSION:
+        raise RoutingError("launch contract changed; refresh and select through the acpx skill")
     age = time.time() - report["selected_at"]
     limit = policy["models"]["stale_seconds"] if args.allow_stale else policy["models"]["ttl_seconds"]
     if age < 0 or age > limit:

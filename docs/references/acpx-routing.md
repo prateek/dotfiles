@@ -3,8 +3,9 @@ status: current
 doc_type: reference
 summary: "Machine model discovery, agent-selected capability shortcuts, native delegation, access policy, and cache diagnostics."
 created: 2026-09-22
-updated: 2026-10-18
+updated: 2026-10-19
 related:
+  - ../research/cursor-acp-model-selection.md
   - ../adr/0056-agent-selected-model-routing.md
   - ../../agent-marketplace/packages/utils-agent/skills/acpx/SKILL.md
 ---
@@ -94,7 +95,21 @@ Claude. Existing provider configuration and credentials remain externally owned.
   in acpx's task directory with the adapter's user, project, and local settings.
 - Cursor retains unqualified default variants, explicit effort variants,
   descriptions, and default markers. Existing generated plugin roots are passed
-  through `--add-dir`; absent directories are omitted.
+  through `--add-dir`; absent directories are omitted. Launch runs through
+  `~/.agents/bin/cursor-acp` ([source](../../scripts/acpx/cursor-acp)), which
+  marks `clientCapabilities._meta.parameterizedModelPicker` on `initialize`;
+  without it Cursor serves the requested model but snaps thinking to its
+  default. Each route gets its own `CURSOR_CONFIG_DIR` under
+  `${XDG_STATE_HOME:-~/.local/state}/dotfiles/acpx/cursor/`; discovery lists
+  models there too, so default markers describe the directory a launch uses.
+  The shim refreshes the user's `cli-config.json` settings into it on every
+  launch, leaves the model keys Cursor rewrites alone, and never copies
+  `acp-config.json`, so a pick saved by another ACP client cannot override
+  `--model`. Cursor's `session/new` reports the saved pick rather than the
+  served model; the served model and thinking are in
+  `acp-sessions/<id>/store.db`. Reports record a launch-contract version, so a
+  selection cached before this change is re-made rather than executed.
+  Evidence: [Cursor ACP model selection](../research/cursor-acp-model-selection.md).
 - Omp refreshes its model catalog once per discovery and splits rows by configured
   provider contracts. Exact provider IDs are validated before candidates qualify.
 - Pi's helper uses its installed `ModelRuntime`, read-only credential storage,

@@ -185,8 +185,12 @@ class AcpxRoutingTests(RepoTestCase):
         self.assertIn("CLAUDE_CODE_DISABLE_FAST_MODE=1", argv)
         self.assertNotIn("CLAUDE_CODE_EFFORT_LEVEL=medium", argv)
         self.assertIn("CLAUDE_CODE_EFFORT_LEVEL", argv)
-        self.assertEqual(report["agpt"]["argv"], ["cursor-agent", "--model", "gpt-5.6-sol", "--add-dir", str(plugins), "acp"])
-        self.assertEqual(report["agptx"]["argv"][2], "gpt-5.6-sol-high")
+        self.assertEqual(report["agpt"]["argv"], [
+            "env", f"CURSOR_CONFIG_DIR={self.env['XDG_STATE_HOME']}/dotfiles/acpx/cursor/cursor",
+            str(ROOT / "scripts/acpx/cursor-acp"), "cursor-agent", "--model", "gpt-5.6-sol", "--add-dir", str(plugins), "acp",
+        ])
+        argv = report["agptx"]["argv"]
+        self.assertEqual(argv[argv.index("--model") + 1], "gpt-5.6-sol-high")
         plugins.rmdir()
         self.commit()
         self.assertNotIn("--add-dir", json.loads(self.report.read_text())["shortcuts"]["agpt"]["argv"])
@@ -376,6 +380,66 @@ class AcpxRoutingTests(RepoTestCase):
         self.commit()
         self.assertIn(b"no advertised default or effort variant", self.cli("show", "agptx", expected_status=2).stderr)
 
+    def test_cursor_shim_marks_the_parameterized_picker_syncs_settings_and_propagates_exit(self):
+        env = self.fake_binary("cursor-agent", '''import json, os, sys
+assert sys.argv[1:] == ['--model', 'gpt-5.6-sol-high', 'acp']
+with open(os.environ['CALLS'], 'a') as calls:
+    for line in sys.stdin:
+        calls.write(line)
+        request = json.loads(line)
+        print(json.dumps({'jsonrpc': '2.0', 'id': request['id'], 'result': {}}), flush=True)
+sys.exit(3)
+''')
+        source = Path(self.env["XDG_CONFIG_HOME"]) / "cursor"
+        source.mkdir()
+        (source / "cli-config.json").write_text(json.dumps(
+            {"permissions": {"allow": ["Shell(git)"]}, "model": {"modelId": "gpt-5.6-sol"}}))
+        (source / "acp-config.json").write_text('{"selectedModelVariantId": "gpt-5.6-sol[reasoning=medium]"}')
+        isolated = Path(self.env["XDG_STATE_HOME"]) / "dotfiles/acpx/cursor/cursor"
+        calls = self.work / "calls"
+        initialize = {"jsonrpc": "2.0", "id": 1, "method": "initialize",
+                      "params": {"protocolVersion": 1, "clientCapabilities": {"fs": {"readTextFile": True}}}}
+        null_params = '{"jsonrpc":"2.0","id":2,"method":"initialize","params":null}\n'
+        session = '{"jsonrpc":"2.0","id":3,"method":"session/new","params":{"cwd":"/tmp"}}\n'
+        raw = (json.dumps(initialize) + "\n" + null_params + session).encode()
+        shim = str(ROOT / "scripts/acpx/cursor-acp")
+        argv = [sys.executable, shim, "cursor-agent", "--model", "gpt-5.6-sol-high", "acp"]
+        run_env = env | {"CALLS": str(calls), "CURSOR_CONFIG_DIR": str(isolated)}
+        result = self.command(argv, raw, expected_status=3, env=run_env)
+        first, second, third = calls.read_text().splitlines()
+        sent = json.loads(first)
+        self.assertTrue(sent["params"]["clientCapabilities"]["_meta"]["parameterizedModelPicker"])
+        self.assertEqual(sent["params"]["clientCapabilities"]["fs"], {"readTextFile": True})
+        self.assertEqual(second + "\n", null_params)
+        self.assertEqual(third + "\n", session)
+        self.assertEqual(result.stdout.decode().count('"result"'), 3)
+        self.assertEqual(json.loads((isolated / "cli-config.json").read_text()), {"permissions": {"allow": ["Shell(git)"]}})
+        self.assertFalse((isolated / "acp-config.json").exists())
+        # Cursor owns the model keys it rewrites per run; every other setting follows the user's file.
+        (isolated / "cli-config.json").write_text(json.dumps(
+            {"model": {"modelId": "claude-opus-5-5"}, "permissions": {"allow": ["Shell(git)"]}}))
+        (source / "cli-config.json").write_text(json.dumps({
+            "permissions": {"allow": ["Shell(git)", "Shell(gh)"]}, "network": {"useHttp1ForAgent": True},
+            "model": {"modelId": "gpt-5.6-sol"}}))
+        calls.unlink()
+        self.command(argv, raw, expected_status=3, env=run_env)
+        self.assertEqual(json.loads((isolated / "cli-config.json").read_text()), {
+            "model": {"modelId": "claude-opus-5-5"},
+            "permissions": {"allow": ["Shell(git)", "Shell(gh)"]},
+            "network": {"useHttp1ForAgent": True},
+        })
+        missing = self.command([sys.executable, shim, "absent-cursor-agent", "acp"], raw, expected_status=1, env=run_env)
+        self.assertIn(b"cursor-acp: absent-cursor-agent: No such file or directory", missing.stderr)
+
+    def test_show_and_run_reject_a_selection_made_under_an_older_launch_contract(self):
+        self.select_gpt()
+        self.cli("show", "agpt")
+        report = json.loads(self.report.read_text())
+        del report["launch_version"]
+        self.report.write_text(json.dumps(report))
+        for action in ("show", "run"):
+            self.assertIn(b"launch contract changed", self.cli(action, "agpt", expected_status=2).stderr)
+
     def test_discovery_retains_codex_descriptions_defaults_and_never_sends_prompt(self):
         self.render_policy(agents=["codex"])
         account = self.home / "codex-active-account"
@@ -409,8 +473,9 @@ for line in sys.stdin:
 
     def test_cursor_discovery_keeps_default_variants_descriptions_and_excludes_fast(self):
         self.render_policy(agents=["cursor-agent"])
-        env = self.fake_binary("cursor-agent", '''import sys
+        env = self.fake_binary("cursor-agent", '''import os, sys
 assert sys.argv[1:] == ['--list-models']
+assert os.environ['CURSOR_CONFIG_DIR'].endswith('/dotfiles/acpx/cursor/cursor'), os.environ['CURSOR_CONFIG_DIR']
 print("""Available models
 gpt-5.6-sol - Workhorse (default)
 gpt-5.6-sol-low - Low thinking
