@@ -203,5 +203,4 @@ agent_session_wiki_ingest = true
 [machines.host.M-D2N572TGQN]
 wiki_host_alias = "work-mbp"
 prolo_ring = true
-winmux_gestures = true
 btt_window_drag = true
