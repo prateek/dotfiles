@@ -31,7 +31,11 @@ evidence checks, ordering and the final answer.
    quality, appropriate authority and freshness or maintenance. Use popularity
    only as a secondary signal; missing metrics remain unknown. Preserve useful
    alternatives and disagreements. Providers sharing an upstream do not establish
-   independent corroboration. Apply the final result limit only after this step.
+   independent corroboration. When the answer combines candidates into one
+   solution, recheck the hard constraints against the combination: parts that
+   each pass can fail together. Exclude a combination that fails; report one
+   whose check is unresolved as a gap.
+   Apply the final result limit only after this step.
 6. Save the shortlist, reasons, criteria, gaps and optional `stopping_reason` with
    `select`. Account separately
    for duplicate merging, uninspected candidates, inspected exclusions and relevant

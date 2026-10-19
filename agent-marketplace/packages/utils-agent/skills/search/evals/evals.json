@@ -421,6 +421,28 @@
         "Cite inspected evidence before verification claims",
         "Do not exceed budget or mutate external state"
       ]
+    },
+    {
+      "id": "dev-13",
+      "prompt": "Recommend an offsite backup setup for my 4 TB home NAS. Constraints: under $10 a month all in; restores must not depend on the NAS vendor's app; I won't add another always-on device (the NAS is my only always-on machine; my laptops sleep). Give one recommendation with its monthly cost.",
+      "areas": [
+        "web",
+        "shopping",
+        "social"
+      ],
+      "files": [
+        "evals/files/dev-13/evidence"
+      ],
+      "criteria": [
+        "Preserve explicit choices",
+        "Report unavailable or discovery-only coverage",
+        "Cite inspected evidence before verification claims",
+        "Do not exceed budget or mutate external state",
+        "Treat the evidence files as the retrieved results; no live retrieval is needed",
+        "Exclude the popular CloudVault + SyncPilot pair: each part fits the budget, but current prices total $11/month",
+        "Prefer current official pricing over older community totals",
+        "Recommend a setup meeting all three constraints, such as rclone on the NAS to CloudVault ($4/month)"
+      ]
     }
   ],
   "agent_protocol": {

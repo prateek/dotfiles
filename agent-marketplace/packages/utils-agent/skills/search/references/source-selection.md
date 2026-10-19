@@ -34,6 +34,13 @@ session. Finish with requirements, binding restrictions and named material unkno
 
 ## 2. Choose complementary branches
 
+For an open-ended recommendation, first name the materially different approaches
+to the outcome, such as buy versus build, another product category, or a service
+versus self-hosting. An approach is material when it changes feasibility, cost,
+constraint fit or ongoing operation. Give each one that could change the
+recommendation a branch or a stated gap. Many sources within one approach cover
+only that approach.
+
 Read the relevant area guides. Start with primary evidence, relevant experience
 or specialist evidence, and an alternative channel when it could change the answer.
 This is a heuristic, not a three-source quota. Choose among:
@@ -47,7 +54,9 @@ This is a heuristic, not a three-source quota. Choose among:
 Source examples are seeds. Discover additional communities, sellers or official
 portals through citations and native-language searches when the seeds fit poorly.
 Missing credentials should leave a visible gap or useful alternative, rather than
-change the question. Finish when each required claim has a facet or an explicit gap.
+change the question. Finish when each required claim has a facet or an explicit
+gap; for an open-ended recommendation, also when each material approach has a
+branch or a stated omission.
 
 ## 3. Resolve routes and reserve inspection
 

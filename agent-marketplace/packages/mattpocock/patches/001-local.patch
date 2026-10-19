@@ -1,0 +1,64 @@
+diff --git a/skills/diagnosing-bugs/SKILL.md b/skills/diagnosing-bugs/SKILL.md
+index d039541..734e620 100644
+--- a/skills/diagnosing-bugs/SKILL.md
++++ b/skills/diagnosing-bugs/SKILL.md
+@@ -52,7 +52,16 @@ The goal is not a clean repro but a **higher reproduction rate**. Loop the trigg
+ 
+ ### When you genuinely cannot build a loop
+ 
+-Stop and say so explicitly. List what you tried. Ask the user for: (a) access to whatever environment reproduces it, (b) a redacted captured artifact (HAR file, log dump, core dump, screen recording with timestamps), or (c) permission to add temporary production instrumentation. Do **not** proceed to hypothesise without a loop.
++Stop and say so explicitly. List what you tried. Ask the user for: (a) access to whatever environment reproduces it, (b) a redacted captured artifact (HAR file, log dump, core dump, screen recording with timestamps), or (c) permission to add temporary production instrumentation. While none of these is available, take the probe path below.
++
++### Probe path: when every run stays expensive
++
++Take this path when, after tightening, each run still costs minutes, a human action or a hardware change, or when no loop exists. Here every cut or swap is itself an experiment, so hypotheses come before the next run:
++
++1. Record the user's exact symptom and the check that shows it (the command or the human observation), if one exists.
++2. Confirm the symptom with that check. With no check, record the symptom as reported and unconfirmed. Skip minimising and go straight to Phase 3.
++3. In Phase 4, choose each run for the hypotheses it would eliminate or rerank. When a result neither eliminates nor reranks them, change what you observe.
++4. Verify any fix against the original symptom with that check; with no check, report the fix as unverified.
+ 
+ ### Completion criterion: a tight loop that goes red
+ 
+@@ -63,7 +72,7 @@ Phase 1 is done when the loop is **tight** and **red-capable**: you can name **o
+ - [ ] **Fast**: seconds, not minutes.
+ - [ ] **Agent-runnable**: you can run it unattended; a human in the loop only via `scripts/hitl-loop.template.sh`.
+ 
+-If you catch yourself reading code to build a theory before this command exists, **stop: jumping straight to a hypothesis is the exact failure this skill prevents.** No red-capable command, no Phase 2.
++If you catch yourself reading code to build a theory before this command exists, **stop: jumping straight to a hypothesis is the exact failure this skill prevents.** No red-capable command, no Phase 2, unless you are on the probe path.
+ 
+ ## Phase 2: Reproduce + minimise
+ 
+@@ -83,7 +92,7 @@ Why bother: a minimal repro shrinks the hypothesis space in Phase 3 (fewer movin
+ 
+ Done when **every remaining element is load-bearing**: removing any one of them makes the loop go green.
+ 
+-Do not proceed until you have reproduced **and** minimised.
++Do not proceed until you have reproduced **and** minimised. On the probe path, reproduce when a check exists, then go to Phase 3.
+ 
+ ## Phase 3: Hypothesise
+ 
+@@ -109,6 +118,8 @@ Tool preference:
+ 
+ **Tag every debug log** with a unique prefix, e.g. `[DEBUG-a4f2]`. Cleanup at the end becomes a single grep. Untagged logs survive; tagged logs die.
+ 
++**Report evidence by kind.** Keep observations, predictions and remaining alternatives separate. State a cause with the confidence its probes earned, and name the alternatives they have not eliminated.
++
+ **Perf branch.** For performance regressions, logs are usually wrong. Instead: establish a baseline measurement (timing harness, `performance.now()`, profiler, query plan), then bisect. Measure first, fix second.
+ 
+ ## Phase 5: Fix + regression test
+diff --git a/skills/retro/SKILL.md b/skills/retro/SKILL.md
+index 12149ac..c8b6df3 100644
+--- a/skills/retro/SKILL.md
++++ b/skills/retro/SKILL.md
+@@ -22,7 +22,9 @@ The user has asked for a **retrospective**. You are suggesting improvements to t
+ - **No-ops**: look for instructions in steering files that don't modify the agent's behavior. _Use when_ the steering files are large and unwieldy.
+ - **Information access**: look for opportunities to increase the agent's access to information. Teeing dev server logs, readonly access to third-party services. _Use when_ a crucial piece of information was not available to the agent.
+ 
+-4. Present these candidates to the user, in order of severity.
++4. Generalise each candidate. Record the observed failure, its general **mechanism**, and whether the existing guidance was missing, unreachable, ignored, contradictory or hard to execute. Name the owning file or tool, the smallest change there, and a behavioural check that would show the change worked. Test the lesson's reach: name one adjacent-domain case it would catch and one case it should leave alone. The reach test applies to shared guidance (global AGENTS.md, shared skills, cross-project tools); a fix specific to one repository or tool belongs with that owner.
++
++5. Present these candidates to the user, in order of severity.
+ 
+ ## Reference
+ 

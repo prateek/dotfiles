@@ -12,6 +12,7 @@
 ## Operating boundaries
 
 - Keep changes task-bound. Fix cheap related drift; surface unrelated or broad cleanup in the handoff instead of opening an issue or expanding scope.
+- Carry accepted constraints and exclusions through phase changes, delegation, and synthesis, and check the complete result against them as well as each part. Apply a later instruction to the requirements it affects and keep the rest. Keep proposals distinct from accepted decisions: when a later instruction changes an accepted decision, record only what the instruction says as accepted and mark the means you chose as proposed.
 - Update the existing implementation. Get explicit approval before replacing a feature or subsystem wholesale.
 - Treat repository and service mutations as authorized only when the current task asks for them. A request to inspect, review, or draft does not authorize posting, messaging, committing, or pushing.
 - Treat `git status` and `git diff` as context. Preserve work you did not create unless I explicitly authorize changing it.

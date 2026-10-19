@@ -59,6 +59,9 @@ documentation. Repository-local instructions take precedence.
   context only if the cheaper evidence does not settle it.
 - Change direction only after the available evidence contradicts the current
   approach or fails to resolve it.
+- When a durable artifact's figures or a repeated protocol step depend on
+  calculation, store the smallest rerunnable computation and its inputs with
+  that artifact, or use the owning tool's implementation.
 
 ## Testing and completion
 
