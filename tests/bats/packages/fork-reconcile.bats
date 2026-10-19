@@ -31,7 +31,7 @@ installed_forks() {
 import pathlib, sys
 calls = pathlib.Path(sys.argv[1]).read_text().splitlines()
 formula = calls.index('install --formula prateek/forks/forkstub-fork')
-cask = calls.index('CASK_OPTS=--no-quarantine install --cask prateek/forks/forkstub-app-fork')
+cask = calls.index('install --cask prateek/forks/forkstub-app-fork')
 assert calls.index('tap prateek/forks https://github.com/prateek/forks') < formula
 assert calls.index('uninstall --formula forkstub') < formula
 assert calls.index('uninstall --cask forkstub-app') < cask
@@ -86,7 +86,7 @@ PY
   assert_success
   [ -z "$stderr" ]
   [[ "$(cat "$FIXTURE/brew.calls")" == *'uninstall --cask forkstub-app'* ]]
-  [[ "$(cat "$FIXTURE/brew.calls")" == *'CASK_OPTS=--no-quarantine install --cask prateek/forks/forkstub-app-fork'* ]]
+  [[ "$(cat "$FIXTURE/brew.calls")" == *'install --cask prateek/forks/forkstub-app-fork'* ]]
   [ "$(cat "$FIXTURE/id.calls")" = -u ]
   : > "$FIXTURE/brew.calls"
   : > "$FIXTURE/id.calls"
