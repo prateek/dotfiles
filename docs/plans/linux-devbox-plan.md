@@ -4,7 +4,7 @@ doc_type: plan
 summary: "Runs the dotfiles and headless Orca on the work-provisioned Linux devbox, defining ownership between the devbox bootstrap, agent sync, image, and chezmoi"
 owner: Prateek
 created: 2026-09-24
-updated: 2026-10-02
+updated: 2026-10-19
 related:
   - ../adr/0040-devbox-machine-type.md
   - ../adr/0043-devbox-os-gating.md
@@ -82,6 +82,10 @@ and credential settings win.
   `work` plugin ([ADR 0039](../adr/0039-work-overlay-in-work-repo.md)): `pair` restarts the
   server with an offer on the loopback pairing address, the Mac captures the
   code straight into `orca environment add`, and `start` closes the offer.
+  The runner pipes server output through a filter that redacts pairing URLs
+  and codes before they reach the serve log; the ready event's offer goes to a
+  0600 `pairing-offer` file that `pair` prints once and deletes, and `start`
+  or `stop` removes an unclaimed one. The serve log is safe to read.
   A repeat `start` changes nothing while the server runs the installed
   package with the same runner.
 - The Mac end of the pairing is the `com.prateek.devbox-orca-tunnel` launch

@@ -16,14 +16,17 @@ readonly ORCA_SESSION="orca-headless"
 # IAM gateway restricts reachability; Orca authenticates each paired device.
 # start always serves with --no-pairing. `pair` restarts the server with a
 # pairing offer on the loopback-only address and prints only the pairing code
-# on stdout, for the caller to capture; run start again after pairing. Never
-# print the serve log or the code. See the devbox-orca-pair skill and
+# on stdout, for the caller to capture; run start again after pairing. The
+# runner redacts pairing URLs before they reach the serve log and hands the
+# offer to `pair` through a one-shot 0600 file, so the log never holds a code.
+# Never print the code. See the devbox-orca-pair skill and
 # docs/plans/linux-devbox-plan.md.
 cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/orca/$ORCA_VERSION"
 state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/orca-headless"
 config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/orca"
 deb="$cache_dir/orca-ide_${ORCA_VERSION}_amd64.deb"
 log="$state_dir/serve.log"
+offer="$state_dir/pairing-offer"
 run_script="$state_dir/run"
 orca_ide="${ORCA_IDE_BIN:-/usr/bin/orca-ide}"
 pairing=0
@@ -52,7 +55,7 @@ stop_server() {
     tmux kill-session -t "$ORCA_SESSION"
   fi
 
-  rm -f "$run_script"
+  rm -f "$run_script" "$offer"
   # The PTY daemon detaches from the server and would keep the old version and
   # environment across a restart. Stopping it ends live Orca terminals.
   pkill -u "$(id -u)" -f '/opt/Orca/.*daemon-entry\.js' 2>/dev/null || true
@@ -130,10 +133,53 @@ render_runner() {
 
   {
     printf '#!/usr/bin/env bash\n'
-    printf 'exec env LIBGL_ALWAYS_SOFTWARE=1 SHELL=%q %q serve' "$login_shell" "$orca_ide"
-    printf ' --port %q --pairing-address %q%s --json' \
+    cat <<'RUNNER'
+# Every line passes through this filter before the serve log. The ready
+# event's pairing URL goes to the offer file instead, and any pairing URL or
+# code in other output, such as a browser link, is redacted.
+redact=$(cat <<'PY'
+import json
+import os
+import re
+import sys
+
+offer = sys.argv[1]
+patterns = [
+    (re.compile(r"orca%3A%2F%2F[^\s\"'<>&]+", re.I), "<redacted>"),
+    (re.compile(r"orca://[^\s\"'<>]+"), "orca://<redacted>"),
+    (re.compile(r"([?#&;](?:code|pairing|token)=)[^\s\"'<>&]+"), r"\1<redacted>"),
+]
+
+def save_offer(url):
+    tmp = f"{offer}.tmp"
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as f:
+        f.write(url + "\n")
+    os.replace(tmp, offer)
+
+for line in sys.stdin:
+    try:
+        event = json.loads(line)
+    except ValueError:
+        event = None
+    if isinstance(event, dict) and isinstance(event.get("pairing"), dict):
+        url = event["pairing"].get("url")
+        if url:
+            save_offer(url)
+            event["pairing"]["url"] = "<redacted>"
+            line = json.dumps(event, separators=(",", ":")) + "\n"
+    for pattern, replacement in patterns:
+        line = pattern.sub(replacement, line)
+    sys.stdout.write(line)
+    sys.stdout.flush()
+PY
+)
+RUNNER
+    printf 'env LIBGL_ALWAYS_SOFTWARE=1 SHELL=%q %q serve' "$login_shell" "$orca_ide"
+    printf ' --port %q --pairing-address %q%s --json 2>&1' \
       "$ORCA_PORT" "$ORCA_PAIRING_ADDRESS" "$pairing_flag"
-    printf ' >>%q 2>&1\n' "$log"
+    # shellcheck disable=SC2016 # $redact belongs to the runner, not this shell
+    printf ' | python3 -u -c "$redact" %q >>%q\n' "$offer" "$log"
   }
 }
 
@@ -147,17 +193,15 @@ serving_current() {
 }
 
 # Reads the first orca_server_ready event from the serve log: exit 1 until it
-# arrives, 2 when Orca bound an unexpected endpoint. --pairing-url also prints
-# the offered pairing URL, and fails when the server made no offer.
+# arrives, 2 when Orca bound an unexpected endpoint.
 ready() {
-  python3 - "$log" "$ORCA_PORT" "$@" <<'PY'
+  python3 - "$log" "$ORCA_PORT" <<'PY'
 import json
 import pathlib
 import sys
 
 path = pathlib.Path(sys.argv[1])
 expected = f"ws://0.0.0.0:{sys.argv[2]}"
-pairing_url = sys.argv[3:] == ["--pairing-url"]
 if not path.exists():
     raise SystemExit(1)
 
@@ -174,16 +218,18 @@ for line in path.read_text(errors="replace").splitlines():
             file=sys.stderr,
         )
         raise SystemExit(2)
-    if pairing_url:
-        url = (event.get("pairing") or {}).get("url")
-        if not url:
-            print("orca-devpod: the server made no pairing offer", file=sys.stderr)
-            raise SystemExit(1)
-        print(url)
     raise SystemExit(0)
 
 raise SystemExit(1)
 PY
+}
+
+# Prints the offered pairing URL once and deletes it, so the code exists on
+# disk only until the caller captures it.
+claim_offer() {
+  [[ -s "$offer" ]] || die "the server made no pairing offer"
+  cat "$offer"
+  rm -f "$offer"
 }
 
 start_server() {
@@ -255,7 +301,7 @@ case "$action" in
     if [[ "$action" == "pair" ]]; then
       pairing=1
       start_server
-      ready --pairing-url
+      claim_offer
     else
       start_server
     fi

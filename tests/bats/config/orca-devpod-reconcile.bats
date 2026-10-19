@@ -29,10 +29,12 @@ setup() {
   kill-session) rm -f "$STUB_SESSION" ;;
   new-session) : >"$STUB_SESSION"; "${@: -1}" ;;
 esac'
-  # The server reports ready, and makes a pairing offer unless told not to.
+  # The server reports ready, and makes a pairing offer unless told not to. An
+  # offer also shows up in plain text, as a browser link carrying the code.
   stub orca-ide 'pairing=",\"pairing\":{\"url\":\"orca://pair?code=secret\"}"
-[[ " $* " != *" --no-pairing "* ]] || pairing=""
-printf "starting\n{\"type\":\"orca_server_ready\",\"boundEndpoint\":\"ws://0.0.0.0:6768\"%s}\n" "$pairing"'
+link="open http://127.0.0.1:6768/#pairing=orca%3A%2F%2Fpair%3Fcode%3Dsecret"
+[[ " $* " != *" --no-pairing "* ]] || { pairing=""; link=""; }
+printf "starting\n%s\n{\"type\":\"orca_server_ready\",\"boundEndpoint\":\"ws://0.0.0.0:6768\"%s}\n" "$link" "$pairing"'
   export ORCA_IDE_BIN="$FIXTURE/bin/orca-ide"
 }
 
@@ -58,4 +60,27 @@ stub() {
   [[ "$stderr" == *"already ready on remote port 6768"* ]]
   run grep -E '^(apt-get|tmux (new|kill)-session|orca-ide) ' "$RECONCILE_LOG"
   assert_failure
+}
+
+@test "Pairing keeps the code out of the serve log and leaves no offer behind" {
+  run_bash 0 "$script" pair
+  assert_success
+  assert_output "orca://pair?code=secret"
+  state="$XDG_STATE_HOME/orca-headless"
+  run grep -c orca_server_ready "$state/serve.log"
+  assert_output 1
+  run grep -E 'secret|code%3D' "$state/serve.log"
+  assert_failure
+  [[ ! -e "$state/pairing-offer" ]]
+}
+
+@test "Start closes a pairing window and removes an unclaimed offer" {
+  state="$XDG_STATE_HOME/orca-headless"
+  mkdir -p "$state"
+  printf 'orca://pair?code=stale\n' >"$state/pairing-offer"
+  run_bash 0 "$script" start
+  assert_success
+  [[ ! -e "$state/pairing-offer" ]]
+  run grep -- '--no-pairing' "$state/run"
+  assert_success
 }
