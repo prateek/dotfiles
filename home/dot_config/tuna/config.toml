@@ -224,7 +224,7 @@ label = "winmux"
         [[comboMode.bindings.destination.bindings]]
         iconPath = "arrow.left.to.line"
         key = "h"
-        label = "move left"
+        label = "move ←"
 
             [comboMode.bindings.destination.bindings.destination]
             type = "command"
@@ -237,9 +237,39 @@ label = "winmux"
                 type = "savedCommand"
 
         [[comboMode.bindings.destination.bindings]]
+        iconPath = "arrow.down.to.line"
+        key = "j"
+        label = "move ↓"
+
+            [comboMode.bindings.destination.bindings.destination]
+            type = "command"
+
+                [comboMode.bindings.destination.bindings.destination.command]
+                actionIdentifier = "tuna.common-actions/run-text-as-shell-command"
+                behavior = "run"
+                presentation = "automatic"
+                subjectIdentifiers = ["text:PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"; winmux move down"]
+                type = "savedCommand"
+
+        [[comboMode.bindings.destination.bindings]]
+        iconPath = "arrow.up.to.line"
+        key = "k"
+        label = "move ↑"
+
+            [comboMode.bindings.destination.bindings.destination]
+            type = "command"
+
+                [comboMode.bindings.destination.bindings.destination.command]
+                actionIdentifier = "tuna.common-actions/run-text-as-shell-command"
+                behavior = "run"
+                presentation = "automatic"
+                subjectIdentifiers = ["text:PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"; winmux move up"]
+                type = "savedCommand"
+
+        [[comboMode.bindings.destination.bindings]]
         iconPath = "arrow.right.to.line"
         key = "l"
-        label = "move right"
+        label = "move →"
 
             [comboMode.bindings.destination.bindings.destination]
             type = "command"
@@ -252,9 +282,9 @@ label = "winmux"
                 type = "savedCommand"
 
         [[comboMode.bindings.destination.bindings]]
-        iconPath = "rectangle"
-        key = "c"
-        label = "columns off"
+        iconPath = "rectangle.split.1x2"
+        key = "r"
+        label = "rows / columns"
 
             [comboMode.bindings.destination.bindings.destination]
             type = "command"
@@ -263,13 +293,13 @@ label = "winmux"
                 actionIdentifier = "tuna.common-actions/run-text-as-shell-command"
                 behavior = "run"
                 presentation = "automatic"
-                subjectIdentifiers = ["text:PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"; winmux column-count off"]
+                subjectIdentifiers = ["text:PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"; \"$HOME/.local/bin/winmux-rows\""]
                 type = "savedCommand"
 
         [[comboMode.bindings.destination.bindings]]
-        iconPath = "rectangle.split.3x1"
-        key = "3"
-        label = "columns 3"
+        iconPath = "arrow.up.left.and.arrow.down.right"
+        key = "f"
+        label = "fullscreen"
 
             [comboMode.bindings.destination.bindings.destination]
             type = "command"
@@ -278,13 +308,13 @@ label = "winmux"
                 actionIdentifier = "tuna.common-actions/run-text-as-shell-command"
                 behavior = "run"
                 presentation = "automatic"
-                subjectIdentifiers = ["text:PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"; winmux column-count 3"]
+                subjectIdentifiers = ["text:PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"; winmux fullscreen"]
                 type = "savedCommand"
 
         [[comboMode.bindings.destination.bindings]]
-        iconPath = "sidebar.left"
-        key = "s"
-        label = "sidebar"
+        iconPath = "square.grid.2x2"
+        key = "o"
+        label = "overview"
 
             [comboMode.bindings.destination.bindings.destination]
             type = "command"
@@ -293,8 +323,106 @@ label = "winmux"
                 actionIdentifier = "tuna.common-actions/run-text-as-shell-command"
                 behavior = "run"
                 presentation = "automatic"
-                subjectIdentifiers = ["text:PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"; winmux open-sidebar"]
+                subjectIdentifiers = ["text:PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"; winmux lens overview"]
                 type = "savedCommand"
+
+        [[comboMode.bindings.destination.bindings]]
+        iconPath = "square.on.square"
+        key = "t"
+        label = "float / tile"
+
+            [comboMode.bindings.destination.bindings.destination]
+            type = "command"
+
+                [comboMode.bindings.destination.bindings.destination.command]
+                actionIdentifier = "tuna.common-actions/run-text-as-shell-command"
+                behavior = "run"
+                presentation = "automatic"
+                subjectIdentifiers = ["text:PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"; winmux layout floating tiling"]
+                type = "savedCommand"
+
+        [[comboMode.bindings.destination.bindings]]
+        iconPath = "ellipsis.circle"
+        key = "m"
+        label = "more"
+
+            [comboMode.bindings.destination.bindings.destination]
+            type = "group"
+
+                [[comboMode.bindings.destination.bindings.destination.bindings]]
+                iconPath = "equal.square"
+                key = "b"
+                label = "balance sizes"
+
+                    [comboMode.bindings.destination.bindings.destination.bindings.destination]
+                    type = "command"
+
+                        [comboMode.bindings.destination.bindings.destination.bindings.destination.command]
+                        actionIdentifier = "tuna.common-actions/run-text-as-shell-command"
+                        behavior = "run"
+                        presentation = "automatic"
+                        subjectIdentifiers = ["text:PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"; winmux balance-sizes"]
+                        type = "savedCommand"
+
+                [[comboMode.bindings.destination.bindings.destination.bindings]]
+                iconPath = "rectangle"
+                key = "c"
+                label = "columns off"
+
+                    [comboMode.bindings.destination.bindings.destination.bindings.destination]
+                    type = "command"
+
+                        [comboMode.bindings.destination.bindings.destination.bindings.destination.command]
+                        actionIdentifier = "tuna.common-actions/run-text-as-shell-command"
+                        behavior = "run"
+                        presentation = "automatic"
+                        subjectIdentifiers = ["text:PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"; winmux column-count off"]
+                        type = "savedCommand"
+
+                [[comboMode.bindings.destination.bindings.destination.bindings]]
+                iconPath = "rectangle.split.3x1"
+                key = "3"
+                label = "columns 3"
+
+                    [comboMode.bindings.destination.bindings.destination.bindings.destination]
+                    type = "command"
+
+                        [comboMode.bindings.destination.bindings.destination.bindings.destination.command]
+                        actionIdentifier = "tuna.common-actions/run-text-as-shell-command"
+                        behavior = "run"
+                        presentation = "automatic"
+                        subjectIdentifiers = ["text:PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"; winmux column-count 3"]
+                        type = "savedCommand"
+
+                [[comboMode.bindings.destination.bindings.destination.bindings]]
+                iconPath = "sidebar.left"
+                key = "s"
+                label = "sidebar"
+
+                    [comboMode.bindings.destination.bindings.destination.bindings.destination]
+                    type = "command"
+
+                        [comboMode.bindings.destination.bindings.destination.bindings.destination.command]
+                        actionIdentifier = "tuna.common-actions/run-text-as-shell-command"
+                        behavior = "run"
+                        presentation = "automatic"
+                        subjectIdentifiers = ["text:PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"; winmux open-sidebar"]
+                        type = "savedCommand"
+
+                [[comboMode.bindings.destination.bindings.destination.bindings]]
+                iconPath = "display"
+                key = "d"
+                label = "display toggle"
+
+                    [comboMode.bindings.destination.bindings.destination.bindings.destination]
+                    type = "command"
+
+                        [comboMode.bindings.destination.bindings.destination.bindings.destination.command]
+                        actionIdentifier = "tuna.common-actions/run-text-as-shell-command"
+                        behavior = "run"
+                        presentation = "automatic"
+                        subjectIdentifiers = ["text:PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"; \"$HOME/.local/bin/winmux-display\" toggle"]
+                        type = "savedCommand"
 
 [[comboMode.bindings]]
 iconPath = "wrench.and.screwdriver"

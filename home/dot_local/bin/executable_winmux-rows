@@ -1,0 +1,34 @@
+#!/bin/sh
+# Toggle a Columns workspace between its Columns and the same containers
+# stacked as rows. Rows last until the next toggle or config reload.
+#   winmux-rows [workspace]     defaults to the focused workspace
+set -eu
+PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+
+ws=${1:-$(winmux list-workspaces --focused)}
+state="${XDG_STATE_HOME:-$HOME/.local/state}/winmux/rows-$ws"
+count=$(winmux list-columns --workspace "$ws" | wc -l | tr -d ' ')
+
+if [ "$count" -eq 0 ]; then
+  [ -f "$state" ] || { echo "winmux-rows: workspace $ws has no Columns to restore" >&2; exit 1; }
+  winmux column-count "$(cat "$state")" --workspace "$ws"
+  rm -f "$state"
+  exit 0
+fi
+
+mkdir -p "${state%/*}"
+echo "$count" >"$state"
+winmux column-count off --workspace "$ws"
+
+# The top-level split's direction is only reachable through a layout rewrite:
+# `layout --window-id` flips the window's parent, a tab group when a Column
+# held several windows.
+dir=$(mktemp -d)
+trap 'rm -rf "$dir"' EXIT
+winmux agent query --path "$dir/q.json"
+jq --arg ws "$ws" '.edit = {operations: [], layout: {workspaces: [
+  {name: $ws,
+   layout: (.reasoning.rawTrees[] | select(.workspace == $ws) | .tree | .direction = "vertical"),
+   floating: [.inventory.windows[] | select(.workspace == $ws and .layout == "floating") | {windowId}]}
+]}}' "$dir/q.json" >"$dir/edit.json"
+winmux agent apply --path "$dir/edit.json" >/dev/null

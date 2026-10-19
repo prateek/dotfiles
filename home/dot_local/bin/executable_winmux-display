@@ -1,0 +1,24 @@
+#!/bin/sh
+# Select WinMux's per-display config until it matches profiles to the attached
+# display itself (prateek/winmux#47).
+#   winmux-display                       print the active display config
+#   winmux-display laptop|ultrawide      select one and reload WinMux
+#   winmux-display toggle                switch to the other one
+set -eu
+
+dir="${XDG_CONFIG_HOME:-$HOME/.config}/winmux"
+selector="$dir/display.ncl"
+current=$(sed -n 's/^import "\(.*\)\.ncl"$/\1/p' "$selector" 2>/dev/null || true)
+
+case "${1:-}" in
+"") echo "${current:-unset}"; exit 0 ;;
+toggle) [ "$current" = laptop ] && target=ultrawide || target=laptop ;;
+laptop | ultrawide) target=$1 ;;
+*) echo "usage: winmux-display [laptop|ultrawide|toggle]" >&2; exit 2 ;;
+esac
+
+[ -f "$dir/$target.ncl" ] || { echo "winmux-display: missing $dir/$target.ncl" >&2; exit 1; }
+printf '# Rewritten by winmux-display; chezmoi creates it once and leaves it alone.\nimport "%s.ncl"\n' "$target" >"$selector"
+winmux config check "$dir/winmux.ncl" >/dev/null
+winmux reload-config --no-gui
+echo "$target"

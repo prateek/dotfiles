@@ -59,14 +59,29 @@ class PackageConfigGatesTests(RepoTestCase):
             self.assertEqual(app["actionIdentifier"], "tuna.common-actions/open")
             self.assertRegex(app["subjectIdentifiers"][0], r"^path:/.+\.app$")
         self.assertEqual(binds["w"]["label"], "winmux")
-        winmux = {child["key"]: child["destination"]["command"] for child in binds["w"]["destination"]["bindings"]}
-        self.assertEqual(
-            {key: cmd["subjectIdentifiers"][0].split("; winmux ", 1)[1] for key, cmd in winmux.items()},
-            {"h": "move left", "l": "move right", "c": "column-count off", "3": "column-count 3", "s": "open-sidebar"},
-        )
+        def commands(bindings, prefix=""):
+            for child in bindings:
+                destination = child["destination"]
+                if destination["type"] == "group":
+                    yield from commands(destination["bindings"], prefix + child["key"])
+                else:
+                    yield prefix + child["key"], destination["command"]
+
+        winmux = dict(commands(binds["w"]["destination"]["bindings"]))
+        path = 'text:PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"; '
         for cmd in winmux.values():
             self.assertEqual(cmd["actionIdentifier"], "tuna.common-actions/run-text-as-shell-command")
-            self.assertTrue(cmd["subjectIdentifiers"][0].startswith('text:PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"; winmux '))
+            self.assertTrue(cmd["subjectIdentifiers"][0].startswith(path))
+        self.assertEqual(
+            {key: cmd["subjectIdentifiers"][0].removeprefix(path) for key, cmd in winmux.items()},
+            {
+                "h": "winmux move left", "j": "winmux move down", "k": "winmux move up", "l": "winmux move right",
+                "r": '"$HOME/.local/bin/winmux-rows"', "f": "winmux fullscreen", "o": "winmux lens overview",
+                "t": "winmux layout floating tiling",
+                "mb": "winmux balance-sizes", "mc": "winmux column-count off", "m3": "winmux column-count 3",
+                "ms": "winmux open-sidebar", "md": '"$HOME/.local/bin/winmux-display" toggle',
+            },
+        )
         self.assertEqual(binds["z"]["label"], "misc")
         self.assertLessEqual({"d", "m", "z", "t", "r", "g"},
                              {child["key"] for child in binds["z"]["destination"]["bindings"]})
