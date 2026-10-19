@@ -1,11 +1,30 @@
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- /* btt_window_drag: hold $move and move the mouse to drag the window under
+       the cursor; hold $resize to resize it. BTT requires an exact modifier
+       match, so the two sets must differ. Names: control opt cmd shift
+       function. Ctrl+Alt / Ctrl+Alt+Cmd is (list "control" "opt") /
+       (list "control" "opt" "cmd"). BTT reads them only at launch; the
+       plist apply hooks quit and relaunch it around the change. */ -}}
+{{- $move := list "control" -}}
+{{- $resize := list "control" "cmd" -}}
+{{- $mods := list "control" "opt" "cmd" "shift" "function" -}}
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
+{{- if not $f.btt_window_drag }}
+<!-- chezmoi-delete: {{ range $i, $m := $mods }}{{ if $i }}, {{ end }}{{ $m }}Move, {{ $m }}Resize{{ end }} -->
+{{- end }}
 <dict>
   <key>BTTClipboardManagerEnabledFromShortcuts</key> <true/>
   <key>BTTDisableListStyleView</key>                 <false/>
   <key>BTTDisabledLegacyUI</key>                     <true/>
   <key>BTTRemoteEnabled</key>                        <false/>
   <key>BTTTouchBarSupportEnabled</key>               <false/>
+{{- if $f.btt_window_drag }}
+{{-   range $m := $mods }}
+  <key>{{ $m }}Move</key>   <{{ has $m $move }}/>
+  <key>{{ $m }}Resize</key> <{{ has $m $resize }}/>
+{{-   end }}
+{{- end }}
 </dict>
 </plist>

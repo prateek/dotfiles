@@ -1,0 +1,120 @@
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- if and $f.run_install_scripts (eq .chezmoi.os "darwin") -}}
+{{ template "script_lib.sh" . }}
+
+# Hand the vertical Mission Control / App Exposé trackpad swipes to WinMux via
+# BetterTouchTool while the winmux_gestures feature is on, and put them back
+# when it is turned off. WinMux has no gesture support of its own yet.
+#
+# On: save the native swipe settings, switch the vertical 3/4-finger swipes off,
+# and add BTT triggers (fixed UUIDs) that run ~/.local/bin/winmux-gesture.
+# Cmd+swipe triggers call the native action directly.
+# Off: restore the saved settings and delete the triggers. A host that never
+# turned it on has no saved state and is left alone.
+#
+# run_after_ with its own input hash: BTT can be missing or slow to start, and a
+# run_onchange_ script that skipped would be recorded as done.
+state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/winmux-gestures"
+saved="$state_dir/native-swipes.tsv"
+hash_file="$state_dir/input.sha256"
+want={{ if $f.winmux_gestures }}on{{ else }}off{{ end }}
+
+[ "$want" = on ] || [ -f "$saved" ] || exit 0
+
+# domain|key|currentHost
+swipe_keys="com.apple.AppleMultitouchTrackpad|TrackpadThreeFingerVertSwipeGesture|
+com.apple.AppleMultitouchTrackpad|TrackpadFourFingerVertSwipeGesture|
+com.apple.driver.AppleBluetoothMultitouch.trackpad|TrackpadThreeFingerVertSwipeGesture|
+com.apple.driver.AppleBluetoothMultitouch.trackpad|TrackpadFourFingerVertSwipeGesture|
+NSGlobalDomain|com.apple.trackpad.threeFingerVertSwipeGesture|1
+NSGlobalDomain|com.apple.trackpad.fourFingerVertSwipeGesture|1"
+
+# uuid|BTT trackpad trigger type|required modifiers|action
+triggers="10581385-921B-4323-94B3-799EC60F7E7C|102|0|overview
+8AF6C162-B0F3-413B-A3E8-2FEEC5DDDE80|103|0|app-windows
+98490E34-0A41-40C6-AF1A-6805DDEDDAA3|108|0|overview
+6D34D0F5-6FE5-429D-985F-2063A8A0B291|107|0|floating
+FE00C232-6B64-44C3-8E8C-4C2A9E340E64|102|1048576|native:5
+97F228C5-BA7E-4364-A457-3194941189A1|103|1048576|native:6
+69A387EE-21BB-47AE-BB26-5B3EA65DB2C8|108|1048576|native:5
+48581174-3967-484D-A6DD-A8F067445358|107|1048576|native:6"
+
+input_hash=$(printf '%s\n%s\n%s\n' "$want" "$swipe_keys" "$triggers" | shasum -a 256 | cut -d' ' -f1)
+if [ -f "$hash_file" ] && [ "$(cat "$hash_file")" = "$input_hash" ]; then
+  exit 0
+fi
+
+if [ ! -d /Applications/BetterTouchTool.app ]; then
+  warn "winmux-gestures: BetterTouchTool is not installed; leaving the native swipes alone."
+  exit 0
+fi
+
+btt() {
+  osascript - "$@" <<'APPLESCRIPT'
+on run argv
+  set verb to item 1 of argv
+  tell application "BetterTouchTool"
+    if verb is "get" then return get_trigger (item 2 of argv)
+    if verb is "add" then return add_new_trigger (item 2 of argv)
+    if verb is "update" then return update_trigger (item 2 of argv) json (item 3 of argv)
+    if verb is "delete" then return delete_trigger (item 2 of argv)
+  end tell
+end run
+APPLESCRIPT
+}
+
+defaults_cmd() { # currentHost domain ...
+  if [ "$1" = 1 ]; then shift; defaults -currentHost "$@"; else shift; defaults "$@"; fi
+}
+
+trigger_json() { # uuid type modifiers action
+  if [ "${4#native:}" != "$4" ]; then
+    action="{\"BTTPredefinedActionType\":${4#native:}}"
+  else
+    action="{\"BTTPredefinedActionType\":206,\"BTTShellTaskActionScript\":\"\\\"\$HOME/.local/bin/winmux-gesture\\\" $4\",\"BTTShellTaskActionConfig\":\"/bin/sh:::-c:::-:::\"}"
+  fi
+  printf '{"BTTUUID":"%s","BTTTriggerClass":"BTTTriggerTypeTouchpadAll","BTTTriggerType":%s,"BTTRequiredModifierKeys":%s,"BTTTriggerTypeDescription":"WinMux: %s","BTTEnabled":1,"BTTEnabled2":1,"BTTActionsToExecute":[%s]}' \
+    "$1" "$2" "$3" "$4" "$action"
+}
+
+refresh_trackpad() {
+  /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u >/dev/null 2>&1 || true
+  killall Dock >/dev/null 2>&1 || true
+}
+
+mkdir -p "$state_dir"
+if [ "$want" = on ]; then
+  if [ ! -f "$saved" ]; then
+    : >"$saved.tmp"
+    echo "$swipe_keys" | while IFS='|' read -r domain key host; do
+      value=$(defaults_cmd "${host:-0}" read "$domain" "$key" 2>/dev/null || echo unset)
+      printf '%s|%s|%s|%s\n' "$domain" "$key" "$host" "$value" >>"$saved.tmp"
+    done
+    mv "$saved.tmp" "$saved"
+  fi
+  echo "$swipe_keys" | while IFS='|' read -r domain key host; do
+    defaults_cmd "${host:-0}" write "$domain" "$key" -int 0
+  done
+  echo "$triggers" | while IFS='|' read -r uuid type mods action; do
+    json=$(trigger_json "$uuid" "$type" "$mods" "$action")
+    if btt get "$uuid" | grep -q BTTUUID; then btt update "$uuid" "$json" >/dev/null; else btt add "$json" >/dev/null; fi
+  done
+  refresh_trackpad
+  log "winmux-gestures: native vertical swipes off; BetterTouchTool gestures open WinMux Lenses."
+else
+  while IFS='|' read -r domain key host value; do
+    if [ "$value" = unset ]; then
+      defaults_cmd "${host:-0}" delete "$domain" "$key" 2>/dev/null || true
+    else
+      defaults_cmd "${host:-0}" write "$domain" "$key" -int "$value"
+    fi
+  done <"$saved"
+  echo "$triggers" | while IFS='|' read -r uuid _ _ _; do
+    btt delete "$uuid" >/dev/null 2>&1 || true
+  done
+  rm -f "$saved"
+  refresh_trackpad
+  log "winmux-gestures: native vertical swipes restored; BetterTouchTool gestures removed."
+fi
+echo "$input_hash" >"$hash_file"
+{{- end }}

@@ -85,6 +85,17 @@ devbox_orca_tunnel = false
 # machine where another owner writes ~/.gitconfig. Git reads the XDG file
 # first, so that owner's identity and credential settings win.
 git_config_xdg = false
+# Hand the vertical Mission Control / App Exposé trackpad swipes to WinMux
+# Lenses through BetterTouchTool; turning it off restores the native swipes.
+# See run_after_49-winmux-gestures.
+winmux_gestures = false
+# BetterTouchTool's built-in hover move/resize: holding the move modifiers and
+# moving the mouse drags the window under the cursor, the resize modifiers
+# resize it, no click. The modifiers are set in the BTT plist fragment
+# (home/.chezmoitemplates/com.hegenberg.BetterTouchTool.plist.tmpl). Turning
+# it off deletes BTT's move/resize modifier keys, so the feature reverts to
+# BTT's default (off), including any choice made in BTT's settings UI.
+btt_window_drag = false
 
 # Minimal/fast tier for CI dry-run, Tart smoke, and shell audits. Keeps the
 # defaults' run_install_scripts/apply_macos_defaults = true so the Tart smoke
@@ -192,3 +203,5 @@ agent_session_wiki_ingest = true
 [machines.host.M-D2N572TGQN]
 wiki_host_alias = "work-mbp"
 prolo_ring = true
+winmux_gestures = true
+btt_window_drag = true

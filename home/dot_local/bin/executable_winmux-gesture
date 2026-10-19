@@ -1,0 +1,18 @@
+#!/bin/sh
+# Run by the BetterTouchTool trackpad gestures that run_after_49-winmux-gestures
+# installs: open a WinMux Lens, or fall back to the native view when WinMux is
+# not running. Cmd+gesture triggers call the native action directly in BTT.
+#   winmux-gesture overview|app-windows|floating
+set -eu
+PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+
+case "${1:-}" in
+overview | floating) native=5 ;; # Mission Control
+app-windows) native=6 ;;         # Application Exposé
+*) echo "usage: winmux-gesture overview|app-windows|floating" >&2; exit 2 ;;
+esac
+
+if pgrep -xq WinMux && winmux lens "$1"; then
+  exit 0
+fi
+osascript -e "tell application \"BetterTouchTool\" to trigger_action \"{\\\"BTTPredefinedActionType\\\":$native}\"" >/dev/null
