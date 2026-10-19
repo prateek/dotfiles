@@ -14,6 +14,9 @@ let defaults = import "winmux/defaults.ncl" in
     ctrl-alt-l = "move right",
     ctrl-alt-c = "column-count off",
     ctrl-alt-shift-c = "column-count 3",
+    # Window switcher: type to filter every window, Enter to go. Caps+F on
+    # both keyboards (Caps is Ctrl when held); takes Ctrl-F from every app.
+    ctrl-f = "lens search",
     # Replace the system app switcher; WinMux disables the native Cmd-Tab pair
     # while bound and restores it on quit (docs/default-config.md). Parked: a
     # WinMux crash is a hard kill that leaves native Cmd-Tab disabled.
