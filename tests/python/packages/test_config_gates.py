@@ -78,7 +78,7 @@ class PackageConfigGatesTests(RepoTestCase):
                 "h": "winmux move left", "j": "winmux move down", "k": "winmux move up", "l": "winmux move right",
                 "r": '"$HOME/.local/bin/winmux-rows"', "f": "winmux fullscreen", "o": "winmux lens overview",
                 "t": "winmux layout floating tiling",
-                "mb": "winmux balance-sizes", "mc": "winmux column-count off", "m3": "winmux column-count 3",
+                "mb": "winmux balance-sizes", "mc": "winmux column-count off", "mr": "winmux reload-config",
                 "ms": "winmux open-sidebar", "md": '"$HOME/.local/bin/winmux-display" toggle',
             },
         )

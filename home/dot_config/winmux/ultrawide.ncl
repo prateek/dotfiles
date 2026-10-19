@@ -1,14 +1,11 @@
 # Settings for the 32:9 Odyssey G95NC with the lid shut. Selected by display.ncl.
-let is-app = fun ids w => std.array.elem w.app.bundleId ids in
-# Self Service's admin sign-in is an ephemeral ASWebAuthenticationSession window
-# in the default browser. At placement its title is "Untitled - … (Incognito)"
-# and `document` is about:blank, so the Chromium incognito suffix is the only
-# signal; Safari and Arc private windows carry no such suffix.
-let is-incognito = fun w => std.string.contains "(Incognito)" w.title in
-let browsers = ["com.talon-sec.Work", "com.google.Chrome", "company.thebrowser.Browser"] in
-let editors = ["com.todesktop.230313mzl4w4u92", "com.stablyai.orca"] in
-let comms = ["io.agentsview.desktop", "com.tinyspeck.slackmacgap", "com.jamfsoftware.selfservice.mac"] in
-let utilities = ["com.1password.1password"] in
+let A = import "apps.ncl" in
+let is-app = A.is-app in
+let is-incognito = A.is-incognito in
+let browsers = A.browsers in
+let editors = A.editors in
+let comms = A.comms in
+let utilities = A.utilities in
 {
   gaps.inner = { horizontal = 2, vertical = 2 },
   gaps.outer = { bottom = 2, left = 2, right = 2, top = 2 },

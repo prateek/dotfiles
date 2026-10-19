@@ -1,10 +1,11 @@
 # Settings for the built-in panel alone. Selected by display.ncl.
-let is-app = fun ids w => std.array.elem w.app.bundleId ids in
-# Chromium incognito windows float; Self Service's admin sign-in is one (see ultrawide.ncl).
-let is-incognito = fun w => std.string.contains "(Incognito)" w.title in
-let editors = ["com.stablyai.orca", "com.todesktop.230313mzl4w4u92"] in
-let browsers = ["com.talon-sec.Work", "com.google.Chrome", "company.thebrowser.Browser"] in
-let comms = ["com.tinyspeck.slackmacgap", "us.zoom.xos", "com.jamfsoftware.selfservice.mac"] in
+let A = import "apps.ncl" in
+let is-app = A.is-app in
+# Chromium incognito windows float; Self Service's admin sign-in is one (see apps.ncl).
+let is-incognito = A.is-incognito in
+let browsers = A.browsers in
+let editors = A.editors in
+let comms = A.comms in
 {
   # Workspace 1 is one full-width tab group; workspace 2 turns Columns on below.
   columns.count = 'off,

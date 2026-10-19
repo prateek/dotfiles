@@ -18,7 +18,12 @@ laptop | ultrawide) target=$1 ;;
 esac
 
 [ -f "$dir/$target.ncl" ] || { echo "winmux-display: missing $dir/$target.ncl" >&2; exit 1; }
+previous=$(cat "$selector" 2>/dev/null || true)
 printf '# Rewritten by winmux-display; chezmoi creates it once and leaves it alone.\nimport "%s.ncl"\n' "$target" >"$selector"
-winmux config check "$dir/winmux.ncl" >/dev/null
+if ! winmux config check "$dir/winmux.ncl" >&2; then
+  printf '%s\n' "$previous" >"$selector"
+  echo "winmux-display: $target.ncl fails the config check; kept ${current:-the previous selection}" >&2
+  exit 1
+fi
 winmux reload-config --no-gui
 echo "$target"

@@ -30,6 +30,8 @@ MANAGED = {
         '.local/bin/wiki-sessions-sync',
     ),
     'work': (
+        'Library/Preferences/com.zimengxiong.winmux.plist',
+        '.local/bin/winmux-rows',
         '.config/ghostty',
         '.config/zed',
         '.orca/keybindings.json',
@@ -138,6 +140,8 @@ IGNORED = {
         '.config/mise/conf.d/mcporter.toml',
     ),
     'homelab': (
+        'Library/Preferences/com.zimengxiong.winmux.plist',
+        '.local/bin/winmux-rows',
         '.config/ghostty',
         'Library/Preferences/com.setapp.DesktopClient.plist',
         'Library/Preferences/com.prakashjoshipax.VoiceInk.plist',
@@ -147,6 +151,8 @@ IGNORED = {
         'Library/LaunchAgents/com.prateek.devbox-orca-tunnel.plist',
     ),
     'ci': (
+        'Library/Preferences/com.zimengxiong.winmux.plist',
+        '.local/bin/winmux-rows',
         '.config/ghostty',
         'Library/Preferences/com.hegenberg.BetterTouchTool.plist',
         'Library/Preferences/com.raycast.macos.plist',

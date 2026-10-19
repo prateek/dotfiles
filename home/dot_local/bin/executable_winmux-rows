@@ -16,19 +16,28 @@ if [ "$count" -eq 0 ]; then
   exit 0
 fi
 
-mkdir -p "${state%/*}"
-echo "$count" >"$state"
 winmux column-count off --workspace "$ws"
+restore() {
+  winmux column-count "$count" --workspace "$ws"
+  echo "winmux-rows: $1; kept $count Columns on workspace $ws" >&2
+  exit 1
+}
 
 # The top-level split's direction is only reachable through a layout rewrite:
 # `layout --window-id` flips the window's parent, a tab group when a Column
-# held several windows.
+# held several windows. Without Columns the root must be a split of two or more
+# containers; one occupied Column collapses to a single node with nothing to
+# stack.
 dir=$(mktemp -d)
 trap 'rm -rf "$dir"' EXIT
-winmux agent query --path "$dir/q.json"
+winmux agent query --path "$dir/q.json" || restore "couldn't read the layout"
+jq -e --arg ws "$ws" '[.reasoning.rawTrees[] | select(.workspace == $ws and .tree.kind == "split")] | length == 1' \
+  "$dir/q.json" >/dev/null || restore "nothing to stack (one occupied Column)"
 jq --arg ws "$ws" '.edit = {operations: [], layout: {workspaces: [
   {name: $ws,
    layout: (.reasoning.rawTrees[] | select(.workspace == $ws) | .tree | .direction = "vertical"),
    floating: [.inventory.windows[] | select(.workspace == $ws and .layout == "floating") | {windowId}]}
 ]}}' "$dir/q.json" >"$dir/edit.json"
-winmux agent apply --path "$dir/edit.json" >/dev/null
+winmux agent apply --path "$dir/edit.json" >/dev/null || restore "WinMux rejected the rows layout"
+mkdir -p "${state%/*}"
+echo "$count" >"$state"

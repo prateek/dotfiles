@@ -6,20 +6,23 @@
 # BetterTouchTool while the winmux_gestures feature is on, and put them back
 # when it is turned off. WinMux has no gesture support of its own yet.
 #
-# On: save the native swipe settings, switch the vertical 3/4-finger swipes off,
-# and add BTT triggers (fixed UUIDs) that run ~/.local/bin/winmux-gesture.
-# Cmd+swipe triggers call the native action directly.
-# Off: restore the saved settings and delete the triggers. A host that never
-# turned it on has no saved state and is left alone.
+# On: add BTT triggers (fixed UUIDs) that run ~/.local/bin/winmux-gesture,
+# then save the native swipe settings and switch the vertical 3/4-finger swipes
+# off; Cmd+swipe triggers call the native action directly. If BTT isn't
+# running or the triggers fail, the native swipes stay on and the next apply
+# retries.
+# Off: restore the saved settings, then delete the triggers once BTT is
+# running. A host that never turned it on has no saved state and is left alone.
 #
 # run_after_ with its own input hash: BTT can be missing or slow to start, and a
 # run_onchange_ script that skipped would be recorded as done.
 state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/winmux-gestures"
 saved="$state_dir/native-swipes.tsv"
 hash_file="$state_dir/input.sha256"
+triggers_marker="$state_dir/btt-triggers-installed"
 want={{ if $f.winmux_gestures }}on{{ else }}off{{ end }}
 
-[ "$want" = on ] || [ -f "$saved" ] || exit 0
+[ "$want" = on ] || [ -f "$saved" ] || [ -f "$triggers_marker" ] || exit 0
 
 # domain|key|currentHost
 swipe_keys="com.apple.AppleMultitouchTrackpad|TrackpadThreeFingerVertSwipeGesture|
@@ -44,11 +47,6 @@ if [ -f "$hash_file" ] && [ "$(cat "$hash_file")" = "$input_hash" ]; then
   exit 0
 fi
 
-if [ ! -d /Applications/BetterTouchTool.app ]; then
-  warn "winmux-gestures: BetterTouchTool is not installed; leaving the native swipes alone."
-  exit 0
-fi
-
 btt() {
   osascript - "$@" <<'APPLESCRIPT'
 on run argv
@@ -62,6 +60,11 @@ on run argv
 end run
 APPLESCRIPT
 }
+
+# Only talk to a BTT that is already running: `tell application` would launch
+# it, and when its plist is pending the plist hooks quit it before apply and
+# relaunch it after, so a launch from here would start it on stale prefs.
+btt_running() { pgrep -xq BetterTouchTool; }
 
 defaults_cmd() { # currentHost domain ...
   if [ "$1" = 1 ]; then shift; defaults -currentHost "$@"; else shift; defaults "$@"; fi
@@ -77,6 +80,19 @@ trigger_json() { # uuid type modifiers action
     "$1" "$2" "$3" "$4" "$action"
 }
 
+sync_triggers() {
+  echo "$triggers" | while IFS='|' read -r uuid type mods action; do
+    json=$(trigger_json "$uuid" "$type" "$mods" "$action")
+    if btt get "$uuid" | grep -q BTTUUID; then btt update "$uuid" "$json" >/dev/null; else btt add "$json" >/dev/null; fi
+  done
+}
+
+delete_triggers() {
+  echo "$triggers" | while IFS='|' read -r uuid _ _ _; do
+    btt delete "$uuid" >/dev/null 2>&1 || true
+  done
+}
+
 refresh_trackpad() {
   /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u >/dev/null 2>&1 || true
   killall Dock >/dev/null 2>&1 || true
@@ -84,6 +100,16 @@ refresh_trackpad() {
 
 mkdir -p "$state_dir"
 if [ "$want" = on ]; then
+  # Triggers first: the native swipes go off only once their replacement exists.
+  if ! btt_running; then
+    warn "winmux-gestures: BetterTouchTool isn't running; leaving the native swipes on until the next apply."
+    exit 0
+  fi
+  if ! sync_triggers; then
+    warn "winmux-gestures: couldn't install the BetterTouchTool triggers (Automation permission?); leaving the native swipes on."
+    exit 0
+  fi
+  : >"$triggers_marker"
   if [ ! -f "$saved" ]; then
     : >"$saved.tmp"
     echo "$swipe_keys" | while IFS='|' read -r domain key host; do
@@ -95,26 +121,34 @@ if [ "$want" = on ]; then
   echo "$swipe_keys" | while IFS='|' read -r domain key host; do
     defaults_cmd "${host:-0}" write "$domain" "$key" -int 0
   done
-  echo "$triggers" | while IFS='|' read -r uuid type mods action; do
-    json=$(trigger_json "$uuid" "$type" "$mods" "$action")
-    if btt get "$uuid" | grep -q BTTUUID; then btt update "$uuid" "$json" >/dev/null; else btt add "$json" >/dev/null; fi
-  done
   refresh_trackpad
   log "winmux-gestures: native vertical swipes off; BetterTouchTool gestures open WinMux Lenses."
 else
-  while IFS='|' read -r domain key host value; do
-    if [ "$value" = unset ]; then
-      defaults_cmd "${host:-0}" delete "$domain" "$key" 2>/dev/null || true
-    else
-      defaults_cmd "${host:-0}" write "$domain" "$key" -int "$value"
+  # Restoring the swipes needs only `defaults`, so it never waits on BTT.
+  # Saved settings mean the triggers were installed too (hosts that turned
+  # this on before the marker existed).
+  if [ -f "$saved" ]; then
+    : >"$triggers_marker"
+    while IFS='|' read -r domain key host value; do
+      if [ "$value" = unset ]; then
+        defaults_cmd "${host:-0}" delete "$domain" "$key" 2>/dev/null || true
+      else
+        defaults_cmd "${host:-0}" write "$domain" "$key" -int "$value"
+      fi
+    done <"$saved"
+    rm -f "$saved"
+    refresh_trackpad
+    log "winmux-gestures: native vertical swipes restored."
+  fi
+  if [ -f "$triggers_marker" ]; then
+    if [ -d /Applications/BetterTouchTool.app ] && ! btt_running; then
+      warn "winmux-gestures: BetterTouchTool isn't running; its WinMux triggers will be removed on a later apply."
+      exit 0
     fi
-  done <"$saved"
-  echo "$triggers" | while IFS='|' read -r uuid _ _ _; do
-    btt delete "$uuid" >/dev/null 2>&1 || true
-  done
-  rm -f "$saved"
-  refresh_trackpad
-  log "winmux-gestures: native vertical swipes restored; BetterTouchTool gestures removed."
+    [ -d /Applications/BetterTouchTool.app ] && delete_triggers
+    rm -f "$triggers_marker"
+    log "winmux-gestures: BetterTouchTool gestures removed."
+  fi
 fi
 echo "$input_hash" >"$hash_file"
 {{- end }}

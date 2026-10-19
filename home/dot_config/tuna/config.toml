@@ -380,9 +380,9 @@ label = "winmux"
                         type = "savedCommand"
 
                 [[comboMode.bindings.destination.bindings.destination.bindings]]
-                iconPath = "rectangle.split.3x1"
-                key = "3"
-                label = "columns 3"
+                iconPath = "arrow.counterclockwise"
+                key = "r"
+                label = "columns restore"
 
                     [comboMode.bindings.destination.bindings.destination.bindings.destination]
                     type = "command"
@@ -391,7 +391,7 @@ label = "winmux"
                         actionIdentifier = "tuna.common-actions/run-text-as-shell-command"
                         behavior = "run"
                         presentation = "automatic"
-                        subjectIdentifiers = ["text:PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"; winmux column-count 3"]
+                        subjectIdentifiers = ["text:PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"; winmux reload-config"]
                         type = "savedCommand"
 
                 [[comboMode.bindings.destination.bindings.destination.bindings]]

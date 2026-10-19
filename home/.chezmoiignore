@@ -173,6 +173,9 @@ Library/Application Support/obsidian/obsidian.json
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "prateek/tap/winmux")) "true" }}
 .config/winmux
 Library/Preferences/com.zimengxiong.winmux.plist
+.local/bin/winmux-display
+.local/bin/winmux-gesture
+.local/bin/winmux-rows
 {{- end }}
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "bettertouchtool")) "true" }}
 Library/Preferences/com.hegenberg.BetterTouchTool.plist

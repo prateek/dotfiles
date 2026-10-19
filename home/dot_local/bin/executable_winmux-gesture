@@ -7,8 +7,8 @@ set -eu
 PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 
 case "${1:-}" in
-overview | floating) native=5 ;; # Mission Control
-app-windows) native=6 ;;         # Application Exposé
+overview) native=5 ;;               # Mission Control (the up swipes)
+app-windows | floating) native=6 ;; # Application Exposé (the down swipes)
 *) echo "usage: winmux-gesture overview|app-windows|floating" >&2; exit 2 ;;
 esac
 
