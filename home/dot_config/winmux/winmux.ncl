@@ -24,6 +24,9 @@ let defaults = import "winmux/defaults.ncl" in
     # cmd-shift-tab = "lens recent",
     # cmd-backtick = "lens app-windows",
   },
+  # The Ctrl-F switcher: one flat most-recent-first list with window cards,
+  # instead of text rows grouped by workspace.
+  lenses.search = { sections = 'none, tile = 'card },
   start-at-login = true,
   workspace-sidebar.auto-hide = true,
 }) | W.Config
