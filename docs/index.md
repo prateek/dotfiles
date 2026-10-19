@@ -93,5 +93,8 @@ Status and summary for each are in the [inventory](inventory.md#plans).
   they informed.
 - [Search source-selection qualification](research/search-source-selection-qualification.md):
   contract checks, reviews, the development pilot and activation evidence.
+- [Launcher recon](research/launcher-recon/README.md): how Alfred, Raycast,
+  Leader Key, Tuna and the hotkey layer have been used and customized, from git
+  history.
 - [Retirement ledger](retired.md): every plan, research doc, reference, or
   runbook that has left the tree, and where its content went.

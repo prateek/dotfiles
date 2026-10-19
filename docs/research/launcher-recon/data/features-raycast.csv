@@ -1,0 +1,32 @@
+feature,area,priority,app,our_status,evidence,notes
+Global hotkey Cmd-Space,invocation,must,Raycast,active,"82a47c37; LIVE",Set by hand; plan TODO to manage raycastGlobalHotkey
+Root search launcher,core,must,Raycast,active,"769a5e98; 7598d906",Installed continuously since 2025-09
+Compact window + large text + vim navigation,ui,should,Raycast,active,home/.chezmoitemplates/com.raycast.macos.plist.tmpl,Pinned in 18-key plist fragment
+Theme follows system appearance,ui,could,Raycast,active,7598d906,bundled-sky plus Raycast light/dark
+Hide Raycast menu bar icon,ui,could,Raycast,active,7598d906,NSStatusItem VisibleCC raycastIcon=false
+Script commands directory,extensibility,must,Raycast,active,"1e4bc99d; home/dot_config/raycast/scripts",Directory registration is manual per machine
+Temp Admin script command,admin,should,Raycast,active,"1e4bc99d; 87b070f7",Jamf Self Service elevation; also bound in Tuna z t
+G95NC Display script command,hardware,should,Raycast,active,"288c0fb9; 1c7c2ca7; b082028b","Dropdown sharp/butter/reset/check; doubles as ~/bin/g95nc"
+Reveal Orca Agent Session (Alt-A),agent-workflow,must,Raycast,active,"e93aafee; d8a9b75f; 843a6051",Hotkey unverified; Tuna o e calls same helper
+Fork Orca Agent Session (Alt-F),agent-workflow,must,Raycast,active,"e89f9a19; d8a9b75f; 843a6051",Native fork per agent; Tuna o f calls same helper
+Custom extension Create Orca Worktree,agent-workflow,should,Raycast,active,"3abf28f9; 1ff6bc3c; 916a35a4",Form over ohc; Tuna o n deep-links into it
+Deep links raycast://extensions,invocation,should,Raycast,active,22e43e7e,Used by Tuna to open the worktree form
+Local extension build hook,config,should,Raycast,active,"916a35a4; c8071b9a",Digest rebuild; dotpkgs raycast provider
+Launchd Monitor store extension (menu bar),monitoring,should,Raycast,active,"82a47c37; 035cca93; 5b1f1420",Labels in encrypted store; manual
+1Password store extension,extensions,could,Raycast,active,LIVE,Only seen in live plist key
+Kill Process store extension,extensions,could,Raycast,active,LIVE,Only seen in live plist key
+File search whole-computer scope,search,could,Raycast,active,7598d906,fileSearch_fileSearchScope pinned
+Emoji picker,utility,could,Raycast,active,7598d906,Skin tone pinned
+Floating Notes,utility,could,Raycast,active,7598d906,Chrome toggles pinned; usage unknown
+Raycast AI,ai,could,Raycast,never-configured,LIVE,AI_* keys and ai dir exist; nothing in repo
+Snippets,text,skip,Raycast,never-configured,"3a24187f; cd29deee",Alfred held snippets; eval asks about Raycast snippet API
+Clipboard history,text,skip,Raycast,never-configured,"27b45613; cd29deee",Alfred clipboard prefs; eval asks about Raycast access
+Quicklinks,invocation,skip,Raycast,never-configured,none,No git evidence
+Aliases,invocation,skip,Raycast,never-configured,none,Encrypted store; no git evidence
+Window management,windows,skip,Raycast,never-configured,packages.toml,Moom and WinMux own windows
+Chorded launcher binds,invocation,skip,Raycast,never-configured,"9235fa6c; 6c549fcc",Leader Key then Tuna own chords
+Pull-requests store extension,dev,could,Raycast,retired,"cd29deee (SEARCH-074)",Per brief replaced by prv 2026-09-03; not in git
+Store-extension install automation,config,could,Raycast,never-configured,82a47c37,Rejected: vendoring/external/.rayconfig
+showGettingStartedLink pin,config,skip,Raycast,retired,6c56155f,Dropped; fought the app
+G95NC fast and dual-cable modes,hardware,skip,Raycast,retired,"a32f7d8a; 9f1b1bba",Removed same day
+Telemetry IDs excluded from capture,config,should,Raycast,active,459aabb8,raycastAnonymousId and posthog IDs stripped

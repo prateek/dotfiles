@@ -97,6 +97,45 @@ label = "apps"
                 subjectIdentifiers = ["path:/Applications/1Password.app"]
                 type = "savedCommand"
 
+        [[comboMode.bindings.destination.bindings]]
+        key = "g"
+
+            [comboMode.bindings.destination.bindings.destination]
+            type = "command"
+
+                [comboMode.bindings.destination.bindings.destination.command]
+                actionIdentifier = "tuna.common-actions/open"
+                behavior = "run"
+                presentation = "automatic"
+                subjectIdentifiers = ["path:/Applications/Google Chrome.app"]
+                type = "savedCommand"
+
+        [[comboMode.bindings.destination.bindings]]
+        key = "w"
+
+            [comboMode.bindings.destination.bindings.destination]
+            type = "command"
+
+                [comboMode.bindings.destination.bindings.destination.command]
+                actionIdentifier = "tuna.common-actions/open"
+                behavior = "run"
+                presentation = "automatic"
+                subjectIdentifiers = ["path:/Applications/Obsidian.app"]
+                type = "savedCommand"
+
+        [[comboMode.bindings.destination.bindings]]
+        key = "e"
+
+            [comboMode.bindings.destination.bindings.destination]
+            type = "command"
+
+                [comboMode.bindings.destination.bindings.destination.command]
+                actionIdentifier = "tuna.common-actions/open"
+                behavior = "run"
+                presentation = "automatic"
+                subjectIdentifiers = ["path:/Applications/Ghostty.app"]
+                type = "savedCommand"
+
 [[comboMode.bindings]]
 iconPath = "terminal"
 key = "o"

@@ -49,7 +49,12 @@ class PackageConfigGatesTests(RepoTestCase):
         self.assertEqual(set(binds), {"a", "o", "w", "z"})
         self.assertEqual(binds["a"]["label"], "apps")
         apps = {child["key"]: child["destination"]["command"] for child in binds["a"]["destination"]["bindings"]}
-        self.assertEqual(set(apps), {"1", "t", "s", "b", "c", "m", "f"})
+        self.assertEqual(set(apps), {"1", "t", "s", "b", "c", "m", "f", "g", "w", "e"})
+        self.assertEqual(
+            {key: apps[key]["subjectIdentifiers"][0] for key in ("g", "w", "e")},
+            {"g": "path:/Applications/Google Chrome.app", "w": "path:/Applications/Obsidian.app",
+             "e": "path:/Applications/Ghostty.app"},
+        )
         for app in apps.values():
             self.assertEqual(app["actionIdentifier"], "tuna.common-actions/open")
             self.assertRegex(app["subjectIdentifiers"][0], r"^path:/.+\.app$")

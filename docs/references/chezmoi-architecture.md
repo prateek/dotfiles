@@ -297,9 +297,6 @@ desired state only through an explicit adoption step.
   folder adoption, writes to the TCC database, or a PPPC profile. Permission
   tooling opens TCC read-only; see
   [macOS permission onboarding](../runbooks/tcc-onboarding.md).
-- Alfred installs as a cask and its license is a secret-backed template.
-  Its preferences and workflows stay with Alfred's own sync and have no
-  source under `home/`.
 
 ## Secrets And Licenses
 

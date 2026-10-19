@@ -75,7 +75,6 @@ casks = [
   { name = "tuna" },
   { name = "moom", appdir = "/Applications" },
   { name = "raycast" },
-  { name = "alfred" },
 
   # Display, menu bar, diagnostics, and local virtualization.
   { name = "betterdisplay" },

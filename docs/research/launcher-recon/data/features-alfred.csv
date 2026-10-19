@@ -1,0 +1,43 @@
+feature,area,priority,app,our_status,evidence,notes
+Global hotkey Cmd-Space,invocation,must,Alfred,retired,"3a24187f; 3aade3e8",Held on all 8 machine hashes; Raycast holds Cmd-Space now (LIVE)
+App launch with fuzzy matching and app keywords,core,must,Alfred,retired,3a24187f,applicationFuzzyType=1; applicationUseKeywords=true
+Default-results scope incl. Homebrew Cellar and excluding home,search,should,Alfred,retired,d51ddcc2,Last Alfred tuning on 2026-04-22
+Fallback searches (Google then Wikipedia then custom),web-search,should,Alfred,retired,3a24187f,Four custom fallback ids dangling
+Custom work web searches with short keywords,web-search,should,Alfred,retired,3a24187f,"s/e/uown/g on former-employer tools and Glean; hostnames withheld"
+Feedbin subscribe search (sub),web-search,could,Alfred,retired,3a24187f,Custom site
+Bundled web searches,web-search,skip,Alfred,disabled,3a24187f,All bundled sites disabled except Google; wa and yt keywords set then disabled
+Clipboard history (text images files),clipboard,should,Alfred,retired,"3a24187f; 27b45613",Cmd-Shift-C; fast-append; remote clipboard ignored; no successor in git
+Snippet auto-expansion,snippets,must,Alfred,retired,"3a24187f; 3d5c8e05; bfacd69a",Edits continued in 2026-01 after Raycast install; successor unknown
+LLM snippet collection (prefix comma),snippets,must,Alfred,retired,"3a24187f; bfacd69a","10 snippets: prompts, llms.txt dumps up to ~198k chars, code scaffolds"
+GTD and Support snippet collections,snippets,could,Alfred,retired,3a24187f,Date stamp; doc metadata; canned reply
+Snippets viewer hotkey Opt-G,snippets,could,Alfred,retired,3a24187f,features/snippets hotkey
+Legacy snippets.alfdb store,snippets,skip,Alfred,never-configured,3a24187f,SQLite table has 0 rows
+File actions on Tab sorted by usage,files,should,Alfred,retired,3a24187f,Right-arrow off; 14 default actions disabled; escaped copied paths
+Finder selection hotkey Cmd-.,files,could,Alfred,retired,3a24187f,finderSelectionHotkey
+Previous-path keyword (prev),files,could,Alfred,retired,3a24187f,filesearch/navigation
+Terminal prefix into iTerm via custom AppleScript,terminal,could,Alfred,retired,3a24187f,vitorgalvao custom-alfred-iterm-scripts
+Large Type,ui,could,Alfred,retired,3a24187f,Autohide; mouse screen
+Custom themes (Big Dark and Smooth; Yosemite; OS X Dark),ui,could,Alfred,retired,3a24187f,Per-machine theme choice
+Hide menu bar icon and cog and hat; save position,ui,should,Alfred,retired,3a24187f,appearance/options
+1Password workflow (1p with modifier copy actions),integrations,should,Alfred,retired,3a24187f,Vitor Galvao 25.1; defaults unchanged; fallback-enabled
+Native 1Password feature,integrations,could,Alfred,retired,3a24187f,Enabled on older machine hashes only
+fzf file search workflow,workflows,could,Alfred,retired,3a24187f,yohasebe 1.7.1; fd --exclude Library; file action
+TimeZones workflow (tz),workflows,could,Alfred,retired,3a24187f,Carl Smith 1.61
+Units workflow (u),workflows,could,Alfred,retired,3a24187f,Design and Such 3.4
+Date Formats workflow (df),workflows,could,Alfred,retired,3a24187f,Dean Karn 1.5.0
+Top and kill workflow,workflows,could,Alfred,retired,3a24187f,Patrick Stadler
+TerminalFinder workflow (fi / if),workflows,could,Alfred,retired,3a24187f,LeEnno; Packal era
+Send to Yoink file action,workflows,could,Alfred,retired,3a24187f,Yoink still a current cask
+Workflow hotkeys,workflows,skip,Alfred,never-configured,3a24187f,All trigger.hotkey slots empty
+Self-authored workflows,workflows,skip,Alfred,never-configured,3a24187f,All 8 workflows third-party; own automation went to Raycast scripts
+Workflow auto-update,workflows,could,Alfred,retired,3a24187f,preferences/workflows/tasks
+Alfred Remote,remote,skip,Alfred,disabled,3a24187f,Setup done; stock pages only
+Prefs sync folder in repo,config,skip,Alfred,retired,"459aabb8; 406b7801; 7598d906",Removed pending a redaction path
+Cask install on work and personal,config,should,Alfred,active,"813394f5; home/.chezmoidata/packages.toml",Re-added deliberately 2026-06-30; LIVE installed but not running
+License via op:// template,config,could,Alfred,active,"7598d906; 02c164a3",Template exists; secrets ref empty
+Spotlight Cmd-Space hotkey,invocation,skip,Spotlight,disabled,"01ed35cf; home/.chezmoitemplates/macos-defaults.sh.tmpl",Symbolic hotkey 64 off (LIVE false); 65 Finder search off
+Spotlight category pruning,search,should,Spotlight,active,"35d41b80; home/.chezmoitemplates/macos-defaults.sh.tmpl","Apps, prefs, dirs, PDF, fonts only; unchanged since 2016"
+Spotlight web results and suggestions,privacy,skip,Spotlight,disabled,35d41b80,MENU_WEBSEARCH and MENU_SPOTLIGHT_SUGGESTIONS off
+Spotlight indexing and reindex on apply,indexing,should,Spotlight,active,"01ed35cf; dfac6c0e",mdutil -i on and -E; gated by DOTFILES_SKIP_SPOTLIGHT_REINDEX
+Exclude /Volumes from indexing,indexing,could,Spotlight,retired,35d41b80,2016 .macos only
+Hide Spotlight menu bar icon,ui,could,Spotlight,never-configured,3aade3e8,TODO never landed

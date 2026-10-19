@@ -1,0 +1,42 @@
+feature,area,priority,app,our_status,evidence,notes
+Tap left Cmd sends F18 to open Tuna combo mode,leader,must,Karabiner-Elements (Goku),active,"6c549fcc 2026-10-05; CURRENT karabiner.edn.tmpl","200 ms tap window; Cmd stays a real held modifier"
+Tap either Cmd sends F18 to open Leader Key,leader,should,Karabiner-Elements (Goku),retired,"8b96b99c 2026-07-04; replaced 9235fa6c",Lazy modifier; first modifier-tap leader
+Tap either Shift sends F18 to open Tuna,leader,could,Karabiner-Elements (Goku),retired,"9235fa6c 2026-07-04; replaced 6c549fcc 2026-10-05","100 ms window was easy to fire by accident and unreliable on purpose"
+Cmd+Space opens launcher,launcher-summon,must,Raycast,active,"LIVE raycastGlobalHotkey=Command-49; 82a47c37 notes it is uncaptured",Also claimed by Tuna activate and earlier by Alfred
+Cmd+Space opens Tuna main mode,launcher-summon,could,Tuna,active,"9235fa6c; CURRENT tuna/config.toml hotkeys.app.activate",Collides with Raycast Cmd+Space; winner unknown
+Double-press left Option opens Tuna fuzzy mode,launcher-summon,could,Tuna,active,"6c56155f 2026-08-17; CURRENT",Untested against left Option remapped to Hyper on internal keyboard
+Cmd+Space opens Alfred,launcher-summon,should,Alfred,retired,"27b45613 2025-11-11; 3a24187f",Raycast now holds Cmd+Space live
+Caps Lock tap Esc hold Ctrl,modifier,must,Karabiner-Elements (Goku),active,"459aabb8; e880ea5b (Kanata); db003980; CURRENT","Survived every tool switch; NocFree firmware MT(Ctrl, Esc)"
+Hold left Option as Hyper,modifier,should,Karabiner-Elements (Goku),active,"db003980 2026-05-02; CURRENT",Internal keyboard only; no committed consumer since Hammerspoon left
+Hold left Control as Meh and tap for F19,modifier,should,Karabiner-Elements (Goku),active,"ff710b93 2026-05-12; CURRENT",F19 is the dictation toggle
+fn key as left Option,modifier,should,Karabiner-Elements (Goku),active,"db003980; CURRENT",Restores an Option key after left Option became Hyper
+Double-tap left Shift one-shot Hyper,modifier,could,Kanata,retired,"e880ea5b 2026-01-17; removed 6c549fcc",Also in Karabiner db003980 until ff710b93
+Akimbo Cmd (both Cmd keys) sends Fn+F12,chord,skip,Karabiner-Elements,retired,"459aabb8 2026-01-11; dropped ff710b93",Also in Kanata until 6c549fcc; target app unknown
+Sticky left-hand nav layer on Ctrl+Space,layer,must,Karabiner-Elements (Goku),active,"6c549fcc 2026-10-05; CURRENT","WASD arrows, word/line/page moves, clipboard; NAV notification"
+Nav layer select mode on left Shift tap,layer,should,Karabiner-Elements (Goku),active,"6c549fcc; CURRENT",Ends on cut paste or delete
+Nav layer cheatsheet overlay on backtick,layer,should,Karabiner-Elements (Goku),active,"6c549fcc; CURRENT","SVG rendered from compiled rules by scripts/macos/render-keymap"
+NocFree firmware layer select bridge via F20,layer,could,Karabiner-Elements (Goku),active,"324d9e72 2026-10-06; CURRENT",Firmware copy of nav layer on right Ctrl
+8BitDo pad base layer with dictation button,device,should,Karabiner-Elements (Goku),active,"9ed21885 2026-06-20; d97650e3; CURRENT","A runs dictation-sidekick then F19"
+8BitDo pad mouse layer toggled by Start,device,could,Karabiner-Elements (Goku),active,"66816d3b 2026-06-22; CURRENT",Notification on toggle
+8BitDo per-app bumper overlays for Orca and Arc,device,could,Karabiner-Elements (Goku),active,"9e9a61d0 2026-06-23; CURRENT",Frontmost-app condition
+Option+Z in Orca runs orca-zen-mode,app-hotkey,could,Karabiner-Elements (Goku),active,"1a0501ad 2026-10-17; CURRENT",Only direct key-to-command binding in Karabiner
+Meh+D types Claude /q queue macro,text-macro,skip,Karabiner-Elements (Goku),retired,"227c8446 2026-08-30; moved 120a706a same day",Sequences belong to Tuna not Karabiner
+Repo URL and file fuzzy picker on Ctrl+Opt+Cmd+U/T,launcher,should,Hammerspoon,retired,"d51d75a3 2026-01-17; removed 5c11b011 2026-09-07",No successor binding found
+Hyper+R rebuilds and reloads Hammerspoon,dev-loop,could,Hammerspoon,retired,"d51d75a3; removed 5c11b011",Fennel compile via make/just
+GhostPepper x-callback URL sinks,url-action,skip,Hammerspoon,retired,"8b96b99c 2026-07-04; removed b4225c7d 2026-07-06",Tuna opens ghostpepper:// directly
+Gemini meeting sync timer,automation,could,Hammerspoon,retired,"4acd76fe 2026-02-12; removed 5c11b011",Not a hotkey; timer hosted in Hammerspoon
+Fennel source compiled to Lua at apply time,codegen,should,Hammerspoon,retired,"d51d75a3; 7598d906; removed 5c11b011",run_onchange_after_25-hammerspoon
+EDN compiled to Karabiner JSON at apply time,codegen,must,Goku,active,"d97650e3 2026-06-21; ADR 0009; CURRENT","goku owns karabiner.json; chezmoi owns the EDN"
+Karabiner as the only keyboard remapper,architecture,must,Karabiner-Elements (Goku),active,"6c549fcc; ADR 0044",Layers the Mac must know about are Karabiner variables
+Kanata text config remapper,architecture,skip,Kanata,retired,"e880ea5b 2026-01-17; removed 6c549fcc 2026-10-05",Never ran as a daemon on master; cannot coexist with Karabiner app
+KeyPath Kanata GUI,architecture,skip,KeyPath,never-configured,"55dd9a28 cites its source only; LIVE app installed",Outside the repo
+BetterTouchTool app preferences,app-prefs,could,BetterTouchTool,active,"237c318d 2026-04-29; CURRENT plist template",Five booleans and a license template
+BetterTouchTool triggers and gestures,gestures,could,BetterTouchTool,never-configured,"049be18d cask since 2016; LIVE running",Live trigger database never captured
+Disable macOS symbolic hotkeys for launchers,system,should,macOS defaults,active,"CURRENT macos-defaults.sh.tmpl",IDs 18 26 28-31 64 65 164 184; comment labels look off
+WinMux releases plain Ctrl and all Cmd chords,collision,should,WinMux,active,"ea3ca3cd 2026-10-06; 74e4b7ca 2026-10-08",Ctrl-W etc. were eaten system-wide by WinMux defaults
+Homerow keyboard-driven clicking,hints,skip,Homerow,never-configured,git log --all -i -G homerow returns nothing,
+Shortcat keyboard-driven clicking,hints,skip,Shortcat,never-configured,git log --all -i -G shortcat returns nothing,
+skhd hotkey daemon,hotkey-daemon,skip,skhd,never-configured,git log --all -i -G skhd returns nothing,
+Keyboard Maestro macros,macros,skip,Keyboard Maestro,never-configured,git log --all -i returns nothing,
+Hyperkey or Superkey Caps-to-Hyper apps,modifier,skip,Hyperkey/Superkey,never-configured,git log --all -i returns nothing,Hyper is done in Karabiner instead
+App switcher hotkey utilities (Apptivate Thor Manico rcmd),app-hotkey,skip,Apptivate/Thor/Manico/rcmd,never-configured,git log --all -i returns nothing,App launches go through the leader instead

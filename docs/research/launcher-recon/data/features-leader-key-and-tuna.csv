@@ -1,0 +1,33 @@
+feature,area,priority,app,our_status,evidence,notes
+Bare-modifier tap opens leader (Karabiner tap to F18),activation,must,Leader Key,retired,COMMITTED 8b96b99c 2026-07-04,"Either Cmd tap; Leader Key cannot bind a bare modifier"
+Left-Cmd tap 200ms opens combo mode via F18,activation,must,Tuna,active,"COMMITTED 6c549fcc 2026-10-05; CURRENT karabiner.edn.tmpl","Replaced Shift-tap 100ms (9235fa6c) which fired by accident"
+Single-key app launchers at root,actions,must,Leader Key,retired,COMMITTED a72c0752..8b96b99c,"10 apps at peak; left-hand keys preferred"
+App launchers under a group (a t/b/c/s/m/f/1),actions,must,Tuna,active,"COMMITTED 4a3a803e; CURRENT config.toml","Root-level 2026-07-04..10-08, then moved under a"
+misc group z (g95nc / m4mini VNC / password paste / temp admin / GhostPepper),actions,must,Leader Key,retired,COMMITTED 8b96b99c,Carried forward verbatim
+misc group z,actions,must,Tuna,active,"COMMITTED 9235fa6c; CURRENT",Six leaves unchanged keys since 2026-07-04
+Shell command actions,actions,must,Tuna,active,CURRENT run-text-as-shell-command,"Each sets its own PATH"
+Shell command actions,actions,must,Leader Key,retired,COMMITTED 8b96b99c,type=command
+URL actions (vnc / ghostpepper / raycast deeplink),actions,should,Tuna,active,"COMMITTED cd4aacfa, 22e43e7e","ghostpepper x-error gives a stateless toggle"
+Hammerspoon x-callback shim for GhostPepper,integration,skip,Leader Key,retired,"COMMITTED 8b96b99c; dropped cd4aacfa",Hammerspoon removed 5c11b011
+Orca group o (open / new worktree / reveal / fork session / zen),actions,should,Tuna,active,COMMITTED 22e43e7e 2026-10-17,Newest group
+WinMux group w (move h/l / columns / sidebar),actions,should,Tuna,active,COMMITTED 4a3a803e 2026-10-08,Drives winmux CLI
+queue-to-Claude macro a q,actions,could,Tuna,retired,"COMMITTED 120a706a, removed 4a3a803e; LIVE on work-mbp",Script and /q command remain unbound
+Chrome launcher g,actions,skip,Leader Key,retired,COMMITTED 8b96b99c,Not ported to Tuna
+Obsidian launcher w,actions,skip,Leader Key,retired,COMMITTED 3e144b90..8b96b99c,Not ported; w reused for WinMux
+Meet launcher m / VS Code v / iTerm t,actions,skip,Leader Key,retired,"COMMITTED ff2d5a8a, fcc62bd6",Pre-July Leader Key binds
+Cheat sheet theme cheater,cheatsheet,should,Leader Key,retired,COMMITTED 459aabb8,
+Delayed combo cheat sheet (1000ms / details hidden / icons),cheatsheet,should,Tuna,active,CURRENT [settings],Shows only on hesitation
+Fuzzy launcher (Cmd+Space / double-press left Option),launcher,could,Tuna,active,"COMMITTED 6c56155f; CURRENT [hotkeys.app.activate]",New capability vs Leader Key
+Shelf background scripts in ~/Library/Scripts,actions,could,Tuna,disabled,"COMMITTED 9235fa6c","Scripts exist, not bound to combo keys"
+Config in XDG via configDir pref,config,should,Leader Key,retired,COMMITTED 8b96b99c,plist-merge modify stub
+Custom sync folder ~/.config/tuna authoritative,config,must,Tuna,active,"COMMITTED 9235fa6c; CURRENT plist tmpl",Default App Support path clobbers edits
+tuna config reload apply hook,config,must,Tuna,active,CURRENT run_onchange_after_46,Hash-keyed; skips without app/CLI
+CLIEnabled via plist,cli,should,Tuna,active,CURRENT plist tmpl,Auto-installs ~/.local/bin/tuna
+External tuna:// shell execution,integration,could,Tuna,active,CURRENT plist tmpl,Deliberate trust choice
+0.104 destination schema,config,must,Tuna,active,COMMITTED 6c549fcc,"Old URL binds dropped on upgrade; work-mbp LIVE still on 0.78"
+Gate test pins layout and F18 hotkey,config,should,Tuna,active,CURRENT tests/python/packages/test_config_gates.py,
+Apply-time cheat sheet render (SVG cards + HTML),cheatsheet,should,Prolo Ring,active,COMMITTED 7579e277,"uvx prolo-ring v0.3.0, prolo_ring flag"
+Overlay toggle prolo-cheatsheet,cheatsheet,should,Prolo Ring,active,CURRENT dot_local/bin,"No hotkey bound yet"
+Gesture labels / chord lookup into Tuna,cheatsheet,could,Prolo Ring,never-configured,CURRENT labels.toml empty,Deferred in plan
+Flash bookkeeping just prolo-flashed,config,could,Prolo Ring,active,CURRENT justfile,
+Live mode prolo-ring watch,cheatsheet,could,Prolo Ring,never-configured,docs/plans/prolo-ring-cheatsheet-plan.md,Phase 3 pending

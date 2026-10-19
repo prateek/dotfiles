@@ -66,9 +66,6 @@ sanitize_defaults_export() {
       delete_plist_key "$plist" "UsageTelemetryDailyActiveBuckets"
       delete_plist_key "$plist" "ProModeTelemetryDailyCounters"
       ;;
-    com.runningwithcrayons.Alfred-Preferences)
-      delete_plist_key "$plist" "NSOSPLastRootDirectory"
-      ;;
     io.tailscale.ipn.macsys)
       delete_plist_key "$plist" "com.tailscale.cached.currentProfile"
       delete_plist_key "$plist" "com.tailscale.cached.profiles"
@@ -126,7 +123,6 @@ for domain in \
   dev.zed.Zed \
   md.obsidian \
   net.matthewpalmer.Rocket \
-  com.runningwithcrayons.Alfred-Preferences \
   com.hegenberg.BetterTouchTool \
   com.hegenberg.bettertouchtool-setapp \
   com.raycast.macos \
