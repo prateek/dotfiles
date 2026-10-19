@@ -23,7 +23,7 @@
 ## Shell commands
 
 - After a usage error, read that command's own help (`<cmd> <sub> --help`) before retrying. Do not guess a second flag.
-- Bound output: `rg -l`, `--max-count`, `| head`, or redirect to a file and read the tail. Follow long-running processes by tailing their log rather than polling their stdin.
+- Bound output: `rg -l`, `--max-count`, `| head`, or redirect to a file and read the tail. When the exit status matters, redirect (`cmd >log 2>&1; echo $?`): `$?` after a pipe is the last stage's. Follow long-running processes by tailing their log rather than polling their stdin.
 - Quote patterns meant for another tool (`--include='*.go'`) and URLs. Hold a multi-word command in an array or a function: zsh does not split an unquoted `$var`.
 
 ## Convention pointers

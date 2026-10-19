@@ -1,0 +1,27 @@
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- $winmux := includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "prateek/tap/winmux") -}}
+{{- if and $f.run_install_scripts (eq $winmux "true") -}}
+{{ template "script_lib.sh" . }}
+
+# Dogfood WinMux builds are self-signed and not notarized (prateek/winmux#92), so
+# a brew install or upgrade leaves com.apple.quarantine on the app and the CLI:
+# Gatekeeper then blocks the app and kills the CLI on launch (exit 137). Clearing
+# the attribute skips that assessment. `ditto --noqtn`, the cask caveat's older
+# recipe, copies the attribute along, so remove it directly.
+brew_shellenv
+
+app="/Applications/WinMux.app"
+targets=("$app")
+if have winmux; then
+  targets+=("$(readlink -f "$(command -v winmux)")")
+fi
+
+for target in "${targets[@]}"; do
+  xattr -p com.apple.quarantine "$target" >/dev/null 2>&1 || continue
+  if xattr -dr com.apple.quarantine "$target"; then
+    log "cleared Gatekeeper quarantine from $target"
+  else
+    warn "could not clear quarantine from $target; run: xattr -dr com.apple.quarantine \"$target\""
+  fi
+done
+{{- end }}

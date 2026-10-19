@@ -21,6 +21,7 @@ bin/orca-agent-session
 .zshrc
 .chezmoiscripts/01-touchid-sudo.sh
 .chezmoiscripts/13-obsidian-cli.sh
+.chezmoiscripts/14-winmux-quarantine.sh
 .chezmoiscripts/15-xcode.sh
 .chezmoiscripts/16-tartelet-runner.sh
 .chezmoiscripts/17-tartelet-settings.sh

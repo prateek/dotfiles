@@ -1,0 +1,31 @@
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- if and $f.run_install_scripts .handoffs -}}
+{{ template "script_lib.sh" . }}
+
+have gh || { warn "gh not found; skipping the dotfiles handoff check."; exit 0; }
+# `auth token` reads local state only, so an unauthenticated host skips without a request.
+gh auth token >/dev/null 2>&1 || { log "gh is not signed in; skipping the dotfiles handoff check."; exit 0; }
+
+# Print one line per bullet under `## Pending`, cut to a readable width.
+pending_entries() {
+  awk '/^## / { p = /^## Pending[[:space:]]*$/; next } p && /^[-*] / { print substr($0, 3, 140) }'
+}
+
+check_handoff() {
+  local repo="$1" path="$2" doc entries
+  # A hung network must not stall the end of every apply; perl's alarm survives the exec.
+  if ! doc="$(perl -e 'alarm shift; exec @ARGV' 20 \
+      gh api "repos/$repo/contents/$path" -H 'Accept: application/vnd.github.raw' 2>&1)"; then
+    warn "could not read $repo:$path: $(printf '%s\n' "${doc:-timed out}" | head -n 1)"
+    return 0
+  fi
+  entries="$(printf '%s\n' "$doc" | pending_entries)"
+  [ -n "$entries" ] || return 0
+  warn "$repo has pending dotfiles changes in $path:"
+  printf '%s\n' "$entries" | sed 's/^/    /' >&2
+  warn "hand them to an agent: /utils-agent:ho reconcile the $repo dotfiles handoff ($path); move each entry under Done when applied"
+}
+{{ range .handoffs }}
+check_handoff {{ .repo | quote }} {{ .path | quote }}
+{{- end }}
+{{- end }}

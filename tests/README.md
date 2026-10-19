@@ -157,6 +157,8 @@ this section maps a change to the distinct guarantees it can affect.
 | 1Password item lookup | `python3 -m unittest tests/python/agents/test_1password_find_item.py` checks vault scoping, exact titles, and field redaction. |
 | Devland SSH key export | `python3 -m unittest tests/python/agents/test_ssh_key_export.py` uses a dummy generated key to check OpenSSH extraction, file mode, validation, and refusal to overwrite. |
 | `~/code/scratch` workbench | `just test-shell tests/bats/hooks/scratch-dir.bats`; git init before Orca registration, commits limited to the managed `AGENTS.md` and `.gitignore`, idempotent reruns, and warn-only Orca failures. |
+| WinMux quarantine clearing | `just test-shell tests/bats/hooks/winmux-quarantine.bats`; the app and the CLI's resolved Caskroom path are cleared only when quarantined, silently otherwise, and a failed removal warns with the manual command. |
+| Pending dotfiles handoffs (`handoffs.toml`) | `just test-shell tests/bats/hooks/pending-handoffs.bats`; only bullets under the exact `## Pending` heading are listed, with the `/utils-agent:ho` line; an empty section prints nothing, an unreachable repo warns with gh's error without failing the apply, and a host without gh auth skips the request. |
 | macOS defaults and app/package gates | `just test-shell tests/bats/hooks/macos-defaults.bats` and `just test-python -p test_config_gates.py` for the affected behavior. |
 
 An ordinary preference edit needs the lightest meaningful render/parse check and

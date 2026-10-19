@@ -1,0 +1,7 @@
+# Repos that queue the changes they want in these dotfiles in a handoff file
+# instead of editing this repo. Each apply lists the entries under the file's
+# `## Pending` heading (run_after_95-pending-handoffs); reconciling one moves it
+# under `## Done` in that repo.
+[[handoffs]]
+repo = "prateek/winmux"
+path = "docs/dotfiles-handoff.md"

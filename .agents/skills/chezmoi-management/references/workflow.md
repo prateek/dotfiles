@@ -142,6 +142,7 @@ run_onchange_after_10-zinit-compat.sh.tmpl
 run_onchange_after_11-zinit-update.sh.tmpl
 run_onchange_after_12-gh-extensions.sh.tmpl
 run_after_13-obsidian-cli.sh.tmpl
+run_after_14-winmux-quarantine.sh.tmpl
 run_onchange_after_15-xcode.sh.tmpl
 run_onchange_after_16-tartelet-runner.sh.tmpl
 run_onchange_after_17-tartelet-settings.sh.tmpl
