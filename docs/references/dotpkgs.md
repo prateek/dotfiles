@@ -3,7 +3,7 @@ status: active
 doc_type: reference
 summary: "Shared package status, pin-aware operations, bulk latest, and banner/audit integration."
 created: 2026-10-12
-updated: 2026-10-15
+updated: 2026-10-19
 related:
   - ../retired.md
   - ../adr/0049-shared-package-operations.md
@@ -117,7 +117,9 @@ A versioned formula stays in that
 formula's release line. Cask receipts can lag an app's self-updated internals.
 Mise compares both permitted versions and `outdated --bump`; opaque runtime
 aliases without a numeric version remain unknown. APM compares accepted locked
-commits with upstream default branches, including pinned refs. Git checks use
+commits with upstream default branches, including pinned refs; `apm:apm-cli`
+compares the build's `uv.lock` version with PyPI releases allowed by its
+`pyproject.toml` requirement and overall. Git checks use
 `ls-remote`, without fetching objects or moving refs. Xcode uses the stable
 versions in xcodes' catalog; installation can still fail on an older macOS.
 MAS reports the compatible App Store release. Source-built helpers use digests,
@@ -134,7 +136,7 @@ versions and the build's source digest.
 | `codex` | Native install/update/remove plus standalone pin/unpin. Pins go in `package_policy.native.codex` and disable the installer's latest-channel tracking. |
 | `gh` | Extension install/remove/update and native pin/unpin. Pins are read from native manifest/Git metadata, survive normal updates, and are not fresh-machine declarations. Unpinned extensions update in place; pin changes and bulk latest on a pinned extension remove/reinstall it, and an installation failure can leave it absent. |
 | `zinit` | Install/remove simple `zinit light` declarations, update through zinit, and persist `ver` pins in the shell source. Tracked local edits block updates. |
-| `apm` | Shared-graph acquisition, declaration pin changes, guarded removal, and validation. Review acquired changes, repair patches, and bump affected plugin versions before installing accepted inputs. Installing an existing dependency validates/materializes the entire marketplace. |
+| `apm` | Shared-graph acquisition, declaration pin changes, guarded removal, and validation. Review acquired changes, repair patches, and bump affected plugin versions before installing accepted inputs. Installing an existing dependency validates/materializes the entire marketplace. `apm:apm-cli` updates, pins, and unpins on its own by editing the `pyproject.toml` requirement, re-locking with uv, and checking the build; `update --latest` moves a bounded requirement to the newest release, and the tool cannot be installed or removed. |
 | `mas` | Install/remove declarations and native app operations. Updates run only for apps `mas outdated` reports. Authentication/admin access may be required. No version-pin API. |
 | `setapp` | Install missing declared apps and reversibly remove bundles/declarations. Updates require the signed Setapp client and are reported as manual steps. No version-pin API. |
 | `xcode` | Install/select the pin, change the pin, install latest stable, or remove an explicit version. The only ID is `xcode:Xcode`. Continuous latest tracking is unsupported, so `unpin` fails; `update --latest` selects a new exact pin. Review the related iOS runtime/device policy after version changes. |

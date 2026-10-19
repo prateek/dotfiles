@@ -6,7 +6,7 @@ import plistlib
 import re
 import tomllib
 
-from core import Problem, apm_identity, record, version
+from core import APM_CLI, Problem, apm_identity, record, version
 
 MANAGERS = {
     'brew': ('brew', 'Homebrew formulae, casks and fork builds'),
@@ -16,7 +16,7 @@ MANAGERS = {
     'cursor': ('cursor-agent', 'Cursor agent native installation'),
     'gh': ('gh', 'GitHub CLI extensions'),
     'zinit': ('zsh', 'Shell plugins'),
-    'apm': ('apm', 'Agent marketplace dependencies'),
+    'apm': ('uv', 'Agent marketplace dependencies and its locked apm-cli'),
     'mas': ('mas', 'Mac App Store apps'),
     'setapp': ('open', 'Setapp subscription apps'),
     'xcode': ('xcodes', 'Xcode toolchains'),
@@ -34,7 +34,7 @@ LIMITS = {
     'cursor': 'Native update/install/remove. No supported durable CLI pin control is integrated.',
     'gh': 'Pins are native gh installation state; fresh machines install the declared extension at latest.',
     'zinit': 'Simple zinit light declarations support install/remove and ver pins. Complex custom ice declarations require source edits.',
-    'apm': 'Updates acquire the entire shared graph, then require source/patch/version review before materialization.',
+    'apm': 'Updates acquire the entire shared graph, then require source/patch/version review before materialization. apm:apm-cli follows agent-marketplace/uv.lock and updates on its own.',
     'mas': 'App Store compatible releases; no version pin API. App Store authentication may be required.',
     'setapp': 'Install/remove are integrated; updates use the signed Setapp client. No version pin API.',
     'xcode': 'Pin/install/select via xcodes. Latest may need a newer macOS. Runtime/device policy requires review after a version change.',
@@ -281,7 +281,58 @@ def apm(ctx, check, names=None, include_declared=True):
         rows.append(record('apm', identity, item['resolved_commit'], requested, latest, allowed,
                            pinned=requested != 'HEAD', direct=identity in declarations,
                            note='Upstream default-branch commit; lock is the accepted source revision.'))
+    if names is None or APM_CLI in names:
+        rows.extend(apm_cli(ctx, root, check))
     return rows
+
+
+APM_CLI_REQUIREMENT = re.compile(r'\s*(?P<name>[A-Za-z0-9][A-Za-z0-9._-]*)\s*(?P<extras>\[[^\]]*\])?'
+                                 r'\s*(?P<specifier>[^;]*?)\s*(?P<marker>;.*)?$')
+
+
+def apm_cli_requirement(root):
+    """The apm-cli entry in the marketplace's project dependencies, split into PEP 508 parts."""
+    project = tomllib.loads((root / 'pyproject.toml').read_text())['project']
+    for index, dependency in enumerate(project.get('dependencies', [])):
+        parts = APM_CLI_REQUIREMENT.match(dependency)
+        if parts and parts['name'].lower().replace('_', '-') == APM_CLI:
+            return dict(parts.groupdict(), index=index, requirement=dependency,
+                        requires_python=project.get('requires-python', ''))
+    return None
+
+
+def apm_cli_resolve(ctx, root, requirement, requires_python):
+    """Newest release satisfying a requirement, resolved for the build's interpreter."""
+    floor = re.search(r'(?:>=|~=|==)\s*(\d+\.\d+)', requires_python)
+    argv = ['uv', 'pip', 'compile', '-', '--no-deps', '--no-header', '--no-annotate', '--quiet']
+    out = ctx.run(argv + (['--python-version', floor.group(1)] if floor else []), cwd=root, input=requirement)
+    match = re.search(rf'^{APM_CLI}(?:\[[^\]]*\])?==([^\s;]+)', out, re.M)
+    if not match:
+        raise Problem(f'cannot resolve {requirement}')
+    return match.group(1)
+
+
+def apm_cli_bounded(specifier):
+    return bool(re.search(r'==|<|~=|!=', specifier))
+
+
+def apm_cli(ctx, root, check):
+    if not (root / 'pyproject.toml').exists():
+        return []
+    parts = apm_cli_requirement(root)
+    if parts is None:
+        return []
+    specifier = parts['specifier']
+    lock = root / 'uv.lock'
+    packages = tomllib.loads(lock.read_text()).get('package', []) if lock.exists() else []
+    installed = next((p['version'] for p in packages if p.get('name') == APM_CLI), None)
+    latest = allowed = None
+    if check:
+        latest = apm_cli_resolve(ctx, root, APM_CLI, parts['requires_python'])
+        allowed = apm_cli_resolve(ctx, root, parts['requirement'], parts['requires_python']) if apm_cli_bounded(specifier) else latest
+    return [record('apm', APM_CLI, installed, specifier or 'any', latest, allowed,
+                   pinned=apm_cli_bounded(specifier), direct=True,
+                   note='Marketplace build tool; uv.lock is the accepted version.')]
 
 
 def mas(ctx, check, names=None, include_declared=True):

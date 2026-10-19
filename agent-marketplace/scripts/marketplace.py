@@ -24,6 +24,15 @@ from apm_cli.utils.content_hash import compute_package_hash
 from artifact import RECEIPT, contained, digest, source_files, tree_files, validate_artifact
 
 
+def apm_version() -> str:
+    output = subprocess.run(["apm", "--version"], env=git_env(), text=True, capture_output=True,
+                            timeout=30, check=True).stdout
+    match = re.search(r"version (\d[\w.+-]*)", output)
+    if not match:
+        raise ValueError(f"unrecognized apm --version output: {output.strip()}")
+    return match.group(1)
+
+
 def run_apm(arguments: list[str], cwd: Path, *, timeout: int = 120) -> None:
     process = subprocess.Popen(["apm", *arguments], cwd=cwd, env=git_env(), start_new_session=True)
     try:
@@ -344,7 +353,7 @@ def build(root: Path) -> Path:
         revision = subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, env=git_env(), text=True, capture_output=True, timeout=30)
         status = subprocess.run(["git", "status", "--porcelain", "--untracked-files=all", "--", "."],
                                 cwd=root, env=git_env(), text=True, capture_output=True, timeout=30)
-        receipt = {"schema": 1, "apm_version": "0.29.1", "source_digest": digest(before),
+        receipt = {"schema": 1, "apm_version": apm_version(), "source_digest": digest(before),
                    "revision": revision.stdout.strip() if revision.returncode == 0 else None,
                    "dirty": bool(status.stdout) if status.returncode == 0 else None,
                    "files": tree_files(output), "checked": False}

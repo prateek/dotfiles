@@ -165,6 +165,12 @@ just fetch                   # native apm lock at the project root
 just update                  # native apm lock --update for all root dependencies
 ```
 
+APM itself is `apm-cli` in `pyproject.toml` and `uv.lock`; recipes run that
+locked version, and there is no global `apm`. `dotpkgs status apm:apm-cli`
+reports newer releases, and `dotpkgs update apm:apm-cli` plans the re-lock,
+environment sync, and `just check` for review. The release receipt records the
+installed version.
+
 Edit root declarations before `fetch` when adding or removing dependencies.
 `PACKAGE=...` is rejected. An update leaves the complete shared cache and lock
 diff for review. Adjust patches if necessary, bump each affected plugin's version,
@@ -198,7 +204,7 @@ selections for remaining uses. The console checks ownership across plugins both
 when planning a deletion and immediately before writing it. After removing a
 declaration, run `fetch` and confirm the resulting lock no longer contains that
 dependency. Only then, from the project root,
-consider `apm prune --dry-run` followed by `apm prune` using APM 0.29.1. This order
+consider `uv run --frozen apm prune --dry-run` followed by `uv run --frozen apm prune`. This order
 has been exercised with a surviving hooks dependency. A prune that removes keys
 from the lock itself may deploy surviving hooks. Leaving unused cache directories
 is safe: selections and the accepted dependency graph determine publication.

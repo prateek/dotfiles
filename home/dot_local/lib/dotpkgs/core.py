@@ -24,7 +24,12 @@ def version(text):
     return match.group(0) if match else text.strip()
 
 
+APM_CLI = 'apm-cli'
+
+
 def apm_identity(dependency):
+    if dependency.lower().replace('_', '-') == APM_CLI:
+        return APM_CLI
     parts = dependency.partition('#')[0].removeprefix('https://github.com/').split('/', 2)
     if len(parts) < 2:
         raise Problem(f'invalid GitHub dependency: {dependency}')
@@ -104,7 +109,7 @@ class Context:
     def available(self, name):
         return shutil.which(self.binary(name)) is not None
 
-    def run(self, argv, *, cwd=None, env=None, write=False, allowed_exit=(0,)):
+    def run(self, argv, *, cwd=None, env=None, write=False, allowed_exit=(0,), input=None):
         argv = [str(x) for x in argv]
         argv[0] = self.binary(argv[0])
         process_env = os.environ | {'NO_COLOR': '1', 'HOMEBREW_NO_AUTO_UPDATE': '1',
@@ -114,7 +119,7 @@ class Context:
             process_env.pop(key, None)
         try:
             result = subprocess.run(argv, cwd=cwd or self.home, env=process_env,
-                                    text=True, stdout=sys.stderr if write else subprocess.PIPE,
+                                    text=True, input=input, stdout=sys.stderr if write else subprocess.PIPE,
                                     stderr=None if write else subprocess.PIPE,
                                     timeout=None if write else self.timeout,
                                     check=False)

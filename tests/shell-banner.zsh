@@ -195,11 +195,11 @@ EOF
 make_fake_apm() {
   local dir="$1"
   mkdir -p "$dir"
-  cat >"$dir/apm" <<'EOF'
+  cat >"$dir/uv" <<'EOF'
 #!/bin/sh
 exit 0
 EOF
-  chmod +x "$dir/apm"
+  chmod +x "$dir/uv"
   cat >"$dir/dotpkgs" <<'EOF'
 #!/bin/sh
 printf '1\t3\t0\t0\n[{"name":"github/foo/bar","status":"update_available"}]\n'

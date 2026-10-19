@@ -36,7 +36,7 @@ typeset -gA BANNER_SOURCE_BINARY=(
   chezmoi  chezmoi
   brew     brew
   mise     mise
-  apm      apm
+  apm      uv
 )
 
 typeset -gA BANNER_SOURCE_PARAMS_VAR=(

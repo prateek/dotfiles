@@ -8,18 +8,8 @@
 # Promotion rule: when a section grows to ~3+ stable entries that share env,
 # settings, or hooks, promote it to its own `conf.d/<category>.toml`. Until
 # then, keep it inline so the whole CLI surface fits in one file.
-#
-# Future work: split "dotfiles dev dependencies" (only needed when authoring
-# or maintaining this repo) from production CLIs (needed on every machine
-# that runs the dotfiles). Tracked at the dev-deps section header below.
 
 [tools]
-# === Dotfiles dev dependencies ===
-# Required to author / maintain this repo, not to run it. When we have a
-# module system that gates installs by role, mark these as dev-only and
-# skip on machines that just consume the dotfiles.
-"pipx:apm-cli" = "latest"  # agent-marketplace/ also pins its own build environment
-
 # === AI coding harnesses ===
 # Interactive AI coding tools the human runs directly. Which ones a machine
 # gets is agent_clis in machines.toml, described by .chezmoidata/agents.toml

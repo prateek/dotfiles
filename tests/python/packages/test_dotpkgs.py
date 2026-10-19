@@ -342,7 +342,7 @@ else: print('DOWNLOAD_URL="https://downloads.cursor.com/lab/2026.02.01-bbb/${OS}
         root.mkdir()
         (root / 'apm.yml').write_text('devDependencies:\n  apm:\n  - owner/one#v1\n  - owner/two\n')
         (root / 'apm.lock.yaml').write_text('dependencies:\n- repo_url: owner/one\n  resolved_commit: old-one\n- repo_url: owner/two\n  resolved_commit: old-two\n')
-        self.binary('apm', "print('apm 0.29.1')\n")
+        self.binary('uv', '')
         self.binary('git', "print('new-commit\\tHEAD')\n")
         rows = self.cli('status', '--manager', 'apm')['results'][0]['packages']
         self.assertEqual([r['status'] for r in rows], ['pinned_outdated','update_available'])
@@ -364,7 +364,7 @@ else: print('DOWNLOAD_URL="https://downloads.cursor.com/lab/2026.02.01-bbb/${OS}
         original = 'devDependencies:\n  apm:\n  - Owner/Repo/Skills/Case#v1\n  - Owner/Repo/skills/case#v2\n'
         manifest.write_text(original)
         (root / 'apm.lock.yaml').write_text('dependencies:\n- repo_url: owner/repo\n  virtual_path: Skills/Case\n  resolved_commit: one\n- repo_url: owner/repo\n  virtual_path: skills/case\n  resolved_commit: two\n- repo_url: other/transitive\n  resolved_commit: three\n')
-        self.binary('apm', '')
+        self.binary('uv', '')
         self.binary('just', '')
         self.binary('git', "print('new-commit\\tHEAD')\n")
         rows = self.cli('status', '--manager', 'apm')['results'][0]['packages']
@@ -380,6 +380,61 @@ else: print('DOWNLOAD_URL="https://downloads.cursor.com/lab/2026.02.01-bbb/${OS}
         rejected = self.cli('pin', 'apm:other/transitive', '--version', 'v4', status=1)
         self.assertIn('no direct declaration', rejected['results'][0]['error'])
         self.assertEqual(declarations(), expected)
+
+    def test_apm_cli_follows_the_marketplace_build_lock(self):
+        root = self.source.parent / 'agent-marketplace'
+        root.mkdir()
+        (root / 'apm.yml').write_text('devDependencies:\n  apm:\n  - owner/one\n')
+        (root / 'apm.lock.yaml').write_text('dependencies:\n- repo_url: owner/one\n  resolved_commit: old-one\n')
+        project = root / 'pyproject.toml'
+        project.write_text('[project]\nname = "fixture"\nrequires-python = ">=3.14,<3.15"\ndependencies = ["apm-cli>=0.29", "PyYAML>=6"]\n')
+        (root / 'uv.lock').write_text('version = 1\n\n[[package]]\nname = "apm-cli"\nversion = "0.29.1"\n')
+        self.binary('uv', '''requirement = sys.stdin.read().strip() if sys.argv[1:3] == ['pip', 'compile'] else ''
+if requirement: print('apm-cli==' + (requirement.split('==')[1] if '==' in requirement else '0.29.1' if '~=' in requirement else '0.34.0'))
+''')
+        self.binary('just', '')
+        self.binary('git', "print('old-one\\tHEAD')\n")
+        row = self.cli('status', 'apm:apm-cli')['results'][0]['packages'][0]
+        self.assertEqual((row['installed'], row['requested'], row['latest_allowed'], row['latest'], row['status']),
+                         ('0.29.1', '>=0.29', '0.34.0', '0.34.0', 'update_available'))
+
+        plan = self.cli('update', 'apm:apm-cli', '--dry-run')['results'][0]['plan']
+        self.assertEqual(plan['edits'], [])
+        commands = [step['argv'] for step in plan['steps'] if step['type'] == 'command']
+        self.assertEqual([Path(argv[0]).name for argv in commands], ['uv', 'uv', 'just'])
+        self.assertEqual([argv[1:] for argv in commands], [['lock', '--upgrade-package', 'apm-cli'], ['sync', '--locked'], ['check']])
+        self.assertEqual(plan['steps'][-1]['type'], 'manual')
+        shared = self.cli('update', '--all', '--manager', 'apm', '--dry-run')['results'][0]['plan']
+        self.assertEqual([step['argv'][1:] for step in shared['steps'] if step['type'] == 'command'],
+                         [['lock', '--upgrade-package', 'apm-cli'], ['sync', '--locked'], ['update'], ['check']])
+
+        pin = self.cli('pin', 'apm:apm-cli', '--version', '0.29.1', '--dry-run')['results'][0]['plan']
+        self.assertIn('+dependencies = ["apm-cli==0.29.1", "PyYAML>=6"]', pin['edits'][0]['diff'])
+        self.assertIn('apm-cli>=0.29"', project.read_text())
+        project.write_text(project.read_text().replace('apm-cli>=0.29', 'apm-cli==0.29.1'))
+        pinned = self.cli('status', 'apm:apm-cli')['results'][0]['packages'][0]
+        self.assertEqual((pinned['latest_allowed'], pinned['status']), ('0.29.1', 'pinned_outdated'))
+        bump = self.cli('update', 'apm:apm-cli', '--latest', '--dry-run')['results'][0]['plan']
+        self.assertIn('"apm-cli==0.34.0"', bump['edits'][0]['diff'])
+        unpin = self.cli('unpin', 'apm:apm-cli', '--dry-run')['results'][0]['plan']
+        self.assertIn('"apm-cli>=0.29.1"', unpin['edits'][0]['diff'])
+
+        rejected = self.cli('remove', 'apm:apm-cli', '--dry-run', status=1)
+        self.assertIn('build tool', rejected['results'][0]['error'])
+        mixed = self.cli('pin', 'apm:apm-cli', 'apm:owner/one', '--version', 'v1', '--dry-run', status=1)
+        self.assertIn('pin them separately', mixed['results'][0]['error'])
+
+        project.write_text(project.read_text().replace('"apm-cli==0.29.1"', '"apm_cli[extra]~=0.29.0; python_version >= \'3.14\'"'))
+        bounded = self.cli('status', 'apm:APM_CLI')['results'][0]['packages'][0]
+        self.assertEqual((bounded['latest_allowed'], bounded['status']), ('0.29.1', 'pinned_outdated'))
+        widened = self.cli('update', 'apm:apm-cli', '--latest', '--dry-run')['results'][0]['plan']
+        self.assertIn('"apm_cli[extra]>=0.34.0; python_version >= \'3.14\'"', widened['edits'][0]['diff'])
+
+        before = project.read_text()
+        (root / 'uv.lock').unlink()
+        missing = self.cli('unpin', 'apm:apm-cli', status=1)
+        self.assertIn('not in agent-marketplace/uv.lock', missing['results'][0]['error'])
+        self.assertEqual(project.read_text(), before)
 
     def test_mas_inventory_and_setapp_manual_update_are_explicit(self):
         self.binary('mas', '''if sys.argv[1] == 'list': print('123 Example App (1.0)\\n456 Current App (3.0)')

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import difflib
+from importlib.metadata import version
 import json
 import os
 from pathlib import Path
@@ -114,6 +115,7 @@ class MarketplaceTests(unittest.TestCase):
         self.recipe("check")
         receipt_path = self.root / "build/marketplace/release.json"
         expected = json.loads(receipt_path.read_text())
+        self.assertEqual(expected["apm_version"], version("apm-cli"))
         outside = self.sandbox / "outside-source"
         outside.mkdir()
         (outside / "sentinel.txt").write_text("Outside the publication inputs.\n")

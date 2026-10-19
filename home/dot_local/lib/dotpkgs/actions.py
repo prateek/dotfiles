@@ -11,8 +11,8 @@ import tempfile
 import time
 import tomllib
 
-from core import Problem, apm_identity, atomic_write, digest
-from providers import MANAGERS, inventory, tree_digest
+from core import APM_CLI, Problem, apm_identity, atomic_write, digest
+from providers import MANAGERS, apm_cli_requirement, apm_cli_resolve, inventory, tree_digest
 from privileges import privilege
 from contracts import validate_operation
 
@@ -428,10 +428,47 @@ def git_plan(plan, ctx, action, names, latest, version, group, rows):
             plan.command('git', '-C', path, 'pull', '--ff-only')
 
 
+def apm_cli_plan(plan, ctx, root, action, latest, version):
+    if action in ('install', 'remove'):
+        raise Problem('apm:apm-cli is the marketplace build tool; change agent-marketplace/pyproject.toml to replace it')
+    parts = apm_cli_requirement(root)
+    if parts is None:
+        raise Problem('apm:apm-cli has no requirement in agent-marketplace/pyproject.toml')
+    if action == 'pin' and not version:
+        raise Problem('apm pin requires --version')
+    target = None
+    if action == 'pin':
+        target = f'=={version}'
+    elif action == 'unpin':
+        installed = next((r['installed'] for r in inventory(ctx, 'apm', check=False, names=[APM_CLI])), None)
+        if not installed:
+            raise Problem('apm:apm-cli is not in agent-marketplace/uv.lock; run uv lock before unpinning')
+        target = f'>={installed}'
+    elif action == 'update' and latest and parts['specifier']:
+        newest = apm_cli_resolve(ctx, root, APM_CLI, parts['requires_python'])
+        if apm_cli_resolve(ctx, root, parts['requirement'], parts['requires_python']) != newest:
+            target = ('==' if parts['specifier'].startswith('==') else '>=') + newest
+    if target:
+        requirement = parts['name'] + (parts['extras'] or '') + target + ('; ' + parts['marker'][1:].strip() if parts['marker'] else '')
+        plan.toml(root / 'pyproject.toml', lambda data: data['project']['dependencies'].__setitem__(parts['index'], requirement))
+    plan.command('uv', 'lock', '--upgrade-package', APM_CLI, cwd=root)
+    plan.command('uv', 'sync', '--locked', cwd=root)
+
+
 def apm_plan(plan, ctx, action, names, latest, version, group, rows):
     import yaml
     root = ctx.repo / 'agent-marketplace'
-    if action == 'update' and set(names) != {r['name'] for r in rows}:
+    graph = [name for name in names if name != APM_CLI]
+    if len(graph) < len(names):
+        if graph and version:
+            raise Problem('--version means a PyPI release for apm:apm-cli and a Git ref for graph dependencies; pin them separately')
+        apm_cli_plan(plan, ctx, root, action, latest, version)
+        if not graph:
+            plan.command('just', 'check', cwd=root)
+            plan.steps.append(dict(type='manual', instruction='Review the uv.lock change and check result. After acceptance, install an existing apm:dependency ID to rebuild and materialize the marketplace with this apm-cli.'))
+            return
+    names = graph
+    if action == 'update' and set(names) != {r['name'] for r in rows} - {APM_CLI}:
         raise Problem('APM updates the shared graph; use update --all --manager apm')
     if action == 'install' and all(name in {r['name'] for r in rows if r['direct']} for name in names):
         plan.command('just', 'check', cwd=root)
