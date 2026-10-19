@@ -48,7 +48,12 @@ request without a named model, and `pgpt` for writing. Use only harnesses select
 by this machine's `agent_clis`. Included subscription or employer access is the
 default candidate pool; metered APIs require explicit `--allow-paid`.
 
-Run `~/.agents/bin/acpx-routing show <shortcut>` first. Pass `--allow-paid` only
+For an existing external task, go directly to
+[Follow up in an existing session](#follow-up-in-an-existing-session) using its
+saved route. Skip new-route resolution; do not refresh the machine selection
+to resume it. Use recovery only for the exceptional states listed there.
+
+For a new task, run `~/.agents/bin/acpx-routing show <shortcut>` first. Pass `--allow-paid` only
 when authorized. A fresh selection includes its model, access, default/effective
 thinking, evidence, and guarded `acpx_agent` command. On a missing, expired, or
 configuration-invalidated cache, or `--refresh`, follow
@@ -123,37 +128,105 @@ above read-only. Never describe a delegation as read-only based on flags alone.
 The permission probes predate dynamic routing. Recheck an adapter whenever its
 version or route changes.
 
-## Launch an external one-shot task
+## Launch an external task in a named session
+
+Create a named persistent session for every external task, including single-turn
+work. Use `sessions ensure` once for a new task, then `prompt -s` for every turn.
+Do not use `acpx exec`. Preserve a caller-supplied name: unless the caller explicitly
+requests creation, treat it as an existing session and use the follow-up path below.
 
 Use the exact `acpx_agent` string returned by `show`; it rechecks cache age,
-configuration, and paid-access authorization before launch. This also carries
-`--allow-stale` on an authorized stale-cache retry. Put substantial prompt text
-in a file to avoid shell-quoting errors. Claude Code
-needs a redirected log for monitoring, so launch it as a background shell task
-and start the relay while acpx runs:
+configuration, and paid-access authorization before adapter launch. Keep that
+command and the absolute cwd unchanged: both belong to the session lookup scope.
+Keep one submitter per task session so request IDs can be attributed to prompts.
+Retain the launch options, prompt, log, session name, and resolved model/thinking.
 
-```sh
+### Start a new task
+
+Choose a unique name. Put substantial prompt text in a file. The example uses
+`jq` to reject an unexpected existing session or scope before submitting work.
+If an exact acpx `--model` override was validated, put it in `creation_args` only;
+leave model and configuration overrides off later prompts.
+
+```bash
+umask 077
 slug=review-auth
-cat > "/tmp/acpx-$slug.prompt.md" <<'EOF'
+log=$(mktemp "/tmp/acpx-$slug.XXXXXX")
+session=${log##*/}
+session_cwd=$PWD
+prompt_file="$log.prompt.md"
+cat > "$prompt_file" <<'EOF'
 <the prompt, carrying the read-only constraint when -w is absent>
 EOF
-log=$(mktemp "/tmp/acpx-$slug.XXXXXX")
-echo "log: $log"
-acpx --format text --suppress-reads --non-interactive-permissions deny \
-  --timeout 600 --prompt-retries 2 \
-  --agent "$acpx_agent" exec -f "/tmp/acpx-$slug.prompt.md" > "$log" 2>&1
+acpx_args=(--suppress-reads --non-interactive-permissions deny
+  --timeout 600 --prompt-retries 2 --cwd "$session_cwd" --agent "$acpx_agent")
+creation_args=()
+echo "session: $session; log: $log; receipts: $log.before.json, $log.after.json"
+acpx --format json --json-strict "${acpx_args[@]}" "${creation_args[@]}" \
+  sessions ensure --name "$session" > "$log.ensure.json" || exit $?
+jq -e '.created == true' "$log.ensure.json" >/dev/null || exit 1
+acpx --format json --cwd "$session_cwd" --agent "$acpx_agent" \
+  sessions show "$session" > "$log.before.json" || exit $?
+jq -e --slurpfile ensured "$log.ensure.json" --arg cwd "$session_cwd" \
+  --arg agent "$acpx_agent" --arg name "$session" \
+  '.closed == false and .cwd == $cwd and .agentCommand == $agent and
+   .name == $name and .acpxRecordId == $ensured[0].acpxRecordId' \
+  "$log.before.json" >/dev/null || exit 1
+if acpx --format text "${acpx_args[@]}" prompt -s "$session" -f "$prompt_file" > "$log" 2>&1; then
+  prompt_rc=0
+else
+  prompt_rc=$?
+fi
+acpx --format json --cwd "$session_cwd" --agent "$acpx_agent" \
+  sessions show "$session" > "$log.after.json" || \
+  printf 'after-snapshot failed (status %s); use recovery before continuing\n' "$?" >&2
+exit "$prompt_rc"
 ```
 
-Codex, cursor-agent, and pi show progress natively, so run acpx directly in
-those harnesses. Keep the redirect for read-only work when its audit needs a
-log.
+The post-prompt snapshot captures `lastRequestId`; text prompt output does not.
+A shell crash can prevent that snapshot or leave a JSON-RPC ID in that field.
+Recover through the watch lifecycle events as described in the recovery procedure;
+do not treat the current field alone as the task request ID.
+Keep both snapshots even when the command fails. Verify `acpx.current_model_id`
+and the advertised `acpx.config_options` against the resolved model and thinking.
 
-Use `exec` for one-shot work. Use a named session when later prompts must keep
-the same context. Put global flags before `exec` and `-f`/`--file` after it;
-`-f -` reads stdin. Use `--agent` with the returned guarded command instead of a
-positional shortcut, preserving explicit stale/paid flags. Set `--format` explicitly so a project
-`.acpxrc.json` cannot silently change the output shape. Set a timeout that fits
-both the calling harness and background work that outlasts the command timeout.
+### Follow up in an existing session
+
+Restore the saved command and cwd; use a fresh prompt file and log. Inspect without
+launching the adapter:
+
+```sh
+acpx --format json --cwd "$session_cwd" --agent "$acpx_agent" sessions show "$session"
+```
+
+Require `closed == false`, the exact cwd, command, name, and saved `acpxRecordId`.
+Verify model, thinking, and `acpSessionId` against the last task receipt. A missing
+or closed record, mismatch, expired guard, or unfinished turn requires the
+[recovery procedure](references/harness-lanes.md#recover-an-interrupted-task).
+Do not run `ensure`, `new`, or pass `--model`/configuration overrides to a follow-up:
+these can replace the conversation or change its model. Submit only `prompt -s`
+through the normal lane and save fresh before/after snapshots as above.
+
+Compare backend IDs after each turn. Some CLI versions silently replace an
+unloadable backend during reconnect; this check detects replacement only after
+the prompt ran. If an established task's `acpSessionId` changes, report lost
+continuity and stop. An empty newly created backend can also change on its first
+prompt: preserve both receipts and establish the first accepted turn's identity
+from its events, rather than treating a local record as proof of continuity.
+
+### Choose the shell lane
+
+Inside Orca, replace the prompt invocation inside the `if` with the pane invocation
+below; keep the post-prompt snapshot and exit-status handling. Outside Orca, Claude
+Code needs the **whole block** in one managed background shell task with its relay
+running. Shell variables do not survive separate tool calls. Codex, cursor-agent,
+and pi can run the whole block directly; if split across calls, reconstruct the
+variables from retained task metadata. Keep redirected output for the audit.
+
+Put global flags before `prompt` and `-s`/`-f` after it; `-f -` reads stdin.
+Use `--agent` with the guarded command, preserving stale/paid flags. Set `--format`
+explicitly so a project `.acpxrc.json` cannot change the output shape. Set a
+timeout that fits both the calling harness and background work.
 
 Use `--format text` by default. For scripts, use `--format json --json-strict`.
 Never use `--format quiet`: it hides progress and thinking that reveal a stuck
@@ -161,46 +234,25 @@ run.
 
 ### Inside Orca: the shared ACPX view
 
-For external execution, when Orca provides a terminal handle or worktree ID and `--inline` is absent, every harness
-launches through this skill's [`scripts/acpx-pane`](scripts/acpx-pane) instead of
-the direct or redirected acpx line. The first call opens one Orca pane containing
-a compact Herdr session. Later calls from the same Orca terminal add tabs there.
-Each tab shows its launch order, local time, and shortcut, such as
-`02 14:41 aopus`. The bottom strip shows the number of session tabs; use
-`Ctrl+B`, then `n` or `p` to switch. The helper writes the full output to the log,
-blocks until acpx exits, and returns acpx's status, so the relay and audit work
-unchanged:
+When Orca provides a terminal handle or worktree ID and `--inline` is absent,
+launch each prompt through [`scripts/acpx-pane`](scripts/acpx-pane). It writes the
+full output to the log, blocks until acpx exits, and returns acpx's status.
+Read the [Orca lane](references/harness-lanes.md#orca-shared-view) for view setup,
+tab controls, fallback behavior, and cancellation.
 
-```sh
+After creating or verifying the named session, use this prompt invocation:
+
+```bash
 ~/.agents/plugins/plugins/utils-agent/skills/acpx/scripts/acpx-pane --log "$log" --label agpt -- \
-  --format text --suppress-reads --non-interactive-permissions deny \
-  --timeout 600 --prompt-retries 2 \
-  --agent "$acpx_agent" exec -f "/tmp/acpx-$slug.prompt.md"
+  --format text "${acpx_args[@]}" prompt -s "$session" -f "$prompt_file"
 ```
 
-The helper checks the caller's current worktree before splitting beside its
-terminal. If an inherited handle belongs to another worktree, it selects the
-current worktree's sole agent terminal; if no parent is available, it runs inline.
-The launch command is the same for every calling harness. To create the empty
-view or switch Orca back to the existing one, run
-`~/.agents/plugins/plugins/utils-agent/skills/acpx/scripts/acpx-pane --view`.
-The helper manages the Herdr session and its tab labels; callers do not need
-Herdr commands. Missing Herdr or Python 3, or a failed view launch, falls back to inline acpx.
-Outside Orca, or with `--inline`, the helper runs acpx in place with the redirect.
-Herdr is declared in the mac-desktop package group. Completed tabs wait quietly
-on their final output for review, without returning to a shell prompt. Press
-an ordinary key or `Ctrl+C` to close a completed tab; when it is the last ACPX
-tab, the Orca view closes too. `Ctrl+B`, then `q` detaches the Herdr view while
-keeping its tabs available. Stopping a waiting helper closes only its tab.
-
-Each Herdr tab starts in the caller's working directory. Pass acpx inputs
-as flags or prompt text rather than relying on ad hoc exported variables.
-
-## Monitor, relay, and cancel
+## Monitor, cancel, and recover
 
 Read [harness-lanes.md](references/harness-lanes.md) when the selected launch
-needs monitoring, relaying, cancellation, or recovery. It defines the
-completion markers and each harness's monitoring loop.
+needs monitoring, relaying, or cancellation. Before continuing a failed, cancelled,
+or partially completed task, or after a timeout, crash, lost terminal, or missing
+final result, follow its [recovery procedure](references/harness-lanes.md#recover-an-interrupted-task).
 
 ## Route-specific behavior
 
@@ -222,14 +274,13 @@ completion markers and each harness's monitoring loop.
 - Local preference preserves the requested model family. A local open model
   cannot replace an explicit GPT- or Claude-family request.
 
-## Named sessions and flows
+## Session controls and flows
 
 Read [the acpx command surface](../acpx-cli/SKILL.md) for named sessions,
 `sessions ensure`, same-prompt comparisons, queues, cancellation, permission
-policy shapes, and durable multi-step flows.
-Before reusing a named session, verify its recorded model and thinking still
-match the resolved request; a refreshed cache does not change an existing
-session's model. Report a mismatch instead of silently reusing that session.
+policy shapes, and durable multi-step flows. For a same-prompt comparison, ensure
+a separate named session per agent and prompt each; `compare` uses disposable
+sessions.
 
 ## Prerequisites and cleanup
 
@@ -240,13 +291,15 @@ session's model. Report a mismatch instead of silently reusing that session.
   cursor-agent's shared authentication worker while status still reports a
   valid login.
 - Sessions, queues, and flows live under `~/.acpx/`; acpx has no XDG relocation
-  variable.
+  variable. Keep the session open for follow-ups; close or prune it only when
+  cleanup is requested.
 
 ## Completion
 
 Finish when the lane reaches its completion condition, the reply or session
 metadata confirms the resolved model and thinking ran. For external execution,
 confirm the guarded command and routing report match
-the launched model and effort. If `-w` was absent, account for every logged
+the launched model and effort, and report the session name for follow-ups.
+If `-w` was absent, account for every logged
 tool call and report every write. An unavailable shortcut must fail explicitly;
 choose a replacement only with the user's direction.

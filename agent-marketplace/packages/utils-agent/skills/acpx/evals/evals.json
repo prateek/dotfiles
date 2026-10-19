@@ -1,17 +1,17 @@
 {
   "skill_name": "acpx",
-  "context": "Behavior evaluation only. Assume fresh successful routing selections unless a case says otherwise. Describe the chosen native or external execution path and tool arguments; no case authorizes launching delegates. Evaluate model, thinking, access, permissions, and cache handling. External examples must use the guarded acpx_agent command from show.",
+  "context": "Behavior evaluation only. Assume fresh successful routing selections unless a case says otherwise. Describe the chosen native or external execution path and tool arguments; no case authorizes launching delegates. Evaluate model, thinking, access, permissions, session continuity, and cache handling. External examples must use the guarded acpx_agent command from show with named persistent sessions.",
   "evals": [
     {
       "id": 1,
       "name": "named-shortcut-triggers",
       "should_trigger": true,
       "prompt": "agptx - take a look at the retry logic in internal/queue/dispatch.go and tell me whether the backoff can starve the DLQ writer",
-      "expected_output": "Load the skill, resolve agptx, and use a matching native child when available; otherwise use guarded external acpx exec.",
+      "expected_output": "Load the skill, resolve agptx, and use a matching native child when available; otherwise ensure a named persistent session and prompt it through guarded external acpx.",
       "files": [],
       "expectations": [
         "Loads the acpx delegation skill from the shortcut token 'agptx' alone, without the user naming acpx",
-        "Uses the resolved model with one thinking increment, preferring a compatible native child; external fallback uses acpx --agent <guarded command> exec -f <prompt file>",
+        "Uses the resolved model with one thinking increment, preferring a compatible native child; external fallback ensures a named session and uses acpx --agent <guarded command> prompt -s <name> -f <prompt file>",
         "Writes the read-only constraint into the prompt text rather than relying on --non-interactive-permissions deny to enforce it",
         "Names internal/queue/dispatch.go explicitly in the prompt instead of expecting the delegate to glob for it",
         "Plans to audit the run's tool calls afterward and report any write"
@@ -68,7 +68,7 @@
       "expectations": [
         "Uses a named session because follow-up prompts must preserve context",
         "Passes -s review and --timeout 1800 (or equivalent) through to acpx rather than inventing --session or --timeout skill flags",
-        "Uses external acpx for named-session semantics; global flags precede the agent request and prompt-file flags follow the exec subcommand when exec is used"
+        "Uses external acpx sessions ensure --name review, then prompt -s review -f <prompt file>; global flags precede the subcommand and no exec invocation is used"
       ]
     },
     {
@@ -164,6 +164,196 @@
         "Uses --allow-stale within seven-day grace",
         "Does not select or launch the paid OpenRouter model",
         "Stops if the cached route cannot run"
+      ]
+    },
+    {
+      "id": 13,
+      "name": "single-task-keeps-session",
+      "should_trigger": true,
+      "prompt": "Use agpt externally for a quick one-off review of this diff. I do not have a session name in mind. We are in Orca with a terminal handle.",
+      "expected_output": "Allocate a unique named ACP session, ensure it, and send the prompt through acpx-pane. Keep and report the session for follow-ups.",
+      "files": [],
+      "expectations": [
+        "Chooses a task-specific unique session name even though the request says one-off",
+        "Uses the guarded command and same cwd for sessions ensure and prompt -s; stops if ensure fails",
+        "Uses acpx-pane for the prompt and does not use exec or an unnamed default session",
+        "Reports the session name and leaves it available after completion; closing the Herdr tab does not close the ACP session",
+        "Requires created true and the exact cwd and record identity before the first prompt; captures lastRequestId in a fresh post-prompt snapshot even on failure"
+      ]
+    },
+    {
+      "id": 14,
+      "name": "follow-up-keeps-conversation",
+      "should_trigger": true,
+      "prompt": "Ask agpt a follow-up about its review. The earlier task recorded session acpx-review-auth.ABC123, cwd /tmp/review-worktree, and its guarded agent command. The route and saved model/thinking still match. Our current cwd is a different checkout.",
+      "expected_output": "Verify and reuse the recorded session scope, with a new per-prompt log and prompt file.",
+      "files": [],
+      "expectations": [
+        "Uses session acpx-review-auth.ABC123, cwd /tmp/review-worktree, and the recorded guarded agent command",
+        "Checks closed false, exact cwd/command/name, saved acpxRecordId, model/thinking, and acpSessionId before and after the follow-up",
+        "Stops if the expected session is absent rather than creating a context-free replacement",
+        "Uses prompt -s with fresh prompt/log files and snapshots; no ensure, new, model/configuration overrides, unrelated name, or exec"
+      ]
+    },
+    {
+      "id": 15,
+      "name": "session-model-mismatch",
+      "should_trigger": true,
+      "prompt": "Continue the review in the existing named session review using agptx. The refreshed routing selection now specifies a different model and effort from the saved session.",
+      "expected_output": "Report the mismatch and leave the saved conversation intact.",
+      "files": [],
+      "expectations": [
+        "Compares the requested selection with the saved session before prompting",
+        "Does not claim refreshing the route changed the existing session's model or effort",
+        "Does not silently reuse the mismatched session, replace it with a new session, or fall back to exec"
+      ]
+    },
+    {
+      "id": 16,
+      "name": "lost-observer-active-turn",
+      "should_trigger": true,
+      "prompt": "The Orca pane vanished during an agpt review. Its saved receipt identifies the session and interrupted request. The queue owner is alive, and session watch shows that request started but has no turn_result yet.",
+      "expected_output": "Recover the saved scope and observe the existing request without submitting duplicate work.",
+      "files": [],
+      "expectations": [
+        "Restores the saved session, cwd, guarded command, and backend ID before recovery",
+        "Uses sessions show, status, and history/events; distinguishes queue-owner health from turn completion",
+        "Runs sessions watch as a managed background task, optionally with a saved cursor; retains its handle and stops that watcher after the target turn_result or terminal watcher error",
+        "Does not submit a new prompt, create a replacement session, or equate closing the watcher with cancellation"
+      ]
+    },
+    {
+      "id": 17,
+      "name": "lost-answer-already-complete",
+      "should_trigger": true,
+      "prompt": "The shell waiting for an afable review died. The session receipt still matches, and its interrupted request has a successful turn_result with a retained final answer.",
+      "expected_output": "Recover and report the retained answer without rerunning the review.",
+      "files": [],
+      "expectations": [
+        "Matches the settled result to the interrupted request",
+        "Drains retained output and returns the existing answer",
+        "Does not send a continuation or replay prompt just because the observer failed",
+        "Audits retained tool calls and effects and checks the original goal before returning the answer"
+      ]
+    },
+    {
+      "id": 18,
+      "name": "partial-work-before-resume",
+      "should_trigger": true,
+      "prompt": "An authorized aopus -w task failed after editing two files. The saved session matches, the request settled as failed, and a previous checkout snapshot and tool log are available.",
+      "expected_output": "Audit partial effects and remaining work, then continue the verified conversation.",
+      "files": [],
+      "expectations": [
+        "Inspects actual file changes and tool calls before deciding what remains",
+        "Writes a continuation describing verified completed work, remaining work, and the current permission scope",
+        "Uses the same named session with fresh prompt/log files and no automatic prompt retries for recovery",
+        "Verifies backend ID/model/thinking afterward and preserves earlier receipts and logs"
+      ]
+    },
+    {
+      "id": 19,
+      "name": "unknown-external-effect",
+      "should_trigger": true,
+      "prompt": "The queue owner died after a delegated task attempted an authorized external operation. There is no turn_result and no receipt proving whether the operation completed.",
+      "expected_output": "Report the uncertain outcome and preserve the session; no automatic retry of the operation.",
+      "files": [],
+      "expectations": [
+        "Does not treat owner death or missing output as proof that the operation did not happen",
+        "Seeks independent evidence of the external effect",
+        "Leaves the dependent retry pending if the outcome remains unknown",
+        "Does not create a new session or blindly replay the original prompt"
+      ]
+    },
+    {
+      "id": 20,
+      "name": "first-turn-failed-receipt",
+      "should_trigger": true,
+      "prompt": "The first prompt in a new ACPX session crashed before any completed reply. Pick up the task using the launch receipt.",
+      "expected_output": "Use metadata saved before the first prompt to verify the session and classify the interrupted request.",
+      "files": [],
+      "expectations": [
+        "Expects a private receipt saved after ensure and before the first prompt",
+        "Compares backend IDs; distinguishes a proven empty first-start replacement from losing an established task, and does not infer continuity from the local record alone",
+        "Classifies the existing request and audits any effects before deciding whether to continue"
+      ]
+    },
+    {
+      "id": 21,
+      "name": "closed-session-no-replacement",
+      "should_trigger": true,
+      "prompt": "Continue review session auth. Its exact-cwd record matches the saved model but has closed true; a same-named active session exists in a parent directory.",
+      "expected_output": "Report the closed task session; do not continue in the ancestor or create a replacement.",
+      "files": [],
+      "expectations": [
+        "Checks closed state and exact cwd/record identity",
+        "Does not run ensure, new, or prompt against the ancestor session"
+      ]
+    },
+    {
+      "id": 22,
+      "name": "expired-guard-preserves-scope",
+      "should_trigger": true,
+      "prompt": "Pick up our interrupted aopus task. Its saved guarded command has expired and the adapter is no longer running. A refresh could change the selection digest.",
+      "expected_output": "Inspect retained evidence with the original scope and report that continuation is blocked by the guard.",
+      "files": [],
+      "expectations": [
+        "Uses saved command for metadata/history/watch/cancel as needed",
+        "Does not refresh global routing, append allow-stale, or substitute a new command to resume",
+        "Reports the current routing-helper limitation without claiming the retained session guarantees resumability"
+      ]
+    },
+    {
+      "id": 23,
+      "name": "request-id-after-observer-crash",
+      "should_trigger": true,
+      "prompt": "The shell died before saving its after-prompt snapshot. The text log has no request ID. We were the only submitter to this task session.",
+      "expected_output": "Recover lastRequestId from current metadata and correlate it with the prompt and watch lifecycle events.",
+      "files": [],
+      "expectations": [
+        "Does not claim the text prompt log contains a request ID",
+        "Uses lastRequestId and submitted prompt/events to establish the target request",
+        "Stops if correlation remains ambiguous",
+        "If lastRequestId is a raw JSON-RPC ID with no turn_started match, uses a uniquely correlated lifecycle event after the last settled boundary; otherwise reports unknown"
+      ]
+    },
+    {
+      "id": 24,
+      "name": "watcher-terminal-error",
+      "should_trigger": true,
+      "prompt": "Our managed recovery watcher returned WATCH_CURSOR_EXPIRED before we found the target turn_result.",
+      "expected_output": "Stop the watcher and preserve an unknown outcome while inspecting other evidence.",
+      "files": [],
+      "expectations": [
+        "Stops the watcher by its managed task handle and drains its log",
+        "Does not treat cursor expiry as task failure or permission to resubmit",
+        "Inspects retained logs and effects before further action"
+      ]
+    },
+    {
+      "id": 25,
+      "name": "user-cancel-stop",
+      "should_trigger": true,
+      "prompt": "I cancelled the delegated task. ACPX cancel returned cancel requested, and the original prompt is still running.",
+      "expected_output": "Wait for a settled cancellation, audit effects, and stop without automatically continuing.",
+      "files": [],
+      "expectations": [
+        "Confirms through done cancelled or the target request turn_result, not the cancel response alone",
+        "Audits effects and reports the settled result",
+        "Stops pending renewed user direction; does not submit a continuation"
+      ]
+    },
+    {
+      "id": 26,
+      "name": "claude-shell-state",
+      "should_trigger": true,
+      "prompt": "Launch a new external review from Claude Code using the canonical shell example.",
+      "expected_output": "Run the complete setup, creation, prompt, and snapshot block in one managed background shell task.",
+      "files": [],
+      "expectations": [
+        "Does not put only the final prompt line in a new shell with undefined variables",
+        "Keeps the task handle and relays bounded log chunks",
+        "Retains both receipts and the prompt exit status",
+        "A failed after-snapshot is reported for recovery without replacing the prompt exit status"
       ]
     }
   ]

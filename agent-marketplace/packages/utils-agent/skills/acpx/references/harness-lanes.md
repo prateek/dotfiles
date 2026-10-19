@@ -12,14 +12,170 @@ In text output, the final line determines the result:
 - `[error]` as the last line: terminal failure.
 - `[error]` before later output: recoverable adapter noise; report it and keep
   watching.
-- No final marker: a crash, SIGKILL, or other hard failure. The harness process
-  completion is the backstop.
+- No final marker: the outcome is unknown. A crash or lost observer can leave
+  the persistent turn running; follow the recovery procedure below.
 
 The final answer is the assistant text immediately before the terminal marker.
 
 Under `acpx-pane`, the shared Herdr tab is the human-visible trail and the log carries
 the same bytes. Harnesses that normally watch a direct run wait for the helper
 to return, then read the log.
+
+## Recover an interrupted task
+
+Use this procedure before continuing a failed, cancelled, or partially completed
+task, or after a timeout, crash, lost terminal, or missing final result.
+Preserve the existing logs and session receipt while classifying the interruption.
+
+1. **Recover the scope.** Read the task's saved receipt and launch options.
+   Restore the exact `session`, absolute `session_cwd`, and guarded `acpx_agent`.
+   If the receipt is missing, recover the command from the original launch and
+   use `acpx --format json --agent "$acpx_agent" sessions list --local` to locate
+   candidates. Local listing filters by agent command; the default Codex list
+   will not discover guarded routes. If the command is also lost, inspect local
+   record metadata under `~/.acpx/sessions/` scoped to the known cwd/task. Match
+   cwd, command, name, history, and model to the task. A similar name alone is
+   insufficient. Complete this step with one verified active session and its saved
+   `acpxRecordId` and `acpSessionId`, or report that continuity cannot be established.
+   Inspect it without running `sessions ensure`:
+
+   ```bash
+   scope=(--cwd "$session_cwd" --agent "$acpx_agent")
+   acpx --format json "${scope[@]}" sessions show "$session"
+   acpx --format json "${scope[@]}" status -s "$session"
+   acpx --format json "${scope[@]}" sessions history "$session" --limit 20
+   ```
+
+   Require `closed == false`, the exact cwd, command, name, and saved record ID;
+   `show` can return closed records, while `prompt` skips them and searches ancestor
+   directories. Verify backend ID, model, and thinking against the saved task receipt.
+   A missing/closed record, changed established backend, or unsupported resume
+   ends continuation without creating a replacement conversation.
+
+   The saved command's route guard can expire or become invalid after a selection
+   change, even when the model is unchanged. `show`, `history`, `status`, `watch`,
+   and `cancel` do not launch the adapter and remain available with that command.
+   A continuation may fail when it reconnects. If the saved guard no longer
+   validates, mark continuation unavailable and complete steps 2–3 with the saved
+   command before reporting the audit and stopping. Do not refresh the global selection, append
+   `--allow-stale`, or substitute a new command to resume: each can invalidate the
+   guard or change the session scope. Repairing that limitation requires a separate
+   routing-helper change.
+
+2. **Classify the interrupted turn.** Correlate the saved request ID with its
+   events. If the post-prompt receipt is missing, inspect the current record's
+   `lastRequestId` and match it to the submitted prompt and watch events. A crash
+   can leave a raw JSON-RPC ID in that field. If it matches no `turn_started`, use
+   the latest `turn_started` after the last settled cursor, matched to the submitted
+   prompt, only when a single submitter and a unique candidate establish identity.
+   If no cursor was saved, establish that boundary from retained lifecycle events
+   and the previous receipt; otherwise report the outcome as unknown. Text prompt
+   logs contain no request ID. If another submitter could have changed
+   the record, or more than one request could match, report the ambiguity and stop.
+   `status` describes queue-owner health; an alive owner may be idle, and a dead
+   owner does not prove that no work happened.
+
+   Watch without submitting another prompt. Run this whole block as a managed
+   background task, retain its task/terminal handle, and read bounded chunks of
+   its log through that harness's monitor or relay:
+
+   ```bash
+   umask 077
+   watch_log=$(mktemp /tmp/acpx-watch.XXXXXX)
+   echo "watch log: $watch_log"
+   acpx --format json --cwd "$session_cwd" --agent "$acpx_agent" \
+     sessions watch -s "$session" > "$watch_log" 2>&1
+   ```
+
+   Restore the saved variables in that same shell before launching. Add
+   `--cursor "$cursor"` when a saved watch cursor exists; otherwise replay
+   retained history. The watcher remains open even when the session is idle.
+   On the target request's `turn_result`, retain its cursor and result, then stop
+   **the watcher task by its handle** and drain the log. Also stop it on a terminal
+   watcher error. Stopping the watcher does not cancel the delegated work.
+
+   Keep observing an active or queued request; another turn's completion does
+   not settle it. `WATCH_OUTCOME_UNKNOWN`, `WATCH_CURSOR_EXPIRED`, and
+   `WATCH_OWNER_UNSUPPORTED`, a missing result, or an uncertain queue state leave
+   the outcome unknown. Inspect retained logs and scoped processes, or use the
+   cancellation procedure below, then reclassify. Finish with a settled result
+   and no unfinished work for this task, or report uncertainty without resubmitting.
+
+3. **Reconcile completed work.** Recover any retained answer and inspect tool
+   calls and actual effects for every outcome:
+   the checkout's current diff, created files, test output, and any external
+   operation receipts. History previews alone are not a complete audit. Account
+   for each attempted mutation and determine the remaining work. If an external
+   effect cannot be verified, report it and leave the dependent retry pending.
+   After a user cancellation, report the result and audit from steps 1–3, then
+   stop until the user gives renewed direction. If the guard blocks continuation,
+   report that limit with the audit and stop before step 4. Otherwise compare the retained
+   result and effects with the original goal. If complete, skip continuation and
+   proceed to step 5 with the answer and audit.
+
+4. **Continue the verified session.** Resume only remaining authorized work.
+   When the previous turn has settled and its effects are accounted for, correct
+   the identified failure
+   within that scope. Write a new continuation prompt stating the original goal,
+   verified completed work, remaining work, and current permission constraints.
+   Keep the previous logs. Use a fresh log and prompt file and the recorded
+   launch options, with `--prompt-retries 0` for this recovery turn and no model
+   or configuration overrides. Do not run `ensure` or `new`. Send
+   `prompt -s "$session" -f "$prompt_file"` through the normal direct or Orca
+   pane lane. Capture a new post-prompt receipt, including `lastRequestId`.
+   Complete this step only after the new turn settles; a repeated failure
+   returns to classification instead of replaying the original prompt.
+
+5. **Verify continuity and finish.** Compare the saved and current `acpSessionId`,
+   model, and thinking. Report a backend replacement as lost continuity even if
+   the new turn produced an answer. Save a fresh receipt without overwriting the
+   earlier one, audit the new tool calls, and report the outcome, session name,
+   and any remaining work.
+
+## Cancel a persistent turn
+
+Use the recorded session scope to cancel work, including a queued turn:
+
+```sh
+acpx --format text --cwd "$session_cwd" --agent "$acpx_agent" cancel -s "$session"
+```
+
+The command returns `cancel requested` or `nothing to cancel`; neither is a
+settled turn result. Confirm through the original prompt's `[done] cancelled`, or
+through the target request's `turn_result` using the managed watcher in step 2.
+Drain that output and stop the watcher. For `nothing to cancel`, classify the
+request through step 2; it does not prove completion. Closing a Herdr tab or stopping a waiting shell process can leave the retained queue owner
+running; neither proves the turn stopped. After cancellation, stop the waiting
+helper if needed. Keep the ACP session available for follow-ups. If cancellation
+cannot be confirmed, report the outcome as unknown before attempting recovery.
+
+## Orca: shared view
+
+The first `acpx-pane` call opens one Orca pane containing a compact Herdr session.
+Later calls from the same Orca terminal add tabs there. Each tab shows its launch
+order, local time, and shortcut, such as `02 14:41 aopus`. The bottom strip shows
+the number of tabs; use `Ctrl+B`, then `n` or `p` to switch.
+
+The helper checks the caller's current worktree before splitting beside its
+terminal. If an inherited handle belongs to another worktree, it selects the
+current worktree's sole agent terminal; if no parent is available, it runs inline.
+The launch command is the same for every calling harness. To create the empty
+view or switch Orca back to the existing one, run
+`~/.agents/plugins/plugins/utils-agent/skills/acpx/scripts/acpx-pane --view`.
+The helper manages the Herdr session and its tab labels; callers do not need
+Herdr commands. Missing Herdr or Python 3, or a failed view launch, falls back to
+inline acpx. Outside Orca, or with `--inline`, the helper runs acpx in place with
+the redirect. Herdr is declared in the mac-desktop package group.
+
+Herdr tabs display individual prompts; closing a completed tab leaves the named
+ACP conversation available for a later prompt. Completed tabs wait on their
+final output without returning to a shell prompt. Press an ordinary key or
+`Ctrl+C` to close a completed tab; the last tab also closes the Orca view.
+`Ctrl+B`, then `q` detaches the view while keeping its tabs available. Cancel a
+running ACP turn before stopping its waiting helper, which closes only its tab.
+
+Each tab starts in the caller's working directory. Pass acpx inputs as flags or
+prompt text rather than relying on ad hoc exported variables.
 
 ## Claude Code: redirected relay
 
@@ -45,10 +201,9 @@ The terminal marker, process state, and drain are all required because byte
 limits can split a marker or leave earlier output unread. Treat the harness
 completion notification as the backstop for a markerless run.
 
-Cancel by stopping the background task or killing only the slug-specific
-process, within the cleanup limits in [SKILL.md](../SKILL.md). Under
-`acpx-pane`, stopping the background task closes its Herdr tab and hangs up that
-acpx run. Other tabs and the Orca view remain open.
+Cancel through the named session as above, then stop the background task if it
+is still waiting. Under `acpx-pane`, stopping the helper closes only its Herdr
+tab. Other tabs and the Orca view remain open.
 
 When a native first-party monitor is available, use it instead of the relay
 because it wakes on stream output.
@@ -59,8 +214,8 @@ Run acpx as a foreground command. Codex can convert a long command into a
 managed background terminal. Keep one long blocking wait outstanding until
 output or completion rather than polling rapidly.
 
-The terminal view and process list provide the human-visible trail. A direct
-acpx run itself leaves no separate log.
+The terminal view and process list provide the human-visible trail. The named
+ACP session retains its event stream; keep a per-prompt log when the audit needs it.
 
 ## cursor-agent: background job
 
@@ -72,7 +227,8 @@ Use escaped regular-expression notification patterns for stable milestones,
 such as `\[done\]` and `\[error\]`, and await only when the next step depends
 on the result.
 
-The task viewer owns the live log and cancellation path.
+The task viewer owns the live log. Cancel through the named session before
+stopping the waiting task in the viewer.
 
 ## pi: native live output
 
@@ -100,8 +256,8 @@ tail -f ~/.acpx/sessions/<recordId>.stream.ndjson | jq -j '
 
 Treat event streams as sensitive: they contain full prompts, reasoning, and
 tool output. Close the session and prune its history when retention is no
-longer needed. An `exec` one-shot has no event stream; only an explicitly
-redirected log provides a trail.
+longer needed and cleanup is requested. Keep the named session available for
+follow-ups after a prompt completes, including after its Herdr tab closes.
 
 ## Completion
 

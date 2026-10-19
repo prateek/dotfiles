@@ -114,15 +114,15 @@ STUB
 
 @test "acpx-pane runs inline outside Orca and returns its status" {
   unset ORCA_TERMINAL_HANDLE
-  run_bash 3 "$pane_cmd" --log "$log" --label agpt -- --format text agpt exec 'two words'
+  run_bash 3 "$pane_cmd" --log "$log" --label agpt -- --format text agpt prompt -s review 'two words'
   assert_output ''
-  assert_equal "$(cat "$log")" $'arg:--format\narg:text\narg:agpt\narg:exec\narg:two words\n[done] end_turn'
-  ! rg -q 'terminal split|terminal switch' "$FIXTURE/orca-calls"
+  assert_equal "$(cat "$log")" $'arg:--format\narg:text\narg:agpt\narg:prompt\narg:-s\narg:review\narg:two words\n[done] end_turn'
+  run ! rg -q 'terminal split|terminal switch' "$FIXTURE/orca-calls"
   [ ! -e "$FIXTURE/herdr-calls" ]
 }
 
 @test "acpx-pane --inline keeps the run out of Herdr" {
-  run_bash 3 "$pane_cmd" --log "$log" --label agpt --inline -- agpt exec hi
+  run_bash 3 "$pane_cmd" --log "$log" --label agpt --inline -- agpt prompt -s review hi
   assert_equal "$(tail -1 "$log")" '[done] end_turn'
   [ ! -e "$FIXTURE/herdr-calls" ]
 }
@@ -140,23 +140,24 @@ STUB
   assert_output 'pane: term_child'
   assert_regex "$(cat "$FIXTURE/orca-calls")" 'terminal list --worktree id:w1'
   assert_regex "$(cat "$FIXTURE/orca-calls")" 'terminal split --terminal term_agent --direction horizontal'
-  ! rg -q 'terminal split --terminal term_parent' "$FIXTURE/orca-calls"
+  run ! rg -q 'terminal split --terminal term_parent' "$FIXTURE/orca-calls"
 }
 
 @test "acpx-pane runs inline once when Orca cannot open the shared view" {
   export SPLIT_FAILS=1
-  run_bash 3 "$pane_cmd" --log "$log" --label agpt -- agpt exec hi
+  run_bash 3 "$pane_cmd" --log "$log" --label agpt -- agpt prompt -s review hi
   assert_regex "$stderr" 'could not open Herdr; running inline'
-  assert_equal "$(cat "$log")" $'arg:agpt\narg:exec\narg:hi\n[done] end_turn'
+  assert_equal "$(cat "$log")" $'arg:agpt\narg:prompt\narg:-s\narg:review\narg:hi\n[done] end_turn'
   [ ! -e "$FIXTURE/herdr-calls" ]
 }
 
 @test "acpx-pane shares one Orca view, labels tabs, and preserves arguments and status" {
-  run_bash 3 "$pane_cmd" --log "$log" --label agpt -- agpt exec 'two words; $(touch injected)'
+  # shellcheck disable=SC2016
+  run_bash 3 "$pane_cmd" --log "$log" --label agpt -- agpt prompt -s review 'two words; $(touch injected)'
   assert_regex "$output" '^pane: term_child; tab: 01 [0-9][0-9]:[0-9][0-9] agpt$'
-  assert_equal "$(cat "$log")" $'arg:agpt\narg:exec\narg:two words; $(touch injected)\n[done] end_turn'
+  assert_equal "$(cat "$log")" $'arg:agpt\narg:prompt\narg:-s\narg:review\narg:two words; $(touch injected)\n[done] end_turn'
   [ ! -e injected ]
-  run_bash 3 "$pane_cmd" --log "$FIXTURE/second log" --label aopus -- aopus exec hi
+  run_bash 3 "$pane_cmd" --log "$FIXTURE/second log" --label aopus -- aopus prompt -s second-review hi
   assert_regex "$output" '^pane: term_child; tab: 02 [0-9][0-9]:[0-9][0-9] aopus$'
   assert_equal "$(rg -c 'terminal split' "$FIXTURE/orca-calls")" 1
   assert_regex "$(cat "$FIXTURE/tabs")" 'w1:t2'
@@ -169,7 +170,7 @@ STUB
 
 @test "stopping one waiting helper closes its tab" {
   export ACPX_TEST_WAIT=1
-  "$pane_cmd" --log "$log" --label agpt -- agpt exec hi > "$FIXTURE/launcher-output" 2>&1 &
+  "$pane_cmd" --log "$log" --label agpt -- agpt prompt -s review hi > "$FIXTURE/launcher-output" 2>&1 &
   launcher=$!
   for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
     [ -s "$FIXTURE/launcher-output" ] && break
@@ -184,12 +185,12 @@ STUB
 }
 
 @test "a restored blank tab is reused after earlier tabs disappear" {
-  run_bash 3 "$pane_cmd" --log "$log" --label agpt -- agpt exec hi
+  run_bash 3 "$pane_cmd" --log "$log" --label agpt -- agpt prompt -s review hi
   printf 'w1:t1|1|w1:p1\n' > "$FIXTURE/tabs"
-  run_bash 3 "$pane_cmd" --log "$FIXTURE/next log" --label aopus -- aopus exec hi
+  run_bash 3 "$pane_cmd" --log "$FIXTURE/next log" --label aopus -- aopus prompt -s second-review hi
   assert_regex "$output" '^pane: term_child; tab: 02 [0-9][0-9]:[0-9][0-9] aopus$'
   assert_regex "$(cat "$FIXTURE/tabs")" 'w1:t1\|02 [0-9][0-9]:[0-9][0-9] aopus\|w1:p1'
-  ! rg -q 'tab create' "$FIXTURE/herdr-calls"
+  run ! rg -q 'tab create' "$FIXTURE/herdr-calls"
 }
 
 @test "a stopped Herdr session is discarded before reopening the view" {
@@ -230,7 +231,7 @@ PY
   "$pane_cmd" --view > "$FIXTURE/launcher-output" 2>&1 &
   launcher=$!
   sleep 0.3
-  ! rg -q 'terminal split|terminal switch' "$FIXTURE/orca-calls"
+  run ! rg -q 'terminal split|terminal switch' "$FIXTURE/orca-calls"
   [ ! -e "$FIXTURE/herdr-calls" ]
   touch "$FIXTURE/release-lock"
   wait "$holder"
@@ -242,7 +243,7 @@ PY
 @test "closing a completed tab waits for a concurrent launch" {
   export PANE_INPUT_FIFO="$FIXTURE/pane-input"
   mkfifo "$PANE_INPUT_FIFO"
-  "$pane_cmd" --log "$log" --label agpt -- agpt exec hi > "$FIXTURE/first-output" 2>&1 &
+  "$pane_cmd" --log "$log" --label agpt -- agpt prompt -s review hi > "$FIXTURE/first-output" 2>&1 &
   first=$!
   exec 8> "$PANE_INPUT_FIFO"
   first_status=0
@@ -251,7 +252,7 @@ PY
   first_runner=$(head -1 "$FIXTURE/pane-runner-pids")
 
   unset PANE_INPUT_FIFO
-  PAUSE_TAB_CREATE=1 ACPX_TEST_WAIT=1 "$pane_cmd" --log "$FIXTURE/second-log" --label aopus -- aopus exec hi > "$FIXTURE/second-output" 2>&1 &
+  PAUSE_TAB_CREATE=1 ACPX_TEST_WAIT=1 "$pane_cmd" --log "$FIXTURE/second-log" --label aopus -- aopus prompt -s second-review hi > "$FIXTURE/second-output" 2>&1 &
   second=$!
   for _ in {1..30}; do
     [ -e "$FIXTURE/tab-create-entered" ] && break
@@ -260,14 +261,14 @@ PY
   [ -e "$FIXTURE/tab-create-entered" ]
   printf x >&8
   sleep 0.3
-  ! rg -q 'terminal close' "$FIXTURE/orca-calls"
+  run ! rg -q 'terminal close' "$FIXTURE/orca-calls"
   touch "$FIXTURE/tab-create-release"
   for _ in {1..30}; do
-    ! kill -0 "$first_runner" 2> /dev/null && break
+    run ! kill -0 "$first_runner" 2> /dev/null && break
     sleep 0.1
   done
-  ! kill -0 "$first_runner" 2> /dev/null
-  ! rg -q 'terminal close' "$FIXTURE/orca-calls"
+  run ! kill -0 "$first_runner" 2> /dev/null
+  run ! rg -q 'terminal close' "$FIXTURE/orca-calls"
   kill -TERM "$second"
   second_status=0
   wait "$second" || second_status=$?

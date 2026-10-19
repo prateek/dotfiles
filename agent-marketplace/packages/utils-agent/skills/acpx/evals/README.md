@@ -2,7 +2,8 @@
 
 Two files, two lanes. The behavior fixtures cover native-first execution,
 semantic selection from machine catalogs, subscription gating, default thinking,
-and stale recovery. Historical results below predate those routing semantics.
+stale recovery, named-session continuity, and recovery after interrupted tasks.
+Historical results below predate those routing and session semantics.
 
 `trigger-evals.json` is the trigger lane: does the description make the model
 reach for this skill, and stay out of it when the request belongs elsewhere? It
