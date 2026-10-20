@@ -183,7 +183,6 @@ brews = [
 
   # Agents, documents, and media.
   { name = "raine/aven/aven" },
-  { name = "herdr" },
   { name = "llm" },
   { name = "pandoc" },
   { name = "imagemagick" },
@@ -408,9 +407,6 @@ brews = [
   # Personal AI agent integrations.
   { name = "steipete/tap/imsg" },
   { name = "steipete/tap/peekaboo" },
-  # Not on work machines: Cortex XDR terminates herdr on start, taking the
-  # whole Orca terminal host with it. acpx-pane runs inline without it.
-  { name = "herdr" },
 ]
 casks = [
   { name = "nvalt", appdir = "/Applications" },
@@ -464,6 +460,7 @@ entries = [
 brews = [
   { name = "gogcli" },  # gog is installed via mise (github:openclaw/gogcli)
   { name = "prek" },  # prek is installed via mise (conf.d/clis.toml)
+  { name = "herdr" },  # acpx-pane's shared view runs on tmux (ADR 0058)
 ]
 casks = [
   { name = "codex" },  # the CLI installs standalone (run_after_07-codex-standalone.sh)

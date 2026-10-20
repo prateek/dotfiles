@@ -1,16 +1,21 @@
 ---
-status: accepted
+status: superseded
 doc_type: adr
 summary: "ACPX runs share one named Herdr session in a single Orca split per calling terminal, one tab per invocation, with the helper owning tabs, logs, and cancellation."
 owner: Prateek
 created: 2026-09-27
-updated: 2026-09-27
+updated: 2026-10-20
+closed: 2026-10-20
+superseded_by: 0058-acpx-shared-tmux-view.md
+status_detail: "ADR 0058 keeps the shared-view contract and moves it from Herdr to tmux after Cortex XDR began terminating Herdr on the work Mac."
 related:
-  - ../plans/acpx-shared-pane-plan.md
+  - 0058-acpx-shared-tmux-view.md
 current_guidance: ../../agent-marketplace/packages/utils-agent/skills/acpx/SKILL.md
 ---
 
 # ADR 0036: Share one Herdr view for ACPX runs
+
+> Superseded by [ADR 0058](0058-acpx-shared-tmux-view.md).
 
 Use a named Herdr session inside one Orca split per calling terminal. Put each
 ACPX invocation in a tab and keep the caller's `acpx-pane` command unchanged.

@@ -53,7 +53,6 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 
 Status and summary for each are in the [inventory](inventory.md#plans).
 
-- [ACPX shared pane](plans/acpx-shared-pane-plan.md)
 - [agent_clis consolidation](plans/agent-clis-consolidation-plan.md)
 - [Agent friction remediation](plans/agent-friction-remediation-plan.md)
 - [Agent session wiki](plans/agent-session-wiki-plan.md)

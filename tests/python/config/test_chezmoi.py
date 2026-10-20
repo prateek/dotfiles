@@ -87,7 +87,7 @@ class ChezmoiConfigTests(RepoTestCase):
 
     def test_linux_brewfile_carries_formulae_but_no_casks_or_mac_only_formulae(self):
         brewfile = self.render("home/.chezmoitemplates/brewfile.tmpl", "devbox").decode()
-        for entry in ('brew "git"', 'brew "fzf"', 'brew "git-spice"', 'brew "crit"', 'brew "herdr"',
+        for entry in ('brew "git"', 'brew "fzf"', 'brew "git-spice"', 'brew "crit"', 'brew "llm"',
                       # Homebrew refuses a tap formula unless the Brewfile trusts its tap.
                       'tap "raine/aven", trusted: true', 'brew "raine/aven/aven"',
                       'tap "sourcegraph/src-cli", trusted: true', 'brew "sourcegraph/src-cli/src-cli"'):

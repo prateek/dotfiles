@@ -5,7 +5,7 @@ setup() {
   pane_cmd="$DOTFILES_ROOT/agent-marketplace/packages/utils-agent/skills/acpx/scripts/acpx-pane"
   log="$FIXTURE/run log"
   export XDG_STATE_HOME="$FIXTURE/state" ORCA_TERMINAL_HANDLE=term_parent
-  printf 'w1:t1|1|w1:p1\n' > "$FIXTURE/tabs"
+  printf '@1|acpx\n' > "$FIXTURE/windows"
   cat > "$FIXTURE/bin/acpx" <<'STUB'
 #!/bin/sh
 printf 'arg:%s\n' "$@"
@@ -52,64 +52,65 @@ case "$1 $2" in
   *) exit 1 ;;
 esac
 STUB
-  cat > "$FIXTURE/bin/herdr" <<'STUB'
+  cat > "$FIXTURE/bin/tmux" <<'STUB'
 #!/usr/bin/env bash
-printf '%s\n' "$*" >> "$FIXTURE/herdr-calls"
-[ "$1" = --session ] && shift 2
-case "$1 $2" in
-  "workspace list")
-    if [ -n "${STALE_VIEW:-}" ] && [ ! -e "$FIXTURE/server-started" ]; then
-      printf '{"error":{"code":"server_not_running"}}\n'
-      exit 0
-    fi
-    printf '{"result":{"workspaces":[{"workspace_id":"w1"}]}}\n'
+printf '%s\n' "$*" >> "$FIXTURE/tmux-calls"
+while [ "$1" = -S ] || [ "$1" = -f ]; do shift 2; done
+start_runner() {
+  if [ -n "${PANE_INPUT_FIFO:-}" ]; then
+    bash -c "$1" < "$PANE_INPUT_FIFO" > "$FIXTURE/pane-screen" 2>&1 &
+  else
+    bash -c "$1" < /dev/null > "$FIXTURE/pane-screen" 2>&1 &
+  fi
+  printf '%s\n' "$!" >> "$FIXTURE/pane-runner-pids"
+}
+cmd="$1"
+shift
+target="" name="" format=""
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    -t) target="$2"; shift 2 ;;
+    -n) name="$2"; shift 2 ;;
+    -F) format="$2"; shift 2 ;;
+    -c) shift 2 ;;
+    -k|-P) shift ;;
+    *) break ;;
+  esac
+done
+case "$cmd" in
+  has-session) [ -e "$FIXTURE/server-started" ] ;;
+  list-windows)
+    case "$format" in
+      '#{window_id}|#{window_name}') cat "$FIXTURE/windows" ;;
+      '#{window_name}') cut -d'|' -f2- "$FIXTURE/windows" ;;
+      '#{window_id}') cut -d'|' -f1 "$FIXTURE/windows" ;;
+      *) exit 1 ;;
+    esac
     ;;
-  "session delete") printf 'deleted\n' ;;
-  "tab list")
-    jq -Rn '[inputs | split("|") | {tab_id: .[0], label: .[1]}] | {result:{tabs:.}}' < "$FIXTURE/tabs"
+  rename-window)
+    awk -F'|' -v id="$target" -v label="$1" 'BEGIN{OFS="|"} $1==id {$2=label} {print}' "$FIXTURE/windows" > "$FIXTURE/windows.new"
+    mv "$FIXTURE/windows.new" "$FIXTURE/windows"
     ;;
-  "tab rename")
-    awk -F'|' -v id="$3" -v label="$4" 'BEGIN{OFS="|"} $1==id {$2=label} {print}' "$FIXTURE/tabs" > "$FIXTURE/tabs.new"
-    mv "$FIXTURE/tabs.new" "$FIXTURE/tabs"
-    printf '{}\n'
-    ;;
-  "tab create")
+  respawn-pane) start_runner "$1" ;;
+  new-window)
     if [ -n "${PAUSE_TAB_CREATE:-}" ]; then
       touch "$FIXTURE/tab-create-entered"
       while [ ! -e "$FIXTURE/tab-create-release" ]; do sleep 0.1; done
     fi
-    while [ "$#" -gt 0 ]; do
-      [ "$1" = --label ] && label="$2"
-      shift
-    done
-    printf 'w1:t2|%s|w1:p2\n' "$label" >> "$FIXTURE/tabs"
-    printf '{"result":{"tab":{"tab_id":"w1:t2"},"root_pane":{"pane_id":"w1:p2"}}}\n'
+    id="@$(($(wc -l < "$FIXTURE/windows") + 1))"
+    printf '%s|%s\n' "$id" "$name" >> "$FIXTURE/windows"
+    start_runner "$1"
+    printf '%s\n' "$id"
     ;;
-  "tab get")
-    grep -q "^$3|" "$FIXTURE/tabs" && printf '{}\n'
-    ;;
-  "tab close")
-    grep -v "^$3|" "$FIXTURE/tabs" > "$FIXTURE/tabs.new" || true
-    mv "$FIXTURE/tabs.new" "$FIXTURE/tabs"
+  kill-window)
+    grep -v "^$target|" "$FIXTURE/windows" > "$FIXTURE/windows.new" || true
+    mv "$FIXTURE/windows.new" "$FIXTURE/windows"
     touch "$FIXTURE/release"
-    printf '{}\n'
-    ;;
-  "pane list")
-    printf '{"result":{"panes":[{"tab_id":"w1:t1","pane_id":"w1:p1"}]}}\n'
-    ;;
-  "pane run")
-    if [ -n "${PANE_INPUT_FIFO:-}" ]; then
-      bash -c "$4" < "$PANE_INPUT_FIFO" > "$FIXTURE/pane-screen" 2>&1 &
-    else
-      bash -c "$4" < /dev/null > "$FIXTURE/pane-screen" 2>&1 &
-    fi
-    printf '%s\n' "$!" >> "$FIXTURE/pane-runner-pids"
-    printf '{}\n'
     ;;
   *) exit 1 ;;
 esac
 STUB
-  chmod +x "$FIXTURE/bin/acpx" "$FIXTURE/bin/orca" "$FIXTURE/bin/herdr"
+  chmod +x "$FIXTURE/bin/acpx" "$FIXTURE/bin/orca" "$FIXTURE/bin/tmux"
 }
 
 @test "acpx-pane runs inline outside Orca and returns its status" {
@@ -118,13 +119,13 @@ STUB
   assert_output ''
   assert_equal "$(cat "$log")" $'arg:--format\narg:text\narg:agpt\narg:prompt\narg:-s\narg:review\narg:two words\n[done] end_turn'
   run ! rg -q 'terminal split|terminal switch' "$FIXTURE/orca-calls"
-  [ ! -e "$FIXTURE/herdr-calls" ]
+  [ ! -e "$FIXTURE/tmux-calls" ]
 }
 
-@test "acpx-pane --inline keeps the run out of Herdr" {
+@test "acpx-pane --inline keeps the run out of tmux" {
   run_bash 3 "$pane_cmd" --log "$log" --label agpt --inline -- agpt prompt -s review hi
   assert_equal "$(tail -1 "$log")" '[done] end_turn'
-  [ ! -e "$FIXTURE/herdr-calls" ]
+  [ ! -e "$FIXTURE/tmux-calls" ]
 }
 
 @test "acpx-pane --view creates the empty shared view without starting acpx" {
@@ -146,9 +147,9 @@ STUB
 @test "acpx-pane runs inline once when Orca cannot open the shared view" {
   export SPLIT_FAILS=1
   run_bash 3 "$pane_cmd" --log "$log" --label agpt -- agpt prompt -s review hi
-  assert_regex "$stderr" 'could not open Herdr; running inline'
+  assert_regex "$stderr" 'could not open the tmux view; running inline'
   assert_equal "$(cat "$log")" $'arg:agpt\narg:prompt\narg:-s\narg:review\narg:hi\n[done] end_turn'
-  [ ! -e "$FIXTURE/herdr-calls" ]
+  [ ! -e "$FIXTURE/tmux-calls" ]
 }
 
 @test "acpx-pane shares one Orca view, labels tabs, and preserves arguments and status" {
@@ -160,7 +161,7 @@ STUB
   run_bash 3 "$pane_cmd" --log "$FIXTURE/second log" --label aopus -- aopus prompt -s second-review hi
   assert_regex "$output" '^pane: term_child; tab: 02 [0-9][0-9]:[0-9][0-9] aopus$'
   assert_equal "$(rg -c 'terminal split' "$FIXTURE/orca-calls")" 1
-  assert_regex "$(cat "$FIXTURE/tabs")" 'w1:t2'
+  assert_regex "$(cat "$FIXTURE/windows")" '@2'
   count_script=$(rg --files "$XDG_STATE_HOME/acpx-pane" | rg '/count.sh$')
   assert_equal "$(bash "$count_script")" 'sessions: 2'
   run_bash 0 "$pane_cmd" --view
@@ -181,27 +182,26 @@ STUB
   status=0
   wait "$launcher" || status=$?
   assert_equal "$status" 130
-  assert_regex "$(cat "$FIXTURE/herdr-calls")" 'tab close w1:t1'
+  assert_regex "$(cat "$FIXTURE/tmux-calls")" 'kill-window -t @1'
 }
 
-@test "a restored blank tab is reused after earlier tabs disappear" {
+@test "a fresh session's idle window is reused after earlier windows disappear" {
   run_bash 3 "$pane_cmd" --log "$log" --label agpt -- agpt prompt -s review hi
-  printf 'w1:t1|1|w1:p1\n' > "$FIXTURE/tabs"
+  printf '@1|acpx\n' > "$FIXTURE/windows"
   run_bash 3 "$pane_cmd" --log "$FIXTURE/next log" --label aopus -- aopus prompt -s second-review hi
   assert_regex "$output" '^pane: term_child; tab: 02 [0-9][0-9]:[0-9][0-9] aopus$'
-  assert_regex "$(cat "$FIXTURE/tabs")" 'w1:t1\|02 [0-9][0-9]:[0-9][0-9] aopus\|w1:p1'
-  run ! rg -q 'tab create' "$FIXTURE/herdr-calls"
+  assert_regex "$(cat "$FIXTURE/windows")" '^@1\|02 [0-9][0-9]:[0-9][0-9] aopus$'
+  run ! rg -q 'new-window' "$FIXTURE/tmux-calls"
 }
 
-@test "a stopped Herdr session is discarded before reopening the view" {
+@test "a closed view reopens attached to the running session" {
   key=$(printf %s "$ORCA_TERMINAL_HANDLE" | shasum -a 256 | cut -c1-16)
   mkdir -p "$XDG_STATE_HOME/acpx-pane/$key"
   printf 'term_stale\n' > "$XDG_STATE_HOME/acpx-pane/$key/pane"
-  export STALE_VIEW=1
   run_bash 0 "$pane_cmd" --view
   assert_output 'pane: term_child'
-  assert_regex "$(cat "$FIXTURE/herdr-calls")" "session delete acpx-$key"
   assert_equal "$(rg -c 'terminal split' "$FIXTURE/orca-calls")" 1
+  assert_regex "$(cat "$FIXTURE/orca-calls")" 'tmux\.sock -f .* new-session -A -s acpx'
 }
 
 @test "a launch waits for a live shared-view lock" {
@@ -232,7 +232,7 @@ PY
   launcher=$!
   sleep 0.3
   run ! rg -q 'terminal split|terminal switch' "$FIXTURE/orca-calls"
-  [ ! -e "$FIXTURE/herdr-calls" ]
+  [ ! -e "$FIXTURE/tmux-calls" ]
   touch "$FIXTURE/release-lock"
   wait "$holder"
   wait "$launcher"

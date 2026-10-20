@@ -26,10 +26,10 @@ fi
 
 run_inline() { exec acpx "$@" > "$log" 2>&1; }
 
-if [ "$inline" = 1 ] || ! command -v orca > /dev/null || ! command -v herdr > /dev/null ||
+if [ "$inline" = 1 ] || ! command -v orca > /dev/null || ! command -v tmux > /dev/null ||
    ! command -v python3 > /dev/null; then
   if [ "$view" = 1 ]; then
-    echo "acpx-pane: viewing requires Orca, Herdr, and Python 3" >&2
+    echo "acpx-pane: viewing requires Orca, tmux, and Python 3" >&2
     exit 1
   fi
   run_inline "$@"
@@ -66,25 +66,21 @@ if [ -z "$parent_handle" ]; then
 fi
 ORCA_TERMINAL_HANDLE="$parent_handle"
 
-herdr_bin=$(command -v herdr)
+tmux_bin=$(command -v tmux)
 orca_bin=$(command -v orca)
 python_bin=$(command -v python3)
 key=$(printf '%s' "$ORCA_TERMINAL_HANDLE" | shasum -a 256 | cut -c1-16)
 state="${XDG_STATE_HOME:-$HOME/.local/state}/acpx-pane/$key"
-session="acpx-$key"
+socket="$state/tmux.sock"
+session=acpx
 mkdir -p "$state"
 chmod 700 "$state"
 lock_file="$state/lock.flock"
 
-herdr_session() {
-  local result
-  result=$("$herdr_bin" --session "$session" "$@" 9>&-) || return
-  [ -n "$result" ] || return 0
-  if ! jq -e '.error == null' > /dev/null <<< "$result"; then
-    printf 'acpx-pane: Herdr %s: %s\n' "$1" "$result" >&2
-    return 1
-  fi
-  printf '%s\n' "$result"
+# A private socket keeps the view out of the user's own tmux server; unsetting
+# TMUX lets the view open from inside another tmux client.
+tmux_view() {
+  env -u TMUX "$tmux_bin" -S "$socket" "$@" 9>&-
 }
 unlock() {
   exec 9>&-
@@ -115,60 +111,50 @@ while True:
 write_config() {
   cat > "$state/count.sh" <<EOF
 #!/usr/bin/env bash
-"\${HERDR_BIN_PATH:-herdr}" --session "$session" tab list 2>/dev/null \
-  | jq -r '[.result.tabs[]? | select(.label | test("^[0-9]+ "))] | length | "sessions: " + tostring' 2>/dev/null
+$(printf %q "$tmux_bin") -S $(printf %q "$socket") list-windows -t =$session -F '#{window_name}' 2>/dev/null \
+  | awk '/^[0-9]+ / { n++ } END { print "sessions: " n + 0 }'
 EOF
   chmod 700 "$state/count.sh"
-  cat > "$state/config.toml" <<EOF
-onboarding = false
-[ui]
-sidebar_start_collapsed = true
-sidebar_collapsed_mode = "hidden"
-pane_borders = "off"
-pane_outer_borders = false
-pane_scrollbars = false
-pane_gaps = false
-tab_bar_position = "bottom"
-hide_tab_bar_when_single_tab = false
-window_title = "ACPX"
-tab_bar_right = [{ type = "command", command = "$state/count.sh", interval_seconds = 2, timeout_seconds = 2 }]
-[ui.toast]
-delivery = "off"
+  cat > "$state/tmux.conf" <<EOF
+set -g status-position bottom
+set -g status-left ''
+set -g status-right '#($(printf %q "$state/count.sh")) '
+set -g status-interval 2
+set -g window-status-format ' #W '
+set -g window-status-current-format '#[reverse] #W '
+set -g automatic-rename off
+set -g allow-rename off
+set -g set-titles on
+set -g set-titles-string ACPX
+set -g mouse on
 EOF
 }
 
+# A view whose Orca pane closed reattaches to the running session, so runs that
+# are still going keep their windows.
 ensure_view() {
-  local pane="" split="" state_json="" spaces="" created=""
+  local pane="" split="" state_json="" ready=0
   if [ -f "$state/pane" ]; then
     pane=$(cat "$state/pane")
     state_json=$(orca terminal show --terminal "$pane" --json 9>&- 2> /dev/null || true)
     if [ "$(printf '%s' "$state_json" | jq -r '.result.terminal.connected // false' 2> /dev/null)" != true ]; then
       pane=""
-      if ! herdr_session workspace list > /dev/null 2>&1; then
-        "$herdr_bin" session delete "$session" > /dev/null 2>&1 || true
-      fi
     fi
   fi
   if [ -z "$pane" ]; then
     write_config
     split=$(orca terminal split --terminal "$ORCA_TERMINAL_HANDLE" --direction horizontal \
-      --command "exec env HERDR_CONFIG_PATH=$(printf %q "$state/config.toml") $(printf %q "$herdr_bin") --session $session" \
+      --command "exec env -u TMUX $(printf %q "$tmux_bin") -S $(printf %q "$socket") -f $(printf %q "$state/tmux.conf") new-session -A -s $session -n $session -c $(printf %q "$PWD")" \
       --json 9>&- 2> /dev/null || true)
     pane=$(printf '%s' "$split" | jq -r '.result.split.handle // empty' 2> /dev/null || true)
     [ -n "$pane" ] || return 1
     printf '%s\n' "$pane" > "$state/pane"
   fi
   for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
-    spaces=$(herdr_session workspace list 2> /dev/null) && break
+    tmux_view has-session -t "=$session" 2> /dev/null && { ready=1; break; }
     sleep 0.25
   done
-  [ -n "$spaces" ] || return 1
-  workspace=$(printf '%s' "$spaces" | jq -r '.result.workspaces[0].workspace_id // empty')
-  if [ -z "$workspace" ]; then
-    created=$(herdr_session workspace create --cwd "$PWD" --label ACPX)
-    workspace=$(printf '%s' "$created" | jq -r '.result.workspace.workspace_id // empty')
-  fi
-  [ -n "$workspace" ] || return 1
+  [ "$ready" = 1 ] || return 1
   view_pane="$pane"
 }
 
@@ -178,10 +164,10 @@ if ! ensure_view; then
   unlock
   trap - EXIT
   if [ "$view" = 1 ]; then
-    echo "acpx-pane: could not open the Herdr view" >&2
+    echo "acpx-pane: could not open the tmux view" >&2
     exit 1
   fi
-  echo "acpx-pane: could not open Herdr; running inline" >&2
+  echo "acpx-pane: could not open the tmux view; running inline" >&2
   run_inline "$@"
 fi
 
@@ -193,25 +179,14 @@ if [ "$view" = 1 ]; then
   exit 0
 fi
 
-tabs=$(herdr_session tab list --workspace "$workspace")
+windows=$(tmux_view list-windows -t "=$session" -F '#{window_id}|#{window_name}')
 sequence=0
 [ ! -f "$state/sequence" ] || sequence=$(cat "$state/sequence")
-last_tab_sequence=$(printf '%s' "$tabs" | jq -r '[.result.tabs[].label | select(test("^[0-9]+ ")) | split(" ")[0] | tonumber] | max // 0')
-[ "$sequence" -ge "$last_tab_sequence" ] || sequence="$last_tab_sequence"
+last_window_sequence=$(printf '%s\n' "$windows" | awk -F'|' '$2 ~ /^[0-9]+ / { split($2, a, " "); if (a[1] + 0 > max) max = a[1] + 0 } END { print max + 0 }')
+[ "$sequence" -ge "$last_window_sequence" ] || sequence="$last_window_sequence"
 sequence=$((sequence + 1))
 printf '%s\n' "$sequence" > "$state/sequence"
 tab_label=$(printf '%02d %s %s' "$sequence" "$(date +%H:%M)" "$label")
-if [ "$(printf '%s' "$tabs" | jq '.result.tabs | length')" = 1 ] &&
-   [ "$(printf '%s' "$tabs" | jq -r '.result.tabs[0].label')" = 1 ]; then
-  tab=$(printf '%s' "$tabs" | jq -r '.result.tabs[0].tab_id')
-  herdr_session tab rename "$tab" "$tab_label" > /dev/null
-  pane=$(herdr_session pane list --workspace "$workspace" | jq -r --arg tab "$tab" '.result.panes[] | select(.tab_id == $tab) | .pane_id' | head -1)
-else
-  created=$(herdr_session tab create --workspace "$workspace" --cwd "$PWD" --label "$tab_label" --focus)
-  tab=$(printf '%s' "$created" | jq -r '.result.tab.tab_id')
-  pane=$(printf '%s' "$created" | jq -r '.result.root_pane.pane_id')
-fi
-[ -n "$tab" ] && [ -n "$pane" ] || { echo "acpx-pane: Herdr did not create a tab" >&2; exit 1; }
 
 exit_file="$log.exit"
 runner="$log.pane.sh"
@@ -220,8 +195,8 @@ rm -f "$exit_file"
 {
   echo '#!/usr/bin/env bash'
   echo 'set -o pipefail'
-  printf 'log=%q exit_file=%q session=%q view_pane=%q orca_bin=%q python_bin=%q lock_file=%q\n' \
-    "$log" "$exit_file" "$session" "$view_pane" "$orca_bin" "$python_bin" "$lock_file"
+  printf 'log=%q exit_file=%q session=%q socket=%q tmux_bin=%q view_pane=%q orca_bin=%q python_bin=%q lock_file=%q\n' \
+    "$log" "$exit_file" "$session" "$socket" "$tmux_bin" "$view_pane" "$orca_bin" "$python_bin" "$lock_file"
   declare -f lock unlock
   cat <<'RUNNER'
 record() { [ -e "$exit_file" ] || { printf '%s\n' "$1" > "$exit_file.tmp" && mv -f "$exit_file.tmp" "$exit_file"; }; }
@@ -238,9 +213,9 @@ printf '\n[acpx exited %s; press any key to close]\n' "$rc"
 close_completed_tab() {
   trap - INT
   lock || exit 1
-  other_tabs=$("${HERDR_BIN_PATH:-herdr}" --session "$session" tab list 9>&- 2>/dev/null \
-    | jq -er '.result.tabs | [.[] | select(.label | test("^[0-9]+ "))] | length' 2>/dev/null)
-  if [ "$other_tabs" = 1 ]; then
+  run_windows=$("$tmux_bin" -S "$socket" list-windows -t "=$session" -F '#{window_name}' 9>&- 2>/dev/null \
+    | awk '/^[0-9]+ / { n++ } END { print n + 0 }')
+  if [ "$run_windows" = 1 ]; then
     "$orca_bin" terminal close --terminal "$view_pane" --json 9>&- > /dev/null 2>&1 || true
   fi
   unlock
@@ -252,18 +227,34 @@ close_completed_tab
 RUNNER
 } > "$runner"
 
-if ! herdr_session pane run "$pane" "exec bash $(printf %q "$runner")" > /dev/null; then
-  herdr_session tab close "$tab" > /dev/null 2>&1 || true
-  echo "acpx-pane: Herdr could not start acpx" >&2
+# The session's first window is an idle shell named after the session; the
+# first run takes it over instead of leaving it beside the run.
+run_command="exec bash $(printf %q "$runner")"
+window=""
+if [ "$(printf '%s\n' "$windows" | wc -l | tr -d ' ')" = 1 ] &&
+   [ "$(printf '%s\n' "$windows" | cut -d'|' -f2-)" = "$session" ]; then
+  window=$(printf '%s\n' "$windows" | cut -d'|' -f1)
+  if ! tmux_view rename-window -t "$window" "$tab_label" ||
+     ! tmux_view respawn-pane -k -t "$window" -c "$PWD" "$run_command"; then
+    window=""
+  fi
+else
+  window=$(tmux_view new-window -t "=$session:" -n "$tab_label" -c "$PWD" -P -F '#{window_id}' "$run_command" || true)
+fi
+if [ -z "$window" ]; then
+  echo "acpx-pane: tmux could not start acpx" >&2
   exit 1
 fi
 unlock
 trap - EXIT
 echo "pane: $view_pane; tab: $tab_label"
 
+window_alive() {
+  tmux_view list-windows -t "=$session" -F '#{window_id}' 2> /dev/null | grep -qxF "$window"
+}
 cancel() {
   trap - INT TERM
-  herdr_session tab close "$tab" > /dev/null 2>&1 || true
+  tmux_view kill-window -t "$window" > /dev/null 2>&1 || true
   exit 130
 }
 trap cancel INT TERM
@@ -272,8 +263,8 @@ ticks=0
 while [ ! -e "$exit_file" ]; do
   sleep 1
   ticks=$((ticks + 1))
-  if [ $((ticks % 5)) = 0 ] && ! herdr_session tab get "$tab" > /dev/null 2>&1; then
-    echo "[error] acpx tab $tab closed before acpx reported an exit status" >> "$log"
+  if [ $((ticks % 5)) = 0 ] && ! window_alive; then
+    echo "[error] acpx window $window closed before acpx reported an exit status" >> "$log"
     exit 129
   fi
 done
