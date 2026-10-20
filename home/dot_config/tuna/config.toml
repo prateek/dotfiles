@@ -425,6 +425,149 @@ label = "winmux"
                         type = "savedCommand"
 
 [[comboMode.bindings]]
+iconPath = "cursorarrow.rays"
+key = "f"
+label = "neru"
+
+    [comboMode.bindings.destination]
+    type = "group"
+
+        [[comboMode.bindings.destination.bindings]]
+        iconPath = "cursorarrow.click"
+        key = "f"
+        label = "hints"
+
+            [comboMode.bindings.destination.bindings.destination]
+            type = "command"
+
+                [comboMode.bindings.destination.bindings.destination.command]
+                actionIdentifier = "tuna.common-actions/run-text-as-shell-command"
+                behavior = "run"
+                presentation = "automatic"
+                subjectIdentifiers = ["text:PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"; neru run 'action save_cursor_pos --slot tuna' 'hints --action left_click'"]
+                type = "savedCommand"
+
+        [[comboMode.bindings.destination.bindings]]
+        iconPath = "square.grid.3x3"
+        key = "d"
+        label = "recursive grid"
+
+            [comboMode.bindings.destination.bindings.destination]
+            type = "command"
+
+                [comboMode.bindings.destination.bindings.destination.command]
+                actionIdentifier = "tuna.common-actions/run-text-as-shell-command"
+                behavior = "run"
+                presentation = "automatic"
+                subjectIdentifiers = ["text:PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"; neru run 'action save_cursor_pos --slot tuna' 'recursive_grid'"]
+                type = "savedCommand"
+
+        [[comboMode.bindings.destination.bindings]]
+        iconPath = "grid"
+        key = "g"
+        label = "grid"
+
+            [comboMode.bindings.destination.bindings.destination]
+            type = "command"
+
+                [comboMode.bindings.destination.bindings.destination.command]
+                actionIdentifier = "tuna.common-actions/run-text-as-shell-command"
+                behavior = "run"
+                presentation = "automatic"
+                subjectIdentifiers = ["text:PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"; neru run 'action save_cursor_pos --slot tuna' 'grid'"]
+                type = "savedCommand"
+
+        [[comboMode.bindings.destination.bindings]]
+        iconPath = "rectangle.split.2x2"
+        key = "a"
+        label = "bisect"
+
+            [comboMode.bindings.destination.bindings.destination]
+            type = "command"
+
+                [comboMode.bindings.destination.bindings.destination.command]
+                actionIdentifier = "tuna.common-actions/run-text-as-shell-command"
+                behavior = "run"
+                presentation = "automatic"
+                subjectIdentifiers = ["text:PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"; neru run 'action save_cursor_pos --slot tuna' 'bisect'"]
+                type = "savedCommand"
+
+        [[comboMode.bindings.destination.bindings]]
+        iconPath = "scroll"
+        key = "s"
+        label = "scroll"
+
+            [comboMode.bindings.destination.bindings.destination]
+            type = "command"
+
+                [comboMode.bindings.destination.bindings.destination.command]
+                actionIdentifier = "tuna.common-actions/run-text-as-shell-command"
+                behavior = "run"
+                presentation = "automatic"
+                subjectIdentifiers = ["text:PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"; neru scroll"]
+                type = "savedCommand"
+
+        [[comboMode.bindings.destination.bindings]]
+        iconPath = "cursorarrow.click"
+        key = "F"
+        label = "hints (cursor stays)"
+
+            [comboMode.bindings.destination.bindings.destination]
+            type = "command"
+
+                [comboMode.bindings.destination.bindings.destination.command]
+                actionIdentifier = "tuna.common-actions/run-text-as-shell-command"
+                behavior = "run"
+                presentation = "automatic"
+                subjectIdentifiers = ["text:PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"; neru hints --action left_click"]
+                type = "savedCommand"
+
+        [[comboMode.bindings.destination.bindings]]
+        iconPath = "square.grid.3x3"
+        key = "D"
+        label = "recursive grid (cursor stays)"
+
+            [comboMode.bindings.destination.bindings.destination]
+            type = "command"
+
+                [comboMode.bindings.destination.bindings.destination.command]
+                actionIdentifier = "tuna.common-actions/run-text-as-shell-command"
+                behavior = "run"
+                presentation = "automatic"
+                subjectIdentifiers = ["text:PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"; neru recursive_grid"]
+                type = "savedCommand"
+
+        [[comboMode.bindings.destination.bindings]]
+        iconPath = "grid"
+        key = "G"
+        label = "grid (cursor stays)"
+
+            [comboMode.bindings.destination.bindings.destination]
+            type = "command"
+
+                [comboMode.bindings.destination.bindings.destination.command]
+                actionIdentifier = "tuna.common-actions/run-text-as-shell-command"
+                behavior = "run"
+                presentation = "automatic"
+                subjectIdentifiers = ["text:PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"; neru grid"]
+                type = "savedCommand"
+
+        [[comboMode.bindings.destination.bindings]]
+        iconPath = "rectangle.split.2x2"
+        key = "A"
+        label = "bisect (cursor stays)"
+
+            [comboMode.bindings.destination.bindings.destination]
+            type = "command"
+
+                [comboMode.bindings.destination.bindings.destination.command]
+                actionIdentifier = "tuna.common-actions/run-text-as-shell-command"
+                behavior = "run"
+                presentation = "automatic"
+                subjectIdentifiers = ["text:PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\"; neru bisect"]
+                type = "savedCommand"
+
+[[comboMode.bindings]]
 iconPath = "wrench.and.screwdriver"
 key = "z"
 label = "misc"

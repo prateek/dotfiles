@@ -1,0 +1,28 @@
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- $neru := includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "y3owk1n/tap/neru") -}}
+{{- if and $f.run_install_scripts (eq $neru "true") -}}
+{{ template "script_lib.sh" . }}
+
+# Keep the Neru daemon running at login and on the managed config. The cask
+# installs only the app; `neru services install` writes and bootstraps
+# ~/Library/LaunchAgents/com.y3owk1n.neru.plist, pointed at the app bundle so
+# cask upgrades keep it valid. Install refuses an existing plist, so it runs
+# only when status reports none. A user's `neru services stop` survives this
+# hook: the plist stays installed, so the hook leaves it alone.
+brew_shellenv
+
+have neru || { log "neru: CLI not installed yet; skipping"; exit 0; }
+
+if ! neru services status --json 2>/dev/null | grep -Eq '"installed": *true'; then
+  if neru services install >/dev/null 2>&1; then
+    log "neru: installed the login service"
+  else
+    warn "neru: could not install the login service (no GUI session?); run: neru services install"
+  fi
+  exit 0
+fi
+
+if neru services status --json 2>/dev/null | grep -Eq '"running": *true'; then
+  neru config reload >/dev/null 2>&1 || warn "neru: config reload failed; run: neru config reload"
+fi
+{{- end }}

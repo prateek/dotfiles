@@ -34,6 +34,7 @@ bin/orca-agent-session
 .chezmoiscripts/44-build-keymap-overlay.sh
 .chezmoiscripts/45-karabiner-goku.sh
 .chezmoiscripts/46-tuna-reload.sh
+.chezmoiscripts/50-neru-service.sh
 .chezmoiscripts/80-tcc-onboarding.sh
 {{- end }}
 {{/* The asset sync replaces these directories wholesale; see
@@ -176,6 +177,9 @@ Library/Preferences/com.zimengxiong.winmux.plist
 .local/bin/winmux-display
 .local/bin/winmux-gesture
 .local/bin/winmux-rows
+{{- end }}
+{{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "y3owk1n/tap/neru")) "true" }}
+.config/neru
 {{- end }}
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "bettertouchtool")) "true" }}
 Library/Preferences/com.hegenberg.BetterTouchTool.plist

@@ -39,6 +39,7 @@ description = "Shared GUI apps and Mac control tools for daily-driver laptops"
 taps = [
   { name = "yqrashawn/goku" },
   { name = "prateek/tap" },
+  { name = "y3owk1n/tap" },
 ]
 brews = [
   # Keyboard and display control.
@@ -71,6 +72,7 @@ casks = [
   { name = "bettertouchtool" },
   { name = "karabiner-elements" },
   { name = "prateek/tap/winmux" },
+  { name = "y3owk1n/tap/neru" },
   { name = "bentobox" },
   { name = "tuna" },
   { name = "moom", appdir = "/Applications" },

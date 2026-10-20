@@ -1,0 +1,74 @@
+# Neru: keyboard hints and grids for the whole desktop. Unset keys keep the
+# defaults in https://github.com/y3owk1n/neru/blob/main/configs/default-config.toml.
+# Apply edits with `neru config reload`; chezmoi apply runs it
+# (run_after_50-neru-service).
+
+# An empty table drops every default global chord. The upstream
+# Cmd+Shift+Space/G/C/B/S chords shadow Save As, Go to Folder and browser
+# devtools; Tuna's combo group (⌘ tap, f) launches the modes instead.
+[hotkeys]
+
+# The cursor goes back where it started when a mode closes, click or cancel.
+# Tuna's lowercase keys save the "tuna" slot before opening a mode; the hook
+# restores it, and restoring empties the slot, so modes opened any other way
+# leave the cursor alone. "stay" re-saves the slot at the current point, which
+# turns the restore into a no-op.
+[hooks]
+on_mode_exit = "action restore_cursor_pos --slot tuna"
+
+[macros]
+stay = ["action save_cursor_pos --slot tuna"]
+
+# Grid, recursive grid and bisect select first, then act: Return clicks and
+# leaves, Shift+Return clicks and leaves the cursor there, Shift+Escape leaves
+# the cursor there without clicking. Shift+L/R/M keep the other buttons.
+[grid.hotkeys]
+"Return" = ["action left_click", "idle"]
+"Shift+Return" = ["macro stay", "action left_click", "idle"]
+"Shift+Escape" = ["macro stay", "idle"]
+
+[recursive_grid.hotkeys]
+"Return" = ["action left_click", "idle"]
+"Shift+Return" = ["macro stay", "action left_click", "idle"]
+"Shift+Escape" = ["macro stay", "idle"]
+
+[bisect.hotkeys]
+"Return" = ["action left_click", "idle"]
+"Shift+Return" = ["macro stay", "action left_click", "idle"]
+"Shift+Escape" = ["macro stay", "idle"]
+
+# Label keys stay on the home row. The 3x3 pickers use the left hand's
+# w e r / s d f / x c v block so the home row is the middle row.
+[hints]
+hint_characters = "asdfghjkl"
+
+[grid]
+characters = "asdfghjkl"
+sublayer_keys = "wersdfxcv"
+
+[recursive_grid]
+keys = "wersdfxcv"
+
+# Vimium's hint marker (vimium.css), minus its gradient, which Neru cannot
+# draw: the flat fill sits between the #FFF785 and #FFC542 stops.
+[hints.ui]
+font_family = "Helvetica-Bold"
+font_size = 11
+border_radius = 3
+padding_x = 3
+padding_y = 1
+border_width = 1
+placement = "center"
+background_color = "#FFDE63"
+text_color = "#302505"
+matched_text_color = "#D4AC3A"
+border_color = "#C38A22"
+
+[hints.search_input_ui]
+font_family = "Helvetica-Bold"
+font_size = 11
+border_radius = 3
+border_width = 1
+background_color = "#FFDE63"
+text_color = "#302505"
+border_color = "#C38A22"

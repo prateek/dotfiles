@@ -25,6 +25,12 @@ permissions = [
   { service = "screenRecording", reason = "Capture window previews and estimate window corner radii." },
 ]
 
+[tcc.apps.neru]
+name = "Neru"
+bundle_id = "com.y3owk1n.neru"
+sources = ["https://github.com/y3owk1n/neru/blob/ca35d3142db8b0615745df4f6104cc5477161911/docs/guide/getting-started.md"]
+permissions = [{ service = "accessibility", reason = "Read accessibility trees for hints and move or click the pointer." }]
+
 [tcc.apps.betterdisplay]
 name = "BetterDisplay"
 bundle_id = "pro.betterdisplay.BetterDisplay"
