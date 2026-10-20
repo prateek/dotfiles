@@ -7,7 +7,7 @@ created: 2026-09-28
 updated: 2026-09-28
 related:
   - 0031-discovered-landing-workflows.md
-current_guidance: ../../agent-marketplace/packages/review/skills/land-changes/references/preferences.md
+current_guidance: ../../agent-marketplace/src/review/skills/land-changes/references/preferences.md
 ---
 
 # ADR 0037: Store landing preferences in the repository

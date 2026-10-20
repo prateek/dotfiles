@@ -18,7 +18,7 @@ import zipfile
 
 
 ROOT = Path(__file__).resolve().parents[3]
-SCRIPT = ROOT / "agent-marketplace/packages/utils-agent/skills/browser/scripts/camofox-runtime.py"
+SCRIPT = ROOT / "agent-marketplace/src/utils-agent/skills/browser/scripts/camofox-runtime.py"
 spec = importlib.util.spec_from_file_location("camofox_runtime", SCRIPT)
 runtime = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(runtime)

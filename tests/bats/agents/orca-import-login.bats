@@ -2,7 +2,7 @@ load '../../support/common'
 
 setup() {
   setup_fixture
-  helper="$DOTFILES_ROOT/agent-marketplace/packages/utils-agent/skills/browser/scripts/orca-import-login"
+  helper="$DOTFILES_ROOT/agent-marketplace/src/utils-agent/skills/browser/scripts/orca-import-login"
   url=https://meta.example.com/dashboards/d/rollout
   export ORCA_VERSION=1.4.210 LANDING="$url"
   echo 25 > "$FIXTURE/imported-cookies"

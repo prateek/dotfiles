@@ -9,7 +9,7 @@ related:
   - ../plans/jev-deterministic-preparation-plan.md
   - ../research/jev-browser-integrations.md
 current_guidance:
-  - ../../agent-marketplace/packages/experimental/skills/browser-jev/SKILL.md
+  - ../../agent-marketplace/src/experimental/skills/browser-jev/SKILL.md
   - ../../tests/README.md
 status_detail: "User-authorized relocation; Jev maintenance and trials are suspended."
 ---
@@ -45,7 +45,7 @@ deliberately gives up automatic detection of Jev runtime regressions while
 preserving every assertion for optional use. Package build/check still validates
 the published skill and paired invocation controls.
 
-The [skill](../../agent-marketplace/packages/experimental/skills/browser-jev/SKILL.md)
+The [skill](../../agent-marketplace/src/experimental/skills/browser-jev/SKILL.md)
 and [test guide](../../tests/README.md) own current execution instructions.
 Offline checks and package validation do not qualify a live browser/model trial
 or establish an improvement over the regular browser workflow.

@@ -61,3 +61,6 @@ ask.json
 
 # Eval run output (transcripts, verdicts); regenerated per run.
 .crit-evals/
+
+# Agent notes accrued during work; folded into GHOST_OF_COMMITS_PAST.md at landing.
+GHOST_MESSAGE_BUFFER.md

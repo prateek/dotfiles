@@ -2,14 +2,18 @@
 
 The [isolated project README](../../../../agent-marketplace/README.md#edit-a-package)
 owns the source layout and just recipes. One root APM project acquires inputs
-for every plugin: one manifest, one lock, and one committed cache. Each directory
-under `packages/` defines a native plugin without a separate APM project.
+for every plugin: one manifest, one lock, and one committed cache. Each
+`[plugins.<name>]` table in `marketplace.toml` defines a native plugin without a
+separate APM project, and `src/<name>/` holds its hand-written files, when it
+has any.
 
-The plugin's `.codex-plugin/plugin.json` owns its identity, version, and common
-metadata. The builder derives temporary APM publication manifests from it,
-generates native metadata and catalogs, then removes those temporary manifests.
+The plugin table owns its version and native manifest: `display_name` for the
+shared template, or a verbatim `[plugins.<name>.manifest]`. The builder
+generates `plugin.json` in a canonical key order, derives temporary APM
+publication manifests from it, generates native metadata and catalogs, then
+removes those temporary manifests.
 
-`publish.toml` maps a curated directory to an APM lock identity and a path inside
+Each `[[plugins.<name>.skills]]` or `[[plugins.<name>.payloads]]` selection maps a curated directory to an APM lock identity and a path inside
 its shared native cache root. It also selects complete hooks and supporting trees. It
 contains no repository URLs or revision pins beyond the producer's dependency
 identity. Authored skills live directly under `skills/<directory>/`.
@@ -24,11 +28,11 @@ removes the entire directory. Overlays that add skills follow the same contract.
 Python `__pycache__` entries are omitted from the source fingerprint and all copied
 payload trees without following cache symlinks. Other symlinks are rejected.
 
-Package policy is separate: `home/.chezmoidata/agent_plugins.toml` requires explicit
-boolean `default_loaded`, `claude`, and `codex` entries for every published package.
-A package remains in both catalogs when host eligibility is false. There is no
-implicit enabled default. Pi uses Claude eligibility and default loading; Cursor
-retains its marketplace registration behavior.
+Package policy is separate: `home/.chezmoidata/agent_plugins.toml` requires an
+explicit boolean `default_loaded` for every published package, and nothing else.
+Every package goes to every harness ([ADR 0059](../../../../docs/adr/0059-one-plugin-set-for-every-harness.md)).
+There is no implicit enabled default. Pi and OMP follow the same policy; Cursor
+loads the plugins Claude has installed and enabled.
 
 The library reads built payloads for effective content and source selections for
 edit ownership. Imported edits belong in patches/overlays; no reader infers origin

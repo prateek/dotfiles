@@ -38,7 +38,7 @@ import tempfile
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SKILL_DIR = REPO_ROOT / "agent-marketplace/packages/core/skills/doc-coauthoring"
+SKILL_DIR = REPO_ROOT / "agent-marketplace/src/core/skills/doc-coauthoring"
 EVALS = SKILL_DIR / "evals"
 REPLAY = EVALS / "accretion-replay.json"
 FIXTURES = ("repository", "accretion")

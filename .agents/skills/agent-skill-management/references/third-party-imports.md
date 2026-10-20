@@ -1,10 +1,10 @@
 # Third-party imports
 
 Follow [Acquire or update upstream inputs](../../../../agent-marketplace/README.md#acquire-or-update-upstream-inputs).
-APM is locked in the project's `uv.lock` (0.29.1 at this writing); there is no
-global `apm`. Check or bump it with `dotpkgs status|update apm:apm-cli`. Use the
+APM is pinned below 0.31 in the project's `pyproject.toml` and locked in its
+`uv.lock` (see the README's pin note); there is no global `apm`. Check or bump it with `dotpkgs status|update apm:apm-cli`. Use the
 project recipes so cache/lock review guards run before APM.
-Declarations, the lock, and `apm_modules/` live at the project root. `just fetch`
+Declarations, the lock, and `apm_modules/` live in the project's `vendor/`. `just fetch`
 and `just update` operate on that shared graph; there is no package selector.
 Before removing an input, check selections in every plugin. A shared input update
 requires reviewing the output and bumping the version of each affected plugin.

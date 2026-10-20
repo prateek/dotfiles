@@ -5,9 +5,10 @@ description: Manage agent-marketplace packages, reviewed APM caches and patches,
 
 # Agent Skill Management
 
-Use `agent-marketplace/` for the portable source/build project. Its root owns the
-single `apm.yml`, lock, and committed `apm_modules/`; `packages/` defines separate
-plugins with their own selections, authored content, and native metadata. Host activation
+Use `agent-marketplace/` for the portable source/build project. It is sorted by
+origin: `vendor/` holds the single `apm.yml`, lock, and committed `apm_modules/`;
+`src/` defines separate plugins with their own selections, authored content,
+patches, and native metadata; `marketplace.toml` lists them in catalog order. Host activation
 policy lives in `home/.chezmoidata/agent_plugins.toml`. Official marketplace sources and client defaults live in
 `home/.chezmoidata/agent_upstream_plugins.toml`; prefer those direct native
 installs wherever the client supports the upstream catalog and enabled defaults.
@@ -26,8 +27,9 @@ artifact.
    installation, enablement, or rollback.
 2. Change durable inputs. Edit authored `skills/` directly and imported content
    through patches or overlays. Keep the shared cache pristine. Bump only the
-   affected plugin's `.codex-plugin/plugin.json` version; the build derives its
-   APM publication manifest and removes it after generating native metadata. The console plans
+   affected plugin's `version` in `agent-marketplace/marketplace.toml`; the build
+   generates its `plugin.json`, derives its APM publication manifest, and removes
+   that manifest after generating native metadata. The console plans
    imported edits as patches, stages paired invocation controls and native
    version bumps, then builds the staged result before guarded writes. Imported
    description/frontmatter edits fingerprint the whole marketplace source before
@@ -68,7 +70,7 @@ Keep all Codex interface metadata; hook-bearing packages retain `hooks: {}` unde
 the current skills-only Codex policy.
 
 Runtime inventory comes from native catalogs and selected built payloads. Treat
-`agent-marketplace/apm.lock.yaml` as the upstream identity/revision source. Preserve upstream license
+`agent-marketplace/vendor/apm.lock.yaml` as the upstream identity/revision source. Preserve upstream license
 and notice files in the published plugin as well as the cache. Subdirectory
 imports need explicit root-notice payload selections when those texts are absent
 from the selected tree; see the project workflow. Generate no `SOURCE.md` or

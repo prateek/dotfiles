@@ -7,7 +7,7 @@ updated: 2026-10-17
 related:
   - browser-skill-plan.md
   - ../adr/0051-camofox-rest-browser-recipe.md
-  - ../../agent-marketplace/packages/utils-agent/skills/browser/SKILL.md
+  - ../../agent-marketplace/src/utils-agent/skills/browser/SKILL.md
   - ../research/browser-controller-qualification.md
   - ../research/local-browser-runtime-evaluation.md
   - ../research/hermes-camofox-comparison.md

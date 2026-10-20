@@ -1,9 +1,0 @@
-[[payloads]]
-dependency = "mattpocock/skills"
-path = ".apm/skills"
-target = "skills"
-
-[[payloads]]
-dependency = "mattpocock/skills"
-path = "LICENSE"
-target = "licenses/mattpocock/skills/LICENSE"

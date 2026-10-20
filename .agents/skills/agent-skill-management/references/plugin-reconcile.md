@@ -28,7 +28,7 @@ matching manifest versions. Chezmoi script 39 runs it. `--json` prints the
 marketplace name and each client's eligible plugins instead, which
 `work-overlay.tmpl` reads so the templates never parse the catalogs themselves.
 
-Claude registers the local root, installs eligible plugins, refreshes changed
+Claude registers the local root, installs every published plugin, refreshes changed
 versions, restores `default_loaded`, and removes owned orphans. Native remove/install
 supports downgrade and removes stale files. Unrelated marketplace records are kept.
 
@@ -43,8 +43,15 @@ remembered and refreshed on relocation too.
 For first-time project use of a disabled Codex plugin, run `codex plugin add
 PACKAGE@prateek-local`, then reconcile to restore its global disabled state and set
 the trusted project's enabled override. Subsequent updates use the explicit refresh
-option. Claude installs eligible plugins even when globally disabled. Pi follows
-Claude selection; Cursor's marketplace/ACP policy is separate.
+option. Claude installs every plugin even when globally disabled. Pi follows
+Claude selection, and Cursor loads what Claude has installed and enabled.
+
+`reconcile-upstream-agent-plugins` installs every official plugin on every
+client. Codex accepts an upstream snapshot holding either its own catalog or
+Claude's. Entries in `retired_agent_upstream_plugins` are uninstalled from each
+client; the config templates pin them disabled because settings merges keep
+stale keys. Retire an official install there when a kept local adapter replaces
+it.
 
 ## Roll back a release with a receipt
 
@@ -91,8 +98,7 @@ claude plugin list --json
 codex plugin list --json
 ```
 
-Adjust the refresh list to the restored policy if package membership or eligibility
-changed. Omitting it at an unchanged root leaves installed disabled Codex caches at
+Adjust the refresh list to the restored policy if package membership changed. Omitting it at an unchanged root leaves installed disabled Codex caches at
 their newer version. Verify native versions, enabled states, and changed payload
 files, then restart the agent session. Keep full `chezmoi apply` paused until source
 and the desired release agree: script 36 builds current source and could otherwise

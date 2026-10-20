@@ -14,24 +14,33 @@ import tomllib
 from agent_skill_lib import REPO_ROOT
 from codex_rpc import enabled_edit, requests
 
+CODEX_CATALOGS = (".agents/plugins/marketplace.json", ".claude-plugin/marketplace.json")
 
-def load_policy(path: Path) -> list[dict]:
-    entries = tomllib.loads(path.read_text()).get("agent_upstream_plugins", [])
+
+def valid_identity(entry: dict) -> tuple[str, str]:
+    for key in ("marketplace", "plugin"):
+        if not isinstance(entry[key], str) or not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9._-]*", entry[key]):
+            raise ValueError(f"invalid upstream {key}")
+    return entry["marketplace"], entry["plugin"]
+
+
+def load_policy(path: Path) -> tuple[list[dict], list[dict]]:
+    data = tomllib.loads(path.read_text())
+    entries = data.get("agent_upstream_plugins", [])
+    retired = data.get("retired_agent_upstream_plugins", [])
     identities = set()
     for entry in entries:
-        if set(entry) != {"marketplace", "plugin", "repository", "ref", "claude", "codex", "default_loaded"}:
-            raise ValueError("upstream plugin policy requires explicit identity, source, ref, and client defaults")
-        for key in ("marketplace", "plugin"):
-            if not isinstance(entry[key], str) or not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9._-]*", entry[key]):
-                raise ValueError(f"invalid upstream {key}")
+        if set(entry) != {"marketplace", "plugin", "repository", "ref", "default_loaded"}:
+            raise ValueError("upstream plugin policy requires explicit identity, source, ref, and default_loaded")
+        valid_identity(entry)
         if entry["marketplace"] == "prateek-local":
             raise ValueError("upstream marketplaces cannot own prateek-local")
         if not isinstance(entry["repository"], str) or not re.fullmatch(r"[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+", entry["repository"]):
             raise ValueError("upstream repository must be a GitHub owner/repo")
         if entry["ref"] != "main":
             raise ValueError("official plugins follow main; all native clients must agree on the ref")
-        if any(type(entry[key]) is not bool for key in ("claude", "codex", "default_loaded")):
-            raise ValueError("upstream client policy must use explicit booleans")
+        if type(entry["default_loaded"]) is not bool:
+            raise ValueError("upstream default_loaded must be an explicit boolean")
         identity = (entry["marketplace"], entry["plugin"])
         if identity in identities:
             raise ValueError("duplicate upstream plugin identity")
@@ -42,7 +51,12 @@ def load_policy(path: Path) -> list[dict]:
         if entry["marketplace"] in sources and sources[entry["marketplace"]] != source:
             raise ValueError("one marketplace cannot have different upstream sources")
         sources[entry["marketplace"]] = source
-    return entries
+    for entry in retired:
+        if set(entry) != {"marketplace", "plugin"}:
+            raise ValueError("a retired upstream plugin names only its marketplace and plugin")
+        if valid_identity(entry) in identities:
+            raise ValueError("a retired upstream plugin cannot also be declared")
+    return entries, retired
 
 
 class NativeClient:
@@ -112,20 +126,30 @@ class NativeClient:
             if (current.get("ref") or "main") != entry["ref"]:
                 raise ValueError(f"marketplace ref conflict: {entry['marketplace']}")
             root = home / ".tmp/marketplaces" / entry["marketplace"]
-            if not (root / ".agents/plugins/marketplace.json").is_file():
+            # Codex reads either catalog; upstreams mostly ship only Claude's.
+            if not any((root / catalog).is_file() for catalog in CODEX_CATALOGS):
                 missing.append(entry)
         for entry in missing:
             self.command("marketplace", "add", f"https://github.com/{entry['repository']}.git", "--ref", entry["ref"])
         return bool(missing)
 
-    def reconcile(self, policy: list[dict], *, update: bool):
-        eligible = [entry for entry in policy if entry["claude" if self.agent == "omp" else self.agent]]
-        if not eligible:
-            return
+    def uninstall(self, identity: str):
+        if self.agent == "codex":
+            self.command("remove", identity)
+        else:
+            self.command("uninstall", identity, "--scope", "user")
+
+    def reconcile(self, policy: list[dict], retired: list[dict], *, update: bool):
+        # Every harness installs every declared plugin.
+        eligible = policy
         if self.bootstrap_codex_snapshots(eligible) and self.dry_run:
             print("[dry-run] refresh the missing Codex snapshots before reading the remaining install plan")
             return
         markets, installed = self.inventory()
+        for entry in retired:
+            identity = f"{entry['plugin']}@{entry['marketplace']}"
+            if identity in installed:
+                self.uninstall(identity)
         for entry in eligible:
             registered = markets.get(entry["marketplace"])
             if registered is None:
@@ -139,56 +163,66 @@ class NativeClient:
                 raise ValueError(f"marketplace source conflict: {entry['marketplace']}")
             if self.agent in ("claude", "codex") and (registered.get("ref") or "main") != entry["ref"]:
                 raise ValueError(f"marketplace ref conflict: {entry['marketplace']}")
-        refreshed = set()
+        refreshed: set[str] = set()
+        failures = []
         for entry in eligible:
-            market = entry["marketplace"]
-            if market not in markets:
-                url = f"https://github.com/{entry['repository']}.git"
-                args = ["marketplace", "add", url]
-                if self.agent == "claude":
-                    args[2] += "#" + entry["ref"]
-                    args += ["--scope", "user"]
-                elif self.agent == "codex":
-                    args += ["--ref", entry["ref"]]
-                self.command(*args)
-                markets[market] = entry
-                refreshed.add(market)
-            elif update and market not in refreshed:
-                self.command("marketplace", "upgrade" if self.agent == "codex" else "update", market)
-                refreshed.add(market)
-            identity = f"{entry['plugin']}@{market}"
-            prior = installed.get(identity)
-            enabled = bool(prior and prior.get("enabled", True))
-            if prior is None or market in refreshed:
-                if self.agent == "codex":
-                    try:
-                        self.command("add", identity)
-                    finally:
-                        if not entry["default_loaded"]:
-                            self.set_enabled(identity, False)
-                    enabled = entry["default_loaded"]
-                elif self.agent == "omp":
-                    old_identity = f"{entry['plugin']}@prateek-local"
-                    old = installed.get(old_identity) if prior is None else None
-                    if old:
-                        self.command("uninstall", old_identity, "--scope", "user")
-                    try:
-                        self.command("install", identity, "--scope", "user", "--force")
-                    except (RuntimeError, OSError, subprocess.TimeoutExpired):
-                        if old:
-                            self.command("install", old_identity, "--scope", "user", "--force")
-                            if not old.get("enabled", True):
-                                self.set_enabled(old_identity, False)
-                        raise
-                    if old:
-                        installed.pop(old_identity)
-                    enabled = enabled if prior else True
-                else:
-                    self.command("update" if prior else "install", identity, "--scope", "user")
-                    enabled = True if prior is None else enabled
-            if enabled != entry["default_loaded"]:
-                self.set_enabled(identity, entry["default_loaded"])
+            # One plugin's failure must not leave the rest of the client unreconciled.
+            try:
+                self.reconcile_entry(entry, markets, installed, refreshed, update=update)
+            except (RuntimeError, OSError, subprocess.TimeoutExpired) as error:
+                print(f"reconcile-upstream-agent-plugins: {self.agent}: {error}", file=sys.stderr, flush=True)
+                failures.append(f"{entry['plugin']}@{entry['marketplace']}")
+        if failures:
+            raise RuntimeError(f"{self.agent}: {len(failures)} official plugin(s) failed: {', '.join(failures)}")
 
+    def reconcile_entry(self, entry: dict, markets: dict, installed: dict, refreshed: set[str], *, update: bool):
+        market = entry["marketplace"]
+        if market not in markets:
+            url = f"https://github.com/{entry['repository']}.git"
+            args = ["marketplace", "add", url]
+            if self.agent == "claude":
+                args[2] += "#" + entry["ref"]
+                args += ["--scope", "user"]
+            elif self.agent == "codex":
+                args += ["--ref", entry["ref"]]
+            self.command(*args)
+            markets[market] = entry
+            refreshed.add(market)
+        elif update and market not in refreshed:
+            self.command("marketplace", "upgrade" if self.agent == "codex" else "update", market)
+            refreshed.add(market)
+        identity = f"{entry['plugin']}@{market}"
+        prior = installed.get(identity)
+        enabled = bool(prior and prior.get("enabled", True))
+        if prior is None or market in refreshed:
+            if self.agent == "codex":
+                try:
+                    self.command("add", identity)
+                finally:
+                    if not entry["default_loaded"]:
+                        self.set_enabled(identity, False)
+                enabled = entry["default_loaded"]
+            elif self.agent == "omp":
+                old_identity = f"{entry['plugin']}@prateek-local"
+                old = installed.get(old_identity) if prior is None else None
+                if old:
+                    self.command("uninstall", old_identity, "--scope", "user")
+                try:
+                    self.command("install", identity, "--scope", "user", "--force")
+                except (RuntimeError, OSError, subprocess.TimeoutExpired):
+                    if old:
+                        self.command("install", old_identity, "--scope", "user", "--force")
+                        if not old.get("enabled", True):
+                            self.set_enabled(old_identity, False)
+                    raise
+                if old:
+                    installed.pop(old_identity)
+                enabled = enabled if prior else True
+            else:
+                self.command("update" if prior else "install", identity, "--scope", "user")
+                enabled = True if prior is None else enabled
+        if enabled != entry["default_loaded"]:
+            self.set_enabled(identity, entry["default_loaded"])
 
 def main() -> int:
     parser = argparse.ArgumentParser()
@@ -199,14 +233,21 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
     try:
-        policy = load_policy(args.policy)
+        policy, retired = load_policy(args.policy)
         if not args.apply:
-            print(json.dumps(policy, indent=2))
+            print(json.dumps({"agent_upstream_plugins": policy, "retired_agent_upstream_plugins": retired}, indent=2))
         else:
             if not args.agent:
                 parser.error("--apply needs at least one --agent")
+            failed = []
             for agent in dict.fromkeys(args.agent):
-                NativeClient(agent, dry_run=args.dry_run).reconcile(policy, update=args.update)
+                try:
+                    NativeClient(agent, dry_run=args.dry_run).reconcile(policy, retired, update=args.update)
+                except RuntimeError as error:
+                    print(f"reconcile-upstream-agent-plugins: {error}", file=sys.stderr)
+                    failed.append(agent)
+            if failed:
+                return 1
     except (OSError, ValueError, KeyError, RuntimeError, subprocess.TimeoutExpired) as error:
         print(f"reconcile-upstream-agent-plugins: {error}", file=sys.stderr)
         return 1

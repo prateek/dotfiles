@@ -6,9 +6,10 @@ Simulated state; no live plugin tree is provided or modified:
 - `chezmoi source-path ~/.agents/plugins/plugins/core/skills/code-gardening/SKILL.md`
   fails because the file is not a direct managed entry.
 - The user edited that materialized skill and wants to make the change portable.
-- The checkout contains `agent-marketplace/packages/core/skills/code-gardening/SKILL.md`
-  as authored source, plus `.codex-plugin/plugin.json` in the package. The shared
-  APM manifest, lock, and cache live at the `agent-marketplace/` root.
+- The checkout contains `agent-marketplace/src/core/skills/code-gardening/SKILL.md`
+  as authored source; its plugin's version and manifest live in
+  `agent-marketplace/marketplace.toml`. The shared APM manifest, lock, and cache
+  live in `agent-marketplace/vendor/`.
 - `home/.chezmoiscripts/run_onchange_after_36-agent-plugins.sh.tmpl` builds and
   materializes the marketplace, then reconciles native clients.
 

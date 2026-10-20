@@ -8,7 +8,7 @@ updated: 2026-10-20
 related:
   - ../references/agent-marketplace.md
   - ../document-lifecycle.md
-  - ../../agent-marketplace/packages/core/skills/doc-coauthoring/SKILL.md
+  - ../../agent-marketplace/src/core/skills/doc-coauthoring/SKILL.md
 status_detail: "Catalog handoff and direct-copy bootstrap pass the final Claude Code/Fable routing and search-isolation matrix. U2 remains open for catalog isolation and broader three-skill discovery. Daily activation remains separate."
 ---
 
@@ -68,13 +68,13 @@ lifecycle commit. They are not behavioral eval results.
 
 | Component | Current behavior and authoritative input |
 | --- | --- |
-| `doc-coauthoring` | Authored in [its skill folder](../../agent-marketplace/packages/core/skills/doc-coauthoring/SKILL.md). Its Gather context, Refine and draft, and Test with a fresh reader sections cover audience, iterative drafting, and fresh-reader review. The implementation-spec branch already prioritizes an end-to-end slice. |
+| `doc-coauthoring` | Authored in [its skill folder](../../agent-marketplace/src/core/skills/doc-coauthoring/SKILL.md). Its Gather context, Refine and draft, and Test with a fresh reader sections cover audience, iterative drafting, and fresh-reader review. The implementation-spec branch already prioritizes an end-to-end slice. |
 | Interaction defaults | The same file asks users to select the workflow, answer repeated question batches, select brainstormed points, and approve transitions. It names Claude and specific editing tools. Its completion test includes a fixed question to the user. These requirements impede autonomous drafting and portability. |
-| Research reports | `core:deep-research` is an imported skill selected by [core's publication metadata](../../agent-marketplace/packages/core/publish.toml). Its [entrypoint](../../agent-marketplace/apm_modules/199-biotechnologies/claude-deep-research-skill/SKILL.md) already requires cited claims, explicit assumptions, evidence persistence, and claim verification. Its report sizes, source quotas, artifact formats, and output directory are unsuitable defaults for a repository plan. |
-| Targeted research | [Matt Pocock's research skill](../../agent-marketplace/apm_modules/mattpocock/skills/skills/engineering/research/SKILL.md) delegates primary-source investigation and saves cited findings using the repository's conventions. It does not define document-authoring acceptance or a code-archaeology procedure. |
-| Coupled updates | [Code gardening](../../agent-marketplace/packages/core/skills/code-gardening/SKILL.md) already reconciles nearby docs with changed behavior. Its [durable-doc guidance](../../agent-marketplace/packages/core/skills/code-gardening/references/durable-docs.md) requires a whole-document reread and one authoritative home per rule. It lacks a specific route for substantial plan revision. |
-| Prose and agent instructions | [Writing for humans](../../agent-marketplace/packages/core/skills/writing-for-humans/SKILL.md) owns prose editing. [Writing for agents](../../agent-marketplace/apm_modules/mattpocock/skills/skills/productivity/writing-for-agents/SKILL.md) owns agent-instruction structure. Neither is a reason to repeat a style catalog in the authoring skill. |
-| Lifecycle | The landed commit moves shared policy and tooling into `agent-marketplace/packages/core/skills/document-lifecycle/`. The [local lifecycle page](../document-lifecycle.md) is a configuration page and its validator is a thin adapter. `AGENTS.md` and code gardening route to the skill. |
+| Research reports | `core:deep-research` is an imported skill selected by [core's publication metadata](../../agent-marketplace/marketplace.toml). Its [entrypoint](../../agent-marketplace/vendor/apm_modules/199-biotechnologies/claude-deep-research-skill/SKILL.md) already requires cited claims, explicit assumptions, evidence persistence, and claim verification. Its report sizes, source quotas, artifact formats, and output directory are unsuitable defaults for a repository plan. |
+| Targeted research | [Matt Pocock's research skill](../../agent-marketplace/vendor/apm_modules/mattpocock/skills/skills/engineering/research/SKILL.md) delegates primary-source investigation and saves cited findings using the repository's conventions. It does not define document-authoring acceptance or a code-archaeology procedure. |
+| Coupled updates | [Code gardening](../../agent-marketplace/src/core/skills/code-gardening/SKILL.md) already reconciles nearby docs with changed behavior. Its [durable-doc guidance](../../agent-marketplace/src/core/skills/code-gardening/references/durable-docs.md) requires a whole-document reread and one authoritative home per rule. It lacks a specific route for substantial plan revision. |
+| Prose and agent instructions | [Writing for humans](../../agent-marketplace/src/core/skills/writing-for-humans/SKILL.md) owns prose editing. [Writing for agents](../../agent-marketplace/vendor/apm_modules/mattpocock/skills/skills/productivity/writing-for-agents/SKILL.md) owns agent-instruction structure. Neither is a reason to repeat a style catalog in the authoring skill. |
+| Lifecycle | The landed commit moves shared policy and tooling into `agent-marketplace/src/core/skills/document-lifecycle/`. The [local lifecycle page](../document-lifecycle.md) is a configuration page and its validator is a thin adapter. `AGENTS.md` and code gardening route to the skill. |
 
 The main additions are requirements preservation, consequential evidence,
 decision completeness, plan decomposition, and revision after changed premises.
@@ -288,17 +288,17 @@ with baseline and candidate authoring samples for review.
 
 | File | Change |
 | --- | --- |
-| `agent-marketplace/packages/core/skills/doc-coauthoring/SKILL.md` | Replace the default interrogation loop with the common workflow above. Preserve the skill name. Add creation, planning, and substantial-revision triggers and local branch pointers. Keep completion criteria beside their steps. |
+| `agent-marketplace/src/core/skills/doc-coauthoring/SKILL.md` | Replace the default interrogation loop with the common workflow above. Preserve the skill name. Add creation, planning, and substantial-revision triggers and local branch pointers. Keep completion criteria beside their steps. |
 | `.../doc-coauthoring/references/implementation-plans.md` | Add the planning contract, deliverable example, revision effects, progress rules, and plan-specific reader questions. Move useful first-slice guidance here and remove its repeated copies from the entrypoint. |
 | `.../doc-coauthoring/references/interactive-drafting.md` | Move the useful interactive branch here. Remove fixed counts, provider-specific instructions, and redundant permission questions. |
 | `.../doc-coauthoring/references/adoption.md` | Add complete-folder pinning, the receipt format and verification commands, local customization boundaries, and the declaration example. Point to the entrypoint's authority rule. Include the clean-adopter procedure below. |
 | `.../doc-coauthoring/evals/evals.json` | Use the existing convention for static prompts, input files, and observable expectations. Link the shared replay protocol from the eval README and keep it outside agent fixture inputs; do not assume the schema executes multiple turns. |
 | `.../doc-coauthoring/evals/README.md` | Document the manual replay protocol below, the reader rubric, fixture mutations, isolation, result locations, and evidence limits. Keep model receipts and outputs in ignored scratch during development. |
 | `.../doc-coauthoring/evals/files/` | Add small self-contained fixtures for the synthetic repository, existing plan, changed requirements, and adopter instructions. Keep the shared response script, including C's preference answer, in `evals/replay.md`; keep E's literal direct-edit payload here for coordinator insertion. Use Markdown fixtures for snippets where possible. |
-| `agent-marketplace/packages/core/.codex-plugin/plugin.json` | Bump the core version for changed published content from the accepted release, currently `1.3.0`. Refresh that value at implementation time. Preserve unrelated metadata. |
+| `agent-marketplace/src/core/.codex-plugin/plugin.json` | Bump the core version for changed published content from the accepted release, currently `1.3.0`. Refresh that value at implementation time. Preserve unrelated metadata. |
 
 The `...` prefix in this table is
-`agent-marketplace/packages/core/skills`. These are proposed paths. The three
+`agent-marketplace/src/core/skills`. These are proposed paths. The three
 reference files and evals do not exist at the planning base.
 
 - [x] Prepare the eval fixtures and scripted interactions while preserving the
@@ -339,8 +339,8 @@ requires an immutable accepted revision or a verified artifact.
 | File | Change |
 | --- | --- |
 | `AGENTS.md` | Add one creation/substantive-revision pointer to the authored `doc-coauthoring/SKILL.md` folder in Docs And Decisions. Preserve the landed lifecycle pointer and its separate ownership. |
-| `agent-marketplace/packages/core/skills/code-gardening/SKILL.md` | In step 4, beside the lifecycle pointer, route substantive plan revision to the declared authoring owner or, when none is declared, the available `doc-coauthoring` skill. Add no copy of the authoring steps. Preserve routine synchronization and lifecycle handling. |
-| `agent-marketplace/packages/core/.codex-plugin/plugin.json` | Bump the version again if U2 lands separately because the published gardening entrypoint changes. |
+| `agent-marketplace/src/core/skills/code-gardening/SKILL.md` | In step 4, beside the lifecycle pointer, route substantive plan revision to the declared authoring owner or, when none is declared, the available `doc-coauthoring` skill. Add no copy of the authoring steps. Preserve routine synchronization and lifecycle handling. |
+| `agent-marketplace/src/core/.codex-plugin/plugin.json` | Bump the version again if U2 lands separately because the published gardening entrypoint changes. |
 | `tests/README.md` | Add a short pointer to the authoring evals and distinguish behavioral evidence from package and native-install tests. |
 | `docs/index.md` and `docs/inventory.md` | Maintain the plan link and generated inventory while work remains open. At final completion, retire this plan using the existing lifecycle process. |
 
@@ -577,22 +577,22 @@ package label. These links identify the inspected text, not a runtime upgrade.
 
 | Principle or rule | Choice it changes |
 | --- | --- |
-| [Writing for agents](../../agent-marketplace/apm_modules/mattpocock/skills/skills/productivity/writing-for-agents/SKILL.md) and [skill mechanics](../../agent-marketplace/apm_modules/mattpocock/skills/skills/productivity/writing-for-agents/SKILL-MECHANICS.md) | One model-invoked description names distinct branches. Common steps remain visible. Planning, interactive, and adoption details move behind conditional pointers. Completion criteria are local and checkable. |
-| [Laziness Protocol](../../agent-marketplace/apm_modules/cursor/plugins/pstack/skills/principle-laziness-protocol/SKILL.md) | Improve one existing skill. Keep research imports unchanged and avoid a new authoring subsystem. |
-| [Subtract Before You Add](../../agent-marketplace/apm_modules/cursor/plugins/pstack/skills/principle-subtract-before-you-add/SKILL.md) | Remove the mandatory question rounds and repeated plan rules before adding the missing evidence and revision instructions. |
-| [Sequence work into verifiable units](../../agent-marketplace/apm_modules/cursor/plugins/pstack/skills/principle-sequence-verifiable-units/SKILL.md) | U1 delivers a usable folder and checked behavior. U2 adds callers and clean-adopter evidence after the folder exists. |
-| [Prove It Works](../../agent-marketplace/apm_modules/cursor/plugins/pstack/skills/principle-prove-it-works/SKILL.md) | Inspect the built folder and actual reader outputs. Separate syntax, package, behavioral, and activation evidence. |
-| [Explain the Number](../../agent-marketplace/apm_modules/cursor/plugins/pstack/skills/principle-explain-the-number/SKILL.md) | Replay equivalent inputs in both variants. Separate unanswered harness questions, tool failures, and interaction cost from document quality. |
-| [Encode Lessons in Structure](../../agent-marketplace/apm_modules/cursor/plugins/pstack/skills/principle-encode-lessons-in-structure/SKILL.md) | Use one canonical folder and a pin receipt for drift. Use examples and evals for judgments a parser cannot establish. |
-| [Guard the Context Window](../../agent-marketplace/apm_modules/cursor/plugins/pstack/skills/principle-guard-the-context-window/SKILL.md) | Bound the read-only packaging explanation and conduct a separate fresh-reader review. Keep private raw reports outside the public plan. |
+| [Writing for agents](../../agent-marketplace/vendor/apm_modules/mattpocock/skills/skills/productivity/writing-for-agents/SKILL.md) and [skill mechanics](../../agent-marketplace/vendor/apm_modules/mattpocock/skills/skills/productivity/writing-for-agents/SKILL-MECHANICS.md) | One model-invoked description names distinct branches. Common steps remain visible. Planning, interactive, and adoption details move behind conditional pointers. Completion criteria are local and checkable. |
+| [Laziness Protocol](../../agent-marketplace/vendor/apm_modules/cursor/plugins/pstack/skills/principle-laziness-protocol/SKILL.md) | Improve one existing skill. Keep research imports unchanged and avoid a new authoring subsystem. |
+| [Subtract Before You Add](../../agent-marketplace/vendor/apm_modules/cursor/plugins/pstack/skills/principle-subtract-before-you-add/SKILL.md) | Remove the mandatory question rounds and repeated plan rules before adding the missing evidence and revision instructions. |
+| [Sequence work into verifiable units](../../agent-marketplace/vendor/apm_modules/cursor/plugins/pstack/skills/principle-sequence-verifiable-units/SKILL.md) | U1 delivers a usable folder and checked behavior. U2 adds callers and clean-adopter evidence after the folder exists. |
+| [Prove It Works](../../agent-marketplace/vendor/apm_modules/cursor/plugins/pstack/skills/principle-prove-it-works/SKILL.md) | Inspect the built folder and actual reader outputs. Separate syntax, package, behavioral, and activation evidence. |
+| [Explain the Number](../../agent-marketplace/vendor/apm_modules/cursor/plugins/pstack/skills/principle-explain-the-number/SKILL.md) | Replay equivalent inputs in both variants. Separate unanswered harness questions, tool failures, and interaction cost from document quality. |
+| [Encode Lessons in Structure](../../agent-marketplace/vendor/apm_modules/cursor/plugins/pstack/skills/principle-encode-lessons-in-structure/SKILL.md) | Use one canonical folder and a pin receipt for drift. Use examples and evals for judgments a parser cannot establish. |
+| [Guard the Context Window](../../agent-marketplace/vendor/apm_modules/cursor/plugins/pstack/skills/principle-guard-the-context-window/SKILL.md) | Bound the read-only packaging explanation and conduct a separate fresh-reader review. Keep private raw reports outside the public plan. |
 
-The final writing pass uses the read [technical-writing](../../agent-marketplace/apm_modules/cursor/plugins/pstack/skills/technical-writing/SKILL.md)
-and [unslop](../../agent-marketplace/apm_modules/cursor/plugins/pstack/skills/unslop/SKILL.md)
+The final writing pass uses the read [technical-writing](../../agent-marketplace/vendor/apm_modules/cursor/plugins/pstack/skills/technical-writing/SKILL.md)
+and [unslop](../../agent-marketplace/vendor/apm_modules/cursor/plugins/pstack/skills/unslop/SKILL.md)
 guidance. The document combines implementation instructions with the rationale
 needed to review them, as the task requests. It avoids an additional family of
 documents solely to enforce one prose category per file.
 
-The [multi-phase planning playbook](../../agent-marketplace/apm_modules/cursor/plugins/pstack/skills/poteto-mode/playbooks/multi-phase-plan.md)
+The [multi-phase planning playbook](../../agent-marketplace/vendor/apm_modules/cursor/plugins/pstack/skills/poteto-mode/playbooks/multi-phase-plan.md)
 was applied during the original planning phase with these scope adjustments.
 These describe completed planning work, not limits on the later implementation
 authorization recorded above.
@@ -675,7 +675,7 @@ the proposed skill improvements work in production.
   and candidate trials cover A–F and an unseen creation variant. Focused A/B/C reruns
   follow the trigger and integration-boundary refinement. Blind reader review covers
   A–E, and separate repair turns resolved the candidate A/C blockers. See the
-  [reviewed observations](../../agent-marketplace/packages/core/skills/doc-coauthoring/evals/results.md)
+  [reviewed observations](../../agent-marketplace/src/core/skills/doc-coauthoring/evals/results.md)
   for baseline strengths, initial output defects, and evidence limits. U1 is complete.
 - 2026-10-18. Parser checks, 58 packaging tests, deterministic builds, runtime
   links, receipt mutation checks, static checks, and four machine-type previews
@@ -764,6 +764,6 @@ the proposed skill improvements work in production.
   an isolated config with the live plugins. Two runs per arm: the candidate's
   final plans had no history narration or contradictions and fewer repeated
   rules, at about twice the cost; see the
-  [accretion results](../../agent-marketplace/packages/core/skills/doc-coauthoring/evals/results.md#accretion-case-core-145).
+  [accretion results](../../agent-marketplace/src/core/skills/doc-coauthoring/evals/results.md#accretion-case-core-145).
   A review then widened step 4's reread to every substantive revision; that
   wording was not rerun. The crit change has no automated behavior check.

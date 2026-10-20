@@ -14,8 +14,8 @@ status_detail: "Five-skill live pilot completed with peak concurrency two, one a
 # Rewrite authored skills with acpx
 
 The [flow](../../scripts/acpx/rewrite-skills.flow.mjs) rewrites every immediate
-skill directory under `agent-marketplace/packages/*/skills/`. Imported selections
-in `publish.toml` and overlays are outside this sweep. It snapshots the current
+skill directory under `agent-marketplace/src/*/skills/`. Imported selections
+in `marketplace.toml` and overlays are outside this sweep. It snapshots the current
 tracked and nonignored untracked source, including pending edits, and produces
 patches relative to that snapshot. It leaves the source worktree and index alone.
 
@@ -55,7 +55,7 @@ flow elsewhere. Unknown input fields fail validation.
 
 To run a subset, provide `skills` as a nonempty array of exact repository-relative
 authored skill roots, such as
-`["agent-marketplace/packages/core/skills/code-simplifier"]`. Duplicates and paths
+`["agent-marketplace/src/core/skills/code-simplifier"]`. Duplicates and paths
 outside the discovered authored inventory fail before model calls. Omitting
 `skills` selects the whole inventory. The selected paths are recorded in the
 manifest and bound both worker and aggregate-review scope.

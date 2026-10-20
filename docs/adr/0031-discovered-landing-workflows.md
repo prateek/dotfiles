@@ -43,5 +43,5 @@ existing caller capabilities; changing shared policy is a separate operation.
 
 The [implementation plan](../plans/land-changes-workflow-plan.md) records evidence
 and validation. Current operation belongs to the
-[skill](../../agent-marketplace/packages/review/skills/land-changes/SKILL.md) and
+[skill](../../agent-marketplace/src/review/skills/land-changes/SKILL.md) and
 [dotfiles runbook](../runbooks/dotfiles-landing.md).

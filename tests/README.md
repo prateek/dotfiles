@@ -153,7 +153,7 @@ this section maps a change to the distinct guarantees it can affect.
 | Orca session shortcuts | `just test-python -p test_orca_shortcuts.py`; focused session identity, agent detection, complete vault lookup, and native fork commands. `just test-shell tests/bats/agents/claude-queue-draft.bats` verifies the Claude queue guard without sending keystrokes. `just test-node` covers the worktree form's installed-agent picker. |
 | Orca remote shortcut integration | `just test-orca-shortcuts-docker`; explicit ARM64 Docker lane with packaged Orca desktop/SSH relay, generated agent forks, and native Claude using a fake API. See [setup and coverage limits](../docs/runbooks/orca-shortcut-validation.md). |
 | Orca browser login import | `just test-shell tests/bats/agents/orca-import-login.bats`; the import request sent to Orca's runtime, the printed page and profile IDs, and fail-closed cleanup when the import copies no cookies, the tab lands on Okta, the browser family is undetected, or the Orca version is untested. |
-| Orca input and private-service recovery | `python3 -m unittest discover -s agent-marketplace/tests -p test_orca_fill_stdin.py` checks the local RPC and secret boundary; `node --test tests/node/browser-fill.test.mjs tests/node/pinned-loopback-proxy.test.mjs` checks nested shadow inputs, application events, certificate pinning, console WebSockets, and proxy lifecycle. The proxy test needs local listener permission. |
+| Orca input and private-service recovery | `python3 -m unittest discover -s agent-marketplace/src/utils-agent/skills/browser/tests` checks the local RPC and secret boundary; `node --test tests/node/browser-fill.test.mjs tests/node/pinned-loopback-proxy.test.mjs` checks nested shadow inputs, application events, certificate pinning, console WebSockets, and proxy lifecycle. The proxy test needs local listener permission. |
 | 1Password item lookup | `python3 -m unittest tests/python/agents/test_1password_find_item.py` checks vault scoping, exact titles, and field redaction. |
 | Devland SSH key export | `python3 -m unittest tests/python/agents/test_ssh_key_export.py` uses a dummy generated key to check OpenSSH extraction, file mode, validation, and refusal to overwrite. |
 | Doc-coauthoring accretion grader | `just test-python -p test_doc_coauthoring_evals.py` checks the deterministic `grade` seam of `scripts/doc-coauthoring-evals`: stale TSV/array terms and history phrases are flagged per body line, the Progress section is exempt, and the shipped fixture plan fails on the decision it predates. |
@@ -272,9 +272,12 @@ CI formula installation step and Tart lanes validate actual installation.
 
 ### Agent-package checks
 
-The authored search engine's public-contract suite is included in marketplace
-checks. Run it directly with `python3 -m unittest discover -s agent-marketplace/packages/utils-agent/skills/search/tests`.
-The separate `zsh agent-marketplace/packages/utils-agent/skills/skills-searcher/tests/skill-search.zsh`
+Each authored skill keeps its tests in its own `tests/` directory, which ships
+with the skill. The marketplace check runs every one of them through
+`agent-marketplace/tests/test_skills.py`, except the suites unittest cannot run,
+which that file names. Run one skill directly, for example the search engine's
+public-contract suite, with `python3 -m unittest discover -s agent-marketplace/src/utils-agent/skills/search/tests`.
+The separate `zsh agent-marketplace/src/utils-agent/skills/skills-searcher/tests/skill-search.zsh`
 checks consumer output compatibility, missing/rate-limited results, no-enrich,
 run-wide call caps and safe preview/install argument quoting. Public trigger/task
 prompts live in the search skill's `evals/evals.json`; live access and model
@@ -287,12 +290,12 @@ repeatability, and export.
 It also runs the authored land-changes preferences helper's CLI tests: explicit
 and saved named choices, repository/branch isolation, concurrent writes, malformed
 configuration, semantic drift, bounded/dynamic groups, and deliberate v1 migration.
-Disposable Git fixtures cover the direct-push refspec and tag boundary. The [land-changes decision scenarios](../agent-marketplace/packages/review/skills/land-changes/evals/README.md)
+Disposable Git fixtures cover the direct-push refspec and tag boundary. The [land-changes decision scenarios](../agent-marketplace/src/review/skills/land-changes/evals/README.md)
 require a separate authenticated model run with expected answers withheld.
 `just test-agent-marketplace` delegates to it. `just test-tools` provisions its frozen APM 0.29.1
 environment, and the project check runs in the required macOS CI lane.
 
-The [document-authoring scenarios](../agent-marketplace/packages/core/skills/doc-coauthoring/evals/README.md)
+The [document-authoring scenarios](../agent-marketplace/src/core/skills/doc-coauthoring/evals/README.md)
 use separate authenticated model runs for creation, revision, interaction, portable
 adoption, and isolated catalog discovery. Follow the scripted replies and keep
 expected observations out of agent inputs. Packaging checks do not establish
@@ -315,7 +318,7 @@ spend model tokens.
 
 Real Orca/Jev trials are a separate host/network lane requiring a task-owned
 page, the selected driver version, and the authorized Cloudflare credential.
-Use the [experimental skill reference](../agent-marketplace/packages/experimental/skills/browser-jev/references/jev.md)
+Use the [experimental skill reference](../agent-marketplace/src/experimental/skills/browser-jev/references/jev.md)
 for current execution requirements, the [fixture guide](fixtures/browser-jev/README.md)
 for independent checks, and the [receipt evaluator](../scripts/eval/browser-jev.mjs)
 for paired development and holdout reporting. Report those results separately
@@ -567,7 +570,7 @@ just test-python -p test_packages.py
 Run the `ios-audit` skill's source-tree unit tests:
 
 ```sh
-just test-python -k IosAudit
+python3 -m unittest discover -s agent-marketplace/src/ios/skills/ios-audit/tests
 ```
 
 Run native Claude and Codex plugin installation and recovery checks:

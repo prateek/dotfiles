@@ -4,8 +4,8 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-export const PACKAGES = "agent-marketplace/packages";
-export const GUIDANCE = "agent-marketplace/apm_modules/mattpocock/skills/skills/productivity/writing-for-agents";
+export const PACKAGES = "agent-marketplace/src";
+export const GUIDANCE = "agent-marketplace/vendor/apm_modules/mattpocock/skills/skills/productivity/writing-for-agents";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const CHILD_RUNTIME = ["rewrite-skill.flow.mjs", "skill-rewrite-flows.mjs", "skill-rewrite.mjs"];
 const hash = (bytes) => createHash("sha256").update(bytes).digest("hex");
@@ -328,21 +328,34 @@ export async function assemble(ctx, manifest) {
   return task;
 }
 
-export const packageManifest = (skill) => `${skill.split("/").slice(0, 3).join("/")}/.codex-plugin/plugin.json`;
+// Plugin versions live in the marketplace catalog, one [plugins.<name>] table each.
+export const CATALOG = "agent-marketplace/marketplace.toml";
+export const packageOf = (skill) => skill.split("/")[2];
+
+export function bumpPluginVersion(text, pkg) {
+  const header = text.indexOf(`\n[plugins.${pkg}]\n`) + 1 || (text.startsWith(`[plugins.${pkg}]\n`) ? 0 : -1);
+  if (header < 0) throw new Error(`No [plugins.${pkg}] table in ${CATALOG}`);
+  const next = text.slice(header + 1).search(/^\[/m);
+  const end = next < 0 ? text.length : header + 1 + next;
+  const table = text.slice(header, end);
+  const match = table.match(/^version = "(\d+)\.(\d+)\.(\d+)"$/m);
+  if (!match) throw new Error(`Cannot increment plugin version: ${pkg}`);
+  const bumped = table.replace(match[0], `version = "${match[1]}.${match[2]}.${Number(match[3]) + 1}"`);
+  return text.slice(0, header) + bumped + text.slice(end);
+}
 
 export async function exportPatch(ctx, task) {
   await report(task, "aggregate");
   await verifiedRows(task);
   const candidate = path.join(task.runDir, "candidate.patch");
   const changed = await capture(ctx, task, task.roots, candidate);
-  const versions = [...new Set(task.skills.filter((skill) => changed.some((file) => file.startsWith(`${skill}/`))).map(packageManifest))].sort();
-  for (const name of versions) {
-    const file = path.join(task.workspace, name);
-    const value = await readJson(file);
-    if (!/^\d+\.\d+\.\d+$/.test(value.version)) throw new Error(`Cannot increment plugin version: ${name}`);
-    const parts = value.version.split(".");
-    value.version = `${parts[0]}.${parts[1]}.${Number(parts[2]) + 1}`;
-    await writeJson(file, value);
+  const bumped = [...new Set(task.skills.filter((skill) => changed.some((file) => file.startsWith(`${skill}/`))).map(packageOf))].sort();
+  const versions = bumped.length ? [CATALOG] : [];
+  if (bumped.length) {
+    const file = path.join(task.workspace, CATALOG);
+    let text = await fs.readFile(file, "utf8");
+    for (const pkg of bumped) text = bumpPluginVersion(text, pkg);
+    await fs.writeFile(file, text);
   }
   await capture(ctx, task, [...task.roots, ...versions], candidate);
   await command(ctx, task.workspace, "just", ["-f", "agent-marketplace/justfile", "-d", "agent-marketplace", "check"],
@@ -356,7 +369,7 @@ export async function exportPatch(ctx, task) {
   await fs.rename(candidate, final);
   const receipt = { status: "ready", patch: final, bytes: (await fs.stat(final)).size,
     sha256: hash(await fs.readFile(final)), sourceTree: task.sourceTree, skills: task.skills.length,
-    versionBumps: versions, parentRunId: task.parentRunId, review: path.join(task.artifacts, "aggregate.report.json"),
+    versionBumps: bumped, parentRunId: task.parentRunId, review: path.join(task.artifacts, "aggregate.report.json"),
     validation: path.join(task.runDir, "validation.log") };
   await writeJson(path.join(task.runDir, "receipt.json"), receipt);
   return receipt;

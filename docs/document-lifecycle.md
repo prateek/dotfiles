@@ -13,20 +13,20 @@ related:
 
 # Document Lifecycle
 
-This repo adopts the [document-lifecycle contract](../agent-marketplace/packages/core/skills/document-lifecycle/references/contract.md).
-Use the [skill workflow](../agent-marketplace/packages/core/skills/document-lifecycle/SKILL.md)
+This repo adopts the [document-lifecycle contract](../agent-marketplace/src/core/skills/document-lifecycle/references/contract.md).
+Use the [skill workflow](../agent-marketplace/src/core/skills/document-lifecycle/SKILL.md)
 when creating or updating documented work. Those files own the shared policy;
 this page owns dotfiles paths, commands, and exceptions.
 
 ## Source and scope
 
 The complete skill lives at
-`agent-marketplace/packages/core/skills/document-lifecycle/`. This repo authors
+`agent-marketplace/src/core/skills/document-lifecycle/`. This repo authors
 it, so work here uses the checkout's source for both policy and tooling, and
 changes are validated with the version being written. There is no second copy
 to synchronize. Installed plugins are discovery surfaces; this checkout's source
 is authoritative for work here. Other repos follow the skill's
-[adoption guide](../agent-marketplace/packages/core/skills/document-lifecycle/references/adoption.md):
+[adoption guide](../agent-marketplace/src/core/skills/document-lifecycle/references/adoption.md):
 they use the environment's copy first and otherwise install the latest fallback.
 
 The contract covers Markdown under `docs/`. The [index](index.md) routes to
@@ -37,8 +37,8 @@ records the adoption decision.
 
 ## Retiring a document
 
-Follow the skill's [retirement workflow](../agent-marketplace/packages/core/skills/document-lifecycle/SKILL.md#retire-in-one-change)
-and [ledger contract](../agent-marketplace/packages/core/skills/document-lifecycle/references/contract.md#navigation-and-retirement).
+Follow the skill's [retirement workflow](../agent-marketplace/src/core/skills/document-lifecycle/SKILL.md#retire-in-one-change)
+and [ledger contract](../agent-marketplace/src/core/skills/document-lifecycle/references/contract.md#navigation-and-retirement).
 Regenerate with `just docs-inventory` and validate in the retiring change.
 
 ## Validation

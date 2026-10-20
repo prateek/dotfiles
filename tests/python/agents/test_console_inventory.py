@@ -9,8 +9,8 @@ class ConsoleInventoryTests(ConsoleCase):
 
         repo = self.work / "repo"
         project = repo / "agent-marketplace"
-        paths = [project / "packages/example/.codex-plugin/plugin.json",
-                 project / "apm.lock.yaml",
+        paths = [project / "marketplace.toml",
+                 project / "vendor/apm.lock.yaml",
                  repo / "home/.chezmoidata/agent_plugins.toml"]
         for path in paths:
             path.parent.mkdir(parents=True, exist_ok=True)

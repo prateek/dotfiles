@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import py_compile
+import re
 import shutil
 import subprocess
 import sys
@@ -45,7 +46,7 @@ class MarketplaceTests(unittest.TestCase):
         self.root.mkdir()
         self.fixture_home = self.sandbox / "home"
         self.fixture_home.mkdir()
-        self.package = self.root / "packages/example"
+        self.package = self.root / "src/example"
         self.skill = self.package / "skills/hello"
         self.skill.mkdir(parents=True)
         (self.skill / "SKILL.md").write_text(
@@ -54,23 +55,51 @@ class MarketplaceTests(unittest.TestCase):
         helper = self.skill / "hello.sh"
         helper.write_text("#!/bin/sh\nprintf 'hello\\n'\n")
         helper.chmod(0o755)
-        codex = self.package / ".codex-plugin/plugin.json"
-        codex.parent.mkdir()
-        codex.write_text(json.dumps({
+        # Per-plugin fixture inputs live outside the project; write_catalog folds them
+        # into marketplace.toml before every recipe, as the real catalog holds them.
+        self.inputs = self.sandbox / "inputs"
+        self.order = ["example"]
+        self.templates = {}
+        self.manifest_path().parent.mkdir(parents=True)
+        self.manifest_path().write_text(json.dumps({
             "name": "example", "version": "1.0.0", "skills": "./skills/",
             "description": "Example skills", "license": "UNLICENSED",
             "interface": {"displayName": "Example Skills"},
         }))
-        (self.root / "apm.yml").write_text(yaml.safe_dump({
-            "name": "fixture-marketplace", "version": "1.0.0", "license": "UNLICENSED",
-            "marketplace": {
-                "owner": {"name": "Fixture"},
-                "outputs": {"claude": {}, "codex": {}},
-                "packages": [{"name": "example", "source": "./plugins/example", "category": "Productivity"}],
-            },
-        }))
+        (self.root / "vendor").mkdir()
+        (self.root / "vendor/apm.yml").write_text(yaml.safe_dump({"name": "fixture-sources", "version": "0.0.0"}))
+
+    def manifest_path(self, name="example"):
+        return self.inputs / name / "plugin.json"
+
+    def selection_path(self, name="example"):
+        return self.inputs / name / "publish.toml"
+
+    def write_catalog(self):
+        def table(prefix, data):
+            lines = [f"[{prefix}]"] + [f"{key} = {json.dumps(value)}" for key, value in data.items() if not isinstance(value, dict)]
+            for key, value in data.items():
+                if isinstance(value, dict):
+                    lines += table(f"{prefix}.{key}", value)
+            return lines
+
+        lines = ['name = "fixture-marketplace"', 'version = "1.0.0"', 'description = "Fixture"', 'license = "UNLICENSED"',
+                 'category = "Productivity"', 'outputs = ["claude", "codex"]', "", "[owner]", 'name = "Fixture"']
+        for name in self.order:
+            manifest = json.loads(self.manifest_path(name).read_text())
+            selection = self.selection_path(name).read_text() if self.selection_path(name).exists() else ""
+            head, marker, blocks = selection.partition("[[")
+            lines += ["", f"[plugins.{name}]", f"version = {json.dumps(manifest.get('version'))}", head.strip()]
+            if name in self.templates:
+                display, hooks = self.templates[name]
+                lines += [f"display_name = {json.dumps(display)}"] + (["hooks = true"] if hooks else [])
+            else:
+                lines += table(f"plugins.{name}.manifest", {k: v for k, v in manifest.items() if k not in ("name", "version")})
+            lines.append(re.sub(r"(?m)^\[\[(skills|payloads)\]\]", rf"[[plugins.{name}.\1]]", marker + blocks))
+        (self.root / "marketplace.toml").write_text("\n".join(lines) + "\n")
 
     def recipe(self, name, *arguments, success=True, extra_env=None):
+        self.write_catalog()
         environment = os.environ.copy()
         for key in ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_COMMON_DIR"):
             environment.pop(key, None)
@@ -104,6 +133,53 @@ class MarketplaceTests(unittest.TestCase):
         manifest = json.loads((plugin / ".codex-plugin/plugin.json").read_text())
         self.assertEqual(manifest["interface"]["displayName"], "Example Skills")
         self.assertEqual(json.loads((plugin / ".claude-plugin/plugin.json").read_text())["name"], "example")
+
+    def test_display_name_template_generates_the_shared_manifest_in_canonical_order(self):
+        self.templates["example"] = ("Example Skills", True)
+        self.recipe("build")
+        text = (self.root / "build/marketplace/plugins/example/.codex-plugin/plugin.json").read_text()
+        self.assertEqual(json.loads(text), {
+            "name": "example", "version": "1.0.0", "description": "Example Skills skills from Fixture's dotfiles.",
+            "author": {"name": "Fixture"}, "license": "UNLICENSED", "skills": "./skills/", "hooks": {},
+            "interface": {"displayName": "Example Skills", "shortDescription": "Example Skills skills",
+                          "longDescription": "Generated local plugin for Example Skills.", "developerName": "Fixture",
+                          "category": "Coding", "capabilities": ["Interactive", "Write"],
+                          "defaultPrompt": ["Use the Example Skills plugin."]},
+        })
+        self.assertEqual(list(json.loads(text)), ["name", "version", "description", "author", "license", "skills", "hooks", "interface"])
+        self.templates.clear()
+        manifest = json.loads(self.manifest_path().read_text())
+        self.manifest_path().write_text(json.dumps({"interface": manifest.pop("interface"), **manifest}))
+        self.recipe("build")
+        self.assertEqual(list(json.loads((self.root / "build/marketplace/plugins/example/.codex-plugin/plugin.json").read_text())),
+                         ["name", "version", "description", "license", "skills", "interface"])
+        manifest["unknown"] = True
+        self.manifest_path().write_text(json.dumps(manifest))
+        self.assertIn("outside the canonical order: ['unknown']", self.recipe("build", success=False).stderr)
+
+    def test_catalog_follows_marketplace_toml_order_and_owns_every_plugin(self):
+        peer = self.root / "src/peer/skills/peer-skill"
+        peer.mkdir(parents=True)
+        (peer / "SKILL.md").write_text("---\nname: peer-skill\ndescription: Peer.\n---\n")
+        result = self.recipe("build", success=False)
+        self.assertIn("missing from marketplace.toml plugins: ['peer']", result.stderr)
+        self.manifest_path("peer").parent.mkdir()
+        self.manifest_path("peer").write_text(json.dumps({
+            "name": "peer", "version": "2.0.0", "description": "Peer skills", "license": "UNLICENSED", "skills": "./skills/",
+        }))
+        self.order = ["peer", "example"]
+        retired = self.root / "src/peer/publish.toml"
+        retired.write_text("")
+        result = self.recipe("build", success=False)
+        self.assertIn("move src/peer/publish.toml into marketplace.toml", result.stderr)
+        self.assertFalse((self.root / "build/marketplace").exists())
+        retired.unlink()
+        self.recipe("build")
+        for catalog in (".claude-plugin/marketplace.json", ".agents/plugins/marketplace.json"):
+            data = json.loads((self.root / "build/marketplace" / catalog).read_text())
+            self.assertEqual([p["name"] for p in data["plugins"]], ["peer", "example"])
+            self.assertEqual(data["name"], "fixture-marketplace")
+        self.assertFalse((self.root / "build/marketplace/apm.yml").exists())
 
     def test_check_and_export_ignore_python_caches_without_following_cache_symlinks(self):
         module = self.imported_skill()
@@ -143,13 +219,13 @@ class MarketplaceTests(unittest.TestCase):
                             shutil.rmtree(cache)
 
     def imported_skill(self):
-        module = self.root / "apm_modules/example/upstream"
+        module = self.root / "vendor/apm_modules/example/upstream"
         module.mkdir(parents=True)
         (module / "SKILL.md").write_text(
             "---\nname: upstream\ndescription: An imported skill.\n---\n\nOriginal.\n"
         )
         (module / ".apm-pin").write_text(json.dumps({"schema_version": 1, "resolved_commit": "a" * 40}))
-        (self.root / "apm.lock.yaml").write_text(yaml.safe_dump({
+        (self.root / "vendor/apm.lock.yaml").write_text(yaml.safe_dump({
             "lockfile_version": "1", "apm_version": "0.29.1",
             "dependencies": [{
                 "repo_url": "example/upstream", "host": "github.com",
@@ -157,10 +233,10 @@ class MarketplaceTests(unittest.TestCase):
                 "content_hash": compute_package_hash(module), "is_dev": True,
             }], "deployments": [],
         }))
-        manifest = yaml.safe_load((self.root / "apm.yml").read_text())
+        manifest = yaml.safe_load((self.root / "vendor/apm.yml").read_text())
         manifest["devDependencies"] = {"apm": ["example/upstream"]}
-        (self.root / "apm.yml").write_text(yaml.safe_dump(manifest))
-        (self.package / "publish.toml").write_text(
+        (self.root / "vendor/apm.yml").write_text(yaml.safe_dump(manifest))
+        self.selection_path().write_text(
             '[[skills]]\nname = "curated"\ndependency = "example/upstream"\npath = "."\n'
         )
         return module
@@ -181,12 +257,12 @@ class MarketplaceTests(unittest.TestCase):
         first.mkdir(parents=True)
         first.joinpath("SKILL.md").write_text("---\nname: first\ndescription: First.\n---\n")
         first.joinpath("reference.md").write_text("Supporting content.\n")
-        (self.package / "publish.toml").write_text(
+        self.selection_path().write_text(
             '[[payloads]]\ndependency = "example/upstream"\npath = ".apm/skills"\ntarget = "skills"\n'
         )
 
         def accept_cache():
-            path = self.root / "apm.lock.yaml"
+            path = self.root / "vendor/apm.lock.yaml"
             lock = yaml.safe_load(path.read_text())
             lock["dependencies"][0]["content_hash"] = compute_package_hash(module)
             path.write_text(yaml.safe_dump(lock))
@@ -212,11 +288,11 @@ class MarketplaceTests(unittest.TestCase):
         sidecar = module / "agents/openai.yaml"
         sidecar.parent.mkdir()
         sidecar.write_text('interface:\n  display_name: "Upstream Name"\n')
-        lock_path = self.root / "apm.lock.yaml"
+        lock_path = self.root / "vendor/apm.lock.yaml"
         lock = yaml.safe_load(lock_path.read_text())
         lock["dependencies"][0]["content_hash"] = compute_package_hash(module)
         lock_path.write_text(yaml.safe_dump(lock))
-        selection = self.package / "publish.toml"
+        selection = self.selection_path()
         selection.write_text("mirror_invocation_controls = true\n\n" + selection.read_text())
         self.recipe("build")
         output = self.root / "build/marketplace/plugins/example/skills/curated"
@@ -228,21 +304,18 @@ class MarketplaceTests(unittest.TestCase):
 
     def test_shared_root_cache_publishes_independent_plugins_without_package_manifests(self):
         self.imported_skill()
-        peer = self.root / "packages/peer"
-        (peer / ".codex-plugin").mkdir(parents=True)
-        (peer / ".codex-plugin/plugin.json").write_text(json.dumps({
+        self.manifest_path("peer").parent.mkdir()
+        self.manifest_path("peer").write_text(json.dumps({
             "name": "peer", "version": "2.0.0", "description": "Peer skills", "skills": "./skills/",
         }))
-        (peer / "publish.toml").write_text(
+        self.selection_path("peer").write_text(
             '[[skills]]\nname = "shared"\ndependency = "example/upstream"\npath = "."\n'
         )
-        manifest_path = self.root / "apm.yml"
+        manifest_path = self.root / "vendor/apm.yml"
         manifest = yaml.safe_load(manifest_path.read_text())
         manifest["devDependencies"] = {"apm": ["example/upstream"]}
-        manifest["marketplace"]["packages"].append({
-            "name": "peer", "source": "./plugins/peer", "category": "Productivity",
-        })
         manifest_path.write_text(yaml.safe_dump(manifest))
+        self.order = ["example", "peer"]
         patches = self.package / "patches"
         patches.mkdir()
         (patches / "001-reviewed.patch").write_text(
@@ -254,13 +327,13 @@ class MarketplaceTests(unittest.TestCase):
         self.assertTrue((output / "plugins/example/skills/curated/SKILL.md").read_text().endswith("Reviewed.\n"))
         self.assertFalse((output / "apm.yml").exists())
         self.assertTrue((output / "plugins/peer/skills/shared/SKILL.md").read_text().endswith("Original.\n"))
-        self.assertTrue((self.root / "apm_modules/example/upstream/SKILL.md").read_text().endswith("Original.\n"))
+        self.assertTrue((self.root / "vendor/apm_modules/example/upstream/SKILL.md").read_text().endswith("Original.\n"))
         for catalog in (".claude-plugin/marketplace.json", ".agents/plugins/marketplace.json"):
             self.assertEqual({p["name"] for p in json.loads((output / catalog).read_text())["plugins"]}, {"example", "peer"})
         for name, version in (("example", "1.0.0"), ("peer", "2.0.0")):
             for native in (".claude-plugin/plugin.json", ".codex-plugin/plugin.json"):
                 self.assertEqual(json.loads((output / "plugins" / name / native).read_text())["version"], version)
-            self.assertFalse((self.root / "packages" / name / "apm.yml").exists())
+            self.assertFalse((self.root / "src" / name / "apm.yml").exists())
             self.assertFalse((output / "plugins" / name / "apm.yml").exists())
 
     def test_export_refuses_unreceipted_runtime_cache(self):
@@ -276,15 +349,15 @@ class MarketplaceTests(unittest.TestCase):
         self.assertEqual(archive.read_bytes(), before)
 
     def test_acquisition_rejects_obsolete_package_scope_before_touching_inputs(self):
-        before = (self.root / "apm.yml").read_bytes()
+        before = (self.root / "vendor/apm.yml").read_bytes()
         for target in ("fetch", "update"):
             with self.subTest(target=target):
                 result = self.recipe(target, "example", success=False)
                 # Acquisition is root-scoped, so a package argument names no recipe.
                 self.assertIn("does not contain recipe `example`", result.stderr)
-                self.assertEqual((self.root / "apm.yml").read_bytes(), before)
-                self.assertFalse((self.root / "apm_modules").exists())
-                self.assertFalse((self.root / "apm.lock.yaml").exists())
+                self.assertEqual((self.root / "vendor/apm.yml").read_bytes(), before)
+                self.assertFalse((self.root / "vendor/apm_modules").exists())
+                self.assertFalse((self.root / "vendor/apm.lock.yaml").exists())
 
     def test_check_refuses_missing_skill_entrypoints_without_replacing_the_artifact(self):
         module = self.imported_skill()
@@ -293,7 +366,7 @@ class MarketplaceTests(unittest.TestCase):
         receipt = self.root / "build/marketplace/release.json"
         archive = self.root / "build/marketplace.tar.gz"
         accepted_receipt, accepted_archive = receipt.read_bytes(), archive.read_bytes()
-        selection = self.package / "publish.toml"
+        selection = self.selection_path()
         patch = self.package / "patches/001-delete-entrypoint.patch"
         patch.parent.mkdir()
         deletion = "".join(difflib.unified_diff((module / "SKILL.md").read_text().splitlines(True), [],
@@ -304,7 +377,7 @@ class MarketplaceTests(unittest.TestCase):
             (patch, deletion),
         )
         for path, replacement in cases:
-            with self.subTest(path=path.relative_to(self.package)):
+            with self.subTest(path=path.name):
                 original = path.read_bytes() if path.exists() else None
                 try:
                     if replacement is None:
@@ -332,11 +405,11 @@ class MarketplaceTests(unittest.TestCase):
         notices = {"LICENSE": "Fixture license text.\n", "THIRD_PARTY_NOTICES.md": "Fixture notices.\n"}
         for name, content in notices.items():
             (module / name).write_text(content)
-        lock_path = self.root / "apm.lock.yaml"
+        lock_path = self.root / "vendor/apm.lock.yaml"
         lock = yaml.safe_load(lock_path.read_text())
         lock["dependencies"][0]["content_hash"] = compute_package_hash(module)
         lock_path.write_text(yaml.safe_dump(lock))
-        selection = self.package / "publish.toml"
+        selection = self.selection_path()
         selection.write_text(selection.read_text().replace('path = "."', 'path = ".apm/skills/upstream"'))
         with selection.open("a") as stream:
             for name in notices:
@@ -356,7 +429,7 @@ class MarketplaceTests(unittest.TestCase):
         helper = module / "helper.sh"
         helper.write_text("#!/bin/sh\nexit 0\n")
         helper.chmod(0o755)
-        lock_path = self.root / "apm.lock.yaml"
+        lock_path = self.root / "vendor/apm.lock.yaml"
         lock = yaml.safe_load(lock_path.read_text())
         lock["dependencies"][0]["content_hash"] = compute_package_hash(module)
         lock_path.write_text(yaml.safe_dump(lock))
@@ -434,11 +507,11 @@ class MarketplaceTests(unittest.TestCase):
         (module / "SKILL.md").rename(selected / "SKILL.md")
         (module / "commands").mkdir()
         (module / "commands/unsupported.md").write_text("Unsupported component.\n")
-        lock_path = self.root / "apm.lock.yaml"
+        lock_path = self.root / "vendor/apm.lock.yaml"
         lock = yaml.safe_load(lock_path.read_text())
         lock["dependencies"][0]["content_hash"] = compute_package_hash(module)
         lock_path.write_text(yaml.safe_dump(lock))
-        selection = self.package / "publish.toml"
+        selection = self.selection_path()
         selection.write_text(selection.read_text().replace('path = "."', 'path = "skills/upstream"'))
         result = self.recipe("build", success=False)
         self.assertIn("unsupported APM component", result.stderr)
@@ -452,13 +525,13 @@ class MarketplaceTests(unittest.TestCase):
         helper = hooks / "start.sh"
         helper.write_text("#!/bin/sh\nexit 0\n")
         helper.chmod(0o755)
-        lock_path = self.root / "apm.lock.yaml"
+        lock_path = self.root / "vendor/apm.lock.yaml"
         lock = yaml.safe_load(lock_path.read_text())
         lock["dependencies"][0]["content_hash"] = compute_package_hash(module)
         lock_path.write_text(yaml.safe_dump(lock))
-        with (self.package / "publish.toml").open("a") as selection:
+        with self.selection_path().open("a") as selection:
             selection.write('\n[[payloads]]\ndependency = "example/upstream"\npath = "hooks"\ntarget = "hooks"\n')
-        codex = self.package / ".codex-plugin/plugin.json"
+        codex = self.manifest_path()
         manifest = json.loads(codex.read_text())
         manifest["hooks"] = {}
         codex.write_text(json.dumps(manifest))
@@ -473,11 +546,11 @@ class MarketplaceTests(unittest.TestCase):
         nested.mkdir(parents=True)
         (nested / "SKILL.md").write_text("Unselected upstream material.\n")
         (module / "SOURCE.md").write_text("Upstream's own document.\n")
-        lock_path = self.root / "apm.lock.yaml"
+        lock_path = self.root / "vendor/apm.lock.yaml"
         lock = yaml.safe_load(lock_path.read_text())
         lock["dependencies"][0]["content_hash"] = compute_package_hash(module)
         lock_path.write_text(yaml.safe_dump(lock))
-        with (self.package / "publish.toml").open("a") as selection:
+        with self.selection_path().open("a") as selection:
             selection.write('exclude = ["skills"]\n')
         self.recipe("build")
         published = self.root / "build/marketplace/plugins/example/skills/curated"
@@ -513,9 +586,9 @@ class MarketplaceTests(unittest.TestCase):
         (upstream / "apm.yml").write_text("name: upstream\nversion: 1.0.0\n")
         skill = upstream / "SKILL.md"
         skill.write_text("---\nname: upstream\ndescription: Local dependency.\n---\n\nFirst.\n")
-        manifest_path = self.root / "apm.yml"
+        manifest_path = self.root / "vendor/apm.yml"
         manifest = yaml.safe_load(manifest_path.read_text())
-        manifest["devDependencies"] = {"apm": ["./upstream"]}
+        manifest["devDependencies"] = {"apm": ["../upstream"]}
         manifest_path.write_text(yaml.safe_dump(manifest))
         environment = os.environ.copy()
         for key in ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_COMMON_DIR"):
@@ -525,9 +598,9 @@ class MarketplaceTests(unittest.TestCase):
                           ["config", "user.email", "fixture@example.invalid"]):
             subprocess.run(["git", *arguments], cwd=self.root, env=environment, check=True)
         self.recipe("fetch")
-        module = self.root / "apm_modules/_local/upstream"
+        module = self.root / "vendor/apm_modules/_local/upstream"
         self.assertEqual((module / "SKILL.md").read_bytes(), skill.read_bytes())
-        lock_path = self.root / "apm.lock.yaml"
+        lock_path = self.root / "vendor/apm.lock.yaml"
         self.assertEqual(yaml.safe_load(lock_path.read_text())["dependencies"][0]["source"], "local")
         subprocess.run(["git", "add", "--force", "--all"], cwd=self.root, env=environment, check=True)
         subprocess.run(["git", "commit", "-q", "-m", "Accept fixture inputs"], cwd=self.root, env=environment, check=True)
@@ -541,7 +614,7 @@ class MarketplaceTests(unittest.TestCase):
             self.assertFalse((self.root / target).exists(), target)
 
     def test_native_failed_acquisition_propagates_through_make(self):
-        manifest = self.root / "apm.yml"
+        manifest = self.root / "vendor/apm.yml"
         data = yaml.safe_load(manifest.read_text())
         data["devDependencies"] = {"apm": [str(self.sandbox / "missing-dependency")]}
         manifest.write_text(yaml.safe_dump(data))
@@ -550,7 +623,7 @@ class MarketplaceTests(unittest.TestCase):
         for target in ("fetch", "update"):
             result = self.recipe(target, success=False)
             self.assertIn("Local package path does not exist", result.stdout + result.stderr)
-        self.assertFalse((self.root / "apm.lock.yaml").exists())
+        self.assertFalse((self.root / "vendor/apm.lock.yaml").exists())
         for target in (".agents", ".claude", ".codex", "AGENTS.md", "CLAUDE.md"):
             self.assertFalse((self.root / target).exists(), target)
 
@@ -570,7 +643,7 @@ class MarketplaceTests(unittest.TestCase):
             "hooks": [{"type": "command", "command": "./leaf-helper.sh"}]}]}}))
         (hooks / "leaf-helper.sh").write_text("#!/bin/sh\nexit 0\n")
         (hooks / "leaf-helper.sh").chmod(0o755)
-        manifest_path = self.root / "apm.yml"
+        manifest_path = self.root / "vendor/apm.yml"
         manifest = yaml.safe_load(manifest_path.read_text())
         manifest["devDependencies"] = {"apm": [str(upstream / name) for name in ("kept", "removed")]}
         manifest_path.write_text(yaml.safe_dump(manifest))
@@ -579,11 +652,11 @@ class MarketplaceTests(unittest.TestCase):
         for args in (["init", "-q"], ["config", "user.name", "Fixture"], ["config", "user.email", "fixture@example.invalid"]):
             subprocess.run(["git", *args], cwd=self.root, env=environment, check=True)
         self.recipe("fetch")
-        lock_path = self.root / "apm.lock.yaml"
+        lock_path = self.root / "vendor/apm.lock.yaml"
         locked = yaml.safe_load(lock_path.read_text())["dependencies"]
         self.assertEqual({entry["name"] for entry in locked}, {"kept", "leaf", "removed"})
         self.assertEqual(next(entry["depth"] for entry in locked if entry["name"] == "leaf"), 2)
-        cache = self.root / "apm_modules/_local"
+        cache = self.root / "vendor/apm_modules/_local"
         leaf_files = {str(path.relative_to(cache / "leaf")): (path.read_bytes(), path.stat().st_mode & 0o777)
                       for path in (cache / "leaf").rglob("*") if path.is_file()}
         for args in (["add", "--force", "--all"], ["commit", "-qm", "Accept inputs"]):
@@ -593,7 +666,7 @@ class MarketplaceTests(unittest.TestCase):
         self.recipe("fetch")
         self.assertEqual({entry["name"] for entry in yaml.safe_load(lock_path.read_text())["dependencies"]}, {"kept", "leaf"})
         for args in (["prune", "--dry-run"], ["prune"]):
-            result = subprocess.run(["apm", *args], cwd=self.root, env=environment, capture_output=True, text=True, timeout=30)
+            result = subprocess.run(["apm", *args], cwd=self.root / "vendor", env=environment, capture_output=True, text=True, timeout=30)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertFalse((cache / "removed").exists())
         self.assertTrue((cache / "kept").is_dir())
@@ -611,7 +684,7 @@ class MarketplaceTests(unittest.TestCase):
         helper = hooks / "start.sh"
         helper.write_text("#!/bin/sh\nexit 0\n")
         helper.chmod(0o755)
-        codex = self.package / ".codex-plugin/plugin.json"
+        codex = self.manifest_path()
         manifest = json.loads(codex.read_text())
         manifest["hooks"] = {}
         codex.write_text(json.dumps(manifest))
@@ -624,7 +697,7 @@ class MarketplaceTests(unittest.TestCase):
 
     def test_selection_rejects_escapes_collisions_and_removed_declarations(self):
         self.imported_skill()
-        selection = self.package / "publish.toml"
+        selection = self.selection_path()
         original = selection.read_text()
         for changed, error in (
             (original.replace('path = "."', 'path = "../../../../"'), "unsafe path"),
@@ -636,7 +709,7 @@ class MarketplaceTests(unittest.TestCase):
                 result = self.recipe("build", success=False)
                 self.assertIn(error, result.stderr)
         selection.write_text(original)
-        manifest = self.root / "apm.yml"
+        manifest = self.root / "vendor/apm.yml"
         data = yaml.safe_load(manifest.read_text())
         data.pop("devDependencies")
         manifest.write_text(yaml.safe_dump(data))
@@ -650,7 +723,7 @@ class MarketplaceTests(unittest.TestCase):
         self.assertFalse((self.root / "build/marketplace").exists())
 
     def test_build_requires_plugin_version_and_paired_invocation_policy(self):
-        manifest = self.package / ".codex-plugin/plugin.json"
+        manifest = self.manifest_path()
         original = manifest.read_text()
         manifest.write_text(original.replace('"1.0.0"', '""'))
         self.assertIn("version", self.recipe("build", success=False).stderr)
@@ -694,7 +767,7 @@ class MarketplaceTests(unittest.TestCase):
         self.assertIn("collision", self.recipe("build", success=False).stderr)
         self.recipe("clean")
         self.assertFalse((self.root / "build").exists())
-        self.assertTrue((self.root / "apm_modules/example/upstream/SKILL.md").exists())
+        self.assertTrue((self.root / "vendor/apm_modules/example/upstream/SKILL.md").exists())
 
 
 if __name__ == "__main__":

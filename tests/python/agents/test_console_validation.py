@@ -5,14 +5,17 @@ class ConsoleValidationTests(ConsoleCase):
     def setUp(self):
         super().setUp()
         self.pkgtree = self.fixtures / "pkgtree/pkg/skills"
+        catalog = self.fixtures / "pkgtree/marketplace.toml"
+        catalog.parent.mkdir(parents=True, exist_ok=True)
+        catalog.write_text('[plugins.pkg]\nversion = "1.0.0"\n')
         for name in ("local", "vend-a", "vend-b", "solo"):
             path = self.pkgtree / name
             path.mkdir(parents=True)
             (path / "SKILL.md").write_text(f"---\nname: {path.name}\ndescription: Local skill.\n---\n\n# Skill\n")
             if name != "local":
                 dependency = "solo" if path.name == "solo" else "shared"
-                with (self.pkgtree.parent / "publish.toml").open("a") as selection:
-                    selection.write(f'[[skills]]\nname = "{path.name}"\ndependency = "example/repo/skills/{dependency}"\npath = "."\n')
+                with catalog.open("a") as selection:
+                    selection.write(f'[[plugins.pkg.skills]]\nname = "{path.name}"\ndependency = "example/repo/skills/{dependency}"\npath = "."\n')
 
     def test_structural_validation_v1_through_v9(self):
         import copy

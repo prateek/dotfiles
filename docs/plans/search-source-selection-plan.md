@@ -12,7 +12,7 @@ related:
   - ../research/social-shopping-search-sources.md
   - ../research/search-source-selection-review.md
   - ../research/search-source-selection-qualification.md
-  - ../../agent-marketplace/packages/utils-agent/skills/search/SKILL.md
+  - ../../agent-marketplace/src/utils-agent/skills/search/SKILL.md
 status_detail: "Implementation delivered in 1.16.1 with review corrections; the 1.16.0 pilot leaves broader task-quality, original-language and independent holdout qualification open."
 ---
 
@@ -90,11 +90,11 @@ The baseline limitations were concrete:
 - `filters.language` already serves programming-language filters. It must not be
   repurposed as the human language of a query or result.
 
-The main owning files are [contracts](../../agent-marketplace/packages/utils-agent/skills/search/scripts/searchlib/contracts.py),
-[planning](../../agent-marketplace/packages/utils-agent/skills/search/scripts/searchlib/planning.py),
-[engine](../../agent-marketplace/packages/utils-agent/skills/search/scripts/searchlib/engine.py),
-[identity](../../agent-marketplace/packages/utils-agent/skills/search/scripts/searchlib/identity.py),
-and the [selection reference](../../agent-marketplace/packages/utils-agent/skills/search/references/selection.md).
+The main owning files are [contracts](../../agent-marketplace/src/utils-agent/skills/search/scripts/searchlib/contracts.py),
+[planning](../../agent-marketplace/src/utils-agent/skills/search/scripts/searchlib/planning.py),
+[engine](../../agent-marketplace/src/utils-agent/skills/search/scripts/searchlib/engine.py),
+[identity](../../agent-marketplace/src/utils-agent/skills/search/scripts/searchlib/identity.py),
+and the [selection reference](../../agent-marketplace/src/utils-agent/skills/search/references/selection.md).
 
 ## Outcome and scope
 
@@ -693,8 +693,8 @@ including the current Brave restriction in the selection/web guidance.
 Run these from the repository root as the implementation reaches each boundary:
 
 ```sh
-python3 -m unittest discover -s agent-marketplace/packages/utils-agent/skills/search/tests
-zsh agent-marketplace/packages/utils-agent/skills/skills-searcher/tests/skill-search.zsh
+python3 -m unittest discover -s agent-marketplace/src/utils-agent/skills/search/tests
+zsh agent-marketplace/src/utils-agent/skills/skills-searcher/tests/skill-search.zsh
 just -f agent-marketplace/justfile -d agent-marketplace check
 just docs-inventory
 just test-docs-lifecycle

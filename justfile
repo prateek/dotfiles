@@ -1,8 +1,8 @@
 set shell := ["bash", "-euo", "pipefail", "-c"]
 set quiet := true
 
-# agent-marketplace also holds vendored third-party suites, so roots stay explicit.
-python_roots := "tests/config_merge tests/python agent-marketplace/packages/ios/skills/ios-audit/tests"
+# Skill suites under agent-marketplace/src run through its own check (test-agent-marketplace).
+python_roots := "tests/config_merge tests/python"
 node_tests := "home/dot_local/share/raycast-extensions/orca-worktree/tests/*.test.mjs"
 test_bash := env("TEST_BASH", "bash")
 docs_base := env("DOCS_LIFECYCLE_BASE", "HEAD")

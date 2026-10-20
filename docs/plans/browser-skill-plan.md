@@ -28,7 +28,7 @@ authentication, driver choice, and safety policy in separate files.
 The current browser surface has one helper and one convention, and they
 disagree.
 
-- `agent-marketplace/packages/experimental/skills/managed-chrome-cdp` bundles
+- `agent-marketplace/src/experimental/skills/managed-chrome-cdp` bundles
   browser launch, profile copying, login, cookie output, page actions,
   diagnostics, and content extraction in one 1,783-line `browser-tools.ts`.
   Its `SKILL.md` invokes `~/.agents/skills/managed-chrome-cdp/...`. That
@@ -79,7 +79,7 @@ disagree.
 | `scripts/orca-fill-stdin` | Fills an owned password field from stdin, verifies the entry, and never submits |
 
 The skill is authored at
-`agent-marketplace/packages/utils-agent/skills/browser/`. That package is
+`agent-marketplace/src/utils-agent/skills/browser/`. That package is
 default-loaded for Claude and Codex, and it already publishes the vendored
 `orca-cli` skill. Following [ADR 0028](../adr/0028-router-skill-over-vendor-remap.md),
 `browser` is a sibling router: it links to `../orca-cli/SKILL.md` and does
@@ -169,8 +169,8 @@ is set.
 ## Work
 
 - [x] Author `skills/browser/` with `SKILL.md` and the references above.
-- [x] Bump `agent-marketplace/packages/utils-agent/.codex-plugin/plugin.json`.
-- [x] Delete `agent-marketplace/packages/experimental/skills/managed-chrome-cdp/`
+- [x] Bump `agent-marketplace/src/utils-agent/.codex-plugin/plugin.json`.
+- [x] Delete `agent-marketplace/src/experimental/skills/managed-chrome-cdp/`
   and bump the experimental package version.
 - [x] Delete `scripts/browser-tools.ts`.
 - [x] Add `home/dot_agents/docs/browser.md`. Replace the `AGENTS.md` pointer

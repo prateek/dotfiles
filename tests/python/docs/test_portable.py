@@ -11,7 +11,7 @@ class PortableLifecycleTests(DocsFixture):
         self.script = self.repo / "scripts/validate-doc-lifecycle.py"
         self.script.parent.mkdir()
         shutil.copyfile(
-            ROOT / "agent-marketplace/packages/core/skills/document-lifecycle/scripts/validate-doc-lifecycle.py",
+            ROOT / "agent-marketplace/src/core/skills/document-lifecycle/scripts/validate-doc-lifecycle.py",
             self.script,
         )
 

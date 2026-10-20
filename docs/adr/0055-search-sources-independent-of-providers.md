@@ -8,7 +8,7 @@ related:
   - ../plans/search-source-selection-plan.md
   - 0054-shared-search-engine.md
   - ../research/search-source-selection-qualification.md
-  - ../../agent-marketplace/packages/utils-agent/skills/search/references/extending.md
+  - ../../agent-marketplace/src/utils-agent/skills/search/references/extending.md
 ---
 
 # Separate search sources from provider capabilities

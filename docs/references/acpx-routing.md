@@ -7,7 +7,7 @@ updated: 2026-10-19
 related:
   - ../research/cursor-acp-model-selection.md
   - ../adr/0056-agent-selected-model-routing.md
-  - ../../agent-marketplace/packages/utils-agent/skills/acpx/SKILL.md
+  - ../../agent-marketplace/src/utils-agent/skills/acpx/SKILL.md
 ---
 
 # acpx model routing
@@ -138,9 +138,9 @@ the same model and effective thinking, recording `external_route` and
 `external_model` when one exists. An included choice never gains a paid external
 fallback. Missing default evidence prevents cross-harness thinking equivalence.
 
-The [skill](../../agent-marketplace/packages/utils-agent/skills/acpx/SKILL.md)
+The [skill](../../agent-marketplace/src/utils-agent/skills/acpx/SKILL.md)
 owns invocation and write-authority rules; its
-[selection reference](../../agent-marketplace/packages/utils-agent/skills/acpx/references/model-selection.md)
+[selection reference](../../agent-marketplace/src/utils-agent/skills/acpx/references/model-selection.md)
 owns the calling agent's refresh procedure and selection JSON format.
 
 ## Cache and ownership

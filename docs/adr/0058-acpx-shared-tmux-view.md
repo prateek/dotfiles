@@ -7,7 +7,7 @@ created: 2026-10-20
 updated: 2026-10-20
 related:
   - 0036-acpx-shared-herdr-pane.md
-current_guidance: ../../agent-marketplace/packages/utils-agent/skills/acpx/references/harness-lanes.md
+current_guidance: ../../agent-marketplace/src/utils-agent/skills/acpx/references/harness-lanes.md
 ---
 
 # ADR 0058: Share one tmux view for ACPX runs

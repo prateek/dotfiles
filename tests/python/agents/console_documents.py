@@ -103,7 +103,7 @@ def sha256(path):
 
 
 def skill_row(repo, package, directory):
-    skill_dir = Path(repo) / "agent-marketplace/packages" / package / "skills" / directory
+    skill_dir = Path(repo) / "agent-marketplace/src" / package / "skills" / directory
     description = parse(skill_dir / "SKILL.md").values["description"]
     return row(f"{package}:{directory}", package, directory, Origin.REPO_LOCAL, str(skill_dir), description=description)
 

@@ -25,8 +25,10 @@ marketplaces = state["codex_marketplaces"] if cli == "codex" else state["marketp
 
 
 def catalog_name(root):
-    catalog = ".agents/plugins/marketplace.json" if cli == "codex" else ".claude-plugin/marketplace.json"
-    return json.loads((Path(root) / catalog).read_text())["name"]
+    # Codex prefers its own catalog and falls back to Claude's, as the real CLI does.
+    catalogs = [".agents/plugins/marketplace.json"] if cli == "codex" else []
+    catalog = next(Path(root) / c for c in [*catalogs, ".claude-plugin/marketplace.json"] if (Path(root) / c).is_file())
+    return json.loads(catalog.read_text())["name"]
 
 
 def manifest_path(key, kind):
@@ -131,6 +133,8 @@ elif args[:2] in (["plugin", "install"], ["plugin", "add"], ["plugin", "update"]
             save()
         fail("simulated install failure")
     manifest = manifest_path(args[2], f".{cli}-plugin")
+    if cli == "codex" and not manifest.is_file():
+        manifest = manifest_path(args[2], ".claude-plugin")
     prior = state[cli].get(args[2])
     enabled = prior["enabled"] if args[1] == "update" and prior else True
     state[cli][args[2]] = {"enabled": enabled, "version": json.loads(manifest.read_text())["version"]}

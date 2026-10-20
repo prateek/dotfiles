@@ -8,5 +8,5 @@ description = "Obsidian Wiki Chrome manifest public identity key"
 targetRules = ["generic-api-key"]
 condition = "AND"
 regexTarget = "line"
-paths = ['''^agent-marketplace/apm_modules/ar9av/obsidian-wiki/extensions/brain/manifest\.json$''']
+paths = ['''^agent-marketplace/vendor/apm_modules/ar9av/obsidian-wiki/extensions/brain/manifest\.json$''']
 regexes = ['''^\s*"key":\s*"MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAviIifjDNa\+37CVfNLRGcS6n4IBFKvSRRBfhJSn\+8Z/NvR\+jt3WU/22KlNqb\+KuuhUKSnfPYxPQrlMfGe7KfWqNFdm4jx4AR99\+zgEeasAAN6e//EWQU4iRlN44FnSn/jLn8wpgzFJH7Qo2oS0A9BOlyJHtIB\+\+ZUi808YcLe2x8uDGTWP/MsYl8I\+3f5kYhyZBFwf6mAAy5glTgnaOlhpWY7HE4e29TG9EAwhNeyjv/HPDmFWdX3LLgvXkVoDjZM3W\+x/bpqG88w\+XTVbEX7P7lV\+j028gXDZBJOhvnn3VbU9IKfVGKOkUmhL\+zYDDsBX5ObdtlNSvuYqaRqBgKIGQIDAQAB"\s*,?\s*$''']

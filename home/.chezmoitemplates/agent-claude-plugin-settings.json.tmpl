@@ -1,15 +1,14 @@
 {{- $plugins := dict -}}
 {{- range $name, $policy := .agent_plugins -}}
-{{- if $policy.claude -}}
 {{- $_ := set $plugins (printf "%s@prateek-local" $name) $policy.default_loaded -}}
-{{- end -}}
 {{- end -}}
 {{- $markets := dict "prateek-local" (dict "source" (dict "source" "directory" "path" (printf "%s/.agents/plugins" .chezmoi.homeDir))) -}}
 {{- range (get . "agent_upstream_plugins" | default (list)) -}}
-{{- if .claude -}}
 {{- $_ := set $markets .marketplace (dict "source" (dict "source" "git" "url" (printf "https://github.com/%s.git" .repository) "ref" .ref)) -}}
 {{- $_ := set $plugins (printf "%s@%s" .plugin .marketplace) .default_loaded -}}
 {{- end -}}
+{{- range (get . "retired_agent_upstream_plugins" | default (list)) -}}
+{{- $_ := set $plugins (printf "%s@%s" .plugin .marketplace) false -}}
 {{- end -}}
 {{- $wo := includeTemplate "work-overlay.tmpl" . | fromJson -}}
 {{- if $wo.marketplace -}}

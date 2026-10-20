@@ -3,7 +3,7 @@ status: accepted
 doc_type: adr
 created: 2026-10-17
 updated: 2026-10-17
-current_guidance: ../../agent-marketplace/packages/utils-agent/skills/search/SKILL.md
+current_guidance: ../../agent-marketplace/src/utils-agent/skills/search/SKILL.md
 related:
   - ../plans/search-skill-plan.md
   - ../research/search-skill-implementation.md

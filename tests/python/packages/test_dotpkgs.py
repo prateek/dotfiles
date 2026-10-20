@@ -392,9 +392,9 @@ else: print('DOWNLOAD_URL="https://downloads.cursor.com/lab/2026.02.01-bbb/${OS}
 
     def test_apm_compares_locked_commits_without_deploying_and_requires_shared_updates(self):
         root = self.source.parent / 'agent-marketplace'
-        root.mkdir()
-        (root / 'apm.yml').write_text('devDependencies:\n  apm:\n  - owner/one#v1\n  - owner/two\n')
-        (root / 'apm.lock.yaml').write_text('dependencies:\n- repo_url: owner/one\n  resolved_commit: old-one\n- repo_url: owner/two\n  resolved_commit: old-two\n')
+        (root / 'vendor').mkdir(parents=True)
+        (root / 'vendor/apm.yml').write_text('devDependencies:\n  apm:\n  - owner/one#v1\n  - owner/two\n')
+        (root / 'vendor/apm.lock.yaml').write_text('dependencies:\n- repo_url: owner/one\n  resolved_commit: old-one\n- repo_url: owner/two\n  resolved_commit: old-two\n')
         self.binary('uv', '')
         self.binary('git', "print('new-commit\\tHEAD')\n")
         rows = self.cli('status', '--manager', 'apm')['results'][0]['packages']
@@ -403,12 +403,12 @@ else: print('DOWNLOAD_URL="https://downloads.cursor.com/lab/2026.02.01-bbb/${OS}
         plan = self.cli('update', '--all', '--manager', 'apm', '--latest', '--dry-run')['results'][0]['plan']
         self.assertIn('+  - owner/one', plan['edits'][0]['diff'])
         self.assertEqual(plan['steps'][-1]['type'], 'manual')
-        self.assertIn('owner/one#v1', (root / 'apm.yml').read_text())
+        self.assertIn('owner/one#v1', (root / 'vendor/apm.yml').read_text())
 
     def test_apm_preserves_declared_case_and_never_promotes_transitive_dependencies(self):
         root = self.source.parent / 'agent-marketplace'
-        root.mkdir()
-        manifest = root / 'apm.yml'
+        (root / 'vendor').mkdir(parents=True)
+        manifest = root / 'vendor/apm.yml'
         def declarations():
             result = self.command([str(PYTHON), '-c',
                                    'import json,sys,yaml; print(json.dumps(yaml.safe_load(open(sys.argv[1]))["devDependencies"]["apm"]))',
@@ -416,7 +416,7 @@ else: print('DOWNLOAD_URL="https://downloads.cursor.com/lab/2026.02.01-bbb/${OS}
             return json.loads(result.stdout)
         original = 'devDependencies:\n  apm:\n  - Owner/Repo/Skills/Case#v1\n  - Owner/Repo/skills/case#v2\n'
         manifest.write_text(original)
-        (root / 'apm.lock.yaml').write_text('dependencies:\n- repo_url: owner/repo\n  virtual_path: Skills/Case\n  resolved_commit: one\n- repo_url: owner/repo\n  virtual_path: skills/case\n  resolved_commit: two\n- repo_url: other/transitive\n  resolved_commit: three\n')
+        (root / 'vendor/apm.lock.yaml').write_text('dependencies:\n- repo_url: owner/repo\n  virtual_path: Skills/Case\n  resolved_commit: one\n- repo_url: owner/repo\n  virtual_path: skills/case\n  resolved_commit: two\n- repo_url: other/transitive\n  resolved_commit: three\n')
         self.binary('uv', '')
         self.binary('just', '')
         self.binary('git', "print('new-commit\\tHEAD')\n")
@@ -436,9 +436,9 @@ else: print('DOWNLOAD_URL="https://downloads.cursor.com/lab/2026.02.01-bbb/${OS}
 
     def test_apm_cli_follows_the_marketplace_build_lock(self):
         root = self.source.parent / 'agent-marketplace'
-        root.mkdir()
-        (root / 'apm.yml').write_text('devDependencies:\n  apm:\n  - owner/one\n')
-        (root / 'apm.lock.yaml').write_text('dependencies:\n- repo_url: owner/one\n  resolved_commit: old-one\n')
+        (root / 'vendor').mkdir(parents=True)
+        (root / 'vendor/apm.yml').write_text('devDependencies:\n  apm:\n  - owner/one\n')
+        (root / 'vendor/apm.lock.yaml').write_text('dependencies:\n- repo_url: owner/one\n  resolved_commit: old-one\n')
         project = root / 'pyproject.toml'
         project.write_text('[project]\nname = "fixture"\nrequires-python = ">=3.14,<3.15"\ndependencies = ["apm-cli>=0.29", "PyYAML>=6"]\n')
         (root / 'uv.lock').write_text('version = 1\n\n[[package]]\nname = "apm-cli"\nversion = "0.29.1"\n')

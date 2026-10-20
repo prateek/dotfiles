@@ -26,9 +26,12 @@ of the official-plugin rollout. A changed checkout does not by itself change the
 live marketplace.
 
 Official sources, plugin identities, and enabled defaults are declared in
-`home/.chezmoidata/agent_upstream_plugins.toml`. Native clients install those
-plugins directly; the local project builds authored skills and compatibility
-adapters. See [ADR 0049](../adr/0049-official-agent-plugin-marketplaces.md) and
+`home/.chezmoidata/agent_upstream_plugins.toml`. Every harness installs every
+plugin, local or official ([ADR 0059](../adr/0059-one-plugin-set-for-every-harness.md)).
+Native clients install official plugins directly, Codex included, from their
+upstream Claude-format catalogs. The local project builds authored skills plus
+the adapters we keep for their patches. See
+[ADR 0049](../adr/0049-official-agent-plugin-marketplaces.md) and
 the retired migration plan (`plans/upstream-agent-plugins-plan.md` in the [ledger](../retired.md)).
 
 Refresh official installs from the repository root:
@@ -48,24 +51,25 @@ Existing official installs refresh only when maintenance passes `--update`. Pi r
 Claude catalogs from its desired-state file on extension reload. Native upstream
 caches are outside the local release receipt.
 
-UI/UX Pro Max, Crit, and Better Writing use maintainer marketplaces in Claude,
-OMP, and Pi. `design` retains authored `devtool-ui`; `core` retains the writing
-router and its other skills. Separate `ui-ux-pro-max` and `better-writing`
-adapters serve Codex. UI/UX and Crit adapters import whole published collections.
-Codex retains the UI/UX icon fixes and Better Writing's explicit-only controls;
-native installs use upstream behavior. The writing router resolves Better
-Writing through the client skill catalog instead of a sibling-directory link.
+Five adapters carry patches we keep, and serve every harness in place of the
+official install: Better Writing (explicit-only controls), pstack (human-only
+setup), and, pending a decision on their patches, Matt Pocock, Crit, and
+Obsidian Wiki. Their official installs are listed in
+`retired_agent_upstream_plugins`, which the reconciler uninstalls and the config
+templates pin disabled. The writing router resolves Better Writing through the
+client skill catalog instead of a sibling-directory link.
 The follow-up plan is retired (`plans/additional-upstream-agent-plugins-plan.md` in the [ledger](../retired.md)).
 
 The consumer boundary is:
 
 | Surface | Owner |
 | --- | --- |
-| `agent-marketplace/apm.yml`, `apm.lock.yaml`, `apm_modules/` | One shared acquisition project and committed accepted inputs |
-| `agent-marketplace/packages/` | Authored content, selections, reviewed patches, and native plugin metadata |
+| `agent-marketplace/marketplace.toml` | The catalog's identity and plugin order, plus each plugin's version, manifest, and selections |
+| `agent-marketplace/vendor/apm.yml`, `apm.lock.yaml`, `apm_modules/` | One shared acquisition project and committed accepted inputs |
+| `agent-marketplace/src/` | Authored content and reviewed patches and overlays, per plugin |
 | `agent-marketplace/build/marketplace` | Validated disposable native artifact |
-| `home/.chezmoidata/agent_plugins.toml` | Authored/fallback eligibility and default enablement |
-| `home/.chezmoidata/agent_upstream_plugins.toml` | Official native sources and enabled defaults |
+| `home/.chezmoidata/agent_plugins.toml` | Default enablement for every local plugin |
+| `home/.chezmoidata/agent_upstream_plugins.toml` | Official native sources, enabled defaults, and retired official installs |
 | `~/.agents/plugins` | Materialized shared marketplace |
 | `~/.agents/plugins.previous` | Previous artifact retained for rollback |
 | `~/.agents/skills` | Writable Codex runtime stub, preserving `.system/` |
@@ -73,22 +77,21 @@ The consumer boundary is:
 | `~/AGENTS.md` | Managed symlink to `.agents/AGENTS.md`, read by Claude Code as a parent directory |
 | Claude/Codex native caches | Native client CLIs and app-server APIs |
 
-The enabled authored packages are `core`, `review`, and `utils-agent`.
-Official last30days, Matt Pocock, Better Writing, and Crit are enabled. Codex
-keeps enabled adapters for Matt Pocock, Better Writing, and Crit. Other official
-plugins and adapters remain disabled. The seventeen local packages include Codex-only adapters, whose
-Claude equivalents come from official marketplaces. Pstack remains a disabled
-compatibility adapter because its upstream catalog targets Cursor. It imports
-the whole upstream collection and mirrors human-only controls into Codex sidecars. The
+The enabled local packages are `core`, `review`, `utils-agent`, and the Matt
+Pocock, Better Writing, and Crit adapters. Official last30days is enabled; other
+official plugins and local packages remain disabled. Pstack is a disabled
+adapter that imports the whole upstream collection and mirrors human-only
+controls into Codex sidecars. The
 [context-impact report](../research/pstack-context-impact.md) records the default
 zero-row projection, the uncontrolled comparison, and the native-client checks.
-Local Codex adapters suppress hook discovery with an explicit empty
-`hooks` object. Paired human-only controls remain file contracts; these
+Local Codex manifests suppress hook discovery with an explicit empty
+`hooks` object, so Crit's hooks run on Claude only. Paired human-only controls remain file contracts; these
 checks do not prove model invocation behavior after a skill is explicitly loaded.
 
-Only the root APM manifest is maintained. Each plugin's Codex manifest owns its
-version and shared metadata; the build derives temporary APM manifests to generate
-Claude metadata and both catalogs, then removes them. Materialized plugins contain
+`marketplace.toml` owns the catalog, its plugin order, and each plugin's
+version, manifest, and selections; `vendor/apm.yml` holds only dependencies.
+The build generates every `plugin.json`, derives temporary APM manifests to
+generate Claude metadata and both catalogs, then removes them. Materialized plugins contain
 selected payloads and native manifests, with no acquisition cache or APM project.
 
 Use [materialization](../../.agents/skills/agent-skill-management/references/generated-outputs.md)
@@ -96,8 +99,8 @@ for build-on-apply, repository tool selection, or prebuilt copy, and
 [native reconciliation](../../.agents/skills/agent-skill-management/references/plugin-reconcile.md)
 for cache updates, disabled project plugins, and rollback. Script 35 preserves
 Codex's runtime skill stub; script 36 owns the build/copy/reconcile sequence.
-Config merge templates read host policy directly. Pi follows Claude selection;
-Cursor keeps its existing marketplace registration and ACP behavior.
+Config merge templates read host policy directly. Pi follows Claude selection,
+and Cursor loads the plugins Claude has installed and enabled.
 
 Work machines with the work overlay configured get a second marketplace,
 `work-overlay`, from the overlay clone's `agent-plugins/` directory

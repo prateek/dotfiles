@@ -10,7 +10,7 @@ related:
   - ../adr/0055-search-sources-independent-of-providers.md
   - search-skill-implementation.md
   - search-source-selection-review.md
-  - ../../agent-marketplace/packages/utils-agent/skills/search/SKILL.md
+  - ../../agent-marketplace/src/utils-agent/skills/search/SKILL.md
 status_detail: "Implementation and pilot qualified separately; broader task quality, translation correctness and hidden-family generalization remain unmeasured."
 ---
 
@@ -36,9 +36,9 @@ relevance advantage, statistical equivalence or comprehensive platform coverage.
 | Guidance | Separate social/shopping areas; regional and multilingual discovery, used/refurb/surplus/auction sourcing, wholesale/delivery, non-GitHub code and primary web evidence |
 | Ownership | Parent owns retrieval, shared evidence policy and diagnostics; specialized skills own domain queries, interpretation and output. New profiles, aliases and adapters have separate addition criteria |
 
-The durable contracts are in [source scopes](../../agent-marketplace/packages/utils-agent/skills/search/references/source-scopes.md),
-[source selection](../../agent-marketplace/packages/utils-agent/skills/search/references/source-selection.md)
-and [extension ownership](../../agent-marketplace/packages/utils-agent/skills/search/references/extending.md).
+The durable contracts are in [source scopes](../../agent-marketplace/src/utils-agent/skills/search/references/source-scopes.md),
+[source selection](../../agent-marketplace/src/utils-agent/skills/search/references/source-selection.md)
+and [extension ownership](../../agent-marketplace/src/utils-agent/skills/search/references/extending.md).
 The source catalog supplies conditional leads, not integrations or guaranteed access.
 Portable instructions contain no personal infrastructure, account or vault conventions.
 
@@ -154,7 +154,7 @@ that ignores a malformed port during host-scope matching remains unchanged.
 
 ## Public development pilot
 
-The [protocol](../../agent-marketplace/packages/utils-agent/skills/search/evals/source-selection.json)
+The [protocol](../../agent-marketplace/src/utils-agent/skills/search/evals/source-selection.json)
 freezes five public cases, three conditions and three repeats: **45 attempts**.
 Each permits at most two discovery queries and one content open, three calls total,
 within 240 seconds. No accounts, purchases or paid-provider calls were made. Brave

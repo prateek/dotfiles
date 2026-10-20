@@ -1,0 +1,20 @@
+# Dependencies only. APM requires a name and version to lock; they are fixed
+# placeholders. The catalog's identity and version live in marketplace.toml.
+name: prateek-local-sources
+version: 0.0.0
+devDependencies:
+  apm:
+  - 199-biotechnologies/claude-deep-research-skill
+  - Cygnusfear/claude-stuff/skills/writing-clearly-and-concisely
+  - ar9av/obsidian-wiki
+  - cursor/plugins/pstack
+  - danshapiro/trycycle
+  - forjd/better-writing
+  - mattpocock/skills
+  - openai/skills/skills/.curated/cli-creator
+  - openclaw/acpx/skills/acpx
+  - stablyai/agent-slack/skills/agent-slack
+  - stablyai/orca/skills/orca-cli
+  - stablyai/orca/skills/orchestration
+  - tomasz-tomczyk/crit/integrations/claude-code
+  - wiseiodev/skills/code-principles

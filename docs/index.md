@@ -8,7 +8,7 @@ related:
   - document-lifecycle.md
   - inventory.md
   - retired.md
-  - ../agent-marketplace/packages/core/skills/code-gardening/SKILL.md
+  - ../agent-marketplace/src/core/skills/code-gardening/SKILL.md
 status_detail: "Keep rows free of status prose; a doc's state lives in its frontmatter and the generated inventory."
 ---
 
@@ -20,7 +20,7 @@ progress. For every document with its status and summary, read the generated
 [retirement ledger](retired.md). Terms are in the [glossary](../GLOSSARY.md).
 
 When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
-[code-gardening workflow](../agent-marketplace/packages/core/skills/code-gardening/SKILL.md).
+[code-gardening workflow](../agent-marketplace/src/core/skills/code-gardening/SKILL.md).
 
 ## Current Guidance
 
@@ -35,7 +35,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [Mise Tool Management](references/mise-tool-management.md) | Mise-native CLI and tool selection. |
 | [Jamf Self Service Elevation](references/jamf-self-service-elevation.md) | Temporary admin elevation on Jamf-managed work Macs. |
 | [Shell Banner](../home/dot_config/dotfiles/shell-banner/README.md) | Cached fastfetch banner for chezmoi drift and stale brew/mise packages. |
-| [Private Service Certificate in Orca](../agent-marketplace/packages/utils-agent/skills/browser/references/certificate.md) | Host-scoped trust preference and pinned loopback recovery for an owned private HTTPS service. |
+| [Private Service Certificate in Orca](../agent-marketplace/src/utils-agent/skills/browser/references/certificate.md) | Host-scoped trust preference and pinned loopback recovery for an owned private HTTPS service. |
 | [Dotfiles Landing](runbooks/dotfiles-landing.md) | Repo-specific checks and chezmoi preview for the published land-changes skill. |
 | [Quarterly Review](runbooks/quarterly-review.md) | Docs that need a decision and the manual session-friction pass. |
 | [acpx Skill Rewrite](runbooks/acpx-skill-rewrite.md) | Rewriting authored skills through acpx native flows, with the required runtime overrides. |
@@ -55,6 +55,7 @@ Status and summary for each are in the [inventory](inventory.md#plans).
 
 - [agent_clis consolidation](plans/agent-clis-consolidation-plan.md)
 - [Agent friction remediation](plans/agent-friction-remediation-plan.md)
+- [Agent marketplace layout](plans/agent-marketplace-layout-plan.md)
 - [Agent session wiki](plans/agent-session-wiki-plan.md)
 - [Agent skills repo split](plans/agent-skills-repo-split-plan.md)
 - [BetterDisplay display modes](plans/betterdisplay-display-modes-plan.md)

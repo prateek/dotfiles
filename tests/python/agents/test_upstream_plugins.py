@@ -16,7 +16,7 @@ class UpstreamPluginTests(RepoTestCase):
         self.policy = self.work / "policy.toml"
         self.policy.write_text("\n".join(
             f'[[agent_upstream_plugins]]\nmarketplace = "official"\nplugin = "{name}"\n'
-            'repository = "example/upstream"\nref = "main"\nclaude = true\ncodex = true\n'
+            'repository = "example/upstream"\nref = "main"\n'
             f'default_loaded = {str(loaded).lower()}\n' for name, loaded in (("on", True), ("off", False))
         ))
         self.state = self.work / "state.json"
@@ -146,3 +146,50 @@ class UpstreamPluginTests(RepoTestCase):
         self.log.write_text("")
         self.reconcile()
         self.assertTrue(all(" list " in line for line in self.log.read_text().splitlines()))
+
+    def test_codex_installs_from_a_claude_only_catalog(self):
+        catalog = write_overlay_marketplace(self.work / "claude-only", {"on": ("claude",), "off": ("claude",)},
+                                            name="official", version="2.0.0")
+        (catalog / ".agents/plugins/marketplace.json").unlink()
+        state = json.loads(self.state.read_text())
+        state["upstream_sources"]["https://github.com/example/upstream.git"] = str(catalog)
+        self.state.write_text(json.dumps(state))
+        self.reconcile()
+        state = json.loads(self.state.read_text())
+        for agent in ("claude", "codex"):
+            self.assertEqual(state[agent]["on@official"], {"version": "2.0.0", "enabled": True})
+            self.assertEqual(state[agent]["off@official"], {"version": "2.0.0", "enabled": False})
+        self.log.write_text("")
+        self.reconcile()
+        self.assertTrue(all(" list " in line for line in self.log.read_text().splitlines()))
+
+    def test_retired_official_plugins_are_uninstalled_from_every_client(self):
+        with self.policy.open("a") as policy:
+            policy.write('\n[[retired_agent_upstream_plugins]]\nmarketplace = "legacy"\nplugin = "old"\n')
+        state = json.loads(self.state.read_text())
+        state["claude"]["old@legacy"] = {"version": "1.0.0", "enabled": True}
+        state["codex"]["old@legacy"] = {"version": "1.0.0", "enabled": True}
+        self.state.write_text(json.dumps(state))
+        self.reconcile()
+        state = json.loads(self.state.read_text())
+        for agent in ("claude", "codex"):
+            self.assertNotIn("old@legacy", state[agent])
+            self.assertIn("on@official", state[agent])
+        self.assertEqual(state["claude"]["other@foreign"], {"version": "1.0.0", "enabled": True})
+
+    def test_a_retired_plugin_cannot_also_be_declared(self):
+        with self.policy.open("a") as policy:
+            policy.write('\n[[retired_agent_upstream_plugins]]\nmarketplace = "official"\nplugin = "on"\n')
+        result = self.reconcile(expected_status=1)
+        self.assertIn(b"cannot also be declared", result.stderr)
+        self.assertFalse(self.log.exists())
+
+    def test_one_failed_install_does_not_stop_the_rest_of_the_clients(self):
+        self.env["FAKE_PLUGIN_FAIL"] = "on@official"
+        self.env["FAKE_PLUGIN_FAIL_CLI"] = "codex"
+        result = self.reconcile(expected_status=1)
+        self.assertIn(b"codex: 1 official plugin(s) failed: on@official", result.stderr)
+        state = json.loads(self.state.read_text())
+        self.assertNotIn("on@official", state["codex"])
+        self.assertEqual(state["codex"]["off@official"], {"version": "2.0.0", "enabled": False})
+        self.assertEqual(state["claude"]["on@official"], {"version": "2.0.0", "enabled": True})

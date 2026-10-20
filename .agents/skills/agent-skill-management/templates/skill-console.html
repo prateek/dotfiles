@@ -1559,7 +1559,7 @@ function changeDetails(o) {
       d.warnings.push(`removes the publication selection${o.remove_apm_dep ? ` and APM dependency ${o.apm_dep}` : ""}; the accepted cache remains available and apply reruns reference checks`);
     }
     if (m && m.origin === "repo-vendor") {
-      d.path = `agent-marketplace/packages/${m.pkg}/${o.op === "delete_skill" ? "publish.toml" : "patches/ + overlays/"}`;
+      d.path = o.op === "delete_skill" ? "agent-marketplace/marketplace.toml" : `agent-marketplace/src/${m.pkg}/patches/ + overlays/`;
       if (o.op !== "delete_skill") d.warnings.push("imported edit: the console updates a reviewed patch or overlay and bumps the plugin version");
     }
     if (m && (o.op === "set_description" || o.op === "set_frontmatter") && packageDisabledInBatch(m.pkgModel)) d.warnings.push("conflicts with disabling its package in this batch (V15)");
@@ -1701,7 +1701,7 @@ function skillInspector(m) {
   if (m.divs.length) prov.push(h("div", { class: "divs" }, ...m.divs.map((d) => h("div", { text: `${d.kind}: ${d.detail}` }))));
   else if (m.health.level === "ok") prov.push(h("div", { class: "note ok", text: "source, marketplace, and cache agree" }));
   if (m.apm) prov.push(h("div", { class: "note" }, `APM dependency `, h("span", { class: "mono", text: m.apm.apm_dep }), ` owns ${m.apm.dep_owns_skills} skill${m.apm.dep_owns_skills === 1 ? "" : "s"}. `,
-    m.apm.dep_owns_skills === 1 ? "Deleting this skill may remove the dependency." : "Review multi-skill dependency selections in publish.toml.", " Edits are kept as reviewed patches."));
+    m.apm.dep_owns_skills === 1 ? "Deleting this skill may remove the dependency." : "Review multi-skill dependency selections in agent-marketplace/marketplace.toml.", " Edits are kept as reviewed patches."));
   if (m.row.frontmatter_name && m.row.directory && m.row.frontmatter_name !== m.row.directory) prov.push(h("div", { class: "note", text: `frontmatter name ${m.row.frontmatter_name}, directory ${m.row.directory}` }));
   out.push(section("Provenance", ...prov));
 

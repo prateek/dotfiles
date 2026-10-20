@@ -14,7 +14,7 @@ summary: "Browser-based search retrieval measurements and website access failure
 
 # Search-index evaluation: provider websites in Camoufox
 
-On 17 October 2026, the [browser skill's Camofox REST recipe](../../agent-marketplace/packages/utils-agent/skills/browser/references/drivers/camofox.md) opened search-result **websites** in an isolated, task-owned Camoufox 152.0.4-beta.30 browser. The local REST controller operated the browser; no search-provider API key was used for these calls. A website may call its own backend APIs. The task browser and its temporary state were removed after the run.
+On 17 October 2026, the [browser skill's Camofox REST recipe](../../agent-marketplace/src/utils-agent/skills/browser/references/drivers/camofox.md) opened search-result **websites** in an isolated, task-owned Camoufox 152.0.4-beta.30 browser. The local REST controller operated the browser; no search-provider API key was used for these calls. A website may call its own backend APIs. The task browser and its temporary state were removed after the run.
 
 The rebased checkout contained the new recipe, but this host did not yet expose its `mise run browser:camofox:install` task. The recipe's supported direct installer provisioned and verified the pinned runtime cache. This run did not apply the dotfiles or activate the new task on the host.
 

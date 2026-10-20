@@ -7,8 +7,8 @@ import { fileURLToPath } from "node:url";
 import { setTimeout as delay } from "node:timers/promises";
 import test from "node:test";
 
-const source = fileURLToPath(new URL("../../../agent-marketplace/packages/experimental/skills/browser-jev/", import.meta.url));
-const regularBrowser = fileURLToPath(new URL("../../../agent-marketplace/packages/utils-agent/skills/browser/", import.meta.url));
+const source = fileURLToPath(new URL("../../../agent-marketplace/src/experimental/skills/browser-jev/", import.meta.url));
+const regularBrowser = fileURLToPath(new URL("../../../agent-marketplace/src/utils-agent/skills/browser/", import.meta.url));
 const token = "synthetic-provider-token-canary";
 const account = "0123456789abcdef0123456789abcdef";
 const value = "Zürich 🌳 東京";

@@ -43,13 +43,13 @@ class LockedDocsTests(DocsFixture):
         body = "# Old Plan\n\nSee [example](../../old-skills/example/SKILL.md)."
         self.doc("plans/old-plan.md", body, status="archived", **ARCHIVED)
         base = self.commit()
-        new = self.repo / "agent-marketplace/packages/example/skills/example/SKILL.md"
+        new = self.repo / "agent-marketplace/src/example/skills/example/SKILL.md"
         new.parent.mkdir(parents=True)
         self.git("mv", str(old), str(new))
-        self.doc("plans/old-plan.md", body.replace("old-skills/example", "agent-marketplace/packages/example/skills/example"),
+        self.doc("plans/old-plan.md", body.replace("old-skills/example", "agent-marketplace/src/example/skills/example"),
                  status="archived", **ARCHIVED)
         self.validate(base=base)
-        self.doc("plans/old-plan.md", body.replace("old-skills/example", "agent-marketplace/packages/example/skills/example") + "\nChanged history.",
+        self.doc("plans/old-plan.md", body.replace("old-skills/example", "agent-marketplace/src/example/skills/example") + "\nChanged history.",
                  status="archived", **ARCHIVED)
         self.validate(base=base, error="body edits are blocked")
 

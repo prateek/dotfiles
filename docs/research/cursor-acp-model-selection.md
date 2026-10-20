@@ -7,7 +7,7 @@ created: 2026-10-19
 updated: 2026-10-19
 related:
   - ../references/acpx-routing.md
-  - ../../agent-marketplace/packages/utils-agent/skills/acpx/SKILL.md
+  - ../../agent-marketplace/src/utils-agent/skills/acpx/SKILL.md
 status_detail: "Live probes on cursor-agent 2026.07.01 and acpx 0.19.5 (2026-10-16); bundle offsets refer to that version."
 ---
 

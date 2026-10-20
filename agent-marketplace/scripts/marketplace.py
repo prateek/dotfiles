@@ -57,7 +57,7 @@ def git_env() -> dict[str, str]:
 
 
 def validate_cache_modes(root: Path) -> None:
-    tracked = subprocess.run(["git", "ls-files", "--stage", "-z", "--", "apm_modules"],
+    tracked = subprocess.run(["git", "ls-files", "--stage", "-z", "--", "vendor/apm_modules"],
                              cwd=root, env=git_env(), capture_output=True, timeout=30)
     if tracked.returncode:
         return  # A standalone source export carries the modes from its trusted archive.
@@ -75,9 +75,9 @@ def validate_cache_modes(root: Path) -> None:
 
 
 def project_inputs(root: Path) -> dict[str, Path]:
-    manifest = APMPackage.from_apm_yml(root / "apm.yml", create_config=False)
+    manifest = APMPackage.from_apm_yml(root / "vendor/apm.yml", create_config=False)
     declared = {dep.get_unique_key() for dep in manifest.get_all_apm_dependencies()}
-    lock_path = root / "apm.lock.yaml"
+    lock_path = root / "vendor/apm.lock.yaml"
     if not lock_path.exists():
         if declared:
             raise ValueError(f"missing cache lock: {lock_path}; restore committed files from Git or a complete source export; use fetch only for new, unacquired declarations")
@@ -94,7 +94,7 @@ def project_inputs(root: Path) -> dict[str, Path]:
         raise ValueError(f"acquisition lock contains deployment claims: {lock_path}")
     modules = {}
     for key, dependency in locked.items():
-        module = build_materialization_path(dependency.to_dependency_ref(), root / "apm_modules")
+        module = build_materialization_path(dependency.to_dependency_ref(), root / "vendor/apm_modules")
         contained(root, str(module.relative_to(root)))
         if not module.is_dir():
             raise ValueError(f"missing cache: {module}; restore committed files from Git or a complete source export")
@@ -128,17 +128,13 @@ def validate_source_surface(module: Path) -> None:
             raise ValueError(f"unsupported APM component: {path}")
 
 
-def selected_inputs(package: Path, modules: dict[str, Path]):
-    selection = package / "publish.toml"
-    if not selection.exists():
-        return
-    data = tomllib.loads(selection.read_text())
-    inputs = [(f"skills/{item['name']}", item) for item in data.get("skills", [])]
-    inputs.extend((item["target"], item) for item in data.get("payloads", []))
+def selected_inputs(plugin: Path, entry: dict, modules: dict[str, Path]):
+    inputs = [(f"skills/{item['name']}", item) for item in entry.get("skills", [])]
+    inputs.extend((item["target"], item) for item in entry.get("payloads", []))
     for target, item in inputs:
         if item["dependency"] not in modules:
             raise ValueError(f"selection has no locked declaration: {item['dependency']}")
-        contained(package, target)
+        contained(plugin, target)
         if target.split("/")[0] not in {"skills", "hooks", "evals", "agents", "commands", "licenses", ".mcp.json"}:
             raise ValueError(f"unsupported publication target: {target}")
         for name in item.get("exclude", []):
@@ -163,13 +159,10 @@ def copy_selection(source: Path, target: Path, excluded: list[str]) -> None:
     shutil.copytree(source, target, symlinks=True, ignore=ignore)
 
 
-def mirror_invocation_controls(package: Path, plugin: Path) -> None:
-    selection = package / "publish.toml"
-    if not selection.exists():
-        return
-    enabled = tomllib.loads(selection.read_text()).get("mirror_invocation_controls", False)
+def mirror_invocation_controls(entry: dict, plugin: Path) -> None:
+    enabled = entry.get("mirror_invocation_controls", False)
     if type(enabled) is not bool:
-        raise ValueError(f"mirror_invocation_controls requires a boolean: {selection}")
+        raise ValueError(f"mirror_invocation_controls requires a boolean: {plugin.name}")
     if not enabled:
         return
     for path in (plugin / "skills").rglob("SKILL.md"):
@@ -300,6 +293,78 @@ def apply_overlays(package: Path, plugin: Path) -> None:
         shutil.copy2(overlay / relative, target)
 
 
+CATALOG_KEYS = {"name", "version", "description", "license", "category", "outputs", "plugins", "owner"}
+PLUGIN_KEYS = {"version", "display_name", "hooks", "manifest", "mirror_invocation_controls", "skills", "payloads"}
+# Native manifests are emitted in one canonical key order, whatever the TOML order.
+MANIFEST_ORDER = ("name", "version", "description", "author", "homepage", "repository", "license",
+                  "keywords", "skills", "agents", "hooks", "interface")
+INTERFACE_ORDER = ("displayName", "shortDescription", "longDescription", "developerName", "category",
+                   "capabilities", "websiteURL", "defaultPrompt")
+# Retired layout: every plugin's selections and manifest now live in marketplace.toml.
+RETIRED_PACKAGE_FILES = ("publish.toml", ".codex-plugin")
+
+
+def load_catalog(root: Path) -> dict:
+    path = root / "marketplace.toml"
+    data = tomllib.loads(path.read_text())
+    if set(data) != CATALOG_KEYS:
+        raise ValueError(f"marketplace.toml requires exactly {sorted(CATALOG_KEYS)}: {path}")
+    for name, entry in data["plugins"].items():
+        if not isinstance(entry, dict) or not set(entry) <= PLUGIN_KEYS:
+            raise ValueError(f"plugin {name} allows only {sorted(PLUGIN_KEYS)}: {path}")
+        if not isinstance(entry.get("version"), str) or not entry["version"].strip():
+            raise ValueError(f"native plugin requires a version: {name}")
+        if ("display_name" in entry) == ("manifest" in entry):
+            raise ValueError(f"plugin {name} needs exactly one of display_name or manifest")
+        if "hooks" in entry and ("manifest" in entry or entry["hooks"] is not True):
+            raise ValueError(f"hooks = true applies only to the display_name template: {name}")
+    present = {package.name for package in (root / "src").iterdir() if package.is_dir()}
+    if unlisted := sorted(present - set(data["plugins"])):
+        raise ValueError(f"src/ directories missing from marketplace.toml plugins: {unlisted}")
+    for name in sorted(present):
+        for retired in RETIRED_PACKAGE_FILES:
+            if (root / "src" / name / retired).exists():
+                raise ValueError(f"move src/{name}/{retired} into marketplace.toml [plugins.{name}]")
+    return data
+
+
+def plugin_manifest(catalog: dict, name: str) -> dict:
+    """The native plugin.json: the shared template for display_name, or a verbatim manifest."""
+    entry = catalog["plugins"][name]
+    owner = catalog["owner"]["name"]
+    if "manifest" in entry:
+        body = dict(entry["manifest"])
+    else:
+        display = entry["display_name"]
+        body = {"description": f"{display} skills from {owner}'s dotfiles.", "author": {"name": owner},
+                "license": catalog["license"], "skills": "./skills/",
+                "interface": {"displayName": display, "shortDescription": f"{display} skills",
+                              "longDescription": f"Generated local plugin for {display}.",
+                              "developerName": owner, "category": "Coding",
+                              "capabilities": ["Interactive", "Write"],
+                              "defaultPrompt": [f"Use the {display} plugin."]}}
+        if entry.get("hooks"):
+            body["hooks"] = {}
+    manifest = {"name": name, "version": entry["version"], **body}
+    for keys, order, label in ((manifest, MANIFEST_ORDER, "manifest"),
+                               (manifest.get("interface", {}), INTERFACE_ORDER, "interface")):
+        if unknown := sorted(set(keys) - set(order)):
+            raise ValueError(f"plugin {name} has {label} keys outside the canonical order: {unknown}")
+    if "interface" in manifest:
+        manifest["interface"] = {key: manifest["interface"][key] for key in INTERFACE_ORDER if key in manifest["interface"]}
+    return {key: manifest[key] for key in MANIFEST_ORDER if key in manifest}
+
+
+def catalog_manifest(catalog: dict) -> dict:
+    """The APM catalog manifest for marketplace.toml, in its declared plugin order."""
+    return {key: catalog[key] for key in ("name", "version", "description", "license")} | {"marketplace": {
+        "owner": catalog["owner"],
+        "outputs": {output: {} for output in catalog["outputs"]},
+        "packages": [{"name": name, "source": f"./plugins/{name}", "category": catalog["category"]}
+                     for name in catalog["plugins"]],
+    }}
+
+
 def write_publication_manifest(plugin: Path) -> None:
     native = json.loads((plugin / ".codex-plugin/plugin.json").read_text())
     manifest = {key: native[key] for key in
@@ -313,6 +378,7 @@ def build(root: Path) -> Path:
     before = source_files(root)
     validate_cache_modes(root)
     modules = project_inputs(root)
+    catalog = load_catalog(root)
     build_root = root / "build"
     if build_root.is_symlink():
         raise ValueError(f"symlink build directory: {build_root}")
@@ -320,25 +386,28 @@ def build(root: Path) -> Path:
     with tempfile.TemporaryDirectory(prefix="assemble-", dir=build_root) as staging:
         output = Path(staging) / "marketplace"
         output.mkdir()
-        shutil.copy2(root / "apm.yml", output / "apm.yml")
-        for package in sorted((root / "packages").iterdir()):
+        (output / "apm.yml").write_text(yaml.safe_dump(catalog_manifest(catalog), sort_keys=False))
+        for name, entry in catalog["plugins"].items():
+            package = root / "src" / name
             validate_authored_paths(package)
-            plugin = output / "plugins" / package.name
+            plugin = output / "plugins" / name
             plugin.mkdir(parents=True)
-            for name in ("skills", ".codex-plugin", "hooks", "evals", "agents", "commands", "licenses", ".mcp.json"):
-                source = package / name
+            for payload in ("skills", "hooks", "evals", "agents", "commands", "licenses", ".mcp.json"):
+                source = package / payload
                 if source.is_dir():
-                    shutil.copytree(source, plugin / name, symlinks=True,
+                    shutil.copytree(source, plugin / payload, symlinks=True,
                                     ignore=shutil.ignore_patterns("__pycache__"))
                 elif source.is_file():
-                    shutil.copy2(source, plugin / name)
-            for target, source, excluded in selected_inputs(package, modules):
+                    shutil.copy2(source, plugin / payload)
+            (plugin / ".codex-plugin").mkdir()
+            (plugin / ".codex-plugin/plugin.json").write_text(json.dumps(plugin_manifest(catalog, name), indent=2) + "\n")
+            for target, source, excluded in selected_inputs(plugin, entry, modules):
                 copy_selection(source, plugin / target, excluded)
             skills = plugin / "skills"
             expected_skills = {skill.name for skill in skills.iterdir()} if skills.is_dir() else set()
             apply_patches(package, plugin)
             apply_overlays(package, plugin)
-            mirror_invocation_controls(package, plugin)
+            mirror_invocation_controls(entry, plugin)
             tree_files(plugin)
             validate_plugin(plugin, expected_skills)
             write_publication_manifest(plugin)
@@ -377,14 +446,14 @@ def acquire(root: Path, update: bool) -> None:
     source_files(root)
     status = subprocess.run(
         ["git", "status", "--porcelain", "--untracked-files=all", "--ignored=matching",
-         "--", str(root / "apm.lock.yaml"), str(root / "apm_modules")],
+         "--", str(root / "vendor/apm.lock.yaml"), str(root / "vendor/apm_modules")],
         cwd=root, env=environment, capture_output=True, text=True, timeout=30,
     )
     if status.returncode:
         raise ValueError("fetch/update require a Git checkout for acquisition review")
     if status.stdout:
         raise ValueError("unaccepted cache or lock changes; review or restore them before acquisition")
-    run_apm(["lock"] + (["--update"] if update else []), root, timeout=300)
+    run_apm(["lock"] + (["--update"] if update else []), root / "vendor", timeout=300)
 
 
 def check(root: Path) -> None:

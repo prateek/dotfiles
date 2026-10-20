@@ -46,7 +46,7 @@ class ClaudeSettingsTests(RepoTestCase):
         self.assertEqual(data["extraKnownMarketplaces"]["other-market"], self.current["extraKnownMarketplaces"]["other-market"])
         self.assertEqual(data["extraKnownMarketplaces"]["prateek-local"]["source"],
                          {"source": "directory", "path": str(self.home / ".agents/plugins")})
-        for name, enabled in package_policy("claude").items():
+        for name, enabled in package_policy().items():
             with self.subTest(plugin=name):
                 self.assertIs(data["enabledPlugins"][name], enabled)
         self.assertIs(data["enabledPlugins"]["stale@prateek-local"], False)
@@ -73,7 +73,7 @@ class ClaudeSettingsTests(RepoTestCase):
         generated = json.loads(self.render(self.plugin_template))
         work = json.loads(self.render(self.managed_template, "work"))
         personal = json.loads(self.render(self.managed_template, "personal"))
-        self.assertEqual(generated["enabledPlugins"], package_policy("claude"))
+        self.assertEqual(generated["enabledPlugins"], package_policy())
         self.assertIs(work["enabledPlugins"]["git-spice@chronosphere-claude-plugins"], False)
         self.assertNotIn("git-spice@chronosphere-claude-plugins", personal.get("enabledPlugins", {}))
 

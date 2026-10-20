@@ -10,7 +10,7 @@ import unittest
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[3]
-MODULE = SourceFileLoader('orca_fill_stdin', str(ROOT / 'agent-marketplace/packages/utils-agent/skills/browser/scripts/orca-fill-stdin')).load_module()
+MODULE = SourceFileLoader('orca_fill_stdin', str(ROOT / 'agent-marketplace/src/utils-agent/skills/browser/scripts/orca-fill-stdin')).load_module()
 
 
 class Input:

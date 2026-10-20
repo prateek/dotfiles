@@ -786,7 +786,7 @@ make test-agent-skill-packages test-claude-settings test-codex-config test-pi-se
 Add:
 
 ```text
-agent-marketplace/packages/utils-agent/skills/agent-session-wiki/SKILL.md
+agent-marketplace/src/utils-agent/skills/agent-session-wiki/SKILL.md
 ```
 
 Document:

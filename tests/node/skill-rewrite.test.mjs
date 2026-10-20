@@ -35,9 +35,7 @@ async function fixture(t) {
     await fs.writeFile(path.join(repo, skill, "SKILL.md"), "Original\n");
     await fs.writeFile(path.join(repo, skill, "old.md"), "Old reference\n");
   }
-  const plugin = path.join(repo, work.packageManifest(skills[0]));
-  await fs.mkdir(path.dirname(plugin), { recursive: true });
-  await work.writeJson(plugin, { name: "example", version: "1.2.3" });
+  await fs.writeFile(path.join(repo, work.CATALOG), '[plugins.example]\nversion = "1.2.3"\ndisplay_name = "Example"\n');
   await fs.mkdir(path.join(repo, work.GUIDANCE), { recursive: true });
   for (const name of ["SKILL.md", "SKILL-MECHANICS.md"]) await fs.writeFile(path.join(repo, work.GUIDANCE, name), "Fixture guidance\n");
   await fs.writeFile(path.join(repo, "untouched.txt"), "Keep\n");
@@ -178,7 +176,7 @@ test("native pipeline exports aggregate fixes and preserves source bytes and ind
   await assert.rejects(fs.stat(path.join(replay, skills[0], "old.md")), { code: "ENOENT" });
   assert.equal(await fs.readFile(path.join(replay, skills[0], "new.md"), "utf8"), "New reference\n");
   assert.ok((await fs.stat(path.join(replay, skills[0], "helper.sh"))).mode & 0o100);
-  assert.equal((await work.readJson(path.join(replay, work.packageManifest(skills[0])))).version, "1.2.4");
+  assert.match(await fs.readFile(path.join(replay, work.CATALOG), "utf8"), /^\[plugins\.example\]\nversion = "1\.2\.4"\n/);
   assert.equal(await git(["status", "--porcelain=v1", "-uall"]), beforeStatus);
   assert.deepEqual(await fs.readFile(path.join(repo, ".git/index")), beforeIndex);
 });
@@ -195,7 +193,7 @@ test("explicit skill selection limits model calls and patch scope", async (t) =>
   assert.ok(journal.every((entry) => entry.roots.length === 1 && entry.roots[0] === skills[1]));
   const changed = (await git(["diff", "--cached", "--name-only", output.outputs.prepare.baselineCommit],
     path.join(base, "selected/combined"))).trim().split("\n");
-  assert.ok(changed.every((file) => file.startsWith(`${skills[1]}/`) || file === work.packageManifest(skills[1])));
+  assert.ok(changed.every((file) => file.startsWith(`${skills[1]}/`) || file === work.CATALOG));
   for (const [index, selection] of [[], [skills[0], skills[0]], ["../outside"], ["missing-skill"], "all"].entries()) {
     await assert.rejects(work.prepare(ctx, { repo, skills: selection, outputDir: path.join(base, `invalid-${index}`),
       writerCommand: ["fixture-writer"], opusCommand: ["fixture-opus"] }), /skills must|Unknown authored skill/);

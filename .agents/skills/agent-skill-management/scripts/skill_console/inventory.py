@@ -52,7 +52,7 @@ from skill_console.budget import (
     utf16_length,
 )
 
-PACKAGES_RELPATH = Path("agent-marketplace/packages")
+PACKAGES_RELPATH = Path("agent-marketplace/src")
 REPO_MARKETPLACE = "prateek-local"
 ENV_BUDGET_VAR = "SLASH_COMMAND_TOOL_CHAR_BUDGET"
 

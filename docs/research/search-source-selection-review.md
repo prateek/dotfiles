@@ -71,11 +71,11 @@ the file links and code facts below were checked against the current source.
 
 Fable P1.1: the plan tells agents to expand through `extend`, while its CLI
 examples establish global source and area restrictions. The behavior is real:
-[planning.py](../../agent-marketplace/packages/utils-agent/skills/search/scripts/searchlib/planning.py)
+[planning.py](../../agent-marketplace/src/utils-agent/skills/search/scripts/searchlib/planning.py)
 rejects facets outside those choices, and
-[engine.extend](../../agent-marketplace/packages/utils-agent/skills/search/scripts/searchlib/engine.py)
+[engine.extend](../../agent-marketplace/src/utils-agent/skills/search/scripts/searchlib/engine.py)
 preserves choices when resolving new jobs. The
-[options reference](../../agent-marketplace/packages/utils-agent/skills/search/references/options.md#inspecting-newly-discovered-urls)
+[options reference](../../agent-marketplace/src/utils-agent/skills/search/references/options.md#inspecting-newly-discovered-urls)
 documents this contract.
 
 Two local, transport-free cases distinguish the issue:
@@ -142,7 +142,7 @@ Qualify behavior before changing route preferences.
 Fable asserted that only Google-backed routes reliably honor site operators and
 that Exa drops path scopes. This review supplied no live or primary-source evidence
 for those assertions. Current
-[web.py](../../agent-marketplace/packages/utils-agent/skills/search/scripts/searchlib/adapters/web.py)
+[web.py](../../agent-marketplace/src/utils-agent/skills/search/scripts/searchlib/adapters/web.py)
 passes domain-filter strings directly to Exa's `includeDomains`; it does not itself
 strip paths. The endpoint's accepted semantics remain a qualification question.
 Do not adopt a blanket Google-first policy from this review.

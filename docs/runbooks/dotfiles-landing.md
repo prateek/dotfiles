@@ -5,13 +5,13 @@ summary: "Repo-specific checks and chezmoi preview for the published land-change
 created: 2026-09-07
 updated: 2026-10-06
 related:
-  - ../../agent-marketplace/packages/review/skills/land-changes/SKILL.md
+  - ../../agent-marketplace/src/review/skills/land-changes/SKILL.md
   - ../../.agents/skills/agent-skill-management/SKILL.md
 ---
 
 # Dotfiles landing
 
-Use the published [land-changes skill](../../agent-marketplace/packages/review/skills/land-changes/SKILL.md).
+Use the published [land-changes skill](../../agent-marketplace/src/review/skills/land-changes/SKILL.md).
 Dotfiles normally lands one commit directly onto `origin/master`; the canonical
 checkout is `~/dotfiles`. Verify its branch and local state before synchronization.
 Inspect live hosting rules and the actual caller's capabilities. Direct landing

@@ -1,9 +1,0 @@
-[[payloads]]
-dependency = "tomasz-tomczyk/crit/integrations/claude-code"
-path = ".apm/skills"
-target = "skills"
-
-[[payloads]]
-dependency = "tomasz-tomczyk/crit/integrations/claude-code"
-path = ".apm/hooks"
-target = "hooks"

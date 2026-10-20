@@ -2,7 +2,7 @@ load '../../support/common'
 
 setup() {
   setup_fixture
-  pane_cmd="$DOTFILES_ROOT/agent-marketplace/packages/utils-agent/skills/acpx/scripts/acpx-pane"
+  pane_cmd="$DOTFILES_ROOT/agent-marketplace/src/utils-agent/skills/acpx/scripts/acpx-pane"
   log="$FIXTURE/run log"
   export XDG_STATE_HOME="$FIXTURE/state" ORCA_TERMINAL_HANDLE=term_parent
   printf '@1|acpx\n' > "$FIXTURE/windows"

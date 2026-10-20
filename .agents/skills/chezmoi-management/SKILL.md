@@ -40,7 +40,7 @@ Should not trigger by itself:
 
 - `Debug why zinit is slow at shell startup.` (Shell startup; no source-state edit.)
 - `Write an ADR for the new mise lockfile policy.` (Docs; no chezmoi state.)
-- `Add a new skill under agent-marketplace/packages/core/skills/.` (Use `agent-skill-management` for portable skill authoring.)
+- `Add a new skill under agent-marketplace/src/core/skills/.` (Use `agent-skill-management` for portable skill authoring.)
 - `Review this PR for unrelated bugs.`
 
 If `code-gardening` already owns a state-sync task and chezmoi is incidental, keep `code-gardening` primary and consult this skill only when a chezmoi command or `home/.chezmoi*/` path enters scope.

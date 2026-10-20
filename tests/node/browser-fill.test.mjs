@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import vm from 'node:vm';
 
-const source = readFileSync(new URL('../../agent-marketplace/packages/utils-agent/skills/browser/scripts/fill-input.js', import.meta.url), 'utf8');
+const source = readFileSync(new URL('../../agent-marketplace/src/utils-agent/skills/browser/scripts/fill-input.js', import.meta.url), 'utf8');
 
 function page({ nested = true, type = 'text' } = {}) {
   const events = [];

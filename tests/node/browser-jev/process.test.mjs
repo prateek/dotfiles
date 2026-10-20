@@ -6,9 +6,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import test from "node:test";
-import { command, claimBrowser } from "../../../agent-marketplace/packages/experimental/skills/browser-jev/scripts/jev/process.mjs";
+import { command, claimBrowser } from "../../../agent-marketplace/src/experimental/skills/browser-jev/scripts/jev/process.mjs";
 
-const moduleURL = new URL("../../../agent-marketplace/packages/experimental/skills/browser-jev/scripts/jev/process.mjs", import.meta.url).href;
+const moduleURL = new URL("../../../agent-marketplace/src/experimental/skills/browser-jev/scripts/jev/process.mjs", import.meta.url).href;
 const browser = { driver: "orca", worktree: "path:/test/worktree", pageId: "page-one" };
 
 async function fixture(t) {

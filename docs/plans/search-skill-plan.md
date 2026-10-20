@@ -25,7 +25,7 @@ Build `utils-agent:search` to retrieve and verify web, code, social and shopping
 ## Implementation status
 
 The shared engine, four-area skill and skills-searcher migration are implemented
-under [search](../../agent-marketplace/packages/utils-agent/skills/search/SKILL.md).
+under [search](../../agent-marketplace/src/utils-agent/skills/search/SKILL.md).
 [ADR 0054](../adr/0054-shared-search-engine.md) records the accepted boundary.
 The [qualification record](../research/search-skill-implementation.md) distinguishes
 contract tests, current live access, packaging, activation and unmeasured task quality.
@@ -34,7 +34,7 @@ Inspection URLs become known after discovery. The implementation adds `extend`
 to append prepared inspection jobs without resetting the run's budget/deadline,
 and `assess` to record the host's facet evidence checks. `select` records candidate
 fit, verification, shortlist reasons and omissions using the shared
-[selection contract](../../agent-marketplace/packages/utils-agent/skills/search/references/selection.md). Automatic private XDG checkpoints and transport events span discovery, enrichment,
+[selection contract](../../agent-marketplace/src/utils-agent/skills/search/references/selection.md). Automatic private XDG checkpoints and transport events span discovery, enrichment,
 inspection and selection, including skills-searcher. Candidate pages and fetch
 budgets are separate from the final result limit. Provider routing is not a
 semantic relevance ranking.
@@ -226,7 +226,7 @@ The engine owns reservations across native, API and host jobs. Reserve before di
 
 ## Implementation sequence
 
-Author under `agent-marketplace/packages/utils-agent/skills/search/`: `SKILL.md`, `agents/openai.yaml`, `references/{web,code,social,shopping,options,extending}.md`, `scripts/agent-search`, focused `scripts/searchlib/` adapters/parsers, `tests/`, and public `evals/evals.json`. Keep the entrypoint near 120 lines and derive provider/options listings from the registry. Record the shared-engine boundary in the next available ADR when implementation is accepted.
+Author under `agent-marketplace/src/utils-agent/skills/search/`: `SKILL.md`, `agents/openai.yaml`, `references/{web,code,social,shopping,options,extending}.md`, `scripts/agent-search`, focused `scripts/searchlib/` adapters/parsers, `tests/`, and public `evals/evals.json`. Keep the entrypoint near 120 lines and derive provider/options listings from the registry. Record the shared-engine boundary in the next available ADR when implementation is accepted.
 
 | Phase | Deliverable | Completion criterion |
 | --- | --- | --- |

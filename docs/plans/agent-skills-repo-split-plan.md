@@ -115,7 +115,7 @@ superseding 0023/0025 and amending 0049 for the Codex-only adapters.
 
 **Would move to `agent-skills`:**
 
-- `agent-marketplace/packages/`: authored skills, patches, and overlays. The
+- `agent-marketplace/src/`: authored skills, patches, and overlays. The
   `publish.toml` files and `plugin.json` manifests would be rewritten as
   `default.nix`.
 - `home/dot_agents/`: `AGENTS.md` and `docs/`, plus the `~/AGENTS.md` link that
@@ -420,7 +420,7 @@ or reconsider.
 
 ### Phase 2: create the repo and port the build
 
-- Extract with `git filter-repo`, keeping history for `agent-marketplace/packages`
+- Extract with `git filter-repo`, keeping history for `agent-marketplace/src`
   and `home/dot_agents`, renaming into the target layout, and dropping
   `apm_modules/` from history.
 - Write `modules/lib`, one plugin module per package, and inputs pinned to the

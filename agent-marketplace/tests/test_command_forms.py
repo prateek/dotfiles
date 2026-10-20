@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 
-PATCH = Path(__file__).resolve().parents[1] / "packages/utils-agent/patches/002-agent-slack-command-forms.patch"
+PATCH = Path(__file__).resolve().parents[1] / "src/utils-agent/patches/002-agent-slack-command-forms.patch"
 
 
 def card_lines() -> list[str]:

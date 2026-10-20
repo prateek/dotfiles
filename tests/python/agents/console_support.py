@@ -55,7 +55,7 @@ class ConsoleRepoCase(ConsoleCase):
 
     def add_synthetic_vendor(self):
         self.synth_skill = "lone-" + uuid.uuid4().hex
-        package = self.repo / "agent-marketplace/packages/synth"
+        package = self.repo / "agent-marketplace/src/synth"
         self.command([str(ROOT / "agent-marketplace/.venv/bin/python"), "-c", SYNTH_PACKAGE,
                       str(package), self.synth_skill])
         (self.repo / "docs/synth-note.md").write_text(f"# Notes\n\nThe synth:{self.synth_skill} skill is mentioned here.\n")
@@ -72,27 +72,25 @@ package=Path(sys.argv[1]);lone=sys.argv[2];project=package.parents[1]
 package.mkdir(parents=True)
 lock=[];selections=[]
 for dependency,names in ((lone,[lone]),("twins",["twin-a","twin-b"])):
-    module=project/"apm_modules/example/repo/skills"/dependency
+    module=project/"vendor/apm_modules/example/repo/skills"/dependency
     for name in names:
         skill=module/"skills"/name;skill.mkdir(parents=True)
         (skill/"SKILL.md").write_text(f"---\nname: {name}\ndescription: Synthetic imported skill.\n---\n\nOriginal.\n")
-        selections.append(f'[[skills]]\nname = "{name}"\ndependency = "example/repo/skills/{dependency}"\npath = "skills/{name}"\n')
+        selections.append(f'[[plugins.synth.skills]]\nname = "{name}"\ndependency = "example/repo/skills/{dependency}"\npath = "skills/{name}"\n')
     (module/"apm.yml").write_text(f"name: {dependency}\nversion: 1.0.0\n")
     sha="a"*40 if dependency==lone else "b"*40
     (module/".apm-pin").write_text(json.dumps({"schema_version":1,"resolved_commit":sha}))
     lock.append({"repo_url":"example/repo","host":"github.com","name":dependency,"resolved_commit":sha,
                  "virtual_path":f"skills/{dependency}","is_virtual":True,"package_type":"apm_package",
                  "content_hash":compute_package_hash(module),"is_dev":True})
-root_lock=yaml.safe_load((project/"apm.lock.yaml").read_text())
+root_lock=yaml.safe_load((project/"vendor/apm.lock.yaml").read_text())
 root_lock["dependencies"].extend(lock)
-(project/"apm.lock.yaml").write_text(yaml.safe_dump(root_lock))
-manifest=yaml.safe_load((project/"apm.yml").read_text())
+(project/"vendor/apm.lock.yaml").write_text(yaml.safe_dump(root_lock))
+manifest=yaml.safe_load((project/"vendor/apm.yml").read_text())
 manifest["devDependencies"]["apm"].extend([f"example/repo/skills/{lone}","example/repo/skills/twins"])
-manifest["marketplace"]["packages"].append({"name":"synth","source":"./plugins/synth","category":"Productivity"})
-(project/"apm.yml").write_text(yaml.safe_dump(manifest,sort_keys=False))
-(package/"publish.toml").write_text("\n".join(selections))
-(package/".codex-plugin").mkdir()
-(package/".codex-plugin/plugin.json").write_text(json.dumps({"name":"synth","version":"1.0.0","skills":"./skills/"}))
+(project/"vendor/apm.yml").write_text(yaml.safe_dump(manifest,sort_keys=False))
+catalog=project/"marketplace.toml"
+catalog.write_text(catalog.read_text()+'\n[plugins.synth]\nversion = "1.0.0"\n\n[plugins.synth.manifest]\nskills = "./skills/"\n\n'+"\n".join(selections))
 overlay=package/"overlays/skills"/lone
 (overlay/"scripts").mkdir(parents=True)
 (overlay/"scripts/tool.py").write_text('print("tool")\n')

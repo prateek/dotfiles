@@ -16,7 +16,7 @@ If `chezmoi source-path` errors, first establish who owns the file. Use `chezmoi
 
 ## Script-Created Plugin Output
 
-`~/.agents/plugins` is a materialized marketplace built from `agent-marketplace/`, outside the `home/` source root. Its files have no direct chezmoi source mapping. Keep edits in the portable project: authored skills live under `agent-marketplace/packages/<package>/skills/<name>/`; imported content changes through reviewed patches or overlays. Those inputs use native filenames, without chezmoi attribute escaping such as `literal_`.
+`~/.agents/plugins` is a materialized marketplace built from `agent-marketplace/`, outside the `home/` source root. Its files have no direct chezmoi source mapping. Keep edits in the portable project: authored skills live under `agent-marketplace/src/<package>/skills/<name>/`; imported content changes through reviewed patches or overlays. Those inputs use native filenames, without chezmoi attribute escaping such as `literal_`.
 
 Read [agent-skill-management](../../agent-skill-management/SKILL.md) for the owning inputs and materialization workflow. Host activation policy lives in `home/.chezmoidata/agent_plugins.toml`; native clients own their install records and caches. Capturing artifact or cache files with `chezmoi add` or `re-add` would create a competing source copy.
 

@@ -9,7 +9,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
-const helper = fileURLToPath(new URL('../../agent-marketplace/packages/utils-agent/skills/browser/scripts/pinned-loopback-proxy.mjs', import.meta.url));
+const helper = fileURLToPath(new URL('../../agent-marketplace/src/utils-agent/skills/browser/scripts/pinned-loopback-proxy.mjs', import.meta.url));
 const run = (...args) => execFileSync(process.execPath, [helper, ...args], { encoding: 'utf8', timeout: 10000 }).trim();
 const startAsync = args => new Promise(resolve => execFile(process.execPath, [helper, ...args], { encoding: 'utf8', timeout: 10000 }, (error, stdout, stderr) => resolve({ error, stdout: stdout.trim(), stderr })));
 const get = url => new Promise((resolve, reject) => http.get(url, response => {

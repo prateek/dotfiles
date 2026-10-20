@@ -521,7 +521,7 @@ def apm_plan(plan, ctx, action, names, latest, version, group, rows):
         hook(plan, ctx, '*36-agent-plugins*')
         return
     if action in ('install', 'remove', 'pin', 'unpin') or latest:
-        path = root / 'apm.yml'
+        path = root / 'vendor/apm.yml'
         data = yaml.safe_load(plan.text(path))
         deps = data['devDependencies']['apm']
         for name in names:
@@ -532,10 +532,10 @@ def apm_plan(plan, ctx, action, names, latest, version, group, rows):
                 raise Problem(f'{name}: no direct declaration; change its parent dependency')
             declared_name = found.partition('#')[0] if found else name
             if action == 'remove':
-                for selection in root.glob('packages/*/publish.toml'):
-                    source = tomllib.loads(selection.read_text())
+                catalog = root / 'marketplace.toml'
+                for plugin, source in tomllib.loads(catalog.read_text())['plugins'].items():
                     if any(apm_identity(entry['dependency']) == name for section in ('skills', 'payloads') for entry in source.get(section, []) if entry.get('dependency')):
-                        raise Problem(f'{name} is selected by {selection}; remove its selections before removing the dependency')
+                        raise Problem(f'{name} is selected by plugin {plugin} in {catalog}; remove its selections before removing the dependency')
                 if found:
                     deps.remove(found)
             elif action == 'pin':

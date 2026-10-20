@@ -1,11 +1,11 @@
 # Upstream-managed skill payloads (apm-cli-vendored). Do not rewrite their
 # shebangs, dependencies, or metadata.
-agent-marketplace/packages/*/apm_modules/** linguist-vendored=true
+agent-marketplace/vendor/apm_modules/** linguist-vendored=true
 
 # Eval fixture trees: code samples representing what skills encounter in the
 # wild, not code we own.
-agent-marketplace/packages/*/evals/files/** linguist-vendored=true
-agent-marketplace/packages/*/skills/*/evals/files/** linguist-vendored=true
+agent-marketplace/src/*/evals/files/** linguist-vendored=true
+agent-marketplace/src/*/skills/*/evals/files/** linguist-vendored=true
 
 # Template payloads rendered into other projects. Shebangs and metadata
 # inside target the rendered output, not this repo.

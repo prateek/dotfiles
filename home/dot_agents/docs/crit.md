@@ -63,7 +63,7 @@ reviewer did not expect.
 ## Local deltas to the vendored skills
 
 The `crit` and `crit-cli` skills in the `review` package carry local edits in
-`agent-marketplace/packages/review/patches/`. The build applies these patches to
+`agent-marketplace/src/review/patches/`. The build applies these patches to
 temporary copies of committed APM inputs. `just -f agent-marketplace/justfile -d agent-marketplace check`
 checks them and fails on upstream drift.
 
@@ -73,7 +73,7 @@ local patch after its changes are present in the accepted upstream revision.
 
 ## Behavioural evals
 
-`agent-marketplace/packages/review/evals/` holds four cases, one per failure mode
+`agent-marketplace/src/review/evals/` holds four cases, one per failure mode
 this setup was built to stop: comment visibility, diff scope, review target, and
 CLI shape. They are synthetic — a throwaway repo and an invented PR number — so
 nothing from a work repo is in them.

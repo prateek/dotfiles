@@ -50,7 +50,8 @@ from skill_console.inventory import REPO_MARKETPLACE
 from artifact import digest, source_files
 from agent_skill_lib import just_binary
 
-PACKAGES_DIR = "agent-marketplace/packages"
+PACKAGES_DIR = "agent-marketplace/src"
+CATALOG_FILE = "agent-marketplace/marketplace.toml"
 POLICY_FILE = "home/.chezmoidata/agent_plugins.toml"
 SETTINGS_TEMPLATE = "home/.chezmoitemplates/claude-settings-managed.json.tmpl"
 SCRIPTS_DIR = ".agents/skills/agent-skill-management/scripts"
@@ -419,19 +420,20 @@ def dependency_key(dependency: str) -> str:
     return dependency.strip().strip("`").split("#", 1)[0].split("@", 1)[0].strip("/").lower()
 
 
-def _selection_of(skill_dir: Path) -> Path:
+def _catalog_of(skill_dir: Path) -> tuple[Path, str]:
+    """The marketplace.toml governing a skill directory, and the skill's plugin."""
+    package = skill_dir.parent.parent.name
     for parent in skill_dir.parents:
-        if parent.name == "agent-marketplace":
-            package = skill_dir.parent.parent.name
-            return parent / "packages" / package / "publish.toml"
-    return skill_dir.parent.parent / "publish.toml"
+        if parent.name == "agent-marketplace" or (parent / "marketplace.toml").is_file():
+            return parent / "marketplace.toml", package
+    return skill_dir.parents[2] / "marketplace.toml", package
 
 
 def _apm_dependency_of(skill_dir: Path) -> str | None:
-    selection = _selection_of(skill_dir)
-    if not selection.is_file():
+    catalog, package = _catalog_of(skill_dir)
+    if not catalog.is_file():
         return None
-    data = tomllib.loads(selection.read_text())
+    data = tomllib.loads(catalog.read_text()).get("plugins", {}).get(package, {})
     named = next((entry["dependency"] for entry in data.get("skills", [])
                   if entry["name"] == skill_dir.name), None)
     return named or next((entry["dependency"] for entry in data.get("payloads", [])
@@ -440,10 +442,13 @@ def _apm_dependency_of(skill_dir: Path) -> str | None:
 
 def _dependency_uses(skill_dir: Path, dependency: str, surface: str) -> int:
     wanted = dependency_key(dependency)
+    catalog, _ = _catalog_of(skill_dir)
+    if not catalog.is_file():
+        raise ApplyError(f"no marketplace.toml governs {skill_dir}; cannot count {dependency}'s selections")
     return sum(
         1
-        for selection in _selection_of(skill_dir).parent.parent.glob("*/publish.toml")
-        for entry in tomllib.loads(selection.read_text()).get(surface, [])
+        for plugin in tomllib.loads(catalog.read_text()).get("plugins", {}).values()
+        for entry in plugin.get(surface, [])
         if dependency_key(entry["dependency"]) == wanted
     )
 
@@ -720,8 +725,7 @@ def _ere_escape(text: str) -> str:
     return _ERE_METACHARS.sub(r"\\\1", text)
 
 
-def _tracked_references(repo_root: Path, directory: str, package: str, excluded: Sequence[str]) -> dict[str, list[str]]:
-    """Tracked files that reference the skill, grouped by top-level directory."""
+def _reference_patterns(directory: str, package: str) -> list[str]:
     name = _ere_escape(directory)
     boundary_before, boundary_after = "(^|[^A-Za-z0-9_-])", "([^A-Za-z0-9_-]|$)"
     patterns = [
@@ -730,6 +734,31 @@ def _tracked_references(repo_root: Path, directory: str, package: str, excluded:
     ]
     if package:
         patterns.append(f"{boundary_before}{_ere_escape(package)}:{name}{boundary_after}")
+    return patterns
+
+
+def _catalog_references(repo_root: Path, directory: str, package: str) -> list[str]:
+    """Other plugins' marketplace.toml tables that reference the skill.
+
+    The guard excludes the whole catalog from the tracked-file scan because the
+    deleted plugin's own selection names the skill; every other table still counts.
+    """
+    catalog = repo_root / CATALOG_FILE
+    if not catalog.is_file():
+        return []
+    patterns = [re.compile(pattern) for pattern in _reference_patterns(directory, package)]
+    found = []
+    for block in _catalog_blocks(catalog.read_text()):
+        match = re.match(r"\[\[?plugins\.([^.\]]+)", block)
+        if match and match[1] != package and any(pattern.search(line) for line in block.splitlines() for pattern in patterns):
+            if (label := f"{CATALOG_FILE} [plugins.{match[1]}]") not in found:
+                found.append(label)
+    return found
+
+
+def _tracked_references(repo_root: Path, directory: str, package: str, excluded: Sequence[str]) -> dict[str, list[str]]:
+    """Tracked files that reference the skill, grouped by top-level directory."""
+    patterns = _reference_patterns(directory, package)
     command = ["git", "-C", str(repo_root), "grep", "-I", "-l", "-E"]
     for pattern in patterns:
         command += ["-e", pattern]
@@ -748,6 +777,7 @@ def _blocking_references(repo_root: Path, guard: DeletionGuard) -> tuple[list[st
     """(refusing, warning) tracked references to the skill a guard describes."""
     references = _tracked_references(repo_root, guard.directory, guard.package, guard.excluded)
     refusing = [path for root in REFERENCE_REFUSE_ROOTS for path in references.get(root, ())]
+    refusing += _catalog_references(repo_root, guard.directory, guard.package)
     warning = [path for root in REFERENCE_WARN_ROOTS for path in references.get(root, ())]
     return refusing, warning
 
@@ -943,23 +973,33 @@ def _plan_patches_and_versions(ws: _Workspace) -> None:
                 raise ApplyError(f"rename the last patch to leave room for a following console patch: {last}")
         ws.write(f"{PACKAGES_DIR}/{package}/patches/{filename}", patch)
     for package in sorted(ws.changed_packages):
-        codex_rel = f"{PACKAGES_DIR}/{package}/.codex-plugin/plugin.json"
-        codex = json.loads(ws.read(codex_rel))
-        match = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)", codex["version"])
-        if not match:
-            raise ApplyError(f"cannot bump non-numeric plugin version: {codex['version']}")
-        version = f"{match[1]}.{match[2]}.{int(match[3]) + 1}"
-        codex["version"] = version
-        ws.write(codex_rel, json.dumps(codex, indent=2) + "\n")
+        ws.write(CATALOG_FILE, _bump_plugin_version(ws.read(CATALOG_FILE), package))
 
 
-def _remove_selection(text: str, name: str) -> str:
-    blocks = re.split(r"(?m)(?=^\[\[)", text)
+def _catalog_blocks(text: str) -> list[str]:
+    """marketplace.toml split before every table header, so edits stay textual."""
+    return re.split(r"(?m)(?=^\[)", text)
+
+
+def _bump_plugin_version(text: str, package: str) -> str:
+    blocks = _catalog_blocks(text)
+    for index, block in enumerate(blocks):
+        if block.startswith(f"[plugins.{package}]"):
+            match = re.search(r'(?m)^version = "(\d+)\.(\d+)\.(\d+)"$', block)
+            if not match:
+                raise ApplyError(f"cannot bump the version of {package}: expected version = \"X.Y.Z\"")
+            bumped = f'version = "{match[1]}.{match[2]}.{int(match[3]) + 1}"'
+            blocks[index] = block[:match.start()] + bumped + block[match.end():]
+            return "".join(blocks)
+    raise ApplyError(f"no [plugins.{package}] table in marketplace.toml")
+
+
+def _remove_selection(text: str, package: str, name: str) -> str:
     result = []
     removed = False
-    for block in blocks:
-        data = tomllib.loads(block)
-        if data.get("skills", [{}])[0].get("name") == name:
+    for block in _catalog_blocks(text):
+        if block.startswith(f"[[plugins.{package}.skills]]") and tomllib.loads(block.replace(
+                f"[[plugins.{package}.skills]]", "[[skills]]", 1))["skills"][0].get("name") == name:
             removed = True
         else:
             result.append(block)
@@ -972,7 +1012,7 @@ def _plan_native_lock(ws: _Workspace, manifest_rel: str, lock_rel: str) -> None:
     from artifact import tree_files
     with tempfile.TemporaryDirectory(prefix="skill-console-lock-") as temporary:
         project = Path(temporary)
-        shutil.copytree(ws.repo_root / "agent-marketplace/apm_modules", project / "apm_modules")
+        shutil.copytree(ws.repo_root / "agent-marketplace/vendor/apm_modules", project / "apm_modules")
         (project / "apm.yml").write_text(ws.read(manifest_rel))
         (project / "apm.lock.yaml").write_text(ws.read(lock_rel))
         before = tree_files(project / "apm_modules")
@@ -990,13 +1030,13 @@ def _plan_native_lock(ws: _Workspace, manifest_rel: str, lock_rel: str) -> None:
 
 def _plan_deletion(ws: _Workspace, row: Row, op: Operation) -> None:
     package_rel = f"{PACKAGES_DIR}/{row.package}"
-    selection_rel = f"{package_rel}/publish.toml"
-    manifest_rel, lock_rel = "agent-marketplace/apm.yml", "agent-marketplace/apm.lock.yaml"
+    selection_rel = CATALOG_FILE
+    manifest_rel, lock_rel = "agent-marketplace/vendor/apm.yml", "agent-marketplace/vendor/apm.lock.yaml"
     skill_rel = f"{package_rel}/skills/{row.directory}"
     dependency = str(op.fields["apm_dep"])
     excluded = (selection_rel, manifest_rel, lock_rel, f"{package_rel}/patches",
                 f"{package_rel}/overlays/skills/{row.directory}", "agent-marketplace/build",
-                "agent-marketplace/apm_modules")
+                "agent-marketplace/vendor/apm_modules")
     guard = DeletionGuard(row.name, row.directory, row.package, skill_rel, dependency,
                           bool(op.fields["remove_apm_dep"]), excluded)
     blocking, mentions = _blocking_references(ws.repo_root, guard)
@@ -1015,7 +1055,7 @@ def _plan_deletion(ws: _Workspace, row: Row, op: Operation) -> None:
     overlay_rel = f"{package_rel}/overlays/skills/{row.directory}"
     if (ws.repo_root / overlay_rel).exists():
         ws.delete_tree(overlay_rel)
-    ws.write(selection_rel, _remove_selection(selection, row.directory))
+    ws.write(selection_rel, _remove_selection(selection, row.package, row.directory))
     for patch in sorted((ws.repo_root / package_rel / "patches").glob("*.patch")):
         relative = patch.relative_to(ws.repo_root).as_posix()
         text = ws.read(relative)

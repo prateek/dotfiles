@@ -7,7 +7,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[3]
 RUNNER = ROOT / 'scripts/doc-coauthoring-evals'
-FIXTURE_PLAN = ROOT / 'agent-marketplace/packages/core/skills/doc-coauthoring/evals/files/accretion/docs/plans/export-plan.md'
+FIXTURE_PLAN = ROOT / 'agent-marketplace/src/core/skills/doc-coauthoring/evals/files/accretion/docs/plans/export-plan.md'
 
 EVERGREEN = '''# JSON export
 

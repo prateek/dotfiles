@@ -63,7 +63,7 @@ trusted_hash = "sha256:live"
         self.assertEqual(data["marketplaces"]["unmanaged-example"], current["marketplaces"]["unmanaged-example"])
         self.assertEqual(data["marketplaces"]["prateek-local"]["source_type"], "local")
         self.assertEqual(data["marketplaces"]["prateek-local"]["source"], str(self.home / ".agents/plugins"))
-        for name, enabled in package_policy("codex").items():
+        for name, enabled in package_policy(retired=False).items():
             with self.subTest(plugin=name):
                 self.assertIs(data["plugins"][name]["enabled"], enabled)
         self.assertIs(data["plugins"]["stale@prateek-local"]["enabled"], False)
@@ -94,6 +94,6 @@ note = "preserve"
         result = self.command(self.modify)
         data = tomllib.loads(result.stdout.decode())
         self.assertEqual(data["marketplaces"]["prateek-local"]["source_type"], "local")
-        for name, enabled in package_policy("codex").items():
+        for name, enabled in package_policy(retired=False).items():
             with self.subTest(plugin=name):
                 self.assertIs(data["plugins"][name]["enabled"], enabled)

@@ -10,7 +10,7 @@ superseded_by: 0058-acpx-shared-tmux-view.md
 status_detail: "ADR 0058 keeps the shared-view contract and moves it from Herdr to tmux after Cortex XDR began terminating Herdr on the work Mac."
 related:
   - 0058-acpx-shared-tmux-view.md
-current_guidance: ../../agent-marketplace/packages/utils-agent/skills/acpx/SKILL.md
+current_guidance: ../../agent-marketplace/src/utils-agent/skills/acpx/SKILL.md
 ---
 
 # ADR 0036: Share one Herdr view for ACPX runs

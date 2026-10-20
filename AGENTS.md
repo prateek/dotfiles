@@ -10,7 +10,7 @@ This is the repo-specific contract for coding agents working in Prateek's dotfil
 - `home/.chezmoitemplates/`: shared templates, including Brewfile, macOS defaults, and plist merge helpers.
 - `.agents/`: repo-local agent surface for this checkout. Keep repo-specific guidance in root `AGENTS.md`; keep repo-local skills and tool adapters under `.agents/`.
 - `home/dot_agents/`: chezmoi-managed machine agent surface. Machine-wide `AGENTS.md`, docs, and workflow conventions materialize under `~/.agents`.
-- `agent-marketplace/`: portable machine-wide skill publishing project with its own justfile. One root APM manifest, lock, and committed cache serve all plugins; `packages/` holds authored skills, selections, patches, and native metadata, outside the chezmoi source root.
+- `agent-marketplace/`: portable machine-wide skill publishing project with its own justfile. It is sorted by origin: `vendor/` holds the one APM manifest, lock, and committed cache that serve all plugins; `src/` holds authored skills, patches, and overlays; `marketplace.toml` holds the catalog and each plugin's version, manifest, and selections. It sits outside the chezmoi source root.
 - `home/dot_claude/`: chezmoi-managed Claude config for this machine. Claude reads the
   machine-wide instructions through `~/AGENTS.md` (`home/symlink_AGENTS.md`), not a
   `CLAUDE.md`; [Agent Surfaces](docs/references/chezmoi-architecture.md#agent-surfaces)
@@ -49,7 +49,7 @@ adapters for compatibility needs and intentional customizations.
 
 For substantial document creation, implementation planning, or revision that
 changes what a reader should do, the pinned authoring owner is the checkout's
-[doc-coauthoring skill](agent-marketplace/packages/core/skills/doc-coauthoring/SKILL.md).
+[doc-coauthoring skill](agent-marketplace/src/core/skills/doc-coauthoring/SKILL.md).
 Resolve conflicting declarations using the client's instruction precedence; if
 none wins, report the conflict and leave authoring pending. Read the selected
 entrypoint and wait for its complete result. On a failed read, stop tool use and
@@ -59,7 +59,7 @@ remain local.
 
 When creating plans or ADRs, updating documented progress, settling research,
 or completing documented work, read the checkout's
-[document-lifecycle skill](agent-marketplace/packages/core/skills/document-lifecycle/SKILL.md).
+[document-lifecycle skill](agent-marketplace/src/core/skills/document-lifecycle/SKILL.md).
 Its contract owns the shared rules; [Document Lifecycle](docs/document-lifecycle.md)
 owns this repo's paths, commands, and exceptions. Use this checkout's version
 when an installed plugin differs.

@@ -14,15 +14,15 @@ class ConsoleWriteTests(ConsoleRepoCase):
 
         self.add_synthetic_vendor()
         project = self.repo / "agent-marketplace"
-        package = project / "packages/synth"
-        (package / "publish.toml").write_text(
-            '[[payloads]]\n'
+        catalog = project / "marketplace.toml"
+        catalog.write_text(catalog.read_text().split("\n[[plugins.synth.skills]]")[0].rstrip() + "\n\n"
+            '[[plugins.synth.payloads]]\n'
             f'dependency = "example/repo/skills/{self.synth_skill}"\n'
             'path = "skills"\ntarget = "skills"\n'
         )
         self.command(marketplace_build_command(project))
         published = project / "build/marketplace/plugins/synth/skills" / self.synth_skill
-        source = project / "apm_modules/example/repo/skills" / self.synth_skill / "skills" / self.synth_skill / "SKILL.md"
+        source = project / "vendor/apm_modules/example/repo/skills" / self.synth_skill / "skills" / self.synth_skill / "SKILL.md"
         before = source.read_bytes()
         identity = f"synth:{self.synth_skill}"
         planned = plan(decisions(describe(identity, "Collection edit.")),
@@ -43,7 +43,7 @@ class ConsoleWriteTests(ConsoleRepoCase):
 
         self.add_synthetic_vendor()
         project = self.repo / "agent-marketplace"
-        package = project / "packages/synth"
+        package = project / "src/synth"
         patches = package / "patches"
         patches.mkdir()
         published = project / "build/marketplace/plugins/synth/skills" / self.synth_skill
@@ -79,8 +79,8 @@ class ConsoleWriteTests(ConsoleRepoCase):
 
         self.add_synthetic_vendor()
         project = self.repo / "agent-marketplace"
-        package = project / "packages/synth"
-        source = project / "apm_modules/example/repo/skills" / self.synth_skill / "skills" / self.synth_skill / "SKILL.md"
+        package = project / "src/synth"
+        source = project / "vendor/apm_modules/example/repo/skills" / self.synth_skill / "skills" / self.synth_skill / "SKILL.md"
         original = source.read_text()
         patch = package / "patches/001-reviewed.patch"
         patch.parent.mkdir()
@@ -141,13 +141,13 @@ class ConsoleWriteTests(ConsoleRepoCase):
 
         self.add_synthetic_vendor()
         project = self.repo / "agent-marketplace"
-        package = project / "packages/synth"
+        package = project / "src/synth"
         sidecar = package / "overlays/skills" / self.synth_skill / "agents/openai.yaml"
         sidecar.parent.mkdir()
         sidecar.write_text("interface:\n  display_name: Preserve me\npolicy:\n  allow_implicit_invocation: true\n")
         self.command(marketplace_build_command(project))
         published = project / "build/marketplace/plugins/synth/skills" / self.synth_skill
-        source = project / "apm_modules/example/repo/skills" / self.synth_skill / "skills" / self.synth_skill / "SKILL.md"
+        source = project / "vendor/apm_modules/example/repo/skills" / self.synth_skill / "skills" / self.synth_skill / "SKILL.md"
         original = source.read_bytes()
         identity = f"synth:{self.synth_skill}"
         document = decisions(describe(identity, "Reviewed imported description."),
@@ -185,7 +185,7 @@ class ConsoleWriteTests(ConsoleRepoCase):
 
         repo, staging = Path(str(self.repo)), Path(str(self.work / "staging"))
         self.assertTrue(git_status(repo) == "", "the copy must start clean")
-        skill = "agent-marketplace/packages/core/skills/code-gardening/SKILL.md"
+        skill = "agent-marketplace/src/core/skills/code-gardening/SKILL.md"
         package_toml = "home/.chezmoidata/agent_plugins.toml"
         self.assertFalse(tomllib.loads((repo / package_toml).read_text())["agent_plugins"]["design"]["default_loaded"])
         rows = [skill_row(repo, "core", "code-gardening")]
@@ -199,7 +199,7 @@ class ConsoleWriteTests(ConsoleRepoCase):
             edit = by_path[path]
             self.assertTrue(edit.kind == "write" and edit.before_sha256 == before[path], f"{path}: before hash")
             self.assertTrue(edit.after_sha256 == __import__("hashlib").sha256(edit.content.encode()).hexdigest(), f"{path}: after hash")
-        self.assertIn("agent-marketplace/packages/core/.codex-plugin/plugin.json", by_path)
+        self.assertIn("agent-marketplace/marketplace.toml", by_path)
         self.assertNotIn("home/.chezmoitemplates/agent-codex-plugin-config.toml.tmpl", by_path)
         self.assertTrue(git_status(repo) == "", f"plan must not touch the worktree:\n{git_status(repo)}")
 
@@ -219,7 +219,7 @@ class ConsoleWriteTests(ConsoleRepoCase):
         from skill_console.decisions import commit, plan, stage
 
         repo, staging = Path(str(self.repo)), Path(str(self.work / "staging"))
-        skill = "agent-marketplace/packages/core/skills/code-gardening/SKILL.md"
+        skill = "agent-marketplace/src/core/skills/code-gardening/SKILL.md"
         original = (repo / skill).read_bytes()
         rows = [skill_row(repo, "core", "code-gardening")]
         doc = decisions(describe("core:code-gardening", "Dirty target check."))
@@ -257,7 +257,7 @@ class ConsoleWriteTests(ConsoleRepoCase):
         self.assertTrue(ok is False, "a 1100-character description must fail validate-agent-packages in the copy")
         self.assertTrue("validate-agent-packages" in reason and "1024" in reason, f"reason must name the failing step: {reason!r}")
         self.assertTrue(git_status(repo) == "", f"the worktree must be untouched:\n{git_status(repo)}")
-        self.assertTrue("x" * 1100 in (staging / "agent-marketplace/packages/core/skills/code-gardening/SKILL.md").read_text(), "the staging copy keeps the failing edit for inspection")
+        self.assertTrue("x" * 1100 in (staging / "agent-marketplace/src/core/skills/code-gardening/SKILL.md").read_text(), "the staging copy keeps the failing edit for inspection")
 
     def test_hash_precondition_at_commit_time(self):
         from pathlib import Path
@@ -265,8 +265,8 @@ class ConsoleWriteTests(ConsoleRepoCase):
         from skill_console.decisions import commit, plan, stage
 
         repo, staging = Path(str(self.repo)), Path(str(self.work / "staging"))
-        first = "agent-marketplace/packages/core/skills/code-gardening/SKILL.md"
-        second = "agent-marketplace/packages/core/skills/decomment/SKILL.md"
+        first = "agent-marketplace/src/core/skills/code-gardening/SKILL.md"
+        second = "agent-marketplace/src/core/skills/decomment/SKILL.md"
         rows = [skill_row(repo, "core", "code-gardening"), skill_row(repo, "core", "decomment")]
         doc = decisions(describe("core:code-gardening", "First edit."), describe("core:decomment", "Second edit."))
         apply_plan = plan(doc, rows, repo)
@@ -338,7 +338,7 @@ class ConsoleWriteTests(ConsoleRepoCase):
 
         repo, staging = Path(str(self.repo)), Path(str(self.work / "staging"))
         head = subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"], capture_output=True, text=True, check=True).stdout.strip()
-        skill = "agent-marketplace/packages/core/skills/code-gardening/SKILL.md"
+        skill = "agent-marketplace/src/core/skills/code-gardening/SKILL.md"
         real = "docs/code-gardening-SKILL.md"
         rows = [skill_row(repo, "core", "code-gardening")]
         doc = decisions(describe("core:code-gardening", "Through the link."))
@@ -376,30 +376,29 @@ class ConsoleWriteTests(ConsoleRepoCase):
         from skill_console.decisions import plan
         from artifact import tree_files
         repo, skill = self.repo, self.synth_skill
-        package = "agent-marketplace/packages/synth"
-        manifest, lock = "agent-marketplace/apm.yml", "agent-marketplace/apm.lock.yaml"
-        selection = f"{package}/publish.toml"
+        package = "agent-marketplace/src/synth"
+        manifest, lock = "agent-marketplace/vendor/apm.yml", "agent-marketplace/vendor/apm.lock.yaml"
+        catalog = "agent-marketplace/marketplace.toml"
         overlay = f"{package}/overlays/skills/{skill}"
-        codex = f"{package}/.codex-plugin/plugin.json"
         target = row(f"synth:{skill}", "synth", skill, Origin.REPO_VENDOR, str(repo / package / "skills" / skill))
-        before = tree_files(repo / "agent-marketplace/apm_modules")
+        before = tree_files(repo / "agent-marketplace/vendor/apm_modules")
         def delete(remove):
             return decisions(op(Op.DELETE_SKILL, f"synth:{skill}", apm_dep=f"example/repo/skills/{skill}", dep_owns_skills=1, remove_apm_dep=remove))
         edits = {edit.relpath: edit for edit in plan(delete(True), [target], repo).edits}
-        self.assertEqual(set(edits), {selection, overlay, manifest, lock, codex})
+        self.assertEqual(set(edits), {catalog, overlay, manifest, lock})
         self.assertEqual(edits[overlay].kind, "delete-tree")
-        self.assertNotIn(skill, edits[selection].content)
-        self.assertIn('name = "twin-a"', edits[selection].content)
+        self.assertNotIn(skill, edits[catalog].content)
+        self.assertIn('name = "twin-a"', edits[catalog].content)
         self.assertNotIn(skill, edits[manifest].content)
         self.assertIn("example/repo/skills/twins", edits[manifest].content)
         self.assertNotIn(skill, edits[lock].content)
         self.assertIn("virtual_path: skills/twins", edits[lock].content)
         self.assertIn("deployments: []", edits[lock].content)
-        self.assertIn('"version": "1.0.1"', edits[codex].content)
+        self.assertIn('[plugins.synth]\nversion = "1.0.1"\n', edits[catalog].content)
         kept = {edit.relpath: edit for edit in plan(delete(False), [target], repo).edits}
-        self.assertEqual(set(kept), {selection, overlay, codex})
+        self.assertEqual(set(kept), {catalog, overlay})
         self.assertIn(f"example/repo/skills/{skill}", (repo / manifest).read_text())
-        self.assertEqual(tree_files(repo / "agent-marketplace/apm_modules"), before)
+        self.assertEqual(tree_files(repo / "agent-marketplace/vendor/apm_modules"), before)
         self.assertEqual(git_status(repo), "")
 
     def test_a_failed_tree_removal_leaves_the_skill_at_its_own_path(self):
@@ -411,9 +410,9 @@ class ConsoleWriteTests(ConsoleRepoCase):
         from skill_console.decisions import commit, plan, stage
 
         repo, skill, staging = Path(str(self.repo)), str(self.synth_skill), Path(str(self.work / "staging"))
-        skill_rel = f"agent-marketplace/packages/synth/overlays/skills/{skill}"
+        skill_rel = f"agent-marketplace/src/synth/overlays/skills/{skill}"
         skill_dir = repo / skill_rel
-        target = row(f"synth:{skill}", "synth", skill, Origin.REPO_VENDOR, str(repo / "agent-marketplace/packages/synth/skills" / skill))
+        target = row(f"synth:{skill}", "synth", skill, Origin.REPO_VENDOR, str(repo / "agent-marketplace/src/synth/skills" / skill))
         doc = decisions(op(Op.DELETE_SKILL, f"synth:{skill}", apm_dep=f"example/repo/skills/{skill}", dep_owns_skills=1, remove_apm_dep=True))
         batch = stage(plan(doc, [target], repo), repo, staging)
 
@@ -445,7 +444,8 @@ class ConsoleWriteTests(ConsoleRepoCase):
         from skill_console.decisions import commit, plan, stage
 
         repo, skill, staging = Path(str(self.repo)), str(self.synth_skill), Path(str(self.work / "staging"))
-        package = "agent-marketplace/packages/synth"
+        package = "agent-marketplace/src/synth"
+        catalog = "agent-marketplace/marketplace.toml"
         skill_rel = f"{package}/skills/{skill}"
         target = row(f"synth:{skill}", "synth", skill, Origin.REPO_VENDOR, str(repo / skill_rel))
         doc = decisions(op(Op.DELETE_SKILL, f"synth:{skill}", apm_dep=f"example/repo/skills/{skill}", dep_owns_skills=1, remove_apm_dep=True))
@@ -461,21 +461,21 @@ class ConsoleWriteTests(ConsoleRepoCase):
             git(repo, "add", "-A")
             git(repo, "commit", "-q", "-m", "concurrent change")
             report = commit(batch, repo, allow_dirty=False)
-            self.assertTrue(report.applied == () and skill in (repo / package / "publish.toml").read_text(), f"nothing may move: {report}")
+            self.assertTrue(report.applied == () and skill in (repo / catalog).read_text(), f"nothing may move: {report}")
             git(repo, "reset", "-q", "--hard", "synth")
             return report.failure or ""
 
 
         failure = commit_after(staged("reference"), "tests/uses-synth.zsh", f"source {skill_rel}/scripts/tool.py\n")
         self.assertTrue("tests/uses-synth.zsh" in failure and "re-plan" in failure, f"a new tracked reference must refuse the commit: {failure!r}")
-        for sibling in (f"{package}/publish.toml", "agent-marketplace/packages/core/publish.toml"):
+        for sibling in ("synth", "core"):
             with self.subTest(sibling=sibling):
-                text = (repo / sibling).read_text() + f'\n[[skills]]\nname = "new-sibling"\ndependency = "example/repo/skills/{skill.upper()}"\npath = "."\n'
-                failure = commit_after(staged(sibling), sibling, text)
+                text = (repo / catalog).read_text() + f'\n[[plugins.{sibling}.skills]]\nname = "new-sibling"\ndependency = "example/repo/skills/{skill.upper()}"\npath = "."\n'
+                failure = commit_after(staged(sibling), catalog, text)
                 self.assertIn("owns 2", failure)
                 self.assertIn("re-plan", failure)
-        payload = "agent-marketplace/packages/core/publish.toml"
-        text = (repo / payload).read_text() + f'\n[[payloads]]\ndependency = "example/repo/skills/{skill.upper()}"\npath = "scripts"\ntarget = "shared-tools"\n'
+        payload = catalog
+        text = (repo / payload).read_text() + f'\n[[plugins.core.payloads]]\ndependency = "example/repo/skills/{skill.upper()}"\npath = "scripts"\ntarget = "shared-tools"\n'
         failure = commit_after(staged("payload"), payload, text)
         self.assertIn("supporting payload", failure)
         self.assertIn("re-plan", failure)
@@ -485,6 +485,6 @@ class ConsoleWriteTests(ConsoleRepoCase):
             plan(doc, [target], repo)
         git(repo, "restore", "--", payload)
         report = commit(staged("clean"), repo, allow_dirty=False)
-        self.assertTrue(report.failure is None and f"{package}/publish.toml" in report.applied and "agent-marketplace/apm.lock.yaml" in report.applied, f"an unchanged tree commits: {report}")
+        self.assertTrue(report.failure is None and catalog in report.applied and "agent-marketplace/vendor/apm.lock.yaml" in report.applied, f"an unchanged tree commits: {report}")
         git(repo, "reset", "-q", "--hard", "synth")
         self.assertTrue(git_status(repo) == "", "clean again")

@@ -168,7 +168,7 @@ locally verified 2026-05-10):
   automatic activation while keeping explicit `$skill` invocation. This is
   the closest equivalent to `disable-model-invocation`. A local example ships
   in the experimental package:
-  `agent-marketplace/packages/experimental/skills/image-gen-nano-banana/agents/openai.yaml`.
+  `agent-marketplace/src/experimental/skills/image-gen-nano-banana/agents/openai.yaml`.
 - `~/.codex/config.toml`: `[[skills.config]]` with `path` and
   `enabled = false` disables a skill entirely, per path.
 

@@ -7,7 +7,7 @@ created: 2026-09-28
 updated: 2026-09-28
 related:
   - ../references/agent-marketplace.md
-  - ../../agent-marketplace/packages/pstack/publish.toml
+  - ../../agent-marketplace/marketplace.toml
   - ../../home/.chezmoidata/agent_plugins.toml
 status_detail: "Measured against pstack 0.15.5 at ecc249f1 and native Claude/Codex clients; repeat when the upstream pin or client loading behavior changes."
 ---

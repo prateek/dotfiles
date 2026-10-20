@@ -56,7 +56,7 @@ class PackageTestCase(RepoTestCase):
         super().setUp()
         self.repo = self.work / "repo"
         self.project = self.repo / "agent-marketplace"
-        self.packages = self.project / "packages"
+        self.packages = self.project / "src"
         self.packages.mkdir(parents=True)
         shutil.copytree(PROJECT / "scripts", self.project / "scripts")
         self.python = PROJECT / ".venv/bin/python"
@@ -76,19 +76,23 @@ class PackageTestCase(RepoTestCase):
     def tool(self, name, *args, **kwargs):
         return self.command([sys.executable, str(SCRIPTS / name), *map(str, args)], **kwargs)
 
-    def package(self, name="sample", *, loaded=False, codex=True, claude=True):
+    def package(self, name="sample", *, loaded=False):
         path = self.packages / name
         skill = path / "skills" / (name + "-skill")
         skill.mkdir(parents=True)
         (skill / "SKILL.md").write_text(f"---\nname: {name}-skill\ndescription: Fixture skill.\n---\n\nHello.\n")
-        (path / ".codex-plugin").mkdir()
-        (path / ".codex-plugin/plugin.json").write_text(json.dumps({"name": name, "version": "1.0.0", "skills": "./skills/", "description": "Example skills", "license": "UNLICENSED"}))
         with self.policy.open("a") as policy:
-            policy.write(f"[agent_plugins.{name}]\ndefault_loaded = {str(loaded).lower()}\nclaude = {str(claude).lower()}\ncodex = {str(codex).lower()}\n\n")
-        self.entries.append({"name": name, "source": f"./plugins/{name}", "category": "Productivity"})
+            policy.write(f"[agent_plugins.{name}]\ndefault_loaded = {str(loaded).lower()}\n\n")
+        self.entries.append(name)
         # JSON is an APM-supported YAML subset.
-        (self.project / "apm.yml").write_text(json.dumps({"name": "prateek-local", "version": "1.0.0", "license": "UNLICENSED",
-            "marketplace": {"owner": {"name": "Fixture"}, "outputs": {"claude": {}, "codex": {}}, "packages": self.entries}}))
+        (self.project / "vendor").mkdir(exist_ok=True)
+        (self.project / "vendor/apm.yml").write_text(json.dumps({"name": "prateek-local-sources", "version": "0.0.0"}))
+        (self.project / "marketplace.toml").write_text(
+            'name = "prateek-local"\nversion = "1.0.0"\ndescription = "Fixture"\nlicense = "UNLICENSED"\n'
+            'category = "Productivity"\noutputs = ["claude", "codex"]\n\n[owner]\nname = "Fixture"\n'
+            + "".join(f'\n[plugins.{entry}]\nversion = "1.0.0"\n\n[plugins.{entry}.manifest]\n'
+                      'description = "Example skills"\nlicense = "UNLICENSED"\nskills = "./skills/"\n'
+                      for entry in self.entries))
         return path
 
     def build(self):
@@ -143,7 +147,7 @@ class PackageValidationTests(PackageTestCase):
         self.assertEqual((target.with_name("packages.retired") / installed.relative_to(target)).read_bytes(), source.read_bytes())
     def test_selected_inventory_and_explicit_policy(self):
         self.package("on", loaded=True)
-        self.package("off", codex=False, claude=False)
+        self.package("off")
         result = self.tool("validate-agent-packages")
         self.assertEqual(result.stdout, b"OK validate-agent-packages\n")
         inventory = json.loads(self.tool("inventory-agent-skills").stdout)["packages"]

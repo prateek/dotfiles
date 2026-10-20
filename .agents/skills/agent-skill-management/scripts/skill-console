@@ -86,7 +86,7 @@ from skill_console.inventory import (
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parents[3]
-PACKAGES_ROOT = REPO_ROOT / "agent-marketplace/packages"
+PACKAGES_ROOT = REPO_ROOT / "agent-marketplace/src"
 TEMPLATE_PATH = SCRIPT_DIR.parent / "templates/skill-console.html"
 BUILTINS_FIXTURE = SCRIPT_DIR / "skill_console/builtins.json"
 STATE_HOME = Path(os.environ.get("XDG_STATE_HOME") or Path.home() / ".local/state")

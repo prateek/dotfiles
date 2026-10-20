@@ -58,47 +58,64 @@ provide an equivalent source export.
 
 ## Source layout
 
-The project root owns one dependency graph shared by all plugins:
+The tree is sorted by origin. Anything outside `vendor/` and `build/` was
+written by hand:
 
-| Input | Ownership |
+| Path | Origin and ownership |
 | --- | --- |
-| `apm.yml` | Marketplace membership and all `devDependencies.apm` declarations |
-| `apm.lock.yaml` | APM's accepted resolution; acquire it through APM |
-| `apm_modules/` | Pristine fetched content and normalization receipts |
+| `marketplace.toml` | Hand-written: the catalog's identity, version, owner, outputs, default category, and ordered plugin list |
+| `src/<plugin>/` | Hand-written: one directory per plugin (see [Edit a package](#edit-a-package)) |
+| `vendor/` | Fetched by APM and never hand-edited; the APM project root, holding one dependency graph shared by all plugins |
+| `vendor/apm.yml` | All `devDependencies.apm` declarations, under a fixed placeholder name and version |
+| `vendor/apm.lock.yaml` | APM's accepted resolution; acquire it through APM |
+| `vendor/apm_modules/` | Pristine fetched content and normalization receipts |
+| `build/` | Built output; ignored |
 
 ## Edit a package
 
-Each directory under `packages/` defines a separate native plugin. It has no APM
-manifest, lock, or cache:
+Each `[plugins.<name>]` table in `marketplace.toml` defines a separate native
+plugin, in catalog order:
+
+```toml
+[plugins.example]
+version = "1.2.3"
+display_name = "Example"        # the shared plugin.json template
+# hooks = true                  # template only: emit "hooks": {} for Codex
+
+[[plugins.example.skills]]
+name = "curated-name"
+dependency = "owner/repo"
+path = ".apm/skills/upstream-name"
+```
+
+A plugin whose `plugin.json` differs from the template carries a verbatim
+`[plugins.<name>.manifest]` table instead of `display_name`. The build emits
+every `plugin.json` in one canonical key order and rejects keys outside it.
+
+`src/<name>/` holds the plugin's hand-written files, and exists only when it
+has some. It has no APM manifest, lock, or cache:
 
 | Input | Ownership |
 | --- | --- |
-| `skills/<name>/` | Authored skills, edited directly |
-| `publish.toml` | Selected cached paths, collection payloads, curated aliases, extra payloads |
+| `skills/<name>/` | Authored skills, edited directly, each with its own `tests/` |
 | `patches/*.patch` | Reviewed edits applied in filename order to temporary plugin trees |
 | `overlays/` | Local additions at their published relative paths |
-| `.codex-plugin/plugin.json` | Plugin identity, version, shared metadata, and Codex interface fields |
 | `hooks/`, `evals/`, other native payloads | Authored supporting files |
 
 Use native filenames throughout this project. Chezmoi does not traverse this
 source directory, so no `literal_` conversion is needed.
 
-Selections refer to dependency identities in the root lock and paths within their
+Selections refer to dependency identities in the lock and paths within their
 shared cache roots. Several plugins can select the same input; each plugin's
 patches and overlays apply to its own build copy:
 
 ```toml
-[[skills]]
-name = "curated-name"
-dependency = "owner/repo"
-path = ".apm/skills/upstream-name"
-
-[[payloads]]
+[[plugins.example.payloads]]
 dependency = "owner/repo"
 path = ".apm/hooks"
 target = "hooks"
 
-[[payloads]]
+[[plugins.example.payloads]]
 dependency = "owner/repo"
 path = "LICENSE"
 target = "licenses/owner/repo/LICENSE"
@@ -112,7 +129,7 @@ Upstream additions and retirements then flow through the collection, including
 supporting files, without an individual skill list. Root notices still need
 explicit payload selections.
 
-An adapter can set `mirror_invocation_controls = true` in `publish.toml`. After
+An adapter can set `mirror_invocation_controls = true` in its plugin table. After
 patches and overlays, the build mirrors a human-only restriction from either
 frontmatter or a Codex sidecar into both controls, preserving sidecar metadata.
 It never changes the accepted cache or relaxes a restriction. Ordinary packages
@@ -140,15 +157,18 @@ For a human-only skill, pair `disable-model-invocation: true` in `SKILL.md` with
 checks both directions. Hook-bearing packages keep `hooks: {}` in their Codex
 manifest under the current Codex skills-only policy.
 
-Bump the version in `.codex-plugin/plugin.json` when published content or metadata
-changes. The build derives a temporary APM publication manifest from that file,
+Bump the plugin's `version` in `marketplace.toml` when published content or
+metadata changes. The build generates `.codex-plugin/plugin.json`, then derives a
+temporary APM publication manifest from it,
 with `targets: [claude]` and no `dependencies` key, then calls native APM to generate
 the Claude manifest and both catalogs. The temporary manifests are removed after
 packing; consumers receive native plugin files and the release receipt.
 
-The root `apm.yml` lists each plugin's relative output path. Catalogs describe
-availability independently of a machine's activation policy. Do not add
-per-plugin APM projects or duplicate dependency declarations in `publish.toml`.
+The build fails for a `src/` directory without a plugin table, and generates
+APM's catalog manifest from the tables. Bump the catalog's top-level `version`
+when the catalog changes. Catalogs describe availability independently of a
+machine's activation policy. Do not add per-plugin APM projects, per-plugin
+`publish.toml` or `plugin.json` files, or duplicate dependency declarations.
 
 ## Acquire or update upstream inputs
 
@@ -161,7 +181,7 @@ Start with an accepted, clean cache and lock. Both commands refuse tracked,
 staged, untracked, and ignored pending cache/lock changes before calling APM:
 
 ```sh
-just fetch                   # native apm lock at the project root
+just fetch                   # native apm lock in vendor/
 just update                  # native apm lock --update for all root dependencies
 ```
 
@@ -170,6 +190,15 @@ locked version, and there is no global `apm`. `dotpkgs status apm:apm-cli`
 reports newer releases, and `dotpkgs update apm:apm-cli` plans the re-lock,
 environment sync, and `just check` for review. The release receipt records the
 installed version.
+
+**APM is pinned to `>=0.30,<0.31`.** From 0.31.0, `apm lock` (and so `just fetch`
+and `just update`) fails whenever an Agent Plugins 1.0 package is in the graph:
+pstack's root `plugin.json` declares that format. APM deploys such packages only
+to its Copilot target, and microsoft/apm#2806 made an install with nothing
+deployed exit non-zero. Lockfile-only mode never deploys, so every lock fails.
+Builds are unaffected; they read the committed cache. Lift the pin only after an
+upstream fix, verified with `just fetch`. The plan's follow-ups track replacing
+APM.
 
 Edit root declarations before `fetch` when adding or removing dependencies.
 `PACKAGE=...` is rejected. An update leaves the complete shared cache and lock
@@ -180,18 +209,18 @@ outside APM's cache and survive acquisition.
 APM locks do not deploy skills or configure agents. Keep lockfiles free of old
 agent deployment claims. APM Git inputs have content hashes and `.apm-pin`
 receipts; both are checked using the pinned producer. Local-directory APM cache
-entries lack those receipts/hashes in 0.29.1, so this publication workflow uses
+entries lack those receipts/hashes in 0.29.1 and later, so this publication workflow uses
 `skills/` for authored local content instead.
 
 Upstream `.gitignore` files can hide new fetched files. Include the **complete**
 cache in review and acceptance:
 
 ```sh
-git add --intent-to-add --force -- apm_modules
+git add --intent-to-add --force -- vendor/apm_modules
 git diff -- .
 # After review, stage the lock, complete cache, metadata, and local changes together.
-git add --force -- apm_modules
-git add -- apm.lock.yaml apm.yml packages/core
+git add --force -- vendor/apm_modules
+git add -- vendor/apm.lock.yaml vendor/apm.yml src/core
 ```
 
 The project attributes preserve raw cache line endings. Native Git commits retain
@@ -203,11 +232,12 @@ Before removing a declaration, check every plugin's skill and supporting-payload
 selections for remaining uses. The console checks ownership across plugins both
 when planning a deletion and immediately before writing it. After removing a
 declaration, run `fetch` and confirm the resulting lock no longer contains that
-dependency. Only then, from the project root,
-consider `uv run --frozen apm prune --dry-run` followed by `uv run --frozen apm prune`. This order
-has been exercised with a surviving hooks dependency. A prune that removes keys
-from the lock itself may deploy surviving hooks. Leaving unused cache directories
-is safe: selections and the accepted dependency graph determine publication.
+dependency. Then remove the dependency's directory under `vendor/apm_modules/`
+with `git rm`. Avoid a real `apm prune`: in 0.29.1 through 0.34.0 it also registers plugins with
+GitHub Copilot in `.github/copilot/settings.local.json`, and a prune that removes
+keys from the lock itself may deploy surviving hooks. Leaving unused cache
+directories is safe: selections and the accepted dependency graph determine
+publication.
 
 We retain upstream license/notice files, including upstream-owned `SOURCE.md`
 files. We generate no per-skill `SOURCE.md`; repository identity and resolved
@@ -215,7 +245,7 @@ revisions come from native locks, and Git records acceptance.
 When selecting a subdirectory, review its upstream root for license and notice
 files and add explicit payload selections under `licenses/<owner>/<repo>/` for
 any texts that the selected tree does not already include. Inspect the exported
-plugin too; retaining notices only in `apm_modules/` does not ship them to clients.
+plugin too; retaining notices only in `vendor/apm_modules/` does not ship them to clients.
 
 ## Consumers and future work
 

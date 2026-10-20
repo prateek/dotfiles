@@ -1,9 +1,0 @@
-[[skills]]
-name = "better-writing"
-dependency = "forjd/better-writing"
-path = "skills/better-writing"
-
-[[payloads]]
-dependency = "forjd/better-writing"
-path = "LICENSE"
-target = "licenses/forjd/better-writing/LICENSE"

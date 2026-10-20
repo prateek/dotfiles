@@ -8,14 +8,14 @@ related:
   - ../plans/search-source-selection-plan.md
   - search-source-selection-qualification.md
   - ../adr/0054-shared-search-engine.md
-  - ../../agent-marketplace/packages/utils-agent/skills/search/SKILL.md
+  - ../../agent-marketplace/src/utils-agent/skills/search/SKILL.md
 status_detail: "Implementation qualification; source health, task quality and native activation are separate gates."
 summary: "Search implementation qualification, live canaries and remaining evidence gaps."
 ---
 
 # Search skill implementation qualification
 
-The authored [search skill](../../agent-marketplace/packages/utils-agent/skills/search/SKILL.md)
+The authored [search skill](../../agent-marketplace/src/utils-agent/skills/search/SKILL.md)
 ships a shared retrieval CLI with four area references, optional adapters,
 constraint/preference resolution, private checkpoints and host continuation.
 `skills-searcher` now sends prepared jobs through this engine while retaining
@@ -185,7 +185,7 @@ ignored `build/search-skill/opus-review-additional/`.
 ## Relevance selection and durable diagnostics follow-up
 
 The source follow-up in utils-agent 1.15.0 implements the approved
-[selection and diagnostics contract](../../agent-marketplace/packages/utils-agent/skills/search/references/selection.md).
+[selection and diagnostics contract](../../agent-marketplace/src/utils-agent/skills/search/references/selection.md).
 It adds automatic private XDG runs, redacted transport events, candidate pages,
 host-authored relevance assessments, evidence digests and final shortlist receipts.
 Skills-searcher separates fetch and display/shortlist limits and uses one engine

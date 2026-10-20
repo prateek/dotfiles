@@ -1,9 +1,0 @@
-[[payloads]]
-dependency = "ar9av/obsidian-wiki"
-path = ".apm/skills"
-target = "skills"
-
-[[payloads]]
-dependency = "ar9av/obsidian-wiki"
-path = "LICENSE"
-target = "licenses/ar9av/obsidian-wiki/LICENSE"

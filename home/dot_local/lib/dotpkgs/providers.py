@@ -318,9 +318,9 @@ def externals(ctx, check, names=None, include_declared=True):
 def apm(ctx, check, names=None, include_declared=True):
     import yaml
     root = ctx.repo / 'agent-marketplace'
-    manifest = yaml.safe_load((root / 'apm.yml').read_text())
+    manifest = yaml.safe_load((root / 'vendor/apm.yml').read_text())
     declarations = {apm_identity(d): d for d in manifest.get('devDependencies', {}).get('apm', [])}
-    lock = yaml.safe_load((root / 'apm.lock.yaml').read_text())
+    lock = yaml.safe_load((root / 'vendor/apm.lock.yaml').read_text())
     refs = {}
     rows = []
     for item in lock.get('dependencies', []):

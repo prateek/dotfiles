@@ -7,7 +7,7 @@ updated: 2026-10-16
 related:
   - ../plans/browser-runtime-controller-plan.md
   - ../plans/browser-skill-plan.md
-  - ../../agent-marketplace/packages/utils-agent/skills/browser/SKILL.md
+  - ../../agent-marketplace/src/utils-agent/skills/browser/SKILL.md
 status_detail: "Adversarial review of the runtime/controller plan against local skill source, agent-browser v0.38.2, and Obscura main/v0.2.4. Plan amended in place; no Obscura runtime trial performed."
 ---
 

@@ -10,7 +10,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 validator = runpy.run_path(str(
-    ROOT / "agent-marketplace/packages/core/skills/document-lifecycle/scripts/validate-doc-lifecycle.py"
+    ROOT / "agent-marketplace/src/core/skills/document-lifecycle/scripts/validate-doc-lifecycle.py"
 ))
 
 if __name__ == "__main__":

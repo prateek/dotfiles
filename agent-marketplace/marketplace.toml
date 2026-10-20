@@ -1,0 +1,195 @@
+# The published catalog. Each [plugins.<name>] table is one plugin, in catalog
+# order: its version, its native manifest (display_name for the shared template,
+# or a verbatim [plugins.<name>.manifest]), and its selections from vendor/.
+# The build generates every plugin.json and APM's catalog manifest from this file.
+name = "prateek-local"
+version = "1.2.0"
+description = "Reviewed local and curated skills"
+license = "UNLICENSED"
+category = "Productivity"
+outputs = ["claude", "codex"]
+
+[owner]
+name = "Prateek"
+
+[plugins.core]
+version = "1.4.6"
+display_name = "Core Agent Skills"
+
+[[plugins.core.skills]]
+name = "code-principles"
+dependency = "wiseiodev/skills/code-principles"
+path = "."
+
+[[plugins.core.skills]]
+name = "deep-research"
+dependency = "199-biotechnologies/claude-deep-research-skill"
+path = "."
+
+[[plugins.core.skills]]
+name = "writing-clearly-and-concisely"
+dependency = "cygnusfear/claude-stuff/skills/writing-clearly-and-concisely"
+path = "."
+
+[plugins.design]
+version = "1.2.3"
+display_name = "Design"
+
+[plugins.experimental]
+version = "1.5.4"
+display_name = "Experimental"
+
+[[plugins.experimental.skills]]
+name = "cli-creator"
+dependency = "openai/skills/skills/.curated/cli-creator"
+path = "."
+
+[[plugins.experimental.skills]]
+name = "trycycle"
+dependency = "danshapiro/trycycle"
+path = "."
+
+[plugins.ios]
+version = "1.2.2"
+display_name = "iOS"
+
+[plugins.mattpocock]
+version = "1.2.3"
+display_name = "Matt Pocock Skills"
+
+[[plugins.mattpocock.payloads]]
+dependency = "mattpocock/skills"
+path = ".apm/skills"
+target = "skills"
+
+[[plugins.mattpocock.payloads]]
+dependency = "mattpocock/skills"
+path = "LICENSE"
+target = "licenses/mattpocock/skills/LICENSE"
+
+[plugins.obsidian-wiki]
+version = "1.3.2"
+display_name = "Obsidian Wiki"
+
+[[plugins.obsidian-wiki.payloads]]
+dependency = "ar9av/obsidian-wiki"
+path = ".apm/skills"
+target = "skills"
+
+[[plugins.obsidian-wiki.payloads]]
+dependency = "ar9av/obsidian-wiki"
+path = "LICENSE"
+target = "licenses/ar9av/obsidian-wiki/LICENSE"
+
+[plugins.pstack]
+version = "0.15.7"
+mirror_invocation_controls = true
+
+[plugins.pstack.manifest]
+description = "pstack engineering workflow skills from Cursor's plugin marketplace."
+homepage = "https://github.com/cursor/plugins/tree/main/pstack"
+repository = "https://github.com/cursor/plugins"
+license = "MIT"
+keywords = ["pstack", "poteto-mode", "workflow", "principles", "subagents"]
+skills = "./skills/"
+agents = "./agents/"
+
+[plugins.pstack.manifest.author]
+name = "Lauren Tan"
+
+[plugins.pstack.manifest.interface]
+displayName = "pstack"
+shortDescription = "Rigorous engineering workflow skills"
+longDescription = "Cursor's pstack workflow and engineering-principle skills, packaged experimentally for Claude and Codex."
+developerName = "Lauren Tan"
+category = "Coding"
+capabilities = ["Interactive", "Read", "Write"]
+websiteURL = "https://github.com/cursor/plugins/tree/main/pstack"
+defaultPrompt = ["Use poteto-mode for this task."]
+
+[[plugins.pstack.payloads]]
+dependency = "cursor/plugins/pstack"
+path = "skills"
+target = "skills"
+
+[[plugins.pstack.payloads]]
+dependency = "cursor/plugins/pstack"
+path = "LICENSE"
+target = "licenses/cursor/plugins/pstack/LICENSE"
+
+[plugins.review]
+version = "3.0.2"
+display_name = "Review"
+hooks = true
+
+[plugins.utils-agent]
+version = "1.18.1"
+display_name = "Agent Utilities"
+
+[[plugins.utils-agent.skills]]
+name = "acpx-cli"
+dependency = "openclaw/acpx/skills/acpx"
+path = "."
+
+[[plugins.utils-agent.skills]]
+name = "agent-slack"
+dependency = "stablyai/agent-slack/skills/agent-slack"
+path = "."
+
+[[plugins.utils-agent.skills]]
+name = "orca-cli"
+dependency = "stablyai/orca/skills/orca-cli"
+path = "."
+
+[[plugins.utils-agent.skills]]
+name = "orca-stration"
+dependency = "stablyai/orca/skills/orchestration"
+path = "."
+
+[plugins.utils-human]
+version = "1.2.1"
+display_name = "Human Utilities"
+
+[plugins.crit]
+version = "1.0.3"
+
+[plugins.crit.manifest]
+description = "crit compatibility skills"
+license = "UNLICENSED"
+skills = "./skills/"
+
+[plugins.crit.manifest.interface]
+displayName = "crit compatibility skills"
+
+[plugins.crit.manifest.hooks]
+
+[[plugins.crit.payloads]]
+dependency = "tomasz-tomczyk/crit/integrations/claude-code"
+path = ".apm/skills"
+target = "skills"
+
+[[plugins.crit.payloads]]
+dependency = "tomasz-tomczyk/crit/integrations/claude-code"
+path = ".apm/hooks"
+target = "hooks"
+
+[plugins.better-writing]
+version = "1.0.0"
+
+[plugins.better-writing.manifest]
+description = "Better Writing compatibility skill"
+license = "UNLICENSED"
+skills = "./skills/"
+
+[plugins.better-writing.manifest.interface]
+displayName = "Better Writing compatibility skill"
+
+[[plugins.better-writing.skills]]
+name = "better-writing"
+dependency = "forjd/better-writing"
+path = "skills/better-writing"
+
+[[plugins.better-writing.payloads]]
+dependency = "forjd/better-writing"
+path = "LICENSE"
+target = "licenses/forjd/better-writing/LICENSE"
