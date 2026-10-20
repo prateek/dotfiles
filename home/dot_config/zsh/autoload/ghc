@@ -2,11 +2,25 @@
 # usage (1) `$ ghc <github-user>/<github-repo>`
 # usage (2) `$ ghc github.com/<github-user>/<github-repo>(/.*)?`
 # usage (3) `$ ghc https://github.com/<github-user>/<github-repo>(/.*)?`
+# `--large` makes a new clone partial (blobs on demand), without
+# tags, tracking only the default branch and your git-spice branch prefix, and
+# registers it for background maintenance.
 function ghc() {
   setopt localoptions pipefail no_aliases 2> /dev/null
 
+  local large=0 arg
+  local -a rest
+  for arg in "$@"; do
+    if [[ "$arg" == "--large" ]]; then
+      large=1
+    else
+      rest+=("$arg")
+    fi
+  done
+  set -- "${rest[@]}"
+
   if [[ $# -lt 1 ]]; then
-    echo "usage: ghc <owner>/<repo>  (or [https://]github.com/<owner>/<repo>)" >&2
+    echo "usage: ghc [--large] <owner>/<repo>  (or [https://]github.com/<owner>/<repo>)" >&2
     return 2
   fi
 
@@ -44,6 +58,26 @@ function ghc() {
     echo "${owner}/${repo}"
   }
 
+  # Never --depth: a thin push from a shallow partial clone lazily fetches the
+  # root tree of every ref the remote advertises. --no-tags also sets
+  # remote.origin.tagOpt, so later fetches skip tags too.
+  _ghc_clone_large() {
+    local url="$1" dir="$2" prefix
+    git clone --filter=blob:none --no-tags --single-branch "$url" "$dir" || return 1
+    prefix="$(git -C "$dir" config --get spice.branchCreate.prefix)" || prefix=""
+    if [[ -n "$prefix" ]]; then
+      git -C "$dir" remote set-branches --add origin "${prefix}*" &&
+        git -C "$dir" fetch origin ||
+        echo "ghc: could not fetch ${prefix}* branches into $dir" >&2
+    fi
+    # Chezmoi renders ~/.gitconfig, where a plain register would land, so the
+    # entry goes to the unmanaged include. start then sees the repo registered.
+    git -C "$dir" maintenance register --config-file "$HOME/.config/git/config.local" &&
+      git -C "$dir" maintenance start ||
+      echo "ghc: maintenance not scheduled for $dir" >&2
+    return 0
+  }
+
   # Normalize to owner/repo.
   local slug
   slug="$(_ghc_parse_slug "$1")"
@@ -61,7 +95,13 @@ function ghc() {
     mkdir -p "$(dirname "$target")"
 
     local clone_url="git@github.com:${slug}.git"
-    git clone "$clone_url" "$target" || return 1
+    if (( large )); then
+      _ghc_clone_large "$clone_url" "$target" || return 1
+    else
+      git clone "$clone_url" "$target" || return 1
+    fi
+  elif (( large )); then
+    echo "ghc: $target already exists; --large applies only to new clones" >&2
   fi
 
   cd "$target" || return 1

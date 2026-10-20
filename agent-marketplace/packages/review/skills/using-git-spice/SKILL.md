@@ -103,6 +103,9 @@ Submission changes remote state. Submit only on the user's explicit request.
 Read [change requests](references/change-requests.md) for authentication,
 previews, submission metadata, merging, and remote failure recovery.
 
+Run one submit at a time. Before submitting, and when a submit runs past about
+60 seconds, read [slow pushes](references/change-requests.md#slow-pushes).
+
 Submit an unsubmitted base first. From a higher layer, submit bottom-up:
 
 ```bash

@@ -1,23 +1,24 @@
 #!/usr/bin/env zsh
 # `ohc`: Orca GitHub checkout -- clone with `ghc`, register in Orca, create a worktree.
-# usage: `$ ohc <github-user>/<github-repo> [orca worktree create options]`
+# usage: `$ ohc [--large] <github-user>/<github-repo> [orca worktree create options]`
 
 function ohc() {
   setopt localoptions pipefail no_aliases 2> /dev/null
 
   _ohc_usage() {
     local stream="${1:-2}"
-    print -u "$stream" -r -- "usage: ohc <owner>/<repo>  (or [https://]github.com/<owner>/<repo>) [worktree options]"
+    print -u "$stream" -r -- "usage: ohc [--large] <owner>/<repo>  (or [https://]github.com/<owner>/<repo>) [worktree options]"
     print -u "$stream" -r -- "try: ohc --help"
   }
 
   _ohc_help() {
-    print -r -- "usage: ohc <owner>/<repo>  (or [https://]github.com/<owner>/<repo>) [worktree options]"
+    print -r -- "usage: ohc [--large] <owner>/<repo>  (or [https://]github.com/<owner>/<repo>) [worktree options]"
     print -r -- ""
     print -r -- "Clone or update a GitHub repo with ghc, add it to Orca, and create an Orca worktree."
     print -r -- ""
     print -r -- "ohc options:"
     print -r -- "  -h, --help                  Show this help message"
+    print -r -- "  --large                     Clone a large repo partially; see ghc"
     print -r -- ""
     print -r -- "Supported Orca worktree options:"
     print -r -- "  --name <name>               Worktree name; defaults to the repo directory name"
@@ -37,14 +38,25 @@ function ohc() {
     print -r -- "ohc emits Orca JSON output. Run 'orca worktree create --help' for Orca's authoritative help."
   }
 
+  local arg
+  local -a ghc_args rest
+  for arg in "$@"; do
+    if [[ "$arg" == "--large" ]]; then
+      ghc_args=(--large)
+    else
+      rest+=("$arg")
+    fi
+  done
+  set -- "${rest[@]}"
+
+  if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+    _ohc_help
+    return 0
+  fi
+
   if [[ $# -lt 1 ]]; then
     _ohc_usage 2
     return 2
-  fi
-
-  if [[ "$1" == "-h" || "$1" == "--help" ]]; then
-    _ohc_help
-    return 0
   fi
 
   if ! command -v orca >/dev/null 2>&1; then
@@ -66,7 +78,6 @@ function ohc() {
   local repo_spec="$1"
   shift
 
-  local arg
   for arg in "$@"; do
     case "$arg" in
       --repo|--repo=*|--project|--project=*|--host|--host=*|--project-host-setup|--project-host-setup=*)
@@ -76,7 +87,7 @@ function ohc() {
     esac
   done
 
-  ghc "$repo_spec" || return $?
+  ghc "${ghc_args[@]}" "$repo_spec" || return $?
 
   local repo_path="${PWD:A}"
   local default_name="${repo_path:t}"

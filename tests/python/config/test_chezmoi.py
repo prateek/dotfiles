@@ -113,6 +113,33 @@ class ChezmoiConfigTests(RepoTestCase):
             self.cat({"machine_type": "personal"}, ".gitconfig"),
         )
 
+    def test_work_github_https_routes_only_the_work_org_over_https(self):
+        def git_config(machine_type, repo="git@github.com:dayjob/work.git"):
+            data = {"machine_type": machine_type, "work_overlay": {"repo": repo}}
+            path = self.work / f"{machine_type}.gitconfig"
+            path.write_bytes(self.cat(data, ".gitconfig"))
+            listing = self.command(["git", "config", "--file", str(path), "--list"]).stdout.decode()
+            return path, listing.splitlines()
+
+        path, work = git_config("work")
+        self.assertIn("url.https://github.com/dayjob/.insteadof=git@github.com:dayjob/", work)
+        self.assertIn("url.https://github.com/dayjob/.insteadof=ssh://git@github.com/dayjob/", work)
+        helpers = [line.split("=", 1)[1] for line in work if line.startswith("credential.https://github.com.helper=")]
+        self.assertEqual(helpers[0], "")
+        self.assertRegex(helpers[1], r"^!/\S*gh auth git-credential$")
+        self.assertEqual(work[-1], "include.path=~/.config/git/config.local")
+
+        def resolved(url):
+            return self.command(["git", "-c", f"include.path={path}", "ls-remote", "--get-url", url]).stdout.decode().strip()
+
+        self.assertEqual(resolved("git@github.com:dayjob/work.git"), "https://github.com/dayjob/work.git")
+        self.assertEqual(resolved("git@github.com:prateek/dotfiles.git"), "git@github.com:prateek/dotfiles.git")
+        self.assertEqual(resolved("https://github.com/openclaw/acpx.git"), "git@github.com:openclaw/acpx.git")
+
+        for machine_type, repo in (("personal", "git@github.com:dayjob/work.git"), ("work", "")):
+            _, listing = git_config(machine_type, repo)
+            self.assertEqual([line for line in listing if line.startswith(("url.", "credential."))], [])
+
     def test_reinitialization_carries_legacy_jamf_identity_to_the_top_level(self):
         self.config.write_text('[data]\nmachine_type = "work"\n[data.elevation]\njamf_policy_id = "LEGACY777"\n')
         self.chezmoi("init", "--promptDefaults")

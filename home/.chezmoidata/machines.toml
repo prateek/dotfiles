@@ -69,6 +69,11 @@ agent_session_wiki_sparse = false
 # the keychain — so Node clients need NODE_EXTRA_CA_CERTS pointing at a bundle
 # exported from it. See docs/runbooks/corp-tls-inspection.md.
 tls_inspection = false
+# Route the work org's GitHub repos over HTTPS with gh's SSO-authorized
+# credential; everything else keeps SSH. The org comes from the work overlay's
+# repo URL. Behind Prisma Access, SSH to github.com:22 drops intermittently and
+# SSH over 443 is cut off as non-TLS traffic.
+work_github_https = false
 direnv_trust_monorepo = false
 # Wrap IT's MCP gateway so its per-session CyberArk sign-in opens in a
 # background Orca tab and asks for attention instead of stealing focus.
@@ -157,6 +162,7 @@ agent_clis = ["claude", "cursor-agent", "pi"]
 agent_session_wiki = true
 agent_session_wiki_sparse = true
 tls_inspection = true
+work_github_https = true
 # Whitelist the work monorepo's .envrc so direnv skips the per-worktree prompt.
 direnv_trust_monorepo = true
 mcp_gateway_browser_hook = true

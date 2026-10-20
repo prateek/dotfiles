@@ -7,7 +7,8 @@ from the running binary.
 
 ## Defaults
 
-- Use `ohc` when a repository may not be cloned or registered with Orca.
+- Use `ohc` when a repository may not be cloned or registered with Orca. Add
+  `--large` for a [large repository](#large-repositories).
 - Use the Orca UI or `orca worktree create` for a registered repository.
 - Create related work as a child worktree. Use an independent worktree when the
   task should start from the repository's default base rather than the current
@@ -51,6 +52,35 @@ The canonical clone used by `ghc` lives at:
 ```text
 ~/code/github.com/<owner>/<repo>
 ```
+
+### Large repositories
+
+`ghc` makes a full clone with every branch and tag. For a repository too large
+for that, pass `--large` on the first clone (`ohc --large <owner>/<repo> ...`
+or `ghc --large <owner>/<repo>`). The flag has no effect on an existing clone.
+
+- The clone is partial (`--filter=blob:none`): full history, file contents
+  fetched on demand. It is never shallow; a shallow partial clone turns each
+  thin push into a lazy fetch of every advertised ref's root tree. Run
+  `git fetch --unshallow` on an existing shallow clone.
+- It skips tags now and on later fetches (`remote.origin.tagOpt=--no-tags`).
+- It tracks the default branch plus the git-spice branch prefix (`prateek/*`).
+  Push and fetch cost grows with the number of remote-tracking refs, so fetch
+  a colleague's branch by name when reviewing it.
+- It registers the repository for `git maintenance` in the unmanaged
+  `~/.config/git/config.local`, which the chezmoi-rendered `~/.gitconfig`
+  includes. A bare `git maintenance register` or `start` would write
+  `maintenance.repo` into `~/.gitconfig`, where the next apply drops it. To
+  schedule an existing clone, run `register --config-file` first; `start` then
+  finds the repository registered and only installs the launchd schedule:
+
+  ```sh
+  git maintenance register --config-file ~/.config/git/config.local
+  git maintenance start
+  ```
+
+Agent rules for working in a partial clone live in
+[git.md](git.md#partial-clones-and-large-repositories).
 
 ## Repository configuration
 

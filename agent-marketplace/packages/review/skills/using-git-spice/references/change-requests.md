@@ -47,6 +47,28 @@ Treat `--force` as both a force-push and a bypass of safety checks. Keep the
 restack check enabled; use force only on explicit request after verifying the
 remote and deliberately pinned base.
 
+## Slow pushes
+
+Submit pushes with `git push`. In a partial clone
+(`git config remote.origin.promisor` prints `true`), that push can fetch
+missing objects on demand, one round trip each. In a shallow partial clone
+(`git rev-parse --is-shallow-repository` also prints `true`), a thin push
+reads the root tree of every advertised ref it has locally, so a push of a few
+kilobytes can run for an hour and look hung.
+
+- Keep one submit running. Check `pgrep -fl '[g]it-spice|[g]it (push|fetch)'`
+  before starting; a second submit competes with the first for the same
+  fetches. A `timeout`-wrapped submit outlives the tool call that started it.
+- When a submit runs past about 60 seconds, stop it and diagnose instead of
+  raising the timeout and rerunning. A climbing
+  `ls "$(git rev-parse --git-common-dir)"/objects/pack/*.promisor | wc -l`
+  is a lazy-fetch storm.
+- Report the storm and the promisor-pack count to the user. A manual
+  `GIT_NO_LAZY_FETCH=1 git push --no-thin` has pushed through one; propose it
+  rather than running it unasked.
+- For a transport failure, report the transport (SSH or HTTPS), host, and
+  error. Leave remote URL rewrites and transport config to the user.
+
 ## Merge
 
 Choose the smallest requested queue:

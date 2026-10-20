@@ -1,8 +1,8 @@
 # Git and GitHub Conventions
 
-Use this document for branches, commits, worktrees, pull requests, issues,
-reviews, and GitHub comments on this machine. Repository-local contribution
-guidance takes precedence.
+Use this document for branches, commits, fetches and pushes, worktrees, pull
+requests, issues, reviews, and GitHub comments on this machine.
+Repository-local contribution guidance takes precedence.
 
 ## Defaults
 
@@ -20,6 +20,45 @@ guidance takes precedence.
   `gh api user -q .login`.
 - Preserve uncommitted work you did not create. Use status and diffs as context,
   not permission to rewrite or revert it.
+- GitHub transport comes from the managed gitconfig. On the work Mac the work
+  org's repos go over HTTPS with gh's credential, because Prisma Access drops
+  SSH to port 22 intermittently and cuts off SSH over 443; every other remote
+  uses SSH. `git config --get-regexp '^(url|credential)\.'` shows the routing.
+  Leave transport config to Prateek. When a fetch or push fails in transport,
+  report the transport, host, and error, and stop; for a 401 or 403 over HTTPS,
+  include `gh auth status`. A per-command `GIT_CONFIG_*` URL rewrite bypasses
+  that routing and its credentials.
+- Set only git config keys that `git help -c` lists, with values their
+  documentation allows. Git silently ignores unknown keys, so a guessed key
+  looks applied and does nothing.
+
+## Partial clones and large repositories
+
+A partial clone (`git config remote.origin.promisor` prints `true`) fetches
+missing objects from the remote on demand. A history read or push in a large
+one can trigger thousands of these lazy fetches and look hung for an hour.
+Shallow plus partial (`git rev-parse --is-shallow-repository` also prints
+`true`) is the worst case: a thin push then reads the root tree of every
+advertised ref it has locally, lazily fetching each missing one. To create such a
+clone, follow [worktrees.md](worktrees.md#large-repositories).
+
+- Before a push, submit, or restack, check for one already running with
+  `pgrep -fl '[g]it-spice|[g]it (push|fetch)'`; the brackets keep the pattern
+  from matching its own shell. Wait for it or stop it explicitly, then start
+  yours. A `timeout`-wrapped command keeps running after the tool call that
+  started it ends.
+- Run history reads (`log -S`, `log -G`, `log -p`, `log --numstat`, `blame`,
+  cross-commit `diff`) with `GIT_NO_LAZY_FETCH=1`. A "missing object" error
+  then calls for a narrow fetch of the ref you need, not a retry.
+- Fetch named refs with `--no-tags`: `git fetch --no-tags origin <branch>`.
+  Unless the repo sets `remote.origin.tagOpt=--no-tags`, a bare
+  `git fetch origin` also follows tags.
+- When a push runs past about 60 seconds, stop it and diagnose rather than
+  raising the timeout and rerunning. A climbing
+  `ls "$(git rev-parse --git-common-dir)"/objects/pack/*.promisor | wc -l` is
+  a lazy-fetch storm. Report it with that count;
+  `GIT_NO_LAZY_FETCH=1 git push --no-thin` has pushed through one, so propose
+  it to Prateek rather than running it unasked.
 
 ## Commits
 
