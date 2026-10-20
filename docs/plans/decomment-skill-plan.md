@@ -497,7 +497,7 @@ human comments and leave the agent's own additions fair game.
 One SKILL.md source serves both agents. At `chezmoi apply`, the `core` package
 renders into the shared local marketplace at `~/.agents/plugins`; its Codex
 and Claude manifests expose the same skill source. The AGENTS.md edits reach
-both agents through the `~/.claude/CLAUDE.md` symlink. The skill is
+Claude through the `~/AGENTS.md` link. The skill is
 user-invocable as `/decomment` in Claude Code and `$decomment` in Codex.
 
 ### New skill: `agent-marketplace/packages/core/skills/decomment/SKILL.md`

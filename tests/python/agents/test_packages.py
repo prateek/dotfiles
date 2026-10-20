@@ -487,7 +487,7 @@ class PluginReconcileTests(PackageTestCase):
         for name in ("run_onchange_after_35-agent-skill-roots.sh.tmpl", "run_onchange_after_36-agent-plugins.sh.tmpl"):
             shutil.copy2(ROOT / "home/.chezmoiscripts" / name, scripts / name)
         source = scripts / "run_onchange_after_36-agent-plugins.sh.tmpl"
-        for relative in ("dot_agents/AGENTS.md", "dot_claude/symlink_CLAUDE.md", "dot_codex/symlink_skills",
+        for relative in ("dot_agents/AGENTS.md", "symlink_AGENTS.md", ".chezmoiremove", "dot_codex/symlink_skills",
                          "dot_claude/modify_private_settings.json.tmpl", "dot_codex/modify_private_config.toml.tmpl",
                          "dot_cursor/modify_private_cli-config.json.tmpl", "dot_pi/agent/modify_settings.json.tmpl",
                          "dot_pi/agent/claude-plugins.json.tmpl"):
@@ -511,6 +511,7 @@ class PluginReconcileTests(PackageTestCase):
             path = self.home / relative
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(content)
+        (self.home / ".claude/CLAUDE.md").symlink_to("../.agents/AGENTS.md")
         helper = self.packages / "on/skills/on-skill/helper.sh"
         helper.write_text("#!/bin/sh\nexit 0\n")
         helper.chmod(0o755)
@@ -536,8 +537,9 @@ class PluginReconcileTests(PackageTestCase):
                 self.assertTrue((plugin / f".{native}-plugin/plugin.json").is_file())
         self.assertEqual((self.plugins / "plugins/on/skills/on-skill/helper.sh").stat().st_mode & 0o777, 0o755)
         self.assertEqual((self.home / ".codex/skills").readlink().as_posix(), "../.agents/skills")
-        self.assertEqual((self.home / ".claude/CLAUDE.md").readlink().as_posix(), "../.agents/AGENTS.md")
-        self.assertEqual((self.home / ".claude/CLAUDE.md").read_bytes(), (ROOT / "home/dot_agents/AGENTS.md").read_bytes())
+        self.assertEqual((self.home / "AGENTS.md").readlink().as_posix(), ".agents/AGENTS.md")
+        self.assertEqual((self.home / "AGENTS.md").read_bytes(), (ROOT / "home/dot_agents/AGENTS.md").read_bytes())
+        self.assertFalse((self.home / ".claude/CLAUDE.md").is_symlink() or (self.home / ".claude/CLAUDE.md").exists())
         self.assertEqual((self.home / ".codex/skills/.system/runtime/SKILL.md").read_text(), initial[".agents/skills/.system/runtime/SKILL.md"])
         self.assertFalse((self.home / ".agents/skills/stale").exists())
         self.assertFalse((self.home / ".claude/skills").exists())
@@ -546,6 +548,8 @@ class PluginReconcileTests(PackageTestCase):
         self.assertEqual(claude["extraKnownMarketplaces"]["prateek-local"]["source"]["path"], str(self.plugins))
         self.assertEqual(claude["enabledPlugins"], {"on@prateek-local": True, "off@prateek-local": False, "other@other-mkt": True})
         self.assertEqual(claude["env"]["KEEP"], "yes")
+        self.assertEqual(claude["pluginConfigs"]["agents-md@builtin"]["options"]["instructionFiles"],
+                         "claude-md-and-agents-md")
         codex = tomllib.loads((self.home / ".codex/config.toml").read_text())
         self.assertEqual(codex["marketplaces"]["prateek-local"]["source"], str(self.plugins))
         self.assertEqual({key: value for key, value in codex["plugins"].items() if key.endswith("@prateek-local")},

@@ -52,6 +52,10 @@ bin/grmrepo-refresh
 Library/Application Support/Yojam/config.json
 {{- end }}
 
+# Claude's global instructions moved from ~/.claude/CLAUDE.md to ~/AGENTS.md,
+# which Claude Code reads as a parent of any working directory under $HOME.
+.claude/CLAUDE.md
+
 # Retired shell banner. Keep its local.env and any user-added files.
 .config/zsh/extra/chezmoi-drift.zsh
 .config/dotfiles/chezmoi-drift/README.md

@@ -324,10 +324,16 @@ and [ADR 0046](../adr/0046-tcc-onboarding.md).
 - Repo guidance for this checkout stays in root `AGENTS.md` and repo-local
   `.agents/`. Claude Code reads the root `AGENTS.md` directly.
 - Machine-wide guidance and skills materialize from `home/dot_agents/`.
-- Claude's machine-wide `CLAUDE.md` is a symlink adapter to
-  `../.agents/AGENTS.md` so shared instructions do not drift. Keep this adapter:
-  Claude Code's [AGENTS.md discovery](https://code.claude.com/docs/en/memory#when-claude-code-reads-agents-md)
-  does not read files under `.agents/`.
+- `~/AGENTS.md` is a symlink to `.agents/AGENTS.md`, the machine-wide
+  instructions. Claude Code's [AGENTS.md discovery](https://code.claude.com/docs/en/memory#when-claude-code-reads-agents-md)
+  reads `AGENTS.md` in the working directory and every parent, and nothing in its
+  config directory or under `.agents/`, so the link reaches every session started
+  under `$HOME` and none started elsewhere. The managed Claude setting
+  `pluginConfigs."agents-md@builtin".options.instructionFiles = "claude-md-and-agents-md"`
+  keeps it loaded in repos that have their own `CLAUDE.md`, which would otherwise
+  suppress it; in that mode a repo's `CLAUDE.md` and `AGENTS.md` both load unless
+  one links to the other. Other agents that walk parent directories read the same
+  file. These loading rules were probed on Claude Code 2.1.305.
 - Codex machine config materializes from `home/dot_codex/` on machines whose
   groups include the `codex` package group (personal/homelab); elsewhere
   `~/.codex` is ignored. Only `config.toml` (deep-merged, so local keys

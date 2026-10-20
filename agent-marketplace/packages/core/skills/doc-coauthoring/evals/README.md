@@ -4,7 +4,9 @@ These tasks exercise document outputs and interactions, not preferred prose.
 `evals.json` follows the repository's static prompt/files/expectations convention.
 [replay.md](replay.md) supplies a manual multi-turn protocol. Use a human or
 coordinating agent as the scripted user in an existing client; no runner is
-assumed to interpret the replay file automatically.
+assumed to interpret the replay file automatically. The accretion case also has
+a machine-readable script, [accretion-replay.json](accretion-replay.json), which
+the dotfiles checkout replays with `scripts/doc-coauthoring-evals`.
 
 ## Prepare a comparison
 
@@ -43,6 +45,10 @@ decision would stop implementation. A guessed answer is not a settled decision.
 For interactive drafts, check preservation of direct edits and their consequences.
 For copyedits and research answers, check exact scope and factual support. Grade
 each case's observable expectations using the fixture's independent facts.
+For the accretion case, grade the final plan both ways: what is missing, and what
+is stale, repeated, narrating history, or an acceptance check the reader cannot
+run. Count history phrases and stale terms deterministically; use the judge for
+contradictions and repeats.
 The eval owner separately checks transcripts for authority, questions, pauses,
 and direct-edit handling. Record unnecessary questions apart from content quality.
 

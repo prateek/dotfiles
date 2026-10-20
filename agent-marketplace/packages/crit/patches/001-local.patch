@@ -171,3 +171,20 @@ index c4731ee..b0ca9b4 100644
  
  <important if="the user wants to open the review from another device — e.g. a phone over Tailscale">
  Keep crit on loopback and reverse-proxy in. Same Step 1 args still apply (file, bare `crit`, etc.):
+@@ -99,6 +144,16 @@ For each unresolved comment:
+ 
+ Editing the plan file triggers Crit's live reload — the user sees changes in the browser immediately.
+ 
++<important if="the round's comments target a document, such as a plan or design, rather than code">
++Finish the round with one whole-document pass before replying. Reread the file
++from disk and reconcile it: resolve contradictions between sections, remove
++claims a later decision superseded, fold a rule stated twice into one home, and
++move narration about the review or earlier drafts out of the body. A comment
++answered by a caveat beside the old text is addressed only once that pass
++rewrites the section whole. Then send the replies, in one `--json` call when
++there are several.
++</important>
++
+ <important if="you are replying to multiple comments at once">
+ Use `--json` for a single bulk call instead of one invocation per comment:
+ 

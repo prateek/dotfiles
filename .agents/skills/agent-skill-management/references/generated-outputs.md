@@ -62,7 +62,7 @@ hand-authored content. Keep generated marketplace and cache copies out of `home/
 Source is the isolated root project; `.chezmoiroot` still points only to `home/`.
 
 `~/.codex/skills` remains a managed symlink to `../.agents/skills`, and
-`~/.claude/CLAUDE.md` links to `../.agents/AGENTS.md`. Claude, Codex, Cursor, and pi
+`~/AGENTS.md` links to `.agents/AGENTS.md`. Claude, Codex, Cursor, and pi
 marketplace configuration points at `~/.agents/plugins`; its two catalogs resolve
 relative paths beneath `plugins/<package>/`. Do not capture script-created
 marketplaces or native caches with `chezmoi add`.

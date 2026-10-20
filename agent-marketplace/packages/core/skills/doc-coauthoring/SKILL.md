@@ -85,18 +85,27 @@ expose material unknowns instead of inventing answers.
 ## 4. Draft or revise
 
 Write in the chosen home. Integrate new answers and evidence into the affected
-sections. A substantive revision changes what a later reader would do. Reread the
-whole document and trace that change through requirements, design, dependencies,
-acceptance, open decisions, and examples. Preserve valid user edits, including
-edits made directly during collaboration.
+sections. A substantive revision changes what a later reader would do. Preserve
+valid user edits, including edits made directly during collaboration.
+
+Keep the body evergreen: it reads as written today by someone who knows only the
+current decisions. Justify each choice against its live alternatives. What
+changed, when, and who asked belongs in the progress record or the commit
+message. Give each fact one home and link to it from elsewhere.
+
+Before every substantive revision, and before the first edit after a context
+compaction, reread the whole document from disk and trace the change through
+requirements, design, dependencies, acceptance, open decisions, and examples.
+When the revision changes a decision, scope, or structure, rewrite each affected
+section whole.
 
 Use the repo's existing lifecycle owner for metadata, indexes, progress state, and
 retirement. Its schema remains local. Optional prose guidance can improve the
 writing; no sibling skill or publisher checkout is required to finish.
 
 Finish when the affected sections agree, requested requirements remain represented,
-and remaining work is explicit. Keep each rule and decision in one authoritative
-home; callers link to it rather than copying its procedure.
+remaining work is explicit, and no sentence in the body depends on a superseded
+decision or refers to an earlier draft.
 
 ## 5. Test the reader and hand off
 
@@ -107,7 +116,16 @@ option, not a required stop. Use the plan-specific questions in the planning
 reference when applicable.
 
 Ask what the document enables, what to do next, and what context or decision is
-missing. Correct concrete gaps and repeat the affected questions. Check links and
-applicable repo document rules. Finish when requirements are covered, consequential
-claims are supported or qualified, and the reader can identify the result and
-next action. Report unresolved decisions and missing verification with the artifact.
+missing. Ask equally what is stale, stated twice, cuttable, or narrating its own
+history. Run the reader after any revision that changes a decision, after every
+third substantive revision, and before handoff. Integrate findings by
+restructuring the affected sections; a caveat appended beside the old text keeps
+both versions alive. Repeat the affected questions.
+
+Before handoff, read the whole document as someone with no context or history and
+rewrite whatever leans on the conversation: an evergreen body with the baggage
+dropped. Use the `writing-for-humans` skill for the prose when it is available.
+Check links and applicable repo document rules. Finish when requirements are
+covered, consequential claims are supported or qualified, each fact has one home,
+and the reader can identify the result and next action. Report unresolved
+decisions and missing verification with the artifact.

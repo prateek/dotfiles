@@ -125,6 +125,10 @@ test-agent-skill-packages-native: test-agent-marketplace
 test-crit-evals *args:
     ./scripts/crit-evals {{ args }}
 
+# Doc-coauthoring accretion eval: replays a scripted revision history headlessly; authenticated and spends tokens.
+test-doc-coauthoring-evals *args:
+    ./scripts/doc-coauthoring-evals {{ args }}
+
 # mode: verify (authoritative correctness), bench (pinned zsh-bench), selftest (validator's own cases).
 zsh-fresh-shells mode="verify":
     zsh ./scripts/audit/zsh-fresh-shells.zsh {{ mode }} --dotfiles-root "{{ justfile_directory() }}"

@@ -4,7 +4,7 @@ doc_type: plan
 summary: "Make document authoring portable, evidence-based, and usable for autonomous drafting, interactive coauthoring, and substantive revision."
 owner: Prateek
 created: 2026-10-17
-updated: 2026-10-18
+updated: 2026-10-20
 related:
   - ../references/agent-marketplace.md
   - ../document-lifecycle.md
@@ -749,3 +749,21 @@ the proposed skill improvements work in production.
   remain in the linked evaluation history. Direct-copy ordering and search
   isolation are resolved for this tested setup. Strict catalog isolation and
   broader three-skill discovery remain open.
+- 2026-10-20. Addressed revision accretion in core 1.4.5 and crit 1.0.2. Across
+  1,719 session/Markdown pairs in agentsview, 95 docs took eight or more Edit
+  calls in one session and 16 of those were later rewritten whole; Prateek typed
+  a manual "rewrite for a reader with no context" prompt in 15 sessions since
+  August. Step 4 now rereads the whole document before a decision, scope, or
+  structure change (and after compaction), rewrites affected sections whole, and
+  keeps history in Progress or the commit. Step 5 runs a two-sided fresh reader
+  after decision changes and every third revision and folds the evergreen rewrite
+  into handoff; the plans reference carries the same rules. The crit patch adds
+  one whole-document reconciliation pass per document-targeted review round. A
+  new accretion case (five scripted turns from the 2026-10-20 layout-plan
+  session's shape) and `scripts/doc-coauthoring-evals` replay it headlessly in
+  an isolated config with the live plugins. Two runs per arm: the candidate's
+  final plans had no history narration or contradictions and fewer repeated
+  rules, at about twice the cost; see the
+  [accretion results](../../agent-marketplace/packages/core/skills/doc-coauthoring/evals/results.md#accretion-case-core-145).
+  A review then widened step 4's reread to every substantive revision; that
+  wording was not rerun. The crit change has no automated behavior check.

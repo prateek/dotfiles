@@ -118,8 +118,8 @@ superseding 0023/0025 and amending 0049 for the Codex-only adapters.
 - `agent-marketplace/packages/`: authored skills, patches, and overlays. The
   `publish.toml` files and `plugin.json` manifests would be rewritten as
   `default.nix`.
-- `home/dot_agents/`: `AGENTS.md`, `docs/`, and the `~/.claude/CLAUDE.md` link
-  to it.
+- `home/dot_agents/`: `AGENTS.md` and `docs/`, plus the `~/AGENTS.md` link that
+  points at them.
 - Plugin policy: `agent_plugins.toml` and `agent_upstream_plugins.toml`,
   rewritten as Nix.
 - The skill CLIs under "Agent skill backends" in

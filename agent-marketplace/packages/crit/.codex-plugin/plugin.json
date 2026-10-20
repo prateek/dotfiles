@@ -1,6 +1,6 @@
 {
   "name": "crit",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "crit compatibility skills",
   "license": "UNLICENSED",
   "skills": "./skills/",

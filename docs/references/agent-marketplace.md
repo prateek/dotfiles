@@ -70,7 +70,7 @@ The consumer boundary is:
 | `~/.agents/plugins.previous` | Previous artifact retained for rollback |
 | `~/.agents/skills` | Writable Codex runtime stub, preserving `.system/` |
 | `~/.codex/skills` | Managed symlink to `../.agents/skills` |
-| `~/.claude/CLAUDE.md` | Managed symlink to `../.agents/AGENTS.md` |
+| `~/AGENTS.md` | Managed symlink to `.agents/AGENTS.md`, read by Claude Code as a parent directory |
 | Claude/Codex native caches | Native client CLIs and app-server APIs |
 
 The enabled authored packages are `core`, `review`, and `utils-agent`.

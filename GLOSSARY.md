@@ -24,6 +24,14 @@ _Avoid_: Index, catalogue, manifest
 The append-only record of every retired document: what it was, when it closed, and where its durable content went.
 _Avoid_: Graveyard, archive list, changelog
 
+**Evergreen**:
+A document body that reads as written today by someone who knows only the current decisions, with each fact in one home; what changed, when, and who asked lives in Progress or the commit.
+_Avoid_: Up to date, current, clean, final
+
+**Accretion**:
+The drift of a document revised in place over many turns: stale claims beside later decisions, review findings appended as caveats, history narrated in the body, and one rule stated in several places.
+_Avoid_: Bloat, cruft, drift, rot
+
 ## Chezmoi source state
 
 **`home/`**:

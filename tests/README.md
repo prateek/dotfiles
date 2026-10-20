@@ -156,6 +156,7 @@ this section maps a change to the distinct guarantees it can affect.
 | Orca input and private-service recovery | `python3 -m unittest discover -s agent-marketplace/tests -p test_orca_fill_stdin.py` checks the local RPC and secret boundary; `node --test tests/node/browser-fill.test.mjs tests/node/pinned-loopback-proxy.test.mjs` checks nested shadow inputs, application events, certificate pinning, console WebSockets, and proxy lifecycle. The proxy test needs local listener permission. |
 | 1Password item lookup | `python3 -m unittest tests/python/agents/test_1password_find_item.py` checks vault scoping, exact titles, and field redaction. |
 | Devland SSH key export | `python3 -m unittest tests/python/agents/test_ssh_key_export.py` uses a dummy generated key to check OpenSSH extraction, file mode, validation, and refusal to overwrite. |
+| Doc-coauthoring accretion grader | `just test-python -p test_doc_coauthoring_evals.py` checks the deterministic `grade` seam of `scripts/doc-coauthoring-evals`: stale TSV/array terms and history phrases are flagged per body line, the Progress section is exempt, and the shipped fixture plan fails on the decision it predates. |
 | `~/code/scratch` workbench | `just test-shell tests/bats/hooks/scratch-dir.bats`; git init before Orca registration, commits limited to the managed `AGENTS.md` and `.gitignore`, idempotent reruns, and warn-only Orca failures. |
 | WinMux quarantine clearing | `just test-shell tests/bats/hooks/winmux-quarantine.bats`; the app and the CLI's resolved Caskroom path are cleared only when quarantined, silently otherwise, and a failed removal warns with the manual command. |
 | Pending dotfiles handoffs (`handoffs.toml`) | `just test-shell tests/bats/hooks/pending-handoffs.bats`; only bullets under the exact `## Pending` heading are listed, with the `/utils-agent:ho` line; an empty section prints nothing, an unreachable repo warns with gh's error without failing the apply, and a host without gh auth skips the request. |
@@ -296,6 +297,9 @@ use separate authenticated model runs for creation, revision, interaction, porta
 adoption, and isolated catalog discovery. Follow the scripted replies and keep
 expected observations out of agent inputs. Packaging checks do not establish
 authoring behavior or discovery.
+`just test-doc-coauthoring-evals` replays the multi-revision accretion case
+headlessly against an isolated copy of the live Claude config; it is
+authenticated and spends tokens.
 
 The Jev browser runner's offline suite lives in `tests/node/browser-jev/` and
 runs only with the optional `just test-browser-jev` lane. Jev is suspended in

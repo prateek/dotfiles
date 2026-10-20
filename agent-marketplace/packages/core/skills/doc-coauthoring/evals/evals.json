@@ -143,6 +143,22 @@
         "Specifies escaping and preserves text compatibility",
         "Defines acceptance for headers, empty rows, and embedded tabs/newlines"
       ]
+    },
+    {
+      "id": 11,
+      "name": "accretion",
+      "prompt": "Revise docs/plans/export-plan.md; decisions will keep changing during this session, so keep the whole plan current each time. First change: JSON output is newline-delimited, one object per line, and no rows produce no output at all. The array form is gone. Do not implement code.",
+      "expected_output": "Body states the newline-delimited shape and the no-rows rule once each, with no array or [] leftovers; Body has no TSV, header-row, tab, or escaping content after the drop; Progress may record it; Body narrates no review or earlier decision; the dated Progress entry carries them; Keeps the owner, the text default, and acceptance checks a fresh implementer can run with the fixture's unittest command.",
+      "files": [
+        "evals/files/repository",
+        "evals/files/accretion"
+      ],
+      "expectations": [
+        "Body states the newline-delimited shape and the no-rows rule once each, with no array or [] leftovers",
+        "Body has no TSV, header-row, tab, or escaping content after the drop; Progress may record it",
+        "Body narrates no review or earlier decision; the dated Progress entry carries them",
+        "Keeps the owner, the text default, and acceptance checks a fresh implementer can run with the fixture's unittest command"
+      ]
     }
   ]
 }

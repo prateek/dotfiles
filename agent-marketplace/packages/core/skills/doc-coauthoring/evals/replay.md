@@ -75,6 +75,27 @@ arbitrary directory name, no declaration with the skill directly available, an
 absent declared target, and conflicting declarations of equal precedence.
 The missing and conflicting cases finish with a dependency report and no draft.
 
+## G. Accretion
+
+Start from the plan in `files/accretion` and send the replies in
+[`accretion-replay.json`](accretion-replay.json) in order, one per turn, each
+after the previous turn finishes. Every reply changes a decision, adds or removes
+scope, or delivers a review round, so the final plan shows whether revisions
+accrete. Send the next reply regardless of what the previous turn asked; a
+material question absent from the script marks the fixture incomplete, as in
+all cases.
+This case keeps catalog skills and delegation available in its preamble, because
+it measures revision behavior under the ordinary configuration.
+
+This case replaces the ten-minute variant limit with twenty minutes per turn,
+because each reply is a full revision. Record a timed-out turn as truncation
+and stop the replay there.
+
+Judge only the final plan, against the file's `final_decisions`. In the dotfiles
+checkout, `scripts/doc-coauthoring-evals` replays the case headlessly in an
+isolated configuration, audits the transcript, and grades the plan. Elsewhere,
+send the same turns by hand and grade with the same rubric.
+
 ## Repository instruction loading
 
 Before testing automatic pin discovery, verify that the native client delivers

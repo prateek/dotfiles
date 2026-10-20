@@ -43,13 +43,17 @@ restates the request has not supplied the design.
 ## Revise the remaining work
 
 When evidence or requirements change, reconcile the mechanism, affected
-deliverables, their dependencies, acceptance, and examples together. Remove
-conflicting old instructions and resolve answered questions. Integrate
-plan-affecting review feedback in the same change.
+deliverables, their dependencies, acceptance, and examples together. A changed
+decision rewrites its owning section whole, along with every deliverable, check,
+and example that depended on it; the old instruction leaves the body, and the
+change itself is recorded under [progress](#keep-progress-distinct). Resolve
+answered questions. Integrate plan-affecting review feedback in the same change
+by restructuring the section it targets.
 
 Repair ordinary sequencing defects within authorized scope. Ask when the repair
 changes intent, authority, or a material constraint. Finish when the remaining
-plan describes one coherent path and preserves unrelated valid edits.
+plan describes one coherent path, states each rule once, and preserves unrelated
+valid edits.
 
 ## Keep progress distinct
 
@@ -58,16 +62,20 @@ entries under one Progress heading at the end of the plan. Create it when there
 is progress to record. Long execution can warrant a separate log, but no filename
 or extra file is mandatory.
 
-Entries record changed state and supporting evidence. Keep the specification
-separate from those entries. Completion means the agreed acceptance criterion,
-which might be a reviewed plan, tests, a merge, deployment, or a physical check.
-Let the existing lifecycle owner interpret that evidence when setting document
-state. Planning completion alone does not authorize implementation.
+Entries record changed state, replaced decisions, and supporting evidence. Keep
+the specification separate from those entries. Completion means the agreed
+acceptance criterion, which might be a reviewed plan, tests, a merge, deployment,
+or a physical check. Let the existing lifecycle owner interpret that evidence
+when setting document state. Planning completion alone does not authorize
+implementation.
 
 ## Ask the fresh reader
 
 Ask which decisions would stop implementation, what the first useful deliverable
-is, which prerequisites it needs, and what would prove it complete. For an
-integration project, check that later polish has not displaced the first required
-slice. A reader's guess is not evidence that an unstated decision was settled.
-Correct missing context before calling the plan ready.
+is, which prerequisites it needs, and what would prove it complete. Ask which
+statements contradict each other or a later decision, which rule appears more
+than once, where the plan narrates its own history, and which acceptance checks
+the reader could not run. For an integration project, check that later polish
+has not displaced the first required slice. A reader's guess is not evidence that
+an unstated decision was settled. Restructure the affected sections for missing
+and surplus findings alike before calling the plan ready.

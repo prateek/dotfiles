@@ -1,0 +1,559 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.14"
+# dependencies = []
+# ///
+"""Replay the doc-coauthoring accretion case through headless Claude Code.
+
+The case is a scripted revision history: the initial prompt and the replies in
+the skill's evals/accretion-replay.json, each sent as one `claude -p` turn that
+resumes the same session inside an isolated CLAUDE_CONFIG_DIR seeded from the
+live user config. The skill under test arrives as a plugin directory, so a
+baseline and a candidate build of the core plugin run under otherwise identical
+conditions, beside the other plugins the live config enables.
+
+  run        replay the case for one arm; writes one directory per repetition
+  judge      grade a run's final plan with a fresh model that never saw the session
+  grade      print the deterministic metrics for any plan file
+  summarize  tabulate metrics and verdicts across run directories
+
+Every run spends tokens against the configured provider. Nothing here writes to
+the live Claude config directory. An enterprise MCP config, when one is installed,
+still applies to every turn: Claude Code rejects --strict-mcp-config beside it, so
+the runner leaves MCP servers to the isolated config. Outputs default to
+$XDG_STATE_HOME/dotfiles/authoring-evals/, outside the repository, because a
+managed policy can deny agents any read under a project's build/.
+"""
+from __future__ import annotations
+
+import argparse
+import datetime as dt
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+SKILL_DIR = REPO_ROOT / "agent-marketplace/packages/core/skills/doc-coauthoring"
+EVALS = SKILL_DIR / "evals"
+REPLAY = EVALS / "accretion-replay.json"
+FIXTURES = ("repository", "accretion")
+PLAN = "docs/plans/export-plan.md"
+FIXTURE_CODE = ("README.md", "AGENTS.md", "src/report.py", "src/settings.py", "tests/test_report.py")
+LIVE_CONFIG = Path(os.environ.get("CLAUDE_CONFIG_DIR") or Path.home() / ".claude")
+CORE_KEY = "core@prateek-local"
+SEED_KEYS = ("env", "permissions", "skillListingBudgetFraction", "effortLevel", "modelSettings", "pluginConfigs")
+INSTRUCTION_FILES = ("AGENTS.md", "CLAUDE.md", ".claude/CLAUDE.md")
+DISALLOWED = "Bash,WebFetch,WebSearch,NotebookEdit"
+STATE_HOME = Path(os.environ.get("XDG_STATE_HOME") or Path.home() / ".local/state")
+DEFAULT_OUT = STATE_HOME / "dotfiles/authoring-evals/accretion/runs"
+
+STALE_TSV = re.compile(r"(?i)\btsv\b|tab-separated|header row|tab separator|separated by (?:one |a )?tab\b")
+STALE_ARRAY = re.compile(r"(?i)\barray\b|[`\"']\[\][`\"']")
+HISTORY = re.compile(
+    r"(?i)earlier draft|previous(?:ly)? (?:draft|version|decided|decision)|originally|no longer|"
+    r"(?:was|were|has been|have been) (?:changed|dropped|removed|replaced|reverted)|per (?:the )?review|"
+    r"review comments?|as (?:requested|decided|reviewed)|Rowan (?:asked|requested|decided|reviewed)|"
+    r"decided on \d|this revision|in this (?:revision|update)|\bused to (?:be|emit|return|produce|output)\b|"
+    r"instead of the (?:earlier|previous|original)"
+)
+ESCAPING = re.compile(r"(?i)\bescap")
+NDJSON = re.compile(r"(?i)one (?:\w+ )?object per line|newline-delimited|ndjson|json lines|\bjsonl\b")
+NO_ROWS = re.compile(r"(?i)no rows|zero rows|empty (?:input|list|row list)")
+PROGRESS = re.compile(r"^#{1,6}\s*Progress\b.*$", re.MULTILINE)
+DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+JUDGE_TEMPLATE = """You are a maintainer who will implement this plan in a later session. You have
+never seen the conversation that produced it. Judge only the plan text against
+the decisions and the repository files below. Do not run anything.
+
+## Decisions in force
+
+{decisions}
+
+## Repository files
+
+{files}
+
+## The plan
+
+````markdown
+{plan}
+````
+
+## Report
+
+Reply with one JSON object and nothing else. Quote the plan's own words in each
+list item; use an empty list when there is nothing to report.
+
+{{"contradictions": ["statements that conflict with each other or with a decision"],
+ "stale_claims": ["claims that a decision above makes false"],
+ "repeated_rules": ["rules or facts stated in more than one place"],
+ "history_narration": ["sentences outside Progress that describe the plan's own revision history, a review, or an earlier version"],
+ "unrunnable_acceptance": ["acceptance checks you could not run against this repository as written"],
+ "first_deliverable": "what you would build first",
+ "blocking_unknowns": ["decisions you would need before starting"],
+ "evergreen_score": 1,
+ "notes": "one sentence"}}
+
+evergreen_score is 1 to 5, where 5 reads as written once, today, by someone who
+knows only the current decisions.
+"""
+
+
+def log(message: str) -> None:
+    print(message, file=sys.stderr, flush=True)
+
+
+def load_json(path: Path) -> dict:
+    return json.loads(path.read_text())
+
+
+def dump_json(path: Path, data: object) -> None:
+    path.write_text(json.dumps(data, indent=2, ensure_ascii=False, default=str) + "\n")
+
+
+def installed_plugins() -> dict[str, Path]:
+    records = load_json(LIVE_CONFIG / "plugins/installed_plugins.json").get("plugins", {})
+    found: dict[str, Path] = {}
+    for key, entries in records.items():
+        for entry in entries:
+            path = Path(entry["installPath"])
+            if path.is_dir():
+                found[key] = path
+                break
+    return found
+
+
+def enabled_plugin_dirs() -> list[tuple[str, Path]]:
+    enabled = load_json(LIVE_CONFIG / "settings.json").get("enabledPlugins", {})
+    installed = installed_plugins()
+    return [(key, installed[key]) for key, on in enabled.items() if on and key != CORE_KEY and key in installed]
+
+
+def resolve_core(arm: str) -> Path:
+    if arm == "baseline":
+        path = installed_plugins().get(CORE_KEY)
+        if path is None:
+            sys.exit(f"baseline: {CORE_KEY} is not installed in {LIVE_CONFIG}")
+    elif arm == "candidate":
+        path = REPO_ROOT / "agent-marketplace/build/marketplace/plugins/core"
+        if not path.is_dir():
+            sys.exit("candidate: run `just -f agent-marketplace/justfile -d agent-marketplace build` first")
+    else:
+        path = Path(arm).expanduser().resolve()
+    if not (path / ".claude-plugin/plugin.json").is_file():
+        sys.exit(f"{path} is not a Claude plugin directory")
+    return path
+
+
+def plugin_version(path: Path) -> str | None:
+    return load_json(path / ".claude-plugin/plugin.json").get("version")
+
+
+def seed_config(config_dir: Path, keys: tuple[str, ...], instructions: bool) -> dict:
+    config_dir.mkdir(parents=True)
+    live = load_json(LIVE_CONFIG / "settings.json")
+    seeded = {key: live[key] for key in keys if key in live}
+    dump_json(config_dir / "settings.json", seeded)
+    report: dict[str, object] = {"settings_keys": sorted(seeded)}
+    claude_md = LIVE_CONFIG / "CLAUDE.md"
+    if instructions and claude_md.exists():
+        (config_dir / "CLAUDE.md").write_text(claude_md.read_text())
+        report["instructions"] = str(claude_md.resolve())
+    return report
+
+
+def inherited_instructions(start: Path) -> list[str]:
+    """Instruction files Claude Code reads from the parents of a working directory."""
+    found = []
+    for directory in start.resolve().parents:
+        found += [str(directory / name) for name in INSTRUCTION_FILES if (directory / name).is_file()]
+    return found
+
+
+def make_workspace(workspace: Path) -> None:
+    workspace.mkdir(parents=True)
+    for name in FIXTURES:
+        shutil.copytree(EVALS / "files" / name, workspace, dirs_exist_ok=True)
+
+
+def claude_env(config_dir: Path) -> dict[str, str]:
+    env = {key: value for key, value in os.environ.items() if key not in ("CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT")}
+    env["CLAUDE_CONFIG_DIR"] = str(config_dir)
+    return env
+
+
+def claude_version() -> str:
+    try:
+        return subprocess.run(["claude", "--version"], capture_output=True, text=True, timeout=30).stdout.strip()
+    except (OSError, subprocess.TimeoutExpired):
+        return "unknown"
+
+
+def _text(value: str | bytes | None) -> str:
+    if isinstance(value, bytes):
+        return value.decode(errors="replace")
+    return value or ""
+
+
+def run_claude(cmd: list[str], *, cwd: Path, config_dir: Path, timeout: int, prefix: Path) -> tuple[dict, str | int]:
+    started = dt.datetime.now(dt.UTC)
+    try:
+        proc = subprocess.run(cmd, cwd=cwd, env=claude_env(config_dir), capture_output=True, text=True, timeout=timeout)
+        stdout, stderr, status = proc.stdout, proc.stderr, proc.returncode
+    except subprocess.TimeoutExpired as exc:
+        stdout, stderr, status = _text(exc.stdout), _text(exc.stderr), "timeout"
+    prefix.with_suffix(".stdout.json").write_text(stdout)
+    prefix.with_suffix(".stderr.txt").write_text(stderr)
+    try:
+        result = json.loads(stdout)
+    except json.JSONDecodeError:
+        result = {}
+    result["_status"] = status
+    result["_seconds"] = round((dt.datetime.now(dt.UTC) - started).total_seconds(), 1)
+    return result, status
+
+
+def run_turn(prompt: str, *, args: argparse.Namespace, cwd: Path, config_dir: Path, plugin_dirs: list[Path],
+             resume: str | None, prefix: Path) -> dict:
+    cmd = ["claude", "-p", prompt, "--output-format", "json", "--setting-sources", "user",
+           "--permission-mode", "acceptEdits", "--disallowedTools", DISALLOWED, "--max-budget-usd", str(args.turn_budget)]
+    if args.model:
+        cmd += ["--model", args.model]
+    if args.effort:
+        cmd += ["--effort", args.effort]
+    if resume:
+        cmd += ["--resume", resume]
+    for path in plugin_dirs:
+        cmd += ["--plugin-dir", str(path)]
+    prefix.with_suffix(".prompt.md").write_text(prompt)
+    result, status = run_claude(cmd, cwd=cwd, config_dir=config_dir, timeout=args.turn_timeout, prefix=prefix)
+    return {
+        "status": status,
+        "seconds": result.get("_seconds"),
+        "session_id": result.get("session_id"),
+        "is_error": result.get("is_error"),
+        "num_turns": result.get("num_turns"),
+        "cost_usd": result.get("total_cost_usd"),
+        "models": sorted((result.get("modelUsage") or {}).keys()),
+        "result": result.get("result"),
+    }
+
+
+def find_transcript(config_dir: Path, session_id: str) -> Path | None:
+    hits = sorted((config_dir / "projects").glob(f"*/{session_id}.jsonl"))
+    return hits[0] if hits else None
+
+
+def transcripts(main: Path) -> list[Path]:
+    return [main, *sorted((main.parent / main.stem / "subagents").glob("*.jsonl"))]
+
+
+def audit_transcript(path: Path) -> dict:
+    tools: dict[str, int] = {}
+    plan = {"Edit": 0, "Write": 0, "Read": 0, "Read_partial": 0}
+    skills: list[str] = []
+    agents = 0
+    eval_access: list[str] = []
+    compactions = 0
+    lines = [line for part in transcripts(path) for line in part.read_text().splitlines()]
+    for line in lines:
+        try:
+            record = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if record.get("isCompactSummary") or record.get("subtype") == "compact_boundary":
+            compactions += 1
+        message = record.get("message") or {}
+        if record.get("type") != "assistant" or not isinstance(message.get("content"), list):
+            continue
+        for block in message["content"]:
+            if block.get("type") != "tool_use":
+                continue
+            name = str(block.get("name"))
+            inputs = block.get("input") or {}
+            tools[name] = tools.get(name, 0) + 1
+            if "/evals/" in json.dumps(inputs):
+                eval_access.append(name)
+            if name == "Skill":
+                skills.append(str(inputs.get("skill")))
+            if name in ("Agent", "Task"):
+                agents += 1
+            target = str(inputs.get("file_path") or "")
+            if target.endswith(PLAN) and name in plan:
+                if name == "Read" and (inputs.get("offset") or inputs.get("limit")):
+                    plan["Read_partial"] += 1
+                else:
+                    plan[name] += 1
+    return {"tools": tools, "plan": plan, "skills": skills, "agents": agents, "eval_access": eval_access,
+            "compactions": compactions, "subagent_transcripts": len(transcripts(path)) - 1}
+
+
+def split_progress(text: str) -> tuple[str, str]:
+    match = PROGRESS.search(text)
+    if not match:
+        return text, ""
+    level = len(match.group(0)) - len(match.group(0).lstrip("#"))
+    after = re.compile(rf"^#{{1,{level}}}\s", re.MULTILINE).search(text, match.end())
+    end = after.start() if after else len(text)
+    return text[: match.start()] + text[end:], text[match.start(): end]
+
+
+def plan_metrics(text: str) -> dict:
+    body, progress = split_progress(text)
+    match = bool(progress)
+
+    def hits(pattern: re.Pattern[str]) -> list[str]:
+        return [line.strip() for line in body.splitlines() if pattern.search(line)]
+
+    stale_tsv, stale_array, history = hits(STALE_TSV), hits(STALE_ARRAY), hits(HISTORY)
+    metrics = {
+        "owner_present": "Owner: Rowan" in text,
+        "progress_section": match,
+        "progress_dated": bool(DATE.search(progress)),
+        "stale_tsv": stale_tsv,
+        "stale_array": stale_array,
+        "history": history,
+        "escaping_lines": hits(ESCAPING),
+        "ndjson_lines": len(hits(NDJSON)),
+        "no_rows_lines": len(hits(NO_ROWS)),
+        "lower_case_rule": bool(re.search(r"(?i)lower-?case", body)),
+        "argparse_rule": "argparse" in body,
+        "unittest_command": "python3 -m unittest discover -s tests" in body,
+        "body_words": len(body.split()),
+        "body_lines": len(body.splitlines()),
+    }
+    metrics["deterministic_pass"] = (not stale_tsv and not stale_array and not history
+                                     and metrics["owner_present"] and metrics["progress_dated"])
+    return metrics
+
+
+def fixture_changes(workspace: Path) -> dict[str, list[str]]:
+    originals: dict[str, Path] = {}
+    for name in FIXTURES:
+        root = EVALS / "files" / name
+        originals.update({p.relative_to(root).as_posix(): p for p in root.rglob("*") if p.is_file()})
+    current = {p.relative_to(workspace).as_posix(): p for p in workspace.rglob("*") if p.is_file()}
+    changed = sorted(r for r, p in originals.items() if r != PLAN and (r not in current or current[r].read_bytes() != p.read_bytes()))
+    created = sorted(r for r in current if r not in originals)
+    return {"changed": changed, "created": created,
+            "non_document": sorted(r for r in [*changed, *created] if not r.endswith(".md"))}
+
+
+def judge_prompt(plan_text: str, workspace: Path, decisions: list[str]) -> str:
+    files = []
+    for relative in FIXTURE_CODE:
+        path = workspace / relative
+        if path.exists():
+            files.append(f"### {relative}\n\n```\n{path.read_text()}```")
+    return JUDGE_TEMPLATE.format(decisions="\n".join(f"- {d}" for d in decisions), files="\n\n".join(files), plan=plan_text)
+
+
+def parse_judge(result_text: str) -> dict:
+    start, end = result_text.find("{"), result_text.rfind("}")
+    if start < 0 or end < 0:
+        return {"parse_error": True, "raw": result_text}
+    try:
+        return json.loads(result_text[start:end + 1])
+    except json.JSONDecodeError:
+        return {"parse_error": True, "raw": result_text}
+
+
+def judge_run(run_dir: Path, model: str, budget: float, timeout: int) -> dict:
+    prompt_path = run_dir / "judge-prompt.md"
+    run_json = run_dir / "run.json"
+    if not prompt_path.exists() or not run_json.exists() or not load_json(run_json).get("finished"):
+        sys.exit(f"{run_dir}: the run did not finish all turns; not judging it")
+    config_dir = run_dir / "judge-config"
+    if config_dir.exists():
+        shutil.rmtree(config_dir)
+    seed_config(config_dir, keys=("env",), instructions=False)
+    cmd = ["claude", "-p", prompt_path.read_text(), "--output-format", "json", "--setting-sources", "user",
+           "--tools", "", "--model", model, "--max-budget-usd", str(budget)]
+    with tempfile.TemporaryDirectory(prefix="doc-coauthoring-judge-", dir="/tmp") as clean:
+        leaked = inherited_instructions(Path(clean) / "x")
+        if leaked:
+            sys.exit(f"judge working directory inherits instructions: {leaked}")
+        result, status = run_claude(cmd, cwd=Path(clean), config_dir=config_dir, timeout=timeout,
+                                    prefix=run_dir / "judge")
+    verdict = parse_judge(result.get("result") or "")
+    verdict["_judge"] = {"model": model, "models": sorted((result.get("modelUsage") or {}).keys()), "status": status,
+                         "cost_usd": result.get("total_cost_usd"), "seconds": result.get("_seconds")}
+    dump_json(run_dir / "judge.json", verdict)
+    return verdict
+
+
+def command_run(args: argparse.Namespace) -> None:
+    replay = load_json(REPLAY)
+    core = resolve_core(args.arm)
+    others = enabled_plugin_dirs() if args.plugins == "live" else []
+    plugin_dirs = [core, *(path for _, path in others)]
+    label = args.label or (args.arm if args.arm in ("baseline", "candidate") else core.name)
+    stamp = dt.datetime.now(dt.UTC).strftime("%Y%m%dT%H%M%SZ")
+    out_root = Path(args.out).resolve()
+    log(f"arm={label} core={core} version={plugin_version(core)} other_plugins={len(others)} model={args.model or 'settings'}")
+    if args.dry_run:
+        replay_turns = 1 + len(replay["replies"])
+        print(json.dumps({
+            "label": label, "core": str(core), "core_version": plugin_version(core),
+            "other_plugins": {key: str(path) for key, path in others},
+            "seeded_settings_keys": [k for k in SEED_KEYS if k in load_json(LIVE_CONFIG / "settings.json")],
+            "inherited_instructions": inherited_instructions(out_root / "run" / "workspace"),
+            "seeded_claude_md": (not args.no_user_instructions and (LIVE_CONFIG / "CLAUDE.md").exists()
+                                 and not inherited_instructions(out_root / "run" / "workspace")),
+            "turns_per_run": replay_turns, "repeats": args.repeats, "claude_version": claude_version(),
+            "turn_budget_usd": args.turn_budget, "max_run_budget_usd": args.turn_budget * replay_turns,
+            "judge": args.judge and args.judge_model,
+        }, indent=2))
+        return
+    for repeat in range(1, args.repeats + 1):
+        run_dir = out_root / f"{stamp}-{label}-{repeat}"
+        suffix = 1
+        while run_dir.exists():
+            suffix += 1
+            run_dir = out_root / f"{stamp}-{label}-{repeat}.{suffix}"
+        workspace = run_dir / "workspace"
+        config_dir = run_dir / "config"
+        make_workspace(workspace)
+        inherited = inherited_instructions(workspace)
+        if args.no_user_instructions and inherited:
+            sys.exit(f"--no-user-instructions: {workspace} inherits {inherited}; pass --out outside them")
+        # Inherited files already deliver the live instructions; seeding a copy too would load them twice.
+        seeded = seed_config(config_dir, keys=SEED_KEYS, instructions=not args.no_user_instructions and not inherited)
+        seeded["inherited_instructions"] = inherited
+        record: dict[str, object] = {
+            "label": label, "arm": args.arm, "core": str(core), "core_version": plugin_version(core),
+            "other_plugins": [key for key, _ in others], "seeded": seeded, "claude_version": claude_version(),
+            "model": args.model, "effort": args.effort, "turn_budget_usd": args.turn_budget,
+            "started": stamp, "turns": [],
+        }
+        dump_json(run_dir / "run.json", record)
+        prompts = [f"{replay['preamble']}\n\n{replay['prompt']}", *replay["replies"]]
+        session_id = None
+        for index, prompt in enumerate(prompts, start=1):
+            log(f"[{label}-{repeat}] turn {index}/{len(prompts)}")
+            turn = run_turn(prompt, args=args, cwd=workspace, config_dir=config_dir, plugin_dirs=plugin_dirs,
+                            resume=session_id, prefix=run_dir / f"turn-{index}")
+            record["turns"].append(turn)
+            dump_json(run_dir / "run.json", record)
+            session_id = turn["session_id"] or session_id
+            plan_path = workspace / PLAN
+            if plan_path.exists():
+                shutil.copy2(plan_path, run_dir / f"plan-after-turn-{index}.md")
+            if turn["status"] != 0 or turn["is_error"] or not turn["session_id"]:
+                log(f"[{label}-{repeat}] stopping after turn {index}: status={turn['status']} is_error={turn['is_error']}")
+                break
+        plan_path = workspace / PLAN
+        plan_text = plan_path.read_text() if plan_path.exists() else ""
+        (run_dir / "plan-final.md").write_text(plan_text)
+        record["completed_turns"] = len(record["turns"])
+        record["finished"] = (len(record["turns"]) == len(prompts) and record["turns"][-1]["status"] == 0
+                              and not record["turns"][-1]["is_error"])
+        record["cost_usd"] = round(sum(t["cost_usd"] or 0 for t in record["turns"]), 4)
+        record["metrics"] = plan_metrics(plan_text)
+        record["fixture_changes"] = fixture_changes(workspace)
+        transcript = find_transcript(config_dir, session_id) if session_id else None
+        if transcript:
+            shutil.copy2(transcript, run_dir / "transcript.jsonl")
+            record["audit"] = audit_transcript(transcript)
+        (run_dir / "judge-prompt.md").write_text(judge_prompt(plan_text, workspace, replay["final_decisions"]))
+        dump_json(run_dir / "run.json", record)
+        log(f"[{label}-{repeat}] done: turns={record['completed_turns']} cost=${record['cost_usd']} "
+            f"deterministic_pass={record['metrics']['deterministic_pass']}")
+        if args.judge and record["finished"]:
+            verdict = judge_run(run_dir, args.judge_model, args.judge_budget, args.turn_timeout)
+            log(f"[{label}-{repeat}] judge: evergreen={verdict.get('evergreen_score')} "
+                f"stale={len(verdict.get('stale_claims', []))} history={len(verdict.get('history_narration', []))}")
+
+
+def command_judge(args: argparse.Namespace) -> None:
+    for run_dir in args.run_dirs:
+        verdict = judge_run(Path(run_dir).resolve(), args.judge_model, args.judge_budget, args.turn_timeout)
+        print(json.dumps({"run": run_dir, **{k: v for k, v in verdict.items() if k != "raw"}}, indent=2))
+
+
+def command_grade(args: argparse.Namespace) -> None:
+    print(json.dumps(plan_metrics(Path(args.plan).read_text()), indent=2, ensure_ascii=False))
+
+
+def command_summarize(args: argparse.Namespace) -> None:
+    rows = []
+    for run_json in sorted(Path(args.root).resolve().rglob("run.json")):
+        record = load_json(run_json)
+        final_plan = run_json.with_name("plan-final.md")
+        metrics = plan_metrics(final_plan.read_text()) if final_plan.exists() else record.get("metrics") or {}
+        audit = record.get("audit") or {}
+        plan = audit.get("plan") or {}
+        judge_path = run_json.with_name("judge.json")
+        verdict = load_json(judge_path) if judge_path.exists() else {}
+
+        def count(key: str) -> str:
+            value = verdict.get(key)
+            return str(len(value)) if isinstance(value, list) else "-"
+
+        rows.append([
+            run_json.parent.name, str(record.get("core_version")), str(record.get("completed_turns")),
+            f"{record.get('cost_usd', 0):.2f}", f"{plan.get('Edit', '-')}/{plan.get('Write', '-')}/{plan.get('Read', '-')}",
+            str(audit.get("agents", "-")), ",".join(sorted(set(audit.get("skills", [])))) or "-",
+            str(len(metrics.get("stale_tsv", []))), str(len(metrics.get("stale_array", []))),
+            str(len(metrics.get("history", []))), str(metrics.get("ndjson_lines", "-")), str(metrics.get("body_words", "-")),
+            "pass" if metrics.get("deterministic_pass") else "fail",
+            count("contradictions"), count("stale_claims"), count("repeated_rules"), count("history_narration"),
+            count("unrunnable_acceptance"), str(verdict.get("evergreen_score", "-")),
+        ])
+    header = ["run", "core", "turns", "usd", "plan E/W/R", "agents", "skills", "tsv", "array", "hist", "ndjson", "words",
+              "det", "J:contra", "J:stale", "J:repeat", "J:hist", "J:unrun", "J:score"]
+    print("| " + " | ".join(header) + " |")
+    print("|" + "---|" * len(header))
+    for row in rows:
+        print("| " + " | ".join(row) + " |")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    run = sub.add_parser("run", help="replay the case for one arm")
+    run.add_argument("--arm", required=True, help="baseline, candidate, or a path to a core plugin directory")
+    run.add_argument("--repeats", type=int, default=1)
+    run.add_argument("--label")
+    run.add_argument("--out", default=str(DEFAULT_OUT))
+    run.add_argument("--model", help="author model; defaults to the seeded settings")
+    run.add_argument("--effort", choices=("low", "medium", "high", "xhigh", "max"))
+    run.add_argument("--turn-budget", type=float, default=5.0, help="--max-budget-usd per turn")
+    run.add_argument("--turn-timeout", type=int, default=1200, help="seconds per turn")
+    run.add_argument("--plugins", choices=("live", "none"), default="live",
+                     help="live loads every other plugin the live config enables; none loads only the core arm")
+    run.add_argument("--no-user-instructions", action="store_true", help="seed no live CLAUDE.md; refuses an --out whose parents hold instruction files")
+    run.add_argument("--judge", action="store_true", help="grade each run when it finishes")
+    run.add_argument("--judge-model", default="claude-opus-5-5")
+    run.add_argument("--judge-budget", type=float, default=2.0)
+    run.add_argument("--dry-run", action="store_true", help="resolve plugins and settings, print the plan, and exit")
+    run.set_defaults(func=command_run)
+
+    judge = sub.add_parser("judge", help="grade finished runs")
+    judge.add_argument("run_dirs", nargs="+")
+    judge.add_argument("--judge-model", default="claude-opus-5-5")
+    judge.add_argument("--judge-budget", type=float, default=2.0)
+    judge.add_argument("--turn-timeout", type=int, default=900)
+    judge.set_defaults(func=command_judge)
+
+    grade = sub.add_parser("grade", help="print deterministic metrics for a plan file")
+    grade.add_argument("plan")
+    grade.set_defaults(func=command_grade)
+
+    summarize = sub.add_parser("summarize", help="tabulate runs under a directory")
+    summarize.add_argument("root", nargs="?", default=str(DEFAULT_OUT))
+    summarize.set_defaults(func=command_summarize)
+
+    args = parser.parse_args()
+    args.func(args)
+
+
+if __name__ == "__main__":
+    main()

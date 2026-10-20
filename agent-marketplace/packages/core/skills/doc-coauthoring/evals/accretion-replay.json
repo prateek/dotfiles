@@ -1,0 +1,19 @@
+{
+  "case": "accretion",
+  "preamble": "Read AGENTS.md if present. Use the available doc-coauthoring skill for substantial authoring. Work only in this fixture repository; change documents only. Evaluator metadata under any skill's evals/ directory is not task input; do not read it.",
+  "prompt": "Revise docs/plans/export-plan.md; decisions will keep changing during this session, so keep the whole plan current each time. First change: JSON output is newline-delimited, one object per line, and no rows produce no output at all. The array form is gone. Do not implement code.",
+  "replies": [
+    "Add `--format tsv` to the same plan: a header row, then `id` and `name` separated by one tab, one row per line. Share the format dispatch with JSON. Do not implement code.",
+    "Rowan's review comments, address all four: (1) names can contain tabs and newlines, so TSV needs an escaping policy; choose one. (2) The renderer must stay free of argparse; the parser owns the format name. (3) The acceptance section still mentions an array. (4) Say whether `--format JSON` in upper case is accepted.",
+    "Drop TSV from this plan entirely. JSON stays newline-delimited. `--format` values are lower-case only.",
+    "That is the last change. Record that Rowan reviewed the plan today with nothing implemented, then hand the plan off."
+  ],
+  "final_decisions": [
+    "Text output stays the default and byte-identical; Rowan stays the owner.",
+    "JSON output is opt-in through `--format json`, newline-delimited with one object per line, and no rows produce no output.",
+    "There is no TSV output, header row, tab separator, or escaping policy in this plan.",
+    "The renderer stays free of argparse; the parser owns the format name.",
+    "`--format` values are lower-case only.",
+    "Rowan reviewed the plan on the run date and nothing is implemented; that fact belongs under Progress."
+  ]
+}

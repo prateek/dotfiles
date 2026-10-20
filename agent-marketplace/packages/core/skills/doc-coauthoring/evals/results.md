@@ -353,6 +353,47 @@ general reliability, or another client's behavior. The explicit catalog cases
 test handoff; they do not replace the broader three-skill discovery test. Strict
 catalog isolation and that broader U2 gate remain open; daily activation is separate.
 
+## Accretion case: core 1.4.5
+
+The candidate's final plans carried no history narration, contradictions, or
+stale TSV content in two of two runs; both baseline runs carried narration and
+about half again as many repeated rules. Two runs per arm show direction, not a rate.
+
+- Baseline: installed core 1.4.4. Candidate: the core 1.4.5 build before the
+  step 4 trigger was widened to every substantive revision; that later wording
+  change was not rerun. The runner swaps only core, so both arms loaded the same
+  installed crit plugin and the crit patch was never exercised.
+- Runtime: Claude Code 2.1.304 headless, author model and effort from the live
+  settings, an isolated config seeded with the live settings, `CLAUDE.md`, and
+  the ten other enabled plugins. `scripts/doc-coauthoring-evals` ran both arms
+  in parallel. Because the run directories sat under `$HOME`, Claude also read
+  `~/.claude/CLAUDE.md` as a parent-directory file, so both arms loaded the
+  machine instructions twice. The judge, Opus 5.5 with no tools and no session
+  history, was rerun from a directory outside `$HOME`; the table shows those
+  clean verdicts.
+- Every run completed five turns. No run changed fixture code or read eval
+  files. The transcript audit predates subagent counting, so plan edit counts
+  cover only the top-level session.
+
+| Measure | Baseline 1 | Baseline 2 | Candidate 1 | Candidate 2 |
+| --- | --- | --- | --- | --- |
+| Judge: history narration | 3 | 1 | 0 | 0 |
+| Judge: repeated rules | 6 | 5 | 3 | 4 |
+| Judge: contradictions | 1 | 1 | 0 | 0 |
+| Judge: unrunnable acceptance checks | 1 | 1 | 0 | 1 |
+| Judge: evergreen score (1–5) | 3 | 4 | 4 | 4 |
+| Grader: stale TSV lines | 2 | 0 | 0 | 0 |
+| Body words | 787 | 494 | 463 | 537 |
+| Subagent calls | 1 | 1 | 4 | 4 |
+| Cost (USD) | 3.79 | 3.61 | 7.72 | 6.68 |
+
+Both baseline plans put the review record in a status line instead of Progress,
+which the judge counted as a contradiction; one also kept "An earlier revision
+of this plan included `--format tsv`; it was dropped". The candidate's cost
+roughly doubles, mostly from the extra fresh-reader passes. The grader still
+flags a test-table row mapping `[]` to empty output, so read its array column
+beside the judge.
+
 ## Original implementation checks (core 1.4.0)
 
 Both edited skill entrypoints passed the skill parser. The packaging suite passed
