@@ -4,7 +4,7 @@ doc_type: plan
 summary: "Replaces one Orca split per acpx run with a shared Herdr tab view per calling terminal, covering tab naming, logging, close behavior, and verification"
 owner: Prateek
 created: 2026-09-27
-updated: 2026-09-27
+updated: 2026-10-20
 related:
   - ../adr/0036-acpx-shared-herdr-pane.md
 current_guidance: ../../agent-marketplace/packages/utils-agent/skills/acpx/SKILL.md
@@ -22,7 +22,8 @@ The helper names tabs by launch order, local time, and shortcut. Each invocation
 gets its own tab and log. Completed tabs remain visible; stopping one helper
 closes only its tab. The Herdr config hides the sidebar and pane decoration and
 shows a session count in the bottom tab strip. Install Herdr through the
-mac-desktop package group. See [ADR 0036](../adr/0036-acpx-shared-herdr-pane.md).
+personal-apps package group; work machines go without it because Cortex XDR
+terminates Herdr there, so `acpx-pane` runs inline. See [ADR 0036](../adr/0036-acpx-shared-herdr-pane.md).
 
 The pane shell execs the logging runner. After ACPX exits, the runner records
 the status and waits for a close key, leaving output visible without a shell

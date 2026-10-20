@@ -49,7 +49,6 @@ brews = [
 
   # Desktop app install support and editor integration.
   { name = "mas" },
-  { name = "herdr" },
 ]
 casks = [
   # Accounts, browsers, terminals, and editors.
@@ -409,6 +408,9 @@ brews = [
   # Personal AI agent integrations.
   { name = "steipete/tap/imsg" },
   { name = "steipete/tap/peekaboo" },
+  # Not on work machines: Cortex XDR terminates herdr on start, taking the
+  # whole Orca terminal host with it. acpx-pane runs inline without it.
+  { name = "herdr" },
 ]
 casks = [
   { name = "nvalt", appdir = "/Applications" },
