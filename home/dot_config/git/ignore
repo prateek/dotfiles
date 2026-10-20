@@ -11,3 +11,7 @@
 # .obsidian config but never this churn.
 **/.obsidian/workspace.json
 **/.obsidian/workspace-mobile.json
+
+# Agent scratch notes for the ghost skill; folded into
+# GHOST_OF_COMMITS_PAST.md at landing, never committed.
+GHOST_MESSAGE_BUFFER.md

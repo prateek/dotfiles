@@ -64,6 +64,18 @@ _Avoid_: Snapshot, export, dump
 A stable name for a model family, capability tier, and thinking increment, resolved against the access available on a machine.
 _Avoid_: Model ID, harness, fixed pin
 
+## Agent conventions
+
+**Ghost ledger**:
+`GHOST_OF_COMMITS_PAST.md` at a repo root: committed entries, one per landing, listing checks on landed work whose result is still unknown.
+_Avoid_: TODO list, handoff doc, progress log
+
+**Ghost entry**:
+One dated message in the ghost ledger, at most 100 words, written for the next agent: the checks to run and how each is known to be done.
+
+**Ghost buffer**:
+`GHOST_MESSAGE_BUFFER.md`, an ignored scratch file at the repo root where an agent accrues candidate checks while working; folded into one ghost entry at landing.
+
 ## Search selection
 
 **Evidence area**:
