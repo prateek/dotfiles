@@ -52,8 +52,8 @@ documentation. Repository-local instructions take precedence.
 ## Investigation
 
 - Settle third-party APIs from local types or language-server evidence first,
-  then vendored source, then version-matched `ask docs <spec>` or
-  `ask src <spec>`.
+  then vendored source, then version-matched upstream source through the
+  `src` skill (`ask src github:owner/repo@<tag>`).
 - When behavior, tests, and docs leave intent unclear, inspect history with
   `git log --follow`, `git log -S`, or `git log -G`; use blame and review
   context only if the cheaper evidence does not settle it.

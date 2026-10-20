@@ -1,0 +1,75 @@
+#!/bin/sh
+# Print an `ask` checkout path for a GitHub branch, refetching when the cached
+# copy is older than SRC_FRESH_MAX_AGE seconds (default 86400) and upstream has
+# moved since it was fetched.
+#
+# Usage: fresh github:owner/repo[@branch]
+#
+# A spec without a ref reads the repo's default branch. Tags and SHAs never
+# change; pass them to `ask src` directly. The fetch time is the mtime of the
+# entry's .ask-hash. A commit pushed after the fetch but dated before it reads
+# as no update.
+
+set -eu
+
+usage() {
+  echo "usage: fresh github:owner/repo[@branch]" >&2
+  exit 2
+}
+
+[ $# -eq 1 ] || usage
+spec=$1
+case $spec in
+  github:*/*) ;;
+  *) usage ;;
+esac
+
+body=${spec#github:}
+repo_path=${body%%@*}
+owner=${repo_path%%/*}
+repo=${repo_path#*/}
+branch=
+case $body in
+  *@*) branch=${body#*@} ;;
+esac
+
+if ! path=$(ask src --no-fetch "$spec" 2>/dev/null); then
+  exec ask src "$spec"
+fi
+
+case $path in
+  */github/github.com/"$owner"/"$repo"/?*) ;;
+  *)
+    echo "fresh: unexpected checkout path from ask: $path" >&2
+    exit 1
+    ;;
+esac
+
+stamp=$path/.ask-hash
+fetched=$(stat -c %Y "$stamp" 2>/dev/null || stat -f %m "$stamp")
+now=$(date +%s)
+if [ $((now - fetched)) -lt "${SRC_FRESH_MAX_AGE:-86400}" ]; then
+  printf '%s\n' "$path"
+  exit 0
+fi
+
+unchecked() {
+  echo "fresh: could not reach GitHub; serving the cached copy, freshness unchecked" >&2
+  printf '%s\n' "$path"
+  exit 0
+}
+
+if [ -z "$branch" ]; then
+  branch=$(gh api "repos/$owner/$repo" --jq .default_branch 2>/dev/null) || unchecked
+fi
+head=$(gh api "repos/$owner/$repo/commits/$branch" --jq .commit.committer.date 2>/dev/null) || unchecked
+head_ts=$(date -u -d "$head" +%s 2>/dev/null || date -j -u -f '%Y-%m-%dT%H:%M:%SZ' "$head" +%s)
+
+if [ "$head_ts" -gt "$fetched" ]; then
+  echo "fresh: $owner/$repo@$branch moved since the cached fetch; refetching" >&2
+  rm -rf -- "$path"
+  exec ask src "$spec"
+fi
+
+touch "$stamp"
+printf '%s\n' "$path"

@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
-"""Trigger eval for the installed acpx skill.
+"""Trigger eval for one installed skill.
 
-Run each query in trigger-evals.json through `claude -p` inside the current
+Run each query in a trigger-evals.json through `claude -p` inside the current
 directory, watch the first tool call, and classify it. A run triggers when that
-first call is the Skill tool selecting `utils-agent:acpx`. The process is killed
-at that decision, so nothing the model chose ever executes.
+first call is the Skill tool selecting the target skill (`--skill`). The
+process is killed at that decision, so nothing the model chose ever executes.
+Exits 1 when any query misses its expectation.
 
 This does not inject a temporary command the way skill-creator's run_eval.py
 does. The skill under test must be installed, so the listing is the real one
-and `utils-agent:acpx-cli` competes exactly as it does in use. Injecting a copy
-next to an installed skill double-lists it, and the installed one wins.
+and its siblings compete exactly as they do in use. Injecting a copy next to an
+installed skill double-lists it, and the installed one wins.
 
 The text and thinking the model emits before its first tool call are kept per
 run: a miss whose pre-tool text says "read the file, then delegate" is the
@@ -29,19 +30,20 @@ from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-ROUTER = "utils-agent:acpx"
-SIBLING = "utils-agent:acpx-cli"
 SKILL_NAME = re.compile(r'"skill"\s*:\s*"([^"]*)"')
 
 
+TARGET = "target"
+
+
 def first_tool(
-    query: str, timeout: float, model: str | None, transcript: Path | None
+    query: str, timeout: float, model: str | None, transcript: Path | None, labeler
 ) -> tuple[str, str | None, str]:
     """Return (label, model, pre_tool_text) for one run.
 
-    Labels: `router`, `acpx-cli`, `skill:<name>`, a tool name such as `Bash` or
-    `Agent`, `none` (the turn ended without a tool call), `timeout`, or `exit`
-    (the process ended before any decision).
+    Labels: `target`, `skill:<name>` for any other skill, a tool name such as
+    `Bash` or `Agent`, `none` (the turn ended without a tool call), `timeout`,
+    or `exit` (the process ended before any decision).
     """
     cmd = ["claude", "-p", query, "--output-format", "stream-json", "--verbose", "--include-partial-messages"]
     if model:
@@ -89,7 +91,7 @@ def first_tool(
                         partial += delta.get("partial_json", "")
                         match = SKILL_NAME.search(partial)
                         if match:
-                            label = skill_label(match.group(1))
+                            label = labeler(match.group(1))
                             break
                     elif delta.get("type") == "text_delta":
                         pre_text.append(delta.get("text", ""))
@@ -98,7 +100,7 @@ def first_tool(
                 elif st in ("content_block_stop", "message_stop"):
                     if pending_skill:
                         match = SKILL_NAME.search(partial)
-                        label = skill_label(match.group(1)) if match else "skill:?"
+                        label = labeler(match.group(1)) if match else "skill:?"
                         break
                     if st == "message_stop":
                         label = "none"
@@ -108,7 +110,7 @@ def first_tool(
                 for block in event.get("message", {}).get("content", []):
                     if block.get("type") == "tool_use":
                         name = block.get("name", "")
-                        label = skill_label(block.get("input", {}).get("skill", "")) if name == "Skill" else name
+                        label = labeler(block.get("input", {}).get("skill", "")) if name == "Skill" else name
                         break
                 if label:
                     break
@@ -124,16 +126,16 @@ def first_tool(
     return label or "exit", run_model, "".join(pre_text).strip()
 
 
-def skill_label(name: str) -> str:
-    if name == ROUTER:
-        return "router"
-    if name == SIBLING:
-        return "acpx-cli"
-    return f"skill:{name}"
+def labeler_for(skill: str):
+    def label(name: str) -> str:
+        return TARGET if name == skill else f"skill:{name}"
+
+    return label
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--skill", required=True, help="installed skill under test, e.g. utils-agent:src")
     parser.add_argument("--eval-set", required=True, help="trigger-evals.json: [{query, should_trigger}]")
     parser.add_argument("--runs", type=int, default=3, help="runs per query (default 3)")
     parser.add_argument("--workers", type=int, default=3, help="concurrent claude -p processes (default 3)")
@@ -150,6 +152,7 @@ def main() -> int:
     if transcripts is not None:
         transcripts.mkdir(parents=True, exist_ok=True)
 
+    labeler = labeler_for(args.skill)
     labels: dict[str, list[str]] = {item["query"]: [] for item in eval_set}
     pre_texts: dict[str, list[str]] = {item["query"]: [] for item in eval_set}
     models: Counter[str] = Counter()
@@ -159,7 +162,7 @@ def main() -> int:
         for index, item in enumerate(eval_set, start=1):
             for run in range(1, args.runs + 1):
                 path = transcripts / f"{index:02d}-run{run}.jsonl" if transcripts is not None else None
-                futures[pool.submit(first_tool, item["query"], args.timeout, args.model, path)] = item["query"]
+                futures[pool.submit(first_tool, item["query"], args.timeout, args.model, path, labeler)] = item["query"]
         for future in as_completed(futures):
             query = futures[future]
             try:
@@ -175,7 +178,7 @@ def main() -> int:
     results = []
     for item in eval_set:
         seen = labels[item["query"]]
-        triggers = sum(1 for label in seen if label == "router")
+        triggers = sum(1 for label in seen if label == TARGET)
         rate = triggers / len(seen) if seen else 0.0
         passed = rate >= args.threshold if item["should_trigger"] else rate < args.threshold
         results.append(
@@ -192,7 +195,7 @@ def main() -> int:
         )
     passed_total = sum(1 for result in results if result["pass"])
     output = {
-        "skill": ROUTER,
+        "skill": args.skill,
         "models": dict(models),
         "results": results,
         "summary": {"total": len(results), "passed": passed_total, "failed": len(results) - passed_total},
@@ -210,16 +213,14 @@ def main() -> int:
                 file=sys.stderr,
             )
             for label, text in zip(result["first_tools"], result["pre_tool_text"]):
-                miss = (result["should_trigger"] and label != "router") or (not result["should_trigger"] and label == "router")
+                miss = (result["should_trigger"] and label != TARGET) or (not result["should_trigger"] and label == TARGET)
                 if miss and text:
                     print(f"      {label}: {text[-220:]!r}", file=sys.stderr)
         if not any(result["triggers"] for result in results):
-            print(
-                f"note: {ROUTER} was never selected; check that utils-agent >= 1.3.0 is installed", file=sys.stderr
-            )
+            print(f"note: {args.skill} was never selected; check that it is installed", file=sys.stderr)
 
     print(json.dumps(output, indent=2))
-    return 0
+    return 0 if passed_total == len(results) else 1
 
 
 if __name__ == "__main__":

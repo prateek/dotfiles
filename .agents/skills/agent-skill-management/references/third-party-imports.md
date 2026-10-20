@@ -9,7 +9,7 @@ and `just update` operate on that shared graph; there is no package selector.
 Before removing an input, check selections in every plugin. A shared input update
 requires reviewing the output and bumping the version of each affected plugin.
 
-For dependency behavior questions, use `utils-agent:ask` against
+For dependency behavior questions, use `utils-agent:src` against
 `github:microsoft/apm@v<locked version>`. Acquisition uses development dependencies and native
 `apm lock`; publication uses native source directories. The bundle exporter is not
 a substitute: the executed research found missing helpers and rejected evals.

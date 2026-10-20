@@ -1,0 +1,58 @@
+[
+  {
+    "query": "check https://github.com/folivoraAI/BetterTouchTool-Docs and see if btt has anything for the selection menu",
+    "should_trigger": true
+  },
+  {
+    "query": "read stablyai/orca's code - i want to click a link with my mouse and have it open in orca silently without stealing focus. is that possible?",
+    "should_trigger": true
+  },
+  {
+    "query": "pull up rclone's source and show me the interface a new storage backend has to implement",
+    "should_trigger": true
+  },
+  {
+    "query": "how does zod's parseAsync short-circuit after the first failed refinement? check it against the version this project actually has installed",
+    "should_trigger": true
+  },
+  {
+    "query": "look at the latest trunk of orca and tell me how it registers its url scheme handler",
+    "should_trigger": true
+  },
+  {
+    "query": "read the source at https://gitlab.com/gitlab-org/cli and tell me where glab stores its auth token",
+    "should_trigger": true
+  },
+  {
+    "query": "for codex, read its source at rust-v0.163.0 and find how spawn_agent picks the child's model",
+    "should_trigger": true
+  },
+  {
+    "query": "don't guess goku syntax from memory - check GokuRakuJoudo's source for how :condi in-rule conditions get parsed",
+    "should_trigger": true
+  },
+  {
+    "query": "search the web for recent reviews of the kinesis advantage 360 and summarize the complaints",
+    "should_trigger": false
+  },
+  {
+    "query": "before you touch docs/migration-plan.md, ask me clarifying questions about what i actually want out of it",
+    "should_trigger": false
+  },
+  {
+    "query": "run a sourcegraph search for public repos whose SKILL.md mentions defineFlow",
+    "should_trigger": false
+  },
+  {
+    "query": "here's src/lib/parse.ts - why does parseLine drop trailing whitespace?",
+    "should_trigger": false
+  },
+  {
+    "query": "explain what the regex in src/lib/parse.ts matches and give me two strings it rejects",
+    "should_trigger": false
+  },
+  {
+    "query": "bump zod to the latest minor in package.json and update the lockfile",
+    "should_trigger": false
+  }
+]

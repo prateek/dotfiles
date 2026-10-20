@@ -58,6 +58,7 @@ Status and summary for each are in the [inventory](inventory.md#plans).
 - [Agent marketplace layout](plans/agent-marketplace-layout-plan.md)
 - [Agent session wiki](plans/agent-session-wiki-plan.md)
 - [Agent skills repo split](plans/agent-skills-repo-split-plan.md)
+- [Src skill (formerly ask)](plans/src-skill-plan.md)
 - [BetterDisplay display modes](plans/betterdisplay-display-modes-plan.md)
 - [Browser skill](plans/browser-skill-plan.md)
 - [Browser components and Camofox adoption](plans/browser-runtime-controller-plan.md)

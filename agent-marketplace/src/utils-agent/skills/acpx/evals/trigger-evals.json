@@ -29,7 +29,7 @@
   },
   {
     "query": "farm the migration audit out to another agent, i don't want the files under db/migrations eating my context. i just want a list of the ones that aren't reversible",
-    "should_trigger": true
+    "should_trigger": false
   },
   {
     "query": "have opus look over docs/design/sharding.md and tell me what i'm missing. don't change anything, just report back",

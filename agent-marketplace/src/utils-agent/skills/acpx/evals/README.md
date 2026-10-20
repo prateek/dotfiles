@@ -26,11 +26,14 @@ evals/run_trigger_evals.sh                                   # 18 queries × 3 r
 evals/run_trigger_evals.sh --runs 5 --transcripts /tmp/te    # for a decision, with evidence
 ```
 
-The wrapper builds a fresh fixture with `setup_fixture.sh`, runs
-`trigger_eval.py` from inside it, and prints the runner's JSON to stdout with
-the per-query table on stderr. Each run is one `claude -p` turn: the runner
-kills the process at the first tool decision, so nothing the model chose ever
-executes.
+The wrapper hands this skill's cases, fixture, and `acpx-cli` sibling to the
+shared runner in `agent-marketplace/scripts/trigger-eval/`, so run it from the
+checkout. The runner builds a fresh fixture with `setup_fixture.sh`, runs
+`trigger_eval.py` from inside it, and prints its JSON to stdout with the
+per-query table on stderr. It exits 1 when any query misses. Each run is one
+`claude -p` turn: the runner kills the process at the first tool decision, so
+nothing the model chose ever executes. The JSON labels a selection of
+`utils-agent:acpx` as `target`.
 
 `trigger_eval.py` measures the **installed** skill against the real listing. It
 does not inject a temporary command the way skill-creator's `run_eval.py` does;
@@ -96,7 +99,16 @@ Two boundaries are documented, not defects:
   eating my context" goes to `Bash` then a subagent every time. "Another agent"
   plus a context-budget motive reads as the built-in Agent tool; the
   description's run-it-elsewhere clause does not beat that, and arguably should
-  not.
+  not. On 2026-10-20 it was relabeled `should_trigger: false`: it names no
+  model or shortcut, and the native subagent is the endorsed outcome under
+  native-first routing.
+
+On 2026-10-20 the shared runner (exit 1 on any miss) scored this lane 15/19 on
+`claude-opus-5-5`. All four misses went straight to the native Agent tool,
+skipping the model resolution the skill requires first. The description now
+says to load the skill before spawning that subagent, and names hand-offs
+outside the session as a branch; the lane then scored 18/19, with the
+farm-out case relabeled as above.
 - Case 8 ("ask the opus model … then update the migration if it won't") was
   first labeled should-not-trigger on the premise that naming a model family is
   not a delegation request. The model read it as one, coherently — delegate the

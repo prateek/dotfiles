@@ -1,6 +1,6 @@
 ---
 name: acpx
-description: Delegate a task by model shortcut (agpt, pgpt, agptx, pgptx, agptw, aopus, popus, afable, pfable, agemini, pgemini), or get a review or second opinion from a named model. Prefer a compatible native subagent; use acpx when native delegation cannot honor the request or a separate external session is requested.
+description: Delegate a task, review, or second opinion to another model by shortcut (agpt, pgpt, agptx, pgptx, agptw, aopus, popus, afable, pfable, agemini, pgemini), by model name, or as a hand-off the user wants done outside this session. Load it before spawning that subagent; it resolves the exact model, then runs a compatible native subagent or an external acpx session.
 argument-hint: "[-m|--model agptx] [-w|--write] [--allow-paid] [--refresh] [--inline] <task> [-- <acpx flags>]"
 ---
 
