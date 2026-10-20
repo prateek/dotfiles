@@ -13,16 +13,36 @@ fi
 case "$app" in /*.app) ;; *) echo 'Destination must be an absolute .app path.' >&2; exit 1 ;; esac
 cache="${XDG_CACHE_HOME:-$HOME/.cache}/dotfiles/tcc-onboarding"
 mkdir -p "$cache" "$(dirname "$app")"
-if ! mkdir "$cache/install.lock" 2>/dev/null; then
-  echo "Permission helper install already in progress; retry apply later. Lock: $cache/install.lock" >&2
-  exit 73
+lock="$cache/install.lock"
+# A symlink whose target is the owner's pid is created atomically, so the owner is always known and
+# a lock left by a crashed install can be reclaimed without racing a live one.
+take_lock() { ln -s "$$" "$lock" 2>/dev/null; }
+# Earlier installers locked with a directory, which `ln -s` would silently link into.
+if [ -d "$lock" ] && [ ! -L "$lock" ]; then
+  echo 'Removing a stale permission helper install lock left by an earlier installer.' >&2
+  rm -rf -- "$lock"
+fi
+if ! take_lock; then
+  owner=$(readlink "$lock" 2>/dev/null || true)
+  if [ -n "$owner" ] && kill -0 "$owner" 2>/dev/null; then
+    echo "Permission helper install already in progress (pid $owner); retry apply later. Lock: $lock" >&2
+    exit 73
+  fi
+  echo "Removing a stale permission helper install lock${owner:+ from pid $owner}." >&2
+  rm -rf -- "$lock"
+  if ! take_lock; then
+    echo "Permission helper install already in progress; retry apply later. Lock: $lock" >&2
+    exit 73
+  fi
 fi
 stage=''
 cleanup() {
   [ -z "$stage" ] || rm -rf -- "$stage"
-  rmdir "$cache/install.lock"
+  [ "$(readlink "$lock" 2>/dev/null)" != "$$" ] || rm -f -- "$lock"
 }
 trap cleanup EXIT
+# LaunchServices lists only the GUI; CLI runs of the same binary never block an update.
+helper_running() { [ -n "$(lsappinfo find bundleid=com.prateek.DotfilesPermissions 2>/dev/null)" ]; }
 
 if [ -e "$app" ]; then
   identity=$(plutil -extract CFBundleIdentifier raw "$app/Contents/Info.plist" 2>/dev/null || true)
@@ -40,11 +60,79 @@ if ! xcrun swift --version >/dev/null 2>&1; then
   echo 'Swift toolchain unavailable. Review expected grants in System Settings → Privacy & Security, or install Command Line Tools and rerun apply.' >&2
   exit 69
 fi
+# A per-machine self-signed identity keeps the designated requirement, and so the helper's
+# Full Disk Access grant, stable across rebuilds; ad-hoc signatures change with every build.
+# The keychain's random password lives beside it so unattended applies can sign without a prompt.
+signing_name='Dotfiles Permissions Code Signing'
+keychain="$HOME/Library/Keychains/dotfiles-codesign.keychain-db"
+secret="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/codesign/keychain-password"
+# Runs inside a command substitution in an `if`, where errexit is off: every step checks itself.
+# Reading the certificate needs no unlock, so an unchanged apply never touches the password.
+signing_identity() {
+  if [ ! -e "$keychain" ]; then
+    mkdir -p "$(dirname "$secret")" "$(dirname "$keychain")" && chmod 700 "$(dirname "$secret")" || return 1
+    (umask 077; openssl rand -hex 24 > "$secret") || return 1
+    local work
+    work=$(mktemp -d "$(dirname "$secret")/new.XXXXXX") || return 1
+    printf '%s\n' '[req]' 'distinguished_name = dn' 'x509_extensions = ext' 'prompt = no' '[dn]' "CN = $signing_name" \
+      '[ext]' 'basicConstraints = critical,CA:false' 'keyUsage = critical,digitalSignature' 'extendedKeyUsage = critical,codeSigning' > "$work/cert.cnf"
+    # SHA1/3DES PKCS#12 is the format `security import` reads from both LibreSSL and OpenSSL 3.
+    # `security` takes passwords only as arguments; they are visible to `ps` while it runs.
+    if ! { openssl req -x509 -newkey rsa:2048 -nodes -days 7300 -config "$work/cert.cnf" -keyout "$work/key.pem" -out "$work/cert.pem" 2>/dev/null &&
+           openssl pkcs12 -export -keypbe PBE-SHA1-3DES -certpbe PBE-SHA1-3DES -macalg sha1 \
+             -inkey "$work/key.pem" -in "$work/cert.pem" -out "$work/identity.p12" -passout "file:$secret" &&
+           security create-keychain -p "$(cat "$secret")" "$keychain" >/dev/null &&
+           security set-keychain-settings "$keychain" >/dev/null &&
+           security import "$work/identity.p12" -k "$keychain" -P "$(cat "$secret")" -T /usr/bin/codesign >/dev/null &&
+           security set-key-partition-list -S apple-tool:,apple: -s -k "$(cat "$secret")" "$keychain" >/dev/null; }; then
+      rm -rf -- "$work"
+      security delete-keychain "$keychain" >/dev/null 2>&1 || rm -f -- "$keychain"
+      echo 'Cannot create the helper signing identity.' >&2
+      return 1
+    fi
+    rm -rf -- "$work"
+  fi
+  local hash
+  hash=$(security find-certificate -c "$signing_name" -Z "$keychain" 2>/dev/null | awk '/^SHA-1 hash:/ {print $NF; exit}')
+  if [ -z "$hash" ]; then
+    echo "No \"$signing_name\" certificate in $keychain. Delete that keychain to recreate the identity, then re-grant the helper." >&2
+    return 1
+  fi
+  printf '%s\n' "$hash"
+}
+# codesign finds identities only through the user search list, never through --keychain alone.
+prepare_signing() {
+  if [ ! -r "$secret" ]; then
+    echo "Signing keychain password missing: $secret. Delete $keychain to recreate the identity, then re-grant the helper." >&2
+    return 1
+  fi
+  security unlock-keychain -p "$(cat "$secret")" "$keychain" >/dev/null || return 1
+  local listing entry listed=0
+  local -a search=()
+  listing=$(security list-keychains -d user) || return 1
+  while IFS= read -r entry; do
+    entry=$(printf '%s' "$entry" | sed -e 's/^ *"//' -e 's/"$//')
+    [ -n "$entry" ] || continue
+    search+=("$entry")
+    [ "$entry" != "$keychain" ] || listed=1
+  done <<< "$listing"
+  # Never rewrite the list from an empty read: that would drop the login keychain.
+  if [ "${#search[@]}" -eq 0 ]; then
+    echo 'Cannot read the keychain search list; refusing to change it.' >&2
+    return 1
+  fi
+  [ "$listed" = 1 ] || security list-keychains -d user -s "${search[@]}" "$keychain" >/dev/null
+}
+if ! identity=$(signing_identity); then
+  echo "Cannot prepare the helper signing identity in $keychain." >&2
+  exit 1
+fi
 digest=$(
   {
     (cd "$source_dir" && { printf '%s\n' Package.swift Info.plist make-icon.swift; find Sources Resources -type f; } | LC_ALL=C sort | while IFS= read -r file; do shasum -a 256 "$file"; done)
     shasum -a 256 < "$0"
     xcrun swift --version 2>&1
+    printf '%s\n' "$identity"
   } | shasum -a 256 | awk '{print $1}'
 )
 binary="$app/Contents/MacOS/DotfilesPermissions"
@@ -54,7 +142,7 @@ if [ -f "$app/Contents/Resources/source.sha256" ] &&
   printf '%s\n' "$app"
   exit 0
 fi
-if [ -x "$binary" ] && "$binary" --is-running; then
+if helper_running; then
   echo 'Quit Dotfiles Permissions (⌘Q) and rerun apply to update it.' >&2
   if codesign --verify --strict "$app" 2>/dev/null; then printf '%s\n' "$app"; fi
   exit 75
@@ -70,9 +158,13 @@ cp "$source_dir/Info.plist" "$bundle/Contents/Info.plist"
 cp "$source_dir/Resources/Help.html" "$bundle/Contents/Resources/Help.html"
 xcrun swift "$source_dir/make-icon.swift" "$bundle/Contents/Resources/Permissions.icns" >&2
 printf '%s\n' "$digest" > "$bundle/Contents/Resources/source.sha256"
-codesign --force --sign - --identifier com.prateek.DotfilesPermissions "$bundle" >&2
+if ! prepare_signing; then
+  echo "Cannot unlock the helper signing identity in $keychain." >&2
+  exit 1
+fi
+codesign --force --sign "$identity" --identifier com.prateek.DotfilesPermissions "$bundle" >&2
 codesign --verify --strict "$bundle"
-if "$bundle/Contents/MacOS/DotfilesPermissions" --is-running; then
+if helper_running; then
   echo 'Dotfiles Permissions opened during the build; quit it (⌘Q) and rerun apply.' >&2
   if [ -x "$binary" ] && codesign --verify --strict "$app" 2>/dev/null; then printf '%s\n' "$app"; fi
   exit 75

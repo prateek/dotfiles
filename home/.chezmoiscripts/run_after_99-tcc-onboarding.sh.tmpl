@@ -1,0 +1,42 @@
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- if and (eq .chezmoi.os "darwin") $f.run_install_scripts $f.tcc_onboarding -}}
+{{ template "script_lib.sh" . }}
+# Numbered last: a failing audit must not skip the other apply hooks.
+
+installer={{ printf "%s/../scripts/macos/install-tcc-onboarding" .chezmoi.sourceDir | replace "'" "'\\''" | printf "'%s'" }}
+disable='set tcc_onboarding = false under [data.machines_local] to skip permission audits on this Mac'
+if app=$("$installer"); then
+  :
+else
+  status=$?
+  if [ "$status" = 75 ]; then
+    warn "Permission helper update deferred; quit it (⌘Q) and rerun chezmoi apply to update."
+    [ -n "$app" ] || exit 0
+  elif [ "$status" = 73 ]; then
+    warn "Permission helper installation is already in progress; retry chezmoi apply later."
+    exit 0
+  elif [ "$status" = 69 ]; then
+    die "Permission helper unavailable without a Swift toolchain. Install the Command Line Tools and rerun chezmoi apply, or $disable."
+  else
+    die "Permission helper installation failed (exit $status)."
+  fi
+fi
+cli="$app/Contents/MacOS/DotfilesPermissions"
+# Never send CLI commands to legacy helpers: they enter the GUI event loop.
+cli_version=$(plutil -extract DotfilesPermissionsCLIVersion raw "$app/Contents/Info.plist" 2>/dev/null || true)
+if [ "$cli_version" != 2 ]; then
+  warn "Permission audit skipped: the installed helper predates its CLI. Quit Dotfiles Permissions (⌘Q) and rerun chezmoi apply."
+  exit 0
+fi
+if "$cli" audit; then
+  exit 0
+else
+  status=$?
+fi
+case "$status" in
+  2|3) ;;
+  77) die "Permission audit cannot read the TCC databases: Dotfiles Permissions needs Full Disk Access (see above). Grant it and rerun chezmoi apply, or $disable." ;;
+  65) die "Invalid or unreadable permission manifest; run: $(printf %q "$cli") doctor" ;;
+  *) die "Permission audit failed (exit $status); recorded access remains unknown." ;;
+esac
+{{- end -}}

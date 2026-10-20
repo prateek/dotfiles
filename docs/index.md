@@ -46,7 +46,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [Session Archive Sync Permissions](runbooks/session-sync-permissions.md) | Building the dedicated sync app and validating its removable-volume access. |
 | [Tart Install Validation](runbooks/tart-mini-validation.md) | Local disposable-VM install validation on a Mac mini. |
 | [Tartelet Runner Setup](runbooks/tartelet-runner-setup.md) | Standing up a homelab mini as an ephemeral iOS/macOS GitHub Actions runner host. |
-| [TCC Onboarding](runbooks/tcc-onboarding.md) | Default desktop-role CLI audit, manual native review, and stale-grant recovery. |
+| [TCC Onboarding](runbooks/tcc-onboarding.md) | The `dotfiles-permissions` CLI, apply-time audit, guided review, and stale-grant recovery. |
 | [USB-C Cable Audit](runbooks/usb-c-cable-audit.md) | Auditing unlabeled USB-C cables for speed, power, generation, and TB5 capability. |
 
 ## Open Plans

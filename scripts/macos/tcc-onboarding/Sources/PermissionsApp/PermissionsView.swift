@@ -20,7 +20,7 @@ struct PermissionsView: View {
                 VStack(spacing: 12) {
                     if model.error != nil {
                         Label("Couldn’t load permissions", systemImage: "exclamationmark.triangle")
-                        Button("Try again") { model.retryLoad() }
+                        Button("Try again") { model.load() }
                     } else {
                         ProgressView()
                         Text("Checking app permissions…").foregroundStyle(.secondary)
@@ -184,7 +184,7 @@ private struct BootstrapView: View {
                         SubjectActions(url: Bundle.main.bundleURL)
                     }
                 }
-                Text("Privacy & Security → Full Disk Access. Add this exact helper, enable it, then relaunch if macOS asks.")
+                Text("Privacy & Security → Full Disk Access. Add this exact helper and enable it, then relaunch. If it is already listed, remove it with − first: a rebuilt helper no longer matches its old entry.")
                     .font(theme.body).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 Button("Relaunch helper") { model.relaunch() }.controlSize(.small)
                 DisclosureGroup("Why checks are unavailable") {

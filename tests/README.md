@@ -498,21 +498,22 @@ selection after success, and visible Settings-launch errors. Model coverage
 protects session deferral (paused rather than falsely complete), external grant
 changes, preference persistence, and grouping without losing evidence. Signed
 universal-binary fixtures distinguish damaged signatures from changed identity.
-Launch tests cover URL-event reconciliation, cold-start completion, repeated
-requests with a closed window, and manual opening without inherited reconcile
-mode. Same-registry reloads retain the review session while adopting changed
+CLI tests cover the XDG manifest default, audit exit statuses, unreadable
+databases failing even with no installed targets, stable `--json` shapes,
+usage and manifest errors that never scan, `doctor`, and GUI-versus-CLI launch
+dispatch. Manifest reloads retain the review session while adopting changed
 reasons. Unknown and denied recovery never offers missing-grant drag instructions.
 The model substitutes the Settings-opening boundary; no app or Settings is launched.
 
 `just test-shell tests/bats/hooks/tcc-onboarding.bats tests/bats/hooks/tcc-installer.bats`
 checks default desktop-role auditing and overrides, quiet matched output, unattended
-audits, unknown/deviation recovery commands, manifest and unexpected failures,
-installer reuse, deferred updates, install-lock recovery, legacy-helper capability
-detection, and missing-toolchain recovery. Shell-safe command replay replaces
-the former PTY prompt and automatic-launch assertions because apply no longer
-prompts or launches. GUI URL-event tests retain encoded-path coverage. External OS commands are
-substituted inside fixture directories. `just test-python -p test_tcc_manifest.py`
-checks the rendered inventory and its macOS/feature gates.
+audits, CLI report passthrough for deviations and unknown evidence, failing apply
+when the helper lacks Full Disk Access, manifest and unexpected failures,
+installer reuse, signing with one stable per-machine identity (and refusing to sign
+without its keychain password), deferred updates, install-lock recovery, legacy-helper capability
+detection, missing-toolchain failure, and shell-safe rendered paths. External OS
+commands are substituted inside fixture directories. `just test-python -p test_tcc_manifest.py`
+checks the rendered inventory, the CLI symlink, and their macOS/feature gates.
 
 Actual System Settings drag/toggle/refresh and rebuild reauthorization remain
 an attended lane in the [TCC runbook](../docs/runbooks/tcc-onboarding.md).

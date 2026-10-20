@@ -4,7 +4,7 @@ doc_type: plan
 summary: "UI layout for the TCC permission helper: a warm card workbench grouped by permission and Settings destination, with by-app and drag-shelf variants"
 owner: Prateek
 created: 2026-10-05
-updated: 2026-10-06
+updated: 2026-10-20
 related:
   - ../retired.md
   - tcc-onboarding-plan.md
@@ -109,9 +109,11 @@ settles the question, before production adoption.
 
 ## Production adoption and acceptance
 
-1. Choose focused permission groups versus the drag shelf using the playable
-   prototype. Confirm that users can identify all needed apps without opening
-   each task, and that the active task's purpose and action remain obvious.
+1. Decided 2026-10-20: keep all three layouts. **By permission** stays the
+   default, with **By app** and **Drag shelf** as View alternatives (⌘1/2/3).
+   The attended pass still confirms that users can identify all needed apps
+   without opening each task, and that the active task's purpose and action
+   remain obvious in each layout.
 2. Move the selected layout into the existing app, retaining the read-only
    inventory, service-specific actions, stable selection, CLI-first apply auditing,
    and toolchain fallback. Use current core semantics rather than copying

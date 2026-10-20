@@ -41,7 +41,7 @@ Retired documents are listed in the [retirement ledger](retired.md).
 | [Session archive sync permissions](runbooks/session-sync-permissions.md) | active | Building the dedicated sync app and validating its removable-volume access. |  |
 | [Tart install validation](runbooks/tart-mini-validation.md) | current | Local disposable-VM install validation on a Mac mini. |  |
 | [Tartelet Runner Setup](runbooks/tartelet-runner-setup.md) | active | Standing up a homelab mini as an ephemeral iOS/macOS GitHub Actions runner host. |  |
-| [macOS permission onboarding](runbooks/tcc-onboarding.md) | active | Default desktop-role CLI audit, manual native review, stale-grant recovery, and pending attended validation. |  |
+| [macOS permission onboarding](runbooks/tcc-onboarding.md) | active | The dotfiles-permissions CLI, apply-time audit that fails without helper access, the guided window, stale-grant recovery, and pending attended validation. |  |
 | [USB-C cable audit](runbooks/usb-c-cable-audit.md) | active | Auditing unlabeled USB-C cables for speed, power, generation, and TB5 capability. |  |
 
 ## Plans
@@ -135,7 +135,7 @@ Retired documents are listed in the [retirement ledger](retired.md).
 | [ADR 0044 — Karabiner is the only keyboard remapper](adr/0044-karabiner-sole-remapper.md) | accepted | Karabiner-Elements is the only keyboard remapper the repo manages; kanata is removed and layers the Mac must know about are Karabiner variables. |  |
 | [Explicit ACPX model profiles](adr/0045-acpx-explicit-model-profiles.md) | superseded | acpx model selection uses explicit workhorse, writing, previous, and escalation profiles pinned in `acpx_models.toml`, keeping machine routing and harness separation. | [docs/adr/0056-agent-selected-model-routing.md](adr/0056-agent-selected-model-routing.md), [docs/references/acpx-routing.md](references/acpx-routing.md) |
 | [ADR 0046 — Declarative TCC onboarding with a native helper](adr/0046-tcc-onboarding.md) | superseded | Expected macOS TCC permissions are declared per app in one manifest, rendered for a read-only SwiftUI helper that an opt-in apply prompt launches. | [docs/adr/0047-tcc-cli-first-apply.md](adr/0047-tcc-cli-first-apply.md) |
-| [ADR 0047 — CLI-first permission auditing during apply](adr/0047-tcc-cli-first-apply.md) | accepted | An enabled `chezmoi apply` audits recorded TCC access headlessly after installing apps, prints deviations with a helper command, and never changes grants itself. |  |
+| [ADR 0047 — CLI-first permission auditing during apply](adr/0047-tcc-cli-first-apply.md) | superseded | An enabled `chezmoi apply` audits recorded TCC access headlessly after installing apps, prints deviations with a helper command, and never changes grants itself. | [docs/adr/0057-tcc-helper-cli-owns-access.md](adr/0057-tcc-helper-cli-owns-access.md) |
 | [ADR 0048 — The repo owns the NocFree keymap](adr/0048-repo-managed-nocfree-keymap.md) | accepted | The repo owns the NocFree keymap as one Vial `.vil` file applied to cable and dongle by `scripts/keyboard/nocfree-keymap`, with Karabiner owning select mode via F20. |  |
 | [ADR 0049: Prefer official agent plugin marketplaces](adr/0049-official-agent-plugin-marketplaces.md) | accepted | Upstream agent plugins install directly from official marketplaces declared in `agent_upstream_plugins.toml`; `agent-marketplace/` keeps only authored skills and compatibility adapters. |  |
 | [Shared package status and operations](adr/0049-shared-package-operations.md) | accepted | `dotpkgs` is the shared Python process boundary for package inventory, version comparison, and operation planning across managers, consumed by the banner and audits. |  |
@@ -146,6 +146,7 @@ Retired documents are listed in the [retirement ledger](retired.md).
 | [Share retrieval through a portable search engine](adr/0054-shared-search-engine.md) | accepted | Shared retrieval adapters, budgets and provenance for search and specialized consumers. | [agent-marketplace/packages/utils-agent/skills/search/SKILL.md](../agent-marketplace/packages/utils-agent/skills/search/SKILL.md) |
 | [Separate search sources from provider capabilities](adr/0055-search-sources-independent-of-providers.md) | accepted | Separate evidence sources and areas from executable providers while admitting explicit public site scopes. |  |
 | [Agent-selected machine model routing](adr/0056-agent-selected-model-routing.md) | accepted | Calling agents select capability-ranked models from machine harness catalogs, cache evidence, and prefer included native delegation. |  |
+| [ADR 0057 — The helper's CLI owns TCC access during apply](adr/0057-tcc-helper-cli-owns-access.md) | accepted | Apply drives a bundled `dotfiles-permissions` CLI that reads TCC under the helper's own identity; an enabled audit that cannot read TCC fails apply, and the GUI reads only the XDG manifest. |  |
 
 ## Research
 

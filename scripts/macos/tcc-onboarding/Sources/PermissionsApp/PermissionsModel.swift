@@ -25,7 +25,7 @@ final class PermissionsModel: ObservableObject {
     @Published private(set) var checkedAt: Date?
     private let preferences: UserDefaults?
     var onChange: (() -> Void)?
-    private var manifestURL = defaultManifest
+    let manifestURL: URL
     private var manifest: Manifest?
     private var selections: [String: URL] = [:]
     private var timer: Timer?
@@ -33,8 +33,11 @@ final class PermissionsModel: ObservableObject {
     private var queuedRefresh = false
     private var generation = 0
     private let openSettingsURL: (URL) -> Bool
+    private let checker = CodeRequirementChecker()
 
-    init(openSettingsURL: @escaping (URL) -> Bool = { NSWorkspace.shared.open($0) }, preferences: UserDefaults? = nil) {
+    init(manifestURL: URL = ManifestLocation.url(), openSettingsURL: @escaping (URL) -> Bool = { NSWorkspace.shared.open($0) },
+         preferences: UserDefaults? = nil) {
+        self.manifestURL = manifestURL
         self.openSettingsURL = openSettingsURL
         self.preferences = preferences
         if let preferences {
@@ -44,19 +47,6 @@ final class PermissionsModel: ObservableObject {
         }
     }
 
-    static var defaultManifest: URL {
-        launchManifest(home: FileManager.default.homeDirectoryForCurrentUser, preferences: .standard)
-    }
-
-    static func launchManifest(home: URL, preferences: UserDefaults) -> URL {
-        let managed = home.appendingPathComponent(".config/dotfiles/tcc.json")
-        if FileManager.default.fileExists(atPath: managed.path) { return managed }
-        if let path = preferences.string(forKey: "lastManifestPath"), path.hasPrefix("/"),
-           FileManager.default.fileExists(atPath: path) {
-            return URL(fileURLWithPath: path)
-        }
-        return managed
-    }
     var needsBootstrap: Bool { snapshot?.blockedDatabases.isEmpty == false }
     var remainingCount: Int { snapshot?.rows.filter { $0.status.state.needsAttention }.count ?? 0 }
     var pendingCount: Int { snapshot?.rows.filter { $0.status.state.needsAttention && !deferredIDs.contains($0.id) }.count ?? 0 }
@@ -119,34 +109,20 @@ final class PermissionsModel: ObservableObject {
         if evidenceOpen.contains(id) { evidenceOpen.remove(id) } else { evidenceOpen.insert(id) }
     }
 
-    func load(_ url: URL) {
-        let normalized = url.standardizedFileURL
-        let preservingSession = manifest != nil && manifestURL.standardizedFileURL == normalized
+    /// Reloads the manifest. A reload keeps the review session; only scan results change.
+    func load() {
         generation += 1
-        manifestURL = normalized
-        if !preservingSession {
-            selections = [:]
-            deferredIDs = []
-            evidenceOpen = []
-            showSummary = false
-            checkedAt = nil
-            selectedID = nil
-            snapshot = nil
-        }
         do {
-            manifest = try Manifest.load(url)
-            preferences?.set(normalized.path, forKey: "lastManifestPath")
+            manifest = try Manifest.load(manifestURL)
             error = nil
             refresh()
         } catch {
             manifest = nil
             snapshot = nil
-            self.error = "Cannot read \(url.path): \(error.localizedDescription)"
+            self.error = "Cannot read \(manifestURL.path): \(error.localizedDescription)"
             onChange?()
         }
     }
-
-    func retryLoad() { load(manifestURL) }
 
     func startPolling() {
         guard timer == nil else { return }
@@ -172,8 +148,9 @@ final class PermissionsModel: ObservableObject {
         let currentGeneration = generation
         let expectations = NativeInventory.expectations(manifest, selections: selections)
         let databases = NativeInventory.databases
+        let checker = self.checker
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            let result = Inventory.scan(expectations, databases: databases)
+            let result = Inventory.scan(expectations, databases: databases, checker: checker)
             DispatchQueue.main.async {
                 guard let self else { return }
                 self.busy = false
@@ -255,7 +232,6 @@ final class PermissionsModel: ObservableObject {
         error = nil
         let configuration = NSWorkspace.OpenConfiguration()
         configuration.createsNewApplicationInstance = true
-        configuration.arguments = ["--manifest", manifestURL.path]
         NSWorkspace.shared.openApplication(at: Bundle.main.bundleURL, configuration: configuration) { [weak self] _, error in
             Task { @MainActor in
                 if let error { self?.error = "Cannot relaunch the helper: \(error.localizedDescription)" }

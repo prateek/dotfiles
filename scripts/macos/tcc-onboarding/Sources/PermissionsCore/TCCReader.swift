@@ -2,80 +2,67 @@ import Foundation
 import SQLite3
 
 public struct TCCRecord: Equatable {
-    let value: Int64
+    let value: Int64?
     let requirement: Data?
+    var malformed = false
 }
 
+/// Copies the access table into memory and closes the database immediately, so tccd never waits
+/// on this reader while code signatures are evaluated.
 public final class TCCSnapshot {
+    private struct Key: Hashable { let service: String; let client: String; let clientType: Int32 }
     public let url: URL
     public private(set) var accessBlocked = false
-    private var database: OpaquePointer?
+    private var rows: [Key: [TCCRecord]] = [:]
     private var problem: String?
 
     public init(url: URL) {
         self.url = url
-        let result = sqlite3_open_v2(url.path, &database, SQLITE_OPEN_READONLY, nil)
-        guard result == SQLITE_OK else {
+        var database: OpaquePointer?
+        defer { sqlite3_close(database) }
+        guard sqlite3_open_v2(url.path, &database, SQLITE_OPEN_READONLY, nil) == SQLITE_OK else {
             accessBlocked = true
             problem = "Cannot read \(url.path). Full Disk Access may be needed."
-            close()
             return
         }
         sqlite3_busy_timeout(database, 400)
-        guard sqlite3_exec(database, "BEGIN", nil, nil, nil) == SQLITE_OK else {
-            problem = "Cannot take a read snapshot of \(url.path). Try Refresh."
-            return
-        }
         var statement: OpaquePointer?
         defer { sqlite3_finalize(statement) }
-        guard sqlite3_prepare_v2(database, "SELECT service, client, client_type, auth_value, csreq FROM access LIMIT 0", -1, &statement, nil) == SQLITE_OK else {
+        guard sqlite3_prepare_v2(database, "SELECT service, client, client_type, auth_value, csreq FROM access", -1, &statement, nil) == SQLITE_OK else {
             problem = "Unsupported or unreadable TCC schema in \(url.path)."
             return
         }
-        guard sqlite3_step(statement) == SQLITE_DONE else {
-            problem = "Cannot read TCC records in \(url.path). Try Refresh."
-            return
+        while true {
+            let result = sqlite3_step(statement)
+            if result == SQLITE_DONE { return }
+            guard result == SQLITE_ROW else {
+                rows = [:]
+                problem = "Cannot read TCC records in \(url.path). Try Refresh."
+                return
+            }
+            guard let service = sqlite3_column_text(statement, 0), let client = sqlite3_column_text(statement, 1) else { continue }
+            let key = Key(service: String(cString: service), client: String(cString: client), clientType: sqlite3_column_int(statement, 2))
+            rows[key, default: []].append(Self.record(statement))
         }
     }
 
-    deinit { close() }
-
-    public func close() {
-        if let database { sqlite3_close(database) }
-        database = nil
+    /// A malformed row is kept as a nil value so the query for its subject reports it.
+    private static func record(_ statement: OpaquePointer?) -> TCCRecord {
+        let value: Int64? = sqlite3_column_type(statement, 3) == SQLITE_INTEGER ? sqlite3_column_int64(statement, 3) : nil
+        let size = sqlite3_column_bytes(statement, 4)
+        var requirement: Data?
+        if size > 1_048_576 { return TCCRecord(value: value, requirement: nil, malformed: true) }
+        if sqlite3_column_type(statement, 4) == SQLITE_BLOB, let bytes = sqlite3_column_blob(statement, 4), size > 0 {
+            requirement = Data(bytes: bytes, count: Int(size))
+        }
+        return TCCRecord(value: value, requirement: requirement, malformed: value == nil)
     }
 
     private func records(service: PermissionService, subject: PermissionSubject) throws -> [TCCRecord] {
         if let problem { throw ManifestError(problem) }
-        guard let database else { throw ManifestError("TCC snapshot is closed.") }
-        var statement: OpaquePointer?
-        defer { sqlite3_finalize(statement) }
-        let sql = "SELECT auth_value, csreq FROM access WHERE service = ? AND client = ? AND client_type = ?"
-        guard sqlite3_prepare_v2(database, sql, -1, &statement, nil) == SQLITE_OK else {
-            throw ManifestError("Cannot query \(url.path).")
-        }
-        let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
-        sqlite3_bind_text(statement, 1, service.tccName, -1, transient)
-        sqlite3_bind_text(statement, 2, subject.client, -1, transient)
-        sqlite3_bind_int(statement, 3, subject.clientType)
-        var records: [TCCRecord] = []
-        while true {
-            let result = sqlite3_step(statement)
-            if result == SQLITE_DONE { return records }
-            guard result == SQLITE_ROW else { throw ManifestError("TCC query failed in \(url.path). Try Refresh.") }
-            guard sqlite3_column_type(statement, 0) == SQLITE_INTEGER else {
-                throw ManifestError("Unrecognized authorization value in \(url.path).")
-            }
-            let size = sqlite3_column_bytes(statement, 1)
-            guard size <= 1_048_576 else { throw ManifestError("Unrecognized code requirement in \(url.path).") }
-            let requirement: Data?
-            if sqlite3_column_type(statement, 1) == SQLITE_BLOB, let bytes = sqlite3_column_blob(statement, 1), size > 0 {
-                requirement = Data(bytes: bytes, count: Int(size))
-            } else {
-                requirement = nil
-            }
-            records.append(TCCRecord(value: sqlite3_column_int64(statement, 0), requirement: requirement))
-        }
+        let records = rows[Key(service: service.tccName, client: subject.client, clientType: subject.clientType)] ?? []
+        if records.contains(where: \.malformed) { throw ManifestError("Unrecognized authorization value or code requirement in \(url.path).") }
+        return records
     }
 
     public static func status(service: PermissionService, subject: PermissionSubject, snapshots: [TCCSnapshot],
@@ -100,7 +87,7 @@ public final class TCCSnapshot {
                 case .mismatch: return GrantStatus(.stale, "The stored grant does not match this app's code identity. Remove and re-add this exact app in Settings where supported, then relaunch it. \(source)")
                 case .unverifiable(let reason): return GrantStatus(.unknown, "\(reason) \(source)")
                 }
-            default: return GrantStatus(.unknown, "The recorded authorization is limited or unsupported (\(first.record.value)). \(source)")
+            default: return GrantStatus(.unknown, "The recorded authorization is limited or unsupported (\(first.record.value.map(String.init) ?? "none")). \(source)")
             }
         } catch { return GrantStatus(.unknown, error.localizedDescription) }
     }

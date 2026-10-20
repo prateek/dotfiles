@@ -75,9 +75,3 @@ permissions = [
   { service = "screenRecording", reason = "Share this Mac's display with a remote desktop client." },
   { service = "microphone", reason = "Preserve the existing microphone access for remote sessions." },
 ]
-
-[tcc.apps.orbstack]
-name = "OrbStack"
-bundle_id = "dev.kdrag0n.MacVirt"
-sources = ["local-audit:personal-mbp:2026-10-05"]
-permissions = [{ service = "microphone", reason = "Preserve the existing microphone access for virtualized workloads." }]

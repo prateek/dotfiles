@@ -1,18 +1,23 @@
 ---
-status: accepted
+status: superseded
 doc_type: adr
 summary: "An enabled `chezmoi apply` audits recorded TCC access headlessly after installing apps, prints deviations with a helper command, and never changes grants itself."
 owner: Prateek
 created: 2026-10-06
-updated: 2026-10-06
+updated: 2026-10-20
+closed: 2026-10-20
+superseded_by: 0057-tcc-helper-cli-owns-access.md
 related:
   - 0046-tcc-onboarding.md
   - ../plans/tcc-onboarding-plan.md
   - ../runbooks/tcc-onboarding.md
-status_detail: "CLI-first integration implemented; attended grant and rebuild validation remains deferred."
+  - 0057-tcc-helper-cli-owns-access.md
+status_detail: "The bundled CLI checks the helper's own access and fails apply when it cannot read TCC."
 ---
 
 # ADR 0047 — CLI-first permission auditing during apply
+
+> Superseded by [ADR 0057](0057-tcc-helper-cli-owns-access.md).
 
 ## Decision
 

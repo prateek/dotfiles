@@ -53,6 +53,18 @@ final class PermissionsTests: XCTestCase {
         XCTAssertEqual(sqlite3_step(statement), SQLITE_DONE)
     }
 
+    struct ScanHost: CLIHost {
+        let scanner: (Manifest) -> InventorySnapshot
+        let version = "test"
+        let bundlePath: String? = nil
+        let responsibility = Responsibility.helper
+        func expectations(_ manifest: Manifest) -> [Expectation] { [] }
+        func scan(_ manifest: Manifest) -> InventorySnapshot { scanner(manifest) }
+        func probeDatabases() -> [DatabaseAccess] { [] }
+        func openURL(_ url: URL) -> Bool { false }
+        func openGUI() -> Bool { false }
+    }
+
     struct Checker: RequirementChecking {
         let result: RequirementResult
         func check(_ url: URL, requirement: Data?) -> RequirementResult { result }
@@ -61,7 +73,6 @@ final class PermissionsTests: XCTestCase {
     func status(_ urls: [URL], result: RequirementResult = .matches,
                 service: PermissionService = .accessibility) -> GrantStatus {
         let snapshots = urls.map(TCCSnapshot.init)
-        defer { snapshots.forEach { $0.close() } }
         return TCCSnapshot.status(service: service, subject: subject, snapshots: snapshots, checker: Checker(result: result))
     }
 
@@ -122,15 +133,16 @@ final class PermissionsTests: XCTestCase {
             ([allowed], RequirementResult.matches, Int32(0), ""),
             ([allowed], .mismatch, 2, "stale"),
             ([allowed], .unverifiable("Damaged code"), 3, "unknown"),
-            ([allowed, missing], .matches, 3, "unknown"),
+            ([allowed, missing], .matches, ExitCode.noAccess, "Full Disk Access"),
         ] {
-            let result = AuditCommand.run(["--audit", manifestURL.path]) { manifest in
-                Inventory.scan([Expectation(id: "test", app: manifest.apps["test"]!, resolution: .found(subject))],
+            let host = ScanHost { manifest in
+                Inventory.scan([Expectation(id: "test", app: manifest.apps["test"]!, resolution: .found(self.subject))],
                                databases: databases, checker: Checker(result: requirement))
             }
+            let result = CLI.run(["audit", "--manifest", manifestURL.path], host: host)
             XCTAssertEqual(result.status, expected)
-            if expected == 0 { XCTAssertEqual(result.output, "") }
-            else { XCTAssertTrue(result.output.contains(text)) }
+            if expected == 0 { XCTAssertEqual(result.stdout + result.stderr, "") }
+            else { XCTAssertTrue((result.stdout + result.stderr).contains(text)) }
             XCTAssertEqual(try Data(contentsOf: allowed), before)
             XCTAssertFalse(FileManager.default.fileExists(atPath: missing.path))
         }
@@ -156,7 +168,9 @@ final class PermissionsTests: XCTestCase {
         XCTAssertThrowsError(try manifest(["bundle_path": "/Applications/Test.app"]))
         XCTAssertThrowsError(try manifest(["helper_path": "Contents/../../bin/tool"]))
         XCTAssertThrowsError(try manifest(["path": "relative/Test.app"]))
-        XCTAssertThrowsError(try manifest(["permissions": [["service": "unknown", "reason": "x"]]]))
+        XCTAssertThrowsError(try manifest(["permissions": [["service": "unknown", "reason": "x"]]])) { error in
+            XCTAssertTrue(error.localizedDescription.contains("unknown service unknown"))
+        }
         XCTAssertThrowsError(try manifest(["permissions": [["service": "camera", "reason": " "]]]))
         XCTAssertThrowsError(try manifest(["permissions": [["service": "camera", "reason": "x"], ["service": "camera", "reason": "y"]]]))
         XCTAssertThrowsError(try Manifest.decode(Data(#"{"version":2,"apps":{}}"#.utf8)))
@@ -181,10 +195,13 @@ final class PermissionsTests: XCTestCase {
             for candidates in [[broken], [valid, broken]] {
                 let resolution = SubjectResolver.resolve(app, candidates: candidates)
                 let unavailable = directory.appendingPathComponent("never-open.db")
-                let report = AuditReport(Inventory.scan([Expectation(id: "test", app: app, resolution: resolution)], databases: [unavailable]))
-                XCTAssertEqual(report.exitStatus, 3)
-                XCTAssertTrue(report.output.contains("unknown"))
-                XCTAssertTrue(report.output.contains("identity"))
+                let manifestURL = directory.appendingPathComponent("manifest.json")
+                try JSONEncoder().encode(try manifest()).write(to: manifestURL)
+                let host = ScanHost { _ in Inventory.scan([Expectation(id: "test", app: app, resolution: resolution)], databases: [unavailable]) }
+                let result = CLI.run(["audit", "--manifest", manifestURL.path], host: host)
+                XCTAssertEqual(result.status, ExitCode.inconclusive)
+                XCTAssertTrue(result.stdout.contains("unknown"))
+                XCTAssertTrue(result.stdout.contains("identity"))
                 XCTAssertFalse(FileManager.default.fileExists(atPath: unavailable.path))
             }
         }
@@ -243,5 +260,44 @@ final class PermissionsTests: XCTestCase {
         for requirement in [nil, Data([0, 1, 2])] {
             if case .unverifiable = CodeRequirementChecker().check(code, requirement: requirement) {} else { XCTFail("Missing/corrupt requirements must remain unknown") }
         }
+    }
+
+    func testCopiesSharingOneCodeIdentityResolveToTheUserFacingInstall() throws {
+        let app = try manifest().apps["test"]!
+        func signedCopy(_ path: String, requirement: String) throws -> URL {
+            let bundle = directory.appendingPathComponent(path)
+            try FileManager.default.createDirectory(at: bundle.appendingPathComponent("Contents/MacOS"), withIntermediateDirectories: true)
+            let plist = ["CFBundleIdentifier": subject.client, "CFBundlePackageType": "APPL", "CFBundleExecutable": "tool"]
+            try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0).write(to: bundle.appendingPathComponent("Contents/Info.plist"))
+            try FileManager.default.copyItem(at: URL(fileURLWithPath: "/usr/bin/true"), to: bundle.appendingPathComponent("Contents/MacOS/tool"))
+            try run("/usr/bin/codesign", ["--force", "--sign", "-", "-r=designated => \(requirement)", bundle.path])
+            return bundle
+        }
+        let shared = "identifier \"shared\""
+        let main = try signedCopy("Main.app", requirement: shared)
+        let host = try signedCopy("Library/support/x.noindex/Host.app", requirement: shared)
+        if case .found(let resolved) = SubjectResolver.resolve(app, candidates: [host, main]) {
+            XCTAssertEqual(resolved.codeURL, main.resolvingSymlinksInPath())
+        } else { XCTFail("Copies with one designated requirement must resolve") }
+        let other = try signedCopy("Library/Other.app", requirement: "identifier \"other\"")
+        guard case .ambiguous(let reason) = SubjectResolver.resolve(app, candidates: [main, other]) else {
+            return XCTFail("Copies with different identities must stay ambiguous")
+        }
+        XCTAssertTrue(reason.contains(other.resolvingSymlinksInPath().path))
+    }
+
+    func testLongLivedCheckerReevaluatesReplacedCode() throws {
+        let code = directory.appendingPathComponent("cached-tool")
+        try FileManager.default.copyItem(at: URL(fileURLWithPath: "/usr/bin/true"), to: code)
+        try run("/usr/bin/codesign", ["--force", "--sign", "-", "--identifier", "com.example.permissions", code.path])
+        var requirement: SecRequirement?
+        XCTAssertEqual(SecRequirementCreateWithString("identifier \"com.example.permissions\"" as CFString, [], &requirement), errSecSuccess)
+        var blob: CFData?
+        XCTAssertEqual(SecRequirementCopyData(requirement!, [], &blob), errSecSuccess)
+        let checker = CodeRequirementChecker()
+        XCTAssertEqual(checker.check(code, requirement: blob! as Data), .matches)
+        try FileManager.default.setAttributes([.modificationDate: Date(timeIntervalSinceNow: -60)], ofItemAtPath: code.path)
+        try run("/usr/bin/codesign", ["--force", "--sign", "-", "--identifier", "com.example.changed", code.path])
+        XCTAssertEqual(checker.check(code, requirement: blob! as Data), .mismatch)
     }
 }

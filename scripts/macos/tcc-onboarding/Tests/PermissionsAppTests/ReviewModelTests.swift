@@ -3,35 +3,6 @@ import XCTest
 @testable import PermissionsCore
 
 final class ReviewModelTests: XCTestCase {
-    @MainActor
-    func testSuccessfulDocumentOpenSurvivesNextLaunchAndInvalidOpen() async throws {
-        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: directory) }
-        let suite = "permissions-registry-\(UUID().uuidString)"
-        let preferences = try XCTUnwrap(UserDefaults(suiteName: suite))
-        defer { preferences.removePersistentDomain(forName: suite) }
-        let url = directory.appendingPathComponent("custom.json")
-        try Data(#"{"version":1,"apps":{}}"#.utf8).write(to: url)
-        let model = PermissionsModel(preferences: preferences)
-        let loaded = expectation(description: "Document loaded")
-        model.onChange = { loaded.fulfill() }
-        model.load(url)
-        await fulfillment(of: [loaded], timeout: 5)
-        model.onChange = nil
-        XCTAssertEqual(preferences.string(forKey: "lastManifestPath"), url.path)
-        model.load(directory.appendingPathComponent("absent.json"))
-        XCTAssertEqual(preferences.string(forKey: "lastManifestPath"), url.path)
-        XCTAssertEqual(PermissionsModel.launchManifest(home: directory, preferences: preferences), url)
-        let managed = directory.appendingPathComponent(".config/dotfiles/tcc.json")
-        try FileManager.default.createDirectory(at: managed.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try Data(#"{"version":1,"apps":{}}"#.utf8).write(to: managed)
-        XCTAssertEqual(PermissionsModel.launchManifest(home: directory, preferences: preferences), managed)
-        try FileManager.default.removeItem(at: managed)
-        try FileManager.default.removeItem(at: url)
-        XCTAssertEqual(PermissionsModel.launchManifest(home: directory, preferences: preferences), managed)
-    }
-
     func row(_ id: String, state: GrantState) -> InventoryRow {
         let url = URL(fileURLWithPath: "/Applications/\(id).app")
         return InventoryRow(id: id, appID: id, name: id,
@@ -76,19 +47,19 @@ final class ReviewModelTests: XCTestCase {
         XCTAssertEqual(model.visibleRows.map(\.id), ["A"])
     }
     @MainActor
-    func testRetryPreservesCustomManifestAfterInitialReadFailure() async throws {
+    func testRetryLoadsManifestAfterInitialReadFailure() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
         let url = directory.appendingPathComponent("custom.json")
         try Data("invalid".utf8).write(to: url)
-        let model = PermissionsModel(openSettingsURL: { _ in true })
-        model.load(url)
+        let model = PermissionsModel(manifestURL: url, openSettingsURL: { _ in true })
+        model.load()
         XCTAssertTrue(model.error?.contains(url.path) == true)
         try Data(#"{"version":1,"apps":{}}"#.utf8).write(to: url)
         let loaded = expectation(description: "Custom manifest retried")
         model.onChange = { loaded.fulfill() }
-        model.retryLoad()
+        model.load()
         await fulfillment(of: [loaded], timeout: 5)
         XCTAssertNil(model.error)
         XCTAssertEqual(model.snapshot?.rows.count, 0)
@@ -201,10 +172,10 @@ final class ReviewModelTests: XCTestCase {
             return try JSONSerialization.data(withJSONObject: ["version": 1, "apps": apps])
         }
         try registry(reason: "Original reason").write(to: url)
-        let model = PermissionsModel(openSettingsURL: { _ in true })
+        let model = PermissionsModel(manifestURL: url, openSettingsURL: { _ in true })
         let loaded = expectation(description: "Ambiguous fixtures loaded without reading TCC")
         model.onChange = { loaded.fulfill() }
-        model.load(url)
+        model.load()
         await fulfillment(of: [loaded], timeout: 5)
         model.onChange = nil
         XCTAssertNil(model.error)
@@ -214,7 +185,7 @@ final class ReviewModelTests: XCTestCase {
         try registry(reason: "Updated reason").write(to: url)
         let refreshed = expectation(description: "Same registry reloaded")
         model.onChange = { refreshed.fulfill() }
-        model.load(url)
+        model.load()
         await fulfillment(of: [refreshed], timeout: 5)
         XCTAssertEqual(model.selectedID, "A:accessibility")
         XCTAssertEqual(model.deferredIDs, ["B:accessibility"])
@@ -222,4 +193,18 @@ final class ReviewModelTests: XCTestCase {
         XCTAssertEqual(model.selectedRow?.permission.reason, "Updated reason")
     }
 
+}
+
+final class CLIEntryTests: XCTestCase {
+    func testBundleLaunchIsTheGUIUnlessGivenACLICommand() {
+        let bundle = "/Users/me/Applications/Dotfiles Permissions.app/Contents/MacOS/DotfilesPermissions"
+        XCTAssertFalse(CLIEntry.isCommandLine([bundle]))
+        XCTAssertFalse(CLIEntry.isCommandLine([bundle, "-psn_0_12345"]))
+        XCTAssertFalse(CLIEntry.isCommandLine([bundle, "-AppleLanguages", "(en)"]))
+        XCTAssertTrue(CLIEntry.isCommandLine([bundle, "audit"]))
+        XCTAssertTrue(CLIEntry.isCommandLine([bundle, "--manifest", "/tmp/x.json", "audit"]))
+        XCTAssertTrue(CLIEntry.isCommandLine([bundle, "--help"]))
+        XCTAssertTrue(CLIEntry.isCommandLine(["/Users/me/.local/bin/dotfiles-permissions"]))
+        XCTAssertTrue(CLIEntry.isCommandLine(["dotfiles-permissions", "doctor"]))
+    }
 }

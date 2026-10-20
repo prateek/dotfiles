@@ -15,7 +15,8 @@ exit "${INSTALL_STATUS:-0}"
 SH
   cat > "$HOME/Applications/Dotfiles Permissions.app/Contents/MacOS/DotfilesPermissions" <<'SH'
 #!/bin/bash
-printf 'audit %s\n' "$*" >> "$events"
+printf 'cli %s\n' "$*" >> "$events"
+[ -z "${AUDIT_OUTPUT:-}" ] || printf '%s\n' "$AUDIT_OUTPUT"
 exit "${AUDIT_STATUS:-0}"
 SH
   cat > "$FIXTURE/bin/open" <<'SH'
@@ -28,7 +29,7 @@ SH
 if [[ "$*" == '-f %u /dev/console' ]]; then printf '%s\n' "${CONSOLE_UID:-$(id -u)}"; else /usr/bin/stat "$@"; fi
 SH
   chmod +x "$FIXTURE/repo/scripts/macos/install-tcc-onboarding" "$HOME/Applications/Dotfiles Permissions.app/Contents/MacOS/DotfilesPermissions" "$FIXTURE/bin/open" "$FIXTURE/bin/stat"
-  render_template home/.chezmoiscripts/run_after_80-tcc-onboarding.sh.tmpl personal '{"machines_local":{"tcc_onboarding":true}}' > "$FIXTURE/rendered"
+  render_template home/.chezmoiscripts/run_after_99-tcc-onboarding.sh.tmpl personal '{"machines_local":{"tcc_onboarding":true}}' > "$FIXTURE/rendered"
   "$TEST_PYTHON" - "$FIXTURE/rendered" "$FIXTURE/hook" "$DOTFILES_ROOT" "$FIXTURE/repo" <<'PY'
 from pathlib import Path
 import sys
@@ -42,36 +43,34 @@ PY
 @test "permission audit defaults to desktop Mac roles and respects overrides" {
   local machine
   for machine in personal work homelab; do
-    run -0 render_template home/.chezmoiscripts/run_after_80-tcc-onboarding.sh.tmpl "$machine"
-    assert_output --partial '--audit'
-    run -0 render_template home/.chezmoiscripts/run_after_80-tcc-onboarding.sh.tmpl "$machine" '{"machines_local":{"tcc_onboarding":false}}'
+    run -0 render_template home/.chezmoiscripts/run_after_99-tcc-onboarding.sh.tmpl "$machine"
+    assert_output --partial '" audit'
+    run -0 render_template home/.chezmoiscripts/run_after_99-tcc-onboarding.sh.tmpl "$machine" '{"machines_local":{"tcc_onboarding":false}}'
     assert_output ''
   done
   for machine in ci devbox; do
-    run -0 render_template home/.chezmoiscripts/run_after_80-tcc-onboarding.sh.tmpl "$machine"
+    run -0 render_template home/.chezmoiscripts/run_after_99-tcc-onboarding.sh.tmpl "$machine"
     assert_output ''
   done
-  run -0 render_template home/.chezmoiscripts/run_after_80-tcc-onboarding.sh.tmpl personal '{"machines_local":{"run_install_scripts":false}}'
+  run -0 render_template home/.chezmoiscripts/run_after_99-tcc-onboarding.sh.tmpl personal '{"machines_local":{"run_install_scripts":false}}'
   assert_output ''
-  run -0 render_template home/.chezmoiscripts/run_after_80-tcc-onboarding.sh.tmpl devbox '{"machines_local":{"tcc_onboarding":true}}'
+  run -0 render_template home/.chezmoiscripts/run_after_99-tcc-onboarding.sh.tmpl devbox '{"machines_local":{"tcc_onboarding":true}}'
   assert_output ''
 }
 
 @test "matching audit is quiet and never launches" {
   run_bash 0 "$hook"
   assert_output ''
-  assert_equal "$(cat "$events")" $'install\naudit --audit '"$HOME/.config/dotfiles/tcc.json"
+  assert_equal "$(cat "$events")" $'install\ncli audit'
 }
 
-@test "deviations and unknown evidence print a shell-safe manual command without launching" {
+@test "deviations and unknown evidence pass the CLI report through and continue apply" {
   local status
   for status in 2 3; do
     : > "$events"
-    run -0 env AUDIT_STATUS="$status" bash "$hook"
-    assert_output --partial 'Review permissions: open -a '
-    local command="${output#Review permissions: }"
-    run -0 bash -c "$command"
-    assert_equal "$(tail -1 "$events")" "open -a $HOME/Applications/Dotfiles Permissions.app $HOME/.config/dotfiles/tcc.json"
+    run -0 env AUDIT_STATUS="$status" AUDIT_OUTPUT='Guided review (optional): dotfiles-permissions gui' bash "$hook"
+    assert_output 'Guided review (optional): dotfiles-permissions gui'
+    assert_equal "$(cat "$events")" $'install\ncli audit'
   done
 }
 
@@ -80,13 +79,18 @@ PY
   for setting in CI=true SSH_CONNECTION=remote; do
     : > "$events"
     run -0 env "$setting" AUDIT_STATUS=3 bash "$hook"
-    assert_output --partial 'Review permissions:'
-    assert_equal "$(cat "$events")" $'install\naudit --audit '"$HOME/.config/dotfiles/tcc.json"
+    assert_equal "$(cat "$events")" $'install\ncli audit'
   done
 }
 
+@test "a helper without Full Disk Access fails apply with recovery" {
+  run -1 env AUDIT_STATUS=77 bash "$hook"
+  assert_output --partial 'needs Full Disk Access'
+  assert_output --partial 'tcc_onboarding = false'
+}
+
 @test "manifest and unexpected audit failures fail apply with unknown evidence" {
-  run -1 env AUDIT_STATUS=64 bash "$hook"
+  run -1 env AUDIT_STATUS=65 bash "$hook"
   assert_output --partial 'Invalid or unreadable permission manifest'
   run -1 env AUDIT_STATUS=1 bash "$hook"
   assert_output --partial 'recorded access remains unknown'
@@ -97,22 +101,20 @@ PY
 @test "deferred update audits verified existing helper" {
   run -0 env INSTALL_STATUS=75 AUDIT_STATUS=2 bash "$hook"
   assert_output --partial 'quit it'
-  assert_output --partial 'Review permissions:'
-  assert_equal "$(cat "$events")" $'install\naudit --audit '"$HOME/.config/dotfiles/tcc.json"
+  assert_equal "$(cat "$events")" $'install\ncli audit'
 }
 
-@test "legacy helper is never called with audit flag" {
-  plutil -remove DotfilesPermissionsAuditVersion "$HOME/Applications/Dotfiles Permissions.app/Contents/Info.plist"
+@test "legacy helper is never sent CLI commands" {
+  plutil -remove DotfilesPermissionsCLIVersion "$HOME/Applications/Dotfiles Permissions.app/Contents/Info.plist"
   run -0 env INSTALL_STATUS=75 bash "$hook"
-  assert_output --partial 'Permission audit unavailable'
-  assert_output --partial 'Review permissions:'
+  assert_output --partial 'predates its CLI'
   assert_equal "$(cat "$events")" install
 }
 
-@test "missing toolchain reports unavailability without scanning or launching" {
-  run -0 env INSTALL_STATUS=69 bash "$hook"
-  assert_output --partial 'unavailable'
-  assert_output --partial 'System Settings'
+@test "missing toolchain fails apply without scanning or launching" {
+  run -1 env INSTALL_STATUS=69 bash "$hook"
+  assert_output --partial 'Swift toolchain'
+  assert_output --partial 'tcc_onboarding = false'
   assert_equal "$(cat "$events")" install
 }
 
@@ -122,7 +124,7 @@ PY
   assert_equal "$(cat "$events")" install
 }
 
-@test "rendered paths and manual command preserve shell metacharacters without execution" {
+@test "rendered installer path preserves shell metacharacters without execution" {
   local previous_home="$HOME"
   local special='User '\'' Space & ✓ $(printf substituted)`printf substituted`'
   export HOME="$FIXTURE/$special"
@@ -136,10 +138,7 @@ import json, sys
 print(json.dumps({"chezmoi": {"sourceDir": sys.argv[1]}}))
 PYTEST
 )
-  render_template home/.chezmoiscripts/run_after_80-tcc-onboarding.sh.tmpl personal "$data" > "$hook"
+  render_template home/.chezmoiscripts/run_after_99-tcc-onboarding.sh.tmpl personal "$data" > "$hook"
   run -0 env AUDIT_STATUS=3 bash "$hook"
-  local command="${output#Review permissions: }"
-  assert_equal "$(cat "$events")" $'install\naudit --audit '"$HOME/.config/dotfiles/tcc.json"
-  run -0 bash -c "$command"
-  assert_equal "$(tail -1 "$events")" "open -a $HOME/Applications/Dotfiles Permissions.app $HOME/.config/dotfiles/tcc.json"
+  assert_equal "$(cat "$events")" $'install\ncli audit'
 }

@@ -4,13 +4,13 @@ doc_type: plan
 summary: "Audits macOS TCC permission grants during chezmoi apply against a per-app manifest, with a SwiftUI helper that opens System Settings and offers the app file to drag"
 owner: Prateek
 created: 2026-10-05
-updated: 2026-10-05
+updated: 2026-10-20
 related:
-  - ../adr/0047-tcc-cli-first-apply.md
+  - ../adr/0057-tcc-helper-cli-owns-access.md
   - ../references/chezmoi-hook-lifecycle.md
   - ../references/chezmoi-architecture.md
   - ../runbooks/tcc-onboarding.md
-status_detail: "Implemented in source with automated checks; CLI-first apply audit. Attended E2E and mini/work audits remain pending."
+status_detail: "Implemented in source with automated checks; apply drives the bundled CLI and fails without helper access. Attended E2E and mini/work audits remain pending."
 ---
 
 # TCC onboarding during chezmoi apply
@@ -27,8 +27,11 @@ declared expectations with recorded grants and explains unresolved entries.
 
 - Read-only TCC inventory is the primary status source, including stored code
   requirement checks for stale grants.
-- An enabled apply audits headlessly and prints a manual GUI command for
-  deviations or unknown evidence. Matching audits are quiet.
+- An enabled apply audits headlessly through the bundled `dotfiles-permissions`
+  CLI, which prints the optional `gui` command for deviations or unknown
+  evidence. Matching audits are quiet. If the helper cannot read TCC under its
+  own identity, apply fails.
+- The GUI reads only the XDG manifest and takes no manifest argument.
 - Start the expected-grant inventory from audits of this Mac and the mini.
   The work Mac will follow later. Observations do not automatically become
   expectations, and denied grants are not requests to broaden access.
@@ -38,7 +41,7 @@ declared expectations with recorded grants and explains unresolved entries.
   end-to-end testing until they are available; native behavior remains unverified.
 
 The [operator runbook](../runbooks/tcc-onboarding.md) owns current setup commands,
-validation coverage, and audit status. [ADR 0047](../adr/0047-tcc-cli-first-apply.md)
+validation coverage, and audit status. [ADR 0057](../adr/0057-tcc-helper-cli-owns-access.md)
 records the architecture.
 
 ## Evidence and simplification
@@ -103,7 +106,7 @@ Implemented ownership:
 | `home/dot_config/dotfiles/tcc.json.tmpl` | Render the manifest as JSON for Swift's `Decodable`. |
 | `scripts/macos/tcc-onboarding/` | Swift source, app metadata, and focused native tests. |
 | `scripts/macos/install-tcc-onboarding` | Build and install `~/Applications/Dotfiles Permissions.app`. |
-| `home/.chezmoiscripts/run_after_80-tcc-onboarding.sh.tmpl` | Gated install and desktop reconciliation after app installation. |
+| `home/.chezmoiscripts/run_after_99-tcc-onboarding.sh.tmpl` | Gated install and desktop reconciliation after app installation. |
 
 Keep permission metadata out of native preference plists. One dedicated
 catalogue fits the repo's structured-data convention without reviving the
@@ -231,17 +234,18 @@ Build only when source or build inputs change, using the existing
 pattern for staged replacement and signature verification. Keep the rendered
 manifest outside the bundle so inventory edits do not rebuild or re-sign it.
 A stable bundle ID and path are necessary, but do not assume they preserve
-grants across ad-hoc rebuilds. The first slice determines the supported update
-and reauthorization procedure; stable certificate signing is a follow-up choice
-if local rebuilds prove too disruptive.
+grants across ad-hoc rebuilds. Because a helper without access fails apply,
+the installer signs with a per-machine self-signed certificate whose designated
+requirement survives rebuilds; the runbook covers its keychain and recovery.
 
 The follow-up integration uses the CLI by default for personal, work, and
 homelab Mac roles, with host/local overrides; CI and devbox remain disabled.
 The headless audit shares app resolution, SQLite reads, and identity validation
 with the GUI. Matching records are quiet; known deviations and unknown evidence
-print reasons and a shell-safe manual command opening the registry document.
-No apply context launches the GUI or changes grants automatically. CLI database
-access does not establish the GUI helper's access. Dry runs never access TCC.
+print reasons and the CLI's `gui` command. No apply context launches the GUI or
+changes grants automatically. The CLI reads TCC as its own responsible process,
+so it checks the same grant the GUI uses; an unreadable database fails apply.
+Dry runs never access TCC.
 
 The [runbook](../runbooks/tcc-onboarding.md#audit-and-open) specifies exit codes,
 bootstrap, legacy-helper capability detection, toolchain reuse, and failure

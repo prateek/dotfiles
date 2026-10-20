@@ -7,7 +7,35 @@ import os
 from pathlib import Path
 import plistlib
 import sqlite3
+import subprocess
 import sys
+
+# LaunchServices knows copies outside the Applications folders (for example Orca's terminal host),
+# which the helper's resolver also sees.
+LAUNCH_SERVICES_LOOKUP = '''
+ObjC.import('AppKit');
+function run(ids) {
+  const found = {};
+  for (const id of ids) {
+    const urls = $.NSWorkspace.sharedWorkspace.URLsForApplicationsWithBundleIdentifier(id);
+    found[id] = [];
+    for (let i = 0; i < urls.count; i++) found[id].push(urls.objectAtIndex(i).path.js);
+  }
+  return JSON.stringify(found);
+}
+'''
+
+
+def registered_copies(bundle_ids):
+    if not bundle_ids:
+        return {}
+    try:
+        result = subprocess.run(['osascript', '-l', 'JavaScript', '-e', LAUNCH_SERVICES_LOOKUP, *bundle_ids],
+                                capture_output=True, text=True, timeout=30, check=True)
+        return json.loads(result.stdout)
+    except (OSError, subprocess.SubprocessError, ValueError) as error:
+        print(f'LaunchServices lookup failed; only Applications folders were searched: {error}', file=sys.stderr)
+        return {}
 
 
 def audit():
@@ -53,6 +81,12 @@ def audit():
             if connection is not None:
                 connection.close()
         report['databases'].append(result)
+    clients = sorted({o['client'] for d in report['databases'] for o in d['observations'] if o['client_kind'] == 'bundle'})
+    for bundle_id, paths in registered_copies(clients).items():
+        for path in paths:
+            known = apps.setdefault(bundle_id, [])
+            if path not in known:
+                known.append(path)
     return report
 
 

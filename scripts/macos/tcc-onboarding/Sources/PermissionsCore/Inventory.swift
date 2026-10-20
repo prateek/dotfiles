@@ -1,4 +1,5 @@
 import Foundation
+import Security
 
 public enum GrantState: String, Sendable {
     case allowed, denied, stale, missing, unknown, notInstalled
@@ -56,8 +57,10 @@ public enum SubjectResolver {
             return .ambiguous("The bundle at \(explicit.path) does not match \(app.bundleID).")
         }
         guard !matching.isEmpty else { return .missing("No installed bundle with identifier \(app.bundleID).") }
-        guard matching.count == 1, let bundle = matching.first else {
-            return .ambiguous("Multiple installed copies match \(app.bundleID). Choose the app you use or set its path in the manifest.")
+        let ranked = matching.sorted { rank($0) < rank($1) }
+        guard let bundle = ranked.first, ranked.count == 1 || sharesDesignatedRequirement(ranked) else {
+            return .ambiguous("Multiple installed copies of \(app.bundleID) have different code identities: "
+                + ranked.map(\.path).joined(separator: ", ") + ". Choose the app you use or set its path in the manifest.")
         }
         if let relative = app.helperPath {
             let helper = bundle.appendingPathComponent(relative).resolvingSymlinksInPath()
@@ -66,6 +69,47 @@ public enum SubjectResolver {
             return .found(PermissionSubject(codeURL: helper, bundleURL: bundle, client: helper.path, clientType: 1))
         }
         return .found(PermissionSubject(codeURL: bundle, bundleURL: bundle, client: app.bundleID, clientType: 0))
+    }
+}
+
+extension SubjectResolver {
+    /// Copies with one designated requirement satisfy the same TCC record, so their verdicts cannot
+    /// differ; prefer the user-facing install over support copies such as Orca's terminal host.
+    static func rank(_ url: URL) -> (Int, Int, String) {
+        let path = url.path
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        let preferred = path.hasPrefix("/Applications/") || path.hasPrefix(home + "/Applications/")
+        let support = path.contains("/Library/") || path.contains(".noindex/")
+        return (preferred ? 0 : support ? 2 : 1, path.count, path)
+    }
+
+    static func sharesDesignatedRequirement(_ urls: [URL]) -> Bool {
+        let requirements = urls.map(designatedRequirement)
+        guard let first = requirements.first, first != nil else { return false }
+        return requirements.allSatisfy { $0 == first }
+    }
+
+    private struct RequirementKey: Hashable { let url: URL; let signed: Date? }
+    nonisolated(unsafe) private static var requirements: [RequirementKey: String?] = [:]
+    private static let requirementsLock = NSLock()
+
+    /// Cached per path and signature date: the GUI resolves on every poll.
+    static func designatedRequirement(_ url: URL) -> String? {
+        let key = RequirementKey(url: url, signed: CodeRequirementChecker.signatureDate(url))
+        if let cached = requirementsLock.withLock({ requirements[key] }) { return cached }
+        let requirement = readDesignatedRequirement(url)
+        requirementsLock.withLock { requirements[key] = requirement }
+        return requirement
+    }
+
+    private static func readDesignatedRequirement(_ url: URL) -> String? {
+        var code: SecStaticCode?
+        var requirement: SecRequirement?
+        var text: CFString?
+        guard SecStaticCodeCreateWithPath(url as CFURL, [], &code) == errSecSuccess, let code,
+              SecCodeCopyDesignatedRequirement(code, [], &requirement) == errSecSuccess, let requirement,
+              SecRequirementCopyString(requirement, [], &text) == errSecSuccess else { return nil }
+        return text as String?
     }
 }
 
@@ -94,11 +138,12 @@ public struct InventorySnapshot: Sendable {
 }
 
 public enum Inventory {
-    public static func scan(_ expectations: [Expectation], databases: [URL],
+    /// `requireAccess` opens the databases even when no target is installed, so a caller can
+    /// treat an unreadable database as a failure rather than as nothing to reconcile.
+    public static func scan(_ expectations: [Expectation], databases: [URL], requireAccess: Bool = false,
                             checker: RequirementChecking = CodeRequirementChecker()) -> InventorySnapshot {
         let found = expectations.contains { if case .found = $0.resolution { return true }; return false }
-        let readers = found ? databases.map(TCCSnapshot.init) : []
-        defer { readers.forEach { $0.close() } }
+        let readers = found || requireAccess ? databases.map(TCCSnapshot.init) : []
         let blocked = readers.filter(\.accessBlocked).map { $0.url.path }
         var rows: [InventoryRow] = []
         for expectation in expectations {

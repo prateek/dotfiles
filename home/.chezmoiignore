@@ -35,7 +35,7 @@ bin/orca-agent-session
 .chezmoiscripts/45-karabiner-goku.sh
 .chezmoiscripts/46-tuna-reload.sh
 .chezmoiscripts/50-neru-service.sh
-.chezmoiscripts/80-tcc-onboarding.sh
+.chezmoiscripts/99-tcc-onboarding.sh
 {{- end }}
 {{/* The asset sync replaces these directories wholesale; see
      agent_assets_synced in machines.toml. */}}
@@ -245,5 +245,6 @@ Library/LaunchAgents/com.prateek.tartelet-runner.plist
 
 {{- if or (ne .chezmoi.os "darwin") (not $f.tcc_onboarding) }}
 .config/dotfiles/tcc.json
-.chezmoiscripts/80-tcc-onboarding.sh
+.local/bin/dotfiles-permissions
+.chezmoiscripts/99-tcc-onboarding.sh
 {{- end }}

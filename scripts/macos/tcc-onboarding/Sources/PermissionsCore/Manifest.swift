@@ -81,6 +81,9 @@ public struct Manifest: Codable, Sendable {
                 if let app = value as? [String: Any], let permissions = app["permissions"] as? [Any] {
                     for permission in permissions {
                         try checkKeys(permission, allowed: ["service", "reason"], context: "\(id) permission")
+                        if let service = (permission as? [String: Any])?["service"] as? String, PermissionService(rawValue: service) == nil {
+                            throw ManifestError("\(id): unknown service \(service). Use one of: \(PermissionService.allCases.map(\.rawValue).joined(separator: ", "))")
+                        }
                     }
                 }
             }

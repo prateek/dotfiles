@@ -62,6 +62,14 @@ test-browser-jev:
 [group('suite')]
 test-tcc-onboarding:
     xcrun swift test --package-path scripts/macos/tcc-onboarding --scratch-path build/tcc-onboarding
+    just test-tcc-manifest
+
+# The rendered catalogue must pass the helper's own validator, or apply fails with exit 65.
+[group('suite')]
+test-tcc-manifest:
+    xcrun swift build --package-path scripts/macos/tcc-onboarding --scratch-path build/tcc-onboarding --product DotfilesPermissions
+    DOTFILES_TCC_CLI="$(xcrun swift build --package-path scripts/macos/tcc-onboarding --scratch-path build/tcc-onboarding --show-bin-path)/DotfilesPermissions" \
+      just test-python -k test_rendered_manifest_passes_the_helper_validator
 
 # Syntax and docs checks that need no behaviour fixtures.
 [group('suite')]

@@ -5,33 +5,11 @@ import SwiftUI
 @main
 enum PermissionsApp {
     static func main() {
-        let args = Array(CommandLine.arguments.dropFirst())
-        if args.first == "--audit" {
-            let result = AuditCommand.run(args, scan: NativeInventory.scan)
-            FileHandle.standardOutput.write(Data(result.output.utf8))
-            exit(result.status)
-        }
-        if args.first == "--validate" {
-            guard args.count == 2 else { fail("Usage: DotfilesPermissions --validate <manifest.json>") }
-            do { _ = try Manifest.load(URL(fileURLWithPath: args[1])); return }
-            catch { fail(error.localizedDescription) }
-        }
-        if args.first == "--is-running" {
-            exit(NSRunningApplication.runningApplications(withBundleIdentifier: "com.prateek.DotfilesPermissions")
-                .contains { $0.processIdentifier != ProcessInfo.processInfo.processIdentifier } ? 0 : 1)
-        }
-        if let first = args.first, first.hasPrefix("--"), !["--manifest", "--reconcile"].contains(first) {
-            fail("Unknown option: \(first)")
-        }
+        if CLIEntry.isCommandLine(CommandLine.arguments) { CLIEntry.run(CommandLine.arguments) }
         let application = NSApplication.shared
         let delegate = AppDelegate()
         application.delegate = delegate
         withExtendedLifetime(delegate) { application.run() }
-    }
-
-    private static func fail(_ message: String) -> Never {
-        FileHandle.standardError.write(Data("Dotfiles Permissions: \(message)\n".utf8))
-        exit(1)
     }
 }
 
@@ -39,8 +17,6 @@ enum PermissionsApp {
 final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItemValidation {
     let model = PermissionsModel(preferences: .standard)
     private var window: NSWindow?
-    private var started = false
-    private var launch = LaunchReview()
     private var statusItem: NSStatusItem?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -49,38 +25,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
                                                           object: nil, queue: .main) { [weak self] _ in
             Task { @MainActor in self?.updateWindowLevel() }
         }
-        if !started {
-            let args = CommandLine.arguments
-            let manifest = args.firstIndex(of: "--manifest").flatMap { index in
-                args.indices.contains(index + 1) ? URL(fileURLWithPath: args[index + 1]) : nil
-            } ?? PermissionsModel.defaultManifest
-            requestReview(manifest, reconcile: args.contains("--reconcile"))
-        }
-    }
-
-    func application(_ sender: NSApplication, openFiles filenames: [String]) {
-        guard filenames.count == 1, let filename = filenames.first else {
-            model.error = "Open one permission manifest at a time."
-            showWindow()
-            sender.reply(toOpenOrPrint: .failure)
-            return
-        }
-        let reconcile = !started && CommandLine.arguments.contains("--reconcile")
-        requestReview(URL(fileURLWithPath: filename), reconcile: reconcile)
-        sender.reply(toOpenOrPrint: .success)
-    }
-
-    func application(_ application: NSApplication, open urls: [URL]) {
-        if urls.count == 1, let file = urls.first, file.isFileURL {
-            requestReview(file, reconcile: !started && CommandLine.arguments.contains("--reconcile"))
-            return
-        }
-        guard urls.count == 1, let request = ReconcileRequest(url: urls[0]) else {
-            model.error = "Invalid permission review request. Open a local permission manifest instead."
-            showWindow()
-            return
-        }
-        requestReview(request.manifestURL, reconcile: true)
+        showWindow()
+        model.load()
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
@@ -89,29 +35,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         return true
     }
 
-    private func requestReview(_ url: URL, reconcile: Bool) {
-        started = true
-        model.onChange = { [weak self] in self?.scanFinished() }
-        perform(launch.request(reconcile: reconcile))
-        model.load(url)
-    }
-
     private func scanFinished() {
-        if !model.busy && (model.snapshot != nil || model.error != nil) {
-            let visible = window?.isVisible == true && window?.isMiniaturized == false && !NSApp.isHidden
-            perform(launch.scanFinished(needsAttention: model.error != nil || model.snapshot?.needsAttention == true,
-                                        windowIsVisible: visible))
-        }
         updateWindowLevel()
         updateStatusItem()
-    }
-
-    private func perform(_ effect: LaunchReview.Effect) {
-        switch effect {
-        case .none: break
-        case .show: showWindow()
-        case .terminate: NSApp.terminate(nil)
-        }
     }
 
     private func showWindow() {
@@ -133,7 +59,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
             if !main.setFrameUsingName("PermissionsWorkbench") { main.center() }
             window = main
         }
-        launch.hasPresentedWindow = true
         window?.deminiaturize(nil)
         window?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
