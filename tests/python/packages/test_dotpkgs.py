@@ -295,13 +295,66 @@ else: raise SystemExit(99)
         target.write_bytes(ENTRY.read_bytes())
         shutil.copytree(ROOT / 'home/dot_local/lib/dotpkgs', self.home / '.local/lib/dotpkgs')
         result = self.command([str(PYTHON), str(target), '--json', 'managers'], cwd=self.work)
-        self.assertEqual(len(json.loads(result.stdout)['managers']), 14)
+        self.assertEqual(len(json.loads(result.stdout)['managers']), 15)
 
     def binary(self, name, body):
         path = self.bin / name
         path.write_text(f'#!{PYTHON}\nimport json, os, pathlib, sys\n' + body)
         path.chmod(0o755)
         self.env['DOTPKGS_' + name.upper().replace('-', '_') + '_BIN'] = str(path)
+
+    def pi_fixture(self, configured, installed, latest):
+        catalogue = self.source / '.chezmoidata/agents.toml'
+        catalogue.write_text('[agents.pi]\nbinary = "pi"\n# peers first\npackages = [\n  "npm:@scope/peer",\n  "npm:pi-held@1.0.0",\n  "npm:pi-wanted",\n]\n\n[agents.gemini]\nbinary = "gemini"\n')
+        settings = self.home / '.pi/agent/settings.json'
+        settings.parent.mkdir(parents=True)
+        settings.write_text(json.dumps({'packages': configured}))
+        for name, version in installed.items():
+            manifest = self.home / '.pi/agent/npm/node_modules' / name / 'package.json'
+            manifest.parent.mkdir(parents=True)
+            manifest.write_text(json.dumps({'name': name, 'version': version}))
+        self.binary('npm', f"print(json.dumps({latest!r}[sys.argv[2]]))\n")
+        log = "with (pathlib.Path(os.environ['FIXTURE']) / 'writes').open('a') as f: f.write(json.dumps(sys.argv[1:]) + '\\n')\n"
+        self.binary('pi', log)
+        self.binary('chezmoi', "if 'apply' in sys.argv:\n " + log + "else: print(json.dumps({'groups': ['core'], 'agent_clis': ['pi']}))\n")
+        return catalogue
+
+    def test_pi_status_reads_catalogue_and_settings_pins_by_package_identity(self):
+        self.pi_fixture(['npm:@scope/peer', 'npm:pi-held@1.0.0', 'npm:live-only'],
+                        {'@scope/peer': '2.0.0', 'pi-held': '0.9.0', 'live-only': '1.0.0'},
+                        {'@scope/peer': '2.0.0', 'pi-held': '3.0.0', 'pi-wanted': '1.0.0', 'live-only': '1.1.0'})
+        rows = {row['name']: row for row in self.cli('status', '--manager', 'pi')['results'][0]['packages']}
+        self.assertEqual({name: (row['status'], row['requested'], row['declared']) for name, row in rows.items()}, {
+            'npm:@scope/peer': ('current', 'latest', True),
+            'npm:pi-held': ('policy_mismatch', '1.0.0', True),
+            'npm:pi-wanted': ('missing', 'latest', True),
+            'npm:live-only': ('update_available', 'latest', False),
+        })
+
+    def test_pi_pin_rewrites_only_its_catalogue_entry_then_reconciles_through_pi(self):
+        catalogue = self.pi_fixture(['npm:@scope/peer', 'npm:pi-held@1.0.0', 'npm:pi-wanted'],
+                                    {'@scope/peer': '2.0.0', 'pi-held': '1.0.0', 'pi-wanted': '1.0.0'},
+                                    {'@scope/peer': '2.0.0', 'pi-held': '3.0.0', 'pi-wanted': '1.0.0'})
+        before = catalogue.read_text()
+        self.cli('pin', 'pi:npm:pi-wanted', '--version', '0.5.0', '--dry-run')
+        self.assertEqual(catalogue.read_text(), before)
+        self.cli('pin', 'pi:npm:pi-wanted', '--version', '0.5.0')
+        self.assertEqual(catalogue.read_text(), before.replace('"npm:pi-wanted"', '"npm:pi-wanted@0.5.0"'))
+        writes = [json.loads(line) for line in (self.work / 'writes').read_text().splitlines()]
+        self.assertEqual([writes[0][-1], writes[1]],
+                         [str(self.home / '.pi/agent/settings.json'), ['update', 'npm:pi-wanted@0.5.0', '--no-approve']])
+
+    def test_pi_update_holds_pins_unless_latest_moves_them_to_the_newest_release(self):
+        catalogue = self.pi_fixture(['npm:@scope/peer', 'npm:pi-held@1.0.0', 'npm:pi-wanted'],
+                                    {'@scope/peer': '1.0.0', 'pi-held': '1.0.0', 'pi-wanted': '1.0.0'},
+                                    {'@scope/peer': '2.0.0', 'pi-held': '3.0.0', 'pi-wanted': '1.0.0'})
+        plan = self.cli('update', '--all', '--manager', 'pi', '--dry-run')['results'][0]['plan']
+        self.assertEqual([step['argv'][1:3] for step in plan['steps']],
+                         [['update', 'npm:@scope/peer'], ['update', 'npm:pi-wanted']])
+        self.assertIn('npm:pi-held: held at 1.0.0', plan['notes'])
+        plan = self.cli('update', '--all', '--manager', 'pi', '--latest', '--dry-run')['results'][0]['plan']
+        self.assertIn('-  "npm:pi-held@1.0.0",\n+  "npm:pi-held",', plan['edits'][0]['diff'])
+        self.assertIn(['pi', 'update', 'npm:pi-held', '--no-approve'], [step['argv'] for step in plan['steps']])
 
     def test_native_channel_checks_and_codex_pin_plan(self):
         for name, installed in [('claude','2.0.0'),('codex','0.1.0'),('cursor-agent','2026.01.01-aaa')]:

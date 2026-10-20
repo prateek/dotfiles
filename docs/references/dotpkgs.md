@@ -3,7 +3,7 @@ status: active
 doc_type: reference
 summary: "Shared package status, pin-aware operations, bulk latest, and banner/audit integration."
 created: 2026-10-12
-updated: 2026-10-19
+updated: 2026-10-20
 related:
   - ../retired.md
   - ../adr/0049-shared-package-operations.md
@@ -44,7 +44,7 @@ dotpkgs exec --dry-run brew -- info --json=v2 git
 ```
 
 Package IDs start with the manager, then a colon and the native name; for
-example `mise:npm:agent-slack`. `list` gives exact IDs. With one `--manager`,
+example `mise:npm:agent-slack` or `pi:npm:pi-vim`. `list` gives exact IDs. With one `--manager`,
 a bare native name is also accepted. An omitted manager on reads selects all;
 writes require explicit IDs or `update --all`. Repeat `--manager` to limit a
 bulk update. New grouped declarations require `--group` so an install cannot
@@ -119,7 +119,11 @@ Mise compares both permitted versions and `outdated --bump`; opaque runtime
 aliases without a numeric version remain unknown. APM compares accepted locked
 commits with upstream default branches, including pinned refs; `apm:apm-cli`
 compares the build's `uv.lock` version with PyPI releases allowed by its
-`pyproject.toml` requirement and overall. Git checks use
+`pyproject.toml` requirement and overall. Pi packages compare the copy pi
+manages under `~/.pi/agent/npm` with npm's latest release, and git sources with
+the remote head; a source's `@version` or `@ref` suffix is its pin, and a local
+path has no comparable version. The pi binary itself is the
+`mise:npm:@earendil-works/pi-coding-agent` row. Git checks use
 `ls-remote`, without fetching objects or moving refs. Xcode uses the stable
 versions in xcodes' catalog; installation can still fail on an older macOS.
 MAS reports the compatible App Store release. Source-built helpers use digests,
@@ -135,6 +139,7 @@ versions and the build's source digest.
 | `claude`, `cursor` | Native installation/update and machine-agent deselection plus reversible launcher removal. No integrated durable pin control; installing one version alone would not disable auto-update. |
 | `codex` | Native install/update/remove plus standalone pin/unpin. Pins go in `package_policy.native.codex` and disable the installer's latest-channel tracking. |
 | `gh` | Extension install/remove/update and native pin/unpin. Pins are read from native manifest/Git metadata, survive normal updates, and are not fresh-machine declarations. Unpinned extensions update in place; pin changes and bulk latest on a pinned extension remove/reinstall it, and an installation failure can leave it absent. |
+| `pi` | Install/remove, update, and pin/unpin pi packages. Declarations are the ordered `packages` list of the pi entry in `.chezmoidata/agents.toml`, which the pi settings template renders before any live-only entries; a declaration replaces a live entry for the same package (npm name or git URL, ignoring the pin). Pin changes edit that entry, apply `~/.pi/agent/settings.json`, and let `pi update` reconcile to it. |
 | `zinit` | Install/remove simple `zinit light` declarations, update through zinit, and persist `ver` pins in the shell source. Tracked local edits block updates. |
 | `apm` | Shared-graph acquisition, declaration pin changes, guarded removal, and validation. Review acquired changes, repair patches, and bump affected plugin versions before installing accepted inputs. Installing an existing dependency validates/materializes the entire marketplace. `apm:apm-cli` updates, pins, and unpins on its own by editing the `pyproject.toml` requirement, re-locking with uv, and checking the build; `update --latest` moves a bounded requirement to the newest release, and the tool cannot be installed or removed. |
 | `mas` | Install/remove declarations and native app operations. Updates run only for apps `mas outdated` reports. Authentication/admin access may be required. No version-pin API. |
@@ -203,7 +208,7 @@ A dry run describes elevation a later execution needs; it never requests it.
 | --- | --- |
 | Homebrew catalog refresh, formula operations, holds | No, when run as the Homebrew owner. Initial Homebrew bootstrap is separate. |
 | Homebrew cask install/update/remove | Sometimes: package installers, system destinations, and uninstall scripts can require it. Homebrew owns the prompt. |
-| Mise, native agent CLIs, gh extensions, zinit, APM, externals | No for the managed user-owned destinations. |
+| Mise, native agent CLIs, gh extensions, pi packages, zinit, APM, externals | No for the managed user-owned destinations. |
 | Swift and Raycast builds | No with the required toolchains already installed. Toolchain setup is separate. |
 | MAS install/update/remove | Yes; current `mas` requests elevation itself and may reuse valid sudo credentials. App Store login is a separate requirement. |
 | Xcode install | May prompt through `xcodes` for privileged installation setup. |
@@ -272,7 +277,7 @@ inventory probes stop the audit with an explicit diagnostic; they must not be in
 
 ```sh
 just test-tools
-just test-python -p test_dotpkgs.py -p test_brewfile.py -p test_agents.py
+just test-python -p test_dotpkgs.py -p test_brewfile.py -p test_agents.py -p test_pi.py
 just test-shell tests/bats/hooks/shell-banner*.bats tests/bats/packages/fork-reconcile.bats tests/bats/packages/brew-inventory.bats
 ```
 

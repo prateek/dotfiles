@@ -29,6 +29,7 @@ def doctor(ctx):
         present = ctx.available(binary)
         paths = {
             'zinit': [ctx.data / 'zinit/zinit.git/zinit.zsh'],
+            'pi': [ctx.home / '.pi/agent/settings.json'],
             'setapp': [Path('/Applications/Setapp.app'), ctx.home / 'Applications/Setapp.app'],
             'apm': [ctx.source / '../agent-marketplace/apm.yml'] if payload.get('source') else [],
             'raycast': [ctx.source / 'dot_local/share/raycast-extensions'] if payload.get('source') else [],

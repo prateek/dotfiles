@@ -13,6 +13,8 @@
 #   orca          Orca's TUI agent id, for the agent picker (empty = not an Orca agent)
 #   plugins       the agent takes the rendered agent plugins (hooks 36/39)
 #   harness       ACP harness provided by this agent (when supported)
+#   packages      agent-native packages in load order (pi: settings.json sources;
+#                 pin with the source's own @version or @ref); dotpkgs manages them
 
 [agents.claude]
 binary = "claude"
@@ -49,9 +51,20 @@ harness = "omp"
 [agents.pi]
 binary = "pi"
 install = "mise"
-mise = "npm:@earendil-works/pi-coding-agent" # Cursor SDK bridge peers are managed in ~/.pi/agent/settings.json
+mise = "npm:@earendil-works/pi-coding-agent"
 config_paths = [".pi"]
 orca = "pi"
+# The Cursor SDK bridge needs its runtime peers listed before it.
+packages = [
+  "npm:@earendil-works/pi-ai",
+  "npm:@earendil-works/pi-coding-agent",
+  "npm:@earendil-works/pi-tui",
+  "npm:pi-claude-marketplace",
+  "npm:pi-cursor-sdk",
+  "npm:typebox",
+  "npm:pi-vim",
+  "npm:pi-statusline",
+]
 
 [agents.gemini]
 binary = "gemini"

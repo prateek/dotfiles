@@ -8,6 +8,7 @@ OPERATIONS = {
     'codex': ('install', 'remove', 'update', 'pin', 'unpin'),
     'cursor': ('install', 'remove', 'update'),
     'gh': ('install', 'remove', 'update', 'pin', 'unpin'),
+    'pi': ('install', 'remove', 'update', 'pin', 'unpin'),
     'zinit': ('install', 'remove', 'update', 'pin', 'unpin'),
     'apm': ('install', 'remove', 'update', 'pin', 'unpin'),
     'mas': ('install', 'remove', 'update'),
@@ -18,7 +19,7 @@ OPERATIONS = {
     'swift': ('install', 'remove', 'update'),
 }
 OPERATION_MODES = {'setapp': {'update': 'manual'}, 'apm': {name: 'review' for name in ('install', 'remove', 'update', 'pin', 'unpin')}}
-VERSION_ACTIONS = {'mise': ('install', 'pin'), 'codex': ('pin',), 'gh': ('pin',),
+VERSION_ACTIONS = {'mise': ('install', 'pin'), 'codex': ('pin',), 'gh': ('pin',), 'pi': ('install', 'pin'),
                    'zinit': ('pin',), 'apm': ('pin',), 'xcode': ('install', 'pin', 'remove')}
 
 

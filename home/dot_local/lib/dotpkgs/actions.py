@@ -12,7 +12,7 @@ import time
 import tomllib
 
 from core import APM_CLI, Problem, apm_identity, atomic_write, digest
-from providers import MANAGERS, apm_cli_requirement, apm_cli_resolve, inventory, tree_digest
+from providers import MANAGERS, apm_cli_requirement, apm_cli_resolve, inventory, pi_source, tree_digest
 from privileges import privilege
 from contracts import validate_operation
 
@@ -350,6 +350,52 @@ def gh_plan(plan, ctx, action, names, latest, version, group, rows):
             plan.notes.append(f'{name}: held by its native gh pin')
         else:
             plan.command('gh', 'extension', 'upgrade', name)
+
+
+def pi_plan(plan, ctx, action, names, latest, version, group, rows):
+    by_name = {row['name']: row for row in rows}
+    settings = ctx.home / '.pi/agent/settings.json'
+
+    def declare(identity, source):
+        """Set, add, or (source None) drop the pi catalogue entry for one package identity."""
+        def mutate(data):
+            packages = data['agents']['pi'].setdefault('packages', [])
+            index = next((i for i, entry in enumerate(packages) if pi_source(entry)[0] == identity), None)
+            if source is None:
+                if index is not None:
+                    del packages[index]
+            elif index is None:
+                packages.append(source)
+            else:
+                packages[index] = source
+        plan.toml(ctx.source / '.chezmoidata/agents.toml', mutate)
+
+    for name in names:
+        identity, pin = pi_source(name)
+        if pin:
+            raise Problem(f'{name}: name the package without its pin; use --version')
+        row = by_name.get(identity)
+        if action == 'install':
+            source = identity + ('@' + version if version else '')
+            declare(identity, source)
+            apply_target(plan, ctx, settings)
+            plan.command('pi', 'install', source, '--no-approve')
+        elif action == 'remove':
+            declare(identity, None)
+            plan.command('pi', 'remove', row['source'], '--no-approve')
+        elif action == 'pin' or action == 'unpin' or (latest and row['pinned']):
+            if action == 'pin' and not version:
+                raise Problem('pi pin requires --version (npm version, git tag, or commit)')
+            source = identity + ('@' + version if action == 'pin' else '')
+            if not row.get('declared'):
+                plan.notes.append(f'{identity}: not in the pi catalogue; the pin change adds it as a managed package.')
+            declare(identity, source)
+            apply_target(plan, ctx, settings)
+            plan.command('pi', 'update', source, '--no-approve')
+        elif row['pinned']:
+            plan.notes.append(f'{identity}: held at {row["requested"]}')
+        else:
+            plan.command('pi', 'update', row['source'], '--no-approve')
 
 
 def git_plan(plan, ctx, action, names, latest, version, group, rows):
@@ -704,7 +750,7 @@ def make_plan(ctx, manager, action, names, *, latest=False, version=None, group=
         raise Problem('invalid package name')
     if action not in ('install',) and manager not in ('xcode',) and any(n not in {r['name'] for r in rows} for n in names):
         raise Problem('package not found; use dotpkgs list to resolve its exact name')
-    dispatch = {'brew': brew_plan, 'mise': mise_plan, 'gh': gh_plan,
+    dispatch = {'brew': brew_plan, 'mise': mise_plan, 'gh': gh_plan, 'pi': pi_plan,
                 'zinit': git_plan, 'externals': git_plan, 'apm': apm_plan,
                 'mas': app_plan, 'setapp': app_plan, 'raycast': build_plan,
                 'swift': build_plan, 'xcode': xcode_plan}

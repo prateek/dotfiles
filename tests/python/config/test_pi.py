@@ -11,6 +11,7 @@ class PiConfigTests(RepoTestCase):
     vim = {"clipboardMirror": "yank", "modeColors": {"insert": "borderMuted", "normal": "borderAccent", "ex": "warning"},
            "syncBorderColorWithMode": True}
     statusline = {"type": "command", "command": "~/.pi/agent/statusline.sh", "placement": "footer", "debounceMs": 300}
+    telemetry_off = {"enableInstallTelemetry": False, "enableAnalytics": False}
 
     def test_dependency_order_and_nested_merge_preserve_user_preferences(self):
         modify = self.modifier("home/dot_pi/agent/modify_settings.json.tmpl")
@@ -20,6 +21,7 @@ class PiConfigTests(RepoTestCase):
             "piVim": {"clipboardMirror": "all", "modeColors": {"visual": "borderStrong"},
                       "modeChange": {"insert": "printf insert", "normal": "printf normal"}},
             "statusLine": {"type": "command", "command": "printf old"}, "trust": {"/code/worktree": True},
+            "enableInstallTelemetry": True, "enableAnalytics": True,
         }
         result = self.command(modify, json.dumps(current).encode())
         expected = current | {
@@ -27,17 +29,26 @@ class PiConfigTests(RepoTestCase):
             "piVim": self.vim | {"modeColors": self.vim["modeColors"] | {"visual": "borderStrong"},
                                  "modeChange": current["piVim"]["modeChange"]},
             "statusLine": self.statusline,
-        }
+        } | self.telemetry_off
         self.assertEqual(json.loads(result.stdout), expected)
         self.assertIs(json.loads(result.stdout)["trust"]["/code/worktree"], True)
         self.assertEqual(self.command(modify, result.stdout).stdout, result.stdout)
 
-    def test_empty_config_gets_only_managed_package_and_renderer_settings(self):
+    def test_empty_config_gets_only_managed_package_renderer_and_telemetry_settings(self):
         result = self.command(self.modifier("home/dot_pi/agent/modify_settings.json.tmpl"))
         self.assertEqual(json.loads(result.stdout), {
             "npmCommand": ["mise", "exec", "node", "--", "npm"], "packages": self.packages,
             "piVim": self.vim, "statusLine": self.statusline,
-        })
+        } | self.telemetry_off)
+
+    def test_managed_packages_replace_live_entries_for_the_same_package(self):
+        # Pi identifies npm packages by name and git packages by URL, ignoring the pin.
+        managed = ["npm:@scope/peer@2.0.0", "npm:pi-vim", "git:github.com/owner/tool@v2"]
+        modify = self.modifier("home/dot_pi/agent/modify_settings.json.tmpl", data={"agents": {"pi": {"packages": managed}}})
+        current = {"packages": ["npm:pi-vim@0.1.0", "npm:@scope/peer", {"source": "git:github.com/owner/tool@v1"},
+                                "git:github.com/owner/other@v1", "npm:custom"]}
+        result = self.command(modify, json.dumps(current).encode())
+        self.assertEqual(json.loads(result.stdout)["packages"], managed + ["git:github.com/owner/other@v1", "npm:custom"])
 
     def test_marketplace_schema_and_enable_policy_match_claude(self):
         path = "home/dot_pi/agent/claude-plugins.json.tmpl"

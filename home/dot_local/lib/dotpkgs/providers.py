@@ -15,6 +15,7 @@ MANAGERS = {
     'codex': ('codex', 'Codex standalone installation'),
     'cursor': ('cursor-agent', 'Cursor agent native installation'),
     'gh': ('gh', 'GitHub CLI extensions'),
+    'pi': ('pi', 'Pi agent packages'),
     'zinit': ('zsh', 'Shell plugins'),
     'apm': ('uv', 'Agent marketplace dependencies and its locked apm-cli'),
     'mas': ('mas', 'Mac App Store apps'),
@@ -33,6 +34,7 @@ LIMITS = {
     'codex': 'Standalone versions support durable pins. Account state and running sessions survive launcher removal.',
     'cursor': 'Native update/install/remove. No supported durable CLI pin control is integrated.',
     'gh': 'Pins are native gh installation state; fresh machines install the declared extension at latest.',
+    'pi': 'Declarations are the pi entry in agents.toml; pins are source @version/@ref suffixes. Local-path packages have no comparable version.',
     'zinit': 'Simple zinit light declarations support install/remove and ver pins. Complex custom ice declarations require source edits.',
     'apm': 'Updates acquire the entire shared graph, then require source/patch/version review before materialization. apm:apm-cli follows agent-marketplace/uv.lock and updates on its own.',
     'mas': 'App Store compatible releases; no version pin API. App Store authentication may be required.',
@@ -194,6 +196,66 @@ def gh(ctx, check, names=None, include_declared=True):
                            installed if pinned else latest, pinned=pinned))
     if include_declared:
         add_declarations(rows, ctx.declared('gh_extensions'), 'gh')
+    return rows
+
+
+def pi_source(entry):
+    """Split a pi package source into pi's identity (npm name or git URL) and its pin."""
+    source = entry.get('source', '') if isinstance(entry, dict) else str(entry)
+    if source.startswith('npm:'):
+        name = source[4:]
+        at = name.find('@', 1)
+        return ('npm:' + name[:at], name[at + 1:]) if at > 0 else (source, None)
+    if source.startswith(('git:', 'http://', 'https://', 'ssh://', 'git@')):
+        head, slash, tail = source.rpartition('/')
+        repo, _, ref = tail.partition('@')
+        return head + slash + repo, ref or None
+    return source, None
+
+
+def pi_declared(ctx):
+    catalogue = tomllib.loads((ctx.source / '.chezmoidata/agents.toml').read_text())['agents']
+    return list(catalogue.get('pi', {}).get('packages', []))
+
+
+def pi(ctx, check, names=None, include_declared=True):
+    settings_path = ctx.home / '.pi/agent/settings.json'
+    configured = json.loads(settings_path.read_text()).get('packages', []) if settings_path.exists() else []
+    declared = pi_declared(ctx) if include_declared else []
+    enabled = 'pi' in ctx.features()['agent_clis']
+    entries = {}
+    for entry in [*declared, *configured]:
+        identity, pin = pi_source(entry)
+        entries.setdefault(identity, pin)
+    declared_ids = {pi_source(entry)[0] for entry in declared}
+    rows = []
+    for identity, pin in entries.items():
+        if names is not None and identity not in names:
+            continue
+        installed = latest = None
+        note = None
+        if identity.startswith('npm:'):
+            manifest = ctx.home / '.pi/agent/npm/node_modules' / identity[4:] / 'package.json'
+            installed = json.loads(manifest.read_text()).get('version') if manifest.is_file() else None
+            if check:
+                latest = ctx.json(['npm', 'view', identity[4:], 'version', '--json'], cwd=ctx.home)
+        elif identity.startswith(('git:', 'http://', 'https://', 'ssh://', 'git@')):
+            host_path = re.sub(r'^(git:|https?://|ssh://)(git@)?', '', identity).replace(':', '/').removesuffix('.git')
+            checkout = ctx.home / '.pi/agent/git' / host_path
+            if (checkout / '.git').exists():
+                installed = ctx.run(['git', '-C', checkout, 'rev-parse', 'HEAD']).strip()
+                latest = remote_head(ctx, checkout) if check else None
+        else:
+            installed = identity
+            note = 'Local path package; pi loads it in place, so there is no comparable version.'
+        status = 'unknown' if note else None
+        if identity.startswith('npm:') and pin and installed and re.fullmatch(r'\d+\.\d+\.\d+\S*', pin) and installed != pin:
+            status = 'policy_mismatch'
+        if not enabled and not installed:
+            status = 'disabled'
+        rows.append(record('pi', identity, installed, pin or 'latest', latest, installed if pin else latest,
+                           pinned=bool(pin), status=status, note=note, declared=identity in declared_ids,
+                           enabled=enabled, source=identity + ('@' + pin if pin else '')))
     return rows
 
 
@@ -484,7 +546,7 @@ def inventory(ctx, manager, check=True, names=None, include_declared=True):
         if manager in ('claude', 'codex', 'cursor'):
             rows = native(ctx, check, manager, names, include_declared)
         else:
-            providers = {'brew': brew, 'mise': mise, 'gh': gh, 'zinit': zinit, 'externals': externals,
+            providers = {'brew': brew, 'mise': mise, 'gh': gh, 'pi': pi, 'zinit': zinit, 'externals': externals,
                          'apm': apm, 'mas': mas, 'setapp': setapp, 'xcode': xcode, 'raycast': raycast, 'swift': swift}
             rows = providers[manager](ctx, check, names, include_declared)
         return [row for row in rows if names is None or row['name'] in names]

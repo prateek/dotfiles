@@ -5,8 +5,9 @@
 # ///
 """Merge durable pi package settings into ~/.pi/agent/settings.json.
 
-The npm command is managed directly. The package list preserves existing entries
-while keeping managed pi packages in dependency order. Unrelated live preferences
+The npm command and telemetry opt-outs are managed directly. Managed packages
+come from the pi entry in .chezmoidata/agents.toml, in order, and replace live
+entries for the same package; other live entries are kept. Unrelated live preferences
 such as provider, model, theme, changelog state, and trust decisions pass through
 untouched.
 """
@@ -14,16 +15,7 @@ import json
 import sys
 
 NPM_COMMAND = ["mise", "exec", "node", "--", "npm"]
-REQUIRED_PACKAGES = [
-    "npm:@earendil-works/pi-ai",
-    "npm:@earendil-works/pi-coding-agent",
-    "npm:@earendil-works/pi-tui",
-    "npm:pi-claude-marketplace",
-    "npm:pi-cursor-sdk",
-    "npm:typebox",
-    "npm:pi-vim",
-    "npm:pi-statusline",
-]
+REQUIRED_PACKAGES = {{ .agents.pi.packages | toJson }}
 PI_VIM_SETTINGS = {
     "clipboardMirror": "yank",
     "modeColors": {
@@ -33,6 +25,8 @@ PI_VIM_SETTINGS = {
     },
     "syncBorderColorWithMode": True,
 }
+# Install telemetry also gates provider attribution headers; analytics is opt-in today.
+TELEMETRY_SETTINGS = {"enableInstallTelemetry": False, "enableAnalytics": False}
 STATUS_LINE_SETTINGS = {
     "type": "command",
     "command": "~/.pi/agent/statusline.sh",
@@ -48,6 +42,18 @@ def load_current(text: str) -> dict:
     return value if isinstance(value, dict) else {}
 
 
+def identity(entry) -> str:
+    """Pi's package identity: npm name or git URL without the version or ref."""
+    source = entry.get("source", "") if isinstance(entry, dict) else str(entry)
+    if source.startswith("npm:"):
+        name = source[4:]
+        return "npm:" + (name[: name.index("@", 1)] if "@" in name[1:] else name)
+    if source.startswith(("git:", "http://", "https://", "ssh://", "git@")):
+        head, slash, tail = source.rpartition("/")
+        return head + slash + tail.split("@", 1)[0]
+    return source
+
+
 def semantic_equal(left: str, right: str) -> bool:
     try:
         return json.loads(left) == json.loads(right)
@@ -58,10 +64,12 @@ def semantic_equal(left: str, right: str) -> bool:
 current_text = sys.stdin.read()
 current = load_current(current_text)
 current["npmCommand"] = NPM_COMMAND
+current.update(TELEMETRY_SETTINGS)
 packages = current.get("packages")
 if not isinstance(packages, list):
     packages = []
-packages = REQUIRED_PACKAGES + [package for package in packages if package not in REQUIRED_PACKAGES]
+managed = {identity(package) for package in REQUIRED_PACKAGES}
+packages = REQUIRED_PACKAGES + [package for package in packages if identity(package) not in managed]
 current["packages"] = packages
 pi_vim = current.get("piVim")
 if not isinstance(pi_vim, dict):
