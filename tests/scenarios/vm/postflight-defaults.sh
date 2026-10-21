@@ -34,6 +34,7 @@ case "$*" in
   "read pro.betterdisplay.BetterDisplay SUAutomaticallyUpdate") printf '1\n' ;;
   "read com.stonerl.Thaw SectionDividerStyle")               printf '1\n' ;;
   "read com.stonerl.Thaw SUEnableAutomaticChecks")           printf '1\n' ;;
+  "read com.stonerl.Thaw enforceConcealedSectionOrder")      printf '1\n' ;;
   *)
     printf 'unexpected defaults invocation: %s\n' "$*" >&2
     exit 1

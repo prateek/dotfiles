@@ -55,6 +55,85 @@ def check_moom(test, merged):
     test.assertEqual(merged["Keyboard Controls"]["Visual Representation"], "\u2303Q")
 
 
+def check_thaw(test, merged):
+    for key in ("IceIcon", "MenuBarAppearanceConfigurationV2"):
+        test.assertIs(type(merged[key]), bytes, f"{key} must remain plist data")
+    test.assertEqual(json.loads(merged["IceIcon"])["name"], "Ellipsis")
+    appearance = json.loads(merged["MenuBarAppearanceConfigurationV2"])
+    test.assertEqual(appearance["shapeKind"], 3)
+    test.assertFalse(appearance["isDynamic"])
+    background = appearance["staticConfiguration"]
+    test.assertEqual(background["backgroundKind"], 2)
+    test.assertEqual(
+        [stop["color"]["components"] for stop in background["backgroundGradient"]["stops"]],
+        [[1, 0.07402068649054683, 0, 1], [0, 0, 0, 1]],
+    )
+    layout = merged["MenuBarItemManager.savedSectionOrder"]
+    test.assertEqual(
+        layout["visible"],
+        [
+            "com.stonerl.Thaw:Thaw.ControlItem.Visible",
+            "com.github.matthartman.ghostpepper:Item-0",
+            "com.prakashjoshipax.VoiceInk:Item-0",
+            "com.apple.controlcenter:WiFi",
+            "com.apple.controlcenter:BentoBox-0",
+            "com.apple.controlcenter:Clock",
+        ],
+    )
+    test.assertIs(type(merged["MenuBarItemTriggers"]), bytes, "triggers must remain plist data")
+    triggers = {
+        trigger["itemDisplayName"]: trigger
+        for trigger in json.loads(merged["MenuBarItemTriggers"])
+    }
+    launchd = triggers["Launchd Monitor"]
+    test.assertEqual(
+        launchd["condition"]["scriptResult"]["path"],
+        str(test.home / ".local/libexec/thaw/launchd-jobs-failing"),
+    )
+    test.assertIn(launchd["itemIdentifier"], layout["hidden"])
+    test.assertEqual(
+        triggers["iStat Menus CPU"]["condition"], {"thermalPressure": {"atLeast": 2}}
+    )
+    test.assertEqual(
+        triggers["Battery"]["condition"], {"batteryBelow": {"percentage": 20}}
+    )
+    for trigger in triggers.values():
+        test.assertEqual(
+            (trigger["revealSection"], trigger["hideSection"]), ("visible", "hidden")
+        )
+    hidden = layout["hidden"]
+    groups = json.loads(merged["MenuBarItemGroups"])
+    test.assertEqual(groups["version"], 1)
+    test.assertEqual(
+        [group["name"] for group in groups["groups"]], ["Rarely", "Sometimes", "Often"]
+    )
+    grouped = set()
+    for group in groups["groups"]:
+        members = group["memberIdentifiers"]
+        start = hidden.index(members[0])
+        test.assertEqual(hidden[start : start + len(members)], members, group["name"])
+        grouped.update(members)
+    test.assertFalse(
+        grouped & {trigger["itemIdentifier"] for trigger in triggers.values()},
+        "a trigger target inside a group is pulled back with its group",
+    )
+    test.assertEqual(json.loads(merged["DisplayIceBarConfigurations"]), {})
+    bar = json.loads(merged["GlobalDisplayConfiguration"])
+    test.assertEqual(
+        (bar["useIceBar"], bar["iceBarLayout"], bar["iceBarLocation"]), (True, 2, 2)
+    )
+    spacers = json.loads(merged["MenuBarSpacers"])
+    for spacer in spacers:
+        test.assertIn(f"com.stonerl.Thaw:Thaw.Spacer.{spacer['id']}", hidden)
+    # Each grid row starts a tier: Often fills row one, Sometimes plus its
+    # padding spacers fills row two, and Rarely starts row three.
+    columns = bar["gridColumns"]
+    starts = {group["name"]: hidden.index(group["memberIdentifiers"][0]) for group in groups["groups"]}
+    test.assertEqual(starts["Rarely"], 2 * columns)
+    test.assertLess(starts["Often"], columns)
+    test.assertTrue(columns <= starts["Sometimes"] < 2 * columns)
+
+
 @dataclass(frozen=True)
 class Scenario:
     bundle_id: str
@@ -75,24 +154,38 @@ SCENARIOS = {
     "thaw": Scenario(
         bundle_id="com.stonerl.Thaw",
         overrides={
+            "DisplayIceBarConfigurations": b'{"display-uuid":{"iceBarLocation":0}}',
             "EnableAlwaysHiddenSection": True,
+            "IceIcon": b'{"name":"IceCube"}',
+            "MenuBarAppearanceConfigurationV2": b'{"shapeKind":0}',
+            "MenuBarItemManager.savedSectionOrder": {"visible": ["com.example.app:Item-0"]},
+            "MenuBarItemTriggers": b"[]",
             "SUAutomaticallyUpdate": False,
             "SectionDividerStyle": 0,
+            "TriggerFeatureFlags": ["imageComparison"],
+            "UseOptionClickToShowAlwaysHiddenSection": False,
+            "hasSeenUpdateConsent": False,
         },
         local={
-            "DisplayIceBarConfigurations": b"local-per-display-bar-config",
-            "MenuBarAppearanceConfigurationV2": b"local-menu-bar-appearance",
+            "KnownDisplays": b"local-known-displays",
             "MenuBarItemManager.knownItemIdentifiers": ["com.example.app:Item-0"],
             "NSStatusItem Preferred Position Thaw.ControlItem.Visible": 316,
             "NSWindow Frame SettingsWindow": "local-window-frame",
             "SULastCheckTime": "local-update-state",
+            "hasSeenOnboarding": True,
         },
         expected={
             "EnableAlwaysHiddenSection": False,
             "SUAutomaticallyUpdate": True,
             "SUEnableAutomaticChecks": True,
             "SectionDividerStyle": 1,
+            "TriggerFeatureFlags": ["scriptResult", "thermalPressure"],
+            "UseDoubleClickToShowAlwaysHiddenSection": True,
+            "UseOptionClickToShowAlwaysHiddenSection": True,
+            "enforceConcealedSectionOrder": True,
+            "hasSeenUpdateConsent": True,
         },
+        check=check_thaw,
     ),
     "orbstack": Scenario(
         bundle_id="dev.kdrag0n.MacVirt",

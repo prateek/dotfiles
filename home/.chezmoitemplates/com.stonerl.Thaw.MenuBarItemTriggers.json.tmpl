@@ -1,0 +1,47 @@
+{{- $libexec := joinPath .chezmoi.homeDir ".local/libexec/thaw" -}}
+[
+  {
+    "id": "E17A1EA9-CCB3-4940-B80A-1B7793FB177F",
+    "name": "Launchd Monitor: a launch agent failed",
+    "isEnabled": true,
+    "itemIdentifier": "com.raycast.macos:c:n:51609800-7f01-41dc-9c60-ce12ebf435a3::-::menubar",
+    "itemDisplayName": "Launchd Monitor",
+    "itemBaseIdentifier": "com.raycast.macos:c:n:51609800-7f01-41dc-9c60-ce12ebf435a3::-::menubar",
+    "revealSection": "visible",
+    "hideSection": "hidden",
+    "condition": {"scriptResult": {"path": {{ joinPath $libexec "launchd-jobs-failing" | toJson }}, "expectedOutput": ""}}
+  },
+  {
+    "id": "1870120C-F3DC-4B7C-A5F6-F5E7638F56D6",
+    "name": "iStat CPU: thermal pressure is serious",
+    "isEnabled": true,
+    "itemIdentifier": "com.apple.controlcenter:com.bjango.istatmenus.cpu",
+    "itemDisplayName": "iStat Menus CPU",
+    "itemBaseIdentifier": "com.apple.controlcenter:com.bjango.istatmenus.cpu",
+    "revealSection": "visible",
+    "hideSection": "hidden",
+    "condition": {"thermalPressure": {"atLeast": 2}}
+  },
+  {
+    "id": "8879D7C4-8889-4C8A-A1AD-7828D31DC9A5",
+    "name": "iStat Memory: memory pressure is high",
+    "isEnabled": true,
+    "itemIdentifier": "com.apple.controlcenter:com.bjango.istatmenus.memory",
+    "itemDisplayName": "iStat Menus Memory",
+    "itemBaseIdentifier": "com.apple.controlcenter:com.bjango.istatmenus.memory",
+    "revealSection": "visible",
+    "hideSection": "hidden",
+    "condition": {"scriptResult": {"path": {{ joinPath $libexec "memory-pressure-high" | toJson }}, "expectedOutput": ""}}
+  },
+  {
+    "id": "F33E30D6-B66F-403C-8EF7-A30CA756356C",
+    "name": "Battery: below 20%",
+    "isEnabled": true,
+    "itemIdentifier": "com.apple.controlcenter:Battery",
+    "itemDisplayName": "Battery",
+    "itemBaseIdentifier": "com.apple.controlcenter:Battery",
+    "revealSection": "visible",
+    "hideSection": "hidden",
+    "condition": {"batteryBelow": {"percentage": 20}}
+  }
+]

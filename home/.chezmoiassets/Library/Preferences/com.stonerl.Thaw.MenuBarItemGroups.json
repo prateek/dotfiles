@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "groups": [
+    {
+      "id": "4561D271-5ECF-4387-85C2-3D9A26DB4689",
+      "name": "Rarely",
+      "memberIdentifiers": [
+        "com.paloaltonetworks.PrismaAccessAgent:Item-0",
+        "com.paloaltonetworks.cortex.agent:Item-0",
+        "com.okta.mobile:Item-0",
+        "com.jamf.connect:Item-0",
+        "org.pqrs.Karabiner-Console-User-Server:Item-0",
+        "org.pqrs.Karabiner-Menu:Item-0",
+        "com.hegenberg.BetterTouchTool:BetterTouchTool",
+        "com.y3owk1n.neru:Item-0",
+        "com.bjango.istatmenus-setapp.status:com.bjango.istatmenus.combined",
+        "com.cmuxterm.app:Item-0"
+      ],
+      "isCollapsed": false
+    },
+    {
+      "id": "D4BF7BCB-CE2B-4E95-963E-821B4765B560",
+      "name": "Sometimes",
+      "memberIdentifiers": [
+        "dev.prateek.Facet:Item-0",
+        "io.agentsview.desktop:Item-0",
+        "com.todesktop.230313mzl4w4u92:Item-0",
+        "dev.kdrag0n.MacVirt:Item-0",
+        "com.brnbw.Tuna:Item-0",
+        "com.zimengxiong.winmux:Item-0"
+      ],
+      "isCollapsed": false
+    },
+    {
+      "id": "8233136E-D85B-43B3-B54E-AB31B0D9055C",
+      "name": "Often",
+      "memberIdentifiers": [
+        "us.zoom.xos:Item-0",
+        "com.intelliscapesolutions.caffeine:Item-0",
+        "pro.betterdisplay.BetterDisplay:Item-0",
+        "pro.betterdisplay.BetterDisplay:bb3cc23c-6950-4e96-8b40-850e09f46934",
+        "com.1password.1password:bb3cc23c-6950-4e96-8b40-850e09f46934",
+        "com.getcleanshot.app-setapp:Item-0",
+        "com.stablyai.orca:Item-0"
+      ],
+      "isCollapsed": false
+    }
+  ],
+  "suppressedAutomaticNamespaces": []
+}

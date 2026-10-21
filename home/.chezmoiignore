@@ -212,6 +212,7 @@ Library/Preferences/net.elasticthreads.nv.plist
 Library/Preferences/dev.kdrag0n.MacVirt.plist
 {{- end }}
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "thaw")) "true" }}
+.local/libexec/thaw
 Library/Preferences/com.stonerl.Thaw.plist
 {{- end }}
 {{- if ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "voiceink")) "true" }}

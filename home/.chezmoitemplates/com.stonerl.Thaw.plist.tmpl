@@ -2,9 +2,80 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+  <!-- No per-display Thaw Bar entries: every display inherits GlobalDisplayConfiguration (Thaw Bar grid under the Thaw icon). -->
+  <key>DisplayIceBarConfigurations</key> <data>{{ `{}` | b64enc }}</data>
   <key>EnableAlwaysHiddenSection</key>  <false/>
+  <key>GlobalDisplayConfiguration</key> <data>{{ `{"alwaysShowHiddenItems":false,"gridColumns":9,"iceBarLayout":2,"iceBarLocation":2,"itemSpacingOffset":0,"useIceBar":true,"useThawBarForAlwaysHidden":false}` | b64enc }}</data>
+  <key>IceIcon</key>                    <data>{{ `{"name":"Ellipsis","hidden":{"catalog":{"_0":"EllipsisFill"}},"visible":{"catalog":{"_0":"EllipsisStroke"}}}` | b64enc }}</data>
+  <key>MenuBarAppearanceConfigurationV2</key>
+  <data>{{ include ".chezmoiassets/Library/Preferences/com.stonerl.Thaw.MenuBarAppearanceConfigurationV2.json" | b64enc }}</data>
+  <key>MenuBarItemManager.savedSectionOrder</key>
+  <dict>
+    <key>visible</key>
+    <array>
+      <string>com.stonerl.Thaw:Thaw.ControlItem.Visible</string>
+      <string>com.github.matthartman.ghostpepper:Item-0</string>
+      <string>com.prakashjoshipax.VoiceInk:Item-0</string>
+      <string>com.apple.controlcenter:WiFi</string>
+      <string>com.apple.controlcenter:BentoBox-0</string>
+      <string>com.apple.controlcenter:Clock</string>
+    </array>
+    <!-- The Thaw Bar is a 9-column grid, so hidden reads as rows: Often (9 items), then Sometimes
+         (7 items, padded to a full row by two transparent spacers), then Rarely.
+         Trigger targets and Apple's system items cannot sit inside a group, so they sit beside one. -->
+    <key>hidden</key>
+    <array>
+      <string>com.apple.controlcenter:Battery</string>
+      <string>com.apple.controlcenter:Bluetooth</string>
+      <string>us.zoom.xos:Item-0</string>
+      <string>com.intelliscapesolutions.caffeine:Item-0</string>
+      <string>pro.betterdisplay.BetterDisplay:Item-0</string>
+      <string>pro.betterdisplay.BetterDisplay:bb3cc23c-6950-4e96-8b40-850e09f46934</string>
+      <string>com.1password.1password:bb3cc23c-6950-4e96-8b40-850e09f46934</string>
+      <string>com.getcleanshot.app-setapp:Item-0</string>
+      <string>com.stablyai.orca:Item-0</string>
+      <string>dev.prateek.Facet:Item-0</string>
+      <string>io.agentsview.desktop:Item-0</string>
+      <string>com.todesktop.230313mzl4w4u92:Item-0</string>
+      <string>dev.kdrag0n.MacVirt:Item-0</string>
+      <string>com.brnbw.Tuna:Item-0</string>
+      <string>com.zimengxiong.winmux:Item-0</string>
+      <string>com.raycast.macos:c:n:51609800-7f01-41dc-9c60-ce12ebf435a3::-::menubar</string>
+      <string>com.stonerl.Thaw:Thaw.Spacer.E56F800F-8939-48B5-AD50-EB2A50F55057</string>
+      <string>com.stonerl.Thaw:Thaw.Spacer.AA939208-8D26-4AE0-94AB-4D534BDD5FEA</string>
+      <string>com.paloaltonetworks.PrismaAccessAgent:Item-0</string>
+      <string>com.paloaltonetworks.cortex.agent:Item-0</string>
+      <string>com.okta.mobile:Item-0</string>
+      <string>com.jamf.connect:Item-0</string>
+      <string>org.pqrs.Karabiner-Console-User-Server:Item-0</string>
+      <string>org.pqrs.Karabiner-Menu:Item-0</string>
+      <string>com.hegenberg.BetterTouchTool:BetterTouchTool</string>
+      <string>com.y3owk1n.neru:Item-0</string>
+      <string>com.bjango.istatmenus-setapp.status:com.bjango.istatmenus.combined</string>
+      <string>com.cmuxterm.app:Item-0</string>
+      <string>com.apple.controlcenter:com.bjango.istatmenus.network</string>
+      <string>com.apple.controlcenter:com.bjango.istatmenus.disks</string>
+      <string>com.apple.controlcenter:com.bjango.istatmenus.cpu</string>
+      <string>com.apple.controlcenter:com.bjango.istatmenus.memory</string>
+    </array>
+  </dict>
+  <key>MenuBarItemGroups</key>
+  <data>{{ include ".chezmoiassets/Library/Preferences/com.stonerl.Thaw.MenuBarItemGroups.json" | b64enc }}</data>
+  <key>MenuBarItemTriggers</key>
+  <data>{{ includeTemplate "com.stonerl.Thaw.MenuBarItemTriggers.json.tmpl" . | b64enc }}</data>
+  <key>MenuBarSpacers</key>
+  <data>{{ include ".chezmoiassets/Library/Preferences/com.stonerl.Thaw.MenuBarSpacers.json" | b64enc }}</data>
   <key>SUAutomaticallyUpdate</key>      <true/>
   <key>SUEnableAutomaticChecks</key>    <true/>
   <key>SectionDividerStyle</key>        <integer>1</integer>
+  <key>TriggerFeatureFlags</key>
+  <array>
+    <string>scriptResult</string>
+    <string>thermalPressure</string>
+  </array>
+  <key>UseDoubleClickToShowAlwaysHiddenSection</key> <true/>
+  <key>UseOptionClickToShowAlwaysHiddenSection</key> <true/>
+  <key>enforceConcealedSectionOrder</key> <true/>
+  <key>hasSeenUpdateConsent</key>       <true/>
 </dict>
 </plist>

@@ -148,6 +148,7 @@ expect_plist_for nvalt_default_editor     net.elasticthreads.nv         DefaultE
 expect_plist_for betterdisplay_su_auto    pro.betterdisplay.BetterDisplay SUAutomaticallyUpdate    1
 expect_plist_for thaw_section_divider     com.stonerl.Thaw              SectionDividerStyle        1
 expect_plist_for thaw_su_auto_check       com.stonerl.Thaw              SUEnableAutomaticChecks    1
+expect_plist_for thaw_concealed_order     com.stonerl.Thaw              enforceConcealedSectionOrder 1
 
 
 printf 'SUMMARY|macos|passed=%d|failed=%d\n' "$passes" "$failures"

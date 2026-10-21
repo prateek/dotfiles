@@ -1,0 +1,5 @@
+#!/bin/sh
+# Thaw trigger: exits 0 while macOS reports warning (2) or critical (4) memory
+# pressure.
+level=$(sysctl -n kern.memorystatus_vm_pressure_level) || exit 1
+[ "$level" -ge 2 ]

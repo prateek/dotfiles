@@ -23,3 +23,11 @@ Skills: `agent-skill-management`.
 - On the devbox, after `chezmoi apply`, `ls ~/.cursor/skills`; it holds links into `~/.agents/plugins/plugins/`.
 
 Skills: `agent-skill-management`.
+
+## 2026-10-20: Thaw layout, groups, triggers and grid (home/.chezmoitemplates/com.stonerl.Thaw.plist.tmpl)
+
+- On a personal Mac on macOS 27 with Thaw 3.0 beta: the seeded `MenuBarItemGroups` (version 1) still loads and "Show as a Folder" works; if 3.0 writes version 2, gate folder fields per OS rather than in the shared fragment.
+- On a fresh Mac after `chezmoi apply` and Thaw's first launch: both spacers land in hidden, and with all its apps running the Thaw Bar grid shows Often as row one.
+- In a Tart VM, postflight passes `thaw_concealed_order`.
+
+Skills: `chezmoi-management`, `peekaboo-vm-app-audit`.

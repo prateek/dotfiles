@@ -41,6 +41,7 @@ PY
   assert_output --partial 'RESULT|macos|PASS|chezmoi_status|empty'
   assert_output --partial 'RESULT|macos|PASS|hook_state|absent'
   assert_output --partial 'RESULT|macos|PASS|thaw_section_divider|'
+  assert_output --partial 'RESULT|macos|PASS|thaw_concealed_order|'
   assert_output --partial 'RESULT|macos|PASS|voiceink_model|'
   assert_output --partial 'RESULT|macos|PASS|tailscale_hide_dock|'
   assert_summary

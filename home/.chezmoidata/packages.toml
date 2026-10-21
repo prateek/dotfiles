@@ -72,7 +72,6 @@ casks = [
   { name = "karabiner-elements" },
   { name = "prateek/tap/winmux" },
   { name = "y3owk1n/tap/neru" },
-  { name = "bentobox" },
   { name = "tuna" },
   { name = "moom", appdir = "/Applications" },
   { name = "raycast" },
@@ -466,4 +465,5 @@ casks = [
   { name = "codex" },  # the CLI installs standalone (run_after_07-codex-standalone.sh)
   { name = "periphery" },
   { name = "nikitabobko/tap/aerospace" },  # replaced by prateek/tap/winmux; the two must not run together
+  { name = "bentobox" },  # window manager, no longer used
 ]
