@@ -1,0 +1,9 @@
+{
+  "alwaysShowHiddenItems": false,
+  "gridColumns": 9,
+  "iceBarLayout": 2,
+  "iceBarLocation": 2,
+  "itemSpacingOffset": 0,
+  "useIceBar": true,
+  "useThawBarForAlwaysHidden": false
+}

@@ -2,10 +2,9 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <!-- No per-display Thaw Bar entries: every display inherits GlobalDisplayConfiguration (Thaw Bar grid under the Thaw icon). -->
-  <key>DisplayIceBarConfigurations</key> <data>{{ `{}` | b64enc }}</data>
   <key>EnableAlwaysHiddenSection</key>  <false/>
-  <key>GlobalDisplayConfiguration</key> <data>{{ `{"alwaysShowHiddenItems":false,"gridColumns":9,"iceBarLayout":2,"iceBarLocation":2,"itemSpacingOffset":0,"useIceBar":true,"useThawBarForAlwaysHidden":false}` | b64enc }}</data>
+  <key>GlobalDisplayConfiguration</key>
+  <data>{{ include ".chezmoitemplates/com.stonerl.Thaw.GlobalDisplayConfiguration.json" | trim | b64enc }}</data>
   <key>IceIcon</key>                    <data>{{ `{"name":"Ellipsis","hidden":{"catalog":{"_0":"EllipsisFill"}},"visible":{"catalog":{"_0":"EllipsisStroke"}}}` | b64enc }}</data>
   <key>MenuBarAppearanceConfigurationV2</key>
   <data>{{ include ".chezmoiassets/Library/Preferences/com.stonerl.Thaw.MenuBarAppearanceConfigurationV2.json" | b64enc }}</data>

@@ -1,0 +1,26 @@
+{{- if eq (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "thaw")) "true" -}}
+{{ template "script_lib.sh" . }}
+
+# Thaw seeds a display's Thaw Bar settings from GlobalDisplayConfiguration only
+# when that display has no entry yet, and seeds every connected display at
+# launch. Clear the per-display entries once whenever the managed template
+# changes, so every display picks it up on Thaw's next launch.
+#
+# GlobalDisplayConfiguration sha256: {{ include ".chezmoitemplates/com.stonerl.Thaw.GlobalDisplayConfiguration.json" | sha256sum }}
+# A running Thaw would write its in-memory entries back, so quit it around the reset.
+relaunch=false
+if pgrep -xq Thaw; then
+  osascript -e 'quit app "Thaw"' >/dev/null 2>&1 || true
+  for _ in $(seq 1 40); do pgrep -xq Thaw || break; sleep 0.5; done
+  if pgrep -xq Thaw; then
+    warn "thaw-display-reset: Thaw did not quit; per-display Thaw Bar settings left as they are"
+    exit 0
+  fi
+  relaunch=true
+fi
+defaults delete com.stonerl.Thaw DisplayIceBarConfigurations 2>/dev/null || true
+log "thaw-display-reset: cleared per-display Thaw Bar settings"
+if [ "$relaunch" = true ]; then
+  open -a Thaw
+fi
+{{ end -}}

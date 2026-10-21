@@ -117,7 +117,6 @@ def check_thaw(test, merged):
         grouped & {trigger["itemIdentifier"] for trigger in triggers.values()},
         "a trigger target inside a group is pulled back with its group",
     )
-    test.assertEqual(json.loads(merged["DisplayIceBarConfigurations"]), {})
     bar = json.loads(merged["GlobalDisplayConfiguration"])
     test.assertEqual(
         (bar["useIceBar"], bar["iceBarLayout"], bar["iceBarLocation"]), (True, 2, 2)
@@ -154,7 +153,6 @@ SCENARIOS = {
     "thaw": Scenario(
         bundle_id="com.stonerl.Thaw",
         overrides={
-            "DisplayIceBarConfigurations": b'{"display-uuid":{"iceBarLocation":0}}',
             "EnableAlwaysHiddenSection": True,
             "IceIcon": b'{"name":"IceCube"}',
             "MenuBarAppearanceConfigurationV2": b'{"shapeKind":0}',
@@ -167,6 +165,7 @@ SCENARIOS = {
             "hasSeenUpdateConsent": False,
         },
         local={
+            "DisplayIceBarConfigurations": b"local-per-display-bar-config",
             "KnownDisplays": b"local-known-displays",
             "MenuBarItemManager.knownItemIdentifiers": ["com.example.app:Item-0"],
             "NSStatusItem Preferred Position Thaw.ControlItem.Visible": 316,
