@@ -62,7 +62,7 @@ class AgentCatalogueTests(RepoTestCase):
         hook = "home/.chezmoiscripts/run_onchange_after_36-agent-plugins.sh.tmpl"
         rendered = self.render(hook, "work", data={"machines_local": {"run_install_scripts": True}}).decode()
         self.assertIn('agents="$agents --agent claude"', rendered)
-        self.assertNotIn("--agent cursor-agent", rendered)
+        self.assertIn('agents="$agents --agent cursor-agent"', rendered)
         self.assertNotIn("--agent pi", rendered)
         rendered = self.render(hook, "personal", data={"machines_local": {"run_install_scripts": True}}).decode()
         for agent in ("claude", "codex", "omp"):

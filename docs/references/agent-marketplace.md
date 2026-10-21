@@ -99,8 +99,9 @@ for build-on-apply, repository tool selection, or prebuilt copy, and
 [native reconciliation](../../.agents/skills/agent-skill-management/references/plugin-reconcile.md)
 for cache updates, disabled project plugins, and rollback. Script 35 preserves
 Codex's runtime skill stub; script 36 owns the build/copy/reconcile sequence.
-Config merge templates read host policy directly. Pi follows Claude selection,
-and Cursor loads the plugins Claude has installed and enabled.
+Config merge templates read host policy directly. Pi follows Claude selection.
+Cursor gets default-loaded skills as links in `~/.cursor/skills`, because its
+CLI loads plugins only from Cursor's server-side marketplaces.
 
 Work machines with the work overlay configured get a second marketplace,
 `work-overlay`, from the overlay clone's `agent-plugins/` directory

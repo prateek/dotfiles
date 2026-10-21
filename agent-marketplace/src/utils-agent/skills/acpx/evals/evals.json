@@ -54,6 +54,7 @@
       "expectations": [
         "Parses -m aopus and -w from the invocation",
         "Omits the read-only constraint from the prompt text because -w was supplied",
+        "Launches an external run with --approve-all because -w was supplied, instead of --non-interactive-permissions deny",
         "Does not treat the acpx permission flags as the thing that granted write access",
         "Does not require a disposable worktree, since the user authorized edits in the working checkout"
       ]

@@ -38,6 +38,7 @@ binary = "cursor-agent"
 install = "native-hook"                     # run_after_07-cursor-agent
 config_paths = [".cursor/cli-config.json"]
 orca = "cursor"
+plugins = true                              # skills linked into ~/.cursor/skills
 harness = "cursor"
 
 [agents.omp]

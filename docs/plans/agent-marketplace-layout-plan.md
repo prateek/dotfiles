@@ -36,7 +36,7 @@ status_detail: "All five deliverables landed on the branch. Open gates: console 
 
 **Every plugin reaches every harness.** Claude and Codex install the same set,
 and the per-client flags go away. Pi and OMP already take Claude's selection.
-Cursor loads whatever Claude has installed and enabled.
+Cursor gets default-loaded skills as links in `~/.cursor/skills`.
 
 **The folder is sorted by origin:**
 
@@ -147,7 +147,12 @@ and `tests/README.md`.
   machine (work-mbp's corp filter blocks some GitHub downloads).
 - In `cursor-cli-config-managed.json.tmpl`, check whether the `prateek-local`
   directory entry duplicates what Cursor loads through Claude, or loads
-  disabled plugins. Remove the entry if Claude's set is enough.
+  disabled plugins. Remove the entry if Claude's set is enough. Checked
+  2026-10-20 on cursor-agent 2026.07.01: the CLI loads neither. It reads
+  `$XDG_CONFIG_HOME/cursor/cli-config.json`, has no `marketplaces` key, and
+  takes plugins only from Cursor's server. Skills now reach it through
+  `reconcile-agent-plugins --agent cursor-agent`. Whether Cursor's editor reads
+  the entry is unverified, so it stays.
 - Never run a real `apm prune`. A dry run showed it would also register
   plugins in `.github/copilot/settings.local.json`.
 

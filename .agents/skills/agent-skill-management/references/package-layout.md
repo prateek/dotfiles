@@ -31,8 +31,9 @@ payload trees without following cache symlinks. Other symlinks are rejected.
 Package policy is separate: `home/.chezmoidata/agent_plugins.toml` requires an
 explicit boolean `default_loaded` for every published package, and nothing else.
 Every package goes to every harness ([ADR 0059](../../../../docs/adr/0059-one-plugin-set-for-every-harness.md)).
-There is no implicit enabled default. Pi and OMP follow the same policy; Cursor
-loads the plugins Claude has installed and enabled.
+There is no implicit enabled default. Pi and OMP follow the same policy. Cursor
+gets the skills of every default-loaded package as links in `~/.cursor/skills`;
+see [reconciliation](plugin-reconcile.md).
 
 The library reads built payloads for effective content and source selections for
 edit ownership. Imported edits belong in patches/overlays; no reader infers origin

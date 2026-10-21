@@ -44,7 +44,14 @@ For first-time project use of a disabled Codex plugin, run `codex plugin add
 PACKAGE@prateek-local`, then reconcile to restore its global disabled state and set
 the trusted project's enabled override. Subsequent updates use the explicit refresh
 option. Claude installs every plugin even when globally disabled. Pi follows
-Claude selection, and Cursor loads what Claude has installed and enabled.
+Claude selection.
+
+cursor-agent installs plugins only from Cursor's server-side marketplaces, so
+`--agent cursor-agent` links each default-loaded package's skills into
+`~/.cursor/skills`, one of the user skill roots cursor-agent scans. It owns only
+links that point under the reconciled root, removes those no longer desired,
+and leaves any other entry in place with a warning, including one that shares a
+skill name. The upstream reconciler skips cursor-agent.
 
 `reconcile-upstream-agent-plugins` installs every official plugin on every
 client. Codex accepts an upstream snapshot holding either its own catalog or

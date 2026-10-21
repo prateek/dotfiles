@@ -494,3 +494,22 @@ rg -n --hidden -e 'utils-agent:ask\b' -e '\bask skill\b' -e 'the `ask` skill' \
   branch lands. Codex was not reconciled, because
   starting `codex` on work-mbp trips the Cortex kill. Landing and the
   follow-up agentsview measurement remain.
+
+### 2026-10-20: Cursor activation fixed (follow-up, not yet landed)
+
+- cursor-agent scans `~/.cursor/skills` for user skills but loads plugins only
+  from Cursor's server, so `reconcile-agent-plugins --agent cursor-agent` now
+  links every default-loaded package's skills there. `agents.toml` marks
+  cursor-agent plugin-capable, so script 36 runs it; the upstream reconciler
+  skips it. Tests in `tests/python/agents/test_packages.py` cover projection,
+  pruning of owned links only, and a foreign entry sharing a skill name.
+- On work-mbp, 62 skills were linked and Cursor reported `src`, `acpx`, and
+  `land-changes` in its list. The GPT slash-branch case then passed: it read
+  the skill, resolved the slash branch through `gh api`, fetched with `fresh`,
+  and stated the ref. The behavior check is now 10 of 10.
+- The acpx skill launches `-w` delegations with `--approve-all` and records
+  that Cursor asks before shell commands outside its allow list, so a
+  read-only Cursor delegate gets reads and searches but no shell.
+- Clean five-run trigger rounds with the install stable throughout: `src`
+  14/14 (exit 0) and acpx 18/19; the one acpx miss, the README rewrite, went
+  to the native Agent tool in four of five runs.

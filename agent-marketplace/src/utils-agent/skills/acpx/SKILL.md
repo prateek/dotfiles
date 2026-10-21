@@ -105,12 +105,22 @@ and does not introduce paid access.
 
 ## Treat permission flags as request handling
 
-On acpx 0.15.0 with cursor-agent 2026.07.01 and claude-agent-acp 0.75.1,
-probes found no `session/request_permission` calls. Both adapters wrote a file
-and ran a shell command under `--non-interactive-permissions deny` and under
-`--deny-all`. Those flags answer permission requests; these adapters made none.
-`--no-terminal` also changed nothing because neither adapter called
-`terminal/create`.
+The flags answer `session/request_permission` calls, and only some adapters
+make them:
+
+- **Cursor** (cursor-agent 2026.07.01, probed 2026-10-20) asks before every
+  shell command outside the user's Cursor allow list. `cursor-acp` copies
+  `~/.config/cursor/cli-config.json` into each route, where `approvalMode` is
+  `allowlist`. File reads and searches proceed without asking.
+- **Claude** (claude-agent-acp 0.75.1, acpx 0.15.0) asked nothing: it wrote a
+  file and ran a shell command under `--deny-all`. `--no-terminal` changed
+  nothing either, because it never called `terminal/create`.
+- **Codex** (`codex-acp`) asks.
+
+Choose the flag from `-w`. With `-w`, launch with `--approve-all`. Without it,
+launch with `--non-interactive-permissions deny`: on Cursor that refuses every
+shell command, so put the command output a delegate needs, such as a diff, in
+the prompt or a file it can read.
 
 Treat read-only delegation as a prompt plus an audit:
 
@@ -124,11 +134,8 @@ Treat read-only delegation as a prompt plus an audit:
    With `--format json`, select
    `.sessionUpdate=="tool_call"` to see each tool call's `kind` and `title`.
 
-Keep `--non-interactive-permissions deny` in the launch. It fails closed for
-adapters that do ask, such as `codex-acp`, but it does not make the adapters
-above read-only. Never describe a delegation as read-only based on flags alone.
-
-The permission probes predate dynamic routing. Recheck an adapter whenever its
+Never describe a delegation as read-only based on flags alone: deny binds only
+the requests an adapter chooses to make. Recheck an adapter whenever its
 version or route changes.
 
 ## Launch an external task in a named session
@@ -161,7 +168,8 @@ prompt_file="$log.prompt.md"
 cat > "$prompt_file" <<'EOF'
 <the prompt, carrying the read-only constraint when -w is absent>
 EOF
-acpx_args=(--suppress-reads --non-interactive-permissions deny
+permission=(--non-interactive-permissions deny)   # with -w: permission=(--approve-all)
+acpx_args=(--suppress-reads "${permission[@]}"
   --timeout 600 --prompt-retries 2 --cwd "$session_cwd" --agent "$acpx_agent")
 creation_args=()
 echo "session: $session; log: $log; receipts: $log.before.json, $log.after.json"

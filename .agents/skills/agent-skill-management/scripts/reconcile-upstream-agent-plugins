@@ -227,7 +227,8 @@ class NativeClient:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--policy", type=Path, default=REPO_ROOT / "home/.chezmoidata/agent_upstream_plugins.toml")
-    parser.add_argument("--agent", action="append", choices=("claude", "codex", "omp"), default=[])
+    parser.add_argument("--agent", action="append", choices=("claude", "codex", "omp", "cursor-agent"),
+                        default=[])
     parser.add_argument("--apply", action="store_true")
     parser.add_argument("--update", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
@@ -241,6 +242,10 @@ def main() -> int:
                 parser.error("--apply needs at least one --agent")
             failed = []
             for agent in dict.fromkeys(args.agent):
+                if agent == "cursor-agent":
+                    # cursor-agent installs plugins only from Cursor's server-side marketplaces.
+                    print("reconcile-upstream-agent-plugins: cursor-agent has no local plugin install; skipping")
+                    continue
                 try:
                     NativeClient(agent, dry_run=args.dry_run).reconcile(policy, retired, update=args.update)
                 except RuntimeError as error:

@@ -14,7 +14,12 @@ Skills: `agent-skill-management`.
 
 - On a personal machine, reconcile utils-agent for Codex; `codex` lists `utils-agent:src`, not `ask`.
 - On the Linux devbox, `just -f agent-marketplace/justfile -d agent-marketplace test`; `test_src_fresh` passes, exercising GNU `stat`/`date`.
-- With utils-agent 1.19.0 installed and no other apply running, `agent-marketplace/scripts/trigger-eval/run.sh --skill-dir agent-marketplace/src/utils-agent/skills/src --runs 5`; exits 0.
-- Same conditions, `agent-marketplace/src/utils-agent/skills/acpx/evals/run_trigger_evals.sh --runs 5`; at least 18/19.
+
+Skills: `agent-skill-management`.
+
+## 2026-10-20: Cursor gets local skills via ~/.cursor/skills (docs/plans/src-skill-plan.md)
+
+- In Cursor's editor, open the skills list; each prateek-local skill (for example `src`) appears once.
+- On the devbox, after `chezmoi apply`, `ls ~/.cursor/skills`; it holds links into `~/.agents/plugins/plugins/`.
 
 Skills: `agent-skill-management`.

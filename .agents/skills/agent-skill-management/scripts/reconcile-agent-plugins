@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 from pathlib import Path
 import subprocess
@@ -148,10 +149,58 @@ def reconcile_omp(packages, root: Path, marketplace: str) -> None:
             command(["omp", "plugin", "uninstall", key, "--scope", "user"])
 
 
+def reconcile_cursor(packages, root: Path) -> None:
+    """Link each Claude-loaded skill into ~/.cursor/skills, the user skill root cursor-agent scans.
+
+    Cursor's CLI loads plugins only from its server-side marketplaces, so a local
+    marketplace reaches it as plain skill directories. A link is owned when it
+    points under ``root``; anything else in the directory is left alone.
+    """
+    skills_dir = Path.home() / ".cursor/skills"
+    desired: dict[str, Path] = {}
+    for package in sorted(packages, key=lambda p: p.package_id):
+        if package.render.get("claude") != "plugin" or not package.default_loaded:
+            continue
+        for skill in package.skills:
+            if skill.skill_id in desired:
+                print(f"reconcile-agent-plugins: cursor: {skill.skill_id} is shipped by more than one loaded plugin; "
+                      f"keeping {desired[skill.skill_id]}", file=sys.stderr)
+                continue
+            desired[skill.skill_id] = skill.path
+    existing = {entry.name: entry for entry in skills_dir.iterdir()} if skills_dir.is_dir() else {}
+
+    def owned(entry: Path) -> bool:
+        return entry.is_symlink() and Path(os.path.abspath(os.readlink(entry))).is_relative_to(root)
+
+    def act(description: str, change) -> None:
+        print(("[dry-run] " if DRY_RUN else "") + description, flush=True)
+        if not DRY_RUN:
+            change()
+
+    for name, target in desired.items():
+        entry = skills_dir / name
+        if name in existing and not owned(entry):
+            print(f"reconcile-agent-plugins: cursor: {entry} is not a link this reconciler owns; leaving it", file=sys.stderr)
+            continue
+        if name in existing and os.readlink(entry) == str(target):
+            continue
+
+        def link(entry=entry, target=target):
+            skills_dir.mkdir(parents=True, exist_ok=True)
+            entry.unlink(missing_ok=True)
+            entry.symlink_to(target)
+
+        act(f"cursor: link {entry} -> {target}", link)
+    for name in sorted(existing.keys() - desired.keys()):
+        entry = skills_dir / name
+        if owned(entry):
+            act(f"cursor: unlink {entry}", entry.unlink)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--apply", action="store_true")
-    parser.add_argument("--agent", action="append", choices=["claude", "codex", "omp"], default=[])
+    parser.add_argument("--agent", action="append", choices=["claude", "codex", "omp", "cursor-agent"], default=[])
     parser.add_argument("--plugins-root", type=Path, default=Path.home() / ".agents/plugins")
     parser.add_argument("--policy", type=Path, default=POLICY_PATH)
     parser.add_argument("--refresh-disabled", action="append", default=[], metavar="PACKAGE")
@@ -188,6 +237,8 @@ def main() -> int:
             reconcile_codex(packages, root, marketplace, set(args.refresh_disabled))
         if "omp" in args.agent:
             reconcile_omp(packages, root, marketplace)
+        if "cursor-agent" in args.agent:
+            reconcile_cursor(packages, root)
     except (OSError, ValueError, KeyError, RuntimeError, subprocess.TimeoutExpired) as error:
         print(f"reconcile-agent-plugins: {error}", file=sys.stderr)
         return 1

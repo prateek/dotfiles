@@ -320,6 +320,33 @@ class PluginReconcileTests(PackageTestCase):
         return self.tool("reconcile-agent-plugins", "--apply", "--agent", "claude", "--agent", "codex",
                          "--plugins-root", self.plugins, "--policy", self.policy, *args, **kwargs)
 
+    def cursor_reconcile(self, *args, **kwargs):
+        return self.tool("reconcile-agent-plugins", "--apply", "--agent", "cursor-agent",
+                         "--plugins-root", self.plugins, "--policy", self.policy, *args, **kwargs)
+
+    def test_cursor_projects_loaded_skills_and_prunes_only_owned_links(self):
+        skills = self.home / ".cursor/skills"
+        skills.mkdir(parents=True)
+        (skills / "hand-made").mkdir()
+        (skills / "stale-skill").symlink_to(self.plugins / "plugins/gone/skills/stale-skill")
+        (skills / "elsewhere").symlink_to(self.work)
+        self.cursor_reconcile()
+        self.assertEqual(os.readlink(skills / "on-skill"), str(self.plugins / "plugins/on/skills/on-skill"))
+        self.assertTrue((skills / "on-skill/SKILL.md").is_file())
+        self.assertFalse((skills / "off-skill").exists())
+        self.assertFalse((skills / "stale-skill").is_symlink())
+        self.assertTrue((skills / "hand-made").is_dir())
+        self.assertEqual(os.readlink(skills / "elsewhere"), str(self.work))
+        self.assertEqual(self.cursor_reconcile("--dry-run").stdout, b"")
+
+    def test_cursor_keeps_a_foreign_entry_that_shares_a_skill_name(self):
+        skills = self.home / ".cursor/skills"
+        (skills / "on-skill").mkdir(parents=True)
+        result = self.cursor_reconcile()
+        self.assertIn(b"on-skill", result.stderr)
+        self.assertTrue((skills / "on-skill").is_dir())
+        self.assertFalse((skills / "on-skill").is_symlink())
+
     def test_converges_owned_versions_and_state_preserving_foreign_plugins(self):
         self.reconcile()
         state = json.loads(self.state.read_text())
