@@ -21,6 +21,29 @@ class PlistMergeTests(PlistTestCase):
         raw = plistlib.dumps(current, fmt=plistlib.FMT_BINARY)
         self.assertEqual(self.merge(desired, raw), raw)
 
+    def test_json_data_with_reordered_keys_preserves_original_bytes(self):
+        desired = plistlib.dumps({"managed": b'{"name":"Ellipsis","size":{"w":1,"h":2}}'})
+        raw = plistlib.dumps(
+            {"managed": b'{"size":{"h":2,"w":1},"name":"Ellipsis"}', "local": "keep"},
+            fmt=plistlib.FMT_BINARY,
+        )
+        self.assertEqual(self.merge(desired, raw), raw)
+
+    def test_json_data_with_changed_or_retyped_values_is_replaced(self):
+        for current in (
+            b'{"name":"Ellipsis","on":false}',
+            b'{"name":"Ellipsis","on":1}',
+            b'{"name":"Ellipsis"}',
+            b"not json",
+        ):
+            with self.subTest(current=current):
+                wanted = b'{"on":true,"name":"Ellipsis"}'
+                desired = plistlib.dumps({"managed": wanted})
+                raw = plistlib.dumps({"managed": current, "local": "keep"})
+                self.assert_plist(
+                    self.merge(desired, raw), {"managed": wanted, "local": "keep"}
+                )
+
     def test_replaces_top_level_values_with_different_numeric_types(self):
         for current, wanted in (
             (True, 1),

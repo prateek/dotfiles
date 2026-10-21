@@ -20,6 +20,7 @@ import argparse
 import base64
 import copy
 import io
+import json
 import os
 import plistlib
 import re
@@ -62,10 +63,29 @@ def main() -> int:
             return a.keys() == b.keys() and all(plist_equal(a[key], b[key]) for key in a)
         if isinstance(a, list):
             return len(a) == len(b) and all(plist_equal(x, y) for x, y in zip(a, b))
+        if isinstance(a, bytes) and a != b and json_equal(a, b):
+            return True
         return a == b or (
             plistlib.dumps(a, fmt=plistlib.FMT_BINARY)
             == plistlib.dumps(b, fmt=plistlib.FMT_BINARY)
         )
+
+    # Apps that store Codable structs as JSON data (Thaw) re-encode them with
+    # a different key order on every launch; equal JSON is not a change.
+    def json_equal(a: bytes, b: bytes) -> bool:
+        try:
+            return json_values_equal(json.loads(a), json.loads(b))
+        except ValueError:
+            return False
+
+    def json_values_equal(a, b) -> bool:
+        if type(a) is not type(b):
+            return False
+        if isinstance(a, dict):
+            return a.keys() == b.keys() and all(json_values_equal(a[key], b[key]) for key in a)
+        if isinstance(a, list):
+            return len(a) == len(b) and all(json_values_equal(x, y) for x, y in zip(a, b))
+        return a == b
 
     # plistlib re-encodes the same logical content with different integer
     # widths, dict order, or version bytes. Preserve stdin verbatim when no
