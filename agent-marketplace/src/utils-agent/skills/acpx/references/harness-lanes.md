@@ -17,8 +17,8 @@ In text output, the final line determines the result:
 
 The final answer is the assistant text immediately before the terminal marker.
 
-Under `acpx-pane`, the shared tmux window is the human-visible trail and the log carries
-the same bytes. Harnesses that normally watch a direct run wait for the helper
+Under `acpx-pane`, the Orca viewer is the human-visible trail and the log carries
+acpx's text output. Harnesses that normally watch a direct run wait for the helper
 to return, then read the log.
 
 ## Recover an interrupted task
@@ -144,41 +144,33 @@ The command returns `cancel requested` or `nothing to cancel`; neither is a
 settled turn result. Confirm through the original prompt's `[done] cancelled`, or
 through the target request's `turn_result` using the managed watcher in step 2.
 Drain that output and stop the watcher. For `nothing to cancel`, classify the
-request through step 2; it does not prove completion. Closing a tmux window or stopping a waiting shell process can leave the retained queue owner
-running; neither proves the turn stopped. After cancellation, stop the waiting
+request through step 2; it does not prove completion. Stopping a waiting shell process can leave the retained queue owner running; it
+does not prove the turn stopped. After cancellation, stop the waiting
 helper if needed. Keep the ACP session available for follow-ups. If cancellation
 cannot be confirmed, report the outcome as unknown before attempting recovery.
 
-## Orca: shared view
+## Orca: viewer
 
-The first `acpx-pane` call opens one Orca pane containing a compact tmux session
-on a private socket, separate from any tmux server of your own. Later calls from
-the same Orca terminal add windows there, shown as tabs in the bottom status
-line. Each tab shows its launch order, local time, and shortcut, such as
-`02 14:41 aopus`, and the status line shows the number of tabs. Click a tab, or
-use `Ctrl+B`, then `n` or `p`, to switch.
+`acpx-pane` runs acpx in the caller's process: the log, the exit status, and
+`Ctrl+C` behave as they do inline. Before the run starts, it makes sure the
+current Orca worktree has a viewer: one split beside the caller, running pi with
+the acpx viewer extension. Later runs in the same worktree reuse it; another
+worktree gets its own. A viewer whose pane was closed reopens on the next run.
+
+The viewer lists every open acpx session under the worktree and shows the
+selected run's transcript: one row per tool call, expandable with a click or
+Enter, with the live thinking and running tool expanded. Press `?` there for its
+keys. It only watches, so closing it never affects a run. Cancelling from the
+viewer (`x`, then `y`) runs `acpx cancel` for the selected session.
 
 The helper checks the caller's current worktree before splitting beside its
 terminal. If an inherited handle belongs to another worktree, it selects the
-current worktree's sole agent terminal; if no parent is available, it runs inline.
-The launch command is the same for every calling harness. To create the empty
-view or switch Orca back to the existing one, run
+current worktree's sole agent terminal; if no parent is available, it runs
+without the viewer. To open the viewer, or switch Orca back to it, run
 `~/.agents/plugins/plugins/utils-agent/skills/acpx/scripts/acpx-pane --view`.
-The helper manages the tmux session and its tab labels; callers do not need
-tmux commands. Missing tmux or Python 3, or a failed view launch, falls back to
-inline acpx. Outside Orca, or with `--inline`, the helper runs acpx in place with
-the redirect. tmux is declared in the core package group.
-
-Tabs display individual prompts; closing a completed tab leaves the named
-ACP conversation available for a later prompt. Completed tabs wait on their
-final output without returning to a shell prompt. Press an ordinary key or
-`Ctrl+C` to close a completed tab; the last tab also closes the Orca view.
-`Ctrl+B`, then `d` detaches the view while keeping its tabs running; the next
-`acpx-pane` call or `--view` reattaches to them. Cancel a
-running ACP turn before stopping its waiting helper, which closes only its tab.
-
-Each tab starts in the caller's working directory. Pass acpx inputs as flags or
-prompt text rather than relying on ad hoc exported variables.
+Missing pi or Python 3, or a failed split, falls back to the inline run.
+Outside Orca, or with `--inline`, the helper runs acpx in place with the
+redirect.
 
 ## Claude Code: redirected relay
 
@@ -205,8 +197,8 @@ limits can split a marker or leave earlier output unread. Treat the harness
 completion notification as the backstop for a markerless run.
 
 Cancel through the named session as above, then stop the background task if it
-is still waiting. Under `acpx-pane`, stopping the helper closes only its tmux
-window. Other tabs and the Orca view remain open.
+is still waiting. Under `acpx-pane`, stopping the helper stops only its acpx
+process; the viewer and other runs stay open.
 
 When a native first-party monitor is available, use it instead of the relay
 because it wakes on stream output.
@@ -260,7 +252,7 @@ tail -f ~/.acpx/sessions/<recordId>.stream.ndjson | jq -j '
 Treat event streams as sensitive: they contain full prompts, reasoning, and
 tool output. Close the session and prune its history when retention is no
 longer needed and cleanup is requested. Keep the named session available for
-follow-ups after a prompt completes, including after its tmux window closes.
+follow-ups after a prompt completes.
 
 ## Completion
 

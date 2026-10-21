@@ -1,16 +1,22 @@
 ---
-status: accepted
+status: superseded
 doc_type: adr
 summary: "ACPX runs share one tmux session on a private socket inside a single Orca split per calling terminal, one window per invocation, replacing Herdr."
 owner: Prateek
 created: 2026-10-20
 updated: 2026-10-20
+closed: 2026-10-20
+superseded_by: 0061-acpx-pi-viewer.md
+status_detail: "ADR 0061 runs acpx in the caller's process and replaces the tmux view with one pi viewer per Orca worktree."
 related:
   - 0036-acpx-shared-herdr-pane.md
+  - 0061-acpx-pi-viewer.md
 current_guidance: ../../agent-marketplace/src/utils-agent/skills/acpx/references/harness-lanes.md
 ---
 
 # ADR 0058: Share one tmux view for ACPX runs
+
+> Superseded by [ADR 0061](0061-acpx-pi-viewer.md).
 
 Host the shared ACPX view in tmux instead of Herdr. Everything else
 [ADR 0036](0036-acpx-shared-herdr-pane.md) decided stays: one Orca split per

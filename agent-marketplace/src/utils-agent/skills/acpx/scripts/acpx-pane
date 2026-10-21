@@ -1,18 +1,27 @@
 #!/usr/bin/env bash
+# Runs one acpx invocation with its output in a log, and keeps a pi viewer open beside the
+# caller in Orca: one viewer split per worktree, attached to that worktree's acpx sessions.
+#
+# Driving agents through Orca itself (instead of acpx) would make this helper unnecessary,
+# but that depends on agent hooks, which do not work reliably on the work laptop (Jamf sets
+# allowManagedHooksOnly; Codex hooks are not installed). Orca also lacks what acpx gives
+# callers here: exit status, receipts, permission policy, named follow-ups, timeouts, and
+# the shortcut routes.
 set -euo pipefail
 umask 077
 
 usage() {
-  echo "usage: acpx-pane [--view] | --log <file> [--label <shortcut>] [--inline] -- <acpx args...>" >&2
+  echo "usage: acpx-pane [--view] | --log <file> [--inline] -- <acpx args...>" >&2
   exit 2
 }
 
-log="" label="acpx" inline=0 view=0
+log="" inline=0 view=0
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --log) [ "$#" -ge 2 ] || usage; log="$2"; shift 2 ;;
-    --label) [ "$#" -ge 2 ] || usage; label="$2"; shift 2 ;;
     --inline) inline=1; shift ;;
+    # Accepted and ignored: agent sessions that loaded the earlier skill text still pass it.
+    --label) [ "$#" -ge 2 ] || usage; shift 2 ;;
     --view) view=1; shift ;;
     --) shift; break ;;
     *) usage ;;
@@ -24,19 +33,24 @@ else
   [ -n "$log" ] && [ "$#" -gt 0 ] || usage
 fi
 
-run_inline() { exec acpx "$@" > "$log" 2>&1; }
+# The run always happens here, in the caller's process: the log, exit status, and Ctrl+C
+# belong to acpx. The viewer only watches.
+run() { exec acpx "$@" > "$log" 2>&1; }
+no_view() {
+  echo "acpx-pane: $1" >&2
+  exit 1
+}
 
-if [ "$inline" = 1 ] || ! command -v orca > /dev/null || ! command -v tmux > /dev/null ||
+viewer="$(cd "$(dirname "$0")/../viewer" && pwd)/acpx-viewer.ts"
+if [ "$inline" = 1 ] || ! command -v orca > /dev/null || ! command -v pi > /dev/null ||
    ! command -v python3 > /dev/null; then
-  if [ "$view" = 1 ]; then
-    echo "acpx-pane: viewing requires Orca, tmux, and Python 3" >&2
-    exit 1
-  fi
-  run_inline "$@"
+  [ "$view" = 0 ] || no_view "viewing requires Orca, pi, and Python 3"
+  run "$@"
 fi
 
 worktree=$(orca worktree current --json 2> /dev/null || true)
 worktree_id=$(printf '%s' "$worktree" | jq -r 'if .ok == true then .result.worktree.id // empty else empty end' 2> /dev/null || true)
+worktree_path=$(printf '%s' "$worktree" | jq -r 'if .ok == true then .result.worktree.path // empty else empty end' 2> /dev/null || true)
 parent_handle=""
 if [ -n "$worktree_id" ] && [ -n "${ORCA_TERMINAL_HANDLE:-}" ]; then
   parent=$(orca terminal show --terminal "$ORCA_TERMINAL_HANDLE" --json 2> /dev/null || true)
@@ -57,37 +71,24 @@ if [ -n "$worktree_id" ] && [ -z "$parent_handle" ]; then
     2> /dev/null || true)
 fi
 if [ -z "$parent_handle" ]; then
-  if [ "$view" = 1 ]; then
-    echo "acpx-pane: no active terminal in the current worktree" >&2
-    exit 1
-  fi
-  echo "acpx-pane: no active terminal in the current worktree; running inline" >&2
-  run_inline "$@"
+  [ "$view" = 0 ] || no_view "no active terminal in the current worktree"
+  echo "acpx-pane: no active terminal in the current worktree; running without the viewer" >&2
+  run "$@"
 fi
-ORCA_TERMINAL_HANDLE="$parent_handle"
 
-tmux_bin=$(command -v tmux)
-orca_bin=$(command -v orca)
 python_bin=$(command -v python3)
-key=$(printf '%s' "$ORCA_TERMINAL_HANDLE" | shasum -a 256 | cut -c1-16)
+pi_bin=$(command -v pi)
+key=$(printf '%s' "$worktree_id" | shasum -a 256 | cut -c1-16)
 state="${XDG_STATE_HOME:-$HOME/.local/state}/acpx-pane/$key"
-socket="$state/tmux.sock"
-session=acpx
-mkdir -p "$state"
-chmod 700 "$state"
+agent_dir="${XDG_STATE_HOME:-$HOME/.local/state}/acpx-pane/pi-agent"
+mkdir -p "$state" "$agent_dir"
+chmod 700 "$state" "$agent_dir"
 lock_file="$state/lock.flock"
 
-# A private socket keeps the view out of the user's own tmux server; unsetting
-# TMUX lets the view open from inside another tmux client.
-tmux_view() {
-  env -u TMUX "$tmux_bin" -S "$socket" "$@" 9>&-
-}
-unlock() {
-  exec 9>&-
-}
+# Concurrent launches in one worktree must not open two viewers.
 lock() {
   exec 9>> "$lock_file"
-  if ! "$python_bin" -c '
+  "$python_bin" -c '
 import fcntl
 import sys
 import time
@@ -101,171 +102,65 @@ while True:
         if time.monotonic() >= deadline:
             sys.exit(1)
         time.sleep(0.1)
-'; then
-    unlock
-    echo "acpx-pane: timed out waiting for the shared view" >&2
-    return 1
-  fi
+'
 }
 
-write_config() {
-  cat > "$state/count.sh" <<EOF
-#!/usr/bin/env bash
-$(printf %q "$tmux_bin") -S $(printf %q "$socket") list-windows -t =$session -F '#{window_name}' 2>/dev/null \
-  | awk '/^[0-9]+ / { n++ } END { print "sessions: " n + 0 }'
-EOF
-  chmod 700 "$state/count.sh"
-  cat > "$state/tmux.conf" <<EOF
-set -g status-position bottom
-set -g status-left ''
-set -g status-right '#($(printf %q "$state/count.sh")) '
-set -g status-interval 2
-set -g window-status-format ' #W '
-set -g window-status-current-format '#[reverse] #W '
-set -g automatic-rename off
-set -g allow-rename off
-set -g set-titles on
-set -g set-titles-string ACPX
-set -g mouse on
+# The viewer's pi gets its own agent directory: no packages, no telemetry, dense output.
+write_agent_settings() {
+  [ -f "$agent_dir/settings.json" ] && return 0
+  cat > "$agent_dir/settings.json" <<'EOF'
+{
+  "theme": "dark",
+  "outputPad": 0,
+  "quietStartup": true,
+  "collapseChangelog": true,
+  "enableInstallTelemetry": false,
+  "enableAnalytics": false
+}
 EOF
 }
 
-# A view whose Orca pane closed reattaches to the running session, so runs that
-# are still going keep their windows.
-ensure_view() {
-  local pane="" split="" state_json="" ready=0
+# A viewer whose Orca pane closed is reopened; a live one is reused.
+ensure_viewer() {
+  local pane="" shown="" split="" command=""
   if [ -f "$state/pane" ]; then
     pane=$(cat "$state/pane")
-    state_json=$(orca terminal show --terminal "$pane" --json 9>&- 2> /dev/null || true)
-    if [ "$(printf '%s' "$state_json" | jq -r '.result.terminal.connected // false' 2> /dev/null)" != true ]; then
+    shown=$(orca terminal show --terminal "$pane" --json 9>&- 2> /dev/null || true)
+    if [ "$(printf '%s' "$shown" | jq -r '.result.terminal.connected // false' 2> /dev/null)" != true ]; then
       pane=""
     fi
   fi
   if [ -z "$pane" ]; then
-    write_config
-    split=$(orca terminal split --terminal "$ORCA_TERMINAL_HANDLE" --direction horizontal \
-      --command "exec env -u TMUX $(printf %q "$tmux_bin") -S $(printf %q "$socket") -f $(printf %q "$state/tmux.conf") new-session -A -s $session -n $session -c $(printf %q "$PWD")" \
+    write_agent_settings
+    command="exec env PI_CODING_AGENT_DIR=$(printf %q "$agent_dir") ACPX_VIEWER=1 ACPX_CWD=$(printf %q "${worktree_path:-$PWD}")"
+    command+=" $(printf %q "$pi_bin") -ne -e $(printf %q "$viewer") -nbt -ns -np -nc -na --no-session --offline"
+    split=$(orca terminal split --terminal "$parent_handle" --direction horizontal --command "$command" \
       --json 9>&- 2> /dev/null || true)
     pane=$(printf '%s' "$split" | jq -r '.result.split.handle // empty' 2> /dev/null || true)
     [ -n "$pane" ] || return 1
     printf '%s\n' "$pane" > "$state/pane"
   fi
-  for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
-    tmux_view has-session -t "=$session" 2> /dev/null && { ready=1; break; }
-    sleep 0.25
-  done
-  [ "$ready" = 1 ] || return 1
-  view_pane="$pane"
+  viewer_pane="$pane"
 }
 
-lock
-trap unlock EXIT
-if ! ensure_view; then
-  unlock
-  trap - EXIT
-  if [ "$view" = 1 ]; then
-    echo "acpx-pane: could not open the tmux view" >&2
-    exit 1
-  fi
-  echo "acpx-pane: could not open the tmux view; running inline" >&2
-  run_inline "$@"
+viewer_pane=""
+if ! lock; then
+  [ "$view" = 0 ] || no_view "timed out waiting for the viewer lock"
+  echo "acpx-pane: timed out waiting for the viewer lock; running without the viewer" >&2
+  run "$@"
 fi
+if ! ensure_viewer; then
+  exec 9>&-
+  [ "$view" = 0 ] || no_view "could not open the viewer"
+  echo "acpx-pane: could not open the viewer; running without it" >&2
+  run "$@"
+fi
+exec 9>&-
 
 if [ "$view" = 1 ]; then
-  unlock
-  trap - EXIT
-  orca terminal switch --terminal "$view_pane" --json > /dev/null
-  echo "pane: $view_pane"
+  orca terminal switch --terminal "$viewer_pane" --json > /dev/null
+  echo "pane: $viewer_pane"
   exit 0
 fi
-
-windows=$(tmux_view list-windows -t "=$session" -F '#{window_id}|#{window_name}')
-sequence=0
-[ ! -f "$state/sequence" ] || sequence=$(cat "$state/sequence")
-last_window_sequence=$(printf '%s\n' "$windows" | awk -F'|' '$2 ~ /^[0-9]+ / { split($2, a, " "); if (a[1] + 0 > max) max = a[1] + 0 } END { print max + 0 }')
-[ "$sequence" -ge "$last_window_sequence" ] || sequence="$last_window_sequence"
-sequence=$((sequence + 1))
-printf '%s\n' "$sequence" > "$state/sequence"
-tab_label=$(printf '%02d %s %s' "$sequence" "$(date +%H:%M)" "$label")
-
-exit_file="$log.exit"
-runner="$log.pane.sh"
-rm -f "$exit_file"
-: > "$log"
-{
-  echo '#!/usr/bin/env bash'
-  echo 'set -o pipefail'
-  printf 'log=%q exit_file=%q session=%q socket=%q tmux_bin=%q view_pane=%q orca_bin=%q python_bin=%q lock_file=%q\n' \
-    "$log" "$exit_file" "$session" "$socket" "$tmux_bin" "$view_pane" "$orca_bin" "$python_bin" "$lock_file"
-  declare -f lock unlock
-  cat <<'RUNNER'
-record() { [ -e "$exit_file" ] || { printf '%s\n' "$1" > "$exit_file.tmp" && mv -f "$exit_file.tmp" "$exit_file"; }; }
-trap 'record 129' HUP
-RUNNER
-  printf 'cd %q || { record 1; exit 1; }\n' "$PWD"
-  printf 'acpx'
-  printf ' %q' "$@"
-  echo ' 2>&1 | tee -a "$log"'
-  cat <<'RUNNER'
-rc=$?
-record "$rc"
-printf '\n[acpx exited %s; press any key to close]\n' "$rc"
-close_completed_tab() {
-  trap - INT
-  lock || exit 1
-  run_windows=$("$tmux_bin" -S "$socket" list-windows -t "=$session" -F '#{window_name}' 9>&- 2>/dev/null \
-    | awk '/^[0-9]+ / { n++ } END { print n + 0 }')
-  if [ "$run_windows" = 1 ]; then
-    "$orca_bin" terminal close --terminal "$view_pane" --json 9>&- > /dev/null 2>&1 || true
-  fi
-  unlock
-  exit 0
-}
-trap close_completed_tab INT
-read -rsn1 _ || true
-close_completed_tab
-RUNNER
-} > "$runner"
-
-# The session's first window is an idle shell named after the session; the
-# first run takes it over instead of leaving it beside the run.
-run_command="exec bash $(printf %q "$runner")"
-window=""
-if [ "$(printf '%s\n' "$windows" | wc -l | tr -d ' ')" = 1 ] &&
-   [ "$(printf '%s\n' "$windows" | cut -d'|' -f2-)" = "$session" ]; then
-  window=$(printf '%s\n' "$windows" | cut -d'|' -f1)
-  if ! tmux_view rename-window -t "$window" "$tab_label" ||
-     ! tmux_view respawn-pane -k -t "$window" -c "$PWD" "$run_command"; then
-    window=""
-  fi
-else
-  window=$(tmux_view new-window -t "=$session:" -n "$tab_label" -c "$PWD" -P -F '#{window_id}' "$run_command" || true)
-fi
-if [ -z "$window" ]; then
-  echo "acpx-pane: tmux could not start acpx" >&2
-  exit 1
-fi
-unlock
-trap - EXIT
-echo "pane: $view_pane; tab: $tab_label"
-
-window_alive() {
-  tmux_view list-windows -t "=$session" -F '#{window_id}' 2> /dev/null | grep -qxF "$window"
-}
-cancel() {
-  trap - INT TERM
-  tmux_view kill-window -t "$window" > /dev/null 2>&1 || true
-  exit 130
-}
-trap cancel INT TERM
-
-ticks=0
-while [ ! -e "$exit_file" ]; do
-  sleep 1
-  ticks=$((ticks + 1))
-  if [ $((ticks % 5)) = 0 ] && ! window_alive; then
-    echo "[error] acpx window $window closed before acpx reported an exit status" >> "$log"
-    exit 129
-  fi
-done
-exit "$(cat "$exit_file")"
+echo "pane: $viewer_pane"
+run "$@"

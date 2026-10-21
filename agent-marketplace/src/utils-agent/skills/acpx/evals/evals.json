@@ -178,7 +178,7 @@
         "Chooses a task-specific unique session name even though the request says one-off",
         "Uses the guarded command and same cwd for sessions ensure and prompt -s; stops if ensure fails",
         "Uses acpx-pane for the prompt and does not use exec or an unnamed default session",
-        "Reports the session name and leaves it available after completion; closing the tmux window does not close the ACP session",
+        "Reports the session name and leaves it available after completion; closing the Orca viewer does not close the ACP session",
         "Requires created true and the exact cwd and record identity before the first prompt; captures lastRequestId in a fresh post-prompt snapshot even on failure"
       ]
     },

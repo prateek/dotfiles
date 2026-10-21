@@ -18,7 +18,7 @@ validates and caches that decision. Read `acpx --help` for external command synt
 | `-w`, `--write` | The delegate may change files. Absent means read-only. |
 | `--allow-paid` | Explicitly admit metered API access for this request. |
 | `--refresh` | Refresh discovery and model selection even with a fresh cache. |
-| `--inline` | Display an external acpx run inline instead of using the Orca shared view. |
+| `--inline` | Run an external acpx session inline, without the Orca viewer. |
 | `-- <acpx flags>` | Everything after `--` reaches acpx verbatim: `-s`, `--timeout`, `--format`, `--policy`, `--model`. |
 
 The shortcut value is not an acpx model ID. These forms are equivalent:
@@ -243,18 +243,19 @@ Use `--format text` by default. For scripts, use `--format json --json-strict`.
 Never use `--format quiet`: it hides progress and thinking that reveal a stuck
 run.
 
-### Inside Orca: the shared ACPX view
+### Inside Orca: the viewer
 
 When Orca provides a terminal handle or worktree ID and `--inline` is absent,
 launch each prompt through [`scripts/acpx-pane`](scripts/acpx-pane). It writes the
-full output to the log, blocks until acpx exits, and returns acpx's status.
-Read the [Orca lane](references/harness-lanes.md#orca-shared-view) for view setup,
-tab controls, fallback behavior, and cancellation.
+full output to the log, blocks until acpx exits, and returns acpx's status, and
+it keeps the worktree's pi viewer open beside you. Read the
+[Orca lane](references/harness-lanes.md#orca-viewer) for the viewer, fallback
+behavior, and cancellation.
 
 After creating or verifying the named session, use this prompt invocation:
 
 ```bash
-~/.agents/plugins/plugins/utils-agent/skills/acpx/scripts/acpx-pane --log "$log" --label agpt -- \
+~/.agents/plugins/plugins/utils-agent/skills/acpx/scripts/acpx-pane --log "$log" -- \
   --format text "${acpx_args[@]}" prompt -s "$session" -f "$prompt_file"
 ```
 

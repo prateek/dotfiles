@@ -31,3 +31,12 @@ Skills: `agent-skill-management`.
 - In a Tart VM, postflight passes `thaw_concealed_order`.
 
 Skills: `chezmoi-management`, `peekaboo-vm-app-audit`.
+
+## 2026-10-20: acpx pi viewer replaces the tmux view (docs/adr/0061-acpx-pi-viewer.md)
+
+- After apply, from an Orca agent terminal, `~/.agents/plugins/plugins/utils-agent/skills/acpx/scripts/acpx-pane --view`; a pi viewer split opens.
+- Delegate once through a Claude route (`aopus`/`afable`) via acpx-pane; the viewer header shows a dollar cost.
+- From Orca Mobile on a phone, tap a run in the viewer list; its detail opens.
+- On a personal machine, repeat the first item.
+
+Skills: `utils-agent:acpx`, `utils-agent:orca-cli`.
