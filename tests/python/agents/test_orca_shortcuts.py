@@ -42,19 +42,14 @@ class OrcaShortcutTests(unittest.TestCase):
 
     def cli(self, *args):
         self.calls.append(args)
-        if args[:2] == ("worktree", "ps"):
-            return {"worktrees": [self.worktree]}
-        if args[:2] == ("terminal", "list"):
-            return {"visualLayouts": [{"worktreeId": self.worktree["worktreeId"], "root": {
-                "type": "group", "activeTabId": "tab", "tabs": [
-                    {"tabId": "tab", "activeLeafId": "leaf", "panes": self.pane}]
-            }}]}
         if args[:2] == ("terminal", "split"):
             return {"terminal": {"handle": "forked"}}
         self.fail(f"Unexpected CLI call: {args}")
 
     def rpc(self, method, params, **kwargs):
         self.rpc_calls.append((method, params))
+        if method == "worktree.ps":
+            return {"worktrees": [self.worktree]}
         if method == "preflight.detectAgents":
             return ["claude", "codex", "pi", "omp"]
         if method == "terminal.agentStatus":
@@ -185,6 +180,23 @@ class OrcaShortcutTests(unittest.TestCase):
         code, output = self.run_cli("--fork", "--dry-run")
         self.assertEqual(code, 0, output)
         self.assertEqual(output["agent"], "pi")
+
+    def test_native_claude_versioned_binary_uses_bound_agent(self):
+        # Native installs exec ~/.local/share/claude/versions/<version>.
+        self.process = "/Users/me/.local/share/claude/versions/2.1.308"
+        self.pane["agentStatus"] = {"agentType": "claude", "providerSession": {"id": "source"}}
+        code, output = self.run_cli("--fork", "--dry-run")
+        self.assertEqual(code, 0, output)
+        self.assertEqual((output["agent"], output["sessionId"]), ("claude", "source"))
+
+    def test_native_claude_ignores_a_previous_agents_binding(self):
+        self.process = "/Users/me/.local/share/claude/versions/2.1.308"
+        self.pane["agentStatus"] = {"agentType": "codex", "providerSession": {"id": "old-codex"}}
+        self.sessions.append(self.session("codex", "old-codex"))
+        code, output = self.run_cli("--fork", "--dry-run")
+        self.assertEqual(code, 0, output)
+        self.assertEqual(output["agent"], "claude")
+        self.assertNotIn("codex", output["forkCommand"])
 
     def test_unknown_agent_never_selects_another_agents_session(self):
         self.process = "zsh"

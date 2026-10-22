@@ -6,6 +6,7 @@ import os
 import pathlib
 import shlex
 import subprocess
+import sys
 import time
 import urllib.request
 
@@ -120,7 +121,14 @@ def wait_focused_source(resolver, worktree_id, handle, agent):
                      if pane.get("id") == result.get("activeTabId") and pane.get("terminal") == handle
                      and pane.get("agentStatus", {}).get("agentType") == agent
                      and pane.get("agentStatus", {}).get("providerSession", {}).get("id") == "fixture-source"), None)
-    return wait(focused, f"focused {agent} source binding")
+    try:
+        return wait(focused, f"focused {agent} source binding")
+    except AssertionError:
+        result = resolver.rpc("session.tabs.list", {"worktree": worktree_id})
+        print(f"TAB STATE (want {handle}):", json.dumps({"active": result.get("activeTabId"), "tabs": [
+            {"id": t.get("id"), "terminal": t.get("terminal"), "agent": (t.get("agentStatus") or {}).get("agentType"),
+             "session": ((t.get("agentStatus") or {}).get("providerSession") or {}).get("id")} for t in result["tabs"]]}), flush=True)
+        raise
 
 
 def focus_terminal_tab(desktop, resolver, worktree_id, handle):
@@ -331,8 +339,10 @@ def ssh_runtime(desktop, resolver):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--scenario", choices=["all", "local", "ssh", "paired"], default="all")
+    parser.add_argument("--scenario", choices=["all", "local", "ssh", "paired", "layouts"], default="all")
     parser.add_argument("--orca-version", required=True)
+    parser.add_argument("--focus-budget-ms", type=int, default=150,
+                        help="layouts: when focus moves after the trigger; the shortcut must have read it by then")
     args = parser.parse_args()
     ENTRYPOINT.symlink_to(SCRIPT)
     log = open("/tmp/orca-desktop.log", "w")
@@ -353,6 +363,11 @@ def main():
             ssh_runtime(desktop, resolver)
         if args.scenario in {"all", "paired"}:
             paired_runtime(desktop, resolver, args.orca_version)
+        if args.scenario == "layouts":
+            # layouts imports this module's helpers; reuse it rather than executing it twice.
+            sys.modules.setdefault("scenarios", sys.modules[__name__])
+            import layouts
+            layouts.run(resolver, args.focus_budget_ms)
     finally:
         if desktop.ws:
             desktop.ws.close()

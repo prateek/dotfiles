@@ -124,7 +124,9 @@ def paired_rpc(method, params, timeout, fatal):
     if not frame.get("ok"):
         if not fatal and not frame.get("transportError"):
             return None
-        fail(f"Orca RPC {method} failed: {frame.get('error', {}).get('message', 'paired server unavailable')}")
+        error = frame.get("error", {})
+        code = f" ({error['code']})" if error.get("code") else ""
+        fail(f"Orca RPC {method} failed: {error.get('message', 'paired server unavailable')}{code}")
     return frame["result"]
 
 
@@ -216,7 +218,8 @@ def selected_environment():
 
 
 def focused_worktree():
-    worktrees = orca_cli("worktree", "ps")["worktrees"]
+    # The runtime socket, not the CLI: a Node launch here delays reading focus by ~170 ms.
+    worktrees = rpc("worktree.ps", {})["worktrees"]
     active = next((w for w in worktrees if w.get("isActive")), None)
     if active is None:
         fail("Orca has no active workspace")
@@ -277,6 +280,9 @@ def pane_agent(handle):
     name = name.removesuffix(".exe")
     if not name or name in GENERIC_PROCESSES:
         return True, None
+    # Native Claude runs ~/.local/share/claude/versions/<version>.
+    if re.fullmatch(r"\d+(?:\.\d+)+", name):
+        return True, "claude"
     return True, VAULT_AGENT_BY_PROCESS.get(name, name)
 
 
@@ -421,7 +427,7 @@ def main():
 
     if args.worktree:
         path = os.path.abspath(os.path.expanduser(args.worktree))
-        worktrees = orca_cli("worktree", "ps")["worktrees"]
+        worktrees = rpc("worktree.ps", {})["worktrees"]
         active = next((w for w in worktrees if w.get("path") == path), None)
         if active is None:
             fail(f"No Orca workspace found for {path}")

@@ -46,7 +46,8 @@ class PackageConfigGatesTests(RepoTestCase):
     def test_tuna_combo_layout_apps_orca_winmux_misc_and_leader_hotkey(self):
         config = tomllib.loads((ROOT / "home/dot_config/tuna/config.toml").read_text())
         binds = {binding["key"]: binding for binding in config["comboMode"]["bindings"]}
-        self.assertEqual(set(binds), {"a", "o", "w", "z"})
+        self.assertEqual(set(binds), {"a", "f", "o", "w", "z"})
+        self.assertEqual(binds["f"]["label"], "neru")
         self.assertEqual(binds["a"]["label"], "apps")
         apps = {child["key"]: child["destination"]["command"] for child in binds["a"]["destination"]["bindings"]}
         self.assertEqual(set(apps), {"1", "t", "s", "b", "c", "m", "f", "g", "w", "e"})
@@ -81,6 +82,16 @@ class PackageConfigGatesTests(RepoTestCase):
                 "mb": "winmux balance-sizes", "mc": "winmux column-count off", "mr": "winmux reload-config",
                 "ms": "winmux open-sidebar", "md": '"$HOME/.local/bin/winmux-display" toggle',
             },
+        )
+        orca = {child["key"]: child["destination"] for child in binds["o"]["destination"]["bindings"]}
+        self.assertEqual(orca["o"]["command"]["subjectIdentifiers"], ["path:/Applications/Orca.app"])
+        self.assertEqual(orca["n"]["url"], "raycast://extensions/prateek/orca-worktree/create-worktree")
+        activate = ('text:PATH="$HOME/bin:$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"; '
+                    "osascript -e 'tell application id \"com.stablyai.orca\" to activate' && ")
+        self.assertEqual(
+            {key: orca[key]["command"]["subjectIdentifiers"][0].removeprefix(activate) for key in ("e", "f", "z")},
+            {"e": '"$HOME/bin/orca-agent-session"', "f": '"$HOME/bin/orca-agent-session" --fork',
+             "z": '"$HOME/.local/bin/orca-zen-mode"'},
         )
         self.assertEqual(binds["z"]["label"], "misc")
         self.assertLessEqual({"d", "m", "z", "t", "r", "g"},

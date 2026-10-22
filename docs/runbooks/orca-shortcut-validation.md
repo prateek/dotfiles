@@ -3,7 +3,7 @@ status: active
 doc_type: runbook
 summary: "Local, SSH, and paired-server fork comparisons, sidebar focus regression, and release-specific integration limits."
 created: 2026-10-07
-updated: 2026-10-17
+updated: 2026-10-22
 related:
   - ../plans/orca-shortcuts-plan.md
 ---
@@ -90,8 +90,35 @@ Select a checksum-pinned release and scenario for diagnosis:
 just test-orca-shortcuts-docker --orca-version 1.4.224 --scenario paired
 ```
 
-`--scenario` accepts `all` (default), `local`, `ssh`, or `paired`. The paired lane
+`--scenario` accepts `all` (default), `local`, `ssh`, `paired`, or `layouts`; `all` omits `layouts`. The paired lane
 also runs local forks so both containers contain source conversations.
+
+## Layout lane
+
+```sh
+just test-orca-shortcuts-docker --orca-version 1.4.224 --scenario layouts
+```
+
+The [layout scenario](../../tests/fixtures/orca-shortcuts/layouts.py) builds two
+workspaces of generated Claude, `cursor-agent`, and pi panes: one tab of three
+splits, single-pane tabs, a tab with a plain shell, and a tab with a second
+Claude. Every agent pane has its own session ID. The helper reaches the runtime
+through a relay socket and a symlinked copy of Orca's user data. The relay logs
+each RPC's time and caller PID and can pause one method.
+
+Each trial focuses a pane and triggers Reveal or Fork. The relay pauses the
+first call after the focus read, and the test moves focus to a sibling split,
+another tab, or the other workspace before releasing it. Reveal must return
+the original session; Fork must split the original tab with a receipt for its
+source; Cursor must refuse. A focused plain shell must not fork.
+
+A second pass moves focus to another tab and to the other workspace at
+`--focus-budget-ms` (default 150) after the trigger without pausing. The helper must have read focus by then, from its own process,
+and act on the original pane. The PID check catches a child process before the
+read: in this Linux lane the old Node CLI path still read focus within 150 ms,
+but it costs about 170 ms on macOS. macOS `uv` startup and Tuna's `osascript`
+activation are outside this lane, as is the hotkey path's `lsappinfo` frontmost
+gate: the lane runs `--json`.
 
 ## Coverage limits
 
@@ -109,6 +136,13 @@ before testing and missed this case. The helper now prefers the active profile's
 saved `workspaceSession.activeWorkspaceExecutionHostId`; the fixed local and paired
 scenarios and 24 focused regression tests pass. This tests settled, persisted
 focus, not the interval before Orca saves a just-clicked workspace.
+
+On 2026-10-22 the paired selected-server loop failed intermittently (2 of 5
+runs on 1.4.222). The desktop marked the clicked terminal tab active, but the
+server's `session.tabs.list` kept an earlier pane as `activeTabId` for the full
+45 s wait. The lane prints the tab state on that timeout. In a paired workspace
+the shortcut acts on the server's focus record, so it can differ from the pane
+the desktop shows.
 
 The 1.4.224 full lane currently fails before the SSH shortcut scenarios:
 `repos.addRemote` reports `SSH connection "<id>" not found or not connected`

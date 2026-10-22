@@ -48,3 +48,11 @@ Skills: `utils-agent:acpx`, `utils-agent:orca-cli`.
 - On a personal machine, `workflow-viewer --once`; it prints JSON for the latest run.
 
 Skills: `utils-agent:workflow-viewer`.
+
+## 2026-10-22: Orca shortcut focus capture and layouts lane (docs/plans/orca-shortcuts-plan.md)
+
+- After `chezmoi apply` on the work Mac, with an Orca pane running native Claude focused, run `~/bin/orca-agent-session --json --agent-only` five times; each prints `{"agent": "claude"}`.
+- In a tab of three agent splits, press ⌥F, then click another tab within a second; the fork split opens beside the original pane.
+- From another app, Tuna ⌘-tap O f; Orca comes forward and forks the last-focused Orca pane.
+
+Skills: `chezmoi-management`, `utils-agent:orca-cli`.

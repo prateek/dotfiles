@@ -25,7 +25,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--appimage", type=pathlib.Path)
     parser.add_argument("--orca-version", choices=RELEASES, default="1.4.222")
-    parser.add_argument("--scenario", choices=["all", "local", "ssh", "paired"], default="all")
+    parser.add_argument("--scenario", choices=["all", "local", "ssh", "paired", "layouts"], default="all")
+    parser.add_argument("--focus-budget-ms", type=int,
+                        help="layouts: when focus moves after the trigger (scenario default 150 ms)")
     args = parser.parse_args()
     version = args.orca_version
     run("docker", "info", stdout=subprocess.DEVNULL)
@@ -66,13 +68,14 @@ def main():
         run("docker", "exec", client, "ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-f", "/root/.ssh/id_ed25519")
         key = subprocess.check_output(["docker", "exec", client, "cat", "/root/.ssh/id_ed25519.pub"])
         run("docker", "exec", "-i", remote, "sh", "-c", "cat > /root/.ssh/authorized_keys && chmod 600 /root/.ssh/authorized_keys", input=key)
-        for agent in ["claude", "codex", "pi", "omp", "droid"]:
+        for agent in ["claude", "codex", "pi", "omp", "droid", "cursor-agent"]:
             for container in [client, remote]:
                 run("docker", "exec", container, "cp", "/dotfiles/tests/fixtures/orca-shortcuts/agent.cjs", f"/usr/local/bin/{agent}")
                 run("docker", "exec", container, "chmod", "+x", f"/usr/local/bin/{agent}")
         try:
             run("docker", "exec", client, "python3", "/dotfiles/tests/fixtures/orca-shortcuts/scenarios.py",
-                "--scenario", args.scenario, "--orca-version", version, timeout=600)
+                "--scenario", args.scenario, "--orca-version", version,
+                *(["--focus-budget-ms", str(args.focus_budget_ms)] if args.focus_budget_ms else []), timeout=900)
         except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
             subprocess.run(["docker", "cp", f"{client}:/tmp/orca-desktop.log", str(cache / "desktop.log")], check=False)
             raise

@@ -11,7 +11,8 @@ process.stdin.on('end', async () => {
     process.stdout.write(JSON.stringify(response));
   } catch (error) {
     const response = error.response?.ok === false ? error.response : {
-      ok: false, transportError: true, error: {message: 'Selected paired Orca server unavailable or incompatible'}
+      ok: false, transportError: true, error: {message: 'Selected paired Orca server unavailable or incompatible',
+        ...(typeof error.code === 'string' ? {code: error.code} : {})}
     };
     process.stdout.write(JSON.stringify(response));
     process.exitCode = 1;

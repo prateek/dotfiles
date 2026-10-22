@@ -3,8 +3,8 @@ status: active
 doc_type: plan
 summary: "Repairs the Orca session fork and reveal shortcuts to resolve the focused agent across Claude, Codex, pi, OMP, and Droid, including remote sessions, and audits related controls"
 created: 2026-09-26
-updated: 2026-10-17
-status_detail: "Remote-session source repair and container validation complete; activation remains separate."
+updated: 2026-10-22
+status_detail: "Session resolution, focus capture, and container validation complete; activation and attended hotkey checks remain."
 ---
 
 # Orca shortcut repair
@@ -30,6 +30,8 @@ for assumptions specific to Claude.
 - [x] Run packaged Orca, generated-agent SSH forks, a real Claude CLI against a fake API, and paired-server scenarios in disposable containers.
 - [x] Route selected paired servers through Orca's packaged runtime client and refuse an unavailable server.
 - [x] Reproduce sidebar-selected remote workspaces with a local default server; route by the saved focused host and verify fork process receipts in Docker.
+- [x] Check mixed Claude, Cursor, and pi layouts across splits, tabs, and workspaces: each action targets the pane focused when it fired, after focus moves.
+- [x] Read focus over the runtime socket without an Orca CLI launch; identify native Claude's version-named binary as Claude.
 - [ ] Activate the scripts and rebuilt Raycast extension after landing.
 - [ ] Verify the assigned hotkeys in Raycast and exercise them in each agent's pane.
 
@@ -111,3 +113,23 @@ See the [integration runbook](../runbooks/orca-shortcut-validation.md) for the
 repeatable lane and what generated agents establish separately from native
 agent/API validation. This work repairs session resolution; the response editor
 discussed on 2026-10-07 remains future work.
+
+## Focus capture
+
+The helper reads Orca's own focus state, not macOS window focus: the active
+workspace from `worktree.ps`, then the focused split from `session.tabs.list`.
+Every later call uses that pane's handle. Orca keeps this state when another
+app, such as Tuna's HUD, is frontmost. Only the non-JSON frontmost gate depends
+on macOS focus, which is why Tuna's Orca commands activate Orca first.
+
+On 2026-10-22 the read took 0.28–1.3 s on macOS, about 170 ms of it in a
+Node `orca worktree ps` launch. Reading `worktree.ps` over the socket cut a warm
+run to about 90 ms. The [layout lane](../runbooks/orca-shortcut-validation.md#layout-lane)
+holds the helper after its focus read and moves focus elsewhere. Reveal and Fork
+then act on the original pane, and Cursor refuses to fork. A fork into the
+original tab takes focus only when the user moved to a sibling split of that
+tab; Prateek accepted this on 2026-10-22 and the lane asserts it. Tuna keeps
+activating Orca before the helper: activation does not change Orca's focused
+pane. Native Claude's `versions/<version>` executable previously displaced
+Orca's `claude` binding. The hotkey path still runs two `lsappinfo` checks for
+the frontmost gate before reading focus; the lane runs `--json`, which skips them.
