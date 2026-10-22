@@ -21,7 +21,7 @@ Skills: `chezmoi-management`, `utils-agent:orca-cli`.
 
 ## 2026-10-22: lore skill (agent-marketplace/src/core/skills/lore/SKILL.md)
 
-- After apply, Claude and Codex list `core:lore`; `lore/evals/trigger-evals.json` passes under an installed-skill first-tool classifier.
+- On a machine with Codex, after apply, `codex` lists `core:lore`.
 - Run an `agptx` adversarial review of the lore skill through `utils-agent:acpx`; findings fixed or answered.
 - In a real repo, `/lore --depth quick <why question>` returns a tiered answer with a sources-checked line; a full run spawns investigators plus a synthesizer.
 
