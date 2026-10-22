@@ -10,7 +10,7 @@ import subprocess
 import threading
 import time
 
-from scenarios import ENTRYPOINT, cli, fork_receipts, wait
+from scenarios import cli, fork_receipts, shortcut_command, wait
 
 USER_DATA = pathlib.Path(os.environ["ORCA_USER_DATA_PATH"])
 SHIM = pathlib.Path("/tmp/orca-shortcut-userdata")
@@ -185,7 +185,7 @@ def focus(resolver, pane):
 def trigger(proxy, *args, hold=None):
     proxy.reset(hold)
     started = time.monotonic()
-    process = subprocess.Popen(["python3", str(ENTRYPOINT), "--json", *args], stdout=subprocess.PIPE,
+    process = subprocess.Popen(shortcut_command(*args), stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE, text=True, env=dict(os.environ, ORCA_USER_DATA_PATH=str(SHIM)))
     return started, process
 

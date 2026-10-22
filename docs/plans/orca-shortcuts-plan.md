@@ -32,7 +32,7 @@ for assumptions specific to Claude.
 - [x] Reproduce sidebar-selected remote workspaces with a local default server; route by the saved focused host and verify fork process receipts in Docker.
 - [x] Check mixed Claude, Cursor, and pi layouts across splits, tabs, and workspaces: each action targets the pane focused when it fired, after focus moves.
 - [x] Read focus over the runtime socket without an Orca CLI launch; identify native Claude's version-named binary as Claude.
-- [ ] Activate the scripts and rebuilt Raycast extension after landing.
+- [ ] Activate the scripts and rebuilt Raycast extension after landing. The [orcactl plan](orcactl-plan.md)'s phase 1 replaces these scripts.
 - [ ] Verify the assigned hotkeys in Raycast and exercise them in each agent's pane.
 
 ## Audited controls

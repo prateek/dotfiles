@@ -61,7 +61,8 @@ home/
   dot_claude/                 # ~/.claude machine-wide Claude config
   dot_config/                 # XDG config targets
   Library/                    # macOS app config targets
-scripts/                      # repo helpers, hooks, audits, VM, trace tooling
+src/<name>/                   # authored programs installed onto PATH, each with its own manifest and tests (ADR 0063)
+scripts/                      # checkout-run machinery: hooks, reconcilers, audits, VM, trace tooling
 tests/                        # focused regression tests
 docs/                         # lifecycle-tracked docs and ADRs
 ```

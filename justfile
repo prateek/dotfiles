@@ -33,7 +33,7 @@ test-ci:
       just _test-ci-suites
 
 [private]
-_test-ci-suites: test-agent-marketplace test-static test-shell test-python test-node test-tcc-onboarding test-chezmoi-apply
+_test-ci-suites: test-agent-marketplace test-static test-shell test-python test-node test-tcc-onboarding orcactl-test test-chezmoi-apply
 
 # Bats cases. Focus with a path and/or flags, and BATS_TAGS= to select tagged lanes.
 [group('suite')]
@@ -48,6 +48,14 @@ test-python *args:
 # Packaged Orca desktop + disposable SSH/server hosts; requires ARM64 Docker.
 test-orca-shortcuts-docker *args:
     {{ mise_env }} python3 -B scripts/tests/orca-shortcuts-docker {{ args }}
+
+# Go tests for orcactl, vetted and gofmt-clean.
+orcactl-test *args:
+    cd src/orcactl && test -z "$({{ mise_env }} gofmt -l .)" && {{ mise_env }} go vet ./... && {{ mise_env }} go test ./... {{ args }}
+
+# Build orcactl; GOOS/GOARCH/CGO_ENABLED in the environment pick the target.
+orcactl-build out="build/orcactl/orcactl":
+    mkdir -p "$(dirname '{{ out }}')" && cd src/orcactl && {{ mise_env }} go build -trimpath -o "{{ if out =~ '^/' { out } else { '../../' + out } }}" ./cmd/orcactl
 
 # Native Node cases from explicit application and browser-runner roots.
 [group('suite')]

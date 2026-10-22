@@ -90,6 +90,8 @@ Select a checksum-pinned release and scenario for diagnosis:
 just test-orca-shortcuts-docker --orca-version 1.4.224 --scenario paired
 ```
 
+`--entrypoint orcactl` builds a static Linux orcactl from `src/orcactl/` and runs the same scenarios against it instead of the Python helper.
+
 `--scenario` accepts `all` (default), `local`, `ssh`, `paired`, or `layouts`; `all` omits `layouts`. The paired lane
 also runs local forks so both containers contain source conversations.
 

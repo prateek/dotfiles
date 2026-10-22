@@ -2,6 +2,7 @@
 """Run the shortcuts against isolated packaged Orca and an SSH execution host."""
 import argparse
 import hashlib
+import os
 import pathlib
 import shutil
 import subprocess
@@ -26,6 +27,8 @@ def main():
     parser.add_argument("--appimage", type=pathlib.Path)
     parser.add_argument("--orca-version", choices=RELEASES, default="1.4.222")
     parser.add_argument("--scenario", choices=["all", "local", "ssh", "paired", "layouts"], default="all")
+    parser.add_argument("--entrypoint", choices=["python", "orcactl"], default="python",
+                        help="shortcut under test: the Python helper or a Linux orcactl built from src/orcactl/")
     parser.add_argument("--focus-budget-ms", type=int,
                         help="layouts: when focus moves after the trigger (scenario default 150 ms)")
     args = parser.parse_args()
@@ -47,6 +50,11 @@ def main():
         digest = hashlib.file_digest(source, "sha256").hexdigest()
     if digest != RELEASES[version]:
         parser.error(f"AppImage does not match the pinned Orca {version} SHA256")
+    if args.entrypoint == "orcactl":
+        binary = ROOT / "build/orcactl/linux-arm64/orcactl"
+        binary.parent.mkdir(parents=True, exist_ok=True)
+        run("go", "build", "-trimpath", "-o", str(binary), "./cmd/orcactl", cwd=ROOT / "src/orcactl", timeout=300,
+            env=dict(os.environ, GOOS="linux", GOARCH="arm64", CGO_ENABLED="0"))
     image = f"dotfiles-orca-shortcuts:{version}"
     with tempfile.TemporaryDirectory(prefix="orca-shortcut-build-") as context:
         shutil.copyfile(artifact, pathlib.Path(context) / "orca.AppImage")
@@ -74,7 +82,7 @@ def main():
                 run("docker", "exec", container, "chmod", "+x", f"/usr/local/bin/{agent}")
         try:
             run("docker", "exec", client, "python3", "/dotfiles/tests/fixtures/orca-shortcuts/scenarios.py",
-                "--scenario", args.scenario, "--orca-version", version,
+                "--scenario", args.scenario, "--orca-version", version, "--entrypoint", args.entrypoint,
                 *(["--focus-budget-ms", str(args.focus_budget_ms)] if args.focus_budget_ms else []), timeout=900)
         except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
             subprocess.run(["docker", "cp", f"{client}:/tmp/orca-desktop.log", str(cache / "desktop.log")], check=False)

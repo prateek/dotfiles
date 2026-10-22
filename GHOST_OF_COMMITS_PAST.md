@@ -34,3 +34,10 @@ Skills: `agent-skill-management`, `utils-agent:acpx`, `skill-creator`.
 - Run the benchmark-zsh-startup Perfetto recipe through `open-perfetto`; the timeline shows `.zshrc` spans.
 
 Skills: `utils-agent:perf-views`, `agent-skill-management`, `benchmark-zsh-startup`.
+
+## 2026-10-22: orcactl engine and src/ layout (docs/plans/orcactl-plan.md)
+
+- Open the `install-smoke` macOS run for this commit; `orcactl-test` passes inside `just test-ci` (Go from mise.toml).
+- `just test-orca-shortcuts-docker --entrypoint orcactl --orca-version 1.4.224 --scenario paired`; all checks pass.
+
+Skills: `utils-agent:orca-cli`.

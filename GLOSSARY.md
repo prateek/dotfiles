@@ -1,6 +1,6 @@
 # Dotfiles Vocabulary
 
-The shared vocabulary for documentation, chezmoi source state, and the portable agent workflows maintained in this repo.
+The shared vocabulary for documentation, chezmoi source state, the machines the dotfiles configure, and the portable agent workflows maintained in this repo.
 
 ## Language
 
@@ -57,6 +57,46 @@ Chezmoi-owned acquisition of a dependency that is only a repository or archive, 
 **Capture**:
 A local observation of live machine state, such as an exported preference domain, a Mackup candidate list, or a TCC audit, written under XDG state. It never becomes desired state without a hand edit.
 _Avoid_: Snapshot, export, dump
+
+## Machines
+
+**Machine type**:
+The single identity choice a machine makes when it first adopts the dotfiles; it selects which behavior layer applies and declares the OS the machine runs.
+_Avoid_: profile, role, flavor
+
+**Synced agent assets**:
+Harness asset directories (`~/.claude/commands`, `skills`, `rules`, `agents`) that another tool on the machine replaces wholesale; the dotfiles leave targets under them unmanaged. The devbox has them.
+_Avoid_: allowlist profile (retired; see ADR 0043)
+
+**Devbox**:
+Prateek's personal Linux Cloud Workstation, provisioned by DAYJOB's tooling, and the machine type it runs.
+_Avoid_: devpod, DevPod, workstation (for the machine itself)
+
+**Cloud Workstation**:
+Google's hosted platform the devbox runs on; use it only when meaning the platform, not the machine.
+
+## Devbox lifecycle
+
+**Devbox bootstrap**:
+DAYJOB's full setup run for a devbox; it runs on first creation and whenever a resume or config push re-runs it, not on a plain stop/start. Distinct from the dotfiles' own **Bootstrap**.
+_Avoid_: setup, provision, bare "bootstrap"
+
+**Boot hook**:
+DAYJOB's per-boot run that restores what a stop/start discards outside `/home`.
+_Avoid_: devbox bootstrap, startup script
+
+**Onstart hook**:
+Prateek's own script that the devbox bootstrap and the boot hook hand control to last; the only place the devbox lifecycle calls into the dotfiles.
+_Avoid_: user hook, startup hook
+
+## Work overlay
+
+**Work overlay**:
+DAYJOB-specific agent docs and plugins, kept in Prateek's user directory in the work repo and cloned sparsely onto work machines.
+_Avoid_: private overlay, dotfiles-private
+
+**Overlay marketplace**:
+The plugin marketplace the work overlay publishes beside prateek-local; hand-maintained, with no activation policy, so every plugin it lists is enabled for the clients whose catalog lists it.
 
 ## Agent delegation
 

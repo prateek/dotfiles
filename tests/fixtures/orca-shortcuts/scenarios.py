@@ -15,6 +15,16 @@ import websocket
 ROOT = pathlib.Path("/dotfiles")
 SCRIPT = ROOT / "home/dot_config/raycast/scripts/executable_orca-agent-session.py"
 ENTRYPOINT = pathlib.Path("/tmp/orca-agent-session")
+ORCACTL = ROOT / "build/orcactl/linux-arm64/orcactl"
+SELECTED = {"entrypoint": "python"}
+
+
+def shortcut_command(*args):
+    """The selected entrypoint's argv for helper-style flags (`--fork`, `--dry-run`), with JSON output."""
+    if SELECTED["entrypoint"] == "orcactl":
+        action = "fork" if "--fork" in args else "reveal"
+        return [str(ORCACTL), "ses", action, *(arg for arg in args if arg != "--fork"), "--json"]
+    return ["python3", str(ENTRYPOINT), "--json", *args]
 
 
 def wait(check, description, seconds=45):
@@ -68,7 +78,7 @@ def cli(*args):
 
 
 def shortcut(*args, expected=0):
-    result = subprocess.run(["python3", str(ENTRYPOINT), "--json", *args], capture_output=True, text=True, timeout=90)
+    result = subprocess.run(shortcut_command(*args), capture_output=True, text=True, timeout=90)
     assert result.returncode == expected, result.stdout + result.stderr
     return json.loads(result.stdout)
 
@@ -343,7 +353,9 @@ def main():
     parser.add_argument("--orca-version", required=True)
     parser.add_argument("--focus-budget-ms", type=int, default=150,
                         help="layouts: when focus moves after the trigger; the shortcut must have read it by then")
+    parser.add_argument("--entrypoint", choices=["python", "orcactl"], default="python")
     args = parser.parse_args()
+    SELECTED["entrypoint"] = args.entrypoint
     ENTRYPOINT.symlink_to(SCRIPT)
     log = open("/tmp/orca-desktop.log", "w")
     app = subprocess.Popen(["dbus-run-session", "--", "xvfb-run", "-a", "/opt/squashfs-root/orca-ide",

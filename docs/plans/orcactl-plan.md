@@ -1,11 +1,11 @@
 ---
-status: draft
+status: active
 doc_type: plan
-summary: "A kubectl-shaped Go CLI for Orca that packages fork, handoff, PR review, resume, pane reading, and layout flows as first-class commands, in its own repo"
+summary: "A kubectl-shaped Go CLI for Orca, built in this repo: phase 1 replaces the shortcut scripts (focus capture, agent identity, fork, reveal, Zen), later phases add worktree fork, handoff, review, resume, pane, and layout flows"
 owner: Prateek
 created: 2026-05-13
-updated: 2026-09-07
-status_detail: "Draft for a separate Go repo/tool; dotfiles integration is limited to eventual install and skill wiring."
+updated: 2026-10-22
+status_detail: "Phase 1 (shortcut engine and cutover) in progress; later phases remain draft."
 ---
 
 # orcactl — kubectl-shaped CLI for working with Orca
@@ -35,9 +35,10 @@ Plus the daily-driver micros: status, comment, list, jump, dashboard.
 - **Orca-required.** Every subcommand calls `orca status --json` first and exits with a clear error if the runtime isn't `ready`. No graceful fallbacks.
 - **Orca owns worktree creation.** Skip `w`/worktrunk for orcactl-managed worktrees. We invoke `orca worktree create` and let Orca pick the path under `~/orca-workspaces/<repo>/<name>`. Implication: the centralized `~/code/wt/<owner>-<repo>.<branch>/<repo>` layout from worktrunk doesn't apply to orcactl-managed work.
 - **Always-explicit session IDs.** Every fork/handoff invocation captures and passes the source UUID; never relies on `--last`/`--continue` semantics that surprise across processes.
-- **Tech: Go single binary.** Cobra/charm. Reasons: kubectl-shaped subcommand tree is unwieldy in zsh; JSON handling; structured testing; ships via Homebrew tap independent of dotfiles.
+- **Tech: Go single binary.** Cobra/charm. Reasons: kubectl-shaped subcommand tree is unwieldy in zsh; JSON handling; structured testing. The hot path is Unix-socket JSON-RPC that must also run on Linux for the Docker acceptance lanes, where Go builds and cross-compiles with the least friction. Rust would work but buys nothing measurable; Swift's native macOS APIs would fight Foundation on Linux; Zig lacks the libraries.
+- **cgo only for macOS APIs.** Accessibility (Zen's sidebars), the frontmost-application check, and the pasteboard call AppKit and ApplicationServices through cgo in a `darwin`-tagged package. Everything else is pure Go, so the Linux test binary builds with `CGO_ENABLED=0` and stubs those calls. SQLite uses the pure-Go `modernc.org/sqlite` for the same reason.
 - **Naming: `orcactl` (long), `o` (alias).** kubectl convention. Subcommand shortcodes git-spice-style.
-- **New repo `orcactl`.** Independent ownership, brew-installable, separate from dotfiles. Chezmoi installs via brew or `mise`.
+- **Lives in this repo under `src/orcactl/`.** It is its own Go module outside the chezmoi source root, in the directory for authored programs that each carry their own build manifest and tests. The shortcut callers, the Docker acceptance lanes, and the chezmoi install all change in the same commits as the code. A `run_onchange` script builds `~/.local/bin/orcactl` from source, as the Swift CLIs are built.
 - **No MCP.** Pair with a thin `orcactl` skill so Claude/Codex know when to invoke which subcommand.
 
 ## Validation findings
@@ -126,6 +127,8 @@ o <nv> [args]                   # combined shortcode (e.g. `o wf` = wt fork)
 | `ses resume --terminal <handle>` | — | Scrape from a sibling terminal's scrollback |
 | `ses ls` | — | All sessions for current cwd, table form |
 | `ses show <id>` | — | Print metadata + last N assistant messages (JSONL parse) |
+| `ses reveal` | — | Copy the focused pane's session ID and open AgentsView at it. Bound to ⌥A and Tuna ⌘-tap O e |
+| `ses fork` | — | Fork the focused pane's session with the agent's native fork, into a split beside that pane on its host. Bound to ⌥F and Tuna O f. `--dry-run` prints the plan. Cursor has no native fork and refuses |
 
 ### `term` — terminal helpers
 
@@ -201,6 +204,151 @@ ORCACTL_AGENT_TUI_STATE        # working|idle|unknown
 ```
 
 Coexists with Orca's own `ORCA_TERMINAL_HANDLE` and `ORCA_WORKTREE_PATH` (Orca-injected in some flows). Two namespaces, no collision; values should always agree (warn on mismatch — itself a useful diagnostic).
+
+Phase 1 ships the `active` object only. `terminal.agent` and `terminal.host` come from Orca's detection and `terminal.session_id` from Orca's pane binding, all without a vault scan, so `ctx` stays a focus-read-sized call; `session_id` is null when Orca has no binding.
+
+### Top-level shortcut commands
+
+| Command | Behavior |
+|---|---|
+| `zen [--status]` | Toggle Zen: filter Orca to the current project and hide both sidebars, then restore the saved view on the next call. Bound to ⌥Z and Tuna O z |
+| `agents` | List agents installed for the active runtime (`preflight.detectAgents`), for the Raycast worktree form's picker |
+
+## Shortcut engine (phase 1)
+
+Phase 1 replaces the scripts behind the Orca shortcuts with orcactl and keeps
+their behavior. The reference implementation is
+`home/dot_config/raycast/scripts/executable_orca-agent-session.py` and
+`home/dot_local/bin/executable_orca-zen-mode` with its accessibility bridge
+`home/dot_local/libexec/orca-zen-mode.js`. The [shortcut plan](orca-shortcuts-plan.md)
+records why each rule exists; the [validation runbook](../runbooks/orca-shortcut-validation.md)
+owns the Docker lanes.
+
+### Behavior to keep
+
+- **Focus is Orca's, captured first.** Pick the route from the active profile's
+  saved focused workspace host (read-only SQLite), then `worktree.ps` and
+  `session.tabs.list` over the runtime socket, before any child process. Every
+  later call uses the captured pane handle. macOS focus matters only for the
+  non-JSON frontmost gate.
+- **Host checks.** `terminal.show` names the execution host; refuse a
+  disconnected terminal, and check `ssh.getState` before probing an SSH pane.
+- **Agent identity.** Orca's agent status must report a running agent. The
+  foreground process names it (`cursor-agent` → cursor, a version name such as
+  `2.1.308` → claude); generic processes fall back to Orca's agent type; a
+  binding for a different agent is dropped.
+- **Session lookup.** Local panes: the AI vault, filtered by the pane's bound ID
+  or transcript, refusing ambiguity. SSH and paired panes: the binding alone,
+  refusing when absent.
+- **Fork.** Native fork commands only (claude, codex with its account home, pi
+  and omp by transcript, droid), split from the captured handle. Cursor refuses.
+- **JSON contract.** `ses reveal --json` and `ses fork --json` keep the helper's
+  field names (`agent`, `sessionId`, `forkCommand`, `newTerminal`,
+  `executionHostId`, `error`, and the rest), so the Docker scenarios switch
+  entrypoints without rewriting assertions.
+- **Zen.** The toggle state machine, per-profile restore file, lock, and every
+  re-check between steps carry over unchanged.
+
+### Command mapping
+
+| Caller today | orcactl |
+|---|---|
+| `orca-agent-session` (Reveal, HUD) | `orcactl ses reveal` |
+| `orca-agent-session --fork` | `orcactl ses fork` |
+| `--json` / `--dry-run` / `--copy` | `--json` / `--dry-run` / `--copy` on either `ses` command |
+| `--worktree <path>` | `--worktree <path>` on either `ses` command |
+| `--json --agent-only` (`claude-queue-draft`) | `orcactl ctx --json`, reading `active.terminal.agent` |
+| `--list-agents --json` (worktree form) | `orcactl agents --json` |
+| `orca-zen-mode [--status]` | `orcactl zen [--status]` |
+
+`o` and the `ctx` and `agents` shortcodes are out of scope for phase 1.
+
+### Mechanism
+
+```text
+src/orcactl/
+  cmd/orcactl/        Cobra commands: ses reveal|fork, ctx, agents, zen
+  internal/runtime/   socket JSON-RPC client; paired route through Orca's packaged client
+  internal/profile/   active profile and saved focused host (read-only SQLite)
+  internal/focus/     route, workspace, focused pane, host checks
+  internal/agent/     identity rules and native fork commands
+  internal/session/   vault and bound-session lookup
+  internal/zen/       toggle state machine
+  internal/macos/     cgo: frontmost app, accessibility sidebars, pasteboard (darwin); stubs elsewhere
+```
+
+Paired servers keep using Orca's packaged runtime client because it carries the
+pairing authentication and encryption; re-implementing that protocol is out of
+scope. The adapter script moves to `internal/runtime/paired-adapter.cjs`, is
+embedded in the binary, written once to the user cache directory, and run with
+Orca's Electron in Node mode; the runtime package finds Electron from the Orca
+CLI on `PATH`, as the helper did. orcactl reads one table of Orca's own
+database, not storage it owns, so the sqlc rule in `home/dot_agents/docs/go.md`
+does not apply; the single read-only query lives in `internal/profile`.
+
+Go tests serve hand-written Orca responses, copied from observed runtime replies,
+over a real Unix socket from a test server in each package's tests; SQLite
+fixtures are built in the test from the same schema the helper's tests use.
+
+Speed check: on the Mac, `hyperfine -N --warmup 3 'orcactl ctx --json'` stays
+under 30 ms warm, and the Docker layout lane's in-process PID check passes.
+
+### Prerequisites
+
+Go from the repo's `mise.toml` (pinned 1.26.4), Xcode command-line tools for cgo
+on the Mac (a darwin build without cgo fails to compile rather than silently
+dropping AppKit), and an ARM64 Docker engine for the lanes.
+
+### Open items
+
+- Each paired-server RPC starts Orca's Electron in Node mode, as the Python
+  helper did, so a paired workspace's focus read costs several process starts.
+  One adapter run that serves the whole invocation would remove them.
+
+### Deliverables
+
+1. **Focus and context.** Module, Cobra skeleton, root `justfile` recipes
+   (`orcactl-build`, `orcactl-test`), runtime client, profile reader, focus
+   capture, agent identity, and `ctx --json`. Accept: `just orcactl-test` covers
+   per-split focus, route selection from a SQLite fixture, host refusals, and
+   the identity rules at the socket boundary; on the live Mac, `ctx --json`'s
+   `active.terminal.agent` and `host` equal the helper's `--json` `agent` and
+   `executionHostId` for the focused pane, and `session_id` equals Orca's pane
+   binding. It is null where Orca has no binding, as on a Mac whose managed
+   policy blocks Claude's hooks; Reveal and Fork then rely on the vault lookup.
+2. **Reveal and Fork.** Session lookup, fork commands, split, AgentsView opening,
+   pasteboard. The Docker runner gains `--entrypoint orcactl`, which builds a
+   Linux binary with `CGO_ENABLED=0` and runs the scenarios against it. Accept:
+   every guarantee in `tests/python/agents/test_orca_shortcuts.py` has a Go test;
+   with `--entrypoint orcactl`, the `local`, `ssh`, and `paired` lanes pass on
+   1.4.222 and the `layouts` and `paired` lanes pass on 1.4.224 (its SSH lane
+   fails in Orca, per the runbook).
+3. **Zen.** Port the toggle and its accessibility calls through cgo. Accept: Go
+   tests with a fake accessibility interface cover every case in
+   `tests/python/agents/test_orca_zen_mode.py`; on the Mac, `orcactl zen --status`
+   matches `orca-zen-mode --status`; with a project selected in Orca, `orcactl zen`
+   hides both sidebars and filters to that project, and a second call restores
+   the previous sidebars and filter.
+4. **Cutover.** A `run_onchange` chezmoi script builds `~/.local/bin/orcactl`
+   from a digest of `src/orcactl/`. Every caller moves to orcactl and the reference
+   scripts leave the tree:
+   - Raycast script commands `executable_orca-agent-session.py` and
+     `executable_orca-fork-agent-session.sh` become thin `exec`s of
+     `~/.local/bin/orcactl ses reveal|fork`; `orca-agent-rpc.cjs` and
+     `home/bin/symlink_orca-agent-session.tmpl` go.
+   - Tuna O e, O f, O z; Karabiner ⌥Z; `bin/claude-queue-draft`; the worktree
+     form's `orca.mjs`.
+   - `home/dot_local/bin/executable_orca-zen-mode` and
+     `home/dot_local/libexec/orca-zen-mode.js`, their `.chezmoiignore` gates, and
+     the Python tests they own.
+   - Config tests that pin these strings (`tests/python/packages/test_config_gates.py`,
+     `tests/scenarios/config/karabiner.py`), the shortcut plan, the runbook, and
+     `tests/README.md`.
+   Accept: all lanes and config tests green with orcactl, `chezmoi apply --dry-run`
+   clean, and on the Mac: ⌥F with focus moved to another tab within a second
+   forks beside the original pane; ⌥A opens AgentsView at the focused session;
+   ⌥Z and Tuna O z toggle Zen; Tuna O f from another app forks the last-focused
+   Orca pane.
 
 ## Workflow walkthroughs
 
@@ -567,35 +715,32 @@ Filing under whatever Stably's public issue tracker is. Title: `terminal move: e
 2. **Snapshot prune horizon**: default 30 days. Configurable via `~/.config/orcactl/config.toml`.
 3. **`include.txt` defaults**: ship a sane global default (`.env`, `.envrc`, `.vscode/settings.json`, `.idea/workspace.xml`)? Or empty default and require explicit opt-in per repo? Default: empty global, document common patterns in README.
 4. **Symlink behavior across volumes**: warn on out-of-repo symlinks at fork time. Don't try to resolve.
-5. **Claude SDK availability**: confirm `@anthropic-ai/claude-agent-sdk` v0.1.51+ is reachable from a Go binary. Likely path: shell out to a tiny node wrapper (`orcactl-claude-sdk-helper`) that ships alongside the binary. Avoid full Node embedding.
+5. **Claude SDK availability**: confirm `@anthropic-ai/claude-agent-sdk` v0.1.51+ is reachable from a Go binary. Likely path: shell out to a tiny node wrapper (`orcactl-claude-sdk-helper`) that chezmoi installs beside the binary. Avoid full Node embedding.
 6. **Codex resume-hint exact wording**: capture during fixture work. Build a small `internal/scrape/fixtures/*.txt` directory with one fixture per (agent × known-version) pair, regex tests against all of them.
-7. **`o ctx` performance**: 5-10 `orca` RPC calls per invocation. Cache for the lifetime of a single CLI invocation; revisit if launcher keybinds need sub-50ms response.
-8. **Skill complement**: thin `orcactl` skill for Claude/Codex teaching when to invoke which subcommand. Phase 2.
+7. **`o ctx` performance**: phase 1 holds `ctx --json` under 30 ms warm (see [Shortcut engine](#shortcut-engine-phase-1)); the full `ctx` adds worktree and inbox reads, so cache them for one invocation if it grows past that.
+8. **Skill complement**: thin `orcactl` skill for Claude/Codex teaching when to invoke which subcommand. Phase 8.
 9. **PR review default agent**: claude or codex? Default claude for now. Configurable.
 
 ## Implementation order
 
 Phased so each phase is self-contained and dogfoodable:
 
-**Phase 0 — repo bootstrap**
+**Phase 1 — shortcut engine and cutover**
 
-- New `orcactl` repo, Go module
-- Cobra skeleton with all noun groups
-- Lipgloss for output styling
-- Single binary build (`mise` task `orcactl:build`)
-- Brew formula in tap
-- README scaffold
+The four deliverables in [Shortcut engine](#shortcut-engine-phase-1), in order.
+Deliverable 1 also bootstraps the module, the Cobra skeleton, and the root
+`justfile` recipes that build and test it.
 
-**Phase 1 — read-only surface (fastest path to dogfooding)**
+**Phase 2 — read-only surface**
 
 - `orcactl status` — wraps `orca status --json`, friendly output
 - `o` (bare) — one-line status
-- `ctx` — full machine-readable + shell-export forms
+- `ctx` — the rest of the machine-readable and shell-export forms
 - `wt ls` — pretty `worktree ps` table
 - `wt show` — describe active worktree
 - `term ls` — list terminals
 
-**Phase 2 — worktree lifecycle**
+**Phase 3 — worktree lifecycle**
 
 - `wt new` — basic create + comment + agent spawn
 - `wt cd` — fzf jump
@@ -603,7 +748,7 @@ Phased so each phase is self-contained and dogfoodable:
 - `wt comment` — quick set
 - `snap ls` (degenerate, since no forks yet)
 
-**Phase 3 — load-bearing fork**
+**Phase 4 — load-bearing fork**
 
 - Pre-flight refusal matrix
 - Snapshot ref creation
@@ -617,12 +762,12 @@ Phased so each phase is self-contained and dogfoodable:
 - Claude agent fork (JSONL copy via SDK helper, fork-context.md generation, --append-system-prompt)
 - `wt unfork`
 
-**Phase 4 — handoff and review**
+**Phase 5 — handoff and review**
 
 - `wt handoff` (asks current agent for summary via `claude -p` / `codex exec`)
 - `wt review <pr>` (gh integration, ghc clone, PR context file, agent spawn)
 
-**Phase 5 — session and terminal helpers**
+**Phase 6 — session and terminal helpers**
 
 - `ses resume` (scrollback scrape, fixture suite for exit-hint regex)
 - `ses ls`, `ses show`
@@ -630,29 +775,32 @@ Phased so each phase is self-contained and dogfoodable:
 - `term send` (with agent-detection guard)
 - `term wait`
 
-**Phase 6 — pane (what's possible today)**
+**Phase 7 — pane (what's possible today)**
 
 - `pane split`, `pane new` (existing public RPC)
 - Stub the others with the upstream-blocked message + Stably issue link
 
-**Phase 7 — polish**
+**Phase 8 — polish and distribution**
 
 - Skill complement (thin `orcactl` skill)
 - Snapshot auto-prune
 - `o ctx` caching
 - Shell completions (zsh, fish)
-- Brew formula updates
+- Own repo and Homebrew tap, when something outside these dotfiles needs to install it
 
-**Out of band, in parallel with phase 0-1**
+**Out of band**
 
 - File Anthropic issue
 - File Stably issue
-- Open `orcactl` repo
 
 ## References
 
-- Orca CLI skills: `home/dot_agents/packages/utils-agent/skills/vendor/orca-cli/SKILL.md`
-- Orca orchestration skill: `home/dot_agents/packages/utils-agent/skills/vendor/orca-stration/SKILL.md`
+- Orca CLI skill: `utils-agent:orca-cli`, which loads the guide from `orca skills get orca-cli`
+- Orca orchestration skill: `utils-agent:orca-stration`
 - Worktrees doc: `home/dot_agents/docs/worktrees.md` (worktrunk-based, predates Orca)
 - Anthropic issue (filed): https://github.com/anthropics/claude-code/issues/58591
 - Document lifecycle: `../document-lifecycle.md`
+
+## Progress
+
+- 2026-10-22: Prateek chose Go, with cgo for the macOS APIs, and building in this repo instead of a separate one; this replaces the earlier separate-repo and Homebrew decisions. He approved phase 1 replacing the shortcut scripts wholesale. The Python helper landed its focus-capture and native-Claude fixes in `980f04b3` as the reference behavior.

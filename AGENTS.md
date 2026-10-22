@@ -11,6 +11,7 @@ This is the repo-specific contract for coding agents working in Prateek's dotfil
 - `.agents/`: repo-local agent surface for this checkout. Keep repo-specific guidance in root `AGENTS.md`; keep repo-local skills and tool adapters under `.agents/`.
 - `home/dot_agents/`: chezmoi-managed machine agent surface. Machine-wide `AGENTS.md`, docs, and workflow conventions materialize under `~/.agents`.
 - `agent-marketplace/`: portable machine-wide skill publishing project with its own justfile. It is sorted by origin: `vendor/` holds the one APM manifest, lock, and committed cache that serve all plugins; `src/` holds authored skills, patches, and overlays; `marketplace.toml` holds the catalog and each plugin's version, manifest, and selections. It sits outside the chezmoi source root.
+- `src/<name>/`: authored programs installed onto `PATH`, each with its own build manifest and tests, which chezmoi builds or links from `home/` ([ADR 0063](docs/adr/0063-authored-programs-live-in-src.md)). `src/orcactl/` is the first; its chezmoi build arrives with the cutover in its [plan](docs/plans/orcactl-plan.md), and the [layout plan](docs/plans/repo-layout-plan.md) sequences the other moves.
 - `home/dot_claude/`: chezmoi-managed Claude config for this machine. Claude reads the
   machine-wide instructions through `~/AGENTS.md` (`home/symlink_AGENTS.md`), not a
   `CLAUDE.md`; [Agent Surfaces](docs/references/chezmoi-architecture.md#agent-surfaces)
