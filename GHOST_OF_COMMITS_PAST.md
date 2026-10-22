@@ -40,3 +40,11 @@ Skills: `chezmoi-management`, `peekaboo-vm-app-audit`.
 - On a personal machine, repeat the first item.
 
 Skills: `utils-agent:acpx`, `utils-agent:orca-cli`.
+
+## 2026-10-21: workflow viewer (docs/adr/0062-claude-workflow-viewer.md)
+
+- After apply, while a Claude Code workflow runs, open `~/.agents/plugins/plugins/utils-agent/skills/workflow-viewer/scripts/workflow-viewer` in an Orca terminal; it opens on that run and agents move from ● to ✓ as they finish.
+- In that viewer, move the mouse over list rows; they highlight (hover was only tested under tmux, which drops motion events).
+- On a personal machine, `workflow-viewer --once`; it prints JSON for the latest run.
+
+Skills: `utils-agent:workflow-viewer`.

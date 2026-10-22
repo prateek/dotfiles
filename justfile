@@ -3,7 +3,7 @@ set quiet := true
 
 # Skill suites under agent-marketplace/src run through its own check (test-agent-marketplace).
 python_roots := "tests/config_merge tests/python"
-node_tests := "home/dot_local/share/raycast-extensions/orca-worktree/tests/*.test.mjs tests/node/acpx-feed.test.mjs"
+node_tests := "home/dot_local/share/raycast-extensions/orca-worktree/tests/*.test.mjs tests/node/acpx-feed.test.mjs tests/node/workflow-model.test.mjs"
 test_bash := env("TEST_BASH", "bash")
 docs_base := env("DOCS_LIFECYCLE_BASE", "HEAD")
 tart_image := env("TART_IMAGE", "ghcr.io/cirruslabs/macos-tahoe-base:latest")

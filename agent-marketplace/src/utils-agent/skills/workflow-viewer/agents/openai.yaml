@@ -1,0 +1,4 @@
+interface:
+  display_name: "Workflow Viewer"
+  short_description: "Watch a Claude Code Workflow run's agents and transcripts live"
+  default_prompt: "Use $workflow-viewer to open the viewer on the running workflow."

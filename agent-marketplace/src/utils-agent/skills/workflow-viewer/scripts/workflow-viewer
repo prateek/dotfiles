@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# Opens the Claude Code workflow viewer (a pi extension) in the current terminal, or prints one run
+# as JSON with --once. The viewer's pi gets its own agent directory: no packages, no telemetry.
+set -euo pipefail
+
+usage() {
+  cat << 'USAGE'
+usage: workflow-viewer [--once] [--replay <speed>] [--mode tree|table|timeline] [run-id-or-name]
+
+Watch a Claude Code Workflow run: its agents by phase and each agent's transcript, live.
+With no run, opens the most recently active one; `r` inside picks another.
+
+  --once            print the run as JSON and exit (no terminal UI)
+  --replay <speed>  replay a finished run as if live, at <speed>x
+  --mode <mode>     starting list mode
+USAGE
+}
+
+once=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -h | --help) usage; exit 0 ;;
+    --once | --json) once=1 ;;
+    --replay) export CCWF_REPLAY="${2:?--replay needs a speed}"; shift ;;
+    --mode) export CCWF_MODE="${2:?--mode needs tree, table or timeline}"; shift ;;
+    -*) echo "workflow-viewer: unknown option $1" >&2; usage >&2; exit 2 ;;
+    *) export CCWF_RUN="$1" ;;
+  esac
+  shift
+done
+
+viewer_dir="$(cd "$(dirname "$0")/../viewer" && pwd)"
+if [ "$once" = 1 ]; then
+  exec node "$viewer_dir/workflow-snapshot.ts" "${CCWF_RUN:-}"
+fi
+command -v pi > /dev/null || { echo "workflow-viewer: pi is not installed; use --once for JSON" >&2; exit 1; }
+
+agent_dir="${XDG_STATE_HOME:-$HOME/.local/state}/workflow-viewer/pi-agent"
+mkdir -p "$agent_dir"
+[ -f "$agent_dir/settings.json" ] || cat > "$agent_dir/settings.json" << 'JSON'
+{
+  "theme": "dark",
+  "outputPad": 0,
+  "quietStartup": true,
+  "collapseChangelog": true,
+  "enableInstallTelemetry": false,
+  "enableAnalytics": false
+}
+JSON
+export CCWF_VIEWER=1 PI_CODING_AGENT_DIR="$agent_dir"
+exec pi -ne -e "$viewer_dir/workflow-viewer.ts" -nbt -ns -np -nc -na --no-session --offline

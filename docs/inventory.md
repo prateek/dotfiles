@@ -152,6 +152,7 @@ Retired documents are listed in the [retirement ledger](retired.md).
 | [ADR 0059 — One plugin set for every harness](adr/0059-one-plugin-set-for-every-harness.md) | accepted | Every plugin goes to every harness a machine selects in agent_clis: the per-client policy flags are gone, Codex installs upstream Claude-format catalogs natively, and local adapters exist only to carry patches we keep. |  |
 | [ADR 0060 — One root marketplace manifest](adr/0060-one-root-marketplace-manifest.md) | accepted | agent-marketplace/marketplace.toml holds every plugin's version, native manifest, and selections; the build generates each plugin.json, and src/<plugin>/ holds only hand-written files. |  |
 | [ADR 0061: Watch ACPX runs in a pi viewer](adr/0061-acpx-pi-viewer.md) | accepted | acpx-pane runs acpx in the caller's process and opens one pi viewer per Orca worktree that attaches to that worktree's acpx sessions; tmux leaves the delegation path. | [agent-marketplace/src/utils-agent/skills/acpx/references/harness-lanes.md](../agent-marketplace/src/utils-agent/skills/acpx/references/harness-lanes.md) |
+| [ADR 0062: Watch Claude Code workflows in a pi viewer](adr/0062-claude-workflow-viewer.md) | accepted | A pi extension in utils-agent watches Claude Code Workflow runs by tailing the files Claude Code already writes: a phase-grouped agent list beside the selected agent's transcript, plus a --once JSON snapshot. | [agent-marketplace/src/utils-agent/skills/workflow-viewer/SKILL.md](../agent-marketplace/src/utils-agent/skills/workflow-viewer/SKILL.md) |
 
 ## Research
 
