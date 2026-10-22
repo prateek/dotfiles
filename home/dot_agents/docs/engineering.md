@@ -54,9 +54,10 @@ documentation. Repository-local instructions take precedence.
 - Settle third-party APIs from local types or language-server evidence first,
   then vendored source, then version-matched upstream source through the
   `src` skill (`ask src github:owner/repo@<tag>`).
-- When behavior, tests, and docs leave intent unclear, inspect history with
-  `git log --follow`, `git log -S`, or `git log -G`; use blame and review
-  context only if the cheaper evidence does not settle it.
+- When behavior, tests, and docs leave intent unclear, run the `lore` skill
+  with `--depth quick`; drop the flag when the question warrants every surface.
+  Where `lore` is unavailable, use `git log --follow`, `git log -S`, or
+  `git log -G` first, then blame and review context.
 - Change direction only after the available evidence contradicts the current
   approach or fails to resolve it.
 - When a durable artifact's figures or a repeated protocol step depend on

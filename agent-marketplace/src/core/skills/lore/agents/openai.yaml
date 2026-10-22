@@ -1,0 +1,4 @@
+interface:
+  display_name: "Lore"
+  short_description: "Cited history, intent, and present state of code"
+  default_prompt: "Use $lore to recover why this code is the way it is, where it came from, and how it is doing now, with cited, confidence-graded evidence."

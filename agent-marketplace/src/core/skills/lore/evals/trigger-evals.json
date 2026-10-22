@@ -1,0 +1,74 @@
+[
+  {
+    "query": "why is PGO turned off for the query read path? do the archaeology using git, github and slack",
+    "should_trigger": true
+  },
+  {
+    "query": "what's the lore behind defaultNumShards = 128 in the usage store config",
+    "should_trigger": true
+  },
+  {
+    "query": "can you look at what it would take to upgrade the DI framework in the repo? figure out how we've done this in the past first",
+    "should_trigger": true
+  },
+  {
+    "query": "why is this flag off? who turned on the other path and why didn't we turn this one on",
+    "should_trigger": true
+  },
+  {
+    "query": "resolveSource maps unknown callers to the default bucket instead of returning ErrUnknownSource. bug or deliberate?",
+    "should_trigger": true
+  },
+  {
+    "query": "who owns or works on the svc-migrate service account these days",
+    "should_trigger": true
+  },
+  {
+    "query": "dig through the history and figure out why we clone over https instead of ssh here",
+    "should_trigger": true
+  },
+  {
+    "query": "why didn't our existing manifest validators catch this, and why are they configured this way?",
+    "should_trigger": true
+  },
+  {
+    "query": "is the 30s flush timeout still pulling its weight? check how often it fires now and why it was added",
+    "should_trigger": true
+  },
+  {
+    "query": "review PR 4512 through the lens of git history and past discussion: does it undo anything deliberate?",
+    "should_trigger": true
+  },
+  {
+    "query": "the customer's traffic doubled without warning. what have we historically done in this situation?",
+    "should_trigger": true
+  },
+  {
+    "query": "walk me through what resolveSource does for a request with no source on the context",
+    "should_trigger": false
+  },
+  {
+    "query": "show me the last five commits on this branch",
+    "should_trigger": false
+  },
+  {
+    "query": "write the commit message for these staged changes",
+    "should_trigger": false
+  },
+  {
+    "query": "this test is failing with a nil pointer in the handler, fix it",
+    "should_trigger": false
+  },
+  {
+    "query": "summarize the open PRs assigned to me",
+    "should_trigger": false
+  },
+  {
+    "query": "bump the gateway's memory limit to 4Gi in the helm values",
+    "should_trigger": false
+  },
+  {
+    "query": "rename defaultNumShards to defaultShardCount everywhere",
+    "should_trigger": false
+  }
+]
