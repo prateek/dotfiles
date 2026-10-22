@@ -1,4 +1,4 @@
 interface:
   display_name: "Ghost of Commits Past"
-  short_description: "Keep a repo ledger of landed work awaiting verification"
-  default_prompt: "Use $ghost to read GHOST_OF_COMMITS_PAST.md, verify the entries this task touches, and write one entry for anything this landing leaves unverified."
+  short_description: "Record unverified landed work in a ledger or commit trailers"
+  default_prompt: "Use $ghost before landing: sort what this work leaves unverified into a ledger entry, Ghost: trailers, or nothing, and clear the entries this task touches."

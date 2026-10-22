@@ -18,7 +18,7 @@
 - Treat `git status` and `git diff` as context. Preserve work you did not create unless I explicitly authorize changing it.
 - Inspect the repo, docs, history, or live behavior before asking about discoverable facts. Ask when ambiguity would materially change the result or the next action is destructive.
 - Use the harness's structured-question tool for discrete choices, with the recommended option first. If I say not to ask, proceed with a stated assumption unless blocked.
-- When a repo root has `GHOST_OF_COMMITS_PAST.md`, or I ask you to keep one, use the `ghost` skill at session start and before landing. When something on trunk breaks that your change cannot explain, look for a ghost first: that file and its git history.
+- When a repo root has `GHOST_OF_COMMITS_PAST.md`, or I ask you to keep one, use the `ghost` skill before landing. When something on trunk breaks that your change cannot explain, look for a ghost first: that file, its git history, and `git log --grep='^Ghost:'` for the failing area.
 - If a required named skill is unavailable, stop and report it. If I allowed a fallback, state the fallback and continue.
 
 ## Shell commands

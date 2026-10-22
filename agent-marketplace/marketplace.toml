@@ -13,7 +13,7 @@ outputs = ["claude", "codex"]
 name = "Prateek"
 
 [plugins.core]
-version = "1.5.1"
+version = "1.6.0"
 display_name = "Core Agent Skills"
 
 [[plugins.core.skills]]

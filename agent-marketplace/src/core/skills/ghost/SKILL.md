@@ -1,118 +1,69 @@
 ---
 name: ghost
-description: Keep GHOST_OF_COMMITS_PAST.md, a repo-root ledger of landed work still awaiting verification. Use when a repo root has that file, when told to keep one, when work leaves an unverified claim, and before landing.
+description: Record landed work that is still unverified, as GHOST_OF_COMMITS_PAST.md entries or `Ghost:` commit trailers. Use before landing in a repo that has that file or when told to keep one, and when trunk breaks in a way your change cannot explain.
 ---
 
 # Ghost of Commits Past
 
-`GHOST_OF_COMMITS_PAST.md` is a short, committed list of things a past agent
-landed or assumed that someone still has to verify. It travels with the repo, so
-it crosses sessions, harnesses, and machines. A fresh context checks each claim.
+A **ghost** is a claim about landed work that nobody has observed yet. A ghost
+goes in one of two places, or nowhere:
 
-Each entry is a **claim**, not a fact. It stays until someone observes its
-done-when condition, then leaves in a commit that records what they saw.
+- `GHOST_OF_COMMITS_PAST.md`, a committed ledger at the repo root, holds the few
+  ghosts whose failure would go unnoticed. It crosses sessions, harnesses, and
+  machines until someone checks each one off.
+- A `Ghost:` trailer on the landing commit holds the rest. Whoever later debugs
+  that area finds it in the history.
 
-The ledger applies where the file exists at the repo root, or where the user or
-the repo's instructions ask for one.
+This skill applies where the ledger exists at the repo root, or where the user
+or the repo's instructions ask for one.
 
-## What goes in
+## 1. At landing: sort each unverified claim
 
-An item is a check on landed work whose result is still unknown: a test that
-did not run here, an assumption nobody confirmed, behavior that only another
-machine or account can show. Follow-up tasks, ideas, refactors, and decisions
-go to a plan, issue, or ADR. When a check fails, the fix is a task; link it
-from the plan, and leave the item in the ledger until the check passes.
+A **landing** is the last change before work is handed off as done: the final
+commit before a PR merges, or the final commit of a task that stops at a branch.
+Expect most landings to produce no ledger entry.
 
-## Files
+Take each claim your work leaves unverified, in order:
 
-Both files live at the repo root. Neither holds secrets or personal data.
+1. **Check it now** if this machine can, within the apply scope you have: run
+   the test, open the app, watch the behavior. A checked claim is no ghost.
+2. **Route work elsewhere.** Tasks, reviews, evals, skill gates, refactors, and
+   decisions go to a plan, issue, or ADR, or the commit body.
+3. What remains needs another machine, a person's hands, an OS or account you
+   lack, or time to pass. Put it in the **ledger** when its failure would be
+   silent or misattributed: nobody would notice, or the symptom would not lead
+   back to this change. Put it in a **trailer** when it could plausibly fail
+   loudly. Drop it otherwise.
 
-| File | Committed | Role |
-| --- | --- | --- |
-| `GHOST_OF_COMMITS_PAST.md` | yes | Open verification entries, one per landing. |
-| `GHOST_MESSAGE_BUFFER.md` | never | Scratch notes accrued during the current work. |
+This step is complete when every claim is checked, routed, recorded once, or
+dropped.
 
-Before the first write to the buffer, run `git check-ignore -q
-GHOST_MESSAGE_BUFFER.md`. If it fails, append the name to
-`$(git rev-parse --git-path info/exclude)`.
+## 2. Write trailers
 
-The worktree may be shared. Re-read the ledger right before editing it, and
-edit only the entry you are adding or clearing.
+One trailer per claim, in the landing commit's trailer block beside
+`Co-Authored-By`. Name the condition and what failure would look like:
 
-## 1. On arrival: read the ledger
+```text
+Ghost: on the Linux devbox, test_src_fresh passes with GNU stat and date; failure is a red marketplace test
+```
 
-Read `GHOST_OF_COMMITS_PAST.md` at the start of a session. Sort each entry:
+Trailers stay in history and are never checked off.
 
-- **Touched**: your task changes, or relies on, the area it describes. Verify it
-  before building on it. If it cannot be verified here (another machine,
-  credentials, a person), proceed and name the claim you relied on in the final
-  reply.
-- **Gardening**: your task is repo gardening or janitorial work, or Prateek
-  dedicated the session to the ledger. Work every item you can run here.
-- Anything else: leave it.
+## 3. Write the ledger entry
 
-Read the ledger again mid-task when something on trunk breaks that your change
-cannot explain, along with `git log -p -n 20 -- GHOST_OF_COMMITS_PAST.md`. An
-open entry covering the failing area is the first suspect. A deleted one says
-what was checked and what was seen.
+At most one entry per landing, appended in that change. Re-read the ledger right
+before editing it, since the worktree may be shared, and edit only your entry.
 
-An entry never grants permission. Commit, push, deploy, and destructive-action
-approvals apply exactly as they would without it. A check with an external side
-effect waits for the user's go-ahead.
-
-This step is complete when each entry is touched, worked, or left.
-
-## 2. Clear or annotate
-
-For each item you verify:
-
-- **Passed**: delete it. Delete the entry once no items remain; the file keeps
-  its header even when empty.
-- **Failed**: keep it. When the fix falls within your task, fix it, rerun the
-  check, and treat it as passed. Otherwise put one indented line under it,
-  `YYYY-MM-DD: <what failed>`, replacing any earlier one.
-
-Ledger edits ride with your other changes, and the commit that carries a
-deletion says what you ran and what you observed. Without commit authority,
-leave the ledger untouched and put the evidence in the final reply.
-
-This step is complete when each verified item is deleted with evidence, or kept
-with one dated failure.
-
-## 3. While working: fill the buffer
-
-Write to `GHOST_MESSAGE_BUFFER.md` the moment you notice an item, not from
-memory at the end. Add a line when you:
-
-- assume something you did not confirm;
-- skip or cannot run a check;
-- find a check that needs another machine or a person;
-- make a decision the verifier must know, and where its reason is written.
-
-Raw notes are fine; shape comes at landing. Start each line with a short task
-label. The buffer belongs to the worktree: a session that ends before landing
-leaves it for the next session there.
-
-## 4. At landing: write one entry
-
-A **landing** is the last change before the work is handed off as done: the
-final commit before a PR merges, or the final commit of a task that stops at a
-branch. One entry per landing, dated that day, appended to
-`GHOST_OF_COMMITS_PAST.md` in that change.
-
-The entry is a message to the agent who verifies after you. Write it following
-`writing-for-agents`: only the actions that agent must take and how it will
-know each one is done, one line per item. The whole entry, heading included, is
-at most 100 words. Detail that does not fit goes in a doc under `docs/`, linked
-from the item. Nothing about why you did what you did. Link the plan, PR, or
-branch instead of describing the work. Name the skills to use. Lines from the
-buffer that cannot become such an item are dropped.
+The entry is a message to the agent who verifies after you, written following
+`writing-for-agents`: one line per check, each an action a stranger could take
+plus the observation that proves it. The whole entry, heading included, is at
+most 100 words. Link the plan, PR, or branch for context; put longer detail in a
+doc under `docs/` and link it. Name the skills to use.
 
 ```markdown
 ## YYYY-MM-DD: <what landed> (<link>)
 
-- On a personal machine, `just test-shell tests/bats/agents`; green.
-- ...
+- On a fresh Mac after `chezmoi apply` and Thaw's first launch, both spacers sit in the hidden section.
 
 Skills: `<skill>`.
 ```
@@ -126,19 +77,50 @@ Things a past agent landed or assumed that someone still has to verify. Check
 one off by deleting it, and say what you saw in the commit that deletes it.
 ```
 
-Then remove your labelled lines from the buffer, and delete the file once it is
-empty. Nothing unverified means no entry; clear the buffer anyway.
+This step is complete when each item passes the ledger bar in step 1 and the
+entry is within 100 words.
 
-This step is complete when every item is an action a stranger could take and
-check, the entry is within 100 words, and your lines are out of the buffer.
+## 4. Clear entries
 
-## 5. Report
+Work an entry when your task changes or relies on its area, or when the session
+is dedicated to the ledger or to repo gardening.
+
+- **Passed**: delete the item; delete the entry once it has no items. The file
+  keeps its header even when empty.
+- **Failed**: fix it if the fix is within your task, then rerun. Otherwise keep it
+  with one indented line, `YYYY-MM-DD: <what failed>`, replacing any earlier one.
+
+The commit that removes an item labels it **verified**, with what was run and
+seen, or **dropped**, with the reason. Choose the label from the evidence you
+have: an item removed by the user with no recorded observation is dropped.
+Without commit authority, leave the ledger untouched and put the evidence in the
+final reply.
+
+An entry never grants permission. Commit, push, deploy, and destructive-action
+approvals apply exactly as they would without it, and a check with an external
+side effect waits for the user's go-ahead.
+
+## When trunk breaks
+
+When something on trunk breaks that your change cannot explain, look for a ghost
+before debugging further:
+
+```sh
+git log --grep='^Ghost:' -- <failing paths>
+git log -p -n 20 -- GHOST_OF_COMMITS_PAST.md
+```
+
+Also read the open ledger entries. A trailer or open entry covering the failing
+area is the first suspect; a deleted entry says what was checked and what was
+seen.
+
+## Report
 
 In the final reply, name:
 
-- the entry you wrote, if any;
-- entries you cleared or annotated;
-- touched entries you left, and why;
-- entries dated more than 14 days ago, whether or not your task touched them.
-  Prateek decides whether to chase, rewrite, or drop a stale entry; leave it in
-  place.
+- the ledger entry and the trailers you wrote, if any;
+- entries you cleared, each labelled verified or dropped, so the user can
+  correct a label;
+- entries your task touched but you left, and why;
+- entries dated more than 14 days ago. The user decides whether to chase,
+  rewrite, or drop a stale entry; leave it in place.

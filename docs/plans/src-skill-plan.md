@@ -4,12 +4,12 @@ doc_type: plan
 summary: "Rewrite the utils-agent ask skill from scratch as src, against the installed CLI and observed agent failures, with a trigger eval."
 owner: Prateek
 created: 2026-10-20
-updated: 2026-10-20
+updated: 2026-10-22
 related:
   - ../../agent-marketplace/src/utils-agent/skills/src/SKILL.md
   - ../../home/dot_agents/docs/engineering.md
   - ../runbooks/corp-tls-inspection.md
-status_detail: "Landed 2026-10-20; open checks are in GHOST_OF_COMMITS_PAST.md, and the Cursor GPT case waits on the Cursor marketplace path."
+status_detail: "Landed 2026-10-20; its ghost ledger checks left in c8dd1210, recorded as verified by Prateek. The Cursor GPT case waits on the Cursor marketplace path."
 ---
 
 # Src skill (formerly ask)

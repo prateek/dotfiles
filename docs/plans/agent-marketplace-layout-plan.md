@@ -4,7 +4,7 @@ doc_type: plan
 summary: "Install every plugin on every harness and retire the unpatched adapters, then split agent-marketplace by origin into src/, vendor/, and build/ with one root manifest."
 owner: Prateek
 created: 2026-10-20
-updated: 2026-10-20
+updated: 2026-10-22
 related:
   - ../references/agent-marketplace.md
   - ../adr/0023-apm-agent-marketplace-packaging.md
@@ -14,7 +14,7 @@ related:
   - ../research/agent-marketplace-adapter-layout-research.md
   - ../../agent-marketplace/README.md
   - ../../.agents/skills/agent-skill-management/SKILL.md
-status_detail: "All five deliverables landed on the branch. Open gates: console and Bats lanes not run, live Codex probe, Cursor directory entry (GHOST_OF_COMMITS_PAST.md)."
+status_detail: "All five deliverables landed. The console and Bats lanes, live Codex probe, and Cursor directory entry left GHOST_OF_COMMITS_PAST.md in c8dd1210, recorded as verified by Prateek."
 ---
 
 # Agent marketplace layout
@@ -63,8 +63,8 @@ utils-agent, utils-human) and five adapters we keep for their patches
 - **Codex installs upstream Claude catalogs natively.** Codex reads
   `.claude-plugin/marketplace.json` and `.claude-plugin/plugin.json` (verified
   in source at `rust-v0.163.0`; [research](../research/agent-marketplace-adapter-layout-research.md)
-  section D). It has never been run live; that check is in
-  [`GHOST_OF_COMMITS_PAST.md`](../../GHOST_OF_COMMITS_PAST.md).
+  section D). The live check left the ghost ledger in `c8dd1210`, recorded as
+  verified by Prateek.
 - **Cursor needs no plugin config of its own.** The installed cursor-agent
   (2026.07.01) reads both `.cursor-plugin/` and `.claude-plugin/` formats, and
   by default loads every plugin in Claude's `installed_plugins.json` that

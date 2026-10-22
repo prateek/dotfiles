@@ -107,14 +107,14 @@ _Avoid_: Model ID, harness, fixed pin
 ## Agent conventions
 
 **Ghost ledger**:
-`GHOST_OF_COMMITS_PAST.md` at a repo root: committed entries, one per landing, listing checks on landed work whose result is still unknown.
+`GHOST_OF_COMMITS_PAST.md` at a repo root: committed entries listing checks on landed work that an author could not run and whose failure would go unnoticed.
 _Avoid_: TODO list, handoff doc, progress log
 
 **Ghost entry**:
 One dated message in the ghost ledger, at most 100 words, written for the next agent: the checks to run and how each is known to be done.
 
-**Ghost buffer**:
-`GHOST_MESSAGE_BUFFER.md`, an ignored scratch file at the repo root where an agent accrues candidate checks while working; folded into one ghost entry at landing.
+**Ghost trailer**:
+A `Ghost:` line in a landing commit's trailer block naming an unverified claim that would fail loudly; found by `git log --grep='^Ghost:'` and never checked off.
 
 ## Search selection
 
