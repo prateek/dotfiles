@@ -42,6 +42,17 @@ Use xtrace when you need sourced-file or line-level attribution.
 - Restrict it to the startup under test.
 - Use it to answer "which sourced file or eval is slow?" not "is my prompt fast?"
 
+To see the trace as a Perfetto timeline, write xtrace in the marker format of `scripts/trace/xtrace-to-perfetto` and convert it:
+
+```sh
+PS4='+DFX|v=1|ts=%D{%s.%9.}|pid=$$|sub=${ZSH_SUBSHELL}|src=%x|line=%I|name=%N|stack=${(pj:,:)funcstack}|ctx=${(pj:,:)zsh_eval_context}| ' \
+  DOTFILES_SKIP_LAUNCHCTL_SYNC=1 zsh -o promptsubst -x -ic exit 2>xtrace.log
+scripts/trace/xtrace-to-perfetto --output trace.json --summary-output summary.json xtrace.log
+scripts/trace/open-perfetto trace.json
+```
+
+This traces the real startup files. `summary.json` ranks the slowest commands. Code that resets options (`emulate -L`) leaves `${...}` fields unexpanded, but times, files, and lines still parse. `scripts/trace/run-zsh` is a different tool: it replaces `ZDOTDIR` to trace zsh scripts a command launches, so it never sources your startup files.
+
 When checking live widget state, use a real PTY login shell instead of `zsh -ic`.
 
 - `zsh -ic` can report `zle` as on even when there is no tty.

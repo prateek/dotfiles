@@ -1,0 +1,239 @@
+#!/usr/bin/env python3
+"""Render a span list as an ASCII waterfall and export it for trace viewers.
+
+Input (JSON, file or stdin):
+  {"title": "...", "unit": "ms",
+   "spans": [{"name": "...", "start": 0, "end": 51,
+              "track": "helper", "estimated": false}],
+   "marks": [{"name": "focus captured", "at": 83, "track": "helper"}],
+   "notes": ["warm run; cold adds ~250 ms"]}
+
+Times share one origin and one unit ("ns", "us", "ms" or "s"; default "ms").
+Spans on one track nest by time containment; spans with identical intervals
+nest in input order. Partial overlap is an error for the exports, which require
+nesting.
+"""
+import argparse
+import json
+import math
+import sys
+
+TO_US = {"ns": 0.001, "us": 1.0, "ms": 1000.0, "s": 1_000_000.0}
+
+
+def is_time(value):
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+
+
+def is_track(value):
+    return value is None or isinstance(value, str)
+
+
+def load(source):
+    data = json.load(source)
+    if not isinstance(data, dict):
+        raise SystemExit("perf-view: input must be a JSON object with a spans list")
+    unit = data.get("unit", "ms")
+    if unit not in TO_US:
+        raise SystemExit(f"perf-view: unit must be one of {sorted(TO_US)}")
+    spans = data.get("spans") or []
+    for span in spans:
+        if not (isinstance(span, dict) and isinstance(span.get("name"), str)
+                and is_time(span.get("start")) and is_time(span.get("end")) and span["end"] >= span["start"]
+                and is_track(span.get("track")) and isinstance(span.get("args", {}), dict)):
+            raise SystemExit(f"perf-view: invalid span {span!r}; need a name, finite start <= end, "
+                             "a string track, and an object args")
+        span.setdefault("track", data.get("track", "main"))
+    marks = data.get("marks") or []
+    for mark in marks:
+        if not (isinstance(mark, dict) and isinstance(mark.get("name"), str) and is_time(mark.get("at"))
+                and is_track(mark.get("track"))):
+            raise SystemExit(f"perf-view: invalid mark {mark!r}; need a name, a finite at, and a string track")
+    return data, unit, spans, marks
+
+
+def tracks(spans):
+    """Spans per track, ordered so every parent precedes its children."""
+    grouped = {}
+    for span in spans:
+        grouped.setdefault(span["track"], []).append(span)
+    for rows in grouped.values():
+        rows.sort(key=lambda s: (s["start"], -s["end"]))
+    return grouped
+
+
+def nest(rows):
+    """Assign depth and parent by containment; refuse partial overlap."""
+    stack = []
+    for span in rows:
+        while stack and span["start"] >= stack[-1]["end"]:
+            stack.pop()
+        if stack and span["end"] > stack[-1]["end"]:
+            raise SystemExit(f"perf-view: {span['name']!r} partially overlaps {stack[-1]['name']!r} "
+                             f"on track {span['track']!r}; move one to its own track")
+        span["_parent"] = stack[-1] if stack else None
+        span["_depth"] = len(stack)
+        stack.append(span)
+    return rows
+
+
+def fmt(value):
+    return f"{value:,.1f}" if abs(value) < 100 else f"{value:,.0f}"
+
+
+def ascii_view(data, unit, spans, marks, width):
+    rows = [span for rows in tracks(spans).values() for span in nest(rows)]
+    if not rows and not marks:
+        return "(no spans)"
+    # Bars start at the earliest time (or 0); labels print times exactly as given.
+    origin = min([0] + [s["start"] for s in rows] + [m["at"] for m in marks])
+    total = max([s["end"] for s in rows] + [m["at"] for m in marks]) - origin or 1
+    scale = width / total
+    many_tracks = len({s["track"] for s in rows}) > 1
+    labels = [("  " * s["_depth"]) + (f"[{s['track']}] " if many_tracks and not s["_depth"] else "") + s["name"]
+              for s in rows]
+    label_width = min(max(map(len, labels + ["◆ " + m["name"] for m in marks] + ["total"])) + 2, 48)
+    widest = max((len(fmt(v)) for s in rows for v in (s["start"], s["end"])), default=len(fmt(total)))
+    span_width = max(len(f"{fmt(total)} → {fmt(total)} {unit}"), 2 * widest + len(f" →  {unit}"))
+    lines = []
+    if data.get("title"):
+        lines.append(data["title"])
+    pad = " " * (label_width + span_width + 3)
+    ticks = [origin + total * i / 4 for i in range(5)]
+    axis = [" "] * (width + 1)
+    for i in range(5):
+        axis[min(width, round(i * width / 4))] = "|"
+    head = list(" " * (width + 8))
+    for i, tick in enumerate(ticks):
+        text = fmt(tick)
+        at = min(round(i * width / 4), width + 8 - len(text))
+        head[at:at + len(text)] = text
+    lines.append(pad + "".join(head).rstrip() + f" {unit}")
+    lines.append(pad + "".join(axis))
+    for label, span in zip(labels, rows):
+        lead = round((span["start"] - origin) * scale)
+        size = max(1, round((span["end"] - span["start"]) * scale))
+        glyph = "│" if span["end"] == span["start"] else "░" if span.get("estimated") else "█"
+        bar = " " * lead + glyph * min(size, width + 1 - lead)
+        when = f"{fmt(span['start'])} → {fmt(span['end'])} {unit}".rjust(span_width)
+        lines.append(f"{label[:label_width - 1]:<{label_width}} {when}  {bar}")
+    for mark in sorted(marks, key=lambda m: m["at"]):
+        at = round((mark["at"] - origin) * scale)
+        when = f"@ {fmt(mark['at'])} {unit}".rjust(span_width)
+        lines.append(f"{('◆ ' + mark['name'])[:label_width - 1]:<{label_width}} {when}  {' ' * at}▲")
+    legend = "█ measured" + ("   ░ estimated" if any(s.get("estimated") for s in rows) else "")
+    lines.append(f"{'total':<{label_width}} {fmt(total).rjust(span_width - len(unit) - 1)} {unit}  {legend}")
+    lines.extend(f"  note: {note}" for note in data.get("notes") or [])
+    return "\n".join(lines)
+
+
+def chrome_trace(data, unit, spans, marks):
+    """Trace Event Format: one process, one thread per track, X slices and I instants (ts/dur in us)."""
+    factor = TO_US[unit]
+    names = list(tracks(spans)) + [m["track"] for m in marks if m.get("track")]
+    ids = {name: index + 1 for index, name in enumerate(dict.fromkeys(names))}
+    events = [{"ph": "M", "pid": 1, "tid": 0, "name": "process_name", "args": {"name": data.get("title", "perf-view")}}]
+    events += [{"ph": "M", "pid": 1, "tid": tid, "name": "thread_name", "args": {"name": name}}
+               for name, tid in ids.items()]
+    for rows in tracks(spans).values():
+        for span in nest(rows):
+            events.append({"ph": "X", "pid": 1, "tid": ids[span["track"]], "name": span["name"],
+                           "cat": "estimated" if span.get("estimated") else "measured",
+                           "ts": span["start"] * factor, "dur": (span["end"] - span["start"]) * factor,
+                           "args": span.get("args", {})})
+    for mark in marks:
+        tid = ids.get(mark.get("track"), 0)
+        events.append({"ph": "I", "pid": 1, "tid": tid, "name": mark["name"], "ts": mark["at"] * factor,
+                       "s": "t" if tid else "g"})
+    return {"traceEvents": events, "displayTimeUnit": "ms", "otherData": {"notes": data.get("notes") or []}}
+
+
+def speedscope(data, unit, spans):
+    """speedscope evented profiles, one per track, with frames shared across tracks."""
+    frames, index = [], {}
+    profiles = []
+    for track, rows in tracks(spans).items():
+        events, stack = [], []
+
+        def close():
+            span = stack.pop()
+            events.append({"type": "C", "frame": index[span["name"]], "at": span["end"]})
+
+        # Walk the nesting so zero-length and boundary spans still balance like a stack.
+        for span in nest(rows):
+            while stack and stack[-1] is not span["_parent"]:
+                close()
+            if span["name"] not in index:
+                index[span["name"]] = len(frames)
+                frames.append({"name": span["name"]})
+            events.append({"type": "O", "frame": index[span["name"]], "at": span["start"]})
+            stack.append(span)
+        while stack:
+            close()
+        profiles.append({"type": "evented", "name": track, "unit": SPEEDSCOPE_UNIT[unit],
+                         "startValue": min(s["start"] for s in rows), "endValue": max(s["end"] for s in rows),
+                         "events": events})
+    return {"$schema": "https://www.speedscope.app/file-format-schema.json", "name": data.get("title", "perf-view"),
+            "exporter": "perf-view", "shared": {"frames": frames}, "profiles": profiles}
+
+
+SPEEDSCOPE_UNIT = {"ns": "nanoseconds", "us": "microseconds", "ms": "milliseconds", "s": "seconds"}
+
+
+def frame(name):
+    return name.replace(";", ",").replace("\n", " ")
+
+
+def folded(unit, spans):
+    """Folded stacks weighted by self time in integer nanoseconds: `track;outer;inner 1234`."""
+    weights = {}
+    for rows in tracks(spans).values():
+        for span in nest(rows):
+            path, node = [], span
+            while node:
+                path.append(frame(node["name"]))
+                node = node["_parent"]
+            key = ";".join([frame(span["track"]), *reversed(path)])
+            self_time = span["end"] - span["start"]
+            weights[key] = weights.get(key, 0) + self_time
+            if span["_parent"]:
+                parent_key = key.rsplit(";", 1)[0]
+                weights[parent_key] = weights.get(parent_key, 0) - self_time
+    to_ns = TO_US[unit] * 1000
+    return "".join(f"{key} {round(value * to_ns)}\n" for key, value in weights.items()
+                   if round(value * to_ns) > 0)
+
+
+def width_arg(text):
+    value = int(text)
+    if value < 8:
+        raise argparse.ArgumentTypeError("--width must be at least 8")
+    return value
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("input", nargs="?", help="span JSON (default: stdin)")
+    parser.add_argument("--width", type=width_arg, default=60, help="bar columns for the ASCII view")
+    parser.add_argument("--chrome", metavar="FILE", help="write Trace Event JSON (Perfetto UI, chrome://tracing)")
+    parser.add_argument("--speedscope", metavar="FILE", help="write a speedscope file")
+    parser.add_argument("--folded", metavar="FILE", help="write folded stacks (inferno-flamegraph, flamegraph.pl)")
+    parser.add_argument("--quiet", action="store_true", help="skip the ASCII view")
+    args = parser.parse_args()
+    with (open(args.input) if args.input else sys.stdin) as source:
+        data, unit, spans, marks = load(source)
+    if args.chrome:
+        with open(args.chrome, "w") as out:
+            json.dump(chrome_trace(data, unit, spans, marks), out)
+    if args.speedscope:
+        with open(args.speedscope, "w") as out:
+            json.dump(speedscope(data, unit, spans), out)
+    if args.folded:
+        with open(args.folded, "w") as out:
+            out.write(folded(unit, spans))
+    if not args.quiet:
+        print(ascii_view(data, unit, spans, marks, args.width))
+
+
+if __name__ == "__main__":
+    main()

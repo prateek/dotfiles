@@ -26,3 +26,11 @@ Skills: `chezmoi-management`, `utils-agent:orca-cli`.
 - In a real repo, `/lore --depth quick <why question>` returns a tiered answer with a sources-checked line; a full run spawns investigators plus a synthesizer.
 
 Skills: `agent-skill-management`, `utils-agent:acpx`, `skill-creator`.
+
+## 2026-10-22: perf-views skill (agent-marketplace/src/utils-agent/skills/perf-views/)
+
+- After apply, in Claude and Codex, `/perf-views` runs, and the skill is absent from the model's skill listing.
+- From a sample span file, write all three exports; the trace opens in ui.perfetto.dev, the speedscope file in speedscope.app, and `inferno-flamegraph --countname ns` draws the folded file.
+- Run the benchmark-zsh-startup Perfetto recipe through `open-perfetto`; the timeline shows `.zshrc` spans.
+
+Skills: `utils-agent:perf-views`, `agent-skill-management`, `benchmark-zsh-startup`.

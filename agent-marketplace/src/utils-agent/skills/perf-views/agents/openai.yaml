@@ -1,0 +1,6 @@
+interface:
+  display_name: "Performance Views"
+  short_description: "Render timing spans as an ASCII waterfall or Perfetto, speedscope, and flamegraph files"
+  default_prompt: "Use $perf-views to measure this path and show the waterfall."
+policy:
+  allow_implicit_invocation: false
