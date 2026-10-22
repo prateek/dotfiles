@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Typechecks the viewers against the pi that is installed. pi resolves its own packages for an
+# extension at run time, so this links them (and @types/node) into an ignored node_modules first.
+set -euo pipefail
+root="$(cd "$(dirname "$0")/.." && pwd)"
+# `command -v pi` is a mise shim whose target is mise itself; ask mise where the install lives.
+pi_root=$(mise where npm:@earendil-works/pi-coding-agent 2> /dev/null) || {
+  pi_bin=$(command -v pi) || { echo "typecheck: pi is not installed" >&2; exit 1; }
+  pi_root="$(cd "$(dirname "$(readlink -f "$pi_bin")")/../.." && pwd)"
+}
+link() {
+  local pkg="$1" dir
+  dir=$(find "$pi_root" -maxdepth 6 -type d -path "*/node_modules/$pkg" -not -path '*/node_modules/*/node_modules/*/node_modules/*' | head -1)
+  [ -n "$dir" ] || { echo "typecheck: $pkg not found under $pi_root" >&2; return 1; }
+  mkdir -p "$root/node_modules/$(dirname "$pkg")"
+  ln -sfn "$dir" "$root/node_modules/$pkg"
+}
+link @earendil-works/pi-coding-agent
+link @earendil-works/pi-tui
+link @earendil-works/pi-ai
+link @types/node || echo "typecheck: continuing without @types/node" >&2
+cd "$root" && exec mise x npm:typescript@5.9.3 -- tsc -p . "$@"

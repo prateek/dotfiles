@@ -7,6 +7,7 @@ created: 2026-10-22
 updated: 2026-10-22
 related:
   - ../adr/0063-authored-programs-live-in-src.md
+  - ../adr/0064-pi-viewers-share-one-kit.md
   - ../adr/0060-one-root-marketplace-manifest.md
   - agent-marketplace-layout-plan.md
 ---
@@ -98,3 +99,6 @@ stays byte-identical so locked documents see exact renames.
 
 - 2026-10-22: Prateek chose `src/` for authored programs (ADR 0063) and approved
   step 1.
+- 2026-10-22: the acpx and workflow pi viewers left their two utils-agent skills
+  for `src/pi-viewers/` as one package with a shared kit (ADR 0064), the second
+  program under the rule; the skills call `pi-viewer` from `PATH`.

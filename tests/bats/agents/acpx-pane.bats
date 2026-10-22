@@ -3,7 +3,6 @@ load '../../support/common'
 setup() {
   setup_fixture
   pane_cmd="$DOTFILES_ROOT/agent-marketplace/src/utils-agent/skills/acpx/scripts/acpx-pane"
-  viewer="$DOTFILES_ROOT/agent-marketplace/src/utils-agent/skills/acpx/viewer/acpx-viewer.ts"
   log="$FIXTURE/run log"
   export XDG_STATE_HOME="$FIXTURE/state" ORCA_TERMINAL_HANDLE=term_parent
   cat > "$FIXTURE/bin/acpx" <<'STUB'
@@ -12,6 +11,7 @@ printf 'arg:%s\n' "$@"
 printf '[done] end_turn\n'
 exit 3
 STUB
+  printf '#!/bin/sh\nexit 0\n' > "$FIXTURE/bin/pi-viewer"
   printf '#!/bin/sh\nexit 0\n' > "$FIXTURE/bin/pi"
   cat > "$FIXTURE/bin/orca" <<'STUB'
 #!/usr/bin/env bash
@@ -49,7 +49,7 @@ case "$1 $2" in
   *) exit 1 ;;
 esac
 STUB
-  chmod +x "$FIXTURE/bin/acpx" "$FIXTURE/bin/orca" "$FIXTURE/bin/pi"
+  chmod +x "$FIXTURE/bin/acpx" "$FIXTURE/bin/orca" "$FIXTURE/bin/pi-viewer" "$FIXTURE/bin/pi"
 }
 
 @test "acpx-pane runs inline outside Orca and returns its status" {
@@ -71,11 +71,11 @@ STUB
   assert_equal "$(head -1 "$log")" 'arg:agpt'
 }
 
-@test "acpx-pane runs inline when pi is missing" {
-  rm "$FIXTURE/bin/pi"
-  PATH=$(printf '%s\n' "$PATH" | tr ':' '\n' | while read -r dir; do [ -x "$dir/pi" ] || printf '%s:' "$dir"; done)
+@test "acpx-pane runs inline when pi-viewer is missing" {
+  rm "$FIXTURE/bin/pi-viewer"
+  PATH=$(printf '%s\n' "$PATH" | tr ':' '\n' | while read -r dir; do [ -x "$dir/pi-viewer" ] || printf '%s:' "$dir"; done)
   export PATH="${PATH%:}"
-  run ! command -v pi
+  run ! command -v pi-viewer
   command -v python3 orca jq > /dev/null
   run_bash 3 "$pane_cmd" --log "$log" -- agpt prompt -s review hi
   assert_equal "$(tail -1 "$log")" '[done] end_turn'
@@ -88,11 +88,8 @@ STUB
   [ ! -e "$log" ]
   split=$(rg 'terminal split' "$FIXTURE/orca-calls")
   assert_regex "$split" 'terminal split --terminal term_parent --direction horizontal'
-  assert_regex "$split" 'ACPX_VIEWER=1 ACPX_CWD=/work/w1 '
-  assert_regex "$split" "pi -ne -e $viewer "
+  assert_equal "${split##* --command }" "exec env ACPX_CWD=/work/w1 $(printf %q "$FIXTURE/bin/pi-viewer") acpx --json"
   assert_regex "$(cat "$FIXTURE/orca-calls")" 'terminal switch --terminal term_viewer1'
-  settings="$XDG_STATE_HOME/acpx-pane/pi-agent/settings.json"
-  assert_equal "$(jq -c '[.enableInstallTelemetry, .enableAnalytics, .theme]' "$settings")" '[false,false,"dark"]'
 }
 
 @test "a stale parent handle opens the viewer beside an agent in the current worktree" {

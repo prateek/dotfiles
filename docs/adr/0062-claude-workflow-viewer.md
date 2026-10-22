@@ -1,12 +1,13 @@
 ---
 status: accepted
 doc_type: adr
-summary: "A pi extension in utils-agent watches Claude Code Workflow runs by tailing the files Claude Code already writes: a phase-grouped agent list beside the selected agent's transcript, plus a --once JSON snapshot."
+summary: "A pi extension watches Claude Code Workflow runs by tailing the files Claude Code already writes: a phase-grouped agent list beside the selected agent's transcript, plus a --once JSON snapshot."
 owner: Prateek
 created: 2026-10-21
-updated: 2026-10-21
+updated: 2026-10-22
 related:
   - 0061-acpx-pi-viewer.md
+  - 0064-pi-viewers-share-one-kit.md
 current_guidance: ../../agent-marketplace/src/utils-agent/skills/workflow-viewer/SKILL.md
 ---
 

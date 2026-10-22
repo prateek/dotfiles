@@ -18,6 +18,14 @@ Skills: `chezmoi-management`, `peekaboo-vm-app-audit`.
 
 Skills: `utils-agent:perf-views`, `agent-skill-management`, `benchmark-zsh-startup`.
 
+## 2026-10-22: pi viewers on one kit (docs/adr/0064-pi-viewers-share-one-kit.md)
+
+- Open this landing's CI run; `pi-viewers-test` passes in every job that runs `test-ci`.
+- After `chezmoi apply`, in an Orca worktree: a delegation through `acpx-pane` opens a `pi-viewer acpx` split attached to the run, and a second delegation reuses it.
+- From a phone over Orca remote (under 100 columns): the acpx viewer shows run cards, a tap opens the transcript, the bottom chips work, and the saved placement survives a relaunch.
+
+Skills: `utils-agent:acpx`, `utils-agent:workflow-viewer`, `chezmoi-management`.
+
 ## 2026-10-22: orcactl engine and src/ layout (docs/plans/orcactl-plan.md)
 
 - Open the `install-smoke` macOS run for this commit; `orcactl-test` passes inside `just test-ci` (Go from mise.toml).

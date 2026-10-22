@@ -153,22 +153,25 @@ cannot be confirmed, report the outcome as unknown before attempting recovery.
 
 `acpx-pane` runs acpx in the caller's process: the log, the exit status, and
 `Ctrl+C` behave as they do inline. Before the run starts, it makes sure the
-current Orca worktree has a viewer: one split beside the caller, running pi with
-the acpx viewer extension. Later runs in the same worktree reuse it; another
-worktree gets its own. A viewer whose pane was closed reopens on the next run.
+current Orca worktree has a viewer: one split beside the caller, running
+`pi-viewer acpx` (the pi viewer that chezmoi links from the dotfiles repo's
+`src/pi-viewers/`). Later runs in the same worktree reuse it; another worktree
+gets its own. A viewer whose pane was closed reopens on the next run.
 
 The viewer lists every open acpx session under the worktree and shows the
 selected run's transcript: one row per tool call, expandable with a click or
 Enter, with the live thinking and running tool expanded. Press `?` there for its
-keys. It only watches, so closing it never affects a run. Cancelling from the
-viewer (`x`, then `y`) runs `acpx cancel` for the selected session.
+keys; they are the same keys as the workflow viewer's, and the list's placement
+and size persist between launches. It only watches, so closing it never affects
+a run. Cancelling from the viewer (`x`, then `y`) runs `acpx cancel` for the
+selected session.
 
 The helper checks the caller's current worktree before splitting beside its
 terminal. If an inherited handle belongs to another worktree, it selects the
 current worktree's sole agent terminal; if no parent is available, it runs
 without the viewer. To open the viewer, or switch Orca back to it, run
 `~/.agents/plugins/plugins/utils-agent/skills/acpx/scripts/acpx-pane --view`.
-Missing pi or Python 3, or a failed split, falls back to the inline run.
+Missing `pi-viewer`, pi, or Python 3, or a failed split, falls back to the inline run.
 Outside Orca, or with `--inline`, the helper runs acpx in place with the
 redirect.
 

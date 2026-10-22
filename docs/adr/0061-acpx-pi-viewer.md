@@ -4,10 +4,11 @@ doc_type: adr
 summary: "acpx-pane runs acpx in the caller's process and opens one pi viewer per Orca worktree that attaches to that worktree's acpx sessions; tmux leaves the delegation path."
 owner: Prateek
 created: 2026-10-20
-updated: 2026-10-20
+updated: 2026-10-22
 related:
   - 0058-acpx-shared-tmux-view.md
   - 0036-acpx-shared-herdr-pane.md
+  - 0064-pi-viewers-share-one-kit.md
 current_guidance: ../../agent-marketplace/src/utils-agent/skills/acpx/references/harness-lanes.md
 ---
 

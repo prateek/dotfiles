@@ -2,6 +2,7 @@
 // `acpx --format json sessions watch` into turns, items, and tool calls. It has no
 // pi or terminal dependencies, so Node can test it directly.
 import { homedir } from "node:os";
+import { newView, type View } from "../lib/core.ts";
 
 export const GROUPABLE = new Set(["read", "search", "fetch"]);
 export const GENERIC = /^(read file|read|grep|find|search|terminal|edit|write|web fetch|fetch|glob|list)$/i;
@@ -35,10 +36,7 @@ export class Delegation {
   // Attach replays retained history in one burst; turns that end inside it have no real timing.
   settled = false;
   // View state, owned by the viewer.
-  overrides = new Map<string, boolean>();
-  scroll = 0;
-  follow = true;
-  cursor?: string;
+  view: View = newView();
 
   constructor(rec: Rec) {
     this.rec = rec;

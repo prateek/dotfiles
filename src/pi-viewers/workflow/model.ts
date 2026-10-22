@@ -9,6 +9,7 @@ import { closeSync, existsSync, openSync, readdirSync, readFileSync, readSync, s
 import { homedir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { StringDecoder } from "node:string_decoder";
+import { newView, type View } from "../lib/core.ts";
 
 export const STALL_MS = 180_000;
 const HOME = homedir();
@@ -45,14 +46,6 @@ export function resultLine(r?: unknown) {
   if (s.startsWith("{")) { try { const v = tellingString(JSON.parse(s)); if (v) return firstLine(v); } catch {} }
   return firstLine(s).replace(/^#+\s*/, "");
 }
-export function dur(ms: number) {
-  const s = Math.max(0, Math.round(ms / 1000));
-  return s >= 172800 ? `${Math.floor(s / 86400)}d` : s >= 3600 ? `${Math.floor(s / 3600)}h${String(Math.floor((s % 3600) / 60)).padStart(2, "0")}m`
-    : s >= 60 ? `${Math.floor(s / 60)}m${String(s % 60).padStart(2, "0")}s` : `${s}s`;
-}
-// Every space-separated term must appear as a substring.
-export const matches = (q: string, s: string) => q.toLowerCase().split(/\s+/).filter(Boolean).every((term) => s.toLowerCase().includes(term));
-
 // Appended-line reader: each call returns the complete lines written since the last call.
 export class Tail {
   path: string;
@@ -108,10 +101,7 @@ export class Agent {
   rev = 0;
   private memo?: { t: number; rev: number; s: Snap };
   // view state, owned by the viewer
-  overrides = new Map<string, boolean>();
-  scroll = 0;
-  follow = true;
-  cursor?: string;
+  view: View = newView();
   constructor(id: string, label: string, phase: string, dir: string) {
     this.id = id; this.label = label; this.phase = phase;
     this.tail = new Tail(join(dir, `agent-${id}.jsonl`));

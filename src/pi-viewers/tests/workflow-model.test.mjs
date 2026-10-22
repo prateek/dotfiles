@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, test } from "node:test";
 
-import { Tail, Run, findRun, parseMeta, resultLine, snapshot, STALL_MS } from "../../agent-marketplace/src/utils-agent/skills/workflow-viewer/viewer/workflow-model.ts";
+import { Tail, Run, findRun, parseMeta, resultLine, snapshot, STALL_MS } from "../workflow/model.ts";
 
 const root = mkdtempSync(join(tmpdir(), "workflow-model-"));
 process.env.CCWF_PROJECTS = root;

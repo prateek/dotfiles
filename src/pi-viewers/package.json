@@ -1,0 +1,11 @@
+{
+  "name": "pi-viewers",
+  "private": true,
+  "type": "module",
+  "description": "pi extensions that watch acpx delegations and Claude Code Workflow runs in a terminal",
+  "bin": { "pi-viewer": "bin/pi-viewer" },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "typecheck": "scripts/typecheck"
+  }
+}

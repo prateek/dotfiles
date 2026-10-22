@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+# Opens one of the pi viewers in the current terminal: `pi-viewer acpx` watches acpx delegations
+# (acpx-pane runs it in an Orca split, one per worktree) and `pi-viewer workflow` watches a Claude
+# Code Workflow run. `pi-viewer workflow --once` prints the run as JSON without a terminal UI. The
+# viewers' pi gets its own agent directory: no packages, no telemetry, dense output.
+set -euo pipefail
+
+usage() {
+  cat << 'USAGE'
+usage: pi-viewer acpx [--cwd <dir>] [--prefix <name-prefix>]
+       pi-viewer workflow [--once] [--replay <speed>] [--mode tree|table|timeline] [run-id-or-name]
+
+acpx      every open acpx session, or those whose cwd is under --cwd and whose name starts
+          with --prefix; cancelling a run (x, then y) is the only write
+workflow  a Claude Code Workflow run: its agents by phase and each agent's transcript, live;
+          with no run, the most recently active one, and `r` inside picks another
+  --once            print the run as JSON and exit (no terminal UI)
+  --replay <speed>  replay a finished run as if live, at <speed>x
+  --mode <mode>     starting list mode
+
+Press ? inside a viewer for its keys and mouse gestures.
+USAGE
+}
+
+# Chezmoi links this script into ~/.local/bin, so resolve the link before locating the package.
+root="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+kind="${1:-}"
+[ $# -gt 0 ] && shift
+case "$kind" in
+  -h | --help) usage; exit 0 ;;
+  acpx | workflow) ;;
+  *) usage >&2; exit 2 ;;
+esac
+
+once=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -h | --help) usage; exit 0 ;;
+    --cwd) [ "$kind" = acpx ] || break; export ACPX_CWD="${2:?--cwd needs a directory}"; shift ;;
+    --prefix) [ "$kind" = acpx ] || break; export ACPX_PREFIX="${2:?--prefix needs a name prefix}"; shift ;;
+    --once | --json) [ "$kind" = workflow ] || break; once=1 ;;
+    --replay) [ "$kind" = workflow ] || break; export CCWF_REPLAY="${2:?--replay needs a speed}"; shift ;;
+    --mode) [ "$kind" = workflow ] || break; export CCWF_MODE="${2:?--mode needs tree, table or timeline}"; shift ;;
+    -*) break ;;
+    *) [ "$kind" = workflow ] || break; export CCWF_RUN="$1" ;;
+  esac
+  shift
+done
+if [ $# -gt 0 ]; then
+  echo "pi-viewer: unexpected argument for $kind: $1" >&2
+  usage >&2
+  exit 2
+fi
+
+if [ "$once" = 1 ]; then
+  exec node "$root/workflow/snapshot.ts" "${CCWF_RUN:-}"
+fi
+if ! command -v pi > /dev/null; then
+  hint=""
+  [ "$kind" = workflow ] && hint="; use --once for JSON"
+  echo "pi-viewer: pi is not installed$hint" >&2
+  exit 1
+fi
+
+state="${XDG_STATE_HOME:-$HOME/.local/state}"
+agent_dir="$state/pi-viewers/pi-agent"
+# The viewers once kept their preferences and summary cache under their own names; carry them over
+# the first time, so a saved layout and the Haiku labels survive the move.
+for old in acpx-viewer:acpx workflow-viewer:workflow; do
+  src="$state/${old%%:*}" dst="$state/pi-viewers/${old##*:}"
+  [ -d "$src" ] && [ ! -d "$dst" ] || continue
+  mkdir -p "$state/pi-viewers" && mv "$src" "$dst"
+  [ -f "$dst/roster-rows" ] && mv "$dst/roster-rows" "$dst/size-strip"
+  [ -f "$dst/left-width-tree" ] && mv "$dst/left-width-tree" "$dst/size-side"
+  rm -f "$dst"/left-width-*
+done
+rm -rf "$state/acpx-pane/pi-agent" "$state/workflow-viewer/pi-agent"
+mkdir -p "$agent_dir"
+chmod 700 "$agent_dir"
+[ -f "$agent_dir/settings.json" ] || cat > "$agent_dir/settings.json" << 'JSON'
+{
+  "theme": "dark",
+  "outputPad": 0,
+  "quietStartup": true,
+  "collapseChangelog": true,
+  "enableInstallTelemetry": false,
+  "enableAnalytics": false
+}
+JSON
+export PI_VIEWER="$kind" PI_CODING_AGENT_DIR="$agent_dir"
+exec pi -ne -e "$root/$kind/viewer.ts" -nbt -ns -np -nc -na --no-session --offline

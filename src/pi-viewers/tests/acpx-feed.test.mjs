@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { Delegation, label } from "../../agent-marketplace/src/utils-agent/skills/acpx/viewer/acpx-feed.ts";
+import { Delegation, label } from "../acpx/feed.ts";
 
 const cwd = "/work/repo";
 const rec = { id: "r1", name: "review", cwd, agent: "agent", shortcut: "agpt", model: "m", closed: false };

@@ -3,7 +3,7 @@ set quiet := true
 
 # Skill suites under agent-marketplace/src run through its own check (test-agent-marketplace).
 python_roots := "tests/config_merge tests/python"
-node_tests := "home/dot_local/share/raycast-extensions/orca-worktree/tests/*.test.mjs tests/node/acpx-feed.test.mjs tests/node/workflow-model.test.mjs"
+node_tests := "home/dot_local/share/raycast-extensions/orca-worktree/tests/*.test.mjs"
 test_bash := env("TEST_BASH", "bash")
 docs_base := env("DOCS_LIFECYCLE_BASE", "HEAD")
 tart_image := env("TART_IMAGE", "ghcr.io/cirruslabs/macos-tahoe-base:latest")
@@ -33,7 +33,7 @@ test-ci:
       just _test-ci-suites
 
 [private]
-_test-ci-suites: test-agent-marketplace test-static test-shell test-python test-node test-tcc-onboarding orcactl-test test-chezmoi-apply
+_test-ci-suites: test-agent-marketplace test-static test-shell test-python test-node test-tcc-onboarding orcactl-test pi-viewers-test test-chezmoi-apply
 
 # Bats cases. Focus with a path and/or flags, and BATS_TAGS= to select tagged lanes.
 [group('suite')]
@@ -56,6 +56,15 @@ orcactl-test *args:
 # Build orcactl; GOOS/GOARCH/CGO_ENABLED in the environment pick the target.
 orcactl-build out="build/orcactl/orcactl":
     mkdir -p "$(dirname '{{ out }}')" && cd src/orcactl && {{ mise_env }} go build -trimpath -o "{{ if out =~ '^/' { out } else { '../../' + out } }}" ./cmd/orcactl
+
+# Node and Bats tests for the pi viewers in src/pi-viewers/ (model folding, kit geometry, the launcher).
+pi-viewers-test *args:
+    {{ mise_env }} bash scripts/tests/node src/pi-viewers/tests/*.test.mjs {{ args }}
+    {{ mise_env }} "{{ test_bash }}" scripts/tests/shell src/pi-viewers/tests/pi-viewer.bats
+
+# Typecheck the pi viewers against the installed pi (local only: it links pi's packages).
+pi-viewers-typecheck:
+    src/pi-viewers/scripts/typecheck
 
 # Native Node cases from explicit application and browser-runner roots.
 [group('suite')]

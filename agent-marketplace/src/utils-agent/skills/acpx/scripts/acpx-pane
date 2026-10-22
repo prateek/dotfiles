@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Runs one acpx invocation with its output in a log, and keeps a pi viewer open beside the
-# caller in Orca: one viewer split per worktree, attached to that worktree's acpx sessions.
+# Runs one acpx invocation with its output in a log, and keeps a viewer open beside the caller
+# in Orca: one `pi-viewer acpx` split per worktree, attached to that worktree's acpx sessions.
 #
 # Driving agents through Orca itself (instead of acpx) would make this helper unnecessary,
 # but that depends on agent hooks, which do not work reliably on the work laptop (Jamf sets
@@ -41,10 +41,9 @@ no_view() {
   exit 1
 }
 
-viewer="$(cd "$(dirname "$0")/../viewer" && pwd)/acpx-viewer.ts"
-if [ "$inline" = 1 ] || ! command -v orca > /dev/null || ! command -v pi > /dev/null ||
-   ! command -v python3 > /dev/null; then
-  [ "$view" = 0 ] || no_view "viewing requires Orca, pi, and Python 3"
+if [ "$inline" = 1 ] || ! command -v orca > /dev/null || ! command -v pi-viewer > /dev/null ||
+   ! command -v pi > /dev/null || ! command -v python3 > /dev/null; then
+  [ "$view" = 0 ] || no_view "viewing requires Orca, pi-viewer, pi, and Python 3"
   run "$@"
 fi
 
@@ -77,12 +76,11 @@ if [ -z "$parent_handle" ]; then
 fi
 
 python_bin=$(command -v python3)
-pi_bin=$(command -v pi)
+viewer_bin=$(command -v pi-viewer)
 key=$(printf '%s' "$worktree_id" | shasum -a 256 | cut -c1-16)
 state="${XDG_STATE_HOME:-$HOME/.local/state}/acpx-pane/$key"
-agent_dir="${XDG_STATE_HOME:-$HOME/.local/state}/acpx-pane/pi-agent"
-mkdir -p "$state" "$agent_dir"
-chmod 700 "$state" "$agent_dir"
+mkdir -p "$state"
+chmod 700 "$state"
 lock_file="$state/lock.flock"
 
 # Concurrent launches in one worktree must not open two viewers.
@@ -105,21 +103,6 @@ while True:
 '
 }
 
-# The viewer's pi gets its own agent directory: no packages, no telemetry, dense output.
-write_agent_settings() {
-  [ -f "$agent_dir/settings.json" ] && return 0
-  cat > "$agent_dir/settings.json" <<'EOF'
-{
-  "theme": "dark",
-  "outputPad": 0,
-  "quietStartup": true,
-  "collapseChangelog": true,
-  "enableInstallTelemetry": false,
-  "enableAnalytics": false
-}
-EOF
-}
-
 # A viewer whose Orca pane closed is reopened; a live one is reused.
 ensure_viewer() {
   local pane="" shown="" split="" command=""
@@ -131,9 +114,7 @@ ensure_viewer() {
     fi
   fi
   if [ -z "$pane" ]; then
-    write_agent_settings
-    command="exec env PI_CODING_AGENT_DIR=$(printf %q "$agent_dir") ACPX_VIEWER=1 ACPX_CWD=$(printf %q "${worktree_path:-$PWD}")"
-    command+=" $(printf %q "$pi_bin") -ne -e $(printf %q "$viewer") -nbt -ns -np -nc -na --no-session --offline"
+    command="exec env ACPX_CWD=$(printf %q "${worktree_path:-$PWD}") $(printf %q "$viewer_bin") acpx"
     split=$(orca terminal split --terminal "$parent_handle" --direction horizontal --command "$command" \
       --json 9>&- 2> /dev/null || true)
     pane=$(printf '%s' "$split" | jq -r '.result.split.handle // empty' 2> /dev/null || true)
