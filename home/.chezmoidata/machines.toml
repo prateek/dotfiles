@@ -201,8 +201,9 @@ winmux_e2e_artifact_root = "/Users/prateek/code/.storage/artifacts/winmux"
 agentsview_data_dir = "/Users/prateek/code/.storage/agentsview"
 qmd_cache_dir = "/Users/prateek/code/.storage/qmd"
 wiki_host_alias = "m4mini"
-# The always-on mini is the single writer for the distilled wiki.
-agent_session_wiki_ingest = true
+# Daily wiki ingest is paused; keep only this host's archive on the mini.
+agent_session_wiki_ingest = false
+agent_session_wiki_sparse = true
 
 # Managed work MacBook (Jamf hostname). Sparse archive clone via the work
 # type, so it cannot own the ingest role.

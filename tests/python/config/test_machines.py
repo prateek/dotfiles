@@ -87,7 +87,7 @@ class MachineFeaturesTests(RepoTestCase):
             self.assertIn(host, aliases)
             self.assertFalse(hosts[host].get("agent_session_wiki_sparse"), host)
 
-    def test_work_uses_sparse_archive_and_m4mini_owns_ingest_with_a_full_clone(self):
+    def test_work_and_m4mini_use_sparse_archives_with_ingest_paused(self):
         personal = self.resolve("personal", chezmoi={"hostname": "prateek-personal-mbp"})
         self.assertEqual(personal["wiki_host_alias"], "personal-mbp")
         work = self.resolve("work")
@@ -95,9 +95,13 @@ class MachineFeaturesTests(RepoTestCase):
         self.assertIs(work["agent_session_wiki_ingest"], False)
         mini = self.resolve("homelab", chezmoi={"hostname": "m4mini"})
         self.assertIs(mini["agent_session_wiki"], True)
-        self.assertIs(mini["agent_session_wiki_ingest"], True)
-        self.assertIs(mini["agent_session_wiki_sparse"], False)
+        self.assertIs(mini["agent_session_wiki_ingest"], False)
+        self.assertIs(mini["agent_session_wiki_sparse"], True)
         self.assertEqual(mini["wiki_host_alias"], "m4mini")
+        self.assertFalse(any(
+            cfg.get("agent_session_wiki_ingest")
+            for cfg in tomllib.loads((ROOT / "home/.chezmoidata/machines.toml").read_text())["machines"]["host"].values()
+        ))
 
     def test_layer_precedence_and_whole_list_replacement(self):
         self.assertIs(self.resolve(machines_local={"secrets_enabled": True})["secrets_enabled"], True)

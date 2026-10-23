@@ -4,7 +4,7 @@ doc_type: plan
 summary: "Architecture for a private cross-machine archive of coding-agent sessions with an Obsidian wiki, agentsview indexing, hourly raw sync, and daily ingest via Orca automations"
 owner: Prateek
 created: 2026-08-30
-updated: 2026-10-17
+updated: 2026-10-22
 status_detail: "Accepted; implementation landing on the av-history branch. See ADR 0017."
 related:
   - ../adr/0017-agent-session-archive.md
@@ -571,7 +571,9 @@ Its prompt instructs the agent to run the `session-sync` skill and report the re
 
 ### `wiki-sessions-ingest`
 
-Register this automation only on the designated ingest host, currently `m4mini`:
+Daily ingest is paused: no host currently owns the ingest role. To resume it,
+assign a full-clone host in `machines.toml` and apply on that host. Register
+this automation only on the designated ingest host:
 
 ```text
 --trigger daily
@@ -585,7 +587,7 @@ This keeps the bounded daily ingest independent of the host's global Claude
 defaults while preserving unrelated keys in that settings file.
 Claude's workspace-trust decision remains user state: after moving the ingest
 role to a new host, accept the archive folder's trust prompt on the first run,
-then rerun the automation. The current `m4mini` clone has completed that step.
+then rerun the automation.
 
 Its prompt performs these steps under `with-repo-lock`:
 
@@ -617,7 +619,7 @@ agent_session_wiki_ingest = false
 agent_session_wiki_sparse = false
 ```
 
-Set `agent_session_wiki = true` for personal, homelab, and work machines. Keep it false for CI. Set `agent_session_wiki_sparse = true` for work machines: they keep a sparse, blobless clone of their own host only ([ADR 0018](../adr/0018-sparse-work-archive-clones.md)). The ingest host must not be sparse; the bootstrap script refuses that combination.
+Set `agent_session_wiki = true` for personal, homelab, and work machines. Keep it false for CI. Set `agent_session_wiki_sparse = true` for work machines and the `m4mini` host: they keep a sparse, blobless clone of their own host only ([ADR 0018](../adr/0018-sparse-work-archive-clones.md)). The ingest host must not be sparse; the bootstrap script refuses that combination.
 
 Set `agent_session_wiki_ingest = true` only under the designated host:
 
@@ -681,7 +683,7 @@ Add:
 scripts/agent-sessions/reconcile-wiki-clone
 ```
 
-The bootstrap script delegates step 1 above to this helper, which owns the clone's shape: a full clone for personal and homelab machines, and for sparse hosts a `--filter=blob:none` partial clone with a cone-mode sparse checkout of `sessions/<alias>/`, `health/`, `.agents/`, `.claude/`, and `.codex/` (no `wiki/`: nothing derived from other hosts lands on a work machine). It is idempotent, takes the wiki repo's lock before mutating an existing clone, narrows a full clone in place only when nothing outside the cone is dirty (future fetches become blobless; old blobs stay until the clone is recreated), widens a sparse clone when the flag flips, refuses remotes without partial-clone support, and exits 4 when the remote is unreachable so the apply can warn instead of fail. `--check` is the read-only drift report the verify script uses. `make test-reconcile-wiki-clone` covers it against a local bare origin.
+The bootstrap script delegates step 1 above to this helper, which owns the clone's shape: a full clone by default for personal and homelab machines, overridden to sparse on `m4mini`, and for sparse hosts a `--filter=blob:none` partial clone with a cone-mode sparse checkout of `sessions/<alias>/`, `health/`, `.agents/`, `.claude/`, and `.codex/` (no `wiki/`: nothing derived from other hosts lands on a work machine). It is idempotent, takes the wiki repo's lock before mutating an existing clone, narrows a full clone in place only when nothing outside the cone is dirty (future fetches become blobless; old blobs stay until the clone is recreated), widens a sparse clone when the flag flips, refuses remotes without partial-clone support, and exits 4 when the remote is unreachable so the apply can warn instead of fail. `--check` is the read-only drift report the verify script uses. `make test-reconcile-wiki-clone` covers it against a local bare origin.
 
 ### Automation reconciliation helper
 
@@ -1007,6 +1009,7 @@ git diff --check
 
 ## Amendments
 
+- 2026-10-22: Daily ingest is paused with no assigned host. `m4mini` now selects a host-only sparse, blobless clone; hourly raw sync stays enabled. Narrowing reduced the checkout from about 60 GB to 43 GB. Normal Git GC then reduced the shared Git database from about 25 GB to 10 GB, leaving the clone at 28 GB and preserving the active `session-blob` worktree. Dropping other hosts' reachable history requires preserving that worktree before recreating the clone. The archive is on the external code SSD, so these changes do not reclaim internal-disk space.
 - 2026-09-01, [ADR 0018](../adr/0018-sparse-work-archive-clones.md): work machines keep a sparse, blobless clone of their own host (the work laptop had accumulated 13 GB of personal transcripts). `sync-sessions` grows the cone to its own paths before mirroring; `audit-heartbeats` fails when an expected host is not checked out. The ingest role moved from the work laptop to `m4mini`; agentsview cross-host browsing and the wiki are full-clone-host features.
 
 ## Deferred work
