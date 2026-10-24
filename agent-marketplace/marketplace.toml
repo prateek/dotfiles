@@ -36,7 +36,7 @@ version = "1.2.3"
 display_name = "Design"
 
 [plugins.experimental]
-version = "1.5.4"
+version = "1.6.0"
 display_name = "Experimental"
 
 [[plugins.experimental.skills]]
@@ -48,6 +48,71 @@ path = "."
 name = "trycycle"
 dependency = "danshapiro/trycycle"
 path = "."
+
+[[plugins.experimental.skills]]
+name = "reverse-engineer-anything"
+dependency = "morluto/rea/.agents/skills/reverse-engineer-anything"
+path = "."
+
+[[plugins.experimental.skills]]
+name = "replica-architect"
+dependency = "jakeschincariol/replica-skill"
+path = "replica-architect"
+
+[[plugins.experimental.skills]]
+name = "replica-backend"
+dependency = "jakeschincariol/replica-skill"
+path = "replica-backend"
+
+[[plugins.experimental.skills]]
+name = "replica-brand"
+dependency = "jakeschincariol/replica-skill"
+path = "replica-brand"
+
+[[plugins.experimental.skills]]
+name = "replica-build"
+dependency = "jakeschincariol/replica-skill"
+path = "replica-build"
+
+[[plugins.experimental.skills]]
+name = "replica-deploy"
+dependency = "jakeschincariol/replica-skill"
+path = "replica-deploy"
+
+[[plugins.experimental.skills]]
+name = "replica-design"
+dependency = "jakeschincariol/replica-skill"
+path = "replica-design"
+
+[[plugins.experimental.skills]]
+name = "replica-diff"
+dependency = "jakeschincariol/replica-skill"
+path = "replica-diff"
+
+[[plugins.experimental.skills]]
+name = "replica-entrepreneur"
+dependency = "jakeschincariol/replica-skill"
+path = "replica-entrepreneur"
+
+[[plugins.experimental.skills]]
+name = "replica-launch"
+dependency = "jakeschincariol/replica-skill"
+path = "replica-launch"
+
+[[plugins.experimental.skills]]
+name = "replica-recon"
+dependency = "jakeschincariol/replica-skill"
+path = "replica-recon"
+
+[[plugins.experimental.skills]]
+name = "replica-test"
+dependency = "jakeschincariol/replica-skill"
+path = "replica-test"
+
+[[plugins.experimental.payloads]]
+dependency = "jakeschincariol/replica-skill"
+path = "LICENSE"
+target = "licenses/jakeschincariol/replica-skill/LICENSE"
 
 [plugins.ios]
 version = "1.2.2"

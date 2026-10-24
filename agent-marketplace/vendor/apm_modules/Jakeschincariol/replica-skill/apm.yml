@@ -1,0 +1,9 @@
+name: replica-skill
+version: 1.0.0
+description: 'Eleven free Claude skills that clone any app: reverse-engineer it, rebuild
+  it, test it for bugs, then fix what its users hate. Free, MIT.'
+author: Jake Schincariol
+license: MIT
+repository: https://github.com/Jakeschincariol/replica-skill
+homepage: https://github.com/Jakeschincariol/replica-skill
+type: hybrid

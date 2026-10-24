@@ -11,6 +11,8 @@ devDependencies:
   - danshapiro/trycycle
   - forjd/better-writing
   - mattpocock/skills
+  - morluto/rea/.agents/skills/reverse-engineer-anything
+  - Jakeschincariol/replica-skill
   - openai/skills/skills/.curated/cli-creator
   - openclaw/acpx/skills/acpx
   - stablyai/agent-slack/skills/agent-slack
