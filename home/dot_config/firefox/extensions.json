@@ -1,0 +1,38 @@
+[
+  {
+    "name": "Sidebery",
+    "url": "https://addons.mozilla.org/firefox/addon/sidebery/"
+  },
+  {
+    "name": "userChrome Companion",
+    "url": "https://addons.mozilla.org/firefox/addon/userchrome-companion/"
+  },
+  {
+    "name": "uBlock Origin",
+    "url": "https://addons.mozilla.org/firefox/addon/ublock-origin/"
+  },
+  {
+    "name": "1Password",
+    "url": "https://addons.mozilla.org/firefox/addon/1password-x-password-manager/"
+  },
+  {
+    "name": "Vimium",
+    "url": "https://addons.mozilla.org/firefox/addon/vimium-ff/"
+  },
+  {
+    "name": "Dark Reader",
+    "url": "https://addons.mozilla.org/firefox/addon/darkreader/"
+  },
+  {
+    "name": "Obsidian Web Clipper",
+    "url": "https://addons.mozilla.org/firefox/addon/web-clipper-obsidian/"
+  },
+  {
+    "name": "Consent-O-Matic",
+    "url": "https://addons.mozilla.org/firefox/addon/consent-o-matic/"
+  },
+  {
+    "name": "Tampermonkey",
+    "url": "https://addons.mozilla.org/firefox/addon/tampermonkey/"
+  }
+]

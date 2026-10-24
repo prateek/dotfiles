@@ -1,0 +1,42 @@
+:root {
+ --uc-browser-color: #d6e2d9 !important;
+ --uc-layered-background: #d6e2d9 !important;
+ --uc-sidebar-background: #d6e2d9 !important;
+ --uc-navbar-background: #d6e2d9 !important;
+ --uc-urlbar-background: #eef4ef !important;
+ --uc-text-color: #304437 !important;
+ --uc-tab-selected-text: #304437 !important;
+ --uc-tab-selected: #ffffff !important;
+ --uc-button-selected: #ffffff !important;
+ --uc-button-color: #304437 !important;
+ --uc-accent-color-1: #ffffff !important;
+ --uc-accent-color-2: #8fa393 !important;
+ --uc-accent-color-3: #304437 !important;
+ --uc-accent-color-4: #d6e2d9 !important;
+ --uc-accent-color-5: #304437 !important;
+ --uc-input-background: #eef4ef !important;
+ --uc-context-menu: #eef4ef !important;
+ --uc-menu-background: #eef4ef !important;
+ --uc-border-radius: 10px !important;
+ --uc-button-border-radius: 8px !important;
+ --uc-box-shadow: none !important;
+}
+#navigator-toolbox {font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif !important;}
+#urlbar-background {box-shadow:0 1px 2px #00000008 !important;border:1px solid #00000008 !important;border-radius:9px !important;}
+#sidebar-splitter {width:8px !important;margin-inline:-4px !important;}
+#sidebar-box {border-radius:0 !important;}
+#sidebar {border-radius:0 !important;}
+#sidebar-box::after {display:none !important;}
+#nav-bar {padding-inline:8px !important;}
+#urlbar-container {max-width:780px !important; margin-inline:auto !important;}
+#userchromecompanion_soulhotel_net-browser-action,#_3c078156-979c-498b-8990-85f7987dd929_-browser-action {display:none !important;}
+#main-window[data-dotfiles-sidebery="true"] #TabsToolbar {display:none !important;}
+#PersonalToolbar[collapsed="true"] {display:none !important;}
+#nav-bar toolbarbutton[label="Toggle Navbar Styles"] {display:none !important;}
+#main-window[data-dotfiles-sidebery="true"] {--uc-tabbar-height:0px !important;}
+/* macOS uses the system menu bar, outside the Firefox window. */
+#main-window {--uc-menubar-height:0px !important;}
+#PersonalToolbar[collapsed=""] {display:none !important;}
+
+#sidebar-box[data-manual-motion] {min-width:0 !important;overflow:clip !important;}
+#urlbar {font-size:13px !important;}

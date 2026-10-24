@@ -1,0 +1,8 @@
+{
+  "repository": "https://github.com/soulhotel/FF-ULTIMA",
+  "revision": "32e1aa1bdd2dddd14939d8c21edba917e73b1b8a",
+  "url": "https://codeload.github.com/soulhotel/FF-ULTIMA/tar.gz/32e1aa1bdd2dddd14939d8c21edba917e73b1b8a",
+  "sha256": "7b2bd39b13f484a73fb09cc403cbef17d58daa14b7b714f20474fa43b3438733",
+  "testedFirefox": "158.0.1",
+  "testedSidebery": "5.6.1"
+}

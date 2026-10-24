@@ -408,6 +408,7 @@ brews = [
   { name = "steipete/tap/peekaboo" },
 ]
 casks = [
+  { name = "firefox", appdir = "/Applications" },
   { name = "nvalt", appdir = "/Applications" },
   { name = "taskpaper", appdir = "/Applications" },
   { name = "monodraw", appdir = "/Applications" },

@@ -163,6 +163,7 @@ this section maps a change to the distinct guarantees it can affect.
 | WinMux quarantine clearing | `just test-shell tests/bats/hooks/winmux-quarantine.bats`; the app and the CLI's resolved Caskroom path are cleared only when quarantined, silently otherwise, and a failed removal warns with the manual command. |
 | Pending dotfiles handoffs (`handoffs.toml`) | `just test-shell tests/bats/hooks/pending-handoffs.bats`; only bullets under the exact `## Pending` heading are listed, with the `/utils-agent:ho` line; an empty section prints nothing, an unreachable repo warns with gh's error without failing the apply, and a host without gh auth skips the request. |
 | macOS defaults and app/package gates | `just test-shell tests/bats/hooks/macos-defaults.bats` and `just test-python -p test_config_gates.py` for the affected behavior. |
+| Firefox Sage portability | `just test-python -p test_firefox.py`; empty-profile install, browsing-data preservation, native-profile locks, interrupted-install recovery, loader upgrades/adoption, file-level previews, checksums/security guards, local-edit protection and personal-Mac gates. `just test-shell tests/bats/hooks/firefox-settings.bats` checks soft deferral versus hard failure. Native Firefox and Sidebery onboarding remain a separate lane in the [runbook](../docs/runbooks/firefox.md). |
 
 An ordinary preference edit needs the lightest meaningful render/parse check and
 a target diff preview. Render the changed template with an explicit worktree

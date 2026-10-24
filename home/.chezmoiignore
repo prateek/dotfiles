@@ -1,5 +1,9 @@
 {{- $f := includeTemplate "features.tmpl" . | fromJson }}
 {{- $a := includeTemplate "agents.tmpl" . | fromJson }}
+{{- if or (ne .chezmoi.os "darwin") (ne (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "firefox")) "true") }}
+.config/firefox
+.chezmoiscripts/23-firefox-settings.sh
+{{- end }}
 {{/* macOS-only targets and scripts. The scripts also skip themselves off
      macOS at run time; ignoring them keeps a Linux apply from listing them.
      Scripts match by target name, .chezmoiscripts/<NN-name>. */}}

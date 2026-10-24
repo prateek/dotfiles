@@ -1,0 +1,15 @@
+{{- $f := includeTemplate "features.tmpl" . | fromJson -}}
+{{- if and $f.run_install_scripts (eq .chezmoi.os "darwin") (eq (includeTemplate "package-cask-enabled.tmpl" (dict "root" . "name" "firefox")) "true") -}}
+{{ template "script_lib.sh" . }}
+
+status=0
+"{{ .chezmoi.sourceDir }}/../scripts/firefox/install-settings" \
+  --source "{{ .chezmoi.homeDir }}/.config/firefox" || status=$?
+if [ "$status" -eq 2 ]; then
+  warn "Firefox settings deferred; see the message above and rerun chezmoi apply when ready."
+elif [ "$status" -eq 3 ]; then
+  warn "Firefox settings need attention; see the message above and docs/runbooks/firefox.md. Continuing apply."
+elif [ "$status" -ne 0 ]; then
+  die "Firefox settings failed; see docs/runbooks/firefox.md."
+fi
+{{- end -}}

@@ -1,0 +1,192 @@
+@-moz-document regexp("moz-extension://[^/]+/sidebar/sidebar[.]html.*") {
+:root {
+ --uc-browser-color: #d6e2d9 !important;
+ --uc-layered-background: #d6e2d9 !important;
+ --uc-sidebar-background: #d6e2d9 !important;
+ --uc-navbar-background: #d6e2d9 !important;
+ --uc-urlbar-background: #eef4ef !important;
+ --uc-text-color: #304437 !important;
+ --uc-tab-selected-text: #304437 !important;
+ --uc-tab-selected: #ffffff !important;
+ --uc-button-selected: #ffffff !important;
+ --uc-button-color: #304437 !important;
+ --uc-accent-color-1: #ffffff !important;
+ --uc-accent-color-2: #8fa393 !important;
+ --uc-accent-color-3: #304437 !important;
+ --uc-accent-color-4: #d6e2d9 !important;
+ --uc-accent-color-5: #304437 !important;
+ --uc-input-background: #eef4ef !important;
+ --uc-context-menu: #eef4ef !important;
+ --uc-menu-background: #eef4ef !important;
+ --uc-border-radius: 10px !important;
+ --uc-button-border-radius: 8px !important;
+ --uc-box-shadow: none !important;
+}
+/* Arc-inspired hierarchy, with native Sidebery tree behavior. */
+#root.root {
+ --general-font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif !important;
+ --general-font-size: 13px !important;
+ --tabs-font: 13px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif !important;
+ --tabs-height: 32px !important;
+ --tabs-indent: 18px !important;
+ --tabs-border-radius: 7px !important;
+ --tabs-discarded-favicon-opacity: 1 !important;
+ --tabs-discarded-title-opacity: 1 !important;
+ --tabs-activated-shadow: none !important;
+ --nav-btn-width: auto !important;
+ --nav-btn-height: 30px !important;
+ --tabs-normal-fg: var(--uc-text-color) !important;
+ --tabs-activated-fg: var(--uc-text-color) !important;
+ font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif !important;
+ font-size: 13px !important;
+}
+#root .Tab {margin-bottom: 1px !important;}
+#root .Tab .body {width: calc(100% - 12px) !important; margin-inline: 6px !important; box-shadow: none !important;}
+#root .Tab .title {font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif !important; font-size: 13px !important; font-weight: 400 !important; letter-spacing: normal !important;}
+#root .Tab .t-box {margin-inline: 8px 12px !important; mask-image: none !important;}
+#root .Tab .fav {margin-left: 8px !important; width: 16px !important; height: 16px !important; min-width: 16px !important;}
+#root .Tab .fav-icon {width: 15px !important; height: 15px !important;}
+#root .Tab .child-count {display:none !important;}
+#root .Tab[data-group="true"] .title {font-weight: 550 !important; color:var(--uc-text-color) !important;}
+#root .Tab[data-group="true"] .fav > .fav-icon {visibility: hidden !important;}
+#root .Tab[data-group="true"] .fav::before {
+ content:"";position:absolute;inset:0;background:currentColor;opacity:.76;
+ mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M2.5 5.5V4.8c0-.7.6-1.3 1.3-1.3h4l1.7 2h6.7c.7 0 1.3.6 1.3 1.3v8.4c0 .7-.6 1.3-1.3 1.3H3.8c-.7 0-1.3-.6-1.3-1.3V5.5Zm0 2h15' fill='none' stroke='black' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
+}
+#root .Tab .exp {background:transparent !important;opacity:0 !important;}
+#root .Tab[data-group="true"]:hover .fav::before {opacity:0;}
+#root .Tab[data-group="true"]:hover .exp {opacity:.8 !important;}
+#root .Tab .close {opacity:0 !important;}
+#root .Tab:hover .close {opacity:.6 !important;}
+#root .Tab[data-pin="true"] .body {background:color-mix(in srgb,var(--uc-text-color) 5%,transparent) !important;border-radius:10px !important;}
+#root .PinnedTabsBar {padding:8px 6px 12px !important;border-bottom:1px solid color-mix(in srgb,var(--uc-text-color) 9%,transparent);margin-bottom:12px !important;}
+#root .PinnedTabsBar .tab-wrapper {flex:1 !important;}
+#root .PinnedTabsBar .Tab {height:42px !important;min-width:80px !important;width:100% !important;}
+#root .PinnedTabsBar .fav {margin:0 !important;transform:none !important;}
+#root .NavigationBar {height:auto !important;min-height:68px !important;padding:6px 8px 8px !important;box-shadow:none !important;}
+#root .NavigationBar .main-items {display:grid !important;grid-template-columns:1fr 1fr !important;gap:3px !important;width:100% !important;}
+#root .NavigationBar .nav-item[data-type="tabs"] {width:auto !important;min-width:0 !important;max-width:none !important;flex:none !important;padding:0 9px !important;height:29px !important;justify-content:flex-start !important;border-radius:7px !important;box-shadow:none !important;}
+#root .NavigationBar .nav-item[data-type="tabs"] > .icon {display:none !important;}
+#root .NavigationBar .name-box {display:flex !important;position:static !important;opacity:1 !important;max-width:none !important;width:auto !important;overflow:hidden !important;}
+#root .NavigationBar .name {display:block !important;font-size:11px !important;font-weight:550 !important;letter-spacing:.05px !important;white-space:nowrap !important;}
+#root .NavigationBar .nav-item[data-active="true"] {background:color-mix(in srgb,var(--uc-text-color) 9%,transparent) !important;color:var(--uc-text-color) !important;}
+#root .NavigationBar .nav-item[data-type="space"],#root .NavigationBar .len {display:none !important;}
+#root .NavigationBar .static-btns {display:none !important;}
+#root .Tab .body::before {box-shadow:none !important;}
+#root .new-tab-btns {box-shadow:none !important;background:transparent !important;height:30px !important;}
+#root .BottomBar {opacity:.5 !important;}
+#root .ScrollBox > .top-shadow,#root .ScrollBox > .bottom-shadow {display:none !important;}
+#root *,#root *::before,#root *::after {box-sizing:border-box;}
+#root .NavigationBar .nav-item[data-class="space"] {display:none !important;}
+#root .NavigationBar {width:100% !important;}
+#root .PinnedTabsBar {width:100% !important;}
+#root .NavigationBar .nav-item[data-class="panel"] {visibility:visible !important;opacity:1 !important;}
+#root .new-tab-btns {position:relative !important;bottom:auto !important;box-shadow:none !important;background:transparent !important;margin:6px !important;}
+#root .new-tab-btns::before {display:none !important;}
+#root .Tab svg.fav-icon:has(use[href="#icon_ff"]) {background:currentColor !important;opacity:.5 !important;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='7' fill='none' stroke='black' stroke-width='1.4'/%3E%3Cpath d='M3 10h14M10 3c4 4 4 10 0 14M10 3c-4 4-4 10 0 14' fill='none' stroke='black' stroke-width='1.3'/%3E%3C/svg%3E") center/contain no-repeat !important;}
+#root .Tab svg.fav-icon use[href="#icon_ff"] {visibility:hidden !important;}
+#root .Tab .t-box {min-width:0 !important;}
+#root .Tab .title {text-overflow:ellipsis !important;}
+#root .Tab[data-group="true"][data-folded="false"] .fav::before {
+ mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M2.5 15.8V4.8c0-.7.6-1.3 1.3-1.3h4l1.7 2h6c.7 0 1.3.6 1.3 1.3V8M2.5 16.5h13.8L18 8.5H4.5l-2 8Z' fill='none' stroke='black' stroke-width='1.4' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+}
+
+#root.root {--bookmarks-indent:18px !important;--bookmarks-bookmark-height:32px !important;--bookmarks-folder-height:32px !important;--bookmarks-bookmark-font:13px -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif !important;--bookmarks-folder-font:600 13px -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif !important;--bookmarks-border-radius:7px !important;}
+#root .NavigationBar .nav-item[data-type="bookmarks"] {grid-column:1 / -1 !important;width:auto !important;min-width:0 !important;max-width:none !important;flex:none !important;padding:0 9px !important;height:29px !important;justify-content:flex-start !important;align-items:center !important;gap:8px !important;border-radius:7px !important;box-shadow:none !important;}
+#root .NavigationBar .nav-item[data-type="bookmarks"] > .icon {display:block !important;position:relative !important;flex:0 0 16px !important;width:16px !important;height:16px !important;margin:0 !important;opacity:.65 !important;}
+
+#root .Tab:not([data-pin="true"]) .fav {margin-left:16px !important;}
+#root .Tab[data-group="true"] .exp {left:-14px !important;top:0 !important;width:12px !important;height:16px !important;opacity:.55 !important;}
+#root .Tab[data-group="true"]:hover .fav::before {opacity:.76 !important;}
+#root .Tab[data-group="true"]:hover .exp {opacity:.9 !important;}
+#root .Tab:focus-within .close,#root .Tab[data-selected="true"] .close {opacity:.65 !important;}
+#root .Tab[data-selected="true"] .body,#root .Tab:focus-visible .body {outline:2px solid #47745a !important;outline-offset:-2px !important;}
+#root .NavigationBar .nav-item[data-sel="true"],#root .NavigationBar .nav-item:focus-visible {outline:2px solid #47745a !important;outline-offset:-2px !important;}
+#root .PinnedTabsBar .Tab .body {background:color-mix(in srgb,white 40%,transparent) !important;}
+#root .PinnedTabsBar .Tab[data-active="true"] .body {background:white !important;}
+#root.root {display:flex !important;flex-direction:column !important;}
+#root > .main-box {order:1 !important;flex:1 1 0 !important;min-height:0 !important;height:auto !important;padding-bottom:0 !important;}
+#root > .top-horizontal-box {order:2 !important;position:relative !important;inset:auto !important;flex:0 0 auto !important;z-index:300 !important;height:auto !important;min-height:0 !important;margin:0 !important;}
+#root .NavigationBar {height:auto !important;min-height:0 !important;box-sizing:border-box !important;padding:8px 8px 10px !important;border-top:1px solid color-mix(in srgb,var(--uc-text-color) 8%,transparent) !important;}
+#root .NavigationBar .main-items {height:auto !important;min-height:0 !important;align-content:start !important;}
+#root .PinnedTabsBar {flex-wrap:wrap !important;margin-bottom:6px !important;border-bottom:0 !important;gap:6px !important;}
+#root .PinnedTabsBar::after {content:'Tabs' !important;flex:0 0 100%;box-sizing:border-box;padding:16px 6px 4px;font-size:12px;font-weight:650;letter-spacing:.1px;opacity:.65;}
+
+#root .PinnedTabsBar::after {position:relative !important;display:block !important;height:auto !important;bottom:auto !important;left:auto !important;background:none !important;opacity:.75 !important;}
+#root .BottomBar,#root .bottom-bar-space {display:none !important;}
+/* Space icons are stored on their Sidebery panels, so they follow reordering. */
+#root .NavigationBar .nav-item[data-type="tabs"] {gap:8px !important;align-items:center !important;}
+#root .NavigationBar .nav-item[data-type="tabs"] > .icon {
+ display:block !important;position:relative !important;flex:0 0 16px !important;
+ width:16px !important;height:16px !important;margin:0 !important;
+ filter:none !important;opacity:.68 !important;
+}
+#root .NavigationBar .nav-item[data-type="tabs"][data-active="true"] > .icon {opacity:.9 !important;}
+#root[data-frame-color-scheme="dark"] .NavigationBar .nav-item[data-type="tabs"] > .icon {filter:brightness(0) invert(1) !important;}
+#root .NavigationBar .name-box {min-width:0 !important;flex:1 !important;}
+#root .NavigationBar .name {overflow:hidden !important;text-overflow:ellipsis !important;}
+/* Compact space switcher; each panel keeps its own native icon and tooltip. */
+#root .NavigationBar .main-items {display:flex !important;gap:6px !important;align-items:center !important;justify-content:flex-start !important;}
+#root .NavigationBar .nav-item[data-class="panel"] {position:relative !important;flex:0 0 36px !important;width:36px !important;min-width:36px !important;height:34px !important;padding:0 !important;gap:0 !important;justify-content:center !important;align-items:center !important;transition:background-color 140ms ease,transform 140ms ease !important;}
+#root .NavigationBar .nav-item[data-class="panel"] > .icon {width:18px !important;height:18px !important;flex:0 0 18px !important;}
+#root .NavigationBar .nav-item[data-class="panel"]:hover {background:color-mix(in srgb,var(--uc-text-color) 8%,transparent) !important;}
+#root .NavigationBar .nav-item[data-class="panel"]:active {transform:scale(.94);}
+#root .NavigationBar .nav-item[data-class="panel"][data-active="true"] {background:color-mix(in srgb,var(--uc-text-color) 14%,transparent) !important;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--uc-text-color) 6%,transparent) !important;}
+#root .NavigationBar .nav-item[data-type="bookmarks"] {margin-left:auto !important;}
+#root .NavigationBar .name-box {position:absolute !important;bottom:42px !important;left:0 !important;width:max-content !important;max-width:190px !important;padding:6px 9px !important;border-radius:7px !important;background:var(--uc-input-background) !important;color:var(--uc-text-color) !important;box-shadow:0 2px 12px #0002 !important;opacity:0 !important;pointer-events:none !important;z-index:10 !important;transition:opacity 120ms ease !important;}
+#root .NavigationBar .nav-item:hover .name-box {opacity:1 !important;}
+#root .NavigationBar .nav-item[data-type="bookmarks"] .name-box {left:auto !important;right:0 !important;}
+@media (prefers-reduced-motion:reduce) {#root .NavigationBar .nav-item,#root .NavigationBar .name-box {transition:none !important;}}
+
+#root .NavigationBar .nav-item[data-class="panel"][data-active="true"] {background:white !important;box-shadow:inset 0 0 0 1px #3044370c !important;}
+#root .NavigationBar .nav-item:hover .name-box {transition-delay:350ms !important;}
+#root .NavigationBar .nav-item[data-sel="true"] .name-box,#root .NavigationBar .nav-item:focus-visible .name-box {opacity:1 !important;transition-delay:0ms !important;}
+#root .NavigationBar .bookmarks-badge-icon {display:none !important;}
+}
+@-moz-document regexp("moz-extension://[^/]+/sidebery/group[.]html.*") {
+:root {
+ --uc-browser-color: #d6e2d9 !important;
+ --uc-layered-background: #d6e2d9 !important;
+ --uc-sidebar-background: #d6e2d9 !important;
+ --uc-navbar-background: #d6e2d9 !important;
+ --uc-urlbar-background: #eef4ef !important;
+ --uc-text-color: #304437 !important;
+ --uc-tab-selected-text: #304437 !important;
+ --uc-tab-selected: #ffffff !important;
+ --uc-button-selected: #ffffff !important;
+ --uc-button-color: #304437 !important;
+ --uc-accent-color-1: #ffffff !important;
+ --uc-accent-color-2: #8fa393 !important;
+ --uc-accent-color-3: #304437 !important;
+ --uc-accent-color-4: #d6e2d9 !important;
+ --uc-accent-color-5: #304437 !important;
+ --uc-input-background: #eef4ef !important;
+ --uc-context-menu: #eef4ef !important;
+ --uc-menu-background: #eef4ef !important;
+ --uc-border-radius: 10px !important;
+ --uc-button-border-radius: 8px !important;
+ --uc-box-shadow: none !important;
+}
+
+ body#root {--max-width:760px !important;--toolbar-fg:var(--uc-text-color) !important;--toolbar-bg:var(--uc-urlbar-background) !important;width:100% !important;padding:28px !important;box-sizing:border-box !important;background:var(--uc-urlbar-background) !important;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif !important;}
+ .title-box {margin:4px 0 22px !important;}
+ .title {font:600 22px/32px -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif !important;text-align:left !important;padding:4px 8px !important;color:var(--uc-text-color) !important;}
+ .title-highlight::before,.title-highlight::after {box-shadow:none !important;background:transparent !important;}
+ .tabs {grid-template-columns:minmax(0,1fr) !important;gap:6px !important;}
+ .tabs .tab {height:54px !important;flex-flow:row !important;align-items:center !important;background:white !important;border:1px solid #30443710 !important;border-radius:8px !important;box-shadow:none !important;}
+ .tabs .tab:hover {border-color:#30443725 !important;}
+ .tabs .tab .bg {display:none !important;}
+ .tabs .tab .fav,.tabs .tab .fav-placeholder {top:18px !important;left:14px !important;bottom:auto !important;filter:none !important;}
+ .tabs .tab .info {flex:1 1 0 !important;min-width:0 !important;width:auto !important;margin:0 8px 0 44px !important;padding:0 !important;opacity:1 !important;}
+ .tabs .tab .tab-title {font-size:13px !important;font-weight:450 !important;line-height:19px !important;margin:0 !important;max-height:19px !important;white-space:nowrap !important;text-overflow:ellipsis !important;}
+ .tabs .tab .tab-url {font-size:11px !important;line-height:16px !important;height:16px !important;margin:0 !important;max-width:100% !important;opacity:.65 !important;}
+ .tabs .tab .ctrls {flex:0 0 96px !important;width:96px !important;height:100% !important;margin:0 6px 0 0 !important;opacity:0 !important;}
+ .tabs .tab:hover .ctrls,.tabs .tab:focus-within .ctrls {opacity:1 !important;}
+ .tabs .tab .ctrls .tab-btn {width:32px !important;height:36px !important;}
+ .tabs .tab .ctrls .tab-btn svg {width:14px !important;height:14px !important;top:calc(50% - 7px) !important;left:calc(50% - 7px) !important;}
+ .new-tab {height:40px !important;border-radius:8px !important;background:transparent !important;border:1px solid #30443718 !important;box-shadow:none !important;}
+ .new-tab::before {content:"Add tab";position:absolute;left:44px;top:11px;font:500 13px/18px -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;color:var(--uc-text-color);}
+ .new-tab-plus {left:14px !important;top:12px !important;width:16px !important;height:16px !important;}
+ :focus-visible {outline:2px solid #47745a !important;outline-offset:2px !important;}
+ footer {padding:28px 0 !important;opacity:.5 !important;}
+}

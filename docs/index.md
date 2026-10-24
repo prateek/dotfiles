@@ -41,6 +41,7 @@ When changing docs, follow [Document Lifecycle](document-lifecycle.md) and the
 | [acpx Skill Rewrite](runbooks/acpx-skill-rewrite.md) | Rewriting authored skills through acpx native flows, with the required runtime overrides. |
 | [Corporate TLS Inspection](runbooks/corp-tls-inspection.md) | Corporate CA trust for Node clients in shells and GUI apps behind a decrypting proxy. |
 | [G95NC Display](runbooks/g95nc-display.md) | Native-output Sharp/Butter setup, app-wide BetterDisplay reset, private backups, logs, and recovery. |
+| [Firefox Sage Setup](runbooks/firefox.md) | Portable theme installation, Sidebery onboarding, profile preservation, and updates. |
 | [Host Storage](runbooks/host-storage.md) | Required SSD mounts before apply computes targets or installs packages. |
 | [Orca Shortcut Validation](runbooks/orca-shortcut-validation.md) | Local, SSH, and paired-server fork comparisons, sidebar focus regression, and release-specific integration limits. |
 | [Session Archive Sync Permissions](runbooks/session-sync-permissions.md) | Building the dedicated sync app and validating its removable-volume access. |

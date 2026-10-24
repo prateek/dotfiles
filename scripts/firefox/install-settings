@@ -1,0 +1,285 @@
+#!/usr/bin/env python3
+"""Install the portable Firefox theme without reading or copying browsing data."""
+
+import argparse
+import configparser
+import datetime
+import fcntl
+import hashlib
+import io
+import json
+import os
+from pathlib import Path, PurePosixPath
+import subprocess
+import sys
+import tarfile
+import tempfile
+import urllib.error
+import urllib.request
+
+BEGIN = "// BEGIN DOTFILES FIREFOX\n"
+END = "// END DOTFILES FIREFOX\n"
+
+
+class NeedsAttention(ValueError):
+    """A user-owned configuration needs an explicit choice before installation."""
+
+
+def digest(data):
+    return hashlib.sha256(data).hexdigest()
+
+
+def read(path):
+    return path.read_bytes() if path.exists() else None
+
+
+def atomic_write(path, data, mode=0o600):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(dir=path.parent, delete=False) as tmp:
+        tmp.write(data)
+        name = tmp.name
+    os.chmod(name, mode)
+    os.replace(name, path)
+
+
+def select_profile(root, explicit):
+    if explicit:
+        profile = explicit.expanduser().resolve()
+        if not profile.is_dir():
+            raise NeedsAttention("--profile must name an existing profile directory")
+        return profile, None
+    ini = configparser.ConfigParser(interpolation=None)
+    ini.optionxform = str
+    ini.read(root / "profiles.ini")
+    profiles = [s for s in ini if s.startswith("Profile")]
+    defaults = {ini[s]["Default"] for s in ini if s.startswith("Install") and ini[s].get("Default")}
+    if not defaults:
+        defaults = {ini[s]["Path"] for s in profiles if ini[s].get("Default") == "1"}
+    if len(defaults) == 1:
+        value = Path(defaults.pop())
+        target = value if value.is_absolute() else root / value
+        if not target.is_dir():
+            raise NeedsAttention("The registered default Firefox profile is missing")
+        return target.resolve(), None
+    if profiles or defaults:
+        raise NeedsAttention("No unambiguous default profile; select one with --profile PATH")
+    profile = root / "Profiles/dotfiles-sage"
+    if profile.exists() and (not profile.is_dir() or any(p.name != ".parentlock" for p in profile.iterdir())):
+        raise NeedsAttention("Unregistered dotfiles-sage directory already exists; select it explicitly")
+    ini["General"] = {"StartWithLastProfile": "0", "Version": "2"}
+    ini["Profile0"] = {"Name": "Sage", "IsRelative": "1", "Path": "Profiles/dotfiles-sage", "Default": "1"}
+    output = io.StringIO()
+    ini.write(output, space_around_delimiters=False)
+    return profile, output.getvalue().encode()
+
+
+def merge_user_js(current, managed):
+    text = (current or b"").decode()
+    if text.count(BEGIN) != text.count(END) or text.count(BEGIN) > 1:
+        raise NeedsAttention("Malformed dotfiles block in user.js")
+    block = BEGIN + managed.decode().rstrip() + "\n" + END
+    if BEGIN in text:
+        start, finish = text.index(BEGIN), text.index(END) + len(END)
+        if finish < start:
+            raise NeedsAttention("Reversed dotfiles markers in user.js")
+        return (text[:start] + block + text[finish:]).encode()
+    return (text + ("\n" if text and not text.endswith("\n") else "") + block).encode()
+
+
+def upstream_files(archive, lock):
+    data = archive.read_bytes()
+    if digest(data) != lock["sha256"]:
+        raise ValueError("FF Ultima archive checksum mismatch")
+    result = {}
+    with tarfile.open(fileobj=io.BytesIO(data), mode="r:gz") as tar:
+        for member in tar:
+            parts = PurePosixPath(member.name).parts
+            if ".." in parts or member.name.startswith("/"):
+                raise ValueError("Unsafe archive path")
+            relative = PurePosixPath(*parts[1:])
+            if not parts[1:] or not member.isfile():
+                continue
+            if relative.parts[0] not in {"theme", "userchromejs"} and str(relative) not in {
+                "userChrome.css", "userContent.css", "ucc.json", "LICENSE"
+            }:
+                continue
+            if str(relative) in result:
+                raise ValueError("Duplicate archive path")
+            result[str(relative)] = tar.extractfile(member).read()
+    for required in ("userChrome.css", "userContent.css", "userchromejs/firefox/config.js",
+                     "userchromejs/firefox/defaults/pref/config-prefs.js"):
+        if required not in result:
+            raise ValueError("FF Ultima archive is missing " + required)
+    return result
+
+
+def install(args):
+    resources = args.app / "Contents/Resources"
+    if not resources.is_dir():
+        raise NeedsAttention("Firefox is not installed at " + str(args.app))
+    profile, registration = select_profile(args.firefox_root, args.profile)
+    receipt_path = profile / "chrome/dotfiles-files.json"
+    receipt = json.loads(read(receipt_path) or b"{}")
+    previous = receipt.get("files", {})
+    app_receipt_path = resources / "dotfiles-ultima.json"
+    app_receipt = json.loads(read(app_receipt_path) or b"{}")
+    app_previous = app_receipt.get("files", {})
+    lock = json.loads((args.source / "ultima.lock.json").read_text())
+    archive = args.archive or args.cache / (lock["revision"] + ".tar.gz")
+    if not archive.exists():
+        if args.dry_run:
+            raise ValueError("Archive is not cached; supply --archive or run an initial install to download it")
+        try:
+            with urllib.request.urlopen(lock["url"], timeout=60) as response:
+                downloaded = response.read()
+        except (urllib.error.URLError, TimeoutError) as exc:
+            print("FF Ultima download unavailable; settings deferred. Retry apply when the download is reachable: " + str(exc), file=sys.stderr)
+            return 2
+        if digest(downloaded) != lock["sha256"]:
+            raise ValueError("FF Ultima download checksum mismatch")
+        atomic_write(archive, downloaded)
+    upstream = upstream_files(archive, lock)
+    desired = {}
+    if registration:
+        desired[args.firefox_root / "profiles.ini"] = registration
+    for relative, content in upstream.items():
+        if relative == "userchromejs/firefox/config.js":
+            excluded = {"lockPref('xpinstall.signatures.required', false);",
+                        "lockPref('extensions.install_origins.enabled', false);"}
+            content = b"".join(line for line in content.splitlines(keepends=True)
+                               if line.decode().strip() not in excluded)
+            if any(key in content for key in (b"xpinstall.signatures.required", b"extensions.install_origins.enabled")):
+                raise ValueError("Unrecognized security directives in the upstream loader; review before installing")
+        if relative.startswith("userchromejs/firefox/"):
+            target = resources / relative.removeprefix("userchromejs/firefox/")
+        else:
+            target = profile / "chrome" / relative
+        desired[target] = content
+    for name in ("customChrome.css", "customContent.css"):
+        desired[profile / "chrome" / name] = (args.source / name).read_bytes()
+    for name in ("sidebar-motion.ffu.js", "sidebar.ffu.js"):
+        desired[profile / "chrome/userchromejs/scripts/ffu" / ("dotfiles-" + name)] = (args.source / name).read_bytes()
+    if args.adopt_theme:
+        # Replace the earlier, privately installed copy of the same motion wrapper.
+        old_motion = profile / "chrome/userchromejs/scripts/ffu/arc-sidebar-motion.ffu.js"
+        if old_motion.exists():
+            if read(old_motion) != (args.source / "sidebar-motion.ffu.js").read_bytes():
+                raise NeedsAttention("The previous motion script has local edits; reconcile it before adopting")
+            desired[old_motion] = None
+    conflicts = []
+    for target, content in desired.items():
+        base = resources if target.is_relative_to(resources) else profile
+        relative = str(target.relative_to(base)) if target.is_relative_to(base) else None
+        if any(p.is_symlink() for p in [target, *target.parents]):
+            raise NeedsAttention("Theme destination contains a symlink: " + str(target))
+        current = read(target)
+        old_hashes = app_previous if base == resources else previous
+        if current is None or current == content or args.adopt_theme or relative is None:
+            continue
+        label = "AutoConfig loader" if base == resources else "theme file"
+        if relative in old_hashes:
+            if digest(current) != old_hashes[relative]:
+                conflicts.append("Locally edited managed " + label + ": " + str(target))
+        else:
+            conflicts.append("New " + label + " would replace an unmanaged file: " + str(target))
+    for relative, old_hash in previous.items():
+        target = profile / relative
+        if ".." in Path(relative).parts or Path(relative).is_absolute() or not target.is_relative_to(profile / "chrome"):
+            raise ValueError("Invalid theme ownership receipt")
+        if any(p.is_symlink() for p in [target, *target.parents]):
+            raise NeedsAttention("Retired theme destination contains a symlink: " + str(target))
+        if target not in desired and target.exists():
+            if digest(read(target)) != old_hash:
+                conflicts.append("Retired theme file has local edits: " + str(target))
+            desired[target] = None
+    if conflicts:
+        raise NeedsAttention("\n".join(conflicts) + "\nPreview with --adopt-theme --dry-run; reconcile edited retired files before adopting.")
+    owned = {str(p.relative_to(profile)): digest(data) for p, data in desired.items()
+             if p.is_relative_to(profile) and data is not None}
+    app_owned = {str(p.relative_to(resources)): digest(data) for p, data in desired.items()
+                 if p.is_relative_to(resources) and data is not None}
+    desired[app_receipt_path] = (json.dumps({"revision": lock["revision"], "files": app_owned}, indent=2) + "\n").encode()
+    desired[receipt_path] = (json.dumps({"revision": lock["revision"], "files": owned}, indent=2) + "\n").encode()
+    desired[profile / "user.js"] = merge_user_js(read(profile / "user.js"), (args.source / "user.js").read_bytes())
+    for target in desired:
+        if any(p.is_symlink() for p in [target, *target.parents]):
+            raise NeedsAttention("Settings destination contains a symlink: " + str(target))
+    originals = {p: read(p) for p in desired}
+    changed = {p: data for p, data in desired.items() if originals[p] != data}
+    for target in changed:
+        parent = target.parent
+        while not parent.exists():
+            parent = parent.parent
+        if not os.access(parent, os.W_OK):
+            raise NeedsAttention("Not writable: " + str(parent) + "; no sudo or permission changes attempted")
+    extra_scripts = sorted(str(p) for p in (profile / "chrome/userchromejs/scripts/ffu").glob("*.ffu.js") if p not in desired)
+    print(json.dumps({"profile": str(profile), "changedFiles": len(changed), "dryRun": args.dry_run,
+                      "changes": [{"path": str(p), "action": "delete" if data is None else "create" if originals[p] is None else "replace"}
+                                  for p, data in changed.items()],
+                      "unmanagedScripts": extra_scripts,
+                      "next": "Install extensions and import ~/.config/firefox/sidebery-settings.json; see the Firefox runbook."}))
+    if args.dry_run or not changed:
+        return 0
+    processes = subprocess.run(["ps", "-axo", "command="], check=True, capture_output=True, text=True).stdout
+    if str(args.app.resolve() / "Contents/MacOS/firefox") in processes:
+        print("Firefox is running; settings deferred. Quit Firefox and apply again.")
+        return 2
+    profile.mkdir(parents=True, exist_ok=True, mode=0o700)
+    with (profile / ".parentlock").open("a+b") as guard:
+        try:
+            fcntl.lockf(guard, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            print("Firefox profile is locked; settings deferred.")
+            return 2
+        if any(read(p) != original for p, original in originals.items()):
+            raise NeedsAttention("Settings changed during planning; rerun to preview the current files")
+        stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%S.%fZ")
+        backup = args.state / "captures/firefox-settings" / stamp
+        replacements = [(p, read(p)) for p in changed if p.exists()]
+        if replacements:
+            backup.mkdir(parents=True, mode=0o700)
+            manifest = {}
+            for index, (target, data) in enumerate(replacements):
+                name = str(index)
+                atomic_write(backup / name, data)
+                manifest[name] = str(target)
+            atomic_write(backup / "manifest.json", json.dumps(manifest, indent=2).encode())
+            print("Previous settings backed up to " + str(backup))
+        for target, data in changed.items():
+            if data is None:
+                target.unlink()
+            else:
+                mode = 0o644 if target.is_relative_to(resources) else 0o600
+                atomic_write(target, data, mode)
+    return 0
+
+
+def main():
+    home = Path.home()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--source", type=Path, default=home / ".config/firefox")
+    parser.add_argument("--firefox-root", type=Path, default=home / "Library/Application Support/Firefox")
+    parser.add_argument("--app", type=Path, default=Path("/Applications/Firefox.app"))
+    parser.add_argument("--profile", type=Path)
+    parser.add_argument("--archive", type=Path)
+    parser.add_argument("--cache", type=Path, default=Path(os.environ.get("XDG_CACHE_HOME", home / ".cache")) / "dotfiles/firefox")
+    parser.add_argument("--state", type=Path, default=Path(os.environ.get("XDG_STATE_HOME", home / ".local/state")) / "dotfiles")
+    parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--adopt-theme", action="store_true", help="Back up and replace existing theme and app loader files; never browsing data")
+    args = parser.parse_args()
+    for name in ("source", "firefox_root", "app", "archive", "cache", "state"):
+        value = getattr(args, name)
+        if value is not None:
+            setattr(args, name, value.expanduser().resolve())
+    try:
+        return install(args)
+    except NeedsAttention as exc:
+        print("Firefox settings need attention: " + str(exc), file=sys.stderr)
+        return 3
+    except (ValueError, OSError, KeyError, tarfile.TarError, configparser.Error) as exc:
+        print("Firefox settings: " + str(exc), file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
