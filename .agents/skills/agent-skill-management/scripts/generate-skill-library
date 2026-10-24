@@ -1,0 +1,149 @@
+#!/usr/bin/env python3
+"""Index default-disabled plugins without changing native activation."""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import tempfile
+import tomllib
+
+from agent_skill_lib import POLICY_PATH, REPO_ROOT, load_published_packages
+from skill_console.frontmatter import FrontmatterError, parse, parse_text
+
+
+def fingerprint(path):
+    return {"path": str(path.absolute()), "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+
+
+def contained(root, path):
+    if not path.resolve().is_relative_to(root.resolve()):
+        raise ValueError(f"path escapes plugin: {path}")
+    return path
+
+
+def skill_entry(root, path, identity, version, native):
+    path = contained(root, path)
+    fm = parse(path)
+    meta = fm.values
+    if not all(isinstance(meta.get(k), str) and meta[k].strip() for k in ("name", "description")):
+        raise ValueError(f"missing name or description: {path}")
+    if "disable-model-invocation" in meta and type(meta["disable-model-invocation"]) is not bool:
+        raise ValueError(f"invalid invocation control: {path}")
+    manual = meta.get("disable-model-invocation") is True
+    sidecar = path.parent / "agents/openai.yaml"
+    if sidecar.exists():
+        policy = parse_text("---\n" + sidecar.read_text() + "\n---\n").values.get("policy", {})
+        manual = manual or policy.get("allow_implicit_invocation") is False
+    controls = [k for k in ("allowed-tools", "context", "agent", "hooks", "model") if k in meta]
+    markers = [s for s in ("$ARGUMENTS", "${CLAUDE_PLUGIN_ROOT}", "${CLAUDE_SKILL_DIR}", "!`") if s in fm.text]
+    return {"id": f"{identity}/{path.parent.name}", "name": meta["name"],
+            "description": meta["description"], "version": version,
+            "mode": "explicit" if manual else "native" if native or controls or markers else "read",
+            "native_requirements": native + controls + markers,
+            "file": fingerprint(path),
+            "controls": [fingerprint(sidecar)] if sidecar.exists() else []}
+
+
+def plugin_skills(root, manifest):
+    paths = []
+    extra = manifest.get("skills")
+    candidates = [root / "skills"] if extra is None else []
+    extra = [] if extra is None else extra
+    if isinstance(extra, str):
+        extra = [extra]
+    if not isinstance(extra, list) or not all(isinstance(p, str) for p in extra):
+        raise ValueError("invalid plugin skills declaration")
+    candidates += [contained(root, root / p) for p in extra]
+    for candidate in candidates:
+        if (candidate / "SKILL.md").is_file():
+            paths.append(candidate / "SKILL.md")
+        elif candidate.is_dir():
+            paths.extend(sorted(candidate.glob("*/SKILL.md")))
+        elif candidate != root / "skills":
+            raise ValueError(f"missing declared skill path: {candidate}")
+    return sorted(set(paths))
+
+
+def native_requirements(root, manifest):
+    return [key for key, path in (("hooks", "hooks"), ("MCP", ".mcp.json"), ("agents", "agents"))
+            if (root / path).exists()] + [key for key in ("hooks", "mcpServers", "agents") if manifest.get(key)]
+
+
+def generate(artifact, policy, upstream, registry):
+    packages = load_published_packages(artifact, policy)
+    inputs = [fingerprint(p) for p in (artifact / "release.json", policy, upstream)]
+    entries, coverage = [], []
+    for package in packages:
+        if package.default_loaded:
+            continue
+        identity = f"prateek-local/{package.package_id}"
+        native = native_requirements(package.path, {})
+        for skill in package.skills:
+            entries.append(skill_entry(package.path, skill.path / "SKILL.md", identity, package.version, native))
+        coverage.append({"plugin": identity, "status": "indexed", "skills": len(package.skills), "source": "local artifact"})
+    installed = {}
+    if registry.is_file():
+        installed = json.loads(registry.read_text())["plugins"]
+        inputs.append(fingerprint(registry))
+    for item in tomllib.loads(upstream.read_text()).get("agent_upstream_plugins", []):
+        if item["default_loaded"]:
+            continue
+        identity = f"{item['marketplace']}/{item['plugin']}"
+        matches = [r for r in installed.get(f"{item['plugin']}@{item['marketplace']}", []) if r.get("scope") == "user"]
+        try:
+            if len(matches) != 1:
+                raise ValueError("no unique user installation in Claude inventory")
+            record = matches[0]
+            root = Path(record["installPath"])
+            manifest_path = root / ".claude-plugin/plugin.json"
+            if manifest_path.exists():
+                manifest = json.loads(manifest_path.read_text())
+                if manifest.get("name") != item["plugin"]:
+                    raise ValueError("installed manifest identity mismatch")
+            else:
+                manifest_path = root / ".claude-plugin/marketplace.json"
+                catalog = json.loads(manifest_path.read_text())
+                if catalog["name"] != item["marketplace"]:
+                    raise ValueError("installed marketplace identity mismatch")
+                candidates = [p for p in catalog["plugins"] if p["name"] == item["plugin"]]
+                if len(candidates) != 1 or candidates[0].get("source") not in ("./", "."):
+                    raise ValueError("unsupported embedded plugin source")
+                manifest = candidates[0]
+            inputs.append(fingerprint(manifest_path))
+            paths = plugin_skills(root, manifest)
+            records = [skill_entry(root, p, identity, record.get("version", "unknown"), native_requirements(root, manifest)) for p in paths]
+            entries.extend(records)
+            coverage.append({"plugin": identity, "status": "indexed", "skills": len(records), "source": "Claude user installation"})
+        except (OSError, ValueError, KeyError, FrontmatterError) as error:
+            coverage.append({"plugin": identity, "status": "unavailable", "reason": str(error)})
+    ids = [e["id"] for e in entries]
+    if len(ids) != len(set(ids)):
+        raise ValueError("duplicate qualified skill identity")
+    return {"schema": 1, "inputs": inputs, "coverage": coverage, "skills": sorted(entries, key=lambda e: e["id"])}
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--plugins-root", type=Path, default=Path.home() / ".agents/plugins")
+    parser.add_argument("--policy", type=Path, default=POLICY_PATH)
+    parser.add_argument("--upstream-policy", type=Path, default=REPO_ROOT / "home/.chezmoidata/agent_upstream_plugins.toml")
+    parser.add_argument("--claude-registry", type=Path, default=Path(os.environ.get("CLAUDE_CONFIG_DIR", str(Path.home() / ".claude"))) / "plugins/installed_plugins.json")
+    parser.add_argument("--output", type=Path, default=Path(os.environ.get("XDG_STATE_HOME", str(Path.home() / ".local/state"))) / "agent-skills/catalog.json")
+    args = parser.parse_args()
+    result = generate(args.plugins_root.absolute(), args.policy.absolute(), args.upstream_policy.absolute(), args.claude_registry.absolute())
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(mode="w", dir=args.output.parent, delete=False) as stream:
+        json.dump(result, stream, indent=2)
+        stream.write("\n")
+    os.replace(stream.name, args.output)
+    print(f"Indexed {len(result['skills'])} skills: {args.output}")
+    for row in result["coverage"]:
+        if row["status"] != "indexed":
+            print(f"Unavailable {row['plugin']}: {row['reason']}")
+
+
+if __name__ == "__main__":
+    main()

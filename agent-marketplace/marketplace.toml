@@ -188,7 +188,7 @@ display_name = "Review"
 hooks = true
 
 [plugins.utils-agent]
-version = "1.24.0"
+version = "1.25.0"
 display_name = "Agent Utilities"
 
 [[plugins.utils-agent.skills]]

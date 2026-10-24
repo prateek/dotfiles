@@ -1,0 +1,57 @@
+#!/usr/bin/env python3
+"""List installed specialist skills and read selected instructions on demand."""
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import sys
+
+
+def verify(record):
+    path = Path(record["path"])
+    if hashlib.sha256(path.read_bytes()).hexdigest() != record["sha256"]:
+        raise ValueError(f"catalog is stale: {path}; regenerate the skill library")
+    return path
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--catalog", type=Path, default=Path(os.environ.get("XDG_STATE_HOME", str(Path.home() / ".local/state"))) / "agent-skills/catalog.json")
+    parser.add_argument("command", choices=("list", "read"))
+    parser.add_argument("id", nargs="?")
+    parser.add_argument("--explicit", action="store_true", help="the user explicitly requested this skill")
+    args = parser.parse_args()
+    catalog = json.loads(args.catalog.read_text())
+    if catalog["schema"] != 1:
+        raise ValueError("unsupported skill library schema")
+    for record in catalog["inputs"]:
+        verify(record)
+    if args.command == "list":
+        for entry in catalog["skills"]:
+            print(json.dumps({k: entry[k] for k in ("id", "description", "mode")}, ensure_ascii=False))
+        for row in catalog["coverage"]:
+            if row["status"] != "indexed":
+                print(json.dumps(row))
+        return
+    matches = [entry for entry in catalog["skills"] if entry["id"] == args.id]
+    if len(matches) != 1:
+        raise ValueError("read requires one exact qualified skill id from list")
+    entry = matches[0]
+    if entry["mode"] == "explicit" and not args.explicit:
+        raise ValueError("this skill requires an explicit user request")
+    if entry["mode"] == "native" or entry["native_requirements"]:
+        raise ValueError("use native plugin invocation; this skill requires: " + ", ".join(entry["native_requirements"]))
+    for record in entry["controls"]:
+        verify(record)
+    path = verify(entry["file"])
+    print(f"Skill directory: {path.parent}\nResolve relative references and scripts from this directory.\n")
+    print(path.read_text())
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except (OSError, ValueError, KeyError) as error:
+        print(f"skill-library: {error}", file=sys.stderr)
+        sys.exit(1)

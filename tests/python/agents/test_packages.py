@@ -559,6 +559,9 @@ class PluginReconcileTests(PackageTestCase):
         self.assertFalse(state["codex"]["off@prateek-local"]["enabled"])
         self.assertEqual(state["codex"]["other@other-mkt"], {"version": "2.0.0", "enabled": False})
         self.assertTrue((self.plugins / "release.json").is_file())
+        library = json.loads((Path(self.env["XDG_STATE_HOME"]) / "agent-skills/catalog.json").read_text())
+        self.assertEqual([entry["id"] for entry in library["skills"]], ["prateek-local/off/off-skill"])
+        self.assertTrue(Path(library["skills"][0]["file"]["path"]).is_file())
         for native, catalog in (("claude", ".claude-plugin/marketplace.json"), ("codex", ".agents/plugins/marketplace.json")):
             entries = json.loads((self.plugins / catalog).read_text())["plugins"]
             for entry in entries:

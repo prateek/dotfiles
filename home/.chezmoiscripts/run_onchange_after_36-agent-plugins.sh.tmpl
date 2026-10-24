@@ -5,6 +5,8 @@
 # agent_skill_lib.py sha256: {{ include (printf "%s/../.agents/skills/agent-skill-management/scripts/agent_skill_lib.py" .chezmoi.sourceDir) | sha256sum }}
 # upstream reconciler sha256: {{ include (printf "%s/../.agents/skills/agent-skill-management/scripts/reconcile-upstream-agent-plugins" .chezmoi.sourceDir) | sha256sum }}
 # upstream policy sha256: {{ include ".chezmoidata/agent_upstream_plugins.toml" | sha256sum }}
+# skill library parser sha256: {{ include (printf "%s/../.agents/skills/agent-skill-management/scripts/skill_console/frontmatter.py" .chezmoi.sourceDir) | sha256sum }}
+# skill library generator sha256: {{ include (printf "%s/../.agents/skills/agent-skill-management/scripts/generate-skill-library" .chezmoi.sourceDir) | sha256sum }}
 # policy sha256: {{ include ".chezmoidata/agent_plugins.toml" | sha256sum }}
 # codex_rpc.py sha256: {{ include (printf "%s/../.agents/skills/agent-skill-management/scripts/codex_rpc.py" .chezmoi.sourceDir) | sha256sum }}
 # retire-legacy-agent-packages sha256: {{ include (printf "%s/../.agents/skills/agent-skill-management/scripts/retire-legacy-agent-packages" .chezmoi.sourceDir) | sha256sum }}
@@ -54,3 +56,6 @@ else
 fi
 
 "{{ .chezmoi.sourceDir }}/../.agents/skills/agent-skill-management/scripts/retire-legacy-agent-packages"
+
+run_timed "generate skill library" \
+  "{{ .chezmoi.sourceDir }}/../.agents/skills/agent-skill-management/scripts/generate-skill-library"

@@ -4,7 +4,7 @@ doc_type: reference
 summary: "Isolated APM source/build project, host activation, recovery, and validation lanes."
 owner: Prateek
 created: 2026-09-07
-updated: 2026-10-12
+updated: 2026-10-24
 related:
   - ../../agent-marketplace/README.md
   - ../../.agents/skills/agent-skill-management/SKILL.md
@@ -117,3 +117,35 @@ The [management skill](../../.agents/skills/agent-skill-management/SKILL.md) rou
 maintenance work. The [test index](../../tests/README.md#agent-package-checks)
 separates portable packaging checks, consumer checks, native client checks,
 console producer parity, and authenticated evals.
+
+## On-demand skill library
+
+`utils-agent:skill-library` discovers skills in every plugin whose policy has
+`default_loaded = false`. There is no separate discovery allowlist. Script 36
+runs `generate-skill-library` after reconciliation and writes
+`${XDG_STATE_HOME:-~/.local/state}/agent-skills/catalog.json`. Regenerate it without
+changing activation from the dotfiles checkout:
+
+```sh
+.agents/skills/agent-skill-management/scripts/generate-skill-library
+```
+
+Local entries come from the receipt-validated materialized artifact. Upstream
+entries resolve declared identities through Claude's user installation registry
+under `${CLAUDE_CONFIG_DIR:-~/.claude}`, including custom skill paths in native
+manifests. They can be read by either client, but this does not establish native
+availability in Codex. Missing or ambiguous installations appear in coverage
+diagnostics. Codex-only upstream installations are not resolved by this adapter.
+Retired plugins and unselected vendor content are not searched.
+
+The catalog includes human-only entries, marked `explicit`, and skills requiring
+native invocation, marked `native`. Discovery preserves those constraints and
+any narrower prose conditions; it does not enable plugins or authorize actions.
+The reader checks input fingerprints and the selected instruction file before
+loading. Changes to policy, the artifact receipt, registry or manifest require
+regeneration. Relative references retain the selected skill's directory.
+
+Only the discovery skill's description enters the default catalog. The generated
+index and chosen instructions load on demand. Automatic triggering, native plugin
+invocation and retention across compaction require separate client validation;
+CLI catalog checks do not establish those behaviors.

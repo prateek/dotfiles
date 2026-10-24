@@ -14,6 +14,7 @@ class ConsoleWriteTests(ConsoleRepoCase):
 
         self.add_synthetic_vendor()
         project = self.repo / "agent-marketplace"
+        package = project / "src/synth"
         catalog = project / "marketplace.toml"
         catalog.write_text(catalog.read_text().split("\n[[plugins.synth.skills]]")[0].rstrip() + "\n\n"
             '[[plugins.synth.payloads]]\n'
