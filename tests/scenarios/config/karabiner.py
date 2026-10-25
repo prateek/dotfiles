@@ -171,3 +171,26 @@ for key in ("x", "v", "delete_or_backspace", "escape", "f20"):
 sheets = [item for item in nav if from_key(item, "grave_accent_and_tilde")]
 assert len(sheets) == 2 and nocfree_scoped(sheets[0]) and "nav-layer-nocfree.svg" in sheets[0]["to"][0]["shell_command"]
 assert not nocfree_scoped(sheets[1]) and "nav-layer.svg" in sheets[1]["to"][0]["shell_command"]
+
+
+def device_ids(item):
+    return [{(identifier.get("vendor_id"), identifier.get("product_id"), identifier.get("is_built_in_keyboard"))
+             for identifier in condition.get("identifiers", [])}
+            for condition in item.get("conditions", []) if condition.get("type") == "device_if"]
+
+
+# The Keychron B11 Pro takes the Mac's bottom row by position: ⌃ is ⌥, ⌥ is Hyper, and right ⌃
+# (MO(1) once remapped in Keychron Launcher) is Meh with an F19 tap.
+B11 = {(13364, 1968, None)}
+for key, target, mods, alone in (
+    ("caps_lock", "left_control", [], "escape"),
+    ("left_control", "left_option", [], None),
+    ("left_option", "left_shift", ["left_command", "left_control", "left_option"], None),
+    ("right_control", "left_shift", ["left_control", "left_option"], "f19"),
+):
+    assert any(from_key(item, key) and device_ids(item) == [B11] and chord(item) == (target, sorted(mods))
+               and item.get("to_if_alone", [{}])[0].get("key_code") == alone and no_variable_gate(item)
+               for item in manipulators), key
+# Caps+Space reaches the nav layer from either keyboard whose Caps is ⌃ in Karabiner.
+assert any(from_key(item, "caps_lock") and gated_on(item, "nav_mode")
+           and device_ids(item) == [B11 | {(None, None, True)}] for item in manipulators)

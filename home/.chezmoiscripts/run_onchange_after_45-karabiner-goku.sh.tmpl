@@ -12,6 +12,7 @@
 # one for the Mac keyboard and one for the NocFree, which the layer's ` key opens.
 #
 # karabiner.edn sha256: {{ include "dot_config/karabiner.edn.tmpl" | sha256sum }}
+# karabiner-base.json sha256: {{ include ".chezmoiassets/karabiner-base.json" | sha256sum }}
 # render-keymap sha256: {{ include (printf "%s/../scripts/macos/render-keymap" .chezmoi.sourceDir) | sha256sum }}
 brew_shellenv
 have goku || { warn "karabiner-goku: goku not found; skipping (brew install yqrashawn/goku/goku)"; exit 0; }
@@ -45,6 +46,30 @@ elif ! jq -e '.profiles[] | select(.name == "Default")' "$kbjson" >/dev/null 2>&
     rm -f "$tmp"
     die "karabiner-goku: could not set a \"Default\" profile in $kbjson"
   fi
+fi
+
+# Karabiner ignores keyboards that also report as pointing devices unless the profile lists
+# them, so carry the base's device entries into an existing config without touching the rest.
+base_devices="$(cat <<'KB_BASE'
+{{ include ".chezmoiassets/karabiner-base.json" }}
+KB_BASE
+)"
+tmp="$(mktemp)"
+if jq --argjson base "$base_devices" '
+     ($base.profiles[0].devices // []) as $want
+     | (.profiles[] | select(.name == "Default") | .devices) |=
+         ((. // []) as $have
+          | $have + [$want[] | select(.identifiers as $id | all($have[]; .identifiers != $id))])
+   ' "$kbjson" >"$tmp"; then
+  if jq -e --slurpfile new "$tmp" '[.profiles[].devices] == [$new[0].profiles[].devices]' "$kbjson" >/dev/null; then
+    rm -f "$tmp"
+  else
+    mv "$tmp" "$kbjson"
+    log "karabiner-goku: added base device entries"
+  fi
+else
+  rm -f "$tmp"
+  die "karabiner-goku: could not merge base device entries into $kbjson"
 fi
 
 goku >/dev/null

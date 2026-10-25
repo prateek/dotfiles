@@ -8,10 +8,10 @@
 ;; See the "Tap left ⌘" rule near the bottom of :main.
 ;;
 ;; Nav layer (every keyboard): ⌃Space toggles a sticky left-hand navigation layer and shows a
-;; "NAV" notification; ⌃Space again, Esc, or a copy leaves it. On the internal keyboard ⌃ is
-;; Caps held, so the toggle is Caps+Space and a Caps tap (normally Esc) also leaves. The NocFree
-;; gets the same Caps behavior from its Vial keymap (MT(Ctrl, Esc)) on both the cable and the
-;; 2.4G dongle, which keep separate keymaps. Layer keys:
+;; "NAV" notification; ⌃Space again, Esc, or a copy leaves it. On the internal keyboard and the
+;; Keychron B11 Pro ⌃ is Caps held, so the toggle is Caps+Space and a Caps tap (normally Esc)
+;; also leaves. The NocFree gets the same Caps behavior from its Vial keymap (MT(Ctrl, Esc))
+;; on both the cable and the 2.4G dongle, which keep separate keymaps. Layer keys:
 ;;
 ;;     1 line start   2 line end
 ;;     q word left    w ↑           e word right   r tab         t page up
@@ -93,7 +93,11 @@
 {:devices {:zero2    [{:vendor_id 11720 :product_id 36888}]
            :internal [{:is_built_in_keyboard true}]
            ;; NocFree Lite: cable, then 2.4G dongle.
-           :nocfree  [{:vendor_id 19269 :product_id 13877} {:vendor_id 19269 :product_id 13876}]}
+           :nocfree  [{:vendor_id 19269 :product_id 13877} {:vendor_id 19269 :product_id 13876}]
+           ;; Keychron B11 Pro over Bluetooth. Its cable or 2.4G dongle may enumerate with
+           ;; another product_id. It also reports as a pointing device, so Karabiner ignores it
+           ;; unless karabiner.json's devices list un-ignores it (see karabiner-base.json).
+           :keychron_b11 [{:vendor_id 13364 :product_id 1968}]}
 
  :applications {:orca ["^com\\.stablyai\\.orca$"]
                 :arc  ["^company\\.thebrowser\\.Browser$"]}
@@ -155,7 +159,7 @@
    :rules [[:!Tspacebar :nav_off :nav_mode]
            [:!Tspacebar [{:set ["nav_mode" 1]} {:noti {:id :nav_mode :text "NAV"}}] :!nav_mode]
            [:escape :nav_off :nav_mode]
-           [:##caps_lock :left_control [:internal :nav_mode] {:alone :nav_off}]
+           [:##caps_lock :left_control [:internal :keychron_b11 :nav_mode] {:alone :nav_off}]
            ;; The leader tap leaves first, so the keys typed into Tuna combo mode are not
            ;; rewritten by the layer.
            [:##left_command {:key :left_command} [:nav_mode]
@@ -241,4 +245,16 @@
            [:##left_control {:key :left_shift :modi [:left_control :left_option] :lazy true}
             [:internal] {:alone :f19 :params {:alone 200}}]
            [:##left_option  {:key :left_shift :modi [:left_command :left_control :left_option] :lazy true}
-            [:internal]]]}]}
+            [:internal]]]}
+
+  {:des "Keychron B11 Pro: modifier remaps to the Mac / NocFree layout (⌥ · Meh/F19 · Hyper · ⌘)"
+   ;; Its bottom-left is ⌃ · MO(1) · ⌥ · ⌘, and MO(1) is a firmware layer key that never
+   ;; reaches macOS. So ⌃ becomes ⌥ and ⌥ becomes Hyper by position, and the Meh/F19 slot waits
+   ;; for MO(1) to be remapped to right ⌃ in Keychron Launcher.
+   ;; TODO(circle back): MO(1) is not remapped yet, so the B11 has no Meh/F19 key until it is.
+   :rules [[:condi :keychron_b11]
+           [:##caps_lock     :left_control nil {:alone :escape}]
+           [:##left_control  :left_option]
+           [:##right_control {:key :left_shift :modi [:left_control :left_option] :lazy true}
+            nil {:alone :f19 :params {:alone 200}}]
+           [:##left_option   {:key :left_shift :modi [:left_command :left_control :left_option] :lazy true}]]}]}

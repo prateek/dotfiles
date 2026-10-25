@@ -3,7 +3,7 @@ status: draft
 doc_type: research
 summary: "Recon map of the hotkey and trigger layer that summons Prateek's launchers: Hammerspoon, Karabiner and Goku, Kanata, BetterTouchTool, and Homerow, from git history."
 created: 2026-10-19
-updated: 2026-10-19
+updated: 2026-10-24
 related:
   - README.md
   - ../../adr/0044-karabiner-sole-remapper.md
@@ -289,7 +289,7 @@ Dropped, with the stated or visible reason:
 | Tool | Source in repo | Generated target | Who owns the target | Apply step |
 |---|---|---|---|---|
 | Karabiner (2026-01 to 2026-06) | `.config/karabiner/karabiner.json`, later `home/dot_config/private_karabiner/private_karabiner.json` | same file | chezmoi | copy |
-| Karabiner + Goku (current) | `home/dot_config/karabiner.edn.tmpl` (Go template; only `{{ .chezmoi.homeDir }}` is templated) | `~/.config/karabiner/karabiner.json`, `Default` profile's `complex_modifications` only | goku; the JSON is `.chezmoiignore`d | `run_onchange_after_45-karabiner-goku.sh.tmpl`: hash-triggered, seeds `karabiner-base.json` (Default profile, built-in keyboard 13364/289 not ignored, ANSI virtual keyboard) or renames the active profile to `Default`, runs `goku`, renders cheatsheets |
+| Karabiner + Goku (current) | `home/dot_config/karabiner.edn.tmpl` (Go template; only `{{ .chezmoi.homeDir }}` is templated) | `~/.config/karabiner/karabiner.json`, `Default` profile's `complex_modifications` only | goku; the JSON is `.chezmoiignore`d | `run_onchange_after_45-karabiner-goku.sh.tmpl`: hash-triggered, seeds `karabiner-base.json` (Default profile, Keychron combo devices 13364/289 and 13364/1968 not ignored, ANSI virtual keyboard) or renames the active profile to `Default`, runs `goku`, renders cheatsheets |
 | Kanata | `.config/kanata/kanata.kbd`, later `home/dot_config/kanata/kanata.kbd` | `~/Library/Application Support/kanata/kanata.kbd` (2026-01 apply script), later `~/.config/kanata/kanata.kbd` | chezmoi | none; no daemon on master |
 | Hammerspoon | `home/dot_hammerspoon/init.fnl` + `init.lua` | `~/.hammerspoon/init.generated.lua` | apply hook | `fennel --compile` in `run_onchange_after_25-hammerspoon.sh.tmpl`, rerun on source hash |
 | BetterTouchTool | `home/.chezmoitemplates/com.hegenberg.BetterTouchTool.plist.tmpl` + modify stub; license template | merged keys in the BTT plist | shared merge engine; gated on the `bettertouchtool` cask | plist merge |
