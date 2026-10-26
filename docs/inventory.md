@@ -34,7 +34,7 @@ Retired documents are listed in the [retirement ledger](retired.md).
 | [Rewrite authored skills with acpx](runbooks/acpx-skill-rewrite.md) | active | Balanced native flows; five-skill live pilot completed at peak concurrency two with one afablex review and a validated unapplied patch. Includes required runtime overrides. |  |
 | [Corporate TLS inspection](runbooks/corp-tls-inspection.md) | active | Corporate CA trust for Node clients in shells and GUI apps behind a decrypting proxy. |  |
 | [Dotfiles landing](runbooks/dotfiles-landing.md) | current | Repo-specific checks and chezmoi preview for the published land-changes skill. |  |
-| [Firefox Sage setup](runbooks/firefox.md) | current | Install and update the portable Firefox Sage theme and Sidebery preferences without migrating browsing data. |  |
+| [Firefox and Sidebery setup](runbooks/firefox.md) | current | Set up themed or vanilla Firefox with Sidebery while keeping browsing data local. |  |
 | [G95NC Display Command](runbooks/g95nc-display.md) | current | Verified native-output Sharp/Butter setup, app-wide BetterDisplay reset, private backups, logs, and recovery. |  |
 | [Host storage](runbooks/host-storage.md) | active | Required SSD mounts before apply computes targets or installs packages. |  |
 | [Orca shortcut validation](runbooks/orca-shortcut-validation.md) | active | Local, SSH, and paired-server fork comparisons, sidebar focus regression, and release-specific integration limits. |  |

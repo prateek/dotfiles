@@ -1,0 +1,101 @@
+#!/usr/bin/env python3
+"""Create a separate stock Firefox profile; never copy browsing or extension data."""
+
+import argparse
+import configparser
+import fcntl
+import io
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+
+PROFILE_NAME = "Vanilla + Sidebery"
+RELATIVE_PATH = "Profiles/dotfiles-vanilla-sidebery"
+MARKER = ".dotfiles-vanilla-profile.json"
+
+
+def atomic_write(path, data):
+    with tempfile.NamedTemporaryFile(dir=path.parent, delete=False) as output:
+        output.write(data)
+        temporary = output.name
+    try:
+        os.chmod(temporary, 0o600)
+        os.replace(temporary, path)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+
+
+def prepare(root, source):
+    profile = root / RELATIVE_PATH
+    registration = root / "profiles.ini"
+    for path in [registration, profile / "user.js", profile / MARKER]:
+        if any(p.is_symlink() for p in [path, *path.parents]):
+            raise ValueError("Refusing symlinked destination: " + str(path))
+    original = registration.read_bytes()
+    config = configparser.ConfigParser(interpolation=None)
+    config.optionxform = str
+    config.read_string(original.decode())
+    profiles = [section for section in config if section.startswith("Profile")]
+    if not profiles:
+        raise ValueError("Create your primary profile in Firefox first")
+    matching = [s for s in profiles if config[s].get("Name") == PROFILE_NAME
+                or config[s].get("Path") == RELATIVE_PATH]
+    marker = json.dumps({"name": PROFILE_NAME, "path": RELATIVE_PATH}) + "\n"
+    if profile.exists():
+        if not (profile / MARKER).is_file() or (profile / MARKER).read_text() != marker:
+            raise ValueError("Existing comparison directory is not owned by this command; leaving it untouched")
+    if matching:
+        if len(matching) != 1 or config[matching[0]].get("Name") != PROFILE_NAME or config[matching[0]].get("Path") != RELATIVE_PATH or config[matching[0]].get("IsRelative") != "1" or not profile.is_dir():
+            raise ValueError("Comparison name or path is already registered differently; leaving it untouched")
+        return profile, original, original, marker, None
+    # A retry may finish registration, but never rewrite an existing profile.
+    prefs = source.read_bytes() if not profile.exists() else None
+    index = 0
+    while config.has_section(f"Profile{index}"):
+        index += 1
+    config[f"Profile{index}"] = {"Name": PROFILE_NAME, "IsRelative": "1", "Path": RELATIVE_PATH}
+    output = io.StringIO()
+    config.write(output, space_around_delimiters=False)
+    return profile, original, output.getvalue().encode(), marker, prefs
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--firefox-root", type=Path, default=Path.home() / "Library/Application Support/Firefox")
+    parser.add_argument("--source", type=Path, default=Path(__file__).resolve().parents[2] / "home/dot_config/firefox/vanilla-user.js")
+    parser.add_argument("--dry-run", action="store_true")
+    args = parser.parse_args()
+    root = args.firefox_root.expanduser().absolute()
+    try:
+        plan = prepare(root, args.source.expanduser())
+        if not args.dry_run and plan[1] != plan[2]:
+            processes = subprocess.run(["ps", "-axo", "comm="], check=True, capture_output=True, text=True)
+            if any(Path(line.strip()).name.lower() in {"firefox", "firefox-bin"} for line in processes.stdout.splitlines()):
+                raise ValueError("Quit all Firefox profiles before creating the comparison profile")
+            lock = root / ".dotfiles-profile-setup.lock"
+            with os.fdopen(os.open(lock, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600), "a+b") as guard:
+                fcntl.flock(guard, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                profile, original, updated, marker, prefs = prepare(root, args.source.expanduser())
+                if original != updated:
+                    if prefs is not None:
+                        profile.mkdir(parents=True, mode=0o700)
+                        atomic_write(profile / "user.js", prefs)
+                        atomic_write(profile / MARKER, marker.encode())
+                    if (root / "profiles.ini").read_bytes() != original:
+                        raise ValueError("Firefox registration changed during setup; rerun with Firefox closed")
+                    atomic_write(root / "profiles.ini", updated)
+        print(json.dumps({"profile": str(plan[0]), "name": PROFILE_NAME,
+                          "dryRun": args.dry_run, "created": not args.dry_run and plan[1] != plan[2],
+                          "next": "Open about:profiles, launch Vanilla + Sidebery, and install only Sidebery from Mozilla Add-ons. Keep Sidebery defaults; do not import the themed settings."}))
+        return 0
+    except (OSError, ValueError, configparser.Error, subprocess.SubprocessError) as exc:
+        print("Vanilla Firefox setup: " + str(exc), file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

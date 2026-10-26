@@ -37,7 +37,7 @@ user_pref("toolkit.telemetry.server", "");
 user_pref("toolkit.telemetry.shutdownPingSender.enabled", false);
 user_pref("toolkit.telemetry.unified", false);
 user_pref("toolkit.telemetry.updatePing.enabled", false);
-user_pref("ui.systemUsesDarkTheme", 0);
+user_pref("ui.systemUsesDarkTheme", 1);
 user_pref("ultima.aboutaddons.compact-grid", true);
 user_pref("ultima.bookmarks.autohide", false);
 user_pref("ultima.bookmarks.centered", true);

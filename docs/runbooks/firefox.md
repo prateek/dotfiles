@@ -1,14 +1,14 @@
 ---
 status: current
 doc_type: runbook
-summary: "Install and update the portable Firefox Sage theme and Sidebery preferences without migrating browsing data."
+summary: "Set up themed or vanilla Firefox with Sidebery while keeping browsing data local."
 created: 2026-10-23
-updated: 2026-10-23
+updated: 2026-10-26
 related:
   - ../references/chezmoi-architecture.md
 ---
 
-# Firefox Sage setup
+# Firefox and Sidebery setup
 
 The `personal-apps` package group installs Firefox on personal Macs. Chezmoi
 stages [the portable configuration](../../home/dot_config/firefox) at
@@ -18,7 +18,8 @@ Work and headless machines do not receive this configuration.
 
 ## What travels
 
-- Sage colors, typography, folder disclosures, selection/focus styles, the
+- Dark graphite and muted violet colors, typography, aligned folder disclosures,
+  selection/focus styles, the active panel heading, compact pinned tabs, the
   icon-only spaces bar, group-page styling, and the resize handle.
 - Manual sidebar animation, including rapid reversal and Reduce Motion support.
 - Selected Firefox behavior and privacy preferences, including telemetry and
@@ -32,9 +33,10 @@ permissions stay local. The Sidebery export has only `ver` and `settings` keys.
 Fresh Sidebery installations start with their default empty tab panel; the CSS
 does not depend on panel IDs or Firefox's generated extension UUID.
 
-The custom macOS Dock/app icon is not managed by this bundle. It is separate
-from the browser theme. Extension account setup, preferences in other
-extensions, and userscripts also remain separate.
+The abstract [app-icon.png](../../home/dot_config/firefox/app-icon.png) artwork
+is staged for manual use. Applying it to the macOS Dock or Cmd-Tab is not
+automated or guaranteed by this setup. Extension account setup, preferences
+in other extensions, and userscripts also remain separate.
 
 ## Install
 
@@ -160,6 +162,46 @@ Backups contain only replaced configuration files and a path manifest, under
 quit Firefox, use the manifest to copy the saved files back, and reconcile the
 dotfiles source before applying again. Keep that directory private.
 
+## Vanilla comparison profile
+
+To compare with stock Firefox, quit every Firefox instance and run from the
+checkout:
+
+```sh
+scripts/firefox/create-vanilla-profile --dry-run
+scripts/firefox/create-vanilla-profile
+```
+
+The command registers **Vanilla + Sidebery** alongside an existing primary
+profile, retaining all existing default selections. It creates only a private
+profile directory, an ownership marker, and
+[vanilla-user.js](../../home/dot_config/firefox/vanilla-user.js): stock UI,
+session restore, optional telemetry/studies/crash uploads disabled, and custom
+stylesheets disabled. It neither installs the Ultima loader nor adds profile
+scripts, even when the shared Firefox app already has the loader installed.
+The command is manual; `chezmoi apply` does not create comparison profiles.
+
+Open `about:profiles` and choose **Launch profile in new browser** under
+**Vanilla + Sidebery**. Install only
+[Sidebery](https://addons.mozilla.org/firefox/addon/sidebery/), open its sidebar,
+and keep its default settings. Do not install Companion or import the themed
+Sidebery settings into this profile. Firefox's native tab strip and sidebar
+controls remain visible. Keep the primary profile as default so the automatic
+theme installer continues to target it.
+
+This command does not clone tabs, groups, panels, bookmarks, history, cookies,
+passwords, containers, extension storage, or signed-in accounts. A separately
+requested local migration remains outside dotfiles. Profiles evolve independently
+after any such migration.
+
+An existing profile with the same name or directory is never adopted or reset.
+A repeat invocation preserves a profile this command created, including later
+user preferences and browsing data. If its directory was written but registration
+was interrupted, rerunning finishes registration without overwriting that profile.
+Use `--firefox-root` for an alternate Firefox registration directory and `--source`
+for an alternate vanilla `user.js` file. These options do not select a profile to
+copy or an app to launch.
+
 ## Change and validate
 
 Edit the source under `home/dot_config/firefox`, then preview and apply through
@@ -170,7 +212,7 @@ revision, update its URL/revision/checksum together, and qualify a disposable
 profile before applying to the daily browser.
 
 ```sh
-just test-python -p test_firefox.py
+just test-python -p 'test_firefox*.py'
 just test-shell tests/bats/hooks/firefox-settings.bats
 just test-docs-lifecycle
 git diff --check
@@ -190,3 +232,10 @@ theme colors, the group-page typography, tab-bar fallback, loaded motion wrapper
 and effective reporting/signature preferences. The individual tab-hiding grant
 left web/proxy permissions absent. Fresh-machine checks are listed under
 First launch; future Firefox UI changes also need runtime qualification.
+
+The vanilla-profile fixture suite checks read-only previews, default-profile
+preservation, no browsing-data copying, repeat safety, registration recovery,
+private permissions, active-browser refusal, and name/path/symlink conflicts.
+The existing local comparison profile was visually checked with stock Firefox
+and only Sidebery active; a fresh-machine run of this new bootstrap command
+followed by native extension installation still needs an attended check.
