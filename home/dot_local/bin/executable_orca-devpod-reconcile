@@ -7,6 +7,9 @@ readonly ORCA_UPDATE_TAG="# orca-devpod-reconcile daily update"
 readonly ORCA_PORT="6768"
 readonly ORCA_PAIRING_ADDRESS="127.0.0.1:16768"
 readonly ORCA_SESSION="orca-headless"
+# Every Orca process by command line: the packaged Electron app, and the orcad
+# server, PTY daemon and helpers that newer releases unpack under the data root.
+readonly ORCA_PROCESSES='^/opt/Orca/orca-ide|/orca/orcad-artifacts/'
 
 # Headless Orca server for the Linux devbox, driven by the devbox onstart hook:
 # start installs the latest released .deb (a stop/start discards /usr) and
@@ -19,7 +22,7 @@ readonly ORCA_SESSION="orca-headless"
 # from the release itself, so the checksum proves an intact download, not a
 # reviewed one. When the manifest cannot be fetched, the last one is reused.
 #
-# Orca binds the serving endpoint to all interfaces and has no bind flag. The
+# Orca binds the serving endpoint to all interfaces by default. The
 # IAM gateway restricts reachability; Orca authenticates each paired device.
 # start always serves with --no-pairing. `pair` restarts the server with a
 # pairing offer on the loopback-only address and prints only the pairing code
@@ -167,12 +170,14 @@ stop_server() {
   fi
 
   rm -f "$run_script" "$offer"
-  # The PTY daemon detaches from the server and would keep the old version and
-  # environment across a restart. Stopping it ends live Orca terminals.
-  pkill -u "$(id -u)" -f '/opt/Orca/.*daemon-entry\.js' 2>/dev/null || true
+  # The server and its PTY daemon outlive the tmux session. A surviving server
+  # holds the data-root lock, so the next launch exits at once; a surviving
+  # daemon would keep the old version and environment across a restart.
+  # Stopping the daemon ends live Orca terminals.
+  pkill -u "$(id -u)" -f "$ORCA_PROCESSES" 2>/dev/null || true
 
-  # Wait for every Orca process, not just the port: a server still tearing
-  # down holds the single-instance lock, and the next launch exits at once.
+  # Wait for every Orca process, not just the port: one still tearing down
+  # holds the lock too.
   for _ in {1..20}; do
     if ! orca_running; then
       log_info "stopped"
@@ -180,14 +185,14 @@ stop_server() {
     fi
     sleep 1
   done
-  pkill -KILL -u "$(id -u)" -f '^/opt/Orca/orca-ide' 2>/dev/null || true
+  pkill -KILL -u "$(id -u)" -f "$ORCA_PROCESSES" 2>/dev/null || true
   sleep 2
   orca_running && die "Orca processes are still running after SIGKILL"
   log_info "stopped"
 }
 
 orca_running() {
-  pgrep -u "$(id -u)" -f '^/opt/Orca/orca-ide' >/dev/null
+  pgrep -u "$(id -u)" -f "$ORCA_PROCESSES" >/dev/null
 }
 
 # Removes a failed download and the directory made for it, then exits.

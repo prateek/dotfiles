@@ -121,7 +121,8 @@ and credential settings win.
   agent run cleanly on the work Mac.
   The runner sets `SHELL` to the login shell, since Orca terminals open
   `$SHELL` and a shared tmux server hands down whatever shell started it.
-  `stop` also ends Orca's detached PTY daemon, so a restart or upgrade never
+  `stop` also ends Orca's detached `orcad` server and PTY daemon, which
+  outlive the tmux session, so a restart or upgrade never
   keeps the old version or environment, and it waits for every Orca process to
   exit, because a server still tearing down holds Orca's single-instance lock.
 - Each proven increment is one landable commit. Nothing lands until Prateek

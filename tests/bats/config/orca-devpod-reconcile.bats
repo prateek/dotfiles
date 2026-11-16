@@ -17,8 +17,12 @@ setup() {
 
   stub uname 'echo Linux'
   stub flock ''
-  stub pgrep 'exit 1'
-  stub pkill ''
+  # A process table of command lines: pgrep matches it and pkill removes from
+  # it, each by the pattern in its last argument.
+  export PROCESSES="$FIXTURE/processes"
+  echo "/usr/bin/python3 /home/me/adc-watch.py" >"$PROCESSES"
+  stub pgrep 'grep -Eq -- "${*: -1}" "$PROCESSES"'
+  stub pkill 'grep -Ev -- "${*: -1}" "$PROCESSES" >"$PROCESSES.next"; mv "$PROCESSES.next" "$PROCESSES"'
   stub getent 'echo "me:x:1000:1000::/home/me:/bin/bash"'
   stub dpkg 'case "$1" in
   --print-architecture) echo amd64 ;;
@@ -51,9 +55,15 @@ esac'
   kill-session) rm -f "$STUB_SESSION" ;;
   new-session) : >"$STUB_SESSION"; "${@: -1}" ;;
 esac'
-  # The server reports ready, and makes a pairing offer unless told not to. An
-  # offer also shows up in plain text, as a browser link carrying the code.
-  stub orca-ide 'pairing=",\"pairing\":{\"url\":\"orca://pair?code=secret\"}"
+  # The server refuses to start while another holds the data root. Otherwise it
+  # leaves its orcad server and PTY daemon running detached, as Orca 1.4.261
+  # does, reports ready, and makes a pairing offer unless told not to. An offer
+  # also shows up in plain text, as a browser link carrying the code.
+  stub orca-ide 'orcad="/home/me/.config/orca/orcad-artifacts/linux-x64-glibc"
+if grep -q "orcad-server.js" "$PROCESSES"; then echo "orcad_instance_lock_held"; exit 3; fi
+echo "$orcad/runtimes/node-1/bin/node $orcad/0.1.0+abc/orcad-server.js --bind 0.0.0.0 --port 6768" >>"$PROCESSES"
+echo "$orcad/runtimes/node-1/bin/node --max-semi-space-size=4 $orcad/0.1.0+abc/daemon-entry.js --socket s" >>"$PROCESSES"
+pairing=",\"pairing\":{\"url\":\"orca://pair?code=secret\"}"
 link="open http://127.0.0.1:6768/#pairing=orca%3A%2F%2Fpair%3Fcode%3Dsecret"
 [[ " $* " != *" --no-pairing "* ]] || { pairing=""; link=""; }
 printf "starting\n%s\n{\"type\":\"orca_server_ready\",\"boundEndpoint\":\"ws://0.0.0.0:6768\"%s}\n" "$link" "$pairing"'
@@ -217,6 +227,17 @@ YAML
   run grep -cE '^(tmux kill-session|orca-ide serve) ' "$RECONCILE_LOG"
   assert_output 2
   [[ ! -e "$deb" && -f "$XDG_CACHE_HOME/orca/9.8.8/orca-ide_9.8.8_amd64.deb" ]]
+}
+
+@test "Stop ends the detached server and PTY daemon, and nothing else" {
+  run_bash 0 "$script" start
+  echo "/opt/Orca/orca-ide /opt/Orca/resources/app.asar.unpacked/out/main/daemon-entry.js --socket old" >>"$PROCESSES"
+  run grep -c . "$PROCESSES"
+  assert_output 4
+  run_bash 0 "$script" stop
+  assert_success
+  run cat "$PROCESSES"
+  assert_output "/usr/bin/python3 /home/me/adc-watch.py"
 }
 
 @test "A withdrawn release does not downgrade or restart the running server" {
