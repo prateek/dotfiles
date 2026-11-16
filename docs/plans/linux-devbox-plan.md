@@ -4,7 +4,7 @@ doc_type: plan
 summary: "Runs the dotfiles and headless Orca on the work-provisioned Linux devbox, defining ownership between the devbox bootstrap, agent sync, image, and chezmoi"
 owner: Prateek
 created: 2026-09-24
-updated: 2026-10-19
+updated: 2026-11-16
 related:
   - ../adr/0040-devbox-machine-type.md
   - ../adr/0043-devbox-os-gating.md
@@ -70,11 +70,22 @@ and credential settings win.
   Script 36 builds the agent marketplace into `~/.agents/plugins` and installs
   the enabled Claude plugins, as on the Macs.
 - Orca: `~/.local/bin/orca-devpod-reconcile` (Linux only) takes `start`,
-  `stop`, `status`, and `pair`. `start` caches the pinned `.deb`,
-  checks its SHA-256, reinstalls it with `sudo -n apt-get` whenever the
+  `stop`, `status`, and `pair`. `start` and `pair` read the latest release
+  from Orca's `latest-linux.yml` manifest, cache that `.deb`, check it against
+  the manifest's SHA-512, install it with `sudo -n apt-get` whenever the
   installed version differs, because a stop/start discards everything outside
-  `/home`, and serves in a tmux session. The pin tracks desktop Orca on the
-  Mac. The onstart hook's `DEVBOX_ORCA_HEADLESS_ENABLED` decides whether it
+  `/home`, and serve in a tmux session. The box follows the latest release
+  because desktop Orca on the Mac updates itself. The checksum comes from the
+  release, so it proves an intact download, not a reviewed one. When the
+  manifest cannot be fetched, the last one whose package verified is reused,
+  and the previous package stays cached until the new server reports ready.
+  It never downgrades a running install: if upstream withdraws a release,
+  the box keeps the installed one until a newer release appears.
+  `start` also adds itself to the user crontab daily at 09:00 in the box's
+  timezone, UTC, since the box stays up for weeks; a run that finds a newer
+  release restarts the server and ends live Orca terminals. The entry runs
+  through the login shell, logs to `~/.local/state/orca-headless/update.log`,
+  and leaves other crontab entries alone; `stop` removes it. The onstart hook's `DEVBOX_ORCA_HEADLESS_ENABLED` decides whether it
   starts. Orca's server binds `0.0.0.0` behind the Cloud Workstation IAM
   gateway, per-device tokens, and end-to-end encryption. `start` always serves
   with `--no-pairing`, so no serve log can enroll a device. Pairing runs from

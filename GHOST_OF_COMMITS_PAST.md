@@ -32,3 +32,10 @@ Skills: `utils-agent:acpx`, `utils-agent:workflow-viewer`, `chezmoi-management`.
 - `just test-orca-shortcuts-docker --entrypoint orcactl --orca-version 1.4.224 --scenario paired`; all checks pass.
 
 Skills: `utils-agent:orca-cli`.
+
+## 2026-11-16: devbox Orca follows the latest release (docs/plans/linux-devbox-plan.md)
+
+- On `prateek-devbox-orca-1` after 09:00 UTC: `~/.local/state/orca-headless/update.log` has a `start at` line dated that day, and `crontab -l` shows one `orca-devpod-reconcile daily update` entry run through `/bin/zsh -lc`, beside the `adc-watch` entry.
+- After Orca's next release: `dpkg-query -W orca-ide` on the box reports it within a day, and `orca status --environment work-devbox` on the Mac reads `ready`.
+
+Skills: `work:devbox-orca-pair`, `utils-agent:orca-cli`.

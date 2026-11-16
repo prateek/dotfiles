@@ -1,16 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-readonly ORCA_VERSION="1.4.217"
-readonly ORCA_DEB_SHA256="dc84039c473833cab6f22dc911927f4ce14d7869b1a5d2e604636976ec4b71bd"
-readonly ORCA_DEB_URL="https://github.com/stablyai/orca/releases/download/v${ORCA_VERSION}/orca-ide_${ORCA_VERSION}_amd64.deb"
+readonly ORCA_RELEASES_URL="https://github.com/stablyai/orca/releases"
+readonly ORCA_UPDATE_SCHEDULE="0 9 * * *"
+readonly ORCA_UPDATE_TAG="# orca-devpod-reconcile daily update"
 readonly ORCA_PORT="6768"
 readonly ORCA_PAIRING_ADDRESS="127.0.0.1:16768"
 readonly ORCA_SESSION="orca-headless"
 
 # Headless Orca server for the Linux devbox, driven by the devbox onstart hook:
-# start installs the pinned .deb (a stop/start discards /usr) and serves in tmux.
-# Keep ORCA_VERSION in step with desktop Orca on the Mac.
+# start installs the latest released .deb (a stop/start discards /usr) and
+# serves in tmux. Desktop Orca on the Mac updates itself, so the box follows
+# the latest release instead of a pin: start also schedules itself daily in
+# cron, and a run that finds a newer release restarts the server, which ends
+# live Orca terminals. stop removes the schedule.
+#
+# The release manifest names the version and the package's SHA-512. Both come
+# from the release itself, so the checksum proves an intact download, not a
+# reviewed one. When the manifest cannot be fetched, the last one is reused.
 #
 # Orca binds the serving endpoint to all interfaces and has no bind flag. The
 # IAM gateway restricts reachability; Orca authenticates each paired device.
@@ -21,10 +28,11 @@ readonly ORCA_SESSION="orca-headless"
 # offer to `pair` through a one-shot 0600 file, so the log never holds a code.
 # Never print the code. See the devbox-orca-pair skill and
 # docs/plans/linux-devbox-plan.md.
-cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/orca/$ORCA_VERSION"
+cache_root="${XDG_CACHE_HOME:-$HOME/.cache}/orca"
+manifest="$cache_root/latest-linux.yml"
+fetched_manifest="$manifest.new"
 state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/orca-headless"
 config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/orca"
-deb="$cache_dir/orca-ide_${ORCA_VERSION}_amd64.deb"
 log="$state_dir/serve.log"
 offer="$state_dir/pairing-offer"
 run_script="$state_dir/run"
@@ -45,9 +53,112 @@ require_command() {
   command -v "$1" >/dev/null 2>&1 || die "required command not found: $1"
 }
 
+# Prints "<version> <sha512>" for the amd64 .deb a release manifest names.
+read_manifest() {
+  python3 - "$1" <<'PY'
+import re
+import sys
+
+try:
+    text = open(sys.argv[1]).read()
+except OSError:
+    raise SystemExit(1)
+version = re.search(r"^version:\s*(\d+(?:\.\d+)+)\s*$", text, re.M)
+package = re.search(
+    r"^\s*-\s*url:\s*(orca-ide_\S+_amd64\.deb)\s*\n\s*sha512:\s*([A-Za-z0-9+/]{86}==)\s*$",
+    text,
+    re.M,
+)
+if not version or not package:
+    raise SystemExit(1)
+if package.group(1) != f"orca-ide_{version.group(1)}_amd64.deb":
+    raise SystemExit(1)
+print(version.group(1), package.group(2))
+PY
+}
+
+# Sets orca_version, orca_sha512, and deb from the latest release. A fetched
+# manifest waits in $fetched_manifest until its package passes the checksum,
+# so the cached manifest always names a package that was once on disk.
+resolve_release() {
+  local release
+
+  rm -f "$fetched_manifest"
+  if curl --fail --silent --show-error --location --proto '=https' --retry 3 \
+    --connect-timeout 20 --max-time 120 --output "$fetched_manifest" \
+    "$ORCA_RELEASES_URL/latest/download/latest-linux.yml" &&
+    release="$(read_manifest "$fetched_manifest")"; then
+    :
+  else
+    rm -f "$fetched_manifest"
+    release="$(read_manifest "$manifest")" ||
+      die "cannot read the latest Orca release, and no earlier manifest is cached"
+    log_info "could not fetch the release manifest; reusing the cached one"
+  fi
+  read -r orca_version orca_sha512 <<<"$release"
+  deb="$cache_root/$orca_version/orca-ide_${orca_version}_amd64.deb"
+}
+
 checksum_matches() {
-  [[ -f "$1" ]] &&
-    printf '%s  %s\n' "$ORCA_DEB_SHA256" "$1" | sha256sum --check --status
+  [[ -f "$1" ]] && python3 - "$1" "$orca_sha512" <<'PY'
+import base64
+import hashlib
+import sys
+
+digest = hashlib.sha512()
+with open(sys.argv[1], "rb") as f:
+    for chunk in iter(lambda: f.read(1 << 20), b""):
+        digest.update(chunk)
+raise SystemExit(base64.b64encode(digest.digest()).decode() != sys.argv[2])
+PY
+}
+
+# Rewrites the crontab without this script's entry, then adds $1 when given.
+# Other entries survive: a crontab that cannot be read is left untouched.
+set_update_schedule() {
+  local current="" errors="$state_dir/crontab.err" existed=1 reason
+
+  if ! current="$(crontab -l 2>"$errors")"; then
+    reason="$(<"$errors")"
+    rm -f "$errors"
+    [[ "$reason" == *"no crontab for"* ]] ||
+      die "cannot read the crontab, so it is unchanged: $reason"
+    current=""
+    existed=0
+  fi
+  rm -f "$errors"
+
+  current="$(grep -vF "$ORCA_UPDATE_TAG" <<<"$current" || true)"
+  if [[ -n "$current$1" ]]; then
+    printf '%s\n' ${current:+"$current"} ${1:+"$1"} | crontab -
+  elif [[ "$existed" -eq 1 ]]; then
+    crontab -r
+  fi
+}
+
+# The account's login shell. A tmux server or cron hands down another one.
+login_shell() {
+  local shell
+
+  shell="$(getent passwd "$(id -un)" | cut -d: -f7 || true)"
+  [[ -x "$shell" ]] || shell=/bin/bash
+  printf '%s\n' "$shell"
+}
+
+schedule_update() {
+  local command
+
+  command="$(printf '%q start' "$(realpath "${BASH_SOURCE[0]}")")"
+  # Through the login shell, so a scheduled restart serves with the login
+  # PATH, as a start from a terminal does, instead of cron's bare one.
+  set_update_schedule "$(printf '%s %q -lc %q >>%q 2>&1 %s' "$ORCA_UPDATE_SCHEDULE" \
+    "$(login_shell)" "$command" "$state_dir/update.log" "$ORCA_UPDATE_TAG")"
+}
+
+unschedule_update() {
+  if command -v crontab >/dev/null 2>&1; then
+    set_update_schedule ""
+  fi
 }
 
 stop_server() {
@@ -79,60 +190,95 @@ orca_running() {
   pgrep -u "$(id -u)" -f '^/opt/Orca/orca-ide' >/dev/null
 }
 
+# Removes a failed download and the directory made for it, then exits.
+discard_download() {
+  rm -f "$deb.tmp" "$fetched_manifest"
+  rmdir "${deb%/*}" 2>/dev/null || true
+  die "$1"
+}
+
+# Each release is a new 200 MB package; keep only the one now serving.
+prune_cache() {
+  local stale
+
+  for stale in "$cache_root"/*/orca-ide_*_amd64.deb*; do
+    if [[ -f "$stale" && "$stale" != "$deb" ]]; then
+      rm -f "$stale"
+      rmdir "${stale%/*}" 2>/dev/null || true
+    fi
+  done
+}
+
 install_orca() {
-  installed=0
-  local -a apt_args=(install -y --allow-downgrades)
+  local -a apt_args=(install -y)
   local architecture
   local installed_version=""
-  local tmp
 
   architecture="$(dpkg --print-architecture)"
   [[ "$architecture" == "amd64" ]] ||
     die "unsupported architecture: $architecture"
 
-  if ! checksum_matches "$deb"; then
-    rm -f "$deb"
-    tmp="$deb.tmp.$$"
-    trap 'rm -f "${tmp:-}"' EXIT
-    curl --fail --location --retry 3 --connect-timeout 20 --max-time 900 --output "$tmp" "$ORCA_DEB_URL"
-    chmod 600 "$tmp"
-    checksum_matches "$tmp" || die "checksum mismatch for downloaded Orca package"
-    mv -f "$tmp" "$deb"
-    trap - EXIT
-  fi
-
+  resolve_release
   installed_version="$(dpkg-query -W -f='${Version}' orca-ide 2>/dev/null || true)"
-  if [[ "$installed_version" == "$ORCA_VERSION" && -x "$orca_ide" ]]; then
+  # Never downgrade unattended: an older build would start on state the newer
+  # one wrote. When upstream withdraws a release, keep serving the installed
+  # one until a newer release appears.
+  if [[ -x "$orca_ide" && -n "$installed_version" ]] &&
+    dpkg --compare-versions "$orca_version" lt "$installed_version"; then
+    log_info "latest release $orca_version is older than installed $installed_version; keeping it"
+    rm -f "$fetched_manifest"
+    orca_version="$installed_version"
+    deb="$cache_root/$orca_version/orca-ide_${orca_version}_amd64.deb"
     return
   fi
 
-  log_info "installing Orca $ORCA_VERSION"
-  if [[ -n "$installed_version" ]]; then
-    apt_args+=(--reinstall)
+  mkdir -p "${deb%/*}"
+  chmod 700 "${deb%/*}"
+  if ! checksum_matches "$deb"; then
+    rm -f "$deb"
+    curl --fail --silent --show-error --location --proto '=https' --retry 3 \
+      --connect-timeout 20 --max-time 900 --output "$deb.tmp" \
+      "$ORCA_RELEASES_URL/download/v$orca_version/${deb##*/}" ||
+      discard_download "could not download Orca $orca_version"
+    chmod 600 "$deb.tmp"
+    checksum_matches "$deb.tmp" ||
+      discard_download "checksum mismatch for downloaded Orca package"
+    mv -f "$deb.tmp" "$deb"
   fi
-  # The .deb pulls dependencies, and the image's package lists can be stale.
-  timeout 900 sudo -n env DEBIAN_FRONTEND=noninteractive apt-get update -qq
-  timeout 900 sudo -n env DEBIAN_FRONTEND=noninteractive apt-get "${apt_args[@]}" "$deb"
-  installed=1
+  if [[ -f "$fetched_manifest" ]]; then
+    mv -f "$fetched_manifest" "$manifest"
+  fi
 
-  [[ "$(dpkg-query -W -f='${Version}' orca-ide 2>/dev/null)" == "$ORCA_VERSION" ]] ||
-    die "Orca $ORCA_VERSION was not installed"
-  [[ -x "$orca_ide" ]] || die "$orca_ide is not executable"
+  if [[ "$installed_version" != "$orca_version" || ! -x "$orca_ide" ]]; then
+    log_info "installing Orca $orca_version${installed_version:+ over $installed_version}"
+    if [[ -n "$installed_version" ]]; then
+      apt_args+=(--reinstall)
+    fi
+    # The .deb pulls dependencies, and the image's package lists can be stale.
+    timeout 900 sudo -n env DEBIAN_FRONTEND=noninteractive apt-get update -qq
+    timeout 900 sudo -n env DEBIAN_FRONTEND=noninteractive apt-get "${apt_args[@]}" "$deb"
+
+    [[ "$(dpkg-query -W -f='${Version}' orca-ide 2>/dev/null)" == "$orca_version" ]] ||
+      die "Orca $orca_version was not installed"
+    [[ -x "$orca_ide" ]] || die "$orca_ide is not executable"
+  fi
 }
 
 render_runner() {
-  local pairing_flag="" login_shell
+  local pairing_flag="" shell
 
   if [[ "$pairing" -eq 0 ]]; then
     pairing_flag=" --no-pairing"
   fi
   # Orca terminals open $SHELL, and a tmux server started by another session
   # hands down that session's shell, so name the login shell explicitly.
-  login_shell="$(getent passwd "$(id -un)" | cut -d: -f7 || true)"
-  [[ -x "$login_shell" ]] || login_shell=/bin/bash
+  shell="$(login_shell)"
 
   {
     printf '#!/usr/bin/env bash\n'
+    # Names the package this server runs, so a start after an upgrade, even
+    # one whose install failed partway, sees a different runner and restarts.
+    printf '# orca-ide %s\n' "$orca_version"
     cat <<'RUNNER'
 # Every line passes through this filter before the serve log. The ready
 # event's pairing URL goes to the offer file instead, and any pairing URL or
@@ -175,7 +321,7 @@ for line in sys.stdin:
 PY
 )
 RUNNER
-    printf 'env LIBGL_ALWAYS_SOFTWARE=1 SHELL=%q %q serve' "$login_shell" "$orca_ide"
+    printf 'env LIBGL_ALWAYS_SOFTWARE=1 SHELL=%q %q serve' "$shell" "$orca_ide"
     printf ' --port %q --pairing-address %q%s --json 2>&1' \
       "$ORCA_PORT" "$ORCA_PAIRING_ADDRESS" "$pairing_flag"
     # shellcheck disable=SC2016 # $redact belongs to the runner, not this shell
@@ -183,10 +329,10 @@ RUNNER
   }
 }
 
-# True when the server already runs the installed package with the runner that
-# start would write now, so a repeat start changes nothing.
+# True when the server already runs the runner that start would write now,
+# which names the installed package, so a repeat start changes nothing.
 serving_current() {
-  [[ "$installed" -eq 0 && -f "$run_script" ]] &&
+  [[ -f "$run_script" ]] &&
     tmux has-session -t "$ORCA_SESSION" 2>/dev/null &&
     ready 2>/dev/null &&
     [[ "$(render_runner)" == "$(<"$run_script")" ]]
@@ -237,6 +383,7 @@ start_server() {
 
   install_orca
   if serving_current; then
+    prune_cache
     log_info "already ready on remote port $ORCA_PORT"
     return
   fi
@@ -251,6 +398,8 @@ start_server() {
   for _ in {1..60}; do
     if ready; then
       chmod 700 "$config_dir" 2>/dev/null || true
+      # Only now, so a release that fails to start leaves its predecessor.
+      prune_cache
       log_info "ready on remote port $ORCA_PORT"
       return
     else
@@ -281,8 +430,8 @@ status() {
 
 [[ "$(uname -s)" == "Linux" ]] || die "this reconciler supports Linux only"
 
-mkdir -p "$cache_dir" "$state_dir" "$config_dir"
-chmod 700 "${XDG_CACHE_HOME:-$HOME/.cache}/orca" "$cache_dir" "$state_dir" "$config_dir"
+mkdir -p "$cache_root" "$state_dir" "$config_dir"
+chmod 700 "$cache_root" "$state_dir" "$config_dir"
 
 require_command flock
 require_command python3
@@ -295,7 +444,7 @@ flock -w 10 9 || die "another reconcile is still running"
 action="${1:-}"
 case "$action" in
   start|pair)
-    for command in curl apt-get dpkg dpkg-query sha256sum sudo timeout getent pkill; do
+    for command in curl apt-get dpkg dpkg-query sudo timeout getent pkill realpath; do
       require_command "$command"
     done
     if [[ "$action" == "pair" ]]; then
@@ -303,11 +452,21 @@ case "$action" in
       start_server
       claim_offer
     else
+      require_command crontab
+      log_info "start at $(date -u +%FT%TZ)"
+      # Close an open pairing window first: the install below can fail, and
+      # start must not leave the window open when it does.
+      if [[ -f "$run_script" ]] && ! grep -q -- '--no-pairing' "$run_script"; then
+        log_info "closing the pairing window"
+        stop_server
+      fi
       start_server
+      schedule_update
     fi
     ;;
   stop)
     stop_server
+    unschedule_update
     ;;
   status)
     status
